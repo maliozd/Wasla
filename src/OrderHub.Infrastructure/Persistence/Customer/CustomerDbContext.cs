@@ -1,0 +1,43 @@
+using Microsoft.EntityFrameworkCore;
+using OrderHub.Domain.Entities.Customer;
+
+namespace OrderHub.Infrastructure.Persistence.Customer;
+
+/// <summary>
+/// Per-customer database context. One physical database per restaurant.
+/// The connection string is resolved per-request/per-sync from CentralDb
+/// and passed in via ICustomerDbContextFactory.
+/// </summary>
+public class CustomerDbContext : DbContext
+{
+    public CustomerDbContext(DbContextOptions<CustomerDbContext> options) : base(options) { }
+
+    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<AppUser> AppUsers => Set<AppUser>();
+    public DbSet<PlatformConnection> PlatformConnections => Set<PlatformConnection>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderItemOption> OrderItemOptions => Set<OrderItemOption>();
+    public DbSet<SyncLog> SyncLogs => Set<SyncLog>();
+    public DbSet<IntegrationError> IntegrationErrors => Set<IntegrationError>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(CustomerDbContext).Assembly);
+    }
+
+    /// <summary>
+    /// Override SaveChanges to auto-update UpdatedAt on modified BaseEntity rows.
+    /// </summary>
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var entry in ChangeTracker.Entries<Domain.Common.BaseEntity>())
+        {
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+        return base.SaveChangesAsync(cancellationToken);
+    }
+}
