@@ -4,7 +4,10 @@ using OrderHub.Api.Middleware;
 using OrderHub.Api.Tenant;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Application.Auth.Services;
 using OrderHub.Infrastructure.Persistence.Central;
+using OrderHub.Infrastructure.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 AesSecretManager.ValidateMasterKeyOrThrow();
 
@@ -18,6 +21,11 @@ builder.Services.AddDbContext<CentralDbContext>(options =>
 
 builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
 builder.Services.AddScoped<ICurrentCustomerService, CurrentCustomerService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie();
+builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -32,6 +40,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<CustomerResolutionMiddleware>();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapGet("/", () => Results.Ok("OrderHub API"));
