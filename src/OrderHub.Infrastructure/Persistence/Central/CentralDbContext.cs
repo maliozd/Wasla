@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using CentralCustomer = OrderHub.Domain.Entities.Central.Customer;
+using OrderHub.Infrastructure.Persistence.Central.Configurations;
 
 namespace OrderHub.Infrastructure.Persistence.Central;
 
@@ -15,6 +16,6 @@ public class CentralDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(CentralDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new CustomerConfiguration());
     }
 }

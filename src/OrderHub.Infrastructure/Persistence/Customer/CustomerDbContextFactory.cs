@@ -1,37 +1,49 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
-using OrderHub.Application.Abstractions.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 using OrderHub.Application.Abstractions.Security;
-using OrderHub.Infrastructure.Persistence.Central;
 
 namespace OrderHub.Infrastructure.Persistence.Customer;
 
 public sealed class CustomerDbContextFactory : ICustomerDbContextFactory
 {
-    private readonly CentralDbContext _centralDb;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ISecretManager _secretManager;
 
     private readonly ConcurrentDictionary<Guid, Lazy<Task<DbContextOptions<CustomerDbContext>>>> _optionsCache = new();
 
-    public CustomerDbContextFactory(CentralDbContext centralDb, ISecretManager secretManager)
+    public CustomerDbContextFactory(IServiceScopeFactory scopeFactory, ISecretManager secretManager)
     {
-        _centralDb = centralDb;
+        _scopeFactory = scopeFactory;
         _secretManager = secretManager;
     }
 
-    public async Task<DbContext> CreateAsync(Guid customerId, CancellationToken ct)
+    public async Task<CustomerDbContext> CreateAsync(Guid customerId, CancellationToken ct)
     {
-        var optionsLazy = _optionsCache.GetOrAdd(
+        var lazy = _optionsCache.GetOrAdd(
             customerId,
-            id => new Lazy<Task<DbContextOptions<CustomerDbContext>>>(() => BuildOptionsAsync(id, ct)));
+            id => new Lazy<Task<DbContextOptions<CustomerDbContext>>>(
+                () => BuildOptionsAsync(id, CancellationToken.None)));
 
-        var options = await optionsLazy.Value.ConfigureAwait(false);
-        return new CustomerDbContext(options);
+        try
+        {
+            var options = await lazy.Value.ConfigureAwait(false);
+            return new CustomerDbContext(options);
+        }
+        catch
+        {
+            _optionsCache.TryRemove(
+                new KeyValuePair<Guid, Lazy<Task<DbContextOptions<CustomerDbContext>>>>(customerId, lazy));
+            throw;
+        }
     }
 
     private async Task<DbContextOptions<CustomerDbContext>> BuildOptionsAsync(Guid customerId, CancellationToken ct)
     {
-        var customer = await _centralDb.Customers
+        using var scope = _scopeFactory.CreateScope();
+        var centralDb = scope.ServiceProvider.GetRequiredService<OrderHub.Infrastructure.Persistence.Central.CentralDbContext>();
+
+        var customer = await centralDb.Customers
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == customerId, ct)
             .ConfigureAwait(false);

@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using OrderHub.Api.Middleware;
 using OrderHub.Api.Tenant;
 using OrderHub.Application.Abstractions.Orders.Services;
-using OrderHub.Application.Abstractions.Persistence;
 using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
@@ -55,7 +54,25 @@ builder.Services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie();
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "orderhub_auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
+        options.Events.OnRedirectToLogin = ctx =>
+        {
+            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        };
+        options.Events.OnRedirectToAccessDenied = ctx =>
+        {
+            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        };
+    });
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
@@ -63,6 +80,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {

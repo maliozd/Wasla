@@ -33,6 +33,8 @@ public sealed class OrderSyncWorker : BackgroundService
         {
             try
             {
+                var cycleStart = DateTime.UtcNow;
+
                 using var outerScope = _scopeFactory.CreateScope();
                 var central = outerScope.ServiceProvider.GetRequiredService<CentralDbContext>();
 
@@ -69,14 +71,30 @@ public sealed class OrderSyncWorker : BackgroundService
                         }
                     });
 
-                _logger.LogInformation("Sync cycle completed");
-
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                var elapsed = DateTime.UtcNow - cycleStart;
+                _logger.LogInformation("Sync cycle completed in {Elapsed}", elapsed);
+                var remaining = TimeSpan.FromSeconds(15) - elapsed;
+                if (remaining > TimeSpan.Zero)
+                {
+                    await Task.Delay(remaining, stoppingToken);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
                 _logger.LogInformation("Worker stopping");
                 break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Sync cycle failed catastrophically, will retry in 30s");
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
         }
     }

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OrderHub.Application.Abstractions.Persistence;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.Persistence.Customer;
 
@@ -29,7 +28,7 @@ public sealed class BranchesController : ControllerBase
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        await using var db = (CustomerDbContext)await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
 
         var branches = await db.Branches
             .AsNoTracking()
@@ -59,7 +58,7 @@ public sealed class BranchesController : ControllerBase
             return BadRequest("Name is required");
         }
 
-        await using var db = (CustomerDbContext)await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
 
         var entity = new OrderHub.Domain.Entities.Customer.Branch
         {

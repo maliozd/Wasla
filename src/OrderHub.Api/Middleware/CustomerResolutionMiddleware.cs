@@ -23,6 +23,14 @@ public sealed class CustomerResolutionMiddleware
         CentralDbContext centralDb,
         ILogger<CustomerResolutionMiddleware> logger)
     {
+        var path = context.Request.Path.Value ?? string.Empty;
+        if (path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/health", StringComparison.OrdinalIgnoreCase))
+        {
+            await _next(context);
+            return;
+        }
+
         var host = context.Request.Host.Host?.Trim();
         if (string.IsNullOrWhiteSpace(host))
         {

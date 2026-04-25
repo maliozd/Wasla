@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OrderHub.Application.Abstractions.Persistence;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Persistence.Customer;
@@ -28,16 +27,19 @@ public sealed class DashboardController : ControllerBase
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        await using var db = (CustomerDbContext)await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
 
-        var todayStart = DateTime.UtcNow.Date;
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+        var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        var todayStartLocal = DateTime.SpecifyKind(nowLocal.Date, DateTimeKind.Unspecified);
+        var todayStart = TimeZoneInfo.ConvertTimeToUtc(todayStartLocal, tz);
         var todayEnd = todayStart.AddDays(1);
 
         var todayQuery = db.Orders.AsNoTracking()
             .Where(o => o.CreatedAtPlatform >= todayStart && o.CreatedAtPlatform < todayEnd);
 
         var todayOrderCount = await todayQuery.CountAsync(ct);
-        var revenue = await todayQuery.SumAsync(o => (decimal?)o.TotalAmount, ct) ?? 0m;
+        var revenue = await todayQuery.SumAsync(o => o.TotalAmount, ct);
 
         var pendingCount = await todayQuery
             .CountAsync(o =>

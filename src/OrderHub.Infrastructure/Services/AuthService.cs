@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using OrderHub.Application.Abstractions.Persistence;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Application.Auth.Services;
 using OrderHub.Infrastructure.Persistence.Customer;
@@ -13,6 +12,8 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class AuthService : IAuthService
 {
+    private static readonly string DummyHash = BCrypt.Net.BCrypt.HashPassword("dummy-never-matches");
+
     private readonly ICustomerDbContextFactory _customerDbFactory;
     private readonly ICurrentCustomerService _currentCustomerService;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -35,21 +36,16 @@ public sealed class AuthService : IAuthService
         var customer = _currentCustomerService.CurrentCustomer;
         if (customer is null) return false;
 
-        var dbBase = await _customerDbFactory.CreateAsync(customer.Id, ct).ConfigureAwait(false);
-        if (dbBase is not CustomerDbContext db)
-        {
-            throw new InvalidOperationException($"Customer DB factory returned '{dbBase.GetType().Name}' (expected CustomerDbContext).");
-        }
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct).ConfigureAwait(false);
 
         var user = await db.AppUsers
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Email == email, ct)
             .ConfigureAwait(false);
 
-        if (user is null) return false;
-
-        var ok = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-        if (!ok) return false;
+        var hashToVerify = user?.PasswordHash ?? DummyHash;
+        var verified = BCrypt.Net.BCrypt.Verify(password, hashToVerify);
+        if (user is null || !user.IsActive || !verified) return false;
 
         var claims = new List<Claim>
         {

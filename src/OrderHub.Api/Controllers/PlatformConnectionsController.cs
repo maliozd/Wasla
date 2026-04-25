@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OrderHub.Application.Abstractions.Persistence;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Domain.Enums;
@@ -43,7 +42,7 @@ public sealed class PlatformConnectionsController : ControllerBase
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        await using var db = (CustomerDbContext)await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
 
         var list = await db.PlatformConnections
             .AsNoTracking()
@@ -55,7 +54,6 @@ public sealed class PlatformConnectionsController : ControllerBase
                 p.Platform,
                 p.StoreId,
                 p.IsActive,
-                p.EncryptionKeyVersion,
                 p.LastSyncAttempt,
                 p.LastSuccessfulSync,
                 p.ConsecutiveFailures,
@@ -79,7 +77,15 @@ public sealed class PlatformConnectionsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.ApiKey)) return BadRequest("ApiKey is required");
         if (string.IsNullOrWhiteSpace(request.ApiSecret)) return BadRequest("ApiSecret is required");
 
-        await using var db = (CustomerDbContext)await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
+
+        var trimmedStoreId = request.StoreId.Trim();
+        var exists = await db.PlatformConnections
+            .AnyAsync(p => p.Platform == request.Platform && p.StoreId == trimmedStoreId, ct);
+        if (exists)
+        {
+            return Conflict(new { message = "This platform and store combination is already configured." });
+        }
 
         var (encKey, keyVer1) = await _secretManager.EncryptAsync(request.ApiKey, ct);
         var (encSecret, keyVer2) = await _secretManager.EncryptAsync(request.ApiSecret, ct);
@@ -88,7 +94,7 @@ public sealed class PlatformConnectionsController : ControllerBase
         var entity = new OrderHub.Domain.Entities.Customer.PlatformConnection
         {
             Platform = request.Platform,
-            StoreId = request.StoreId.Trim(),
+            StoreId = trimmedStoreId,
             EncryptedApiKey = encKey,
             EncryptedApiSecret = encSecret,
             EncryptionKeyVersion = keyVer,
@@ -117,7 +123,7 @@ public sealed class PlatformConnectionsController : ControllerBase
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        await using var db = (CustomerDbContext)await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
 
         var entity = await db.PlatformConnections.FirstOrDefaultAsync(p => p.Id == id, ct);
         if (entity is null) return NotFound();

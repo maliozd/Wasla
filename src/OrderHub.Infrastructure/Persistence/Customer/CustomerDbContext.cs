@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Domain.Entities.Customer;
+using OrderHub.Infrastructure.Persistence.Customer.Configurations;
 
 namespace OrderHub.Infrastructure.Persistence.Customer;
 
@@ -23,7 +24,14 @@ public class CustomerDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(CustomerDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new BranchConfiguration());
+        modelBuilder.ApplyConfiguration(new AppUserConfiguration());
+        modelBuilder.ApplyConfiguration(new PlatformConnectionConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderItemOptionConfiguration());
+        modelBuilder.ApplyConfiguration(new SyncLogConfiguration());
+        modelBuilder.ApplyConfiguration(new IntegrationErrorConfiguration());
     }
 
     /// <summary>

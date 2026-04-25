@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OrderHub.Application.Abstractions.Persistence;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Persistence.Customer;
@@ -38,7 +37,7 @@ public sealed class OrdersController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        await using var db = (CustomerDbContext)await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
 
         var q = db.Orders.AsNoTracking().AsQueryable();
 
@@ -86,7 +85,7 @@ public sealed class OrdersController : ControllerBase
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        await using var db = (CustomerDbContext)await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
 
         var order = await db.Orders
             .AsNoTracking()
