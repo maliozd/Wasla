@@ -76,10 +76,19 @@ internal static class CliCommands
             var options = new DbContextOptionsBuilder<CustomerDbContext>()
                 .UseSqlServer(customerConnString)
                 .Options;
-            await using (var db = new CustomerDbContext(options))
+            var migrationNow = DateTime.UtcNow;
+            string migrationResult;
+            try
             {
+                await using var db = new CustomerDbContext(options);
                 WriteLineStep("Applying CustomerDb migrations…");
                 await db.Database.MigrateAsync(ct).ConfigureAwait(false);
+                migrationResult = "Success";
+            }
+            catch (Exception ex)
+            {
+                migrationResult = "Failed: " + SanitizeMigrationError(ex);
+                throw;
             }
 
             WriteLineStep("Encrypting connection string…");
@@ -97,6 +106,8 @@ internal static class CliCommands
                 EncryptedConnectionString = encrypted,
                 EncryptionKeyVersion = keyVersion,
                 SchemaVersion = "1.0.0",
+                LastMigrationAt = migrationNow,
+                LastMigrationResult = migrationResult,
                 IsActive = true,
                 CreatedAt = now,
                 UpdatedAt = now
@@ -231,6 +242,15 @@ internal static class CliCommands
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"✓ {c.DatabaseName}");
                         Console.ResetColor();
+
+                        var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
+                        if (tracked is not null)
+                        {
+                            tracked.LastMigrationAt = DateTime.UtcNow;
+                            tracked.LastMigrationResult = "Success";
+                            tracked.UpdatedAt = DateTime.UtcNow;
+                            await central.SaveChangesAsync(ct).ConfigureAwait(false);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -239,6 +259,21 @@ internal static class CliCommands
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"✗ {c.DatabaseName}: {ex.Message}");
                     Console.ResetColor();
+
+                    try
+                    {
+                        var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
+                        if (tracked is not null)
+                        {
+                            tracked.LastMigrationResult = "Failed: " + SanitizeMigrationError(ex);
+                            tracked.UpdatedAt = DateTime.UtcNow;
+                            await central.SaveChangesAsync(ct).ConfigureAwait(false);
+                        }
+                    }
+                    catch
+                    {
+                        // Swallow tracking update failures; migration errors are primary.
+                    }
                 }
             }
 
@@ -535,5 +570,12 @@ internal static class CliCommands
             await create.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
         WriteLineStep($"Database '{dbName}' created.");
+    }
+
+    private static string SanitizeMigrationError(Exception ex)
+    {
+        var msg = ex.Message ?? "Unknown error";
+        msg = msg.Replace("\r", " ").Replace("\n", " ").Trim();
+        return msg.Length <= 500 ? msg : msg[..500];
     }
 }

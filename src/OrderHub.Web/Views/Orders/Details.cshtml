@@ -1,0 +1,82 @@
+@model OrderHub.Web.Models.Orders.OrderDetailViewModel
+@{
+    ViewData["Title"] = "Sipariş Detayı";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h1 class="h4 mb-0">Sipariş Detayı</h1>
+        <div class="text-muted small">@Model.Platform - @Model.ExternalOrderCode</div>
+    </div>
+    <a class="btn btn-sm btn-outline-primary" href="/orders">Geri</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-5">
+        <div class="card oh-card">
+            <div class="card-body">
+                <h2 class="h6">Özet</h2>
+                <dl class="row mb-0">
+                    <dt class="col-5">Durum</dt>
+                    <dd class="col-7">@Model.Status</dd>
+
+                    <dt class="col-5">Müşteri</dt>
+                    <dd class="col-7">@Model.CustomerName</dd>
+
+                    <dt class="col-5">Telefon</dt>
+                    <dd class="col-7">@Model.CustomerPhone</dd>
+
+                    <dt class="col-5">Adres</dt>
+                    <dd class="col-7">@Model.CustomerAddress</dd>
+
+                    <dt class="col-5">Toplam</dt>
+                    <dd class="col-7">@Model.TotalAmount.ToString("C")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-7">
+        <div class="card oh-card">
+            <div class="card-body">
+                <h2 class="h6">Ürünler</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th class="text-end">Adet</th>
+                            <th class="text-end">Birim</th>
+                            <th class="text-end">Toplam</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var i in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@i.ProductName</div>
+                                    @if (!string.IsNullOrWhiteSpace(i.Notes))
+                                    {
+                                        <div class="text-muted small">@i.Notes</div>
+                                    }
+                                    @if (i.Options.Count > 0)
+                                    {
+                                        <div class="text-muted small">
+                                            @string.Join(", ", i.Options.Select(o => $"{o.Name} (+{o.Price:C})"))
+                                        </div>
+                                    }
+                                </td>
+                                <td class="text-end">@i.Quantity</td>
+                                <td class="text-end">@i.UnitPrice.ToString("C")</td>
+                                <td class="text-end">@i.TotalPrice.ToString("C")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

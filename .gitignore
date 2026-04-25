@@ -236,6 +236,8 @@ ClientBin/
 *.dbmdl
 *.dbproj.schemaview
 *.jfm
+*.db
+*.sqlite
 *.pfx
 *.publishsettings
 orleans.codegen.cs
@@ -352,6 +354,9 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# OrderHub shared data-protection keys
+OrderHub-keys/
 
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/

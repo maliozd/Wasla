@@ -25,22 +25,27 @@ internal static class MockOrders
 
             var subtotal = items.Sum(x => x.TotalPrice);
             var deliveryFee = Random.Shared.Next(0, 2) == 0 ? 0m : 24.90m;
-            var total = subtotal + deliveryFee;
+            var serviceFee = 5.00m;
+            var total = subtotal + deliveryFee + serviceFee;
 
             var externalStatus = GetExternalStatus(platform);
 
             var dto = new ExternalOrderDto(
                 Platform: platform,
                 ExternalOrderId: externalOrderId,
+                ExternalOrderCode: CreateOrderCode(platform),
                 OrderedAtUtc: DateTime.UtcNow.AddMinutes(-Random.Shared.Next(1, 90)),
                 CustomerName: $"Customer {Random.Shared.Next(1000, 9999)}",
+                CustomerPhone: CreatePhone(),
+                CustomerAddress: CreateAddress(),
                 Subtotal: subtotal,
                 DeliveryFee: deliveryFee,
+                ServiceFee: serviceFee,
                 Total: total,
                 PaymentMethod: GetPaymentMethod(),
                 PaymentStatus: GetPaymentStatus(),
                 ExternalStatus: externalStatus,
-                RawPayloadJson: CreateRawPayload(platform, connection, externalOrderId, externalStatus, items, subtotal, deliveryFee, total),
+                RawPayloadJson: CreateRawPayload(platform, connection, externalOrderId, externalStatus, items, subtotal, deliveryFee, serviceFee, total),
                 Items: items);
 
             list.Add(dto);
@@ -139,6 +144,7 @@ internal static class MockOrders
         IReadOnlyCollection<ExternalOrderItemDto> items,
         decimal subtotal,
         decimal deliveryFee,
+        decimal serviceFee,
         decimal total)
     {
         var payload = new
@@ -148,7 +154,7 @@ internal static class MockOrders
             externalOrderId,
             externalStatus,
             orderedAtUtc = DateTime.UtcNow,
-            totals = new { subtotal, deliveryFee, total },
+            totals = new { subtotal, deliveryFee, serviceFee, total },
             items = items.Select(i => new
             {
                 i.ExternalItemId,
@@ -163,6 +169,23 @@ internal static class MockOrders
 
         return JsonSerializer.Serialize(payload);
     }
+
+    private static string CreateOrderCode(FoodPlatform platform)
+    {
+        var prefix = platform switch
+        {
+            FoodPlatform.Yemeksepeti => "YS",
+            FoodPlatform.GetirYemek => "GY",
+            FoodPlatform.TrendyolYemek => "TY",
+            _ => "OH"
+        };
+        return $"{prefix}-ORDER-{Random.Shared.Next(10000, 99999)}";
+    }
+
+    private static string CreatePhone() => $"+9055{Random.Shared.Next(10000000, 99999999)}";
+
+    private static string CreateAddress() =>
+        Pick("Kadıköy, İstanbul", "Beşiktaş, İstanbul", "Üsküdar, İstanbul", "Şişli, İstanbul", "Ataşehir, İstanbul");
 
     private static T Pick<T>(params T[] values) => values[Random.Shared.Next(values.Length)];
 }

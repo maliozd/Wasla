@@ -1,0 +1,113 @@
+@model OrderHub.Web.Models.Dashboard.DashboardViewModel
+@{
+    ViewData["Title"] = "Panel";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Panel</h1>
+    <span class="text-muted small">Bugün</span>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="text-muted small">Bugünkü Sipariş Sayısı</div>
+                <div class="display-6 fw-semibold">@Model.TodayOrderCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="text-muted small">Bugünkü Ciro</div>
+                <div class="display-6 fw-semibold">@Model.TodayRevenue.ToString("C")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="text-muted small">Aktif Siparişler</div>
+                <div class="display-6 fw-semibold">@Model.ActiveOrderCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="text-muted small">İptal Siparişler</div>
+                <div class="display-6 fw-semibold">@Model.CancelledOrderCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-7">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h2 class="h6 mb-0">Son Siparişler</h2>
+                    <a class="btn btn-sm btn-outline-primary" href="/orders">Tümü</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Kod</th>
+                            <th>Müşteri</th>
+                            <th>Durum</th>
+                            <th class="text-end">Tutar</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var o in Model.RecentOrders)
+                        {
+                            <tr>
+                                <td>@o.Platform</td>
+                                <td><a href="/orders/details/@o.Id">@o.ExternalOrderCode</a></td>
+                                <td>@o.CustomerName</td>
+                                <td>@o.Status</td>
+                                <td class="text-end">@o.TotalAmount.ToString("C")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card oh-card">
+            <div class="card-body">
+                <h2 class="h6">Platform Özeti</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th class="text-end">Adet</th>
+                            <th class="text-end">Ciro</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var p in Model.PlatformSummary)
+                        {
+                            <tr>
+                                <td>@p.Platform</td>
+                                <td class="text-end">@p.Count</td>
+                                <td class="text-end">@p.Revenue.ToString("C")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

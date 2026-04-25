@@ -1,5 +1,4 @@
 using OrderHub.Application.Abstractions.Tenant;
-using OrderHub.Domain.Entities.Central;
 
 namespace OrderHub.Api.Tenant;
 
@@ -13,14 +12,14 @@ public sealed class CurrentCustomerService : ICurrentCustomerService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public Customer? CurrentCustomer
+    public ResolvedCustomerDto? CurrentCustomer
     {
         get
         {
             var ctx = _httpContextAccessor.HttpContext;
             if (ctx is null) return null;
 
-            return ctx.Items.TryGetValue(ItemKey, out var value) ? value as Customer : null;
+            return ctx.Items.TryGetValue(ItemKey, out var value) ? value as ResolvedCustomerDto : null;
         }
     }
 }

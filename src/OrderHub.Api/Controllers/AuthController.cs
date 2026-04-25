@@ -1,11 +1,10 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using OrderHub.Application.Auth.Services;
+using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Contracts.Auth;
 using OrderHub.Contracts.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Api.Controllers;
 
@@ -13,60 +12,53 @@ namespace OrderHub.Api.Controllers;
 [Route("api/auth")]
 public sealed class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
-    private readonly ICurrentCustomerService _currentCustomerService;
-    private readonly ICustomerDbContextFactory _customerDbFactory;
+    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly IAuthValidationService _authValidation;
 
-    public AuthController(
-        IAuthService authService,
-        ICurrentCustomerService currentCustomerService,
-        ICustomerDbContextFactory customerDbFactory)
+    public AuthController(ICurrentCustomerService currentCustomer, IAuthValidationService authValidation)
     {
-        _authService = authService;
-        _currentCustomerService = currentCustomerService;
-        _customerDbFactory = customerDbFactory;
+        _currentCustomer = currentCustomer;
+        _authValidation = authValidation;
     }
 
-    [HttpPost("login")]
+    // API login endpoint remains for API clients; cookie issuance for browser UI is handled by OrderHub.Web.
+    [HttpPost("validate")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
+    public async Task<IActionResult> Validate([FromBody] LoginRequest request, CancellationToken ct)
     {
-        var ok = await _authService.LoginAsync(request.Email, request.Password, ct);
-        return ok ? Ok() : Unauthorized();
-    }
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound("Customer not found");
 
-    [HttpPost("logout")]
-    public async Task<IActionResult> Logout(CancellationToken ct)
-    {
-        await _authService.LogoutAsync(ct);
-        return Ok();
+        var session = await _authValidation.ValidateAsync(customer.Id, request.Email, request.Password, ct);
+        return session is null ? Unauthorized() : Ok();
     }
 
     [Authorize]
     [HttpGet("me")]
-    public async Task<ActionResult<CurrentUserDto>> Me(CancellationToken ct)
+    public ActionResult<CurrentUserDto> Me()
     {
-        var customer = _currentCustomerService.CurrentCustomer;
-        if (customer is null) return NotFound("Customer not found");
-
         var userIdClaim =
-            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
             User.FindFirst("UserId")?.Value;
 
-        if (!Guid.TryParse(userIdClaim, out var userId)) return Unauthorized();
+        var email =
+            User.FindFirst(ClaimTypes.Email)?.Value ??
+            User.FindFirst("Email")?.Value ??
+            string.Empty;
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
-        var user = await db.AppUsers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+        var fullName =
+            User.FindFirst(ClaimTypes.Name)?.Value ??
+            "User";
 
-        if (user is null) return Unauthorized();
+        var role =
+            User.FindFirst(ClaimTypes.Role)?.Value ??
+            User.FindFirst("Role")?.Value ??
+            "Staff";
 
-        return Ok(new CurrentUserDto(
-            user.Id,
-            user.Email,
-            user.FullName,
-            (UserRoleDto)(int)user.Role));
+        _ = Guid.TryParse(userIdClaim, out var userId);
+        _ = Enum.TryParse<UserRoleDto>(role, ignoreCase: true, out var roleDto);
+
+        return Ok(new CurrentUserDto(userId, email, fullName, roleDto));
     }
 }
 

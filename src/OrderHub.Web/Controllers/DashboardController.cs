@@ -1,0 +1,55 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using OrderHub.Application.Abstractions.Dashboard;
+using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Web.Models.Dashboard;
+
+namespace OrderHub.Web.Controllers;
+
+[Authorize]
+[Route("dashboard")]
+public sealed class DashboardController : BaseController
+{
+    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly IDashboardService _dashboard;
+
+    public DashboardController(ICurrentCustomerService currentCustomer, IDashboardService dashboard)
+    {
+        _currentCustomer = currentCustomer;
+        _dashboard = dashboard;
+    }
+
+    [HttpGet("")]
+    public async Task<IActionResult> Index(CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var dto = await _dashboard.GetTodayAsync(customer.Id, ct);
+        var vm = new DashboardViewModel
+        {
+            TodayOrderCount = dto.TodayOrderCount,
+            TodayRevenue = dto.TodayRevenue,
+            ActiveOrderCount = dto.ActiveOrderCount,
+            CancelledOrderCount = dto.CancelledOrderCount,
+            PlatformSummary = dto.PlatformSummary
+                .Select(p => new DashboardViewModel.PlatformSummaryRow { Platform = p.Platform, Count = p.Count, Revenue = p.Revenue })
+                .ToList(),
+            RecentOrders = dto.RecentOrders
+                .Select(o => new DashboardViewModel.RecentOrderRow
+                {
+                    Id = o.Id,
+                    Platform = o.Platform,
+                    ExternalOrderCode = o.ExternalOrderCode,
+                    Status = o.Status,
+                    CustomerName = o.CustomerName,
+                    TotalAmount = o.TotalAmount,
+                    ReceivedAtUtc = o.ReceivedAtUtc
+                })
+                .ToList()
+        };
+
+        return View("Index", vm);
+    }
+}
+

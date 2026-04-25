@@ -1,0 +1,63 @@
+@model OrderHub.Web.Models.PlatformConnections.PlatformConnectionListViewModel
+@{
+    ViewData["Title"] = "Platform Bağlantıları";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Platform Bağlantıları</h1>
+    <a class="btn btn-sm btn-primary" href="/platform-connections/create">Yeni Bağlantı</a>
+</div>
+
+<div class="card oh-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Platform</th>
+                    <th>Mağaza ID</th>
+                    <th>Durum</th>
+                    <th class="text-end">Hata</th>
+                    <th class="text-end">Circuit</th>
+                    <th class="text-end">Son Başarılı</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var c in Model.Connections)
+                {
+                    <tr>
+                        <td>@c.Platform</td>
+                        <td>@c.StoreId</td>
+                        <td>
+                            @if (c.IsActive)
+                            {
+                                <span class="badge text-bg-success">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Pasif</span>
+                            }
+                        </td>
+                        <td class="text-end">@c.ConsecutiveFailures</td>
+                        <td class="text-end">@c.CircuitOpenUntilUtc?.ToString("u")</td>
+                        <td class="text-end">@c.LastSuccessfulSyncUtc?.ToString("u")</td>
+                        <td class="text-end">
+                            <form method="post" action="/platform-connections/@c.Id/@(c.IsActive ? "deactivate" : "activate")">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-primary" type="submit">
+                                    @(c.IsActive ? "Pasif Et" : "Aktif Et")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <div class="text-muted small mt-2">
+            Not: Platform bağlantı yönetimi için Owner/Manager yetkisi beklenir.
+        </div>
+    </div>
+</div>
+

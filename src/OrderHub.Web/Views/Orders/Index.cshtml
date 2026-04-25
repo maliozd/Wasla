@@ -1,0 +1,82 @@
+@model OrderHub.Web.Models.Orders.OrderListViewModel
+@using OrderHub.Domain.Enums
+@{
+    ViewData["Title"] = "Siparişler";
+    var f = Model.Filters;
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Siparişler</h1>
+    <span class="text-muted small">Toplam: @Model.TotalCount</span>
+</div>
+
+<div class="card oh-card mb-3">
+    <div class="card-body">
+        <form method="get" action="/orders" class="row g-2 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label">Platform</label>
+                <select class="form-select" name="platform">
+                    <option value="">Hepsi</option>
+                    @foreach (var p in Enum.GetValues<FoodPlatform>())
+                    {
+                        <option value="@p" selected="@(f.Platform == p)">@p</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Durum</label>
+                <select class="form-select" name="status">
+                    <option value="">Hepsi</option>
+                    @foreach (var s in Enum.GetValues<OrderStatus>())
+                    {
+                        <option value="@s" selected="@(f.Status == s)">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Başlangıç (UTC)</label>
+                <input class="form-control" type="datetime-local" name="startDate" value="@(f.StartDateUtc?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Bitiş (UTC)</label>
+                <input class="form-control" type="datetime-local" name="endDate" value="@(f.EndDateUtc?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-12 col-md-2">
+                <button class="btn btn-primary w-100" type="submit">Filtrele</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card oh-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Platform</th>
+                    <th>Kod</th>
+                    <th>Müşteri</th>
+                    <th>Durum</th>
+                    <th class="text-end">Tutar</th>
+                    <th class="text-end">Alındı (UTC)</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var o in Model.Orders)
+                {
+                    <tr>
+                        <td>@o.Platform</td>
+                        <td><a href="/orders/details/@o.Id">@o.ExternalOrderCode</a></td>
+                        <td>@o.CustomerName</td>
+                        <td>@o.Status</td>
+                        <td class="text-end">@o.TotalAmount.ToString("C")</td>
+                        <td class="text-end">@o.ReceivedAtUtc.ToString("u")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

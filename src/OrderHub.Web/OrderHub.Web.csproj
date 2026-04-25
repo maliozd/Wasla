@@ -9,6 +9,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OrderHub.Contracts\OrderHub.Contracts.csproj" />
+    <ProjectReference Include="..\OrderHub.Application\OrderHub.Application.csproj" />
+    <ProjectReference Include="..\OrderHub.Infrastructure\OrderHub.Infrastructure.csproj" />
+    <ProjectReference Include="..\OrderHub.Domain\OrderHub.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
   </ItemGroup>
 
 </Project>

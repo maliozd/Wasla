@@ -9,7 +9,6 @@ using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Persistence.Customer;
 using Polly;
-using Polly.CircuitBreaker;
 using Polly.Retry;
 using Polly.Timeout;
 
@@ -21,36 +20,34 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly IEnumerable<IFoodPlatformClient> _platformClients;
     private readonly IOrderStatusMapper _statusMapper;
 
-    private static readonly ConcurrentDictionary<FoodPlatform, ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>>> _fetchPipelines =
-        new();
+    private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
+        new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
+            .AddRetry(new RetryStrategyOptions<IReadOnlyCollection<ExternalOrderDto>>
+            {
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(2),
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                ShouldHandle = new PredicateBuilder<IReadOnlyCollection<ExternalOrderDto>>()
+                    .Handle<HttpRequestException>()
+                    .Handle<TimeoutException>()
+                    .Handle<TimeoutRejectedException>()
+            })
+            .AddTimeout(TimeSpan.FromSeconds(15))
+            .Build();
 
-    private static ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> GetPipeline(FoodPlatform platform) =>
-        _fetchPipelines.GetOrAdd(platform, static _ =>
-            new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
-                .AddRetry(new RetryStrategyOptions<IReadOnlyCollection<ExternalOrderDto>>
-                {
-                    MaxRetryAttempts = 3,
-                    Delay = TimeSpan.FromSeconds(2),
-                    BackoffType = DelayBackoffType.Exponential,
-                    UseJitter = true,
-                    ShouldHandle = new PredicateBuilder<IReadOnlyCollection<ExternalOrderDto>>()
-                        .Handle<HttpRequestException>()
-                        .Handle<TimeoutException>()
-                        .Handle<TimeoutRejectedException>()
-                })
-                .AddCircuitBreaker(new CircuitBreakerStrategyOptions<IReadOnlyCollection<ExternalOrderDto>>
-                {
-                    FailureRatio = 0.5,
-                    SamplingDuration = TimeSpan.FromSeconds(30),
-                    MinimumThroughput = 5,
-                    BreakDuration = TimeSpan.FromSeconds(30),
-                    ShouldHandle = new PredicateBuilder<IReadOnlyCollection<ExternalOrderDto>>()
-                        .Handle<HttpRequestException>()
-                        .Handle<TimeoutException>()
-                        .Handle<TimeoutRejectedException>()
-                })
-                .AddTimeout(TimeSpan.FromSeconds(15))
-                .Build());
+    //.AddCircuitBreaker(new CircuitBreakerStrategyOptions<IReadOnlyCollection<ExternalOrderDto>>
+    //{
+    //    FailureRatio = 0.5,
+    //    SamplingDuration = TimeSpan.FromSeconds(30),
+    //    MinimumThroughput = 5,
+    //    BreakDuration = TimeSpan.FromSeconds(30),
+    //    ShouldHandle = new PredicateBuilder<IReadOnlyCollection<ExternalOrderDto>>()
+    //        .Handle<HttpRequestException>()
+    //        .Handle<TimeoutException>()
+    //        .Handle<TimeoutRejectedException>()
+    //})
+
 
     public OrderSyncService(
         ICustomerDbContextFactory customerDbFactory,
@@ -101,7 +98,7 @@ public sealed class OrderSyncService : IOrderSyncService
                 throw new InvalidOperationException($"No IFoodPlatformClient registered for platform '{connection.Platform}'.");
             }
 
-            var externalOrders = await GetPipeline(connection.Platform).ExecuteAsync(
+            var externalOrders = await _fetchPipeline.ExecuteAsync(
                     async token => await client.FetchOrdersAsync(connection, token).ConfigureAwait(false),
                     ct)
                 .ConfigureAwait(false);
@@ -152,50 +149,111 @@ public sealed class OrderSyncService : IOrderSyncService
         }
     }
 
-    private async Task<(bool Inserted, bool Updated)> UpsertOrderAsync(CustomerDbContext db, ExternalOrderDto external, CancellationToken ct)
+    private async Task<(bool Inserted, bool Updated)> UpsertOrderAsync(
+      CustomerDbContext db,
+      ExternalOrderDto external,
+      CancellationToken ct)
     {
         var input = $"{external.Platform}:{external.ExternalOrderId}";
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         var key = Convert.ToBase64String(hash);
 
+        var nowUtc = DateTime.UtcNow;
+        var newStatus = _statusMapper.MapToInternalStatus(
+            external.Platform,
+            external.ExternalStatus);
+
         var existing = await db.Orders
             .FirstOrDefaultAsync(o => o.IdempotencyKey == key, ct)
             .ConfigureAwait(false);
 
-        var wasUpdate = existing is not null;
-        var receivedAtUtc = existing?.ReceivedAt ?? DateTime.UtcNow;
-        var preservedAcceptedAt = existing?.AcceptedAt;
-        var preservedDeliveredAt = existing?.DeliveredAt;
-        var preservedCancelledAt = existing?.CancelledAt;
-
-        if (existing is not null)
+        if (existing is null)
         {
-            // Cascade-delete the old Order along with its Items and Options.
-            db.Orders.Remove(existing);
+            var order = MapToOrderEntity(
+                external,
+                key,
+                receivedAtUtc: nowUtc,
+                internalStatus: newStatus,
+                nowUtc: nowUtc);
+
+            db.Orders.Add(order);
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            return (Inserted: true, Updated: false);
         }
 
-        var order = MapToOrderEntity(external, key, receivedAtUtc);
+        var oldStatus = existing.InternalStatus;
 
-        // Preserve the lifecycle timestamps across delete-insert.
-        if (wasUpdate)
+        await using var tx = await db.Database.BeginTransactionAsync(ct)
+            .ConfigureAwait(false);
+
+        existing.InternalStatus = newStatus;
+        existing.PlatformStatus = external.ExternalStatus;
+        existing.CustomerName = external.CustomerName;
+        existing.TotalAmount = external.Total;
+        existing.DeliveryFee = external.DeliveryFee;
+        existing.ServiceFee = external.ServiceFee;
+        existing.PaymentMethod = external.PaymentMethod;
+        existing.PaymentStatus = external.PaymentStatus;
+        existing.RawPayloadJson = external.RawPayloadJson;
+        existing.CreatedAtPlatform = external.OrderedAtUtc;
+        existing.ExternalOrderCode = external.ExternalOrderCode;
+        existing.CustomerPhone = external.CustomerPhone;
+        existing.CustomerAddress = external.CustomerAddress;
+        existing.UpdatedAt = nowUtc;
+
+        ApplyStatusTransitionTimestamps(
+            existing,
+            oldStatus,
+            newStatus,
+            nowUtc);
+
+        await db.OrderItemOptions
+            .Where(o => o.OrderItem.OrderId == existing.Id)
+            .ExecuteDeleteAsync(ct)
+            .ConfigureAwait(false);
+
+        await db.OrderItems
+            .Where(i => i.OrderId == existing.Id)
+            .ExecuteDeleteAsync(ct)
+            .ConfigureAwait(false);
+
+        foreach (var itemDto in external.Items)
         {
-            order.AcceptedAt = preservedAcceptedAt;
-            order.DeliveredAt = preservedDeliveredAt;
-            order.CancelledAt = preservedCancelledAt;
-            ApplyStatusTransitionTimestamps(order, order.InternalStatus, DateTime.UtcNow);
+            var item = new OrderItem
+            {
+                OrderId = existing.Id,
+                ProductName = itemDto.ProductName,
+                Quantity = itemDto.Quantity,
+                UnitPrice = itemDto.UnitPrice,
+                TotalPrice = itemDto.TotalPrice,
+                Notes = itemDto.Notes,
+                CreatedAt = nowUtc,
+                UpdatedAt = nowUtc
+            };
+
+            foreach (var opt in itemDto.Options)
+            {
+                item.Options.Add(new OrderItemOption
+                {
+                    Name = opt.Name,
+                    Price = opt.Price,
+                    CreatedAt = nowUtc,
+                    UpdatedAt = nowUtc
+                });
+            }
+
+            db.OrderItems.Add(item);
         }
 
-        db.Orders.Add(order);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await tx.CommitAsync(ct).ConfigureAwait(false);
 
-        return (Inserted: !wasUpdate, Updated: wasUpdate);
+        return (Inserted: false, Updated: true);
     }
 
-    private Order MapToOrderEntity(ExternalOrderDto external, string idempotencyKey, DateTime receivedAtUtc)
+    private static Order MapToOrderEntity(ExternalOrderDto external, string idempotencyKey, DateTime receivedAtUtc, OrderStatus internalStatus, DateTime nowUtc)
     {
-        var internalStatus = _statusMapper.MapToInternalStatus(external.Platform, external.ExternalStatus);
-
         var order = new Order
         {
             Platform = external.Platform,
@@ -206,15 +264,19 @@ public sealed class OrderSyncService : IOrderSyncService
             CustomerName = external.CustomerName,
             TotalAmount = external.Total,
             DeliveryFee = external.DeliveryFee,
-            ServiceFee = 0m,
+            ServiceFee = external.ServiceFee,
             PaymentMethod = external.PaymentMethod,
             PaymentStatus = external.PaymentStatus,
             CreatedAtPlatform = external.OrderedAtUtc,
             ReceivedAt = receivedAtUtc,
-            RawPayloadJson = external.RawPayloadJson
+            RawPayloadJson = external.RawPayloadJson,
+            ExternalOrderCode = external.ExternalOrderCode,
+            CustomerPhone = external.CustomerPhone,
+            CustomerAddress = external.CustomerAddress
         };
 
-        ApplyStatusTransitionTimestamps(order, internalStatus, receivedAtUtc);
+        // Initial milestone timestamps based on initial status
+        ApplyStatusTransitionTimestamps(order, OrderStatus.New, internalStatus, nowUtc);
 
         foreach (var itemDto in external.Items)
         {
@@ -242,9 +304,9 @@ public sealed class OrderSyncService : IOrderSyncService
         return order;
     }
 
-    private static void ApplyStatusTransitionTimestamps(Order order, OrderStatus newStatus, DateTime nowUtc)
+    private static void ApplyStatusTransitionTimestamps(Order order, OrderStatus oldStatus, OrderStatus newStatus, DateTime nowUtc)
     {
-        if (order.InternalStatus == newStatus) return;
+        if (oldStatus == newStatus) return;
 
         switch (newStatus)
         {

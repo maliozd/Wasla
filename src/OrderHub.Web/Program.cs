@@ -1,13 +1,18 @@
-using System.IO;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using OrderHub.Web.Services;
+using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Infrastructure.Security;
+using OrderHub.Infrastructure.DependencyInjection;
+using OrderHub.Web.Middleware;
+using OrderHub.Web.Tenant;
+
+// Web needs encryption master key to decrypt CustomerDb connection strings
+AesSecretManager.ValidateMasterKeyOrThrow();
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages();
-
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 
 try
 {
@@ -35,41 +40,25 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.LoginPath = "/giris";
-        options.LogoutPath = "/cikis";
-        options.AccessDeniedPath = "/erisim-engeli";
+        options.LoginPath = "/auth/login";
+        options.LogoutPath = "/auth/logout";
+        options.AccessDeniedPath = "/auth/login";
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.SlidingExpiration = true;
     });
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddTransient<CookieForwardingHandler>();
+builder.Services.AddControllersWithViews();
 
-var apiBaseUrl = builder.Configuration["Api:BaseUrl"]
-    ?? throw new InvalidOperationException("Api:BaseUrl not configured.");
-
-builder.Services.AddHttpClient<IOrderHubApiClient, OrderHubApiClient>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(30);
-})
-.ConfigurePrimaryHttpMessageHandler(() =>
-{
-    var handler = new HttpClientHandler();
-    if (builder.Environment.IsDevelopment())
-    {
-        handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
-    }
-    return handler;
-})
-.AddHttpMessageHandler<CookieForwardingHandler>();
+builder.Services.AddScoped<ICurrentCustomerService, CurrentCustomerService>();
+builder.Services.AddOrderHubInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/hata");
+    app.UseExceptionHandler("/auth/login");
     app.UseHsts();
 }
 
@@ -78,9 +67,16 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseMiddleware<CustomerResolutionMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapRazorPages();
+app.MapControllers();
+app.MapGet("/", ctx =>
+{
+    ctx.Response.Redirect("/dashboard");
+    return Task.CompletedTask;
+});
 
 app.Run();

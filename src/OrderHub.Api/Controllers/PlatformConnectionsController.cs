@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using OrderHub.Application.Abstractions.Security;
+using FluentValidation;
+using OrderHub.Application.Abstractions.PlatformConnections;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Contracts.Enums;
 using OrderHub.Contracts.PlatformConnections;
-using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using FoodPlatformDomain = OrderHub.Domain.Enums.FoodPlatform;
+using ContractPlatformConnectionDto = OrderHub.Contracts.PlatformConnections.PlatformConnectionDto;
 
 namespace OrderHub.Api.Controllers;
 
@@ -16,51 +16,45 @@ namespace OrderHub.Api.Controllers;
 public sealed class PlatformConnectionsController : ControllerBase
 {
     private readonly ICurrentCustomerService _currentCustomer;
-    private readonly ICustomerDbContextFactory _customerDbFactory;
-    private readonly ISecretManager _secretManager;
+    private readonly IPlatformConnectionService _connections;
+    private readonly IValidator<CreatePlatformConnectionCommand> _createValidator;
 
     public PlatformConnectionsController(
         ICurrentCustomerService currentCustomer,
-        ICustomerDbContextFactory customerDbFactory,
-        ISecretManager secretManager)
+        IPlatformConnectionService connections,
+        IValidator<CreatePlatformConnectionCommand> createValidator)
     {
         _currentCustomer = currentCustomer;
-        _customerDbFactory = customerDbFactory;
-        _secretManager = secretManager;
+        _connections = connections;
+        _createValidator = createValidator;
     }
 
     public sealed record CreatePlatformConnectionRequest(
-        FoodPlatform Platform,
+        FoodPlatformDomain Platform,
         string StoreId,
         string ApiKey,
         string ApiSecret,
         bool IsActive = true);
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<PlatformConnectionDto>>> GetList(CancellationToken ct)
+    public async Task<ActionResult<IReadOnlyList<ContractPlatformConnectionDto>>> GetList(CancellationToken ct)
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
+        var list = await _connections.GetListAsync(customer.Id, ct);
+        var mapped = list.Select(p => new ContractPlatformConnectionDto(
+            p.Id,
+            (FoodPlatformDto)(int)p.Platform,
+            p.StoreId,
+            p.IsActive,
+            p.LastSyncAttemptUtc,
+            p.LastSuccessfulSyncUtc,
+            p.ConsecutiveFailures,
+            p.CircuitOpenUntilUtc,
+            p.SyncIntervalSeconds)).ToList();
 
-        var list = await db.PlatformConnections
-            .AsNoTracking()
-            .OrderBy(p => p.Platform)
-            .ThenBy(p => p.StoreId)
-            .Select(p => new PlatformConnectionDto(
-                p.Id,
-                (FoodPlatformDto)(int)p.Platform,
-                p.StoreId,
-                p.IsActive,
-                p.LastSyncAttempt,
-                p.LastSuccessfulSync,
-                p.ConsecutiveFailures,
-                p.CircuitOpenUntil,
-                p.SyncIntervalSeconds))
-            .ToListAsync(ct);
-
-        return Ok(list);
+        return Ok(mapped);
     }
 
     [HttpPost]
@@ -69,48 +63,33 @@ public sealed class PlatformConnectionsController : ControllerBase
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        if (string.IsNullOrWhiteSpace(request.StoreId)) return BadRequest("StoreId is required");
-        if (string.IsNullOrWhiteSpace(request.ApiKey)) return BadRequest("ApiKey is required");
-        if (string.IsNullOrWhiteSpace(request.ApiSecret)) return BadRequest("ApiSecret is required");
+        var cmd = new CreatePlatformConnectionCommand(
+            request.Platform,
+            request.StoreId,
+            request.ApiKey,
+            request.ApiSecret,
+            request.IsActive);
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
-
-        var trimmedStoreId = request.StoreId.Trim();
-        var exists = await db.PlatformConnections
-            .AnyAsync(p => p.Platform == request.Platform && p.StoreId == trimmedStoreId, ct);
-        if (exists)
+        var validation = await _createValidator.ValidateAsync(cmd, ct);
+        if (!validation.IsValid)
         {
-            return Conflict(new { message = "This platform and store combination is already configured." });
+            var modelState = new Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary();
+            foreach (var e in validation.Errors)
+            {
+                modelState.AddModelError(e.PropertyName, e.ErrorMessage);
+            }
+            return ValidationProblem(modelState);
         }
 
-        var (encKey, keyVer1) = await _secretManager.EncryptAsync(request.ApiKey, ct);
-        var (encSecret, keyVer2) = await _secretManager.EncryptAsync(request.ApiSecret, ct);
-        var keyVer = Math.Max(keyVer1, keyVer2);
-
-        var entity = new OrderHub.Domain.Entities.Customer.PlatformConnection
+        var result = await _connections.CreateAsync(customer.Id, cmd, ct);
+        if (!result.Succeeded)
         {
-            Platform = request.Platform,
-            StoreId = trimmedStoreId,
-            EncryptedApiKey = encKey,
-            EncryptedApiSecret = encSecret,
-            EncryptionKeyVersion = keyVer,
-            IsActive = request.IsActive
-        };
+            return result.ErrorCode == "Duplicate"
+                ? Conflict(new { message = result.ErrorMessage })
+                : BadRequest(new { message = result.ErrorMessage });
+        }
 
-        db.PlatformConnections.Add(entity);
-        await db.SaveChangesAsync(ct);
-
-        // Never return encrypted secrets.
-        return Created($"/api/platform-connections/{entity.Id}", new
-        {
-            entity.Id,
-            entity.Platform,
-            entity.StoreId,
-            entity.IsActive,
-            entity.EncryptionKeyVersion,
-            entity.CreatedAt,
-            entity.UpdatedAt
-        });
+        return Created($"/api/platform-connections/{result.Id}", new { id = result.Id });
     }
 
     [HttpPatch("{id:guid}/active")]
@@ -119,22 +98,8 @@ public sealed class PlatformConnectionsController : ControllerBase
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
-
-        var entity = await db.PlatformConnections.FirstOrDefaultAsync(p => p.Id == id, ct);
-        if (entity is null) return NotFound();
-
-        entity.IsActive = request.IsActive;
-        await db.SaveChangesAsync(ct);
-
-        return Ok(new
-        {
-            entity.Id,
-            entity.Platform,
-            entity.StoreId,
-            entity.IsActive,
-            entity.UpdatedAt
-        });
+        var ok = await _connections.SetActiveAsync(customer.Id, id, request.IsActive, ct);
+        return ok ? Ok() : NotFound();
     }
 }
 

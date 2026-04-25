@@ -9,12 +9,8 @@ using OrderHub.Application.Abstractions.Orders.Services;
 using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
-using OrderHub.Application.Auth.Services;
-using OrderHub.Infrastructure.Persistence.Customer;
-using OrderHub.Infrastructure.Platform.Mapping;
+using OrderHub.Infrastructure.DependencyInjection;
 using OrderHub.Infrastructure.Platform.Mock;
-using OrderHub.Infrastructure.Persistence.Central;
-using OrderHub.Infrastructure.Services;
 using OrderHub.Infrastructure.Sync;
 using Serilog;
 
@@ -60,19 +56,14 @@ catch
         .SetApplicationName("OrderHub");
 }
 
-builder.Services.AddDbContext<CentralDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CentralDb")));
-
-builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
 builder.Services.AddScoped<ICurrentCustomerService, CurrentCustomerService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
 
-builder.Services.AddSingleton<ICustomerDbContextFactory, CustomerDbContextFactory>();
 builder.Services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
 builder.Services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
 builder.Services.AddSingleton<IFoodPlatformClient, TrendyolYemekFoodPlatformClient>();
-builder.Services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
+
+builder.Services.AddOrderHubInfrastructure(builder.Configuration);
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

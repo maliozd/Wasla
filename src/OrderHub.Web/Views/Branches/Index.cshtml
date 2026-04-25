@@ -1,0 +1,45 @@
+@model OrderHub.Web.Models.Branches.BranchListViewModel
+@{
+    ViewData["Title"] = "Şubeler";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Şubeler</h1>
+    <a class="btn btn-sm btn-primary" href="/branches/create">Yeni Şube</a>
+</div>
+
+<div class="card oh-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Şube</th>
+                    <th>Adres</th>
+                    <th>Durum</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var b in Model.Branches)
+                {
+                    <tr>
+                        <td class="fw-semibold">@b.Name</td>
+                        <td>@b.Address</td>
+                        <td>
+                            @if (b.IsActive)
+                            {
+                                <span class="badge text-bg-success">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Pasif</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
