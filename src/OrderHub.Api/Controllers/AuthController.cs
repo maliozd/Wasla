@@ -1,6 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Auth.Services;
+using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Contracts.Auth;
+using OrderHub.Contracts.Enums;
+using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Api.Controllers;
 
@@ -9,13 +14,18 @@ namespace OrderHub.Api.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ICurrentCustomerService _currentCustomerService;
+    private readonly ICustomerDbContextFactory _customerDbFactory;
 
-    public AuthController(IAuthService authService)
+    public AuthController(
+        IAuthService authService,
+        ICurrentCustomerService currentCustomerService,
+        ICustomerDbContextFactory customerDbFactory)
     {
         _authService = authService;
+        _currentCustomerService = currentCustomerService;
+        _customerDbFactory = customerDbFactory;
     }
-
-    public sealed record LoginRequest(string Email, string Password);
 
     [HttpPost("login")]
     [AllowAnonymous]
@@ -32,20 +42,31 @@ public sealed class AuthController : ControllerBase
         return Ok();
     }
 
+    [Authorize]
     [HttpGet("me")]
-    public IActionResult Me()
+    public async Task<ActionResult<CurrentUserDto>> Me(CancellationToken ct)
     {
-        if (!User.Identity?.IsAuthenticated ?? true)
-        {
-            return Unauthorized();
-        }
+        var customer = _currentCustomerService.CurrentCustomer;
+        if (customer is null) return NotFound("Customer not found");
 
-        var customerId = User.FindFirst("CustomerId")?.Value;
-        var userId = User.FindFirst("UserId")?.Value;
-        var role = User.FindFirst("Role")?.Value;
-        var email = User.FindFirst("Email")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        var userIdClaim =
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
+            User.FindFirst("UserId")?.Value;
 
-        return Ok(new { customerId, userId, role, email });
+        if (!Guid.TryParse(userIdClaim, out var userId)) return Unauthorized();
+
+        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
+        var user = await db.AppUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+
+        if (user is null) return Unauthorized();
+
+        return Ok(new CurrentUserDto(
+            user.Id,
+            user.Email,
+            user.FullName,
+            (UserRoleDto)(int)user.Role));
     }
 }
 

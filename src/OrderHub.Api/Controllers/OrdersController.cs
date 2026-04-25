@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Tenant;
-using OrderHub.Domain.Enums;
+using OrderHub.Contracts.Enums;
+using OrderHub.Contracts.Orders;
 using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Api.Controllers;
@@ -22,29 +23,24 @@ public sealed class OrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetList(
-        [FromQuery] FoodPlatform? platform,
-        [FromQuery] OrderStatus? status,
-        [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50,
+    public async Task<ActionResult<OrderListResponse>> GetList(
+        [FromQuery] OrderListQuery query,
         CancellationToken ct = default)
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
 
-        page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 200);
+        var page = Math.Max(1, query.Page);
+        var pageSize = Math.Clamp(query.PageSize, 1, 200);
 
         await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
 
         var q = db.Orders.AsNoTracking().AsQueryable();
 
-        if (platform.HasValue) q = q.Where(o => o.Platform == platform.Value);
-        if (status.HasValue) q = q.Where(o => o.InternalStatus == status.Value);
-        if (startDate.HasValue) q = q.Where(o => o.CreatedAtPlatform >= startDate.Value);
-        if (endDate.HasValue) q = q.Where(o => o.CreatedAtPlatform <= endDate.Value);
+        if (query.Platform.HasValue) q = q.Where(o => (int)o.Platform == (int)query.Platform.Value);
+        if (query.Status.HasValue) q = q.Where(o => (int)o.InternalStatus == (int)query.Status.Value);
+        if (query.StartDate.HasValue) q = q.Where(o => o.CreatedAtPlatform >= query.StartDate.Value);
+        if (query.EndDate.HasValue) q = q.Where(o => o.CreatedAtPlatform <= query.EndDate.Value);
 
         var total = await q.CountAsync(ct);
 
@@ -52,35 +48,23 @@ public sealed class OrdersController : ControllerBase
             .OrderByDescending(o => o.CreatedAtPlatform)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(o => new
-            {
+            .Select(o => new OrderListItemDto(
                 o.Id,
-                o.Platform,
+                (FoodPlatformDto)(int)o.Platform,
                 o.ExternalOrderId,
-                o.ExternalOrderCode,
-                o.InternalStatus,
-                o.PlatformStatus,
                 o.CustomerName,
                 o.TotalAmount,
-                o.DeliveryFee,
-                o.PaymentMethod,
-                o.PaymentStatus,
+                (OrderStatusDto)(int)o.InternalStatus,
+                o.PlatformStatus,
                 o.CreatedAtPlatform,
-                o.ReceivedAt
-            })
+                o.ReceivedAt))
             .ToListAsync(ct);
 
-        return Ok(new
-        {
-            page,
-            pageSize,
-            total,
-            items
-        });
+        return Ok(new OrderListResponse(items, total, page, pageSize));
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken ct)
+    public async Task<ActionResult<OrderDetailDto>> GetById([FromRoute] Guid id, CancellationToken ct)
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
@@ -95,39 +79,35 @@ public sealed class OrdersController : ControllerBase
 
         if (order is null) return NotFound();
 
-        return Ok(new
-        {
-            order.Id,
-            order.Platform,
-            order.ExternalOrderId,
-            order.ExternalOrderCode,
-            order.InternalStatus,
-            order.PlatformStatus,
-            order.CustomerName,
-            order.CustomerPhone,
-            order.CustomerAddress,
-            order.TotalAmount,
-            order.DeliveryFee,
-            order.ServiceFee,
-            order.PaymentMethod,
-            order.PaymentStatus,
-            order.CreatedAtPlatform,
-            order.ReceivedAt,
-            order.AcceptedAt,
-            order.DeliveredAt,
-            order.CancelledAt,
-            order.RawPayloadJson,
-            items = order.Items.Select(i => new
-            {
+        var items = order.Items
+            .Select(i => new OrderItemDto(
                 i.Id,
                 i.ProductName,
                 i.Quantity,
                 i.UnitPrice,
                 i.TotalPrice,
                 i.Notes,
-                options = i.Options.Select(o => new { o.Id, o.Name, o.Price })
-            })
-        });
+                i.Options.Select(o => new OrderItemOptionDto(o.Id, o.Name, o.Price)).ToList()))
+            .ToList();
+
+        return Ok(new OrderDetailDto(
+            order.Id,
+            (FoodPlatformDto)(int)order.Platform,
+            order.ExternalOrderId,
+            order.CustomerName,
+            order.TotalAmount,
+            order.DeliveryFee,
+            order.ServiceFee,
+            order.PaymentMethod.ToString(),
+            order.PaymentStatus.ToString(),
+            (OrderStatusDto)(int)order.InternalStatus,
+            order.PlatformStatus,
+            order.CreatedAtPlatform,
+            order.ReceivedAt,
+            order.AcceptedAt,
+            order.DeliveredAt,
+            order.CancelledAt,
+            items));
     }
 }
 

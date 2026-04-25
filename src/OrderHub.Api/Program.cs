@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
 using OrderHub.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Api.Middleware;
@@ -38,6 +40,25 @@ builder.Host.UseSerilog((ctx, services, cfg) =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
+
+try
+{
+    var keyDir = new DirectoryInfo(@"C:\OrderHub-keys");
+    if (!keyDir.Exists)
+    {
+        Directory.CreateDirectory(keyDir.FullName);
+    }
+
+    builder.Services.AddDataProtection()
+        .SetApplicationName("OrderHub")
+        .PersistKeysToFileSystem(keyDir);
+}
+catch
+{
+    // Fallback gracefully: if key persistence fails, default DP settings apply.
+    builder.Services.AddDataProtection()
+        .SetApplicationName("OrderHub");
+}
 
 builder.Services.AddDbContext<CentralDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CentralDb")));

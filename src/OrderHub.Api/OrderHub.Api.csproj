@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OrderHub.Application\OrderHub.Application.csproj" />
+    <ProjectReference Include="..\OrderHub.Contracts\OrderHub.Contracts.csproj" />
     <ProjectReference Include="..\OrderHub.Domain\OrderHub.Domain.csproj" />
     <ProjectReference Include="..\OrderHub.Infrastructure\OrderHub.Infrastructure.csproj" />
   </ItemGroup>

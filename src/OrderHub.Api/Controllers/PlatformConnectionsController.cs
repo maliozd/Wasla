@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Contracts.Enums;
+using OrderHub.Contracts.PlatformConnections;
 using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Persistence.Customer;
 
@@ -34,10 +36,8 @@ public sealed class PlatformConnectionsController : ControllerBase
         string ApiSecret,
         bool IsActive = true);
 
-    public sealed record SetActiveRequest(bool IsActive);
-
     [HttpGet]
-    public async Task<IActionResult> GetList(CancellationToken ct)
+    public async Task<ActionResult<IReadOnlyList<PlatformConnectionDto>>> GetList(CancellationToken ct)
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
@@ -48,20 +48,16 @@ public sealed class PlatformConnectionsController : ControllerBase
             .AsNoTracking()
             .OrderBy(p => p.Platform)
             .ThenBy(p => p.StoreId)
-            .Select(p => new
-            {
+            .Select(p => new PlatformConnectionDto(
                 p.Id,
-                p.Platform,
+                (FoodPlatformDto)(int)p.Platform,
                 p.StoreId,
                 p.IsActive,
                 p.LastSyncAttempt,
                 p.LastSuccessfulSync,
                 p.ConsecutiveFailures,
                 p.CircuitOpenUntil,
-                p.SyncIntervalSeconds,
-                p.CreatedAt,
-                p.UpdatedAt
-            })
+                p.SyncIntervalSeconds))
             .ToListAsync(ct);
 
         return Ok(list);
@@ -118,7 +114,7 @@ public sealed class PlatformConnectionsController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/active")]
-    public async Task<IActionResult> SetActive([FromRoute] Guid id, [FromBody] SetActiveRequest request, CancellationToken ct)
+    public async Task<IActionResult> SetActive([FromRoute] Guid id, [FromBody] UpdatePlatformConnectionActiveRequest request, CancellationToken ct)
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound("Customer not found");
