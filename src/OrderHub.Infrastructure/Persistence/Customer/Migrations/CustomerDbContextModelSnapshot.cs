@@ -355,6 +355,10 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                     b.Property<int>("EncryptionKeyVersion")
                         .HasColumnType("int");
 
+                    b.Property<string>("ExecutorEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -371,6 +375,10 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("SupplierId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<int>("SyncIntervalSeconds")
                         .HasColumnType("int");

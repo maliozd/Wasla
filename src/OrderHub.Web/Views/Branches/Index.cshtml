@@ -20,22 +20,31 @@
                 </tr>
                 </thead>
                 <tbody>
-                @foreach (var b in Model.Branches)
+                @if (Model.Branches.Count == 0)
                 {
                     <tr>
-                        <td class="fw-semibold">@b.Name</td>
-                        <td>@b.Address</td>
-                        <td>
-                            @if (b.IsActive)
-                            {
-                                <span class="badge text-bg-success">Aktif</span>
-                            }
-                            else
-                            {
-                                <span class="badge text-bg-secondary">Pasif</span>
-                            }
-                        </td>
+                        <td colspan="3" class="text-center text-muted py-4">Henüz şube eklenmemiş.</td>
                     </tr>
+                }
+                else
+                {
+                    @foreach (var b in Model.Branches)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@b.Name</td>
+                            <td>@b.Address</td>
+                            <td>
+                                @if (b.IsActive)
+                                {
+                                    <span class="badge text-bg-success">Aktif</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">Pasif</span>
+                                }
+                            </td>
+                        </tr>
+                    }
                 }
                 </tbody>
             </table>

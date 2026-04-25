@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using FluentValidation;
 using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Branches;
@@ -12,7 +13,9 @@ using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.Persistence.Central;
 using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Platform.Mock;
 using OrderHub.Infrastructure.Platform.Mapping;
+using OrderHub.Infrastructure.Platform.TrendyolGo;
 using OrderHub.Infrastructure.Security;
 using OrderHub.Infrastructure.Services;
 using OrderHub.Infrastructure.Tenant;
@@ -31,6 +34,30 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISecretManager, AesSecretManager>();
         services.AddSingleton<ICustomerDbContextFactory, CustomerDbContextFactory>();
         services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
+
+        services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
+
+        var useMocks = configuration.GetValue<bool?>("Platform:UseMocks") ?? true;
+
+        if (useMocks)
+        {
+            services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
+            services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
+            services.AddSingleton<IFoodPlatformClient, TrendyolYemekFoodPlatformClient>();
+        }
+        else
+        {
+            // Real clients will be wired up later (Prompt 2).
+            services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
+            services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
+
+            services.AddHttpClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>((sp, client) =>
+            {
+                var opts = sp.GetRequiredService<IOptions<TrendyolGoOptions>>().Value;
+                client.BaseAddress = new Uri(opts.BaseUrl);
+                client.Timeout = opts.RequestTimeout;
+            });
+        }
 
         services.AddScoped<ICustomerResolver, CustomerResolver>();
 

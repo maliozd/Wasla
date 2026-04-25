@@ -66,7 +66,7 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             {
                 Succeeded = false,
                 ErrorCode = "Duplicate",
-                ErrorMessage = "This platform and store combination is already configured."
+                ErrorMessage = "Bu platform ve mağaza kodu zaten tanımlı."
             };
         }
 

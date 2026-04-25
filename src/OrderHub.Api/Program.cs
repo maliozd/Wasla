@@ -10,7 +10,6 @@ using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.DependencyInjection;
-using OrderHub.Infrastructure.Platform.Mock;
 using OrderHub.Infrastructure.Sync;
 using Serilog;
 
@@ -58,9 +57,6 @@ catch
 
 builder.Services.AddScoped<ICurrentCustomerService, CurrentCustomerService>();
 
-builder.Services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
-builder.Services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
-builder.Services.AddSingleton<IFoodPlatformClient, TrendyolYemekFoodPlatformClient>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 
 builder.Services.AddOrderHubInfrastructure(builder.Configuration);

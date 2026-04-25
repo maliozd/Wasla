@@ -24,33 +24,42 @@
                 </tr>
                 </thead>
                 <tbody>
-                @foreach (var c in Model.Connections)
+                @if (Model.Connections.Count == 0)
                 {
                     <tr>
-                        <td>@c.Platform</td>
-                        <td>@c.StoreId</td>
-                        <td>
-                            @if (c.IsActive)
-                            {
-                                <span class="badge text-bg-success">Aktif</span>
-                            }
-                            else
-                            {
-                                <span class="badge text-bg-secondary">Pasif</span>
-                            }
-                        </td>
-                        <td class="text-end">@c.ConsecutiveFailures</td>
-                        <td class="text-end">@c.CircuitOpenUntilUtc?.ToString("u")</td>
-                        <td class="text-end">@c.LastSuccessfulSyncUtc?.ToString("u")</td>
-                        <td class="text-end">
-                            <form method="post" action="/platform-connections/@c.Id/@(c.IsActive ? "deactivate" : "activate")">
-                                @Html.AntiForgeryToken()
-                                <button class="btn btn-sm btn-outline-primary" type="submit">
-                                    @(c.IsActive ? "Pasif Et" : "Aktif Et")
-                                </button>
-                            </form>
-                        </td>
+                        <td colspan="7" class="text-center text-muted py-4">Henüz platform bağlantısı eklenmemiş.</td>
                     </tr>
+                }
+                else
+                {
+                    @foreach (var c in Model.Connections)
+                    {
+                        <tr>
+                            <td>@c.Platform</td>
+                            <td>@c.StoreId</td>
+                            <td>
+                                @if (c.IsActive)
+                                {
+                                    <span class="badge text-bg-success">Aktif</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">Pasif</span>
+                                }
+                            </td>
+                            <td class="text-end">@c.ConsecutiveFailures</td>
+                            <td class="text-end">@c.CircuitOpenUntilUtc?.ToString("u")</td>
+                            <td class="text-end">@c.LastSuccessfulSyncUtc?.ToString("u")</td>
+                            <td class="text-end">
+                                <form method="post" action="/platform-connections/@c.Id/@(c.IsActive ? "deactivate" : "activate")">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn btn-sm btn-outline-primary" type="submit">
+                                        @(c.IsActive ? "Pasif Et" : "Aktif Et")
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
                 }
                 </tbody>
             </table>

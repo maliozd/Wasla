@@ -1,13 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using OrderHub.Infrastructure.Security;
-using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Orders.Services;
-using OrderHub.Application.Abstractions.Platform;
-using OrderHub.Application.Abstractions.Security;
-using OrderHub.Infrastructure.Persistence.Central;
-using OrderHub.Infrastructure.Persistence.Customer;
-using OrderHub.Infrastructure.Platform.Mapping;
-using OrderHub.Infrastructure.Platform.Mock;
+using OrderHub.Infrastructure.DependencyInjection;
 using OrderHub.Infrastructure.Sync;
 using OrderHub.Worker.Jobs;
 using Serilog;
@@ -32,18 +26,9 @@ builder.Services.AddSerilog((services, cfg) =>
         .WriteTo.File("logs/orderhub-worker-.log", rollingInterval: RollingInterval.Day);
 });
 
-builder.Services.AddDbContext<CentralDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CentralDb")));
-
-builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
-
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<ICustomerDbContextFactory, CustomerDbContextFactory>();
 
-builder.Services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
-builder.Services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
-builder.Services.AddSingleton<IFoodPlatformClient, TrendyolYemekFoodPlatformClient>();
-builder.Services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
+builder.Services.AddOrderHubInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 

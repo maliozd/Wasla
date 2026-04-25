@@ -64,15 +64,24 @@
                         </tr>
                         </thead>
                         <tbody>
-                        @foreach (var o in Model.RecentOrders)
+                        @if (Model.RecentOrders.Count == 0)
                         {
                             <tr>
-                                <td>@o.Platform</td>
-                                <td><a href="/orders/details/@o.Id">@o.ExternalOrderCode</a></td>
-                                <td>@o.CustomerName</td>
-                                <td>@o.Status</td>
-                                <td class="text-end">@o.TotalAmount.ToString("C")</td>
+                                <td colspan="5" class="text-center text-muted py-4">Henüz gösterilecek sipariş yok.</td>
                             </tr>
+                        }
+                        else
+                        {
+                            @foreach (var o in Model.RecentOrders)
+                            {
+                                <tr>
+                                    <td>@o.Platform</td>
+                                    <td><a href="/orders/details/@o.Id">@o.ExternalOrderCode</a></td>
+                                    <td>@o.CustomerName</td>
+                                    <td>@o.Status</td>
+                                    <td class="text-end">@o.TotalAmount.ToString("C")</td>
+                                </tr>
+                            }
                         }
                         </tbody>
                     </table>
@@ -95,13 +104,22 @@
                         </tr>
                         </thead>
                         <tbody>
-                        @foreach (var p in Model.PlatformSummary)
+                        @if (Model.PlatformSummary.Count == 0)
                         {
                             <tr>
-                                <td>@p.Platform</td>
-                                <td class="text-end">@p.Count</td>
-                                <td class="text-end">@p.Revenue.ToString("C")</td>
+                                <td colspan="3" class="text-center text-muted py-4">Henüz platform özeti yok.</td>
                             </tr>
+                        }
+                        else
+                        {
+                            @foreach (var p in Model.PlatformSummary)
+                            {
+                                <tr>
+                                    <td>@p.Platform</td>
+                                    <td class="text-end">@p.Count</td>
+                                    <td class="text-end">@p.Revenue.ToString("C")</td>
+                                </tr>
+                            }
                         }
                         </tbody>
                     </table>

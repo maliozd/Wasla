@@ -17,6 +17,16 @@ public class PlatformConnection : BaseEntity
     public string StoreId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Optional chain/supplier identifier used by some platforms (e.g. Trendyol GO supplier id).
+    /// </summary>
+    public string? SupplierId { get; set; }
+
+    /// <summary>
+    /// Optional executor email used by some platforms (e.g. x-executor-user header).
+    /// </summary>
+    public string? ExecutorEmail { get; set; }
+
+    /// <summary>
     /// AES-256-GCM encrypted API key. Never log, never return from API.
     /// </summary>
     public string EncryptedApiKey { get; set; } = string.Empty;

@@ -39,14 +39,25 @@ public sealed class DashboardService : IDashboardService
 
         var cancelledCount = await todayOrders.CountAsync(o => o.InternalStatus == OrderStatus.Cancelled, ct);
 
-        var platform = await todayOrders
+        // EF Core translation can be finicky with record constructors inside GroupBy projections.
+        // Keep the DB query to anonymous types, then map in-memory.
+        var platformRaw = await todayOrders
             .GroupBy(o => o.Platform)
-            .Select(g => new DashboardResult.PlatformSummaryRow(
-                g.Key,
-                g.Count(),
-                g.Sum(x => x.TotalAmount)))
+            .Select(g => new
+            {
+                Platform = g.Key,
+                Count = g.Count(),
+                Revenue = (decimal?)g.Sum(x => x.TotalAmount)
+            })
             .OrderByDescending(x => x.Count)
             .ToListAsync(ct);
+
+        var platform = platformRaw
+            .Select(x => new DashboardResult.PlatformSummaryRow(
+                x.Platform,
+                x.Count,
+                x.Revenue ?? 0m))
+            .ToList();
 
         var recent = await db.Orders.AsNoTracking()
             .OrderByDescending(o => o.ReceivedAt)

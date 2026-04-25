@@ -51,26 +51,35 @@
                         </tr>
                         </thead>
                         <tbody>
-                        @foreach (var i in Model.Items)
+                        @if (Model.Items.Count == 0)
                         {
                             <tr>
-                                <td>
-                                    <div class="fw-semibold">@i.ProductName</div>
-                                    @if (!string.IsNullOrWhiteSpace(i.Notes))
-                                    {
-                                        <div class="text-muted small">@i.Notes</div>
-                                    }
-                                    @if (i.Options.Count > 0)
-                                    {
-                                        <div class="text-muted small">
-                                            @string.Join(", ", i.Options.Select(o => $"{o.Name} (+{o.Price:C})"))
-                                        </div>
-                                    }
-                                </td>
-                                <td class="text-end">@i.Quantity</td>
-                                <td class="text-end">@i.UnitPrice.ToString("C")</td>
-                                <td class="text-end">@i.TotalPrice.ToString("C")</td>
+                                <td colspan="4" class="text-center text-muted py-4">Henüz gösterilecek sipariş yok.</td>
                             </tr>
+                        }
+                        else
+                        {
+                            @foreach (var i in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@i.ProductName</div>
+                                        @if (!string.IsNullOrWhiteSpace(i.Notes))
+                                        {
+                                            <div class="text-muted small">@i.Notes</div>
+                                        }
+                                        @if (i.Options.Count > 0)
+                                        {
+                                            <div class="text-muted small">
+                                                @string.Join(", ", i.Options.Select(o => $"{o.Name} (+{o.Price:C})"))
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-end">@i.Quantity</td>
+                                    <td class="text-end">@i.UnitPrice.ToString("C")</td>
+                                    <td class="text-end">@i.TotalPrice.ToString("C")</td>
+                                </tr>
+                            }
                         }
                         </tbody>
                     </table>

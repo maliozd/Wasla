@@ -1,0 +1,43 @@
+@model OrderHub.Web.Models.Orders.OrderListViewModel
+
+<div class="d-flex align-items-center justify-content-between mb-2">
+    <div class="small text-muted">Son güncelleme: <span id="ordersLastUpdated">-</span></div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+        <thead>
+        <tr>
+            <th>Platform</th>
+            <th>Kod</th>
+            <th>Müşteri</th>
+            <th>Durum</th>
+            <th class="text-end">Tutar</th>
+            <th class="text-end">Alındı (UTC)</th>
+        </tr>
+        </thead>
+        <tbody>
+        @if (Model.Orders.Count == 0)
+        {
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">Henüz sipariş bulunamadı.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var o in Model.Orders)
+            {
+                <tr>
+                    <td>@o.Platform</td>
+                    <td><a href="/orders/details/@o.Id">@o.ExternalOrderCode</a></td>
+                    <td>@o.CustomerName</td>
+                    <td>@o.Status</td>
+                    <td class="text-end">@o.TotalAmount.ToString("C")</td>
+                    <td class="text-end">@o.ReceivedAtUtc.ToString("u")</td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>
+

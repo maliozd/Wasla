@@ -44,6 +44,13 @@ pieces below and run `dotnet restore`.
 
 Numbered to match sections in your original prompt.
 
+---
+
+## Local Development Docs
+
+- Turkish: `docs/LOCAL_DEVELOPMENT_TR.md`
+- English: `docs/LOCAL_DEVELOPMENT_EN.md`
+
 ### 1. Application Abstractions (interfaces only)
 Put these under `src/OrderHub.Application/Abstractions/`:
 - `Security/ISecretManager.cs` — `EncryptAsync`, `DecryptAsync(ct, keyVersion)`

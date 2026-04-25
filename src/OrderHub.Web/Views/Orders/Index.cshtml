@@ -19,7 +19,14 @@
                     <option value="">Hepsi</option>
                     @foreach (var p in Enum.GetValues<FoodPlatform>())
                     {
-                        <option value="@p" selected="@(f.Platform == p)">@p</option>
+                        if (f.Platform == p)
+                        {
+                            <option value="@p" selected>@p</option>
+                        }
+                        else
+                        {
+                            <option value="@p">@p</option>
+                        }
                     }
                 </select>
             </div>
@@ -29,7 +36,14 @@
                     <option value="">Hepsi</option>
                     @foreach (var s in Enum.GetValues<OrderStatus>())
                     {
-                        <option value="@s" selected="@(f.Status == s)">@s</option>
+                        if (f.Status == s)
+                        {
+                            <option value="@s" selected>@s</option>
+                        }
+                        else
+                        {
+                            <option value="@s">@s</option>
+                        }
                     }
                 </select>
             </div>
@@ -50,33 +64,43 @@
 
 <div class="card oh-card">
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-                <thead>
-                <tr>
-                    <th>Platform</th>
-                    <th>Kod</th>
-                    <th>Müşteri</th>
-                    <th>Durum</th>
-                    <th class="text-end">Tutar</th>
-                    <th class="text-end">Alındı (UTC)</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (var o in Model.Orders)
-                {
-                    <tr>
-                        <td>@o.Platform</td>
-                        <td><a href="/orders/details/@o.Id">@o.ExternalOrderCode</a></td>
-                        <td>@o.CustomerName</td>
-                        <td>@o.Status</td>
-                        <td class="text-end">@o.TotalAmount.ToString("C")</td>
-                        <td class="text-end">@o.ReceivedAtUtc.ToString("u")</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+        <div id="ordersTableContainer">
+            @await Html.PartialAsync("_OrdersTable", Model)
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            function setUpdatedNow() {
+                var el = document.getElementById("ordersLastUpdated");
+                if (!el) return;
+                el.textContent = new Date().toLocaleTimeString("tr-TR");
+            }
+
+            async function refreshOrdersTable() {
+                try {
+                    var url = new URL(window.location.origin + "/orders/table");
+                    url.search = window.location.search || "";
+                    url.searchParams.set("_", Date.now().toString());
+
+                    var resp = await fetch(url.toString(), { headers: { "X-Requested-With": "fetch" } });
+                    if (!resp.ok) return;
+
+                    var html = await resp.text();
+                    var container = document.getElementById("ordersTableContainer");
+                    if (!container) return;
+                    container.innerHTML = html;
+                    setUpdatedNow();
+                } catch { }
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                setUpdatedNow();
+                setInterval(refreshOrdersTable, 10000);
+            });
+        })();
+    </script>
+}
 

@@ -73,10 +73,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGet("/", ctx =>
-{
-    ctx.Response.Redirect("/dashboard");
-    return Task.CompletedTask;
-});
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

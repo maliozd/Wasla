@@ -51,6 +51,14 @@ public sealed class CustomerResolutionMiddleware
         if (customer is null)
         {
             logger.LogInformation("No customer for host {Host}", host);
+
+            // Public marketing surface when the host is not mapped to a tenant.
+            if (IsPublicNoTenantPath(path))
+            {
+                await _next(context);
+                return;
+            }
+
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             await context.Response.WriteAsync("Customer not found");
             return;
@@ -60,6 +68,19 @@ public sealed class CustomerResolutionMiddleware
         cache.Set(cacheKey, customer, CacheTtl);
 
         await _next(context);
+    }
+
+    private static bool IsPublicNoTenantPath(string path)
+    {
+        var p = path;
+        if (p.Length > 1 && p.EndsWith('/'))
+        {
+            p = p.TrimEnd('/');
+        }
+
+        if (string.Equals(p, "/", StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(p, "/admin/login", StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
     }
 }
 

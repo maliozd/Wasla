@@ -33,5 +33,20 @@ public sealed class TrendyolYemekFoodPlatformClient : IFoodPlatformClient
         var count = Random.Shared.Next(0, 4);
         return MockOrders.CreateOrders(Platform, connection, count);
     }
+
+    public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
+        Task.CompletedTask;
+
+    public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        Task.CompletedTask;
+
+    public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        Task.CompletedTask;
+
+    public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        Task.CompletedTask;
+
+    public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) =>
+        Task.CompletedTask;
 }
 

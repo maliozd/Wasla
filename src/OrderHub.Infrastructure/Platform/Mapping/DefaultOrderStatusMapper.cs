@@ -1,10 +1,18 @@
 using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace OrderHub.Infrastructure.Platform.Mapping;
 
 public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
 {
+    private readonly ILogger<DefaultOrderStatusMapper> _logger;
+
+    public DefaultOrderStatusMapper(ILogger<DefaultOrderStatusMapper> logger)
+    {
+        _logger = logger;
+    }
+
     public OrderStatus MapToInternalStatus(FoodPlatform platform, string externalStatus)
     {
         var s = (externalStatus ?? string.Empty).Trim();
@@ -15,7 +23,7 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         {
             FoodPlatform.Yemeksepeti => MapYemeksepeti(s),
             FoodPlatform.GetirYemek => MapGetir(s),
-            FoodPlatform.TrendyolYemek => MapTrendyol(s),
+            FoodPlatform.TrendyolYemek => MapTrendyolWithWarning(s),
             _ => OrderStatus.New
         };
     }
@@ -56,20 +64,51 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
 
     private static OrderStatus MapTrendyol(string status)
     {
-        // Turkish sample statuses from mocks / common UI labels.
-        var s = status.ToLowerInvariant();
+        // Trendyol GO (real API) statuses + Turkish mock labels.
+        var s = (status ?? string.Empty).Trim();
+        if (s.Length == 0) return OrderStatus.New;
+
         return s switch
         {
-            "yeni" => OrderStatus.New,
-            "onaylandı" or "onaylandi" => OrderStatus.Accepted,
-            "hazırlanıyor" or "hazirlaniyor" => OrderStatus.Preparing,
-            "hazır" or "hazir" => OrderStatus.ReadyForPickup,
-            "yolda" => OrderStatus.OnTheWay,
-            "teslim" or "teslim edildi" => OrderStatus.Delivered,
-            "iptal" or "iptal edildi" => OrderStatus.Cancelled,
-            "başarısız" or "basarisiz" => OrderStatus.Failed,
+            // Trendyol GO
+            "Created" => OrderStatus.New,
+            "Picking" => OrderStatus.Accepted,
+            "Invoiced" => OrderStatus.ReadyForPickup,
+            "Shipped" => OrderStatus.OnTheWay,
+            "Delivered" => OrderStatus.Delivered,
+            "Cancelled" => OrderStatus.Cancelled,
+            "UnSupplied" => OrderStatus.Cancelled,
+
+            // Turkish mock labels / UI-ish strings
+            "Yeni" or "yeni" => OrderStatus.New,
+            "Onaylandı" or "Onaylandi" or "onaylandı" or "onaylandi" => OrderStatus.Accepted,
+            "Hazırlanıyor" or "Hazirlaniyor" or "hazırlanıyor" or "hazirlaniyor" => OrderStatus.Preparing,
+            "Hazır" or "Hazir" or "hazır" or "hazir" => OrderStatus.ReadyForPickup,
+            "Yolda" or "yolda" => OrderStatus.OnTheWay,
+            "Teslim" or "Teslim edildi" or "teslim" or "teslim edildi" => OrderStatus.Delivered,
+            "İptal" or "Iptal" or "İptal edildi" or "Iptal edildi" or "iptal" or "iptal edildi" => OrderStatus.Cancelled,
+            "Başarısız" or "Basarisiz" or "başarısız" or "basarisiz" => OrderStatus.Failed,
+
             _ => OrderStatus.New
         };
+    }
+
+    private OrderStatus MapTrendyolWithWarning(string status)
+    {
+        var mapped = MapTrendyol(status);
+        if (mapped == OrderStatus.New)
+        {
+            // If the external status is not a known "New" synonym, warn.
+            var s = (status ?? string.Empty).Trim();
+            var isKnownNew =
+                s is "Created" or "Yeni" or "yeni" or "new" or "New";
+
+            if (!isKnownNew)
+            {
+                _logger.LogWarning("Unknown Trendyol status '{ExternalStatus}', defaulting to New", s);
+            }
+        }
+        return mapped;
     }
 }
 

@@ -1,0 +1,62 @@
+:root {
+  --oh-landing-primary: #ff6b35;
+  --oh-landing-primary-dark: #e8541c;
+}
+
+.oh-landing {
+  background: #fafafa;
+}
+
+.oh-logo-mark {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--oh-landing-primary), #ff8a5b);
+}
+
+.bg-gradient-hero {
+  background: radial-gradient(1200px 500px at 10% 0%, rgba(255, 107, 53, 0.18), transparent 60%),
+              radial-gradient(900px 400px at 90% 20%, rgba(255, 138, 91, 0.16), transparent 55%),
+              #ffffff;
+}
+
+.icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 107, 53, 0.12);
+  color: var(--oh-landing-primary-dark);
+}
+
+.phone-mockup {
+  position: absolute;
+  right: 12px;
+  bottom: -18px;
+  width: min(360px, 92%);
+}
+
+@media (max-width: 991.98px) {
+  .phone-mockup {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: 1rem;
+  }
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--oh-landing-primary);
+  --bs-btn-border-color: var(--oh-landing-primary);
+  --bs-btn-hover-bg: var(--oh-landing-primary-dark);
+  --bs-btn-hover-border-color: var(--oh-landing-primary-dark);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--oh-landing-primary);
+  --bs-btn-border-color: rgba(255, 107, 53, 0.55);
+  --bs-btn-hover-bg: var(--oh-landing-primary);
+  --bs-btn-hover-border-color: var(--oh-landing-primary);
+}

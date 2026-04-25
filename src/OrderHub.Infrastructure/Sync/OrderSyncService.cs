@@ -209,7 +209,10 @@ public sealed class OrderSyncService : IOrderSyncService
             nowUtc);
 
         await db.OrderItemOptions
-            .Where(o => o.OrderItem.OrderId == existing.Id)
+            .Where(o => db.OrderItems
+                .Where(i => i.OrderId == existing.Id)
+                .Select(i => i.Id)
+                .Contains(o.OrderItemId))
             .ExecuteDeleteAsync(ct)
             .ConfigureAwait(false);
 

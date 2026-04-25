@@ -38,6 +38,8 @@ public class PlatformConnectionConfiguration : IEntityTypeConfiguration<Platform
         builder.ToTable("PlatformConnections");
         builder.HasKey(p => p.Id);
         builder.Property(p => p.StoreId).HasMaxLength(128);
+        builder.Property(p => p.SupplierId).HasMaxLength(64);
+        builder.Property(p => p.ExecutorEmail).HasMaxLength(256);
         builder.Property(p => p.EncryptedApiKey).HasMaxLength(2000);
         builder.Property(p => p.EncryptedApiSecret).HasMaxLength(2000);
 
