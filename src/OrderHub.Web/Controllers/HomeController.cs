@@ -10,4 +10,12 @@ public sealed class HomeController : Controller
     {
         return View();
     }
+
+    [AllowAnonymous]
+    [HttpGet("/customer-access-required")]
+    public IActionResult CustomerAccessRequired([FromQuery] string? returnUrl = null)
+    {
+        ViewData["ReturnUrl"] = returnUrl;
+        return View();
+    }
 }

@@ -36,9 +36,19 @@ public sealed class CustomerResolutionMiddleware
             return;
         }
 
-        // If host has no subdomain (e.g. orderhub.local), treat as public marketing host.
+        // Public marketing / root host (e.g. orderhub.local): no tenant. Block /auth (tenant login) with info page.
         if (!IsSubdomainRequest(host))
         {
+            if (path.StartsWith("/auth", StringComparison.OrdinalIgnoreCase))
+            {
+                var attemptedUrl = $"{context.Request.Path}{context.Request.QueryString}";
+                if (string.IsNullOrWhiteSpace(attemptedUrl))
+                    attemptedUrl = "/auth/login";
+                var encodedReturnUrl = Uri.EscapeDataString(attemptedUrl);
+                context.Response.Redirect($"/customer-access-required?returnUrl={encodedReturnUrl}");
+                return;
+            }
+
             await _next(context);
             return;
         }
@@ -77,10 +87,9 @@ public sealed class CustomerResolutionMiddleware
         }
 
         if (string.Equals(p, "/", StringComparison.OrdinalIgnoreCase)) return true;
-        if (string.Equals(p, "/admin/login", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/admin", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/customer-access-required", StringComparison.OrdinalIgnoreCase)) return true;
 
-        // Public routes / auth / culture switch / common diagnostics
-        //if (p.StartsWith("/auth", StringComparison.OrdinalIgnoreCase)) return true;
         if (p.StartsWith("/culture", StringComparison.OrdinalIgnoreCase)) return true;
         if (p.StartsWith("/setlanguage", StringComparison.OrdinalIgnoreCase)) return true;
         if (p.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase)) return true;

@@ -270,6 +270,9 @@
   <data name="Auth.InvalidCredentials" xml:space="preserve">
     <value>Please check your details.</value>
   </data>
+  <data name="Auth.TenantContextMissing" xml:space="preserve">
+    <value>Restaurant context is missing. Open your login link on the customer domain you were given.</value>
+  </data>
   <data name="Auth.Logout" xml:space="preserve">
     <value>Log out</value>
   </data>
@@ -575,5 +578,269 @@
   </data>
   <data name="Landing.Live" xml:space="preserve">
     <value>Live</value>
+  </data>
+  <data name="Landing.PlatformsTitle" xml:space="preserve">
+    <value>Platform integrations</value>
+  </data>
+  <data name="Landing.PlatformsDescription" xml:space="preserve">
+    <value>Yemeksepeti, GetirYemek, Trendyol Yemek / Trendyol GO, and more — orders are collected into a single panel.</value>
+  </data>
+  <data name="Landing.HowItWorksTitle" xml:space="preserve">
+    <value>How it works</value>
+  </data>
+  <data name="Landing.HowItWorksDescription" xml:space="preserve">
+    <value>From setup to daily operations in four clear steps.</value>
+  </data>
+  <data name="Landing.Step1Title" xml:space="preserve">
+    <value>Define platform connections</value>
+  </data>
+  <data name="Landing.Step1Description" xml:space="preserve">
+    <value>Connect your restaurant’s marketplace accounts in one place.</value>
+  </data>
+  <data name="Landing.Step2Title" xml:space="preserve">
+    <value>Track orders from one screen</value>
+  </data>
+  <data name="Landing.Step2Description" xml:space="preserve">
+    <value>See new and in-progress orders without switching between systems.</value>
+  </data>
+  <data name="Landing.Step3Title" xml:space="preserve">
+    <value>Get sound and visual notifications</value>
+  </data>
+  <data name="Landing.Step3Description" xml:space="preserve">
+    <value>Be alerted the moment a new order arrives, even during peak hours.</value>
+  </data>
+  <data name="Landing.Step4Title" xml:space="preserve">
+    <value>Run restaurant operations with clarity</value>
+  </data>
+  <data name="Landing.Step4Description" xml:space="preserve">
+    <value>Branches, staff, and platforms stay aligned with one consistent workflow.</value>
+  </data>
+  <data name="Landing.FeaturesTitle" xml:space="preserve">
+    <value>Features</value>
+  </data>
+  <data name="Landing.FeaturesDescription" xml:space="preserve">
+    <value>Everything you need to manage marketplaces, branches, and teams in one system.</value>
+  </data>
+  <data name="Landing.FeatureSinglePanel" xml:space="preserve">
+    <value>Single-panel order management</value>
+  </data>
+  <data name="Landing.FeatureSinglePanelDescription" xml:space="preserve">
+    <value>All channels in one list with live status and details.</value>
+  </data>
+  <data name="Landing.FeatureLiveTracking" xml:space="preserve">
+    <value>Live order tracking</value>
+  </data>
+  <data name="Landing.FeatureLiveTrackingDescription" xml:space="preserve">
+    <value>See where every order is from acceptance to handoff.</value>
+  </data>
+  <data name="Landing.FeatureNotifications" xml:space="preserve">
+    <value>New order notifications</value>
+  </data>
+  <data name="Landing.FeatureNotificationsDescription" xml:space="preserve">
+    <value>Don’t miss orders during busy rushes with clear alerts.</value>
+  </data>
+  <data name="Landing.FeatureBranchManagement" xml:space="preserve">
+    <value>Branch management</value>
+  </data>
+  <data name="Landing.FeatureBranchManagementDescription" xml:space="preserve">
+    <value>Organize multiple locations and teams from one place.</value>
+  </data>
+  <data name="Landing.FeaturePlatformConnections" xml:space="preserve">
+    <value>Platform connections</value>
+  </data>
+  <data name="Landing.FeaturePlatformConnectionsDescription" xml:space="preserve">
+    <value>Connect major delivery marketplaces and grow without extra chaos.</value>
+  </data>
+  <data name="Landing.FeatureMultilingual" xml:space="preserve">
+    <value>Multilingual interface</value>
+  </data>
+  <data name="Landing.FeatureMultilingualDescription" xml:space="preserve">
+    <value>Work in the language that fits your team, including right-to-left support.</value>
+  </data>
+  <data name="Landing.FeatureAdminPanel" xml:space="preserve">
+    <value>Admin panel</value>
+  </data>
+  <data name="Landing.FeatureAdminPanelDescription" xml:space="preserve">
+    <value>System administration, security, and configuration in a dedicated area.</value>
+  </data>
+  <data name="Landing.FeatureSeparateDatabases" xml:space="preserve">
+    <value>Separate database per customer</value>
+  </data>
+  <data name="Landing.FeatureSeparateDatabasesDescription" xml:space="preserve">
+    <value>Each restaurant’s data stays isolated for privacy and performance.</value>
+  </data>
+  <data name="Landing.BenefitsTitle" xml:space="preserve">
+    <value>Built for real restaurant days</value>
+  </data>
+  <data name="Landing.BenefitsDescription" xml:space="preserve">
+    <value>Practical benefits for fast-paced kitchens and front-of-house teams.</value>
+  </data>
+  <data name="Landing.BenefitLessSwitching" xml:space="preserve">
+    <value>Less screen switching</value>
+  </data>
+  <data name="Landing.BenefitLessSwitchingDescription" xml:space="preserve">
+    <value>Stop jumping between marketplaces, chats, and spreadsheets.</value>
+  </data>
+  <data name="Landing.BenefitFewerMissedOrders" xml:space="preserve">
+    <value>Lower risk of missed orders</value>
+  </data>
+  <data name="Landing.BenefitFewerMissedOrdersDescription" xml:space="preserve">
+    <value>Consolidated visibility and alerts help nothing slip through.</value>
+  </data>
+  <data name="Landing.BenefitBranchTracking" xml:space="preserve">
+    <value>Branch and platform tracking</value>
+  </data>
+  <data name="Landing.BenefitBranchTrackingDescription" xml:space="preserve">
+    <value>Filter and report by site and channel when you need the full picture.</value>
+  </data>
+  <data name="Landing.BenefitSimpleInterface" xml:space="preserve">
+    <value>Simple for restaurant teams</value>
+  </data>
+  <data name="Landing.BenefitSimpleInterfaceDescription" xml:space="preserve">
+    <value>An interface designed for speed during service, not slow office work.</value>
+  </data>
+  <data name="Landing.VisualTitle" xml:space="preserve">
+    <value>From kitchen to handoff</value>
+  </data>
+  <data name="Landing.VisualDescription" xml:space="preserve">
+    <value>Visual cues that match how orders move through a real service flow.</value>
+  </data>
+  <data name="Landing.CtaTitle" xml:space="preserve">
+    <value>Sign in to your customer panel</value>
+  </data>
+  <data name="Landing.CtaDescription" xml:space="preserve">
+    <value>Customer login works only through the domain assigned to your restaurant.</value>
+  </data>
+  <data name="Landing.CustomerOnlyTitle" xml:space="preserve">
+    <value>Customer panel is only on your restaurant domain</value>
+  </data>
+  <data name="Landing.CustomerOnlyDescription" xml:space="preserve">
+    <value>The public site does not host customer login. Use the address you were given.</value>
+  </data>
+  <data name="Landing.CustomerOnlyHelp" xml:space="preserve">
+    <value>Open the private login link for your business — usually a subdomain on your operator’s domain.</value>
+  </data>
+  <data name="Landing.CustomerOnlyExample" xml:space="preserve">
+    <value>Example: companyname.orderhub.local/auth/login</value>
+  </data>
+  <data name="Landing.BackToHome" xml:space="preserve">
+    <value>Back to home</value>
+  </data>
+  <data name="Landing.HeroImageAlt" xml:space="preserve">
+    <value>Chefs working in a bright restaurant kitchen</value>
+  </data>
+  <data name="Landing.VisualImageAlt1" xml:space="preserve">
+    <value>Team preparing food in a restaurant kitchen</value>
+  </data>
+  <data name="Landing.VisualImageAlt2" xml:space="preserve">
+    <value>Plated food ready to be packed for delivery</value>
+  </data>
+  <data name="Landing.VisualImageAlt3" xml:space="preserve">
+    <value>Packaged order handoff at a service counter</value>
+  </data>
+  <data name="PlatformConnections.ErrorCount" xml:space="preserve">
+    <value>Consecutive errors</value>
+  </data>
+  <data name="PlatformConnections.CircuitOpenUntil" xml:space="preserve">
+    <value>Circuit open until (UTC)</value>
+  </data>
+  <data name="PlatformConnections.LastSuccessfulSync" xml:space="preserve">
+    <value>Last successful sync (UTC)</value>
+  </data>
+  <data name="Admin.LoginTitle" xml:space="preserve">
+    <value>Central admin sign in</value>
+  </data>
+  <data name="Admin.LoginSubtitle" xml:space="preserve">
+    <value>Manage the customer registry in CentralDb</value>
+  </data>
+  <data name="Admin.DashboardTitle" xml:space="preserve">
+    <value>Central admin</value>
+  </data>
+  <data name="Admin.Customers" xml:space="preserve">
+    <value>Customers</value>
+  </data>
+  <data name="Admin.TotalCustomers" xml:space="preserve">
+    <value>Total customers</value>
+  </data>
+  <data name="Admin.ActiveCustomers" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Admin.InactiveCustomers" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="Admin.CustomerDetails" xml:space="preserve">
+    <value>Customer details</value>
+  </data>
+  <data name="Admin.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Admin.Slug" xml:space="preserve">
+    <value>Slug</value>
+  </data>
+  <data name="Admin.PrimaryDomain" xml:space="preserve">
+    <value>Primary domain</value>
+  </data>
+  <data name="Admin.DatabaseName" xml:space="preserve">
+    <value>Database name</value>
+  </data>
+  <data name="Admin.SchemaVersion" xml:space="preserve">
+    <value>Schema version</value>
+  </data>
+  <data name="Admin.LastMigrationAt" xml:space="preserve">
+    <value>Last migration (UTC)</value>
+  </data>
+  <data name="Admin.LastMigrationResult" xml:space="preserve">
+    <value>Last migration result</value>
+  </data>
+  <data name="Admin.CreatedAt" xml:space="preserve">
+    <value>Created at (UTC)</value>
+  </data>
+  <data name="Admin.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Admin.Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Admin.Activate" xml:space="preserve">
+    <value>Activate</value>
+  </data>
+  <data name="Admin.Deactivate" xml:space="preserve">
+    <value>Deactivate</value>
+  </data>
+  <data name="Admin.Logout" xml:space="preserve">
+    <value>Log out</value>
+  </data>
+  <data name="Admin.InvalidCredentials" xml:space="preserve">
+    <value>Invalid email or password.</value>
+  </data>
+  <data name="Admin.ConfigurationMissing" xml:space="preserve">
+    <value>Central admin is not configured. Set CentralAdmin:Email and CentralAdmin:PasswordHash (user-level environment variables) and restart the app.</value>
+  </data>
+  <data name="Admin.BackToDashboard" xml:space="preserve">
+    <value>Back to dashboard</value>
+  </data>
+  <data name="Admin.PublicSite" xml:space="preserve">
+    <value>Public site</value>
+  </data>
+  <data name="Admin.CentralAdmin" xml:space="preserve">
+    <value>OrderHub — Central admin</value>
+  </data>
+  <data name="Admin.CustomerNotFound" xml:space="preserve">
+    <value>Customer not found.</value>
+  </data>
+  <data name="Admin.NoCustomers" xml:space="preserve">
+    <value>No customers registered in CentralDb yet.</value>
+  </data>
+  <data name="Admin.StatusActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Admin.StatusInactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="Admin.InactiveWarning" xml:space="preserve">
+    <value>This customer is inactive. The tenant will not be resolved for its domain until reactivated.</value>
+  </data>
+  <data name="Admin.UpdatedAt" xml:space="preserve">
+    <value>Updated at (UTC)</value>
   </data>
 </root>

@@ -1,11 +1,13 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Web.Models.Auth;
+using OrderHub.Web.Security;
+using OrderHub.Web;
 
 namespace OrderHub.Web.Controllers;
 
@@ -14,11 +16,16 @@ public sealed class AuthController : Controller
 {
     private readonly ICurrentCustomerService _currentCustomer;
     private readonly IAuthValidationService _authValidation;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public AuthController(ICurrentCustomerService currentCustomer, IAuthValidationService authValidation)
+    public AuthController(
+        ICurrentCustomerService currentCustomer,
+        IAuthValidationService authValidation,
+        IStringLocalizer<SharedResource> localizer)
     {
         _currentCustomer = currentCustomer;
         _authValidation = authValidation;
+        _localizer = localizer;
     }
 
     [AllowAnonymous]
@@ -38,14 +45,14 @@ public sealed class AuthController : Controller
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null)
         {
-            ModelState.AddModelError(string.Empty, "Müşteri bulunamadı.");
+            ModelState.AddModelError(string.Empty, _localizer["Auth.TenantContextMissing"].Value);
             return View(model);
         }
 
         var session = await _authValidation.ValidateAsync(customer.Id, model.Email, model.Password, ct);
         if (session is null)
         {
-            ModelState.AddModelError(string.Empty, "E-posta veya şifre yanlış.");
+            ModelState.AddModelError(string.Empty, _localizer["Auth.InvalidCredentials"].Value);
             return View(model);
         }
 
@@ -61,11 +68,11 @@ public sealed class AuthController : Controller
             new(ClaimTypes.Name, session.FullName),
         };
 
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(claims, AuthSchemes.Customer);
         var principal = new ClaimsPrincipal(identity);
 
         await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
+            AuthSchemes.Customer,
             principal,
             new AuthenticationProperties
             {
@@ -80,13 +87,12 @@ public sealed class AuthController : Controller
         return Redirect("/dashboard");
     }
 
-    [Authorize]
+    [Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
     [ValidateAntiForgeryToken]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignOutAsync(AuthSchemes.Customer);
         return Redirect("/auth/login");
     }
 }
-

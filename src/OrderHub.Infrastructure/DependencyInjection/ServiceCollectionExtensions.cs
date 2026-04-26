@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using FluentValidation;
+using OrderHub.Application.Abstractions.Admin;
 using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Branches;
 using OrderHub.Application.Abstractions.Dashboard;
@@ -63,6 +64,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICustomerResolver, CustomerResolver>();
 
         services.AddScoped<IAuthValidationService, AuthValidationService>();
+        services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
+        services.AddScoped<ICentralAdminCustomerService, CentralAdminCustomerService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IPlatformConnectionService, PlatformConnectionService>();

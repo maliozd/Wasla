@@ -2,8 +2,6 @@
     Layout = null;
     ViewData["Title"] = "OrderHub";
 }
-
-<!DOCTYPE html>
 @using System.Globalization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
@@ -12,6 +10,7 @@
     var culture = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
 }
+<!DOCTYPE html>
 <html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
@@ -28,42 +27,30 @@
 </head>
 <body class="oh-landing">
 <header class="border-bottom bg-white">
-    <div class="container py-3 d-flex align-items-center justify-content-between">
+    <div class="container py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="d-flex align-items-center gap-2">
             <div class="oh-logo-mark rounded-3 d-flex align-items-center justify-content-center">
                 <i class="bi bi-basket2-fill text-white"></i>
             </div>
             <div>
-                <div class="fw-bold text-dark">OrderHub</div>
+                <div class="fw-bold text-dark">@L["Landing.Title"]</div>
                 <div class="small text-muted">@L["Landing.Subtitle"]</div>
             </div>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">
                     <i class="bi bi-translate me-1"></i>@L["Common.Language"]
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <a class="dropdown-item"
-                           asp-controller="Culture"
-                           asp-action="Set"
-                           asp-route-culture="tr-TR"
-                           asp-route-returnUrl="@returnUrl">Türkçe</a>
+                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="tr-TR" asp-route-returnUrl="@returnUrl">Türkçe</a>
                     </li>
                     <li>
-                        <a class="dropdown-item"
-                           asp-controller="Culture"
-                           asp-action="Set"
-                           asp-route-culture="en-US"
-                           asp-route-returnUrl="@returnUrl">English</a>
+                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="en-US" asp-route-returnUrl="@returnUrl">English</a>
                     </li>
                     <li>
-                        <a class="dropdown-item"
-                           asp-controller="Culture"
-                           asp-action="Set"
-                           asp-route-culture="ar-SA"
-                           asp-route-returnUrl="@returnUrl">العربية</a>
+                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ar-SA" asp-route-returnUrl="@returnUrl">العربية</a>
                     </li>
                 </ul>
             </div>
@@ -80,25 +67,20 @@
                 <div class="col-lg-6">
                     <div class="badge text-bg-light border mb-3">@L["Landing.HeroBadge"]</div>
                     <h1 class="display-6 fw-bold mb-3">@L["Landing.HeroTitle"]</h1>
-                    <p class="lead text-secondary mb-4">
-                        @L["Landing.HeroDescription"]
-                    </p>
+                    <p class="lead text-secondary mb-4">@L["Landing.HeroDescription"]</p>
                     <div class="d-flex flex-wrap gap-2">
                         <a class="btn btn-primary btn-lg" href="/auth/login"><i class="bi bi-box-arrow-in-right me-2"></i>@L["Landing.CustomerLogin"]</a>
                         <a class="btn btn-outline-dark btn-lg" href="/admin/login"><i class="bi bi-shield-lock me-2"></i>@L["Landing.AdminLogin"]</a>
                     </div>
-                    <div class="small text-muted mt-3">
-                        @L["Landing.TenantNote"]
-                    </div>
+                    <div class="small text-muted mt-3">@L["Landing.TenantNote"]</div>
                 </div>
                 <div class="col-lg-6">
                     <div class="position-relative">
                         <div class="rounded-4 shadow-lg overflow-hidden border bg-white">
                             <img class="w-100 object-fit-cover" style="height: 320px;"
                                  src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1600&q=80"
-                                 alt="Restoran ve yemek görseli (placeholder)" />
+                                 alt="@L["Landing.HeroImageAlt"]" />
                         </div>
-
                         <div class="phone-mockup shadow-lg border bg-white p-3 rounded-4">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <span class="fw-semibold">OrderHub</span>
@@ -137,34 +119,206 @@
         </div>
     </section>
 
+    <section class="py-5 oh-section-muted">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold">@L["Landing.PlatformsTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.PlatformsDescription"]</p>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap justify-content-center gap-2 gap-md-3">
+                <span class="oh-platform-pill">Yemeksepeti</span>
+                <span class="oh-platform-pill">GetirYemek</span>
+                <span class="oh-platform-pill">Trendyol Yemek / Trendyol GO</span>
+            </div>
+        </div>
+    </section>
+
     <section class="py-5 bg-white">
         <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold">@L["Landing.HowItWorksTitle"]</h2>
+                    <p class="text-secondary">@L["Landing.HowItWorksDescription"]</p>
+                </div>
+            </div>
             <div class="row g-3">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-step-card h-100 border rounded-4 p-4 bg-light">
+                        <div class="fw-bold text-primary mb-2">1</div>
+                        <h3 class="h6 fw-bold">@L["Landing.Step1Title"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.Step1Description"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-step-card h-100 border rounded-4 p-4 bg-light">
+                        <div class="fw-bold text-primary mb-2">2</div>
+                        <h3 class="h6 fw-bold">@L["Landing.Step2Title"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.Step2Description"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-step-card h-100 border rounded-4 p-4 bg-light">
+                        <div class="fw-bold text-primary mb-2">3</div>
+                        <h3 class="h6 fw-bold">@L["Landing.Step3Title"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.Step3Description"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-step-card h-100 border rounded-4 p-4 bg-light">
+                        <div class="fw-bold text-primary mb-2">4</div>
+                        <h3 class="h6 fw-bold">@L["Landing.Step4Title"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.Step4Description"]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 oh-section-muted">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-9">
+                    <h2 class="h3 fw-bold">@L["Landing.FeaturesTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.FeaturesDescription"]</p>
+                </div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6 col-lg-3">
+                    <div class="oh-feature-card h-100 border-0 shadow-sm bg-white rounded-4 p-4">
+                        <div class="icon-circle mb-3"><i class="bi bi-grid-1x2"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.FeatureSinglePanel"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.FeatureSinglePanelDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="oh-feature-card h-100 border-0 shadow-sm bg-white rounded-4 p-4">
+                        <div class="icon-circle mb-3"><i class="bi bi-activity"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.FeatureLiveTracking"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.FeatureLiveTrackingDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="oh-feature-card h-100 border-0 shadow-sm bg-white rounded-4 p-4">
+                        <div class="icon-circle mb-3"><i class="bi bi-bell"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.FeatureNotifications"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.FeatureNotificationsDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="oh-feature-card h-100 border-0 shadow-sm bg-white rounded-4 p-4">
+                        <div class="icon-circle mb-3"><i class="bi bi-diagram-3"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.FeatureBranchManagement"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.FeatureBranchManagementDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="oh-feature-card h-100 border-0 shadow-sm bg-white rounded-4 p-4">
+                        <div class="icon-circle mb-3"><i class="bi bi-plug"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.FeaturePlatformConnections"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.FeaturePlatformConnectionsDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="oh-feature-card h-100 border-0 shadow-sm bg-white rounded-4 p-4">
+                        <div class="icon-circle mb-3"><i class="bi bi-translate"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.FeatureMultilingual"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.FeatureMultilingualDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="oh-feature-card h-100 border-0 shadow-sm bg-white rounded-4 p-4">
+                        <div class="icon-circle mb-3"><i class="bi bi-shield-lock"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.FeatureAdminPanel"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.FeatureAdminPanelDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="oh-feature-card h-100 border-0 shadow-sm bg-white rounded-4 p-4">
+                        <div class="icon-circle mb-3"><i class="bi bi-database"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.FeatureSeparateDatabases"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.FeatureSeparateDatabasesDescription"]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 bg-white">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-9">
+                    <h2 class="h3 fw-bold">@L["Landing.BenefitsTitle"]</h2>
+                    <p class="text-secondary">@L["Landing.BenefitsDescription"]</p>
+                </div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="border rounded-4 p-4 h-100">
+                        <h3 class="h6 fw-bold"><i class="bi bi-arrows-fullscreen me-2 text-primary"></i>@L["Landing.BenefitLessSwitching"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.BenefitLessSwitchingDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded-4 p-4 h-100">
+                        <h3 class="h6 fw-bold"><i class="bi bi-check2-circle me-2 text-primary"></i>@L["Landing.BenefitFewerMissedOrders"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.BenefitFewerMissedOrdersDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded-4 p-4 h-100">
+                        <h3 class="h6 fw-bold"><i class="bi bi-pin-map me-2 text-primary"></i>@L["Landing.BenefitBranchTracking"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.BenefitBranchTrackingDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded-4 p-4 h-100">
+                        <h3 class="h6 fw-bold"><i class="bi bi-people me-2 text-primary"></i>@L["Landing.BenefitSimpleInterface"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.BenefitSimpleInterfaceDescription"]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 oh-section-muted">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold">@L["Landing.VisualTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.VisualDescription"]</p>
+                </div>
+            </div>
+            <div class="row g-3 g-md-4">
                 <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="icon-circle mb-3"><i class="bi bi-grid-1x2"></i></div>
-                                <h3 class="h5">@L["Landing.SinglePanel"]</h3>
-                                <p class="text-secondary mb-0">@L["Landing.SinglePanelDescription"]</p>
-                        </div>
+                    <div class="oh-image-card overflow-hidden rounded-4 border bg-white shadow-sm">
+                        <img class="w-100 object-fit-cover" style="height: 200px; max-height: 40vw;" src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80" alt="@L["Landing.VisualImageAlt1"]" />
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="icon-circle mb-3"><i class="bi bi-sliders"></i></div>
-                                <h3 class="h5">@L["Landing.EasyManagement"]</h3>
-                                <p class="text-secondary mb-0">@L["Landing.EasyManagementDescription"]</p>
-                        </div>
+                    <div class="oh-image-card overflow-hidden rounded-4 border bg-white shadow-sm">
+                        <img class="w-100 object-fit-cover" style="height: 200px; max-height: 40vw;" src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80" alt="@L["Landing.VisualImageAlt2"]" />
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="icon-circle mb-3"><i class="bi bi-activity"></i></div>
-                                <h3 class="h5">@L["Landing.LiveTracking"]</h3>
-                                <p class="text-secondary mb-0">@L["Landing.LiveTrackingDescription"]</p>
-                        </div>
+                    <div class="oh-image-card overflow-hidden rounded-4 border bg-white shadow-sm">
+                        <img class="w-100 object-fit-cover" style="height: 200px; max-height: 40vw;" src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80" alt="@L["Landing.VisualImageAlt3"]" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="oh-cta-section py-5 text-white">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold">@L["Landing.CtaTitle"]</h2>
+                    <p class="mb-4 opacity-90">@L["Landing.CtaDescription"]</p>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <a class="btn btn-light btn-lg" href="/auth/login"><i class="bi bi-box-arrow-in-right me-2"></i>@L["Landing.CustomerLogin"]</a>
+                        <a class="btn btn-outline-light btn-lg" href="/admin/login"><i class="bi bi-shield-lock me-2"></i>@L["Landing.AdminLogin"]</a>
                     </div>
                 </div>
             </div>
@@ -180,7 +334,6 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

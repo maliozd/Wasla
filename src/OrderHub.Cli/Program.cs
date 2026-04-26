@@ -44,6 +44,9 @@ if (!args[0].StartsWith("-", StringComparison.Ordinal) && !CliHelpPrinter.IsKnow
     return 2;
 }
 
+if (string.Equals(args[0], "hash-password", StringComparison.OrdinalIgnoreCase))
+    return CliCommands.HashPassword(args);
+
 // All non-help commands require master key.
 AesSecretManager.ValidateMasterKeyOrThrow();
 

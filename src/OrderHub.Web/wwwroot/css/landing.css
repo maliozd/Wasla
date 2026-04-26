@@ -32,19 +32,74 @@
 
 .phone-mockup {
   position: absolute;
-  right: 12px;
+  inset-inline-end: 12px;
   bottom: -18px;
   width: min(360px, 92%);
+  max-width: 100%;
 }
 
 @media (max-width: 991.98px) {
   .phone-mockup {
     position: relative;
-    right: auto;
+    inset-inline-end: auto;
     bottom: auto;
     width: 100%;
     margin-top: 1rem;
   }
+}
+
+.oh-section-muted {
+  background: #f3f4f6;
+}
+
+.oh-feature-card .icon-circle {
+  flex-shrink: 0;
+}
+
+.oh-step-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.oh-step-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.06);
+}
+
+.oh-platform-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1f2937;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  max-width: 100%;
+  text-align: center;
+}
+
+.oh-image-card img {
+  display: block;
+}
+
+.oh-cta-section {
+  background: linear-gradient(135deg, var(--oh-landing-primary-dark), var(--oh-landing-primary));
+  overflow-x: clip;
+}
+
+.oh-customer-only-card {
+  overflow-x: auto;
+}
+
+.object-fit-cover {
+  object-fit: cover;
+}
+
+main,
+.oh-landing {
+  overflow-x: clip;
 }
 
 .btn-primary {

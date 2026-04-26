@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
@@ -6,8 +5,10 @@ using Microsoft.Extensions.Options;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.Security;
 using OrderHub.Infrastructure.DependencyInjection;
+using OrderHub.Web;
 using OrderHub.Web.Localization;
 using OrderHub.Web.Middleware;
+using OrderHub.Web.Security;
 using OrderHub.Web.Tenant;
 using System.Globalization;
 
@@ -59,17 +60,38 @@ if (!string.IsNullOrWhiteSpace(keyPath))
     }
 }
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+var securePolicy = builder.Environment.IsDevelopment()
+    ? CookieSecurePolicy.SameAsRequest
+    : CookieSecurePolicy.Always;
+
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = AuthSchemes.Customer;
+        options.DefaultAuthenticateScheme = AuthSchemes.Customer;
+        options.DefaultChallengeScheme = AuthSchemes.Customer;
+    })
+    .AddCookie(AuthSchemes.Customer, options =>
     {
         options.Cookie.Name = "orderhub_auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = securePolicy;
         options.LoginPath = "/auth/login";
         options.LogoutPath = "/auth/logout";
         options.AccessDeniedPath = "/auth/login";
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
+    })
+    .AddCookie(AuthSchemes.CentralAdmin, options =>
+    {
+        options.Cookie.Name = "orderhub_central_admin";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = securePolicy;
+        options.LoginPath = "/admin/login";
+        options.LogoutPath = "/admin/logout";
+        options.AccessDeniedPath = "/admin/login";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
     });
 
@@ -78,7 +100,10 @@ builder.Services.AddAuthorization();
 builder.Services
     .AddControllersWithViews()
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
-    .AddDataAnnotationsLocalization();
+    .AddDataAnnotationsLocalization(options =>
+    {
+        options.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(SharedResource));
+    });
 
 builder.Services.AddScoped<ICurrentCustomerService, CurrentCustomerService>();
 builder.Services.AddOrderHubInfrastructure(builder.Configuration);

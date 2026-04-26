@@ -23,6 +23,7 @@ internal static class CliHelpPrinter
     private static readonly string[] UtilityCommands =
     [
         "encrypt",
+        "hash-password",
         "help"
     ];
 
@@ -56,6 +57,7 @@ internal static class CliHelpPrinter
 
         Console.WriteLine("Utility commands:");
         Console.WriteLine("  encrypt                   Encrypt a plaintext value using ENCRYPTION_MASTER_KEY.");
+        Console.WriteLine("  hash-password             Print a BCrypt hash (no configuration or master key required).");
         Console.WriteLine("  help                      Show CLI help.");
         Console.WriteLine();
 
@@ -174,6 +176,19 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Example:");
                 Console.WriteLine("  dotnet run --project src\\OrderHub.Cli -- encrypt \"fake-trendyol-key\"");
+                return;
+
+            case "hash-password":
+                Console.WriteLine("hash-password");
+                Console.WriteLine();
+                Console.WriteLine("Prints a BCrypt hash of the given password (for CentralAdmin:PasswordHash).");
+                Console.WriteLine("Does not use ENCRYPTION_MASTER_KEY.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  hash-password --password <plaintext>");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\OrderHub.Cli -- hash-password --password \"Test123!\"");
                 return;
 
             default:

@@ -23,6 +23,25 @@ setx ENCRYPTION_MASTER_KEY $key
 
 Yeni terminal açın (env değişkeni yeniden yüklensin).
 
+## 1.1) Merkez yönetim (Web `/admin`)
+
+Merkez yönetim, tenant kullanıcılarından **ayrı** çerez kimlik doğrulaması kullanır. Gerçek sırları repoya koymayın; **kullanıcı ortam değişkenleri** ile yapılandırın. Parola yalnızca **BCrypt hash** olarak saklanmalı.
+
+Hash üretmek (master key gerekmez):
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- hash-password --password "ParolaBurada!"
+```
+
+Örnek env ayarı:
+
+```powershell
+[Environment]::SetEnvironmentVariable("CentralAdmin__Email", "admin@orderhub.local", "User")
+[Environment]::SetEnvironmentVariable("CentralAdmin__PasswordHash", "<önceki komutun BCrypt çıktısı>", "User")
+```
+
+Visual Studio / Rider / terminali yeniden başlatın. `/admin/login` üzerinden giriş yapın.
+
 ## 2) Build
 
 Repo kökünde:

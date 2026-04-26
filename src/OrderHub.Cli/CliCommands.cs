@@ -15,6 +15,31 @@ namespace OrderHub.Cli;
 
 internal static class CliCommands
 {
+    /// <summary>
+    /// Prints a BCrypt hash for CentralAdmin PasswordHash configuration (no master key required).
+    /// </summary>
+    public static int HashPassword(string[] args)
+    {
+        string? password = null;
+        for (var i = 0; i < args.Length; i++)
+        {
+            if (string.Equals(args[i], "--password", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                password = args[i + 1];
+                break;
+            }
+        }
+
+        if (string.IsNullOrEmpty(password))
+        {
+            WriteError("Usage: hash-password --password <plaintext>");
+            return 2;
+        }
+
+        Console.WriteLine(BCrypt.Net.BCrypt.HashPassword(password));
+        return 0;
+    }
+
     private static readonly Regex SlugRegex = new(@"^[a-zA-Z0-9_-]+$", RegexOptions.Compiled);
     private static readonly Regex SqlDbNameRegex = new(@"^[A-Za-z0-9_]+$", RegexOptions.Compiled);
 

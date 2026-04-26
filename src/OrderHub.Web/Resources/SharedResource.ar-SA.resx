@@ -270,6 +270,9 @@
   <data name="Auth.InvalidCredentials" xml:space="preserve">
     <value>يرجى التحقق من البيانات.</value>
   </data>
+  <data name="Auth.TenantContextMissing" xml:space="preserve">
+    <value>سياق المطعم غير متوفر. افتح رابط تسجيل الدخول على نطاق العميل الذي أعطي لك.</value>
+  </data>
   <data name="Auth.Logout" xml:space="preserve">
     <value>تسجيل الخروج</value>
   </data>
@@ -575,5 +578,269 @@
   </data>
   <data name="Landing.Live" xml:space="preserve">
     <value>يعيش</value>
+  </data>
+  <data name="Landing.PlatformsTitle" xml:space="preserve">
+    <value>تكامل المنصات</value>
+  </data>
+  <data name="Landing.PlatformsDescription" xml:space="preserve">
+    <value>Yemeksepeti وGetirYemek وTrendyol Yemek / Trendyol GO وغيرها — تُجمع الطلبات في لوحة واحدة.</value>
+  </data>
+  <data name="Landing.HowItWorksTitle" xml:space="preserve">
+    <value>كيف يعمل؟</value>
+  </data>
+  <data name="Landing.HowItWorksDescription" xml:space="preserve">
+    <value>أربع خطوات واضحة من الإعداد إلى التشغيل اليومي.</value>
+  </data>
+  <data name="Landing.Step1Title" xml:space="preserve">
+    <value>تحديد اتصالات المنصات</value>
+  </data>
+  <data name="Landing.Step1Description" xml:space="preserve">
+    <value>اربط حسابات أسواق التوصيل لديك في مكان واحد.</value>
+  </data>
+  <data name="Landing.Step2Title" xml:space="preserve">
+    <value>تتبع الطلبات من شاشة واحدة</value>
+  </data>
+  <data name="Landing.Step2Description" xml:space="preserve">
+    <value>شاهد الطلبات الجديدة والقيد التنفيذ دون تبديل التطبيقات.</value>
+  </data>
+  <data name="Landing.Step3Title" xml:space="preserve">
+    <value>إشعارات صوتية وبصرية للطلبات الجديدة</value>
+  </data>
+  <data name="Landing.Step3Description" xml:space="preserve">
+    <value>تنبيهات واضحة حتى في أوقات الذروة.</value>
+  </data>
+  <data name="Landing.Step4Title" xml:space="preserve">
+    <value>إدارة عمل المطعم بشكل أوضح</value>
+  </data>
+  <data name="Landing.Step4Description" xml:space="preserve">
+    <value>الفروع والمنصات والفرق تبقى على نفس المسار.</value>
+  </data>
+  <data name="Landing.FeaturesTitle" xml:space="preserve">
+    <value>المميزات</value>
+  </data>
+  <data name="Landing.FeaturesDescription" xml:space="preserve">
+    <value>كل ما تحتاجه لإدارة الأسواق والفروع والفرق في نظام واحد.</value>
+  </data>
+  <data name="Landing.FeatureSinglePanel" xml:space="preserve">
+    <value>إدارة الطلبات من لوحة واحدة</value>
+  </data>
+  <data name="Landing.FeatureSinglePanelDescription" xml:space="preserve">
+    <value>كل القنوات في قائمة واحدة مع حالة مباشرة.</value>
+  </data>
+  <data name="Landing.FeatureLiveTracking" xml:space="preserve">
+    <value>تتبع مباشر للطلبات</value>
+  </data>
+  <data name="Landing.FeatureLiveTrackingDescription" xml:space="preserve">
+    <value>تتبع الطلب من القبول حتى التسليم.</value>
+  </data>
+  <data name="Landing.FeatureNotifications" xml:space="preserve">
+    <value>تنبيهات للطلبات الجديدة</value>
+  </data>
+  <data name="Landing.FeatureNotificationsDescription" xml:space="preserve">
+    <value>تنبيهات واضحة ولا تفوتك الطلبات في الزحام.</value>
+  </data>
+  <data name="Landing.FeatureBranchManagement" xml:space="preserve">
+    <value>إدارة الفروع</value>
+  </data>
+  <data name="Landing.FeatureBranchManagementDescription" xml:space="preserve">
+    <value>نظّم عدة مواقع وفرق من مكان واحد.</value>
+  </data>
+  <data name="Landing.FeaturePlatformConnections" xml:space="preserve">
+    <value>اتصالات المنصات</value>
+  </data>
+  <data name="Landing.FeaturePlatformConnectionsDescription" xml:space="preserve">
+    <value>اربط أسواق التوصيل الكبرى دون مزيد من الفوضى.</value>
+  </data>
+  <data name="Landing.FeatureMultilingual" xml:space="preserve">
+    <value>واجهة متعددة اللغات</value>
+  </data>
+  <data name="Landing.FeatureMultilingualDescription" xml:space="preserve">
+    <value>اعمل بلغة فريقك، مع دعم الاتجاه من اليمين لليسار.</value>
+  </data>
+  <data name="Landing.FeatureAdminPanel" xml:space="preserve">
+    <value>لوحة الإدارة</value>
+  </data>
+  <data name="Landing.FeatureAdminPanelDescription" xml:space="preserve">
+    <value>إدارة النظام والأمان والإعدادات في قسم مخصص.</value>
+  </data>
+  <data name="Landing.FeatureSeparateDatabases" xml:space="preserve">
+    <value>قاعدة بيانات منفصلة لكل عميل</value>
+  </data>
+  <data name="Landing.FeatureSeparateDatabasesDescription" xml:space="preserve">
+    <value>بيانات كل مطعم معزولة للخصوصية والأداء.</value>
+  </data>
+  <data name="Landing.BenefitsTitle" xml:space="preserve">
+    <value>مصمم لأيام المطعم الحقيقية</value>
+  </data>
+  <data name="Landing.BenefitsDescription" xml:space="preserve">
+    <value>فوائد عملية للمطابخ وفرق الصالة في وقت الذروة.</value>
+  </data>
+  <data name="Landing.BenefitLessSwitching" xml:space="preserve">
+    <value>تبديل شاشات أقل</value>
+  </data>
+  <data name="Landing.BenefitLessSwitchingDescription" xml:space="preserve">
+    <value>توقف عن القفز بين الأسواق والمحادثات والجداول.</value>
+  </data>
+  <data name="Landing.BenefitFewerMissedOrders" xml:space="preserve">
+    <value>مخاطر أقل لضياع الطلبات</value>
+  </data>
+  <data name="Landing.BenefitFewerMissedOrdersDescription" xml:space="preserve">
+    <value>رؤية موحّدة وتنبيهات تساعد على عدم تفويت شيء.</value>
+  </data>
+  <data name="Landing.BenefitBranchTracking" xml:space="preserve">
+    <value>تتبع حسب الفرع والمنصة</value>
+  </data>
+  <data name="Landing.BenefitBranchTrackingDescription" xml:space="preserve">
+    <value>صفِّر وبلِّر حسب الموقع والقناة عند الحاجة.</value>
+  </data>
+  <data name="Landing.BenefitSimpleInterface" xml:space="preserve">
+    <value>واجهة بسيطة لفرق المطعم</value>
+  </data>
+  <data name="Landing.BenefitSimpleInterfaceDescription" xml:space="preserve">
+    <value>مصممة لسرعة الخدمة لا لأعمال المكتب البطيئة.</value>
+  </data>
+  <data name="Landing.VisualTitle" xml:space="preserve">
+    <value>من المطبخ إلى التسليم</value>
+  </data>
+  <data name="Landing.VisualDescription" xml:space="preserve">
+    <value>صور توضيحية تطابق تدفق العمل في المطعم.</value>
+  </data>
+  <data name="Landing.CtaTitle" xml:space="preserve">
+    <value>سجّل الدخول إلى لوحة العميل</value>
+  </data>
+  <data name="Landing.CtaDescription" xml:space="preserve">
+    <value>تسجيل دخول العميل يعمل فقط عبر النطاق المخصص لمطعمك.</value>
+  </data>
+  <data name="Landing.CustomerOnlyTitle" xml:space="preserve">
+    <value>لوحة العميل متاحة فقط على نطاق المطعم</value>
+  </data>
+  <data name="Landing.CustomerOnlyDescription" xml:space="preserve">
+    <value>الموقع العام لا يستضيف تسجيل دخول العملاء. استخدم العنوان المعطى لك.</value>
+  </data>
+  <data name="Landing.CustomerOnlyHelp" xml:space="preserve">
+    <value>افتح رابط تسجيل الدخول الخاص بعملك — عادة نطاق فرعي على نطاق المشغل.</value>
+  </data>
+  <data name="Landing.CustomerOnlyExample" xml:space="preserve">
+    <value>مثال: companyname.orderhub.local/auth/login</value>
+  </data>
+  <data name="Landing.BackToHome" xml:space="preserve">
+    <value>العودة إلى الصفحة الرئيسية</value>
+  </data>
+  <data name="Landing.HeroImageAlt" xml:space="preserve">
+    <value>طهاة يعملون في مطبخ مطعم مضاء جيداً</value>
+  </data>
+  <data name="Landing.VisualImageAlt1" xml:space="preserve">
+    <value>فريق يحضر الطعام في مطبخ المطعم</value>
+  </data>
+  <data name="Landing.VisualImageAlt2" xml:space="preserve">
+    <value>وجبة جاهزة للتعبئة والتوصيل</value>
+  </data>
+  <data name="Landing.VisualImageAlt3" xml:space="preserve">
+    <value>تسليم طلب معبأ عند مكتب الخدمة</value>
+  </data>
+  <data name="PlatformConnections.ErrorCount" xml:space="preserve">
+    <value>أخطاء متتالية</value>
+  </data>
+  <data name="PlatformConnections.CircuitOpenUntil" xml:space="preserve">
+    <value>الدائرة مفتوحة حتى (UTC)</value>
+  </data>
+  <data name="PlatformConnections.LastSuccessfulSync" xml:space="preserve">
+    <value>آخر مزامنة ناجحة (UTC)</value>
+  </data>
+  <data name="Admin.LoginTitle" xml:space="preserve">
+    <value>تسجيل دخول المسؤول المركزي</value>
+  </data>
+  <data name="Admin.LoginSubtitle" xml:space="preserve">
+    <value>إدارة سجل العملاء في CentralDb</value>
+  </data>
+  <data name="Admin.DashboardTitle" xml:space="preserve">
+    <value>الإدارة المركزية</value>
+  </data>
+  <data name="Admin.Customers" xml:space="preserve">
+    <value>العملاء</value>
+  </data>
+  <data name="Admin.TotalCustomers" xml:space="preserve">
+    <value>إجمالي العملاء</value>
+  </data>
+  <data name="Admin.ActiveCustomers" xml:space="preserve">
+    <value>النشطون</value>
+  </data>
+  <data name="Admin.InactiveCustomers" xml:space="preserve">
+    <value>غير النشطين</value>
+  </data>
+  <data name="Admin.CustomerDetails" xml:space="preserve">
+    <value>تفاصيل العميل</value>
+  </data>
+  <data name="Admin.Name" xml:space="preserve">
+    <value>الاسم</value>
+  </data>
+  <data name="Admin.Slug" xml:space="preserve">
+    <value>المعرف المختصر</value>
+  </data>
+  <data name="Admin.PrimaryDomain" xml:space="preserve">
+    <value>النطاق الأساسي</value>
+  </data>
+  <data name="Admin.DatabaseName" xml:space="preserve">
+    <value>اسم قاعدة البيانات</value>
+  </data>
+  <data name="Admin.SchemaVersion" xml:space="preserve">
+    <value>إصدار المخطط</value>
+  </data>
+  <data name="Admin.LastMigrationAt" xml:space="preserve">
+    <value>آخر ترحيل (UTC)</value>
+  </data>
+  <data name="Admin.LastMigrationResult" xml:space="preserve">
+    <value>نتيجة آخر ترحيل</value>
+  </data>
+  <data name="Admin.CreatedAt" xml:space="preserve">
+    <value>تاريخ الإنشاء (UTC)</value>
+  </data>
+  <data name="Admin.Actions" xml:space="preserve">
+    <value>إجراءات</value>
+  </data>
+  <data name="Admin.Details" xml:space="preserve">
+    <value>تفاصيل</value>
+  </data>
+  <data name="Admin.Activate" xml:space="preserve">
+    <value>تفعيل</value>
+  </data>
+  <data name="Admin.Deactivate" xml:space="preserve">
+    <value>إلغاء التفعيل</value>
+  </data>
+  <data name="Admin.Logout" xml:space="preserve">
+    <value>تسجيل الخروج</value>
+  </data>
+  <data name="Admin.InvalidCredentials" xml:space="preserve">
+    <value>البريد أو كلمة المرور غير صحيحة.</value>
+  </data>
+  <data name="Admin.ConfigurationMissing" xml:space="preserve">
+    <value>المسؤول المركزي غير مهيأ. اضبط CentralAdmin:Email و CentralAdmin:PasswordHash كمتغيرات بيئة للمستخدم وأعد تشغيل التطبيق.</value>
+  </data>
+  <data name="Admin.BackToDashboard" xml:space="preserve">
+    <value>العودة للوحة</value>
+  </data>
+  <data name="Admin.PublicSite" xml:space="preserve">
+    <value>الموقع العام</value>
+  </data>
+  <data name="Admin.CentralAdmin" xml:space="preserve">
+    <value>OrderHub — الإدارة المركزية</value>
+  </data>
+  <data name="Admin.CustomerNotFound" xml:space="preserve">
+    <value>العميل غير موجود.</value>
+  </data>
+  <data name="Admin.NoCustomers" xml:space="preserve">
+    <value>لا يوجد عملاء مسجّلون في CentralDb بعد.</value>
+  </data>
+  <data name="Admin.StatusActive" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="Admin.StatusInactive" xml:space="preserve">
+    <value>غير نشط</value>
+  </data>
+  <data name="Admin.InactiveWarning" xml:space="preserve">
+    <value>هذا العميل غير نشط ولن يُحل نطاقه حتى يُعاد تفعيله.</value>
+  </data>
+  <data name="Admin.UpdatedAt" xml:space="preserve">
+    <value>آخر تحديث (UTC)</value>
   </data>
 </root>

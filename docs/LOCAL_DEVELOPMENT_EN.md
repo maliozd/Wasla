@@ -23,6 +23,25 @@ setx ENCRYPTION_MASTER_KEY $key
 
 Open a new terminal so the env var is reloaded.
 
+## 1.1) Central admin (Web `/admin`)
+
+Central admin uses **separate** cookie authentication from tenant users. Configure it with **user-level environment variables** (do not commit real secrets). The password must be stored as a **BCrypt hash**, not plaintext.
+
+Generate a hash (no master key required):
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- hash-password --password "YourPasswordHere!"
+```
+
+Then set (example):
+
+```powershell
+[Environment]::SetEnvironmentVariable("CentralAdmin__Email", "admin@orderhub.local", "User")
+[Environment]::SetEnvironmentVariable("CentralAdmin__PasswordHash", "<paste BCrypt hash from previous command>", "User")
+```
+
+Restart Visual Studio / Rider / your terminal so the Web app picks up user environment variables. Open `/admin/login` and sign in.
+
 ## 2) Build
 
 From repo root:
