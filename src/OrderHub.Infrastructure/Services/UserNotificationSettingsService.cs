@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Notifications;
+using OrderHub.Application.Notifications;
 using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Infrastructure.Services;
@@ -35,7 +36,10 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
                 NewOrderSoundName = "bell1",
                 NewOrderSoundRepeatCount = 3,
                 NewOrderSoundVolume = 1.0m,
-                ShowBrowserNotification = false
+                ShowBrowserNotification = false,
+                NewOrderHighlightColor = NotificationHighlightOptions.DefaultColor,
+                NewOrderHighlightBehavior = NotificationHighlightOptions.DefaultBehavior,
+                NewOrderHighlightDurationSeconds = NotificationHighlightOptions.DefaultDurationSeconds
             };
         }
 
@@ -45,7 +49,10 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
             NewOrderSoundName = NormalizeSoundName(row.NewOrderSoundName),
             NewOrderSoundRepeatCount = Math.Clamp(row.NewOrderSoundRepeatCount, 1, 3),
             NewOrderSoundVolume = ClampVolume(row.NewOrderSoundVolume),
-            ShowBrowserNotification = row.ShowBrowserNotification
+            ShowBrowserNotification = row.ShowBrowserNotification,
+            NewOrderHighlightColor = NotificationHighlightOptions.NormalizeColor(row.NewOrderHighlightColor),
+            NewOrderHighlightBehavior = NotificationHighlightOptions.NormalizeBehavior(row.NewOrderHighlightBehavior),
+            NewOrderHighlightDurationSeconds = NotificationHighlightOptions.NormalizeDurationSeconds(row.NewOrderHighlightDurationSeconds)
         };
     }
 
@@ -71,6 +78,9 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
                 NewOrderSoundRepeatCount = Math.Clamp(command.NewOrderSoundRepeatCount, 1, 3),
                 NewOrderSoundVolume = ClampVolume(command.NewOrderSoundVolume),
                 ShowBrowserNotification = command.ShowBrowserNotification,
+                NewOrderHighlightColor = NotificationHighlightOptions.NormalizeColor(command.NewOrderHighlightColor),
+                NewOrderHighlightBehavior = NotificationHighlightOptions.NormalizeBehavior(command.NewOrderHighlightBehavior),
+                NewOrderHighlightDurationSeconds = NotificationHighlightOptions.NormalizeDurationSeconds(command.NewOrderHighlightDurationSeconds),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -83,6 +93,9 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
             row.NewOrderSoundRepeatCount = Math.Clamp(command.NewOrderSoundRepeatCount, 1, 3);
             row.NewOrderSoundVolume = ClampVolume(command.NewOrderSoundVolume);
             row.ShowBrowserNotification = command.ShowBrowserNotification;
+            row.NewOrderHighlightColor = NotificationHighlightOptions.NormalizeColor(command.NewOrderHighlightColor);
+            row.NewOrderHighlightBehavior = NotificationHighlightOptions.NormalizeBehavior(command.NewOrderHighlightBehavior);
+            row.NewOrderHighlightDurationSeconds = NotificationHighlightOptions.NormalizeDurationSeconds(command.NewOrderHighlightDurationSeconds);
             row.UpdatedAt = DateTime.UtcNow;
         }
 

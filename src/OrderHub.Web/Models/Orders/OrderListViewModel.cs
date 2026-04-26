@@ -9,6 +9,9 @@ public sealed class OrderListViewModel
 
     public int TotalCount { get; set; }
 
+    /// <summary>Restaurant local (Turkey) calendar date used for "default live" and empty-state copy.</summary>
+    public DateOnly TurkeyLocalToday { get; set; }
+
     /// <summary>When no rows, use a simple "no orders" string instead of "no matches for filters" (e.g. default today, no extra filters).</summary>
     public bool UseSimpleNoOrdersMessage { get; set; }
 
@@ -21,6 +24,9 @@ public sealed class OrderListViewModel
         public decimal TotalAmount { get; set; }
         public OrderStatus Status { get; set; }
         public DateTime ReceivedAtUtc { get; set; }
+
+        /// <summary>Received time in Turkey local zone for table display (DB stores UTC in <see cref="ReceivedAtUtc" />).</summary>
+        public DateTime ReceivedAtLocal { get; set; }
     }
 }
 

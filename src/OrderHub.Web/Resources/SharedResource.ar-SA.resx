@@ -630,6 +630,75 @@
   <data name="Notification.ShowBrowserNotification" xml:space="preserve">
     <value>عرض إشعار المتصفح</value>
   </data>
+  <data name="Notification.Highlight" xml:space="preserve">
+    <value>تمييز الطلبات الجديدة</value>
+  </data>
+  <data name="Notification.HighlightColor" xml:space="preserve">
+    <value>لون التمييز</value>
+  </data>
+  <data name="Notification.HighlightBehavior" xml:space="preserve">
+    <value>أسلوب التمييز</value>
+  </data>
+  <data name="Notification.HighlightDuration" xml:space="preserve">
+    <value>مدة التمييز</value>
+  </data>
+  <data name="Notification.HighlightColorOrange" xml:space="preserve">
+    <value>برتقالي</value>
+  </data>
+  <data name="Notification.HighlightColorBlue" xml:space="preserve">
+    <value>أزرق</value>
+  </data>
+  <data name="Notification.HighlightColorGreen" xml:space="preserve">
+    <value>أخضر</value>
+  </data>
+  <data name="Notification.HighlightColorYellow" xml:space="preserve">
+    <value>أصفر</value>
+  </data>
+  <data name="Notification.HighlightColorRed" xml:space="preserve">
+    <value>أحمر</value>
+  </data>
+  <data name="Notification.HighlightBehaviorFade" xml:space="preserve">
+    <value>تتلاشى بهدوء</value>
+  </data>
+  <data name="Notification.HighlightBehaviorPulse" xml:space="preserve">
+    <value>نبض خفيف</value>
+  </data>
+  <data name="Notification.HighlightBehaviorBlink" xml:space="preserve">
+    <value>وميض</value>
+  </data>
+  <data name="Notification.HighlightBehaviorBorderGlow" xml:space="preserve">
+    <value>توهج الحافة</value>
+  </data>
+  <data name="Notification.HighlightBehaviorNone" xml:space="preserve">
+    <value>بدون حركة</value>
+  </data>
+  <data name="Notification.HighlightDuration10" xml:space="preserve">
+    <value>10 ثوانٍ</value>
+  </data>
+  <data name="Notification.HighlightDuration20" xml:space="preserve">
+    <value>20 ثانية</value>
+  </data>
+  <data name="Notification.HighlightDuration30" xml:space="preserve">
+    <value>30 ثانية</value>
+  </data>
+  <data name="Notification.HighlightDuration60" xml:space="preserve">
+    <value>60 ثانية</value>
+  </data>
+  <data name="Notification.HighlightPreview" xml:space="preserve">
+    <value>معاينة</value>
+  </data>
+  <data name="Notification.HighlightPreviewHelp" xml:space="preserve">
+    <value>سيظهر لون التمييز والحركة التي اخترتها بهذا الشكل على سطر الطلب الجديد.</value>
+  </data>
+  <data name="Notification.PreviewCustomer" xml:space="preserve">
+    <value>عميل تجريبي</value>
+  </data>
+  <data name="Notification.CustomColor" xml:space="preserve">
+    <value>لون مخصص</value>
+  </data>
+  <data name="Notification.HighlightColorCustom" xml:space="preserve">
+    <value>مخصص</value>
+  </data>
   <data name="OrderStatus.New" xml:space="preserve">
     <value>جديد</value>
   </data>

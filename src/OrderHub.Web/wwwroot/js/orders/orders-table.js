@@ -53,6 +53,24 @@
     return { ids: ids, tmp: tmp };
   }
 
+  function updateTotalCountFromTmp(tmp) {
+    try {
+      const el = document.getElementById("ordersTotalCount");
+      if (!el || !tmp) return;
+      const meta = tmp.querySelector(".orders-table-meta");
+      if (!meta) return;
+      const v = meta.getAttribute("data-total-count");
+      if (v == null) return;
+      const n = parseInt(String(v), 10);
+      if (isNaN(n)) return;
+      el.textContent = String(n);
+    } catch (e) {
+      if (O.isDebugEnabled()) {
+        O.debugWarn("updateTotalCountFromTmp failed", e);
+      }
+    }
+  }
+
   function detectNewOrderIds(incomingIds) {
     const newIds = [];
     for (let i = 0; i < incomingIds.length; i++) {
@@ -72,8 +90,75 @@
     });
   }
 
+  function getNewOrderHighlightDurationMs() {
+    var st = O.state.notificationSettings;
+    if (O.notificationSettings && typeof O.notificationSettings.mergeDefaultNotificationState === "function") {
+      st = O.notificationSettings.mergeDefaultNotificationState(st || {});
+    }
+    if (!st) return T.NEW_ORDER_HIGHLIGHT_MS;
+    var sec = parseInt(st.newOrderHighlightDurationSeconds, 10);
+    if (isNaN(sec) || sec < 1) return T.NEW_ORDER_HIGHLIGHT_MS;
+    return sec * 1000;
+  }
+
+  function behaviorToClass(b) {
+    if (!b) return "fade";
+    var s = String(b);
+    if (s.toLowerCase() === "borderglow") return "border-glow";
+    return s.toLowerCase();
+  }
+
+  function getHighlightColorName() {
+    var st = O.state.notificationSettings;
+    if (O.notificationSettings && typeof O.notificationSettings.mergeDefaultNotificationState === "function") {
+      st = O.notificationSettings.mergeDefaultNotificationState(st || {});
+    }
+    var c = (st && st.newOrderHighlightColor) ? String(st.newOrderHighlightColor).trim() : "yellow";
+    if (!c) c = "yellow";
+    if (/^#[0-9a-fA-F]{6}$/.test(c)) return c.toLowerCase();
+    c = c.toLowerCase();
+    if (["orange", "blue", "green", "yellow", "red"].indexOf(c) < 0) c = "yellow";
+    return c;
+  }
+
+  function getHighlightBehaviorName() {
+    var st = O.state.notificationSettings;
+    if (O.notificationSettings && typeof O.notificationSettings.mergeDefaultNotificationState === "function") {
+      st = O.notificationSettings.mergeDefaultNotificationState(st || {});
+    }
+    var b = (st && st.newOrderHighlightBehavior) ? String(st.newOrderHighlightBehavior) : "fade";
+    return behaviorToClass(b);
+  }
+
+  function applyHighlightClassesToRow(row) {
+    var color = getHighlightColorName();
+    var beh = getHighlightBehaviorName();
+    row.classList.remove(
+      "order-row-new",
+      "order-row-new-flash",
+      "color-orange", "color-blue", "color-green", "color-yellow", "color-red", "color-custom",
+      "behavior-fade", "behavior-pulse", "behavior-blink", "behavior-border-glow", "behavior-none"
+    );
+    row.style.removeProperty("--new-order-highlight-bg");
+    row.style.removeProperty("--new-order-highlight-border");
+
+    if (color && String(color).indexOf("#") === 0) {
+      // Custom hex color -> CSS variables
+      var h = String(color).replace("#", "");
+      var r = parseInt(h.substring(0, 2), 16);
+      var g = parseInt(h.substring(2, 4), 16);
+      var b = parseInt(h.substring(4, 6), 16);
+      row.style.setProperty("--new-order-highlight-bg", "rgba(" + r + "," + g + "," + b + ",0.18)");
+      row.style.setProperty("--new-order-highlight-border", String(color));
+      row.classList.add("order-row-new", "color-custom", "behavior-" + beh);
+      return;
+    }
+
+    row.classList.add("order-row-new", "color-" + color, "behavior-" + beh);
+  }
+
   function markOrdersAsRecentlyNew(orderIds) {
-    const expiresAt = Date.now() + T.NEW_ORDER_HIGHLIGHT_MS;
+    const expiresAt = Date.now() + getNewOrderHighlightDurationMs();
     orderIds.forEach(function (id) {
       T.recentlyNewOrderIds.set(id, expiresAt);
     });
@@ -93,8 +178,7 @@
       }
       const row = container.querySelector("[data-order-id=\"" + id + "\"]");
       if (!row) continue;
-      row.classList.add("order-row-new");
-      row.classList.add("order-row-new-flash");
+      applyHighlightClassesToRow(row);
     }
   }
 
@@ -186,6 +270,7 @@
       }
 
       container.innerHTML = html;
+      updateTotalCountFromTmp(tmp);
 
       if (live && newIds.length > 0) {
         markOrdersAsRecentlyNew(newIds);

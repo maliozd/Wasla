@@ -630,6 +630,75 @@
   <data name="Notification.ShowBrowserNotification" xml:space="preserve">
     <value>Tarayıcı bildirimi göster</value>
   </data>
+  <data name="Notification.Highlight" xml:space="preserve">
+    <value>Yeni sipariş vurgusu</value>
+  </data>
+  <data name="Notification.HighlightColor" xml:space="preserve">
+    <value>Vurgu rengi</value>
+  </data>
+  <data name="Notification.HighlightBehavior" xml:space="preserve">
+    <value>Vurgu davranışı</value>
+  </data>
+  <data name="Notification.HighlightDuration" xml:space="preserve">
+    <value>Vurgu süresi</value>
+  </data>
+  <data name="Notification.HighlightColorOrange" xml:space="preserve">
+    <value>Turuncu</value>
+  </data>
+  <data name="Notification.HighlightColorBlue" xml:space="preserve">
+    <value>Mavi</value>
+  </data>
+  <data name="Notification.HighlightColorGreen" xml:space="preserve">
+    <value>Yeşil</value>
+  </data>
+  <data name="Notification.HighlightColorYellow" xml:space="preserve">
+    <value>Sarı</value>
+  </data>
+  <data name="Notification.HighlightColorRed" xml:space="preserve">
+    <value>Kırmızı</value>
+  </data>
+  <data name="Notification.HighlightBehaviorFade" xml:space="preserve">
+    <value>Yavaşça sönsün</value>
+  </data>
+  <data name="Notification.HighlightBehaviorPulse" xml:space="preserve">
+    <value>Hafif nabız efekti</value>
+  </data>
+  <data name="Notification.HighlightBehaviorBlink" xml:space="preserve">
+    <value>Yanıp sönsün</value>
+  </data>
+  <data name="Notification.HighlightBehaviorBorderGlow" xml:space="preserve">
+    <value>Kenar parlasın</value>
+  </data>
+  <data name="Notification.HighlightBehaviorNone" xml:space="preserve">
+    <value>Animasyon yok</value>
+  </data>
+  <data name="Notification.HighlightDuration10" xml:space="preserve">
+    <value>10 sn</value>
+  </data>
+  <data name="Notification.HighlightDuration20" xml:space="preserve">
+    <value>20 sn</value>
+  </data>
+  <data name="Notification.HighlightDuration30" xml:space="preserve">
+    <value>30 sn</value>
+  </data>
+  <data name="Notification.HighlightDuration60" xml:space="preserve">
+    <value>60 sn</value>
+  </data>
+  <data name="Notification.HighlightPreview" xml:space="preserve">
+    <value>Önizleme</value>
+  </data>
+  <data name="Notification.HighlightPreviewHelp" xml:space="preserve">
+    <value>Seçtiğiniz vurgu rengi ve animasyon yeni sipariş satırında böyle görünecek.</value>
+  </data>
+  <data name="Notification.PreviewCustomer" xml:space="preserve">
+    <value>Demo müşteri</value>
+  </data>
+  <data name="Notification.CustomColor" xml:space="preserve">
+    <value>Özel renk</value>
+  </data>
+  <data name="Notification.HighlightColorCustom" xml:space="preserve">
+    <value>Özel</value>
+  </data>
   <data name="OrderStatus.New" xml:space="preserve">
     <value>Yeni</value>
   </data>

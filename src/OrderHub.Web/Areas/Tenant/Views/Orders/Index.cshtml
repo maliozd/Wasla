@@ -7,7 +7,7 @@
 @{
     ViewData["Title"] = L["Orders.Title"];
     var f = Model.Filters;
-    var today = DateOnly.FromDateTime(DateTime.Today);
+    var today = Model.TurkeyLocalToday;
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
     var isDefaultLive = f.Page == 1
         && string.Equals(f.SortBy, "receivedAt", StringComparison.OrdinalIgnoreCase)
@@ -25,7 +25,7 @@
         <button type="button" class="btn btn-outline-secondary btn-sm" id="notificationSettingsBtn">
             <i class="bi bi-bell me-1"></i>@L["Notification.Settings"]
         </button>
-        <span class="text-muted small">@L["Orders.TotalCount"]: @Model.TotalCount</span>
+        <span class="text-muted small">@L["Orders.TotalCount"]: <span id="ordersTotalCount">@Model.TotalCount</span></span>
     </div>
 </div>
 
@@ -118,7 +118,7 @@
 </div>
 
 <div class="modal fade" id="notificationSettingsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable" style="max-width: 520px">
         <div class="modal-content">
             <form id="notificationSettingsForm" method="post" action="/notification-settings">
                 @Html.AntiForgeryToken()

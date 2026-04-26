@@ -462,6 +462,19 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("NewOrderHighlightBehavior")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("NewOrderHighlightColor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("NewOrderHighlightDurationSeconds")
+                        .HasColumnType("int");
+
                     b.Property<bool>("NewOrderSoundEnabled")
                         .HasColumnType("bit");
 

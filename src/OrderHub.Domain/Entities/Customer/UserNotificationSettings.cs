@@ -17,5 +17,13 @@ public sealed class UserNotificationSettings : BaseEntity
     public decimal NewOrderSoundVolume { get; set; } = 1.0m;
 
     public bool ShowBrowserNotification { get; set; } = false;
+
+    /// <summary>New order row highlight tint (e.g. yellow, orange). Meaning is defined in the web app.</summary>
+    public string NewOrderHighlightColor { get; set; } = "yellow";
+
+    /// <summary>Highlight motion style (fade, pulse, blink, borderGlow, none).</summary>
+    public string NewOrderHighlightBehavior { get; set; } = "fade";
+
+    public int NewOrderHighlightDurationSeconds { get; set; } = 30;
 }
 

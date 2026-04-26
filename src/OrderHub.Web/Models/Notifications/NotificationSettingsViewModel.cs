@@ -8,6 +8,10 @@ public sealed class NotificationSettingsViewModel
     public int NewOrderSoundVolumePercent { get; set; } = 100;
     public bool ShowBrowserNotification { get; set; } = false;
 
+    public string NewOrderHighlightColor { get; set; } = "yellow";
+    public string NewOrderHighlightBehavior { get; set; } = "fade";
+    public int NewOrderHighlightDurationSeconds { get; set; } = 30;
+
     public bool SoundUnlocked { get; set; } = false;
 
     public IReadOnlyList<SoundOption> AvailableSounds { get; set; } = Array.Empty<SoundOption>();

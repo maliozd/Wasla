@@ -630,6 +630,75 @@
   <data name="Notification.ShowBrowserNotification" xml:space="preserve">
     <value>Show browser notification</value>
   </data>
+  <data name="Notification.Highlight" xml:space="preserve">
+    <value>New order highlight</value>
+  </data>
+  <data name="Notification.HighlightColor" xml:space="preserve">
+    <value>Highlight color</value>
+  </data>
+  <data name="Notification.HighlightBehavior" xml:space="preserve">
+    <value>Highlight style</value>
+  </data>
+  <data name="Notification.HighlightDuration" xml:space="preserve">
+    <value>Highlight duration</value>
+  </data>
+  <data name="Notification.HighlightColorOrange" xml:space="preserve">
+    <value>Orange</value>
+  </data>
+  <data name="Notification.HighlightColorBlue" xml:space="preserve">
+    <value>Blue</value>
+  </data>
+  <data name="Notification.HighlightColorGreen" xml:space="preserve">
+    <value>Green</value>
+  </data>
+  <data name="Notification.HighlightColorYellow" xml:space="preserve">
+    <value>Yellow</value>
+  </data>
+  <data name="Notification.HighlightColorRed" xml:space="preserve">
+    <value>Red</value>
+  </data>
+  <data name="Notification.HighlightBehaviorFade" xml:space="preserve">
+    <value>Soft fade</value>
+  </data>
+  <data name="Notification.HighlightBehaviorPulse" xml:space="preserve">
+    <value>Gentle pulse</value>
+  </data>
+  <data name="Notification.HighlightBehaviorBlink" xml:space="preserve">
+    <value>Blink</value>
+  </data>
+  <data name="Notification.HighlightBehaviorBorderGlow" xml:space="preserve">
+    <value>Border glow</value>
+  </data>
+  <data name="Notification.HighlightBehaviorNone" xml:space="preserve">
+    <value>No animation</value>
+  </data>
+  <data name="Notification.HighlightDuration10" xml:space="preserve">
+    <value>10 seconds</value>
+  </data>
+  <data name="Notification.HighlightDuration20" xml:space="preserve">
+    <value>20 seconds</value>
+  </data>
+  <data name="Notification.HighlightDuration30" xml:space="preserve">
+    <value>30 seconds</value>
+  </data>
+  <data name="Notification.HighlightDuration60" xml:space="preserve">
+    <value>60 seconds</value>
+  </data>
+  <data name="Notification.HighlightPreview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Notification.HighlightPreviewHelp" xml:space="preserve">
+    <value>Your selected highlight color and animation will look like this on a new order row.</value>
+  </data>
+  <data name="Notification.PreviewCustomer" xml:space="preserve">
+    <value>Demo customer</value>
+  </data>
+  <data name="Notification.CustomColor" xml:space="preserve">
+    <value>Custom color</value>
+  </data>
+  <data name="Notification.HighlightColorCustom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
   <data name="OrderStatus.New" xml:space="preserve">
     <value>New</value>
   </data>

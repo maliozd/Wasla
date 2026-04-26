@@ -428,23 +428,36 @@ body.oh-tenant.oh-app .btn-outline-primary {
   background-color: color-mix(in srgb, var(--orderhub-primary) 12%, var(--orderhub-surface)) !important;
 }
 
-/* Notyf toasts: rounded, soft shadow, above modals; vivid accent colors (see orderhub-toast.js). */
+/* Notyf toasts: modern, soft, above modals (see orderhub-toast.js for base colors). */
 body.oh-tenant.oh-app .notyf {
   z-index: 1090;
 }
 
 body.oh-tenant.oh-app .notyf__toast {
-  border-radius: 0.7rem;
-  box-shadow: 0 8px 28px color-mix(in srgb, var(--orderhub-text) 18%, transparent) !important;
-  border: 1px solid color-mix(in srgb, #fff 40%, transparent);
+  min-width: 320px;
+  max-width: 420px;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--orderhub-text) 16%, transparent),
+    0 2px 8px color-mix(in srgb, var(--orderhub-text) 8%, transparent) !important;
+  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
   overflow: hidden;
+  padding: 0.75rem 1rem !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 body.oh-tenant.oh-app .notyf__message {
   font-size: 0.9rem;
   font-weight: 500;
-  padding: 0.15rem 0;
-  line-height: 1.35;
+  padding: 0.2rem 0;
+  line-height: 1.4;
+  color: #fff;
+  text-shadow: 0 1px 1px color-mix(in srgb, #000 20%, transparent);
+}
+
+body.oh-tenant.oh-app .notyf__dismiss {
+  margin-right: 0.1rem;
+  opacity: 0.9;
 }
 
 /* --- Tenant: subtle card + table base polish (non-orders pages) --- */

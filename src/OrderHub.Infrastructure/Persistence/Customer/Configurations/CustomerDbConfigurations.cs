@@ -44,6 +44,9 @@ public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<Us
         builder.Property(s => s.NewOrderSoundRepeatCount).IsRequired();
         builder.Property(s => s.NewOrderSoundVolume).HasPrecision(4, 2);
         builder.Property(s => s.ShowBrowserNotification).IsRequired();
+        builder.Property(s => s.NewOrderHighlightColor).IsRequired().HasMaxLength(32);
+        builder.Property(s => s.NewOrderHighlightBehavior).IsRequired().HasMaxLength(32);
+        builder.Property(s => s.NewOrderHighlightDurationSeconds).IsRequired();
 
         // One settings row per AppUser.
         builder.HasIndex(s => s.UserId)

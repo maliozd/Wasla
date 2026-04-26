@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Application.Orders;
+using OrderHub.Application.Time;
 using OrderHub.Domain.Enums;
 using OrderHub.Web.Controllers;
 using OrderHub.Web.Models.Orders;
@@ -17,11 +19,16 @@ public sealed class OrdersController : BaseController
 {
     private readonly ICurrentCustomerService _currentCustomer;
     private readonly IOrderReadService _orders;
+    private readonly ILogger<OrdersController> _logger;
 
-    public OrdersController(ICurrentCustomerService currentCustomer, IOrderReadService orders)
+    public OrdersController(
+        ICurrentCustomerService currentCustomer,
+        IOrderReadService orders,
+        ILogger<OrdersController> logger)
     {
         _currentCustomer = currentCustomer;
         _orders = orders;
+        _logger = logger;
     }
 
     [HttpGet("")]
@@ -60,19 +67,15 @@ public sealed class OrdersController : BaseController
             safePageSize,
             ct);
 
+        LogDateFilter("Index", startDate, endDate, startDateParsed, endDateParsed, startUtc, endUtc, result.TotalCount);
+
+        var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
+        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
         var vm = new OrderListViewModel
         {
             TotalCount = result.TotalCount,
-            Orders = result.Items.Select(o => new OrderListViewModel.Row
-            {
-                Id = o.Id,
-                Platform = o.Platform,
-                ExternalOrderCode = o.ExternalOrderCode,
-                CustomerName = o.CustomerName,
-                TotalAmount = o.TotalAmount,
-                Status = o.Status,
-                ReceivedAtUtc = o.ReceivedAtUtc
-            }).ToList(),
+            TurkeyLocalToday = turkeyToday,
+            Orders = MapOrderRows(result.Items, tz),
             Filters = new OrderFilterViewModel
             {
                 Platform = platform,
@@ -86,10 +89,9 @@ public sealed class OrdersController : BaseController
             }
         };
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
         vm.UseSimpleNoOrdersMessage = !platform.HasValue && !status.HasValue
-            && startDateParsed == today
-            && endDateParsed == today
+            && startDateParsed == turkeyToday
+            && endDateParsed == turkeyToday
             && startDateParsed == endDateParsed;
 
         return View("Index", vm);
@@ -113,6 +115,7 @@ public sealed class OrdersController : BaseController
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
         DefaultTodayIfNoDates(ref startDate, ref endDate);
         var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
+
         var result = await _orders.GetListAsync(
             customer.Id,
             platform,
@@ -125,24 +128,17 @@ public sealed class OrdersController : BaseController
             safePageSize,
             ct);
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
+        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
         var vm = new OrderListViewModel
         {
             TotalCount = result.TotalCount,
+            TurkeyLocalToday = turkeyToday,
             UseSimpleNoOrdersMessage = !platform.HasValue && !status.HasValue
-                && startDateParsed == today
-                && endDateParsed == today
+                && startDateParsed == turkeyToday
+                && endDateParsed == turkeyToday
                 && startDateParsed == endDateParsed,
-            Orders = result.Items.Select(o => new OrderListViewModel.Row
-            {
-                Id = o.Id,
-                Platform = o.Platform,
-                ExternalOrderCode = o.ExternalOrderCode,
-                CustomerName = o.CustomerName,
-                TotalAmount = o.TotalAmount,
-                Status = o.Status,
-                ReceivedAtUtc = o.ReceivedAtUtc
-            }).ToList(),
+            Orders = MapOrderRows(result.Items, tz),
             Filters = new OrderFilterViewModel
             {
                 Platform = platform,
@@ -201,6 +197,54 @@ public sealed class OrdersController : BaseController
         return View("Details", vm);
     }
 
+    private static List<OrderListViewModel.Row> MapOrderRows(
+        IReadOnlyList<OrderListResult.Row> items,
+        TimeZoneInfo timeZone) =>
+        items.Select(o => new OrderListViewModel.Row
+        {
+            Id = o.Id,
+            Platform = o.Platform,
+            ExternalOrderCode = o.ExternalOrderCode,
+            CustomerName = o.CustomerName,
+            TotalAmount = o.TotalAmount,
+            Status = o.Status,
+            ReceivedAtUtc = o.ReceivedAtUtc,
+            ReceivedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.SpecifyKind(o.ReceivedAtUtc, DateTimeKind.Utc),
+                timeZone)
+        }).ToList();
+
+    private void LogDateFilter(
+        string action,
+        string? rawStart,
+        string? rawEnd,
+        DateOnly? startDateParsed,
+        DateOnly? endDateParsed,
+        DateTime? utcStart,
+        DateTime? utcEndExclusive,
+        int? resultCount = null)
+    {
+        if (!_logger.IsEnabled(LogLevel.Information)) return;
+
+        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
+        var localStart = startDateParsed?.ToDateTime(TimeOnly.MinValue);
+        var localEndExclusive = endDateParsed?.AddDays(1).ToDateTime(TimeOnly.MinValue);
+
+        _logger.LogInformation(
+            "Orders {Action} date filter: rawStart={RawStart} rawEnd={RawEnd} timeZoneId={TimeZone} localStartDate={StartDate} localEndDate={EndDate} localStart={LocalStart} localEndExclusive={LocalEndEx} utcStartInclusive={UtcStart} utcEndExclusive={UtcEnd} resultCount={ResultCount}",
+            action,
+            rawStart,
+            rawEnd,
+            tz.Id,
+            startDateParsed,
+            endDateParsed,
+            localStart,
+            localEndExclusive,
+            utcStart,
+            utcEndExclusive,
+            resultCount);
+    }
+
     private static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
     {
         var p = page < 1 ? 1 : page;
@@ -208,36 +252,22 @@ public sealed class OrdersController : BaseController
         return (p, ps);
     }
 
-    /// <summary>When both query params are missing, use today's local date for start and end (MVP: <see cref="DateTime.Today" />).</summary>
+    /// <summary>When both query params are missing, use today's Turkey local calendar date for start and end.</summary>
     private static void DefaultTodayIfNoDates(ref string? startDate, ref string? endDate)
     {
         if (string.IsNullOrWhiteSpace(startDate) && string.IsNullOrWhiteSpace(endDate))
         {
-            var y = DateOnly.FromDateTime(DateTime.Today);
+            var y = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
             var s = y.ToString("yyyy-MM-dd");
             startDate = s;
             endDate = s;
         }
     }
 
-    private static (DateTime? StartUtc, DateTime? EndUtc, DateOnly? StartDate, DateOnly? EndDate) ParseDateFilters(string? startDate, string? endDate)
+    private static (DateTime? StartUtc, DateTime? EndUtc, DateOnly? StartDate, DateOnly? EndDate) ParseDateFilters(
+        string? startDate, string? endDate)
     {
-        DateOnly? start = null;
-        DateOnly? end = null;
-
-        if (!string.IsNullOrWhiteSpace(startDate) && DateOnly.TryParse(startDate, out var s))
-            start = s;
-        if (!string.IsNullOrWhiteSpace(endDate) && DateOnly.TryParse(endDate, out var e))
-            end = e;
-
-        DateTime? startUtc = start.HasValue
-            ? DateTime.SpecifyKind(start.Value.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc)
-            : null;
-
-        DateTime? endUtc = end.HasValue
-            ? DateTime.SpecifyKind(end.Value.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc)
-            : null;
-
+        var (startUtc, endUtc) = OrdersReceivedAtQueryRange.FromWebQueryStrings(startDate, endDate, out var start, out var end);
         return (startUtc, endUtc, start, end);
     }
 
@@ -254,4 +284,3 @@ public sealed class OrdersController : BaseController
         };
     }
 }
-

@@ -58,7 +58,7 @@ public class Order : BaseEntity
     public DateTime CreatedAtPlatform { get; set; }
 
     /// <summary>
-    /// When our worker first received this order.
+    /// When our worker first received this order, stored in UTC (compare/query using UTC; display in the restaurant timezone in the app).
     /// </summary>
     public DateTime ReceivedAt { get; set; }
 

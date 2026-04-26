@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Application.Orders;
 using OrderHub.Contracts.Enums;
 using OrderHub.Contracts.Orders;
 using FoodPlatformDomain = OrderHub.Domain.Enums.FoodPlatform;
@@ -35,12 +36,14 @@ public sealed class OrdersController : ControllerBase
         var page = Math.Max(1, query.Page);
         var pageSize = Math.Clamp(query.PageSize, 1, 200);
 
+        var (utcStart, utcEndExclusive) = OrdersReceivedAtQueryRange.FromApiDateTimes(query.StartDate, query.EndDate);
+
         var result = await _orders.GetListAsync(
             customer.Id,
             query.Platform.HasValue ? (FoodPlatformDomain?)(int)query.Platform.Value : null,
             query.Status.HasValue ? (OrderStatusDomain?)(int)query.Status.Value : null,
-            query.StartDate,
-            query.EndDate,
+            utcStart,
+            utcEndExclusive,
             sortBy: null,
             sortDirection: null,
             page,

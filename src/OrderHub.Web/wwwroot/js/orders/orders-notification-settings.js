@@ -7,22 +7,130 @@
     return;
   }
 
+  function isHexColor(v) {
+    if (!v) return false;
+    const s = String(v).trim();
+    return /^#[0-9a-fA-F]{6}$/.test(s);
+  }
+
+  function hexToRgba(hex, alpha) {
+    try {
+      const h = String(hex).trim().replace("#", "");
+      const r = parseInt(h.substring(0, 2), 16);
+      const g = parseInt(h.substring(2, 4), 16);
+      const b = parseInt(h.substring(4, 6), 16);
+      const a = Math.max(0, Math.min(1, alpha == null ? 0.18 : alpha));
+      return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+    } catch (e) {
+      return "rgba(255,243,205,0.18)";
+    }
+  }
+
+  function restartPreviewAnimation(el) {
+    if (!el) return;
+    el.classList.remove("preview-anim");
+    // Force reflow.
+    void el.offsetHeight;
+    el.classList.add("preview-anim");
+  }
+
+  function clearPreviewClasses(preview) {
+    preview.classList.remove(
+      "highlight-color-yellow",
+      "highlight-color-orange",
+      "highlight-color-blue",
+      "highlight-color-green",
+      "highlight-color-red",
+      "highlight-color-custom",
+      "highlight-behavior-fade",
+      "highlight-behavior-pulse",
+      "highlight-behavior-blink",
+      "highlight-behavior-borderGlow",
+      "highlight-behavior-none"
+    );
+  }
+
+  function getSelectedHighlightColor() {
+    const hidden = document.getElementById("NewOrderHighlightColor");
+    const custom = document.getElementById("NewOrderHighlightColorCustom");
+    const v = hidden ? String(hidden.value || "").trim() : "";
+    if (isHexColor(v)) return v;
+    // If custom color input exists and last chosen is custom, hidden will be hex. Otherwise ignore.
+    if (!v && custom && isHexColor(custom.value)) return custom.value;
+    return (v || "yellow").toLowerCase();
+  }
+
+  function setSelectedHighlightColor(value) {
+    const hidden = document.getElementById("NewOrderHighlightColor");
+    if (hidden) hidden.value = String(value || "");
+
+    const swatches = document.querySelectorAll(".oh-color-swatch[data-highlight-color]");
+    swatches.forEach(function (b) {
+      const c = (b.getAttribute("data-highlight-color") || "").toLowerCase();
+      b.classList.toggle("active", c && String(value).toLowerCase() === c);
+    });
+  }
+
+  function updateHighlightPreview() {
+    const preview = document.getElementById("newOrderHighlightPreview");
+    if (!preview) return;
+
+    const color = getSelectedHighlightColor();
+    const behavior = (document.getElementById("NewOrderHighlightBehavior") && document.getElementById("NewOrderHighlightBehavior").value) || "fade";
+
+    preview.className = "order-highlight-preview";
+    clearPreviewClasses(preview);
+    preview.classList.add("highlight-behavior-" + behavior);
+
+    if (color && String(color).startsWith("#")) {
+      preview.classList.add("highlight-color-custom");
+      preview.style.setProperty("--new-order-highlight-bg", hexToRgba(color, 0.18));
+      preview.style.setProperty("--new-order-highlight-border", String(color));
+    } else {
+      preview.classList.add("highlight-color-" + (color || "yellow"));
+      preview.style.removeProperty("--new-order-highlight-bg");
+      preview.style.removeProperty("--new-order-highlight-border");
+    }
+
+    restartPreviewAnimation(preview);
+  }
+
+  function parseHighlightDurationSeconds() {
+    const el = document.getElementById("NewOrderHighlightDurationSeconds");
+    const v = el ? parseInt(el.value, 10) : 30;
+    if (isNaN(v) || v < 1) return 30;
+    return v;
+  }
+
   function getModalState() {
     const enabledHidden = document.getElementById("NewOrderSoundEnabled");
     const enabled = enabledHidden ? (enabledHidden.value === "true") : true;
 
+    const soundSel = document.getElementById("newOrderSoundSelect");
+    const nameFromSelect = soundSel && soundSel.value
+      ? String(soundSel.value).toLowerCase()
+      : (document.getElementById("NewOrderSoundName") && document.getElementById("NewOrderSoundName").value) || "bell1";
     const nameEl = document.getElementById("NewOrderSoundName");
-    const name = (nameEl && nameEl.value || "bell1").toLowerCase();
+    if (nameEl) nameEl.value = nameFromSelect;
+
     const repeat = parseInt((document.getElementById("NewOrderSoundRepeatCount") && document.getElementById("NewOrderSoundRepeatCount").value) || "3", 10);
     const volPct = parseInt((document.getElementById("NewOrderSoundVolumePercent") && document.getElementById("NewOrderSoundVolumePercent").value) || "100", 10);
     const showChk = document.getElementById("ShowBrowserNotification");
 
+    const hb = document.getElementById("NewOrderHighlightBehavior");
+    const newOrderHighlightColor = getSelectedHighlightColor();
+    const newOrderHighlightBehavior = (hb && hb.value) ? String(hb.value) : "fade";
+    const newOrderHighlightDurationSeconds = parseHighlightDurationSeconds();
+
     return {
       newOrderSoundEnabled: enabled,
-      newOrderSoundName: name,
+      newOrderSoundName: nameFromSelect,
       newOrderSoundRepeatCount: isNaN(repeat) ? 3 : repeat,
       newOrderSoundVolumePercent: isNaN(volPct) ? 100 : volPct,
-      showBrowserNotification: showChk ? showChk.checked === true : false
+      showBrowserNotification: showChk ? showChk.checked === true : false,
+      newOrderHighlightColor: newOrderHighlightColor,
+      newOrderHighlightBehavior: newOrderHighlightBehavior,
+      newOrderHighlightDurationSeconds: newOrderHighlightDurationSeconds
     };
   }
 
@@ -67,25 +175,41 @@
   }
 
   function selectNotificationSound(soundName) {
-    const list = document.getElementById("soundOptionsList");
-    if (!list) return;
-    list.querySelectorAll(".sound-option").forEach(function (row) {
-      const name = row.getAttribute("data-sound-name");
-      const isActive = name && name.toLowerCase() === soundName.toLowerCase();
-      row.classList.toggle("active", !!isActive);
-      const radio = row.querySelector("input[type=radio]");
-      if (radio) radio.checked = !!isActive;
-    });
-
-    const hidden = document.getElementById("NewOrderSoundName");
-    if (hidden) hidden.value = soundName;
-
-    const label = document.getElementById("selectedSoundLabel");
-    if (label) {
-      const row = list.querySelector(".sound-option[data-sound-name=\"" + soundName + "\"]");
-      var firstDiv = row && row.querySelector("div");
-      label.textContent = row && firstDiv ? (firstDiv.textContent || soundName) : soundName;
+    const sel = document.getElementById("newOrderSoundSelect");
+    if (sel) {
+      var found = false;
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value && sel.options[i].value.toLowerCase() === String(soundName).toLowerCase()) {
+          sel.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found && sel.options.length) sel.selectedIndex = 0;
     }
+    const hidden = document.getElementById("NewOrderSoundName");
+    if (hidden) hidden.value = (sel && sel.value) ? sel.value : String(soundName);
+  }
+
+  function hideNotificationSettingsModal() {
+    const modalEl = document.getElementById("notificationSettingsModal");
+    if (!modalEl || !global.bootstrap || !global.bootstrap.Modal) return;
+    const inst = global.bootstrap.Modal.getInstance(modalEl) || global.bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (inst) inst.hide();
+  }
+
+  function mergeDefaultNotificationState(json) {
+    const n = json || {};
+    return {
+      newOrderSoundEnabled: n.newOrderSoundEnabled !== false,
+      newOrderSoundName: (n.newOrderSoundName || "bell1").toLowerCase(),
+      newOrderSoundRepeatCount: n.newOrderSoundRepeatCount != null ? n.newOrderSoundRepeatCount : 3,
+      newOrderSoundVolumePercent: n.newOrderSoundVolumePercent != null ? n.newOrderSoundVolumePercent : 100,
+      showBrowserNotification: !!n.showBrowserNotification,
+      newOrderHighlightColor: n.newOrderHighlightColor || "yellow",
+      newOrderHighlightBehavior: n.newOrderHighlightBehavior || "fade",
+      newOrderHighlightDurationSeconds: n.newOrderHighlightDurationSeconds != null ? n.newOrderHighlightDurationSeconds : 30
+    };
   }
 
   async function loadNotificationSettings() {
@@ -93,10 +217,7 @@
       const resp = await fetch(O.opts.notificationSettingsJsonUrl, { headers: { "X-Requested-With": "fetch" } });
       O.debugLog("Loading notification settings", {
         url: O.opts.notificationSettingsJsonUrl,
-        status: resp.status,
-        redirected: resp.redirected,
-        responseUrl: resp.url,
-        contentType: resp.headers.get("content-type")
+        status: resp.status
       });
 
       if (!resp.ok) {
@@ -126,7 +247,7 @@
         O.debugWarn("Notification settings JSON missing fields", { missing: missing, json: json });
       }
 
-      O.state.notificationSettings = json;
+      O.state.notificationSettings = mergeDefaultNotificationState(json);
     } catch (error) {
       if (global.OrderHubToast) {
         global.OrderHubToast.error(O.getMessage("notificationSettingsLoadException"));
@@ -137,7 +258,90 @@
     }
   }
 
-  async function saveNotificationSettings(mode) {
+  function wireNotificationModalContent() {
+    const toggle = document.getElementById("NewOrderSoundEnabledToggle");
+    if (toggle) {
+      toggle.addEventListener("change", function () {
+        setModalEnabled(toggle.checked);
+        updateNotificationStatusUi(getModalState());
+      });
+    }
+
+    const soundSel = document.getElementById("newOrderSoundSelect");
+    if (soundSel) {
+      soundSel.addEventListener("change", function () {
+        selectNotificationSound(soundSel.value);
+        updateNotificationStatusUi(getModalState());
+      });
+    }
+
+    const testSelectedBtn = document.getElementById("testSelectedSoundBtn");
+    if (testSelectedBtn) {
+      testSelectedBtn.addEventListener("click", async function () {
+        const st = getModalState();
+        await O.audio.maybeRequestBrowserNotificationPermission(st);
+        if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
+          O.audio.stopCurrentPreviewSound();
+        }
+        const opt = soundSel && soundSel.options[soundSel.selectedIndex];
+        const url = opt && opt.getAttribute("data-sound-url");
+        await O.audio.playSoundNow(st, url || null);
+        try {
+          localStorage.setItem("orderhub.soundUnlocked", "true");
+        } catch (e) { /* ignore */ }
+        updateNotificationStatusUi(getModalState());
+      });
+    }
+
+    // Highlight swatches + custom color
+    document.querySelectorAll(".oh-color-swatch[data-highlight-color]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        const c = btn.getAttribute("data-highlight-color") || "yellow";
+        setSelectedHighlightColor(String(c).toLowerCase());
+        updateHighlightPreview();
+      });
+    });
+
+    const customColor = document.getElementById("NewOrderHighlightColorCustom");
+    if (customColor) {
+      customColor.addEventListener("input", function () {
+        const v = String(customColor.value || "").trim();
+        if (isHexColor(v)) {
+          setSelectedHighlightColor(v.toLowerCase());
+          updateHighlightPreview();
+        }
+      });
+    }
+
+    const hb = document.getElementById("NewOrderHighlightBehavior");
+    if (hb) hb.addEventListener("change", updateHighlightPreview);
+    const hd = document.getElementById("NewOrderHighlightDurationSeconds");
+    if (hd) hd.addEventListener("change", updateHighlightPreview);
+
+    const form = document.getElementById("notificationSettingsForm");
+    if (form) {
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        await saveNotificationSettings("save");
+        updateNotificationStatusUi(getModalState());
+      });
+    }
+
+    // Stop preview sound when modal closes
+    const modalEl = document.getElementById("notificationSettingsModal");
+    if (modalEl) {
+      modalEl.addEventListener("hidden.bs.modal", function () {
+        if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
+          O.audio.stopCurrentPreviewSound();
+        }
+      });
+    }
+
+    updateHighlightPreview();
+  }
+
+  async function saveNotificationSettings() {
     const form = document.getElementById("notificationSettingsForm");
     const body = document.getElementById("notificationSettingsModalBody");
     if (!form || !body) return;
@@ -148,35 +352,54 @@
 
       const fd = new FormData(form);
       fd.set("NewOrderSoundEnabled", state.newOrderSoundEnabled ? "true" : "false");
+      fd.set("NewOrderSoundName", state.newOrderSoundName);
+      fd.set("NewOrderHighlightColor", state.newOrderHighlightColor);
+      fd.set("NewOrderHighlightBehavior", state.newOrderHighlightBehavior);
+      fd.set("NewOrderHighlightDurationSeconds", String(state.newOrderHighlightDurationSeconds));
 
       const url = form.action;
-
       const resp = await fetch(url, { method: "POST", body: fd, headers: { "X-Requested-With": "fetch" } });
-      if (!resp.ok) {
-        const saveErr = O.getMessage("settingsSaveFailed");
-        if (global.OrderHubToast) {
-          global.OrderHubToast.error(saveErr);
-        } else {
-          showModalWarning(saveErr);
-          O.showOrdersWarning("notification-settings-save-http", saveErr + " (HTTP " + resp.status + ")");
+
+      const ct = (resp.headers.get("content-type") || "").toLowerCase();
+      if (resp.ok && ct.indexOf("application/json") >= 0) {
+        var data = null;
+        try { data = await resp.json(); } catch (e1) { data = null; }
+        if (data && data.success) {
+          await loadNotificationSettings();
+          if (global.OrderHubToast) {
+            global.OrderHubToast.success(O.getMessage("settingsSaved"));
+          }
+          setTimeout(function () { hideNotificationSettingsModal(); }, 200);
+          return;
         }
-        O.debugWarn("Notification settings save failed", resp);
+        if (global.OrderHubToast) {
+          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"));
+        }
+        return;
+      }
+
+      if (!resp.ok) {
+        const html = await resp.text();
+        if (html) {
+          body.innerHTML = html;
+          wireNotificationModalContent();
+        }
+        if (global.OrderHubToast) {
+          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"));
+        }
+        O.debugWarn("Notification settings save failed", resp.status);
         return;
       }
 
       const html = await resp.text();
-      body.innerHTML = html;
-
-      await loadNotificationSettings();
-      if (global.OrderHubToast) {
-        global.OrderHubToast.success(O.getMessage("settingsSaved"));
+      if (html) {
+        body.innerHTML = html;
+        wireNotificationModalContent();
       }
     } catch (error) {
       if (global.OrderHubToast) {
         global.OrderHubToast.error(O.getMessage("notificationSettingsSaveException"));
       } else {
-        const saveErr = O.getMessage("settingsSaveFailed");
-        showModalWarning(saveErr);
         O.showOrdersWarning("notification-settings-save-exception", O.getMessage("notificationSettingsSaveException"));
       }
       O.debugWarn("saveNotificationSettings failed", error);
@@ -197,7 +420,7 @@
       return;
     }
 
-    O.debugLog("Notification settings modal response", { status: resp.status, redirected: resp.redirected, responseUrl: resp.url });
+    O.debugLog("Notification settings modal response", { status: resp.status });
     if (!resp.ok) {
       const base = O.getMessage("notificationSettingsModalOpenFailed");
       if (global.OrderHubToast) {
@@ -210,88 +433,37 @@
     }
 
     const html = await resp.text();
-
     const body = document.getElementById("notificationSettingsModalBody");
     if (!body) return;
     body.innerHTML = html;
 
     if (O.state.notificationSettings) {
-      setModalEnabled(!!O.state.notificationSettings.newOrderSoundEnabled);
-      const nameSel = document.getElementById("NewOrderSoundName");
-      if (nameSel) nameSel.value = O.state.notificationSettings.newOrderSoundName || "bell1";
+      const m = O.state.notificationSettings;
+      setModalEnabled(!!m.newOrderSoundEnabled);
+      if (m.newOrderSoundName) selectNotificationSound(m.newOrderSoundName);
       const repeatSel = document.getElementById("NewOrderSoundRepeatCount");
-      if (repeatSel) repeatSel.value = String(O.state.notificationSettings.newOrderSoundRepeatCount || 3);
+      if (repeatSel) repeatSel.value = String(m.newOrderSoundRepeatCount || 3);
       const volSel = document.getElementById("NewOrderSoundVolumePercent");
-      if (volSel) volSel.value = String(O.state.notificationSettings.newOrderSoundVolumePercent || 100);
+      if (volSel) volSel.value = String(m.newOrderSoundVolumePercent != null ? m.newOrderSoundVolumePercent : 100);
       const showChk = document.getElementById("ShowBrowserNotification");
-      if (showChk) showChk.checked = !!O.state.notificationSettings.showBrowserNotification;
+      if (showChk) showChk.checked = !!m.showBrowserNotification;
+      const hlC = document.getElementById("NewOrderHighlightColor");
+      if (hlC && m.newOrderHighlightColor) hlC.value = m.newOrderHighlightColor;
+      const hlB = document.getElementById("NewOrderHighlightBehavior");
+      if (hlB && m.newOrderHighlightBehavior) hlB.value = m.newOrderHighlightBehavior;
+      const hlD = document.getElementById("NewOrderHighlightDurationSeconds");
+      if (hlD && m.newOrderHighlightDurationSeconds != null) hlD.value = String(m.newOrderHighlightDurationSeconds);
 
-      selectNotificationSound(O.state.notificationSettings.newOrderSoundName || "bell1");
+      const custom = document.getElementById("NewOrderHighlightColorCustom");
+      if (custom && m.newOrderHighlightColor && isHexColor(m.newOrderHighlightColor)) {
+        custom.value = String(m.newOrderHighlightColor);
+      }
+
+      setSelectedHighlightColor(m.newOrderHighlightColor || "yellow");
     }
 
-    const toggle = document.getElementById("NewOrderSoundEnabledToggle");
-    if (toggle) {
-      toggle.addEventListener("change", function () {
-        setModalEnabled(toggle.checked);
-        updateNotificationStatusUi(getModalState());
-      });
-    }
-
-    const list = document.getElementById("soundOptionsList");
-    if (list) {
-      list.querySelectorAll(".sound-option").forEach(function (row) {
-        row.addEventListener("click", function (e) {
-          const isListenBtn = e.target && e.target.classList && e.target.classList.contains("listen-sound-btn");
-          const name = row.getAttribute("data-sound-name");
-          if (!name) return;
-
-          selectNotificationSound(name);
-
-          if (isListenBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            const u = row.getAttribute("data-sound-url");
-            O.audio.playSoundPreview(name, u);
-          }
-        });
-
-        const btn = row.querySelector(".listen-sound-btn");
-        if (btn) {
-          btn.addEventListener("click", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const name = row.getAttribute("data-sound-name");
-            const u = row.getAttribute("data-sound-url");
-            if (!name) return;
-            selectNotificationSound(name);
-            O.audio.playSoundPreview(name, u);
-          });
-        }
-      });
-    }
-
+    wireNotificationModalContent();
     updateNotificationStatusUi(getModalState());
-
-    const testSelectedBtn = document.getElementById("testSelectedSoundBtn");
-    if (testSelectedBtn) {
-      testSelectedBtn.addEventListener("click", async function () {
-        const st = getModalState();
-        await O.audio.maybeRequestBrowserNotificationPermission(st);
-        const active = document.querySelector(".sound-option.active");
-        const url = active && active.getAttribute("data-sound-url");
-        await O.audio.playSoundNow(st, url || null);
-        localStorage.setItem("orderhub.soundUnlocked", "true");
-      });
-    }
-
-    const form = document.getElementById("notificationSettingsForm");
-    if (form) {
-      form.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        await saveNotificationSettings("save");
-        updateNotificationStatusUi(getModalState());
-      });
-    }
   }
 
   O.notificationSettings = {
@@ -302,6 +474,7 @@
     updateNotificationStatusUi: updateNotificationStatusUi,
     showModalWarning: showModalWarning,
     selectNotificationSound: selectNotificationSound,
-    saveNotificationSettings: saveNotificationSettings
+    saveNotificationSettings: saveNotificationSettings,
+    mergeDefaultNotificationState: mergeDefaultNotificationState
   };
 })(window);

@@ -48,6 +48,9 @@ public sealed class NotificationSettingsController : BaseController
             NewOrderSoundRepeatCount = s.NewOrderSoundRepeatCount,
             NewOrderSoundVolumePercent = ToPercent(s.NewOrderSoundVolume),
             ShowBrowserNotification = s.ShowBrowserNotification,
+            NewOrderHighlightColor = s.NewOrderHighlightColor,
+            NewOrderHighlightBehavior = s.NewOrderHighlightBehavior,
+            NewOrderHighlightDurationSeconds = s.NewOrderHighlightDurationSeconds,
             AvailableSounds = sounds
         };
 
@@ -71,6 +74,9 @@ public sealed class NotificationSettingsController : BaseController
             newOrderSoundVolume = s.NewOrderSoundVolume,
             newOrderSoundVolumePercent = percent,
             showBrowserNotification = s.ShowBrowserNotification,
+            newOrderHighlightColor = s.NewOrderHighlightColor,
+            newOrderHighlightBehavior = s.NewOrderHighlightBehavior,
+            newOrderHighlightDurationSeconds = s.NewOrderHighlightDurationSeconds,
             availableSounds = sounds.Select(x => new { name = x.Name, label = x.Label, url = x.Url })
         });
     }
@@ -92,15 +98,19 @@ public sealed class NotificationSettingsController : BaseController
         var cmd = new UpdateNotificationSettingsCommand
         {
             NewOrderSoundEnabled = model.NewOrderSoundEnabled,
-            NewOrderSoundName = model.NewOrderSoundName ?? "bell",
+            NewOrderSoundName = model.NewOrderSoundName ?? "bell1",
             NewOrderSoundRepeatCount = model.NewOrderSoundRepeatCount,
             NewOrderSoundVolume = volume,
-            ShowBrowserNotification = model.ShowBrowserNotification
+            ShowBrowserNotification = model.ShowBrowserNotification,
+            NewOrderHighlightColor = model.NewOrderHighlightColor,
+            NewOrderHighlightBehavior = model.NewOrderHighlightBehavior,
+            NewOrderHighlightDurationSeconds = model.NewOrderHighlightDurationSeconds
         };
 
         if (!ModelState.IsValid)
         {
             model.AvailableSounds = ResolveSounds();
+            if (WantsSettingsJsonResponse()) Response.StatusCode = StatusCodes.Status400BadRequest;
             return PartialView("_NotificationSettingsModal", model);
         }
 
@@ -110,15 +120,21 @@ public sealed class NotificationSettingsController : BaseController
             foreach (var e in validation.Errors)
                 ModelState.AddModelError(e.PropertyName, e.ErrorMessage);
             model.AvailableSounds = ResolveSounds();
+            if (WantsSettingsJsonResponse()) Response.StatusCode = StatusCodes.Status400BadRequest;
             return PartialView("_NotificationSettingsModal", model);
         }
 
         await _settings.UpdateAsync(customer.Id, CurrentUserId, cmd, ct);
 
-        ViewData["Saved"] = true;
+        if (WantsSettingsJsonResponse())
+            return Json(new { success = true });
+
         model.AvailableSounds = ResolveSounds();
         return PartialView("_NotificationSettingsModal", model);
     }
+
+    private bool WantsSettingsJsonResponse() =>
+        string.Equals(Request.Headers["X-Requested-With"], "fetch", StringComparison.OrdinalIgnoreCase);
 
     [ValidateAntiForgeryToken]
     [HttpPost("enable")]

@@ -8,6 +8,8 @@
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
+<div class="orders-table-meta d-none" data-total-count="@Model.TotalCount"></div>
+
 <div class="d-flex align-items-center justify-content-between mb-2">
     <div class="small text-muted">@L["Orders.LastUpdated"]: <span id="ordersLastUpdated">-</span></div>
 </div>
@@ -48,7 +50,7 @@
                     <td>@o.CustomerName</td>
                     <td>@StatusLabel(o.Status)</td>
                     <td class="text-end">@o.TotalAmount.ToString("C")</td>
-                    <td class="text-end">@o.ReceivedAtUtc.ToString("u")</td>
+                    <td class="text-end">@o.ReceivedAtLocal.ToString("g")</td>
                 </tr>
             }
         }

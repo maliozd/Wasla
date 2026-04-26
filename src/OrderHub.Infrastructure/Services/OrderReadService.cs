@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Persistence.Customer;
@@ -8,10 +9,12 @@ namespace OrderHub.Infrastructure.Services;
 public sealed class OrderReadService : IOrderReadService
 {
     private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ILogger<OrderReadService> _logger;
 
-    public OrderReadService(ICustomerDbContextFactory dbFactory)
+    public OrderReadService(ICustomerDbContextFactory dbFactory, ILogger<OrderReadService> logger)
     {
         _dbFactory = dbFactory;
+        _logger = logger;
     }
 
     public async Task<OrderListResult> GetListAsync(
@@ -35,7 +38,7 @@ public sealed class OrderReadService : IOrderReadService
         if (platform.HasValue) q = q.Where(o => o.Platform == platform.Value);
         if (status.HasValue) q = q.Where(o => o.InternalStatus == status.Value);
         if (startDateUtc.HasValue) q = q.Where(o => o.ReceivedAt >= startDateUtc.Value);
-        if (endDateUtc.HasValue) q = q.Where(o => o.ReceivedAt <= endDateUtc.Value);
+        if (endDateUtc.HasValue) q = q.Where(o => o.ReceivedAt < endDateUtc.Value);
 
         var safeSortBy = string.IsNullOrWhiteSpace(sortBy) ? "receivedAt" : sortBy.Trim();
         var safeSortDirection = string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
@@ -63,6 +66,13 @@ public sealed class OrderReadService : IOrderReadService
         };
 
         var total = await q.CountAsync(ct);
+
+        if (_logger.IsEnabled(LogLevel.Debug) && (startDateUtc.HasValue || endDateUtc.HasValue))
+        {
+            _logger.LogDebug(
+                "Orders list UTC filter result: startInclusive={StartUtc} endExclusive={EndExclusiveUtc} totalCount={Count}",
+                startDateUtc, endDateUtc, total);
+        }
 
         var items = await q
             .Skip((page - 1) * pageSize)
