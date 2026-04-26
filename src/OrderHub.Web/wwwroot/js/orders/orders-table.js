@@ -9,14 +9,35 @@
 
   const T = O.table;
 
-  /** Matches server query names: sortBy, sortDirection, page, startDate, endDate. */
+  /** YYYY-MM-DD in local time (same as date input / server default-today). */
+  function localDateYmd() {
+    const d = new Date();
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
+  }
+
+  /** Default live: page 1, receivedAt desc, and date range is "today" (incl. empty URL: server uses today). */
   function isDefaultLiveOrdersView() {
     const p = new URLSearchParams(global.location.search);
     const sortBy = (p.get("sortBy") || p.get("sort") || "receivedAt").toLowerCase();
     const sortDirection = (p.get("sortDirection") || p.get("dir") || "desc").toLowerCase();
     const page = (p.get("page") || "1").trim();
-    if (p.get("startDate") || p.get("endDate")) return false;
-    return sortBy === "receivedat" && sortDirection === "desc" && page === "1";
+    if (page !== "1" || sortBy !== "receivedat" || sortDirection !== "desc") return false;
+
+    const s = p.get("startDate");
+    const e = p.get("endDate");
+    const ymd = localDateYmd();
+    if (s && e) {
+      if (s !== ymd || e !== ymd) return false;
+    } else if (s || e) {
+      return false;
+    }
+    return true;
   }
 
   T.isDefaultLiveOrdersView = isDefaultLiveOrdersView;

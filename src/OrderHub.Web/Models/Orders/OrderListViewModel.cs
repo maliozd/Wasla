@@ -9,6 +9,9 @@ public sealed class OrderListViewModel
 
     public int TotalCount { get; set; }
 
+    /// <summary>When no rows, use a simple "no orders" string instead of "no matches for filters" (e.g. default today, no extra filters).</summary>
+    public bool UseSimpleNoOrdersMessage { get; set; }
+
     public sealed class Row
     {
         public Guid Id { get; set; }

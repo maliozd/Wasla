@@ -116,13 +116,21 @@
     } catch (error) {
       O.debugWarn("playSoundPreview failed", error);
       stopCurrentPreviewSound();
-      if (O.notificationSettings && typeof O.notificationSettings.showModalWarning === "function") {
-        O.notificationSettings.showModalWarning(O.getMessage("soundCouldNotPlay"));
-      }
-      if (error && error.name === "NotAllowedError") {
-        O.showOrdersWarning("audio-not-allowed", O.getMessage("audioNotAllowed"));
+      if (global.OrderHubToast) {
+        if (error && error.name === "NotAllowedError") {
+          global.OrderHubToast.error(O.getMessage("audioNotAllowed"));
+        } else {
+          global.OrderHubToast.warning(O.getMessage("soundCouldNotPlay"));
+        }
       } else {
-        O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
+        if (O.notificationSettings && typeof O.notificationSettings.showModalWarning === "function") {
+          O.notificationSettings.showModalWarning(O.getMessage("soundCouldNotPlay"));
+        }
+        if (error && error.name === "NotAllowedError") {
+          O.showOrdersWarning("audio-not-allowed", O.getMessage("audioNotAllowed"));
+        } else {
+          O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
+        }
       }
     }
   }

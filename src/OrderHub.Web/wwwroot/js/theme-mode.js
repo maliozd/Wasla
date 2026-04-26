@@ -41,9 +41,20 @@
     document.querySelectorAll(".oh-theme-toggle").forEach(function (btn) {
       btn.setAttribute("aria-pressed", t === "dark" ? "true" : "false");
       if (t === "dark") {
-        btn.setAttribute("title", btn.getAttribute("data-title-dark") || "");
+        btn.setAttribute("title", btn.getAttribute("data-go-light") || "");
       } else {
-        btn.setAttribute("title", btn.getAttribute("data-title-light") || "");
+        btn.setAttribute("title", btn.getAttribute("data-go-dark") || "");
+      }
+      const moon = btn.querySelector(".oh-theme-moon");
+      const sun = btn.querySelector(".oh-theme-sun");
+      if (moon && sun) {
+        if (t === "dark") {
+          moon.classList.add("d-none");
+          sun.classList.remove("d-none");
+        } else {
+          moon.classList.remove("d-none");
+          sun.classList.add("d-none");
+        }
       }
     });
   }
@@ -63,10 +74,12 @@
     document.addEventListener("DOMContentLoaded", function () {
       applyTheme(getStoredTheme());
       setTopbarVar();
+      requestAnimationFrame(setTopbarVar);
     });
   } else {
     applyTheme(getStoredTheme());
     setTopbarVar();
+    requestAnimationFrame(setTopbarVar);
   }
 
   bindToggles();

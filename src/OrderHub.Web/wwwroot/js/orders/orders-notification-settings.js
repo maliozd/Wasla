@@ -101,7 +101,11 @@
 
       if (!resp.ok) {
         const base = O.getMessage("notificationSettingsLoadFailed");
-        O.showOrdersWarning("notification-settings-failed", base + " (HTTP " + resp.status + ")");
+        if (global.OrderHubToast) {
+          global.OrderHubToast.error(base + " (HTTP " + resp.status + ")");
+        } else {
+          O.showOrdersWarning("notification-settings-failed", base + " (HTTP " + resp.status + ")");
+        }
         O.debugWarn("Notification settings request failed", resp);
         return;
       }
@@ -124,7 +128,11 @@
 
       O.state.notificationSettings = json;
     } catch (error) {
-      O.showOrdersWarning("notification-settings-exception", O.getMessage("notificationSettingsLoadException"));
+      if (global.OrderHubToast) {
+        global.OrderHubToast.error(O.getMessage("notificationSettingsLoadException"));
+      } else {
+        O.showOrdersWarning("notification-settings-exception", O.getMessage("notificationSettingsLoadException"));
+      }
       O.debugWarn("loadNotificationSettings failed", error);
     }
   }
@@ -145,9 +153,13 @@
 
       const resp = await fetch(url, { method: "POST", body: fd, headers: { "X-Requested-With": "fetch" } });
       if (!resp.ok) {
-        const saveErr = O.getMessage("notificationSettingsSaveFailed");
-        showModalWarning(saveErr);
-        O.showOrdersWarning("notification-settings-save-http", saveErr + " (HTTP " + resp.status + ")");
+        const saveErr = O.getMessage("settingsSaveFailed");
+        if (global.OrderHubToast) {
+          global.OrderHubToast.error(saveErr);
+        } else {
+          showModalWarning(saveErr);
+          O.showOrdersWarning("notification-settings-save-http", saveErr + " (HTTP " + resp.status + ")");
+        }
         O.debugWarn("Notification settings save failed", resp);
         return;
       }
@@ -156,10 +168,17 @@
       body.innerHTML = html;
 
       await loadNotificationSettings();
+      if (global.OrderHubToast) {
+        global.OrderHubToast.success(O.getMessage("settingsSaved"));
+      }
     } catch (error) {
-      const saveErr = O.getMessage("notificationSettingsSaveFailed");
-      showModalWarning(saveErr);
-      O.showOrdersWarning("notification-settings-save-exception", O.getMessage("notificationSettingsSaveException"));
+      if (global.OrderHubToast) {
+        global.OrderHubToast.error(O.getMessage("notificationSettingsSaveException"));
+      } else {
+        const saveErr = O.getMessage("settingsSaveFailed");
+        showModalWarning(saveErr);
+        O.showOrdersWarning("notification-settings-save-exception", O.getMessage("notificationSettingsSaveException"));
+      }
       O.debugWarn("saveNotificationSettings failed", error);
     }
   }
@@ -169,7 +188,11 @@
     try {
       resp = await fetch(O.opts.notificationSettingsUrl, { headers: { "X-Requested-With": "fetch" } });
     } catch (error) {
-      O.showOrdersWarning("notification-settings-modal-failed", O.getMessage("notificationSettingsModalOpenFailed"));
+      if (global.OrderHubToast) {
+        global.OrderHubToast.error(O.getMessage("notificationSettingsModalOpenFailed"));
+      } else {
+        O.showOrdersWarning("notification-settings-modal-failed", O.getMessage("notificationSettingsModalOpenFailed"));
+      }
       O.debugWarn("Notification settings modal fetch failed", error);
       return;
     }
@@ -177,7 +200,11 @@
     O.debugLog("Notification settings modal response", { status: resp.status, redirected: resp.redirected, responseUrl: resp.url });
     if (!resp.ok) {
       const base = O.getMessage("notificationSettingsModalOpenFailed");
-      O.showOrdersWarning("notification-settings-modal-http", base + " (HTTP " + resp.status + ")");
+      if (global.OrderHubToast) {
+        global.OrderHubToast.error(base + " (HTTP " + resp.status + ")");
+      } else {
+        O.showOrdersWarning("notification-settings-modal-http", base + " (HTTP " + resp.status + ")");
+      }
       O.debugWarn("Notification settings modal HTTP failed", resp);
       return;
     }

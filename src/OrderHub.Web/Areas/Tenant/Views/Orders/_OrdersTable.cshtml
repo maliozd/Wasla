@@ -13,7 +13,7 @@
 </div>
 
 <div class="table-responsive">
-    <table class="table table-sm align-middle mb-0">
+    <table class="table table-sm align-middle mb-0 oh-orders-table">
         <thead>
         <tr>
             <th>@SortHeader("platform", L["Orders.Platform"])</th>
@@ -29,7 +29,7 @@
         {
             <tr>
                 <td colspan="6" class="text-center text-muted py-4">
-                    @(f.HasAnyFilter ? L["Orders.NoFilteredOrdersFound"] : L["Orders.NoOrdersFound"])
+                    @(Model.UseSimpleNoOrdersMessage ? L["Orders.NoOrdersFound"] : L["Orders.NoFilteredOrdersFound"])
                 </td>
             </tr>
         }

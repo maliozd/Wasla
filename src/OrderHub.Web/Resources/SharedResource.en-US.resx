@@ -120,6 +120,12 @@
   <data name="Common.Save" xml:space="preserve">
     <value>Save</value>
   </data>
+  <data name="Common.Saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="Common.SaveFailed" xml:space="preserve">
+    <value>Save failed</value>
+  </data>
   <data name="Common.Close" xml:space="preserve">
     <value>Close</value>
   </data>
@@ -210,6 +216,39 @@
   <data name="Layout.User" xml:space="preserve">
     <value>User</value>
   </data>
+  <data name="Layout.UserMenu" xml:space="preserve">
+    <value>User menu</value>
+  </data>
+  <data name="Layout.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Layout.DarkMode" xml:space="preserve">
+    <value>Dark mode</value>
+  </data>
+  <data name="Layout.LightMode" xml:space="preserve">
+    <value>Light mode</value>
+  </data>
+  <data name="Layout.Theme" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Layout.CentralAdmin" xml:space="preserve">
+    <value>OrderHub — Central admin</value>
+  </data>
+  <data name="Layout.Customers" xml:space="preserve">
+    <value>Customers</value>
+  </data>
+  <data name="Layout.PublicSite" xml:space="preserve">
+    <value>Public site</value>
+  </data>
+  <data name="Layout.CollapseSidebar" xml:space="preserve">
+    <value>Collapse menu</value>
+  </data>
+  <data name="Layout.ExpandSidebar" xml:space="preserve">
+    <value>Expand menu</value>
+  </data>
+  <data name="Layout.ToggleSidebar" xml:space="preserve">
+    <value>Toggle menu</value>
+  </data>
   <data name="Landing.Title" xml:space="preserve">
     <value>OrderHub</value>
   </data>
@@ -244,13 +283,16 @@
     <value>SaaS • Restaurant • Operations</value>
   </data>
   <data name="Landing.HeroTitle" xml:space="preserve">
-    <value>Manage all your orders from one screen</value>
+    <value>Manage your restaurant orders from one screen.</value>
   </data>
   <data name="Landing.HeroDescription" xml:space="preserve">
     <value>View, track and manage orders from Yemeksepeti, Getir and Trendyol in one panel.</value>
   </data>
+  <data name="Landing.HeroSubtitle" xml:space="preserve">
+    <value>Track Yemeksepeti, GetirYemek and TrendyolYemek orders from a single panel. See new orders instantly, receive sound notifications, and simplify restaurant operations.</value>
+  </data>
   <data name="Landing.TenantNote" xml:space="preserve">
-    <value>Note: Your domain must resolve to a tenant to access the customer panel.</value>
+    <value>Customer login works through the restaurant domain assigned to you.</value>
   </data>
   <data name="Landing.FooterTagline" xml:space="preserve">
     <value>Modern order management for operations teams</value>
@@ -335,6 +377,12 @@
   </data>
   <data name="Orders.Clear" xml:space="preserve">
     <value>Clear</value>
+  </data>
+  <data name="Orders.Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Orders.DefaultTodayInfo" xml:space="preserve">
+    <value>Today's orders are shown by default.</value>
   </data>
   <data name="Orders.NoOrdersFound" xml:space="preserve">
     <value>No orders found yet.</value>
@@ -543,6 +591,15 @@
   <data name="Notification.SaveSuccess" xml:space="preserve">
     <value>Settings saved.</value>
   </data>
+  <data name="Notification.SettingsSaved" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="Notification.SettingsSaveFailed" xml:space="preserve">
+    <value>Could not save settings. Try again.</value>
+  </data>
+  <data name="Notification.SoundEnabled" xml:space="preserve">
+    <value>Sound enabled</value>
+  </data>
   <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
     <value>Sound could not play. Check the sound file or browser permissions.</value>
   </data>
@@ -643,10 +700,10 @@
     <value>Live</value>
   </data>
   <data name="Landing.PlatformsTitle" xml:space="preserve">
-    <value>Platform integrations</value>
+    <value>Platform orders in one panel</value>
   </data>
   <data name="Landing.PlatformsDescription" xml:space="preserve">
-    <value>Yemeksepeti, GetirYemek, Trendyol Yemek / Trendyol GO, and more — orders are collected into a single panel.</value>
+    <value>Orders from different food platforms are collected in one panel.</value>
   </data>
   <data name="Landing.HowItWorksTitle" xml:space="preserve">
     <value>How it works</value>
@@ -733,16 +790,16 @@
     <value>Each restaurant’s data stays isolated for privacy and performance.</value>
   </data>
   <data name="Landing.BenefitsTitle" xml:space="preserve">
-    <value>Built for real restaurant days</value>
+    <value>Simplify restaurant operations</value>
   </data>
   <data name="Landing.BenefitsDescription" xml:space="preserve">
-    <value>Practical benefits for fast-paced kitchens and front-of-house teams.</value>
+    <value>Practical benefits for kitchen and front-of-house teams.</value>
   </data>
   <data name="Landing.BenefitLessSwitching" xml:space="preserve">
-    <value>Less screen switching</value>
+    <value>Less switching between platform screens</value>
   </data>
   <data name="Landing.BenefitLessSwitchingDescription" xml:space="preserve">
-    <value>Stop jumping between marketplaces, chats, and spreadsheets.</value>
+    <value>You do not have to keep jumping between different platform dashboards all day.</value>
   </data>
   <data name="Landing.BenefitFewerMissedOrders" xml:space="preserve">
     <value>Lower risk of missed orders</value>
@@ -751,10 +808,10 @@
     <value>Consolidated visibility and alerts help nothing slip through.</value>
   </data>
   <data name="Landing.BenefitBranchTracking" xml:space="preserve">
-    <value>Branch and platform tracking</value>
+    <value>Track orders by branch and platform</value>
   </data>
   <data name="Landing.BenefitBranchTrackingDescription" xml:space="preserve">
-    <value>Filter and report by site and channel when you need the full picture.</value>
+    <value>Follow orders by platform and branch in a more organized way.</value>
   </data>
   <data name="Landing.BenefitSimpleInterface" xml:space="preserve">
     <value>Simple for restaurant teams</value>
@@ -773,6 +830,69 @@
   </data>
   <data name="Landing.CtaDescription" xml:space="preserve">
     <value>Customer login works only through the domain assigned to your restaurant.</value>
+  </data>
+  <data name="Landing.MockupTitle" xml:space="preserve">
+    <value>Live orders screen</value>
+  </data>
+  <data name="Landing.MockupSubtitle" xml:space="preserve">
+    <value>See new orders in one table, follow statuses, and get sound notifications.</value>
+  </data>
+  <data name="Landing.TrustTitle" xml:space="preserve">
+    <value>Each restaurant’s data is managed separately</value>
+  </data>
+  <data name="Landing.TrustDescription" xml:space="preserve">
+    <value>Your operations stay in a dedicated space—secure and under your control.</value>
+  </data>
+  <data name="Landing.FinalCtaTitle" xml:space="preserve">
+    <value>Sign in to your restaurant panel</value>
+  </data>
+  <data name="Landing.FinalCtaDescription" xml:space="preserve">
+    <value>Customer login works through the restaurant domain assigned to you.</value>
+  </data>
+  <data name="Landing.NewOrder" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Landing.Delivered" xml:space="preserve">
+    <value>Delivered</value>
+  </data>
+  <data name="Landing.SoundNotification" xml:space="preserve">
+    <value>Sound notification</value>
+  </data>
+  <data name="Landing.BenefitMissedOrders" xml:space="preserve">
+    <value>Reduce missed orders</value>
+  </data>
+  <data name="Landing.BenefitMissedOrdersDescription" xml:space="preserve">
+    <value>See new orders immediately and act fast with clear sound alerts.</value>
+  </data>
+  <data name="Landing.BenefitSimpleOperation" xml:space="preserve">
+    <value>Simple operations screen</value>
+  </data>
+  <data name="Landing.BenefitSimpleOperationDescription" xml:space="preserve">
+    <value>A clear order view your restaurant team can use during a busy service.</value>
+  </data>
+  <data name="Landing.StepConnectionsTitle" xml:space="preserve">
+    <value>Define platform connections</value>
+  </data>
+  <data name="Landing.StepConnectionsDescription" xml:space="preserve">
+    <value>Add the delivery platforms your restaurant uses.</value>
+  </data>
+  <data name="Landing.StepTrackTitle" xml:space="preserve">
+    <value>Track orders from one screen</value>
+  </data>
+  <data name="Landing.StepTrackDescription" xml:space="preserve">
+    <value>View incoming orders in a single, easy-to-read list.</value>
+  </data>
+  <data name="Landing.StepNotifyTitle" xml:space="preserve">
+    <value>Get notified on new orders</value>
+  </data>
+  <data name="Landing.StepNotifyDescription" xml:space="preserve">
+    <value>Hear and see when a new order lands—especially during rushes.</value>
+  </data>
+  <data name="Landing.StepManageTitle" xml:space="preserve">
+    <value>Run service with more clarity</value>
+  </data>
+  <data name="Landing.StepManageDescription" xml:space="preserve">
+    <value>Stay in control across platforms, branches, and order statuses.</value>
   </data>
   <data name="Landing.CustomerOnlyTitle" xml:space="preserve">
     <value>Customer panel is only on your restaurant domain</value>

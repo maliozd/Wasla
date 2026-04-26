@@ -13,6 +13,8 @@
   --orderhub-border: #e5e7eb;
   --orderhub-shadow: 0 10px 30px rgba(0, 0, 0, .06);
   --oh-topbar-h: 56px;
+  --oh-sidebar-width: 240px;
+  --oh-sidebar-collapsed-width: 72px;
 
   --oh-primary: var(--orderhub-primary);
   --oh-primary-dark: var(--orderhub-primary-dark);
@@ -72,9 +74,18 @@ body.oh-app {
   color: var(--oh-text);
 }
 
-/* AdminLTE shell: body.layout-fixed + .app-wrapper */
-.app-wrapper {
+/* AdminLTE shell: body.layout-fixed + .app-wrapper.
+   One vertical scrollbar on body — never nested page scroll in main/content-wrapper. */
+body.oh-app .app-wrapper,
+body.oh-app.layout-fixed .app-wrapper {
   min-height: 100vh;
+  overflow: visible;
+}
+
+body.oh-app .content-wrapper,
+body.oh-app .app-content,
+body.oh-app .app-main {
+  max-height: none !important;
 }
 
 .app-header.navbar {
@@ -126,8 +137,9 @@ body.oh-app {
   overflow-y: visible;
 }
 
-/* Sidebar brand + links */
-.oh-sidebar-brand a {
+/* Topbar brand + links */
+a.oh-sidebar-brand,
+.oh-sidebar-brand {
   color: var(--orderhub-primary) !important;
   font-weight: 700;
   font-size: 1.1rem;
@@ -150,6 +162,40 @@ body.oh-app {
   font-weight: 600;
   border-left: 3px solid var(--orderhub-primary);
   padding-left: calc(0.75rem - 3px);
+}
+
+/* Tenant: readable active state (white on primary) + soft hover on inactive */
+body.oh-tenant.oh-app .sidebar-menu .nav-link:hover:not(.active) {
+  background: color-mix(in srgb, var(--orderhub-primary) 12%, var(--oh-sidebar-bg)) !important;
+  color: var(--orderhub-sidebar-text) !important;
+}
+
+body.oh-tenant.oh-app .sidebar-menu .nav-link.active,
+body.oh-tenant.oh-app .sidebar-menu .nav-link.active:focus {
+  background: var(--orderhub-primary) !important;
+  color: #ffffff !important;
+  border-left: 3px solid rgba(255, 255, 255, 0.4);
+  padding-left: calc(0.75rem - 3px);
+}
+
+body.oh-tenant.oh-app .sidebar-menu .nav-link.active i,
+body.oh-tenant.oh-app .sidebar-menu .nav-link.active .me-2,
+body.oh-tenant.oh-app .sidebar-menu .nav-link.active .nav-text {
+  color: #ffffff !important;
+}
+
+body.oh-tenant.oh-app .sidebar-menu .nav-link.active:hover,
+body.oh-tenant.oh-app .sidebar-menu .nav-link.active:focus:hover {
+  background: var(--orderhub-primary-dark) !important;
+  color: #ffffff !important;
+}
+
+[dir="rtl"] body.oh-tenant.oh-app .sidebar-menu .nav-link.active,
+[dir="rtl"] body.oh-tenant.oh-app .sidebar-menu .nav-link.active:focus {
+  border-left: none;
+  border-right: 3px solid rgba(255, 255, 255, 0.4);
+  padding-left: 0.75rem;
+  padding-right: calc(0.75rem - 3px);
 }
 
 .card {
@@ -183,4 +229,238 @@ body.oh-app {
   box-shadow: var(--orderhub-shadow) !important;
 }
 
-.oh-topbar-legacy { display: none; }
+/* --- Tenant: typography (shell + pages) --- */
+body.oh-tenant.oh-app {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.oh-tenant.oh-app h1,
+body.oh-tenant.oh-app h2,
+body.oh-tenant.oh-app h3,
+body.oh-tenant.oh-app h4,
+body.oh-tenant.oh-app h5,
+body.oh-tenant.oh-app h6,
+body.oh-tenant.oh-app .h4,
+body.oh-tenant.oh-app .h5 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--oh-text);
+}
+
+body.oh-tenant.oh-app .text-muted,
+body.oh-tenant.oh-app .form-label,
+body.oh-tenant.oh-app small {
+  color: var(--orderhub-muted) !important;
+}
+
+/* --- Tenant: sidebar + main (AdminLTE + collapse) --- */
+body.oh-tenant.oh-app .app-sidebar {
+  position: fixed;
+  top: var(--oh-topbar-h, 3.5rem);
+  left: 0;
+  bottom: 0;
+  z-index: 1020;
+  width: var(--oh-sidebar-width);
+  min-width: var(--oh-sidebar-width);
+  transition: width 0.2s ease, min-width 0.2s ease;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-right: 1px solid var(--oh-border) !important;
+  border-radius: 0;
+}
+
+[dir="rtl"] body.oh-tenant.oh-app .app-sidebar {
+  left: auto;
+  right: 0;
+  border-right: 0;
+  border-left: 1px solid var(--oh-border) !important;
+}
+
+body.oh-tenant.oh-app .app-main,
+body.oh-tenant.oh-app .app-header.navbar {
+  transition: margin 0.2s ease, margin-inline 0.2s ease, padding 0.2s ease, padding-inline 0.2s ease;
+}
+
+body.oh-tenant.oh-app .app-main {
+  margin-inline-start: var(--oh-sidebar-width) !important;
+  width: auto;
+  max-width: 100%;
+}
+
+body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar {
+  width: var(--oh-sidebar-collapsed-width);
+  min-width: var(--oh-sidebar-collapsed-width);
+}
+
+body.oh-tenant.oh-app.sidebar-collapsed .app-main {
+  margin-inline-start: var(--oh-sidebar-collapsed-width) !important;
+}
+
+body.oh-tenant.oh-app .sidebar-menu {
+  font-size: 0.92rem;
+}
+
+body.oh-tenant.oh-app.sidebar-collapsed .brand-text,
+body.oh-tenant.oh-app.sidebar-collapsed .customer-text,
+body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-text {
+  display: none;
+}
+
+body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  border-left: none;
+}
+
+body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link i,
+body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link .me-2 {
+  margin: 0 !important;
+}
+
+body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link.active {
+  background: var(--orderhub-primary) !important;
+  color: #fff !important;
+  border-left: none;
+  box-shadow: none;
+  padding-left: 0.5rem;
+}
+
+body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link.active i,
+body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link.active .me-2 {
+  color: #fff !important;
+}
+
+[dir="rtl"] body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link.active {
+  box-shadow: none;
+}
+
+/* --- Tenant: button polish (keep danger) --- */
+body.oh-tenant.oh-app .btn {
+  border-radius: 0.65rem;
+  font-weight: 500;
+  padding: 0.4rem 0.85rem;
+}
+
+body.oh-tenant.oh-app .btn-sm {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+}
+
+body.oh-tenant.oh-app .btn:focus-visible,
+body.oh-tenant.oh-app .btn-oh-primary:focus-visible {
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--orderhub-primary) 35%, transparent);
+  outline: none;
+}
+
+body.oh-tenant.oh-app .btn-oh-primary {
+  --bs-btn-bg: var(--orderhub-primary);
+  --bs-btn-border-color: var(--orderhub-primary);
+  --bs-btn-hover-bg: var(--orderhub-primary-dark);
+  --bs-btn-hover-border-color: var(--orderhub-primary-dark);
+  color: #fff;
+}
+
+body.oh-tenant.oh-app .btn-oh-primary:hover {
+  color: #fff;
+}
+
+body.oh-tenant.oh-app .btn-primary {
+  --bs-btn-font-weight: 500;
+  --bs-btn-padding-y: 0.45rem;
+  --bs-btn-padding-x: 0.9rem;
+}
+
+body.oh-tenant.oh-app .btn-outline-secondary {
+  --bs-btn-color: var(--orderhub-muted);
+  --bs-btn-border-color: color-mix(in srgb, var(--oh-border) 90%, var(--orderhub-muted));
+  --bs-btn-hover-border-color: var(--oh-border);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--orderhub-surface) 50%, var(--orderhub-primary));
+  --bs-btn-hover-color: var(--oh-text);
+}
+
+body.oh-tenant.oh-app .btn-outline-primary {
+  --bs-btn-border-color: color-mix(in srgb, var(--orderhub-primary) 40%, var(--orderhub-surface));
+}
+
+/* --- Orders page visual (does not override order row flash) --- */
+.oh-orders-page .oh-orders-filters .card-body {
+  padding: 1.1rem 1.25rem;
+}
+
+.oh-orders-page .oh-orders-filters .form-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.oh-orders-page .oh-orders-table-card {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--oh-text) 6%, transparent);
+}
+
+.oh-orders-page .oh-orders-table-host .table.oh-orders-table {
+  font-size: 0.9rem;
+}
+
+.oh-orders-page .oh-orders-table-host .table.oh-orders-table thead th {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--orderhub-muted);
+  border-bottom-width: 1px;
+  padding: 0.6rem 0.75rem;
+  white-space: nowrap;
+}
+
+.oh-orders-page .oh-orders-table-host .table.oh-orders-table tbody td {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.oh-orders-page .oh-orders-table-host .table.oh-orders-table tbody tr:not(.order-row-new):not(.order-row-new-flash):hover {
+  background-color: color-mix(in srgb, var(--orderhub-primary) 6%, var(--orderhub-surface)) !important;
+}
+
+[data-bs-theme="dark"] .oh-orders-page .oh-orders-table-host .table.oh-orders-table tbody tr:not(.order-row-new):not(.order-row-new-flash):hover {
+  background-color: color-mix(in srgb, var(--orderhub-primary) 12%, var(--orderhub-surface)) !important;
+}
+
+/* Notyf toasts: rounded, soft shadow, above modals; vivid accent colors (see orderhub-toast.js). */
+body.oh-tenant.oh-app .notyf {
+  z-index: 1090;
+}
+
+body.oh-tenant.oh-app .notyf__toast {
+  border-radius: 0.7rem;
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--orderhub-text) 18%, transparent) !important;
+  border: 1px solid color-mix(in srgb, #fff 40%, transparent);
+  overflow: hidden;
+}
+
+body.oh-tenant.oh-app .notyf__message {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.15rem 0;
+  line-height: 1.35;
+}
+
+/* --- Tenant: subtle card + table base polish (non-orders pages) --- */
+body.oh-tenant.oh-app .oh-card,
+body.oh-tenant.oh-app .card {
+  border-color: color-mix(in srgb, var(--oh-border) 90%, var(--orderhub-text)) !important;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--orderhub-text) 5%, transparent);
+}
+
+body.oh-tenant.oh-app .table {
+  --bs-table-color: var(--orderhub-text);
+  font-size: 0.9rem;
+}
+
+body.oh-tenant.oh-app .table thead th {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--orderhub-muted);
+}

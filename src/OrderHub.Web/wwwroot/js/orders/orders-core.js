@@ -53,6 +53,11 @@
     if (now - lastShown < 60000) return;
     warningState[key] = now;
 
+    if (global.OrderHubToast && typeof global.OrderHubToast.warning === "function") {
+      global.OrderHubToast.warning(String(message || ""));
+      return;
+    }
+
     const host = document.getElementById("ordersMessageHost");
     if (!host) {
       console.warn("[OrderHub Orders]", message);
@@ -69,6 +74,21 @@
   }
 
   function showMessage(message, type) {
+    if (global.OrderHubToast) {
+      const m = String(message || "");
+      if (type === "error" && global.OrderHubToast.error) {
+        global.OrderHubToast.error(m);
+        return;
+      }
+      if (type === "warning" && global.OrderHubToast.warning) {
+        global.OrderHubToast.warning(m);
+        return;
+      }
+      if (global.OrderHubToast.info) {
+        global.OrderHubToast.info(m);
+        return;
+      }
+    }
     const host = document.getElementById("ordersMessageHost");
     if (!host) return;
     const cls = type === "error" ? "alert-danger" : (type === "warning" ? "alert-warning" : "alert-info");

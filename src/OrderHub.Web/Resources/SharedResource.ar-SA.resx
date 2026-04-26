@@ -120,6 +120,12 @@
   <data name="Common.Save" xml:space="preserve">
     <value>حفظ</value>
   </data>
+  <data name="Common.Saved" xml:space="preserve">
+    <value>تم الحفظ</value>
+  </data>
+  <data name="Common.SaveFailed" xml:space="preserve">
+    <value>فشل الحفظ</value>
+  </data>
   <data name="Common.Close" xml:space="preserve">
     <value>إغلاق</value>
   </data>
@@ -210,6 +216,39 @@
   <data name="Layout.User" xml:space="preserve">
     <value>مستخدم</value>
   </data>
+  <data name="Layout.UserMenu" xml:space="preserve">
+    <value>قائمة المستخدم</value>
+  </data>
+  <data name="Layout.Language" xml:space="preserve">
+    <value>اللغة</value>
+  </data>
+  <data name="Layout.DarkMode" xml:space="preserve">
+    <value>الوضع الداكن</value>
+  </data>
+  <data name="Layout.LightMode" xml:space="preserve">
+    <value>الوضع الفاتح</value>
+  </data>
+  <data name="Layout.Theme" xml:space="preserve">
+    <value>السمة</value>
+  </data>
+  <data name="Layout.CentralAdmin" xml:space="preserve">
+    <value>OrderHub — الإدارة المركزية</value>
+  </data>
+  <data name="Layout.Customers" xml:space="preserve">
+    <value>العملاء</value>
+  </data>
+  <data name="Layout.PublicSite" xml:space="preserve">
+    <value>الموقع العام</value>
+  </data>
+  <data name="Layout.CollapseSidebar" xml:space="preserve">
+    <value>طي القائمة</value>
+  </data>
+  <data name="Layout.ExpandSidebar" xml:space="preserve">
+    <value>توسيع القائمة</value>
+  </data>
+  <data name="Layout.ToggleSidebar" xml:space="preserve">
+    <value>تبديل القائمة</value>
+  </data>
   <data name="Landing.Title" xml:space="preserve">
     <value>OrderHub</value>
   </data>
@@ -244,13 +283,16 @@
     <value>منصة • مطعم • عمليات</value>
   </data>
   <data name="Landing.HeroTitle" xml:space="preserve">
-    <value>أدر جميع طلباتك من شاشة واحدة</value>
+    <value>أدِر طلبات مطعمك من شاشة واحدة</value>
   </data>
   <data name="Landing.HeroDescription" xml:space="preserve">
     <value>اعرض وتتبع وأدر الطلبات من Yemeksepeti وGetir وTrendyol من لوحة واحدة.</value>
   </data>
+  <data name="Landing.HeroSubtitle" xml:space="preserve">
+    <value>تتبع طلبات Yemeksepeti وGetirYemek وTrendyol Yemek من لوحة واحدة. اطّلع على الطلبات الجديدة فوراً مع إشعارات صوتية وبسّط العمليات.</value>
+  </data>
   <data name="Landing.TenantNote" xml:space="preserve">
-    <value>ملاحظة: يجب أن يتطابق نطاقك مع مستأجر للوصول إلى لوحة العميل.</value>
+    <value>يُفتح دخول العميل عبر نطاق المطعم المُخصص لك.</value>
   </data>
   <data name="Landing.FooterTagline" xml:space="preserve">
     <value>إدارة طلبات حديثة لفرق العمليات</value>
@@ -335,6 +377,12 @@
   </data>
   <data name="Orders.Clear" xml:space="preserve">
     <value>مسح</value>
+  </data>
+  <data name="Orders.Today" xml:space="preserve">
+    <value>اليوم</value>
+  </data>
+  <data name="Orders.DefaultTodayInfo" xml:space="preserve">
+    <value>تُعرض طلبات اليوم افتراضياً.</value>
   </data>
   <data name="Orders.NoOrdersFound" xml:space="preserve">
     <value>لا توجد طلبات بعد.</value>
@@ -543,6 +591,15 @@
   <data name="Notification.SaveSuccess" xml:space="preserve">
     <value>تم حفظ الإعدادات.</value>
   </data>
+  <data name="Notification.SettingsSaved" xml:space="preserve">
+    <value>تم حفظ الإعدادات.</value>
+  </data>
+  <data name="Notification.SettingsSaveFailed" xml:space="preserve">
+    <value>تعذر حفظ الإعدادات. حاول مرة أخرى.</value>
+  </data>
+  <data name="Notification.SoundEnabled" xml:space="preserve">
+    <value>الصوت مُفعّل</value>
+  </data>
   <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
     <value>تعذر تشغيل الصوت. تحقق من ملف الصوت أو أذونات المتصفح.</value>
   </data>
@@ -643,10 +700,10 @@
     <value>يعيش</value>
   </data>
   <data name="Landing.PlatformsTitle" xml:space="preserve">
-    <value>تكامل المنصات</value>
+    <value>طلبات المنصات في لوحة واحدة</value>
   </data>
   <data name="Landing.PlatformsDescription" xml:space="preserve">
-    <value>Yemeksepeti وGetirYemek وTrendyol Yemek / Trendyol GO وغيرها — تُجمع الطلبات في لوحة واحدة.</value>
+    <value>تُجمع طلبات منصات التوصيل المختلفة في شاشة واحدة.</value>
   </data>
   <data name="Landing.HowItWorksTitle" xml:space="preserve">
     <value>كيف يعمل؟</value>
@@ -733,16 +790,16 @@
     <value>بيانات كل مطعم معزولة للخصوصية والأداء.</value>
   </data>
   <data name="Landing.BenefitsTitle" xml:space="preserve">
-    <value>مصمم لأيام المطعم الحقيقية</value>
+    <value>بسّط عمليات المطعم</value>
   </data>
   <data name="Landing.BenefitsDescription" xml:space="preserve">
-    <value>فوائد عملية للمطابخ وفرق الصالة في وقت الذروة.</value>
+    <value>فوائد عملية للمطبخ وفرق الصالة.</value>
   </data>
   <data name="Landing.BenefitLessSwitching" xml:space="preserve">
-    <value>تبديل شاشات أقل</value>
+    <value>تبديل أقل بين شاشات المنصات</value>
   </data>
   <data name="Landing.BenefitLessSwitchingDescription" xml:space="preserve">
-    <value>توقف عن القفز بين الأسواق والمحادثات والجداول.</value>
+    <value>لن تحتاج للتنقّل باستمرار بين لوحات منصات مختلفة.</value>
   </data>
   <data name="Landing.BenefitFewerMissedOrders" xml:space="preserve">
     <value>مخاطر أقل لضياع الطلبات</value>
@@ -754,7 +811,7 @@
     <value>تتبع حسب الفرع والمنصة</value>
   </data>
   <data name="Landing.BenefitBranchTrackingDescription" xml:space="preserve">
-    <value>صفِّر وبلِّر حسب الموقع والقناة عند الحاجة.</value>
+    <value>تابع الطلبات حسب المنصة والفرع بشكل منظم.</value>
   </data>
   <data name="Landing.BenefitSimpleInterface" xml:space="preserve">
     <value>واجهة بسيطة لفرق المطعم</value>
@@ -773,6 +830,69 @@
   </data>
   <data name="Landing.CtaDescription" xml:space="preserve">
     <value>تسجيل دخول العميل يعمل فقط عبر النطاق المخصص لمطعمك.</value>
+  </data>
+  <data name="Landing.MockupTitle" xml:space="preserve">
+    <value>شاشة الطلبات المباشرة</value>
+  </data>
+  <data name="Landing.MockupSubtitle" xml:space="preserve">
+    <value>شاهد الطلبات الجديدة في جدول واحد، تابع الحالات واحصل على إشعارات صوتية.</value>
+  </data>
+  <data name="Landing.TrustTitle" xml:space="preserve">
+    <value>بيانات كل مطعم تُدار بشكل منفصل</value>
+  </data>
+  <data name="Landing.TrustDescription" xml:space="preserve">
+    <value>تبقى عملياتك في مساحة مخصصة—آمنة وتحت سيطرتك.</value>
+  </data>
+  <data name="Landing.FinalCtaTitle" xml:space="preserve">
+    <value>سجّل الدخول إلى لوحة مطعمك</value>
+  </data>
+  <data name="Landing.FinalCtaDescription" xml:space="preserve">
+    <value>يُفتح دخول العميل عبر نطاق المطعم المُخصص لك.</value>
+  </data>
+  <data name="Landing.NewOrder" xml:space="preserve">
+    <value>جديد</value>
+  </data>
+  <data name="Landing.Delivered" xml:space="preserve">
+    <value>تم التسليم</value>
+  </data>
+  <data name="Landing.SoundNotification" xml:space="preserve">
+    <value>إشعار صوتي</value>
+  </data>
+  <data name="Landing.BenefitMissedOrders" xml:space="preserve">
+    <value>قلّل الطلبات الفائتة</value>
+  </data>
+  <data name="Landing.BenefitMissedOrdersDescription" xml:space="preserve">
+    <value>تعرّف على الطلبات الجديدة فوراً وتصرّف بسرعة عبر التنبيهات الصوتية.</value>
+  </data>
+  <data name="Landing.BenefitSimpleOperation" xml:space="preserve">
+    <value>واجهة تشغيل بسيطة</value>
+  </data>
+  <data name="Landing.BenefitSimpleOperationDescription" xml:space="preserve">
+    <value>واجهة طلبات واضحة يسهل على فريق المطعم استخدامها أثناء الذروة.</value>
+  </data>
+  <data name="Landing.StepConnectionsTitle" xml:space="preserve">
+    <value>اضبط ارتباطات المنصات</value>
+  </data>
+  <data name="Landing.StepConnectionsDescription" xml:space="preserve">
+    <value>أضف منصات التوصيل التي يستخدمها مطعمك.</value>
+  </data>
+  <data name="Landing.StepTrackTitle" xml:space="preserve">
+    <value>تتبع الطلبات من شاشة واحدة</value>
+  </data>
+  <data name="Landing.StepTrackDescription" xml:space="preserve">
+    <value>اعرض الطلبات الواردة في قائمة واحدة سهلة القراءة.</value>
+  </data>
+  <data name="Landing.StepNotifyTitle" xml:space="preserve">
+    <value>احصل على إشعار عند طلب جديد</value>
+  </data>
+  <data name="Landing.StepNotifyDescription" xml:space="preserve">
+    <value>تنبّه صوتياً ومرئياً عند وصول طلب جديد—خصوصاً في أوقات الذروة.</value>
+  </data>
+  <data name="Landing.StepManageTitle" xml:space="preserve">
+    <value>أدِر الخدمة بوضوح أكبر</value>
+  </data>
+  <data name="Landing.StepManageDescription" xml:space="preserve">
+    <value>حافظ على التحكّم عبر المنصات والفروع وحالات الطلب.</value>
   </data>
   <data name="Landing.CustomerOnlyTitle" xml:space="preserve">
     <value>لوحة العميل متاحة فقط على نطاق المطعم</value>

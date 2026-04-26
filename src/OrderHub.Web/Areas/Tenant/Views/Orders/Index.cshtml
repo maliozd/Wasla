@@ -7,16 +7,20 @@
 @{
     ViewData["Title"] = L["Orders.Title"];
     var f = Model.Filters;
+    var today = DateOnly.FromDateTime(DateTime.Today);
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
-    var isDefaultLive = string.Equals(f.SortBy, "receivedAt", StringComparison.OrdinalIgnoreCase)
+    var isDefaultLive = f.Page == 1
+        && string.Equals(f.SortBy, "receivedAt", StringComparison.OrdinalIgnoreCase)
         && string.Equals(f.SortDirection, "desc", StringComparison.OrdinalIgnoreCase)
-        && f.Page == 1
-        && !f.StartDate.HasValue
-        && !f.EndDate.HasValue;
+        && f.StartDate == today && f.EndDate == today;
 }
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">@L["Orders.Title"]</h1>
+<div class="oh-orders-page">
+<div class="d-flex align-items-center justify-content-between mb-2 oh-orders-header">
+    <div>
+        <h1 class="h4 mb-0">@L["Orders.Title"]</h1>
+        <p class="text-muted small mb-0 mt-1">@L["Orders.Today"] — @L["Orders.DefaultTodayInfo"]</p>
+    </div>
     <div class="d-flex align-items-center gap-2">
         <button type="button" class="btn btn-outline-secondary btn-sm" id="notificationSettingsBtn">
             <i class="bi bi-bell me-1"></i>@L["Notification.Settings"]
@@ -29,15 +33,15 @@
 {
     <div class="alert alert-info small py-2 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" role="status">
         <span>@L["Orders.LiveTrackingLimited"]</span>
-        <a class="btn btn-sm btn-outline-primary flex-shrink-0" href="/orders?sortBy=receivedAt&amp;sortDirection=desc&amp;page=1&amp;pageSize=@(f.PageSize)">@L["Orders.DefaultLiveView"]</a>
+        <a class="btn btn-sm btn-outline-primary flex-shrink-0" href="/orders">@L["Orders.DefaultLiveView"]</a>
     </div>
 }
 
 <div id="ordersMessageHost"></div>
 
-<div class="card oh-card mb-3">
+<div class="card oh-card mb-3 oh-orders-filters">
     <div class="card-body">
-        <form id="ordersFilterForm" method="get" action="/orders" class="row g-2 align-items-end">
+        <form id="ordersFilterForm" method="get" action="/orders" class="row g-3 align-items-end">
             <div class="col-12 col-md-3">
                 <label class="form-label">@L["Orders.Platform"]</label>
                 <select id="platformSelect" class="form-select" name="platform">
@@ -105,9 +109,9 @@
     </div>
 </div>
 
-<div class="card oh-card">
-    <div class="card-body">
-        <div id="ordersTableHost">
+<div class="card oh-card oh-orders-table-card">
+    <div class="card-body p-0 p-md-3">
+        <div id="ordersTableHost" class="oh-orders-table-host">
             @await Html.PartialAsync("_OrdersTable", Model)
         </div>
     </div>
@@ -125,6 +129,7 @@
         </div>
     </div>
 </div>
+</div>
 
 @section Scripts {
     <script>
@@ -141,7 +146,11 @@
                 ["newOrderArrived"] = L["Notification.NewOrderArrived"].Value,
                 ["checkOrdersPage"] = L["Notification.CheckOrdersPage"].Value,
                 ["soundCouldNotPlay"] = L["Notification.SoundCouldNotPlay"].Value,
-                ["settingsSaved"] = L["Notification.SaveSuccess"].Value,
+                ["settingsSaved"] = L["Notification.SettingsSaved"].Value,
+                ["settingsSaveFailed"] = L["Notification.SettingsSaveFailed"].Value,
+                ["commonSaved"] = L["Common.Saved"].Value,
+                ["commonSaveFailed"] = L["Common.SaveFailed"].Value,
+                ["soundEnabled"] = L["Notification.SoundEnabled"].Value,
                 ["soundUnlockHint"] = L["Notification.SoundUnlockHint"].Value,
                 ["notificationsOff"] = L["Notification.Disabled"].Value,
                 ["notificationsOffHelp"] = L["Notification.NotificationsHelp"].Value,

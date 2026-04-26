@@ -1,87 +1,204 @@
+/* Public landing (Home/Index) — independent from tenant/admin. */
+
 :root {
   --oh-landing-primary: #ff6b35;
   --oh-landing-primary-dark: #e8541c;
+  --oh-landing-surface: #ffffff;
+  --oh-landing-bg: #fafafa;
+  --oh-landing-muted: #5c6370;
+  --oh-landing-border: rgba(0, 0, 0, 0.08);
+  --oh-landing-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+  --oh-landing-shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
 .oh-landing {
-  background: #fafafa;
+  background: var(--oh-landing-bg);
+  color: #1a1d24;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.95rem;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  max-width: 100vw;
+}
+
+.oh-landing h1,
+.oh-landing h2,
+.oh-landing h3,
+.oh-hero-title {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.oh-hero-sub,
+.oh-landing .lead {
+  line-height: 1.6;
+  font-size: 1.05rem;
+}
+
+.oh-landing-header {
+  background: var(--oh-landing-surface);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
 }
 
 .oh-logo-mark {
   width: 40px;
   height: 40px;
   background: linear-gradient(135deg, var(--oh-landing-primary), #ff8a5b);
-}
-
-.bg-gradient-hero {
-  background: radial-gradient(1200px 500px at 10% 0%, rgba(255, 107, 53, 0.18), transparent 60%),
-              radial-gradient(900px 400px at 90% 20%, rgba(255, 138, 91, 0.16), transparent 55%),
-              #ffffff;
-}
-
-.icon-circle {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 107, 53, 0.12);
-  color: var(--oh-landing-primary-dark);
-}
-
-.phone-mockup {
-  position: absolute;
-  inset-inline-end: 12px;
-  bottom: -18px;
-  width: min(360px, 92%);
-  max-width: 100%;
-}
-
-@media (max-width: 991.98px) {
-  .phone-mockup {
-    position: relative;
-    inset-inline-end: auto;
-    bottom: auto;
-    width: 100%;
-    margin-top: 1rem;
-  }
-}
-
-.oh-section-muted {
-  background: #f3f4f6;
-}
-
-.oh-feature-card .icon-circle {
   flex-shrink: 0;
 }
 
-.oh-step-card {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+/* Hero */
+.oh-hero {
+  background: radial-gradient(1000px 480px at 0% 0%, rgba(255, 107, 53, 0.2), transparent 60%),
+    radial-gradient(800px 400px at 100% 20%, rgba(255, 138, 91, 0.18), transparent 55%),
+    linear-gradient(180deg, #fff 0%, #fafbfc 100%);
 }
 
-.oh-step-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.06);
+.oh-hero-illu {
+  box-shadow: var(--oh-landing-shadow);
+}
+
+.oh-illu-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.oh-illu-row {
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e5e7eb, #f3f4f6, #e5e7eb);
+  background-size: 200% 100%;
+  animation: oh-illu-shimmer 3s ease-in-out infinite;
+}
+
+.oh-illu-row--short {
+  width: 70%;
+  margin-inline: auto 0;
+}
+
+[dir="rtl"] .oh-illu-row--short {
+  margin-inline: 0 auto;
+}
+
+@keyframes oh-illu-shimmer {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+}
+
+.oh-badge-live {
+  background: color-mix(in srgb, #22c55e 12%, #fff) !important;
+  color: #15803d !important;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Mockup + tables */
+.oh-mockup-card,
+.oh-landing-table {
+  font-size: 0.9rem;
+}
+
+.oh-landing-thead th {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.oh-landing-table td {
+  vertical-align: middle;
+  padding: 0.75rem 0.85rem;
+}
+
+.oh-landing-table tbody tr:hover {
+  background: rgba(255, 107, 53, 0.04);
+}
+
+.oh-platform-tile {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.35rem;
+  background: #f3f4f6;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.oh-section-muted {
+  background: #f1f3f5;
 }
 
 .oh-platform-pill {
   display: inline-flex;
   align-items: center;
-  padding: 0.5rem 1rem;
+  justify-content: center;
+  padding: 0.55rem 1.1rem;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: #1f2937;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--oh-landing-border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   max-width: 100%;
   text-align: center;
 }
 
-.oh-image-card img {
-  display: block;
+.oh-step-card,
+.oh-benefit-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.oh-step-card:hover,
+.oh-benefit-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--oh-landing-shadow-sm);
+}
+
+.oh-step-num {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--oh-landing-primary), #ff8a5b);
+  font-size: 0.95rem;
+}
+
+.oh-benefit-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--oh-landing-primary) 14%, #fff);
+  color: var(--oh-landing-primary-dark);
+  font-size: 1.15rem;
+}
+
+.oh-trust-bubble {
+  max-width: 42rem;
+}
+
+.oh-trust-icon {
+  font-size: 2rem;
+  color: var(--oh-landing-primary);
 }
 
 .oh-cta-section {
@@ -89,29 +206,47 @@
   overflow-x: clip;
 }
 
-.oh-customer-only-card {
-  overflow-x: auto;
+.oh-landing-footer {
+  background: #f8fafc;
 }
 
 .object-fit-cover {
   object-fit: cover;
 }
 
-main,
-.oh-landing {
+main {
   overflow-x: clip;
 }
 
-.btn-primary {
+.oh-landing .btn-primary {
   --bs-btn-bg: var(--oh-landing-primary);
   --bs-btn-border-color: var(--oh-landing-primary);
   --bs-btn-hover-bg: var(--oh-landing-primary-dark);
   --bs-btn-hover-border-color: var(--oh-landing-primary-dark);
 }
 
-.btn-outline-primary {
+.oh-landing .btn-outline-primary {
   --bs-btn-color: var(--oh-landing-primary);
-  --bs-btn-border-color: rgba(255, 107, 53, 0.55);
+  --bs-btn-border-color: rgba(255, 107, 53, 0.45);
   --bs-btn-hover-bg: var(--oh-landing-primary);
   --bs-btn-hover-border-color: var(--oh-landing-primary);
+}
+
+.oh-landing .btn-light {
+  color: #1a1d24;
+  font-weight: 500;
+}
+
+.oh-landing .btn-lg {
+  font-weight: 500;
+}
+
+.oh-landing .font-monospace {
+  font-size: 0.88em;
+}
+
+@media (max-width: 576px) {
+  .oh-hero-title {
+    font-size: 1.5rem;
+  }
 }

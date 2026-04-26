@@ -40,6 +40,7 @@ public sealed class OrdersController : BaseController
         if (customer is null) return NotFound();
 
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
+        DefaultTodayIfNoDates(ref startDate, ref endDate);
 
         var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
         if (startUtc is null && !string.IsNullOrWhiteSpace(startDate))
@@ -85,6 +86,12 @@ public sealed class OrdersController : BaseController
             }
         };
 
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        vm.UseSimpleNoOrdersMessage = !platform.HasValue && !status.HasValue
+            && startDateParsed == today
+            && endDateParsed == today
+            && startDateParsed == endDateParsed;
+
         return View("Index", vm);
     }
 
@@ -104,6 +111,7 @@ public sealed class OrdersController : BaseController
         if (customer is null) return NotFound();
 
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
+        DefaultTodayIfNoDates(ref startDate, ref endDate);
         var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
         var result = await _orders.GetListAsync(
             customer.Id,
@@ -117,9 +125,14 @@ public sealed class OrdersController : BaseController
             safePageSize,
             ct);
 
+        var today = DateOnly.FromDateTime(DateTime.Today);
         var vm = new OrderListViewModel
         {
             TotalCount = result.TotalCount,
+            UseSimpleNoOrdersMessage = !platform.HasValue && !status.HasValue
+                && startDateParsed == today
+                && endDateParsed == today
+                && startDateParsed == endDateParsed,
             Orders = result.Items.Select(o => new OrderListViewModel.Row
             {
                 Id = o.Id,
@@ -193,6 +206,18 @@ public sealed class OrdersController : BaseController
         var p = page < 1 ? 1 : page;
         var ps = pageSize is < 5 or > 100 ? 25 : pageSize;
         return (p, ps);
+    }
+
+    /// <summary>When both query params are missing, use today's local date for start and end (MVP: <see cref="DateTime.Today" />).</summary>
+    private static void DefaultTodayIfNoDates(ref string? startDate, ref string? endDate)
+    {
+        if (string.IsNullOrWhiteSpace(startDate) && string.IsNullOrWhiteSpace(endDate))
+        {
+            var y = DateOnly.FromDateTime(DateTime.Today);
+            var s = y.ToString("yyyy-MM-dd");
+            startDate = s;
+            endDate = s;
+        }
     }
 
     private static (DateTime? StartUtc, DateTime? EndUtc, DateOnly? StartDate, DateOnly? EndDate) ParseDateFilters(string? startDate, string? endDate)
