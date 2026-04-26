@@ -450,6 +450,12 @@
   <data name="Orders.RefreshToSeeNewOrders" xml:space="preserve">
     <value>Yeni siparişi görmek için listeyi yenileyin veya varsayılan sıralamaya dönün.</value>
   </data>
+  <data name="Orders.LiveTrackingLimited" xml:space="preserve">
+    <value>Canlı yeni sipariş takibi varsayılan sıralamada çalışır. Yeni siparişleri anlık görmek için Alınma Zamanı ↓ ve 1. sayfaya dönün.</value>
+  </data>
+  <data name="Orders.DefaultLiveView" xml:space="preserve">
+    <value>Canlı varsayılan görünüm</value>
+  </data>
   <data name="PlatformConnections.Title" xml:space="preserve">
     <value>Platform Bağlantıları</value>
   </data>

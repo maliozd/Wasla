@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderHub.Application.Abstractions.Orders;
@@ -60,12 +59,9 @@ public sealed class OrdersController : BaseController
             safePageSize,
             ct);
 
-        var latestReceivedAtUtc = await _orders.GetLatestReceivedAtUtcAsync(customer.Id, ct);
-
         var vm = new OrderListViewModel
         {
             TotalCount = result.TotalCount,
-            LatestReceivedAtUtc = latestReceivedAtUtc,
             Orders = result.Items.Select(o => new OrderListViewModel.Row
             {
                 Id = o.Id,
@@ -90,36 +86,6 @@ public sealed class OrdersController : BaseController
         };
 
         return View("Index", vm);
-    }
-
-    [HttpGet("new-orders/check")]
-    public async Task<IActionResult> NewOrdersCheck([FromQuery] string? sinceReceivedAtUtc, CancellationToken ct = default)
-    {
-        var customer = _currentCustomer.CurrentCustomer;
-        if (customer is null) return NotFound();
-
-        if (string.IsNullOrWhiteSpace(sinceReceivedAtUtc) ||
-            !DateTime.TryParse(
-                sinceReceivedAtUtc,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind,
-                out var sinceParsed))
-        {
-            return BadRequest("sinceReceivedAtUtc is required.");
-        }
-
-        var since = sinceParsed.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(sinceParsed, DateTimeKind.Utc)
-            : sinceParsed.ToUniversalTime();
-
-        var r = await _orders.GetNewOrdersSinceAsync(customer.Id, since, ct);
-        return Json(new
-        {
-            hasNewOrders = r.HasNewOrders,
-            newOrderCount = r.NewOrderCount,
-            newOrderIds = r.NewOrderIds,
-            latestReceivedAtUtc = r.LatestReceivedAtUtc
-        });
     }
 
     [HttpGet("table")]

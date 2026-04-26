@@ -4,11 +4,9 @@
 
   const defaults = {
     tableUrl: "/orders/table",
-    newOrdersCheckUrl: "/orders/new-orders/check",
     notificationSettingsUrl: "/notification-settings",
     notificationSettingsJsonUrl: "/notification-settings/current",
     pollingIntervalMs: 10000,
-    latestReceivedAtUtc: null,
     messages: {}
   };
 
@@ -97,10 +95,6 @@
     table: {
       knownOrderIds: new Set(),
       recentlyNewOrderIds: new Map(),
-      recentlySoundPlayed: new Map(),
-      SOUND_DEDUPE_MS: 120000,
-      lastKnownLatestReceivedAtUtc: "",
-      pendingFromCheck: null,
       hintShownForUnlock: false,
       NEW_ORDER_HIGHLIGHT_MS: 30000
     }

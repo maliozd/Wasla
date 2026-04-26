@@ -1,4 +1,4 @@
-// Orders table: polling, table partial refresh, new-order detection (API + table diff), highlights, speaker.
+// Orders table: fetch /orders/table partial, diff data-order-id, new-order UI only in default live view.
 (function (global) {
   "use strict";
 
@@ -9,11 +9,13 @@
 
   const T = O.table;
 
+  /** Matches server query names: sortBy, sortDirection, page, startDate, endDate. */
   function isDefaultLiveOrdersView() {
-    const params = new URLSearchParams(global.location.search);
-    const sortBy = (params.get("sortBy") || "receivedAt").toLowerCase();
-    const sortDirection = (params.get("sortDirection") || "desc").toLowerCase();
-    const page = (params.get("page") || "1").trim();
+    const p = new URLSearchParams(global.location.search);
+    const sortBy = (p.get("sortBy") || p.get("sort") || "receivedAt").toLowerCase();
+    const sortDirection = (p.get("sortDirection") || p.get("dir") || "desc").toLowerCase();
+    const page = (p.get("page") || "1").trim();
+    if (p.get("startDate") || p.get("endDate")) return false;
     return sortBy === "receivedat" && sortDirection === "desc" && page === "1";
   }
 
@@ -32,7 +34,8 @@
 
   function detectNewOrderIds(incomingIds) {
     const newIds = [];
-    for (const id of incomingIds) {
+    for (let i = 0; i < incomingIds.length; i++) {
+      const id = incomingIds[i];
       if (!T.knownOrderIds.has(id)) newIds.push(id);
     }
     return newIds;
@@ -67,7 +70,6 @@
         T.recentlyNewOrderIds.delete(id);
         continue;
       }
-
       const row = container.querySelector("[data-order-id=\"" + id + "\"]");
       if (!row) continue;
       row.classList.add("order-row-new");
@@ -97,199 +99,131 @@
     });
   }
 
-  function isOrderIdInTableDom(orderId) {
-    const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
-    if (!container) return false;
-    return !!container.querySelector("[data-order-id=\"" + orderId + "\"]");
-  }
-
-  function pruneSoundDedupe() {
-    const now = Date.now();
-    for (const entry of T.recentlySoundPlayed.entries()) {
-      if (entry[1] <= now) T.recentlySoundPlayed.delete(entry[0]);
-    }
-  }
-
-  async function processPendingFromCheck(visibleTableNewIds) {
-    const pending = T.pendingFromCheck;
-    T.pendingFromCheck = null;
-    if (!pending || !pending.length) return;
-    const st = O.state.notificationSettings;
-
-    pruneSoundDedupe();
-    const needPlay = [];
-    for (const id of pending) {
-      if (!T.recentlySoundPlayed.has(id)) {
-        needPlay.push(id);
-      }
-    }
-    if (needPlay.length > 0) {
-      const now = Date.now();
-      const until = now + T.SOUND_DEDUPE_MS;
-      for (const id of needPlay) {
-        T.recentlySoundPlayed.set(id, until);
-      }
-    }
-
-    if (needPlay.length > 0 && st && st.newOrderSoundEnabled) {
-      if (!O.audio.isSoundUnlocked()) {
-        if (!T.hintShownForUnlock) {
-          T.hintShownForUnlock = true;
-          O.showMessage(O.getMessage("soundUnlockHint"), "info");
-        }
-      } else {
-        const forSpeaker = visibleTableNewIds.filter(function (id) {
-          return needPlay.indexOf(id) >= 0;
-        });
-        if (forSpeaker.length) {
-          showSpeakerIndicators(forSpeaker);
-        }
-        try {
-          await O.audio.playSoundNow({
-            newOrderSoundEnabled: true,
-            newOrderSoundName: st.newOrderSoundName,
-            newOrderSoundRepeatCount: st.newOrderSoundRepeatCount,
-            newOrderSoundVolumePercent: st.newOrderSoundVolumePercent != null
-              ? st.newOrderSoundVolumePercent
-              : Math.round((st.newOrderSoundVolume || 1) * 100),
-            showBrowserNotification: st.showBrowserNotification
-          });
-        } finally {
-          if (forSpeaker && forSpeaker.length) {
-            hideSpeakerIndicators(forSpeaker);
-          }
-        }
-      }
-    }
-
-    O.audio.showBrowserNotificationIfAllowed();
-
-    const anyNotVisible = pending.some(function (id) {
-      return !isOrderIdInTableDom(id);
-    });
-    if (anyNotVisible || !isDefaultLiveOrdersView()) {
-      O.showMessage(O.getMessage("newOrdersAvailable") + " " + O.getMessage("refreshToSeeNewOrders"), "info");
-    }
-  }
-
-  async function checkNewOrders() {
-    const base = (O.opts.newOrdersCheckUrl || "/orders/new-orders/check").replace(/\/$/, "");
-    const u = new URL(base, global.location.origin);
-    u.searchParams.set("sinceReceivedAtUtc", T.lastKnownLatestReceivedAtUtc || "2000-01-01T00:00:00.000Z");
-    u.searchParams.set("_", String(Date.now()));
-
-    O.debugLog("Check new orders", { url: u.toString() });
-
-    const resp = await fetch(u.toString(), { headers: { "X-Requested-With": "fetch" } });
-    if (!resp.ok) {
-      O.debugWarn("new-orders check HTTP failed", resp.status);
-      return;
-    }
-    const j = await resp.json();
-    if (j.latestReceivedAtUtc) {
-      T.lastKnownLatestReceivedAtUtc = j.latestReceivedAtUtc;
-    }
-    if (j.hasNewOrders && j.newOrderIds && j.newOrderIds.length) {
-      T.pendingFromCheck = j.newOrderIds.map(String);
-    }
-  }
-
   async function refreshOrdersTable() {
-    const visibleNewForPending = [];
+    const live = isDefaultLiveOrdersView();
+    var audioPlayedOk = "-";
+
     try {
       const u = new URL(global.location.origin + O.opts.tableUrl);
       u.search = global.location.search || "";
-      u.searchParams.set("_", Date.now().toString());
-
-      O.debugLog("Polling orders table", { url: u.toString() });
+      u.searchParams.set("_", String(Date.now()));
 
       const resp = await fetch(u.toString(), {
         headers: { "X-Requested-With": "XMLHttpRequest" }
       });
 
-      O.debugLog("Orders table response", {
-        status: resp.status,
-        redirected: resp.redirected,
-        responseUrl: resp.url,
-        contentType: resp.headers.get("content-type")
-      });
+      if (O.isDebugEnabled()) {
+        O.debugLog("orders poll", { url: u.toString(), status: resp.status, defaultLive: live });
+      }
 
       if (!resp.ok) {
-        const base = O.getMessage("tableRefreshFailed");
-        O.showOrdersWarning("orders-table-failed", base + " (HTTP " + resp.status + ")");
-        O.debugWarn("Orders table request failed", resp);
-        await processPendingFromCheck([]);
+        O.showOrdersWarning("orders-table-failed", O.getMessage("tableRefreshFailed") + " (HTTP " + resp.status + ")");
+        if (O.isDebugEnabled()) {
+          O.debugWarn("table refresh failed", resp.status);
+        }
         return;
       }
 
       const html = await resp.text();
-      O.debugLog("Orders table HTML length", { length: html.length });
 
       if (html.indexOf("<html") >= 0 || html.indexOf("<!DOCTYPE") >= 0) {
         O.showOrdersWarning("orders-table-html", O.getMessage("tableReturnedFullPage"));
-        O.debugWarn("Orders table returned full HTML instead of partial", html.substring(0, 500));
-        await processPendingFromCheck([]);
+        if (O.isDebugEnabled()) {
+          O.debugWarn("table returned full document");
+        }
         return;
       }
 
       const parsed = extractOrderIdsFromHtml(html);
       const ids = parsed.ids;
       const tmp = parsed.tmp;
-      O.debugLog("Incoming order ids", { count: ids.length, ids: ids.slice(0, 30) });
-      O.debugLog("Known order ids before compare", { count: T.knownOrderIds.size });
+      const newIds = detectNewOrderIds(ids);
+
+      if (O.isDebugEnabled()) {
+        O.debugLog("table diff", {
+          incomingIdCount: ids.length,
+          knownIdCount: T.knownOrderIds.size,
+          newInTable: newIds.length,
+          newIds: newIds.slice(0, 20),
+          defaultLive: live
+        });
+      }
 
       const hasRows = tmp.querySelectorAll("tr").length > 0;
       const hasDataOrderIds = tmp.querySelectorAll("[data-order-id]").length > 0;
       if (hasRows && !hasDataOrderIds) {
-        O.debugWarn("Orders table rows exist but no data-order-id attributes were found.");
+        if (O.isDebugEnabled()) {
+          O.debugWarn("rows without data-order-id");
+        }
         O.showOrdersWarning("orders-table-missing-data", O.getMessage("tableMissingDataOrderId"));
       }
-
-      const newIds = detectNewOrderIds(ids);
-      O.debugLog("Detected new order ids in table", { count: newIds.length, newIds: newIds });
 
       const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
       if (!container) {
         O.showOrdersWarning("orders-table-target-missing", O.getMessage("tableHostMissing"));
-        O.debugWarn("Missing orders table host element (#ordersTableHost)");
-        await processPendingFromCheck([]);
         return;
       }
 
       container.innerHTML = html;
-      O.debugLog("Orders table replaced", { replaced: true });
+
+      if (live && newIds.length > 0) {
+        markOrdersAsRecentlyNew(newIds);
+      }
 
       captureKnownOrderIdsFromContainer();
       applyNewOrderVisualState();
 
-      if (newIds.length > 0) {
-        markOrdersAsRecentlyNew(newIds);
-        applyNewOrderVisualState();
-        newIds.forEach(function (id) { visibleNewForPending.push(id); });
+      if (live && newIds.length > 0 && O.state.notificationSettings) {
+        const st = O.state.notificationSettings;
+        if (st.newOrderSoundEnabled) {
+          if (!O.audio.isSoundUnlocked()) {
+            if (!T.hintShownForUnlock) {
+              T.hintShownForUnlock = true;
+              O.showMessage(O.getMessage("soundUnlockHint"), "info");
+            }
+            audioPlayedOk = "locked";
+          } else {
+            showSpeakerIndicators(newIds);
+            try {
+              await O.audio.playSoundNow({
+                newOrderSoundEnabled: true,
+                newOrderSoundName: st.newOrderSoundName,
+                newOrderSoundRepeatCount: st.newOrderSoundRepeatCount,
+                newOrderSoundVolumePercent: st.newOrderSoundVolumePercent != null
+                  ? st.newOrderSoundVolumePercent
+                  : Math.round((st.newOrderSoundVolume || 1) * 100),
+                showBrowserNotification: st.showBrowserNotification
+              });
+              audioPlayedOk = "ok";
+            } catch (e) {
+              audioPlayedOk = "error";
+              if (O.isDebugEnabled()) {
+                O.debugWarn("playSoundNow", e);
+              }
+            } finally {
+              hideSpeakerIndicators(newIds);
+            }
+          }
+        } else {
+          audioPlayedOk = "soundDisabled";
+        }
+        O.audio.showBrowserNotificationIfAllowed();
+      }
+
+      if (O.isDebugEnabled() && live && newIds.length > 0) {
+        O.debugLog("poll", { newInTable: newIds.length, defaultLive: true, audio: audioPlayedOk });
       }
     } catch (error) {
       O.showOrdersWarning("orders-table-exception", O.getMessage("tableRefreshException"));
-      O.debugWarn("refreshOrdersTable failed", error);
-    }
-    await processPendingFromCheck(visibleNewForPending);
-  }
-
-  async function runPollCycle() {
-    try {
-      if (!T.lastKnownLatestReceivedAtUtc) {
-        T.lastKnownLatestReceivedAtUtc = O.opts.latestReceivedAtUtc || "2000-01-01T00:00:00.000Z";
+      if (O.isDebugEnabled()) {
+        O.debugWarn("refreshOrdersTable", error);
       }
-      await checkNewOrders();
-    } catch (err) {
-      O.debugWarn("checkNewOrders failed", err);
     }
-    await refreshOrdersTable();
   }
 
   function initPolling() {
-    T.lastKnownLatestReceivedAtUtc = O.opts.latestReceivedAtUtc || "2000-01-01T00:00:00.000Z";
     setInterval(function () {
-      runPollCycle();
+      refreshOrdersTable();
     }, O.opts.pollingIntervalMs);
   }
 
@@ -301,7 +235,5 @@
   T.showSpeakerIndicators = showSpeakerIndicators;
   T.hideSpeakerIndicators = hideSpeakerIndicators;
   T.refreshOrdersTable = refreshOrdersTable;
-  T.checkNewOrders = checkNewOrders;
-  T.runPollCycle = runPollCycle;
   T.initPolling = initPolling;
 })(window);

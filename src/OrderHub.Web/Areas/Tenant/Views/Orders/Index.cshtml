@@ -8,6 +8,11 @@
     ViewData["Title"] = L["Orders.Title"];
     var f = Model.Filters;
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
+    var isDefaultLive = string.Equals(f.SortBy, "receivedAt", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(f.SortDirection, "desc", StringComparison.OrdinalIgnoreCase)
+        && f.Page == 1
+        && !f.StartDate.HasValue
+        && !f.EndDate.HasValue;
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -19,6 +24,14 @@
         <span class="text-muted small">@L["Orders.TotalCount"]: @Model.TotalCount</span>
     </div>
 </div>
+
+@if (!isDefaultLive)
+{
+    <div class="alert alert-info small py-2 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" role="status">
+        <span>@L["Orders.LiveTrackingLimited"]</span>
+        <a class="btn btn-sm btn-outline-primary flex-shrink-0" href="/orders?sortBy=receivedAt&amp;sortDirection=desc&amp;page=1&amp;pageSize=@(f.PageSize)">@L["Orders.DefaultLiveView"]</a>
+    </div>
+}
 
 <div id="ordersMessageHost"></div>
 
@@ -117,8 +130,6 @@
     <script>
         window.orderHubOrdersOptions = {
             tableUrl: "/orders/table",
-            newOrdersCheckUrl: "/orders/new-orders/check",
-            latestReceivedAtUtc: @Html.Raw(Model.LatestReceivedAtUtc.HasValue ? JsonSerializer.Serialize(Model.LatestReceivedAtUtc.Value.ToUniversalTime().ToString("O")) : "null"),
             notificationSettingsUrl: "/notification-settings",
             notificationSettingsJsonUrl: "/notification-settings/current",
             pollingIntervalMs: 10000,
@@ -152,9 +163,7 @@
                 ["notificationSettingsModalOpenFailed"] = L["Orders.NotificationSettingsModalOpenFailed"].Value,
                 ["notificationSettingsSaveFailed"] = L["Orders.NotificationSettingsSaveFailed"].Value,
                 ["notificationSettingsSaveException"] = L["Orders.NotificationSettingsSaveException"].Value,
-                ["pageInitFailed"] = L["Orders.PageInitFailed"].Value,
-                ["newOrdersAvailable"] = L["Orders.NewOrdersAvailable"].Value,
-                ["refreshToSeeNewOrders"] = L["Orders.RefreshToSeeNewOrders"].Value
+                ["pageInitFailed"] = L["Orders.PageInitFailed"].Value
             }))
         };
     </script>

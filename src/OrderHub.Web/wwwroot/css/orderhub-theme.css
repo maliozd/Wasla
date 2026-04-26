@@ -1,0 +1,186 @@
+/* OrderHub shell + AdminLTE overrides. Load after AdminLTE. */
+
+:root {
+  --orderhub-primary: #ff6b35;
+  --orderhub-primary-dark: #e8541c;
+  --orderhub-primary-light: #ff8a5b;
+  --orderhub-surface: #ffffff;
+  --orderhub-bg: #fafafa;
+  --orderhub-text: #2c2c2c;
+  --orderhub-muted: #6c6c6c;
+  --orderhub-sidebar: #f3f4f6;
+  --orderhub-sidebar-text: #1f2937;
+  --orderhub-border: #e5e7eb;
+  --orderhub-shadow: 0 10px 30px rgba(0, 0, 0, .06);
+  --oh-topbar-h: 56px;
+
+  --oh-primary: var(--orderhub-primary);
+  --oh-primary-dark: var(--orderhub-primary-dark);
+  --oh-bg: var(--orderhub-bg);
+  --oh-surface: var(--orderhub-surface);
+  --oh-text: var(--orderhub-text);
+  --oh-muted: var(--orderhub-muted);
+  --oh-border: var(--orderhub-border);
+  --oh-sidebar-bg: var(--orderhub-sidebar);
+  --oh-topbar-bg: #ffffff;
+
+  --bs-primary: var(--orderhub-primary);
+  --bs-primary-rgb: 255, 107, 53;
+  --bs-body-bg: var(--oh-bg);
+  --bs-body-color: var(--oh-text);
+}
+
+[data-bs-theme="dark"] {
+  --orderhub-surface: #111827;
+  --orderhub-bg: #0f172a;
+  --orderhub-text: #e5e7eb;
+  --orderhub-muted: #9ca3af;
+  --orderhub-sidebar: #111827;
+  --orderhub-sidebar-text: #e5e7eb;
+  --orderhub-border: #243044;
+  --orderhub-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  --oh-primary: #ff8a5b;
+  --oh-primary-dark: #ff6b35;
+  --oh-bg: var(--orderhub-bg);
+  --oh-surface: var(--orderhub-surface);
+  --oh-text: var(--orderhub-text);
+  --oh-muted: var(--orderhub-muted);
+  --oh-border: var(--orderhub-border);
+  --oh-sidebar-bg: #111827;
+  --oh-topbar-bg: #111827;
+
+  --bs-body-bg: var(--oh-bg);
+  --bs-body-color: var(--oh-text);
+}
+
+/* Single page scroll */
+html {
+  scrollbar-gutter: stable;
+  min-height: 100%;
+}
+
+html,
+body {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body.oh-app {
+  overflow-y: auto;
+  margin-bottom: 0;
+  background: var(--oh-bg);
+  color: var(--oh-text);
+}
+
+/* AdminLTE shell: body.layout-fixed + .app-wrapper */
+.app-wrapper {
+  min-height: 100vh;
+}
+
+.app-header.navbar {
+  background: var(--oh-topbar-bg) !important;
+  border-color: var(--oh-border) !important;
+  min-height: 3.5rem;
+}
+
+#ohAppHeader {
+  z-index: 1030;
+}
+
+.app-sidebar {
+  background: var(--oh-sidebar-bg) !important;
+  color: var(--orderhub-sidebar-text) !important;
+  border-color: var(--oh-border) !important;
+  overflow: visible;
+}
+
+.app-main {
+  display: block;
+  min-width: 0;
+  height: auto;
+  min-height: calc(100vh - var(--oh-topbar-h, 56px));
+  overflow: visible;
+  background: var(--oh-bg) !important;
+}
+
+.app-content {
+  height: auto;
+  overflow: visible;
+}
+
+/* Orders / tenant: retain hook used by site.css for table min-height */
+.app-main.oh-content {
+  min-height: calc(100vh - var(--oh-topbar-h, 56px));
+  overflow: visible;
+}
+
+.content-wrapper {
+  height: auto;
+  min-height: auto;
+  overflow: visible;
+}
+
+.oh-app .app-main .table-responsive,
+.oh-app .table-responsive {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Sidebar brand + links */
+.oh-sidebar-brand a {
+  color: var(--orderhub-primary) !important;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.oh-app .sidebar-menu .nav-link {
+  color: var(--orderhub-sidebar-text) !important;
+  border-radius: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+
+.oh-app .sidebar-menu .nav-link:hover {
+  background: color-mix(in srgb, var(--orderhub-primary) 12%, transparent);
+  color: var(--oh-text) !important;
+}
+
+.oh-app .sidebar-menu .nav-link.active {
+  background: color-mix(in srgb, var(--orderhub-primary) 22%, transparent);
+  color: var(--oh-text) !important;
+  font-weight: 600;
+  border-left: 3px solid var(--orderhub-primary);
+  padding-left: calc(0.75rem - 3px);
+}
+
+.card {
+  background: var(--oh-surface);
+  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
+  box-shadow: var(--orderhub-shadow);
+  color: var(--oh-text);
+}
+
+[data-bs-theme="dark"] .card {
+  --bs-card-bg: var(--oh-surface);
+}
+
+.oh-app .btn-primary {
+  --bs-btn-bg: var(--orderhub-primary);
+  --bs-btn-border-color: var(--orderhub-primary);
+  --bs-btn-hover-bg: var(--orderhub-primary-dark);
+  --bs-btn-hover-border-color: var(--orderhub-primary-dark);
+}
+
+.oh-app .btn-outline-primary {
+  --bs-btn-color: var(--orderhub-primary);
+  --bs-btn-border-color: color-mix(in srgb, var(--orderhub-primary) 55%, white);
+  --bs-btn-hover-bg: var(--orderhub-primary);
+  --bs-btn-hover-border-color: var(--orderhub-primary);
+}
+
+.oh-card {
+  background: var(--oh-surface) !important;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent) !important;
+  box-shadow: var(--orderhub-shadow) !important;
+}
+
+.oh-topbar-legacy { display: none; }

@@ -450,6 +450,12 @@
   <data name="Orders.RefreshToSeeNewOrders" xml:space="preserve">
     <value>أعد تحميل القائمة أو ارجع إلى الترتيب الافتراضي لعرض الطلبات الجديدة.</value>
   </data>
+  <data name="Orders.LiveTrackingLimited" xml:space="preserve">
+    <value>يعمل تتبع الطلبات الجديدة المباشر مع الترتيب الافتراضي. لرؤية الطلبات فوراً، ارجع إلى «وقت الاستلام ↓» والصفحة 1.</value>
+  </data>
+  <data name="Orders.DefaultLiveView" xml:space="preserve">
+    <value>العرض المباشر الافتراضي</value>
+  </data>
   <data name="PlatformConnections.Title" xml:space="preserve">
     <value>اتصالات المنصات</value>
   </data>

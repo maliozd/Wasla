@@ -450,6 +450,12 @@
   <data name="Orders.RefreshToSeeNewOrders" xml:space="preserve">
     <value>Refresh the list or return to the default sorting to see new orders.</value>
   </data>
+  <data name="Orders.LiveTrackingLimited" xml:space="preserve">
+    <value>Live new-order tracking works in the default sorting. To see new orders instantly, return to Received Time ↓ and page 1.</value>
+  </data>
+  <data name="Orders.DefaultLiveView" xml:space="preserve">
+    <value>Default live view</value>
+  </data>
   <data name="PlatformConnections.Title" xml:space="preserve">
     <value>Platform Connections</value>
   </data>
