@@ -1,44 +1,80 @@
 @model OrderHub.Web.Models.Notifications.NotificationSettingsViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 
 @{
     var saved = ViewData["Saved"] as bool? == true;
+    var selectedLabel = Model.AvailableSounds.FirstOrDefault(x => x.Name == Model.NewOrderSoundName)?.Label ?? "Bell";
 }
 
 <div class="modal-header">
-    <h5 class="modal-title">Bildirim Ayarları</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+    <h5 class="modal-title">@L["Notification.Settings"]</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Close"]"></button>
 </div>
 
 <div class="modal-body">
     @if (saved)
     {
-        <div class="alert alert-success py-2">Kaydedildi.</div>
+        <div class="alert alert-success py-2">@L["Notification.SaveSuccess"]</div>
     }
 
-    <div class="alert alert-warning py-2 d-none" id="soundUnlockHint">
-        Sesli bildirimler için önce <b>Sesli bildirimleri etkinleştir</b> butonuna tıklayın.
+    <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span id="notificationStatusBadge" class="badge text-bg-secondary">@L["Common.Status"]</span>
+                <span class="text-muted small">@L["Notification.PersistentHelp"]</span>
+            </div>
+            <div id="notificationStatusHelp" class="small text-muted mt-1">
+                @L["Notification.NotificationsHelp"]
+            </div>
+            <div id="notificationStatusWarning" class="small text-danger mt-2 d-none"></div>
+        </div>
     </div>
 
-    <div class="mb-3 form-check">
-        <input class="form-check-input" type="checkbox" id="NewOrderSoundEnabled" name="NewOrderSoundEnabled" value="true" @(Model.NewOrderSoundEnabled ? "checked" : "")>
-        <input type="hidden" name="NewOrderSoundEnabled" value="false" />
-        <label class="form-check-label" for="NewOrderSoundEnabled">Yeni sipariş sesi açık</label>
+    <input type="hidden" id="NewOrderSoundEnabled" name="NewOrderSoundEnabled" value="@(Model.NewOrderSoundEnabled ? "true" : "false")" />
+
+    <div class="mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <label class="form-label mb-0">@L["Notification.Notifications"]</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="NewOrderSoundEnabledToggle" @(Model.NewOrderSoundEnabled ? "checked" : "")>
+            </div>
+        </div>
+        <div class="small text-muted">@L["Notification.NotificationsHelp"]</div>
+    </div>
+
+    <div class="mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <div>
+                <div class="fw-semibold">@L["Notification.Sound"]</div>
+                <div class="small text-muted">@L["Notification.SelectedSound"]: <span id="selectedSoundLabel">@selectedLabel</span></div>
+            </div>
+        </div>
+
+        <div class="list-group" id="soundOptionsList">
+            @foreach (var s in Model.AvailableSounds)
+            {
+                var active = string.Equals(Model.NewOrderSoundName, s.Name, StringComparison.OrdinalIgnoreCase);
+                <div class="list-group-item d-flex align-items-center justify-content-between gap-2 sound-option @(active ? "active" : "")"
+                     data-sound-name="@s.Name"
+                     data-sound-url="@s.Url">
+                    <div class="d-flex align-items-center gap-2">
+                        <input class="form-check-input mt-0" type="radio" name="soundRadio" value="@s.Name" @(active ? "checked" : "")>
+                        <div>@s.Label</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-light listen-sound-btn">@L["Notification.Play"]</button>
+                </div>
+            }
+        </div>
+
+        <input type="hidden" id="NewOrderSoundName" name="NewOrderSoundName" value="@Model.NewOrderSoundName" />
     </div>
 
     <div class="row g-2">
         <div class="col-12 col-md-6">
-            <label class="form-label" for="NewOrderSoundName">Zil sesi</label>
-            <select class="form-select" id="NewOrderSoundName" name="NewOrderSoundName">
-                <option value="bell" selected="@(Model.NewOrderSoundName == "bell")">Klasik Zil</option>
-                <option value="chime" selected="@(Model.NewOrderSoundName == "chime")">Bildirim Sesi</option>
-                <option value="alert" selected="@(Model.NewOrderSoundName == "alert")">Uyarı Sesi</option>
-            </select>
-        </div>
-
-        <div class="col-12 col-md-6">
-            <label class="form-label" for="NewOrderSoundRepeatCount">Tekrar sayısı</label>
+            <label class="form-label" for="NewOrderSoundRepeatCount">@L["Notification.RepeatCount"]</label>
             <select class="form-select" id="NewOrderSoundRepeatCount" name="NewOrderSoundRepeatCount">
-                @for (var i = 1; i <= 5; i++)
+                @foreach (var i in new[] { 1, 2, 3 })
                 {
                     <option value="@i" selected="@(Model.NewOrderSoundRepeatCount == i)">@i</option>
                 }
@@ -46,12 +82,12 @@
         </div>
 
         <div class="col-12 col-md-6">
-            <label class="form-label" for="NewOrderSoundVolume">Ses seviyesi</label>
-            <select class="form-select" id="NewOrderSoundVolume" name="NewOrderSoundVolume">
-                <option value="0.25" selected="@(Model.NewOrderSoundVolume == 0.25m)">%25</option>
-                <option value="0.50" selected="@(Model.NewOrderSoundVolume == 0.50m)">%50</option>
-                <option value="0.75" selected="@(Model.NewOrderSoundVolume == 0.75m)">%75</option>
-                <option value="1.00" selected="@(Model.NewOrderSoundVolume == 1.00m)">%100</option>
+            <label class="form-label" for="NewOrderSoundVolumePercent">@L["Notification.Volume"]</label>
+            <select class="form-select" id="NewOrderSoundVolumePercent" name="NewOrderSoundVolumePercent">
+                <option value="25" selected="@(Model.NewOrderSoundVolumePercent == 25)">%25</option>
+                <option value="50" selected="@(Model.NewOrderSoundVolumePercent == 50)">%50</option>
+                <option value="75" selected="@(Model.NewOrderSoundVolumePercent == 75)">%75</option>
+                <option value="100" selected="@(Model.NewOrderSoundVolumePercent == 100)">%100</option>
             </select>
         </div>
 
@@ -59,7 +95,7 @@
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="ShowBrowserNotification" name="ShowBrowserNotification" value="true" @(Model.ShowBrowserNotification ? "checked" : "")>
                 <input type="hidden" name="ShowBrowserNotification" value="false" />
-                <label class="form-check-label" for="ShowBrowserNotification">Tarayıcı bildirimi göster</label>
+                <label class="form-check-label" for="ShowBrowserNotification">@L["Notification.ShowBrowserNotification"]</label>
             </div>
         </div>
     </div>
@@ -76,9 +112,8 @@
 </div>
 
 <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary" id="enableSoundBtn">Sesli bildirimleri etkinleştir</button>
-    <button type="button" class="btn btn-outline-primary" id="testSoundBtn">Test Et</button>
-    <button type="submit" class="btn btn-primary">Kaydet</button>
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Kapat</button>
+    <button type="button" class="btn btn-outline-primary" id="testSelectedSoundBtn">@L["Notification.TestSelectedSound"]</button>
+    <button type="submit" class="btn btn-primary" id="saveNotificationsBtn">@L["Common.Save"]</button>
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Common.Close"]</button>
 </div>
 

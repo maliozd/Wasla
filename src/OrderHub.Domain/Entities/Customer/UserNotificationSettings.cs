@@ -12,7 +12,7 @@ public sealed class UserNotificationSettings : BaseEntity
     public AppUser? AppUser { get; set; }
 
     public bool NewOrderSoundEnabled { get; set; } = true;
-    public string NewOrderSoundName { get; set; } = "bell";
+    public string NewOrderSoundName { get; set; } = "bell1";
     public int NewOrderSoundRepeatCount { get; set; } = 3;
     public decimal NewOrderSoundVolume { get; set; } = 1.0m;
 

@@ -1,0 +1,30 @@
+/* Minimal RTL support for ar-* cultures.
+   TODO: Add full RTL polish / Bootstrap RTL if needed. */
+
+html[dir="rtl"] body {
+  direction: rtl;
+}
+
+html[dir="rtl"] .ms-auto {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+html[dir="rtl"] .me-1,
+html[dir="rtl"] .me-2,
+html[dir="rtl"] .me-3 {
+  margin-right: 0 !important;
+  margin-left: .5rem !important;
+}
+
+html[dir="rtl"] .ms-1,
+html[dir="rtl"] .ms-2,
+html[dir="rtl"] .ms-3 {
+  margin-left: 0 !important;
+  margin-right: .5rem !important;
+}
+
+html[dir="rtl"] .text-end {
+  text-align: left !important;
+}
+

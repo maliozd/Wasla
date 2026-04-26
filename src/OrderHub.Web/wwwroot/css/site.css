@@ -82,6 +82,37 @@ body { background: var(--orderhub-bg); color: var(--orderhub-text); }
   box-shadow: var(--orderhub-shadow);
 }
 
+/* Orders: new-order visual feedback */
+.order-row-new,
+.order-row-new > td {
+  background-color: #fff3cd !important;
+}
+
+.order-row-new-flash,
+.order-row-new-flash > td {
+  animation: orderRowFlash 1s ease-in-out 10;
+}
+
+@keyframes orderRowFlash {
+  0%, 100% { background-color: #fff3cd; }
+  50% { background-color: #ffe08a; }
+}
+
+.order-sound-indicator {
+  margin-left: .35rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.order-sound-indicator.is-playing {
+  animation: orderSpeakerPulse .5s ease-in-out infinite;
+}
+
+@keyframes orderSpeakerPulse {
+  0%, 100% { transform: scale(1); opacity: .55; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+
 .btn-primary{
   --bs-btn-bg: var(--orderhub-primary);
   --bs-btn-border-color: var(--orderhub-primary);

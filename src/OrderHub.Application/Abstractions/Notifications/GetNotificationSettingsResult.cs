@@ -3,7 +3,7 @@ namespace OrderHub.Application.Abstractions.Notifications;
 public sealed class GetNotificationSettingsResult
 {
     public bool NewOrderSoundEnabled { get; init; } = true;
-    public string NewOrderSoundName { get; init; } = "bell";
+    public string NewOrderSoundName { get; init; } = "bell1";
     public int NewOrderSoundRepeatCount { get; init; } = 3;
     public decimal NewOrderSoundVolume { get; init; } = 1.0m;
     public bool ShowBrowserNotification { get; init; } = false;

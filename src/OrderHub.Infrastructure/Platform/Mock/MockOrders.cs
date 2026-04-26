@@ -20,7 +20,12 @@ internal static class MockOrders
         var list = new List<ExternalOrderDto>(count);
         for (var i = 0; i < count; i++)
         {
-            var externalOrderId = GetExternalOrderId(platform);
+            // Mock behavior for MVP demo:
+            // - New orders are always generated as "New" (provider-like Created/New).
+            // - Existing orders may occasionally transition ONLY to final outcomes (Delivered/Cancelled).
+            // - Intermediate operational states are intentionally not simulated right now.
+            // TODO: Add explicit mock status progression mode for demo/testing.
+            var (externalOrderId, isExisting) = GetExternalOrderId(platform);
             var items = CreateItems(externalOrderId);
 
             var subtotal = items.Sum(x => x.TotalPrice);
@@ -28,7 +33,9 @@ internal static class MockOrders
             var serviceFee = 5.00m;
             var total = subtotal + deliveryFee + serviceFee;
 
-            var externalStatus = GetExternalStatus(platform);
+            var externalStatus = isExisting
+                ? GetMockUpdateExternalStatus(platform)
+                : GetInitialExternalStatus(platform);
 
             var dto = new ExternalOrderDto(
                 Platform: platform,
@@ -99,14 +106,14 @@ internal static class MockOrders
         return options;
     }
 
-    private static string GetExternalOrderId(FoodPlatform platform)
+    private static (string ExternalOrderId, bool IsExisting) GetExternalOrderId(FoodPlatform platform)
     {
         var q = _knownExternalOrderIds.GetOrAdd(platform, _ => new ConcurrentQueue<string>());
 
-        // ~30% reuse an existing ExternalOrderId to exercise idempotent upsert
+        // ~30% reuse an existing ExternalOrderId to exercise idempotent upsert + updates
         if (Random.Shared.NextDouble() < 0.30 && q.TryPeek(out var existing))
         {
-            return existing;
+            return (existing, true);
         }
 
         var fresh = $"{platform}-{Guid.NewGuid():N}";
@@ -115,17 +122,36 @@ internal static class MockOrders
         // keep memory bounded
         while (q.Count > 200 && q.TryDequeue(out _)) { }
 
-        return fresh;
+        return (fresh, false);
     }
 
-    private static string GetExternalStatus(FoodPlatform platform) =>
+    private static string GetInitialExternalStatus(FoodPlatform platform) =>
         platform switch
         {
-            FoodPlatform.Yemeksepeti => Pick("new", "confirmed", "delivered", "cancelled"),
-            FoodPlatform.GetirYemek => Pick("CREATED", "PREPARING", "ON_THE_WAY", "DELIVERED", "CANCELLED"),
-            FoodPlatform.TrendyolYemek => Pick("Yeni", "Hazırlanıyor", "Yolda", "Teslim", "İptal"),
+            // Ensure these map to OrderStatus.New in DefaultOrderStatusMapper.
+            FoodPlatform.Yemeksepeti => "new",
+            FoodPlatform.GetirYemek => "CREATED",
+            FoodPlatform.TrendyolYemek => "Created",
             _ => "unknown"
         };
+
+    private static string GetMockUpdateExternalStatus(FoodPlatform platform)
+    {
+        // Simple, predictable demo behavior:
+        // 70% stays New, 20% becomes Delivered, 10% becomes Cancelled.
+        var roll = Random.Shared.NextDouble();
+        if (roll < 0.70) return GetInitialExternalStatus(platform);
+
+        var outcome = roll < 0.90 ? "delivered" : "cancelled";
+
+        return platform switch
+        {
+            FoodPlatform.Yemeksepeti => outcome, // delivered/cancelled
+            FoodPlatform.GetirYemek => outcome.ToUpperInvariant(), // DELIVERED/CANCELLED
+            FoodPlatform.TrendyolYemek => outcome == "delivered" ? "Delivered" : "Cancelled",
+            _ => GetInitialExternalStatus(platform)
+        };
+    }
 
     private static PaymentMethod GetPaymentMethod() =>
         Pick(PaymentMethod.Cash, PaymentMethod.CreditCard, PaymentMethod.OnlinePayment);

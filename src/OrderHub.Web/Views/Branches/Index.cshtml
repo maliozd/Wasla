@@ -1,11 +1,13 @@
 @model OrderHub.Web.Models.Branches.BranchListViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
-    ViewData["Title"] = "Şubeler";
+    ViewData["Title"] = L["Branches.Title"];
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Şubeler</h1>
-    <a class="btn btn-sm btn-primary" href="/branches/create">Yeni Şube</a>
+    <h1 class="h4 mb-0">@L["Branches.Title"]</h1>
+    <a class="btn btn-sm btn-primary" href="/branches/create">@L["Branches.Create"]</a>
 </div>
 
 <div class="card oh-card">
@@ -14,16 +16,16 @@
             <table class="table table-sm align-middle mb-0">
                 <thead>
                 <tr>
-                    <th>Şube</th>
-                    <th>Adres</th>
-                    <th>Durum</th>
+                    <th>@L["Branches.Name"]</th>
+                    <th>@L["Branches.Address"]</th>
+                    <th>@L["Common.Status"]</th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (Model.Branches.Count == 0)
                 {
                     <tr>
-                        <td colspan="3" class="text-center text-muted py-4">Henüz şube eklenmemiş.</td>
+                        <td colspan="3" class="text-center text-muted py-4">@L["Branches.NoBranchesFound"]</td>
                     </tr>
                 }
                 else
@@ -36,11 +38,11 @@
                             <td>
                                 @if (b.IsActive)
                                 {
-                                    <span class="badge text-bg-success">Aktif</span>
+                                    <span class="badge text-bg-success">@L["Common.Active"]</span>
                                 }
                                 else
                                 {
-                                    <span class="badge text-bg-secondary">Pasif</span>
+                                    <span class="badge text-bg-secondary">@L["Common.Passive"]</span>
                                 }
                             </td>
                         </tr>

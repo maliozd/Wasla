@@ -7,8 +7,6 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class UserNotificationSettingsService : IUserNotificationSettingsService
 {
-    private static readonly string[] AllowedSoundNames = ["bell", "chime", "alert"];
-
     private readonly ICustomerDbContextFactory _dbFactory;
     private readonly IValidator<UpdateNotificationSettingsCommand> _validator;
 
@@ -34,7 +32,7 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
             return new GetNotificationSettingsResult
             {
                 NewOrderSoundEnabled = true,
-                NewOrderSoundName = "bell",
+                NewOrderSoundName = "bell1",
                 NewOrderSoundRepeatCount = 3,
                 NewOrderSoundVolume = 1.0m,
                 ShowBrowserNotification = false
@@ -45,7 +43,7 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
         {
             NewOrderSoundEnabled = row.NewOrderSoundEnabled,
             NewOrderSoundName = NormalizeSoundName(row.NewOrderSoundName),
-            NewOrderSoundRepeatCount = Math.Clamp(row.NewOrderSoundRepeatCount, 1, 5),
+            NewOrderSoundRepeatCount = Math.Clamp(row.NewOrderSoundRepeatCount, 1, 3),
             NewOrderSoundVolume = ClampVolume(row.NewOrderSoundVolume),
             ShowBrowserNotification = row.ShowBrowserNotification
         };
@@ -70,7 +68,7 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
                 UserId = userId,
                 NewOrderSoundEnabled = command.NewOrderSoundEnabled,
                 NewOrderSoundName = NormalizeSoundName(command.NewOrderSoundName),
-                NewOrderSoundRepeatCount = Math.Clamp(command.NewOrderSoundRepeatCount, 1, 5),
+                NewOrderSoundRepeatCount = Math.Clamp(command.NewOrderSoundRepeatCount, 1, 3),
                 NewOrderSoundVolume = ClampVolume(command.NewOrderSoundVolume),
                 ShowBrowserNotification = command.ShowBrowserNotification,
                 CreatedAt = DateTime.UtcNow,
@@ -82,7 +80,7 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
         {
             row.NewOrderSoundEnabled = command.NewOrderSoundEnabled;
             row.NewOrderSoundName = NormalizeSoundName(command.NewOrderSoundName);
-            row.NewOrderSoundRepeatCount = Math.Clamp(command.NewOrderSoundRepeatCount, 1, 5);
+            row.NewOrderSoundRepeatCount = Math.Clamp(command.NewOrderSoundRepeatCount, 1, 3);
             row.NewOrderSoundVolume = ClampVolume(command.NewOrderSoundVolume);
             row.ShowBrowserNotification = command.ShowBrowserNotification;
             row.UpdatedAt = DateTime.UtcNow;
@@ -94,7 +92,7 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
     private static string NormalizeSoundName(string? name)
     {
         var v = (name ?? string.Empty).Trim().ToLowerInvariant();
-        return AllowedSoundNames.Contains(v) ? v : "bell";
+        return NotificationSoundOptions.AllowedNames.Contains(v) ? v : "bell1";
     }
 
     private static decimal ClampVolume(decimal v)

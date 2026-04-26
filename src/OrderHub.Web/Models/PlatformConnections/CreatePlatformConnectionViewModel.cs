@@ -5,23 +5,23 @@ namespace OrderHub.Web.Models.PlatformConnections;
 
 public sealed class CreatePlatformConnectionViewModel
 {
-    [Required(ErrorMessage = "Platform seçin.")]
-    [Display(Name = "Platform")]
+    [Required(ErrorMessage = "Validation.PlatformRequired")]
+    [Display(Name = "PlatformConnections.Platform")]
     public FoodPlatform Platform { get; set; }
 
-    [Required(ErrorMessage = "Mağaza/Restoran ID gerekli.")]
-    [Display(Name = "Mağaza ID")]
+    [Required(ErrorMessage = "Validation.StoreIdRequired")]
+    [Display(Name = "PlatformConnections.StoreId")]
     public string StoreId { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "API Key gerekli.")]
-    [Display(Name = "API Key")]
+    [Required(ErrorMessage = "Validation.ApiKeyRequired")]
+    [Display(Name = "PlatformConnections.ApiKey")]
     public string ApiKey { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "API Secret gerekli.")]
-    [Display(Name = "API Secret")]
+    [Required(ErrorMessage = "Validation.ApiSecretRequired")]
+    [Display(Name = "PlatformConnections.ApiSecret")]
     public string ApiSecret { get; set; } = string.Empty;
 
-    [Display(Name = "Aktif")]
+    [Display(Name = "Common.Active")]
     public bool IsActive { get; set; } = true;
 }
 

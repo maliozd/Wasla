@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Api.Diagnostics;
 using OrderHub.Contracts.Auth;
 using OrderHub.Contracts.Enums;
 

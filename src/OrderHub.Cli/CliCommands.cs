@@ -18,6 +18,38 @@ internal static class CliCommands
     private static readonly Regex SlugRegex = new(@"^[a-zA-Z0-9_-]+$", RegexOptions.Compiled);
     private static readonly Regex SqlDbNameRegex = new(@"^[A-Za-z0-9_]+$", RegexOptions.Compiled);
 
+    private static bool IsProductionEnvironment()
+    {
+        var env =
+            Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ??
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ??
+            string.Empty;
+
+        return string.Equals(env, "Production", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool CheckDestructiveSafety(bool confirm, bool forceProduction)
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("WARNING: This will permanently delete data.");
+        Console.WriteLine("This will permanently delete the customer record and/or the customer database.");
+        Console.ResetColor();
+
+        if (!confirm)
+        {
+            WriteError("Refusing to run destructive command without --confirm.");
+            return false;
+        }
+
+        if (IsProductionEnvironment() && !forceProduction)
+        {
+            WriteError("Refusing to run destructive command in Production. Use --force-production only if you know exactly what you are doing.");
+            return false;
+        }
+
+        return true;
+    }
+
     public static async Task<int> AddCustomerAsync(
         IHost host,
         string name,
@@ -686,6 +718,379 @@ internal static class CliCommands
         catch (Exception ex)
         {
             WriteError(ex.Message);
+            return 1;
+        }
+    }
+
+    public static async Task<int> DeleteCustomerAsync(
+        IHost host,
+        string? slug,
+        string? customerIdArg,
+        bool confirm,
+        bool forceProduction,
+        CancellationToken ct)
+    {
+        if (!CheckDestructiveSafety(confirm, forceProduction))
+            return 2;
+
+        var hasSlug = !string.IsNullOrWhiteSpace(slug);
+        if (hasSlug && !string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            WriteError("Use either --slug or --customer-id, not both.");
+            return 2;
+        }
+        if (!hasSlug && string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            WriteError("Specify --slug or --customer-id.");
+            return 2;
+        }
+        if (hasSlug && !SlugRegex.IsMatch(slug!))
+        {
+            WriteError("Slug must match ^[a-zA-Z0-9_-]+$.");
+            return 2;
+        }
+
+        Guid? customerId = null;
+        if (!string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            if (!Guid.TryParse(customerIdArg, out var g))
+            {
+                WriteError("--customer-id must be a valid GUID.");
+                return 2;
+            }
+            customerId = g;
+        }
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+
+            var slugNorm = slug?.Trim() ?? string.Empty;
+            var customer = customerId is { } id
+                ? await central.Customers.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
+                : await central.Customers.FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
+
+            if (customer is null)
+            {
+                WriteError("Customer not found.");
+                return 2;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"About to delete customer '{customer.Name}' (slug={customer.Slug}) and drop database '{customer.DatabaseName}'.");
+            Console.ResetColor();
+
+            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+                .ConfigureAwait(false);
+            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+                .UseSqlServer(plain)
+                .Options;
+
+            await using (var db = new CustomerDbContext(options))
+            {
+                WriteLineStep("Dropping CustomerDb (if exists)…");
+                await db.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
+            }
+
+            WriteLineStep("Deleting CentralDb customer record…");
+            central.Customers.Remove(customer);
+            await central.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ Customer deleted successfully.");
+            Console.ResetColor();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError("delete-customer failed: " + ex.Message);
+            return 1;
+        }
+    }
+
+    public static async Task<int> ResetCustomerDbAsync(
+        IHost host,
+        string? slug,
+        string? customerIdArg,
+        bool confirm,
+        bool forceProduction,
+        CancellationToken ct)
+    {
+        if (!CheckDestructiveSafety(confirm, forceProduction))
+            return 2;
+
+        var hasSlug = !string.IsNullOrWhiteSpace(slug);
+        if (hasSlug && !string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            WriteError("Use either --slug or --customer-id, not both.");
+            return 2;
+        }
+        if (!hasSlug && string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            WriteError("Specify --slug or --customer-id.");
+            return 2;
+        }
+        if (hasSlug && !SlugRegex.IsMatch(slug!))
+        {
+            WriteError("Slug must match ^[a-zA-Z0-9_-]+$.");
+            return 2;
+        }
+
+        Guid? customerId = null;
+        if (!string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            if (!Guid.TryParse(customerIdArg, out var g))
+            {
+                WriteError("--customer-id must be a valid GUID.");
+                return 2;
+            }
+            customerId = g;
+        }
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+
+            var slugNorm = slug?.Trim() ?? string.Empty;
+            var customer = customerId is { } id
+                ? await central.Customers.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
+                : await central.Customers.FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
+
+            if (customer is null)
+            {
+                WriteError("Customer not found.");
+                return 2;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"About to RESET database '{customer.DatabaseName}' for customer '{customer.Name}' (slug={customer.Slug}).");
+            Console.ResetColor();
+
+            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+                .ConfigureAwait(false);
+            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+                .UseSqlServer(plain)
+                .Options;
+
+            var migrationNow = DateTime.UtcNow;
+            var migrationResult = "Unknown";
+
+            try
+            {
+                await using var db = new CustomerDbContext(options);
+                WriteLineStep("Dropping CustomerDb (if exists)…");
+                await db.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
+
+                WriteLineStep("Applying CustomerDb migrations…");
+                await db.Database.MigrateAsync(ct).ConfigureAwait(false);
+                migrationResult = "Success";
+            }
+            catch (Exception ex)
+            {
+                migrationResult = "Failed: " + SanitizeMigrationError(ex);
+                throw;
+            }
+            finally
+            {
+                var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == customer.Id, ct).ConfigureAwait(false);
+                if (tracked is not null)
+                {
+                    tracked.LastMigrationAt = migrationNow;
+                    tracked.LastMigrationResult = migrationResult;
+                    tracked.SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion;
+                    tracked.UpdatedAt = DateTime.UtcNow;
+                    await central.SaveChangesAsync(ct).ConfigureAwait(false);
+                }
+            }
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ Customer database reset successfully (schema migrated).");
+            Console.ResetColor();
+            Console.WriteLine("Note: All users/orders/platform connections/branches were deleted. Recreate admin user if needed (seed-customer-admin).");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError("reset-customer-db failed: " + ex.Message);
+            return 1;
+        }
+    }
+
+    public static async Task<int> ResetAllCustomerDbsAsync(
+        IHost host,
+        bool confirm,
+        bool forceProduction,
+        CancellationToken ct)
+    {
+        if (!CheckDestructiveSafety(confirm, forceProduction))
+            return 2;
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+
+            var customers = await central.Customers
+                .AsNoTracking()
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Slug)
+                .ToListAsync(ct)
+                .ConfigureAwait(false);
+
+            var total = customers.Count;
+            var succeeded = 0;
+            var failed = new List<(string Slug, string Name)>();
+
+            Console.WriteLine($"Active customers to reset: {total}");
+
+            foreach (var c in customers)
+            {
+                try
+                {
+                    var plain = await secret.DecryptAsync(c.EncryptedConnectionString, c.EncryptionKeyVersion, ct).ConfigureAwait(false);
+                    var options = new DbContextOptionsBuilder<CustomerDbContext>().UseSqlServer(plain).Options;
+
+                    var migrationNow = DateTime.UtcNow;
+                    var migrationResult = "Unknown";
+
+                    try
+                    {
+                        await using var db = new CustomerDbContext(options);
+                        await db.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
+                        await db.Database.MigrateAsync(ct).ConfigureAwait(false);
+                        migrationResult = "Success";
+                    }
+                    catch (Exception ex)
+                    {
+                        migrationResult = "Failed: " + SanitizeMigrationError(ex);
+                        throw;
+                    }
+                    finally
+                    {
+                        var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
+                        if (tracked is not null)
+                        {
+                            tracked.LastMigrationAt = migrationNow;
+                            tracked.LastMigrationResult = migrationResult;
+                            tracked.SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion;
+                            tracked.UpdatedAt = DateTime.UtcNow;
+                            await central.SaveChangesAsync(ct).ConfigureAwait(false);
+                        }
+                    }
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"✓ {c.Slug}  ({c.DatabaseName})");
+                    Console.ResetColor();
+                    succeeded++;
+                }
+                catch (Exception ex)
+                {
+                    failed.Add((c.Slug, c.Name));
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"✗ {c.Slug}: {ex.Message}");
+                    Console.ResetColor();
+                }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("--- Summary ---");
+            Console.WriteLine($"Total:     {total}");
+            Console.WriteLine($"Succeeded: {succeeded}");
+            Console.WriteLine($"Failed:    {failed.Count}");
+            if (failed.Count > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Failed customers (slug / name):");
+                foreach (var f in failed)
+                    Console.WriteLine($"  - {f.Slug}  /  {f.Name}");
+                Console.ResetColor();
+            }
+
+            return failed.Count > 0 ? 1 : 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError("reset-all-customer-dbs failed: " + ex.Message);
+            return 1;
+        }
+    }
+
+    public static async Task<int> SeedCustomerAdminAsync(
+        IHost host,
+        string slug,
+        string adminEmail,
+        string adminPassword,
+        string? adminName,
+        CancellationToken ct)
+    {
+        if (!SlugRegex.IsMatch(slug))
+        {
+            WriteError("Slug must match ^[a-zA-Z0-9_-]+$.");
+            return 2;
+        }
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+
+            var customer = await central.Customers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Slug == slug.Trim(), ct)
+                .ConfigureAwait(false);
+
+            if (customer is null)
+            {
+                WriteError("Customer not found for slug.");
+                return 2;
+            }
+
+            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+                .ConfigureAwait(false);
+            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+                .UseSqlServer(plain)
+                .Options;
+
+            await using var db = new CustomerDbContext(options);
+
+            var emailNorm = adminEmail.Trim();
+            var exists = await db.AppUsers.AnyAsync(u => u.Email == emailNorm, ct).ConfigureAwait(false);
+            if (exists)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"Admin user already exists: {emailNorm}");
+                Console.ResetColor();
+                return 0;
+            }
+
+            var now = DateTime.UtcNow;
+            db.AppUsers.Add(new AppUser
+            {
+                Email = emailNorm,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword),
+                FullName = string.IsNullOrWhiteSpace(adminName) ? "Admin" : adminName.Trim(),
+                Role = UserRole.Owner,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ Admin user created: {emailNorm} (Owner)");
+            Console.ResetColor();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError("seed-customer-admin failed: " + ex.Message);
             return 1;
         }
     }

@@ -4,15 +4,15 @@ namespace OrderHub.Web.Models.Branches;
 
 public sealed class CreateBranchViewModel
 {
-    [Required(ErrorMessage = "Şube adı gerekli.")]
-    [Display(Name = "Şube Adı")]
+    [Required(ErrorMessage = "Validation.BranchNameRequired")]
+    [Display(Name = "Branches.Name")]
     public string Name { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Adres gerekli.")]
-    [Display(Name = "Adres")]
+    [Required(ErrorMessage = "Validation.AddressRequired")]
+    [Display(Name = "Branches.Address")]
     public string Address { get; set; } = string.Empty;
 
-    [Display(Name = "Aktif")]
+    [Display(Name = "Common.Active")]
     public bool IsActive { get; set; } = true;
 }
 

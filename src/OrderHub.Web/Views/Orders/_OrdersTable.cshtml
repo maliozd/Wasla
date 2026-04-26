@@ -1,24 +1,27 @@
 @model OrderHub.Web.Models.Orders.OrderListViewModel
 @using OrderHub.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 
 @{
     var f = Model.Filters;
+    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
 <div class="d-flex align-items-center justify-content-between mb-2">
-    <div class="small text-muted">Son güncelleme: <span id="ordersLastUpdated">-</span></div>
+    <div class="small text-muted">@L["Orders.LastUpdated"]: <span id="ordersLastUpdated">-</span></div>
 </div>
 
 <div class="table-responsive">
     <table class="table table-sm align-middle mb-0">
         <thead>
         <tr>
-            <th>@SortHeader("platform", "Platform")</th>
-            <th>Kod</th>
-            <th>@SortHeader("customerName", "Müşteri")</th>
-            <th>@SortHeader("status", "Durum")</th>
-            <th class="text-end">@SortHeader("totalAmount", "Tutar")</th>
-            <th class="text-end">@SortHeader("receivedAt", "Alındı")</th>
+            <th>@SortHeader("platform", L["Orders.Platform"])</th>
+            <th>@L["Orders.OrderCode"]</th>
+            <th>@SortHeader("customerName", L["Orders.Customer"])</th>
+            <th>@SortHeader("status", L["Orders.Status"])</th>
+            <th class="text-end">@SortHeader("totalAmount", L["Orders.TotalAmount"])</th>
+            <th class="text-end">@SortHeader("receivedAt", L["Orders.ReceivedAt"])</th>
         </tr>
         </thead>
         <tbody>
@@ -26,7 +29,7 @@
         {
             <tr>
                 <td colspan="6" class="text-center text-muted py-4">
-                    @(f.HasAnyFilter ? "Filtreye uygun sipariş bulunamadı." : "Henüz sipariş bulunamadı.")
+                    @(f.HasAnyFilter ? L["Orders.NoFilteredOrdersFound"] : L["Orders.NoOrdersFound"])
                 </td>
             </tr>
         }
@@ -36,9 +39,14 @@
             {
                 <tr data-order-id="@o.Id" data-received-at="@o.ReceivedAtUtc.ToString("O")">
                     <td>@o.Platform</td>
-                    <td><a href="/orders/details/@o.Id">@o.ExternalOrderCode</a></td>
+                    <td>
+                        <a href="/orders/details/@o.Id">@o.ExternalOrderCode</a>
+                        <span class="order-sound-indicator d-none" data-order-speaker="@o.Id" title="@L["Orders.SoundPlayingTitle"]">
+                            <i class="bi bi-volume-up"></i>
+                        </span>
+                    </td>
                     <td>@o.CustomerName</td>
-                    <td>@StatusTr(o.Status)</td>
+                    <td>@StatusLabel(o.Status)</td>
                     <td class="text-end">@o.TotalAmount.ToString("C")</td>
                     <td class="text-end">@o.ReceivedAtUtc.ToString("u")</td>
                 </tr>
@@ -58,19 +66,6 @@
 
         return list.Count == 0 ? "/orders" : "/orders?" + string.Join("&", list);
     }
-
-    private static string StatusTr(OrderStatus s) => s switch
-    {
-        OrderStatus.New => "Yeni",
-        OrderStatus.Accepted => "Kabul Edildi",
-        OrderStatus.Preparing => "Hazırlanıyor",
-        OrderStatus.ReadyForPickup => "Hazır",
-        OrderStatus.OnTheWay => "Yolda",
-        OrderStatus.Delivered => "Teslim Edildi",
-        OrderStatus.Cancelled => "İptal",
-        OrderStatus.Failed => "Hatalı",
-        _ => s.ToString()
-    };
 
     private Microsoft.AspNetCore.Html.IHtmlContent SortHeader(string sortBy, string title)
     {

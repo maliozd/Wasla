@@ -68,6 +68,41 @@ Run:
 dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
 ```
 
+## 3.1) Destructive customer reset/delete (CLI)
+
+These commands are **development/staging friendly** and **destructive**. They require `--confirm` and refuse to run in Production unless `--force-production` is provided.
+
+### Delete customer completely (CentralDb record + drop CustomerDb)
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- delete-customer --slug ahmet --confirm
+```
+
+### Reset only a customer database (keeps CentralDb customer record)
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- reset-customer-db --slug ahmet --confirm
+```
+
+After a reset, recreate an Owner admin user:
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- seed-customer-admin --slug ahmet --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
+```
+
+### Reset all active customer databases
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- reset-all-customer-dbs --confirm
+```
+
+### Recommended clean local flow
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- delete-customer --slug ahmet --confirm
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- add-customer --name "Ahmet Restaurant" --slug ahmet --domain ahmet.orderhub.local --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
+```
+
 ## 4) Create a customer (CLI)
 
 Creates a tenant/customer record, creates+migrates the CustomerDb, and creates an admin user.

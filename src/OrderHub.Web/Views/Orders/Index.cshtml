@@ -1,27 +1,32 @@
 @model OrderHub.Web.Models.Orders.OrderListViewModel
 @using OrderHub.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
-    ViewData["Title"] = "Siparişler";
+    ViewData["Title"] = L["Orders.Title"];
     var f = Model.Filters;
+    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Siparişler</h1>
+    <h1 class="h4 mb-0">@L["Orders.Title"]</h1>
     <div class="d-flex align-items-center gap-2">
         <button type="button" class="btn btn-outline-secondary btn-sm" id="notificationSettingsBtn">
-            <i class="bi bi-bell me-1"></i>Bildirim Ayarları
+            <i class="bi bi-bell me-1"></i>@L["Notification.Settings"]
         </button>
-        <span class="text-muted small">Toplam: @Model.TotalCount</span>
+        <span class="text-muted small">@L["Orders.TotalCount"]: @Model.TotalCount</span>
     </div>
 </div>
+
+<div id="ordersMessageHost"></div>
 
 <div class="card oh-card mb-3">
     <div class="card-body">
         <form id="ordersFilterForm" method="get" action="/orders" class="row g-2 align-items-end">
             <div class="col-12 col-md-3">
-                <label class="form-label">Platform</label>
+                <label class="form-label">@L["Orders.Platform"]</label>
                 <select id="platformSelect" class="form-select" name="platform">
-                    <option value="">Tüm Platformlar</option>
+                    <option value="">@L["Common.AllPlatforms"]</option>
                     @foreach (var p in Enum.GetValues<FoodPlatform>())
                     {
                         if (f.Platform == p)
@@ -36,33 +41,33 @@
                 </select>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label">Durum</label>
+                <label class="form-label">@L["Orders.Status"]</label>
                 <select id="statusSelect" class="form-select" name="status">
-                    <option value="">Tüm Durumlar</option>
+                    <option value="">@L["Common.AllStatuses"]</option>
                     @foreach (var s in Enum.GetValues<OrderStatus>())
                     {
                         if (f.Status == s)
                         {
-                            <option value="@s" selected>@StatusTr(s)</option>
+                            <option value="@s" selected>@StatusLabel(s)</option>
                         }
                         else
                         {
-                            <option value="@s">@StatusTr(s)</option>
+                            <option value="@s">@StatusLabel(s)</option>
                         }
                     }
                 </select>
             </div>
             <div class="col-12 col-md-2">
-                <label class="form-label">Başlangıç Tarihi</label>
+                <label class="form-label">@L["Orders.StartDate"]</label>
                 <input class="form-control" type="date" name="startDate" value="@(f.StartDate?.ToString("yyyy-MM-dd"))" />
             </div>
             <div class="col-12 col-md-2">
-                <label class="form-label">Bitiş Tarihi</label>
+                <label class="form-label">@L["Orders.EndDate"]</label>
                 <input class="form-control" type="date" name="endDate" value="@(f.EndDate?.ToString("yyyy-MM-dd"))" />
             </div>
             <div class="col-12 col-md-2 d-flex gap-2">
-                <button class="btn btn-primary flex-grow-1" type="submit">Filtrele</button>
-                <a class="btn btn-outline-secondary" href="/orders">Temizle</a>
+                <button class="btn btn-primary flex-grow-1" type="submit">@L["Orders.Filter"]</button>
+                <a class="btn btn-outline-secondary" href="/orders">@L["Orders.Clear"]</a>
             </div>
 
             <input type="hidden" name="sortBy" value="@f.SortBy" />
@@ -99,7 +104,7 @@
             <form id="notificationSettingsForm" method="post" action="/notification-settings">
                 @Html.AntiForgeryToken()
                 <div id="notificationSettingsModalBody" class="p-3 text-muted small">
-                    Yükleniyor…
+                    @L["Notification.Loading"]
                 </div>
             </form>
         </div>
@@ -108,241 +113,26 @@
 
 @section Scripts {
     <script>
-        (function () {
-            var knownOrderIds = new Set();
-            var notificationSettings = null;
+        window.orderHubOrdersOptions = {
+            tableUrl: "/orders/table",
+            notificationSettingsUrl: "/notification-settings",
+            notificationSettingsJsonUrl: "/notification-settings/current",
+            pollingIntervalMs: 10000
+        };
 
-            function navigateWithParam(name, value) {
-                var url = new URL(window.location.href);
-                if (value === null || value === undefined || value === "") url.searchParams.delete(name);
-                else url.searchParams.set(name, value);
-
-                // reset paging when filter changes
-                url.searchParams.set("page", "1");
-
-                window.location.href = url.toString();
-            }
-
-            function setUpdatedNow() {
-                var el = document.getElementById("ordersLastUpdated");
-                if (!el) return;
-                el.textContent = new Date().toLocaleTimeString("tr-TR");
-            }
-
-            function isSoundUnlocked() {
-                return localStorage.getItem("orderhub.soundUnlocked") === "true";
-            }
-
-            async function unlockSoundPlayback() {
-                try {
-                    // Try to "unlock" audio on user gesture.
-                    var a = new Audio();
-                    a.volume = 0;
-                    await a.play().catch(function () { });
-                } catch { }
-                localStorage.setItem("orderhub.soundUnlocked", "true");
-            }
-
-            function getSelectedSettingsFromModal() {
-                var enabled = document.getElementById("NewOrderSoundEnabled")?.checked === true;
-                var name = document.getElementById("NewOrderSoundName")?.value || "bell";
-                var repeat = parseInt(document.getElementById("NewOrderSoundRepeatCount")?.value || "3", 10);
-                var vol = parseFloat(document.getElementById("NewOrderSoundVolume")?.value || "1.0");
-                var showBrowser = document.getElementById("ShowBrowserNotification")?.checked === true;
-                return {
-                    newOrderSoundEnabled: enabled,
-                    newOrderSoundName: name,
-                    newOrderSoundRepeatCount: isNaN(repeat) ? 3 : repeat,
-                    newOrderSoundVolume: isNaN(vol) ? 1.0 : vol,
-                    showBrowserNotification: showBrowser
-                };
-            }
-
-            async function playNewOrderSound(settings) {
-                if (!settings || !settings.newOrderSoundEnabled) return;
-                if (!isSoundUnlocked()) {
-                    var hint = document.getElementById("soundUnlockHint");
-                    if (hint) hint.classList.remove("d-none");
-                    return;
-                }
-
-                var sound = (settings.newOrderSoundName || "bell").toLowerCase();
-                var url = "/sounds/" + sound + ".mp3";
-                var repeat = Math.max(1, Math.min(5, settings.newOrderSoundRepeatCount || 1));
-                var vol = Math.max(0, Math.min(1, settings.newOrderSoundVolume || 1));
-
-                for (var i = 0; i < repeat; i++) {
-                    try {
-                        var audio = new Audio(url);
-                        audio.volume = vol;
-                        await new Promise(function (resolve) {
-                            audio.addEventListener("ended", resolve, { once: true });
-                            audio.addEventListener("error", resolve, { once: true });
-                            audio.play().catch(function () { resolve(); });
-                        });
-                    } catch { }
-                }
-            }
-
-            async function showBrowserNotificationIfEnabled(settings) {
-                if (!settings || !settings.showBrowserNotification) return;
-                if (!("Notification" in window)) return;
-                if (Notification.permission !== "granted") return;
-                try {
-                    new Notification("Yeni sipariş geldi", { body: "Siparişler ekranını kontrol edin." });
-                } catch { }
-            }
-
-            async function refreshOrdersTable() {
-                try {
-                    var url = new URL(window.location.origin + "/orders/table");
-                    url.search = window.location.search || "";
-                    url.searchParams.set("_", Date.now().toString());
-
-                    var resp = await fetch(url.toString(), { headers: { "X-Requested-With": "fetch" } });
-                    if (!resp.ok) return;
-
-                    var html = await resp.text();
-                    var tmp = document.createElement("div");
-                    tmp.innerHTML = html;
-
-                    var rows = tmp.querySelectorAll("[data-order-id]");
-                    var newIds = [];
-                    rows.forEach(function (r) {
-                        var id = r.getAttribute("data-order-id");
-                        if (!id) return;
-                        if (!knownOrderIds.has(id)) newIds.push(id);
-                    });
-
-                    var container = document.getElementById("ordersTableContainer");
-                    if (!container) return;
-                    container.innerHTML = html;
-                    setUpdatedNow();
-
-                    // Update known ids after successful DOM update.
-                    knownOrderIds = new Set();
-                    container.querySelectorAll("[data-order-id]").forEach(function (r) {
-                        var id = r.getAttribute("data-order-id");
-                        if (id) knownOrderIds.add(id);
-                    });
-
-                    if (newIds.length > 0) {
-                        await playNewOrderSound(notificationSettings || getSelectedSettingsFromModal());
-                        await showBrowserNotificationIfEnabled(notificationSettings || getSelectedSettingsFromModal());
-                    }
-                } catch { }
-            }
-
-            async function loadNotificationSettingsModal() {
-                var resp = await fetch("/notification-settings", { headers: { "X-Requested-With": "fetch" } });
-                if (!resp.ok) return;
-                var html = await resp.text();
-                var body = document.getElementById("notificationSettingsModalBody");
-                if (!body) return;
-                body.innerHTML = html;
-
-                var enableBtn = document.getElementById("enableSoundBtn");
-                if (enableBtn) {
-                    enableBtn.addEventListener("click", async function () {
-                        await unlockSoundPlayback();
-                        var hint = document.getElementById("soundUnlockHint");
-                        if (hint) hint.classList.add("d-none");
-                    });
-                }
-
-                var testBtn = document.getElementById("testSoundBtn");
-                if (testBtn) {
-                    testBtn.addEventListener("click", async function () {
-                        var s = getSelectedSettingsFromModal();
-                        if (s.showBrowserNotification && "Notification" in window && Notification.permission === "default") {
-                            // Permission must be requested only on user action.
-                            try { await Notification.requestPermission(); } catch { }
-                        }
-                        await playNewOrderSound(s);
-                    });
-                }
-
-                var form = document.getElementById("notificationSettingsForm");
-                if (form) {
-                    form.addEventListener("submit", async function (e) {
-                        e.preventDefault();
-                        try {
-                            var fd = new FormData(form);
-                            var resp2 = await fetch(form.action, {
-                                method: "POST",
-                                body: fd,
-                                headers: { "X-Requested-With": "fetch" }
-                            });
-                            if (!resp2.ok) return;
-                            var html2 = await resp2.text();
-                            body.innerHTML = html2;
-                            notificationSettings = getSelectedSettingsFromModal();
-
-                            if (notificationSettings.showBrowserNotification && "Notification" in window && Notification.permission === "default") {
-                                try { await Notification.requestPermission(); } catch { }
-                            }
-                        } catch { }
-                    });
-                }
-
-                notificationSettings = getSelectedSettingsFromModal();
-                if (!isSoundUnlocked()) {
-                    var hint = document.getElementById("soundUnlockHint");
-                    if (hint) hint.classList.remove("d-none");
-                }
-            }
-
-            document.addEventListener("DOMContentLoaded", function () {
-                var platformSelect = document.getElementById("platformSelect");
-                if (platformSelect) {
-                    platformSelect.addEventListener("change", function () {
-                        navigateWithParam("platform", platformSelect.value);
-                    });
-                }
-
-                var statusSelect = document.getElementById("statusSelect");
-                if (statusSelect) {
-                    statusSelect.addEventListener("change", function () {
-                        navigateWithParam("status", statusSelect.value);
-                    });
-                }
-
-                // Capture initial known ids (no sound on first load).
-                document.querySelectorAll("[data-order-id]").forEach(function (r) {
-                    var id = r.getAttribute("data-order-id");
-                    if (id) knownOrderIds.add(id);
-                });
-
-                var btn = document.getElementById("notificationSettingsBtn");
-                if (btn) {
-                    btn.addEventListener("click", async function () {
-                        await loadNotificationSettingsModal();
-                        var modalEl = document.getElementById("notificationSettingsModal");
-                        if (!modalEl) return;
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                        modal.show();
-                    });
-                }
-
-                setUpdatedNow();
-                setInterval(refreshOrdersTable, 10000);
-            });
-        })();
+        window.orderHubLocalization = {
+            newOrderArrived: "@L["Notification.NewOrderArrived"]",
+            checkOrdersPage: "@L["Notification.CheckOrdersPage"]",
+            soundCouldNotPlay: "@L["Notification.SoundCouldNotPlay"]",
+            settingsSaved: "@L["Notification.SaveSuccess"]",
+            soundUnlockHint: "@L["Notification.SoundUnlockHint"]",
+            notificationsOff: "@L["Notification.Disabled"]",
+            notificationsOffHelp: "@L["Notification.NotificationsHelp"]",
+            waitingForAudio: "@L["Notification.WaitingForBrowserAudio"]",
+            waitingForAudioHelp: "@L["Notification.NotificationsHelp"]",
+            notificationsOn: "@L["Notification.Enabled"]",
+            notificationsOnHelp: "@L["Notification.NotificationsHelp"]"
+        };
     </script>
+    <script src="~/js/orders-page.js" asp-append-version="true"></script>
 }
-
-@functions{
-    private static string StatusTr(OrderStatus s) => s switch
-    {
-        OrderStatus.New => "Yeni",
-        OrderStatus.Accepted => "Kabul Edildi",
-        OrderStatus.Preparing => "Hazırlanıyor",
-        OrderStatus.ReadyForPickup => "Hazır",
-        OrderStatus.OnTheWay => "Yolda",
-        OrderStatus.Delivered => "Teslim Edildi",
-        OrderStatus.Cancelled => "İptal",
-        OrderStatus.Failed => "Hatalı",
-        _ => s.ToString()
-    };
-}
-

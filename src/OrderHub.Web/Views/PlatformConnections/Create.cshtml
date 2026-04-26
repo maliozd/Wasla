@@ -1,12 +1,14 @@
 @model OrderHub.Web.Models.PlatformConnections.CreatePlatformConnectionViewModel
 @using OrderHub.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
-    ViewData["Title"] = "Yeni Platform Bağlantısı";
+    ViewData["Title"] = L["PlatformConnections.Create"];
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Yeni Platform Bağlantısı</h1>
-    <a class="btn btn-sm btn-outline-primary" href="/platform-connections">Geri</a>
+    <h1 class="h4 mb-0">@L["PlatformConnections.Create"]</h1>
+    <a class="btn btn-sm btn-outline-primary" href="/platform-connections">@L["PlatformConnections.Back"]</a>
 </div>
 
 <div class="card oh-card">
@@ -52,7 +54,7 @@
                 </div>
 
                 <div class="col-12">
-                    <button class="btn btn-primary" type="submit">Kaydet</button>
+                    <button class="btn btn-primary" type="submit">@L["Common.Save"]</button>
                 </div>
             </div>
         </form>

@@ -1,11 +1,13 @@
 @model OrderHub.Web.Models.Branches.CreateBranchViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
-    ViewData["Title"] = "Yeni Şube";
+    ViewData["Title"] = L["Branches.Create"];
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Yeni Şube</h1>
-    <a class="btn btn-sm btn-outline-primary" href="/branches">Geri</a>
+    <h1 class="h4 mb-0">@L["Branches.Create"]</h1>
+    <a class="btn btn-sm btn-outline-primary" href="/branches">@L["Common.Back"]</a>
 </div>
 
 <div class="card oh-card">
@@ -30,7 +32,7 @@
                     </div>
                 </div>
                 <div class="col-12">
-                    <button class="btn btn-primary" type="submit">Kaydet</button>
+                    <button class="btn btn-primary" type="submit">@L["Common.Save"]</button>
                 </div>
             </div>
         </form>

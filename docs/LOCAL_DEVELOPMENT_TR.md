@@ -68,6 +68,41 @@ CustomerDb’ye yeni tablolar/alanlar eklendiyse (ör. `UserNotificationSettings
 dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
 ```
 
+## 3.1) Yıkıcı müşteri sıfırlama/silme (CLI)
+
+Bu komutlar **geliştirme/staging** içindir ve **yıkıcıdır**. `--confirm` zorunludur. Production ortamında `--force-production` olmadan çalışmayı reddeder.
+
+### Müşteriyi tamamen sil (CentralDb kaydı + CustomerDb drop)
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- delete-customer --slug ahmet --confirm
+```
+
+### Sadece müşteri veritabanını sıfırla (CentralDb müşteri kaydı kalır)
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- reset-customer-db --slug ahmet --confirm
+```
+
+Reset sonrası Owner admin kullanıcı oluşturma:
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- seed-customer-admin --slug ahmet --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
+```
+
+### Tüm aktif müşteri veritabanlarını sıfırla
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- reset-all-customer-dbs --confirm
+```
+
+### Önerilen temiz yerel akış
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- delete-customer --slug ahmet --confirm
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- add-customer --name "Ahmet Restoran" --slug ahmet --domain ahmet.orderhub.local --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
+```
+
 ## 4) Müşteri oluşturma (CLI)
 
 Bir tenant/customer kaydı oluşturur, CustomerDb’yi yaratır/migrate eder ve admin kullanıcı ekler.

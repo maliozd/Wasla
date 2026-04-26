@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Common.Create" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="Common.Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Common.Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Common.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Common.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Common.Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Common.No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Common.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Common.Passive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="Common.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Common.Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Common.Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Common.Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Common.AllPlatforms" xml:space="preserve">
+    <value>All Platforms</value>
+  </data>
+  <data name="Common.AllStatuses" xml:space="preserve">
+    <value>All Statuses</value>
+  </data>
+  <data name="Layout.Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Layout.Orders" xml:space="preserve">
+    <value>Orders</value>
+  </data>
+  <data name="Layout.PlatformConnections" xml:space="preserve">
+    <value>Platform Connections</value>
+  </data>
+  <data name="Layout.Branches" xml:space="preserve">
+    <value>Branches</value>
+  </data>
+  <data name="Layout.Logout" xml:space="preserve">
+    <value>Log out</value>
+  </data>
+  <data name="Layout.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Layout.Layout" xml:space="preserve">
+    <value>Layout</value>
+  </data>
+  <data name="Layout.Guest" xml:space="preserve">
+    <value>Guest</value>
+  </data>
+  <data name="Layout.User" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="Landing.Title" xml:space="preserve">
+    <value>OrderHub</value>
+  </data>
+  <data name="Landing.Subtitle" xml:space="preserve">
+    <value>Multi-platform order management</value>
+  </data>
+  <data name="Landing.CustomerLogin" xml:space="preserve">
+    <value>Customer Login</value>
+  </data>
+  <data name="Landing.AdminLogin" xml:space="preserve">
+    <value>Admin Login</value>
+  </data>
+  <data name="Landing.SinglePanel" xml:space="preserve">
+    <value>Single Panel</value>
+  </data>
+  <data name="Landing.SinglePanelDescription" xml:space="preserve">
+    <value>All platform orders in one place</value>
+  </data>
+  <data name="Landing.EasyManagement" xml:space="preserve">
+    <value>Easy Management</value>
+  </data>
+  <data name="Landing.EasyManagementDescription" xml:space="preserve">
+    <value>Manage branches and connections easily</value>
+  </data>
+  <data name="Landing.LiveTracking" xml:space="preserve">
+    <value>Live Tracking</value>
+  </data>
+  <data name="Landing.LiveTrackingDescription" xml:space="preserve">
+    <value>Track order flow and status changes</value>
+  </data>
+  <data name="Landing.HeroBadge" xml:space="preserve">
+    <value>SaaS • Restaurant • Operations</value>
+  </data>
+  <data name="Landing.HeroTitle" xml:space="preserve">
+    <value>Manage all your orders from one screen</value>
+  </data>
+  <data name="Landing.HeroDescription" xml:space="preserve">
+    <value>View, track and manage orders from Yemeksepeti, Getir and Trendyol in one panel.</value>
+  </data>
+  <data name="Landing.TenantNote" xml:space="preserve">
+    <value>Note: Your domain must resolve to a tenant to access the customer panel.</value>
+  </data>
+  <data name="Landing.FooterTagline" xml:space="preserve">
+    <value>Modern order management for operations teams</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Auth.Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Auth.LoginButton" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>Please check your details.</value>
+  </data>
+  <data name="Auth.Logout" xml:space="preserve">
+    <value>Log out</value>
+  </data>
+  <data name="Dashboard.Title" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Dashboard.TodayOrders" xml:space="preserve">
+    <value>Today's Orders</value>
+  </data>
+  <data name="Dashboard.TodayRevenue" xml:space="preserve">
+    <value>Today's Revenue</value>
+  </data>
+  <data name="Dashboard.ActiveConnections" xml:space="preserve">
+    <value>Active Connections</value>
+  </data>
+  <data name="Dashboard.RecentOrders" xml:space="preserve">
+    <value>Recent Orders</value>
+  </data>
+  <data name="Dashboard.NoRecentOrders" xml:space="preserve">
+    <value>No recent orders to show.</value>
+  </data>
+  <data name="Dashboard.ActiveOrders" xml:space="preserve">
+    <value>Active Orders</value>
+  </data>
+  <data name="Dashboard.CancelledOrders" xml:space="preserve">
+    <value>Cancelled Orders</value>
+  </data>
+  <data name="Dashboard.ViewAll" xml:space="preserve">
+    <value>View all</value>
+  </data>
+  <data name="Dashboard.PlatformSummary" xml:space="preserve">
+    <value>Platform Summary</value>
+  </data>
+  <data name="Dashboard.Count" xml:space="preserve">
+    <value>Count</value>
+  </data>
+  <data name="Dashboard.Revenue" xml:space="preserve">
+    <value>Revenue</value>
+  </data>
+  <data name="Dashboard.NoPlatformSummary" xml:space="preserve">
+    <value>No platform summary yet.</value>
+  </data>
+  <data name="Orders.Title" xml:space="preserve">
+    <value>Orders</value>
+  </data>
+  <data name="Orders.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Orders.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Orders.StartDate" xml:space="preserve">
+    <value>Start Date</value>
+  </data>
+  <data name="Orders.EndDate" xml:space="preserve">
+    <value>End Date</value>
+  </data>
+  <data name="Orders.Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Orders.Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Orders.NoOrdersFound" xml:space="preserve">
+    <value>No orders found yet.</value>
+  </data>
+  <data name="Orders.NoFilteredOrdersFound" xml:space="preserve">
+    <value>No orders match the filters.</value>
+  </data>
+  <data name="Orders.OrderCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="Orders.Customer" xml:space="preserve">
+    <value>Customer</value>
+  </data>
+  <data name="Orders.TotalAmount" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Orders.ReceivedAt" xml:space="preserve">
+    <value>Received</value>
+  </data>
+  <data name="Orders.Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Orders.LastUpdated" xml:space="preserve">
+    <value>Last updated</value>
+  </data>
+  <data name="Orders.TotalCount" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Orders.DetailsTitle" xml:space="preserve">
+    <value>Order Details</value>
+  </data>
+  <data name="Orders.Summary" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="Orders.Phone" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="Orders.Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="Orders.Products" xml:space="preserve">
+    <value>Items</value>
+  </data>
+  <data name="Orders.Product" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Orders.Quantity" xml:space="preserve">
+    <value>Qty</value>
+  </data>
+  <data name="Orders.Unit" xml:space="preserve">
+    <value>Unit</value>
+  </data>
+  <data name="Orders.LineTotal" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Orders.SoundPlayingTitle" xml:space="preserve">
+    <value>New order sound is playing</value>
+  </data>
+  <data name="PlatformConnections.Title" xml:space="preserve">
+    <value>Platform Connections</value>
+  </data>
+  <data name="PlatformConnections.Create" xml:space="preserve">
+    <value>New Connection</value>
+  </data>
+  <data name="PlatformConnections.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="PlatformConnections.StoreId" xml:space="preserve">
+    <value>Store Id</value>
+  </data>
+  <data name="PlatformConnections.ApiKey" xml:space="preserve">
+    <value>API Key</value>
+  </data>
+  <data name="PlatformConnections.ApiSecret" xml:space="preserve">
+    <value>API Secret</value>
+  </data>
+  <data name="PlatformConnections.IsActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="PlatformConnections.NoConnectionsFound" xml:space="preserve">
+    <value>No platform connections added yet.</value>
+  </data>
+  <data name="PlatformConnections.DuplicateError" xml:space="preserve">
+    <value>This platform and store id is already defined.</value>
+  </data>
+  <data name="PlatformConnections.Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="PlatformConnections.Deactivate" xml:space="preserve">
+    <value>Deactivate</value>
+  </data>
+  <data name="PlatformConnections.Activate" xml:space="preserve">
+    <value>Activate</value>
+  </data>
+  <data name="PlatformConnections.NoteRole" xml:space="preserve">
+    <value>Note: Owner/Manager role is expected for managing platform connections.</value>
+  </data>
+  <data name="Branches.Title" xml:space="preserve">
+    <value>Branches</value>
+  </data>
+  <data name="Branches.Create" xml:space="preserve">
+    <value>New Branch</value>
+  </data>
+  <data name="Branches.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Branches.Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="Branches.NoBranchesFound" xml:space="preserve">
+    <value>No branches added yet.</value>
+  </data>
+  <data name="Notification.Settings" xml:space="preserve">
+    <value>Notification Settings</value>
+  </data>
+  <data name="Notification.Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Notification.Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="Notification.WaitingForBrowserAudio" xml:space="preserve">
+    <value>Waiting for browser audio permission</value>
+  </data>
+  <data name="Notification.Sound" xml:space="preserve">
+    <value>Sound</value>
+  </data>
+  <data name="Notification.SelectedSound" xml:space="preserve">
+    <value>Selected sound</value>
+  </data>
+  <data name="Notification.RepeatCount" xml:space="preserve">
+    <value>Repeat count</value>
+  </data>
+  <data name="Notification.Volume" xml:space="preserve">
+    <value>Volume</value>
+  </data>
+  <data name="Notification.BrowserNotification" xml:space="preserve">
+    <value>Browser notification</value>
+  </data>
+  <data name="Notification.Play" xml:space="preserve">
+    <value>Play</value>
+  </data>
+  <data name="Notification.SaveSuccess" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
+    <value>Sound could not play. Check the sound file or browser permissions.</value>
+  </data>
+  <data name="Notification.NewOrderArrived" xml:space="preserve">
+    <value>New order arrived</value>
+  </data>
+  <data name="Notification.CheckOrdersPage" xml:space="preserve">
+    <value>Please check the Orders page.</value>
+  </data>
+  <data name="Notification.SoundUnlockHint" xml:space="preserve">
+    <value>To hear new-order sounds, first preview a sound from Notification Settings.</value>
+  </data>
+  <data name="Notification.Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Notification.PersistentHelp" xml:space="preserve">
+    <value>Persistent setting: saved to your user account</value>
+  </data>
+  <data name="Notification.Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Notification.NotificationsHelp" xml:space="preserve">
+    <value>Your sound setting is saved. Browser audio unlock is device-specific.</value>
+  </data>
+  <data name="Notification.TestSelectedSound" xml:space="preserve">
+    <value>Test selected sound</value>
+  </data>
+  <data name="Notification.ShowBrowserNotification" xml:space="preserve">
+    <value>Show browser notification</value>
+  </data>
+  <data name="OrderStatus.New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="OrderStatus.Accepted" xml:space="preserve">
+    <value>Accepted</value>
+  </data>
+  <data name="OrderStatus.Preparing" xml:space="preserve">
+    <value>Preparing</value>
+  </data>
+  <data name="OrderStatus.ReadyForPickup" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="OrderStatus.OnTheWay" xml:space="preserve">
+    <value>On the way</value>
+  </data>
+  <data name="OrderStatus.Delivered" xml:space="preserve">
+    <value>Delivered</value>
+  </data>
+  <data name="OrderStatus.Cancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="OrderStatus.Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="Validation.EmailRequired" xml:space="preserve">
+    <value>Email is required.</value>
+  </data>
+  <data name="Validation.EmailInvalid" xml:space="preserve">
+    <value>Please enter a valid email.</value>
+  </data>
+  <data name="Validation.PasswordRequired" xml:space="preserve">
+    <value>Password is required.</value>
+  </data>
+  <data name="Validation.PlatformRequired" xml:space="preserve">
+    <value>Please select a platform.</value>
+  </data>
+  <data name="Validation.StoreIdRequired" xml:space="preserve">
+    <value>Store id is required.</value>
+  </data>
+  <data name="Validation.ApiKeyRequired" xml:space="preserve">
+    <value>API key is required.</value>
+  </data>
+  <data name="Validation.ApiSecretRequired" xml:space="preserve">
+    <value>API secret is required.</value>
+  </data>
+  <data name="Validation.BranchNameRequired" xml:space="preserve">
+    <value>Branch name is required.</value>
+  </data>
+  <data name="Validation.AddressRequired" xml:space="preserve">
+    <value>Address is required.</value>
+  </data>
+  <data name="Landing.Order" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="Landing.Endorsement" xml:space="preserve">
+    <value>Endorsement</value>
+  </data>
+  <data name="Landing.Preparing" xml:space="preserve">
+    <value>Preparing</value>
+  </data>
+  <data name="Landing.OnTheRoad" xml:space="preserve">
+    <value>On the Road</value>
+  </data>
+  <data name="Landing.OrdersToday" xml:space="preserve">
+    <value>Orders Today</value>
+  </data>
+  <data name="Landing.Live" xml:space="preserve">
+    <value>Live</value>
+  </data>
+</root>

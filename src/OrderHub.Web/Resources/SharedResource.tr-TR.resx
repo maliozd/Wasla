@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Düzenle</value>
+  </data>
+  <data name="Common.Create" xml:space="preserve">
+    <value>Oluştur</value>
+  </data>
+  <data name="Common.Filter" xml:space="preserve">
+    <value>Filtrele</value>
+  </data>
+  <data name="Common.Clear" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>Ara</value>
+  </data>
+  <data name="Common.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Common.Actions" xml:space="preserve">
+    <value>İşlemler</value>
+  </data>
+  <data name="Common.Yes" xml:space="preserve">
+    <value>Evet</value>
+  </data>
+  <data name="Common.No" xml:space="preserve">
+    <value>Hayır</value>
+  </data>
+  <data name="Common.Active" xml:space="preserve">
+    <value>Aktif</value>
+  </data>
+  <data name="Common.Passive" xml:space="preserve">
+    <value>Pasif</value>
+  </data>
+  <data name="Common.Language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="Common.Today" xml:space="preserve">
+    <value>Bugün</value>
+  </data>
+  <data name="Common.Total" xml:space="preserve">
+    <value>Toplam</value>
+  </data>
+  <data name="Common.Loading" xml:space="preserve">
+    <value>Yükleniyor…</value>
+  </data>
+  <data name="Common.AllPlatforms" xml:space="preserve">
+    <value>Tüm Platformlar</value>
+  </data>
+  <data name="Common.AllStatuses" xml:space="preserve">
+    <value>Tüm Durumlar</value>
+  </data>
+  <data name="Layout.Dashboard" xml:space="preserve">
+    <value>Panel</value>
+  </data>
+  <data name="Layout.Orders" xml:space="preserve">
+    <value>Siparişler</value>
+  </data>
+  <data name="Layout.PlatformConnections" xml:space="preserve">
+    <value>Platform Bağlantıları</value>
+  </data>
+  <data name="Layout.Branches" xml:space="preserve">
+    <value>Şubeler</value>
+  </data>
+  <data name="Layout.Logout" xml:space="preserve">
+    <value>Çıkış yap</value>
+  </data>
+  <data name="Layout.Settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="Layout.Layout" xml:space="preserve">
+    <value>Düzen</value>
+  </data>
+  <data name="Layout.Guest" xml:space="preserve">
+    <value>Misafir</value>
+  </data>
+  <data name="Layout.User" xml:space="preserve">
+    <value>Kullanıcı</value>
+  </data>
+  <data name="Landing.Title" xml:space="preserve">
+    <value>OrderHub</value>
+  </data>
+  <data name="Landing.Subtitle" xml:space="preserve">
+    <value>Çoklu platform sipariş yönetimi</value>
+  </data>
+  <data name="Landing.CustomerLogin" xml:space="preserve">
+    <value>Müşteri Girişi</value>
+  </data>
+  <data name="Landing.AdminLogin" xml:space="preserve">
+    <value>Admin Girişi</value>
+  </data>
+  <data name="Landing.SinglePanel" xml:space="preserve">
+    <value>Tek Panel</value>
+  </data>
+  <data name="Landing.SinglePanelDescription" xml:space="preserve">
+    <value>Tüm platform siparişleri tek yerde</value>
+  </data>
+  <data name="Landing.EasyManagement" xml:space="preserve">
+    <value>Kolay Yönetim</value>
+  </data>
+  <data name="Landing.EasyManagementDescription" xml:space="preserve">
+    <value>Şube ve platform bağlantılarını kolayca yönetin</value>
+  </data>
+  <data name="Landing.LiveTracking" xml:space="preserve">
+    <value>Canlı Takip</value>
+  </data>
+  <data name="Landing.LiveTrackingDescription" xml:space="preserve">
+    <value>Sipariş akışını ve durum değişimlerini izleyin</value>
+  </data>
+  <data name="Landing.HeroBadge" xml:space="preserve">
+    <value>SaaS • Restoran • Operasyon</value>
+  </data>
+  <data name="Landing.HeroTitle" xml:space="preserve">
+    <value>Tüm siparişlerinizi tek ekranda yönetin</value>
+  </data>
+  <data name="Landing.HeroDescription" xml:space="preserve">
+    <value>Yemeksepeti, Getir ve Trendyol’dan gelen siparişleri tek panelde görüntüleyin, takip edin ve yönetin.</value>
+  </data>
+  <data name="Landing.TenantNote" xml:space="preserve">
+    <value>Not: Müşteri paneli için alan adınızın tenant olarak eşleşmesi gerekir.</value>
+  </data>
+  <data name="Landing.FooterTagline" xml:space="preserve">
+    <value>Operasyon ekipleri için modern sipariş yönetimi</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>Giriş Yap</value>
+  </data>
+  <data name="Auth.Email" xml:space="preserve">
+    <value>E-posta</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>Şifre</value>
+  </data>
+  <data name="Auth.LoginButton" xml:space="preserve">
+    <value>Giriş Yap</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>Lütfen bilgileri kontrol edin.</value>
+  </data>
+  <data name="Auth.Logout" xml:space="preserve">
+    <value>Çıkış yap</value>
+  </data>
+  <data name="Dashboard.Title" xml:space="preserve">
+    <value>Panel</value>
+  </data>
+  <data name="Dashboard.TodayOrders" xml:space="preserve">
+    <value>Bugünkü Siparişler</value>
+  </data>
+  <data name="Dashboard.TodayRevenue" xml:space="preserve">
+    <value>Bugünkü Ciro</value>
+  </data>
+  <data name="Dashboard.ActiveConnections" xml:space="preserve">
+    <value>Aktif Bağlantılar</value>
+  </data>
+  <data name="Dashboard.RecentOrders" xml:space="preserve">
+    <value>Son Siparişler</value>
+  </data>
+  <data name="Dashboard.NoRecentOrders" xml:space="preserve">
+    <value>Henüz gösterilecek sipariş yok.</value>
+  </data>
+  <data name="Dashboard.ActiveOrders" xml:space="preserve">
+    <value>Aktif Siparişler</value>
+  </data>
+  <data name="Dashboard.CancelledOrders" xml:space="preserve">
+    <value>İptal Siparişler</value>
+  </data>
+  <data name="Dashboard.ViewAll" xml:space="preserve">
+    <value>Tümü</value>
+  </data>
+  <data name="Dashboard.PlatformSummary" xml:space="preserve">
+    <value>Platform Özeti</value>
+  </data>
+  <data name="Dashboard.Count" xml:space="preserve">
+    <value>Adet</value>
+  </data>
+  <data name="Dashboard.Revenue" xml:space="preserve">
+    <value>Ciro</value>
+  </data>
+  <data name="Dashboard.NoPlatformSummary" xml:space="preserve">
+    <value>Henüz platform özeti yok.</value>
+  </data>
+  <data name="Orders.Title" xml:space="preserve">
+    <value>Siparişler</value>
+  </data>
+  <data name="Orders.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Orders.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Orders.StartDate" xml:space="preserve">
+    <value>Başlangıç Tarihi</value>
+  </data>
+  <data name="Orders.EndDate" xml:space="preserve">
+    <value>Bitiş Tarihi</value>
+  </data>
+  <data name="Orders.Filter" xml:space="preserve">
+    <value>Filtrele</value>
+  </data>
+  <data name="Orders.Clear" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="Orders.NoOrdersFound" xml:space="preserve">
+    <value>Henüz sipariş bulunamadı.</value>
+  </data>
+  <data name="Orders.NoFilteredOrdersFound" xml:space="preserve">
+    <value>Filtreye uygun sipariş bulunamadı.</value>
+  </data>
+  <data name="Orders.OrderCode" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="Orders.Customer" xml:space="preserve">
+    <value>Müşteri</value>
+  </data>
+  <data name="Orders.TotalAmount" xml:space="preserve">
+    <value>Tutar</value>
+  </data>
+  <data name="Orders.ReceivedAt" xml:space="preserve">
+    <value>Alındı</value>
+  </data>
+  <data name="Orders.Details" xml:space="preserve">
+    <value>Detay</value>
+  </data>
+  <data name="Orders.LastUpdated" xml:space="preserve">
+    <value>Son güncelleme</value>
+  </data>
+  <data name="Orders.TotalCount" xml:space="preserve">
+    <value>Toplam</value>
+  </data>
+  <data name="Orders.DetailsTitle" xml:space="preserve">
+    <value>Sipariş Detayı</value>
+  </data>
+  <data name="Orders.Summary" xml:space="preserve">
+    <value>Özet</value>
+  </data>
+  <data name="Orders.Phone" xml:space="preserve">
+    <value>Telefon</value>
+  </data>
+  <data name="Orders.Address" xml:space="preserve">
+    <value>Adres</value>
+  </data>
+  <data name="Orders.Products" xml:space="preserve">
+    <value>Ürünler</value>
+  </data>
+  <data name="Orders.Product" xml:space="preserve">
+    <value>Ürün</value>
+  </data>
+  <data name="Orders.Quantity" xml:space="preserve">
+    <value>Adet</value>
+  </data>
+  <data name="Orders.Unit" xml:space="preserve">
+    <value>Birim</value>
+  </data>
+  <data name="Orders.LineTotal" xml:space="preserve">
+    <value>Toplam</value>
+  </data>
+  <data name="Orders.SoundPlayingTitle" xml:space="preserve">
+    <value>Yeni sipariş sesi çalıyor</value>
+  </data>
+  <data name="PlatformConnections.Title" xml:space="preserve">
+    <value>Platform Bağlantıları</value>
+  </data>
+  <data name="PlatformConnections.Create" xml:space="preserve">
+    <value>Yeni Bağlantı</value>
+  </data>
+  <data name="PlatformConnections.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="PlatformConnections.StoreId" xml:space="preserve">
+    <value>Mağaza Kodu</value>
+  </data>
+  <data name="PlatformConnections.ApiKey" xml:space="preserve">
+    <value>API Key</value>
+  </data>
+  <data name="PlatformConnections.ApiSecret" xml:space="preserve">
+    <value>API Secret</value>
+  </data>
+  <data name="PlatformConnections.IsActive" xml:space="preserve">
+    <value>Aktif</value>
+  </data>
+  <data name="PlatformConnections.NoConnectionsFound" xml:space="preserve">
+    <value>Henüz platform bağlantısı eklenmemiş.</value>
+  </data>
+  <data name="PlatformConnections.DuplicateError" xml:space="preserve">
+    <value>Bu platform ve mağaza kodu zaten tanımlı.</value>
+  </data>
+  <data name="PlatformConnections.Back" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="PlatformConnections.Deactivate" xml:space="preserve">
+    <value>Pasif Et</value>
+  </data>
+  <data name="PlatformConnections.Activate" xml:space="preserve">
+    <value>Aktif Et</value>
+  </data>
+  <data name="PlatformConnections.NoteRole" xml:space="preserve">
+    <value>Not: Platform bağlantı yönetimi için Owner/Manager yetkisi beklenir.</value>
+  </data>
+  <data name="Branches.Title" xml:space="preserve">
+    <value>Şubeler</value>
+  </data>
+  <data name="Branches.Create" xml:space="preserve">
+    <value>Yeni Şube</value>
+  </data>
+  <data name="Branches.Name" xml:space="preserve">
+    <value>Ad</value>
+  </data>
+  <data name="Branches.Address" xml:space="preserve">
+    <value>Adres</value>
+  </data>
+  <data name="Branches.NoBranchesFound" xml:space="preserve">
+    <value>Henüz şube eklenmemiş.</value>
+  </data>
+  <data name="Notification.Settings" xml:space="preserve">
+    <value>Bildirim Ayarları</value>
+  </data>
+  <data name="Notification.Enabled" xml:space="preserve">
+    <value>Aktif</value>
+  </data>
+  <data name="Notification.Disabled" xml:space="preserve">
+    <value>Kapalı</value>
+  </data>
+  <data name="Notification.WaitingForBrowserAudio" xml:space="preserve">
+    <value>Tarayıcı izni bekleniyor</value>
+  </data>
+  <data name="Notification.Sound" xml:space="preserve">
+    <value>Zil sesi</value>
+  </data>
+  <data name="Notification.SelectedSound" xml:space="preserve">
+    <value>Seçili zil sesi</value>
+  </data>
+  <data name="Notification.RepeatCount" xml:space="preserve">
+    <value>Tekrar sayısı</value>
+  </data>
+  <data name="Notification.Volume" xml:space="preserve">
+    <value>Ses seviyesi</value>
+  </data>
+  <data name="Notification.BrowserNotification" xml:space="preserve">
+    <value>Tarayıcı bildirimi</value>
+  </data>
+  <data name="Notification.Play" xml:space="preserve">
+    <value>Dinle</value>
+  </data>
+  <data name="Notification.SaveSuccess" xml:space="preserve">
+    <value>Ayarlar kaydedildi.</value>
+  </data>
+  <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
+    <value>Ses çalınamadı. Ses dosyasını veya tarayıcı izinlerini kontrol edin.</value>
+  </data>
+  <data name="Notification.NewOrderArrived" xml:space="preserve">
+    <value>Yeni sipariş geldi</value>
+  </data>
+  <data name="Notification.CheckOrdersPage" xml:space="preserve">
+    <value>Siparişler ekranını kontrol edin.</value>
+  </data>
+  <data name="Notification.SoundUnlockHint" xml:space="preserve">
+    <value>Yeni sipariş sesini duymak için önce Bildirim Ayarları içinden bir sesi dinleyin.</value>
+  </data>
+  <data name="Notification.Loading" xml:space="preserve">
+    <value>Yükleniyor…</value>
+  </data>
+  <data name="Notification.PersistentHelp" xml:space="preserve">
+    <value>Kalıcı ayar: kullanıcı hesabınıza kaydedilir</value>
+  </data>
+  <data name="Notification.Notifications" xml:space="preserve">
+    <value>Bildirimler</value>
+  </data>
+  <data name="Notification.NotificationsHelp" xml:space="preserve">
+    <value>Sesli bildirim ayarı kaydedilir. Tarayıcıdaki ses açma durumu ise bu cihaza özeldir.</value>
+  </data>
+  <data name="Notification.TestSelectedSound" xml:space="preserve">
+    <value>Seçili Sesi Test Et</value>
+  </data>
+  <data name="Notification.ShowBrowserNotification" xml:space="preserve">
+    <value>Tarayıcı bildirimi göster</value>
+  </data>
+  <data name="OrderStatus.New" xml:space="preserve">
+    <value>Yeni</value>
+  </data>
+  <data name="OrderStatus.Accepted" xml:space="preserve">
+    <value>Kabul Edildi</value>
+  </data>
+  <data name="OrderStatus.Preparing" xml:space="preserve">
+    <value>Hazırlanıyor</value>
+  </data>
+  <data name="OrderStatus.ReadyForPickup" xml:space="preserve">
+    <value>Hazır</value>
+  </data>
+  <data name="OrderStatus.OnTheWay" xml:space="preserve">
+    <value>Yolda</value>
+  </data>
+  <data name="OrderStatus.Delivered" xml:space="preserve">
+    <value>Teslim Edildi</value>
+  </data>
+  <data name="OrderStatus.Cancelled" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="OrderStatus.Failed" xml:space="preserve">
+    <value>Hatalı</value>
+  </data>
+  <data name="Validation.EmailRequired" xml:space="preserve">
+    <value>E-posta gerekli.</value>
+  </data>
+  <data name="Validation.EmailInvalid" xml:space="preserve">
+    <value>Geçerli bir e-posta girin.</value>
+  </data>
+  <data name="Validation.PasswordRequired" xml:space="preserve">
+    <value>Şifre gerekli.</value>
+  </data>
+  <data name="Validation.PlatformRequired" xml:space="preserve">
+    <value>Platform seçin.</value>
+  </data>
+  <data name="Validation.StoreIdRequired" xml:space="preserve">
+    <value>Mağaza/Restoran ID gerekli.</value>
+  </data>
+  <data name="Validation.ApiKeyRequired" xml:space="preserve">
+    <value>API Key gerekli.</value>
+  </data>
+  <data name="Validation.ApiSecretRequired" xml:space="preserve">
+    <value>API Secret gerekli.</value>
+  </data>
+  <data name="Validation.BranchNameRequired" xml:space="preserve">
+    <value>Şube adı gerekli.</value>
+  </data>
+  <data name="Validation.AddressRequired" xml:space="preserve">
+    <value>Adres gerekli.</value>
+  </data>
+  <data name="Landing.Order" xml:space="preserve">
+    <value>Sipariş</value>
+  </data>
+  <data name="Landing.Endorsement" xml:space="preserve">
+    <value>Ciro</value>
+  </data>
+  <data name="Landing.Preparing" xml:space="preserve">
+    <value>Hazırlanıyor</value>
+  </data>
+  <data name="Landing.OnTheRoad" xml:space="preserve">
+    <value>Yolda</value>
+  </data>
+  <data name="Landing.OrdersToday" xml:space="preserve">
+    <value>Bugünkü Siparişler</value>
+  </data>
+  <data name="Landing.Live" xml:space="preserve">
+    <value>Canlı</value>
+  </data>
+</root>

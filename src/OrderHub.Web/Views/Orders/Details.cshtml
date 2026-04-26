@@ -1,35 +1,39 @@
 @model OrderHub.Web.Models.Orders.OrderDetailViewModel
+@using OrderHub.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
-    ViewData["Title"] = "Sipariş Detayı";
+    ViewData["Title"] = L["Orders.DetailsTitle"];
+    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
-        <h1 class="h4 mb-0">Sipariş Detayı</h1>
+        <h1 class="h4 mb-0">@L["Orders.DetailsTitle"]</h1>
         <div class="text-muted small">@Model.Platform - @Model.ExternalOrderCode</div>
     </div>
-    <a class="btn btn-sm btn-outline-primary" href="/orders">Geri</a>
+    <a class="btn btn-sm btn-outline-primary" href="/orders">@L["Common.Back"]</a>
 </div>
 
 <div class="row g-3">
     <div class="col-12 col-lg-5">
         <div class="card oh-card">
             <div class="card-body">
-                <h2 class="h6">Özet</h2>
+                <h2 class="h6">@L["Orders.Summary"]</h2>
                 <dl class="row mb-0">
-                    <dt class="col-5">Durum</dt>
-                    <dd class="col-7">@Model.Status</dd>
+                    <dt class="col-5">@L["Common.Status"]</dt>
+                    <dd class="col-7">@StatusLabel(Model.Status)</dd>
 
-                    <dt class="col-5">Müşteri</dt>
+                    <dt class="col-5">@L["Orders.Customer"]</dt>
                     <dd class="col-7">@Model.CustomerName</dd>
 
-                    <dt class="col-5">Telefon</dt>
+                    <dt class="col-5">@L["Orders.Phone"]</dt>
                     <dd class="col-7">@Model.CustomerPhone</dd>
 
-                    <dt class="col-5">Adres</dt>
+                    <dt class="col-5">@L["Orders.Address"]</dt>
                     <dd class="col-7">@Model.CustomerAddress</dd>
 
-                    <dt class="col-5">Toplam</dt>
+                    <dt class="col-5">@L["Common.Total"]</dt>
                     <dd class="col-7">@Model.TotalAmount.ToString("C")</dd>
                 </dl>
             </div>
@@ -39,22 +43,22 @@
     <div class="col-12 col-lg-7">
         <div class="card oh-card">
             <div class="card-body">
-                <h2 class="h6">Ürünler</h2>
+                <h2 class="h6">@L["Orders.Products"]</h2>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
                         <thead>
                         <tr>
-                            <th>Ürün</th>
-                            <th class="text-end">Adet</th>
-                            <th class="text-end">Birim</th>
-                            <th class="text-end">Toplam</th>
+                            <th>@L["Orders.Product"]</th>
+                            <th class="text-end">@L["Orders.Quantity"]</th>
+                            <th class="text-end">@L["Orders.Unit"]</th>
+                            <th class="text-end">@L["Orders.LineTotal"]</th>
                         </tr>
                         </thead>
                         <tbody>
                         @if (Model.Items.Count == 0)
                         {
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">Henüz gösterilecek sipariş yok.</td>
+                                <td colspan="4" class="text-center text-muted py-4">@L["Dashboard.NoRecentOrders"]</td>
                             </tr>
                         }
                         else

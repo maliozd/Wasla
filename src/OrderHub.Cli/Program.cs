@@ -9,6 +9,42 @@ using OrderHub.Cli;
 using OrderHub.Infrastructure.Persistence.Central;
 using OrderHub.Infrastructure.Security;
 
+static bool HasHelpFlag(string[] a) =>
+    a.Any(x => string.Equals(x, "--help", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(x, "-h", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(x, "-?", StringComparison.OrdinalIgnoreCase));
+
+// Custom help behavior:
+// - no args => general help
+// - --help/-h/-? => general help
+// - help [command] => custom help (and does NOT require ENCRYPTION_MASTER_KEY)
+// - unknown command => print unknown + general help
+if (args.Length == 0 || HasHelpFlag(args))
+{
+    CliHelpPrinter.PrintGeneralHelp();
+    return 0;
+}
+
+if (string.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase))
+{
+    if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
+        CliHelpPrinter.PrintCommandHelp(args[1]);
+    else
+        CliHelpPrinter.PrintGeneralHelp();
+
+    return 0;
+}
+
+// If the first token isn't a known command and isn't an option, show custom help.
+if (!args[0].StartsWith("-", StringComparison.Ordinal) && !CliHelpPrinter.IsKnownCommand(args[0]))
+{
+    Console.WriteLine($"Unknown command: {args[0]}");
+    Console.WriteLine();
+    CliHelpPrinter.PrintGeneralHelp();
+    return 2;
+}
+
+// All non-help commands require master key.
 AesSecretManager.ValidateMasterKeyOrThrow();
 
 
@@ -169,6 +205,84 @@ createUser.SetHandler(async (InvocationContext context) =>
         context.GetCancellationToken());
 });
 
+// --- delete-customer ---
+var deleteCustomer = new Command("delete-customer", "Permanently delete a customer record and drop its CustomerDb (DESTRUCTIVE).");
+var optDelSlug = new Option<string?>("--slug", "Customer slug in CentralDb");
+var optDelCid = new Option<string?>("--customer-id", "Customer id (GUID) in CentralDb");
+var optConfirm = new Option<bool>("--confirm", "Required. Confirms you understand this is destructive.");
+var optForceProd = new Option<bool>("--force-production", "Allow running in Production (still requires --confirm).");
+deleteCustomer.AddOption(optDelSlug);
+deleteCustomer.AddOption(optDelCid);
+deleteCustomer.AddOption(optConfirm);
+deleteCustomer.AddOption(optForceProd);
+deleteCustomer.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.DeleteCustomerAsync(
+        host,
+        p.GetValueForOption(optDelSlug),
+        p.GetValueForOption(optDelCid),
+        p.GetValueForOption(optConfirm),
+        p.GetValueForOption(optForceProd),
+        context.GetCancellationToken());
+});
+
+// --- reset-customer-db ---
+var resetCustomerDb = new Command("reset-customer-db", "Drop + recreate + migrate a single CustomerDb, keeping CentralDb customer record (DESTRUCTIVE).");
+var optResetSlug = new Option<string?>("--slug", "Customer slug in CentralDb");
+var optResetCid = new Option<string?>("--customer-id", "Customer id (GUID) in CentralDb");
+resetCustomerDb.AddOption(optResetSlug);
+resetCustomerDb.AddOption(optResetCid);
+resetCustomerDb.AddOption(optConfirm);
+resetCustomerDb.AddOption(optForceProd);
+resetCustomerDb.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.ResetCustomerDbAsync(
+        host,
+        p.GetValueForOption(optResetSlug),
+        p.GetValueForOption(optResetCid),
+        p.GetValueForOption(optConfirm),
+        p.GetValueForOption(optForceProd),
+        context.GetCancellationToken());
+});
+
+// --- reset-all-customer-dbs ---
+var resetAllCustomerDbs = new Command("reset-all-customer-dbs", "Drop + recreate + migrate ALL active CustomerDbs (DESTRUCTIVE).");
+resetAllCustomerDbs.AddOption(optConfirm);
+resetAllCustomerDbs.AddOption(optForceProd);
+resetAllCustomerDbs.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.ResetAllCustomerDbsAsync(
+        host,
+        p.GetValueForOption(optConfirm),
+        p.GetValueForOption(optForceProd),
+        context.GetCancellationToken());
+});
+
+// --- seed-customer-admin ---
+var seedCustomerAdmin = new Command("seed-customer-admin", "Create an Owner admin user in an existing customer DB if missing.");
+var optSeedSlug = new Option<string>("--slug", "Customer slug in CentralDb") { IsRequired = true };
+var optSeedEmail = new Option<string>("--admin-email", "Admin email") { IsRequired = true };
+var optSeedPassword = new Option<string>("--admin-password", "Admin password (visible in history)") { IsRequired = true };
+var optSeedName = new Option<string?>("--admin-name", "Admin full name");
+seedCustomerAdmin.AddOption(optSeedSlug);
+seedCustomerAdmin.AddOption(optSeedEmail);
+seedCustomerAdmin.AddOption(optSeedPassword);
+seedCustomerAdmin.AddOption(optSeedName);
+seedCustomerAdmin.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.SeedCustomerAdminAsync(
+        host,
+        p.GetValueForOption(optSeedSlug)!,
+        p.GetValueForOption(optSeedEmail)!,
+        p.GetValueForOption(optSeedPassword)!,
+        p.GetValueForOption(optSeedName),
+        context.GetCancellationToken());
+});
+
 var root = new RootCommand("orderhub — operational CLI for customer onboarding, migrations, and secrets.")
 {
     addCustomer,
@@ -176,6 +290,10 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     migrateCustomer,
     migrateAll,
     migrationStatus,
+    deleteCustomer,
+    resetCustomerDb,
+    resetAllCustomerDbs,
+    seedCustomerAdmin,
     listCustomers,
     encrypt,
     createUser

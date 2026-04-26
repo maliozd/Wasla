@@ -1,11 +1,13 @@
 @model OrderHub.Web.Models.PlatformConnections.PlatformConnectionListViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
-    ViewData["Title"] = "Platform Bağlantıları";
+    ViewData["Title"] = L["PlatformConnections.Title"];
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Platform Bağlantıları</h1>
-    <a class="btn btn-sm btn-primary" href="/platform-connections/create">Yeni Bağlantı</a>
+    <h1 class="h4 mb-0">@L["PlatformConnections.Title"]</h1>
+    <a class="btn btn-sm btn-primary" href="/platform-connections/create">@L["PlatformConnections.Create"]</a>
 </div>
 
 <div class="card oh-card">
@@ -14,9 +16,9 @@
             <table class="table table-sm align-middle mb-0">
                 <thead>
                 <tr>
-                    <th>Platform</th>
-                    <th>Mağaza ID</th>
-                    <th>Durum</th>
+                    <th>@L["PlatformConnections.Platform"]</th>
+                    <th>@L["PlatformConnections.StoreId"]</th>
+                    <th>@L["Common.Status"]</th>
                     <th class="text-end">Hata</th>
                     <th class="text-end">Circuit</th>
                     <th class="text-end">Son Başarılı</th>
@@ -27,7 +29,7 @@
                 @if (Model.Connections.Count == 0)
                 {
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">Henüz platform bağlantısı eklenmemiş.</td>
+                        <td colspan="7" class="text-center text-muted py-4">@L["PlatformConnections.NoConnectionsFound"]</td>
                     </tr>
                 }
                 else
@@ -40,11 +42,11 @@
                             <td>
                                 @if (c.IsActive)
                                 {
-                                    <span class="badge text-bg-success">Aktif</span>
+                                    <span class="badge text-bg-success">@L["Common.Active"]</span>
                                 }
                                 else
                                 {
-                                    <span class="badge text-bg-secondary">Pasif</span>
+                                    <span class="badge text-bg-secondary">@L["Common.Passive"]</span>
                                 }
                             </td>
                             <td class="text-end">@c.ConsecutiveFailures</td>
@@ -54,7 +56,7 @@
                                 <form method="post" action="/platform-connections/@c.Id/@(c.IsActive ? "deactivate" : "activate")">
                                     @Html.AntiForgeryToken()
                                     <button class="btn btn-sm btn-outline-primary" type="submit">
-                                        @(c.IsActive ? "Pasif Et" : "Aktif Et")
+                                        @(c.IsActive ? L["PlatformConnections.Deactivate"] : L["PlatformConnections.Activate"])
                                     </button>
                                 </form>
                             </td>
@@ -65,7 +67,7 @@
             </table>
         </div>
         <div class="text-muted small mt-2">
-            Not: Platform bağlantı yönetimi için Owner/Manager yetkisi beklenir.
+            @L["PlatformConnections.NoteRole"]
         </div>
     </div>
 </div>

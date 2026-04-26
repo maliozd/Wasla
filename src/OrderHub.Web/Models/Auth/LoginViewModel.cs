@@ -4,13 +4,13 @@ namespace OrderHub.Web.Models.Auth;
 
 public sealed class LoginViewModel
 {
-    [Required(ErrorMessage = "E-posta gerekli.")]
-    [EmailAddress(ErrorMessage = "Geçerli bir e-posta girin.")]
-    [Display(Name = "E-posta")]
+    [Required(ErrorMessage = "Validation.EmailRequired")]
+    [EmailAddress(ErrorMessage = "Validation.EmailInvalid")]
+    [Display(Name = "Auth.Email")]
     public string Email { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Şifre gerekli.")]
-    [Display(Name = "Şifre")]
+    [Required(ErrorMessage = "Validation.PasswordRequired")]
+    [Display(Name = "Auth.Password")]
     public string Password { get; set; } = string.Empty;
 
     public string? ReturnUrl { get; set; }

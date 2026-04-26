@@ -1,18 +1,22 @@
 @model OrderHub.Web.Models.Dashboard.DashboardViewModel
+@using OrderHub.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
-    ViewData["Title"] = "Panel";
+    ViewData["Title"] = L["Dashboard.Title"];
+    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Panel</h1>
-    <span class="text-muted small">Bugün</span>
+    <h1 class="h4 mb-0">@L["Dashboard.Title"]</h1>
+    <span class="text-muted small">@L["Common.Today"]</span>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-3">
         <div class="card oh-card">
             <div class="card-body">
-                <div class="text-muted small">Bugünkü Sipariş Sayısı</div>
+                <div class="text-muted small">@L["Dashboard.TodayOrders"]</div>
                 <div class="display-6 fw-semibold">@Model.TodayOrderCount</div>
             </div>
         </div>
@@ -20,7 +24,7 @@
     <div class="col-12 col-md-3">
         <div class="card oh-card">
             <div class="card-body">
-                <div class="text-muted small">Bugünkü Ciro</div>
+                <div class="text-muted small">@L["Dashboard.TodayRevenue"]</div>
                 <div class="display-6 fw-semibold">@Model.TodayRevenue.ToString("C")</div>
             </div>
         </div>
@@ -28,7 +32,7 @@
     <div class="col-12 col-md-3">
         <div class="card oh-card">
             <div class="card-body">
-                <div class="text-muted small">Aktif Siparişler</div>
+                <div class="text-muted small">@L["Dashboard.ActiveOrders"]</div>
                 <div class="display-6 fw-semibold">@Model.ActiveOrderCount</div>
             </div>
         </div>
@@ -36,7 +40,7 @@
     <div class="col-12 col-md-3">
         <div class="card oh-card">
             <div class="card-body">
-                <div class="text-muted small">İptal Siparişler</div>
+                <div class="text-muted small">@L["Dashboard.CancelledOrders"]</div>
                 <div class="display-6 fw-semibold">@Model.CancelledOrderCount</div>
             </div>
         </div>
@@ -48,26 +52,26 @@
         <div class="card oh-card">
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h2 class="h6 mb-0">Son Siparişler</h2>
-                    <a class="btn btn-sm btn-outline-primary" href="/orders">Tümü</a>
+                    <h2 class="h6 mb-0">@L["Dashboard.RecentOrders"]</h2>
+                    <a class="btn btn-sm btn-outline-primary" href="/orders">@L["Dashboard.ViewAll"]</a>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
                         <thead>
                         <tr>
-                            <th>Platform</th>
-                            <th>Kod</th>
-                            <th>Müşteri</th>
-                            <th>Durum</th>
-                            <th class="text-end">Tutar</th>
+                            <th>@L["Orders.Platform"]</th>
+                            <th>@L["Orders.OrderCode"]</th>
+                            <th>@L["Orders.Customer"]</th>
+                            <th>@L["Orders.Status"]</th>
+                            <th class="text-end">@L["Orders.TotalAmount"]</th>
                         </tr>
                         </thead>
                         <tbody>
                         @if (Model.RecentOrders.Count == 0)
                         {
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">Henüz gösterilecek sipariş yok.</td>
+                                <td colspan="5" class="text-center text-muted py-4">@L["Dashboard.NoRecentOrders"]</td>
                             </tr>
                         }
                         else
@@ -78,7 +82,7 @@
                                     <td>@o.Platform</td>
                                     <td><a href="/orders/details/@o.Id">@o.ExternalOrderCode</a></td>
                                     <td>@o.CustomerName</td>
-                                    <td>@o.Status</td>
+                                    <td>@StatusLabel(o.Status)</td>
                                     <td class="text-end">@o.TotalAmount.ToString("C")</td>
                                 </tr>
                             }
@@ -93,21 +97,21 @@
     <div class="col-12 col-lg-5">
         <div class="card oh-card">
             <div class="card-body">
-                <h2 class="h6">Platform Özeti</h2>
+                <h2 class="h6">@L["Dashboard.PlatformSummary"]</h2>
                 <div class="table-responsive">
                     <table class="table table-sm mb-0">
                         <thead>
                         <tr>
-                            <th>Platform</th>
-                            <th class="text-end">Adet</th>
-                            <th class="text-end">Ciro</th>
+                            <th>@L["Orders.Platform"]</th>
+                            <th class="text-end">@L["Dashboard.Count"]</th>
+                            <th class="text-end">@L["Dashboard.Revenue"]</th>
                         </tr>
                         </thead>
                         <tbody>
                         @if (Model.PlatformSummary.Count == 0)
                         {
                             <tr>
-                                <td colspan="3" class="text-center text-muted py-4">Henüz platform özeti yok.</td>
+                                <td colspan="3" class="text-center text-muted py-4">@L["Dashboard.NoPlatformSummary"]</td>
                             </tr>
                         }
                         else

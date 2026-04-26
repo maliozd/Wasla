@@ -22,12 +22,7 @@ public sealed class CustomerResolutionMiddleware
         ILogger<CustomerResolutionMiddleware> logger)
     {
         var path = context.Request.Path.Value ?? string.Empty;
-        if (path.StartsWith("/css", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/js", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/lib", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/images", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/img", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/favicon", StringComparison.OrdinalIgnoreCase))
+        if (IsBypassPath(path))
         {
             await _next(context);
             return;
@@ -38,6 +33,13 @@ public sealed class CustomerResolutionMiddleware
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsync("Invalid host");
+            return;
+        }
+
+        // If host has no subdomain (e.g. orderhub.local), treat as public marketing host.
+        if (!IsSubdomainRequest(host))
+        {
+            await _next(context);
             return;
         }
 
@@ -54,13 +56,7 @@ public sealed class CustomerResolutionMiddleware
         {
             logger.LogInformation("No customer for host {Host}", host);
 
-            // Public marketing surface when the host is not mapped to a tenant.
-            if (IsPublicNoTenantPath(path))
-            {
-                await _next(context);
-                return;
-            }
-
+            // Subdomain request but no matching tenant: keep the existing behavior.
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             await context.Response.WriteAsync("Customer not found");
             return;
@@ -72,7 +68,7 @@ public sealed class CustomerResolutionMiddleware
         await _next(context);
     }
 
-    private static bool IsPublicNoTenantPath(string path)
+    private static bool IsBypassPath(string path)
     {
         var p = path;
         if (p.Length > 1 && p.EndsWith('/'))
@@ -82,7 +78,31 @@ public sealed class CustomerResolutionMiddleware
 
         if (string.Equals(p, "/", StringComparison.OrdinalIgnoreCase)) return true;
         if (string.Equals(p, "/admin/login", StringComparison.OrdinalIgnoreCase)) return true;
+
+        // Public routes / auth / culture switch / common diagnostics
+        //if (p.StartsWith("/auth", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/culture", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/setlanguage", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/health", StringComparison.OrdinalIgnoreCase)) return true;
+
+        // Static files
+        if (p.StartsWith("/css", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/js", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/lib", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/images", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/img", StringComparison.OrdinalIgnoreCase)) return true;
+        if (p.StartsWith("/favicon", StringComparison.OrdinalIgnoreCase)) return true;
+
         return false;
+    }
+
+    private static bool IsSubdomainRequest(string host)
+    {
+        // ahmet.orderhub.local => 3 parts (subdomain + base + tld)
+        // orderhub.local => 2 parts (marketing host)
+        var parts = host.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length >= 3;
     }
 }
 

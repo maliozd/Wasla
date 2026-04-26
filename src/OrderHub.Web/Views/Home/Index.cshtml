@@ -4,7 +4,15 @@
 }
 
 <!DOCTYPE html>
-<html lang="tr">
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    var returnUrl = (Context.Request.Path.Value ?? "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : "");
+    var culture = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
+    var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
+}
+<html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,6 +21,10 @@
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+    @if (isRtl)
+    {
+        <link rel="stylesheet" href="~/css/rtl.css" asp-append-version="true" />
+    }
 </head>
 <body class="oh-landing">
 <header class="border-bottom bg-white">
@@ -23,12 +35,40 @@
             </div>
             <div>
                 <div class="fw-bold text-dark">OrderHub</div>
-                <div class="small text-muted">Çoklu platform sipariş yönetimi</div>
+                <div class="small text-muted">@L["Landing.Subtitle"]</div>
             </div>
         </div>
         <div class="d-flex gap-2">
-            <a class="btn btn-outline-primary" href="/auth/login">Müşteri Girişi</a>
-            <a class="btn btn-primary" href="/admin/login">Admin Girişi</a>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">
+                    <i class="bi bi-translate me-1"></i>@L["Common.Language"]
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item"
+                           asp-controller="Culture"
+                           asp-action="Set"
+                           asp-route-culture="tr-TR"
+                           asp-route-returnUrl="@returnUrl">Türkçe</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                           asp-controller="Culture"
+                           asp-action="Set"
+                           asp-route-culture="en-US"
+                           asp-route-returnUrl="@returnUrl">English</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                           asp-controller="Culture"
+                           asp-action="Set"
+                           asp-route-culture="ar-SA"
+                           asp-route-returnUrl="@returnUrl">العربية</a>
+                    </li>
+                </ul>
+            </div>
+            <a class="btn btn-outline-primary" href="/auth/login">@L["Landing.CustomerLogin"]</a>
+            <a class="btn btn-primary" href="/admin/login">@L["Landing.AdminLogin"]</a>
         </div>
     </div>
 </header>
@@ -38,17 +78,17 @@
         <div class="container">
             <div class="row align-items-center g-4">
                 <div class="col-lg-6">
-                    <div class="badge text-bg-light border mb-3">SaaS • Restoran • Operasyon</div>
-                    <h1 class="display-6 fw-bold mb-3">Tüm siparişlerinizi tek ekranda yönetin</h1>
+                    <div class="badge text-bg-light border mb-3">@L["Landing.HeroBadge"]</div>
+                    <h1 class="display-6 fw-bold mb-3">@L["Landing.HeroTitle"]</h1>
                     <p class="lead text-secondary mb-4">
-                        Yemeksepeti, Getir ve Trendyol’dan gelen siparişleri tek panelde görüntüleyin, takip edin ve yönetin.
+                        @L["Landing.HeroDescription"]
                     </p>
                     <div class="d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary btn-lg" href="/auth/login"><i class="bi bi-box-arrow-in-right me-2"></i>Müşteri Girişi</a>
-                        <a class="btn btn-outline-dark btn-lg" href="/admin/login"><i class="bi bi-shield-lock me-2"></i>Admin Girişi</a>
+                        <a class="btn btn-primary btn-lg" href="/auth/login"><i class="bi bi-box-arrow-in-right me-2"></i>@L["Landing.CustomerLogin"]</a>
+                        <a class="btn btn-outline-dark btn-lg" href="/admin/login"><i class="bi bi-shield-lock me-2"></i>@L["Landing.AdminLogin"]</a>
                     </div>
                     <div class="small text-muted mt-3">
-                        Not: Müşteri paneli için alan adınızın tenant olarak eşleşmesi gerekir.
+                        @L["Landing.TenantNote"]
                     </div>
                 </div>
                 <div class="col-lg-6">
@@ -62,23 +102,23 @@
                         <div class="phone-mockup shadow-lg border bg-white p-3 rounded-4">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <span class="fw-semibold">OrderHub</span>
-                                <span class="badge text-bg-success">Canlı</span>
+                                <span class="badge text-bg-success">@L["Landing.Live"]</span>
                             </div>
-                            <div class="small text-muted mb-2">Bugünkü siparişler</div>
+                            <div class="small text-muted mb-2">@L["Landing.OrdersToday"]</div>
                             <div class="d-flex gap-2 mb-2">
                                 <div class="flex-fill rounded-3 bg-light border p-2">
-                                    <div class="text-muted small">Ciro</div>
+                                    <div class="text-muted small">@L["Landing.Endorsement"]</div>
                                     <div class="fw-bold">₺12.450</div>
                                 </div>
                                 <div class="flex-fill rounded-3 bg-light border p-2">
-                                    <div class="text-muted small">Sipariş</div>
+                                    <div class="text-muted small">@L["Landing.Order"]</div>
                                     <div class="fw-bold">48</div>
                                 </div>
                             </div>
                             <div class="rounded-3 border p-2 mb-2">
                                 <div class="d-flex justify-content-between">
                                     <div class="fw-semibold small">YS-ORDER-12345</div>
-                                    <div class="small text-muted">Hazırlanıyor</div>
+                                    <div class="small text-muted">@L["Landing.Preparing"]</div>
                                 </div>
                                 <div class="progress mt-2" style="height: 6px;">
                                     <div class="progress-bar" style="width: 62%"></div>
@@ -87,7 +127,7 @@
                             <div class="rounded-3 border p-2">
                                 <div class="d-flex justify-content-between">
                                     <div class="fw-semibold small">GY-ORDER-88221</div>
-                                    <div class="small text-muted">Yolda</div>
+                                    <div class="small text-muted">@L["Landing.OnTheRoad"]</div>
                                 </div>
                             </div>
                         </div>
@@ -104,8 +144,8 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
                             <div class="icon-circle mb-3"><i class="bi bi-grid-1x2"></i></div>
-                            <h3 class="h5">Tek Panel</h3>
-                            <p class="text-secondary mb-0">Tüm platform siparişleri tek yerde</p>
+                                <h3 class="h5">@L["Landing.SinglePanel"]</h3>
+                                <p class="text-secondary mb-0">@L["Landing.SinglePanelDescription"]</p>
                         </div>
                     </div>
                 </div>
@@ -113,8 +153,8 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
                             <div class="icon-circle mb-3"><i class="bi bi-sliders"></i></div>
-                            <h3 class="h5">Kolay Yönetim</h3>
-                            <p class="text-secondary mb-0">Şube ve platform bağlantılarını kolayca yönetin</p>
+                                <h3 class="h5">@L["Landing.EasyManagement"]</h3>
+                                <p class="text-secondary mb-0">@L["Landing.EasyManagementDescription"]</p>
                         </div>
                     </div>
                 </div>
@@ -122,8 +162,8 @@
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
                             <div class="icon-circle mb-3"><i class="bi bi-activity"></i></div>
-                            <h3 class="h5">Canlı Takip</h3>
-                            <p class="text-secondary mb-0">Sipariş akışını ve durum değişimlerini izleyin</p>
+                                <h3 class="h5">@L["Landing.LiveTracking"]</h3>
+                                <p class="text-secondary mb-0">@L["Landing.LiveTrackingDescription"]</p>
                         </div>
                     </div>
                 </div>
@@ -135,7 +175,7 @@
 <footer class="border-top py-4 bg-light">
     <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="text-muted small">© @DateTime.UtcNow.Year OrderHub</div>
-        <div class="small text-muted">Operasyon ekipleri için modern sipariş yönetimi</div>
+        <div class="small text-muted">@L["Landing.FooterTagline"]</div>
     </div>
 </footer>
 
