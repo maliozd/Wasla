@@ -63,6 +63,40 @@ addCustomer.SetHandler(async (InvocationContext context) =>
         host, name, slug, domain, adminEmail, adminPassword, adminName, sqlServer, sqlAuth, ct);
 });
 
+// --- migrate-central ---
+var migrateCentral = new Command("migrate-central", "Apply pending EF Core migrations for CentralDb (customer registry).");
+
+migrateCentral.SetHandler(async (InvocationContext context) =>
+{
+    context.ExitCode = await CliCommands.MigrateCentralAsync(host, context.GetCancellationToken());
+});
+
+// --- migrate-customer ---
+var migrateCustomer = new Command("migrate-customer", "Apply pending CustomerDb migrations for a single customer.");
+
+var optMcSlug = new Option<string?>("--slug", "Customer slug in CentralDb");
+var optMcCid = new Option<string?>("--customer-id", "Customer id (GUID) in CentralDb");
+migrateCustomer.AddOption(optMcSlug);
+migrateCustomer.AddOption(optMcCid);
+
+migrateCustomer.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.MigrateCustomerAsync(
+        host,
+        p.GetValueForOption(optMcSlug),
+        p.GetValueForOption(optMcCid),
+        context.GetCancellationToken());
+});
+
+// --- migration-status ---
+var migrationStatus = new Command("migration-status", "Show CentralDb and per-customer CustomerDb migration status.");
+
+migrationStatus.SetHandler(async (InvocationContext context) =>
+{
+    context.ExitCode = await CliCommands.MigrationStatusAsync(host, context.GetCancellationToken());
+});
+
 // --- migrate-all-customers ---
 var migrateAll = new Command("migrate-all-customers", "Apply pending CustomerDb migrations to every (or selected) active customer database.");
 
@@ -137,7 +171,14 @@ createUser.SetHandler(async (InvocationContext context) =>
 
 var root = new RootCommand("orderhub — operational CLI for customer onboarding, migrations, and secrets.")
 {
-    addCustomer, migrateAll, listCustomers, encrypt, createUser
+    addCustomer,
+    migrateCentral,
+    migrateCustomer,
+    migrateAll,
+    migrationStatus,
+    listCustomers,
+    encrypt,
+    createUser
 };
 
 return await root.InvokeAsync(args);

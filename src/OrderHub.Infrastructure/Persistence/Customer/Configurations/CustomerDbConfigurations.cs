@@ -43,7 +43,8 @@ public class PlatformConnectionConfiguration : IEntityTypeConfiguration<Platform
         builder.Property(p => p.EncryptedApiKey).HasMaxLength(2000);
         builder.Property(p => p.EncryptedApiSecret).HasMaxLength(2000);
 
-        // A customer should have at most one active connection per platform.
+        // One row per external store: duplicate Platform + StoreId is blocked.
+        // Same platform with a different StoreId is allowed (multiple stores).
         builder.HasIndex(p => new { p.Platform, p.StoreId })
             .IsUnique()
             .HasDatabaseName("IX_PlatformConnections_Platform_StoreId");

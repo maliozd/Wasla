@@ -14,23 +14,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 
-try
-{
-    var keyDir = new DirectoryInfo(@"C:\OrderHub-keys");
-    if (!keyDir.Exists)
-    {
-        Directory.CreateDirectory(keyDir.FullName);
-    }
+var dataProtection = builder.Services.AddDataProtection()
+    .SetApplicationName("OrderHub");
 
-    builder.Services.AddDataProtection()
-        .SetApplicationName("OrderHub")
-        .PersistKeysToFileSystem(keyDir);
-}
-catch
+var keyPath = builder.Configuration["DataProtection:KeyPath"];
+if (!string.IsNullOrWhiteSpace(keyPath))
 {
-    // Fallback gracefully: if key persistence fails, default DP settings apply.
-    builder.Services.AddDataProtection()
-        .SetApplicationName("OrderHub");
+    try
+    {
+        var keyDir = new DirectoryInfo(keyPath);
+        if (!keyDir.Exists)
+            Directory.CreateDirectory(keyDir.FullName);
+        dataProtection.PersistKeysToFileSystem(keyDir);
+    }
+    catch
+    {
+        // Key persistence unavailable; default DataProtection key storage applies.
+    }
 }
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

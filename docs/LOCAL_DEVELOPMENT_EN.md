@@ -33,7 +33,32 @@ dotnet restore
 dotnet build
 ```
 
-## 3) Create a customer (CLI)
+## 3) Database migrations (CLI)
+
+CentralDb and each CustomerDb have **separate** EF Core migration histories. After pulling new code, apply migrations so the schema matches the app (e.g. new columns such as `SupplierId`, `ExecutorEmail` on `PlatformConnections`).
+
+| Command | When to use it |
+|--------|-----------------|
+| `migrate-central` | After a **CentralDb** model/migration change (registry / `Customer` table in the central database). |
+| `migrate-customer` | Update **one** tenant’s customer database (e.g. `dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --slug demo`). |
+| `migrate-all-customers` | After a **CustomerDb** migration change — applies to **all active** customers (use this most often in dev when you have multiple tenants). |
+| `migration-status` | Inspect latest applied and pending migrations for Central and each active customer. |
+
+Examples (from repo root, with `ENCRYPTION_MASTER_KEY` set):
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-central
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --slug demo
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --customer-id "00000000-0000-0000-0000-000000000000"
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migration-status
+```
+
+Optional: `migrate-all-customers --dry-run` (list pending only) and `--only slug1 --only slug2` (filter slugs).
+
+**Troubleshooting:** If the Web app or Worker throws SQL errors like **Invalid column name** (e.g. missing new columns), run `migrate-all-customers` (and `migrate-central` if the central registry schema changed), then restart the app.
+
+## 4) Create a customer (CLI)
 
 Creates a tenant/customer record, creates+migrates the CustomerDb, and creates an admin user.
 
@@ -56,7 +81,7 @@ Windows hosts:
 - `C:\Windows\System32\drivers\etc\hosts`
 - Add: `127.0.0.1 demo.local`
 
-## 4) Run Web
+## 5) Run Web
 
 ```powershell
 dotnet run --project .\src\OrderHub.Web\OrderHub.Web.csproj
@@ -71,7 +96,7 @@ After login:
 - `/orders`
 - `/branches`
 
-## 5) Add a platform connection
+## 6) Add a platform connection
 
 In Web:
 - Select platform
@@ -81,7 +106,7 @@ In Web:
 Duplicate rule:
 - Same Platform + same StoreId is blocked.
 
-## 6) Run Worker (sync)
+## 7) Run Worker (sync)
 
 ```powershell
 dotnet run --project .\src\OrderHub.Worker\OrderHub.Worker.csproj

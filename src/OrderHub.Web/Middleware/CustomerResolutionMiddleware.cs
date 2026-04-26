@@ -25,6 +25,8 @@ public sealed class CustomerResolutionMiddleware
         if (path.StartsWith("/css", StringComparison.OrdinalIgnoreCase) ||
             path.StartsWith("/js", StringComparison.OrdinalIgnoreCase) ||
             path.StartsWith("/lib", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/images", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/img", StringComparison.OrdinalIgnoreCase) ||
             path.StartsWith("/favicon", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);

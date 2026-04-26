@@ -33,7 +33,32 @@ dotnet restore
 dotnet build
 ```
 
-## 3) Müşteri oluşturma (CLI)
+## 3) Veritabanı migrasyonları (CLI)
+
+CentralDb ile her CustomerDb’nin **ayrı** EF Core migrasyon geçmişi vardır. Yeni kod çektikten sonra şema ile uygulamanın uyumlu olması için migrasyonları uygulayın (ör. `PlatformConnections` üzerinde `SupplierId`, `ExecutorEmail` gibi yeni sütunlar).
+
+| Komut | Ne zaman? |
+|------|-----------|
+| `migrate-central` | **CentralDb** model/migrasyonu değişince (merkez veritabanındaki kayıt / `Customer` tablosu). |
+| `migrate-customer` | **Tek** kiracının veritabanını güncellemek için (ör. `--slug demo`). |
+| `migrate-all-customers` | **CustomerDb** migrasyonu değişince — **tüm aktif** müşterilere uygular (birden çok tenant varken geliştirme ortamında en sık bu). |
+| `migration-status` | Central ve her aktif müşteri için uygulanan ve bekleyen migrasyonları gösterir. |
+
+Örnekler (repo kökü, `ENCRYPTION_MASTER_KEY` tanımlıyken):
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-central
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --slug demo
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --customer-id "00000000-0000-0000-0000-000000000000"
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migration-status
+```
+
+İsteğe bağlı: `migrate-all-customers --dry-run` (sadece bekleyen listesi) ve `--only slug1 --only slug2` (slug filtresi).
+
+**Sorun giderme:** Web veya Worker **Invalid column name** (eksik sütun vb.) hatası verirse `migrate-all-customers` (ve merkez şeması değiştiyse `migrate-central`) çalıştırın, ardından uygulamayı yeniden başlatın.
+
+## 4) Müşteri oluşturma (CLI)
 
 Bir tenant/customer kaydı oluşturur, CustomerDb’yi yaratır/migrate eder ve admin kullanıcı ekler.
 
@@ -56,7 +81,7 @@ Windows hosts:
 - `C:\Windows\System32\drivers\etc\hosts`
 - Satır ekleyin: `127.0.0.1 demo.local`
 
-## 4) Web’i çalıştırma
+## 5) Web’i çalıştırma
 
 ```powershell
 dotnet run --project .\src\OrderHub.Web\OrderHub.Web.csproj
@@ -71,7 +96,7 @@ Giriş yaptıktan sonra:
 - `/orders`
 - `/branches`
 
-## 5) Platform bağlantısı ekleme
+## 6) Platform bağlantısı ekleme
 
 Web’de:
 - Platform seçin
@@ -81,7 +106,7 @@ Web’de:
 Duplicate kontrol:
 - Aynı Platform + aynı StoreId engellenir.
 
-## 6) Worker çalıştırma (sync)
+## 7) Worker çalıştırma (sync)
 
 ```powershell
 dotnet run --project .\src\OrderHub.Worker\OrderHub.Worker.csproj

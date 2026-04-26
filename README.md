@@ -50,6 +50,7 @@ Numbered to match sections in your original prompt.
 
 - Turkish: `docs/LOCAL_DEVELOPMENT_TR.md`
 - English: `docs/LOCAL_DEVELOPMENT_EN.md`
+- Applying DB schema updates: use the CLI commands `migrate-central`, `migrate-customer`, `migrate-all-customers`, and `migration-status` (see the “Database migrations” section in those docs).
 
 ### 1. Application Abstractions (interfaces only)
 Put these under `src/OrderHub.Application/Abstractions/`:

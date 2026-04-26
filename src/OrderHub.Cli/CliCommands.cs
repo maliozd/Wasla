@@ -105,7 +105,7 @@ internal static class CliCommands
                 DatabaseName = dbName,
                 EncryptedConnectionString = encrypted,
                 EncryptionKeyVersion = keyVersion,
-                SchemaVersion = "1.0.0",
+                SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion,
                 LastMigrationAt = migrationNow,
                 LastMigrationResult = migrationResult,
                 IsActive = true,
@@ -145,7 +145,7 @@ internal static class CliCommands
                 Admin:    {adminEmail}  (password set)
                 Next steps:
                 - Ensure DNS points {domain} to your server
-                - Log in at https://{domain}/api/auth/login
+                - Log in at https://{domain}/auth/login
                 """);
 
             return 0;
@@ -171,6 +171,175 @@ internal static class CliCommands
         }
     }
 
+    public static async Task<int> MigrateCentralAsync(IHost host, CancellationToken ct)
+    {
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+            var pending = (await central.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+            WriteLineStep("CentralDb migration check");
+            Console.WriteLine($"Pending: {pending.Count}");
+            if (pending.Count > 0)
+            {
+                foreach (var m in pending)
+                    Console.WriteLine($"  {m}");
+                WriteLineStep("Applying migrations…");
+            }
+
+            await central.Database.MigrateAsync(ct).ConfigureAwait(false);
+
+            var applied = (await central.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+            var latest = applied.Count > 0 ? applied[^1] : "(none)";
+            Console.WriteLine($"Latest applied migration: {latest}");
+            if (pending.Count == 0)
+                Console.WriteLine("CentralDb was already up to date.");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ migrate-central completed successfully.");
+            Console.ResetColor();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError($"migrate-central failed: {ex.Message}");
+            return 1;
+        }
+    }
+
+    public static async Task<int> MigrateCustomerAsync(
+        IHost host,
+        string? slug,
+        string? customerIdArg,
+        CancellationToken ct)
+    {
+        var hasSlug = !string.IsNullOrWhiteSpace(slug);
+        if (hasSlug && !string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            WriteError("Use either --slug or --customer-id, not both.");
+            return 2;
+        }
+        if (!hasSlug && string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            WriteError("Specify --slug or --customer-id.");
+            return 2;
+        }
+        if (!string.IsNullOrWhiteSpace(slug) && !SlugRegex.IsMatch(slug))
+        {
+            WriteError("Slug must match ^[a-zA-Z0-9_-]+$.");
+            return 2;
+        }
+
+        Guid? customerId = null;
+        if (!string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            if (!Guid.TryParse(customerIdArg, out var g))
+            {
+                WriteError("--customer-id must be a valid GUID.");
+                return 2;
+            }
+            customerId = g;
+        }
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+
+            var slugNorm = slug?.Trim() ?? string.Empty;
+            var customer = customerId is { } id
+                ? await central.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
+                : await central.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
+
+            if (customer is null)
+            {
+                WriteError("Customer not found.");
+                return 2;
+            }
+            if (!customer.IsActive)
+            {
+                WriteError("Customer is inactive.");
+                return 2;
+            }
+
+            WriteLineStep($"Customer: {customer.Name}  slug={customer.Slug}  database={customer.DatabaseName}");
+
+            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+                .ConfigureAwait(false);
+            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+                .UseSqlServer(plain)
+                .Options;
+
+            await using (var db = new CustomerDbContext(options))
+            {
+                var pending = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+                Console.WriteLine($"Pending CustomerDb migrations: {pending.Count}");
+                foreach (var m in pending)
+                    Console.WriteLine($"  {m}");
+
+                WriteLineStep("Applying CustomerDb migrations…");
+                await db.Database.MigrateAsync(ct).ConfigureAwait(false);
+
+                var applied = (await db.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+                var latest = applied.Count > 0 ? applied[^1] : "(none)";
+                Console.WriteLine($"Latest applied CustomerDb migration: {latest}");
+            }
+
+            var tracked = await central.Customers.FirstOrDefaultAsync(c => c.Id == customer.Id, ct).ConfigureAwait(false);
+            if (tracked is not null)
+            {
+                var when = DateTime.UtcNow;
+                tracked.LastMigrationAt = when;
+                tracked.LastMigrationResult = "Success";
+                tracked.SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion;
+                tracked.UpdatedAt = when;
+                await central.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ migrate-customer completed successfully.");
+            Console.ResetColor();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                using var scope2 = host.Services.CreateScope();
+                var central2 = scope2.ServiceProvider.GetRequiredService<CentralDbContext>();
+                Guid? idForTrack = customerId;
+                if (idForTrack is null && !string.IsNullOrWhiteSpace(slug))
+                {
+                    var slugN = slug.Trim();
+                    var c2 = await central2.Customers.AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Slug == slugN, ct)
+                        .ConfigureAwait(false);
+                    idForTrack = c2?.Id;
+                }
+                if (idForTrack is { } trackId)
+                {
+                    var tracked = await central2.Customers.FirstOrDefaultAsync(c => c.Id == trackId, ct).ConfigureAwait(false);
+                    if (tracked is not null)
+                    {
+                        tracked.LastMigrationAt = DateTime.UtcNow;
+                        tracked.LastMigrationResult = "Failed: " + SanitizeMigrationError(ex);
+                        tracked.UpdatedAt = DateTime.UtcNow;
+                        await central2.SaveChangesAsync(ct).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch
+            {
+                // ignore secondary failure
+            }
+
+            WriteError($"migrate-customer failed: {ex.Message}");
+            return 1;
+        }
+    }
+
     public static async Task<int> MigrateAllCustomersAsync(
         IHost host,
         bool dryRun,
@@ -184,7 +353,7 @@ internal static class CliCommands
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
             var query = central.Customers.AsNoTracking().Where(c => c.IsActive);
-            var list = await query.ToListAsync(ct).ConfigureAwait(false);
+            var list = (await query.ToListAsync(ct).ConfigureAwait(false)).OrderBy(c => c.Slug).ToList();
 
             if (onlySlugs is { Length: > 0 })
             {
@@ -200,22 +369,39 @@ internal static class CliCommands
                 }
             }
 
-            Console.WriteLine("Databases to process:");
+            var total = list.Count;
+            Console.WriteLine($"Active customers to process: {total}");
             foreach (var c in list)
-                Console.WriteLine($"  - {c.DatabaseName} ({c.Slug})");
+                Console.WriteLine($"  - {c.Name}  ({c.Slug})  [{c.DatabaseName}]");
 
-            if (!dryRun)
+            if (dryRun)
             {
-                Console.Write("Continue? [y/N]: ");
-                var line = Console.ReadLine();
-                if (!string.Equals(line?.Trim(), "y", StringComparison.OrdinalIgnoreCase))
+                foreach (var c in list)
                 {
-                    Console.WriteLine("Aborted.");
-                    return 0;
+                    try
+                    {
+                        var plain = await secret.DecryptAsync(c.EncryptedConnectionString, c.EncryptionKeyVersion, ct).ConfigureAwait(false);
+                        var options = new DbContextOptionsBuilder<CustomerDbContext>().UseSqlServer(plain).Options;
+                        await using var db = new CustomerDbContext(options);
+                        var p = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+                        if (p.Count == 0)
+                            Console.WriteLine($"  (dry-run) {c.Slug}: up to date");
+                        else
+                            Console.WriteLine($"  (dry-run) {c.Slug}: would apply {p.Count} migration(s): {string.Join(", ", p)}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"  (dry-run) {c.Slug}: {ex.Message}");
+                        Console.ResetColor();
+                    }
                 }
+                return 0;
             }
 
-            var failures = new List<string>();
+            var succeeded = 0;
+            var failed = new List<(string Slug, string Name)>();
+
             foreach (var c in list)
             {
                 try
@@ -227,37 +413,28 @@ internal static class CliCommands
                         .Options;
                     await using var db = new CustomerDbContext(options);
 
-                    if (dryRun)
-                    {
-                        var pending = await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false);
-                        var pendingList = pending.ToList();
-                        if (pendingList.Count == 0)
-                            Console.WriteLine($"  (dry-run) {c.DatabaseName}: up to date");
-                        else
-                            Console.WriteLine($"  (dry-run) {c.DatabaseName}: would apply: {string.Join(", ", pendingList)}");
-                    }
-                    else
-                    {
-                        await db.Database.MigrateAsync(ct).ConfigureAwait(false);
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine($"✓ {c.DatabaseName}");
-                        Console.ResetColor();
+                    await db.Database.MigrateAsync(ct).ConfigureAwait(false);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"✓ {c.Slug}  ({c.DatabaseName})");
+                    Console.ResetColor();
 
-                        var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
-                        if (tracked is not null)
-                        {
-                            tracked.LastMigrationAt = DateTime.UtcNow;
-                            tracked.LastMigrationResult = "Success";
-                            tracked.UpdatedAt = DateTime.UtcNow;
-                            await central.SaveChangesAsync(ct).ConfigureAwait(false);
-                        }
+                    var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
+                    if (tracked is not null)
+                    {
+                        var when = DateTime.UtcNow;
+                        tracked.LastMigrationAt = when;
+                        tracked.LastMigrationResult = "Success";
+                        tracked.SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion;
+                        tracked.UpdatedAt = when;
+                        await central.SaveChangesAsync(ct).ConfigureAwait(false);
                     }
+                    succeeded++;
                 }
                 catch (Exception ex)
                 {
-                    failures.Add($"{c.DatabaseName}: {ex.Message}");
+                    failed.Add((c.Slug, c.Name));
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"✗ {c.DatabaseName}: {ex.Message}");
+                    Console.WriteLine($"✗ {c.Slug}: {ex.Message}");
                     Console.ResetColor();
 
                     try
@@ -265,26 +442,99 @@ internal static class CliCommands
                         var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
                         if (tracked is not null)
                         {
+                            var when = DateTime.UtcNow;
+                            tracked.LastMigrationAt = when;
                             tracked.LastMigrationResult = "Failed: " + SanitizeMigrationError(ex);
-                            tracked.UpdatedAt = DateTime.UtcNow;
+                            tracked.UpdatedAt = when;
                             await central.SaveChangesAsync(ct).ConfigureAwait(false);
                         }
                     }
                     catch
                     {
-                        // Swallow tracking update failures; migration errors are primary.
                     }
                 }
             }
 
-            if (failures.Count > 0)
+            Console.WriteLine();
+            Console.WriteLine("--- Summary ---");
+            Console.WriteLine($"Total:     {total}");
+            Console.WriteLine($"Succeeded: {succeeded}");
+            Console.WriteLine($"Failed:    {failed.Count}");
+            if (failed.Count > 0)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Failures:");
-                foreach (var f in failures)
-                    Console.WriteLine(f);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Failed customers (slug / name):");
+                foreach (var f in failed)
+                    Console.WriteLine($"  - {f.Slug}  /  {f.Name}");
                 Console.ResetColor();
-                return 1;
+            }
+
+            return failed.Count > 0 ? 1 : 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError(ex.Message);
+            return 1;
+        }
+    }
+
+    public static async Task<int> MigrationStatusAsync(IHost host, CancellationToken ct)
+    {
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+
+            Console.WriteLine("=== CentralDb ===");
+            var centralPending = (await central.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+            var centralApplied = (await central.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+            var centralLatest = centralApplied.Count > 0 ? centralApplied[^1] : "(none)";
+            Console.WriteLine($"Latest applied: {centralLatest}");
+            Console.WriteLine($"Pending count:  {centralPending.Count}");
+            if (centralPending.Count > 0)
+            {
+                foreach (var m in centralPending)
+                    Console.WriteLine($"  {m}");
+            }
+
+            var customers = await central.Customers
+                .AsNoTracking()
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Slug)
+                .ToListAsync(ct)
+                .ConfigureAwait(false);
+
+            Console.WriteLine();
+            Console.WriteLine("=== Customer databases (active) ===");
+            foreach (var c in customers)
+            {
+                Console.WriteLine();
+                Console.WriteLine($"{c.Name}  |  slug: {c.Slug}  |  db: {c.DatabaseName}");
+                Console.WriteLine(
+                    $"  CentralDb tracking: LastMigrationAt={c.LastMigrationAt:u}  Result={c.LastMigrationResult ?? "(null)"}  SchemaVersion={c.SchemaVersion}");
+                try
+                {
+                    var plain = await secret.DecryptAsync(c.EncryptedConnectionString, c.EncryptionKeyVersion, ct).ConfigureAwait(false);
+                    var options = new DbContextOptionsBuilder<CustomerDbContext>().UseSqlServer(plain).Options;
+                    await using var db = new CustomerDbContext(options);
+                    var applied = (await db.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+                    var latest = applied.Count > 0 ? applied[^1] : "(none)";
+                    var pending = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+                    Console.WriteLine($"  CustomerDb latest applied: {latest}");
+                    Console.WriteLine($"  Pending: {pending.Count}");
+                    if (pending.Count > 0)
+                    {
+                        foreach (var m in pending)
+                            Console.WriteLine($"    {m}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"  (could not read migration status) {ex.Message}");
+                    Console.ResetColor();
+                }
             }
 
             return 0;
