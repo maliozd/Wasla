@@ -6,6 +6,7 @@ using FluentValidation;
 using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Branches;
 using OrderHub.Application.Abstractions.Dashboard;
+using OrderHub.Application.Abstractions.Notifications;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Application.Abstractions.PlatformConnections;
@@ -66,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IPlatformConnectionService, PlatformConnectionService>();
         services.AddScoped<IBranchService, BranchService>();
+        services.AddScoped<IUserNotificationSettingsService, UserNotificationSettingsService>();
 
         return services;
     }

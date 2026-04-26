@@ -41,6 +41,8 @@ public sealed class OrdersController : ControllerBase
             query.Status.HasValue ? (OrderStatusDomain?)(int)query.Status.Value : null,
             query.StartDate,
             query.EndDate,
+            sortBy: null,
+            sortDirection: null,
             page,
             pageSize,
             ct);

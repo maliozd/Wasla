@@ -58,6 +58,16 @@ Optional: `migrate-all-customers --dry-run` (list pending only) and `--only slug
 
 **Troubleshooting:** If the Web app or Worker throws SQL errors like **Invalid column name** (e.g. missing new columns), run `migrate-all-customers` (and `migrate-central` if the central registry schema changed), then restart the app.
 
+If you added new CustomerDb entities (e.g. `UserNotificationSettings`) and you see errors like:
+- `Invalid column name 'NewOrderSoundEnabled'`
+- `Invalid object name 'UserNotificationSettings'`
+
+Run:
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
+```
+
 ## 4) Create a customer (CLI)
 
 Creates a tenant/customer record, creates+migrates the CustomerDb, and creates an admin user.

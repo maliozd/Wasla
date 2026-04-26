@@ -1,0 +1,84 @@
+@model OrderHub.Web.Models.Notifications.NotificationSettingsViewModel
+
+@{
+    var saved = ViewData["Saved"] as bool? == true;
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">Bildirim Ayarları</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+</div>
+
+<div class="modal-body">
+    @if (saved)
+    {
+        <div class="alert alert-success py-2">Kaydedildi.</div>
+    }
+
+    <div class="alert alert-warning py-2 d-none" id="soundUnlockHint">
+        Sesli bildirimler için önce <b>Sesli bildirimleri etkinleştir</b> butonuna tıklayın.
+    </div>
+
+    <div class="mb-3 form-check">
+        <input class="form-check-input" type="checkbox" id="NewOrderSoundEnabled" name="NewOrderSoundEnabled" value="true" @(Model.NewOrderSoundEnabled ? "checked" : "")>
+        <input type="hidden" name="NewOrderSoundEnabled" value="false" />
+        <label class="form-check-label" for="NewOrderSoundEnabled">Yeni sipariş sesi açık</label>
+    </div>
+
+    <div class="row g-2">
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="NewOrderSoundName">Zil sesi</label>
+            <select class="form-select" id="NewOrderSoundName" name="NewOrderSoundName">
+                <option value="bell" selected="@(Model.NewOrderSoundName == "bell")">Klasik Zil</option>
+                <option value="chime" selected="@(Model.NewOrderSoundName == "chime")">Bildirim Sesi</option>
+                <option value="alert" selected="@(Model.NewOrderSoundName == "alert")">Uyarı Sesi</option>
+            </select>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="NewOrderSoundRepeatCount">Tekrar sayısı</label>
+            <select class="form-select" id="NewOrderSoundRepeatCount" name="NewOrderSoundRepeatCount">
+                @for (var i = 1; i <= 5; i++)
+                {
+                    <option value="@i" selected="@(Model.NewOrderSoundRepeatCount == i)">@i</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="NewOrderSoundVolume">Ses seviyesi</label>
+            <select class="form-select" id="NewOrderSoundVolume" name="NewOrderSoundVolume">
+                <option value="0.25" selected="@(Model.NewOrderSoundVolume == 0.25m)">%25</option>
+                <option value="0.50" selected="@(Model.NewOrderSoundVolume == 0.50m)">%50</option>
+                <option value="0.75" selected="@(Model.NewOrderSoundVolume == 0.75m)">%75</option>
+                <option value="1.00" selected="@(Model.NewOrderSoundVolume == 1.00m)">%100</option>
+            </select>
+        </div>
+
+        <div class="col-12 col-md-6 d-flex align-items-end">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="ShowBrowserNotification" name="ShowBrowserNotification" value="true" @(Model.ShowBrowserNotification ? "checked" : "")>
+                <input type="hidden" name="ShowBrowserNotification" value="false" />
+                <label class="form-check-label" for="ShowBrowserNotification">Tarayıcı bildirimi göster</label>
+            </div>
+        </div>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="mt-2 text-danger small">
+            @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@e.ErrorMessage</div>
+            }
+        </div>
+    }
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" id="enableSoundBtn">Sesli bildirimleri etkinleştir</button>
+    <button type="button" class="btn btn-outline-primary" id="testSoundBtn">Test Et</button>
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Kapat</button>
+</div>
+

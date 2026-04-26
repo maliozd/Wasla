@@ -20,6 +20,8 @@ public sealed class OrderReadService : IOrderReadService
         OrderStatus? status,
         DateTime? startDateUtc,
         DateTime? endDateUtc,
+        string? sortBy,
+        string? sortDirection,
         int page,
         int pageSize,
         CancellationToken ct)
@@ -32,13 +34,37 @@ public sealed class OrderReadService : IOrderReadService
 
         if (platform.HasValue) q = q.Where(o => o.Platform == platform.Value);
         if (status.HasValue) q = q.Where(o => o.InternalStatus == status.Value);
-        if (startDateUtc.HasValue) q = q.Where(o => o.CreatedAtPlatform >= startDateUtc.Value);
-        if (endDateUtc.HasValue) q = q.Where(o => o.CreatedAtPlatform <= endDateUtc.Value);
+        if (startDateUtc.HasValue) q = q.Where(o => o.ReceivedAt >= startDateUtc.Value);
+        if (endDateUtc.HasValue) q = q.Where(o => o.ReceivedAt <= endDateUtc.Value);
+
+        var safeSortBy = string.IsNullOrWhiteSpace(sortBy) ? "receivedAt" : sortBy.Trim();
+        var safeSortDirection = string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
+
+        q = safeSortBy switch
+        {
+            "platform" => safeSortDirection == "asc"
+                ? q.OrderBy(o => o.Platform)
+                : q.OrderByDescending(o => o.Platform),
+            "status" => safeSortDirection == "asc"
+                ? q.OrderBy(o => o.InternalStatus)
+                : q.OrderByDescending(o => o.InternalStatus),
+            "customerName" => safeSortDirection == "asc"
+                ? q.OrderBy(o => o.CustomerName)
+                : q.OrderByDescending(o => o.CustomerName),
+            "totalAmount" => safeSortDirection == "asc"
+                ? q.OrderBy(o => o.TotalAmount)
+                : q.OrderByDescending(o => o.TotalAmount),
+            "receivedAt" => safeSortDirection == "asc"
+                ? q.OrderBy(o => o.ReceivedAt)
+                : q.OrderByDescending(o => o.ReceivedAt),
+            _ => safeSortDirection == "asc"
+                ? q.OrderBy(o => o.ReceivedAt)
+                : q.OrderByDescending(o => o.ReceivedAt)
+        };
 
         var total = await q.CountAsync(ct);
 
         var items = await q
-            .OrderByDescending(o => o.CreatedAtPlatform)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(o => new OrderListResult.Row(

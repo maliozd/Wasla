@@ -58,6 +58,16 @@ dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migration-status
 
 **Sorun giderme:** Web veya Worker **Invalid column name** (eksik sütun vb.) hatası verirse `migrate-all-customers` (ve merkez şeması değiştiyse `migrate-central`) çalıştırın, ardından uygulamayı yeniden başlatın.
 
+CustomerDb’ye yeni tablolar/alanlar eklendiyse (ör. `UserNotificationSettings`) ve şu tarz hatalar görürseniz:
+- `Invalid column name 'NewOrderSoundEnabled'`
+- `Invalid object name 'UserNotificationSettings'`
+
+Şunu çalıştırın:
+
+```powershell
+dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
+```
+
 ## 4) Müşteri oluşturma (CLI)
 
 Bir tenant/customer kaydı oluşturur, CustomerDb’yi yaratır/migrate eder ve admin kullanıcı ekler.

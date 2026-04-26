@@ -31,6 +31,32 @@ public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
     }
 }
 
+public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<UserNotificationSettings>
+{
+    public void Configure(EntityTypeBuilder<UserNotificationSettings> builder)
+    {
+        builder.ToTable("UserNotificationSettings");
+        builder.HasKey(s => s.Id);
+
+        builder.Property(s => s.UserId).IsRequired();
+        builder.Property(s => s.NewOrderSoundEnabled).IsRequired();
+        builder.Property(s => s.NewOrderSoundName).IsRequired().HasMaxLength(32);
+        builder.Property(s => s.NewOrderSoundRepeatCount).IsRequired();
+        builder.Property(s => s.NewOrderSoundVolume).HasPrecision(4, 2);
+        builder.Property(s => s.ShowBrowserNotification).IsRequired();
+
+        // One settings row per AppUser.
+        builder.HasIndex(s => s.UserId)
+            .IsUnique()
+            .HasDatabaseName("IX_UserNotificationSettings_UserId");
+
+        builder.HasOne(s => s.AppUser)
+            .WithMany()
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
 public class PlatformConnectionConfiguration : IEntityTypeConfiguration<PlatformConnection>
 {
     public void Configure(EntityTypeBuilder<PlatformConnection> builder)

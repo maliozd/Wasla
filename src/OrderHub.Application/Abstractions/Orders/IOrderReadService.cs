@@ -10,6 +10,8 @@ public interface IOrderReadService
         OrderStatus? status,
         DateTime? startDateUtc,
         DateTime? endDateUtc,
+        string? sortBy,
+        string? sortDirection,
         int page,
         int pageSize,
         CancellationToken ct);

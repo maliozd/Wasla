@@ -24,8 +24,10 @@ public sealed class OrdersController : BaseController
     public async Task<IActionResult> Index(
         [FromQuery] FoodPlatform? platform,
         [FromQuery] OrderStatus? status,
-        [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate,
+        [FromQuery] string? startDate,
+        [FromQuery] string? endDate,
+        [FromQuery] string? sortBy = "receivedAt",
+        [FromQuery] string? sortDirection = "desc",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
         CancellationToken ct = default)
@@ -35,7 +37,23 @@ public sealed class OrdersController : BaseController
 
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
 
-        var result = await _orders.GetListAsync(customer.Id, platform, status, startDate, endDate, safePage, safePageSize, ct);
+        var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
+        if (startUtc is null && !string.IsNullOrWhiteSpace(startDate))
+            ModelState.AddModelError("startDate", "Başlangıç tarihi geçersiz.");
+        if (endUtc is null && !string.IsNullOrWhiteSpace(endDate))
+            ModelState.AddModelError("endDate", "Bitiş tarihi geçersiz.");
+
+        var result = await _orders.GetListAsync(
+            customer.Id,
+            platform,
+            status,
+            startUtc,
+            endUtc,
+            sortBy,
+            sortDirection,
+            safePage,
+            safePageSize,
+            ct);
 
         var vm = new OrderListViewModel
         {
@@ -54,8 +72,10 @@ public sealed class OrdersController : BaseController
             {
                 Platform = platform,
                 Status = status,
-                StartDateUtc = startDate,
-                EndDateUtc = endDate,
+                StartDate = startDateParsed,
+                EndDate = endDateParsed,
+                SortBy = NormalizeSortBy(sortBy),
+                SortDirection = NormalizeSortDirection(sortDirection),
                 Page = safePage,
                 PageSize = safePageSize
             }
@@ -68,8 +88,10 @@ public sealed class OrdersController : BaseController
     public async Task<IActionResult> Table(
         [FromQuery] FoodPlatform? platform,
         [FromQuery] OrderStatus? status,
-        [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate,
+        [FromQuery] string? startDate,
+        [FromQuery] string? endDate,
+        [FromQuery] string? sortBy = "receivedAt",
+        [FromQuery] string? sortDirection = "desc",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
         CancellationToken ct = default)
@@ -78,7 +100,18 @@ public sealed class OrdersController : BaseController
         if (customer is null) return NotFound();
 
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
-        var result = await _orders.GetListAsync(customer.Id, platform, status, startDate, endDate, safePage, safePageSize, ct);
+        var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
+        var result = await _orders.GetListAsync(
+            customer.Id,
+            platform,
+            status,
+            startUtc,
+            endUtc,
+            sortBy,
+            sortDirection,
+            safePage,
+            safePageSize,
+            ct);
 
         var vm = new OrderListViewModel
         {
@@ -97,8 +130,10 @@ public sealed class OrdersController : BaseController
             {
                 Platform = platform,
                 Status = status,
-                StartDateUtc = startDate,
-                EndDateUtc = endDate,
+                StartDate = startDateParsed,
+                EndDate = endDateParsed,
+                SortBy = NormalizeSortBy(sortBy),
+                SortDirection = NormalizeSortDirection(sortDirection),
                 Page = safePage,
                 PageSize = safePageSize
             }
@@ -154,6 +189,40 @@ public sealed class OrdersController : BaseController
         var p = page < 1 ? 1 : page;
         var ps = pageSize is < 5 or > 100 ? 25 : pageSize;
         return (p, ps);
+    }
+
+    private static (DateTime? StartUtc, DateTime? EndUtc, DateOnly? StartDate, DateOnly? EndDate) ParseDateFilters(string? startDate, string? endDate)
+    {
+        DateOnly? start = null;
+        DateOnly? end = null;
+
+        if (!string.IsNullOrWhiteSpace(startDate) && DateOnly.TryParse(startDate, out var s))
+            start = s;
+        if (!string.IsNullOrWhiteSpace(endDate) && DateOnly.TryParse(endDate, out var e))
+            end = e;
+
+        DateTime? startUtc = start.HasValue
+            ? DateTime.SpecifyKind(start.Value.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc)
+            : null;
+
+        DateTime? endUtc = end.HasValue
+            ? DateTime.SpecifyKind(end.Value.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc)
+            : null;
+
+        return (startUtc, endUtc, start, end);
+    }
+
+    private static string NormalizeSortDirection(string? sortDirection) =>
+        string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
+
+    private static string NormalizeSortBy(string? sortBy)
+    {
+        var s = string.IsNullOrWhiteSpace(sortBy) ? "receivedAt" : sortBy.Trim();
+        return s switch
+        {
+            "receivedAt" or "platform" or "status" or "customerName" or "totalAmount" => s,
+            _ => "receivedAt"
+        };
     }
 }
 
