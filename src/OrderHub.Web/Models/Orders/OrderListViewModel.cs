@@ -9,6 +9,9 @@ public sealed class OrderListViewModel
 
     public int TotalCount { get; set; }
 
+    /// <summary>Max ReceivedAt in the customer database (UTC), for client new-order checks.</summary>
+    public DateTime? LatestReceivedAtUtc { get; set; }
+
     public sealed class Row
     {
         public Guid Id { get; set; }

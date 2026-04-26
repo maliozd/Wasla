@@ -27,8 +27,18 @@ internal static class CliHelpPrinter
         "help"
     ];
 
+    private static readonly string[] CentralAdminCommands =
+    [
+        "add-central-admin",
+        "reset-central-admin-password",
+        "list-central-admins"
+    ];
+
     private static readonly HashSet<string> AllCommands = new(
-        CustomerCommands.Concat(MigrationCommands).Concat(UtilityCommands),
+        CustomerCommands
+            .Concat(MigrationCommands)
+            .Concat(CentralAdminCommands)
+            .Concat(UtilityCommands),
         StringComparer.OrdinalIgnoreCase);
 
     public static void PrintGeneralHelp()
@@ -53,6 +63,12 @@ internal static class CliHelpPrinter
         Console.WriteLine("  migrate-customer          Apply pending CustomerDb migrations for one customer.");
         Console.WriteLine("  migrate-all-customers     Apply pending CustomerDb migrations for all active customers.");
         Console.WriteLine("  migration-status          Show CentralDb and CustomerDb migration status.");
+        Console.WriteLine();
+
+        Console.WriteLine("Central admin commands:");
+        Console.WriteLine("  add-central-admin          Create a central admin user in CentralDb.");
+        Console.WriteLine("  reset-central-admin-password Reset a central admin password in CentralDb.");
+        Console.WriteLine("  list-central-admins        List central admin users (safe fields only).");
         Console.WriteLine();
 
         Console.WriteLine("Utility commands:");
@@ -181,7 +197,7 @@ internal static class CliHelpPrinter
             case "hash-password":
                 Console.WriteLine("hash-password");
                 Console.WriteLine();
-                Console.WriteLine("Prints a BCrypt hash of the given password (for CentralAdmin:PasswordHash).");
+                Console.WriteLine("Prints a BCrypt hash of the given password.");
                 Console.WriteLine("Does not use ENCRYPTION_MASTER_KEY.");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
@@ -189,6 +205,36 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Example:");
                 Console.WriteLine("  dotnet run --project src\\OrderHub.Cli -- hash-password --password \"Test123!\"");
+                return;
+
+            case "add-central-admin":
+                Console.WriteLine("add-central-admin");
+                Console.WriteLine();
+                Console.WriteLine("Creates a central admin user in CentralDb.");
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  add-central-admin --email <email> --password <password> --display-name <name>");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\OrderHub.Cli -- add-central-admin --email admin@orderhub.com --password \"Test123!\" --display-name \"Central Admin\"");
+                return;
+
+            case "reset-central-admin-password":
+                Console.WriteLine("reset-central-admin-password");
+                Console.WriteLine();
+                Console.WriteLine("Resets the password for a central admin user (CentralDb).");
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  reset-central-admin-password --email <email> --password <newPassword>");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\OrderHub.Cli -- reset-central-admin-password --email admin@orderhub.com --password \"NewPassword123!\"");
+                return;
+
+            case "list-central-admins":
+                Console.WriteLine("list-central-admins");
+                Console.WriteLine();
+                Console.WriteLine("Lists central admin users (safe output only).");
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  list-central-admins");
                 return;
 
             default:

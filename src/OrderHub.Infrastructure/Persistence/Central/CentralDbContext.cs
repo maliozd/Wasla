@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using CentralCustomer = OrderHub.Domain.Entities.Central.Customer;
+using CentralAdminUser = OrderHub.Domain.Entities.Central.CentralAdminUser;
 using OrderHub.Infrastructure.Persistence.Central.Configurations;
 
 namespace OrderHub.Infrastructure.Persistence.Central;
@@ -13,9 +14,11 @@ public class CentralDbContext : DbContext
     public CentralDbContext(DbContextOptions<CentralDbContext> options) : base(options) { }
 
     public DbSet<CentralCustomer> Customers => Set<CentralCustomer>();
+    public DbSet<CentralAdminUser> CentralAdminUsers => Set<CentralAdminUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new CustomerConfiguration());
+        modelBuilder.ApplyConfiguration(new CentralAdminUserConfiguration());
     }
 }

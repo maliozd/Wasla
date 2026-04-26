@@ -393,6 +393,63 @@
   <data name="Orders.SoundPlayingTitle" xml:space="preserve">
     <value>New order sound is playing</value>
   </data>
+  <data name="Orders.AudioNotAllowed" xml:space="preserve">
+    <value>The browser blocked audio playback. Please enable sound from Notification Settings by using "Test Sound".</value>
+  </data>
+  <data name="Orders.AudioPlayFailed" xml:space="preserve">
+    <value>The new order sound could not be played.</value>
+  </data>
+  <data name="Orders.AudioFileError" xml:space="preserve">
+    <value>The sound file could not be found or played.</value>
+  </data>
+  <data name="Orders.TableRefreshFailed" xml:space="preserve">
+    <value>The order list could not be refreshed. Please check your session or connection.</value>
+  </data>
+  <data name="Orders.NotificationSettingsLoadFailed" xml:space="preserve">
+    <value>Notification settings could not be loaded.</value>
+  </data>
+  <data name="Orders.TableReturnedFullPage" xml:space="preserve">
+    <value>The order list returned a full page instead of a partial. Check your session or route.</value>
+  </data>
+  <data name="Orders.NotificationSettingsUnexpectedFormat" xml:space="preserve">
+    <value>Notification settings returned an unexpected format. Check the console.</value>
+  </data>
+  <data name="Orders.NotificationSettingsLoadException" xml:space="preserve">
+    <value>An error occurred while loading notification settings. Check the console.</value>
+  </data>
+  <data name="Orders.TableMissingDataOrderId" xml:space="preserve">
+    <value>The order table was updated but row ids were not found (data-order-id).</value>
+  </data>
+  <data name="Orders.TableHostMissing" xml:space="preserve">
+    <value>The order table could not be updated: table target is missing on the page.</value>
+  </data>
+  <data name="Orders.TableRefreshException" xml:space="preserve">
+    <value>An error occurred while refreshing the order list. Check the console.</value>
+  </data>
+  <data name="Orders.NotificationSettingsModalOpenFailed" xml:space="preserve">
+    <value>Could not open notification settings. Check the console.</value>
+  </data>
+  <data name="Orders.NotificationSettingsSaveFailed" xml:space="preserve">
+    <value>An error occurred while saving.</value>
+  </data>
+  <data name="Orders.NotificationSettingsSaveException" xml:space="preserve">
+    <value>An error occurred while saving notification settings. Check the console.</value>
+  </data>
+  <data name="Orders.PageInitFailed" xml:space="preserve">
+    <value>An error occurred while starting the orders page. Check the console.</value>
+  </data>
+  <data name="Orders.GenericError" xml:space="preserve">
+    <value>An unexpected error occurred. Please try again.</value>
+  </data>
+  <data name="Orders.DebugBadgeEnabled" xml:space="preserve">
+    <value>Orders debug enabled (localStorage orderhub.ordersDebug)</value>
+  </data>
+  <data name="Orders.NewOrdersAvailable" xml:space="preserve">
+    <value>New orders are available.</value>
+  </data>
+  <data name="Orders.RefreshToSeeNewOrders" xml:space="preserve">
+    <value>Refresh the list or return to the default sorting to see new orders.</value>
+  </data>
   <data name="PlatformConnections.Title" xml:space="preserve">
     <value>Platform Connections</value>
   </data>
@@ -813,8 +870,8 @@
   <data name="Admin.InvalidCredentials" xml:space="preserve">
     <value>Invalid email or password.</value>
   </data>
-  <data name="Admin.ConfigurationMissing" xml:space="preserve">
-    <value>Central admin is not configured. Set CentralAdmin:Email and CentralAdmin:PasswordHash (user-level environment variables) and restart the app.</value>
+  <data name="Admin.AccountInactive" xml:space="preserve">
+    <value>Your admin account is inactive.</value>
   </data>
   <data name="Admin.BackToDashboard" xml:space="preserve">
     <value>Back to dashboard</value>

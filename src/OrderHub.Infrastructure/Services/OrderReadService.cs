@@ -89,6 +89,54 @@ public sealed class OrderReadService : IOrderReadService
         };
     }
 
+    public async Task<DateTime?> GetLatestReceivedAtUtcAsync(Guid customerId, CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        if (!await db.Orders.AsNoTracking().AnyAsync(ct)) return null;
+        var max = await db.Orders.AsNoTracking().MaxAsync(o => o.ReceivedAt, ct);
+        return max.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(max, DateTimeKind.Utc)
+            : max.ToUniversalTime();
+    }
+
+    public async Task<NewOrdersCheckResult> GetNewOrdersSinceAsync(Guid customerId, DateTime sinceReceivedAtUtc, CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        if (!await db.Orders.AsNoTracking().AnyAsync(ct))
+        {
+            return new NewOrdersCheckResult
+            {
+                HasNewOrders = false,
+                NewOrderCount = 0,
+                NewOrderIds = Array.Empty<Guid>(),
+                LatestReceivedAtUtc = null
+            };
+        }
+
+        var since = sinceReceivedAtUtc.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(sinceReceivedAtUtc, DateTimeKind.Utc)
+            : sinceReceivedAtUtc.ToUniversalTime();
+
+        var maxReceived = await db.Orders.AsNoTracking().MaxAsync(o => o.ReceivedAt, ct);
+        var latestUtc = maxReceived.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(maxReceived, DateTimeKind.Utc)
+            : maxReceived.ToUniversalTime();
+
+        var newOnes = await db.Orders.AsNoTracking()
+            .Where(o => o.ReceivedAt > since)
+            .OrderBy(o => o.ReceivedAt)
+            .Select(o => o.Id)
+            .ToListAsync(ct);
+
+        return new NewOrdersCheckResult
+        {
+            HasNewOrders = newOnes.Count > 0,
+            NewOrderCount = newOnes.Count,
+            NewOrderIds = newOnes,
+            LatestReceivedAtUtc = latestUtc
+        };
+    }
+
     public async Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct);

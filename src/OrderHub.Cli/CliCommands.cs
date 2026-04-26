@@ -16,7 +16,7 @@ namespace OrderHub.Cli;
 internal static class CliCommands
 {
     /// <summary>
-    /// Prints a BCrypt hash for CentralAdmin PasswordHash configuration (no master key required).
+    /// Prints a BCrypt hash (no master key required).
     /// </summary>
     public static int HashPassword(string[] args)
     {
@@ -38,6 +38,159 @@ internal static class CliCommands
 
         Console.WriteLine(BCrypt.Net.BCrypt.HashPassword(password));
         return 0;
+    }
+
+    public static async Task<int> AddCentralAdminAsync(
+        IHost host,
+        string email,
+        string password,
+        string displayName,
+        CancellationToken ct)
+    {
+        var emailNorm = (email ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(emailNorm))
+        {
+            WriteError("--email is required.");
+            return 2;
+        }
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            WriteError("--password is required.");
+            return 2;
+        }
+
+        var normalizedEmail = emailNorm.ToUpperInvariant();
+        var name = string.IsNullOrWhiteSpace(displayName) ? "Central Admin" : displayName.Trim();
+        if (name.Length > 150) name = name[..150];
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+            var exists = await db.CentralAdminUsers
+                .AsNoTracking()
+                .AnyAsync(x => x.NormalizedEmail == normalizedEmail, ct)
+                .ConfigureAwait(false);
+
+            if (exists)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Central admin already exists for this email. No changes were made.");
+                Console.ResetColor();
+                return 0;
+            }
+
+            var now = DateTime.UtcNow;
+            db.CentralAdminUsers.Add(new CentralAdminUser
+            {
+                Id = Guid.NewGuid(),
+                Email = emailNorm,
+                NormalizedEmail = normalizedEmail,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                DisplayName = name,
+                IsActive = true,
+                LastLoginAt = null,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ Central admin user created.");
+            Console.ResetColor();
+            Console.WriteLine($"Email: {emailNorm}");
+            Console.WriteLine($"DisplayName: {name}");
+            return 0;
+        }
+        catch (Exception ex) when (ex is DbUpdateException or InvalidOperationException)
+        {
+            WriteError(ex.Message);
+            return 3;
+        }
+        catch (Exception ex)
+        {
+            WriteError(ex.Message);
+            return 1;
+        }
+    }
+
+    public static async Task<int> ResetCentralAdminPasswordAsync(
+        IHost host,
+        string email,
+        string password,
+        CancellationToken ct)
+    {
+        var emailNorm = (email ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(emailNorm))
+        {
+            WriteError("--email is required.");
+            return 2;
+        }
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            WriteError("--password is required.");
+            return 2;
+        }
+
+        var normalizedEmail = emailNorm.ToUpperInvariant();
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+            var user = await db.CentralAdminUsers.FirstOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail, ct).ConfigureAwait(false);
+            if (user is null)
+            {
+                WriteError("Central admin not found for this email.");
+                return 2;
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            user.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ Central admin password updated.");
+            Console.ResetColor();
+            Console.WriteLine($"Email: {user.Email}");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError(ex.Message);
+            return 1;
+        }
+    }
+
+    public static async Task<int> ListCentralAdminsAsync(IHost host, CancellationToken ct)
+    {
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+            var rows = await db.CentralAdminUsers
+                .AsNoTracking()
+                .OrderBy(x => x.NormalizedEmail)
+                .Select(x => new { x.Email, x.DisplayName, x.IsActive, x.LastLoginAt, x.CreatedAt })
+                .ToListAsync(ct)
+                .ConfigureAwait(false);
+
+            Console.WriteLine("Email | DisplayName | Active | LastLoginAt (UTC) | CreatedAt (UTC)");
+            foreach (var r in rows)
+            {
+                Console.WriteLine($"{r.Email} | {r.DisplayName} | {(r.IsActive ? "yes" : "no")} | {r.LastLoginAt:u} | {r.CreatedAt:u}");
+            }
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError(ex.Message);
+            return 1;
+        }
     }
 
     private static readonly Regex SlugRegex = new(@"^[a-zA-Z0-9_-]+$", RegexOptions.Compiled);

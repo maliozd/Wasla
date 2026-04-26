@@ -54,8 +54,8 @@
                     </li>
                 </ul>
             </div>
-            <a class="btn btn-outline-primary" href="/auth/login">@L["Landing.CustomerLogin"]</a>
-            <a class="btn btn-primary" href="/admin/login">@L["Landing.AdminLogin"]</a>
+            <a class="btn btn-outline-primary" asp-area="Tenant" asp-controller="Auth" asp-action="Login">@L["Landing.CustomerLogin"]</a>
+            <a class="btn btn-primary" asp-area="Admin" asp-controller="Auth" asp-action="Login">@L["Landing.AdminLogin"]</a>
         </div>
     </div>
 </header>
@@ -69,8 +69,8 @@
                     <h1 class="display-6 fw-bold mb-3">@L["Landing.HeroTitle"]</h1>
                     <p class="lead text-secondary mb-4">@L["Landing.HeroDescription"]</p>
                     <div class="d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary btn-lg" href="/auth/login"><i class="bi bi-box-arrow-in-right me-2"></i>@L["Landing.CustomerLogin"]</a>
-                        <a class="btn btn-outline-dark btn-lg" href="/admin/login"><i class="bi bi-shield-lock me-2"></i>@L["Landing.AdminLogin"]</a>
+                        <a class="btn btn-primary btn-lg" asp-area="Tenant" asp-controller="Auth" asp-action="Login"><i class="bi bi-box-arrow-in-right me-2"></i>@L["Landing.CustomerLogin"]</a>
+                        <a class="btn btn-outline-dark btn-lg" asp-area="Admin" asp-controller="Auth" asp-action="Login"><i class="bi bi-shield-lock me-2"></i>@L["Landing.AdminLogin"]</a>
                     </div>
                     <div class="small text-muted mt-3">@L["Landing.TenantNote"]</div>
                 </div>
@@ -317,8 +317,8 @@
                     <h2 class="h3 fw-bold">@L["Landing.CtaTitle"]</h2>
                     <p class="mb-4 opacity-90">@L["Landing.CtaDescription"]</p>
                     <div class="d-flex flex-wrap justify-content-center gap-2">
-                        <a class="btn btn-light btn-lg" href="/auth/login"><i class="bi bi-box-arrow-in-right me-2"></i>@L["Landing.CustomerLogin"]</a>
-                        <a class="btn btn-outline-light btn-lg" href="/admin/login"><i class="bi bi-shield-lock me-2"></i>@L["Landing.AdminLogin"]</a>
+                        <a class="btn btn-light btn-lg" asp-area="Tenant" asp-controller="Auth" asp-action="Login"><i class="bi bi-box-arrow-in-right me-2"></i>@L["Landing.CustomerLogin"]</a>
+                        <a class="btn btn-outline-light btn-lg" asp-area="Admin" asp-controller="Auth" asp-action="Login"><i class="bi bi-shield-lock me-2"></i>@L["Landing.AdminLogin"]</a>
                     </div>
                 </div>
             </div>

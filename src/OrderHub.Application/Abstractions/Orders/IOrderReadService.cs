@@ -17,5 +17,9 @@ public interface IOrderReadService
         CancellationToken ct);
 
     Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct);
+
+    Task<DateTime?> GetLatestReceivedAtUtcAsync(Guid customerId, CancellationToken ct);
+
+    Task<NewOrdersCheckResult> GetNewOrdersSinceAsync(Guid customerId, DateTime sinceReceivedAtUtc, CancellationToken ct);
 }
 

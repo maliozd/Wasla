@@ -1,0 +1,167 @@
+@model OrderHub.Web.Models.Orders.OrderListViewModel
+@using System.Collections.Generic
+@using System.Text.Json
+@using OrderHub.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Orders.Title"];
+    var f = Model.Filters;
+    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">@L["Orders.Title"]</h1>
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="notificationSettingsBtn">
+            <i class="bi bi-bell me-1"></i>@L["Notification.Settings"]
+        </button>
+        <span class="text-muted small">@L["Orders.TotalCount"]: @Model.TotalCount</span>
+    </div>
+</div>
+
+<div id="ordersMessageHost"></div>
+
+<div class="card oh-card mb-3">
+    <div class="card-body">
+        <form id="ordersFilterForm" method="get" action="/orders" class="row g-2 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label">@L["Orders.Platform"]</label>
+                <select id="platformSelect" class="form-select" name="platform">
+                    <option value="">@L["Common.AllPlatforms"]</option>
+                    @foreach (var p in Enum.GetValues<FoodPlatform>())
+                    {
+                        if (f.Platform == p)
+                        {
+                            <option value="@p" selected>@p</option>
+                        }
+                        else
+                        {
+                            <option value="@p">@p</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">@L["Orders.Status"]</label>
+                <select id="statusSelect" class="form-select" name="status">
+                    <option value="">@L["Common.AllStatuses"]</option>
+                    @foreach (var s in Enum.GetValues<OrderStatus>())
+                    {
+                        if (f.Status == s)
+                        {
+                            <option value="@s" selected>@StatusLabel(s)</option>
+                        }
+                        else
+                        {
+                            <option value="@s">@StatusLabel(s)</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">@L["Orders.StartDate"]</label>
+                <input class="form-control" type="date" name="startDate" value="@(f.StartDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">@L["Orders.EndDate"]</label>
+                <input class="form-control" type="date" name="endDate" value="@(f.EndDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button class="btn btn-primary flex-grow-1" type="submit">@L["Orders.Filter"]</button>
+                <a class="btn btn-outline-secondary" href="/orders">@L["Orders.Clear"]</a>
+            </div>
+
+            <input type="hidden" name="sortBy" value="@f.SortBy" />
+            <input type="hidden" name="sortDirection" value="@f.SortDirection" />
+            <input type="hidden" name="page" value="@f.Page" />
+            <input type="hidden" name="pageSize" value="@f.PageSize" />
+        </form>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="mt-2">
+                <div class="text-danger small">
+                    @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@e.ErrorMessage</div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card oh-card">
+    <div class="card-body">
+        <div id="ordersTableHost">
+            @await Html.PartialAsync("_OrdersTable", Model)
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="notificationSettingsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="notificationSettingsForm" method="post" action="/notification-settings">
+                @Html.AntiForgeryToken()
+                <div id="notificationSettingsModalBody" class="p-3 text-muted small">
+                    @L["Notification.Loading"]
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.orderHubOrdersOptions = {
+            tableUrl: "/orders/table",
+            newOrdersCheckUrl: "/orders/new-orders/check",
+            latestReceivedAtUtc: @Html.Raw(Model.LatestReceivedAtUtc.HasValue ? JsonSerializer.Serialize(Model.LatestReceivedAtUtc.Value.ToUniversalTime().ToString("O")) : "null"),
+            notificationSettingsUrl: "/notification-settings",
+            notificationSettingsJsonUrl: "/notification-settings/current",
+            pollingIntervalMs: 10000,
+            messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["genericError"] = L["Orders.GenericError"].Value,
+                ["alertClose"] = L["Common.Close"].Value,
+                ["debugBadgeEnabled"] = L["Orders.DebugBadgeEnabled"].Value,
+                ["newOrderArrived"] = L["Notification.NewOrderArrived"].Value,
+                ["checkOrdersPage"] = L["Notification.CheckOrdersPage"].Value,
+                ["soundCouldNotPlay"] = L["Notification.SoundCouldNotPlay"].Value,
+                ["settingsSaved"] = L["Notification.SaveSuccess"].Value,
+                ["soundUnlockHint"] = L["Notification.SoundUnlockHint"].Value,
+                ["notificationsOff"] = L["Notification.Disabled"].Value,
+                ["notificationsOffHelp"] = L["Notification.NotificationsHelp"].Value,
+                ["waitingForAudio"] = L["Notification.WaitingForBrowserAudio"].Value,
+                ["waitingForAudioHelp"] = L["Notification.NotificationsHelp"].Value,
+                ["notificationsOn"] = L["Notification.Enabled"].Value,
+                ["notificationsOnHelp"] = L["Notification.NotificationsHelp"].Value,
+                ["audioNotAllowed"] = L["Orders.AudioNotAllowed"].Value,
+                ["audioPlayFailed"] = L["Orders.AudioPlayFailed"].Value,
+                ["audioFileError"] = L["Orders.AudioFileError"].Value,
+                ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
+                ["notificationSettingsLoadFailed"] = L["Orders.NotificationSettingsLoadFailed"].Value,
+                ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
+                ["notificationSettingsUnexpectedFormat"] = L["Orders.NotificationSettingsUnexpectedFormat"].Value,
+                ["notificationSettingsLoadException"] = L["Orders.NotificationSettingsLoadException"].Value,
+                ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
+                ["tableHostMissing"] = L["Orders.TableHostMissing"].Value,
+                ["tableRefreshException"] = L["Orders.TableRefreshException"].Value,
+                ["notificationSettingsModalOpenFailed"] = L["Orders.NotificationSettingsModalOpenFailed"].Value,
+                ["notificationSettingsSaveFailed"] = L["Orders.NotificationSettingsSaveFailed"].Value,
+                ["notificationSettingsSaveException"] = L["Orders.NotificationSettingsSaveException"].Value,
+                ["pageInitFailed"] = L["Orders.PageInitFailed"].Value,
+                ["newOrdersAvailable"] = L["Orders.NewOrdersAvailable"].Value,
+                ["refreshToSeeNewOrders"] = L["Orders.RefreshToSeeNewOrders"].Value
+            }))
+        };
+    </script>
+    <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-page.js" asp-append-version="true"></script>
+}
+

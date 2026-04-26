@@ -16,11 +16,52 @@
   --bs-body-color: var(--orderhub-text);
 }
 
-html, body { height: 100%; }
-body { background: var(--orderhub-bg); color: var(--orderhub-text); }
+/* Single vertical scroll: page scrolls on html/body, not in nested main/content wrappers. */
+html {
+  scrollbar-gutter: stable;
+  min-height: 100%;
+  position: relative;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html,
+body {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--orderhub-bg);
+  color: var(--orderhub-text);
+  overflow-y: auto;
+  margin-bottom: 60px;
+}
+
+/* Tenant app shell: no extra bottom gap from the legacy body margin (login/public pages keep default above). */
+body.oh-tenant-body {
+  margin-bottom: 0;
+}
 
 .oh-logo { color: var(--orderhub-primary); font-size: 1.2rem; }
-.oh-topbar { background: var(--orderhub-surface); position: sticky; top: 0; z-index: 1030; }
+.oh-topbar { background: var(--orderhub-surface); position: sticky; top: 0; z-index: 1030; flex: 0 0 auto; }
+
+/* Tenant: header + (sidebar | main) — sidebar aligns flush under the topbar (no hardcoded 56px gap) */
+.oh-tenant-body { min-height: 100vh; }
+.oh-tenant-row {
+  /* Grow with page content; do not cap height + inner scroll (see main.oh-content). */
+  flex: 1 0 auto;
+  min-height: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  position: relative;
+}
 
 .oh-nav-link{
   color: var(--orderhub-muted);
@@ -30,20 +71,6 @@ body { background: var(--orderhub-bg); color: var(--orderhub-text); }
 }
 .oh-nav-link:hover{ color: var(--orderhub-text); background: rgba(255,107,53,.10); }
 .oh-nav-link.active{ color: var(--orderhub-text); background: rgba(255,107,53,.18); }
-
-.oh-sidebar{
-  position: fixed;
-  top: 56px;
-  left: 0;
-  bottom: 0;
-  width: 240px;
-  background: var(--orderhub-sidebar);
-  color: var(--orderhub-sidebar-text);
-  overflow-y: auto;
-  transform: translateX(0);
-  transition: transform .2s ease;
-  z-index: 1029;
-}
 
 .oh-side-link{
   display: flex;
@@ -58,22 +85,70 @@ body { background: var(--orderhub-bg); color: var(--orderhub-text); }
 .oh-side-link:hover{ background: rgba(255,255,255,.08); }
 .oh-side-link.active{ background: rgba(255,107,53,.20); border-left: 3px solid var(--orderhub-primary); }
 
-.oh-content{
-  margin-left: 240px;
+main.oh-content {
+  display: block;
+  margin: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+  /* At least one viewport under the topbar; additional height extends the document (body scroll). */
+  min-height: calc(100vh - var(--oh-topbar-h, 56px));
+  overflow: visible;
+}
+
+.oh-sidebar {
+  width: 240px;
+  background: var(--orderhub-sidebar);
+  color: var(--orderhub-sidebar-text);
+  overflow-y: auto;
+  z-index: 1029;
+  flex: 0 0 240px;
+  min-height: 0;
 }
 
 /* Navbar mode: hide sidebar, content full width */
-.layout-navbar .oh-sidebar { display: none; }
+.layout-navbar .oh-sidebar { display: none !important; }
 .layout-navbar .oh-content { margin-left: 0; }
 
 /* Sidebar mode: hide horizontal nav on desktop */
 .layout-sidebar .oh-nav { display: none !important; }
 
-/* Mobile: sidebar off-canvas */
-@media (max-width: 767.98px){
-  .oh-sidebar{ transform: translateX(-100%); top: 56px; }
-  body.sidebar-open .oh-sidebar{ transform: translateX(0); }
-  .oh-content{ margin-left: 0; }
+/* Desktop: sidebar in document flow under header (no gap vs fixed top:56px) */
+@media (min-width: 768px) {
+  .layout-sidebar .oh-sidebar {
+    position: static;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    transform: none !important;
+  }
+  .layout-sidebar .oh-tenant-row .oh-content {
+    margin-left: 0;
+  }
+}
+
+/* Mobile: fixed off-canvas; top matches measured --oh-topbar-h from layout.js.
+   Row is block so the fixed sidebar does not reserve 240px next to the main. */
+@media (max-width: 767.98px) {
+  .oh-tenant-row { display: block; }
+
+  .layout-sidebar .oh-sidebar {
+    position: fixed;
+    top: var(--oh-topbar-h, 56px);
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    flex: none;
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+  }
+  body.sidebar-open.layout-sidebar .oh-sidebar {
+    transform: translateX(0);
+  }
+
+  .layout-sidebar .oh-content {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 .oh-card{
@@ -133,25 +208,12 @@ body { background: var(--orderhub-bg); color: var(--orderhub-text); }
   background: linear-gradient(180deg, rgba(255,107,53,.10), rgba(255,138,91,.06));
 }
 
-html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+/* Wide tables: horizontal scroll only; never a nested vertical page scroll. */
+body.oh-tenant-body .table-responsive {
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
-body {
-  margin-bottom: 60px;
 }

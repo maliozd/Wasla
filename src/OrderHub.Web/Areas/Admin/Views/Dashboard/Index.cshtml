@@ -1,0 +1,90 @@
+@model OrderHub.Web.Areas.Admin.Models.CentralAdminDashboardViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Admin.DashboardTitle"].Value;
+}
+
+<h1 class="h4 mb-3">@L["Admin.DashboardTitle"]</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">@L["Admin.TotalCustomers"]</div>
+                <div class="fs-3 fw-bold">@Model.TotalCustomers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">@L["Admin.ActiveCustomers"]</div>
+                <div class="fs-3 fw-bold text-success">@Model.ActiveCustomers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">@L["Admin.InactiveCustomers"]</div>
+                <div class="fs-3 fw-bold text-secondary">@Model.InactiveCustomers</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between">
+        <span class="fw-semibold">@L["Admin.Customers"]</span>
+        <a class="btn btn-sm btn-outline-primary" href="/admin/customers">@L["Admin.Customers"]</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>@L["Admin.Name"]</th>
+                    <th>@L["Admin.Slug"]</th>
+                    <th>@L["Admin.PrimaryDomain"]</th>
+                    <th>@L["Common.Status"]</th>
+                    <th class="text-end">@L["Admin.Actions"]</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (Model.Customers.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">@L["Admin.NoCustomers"]</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var c in Model.Customers)
+                    {
+                        <tr>
+                            <td>@c.Name</td>
+                            <td><code class="small">@c.Slug</code></td>
+                            <td class="small">@c.PrimaryDomain</td>
+                            <td>
+                                @if (c.IsActive)
+                                {
+                                    <span class="badge text-bg-success">@L["Admin.StatusActive"]</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">@L["Admin.StatusInactive"]</span>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" href="/admin/customers/@c.Id">@L["Admin.Details"]</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

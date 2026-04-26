@@ -47,8 +47,17 @@ if (!args[0].StartsWith("-", StringComparison.Ordinal) && !CliHelpPrinter.IsKnow
 if (string.Equals(args[0], "hash-password", StringComparison.OrdinalIgnoreCase))
     return CliCommands.HashPassword(args);
 
+if (string.Equals(args[0], "add-central-admin", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(args[0], "reset-central-admin-password", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(args[0], "list-central-admins", StringComparison.OrdinalIgnoreCase))
+{
+    // These commands operate on CentralDb only and do not require ENCRYPTION_MASTER_KEY.
+}
+else
+{
 // All non-help commands require master key.
 AesSecretManager.ValidateMasterKeyOrThrow();
+}
 
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -163,6 +172,48 @@ var listCustomers = new Command("list-customers", "List active customers from Ce
 listCustomers.SetHandler(async (InvocationContext context) =>
 {
     context.ExitCode = await CliCommands.ListCustomersAsync(host, context.GetCancellationToken());
+});
+
+// --- add-central-admin ---
+var addCentralAdmin = new Command("add-central-admin", "Create a CentralDb central admin user (no customer secrets).");
+var optCaEmail = new Option<string>("--email", "Admin email") { IsRequired = true };
+var optCaPassword = new Option<string>("--password", "Plaintext password (visible in history)") { IsRequired = true };
+var optCaDisplayName = new Option<string>("--display-name", () => "Central Admin", "Display name");
+addCentralAdmin.AddOption(optCaEmail);
+addCentralAdmin.AddOption(optCaPassword);
+addCentralAdmin.AddOption(optCaDisplayName);
+addCentralAdmin.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.AddCentralAdminAsync(
+        host,
+        p.GetValueForOption(optCaEmail)!,
+        p.GetValueForOption(optCaPassword)!,
+        p.GetValueForOption(optCaDisplayName) ?? "Central Admin",
+        context.GetCancellationToken());
+});
+
+// --- reset-central-admin-password ---
+var resetCentralAdminPassword = new Command("reset-central-admin-password", "Reset password for a CentralDb central admin user.");
+var optRcaEmail = new Option<string>("--email", "Admin email") { IsRequired = true };
+var optRcaPassword = new Option<string>("--password", "New plaintext password (visible in history)") { IsRequired = true };
+resetCentralAdminPassword.AddOption(optRcaEmail);
+resetCentralAdminPassword.AddOption(optRcaPassword);
+resetCentralAdminPassword.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.ResetCentralAdminPasswordAsync(
+        host,
+        p.GetValueForOption(optRcaEmail)!,
+        p.GetValueForOption(optRcaPassword)!,
+        context.GetCancellationToken());
+});
+
+// --- list-central-admins ---
+var listCentralAdmins = new Command("list-central-admins", "List central admin users from CentralDb (safe fields only).");
+listCentralAdmins.SetHandler(async (InvocationContext context) =>
+{
+    context.ExitCode = await CliCommands.ListCentralAdminsAsync(host, context.GetCancellationToken());
 });
 
 // --- encrypt ---
@@ -289,6 +340,9 @@ seedCustomerAdmin.SetHandler(async (InvocationContext context) =>
 var root = new RootCommand("orderhub — operational CLI for customer onboarding, migrations, and secrets.")
 {
     addCustomer,
+    addCentralAdmin,
+    resetCentralAdminPassword,
+    listCentralAdmins,
     migrateCentral,
     migrateCustomer,
     migrateAll,

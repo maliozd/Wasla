@@ -1,0 +1,114 @@
+@model OrderHub.Web.Models.Dashboard.DashboardViewModel
+@using OrderHub.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Dashboard.Title"];
+    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">@L["Dashboard.Title"]</h1>
+    <span class="text-muted small">@L["Common.Today"]</span>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="text-muted small">@L["Dashboard.TodayOrders"]</div>
+                <div class="display-6 fw-semibold">@Model.TodayOrderCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="text-muted small">@L["Dashboard.TodayRevenue"]</div>
+                <div class="display-6 fw-semibold">@Model.TodayRevenue.ToString("C")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="text-muted small">@L["Dashboard.ActiveOrders"]</div>
+                <div class="display-6 fw-semibold">@Model.ActiveOrderCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="text-muted small">@L["Dashboard.CancelledOrders"]</div>
+                <div class="display-6 fw-semibold">@Model.CancelledOrderCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card oh-card">
+            <div class="card-body">
+                <h2 class="h6 mb-3">@L["Dashboard.RecentOrders"]</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>@L["Orders.Platform"]</th>
+                            <th>@L["Orders.ExternalCode"]</th>
+                            <th>@L["Orders.Customer"]</th>
+                            <th>@L["Orders.Total"]</th>
+                            <th>@L["Orders.Status"]</th>
+                            <th>@L["Orders.ReceivedAt"]</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var o in Model.RecentOrders)
+                        {
+                            <tr>
+                                <td>@o.Platform</td>
+                                <td class="small">@o.ExternalOrderCode</td>
+                                <td class="small">@o.CustomerName</td>
+                                <td>@o.TotalAmount.ToString("C")</td>
+                                <td><span class="badge text-bg-light border">@StatusLabel(o.Status)</span></td>
+                                <td class="small">@o.ReceivedAtUtc.ToString("u")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card oh-card">
+            <div class="card-body">
+                <h2 class="h6 mb-3">@L["Dashboard.PlatformSummary"]</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>@L["Orders.Platform"]</th>
+                            <th class="text-end">@L["Orders.Count"]</th>
+                            <th class="text-end">@L["Orders.Total"]</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var p in Model.PlatformSummary)
+                        {
+                            <tr>
+                                <td>@p.Platform</td>
+                                <td class="text-end">@p.Count</td>
+                                <td class="text-end">@p.Revenue.ToString("C")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

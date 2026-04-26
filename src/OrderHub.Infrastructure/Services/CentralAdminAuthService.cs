@@ -1,48 +1,55 @@
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Admin;
+using OrderHub.Infrastructure.Persistence.Central;
 
 namespace OrderHub.Infrastructure.Services;
 
 public sealed class CentralAdminAuthService : ICentralAdminAuthService
 {
-    private readonly IConfiguration _configuration;
+    private readonly CentralDbContext _db;
     private readonly ILogger<CentralAdminAuthService> _logger;
 
-    public CentralAdminAuthService(IConfiguration configuration, ILogger<CentralAdminAuthService> logger)
+    public CentralAdminAuthService(CentralDbContext db, ILogger<CentralAdminAuthService> logger)
     {
-        _configuration = configuration;
+        _db = db;
         _logger = logger;
     }
 
-    public Task<bool> ValidateAsync(string email, string password, CancellationToken ct)
+    public async Task<CentralAdminLoginResult> ValidateAsync(string email, string password, CancellationToken ct)
     {
-        // Environment variables use CentralAdmin__Email / CentralAdmin__PasswordHash,
-        // but IConfiguration access is via section keys: CentralAdmin:Email / CentralAdmin:PasswordHash.
-        var configuredEmail = _configuration["CentralAdmin:Email"]?.Trim();
-        var hash = _configuration["CentralAdmin:PasswordHash"]?.Trim();
-        var a = Environment.GetEnvironmentVariable("CentralAdmin__Email");
-        if (string.IsNullOrWhiteSpace(configuredEmail) || string.IsNullOrWhiteSpace(hash))
-        {
-            _logger.LogWarning("Central admin login is not configured (missing CentralAdmin:Email or CentralAdmin:PasswordHash).");
-            return Task.FromResult(false);
-        }
-
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-            return Task.FromResult(false);
+            return new CentralAdminLoginResult(false, null, null, null, "Admin.InvalidCredentials");
 
-        if (!string.Equals(email.Trim(), configuredEmail, StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(false);
+        var normalized = email.Trim().ToUpperInvariant();
+
+        var user = await _db.CentralAdminUsers
+            .FirstOrDefaultAsync(x => x.NormalizedEmail == normalized, ct)
+            .ConfigureAwait(false);
+
+        if (user is null)
+            return new CentralAdminLoginResult(false, null, null, null, "Admin.InvalidCredentials");
+
+        if (!user.IsActive)
+            return new CentralAdminLoginResult(false, user.Id, user.Email, user.DisplayName, "Admin.AccountInactive");
 
         try
         {
-            var ok = BCrypt.Net.BCrypt.Verify(password, hash);
-            return Task.FromResult(ok);
+            var ok = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+            if (!ok)
+                return new CentralAdminLoginResult(false, null, null, null, "Admin.InvalidCredentials");
+
+            var now = DateTime.UtcNow;
+            user.LastLoginAt = now;
+            user.UpdatedAt = now;
+            await _db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            return new CentralAdminLoginResult(true, user.Id, user.Email, user.DisplayName, null);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Central admin password verification failed.");
-            return Task.FromResult(false);
+            return new CentralAdminLoginResult(false, null, null, null, "Admin.InvalidCredentials");
         }
     }
 }
