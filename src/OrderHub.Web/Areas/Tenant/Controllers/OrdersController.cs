@@ -9,6 +9,7 @@ using OrderHub.Web.Controllers;
 using OrderHub.Web.Models.Orders;
 using OrderHub.Web.Routing;
 using OrderHub.Web.Security;
+using Microsoft.Extensions.Localization;
 
 namespace OrderHub.Web.Areas.Tenant.Controllers;
 
@@ -21,17 +22,20 @@ public sealed class OrdersController : BaseController
     private readonly IOrderReadService _orders;
     private readonly IOrderActionService _actions;
     private readonly ILogger<OrdersController> _logger;
+    private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
     public OrdersController(
         ICurrentCustomerService currentCustomer,
         IOrderReadService orders,
         IOrderActionService actions,
-        ILogger<OrdersController> logger)
+        ILogger<OrdersController> logger,
+        IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
         _currentCustomer = currentCustomer;
         _orders = orders;
         _actions = actions;
         _logger = logger;
+        _localizer = localizer;
     }
 
     [HttpGet("")]
@@ -54,9 +58,9 @@ public sealed class OrdersController : BaseController
 
         var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
         if (startUtc is null && !string.IsNullOrWhiteSpace(startDate))
-            ModelState.AddModelError("startDate", "Başlangıç tarihi geçersiz.");
+            ModelState.AddModelError("startDate", _localizer["Orders.InvalidStartDate"].Value);
         if (endUtc is null && !string.IsNullOrWhiteSpace(endDate))
-            ModelState.AddModelError("endDate", "Bitiş tarihi geçersiz.");
+            ModelState.AddModelError("endDate", _localizer["Orders.InvalidEndDate"].Value);
 
         var result = await _orders.GetListAsync(
             customer.Id,

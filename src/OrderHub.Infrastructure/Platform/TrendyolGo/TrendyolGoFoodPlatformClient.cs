@@ -42,10 +42,18 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
 
+    private static string? ResolveSupplierId(PlatformConnection connection)
+    {
+        if (!string.IsNullOrWhiteSpace(connection.SupplierId)) return connection.SupplierId.Trim();
+        if (!string.IsNullOrWhiteSpace(connection.StoreId)) return connection.StoreId.Trim();
+        return null;
+    }
+
     public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(connection.SupplierId))
-            throw new InvalidOperationException("SupplierId not set on PlatformConnection");
+        var supplierId = ResolveSupplierId(connection);
+        if (string.IsNullOrWhiteSpace(supplierId))
+            throw new InvalidOperationException("SupplierId could not be resolved (SupplierId and StoreId are empty)");
 
         var query = new List<string>
         {
@@ -60,9 +68,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var sinceMs = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeMilliseconds();
         query.Add($"packageModificationStartDate={sinceMs}");
 
-        var path = $"/integrator/order/meal/suppliers/{connection.SupplierId}/packages?{string.Join("&", query)}";
+        var path = $"/integrator/order/meal/suppliers/{supplierId}/packages?{string.Join("&", query)}";
 
-        using var req = await BuildRequestAsync(HttpMethod.Get, path, connection, ct);
+        using var req = await BuildRequestAsync(HttpMethod.Get, path, connection, supplierId, ct);
         using var resp = await _httpClient.SendAsync(req, ct);
 
         if (!resp.IsSuccessStatusCode)
@@ -83,9 +91,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     public async Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
     {
-        EnsureSupplierAndExecutor(connection);
-        var path = $"/integrator/order/meal/suppliers/{connection.SupplierId}/packages/picked";
-        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, ct);
+        var supplierId = EnsureSupplierAndExecutor(connection);
+        var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/picked";
+        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { packageId = externalOrderId, preparationTime = preparationMinutes }, options: JsonOptions);
         using var resp = await _httpClient.SendAsync(req, ct);
         await EnsureSuccessAsync(resp, "AcceptOrder", externalOrderId, ct);
@@ -93,9 +101,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     public async Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
     {
-        EnsureSupplierAndExecutor(connection);
-        var path = $"/integrator/order/meal/suppliers/{connection.SupplierId}/packages/invoiced";
-        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, ct);
+        var supplierId = EnsureSupplierAndExecutor(connection);
+        var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/invoiced";
+        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { packageId = externalOrderId, actualDate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }, options: JsonOptions);
         using var resp = await _httpClient.SendAsync(req, ct);
         await EnsureSuccessAsync(resp, "MarkInvoiced", externalOrderId, ct);
@@ -103,9 +111,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     public async Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
     {
-        EnsureSupplierAndExecutor(connection);
-        var path = $"/integrator/order/meal/suppliers/{connection.SupplierId}/packages/{externalOrderId}/manual-shipped";
-        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, ct);
+        var supplierId = EnsureSupplierAndExecutor(connection);
+        var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/{externalOrderId}/manual-shipped";
+        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { actualDate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }, options: JsonOptions);
         using var resp = await _httpClient.SendAsync(req, ct);
         await EnsureSuccessAsync(resp, "MarkShipped", externalOrderId, ct);
@@ -113,9 +121,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     public async Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
     {
-        EnsureSupplierAndExecutor(connection);
-        var path = $"/integrator/order/meal/suppliers/{connection.SupplierId}/packages/{externalOrderId}/manual-delivered";
-        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, ct);
+        var supplierId = EnsureSupplierAndExecutor(connection);
+        var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/{externalOrderId}/manual-delivered";
+        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { actualDate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }, options: JsonOptions);
         using var resp = await _httpClient.SendAsync(req, ct);
         await EnsureSuccessAsync(resp, "MarkDelivered", externalOrderId, ct);
@@ -123,15 +131,15 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     public async Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct)
     {
-        EnsureSupplierAndExecutor(connection);
-        var path = $"/integrator/order/meal/suppliers/{connection.SupplierId}/packages/unsupplied";
-        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, ct);
+        var supplierId = EnsureSupplierAndExecutor(connection);
+        var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/unsupplied";
+        using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { packageId = externalOrderId, itemIdList, reasonId }, options: JsonOptions);
         using var resp = await _httpClient.SendAsync(req, ct);
         await EnsureSuccessAsync(resp, "RejectOrder", externalOrderId, ct);
     }
 
-    private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string path, PlatformConnection connection, CancellationToken ct)
+    private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string path, PlatformConnection connection, string supplierId, CancellationToken ct)
     {
         var apiKey = await _secretManager.DecryptAsync(connection.EncryptedApiKey, connection.EncryptionKeyVersion, ct);
         var apiSecret = await _secretManager.DecryptAsync(connection.EncryptedApiSecret, connection.EncryptionKeyVersion, ct);
@@ -145,17 +153,19 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             ?? throw new InvalidOperationException("ExecutorEmail not set on PlatformConnection"));
 
         req.Headers.UserAgent.Clear();
-        req.Headers.TryAddWithoutValidation("User-Agent", $"{connection.SupplierId} - {_options.Value.AgentName}");
+        req.Headers.TryAddWithoutValidation("User-Agent", $"{supplierId} - {_options.Value.AgentName}");
 
         return req;
     }
 
-    private void EnsureSupplierAndExecutor(PlatformConnection connection)
+    private string EnsureSupplierAndExecutor(PlatformConnection connection)
     {
-        if (string.IsNullOrWhiteSpace(connection.SupplierId))
-            throw new InvalidOperationException("SupplierId not set on PlatformConnection");
+        var supplierId = ResolveSupplierId(connection);
+        if (string.IsNullOrWhiteSpace(supplierId))
+            throw new InvalidOperationException("SupplierId could not be resolved (SupplierId and StoreId are empty)");
         if (string.IsNullOrWhiteSpace(connection.ExecutorEmail))
             throw new InvalidOperationException("ExecutorEmail not set on PlatformConnection");
+        return supplierId;
     }
 
     private ExternalOrderDto MapToExternalOrderDto(TrendyolGoPackage package)

@@ -38,7 +38,11 @@ builder.Services.AddMemoryCache();
 
 try
 {
-    var keyDir = new DirectoryInfo(@"C:\OrderHub-keys");
+    var keyPath = builder.Configuration["DataProtection:KeyPath"];
+    if (string.IsNullOrWhiteSpace(keyPath))
+        keyPath = @"C:\OrderHub-keys";
+
+    var keyDir = new DirectoryInfo(keyPath);
     if (!keyDir.Exists)
     {
         Directory.CreateDirectory(keyDir.FullName);

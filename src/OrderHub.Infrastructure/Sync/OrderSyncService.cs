@@ -206,26 +206,34 @@ public sealed class OrderSyncService : IOrderSyncService
                 connection.LastSyncAttempt,
                 connection.CircuitOpenUntil);
 
-            // Provider-specific required config (recoverable): warn and short-circuit this connection
-            // to avoid repeating failures every cycle.
-            if (connection.Platform == FoodPlatform.TrendyolYemek && string.IsNullOrWhiteSpace(connection.SupplierId))
+            // Trendyol supplier id resolution (MVP):
+            // If SupplierId is not explicitly set, StoreId is used as the supplier id.
+            if (connection.Platform == FoodPlatform.TrendyolYemek)
             {
-                _logger.LogWarning(
-                    "Skipping {Platform} connection {ConnectionId} because required setting {SettingKey} is missing. CustomerId={CustomerId}, StoreId={StoreId}",
-                    connection.Platform,
-                    connection.Id,
-                    "SupplierId",
-                    customerId,
-                    connection.StoreId);
+                if (string.IsNullOrWhiteSpace(connection.SupplierId) && !string.IsNullOrWhiteSpace(connection.StoreId))
+                {
+                    _logger.LogDebug(
+                        "Resolved Trendyol supplier id from StoreId for connection {ConnectionId}. CustomerId={CustomerId}",
+                        connection.Id,
+                        customerId);
+                }
 
-                syncLog.Status = SyncStatus.Failed;
-                syncLog.FinishedAt = DateTime.UtcNow;
-                syncLog.ErrorMessage = "Missing required setting: SupplierId";
-                db.SyncLogs.Add(syncLog);
-                await db.SaveChangesAsync(ct).ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(connection.SupplierId) && string.IsNullOrWhiteSpace(connection.StoreId))
+                {
+                    _logger.LogWarning(
+                        "Skipping TrendyolYemek connection {ConnectionId} because supplier id could not be resolved. StoreId is empty and no supplierId setting exists. CustomerId={CustomerId}",
+                        connection.Id,
+                        customerId);
 
-                swConn.Stop();
-                return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, 0, 0, 0, 0, 0, IsFailed: true);
+                    syncLog.Status = SyncStatus.Failed;
+                    syncLog.FinishedAt = DateTime.UtcNow;
+                    syncLog.ErrorMessage = "Supplier id could not be resolved (StoreId empty, SupplierId empty)";
+                    db.SyncLogs.Add(syncLog);
+                    await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+                    swConn.Stop();
+                    return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, 0, 0, 0, 0, 0, IsFailed: true);
+                }
             }
 
             var swFetch = Stopwatch.StartNew();

@@ -95,7 +95,14 @@ builder.Services.AddAuthentication(options =>
         options.SlidingExpiration = true;
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ManagePlatformConnections", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole("Owner", "Manager");
+    });
+});
 
 builder.Services
     .AddControllersWithViews()

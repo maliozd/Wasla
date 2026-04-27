@@ -33,7 +33,7 @@
     var badgeVariant = mapped switch
     {
         "yemeksepeti" => "logo-only",
-        "getiryemek" => "text-only",
+        "getiryemek" => "logo-only",
         "trendyolyemek" or "trendyolgo" => "logo-only",
         _ => "icon-text"
     };
@@ -69,11 +69,24 @@
 <span class="platform-badge @cssMod @cssVariant" aria-label="@label" title="@label">
     @if (badgeVariant != "text-only" && !string.IsNullOrWhiteSpace(iconPath))
     {
-        <img class="platform-badge__icon"
-             src="@iconPath"
-             alt=""
-             aria-hidden="true"
-             onerror="this.style.display='none'; this.closest('.platform-badge')?.classList.add('platform-badge--icon-missing');" />
+        if (mapped == "getiryemek")
+        {
+            <span class="platform-badge__icon-wrap" aria-hidden="true">
+                <img class="platform-badge__icon"
+                     src="@iconPath"
+                     alt=""
+                     aria-hidden="true"
+                     onerror="this.style.display='none'; this.closest('.platform-badge')?.classList.add('platform-badge--icon-missing');" />
+            </span>
+        }
+        else
+        {
+            <img class="platform-badge__icon"
+                 src="@iconPath"
+                 alt=""
+                 aria-hidden="true"
+                 onerror="this.style.display='none'; this.closest('.platform-badge')?.classList.add('platform-badge--icon-missing');" />
+        }
     }
     <span class="platform-badge__text">@label</span>
 </span>

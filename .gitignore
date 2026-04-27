@@ -358,6 +358,20 @@ healthchecksdb
 
 # OrderHub shared data-protection keys
 OrderHub-keys/
+**/OrderHub-keys/
+
+# Local secrets / env files
+*.env
+*.env.local
+secrets.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
 
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/

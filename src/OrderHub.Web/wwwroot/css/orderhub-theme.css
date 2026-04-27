@@ -491,9 +491,41 @@ body.oh-tenant.oh-app .table thead th {
 }
 
 .platform-badge--getiryemek {
-  background: rgba(93, 62, 188, .12);
-  border-color: rgba(93, 62, 188, .24);
-  color: #3f2a8a;
+  background: rgba(93, 62, 188, .14);
+  border-color: rgba(93, 62, 188, .30);
+}
+
+/* Getir: remove "outer pill" look; keep only inner purple chip */
+.platform-badge--getiryemek.platform-badge {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  padding: 0;
+  min-height: 0;
+}
+
+.platform-badge--getiryemek.platform-badge .platform-badge__icon-wrap {
+  padding: 3px 8px;
+}
+
+.platform-badge--getiryemek.platform-badge .platform-badge__icon {
+  display: block;
+}
+
+.platform-badge--getiryemek .platform-badge__icon {
+  height: 20px;
+  width: auto;
+  max-width: 76px;
+  object-fit: contain;
+}
+
+.platform-badge--getiryemek .platform-badge__icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(93, 62, 188, .95);
+  border-radius: 999px;
+  padding: 2px 6px;
 }
 
 .platform-badge--trendyol {
@@ -512,9 +544,13 @@ body.oh-tenant.oh-app .table thead th {
 }
 
 [data-bs-theme="dark"] .platform-badge--getiryemek {
-  background: rgba(93, 62, 188, .18);
-  border-color: rgba(93, 62, 188, .34);
-  color: #e7e0ff;
+  background: rgba(93, 62, 188, .20);
+  border-color: rgba(93, 62, 188, .38);
+}
+
+[data-bs-theme="dark"] .platform-badge--getiryemek.platform-badge {
+  background: transparent;
+  border-color: transparent;
 }
 
 [data-bs-theme="dark"] .platform-badge--trendyol {

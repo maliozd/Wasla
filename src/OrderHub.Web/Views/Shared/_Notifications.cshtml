@@ -1,15 +1,27 @@
+@using System.Text.Json
 @{
     var success = TempData["Success"] as string;
     var error = TempData["Error"] as string;
-}
 
-@if (!string.IsNullOrWhiteSpace(success))
-{
-    <div class="alert alert-success">@success</div>
-}
-
-@if (!string.IsNullOrWhiteSpace(error))
-{
-    <div class="alert alert-danger">@error</div>
+    if (!string.IsNullOrWhiteSpace(success) || !string.IsNullOrWhiteSpace(error))
+    {
+        var payload = new { success = success, error = error };
+        var payloadJson = JsonSerializer.Serialize(payload);
+        <script>
+            (function () {
+                var data = @Html.Raw(payloadJson);
+                function fire() {
+                    if (!window.OrderHubToast) return;
+                    if (data.success) window.OrderHubToast.success(data.success);
+                    if (data.error)   window.OrderHubToast.error(data.error);
+                }
+                if (document.readyState === "loading") {
+                    document.addEventListener("DOMContentLoaded", fire);
+                } else {
+                    fire();
+                }
+            })();
+        </script>
+    }
 }
 

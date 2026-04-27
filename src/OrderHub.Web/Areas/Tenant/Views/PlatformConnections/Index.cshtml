@@ -1,8 +1,18 @@
 @model OrderHub.Web.Models.PlatformConnections.PlatformConnectionListViewModel
 @using Microsoft.Extensions.Localization
+@using System.Text.Json
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
     ViewData["Title"] = L["PlatformConnections.Title"];
+
+    var pcMessages = new
+    {
+        activeText = L["PlatformConnections.Active"].Value,
+        inactiveText = L["PlatformConnections.Inactive"].Value,
+        toggled = L["PlatformConnections.Updated"].Value,
+        toggleFailed = L["PlatformConnections.ToggleFailed"].Value
+    };
+    var pcMessagesJson = JsonSerializer.Serialize(pcMessages);
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -12,6 +22,9 @@
 
 <div class="card oh-card">
     <div class="card-body">
+        <form id="platformConnectionsAntiForgery" class="d-none" method="post">
+            @Html.AntiForgeryToken()
+        </form>
         <div class="table-responsive">
             <table class="table table-sm align-middle mb-0">
                 <thead>
@@ -22,7 +35,7 @@
                     <th class="text-end">@L["PlatformConnections.ErrorCount"]</th>
                     <th class="text-end">@L["PlatformConnections.CircuitOpenUntil"]</th>
                     <th class="text-end">@L["PlatformConnections.LastSuccessfulSync"]</th>
-                    <th></th>
+                    <th class="text-end">@L["PlatformConnections.Actions"]</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -40,25 +53,27 @@
                             <td>@c.Platform</td>
                             <td>@c.StoreId</td>
                             <td>
-                                @if (c.IsActive)
-                                {
-                                    <span class="badge text-bg-success">@L["Common.Active"]</span>
-                                }
-                                else
-                                {
-                                    <span class="badge text-bg-secondary">@L["Common.Passive"]</span>
-                                }
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge @(c.IsActive ? "text-bg-success" : "text-bg-secondary")">
+                                        @(c.IsActive ? L["PlatformConnections.Active"] : L["PlatformConnections.Inactive"])
+                                    </span>
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input pc-active-toggle"
+                                               type="checkbox"
+                                               role="switch"
+                                               data-connection-id="@c.Id"
+                                               @(c.IsActive ? "checked" : null) />
+                                    </div>
+                                </div>
                             </td>
                             <td class="text-end">@c.ConsecutiveFailures</td>
                             <td class="text-end">@c.CircuitOpenUntilUtc?.ToString("u")</td>
                             <td class="text-end">@c.LastSuccessfulSyncUtc?.ToString("u")</td>
                             <td class="text-end">
-                                <form method="post" action="/platform-connections/@c.Id/@(c.IsActive ? "deactivate" : "activate")">
-                                    @Html.AntiForgeryToken()
-                                    <button class="btn btn-sm btn-outline-primary" type="submit">
-                                        @(c.IsActive ? L["PlatformConnections.Deactivate"] : L["PlatformConnections.Activate"])
-                                    </button>
-                                </form>
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="/platform-connections/@c.Id/edit">
+                                    @L["PlatformConnections.Edit"]
+                                </a>
                             </td>
                         </tr>
                     }
@@ -72,3 +87,9 @@
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        window.platformConnectionsMessages = @Html.Raw(pcMessagesJson);
+    </script>
+    <script src="~/js/platform-connections/platform-connections.js" asp-append-version="true"></script>
+}

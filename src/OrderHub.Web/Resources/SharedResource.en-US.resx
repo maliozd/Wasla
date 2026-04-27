@@ -732,6 +732,9 @@
   <data name="Validation.PasswordRequired" xml:space="preserve">
     <value>Password is required.</value>
   </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>This field is required.</value>
+  </data>
   <data name="Validation.PlatformRequired" xml:space="preserve">
     <value>Please select a platform.</value>
   </data>
@@ -743,6 +746,12 @@
   </data>
   <data name="Validation.ApiSecretRequired" xml:space="preserve">
     <value>API secret is required.</value>
+  </data>
+  <data name="PlatformConnections.CreateFailed" xml:space="preserve">
+    <value>Platform connection could not be created.</value>
+  </data>
+  <data name="PlatformConnections.ApiLeaveEmptyHelp" xml:space="preserve">
+    <value>Leave blank to keep the existing value.</value>
   </data>
   <data name="Validation.BranchNameRequired" xml:space="preserve">
     <value>Branch name is required.</value>
@@ -1125,6 +1134,12 @@
   <data name="Orders.ActionFailed" xml:space="preserve">
     <value>Action failed. This order may no longer be actionable.</value>
   </data>
+  <data name="Orders.InvalidStartDate" xml:space="preserve">
+    <value>Invalid start date.</value>
+  </data>
+  <data name="Orders.InvalidEndDate" xml:space="preserve">
+    <value>Invalid end date.</value>
+  </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>New</value>
   </data>
@@ -1139,5 +1154,65 @@
   </data>
   <data name="Orders.PlatformTrendyolGo" xml:space="preserve">
     <value>Trendyol GO</value>
+  </data>
+  <data name="PlatformConnections.TrendyolStoreIdHelp" xml:space="preserve">
+    <value>For Trendyol GO, Store Id is used as the supplier id.</value>
+  </data>
+  <data name="PlatformConnections.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="PlatformConnections.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="PlatformConnections.Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="PlatformConnections.Updated" xml:space="preserve">
+    <value>Platform connection updated.</value>
+  </data>
+  <data name="PlatformConnections.UpdateFailed" xml:space="preserve">
+    <value>Platform connection could not be updated.</value>
+  </data>
+  <data name="PlatformConnections.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="PlatformConnections.Inactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="PlatformConnections.Activated" xml:space="preserve">
+    <value>Platform connection activated.</value>
+  </data>
+  <data name="PlatformConnections.Deactivated" xml:space="preserve">
+    <value>Platform connection deactivated.</value>
+  </data>
+  <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
+    <value>Platform connection status could not be changed.</value>
+  </data>
+  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
+    <value>A connection with the same platform and store id already exists.</value>
+  </data>
+  <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
+    <value>Owner or Manager role is required to manage platform connections.</value>
+  </data>
+  <data name="PlatformConnections.ApiSecretLeaveEmptyHelp" xml:space="preserve">
+    <value>Leave empty to keep the existing secret.</value>
+  </data>
+  <data name="PlatformConnections.SupplierId" xml:space="preserve">
+    <value>Supplier Id</value>
+  </data>
+  <data name="PlatformConnections.ExecutorEmail" xml:space="preserve">
+    <value>Executor email</value>
+  </data>
+  <data name="PlatformConnections.SyncIntervalSeconds" xml:space="preserve">
+    <value>Sync interval (sec)</value>
+  </data>
+  <data name="Validation.StoreIdMaxLength" xml:space="preserve">
+    <value>StoreId max length is 100.</value>
+  </data>
+  <data name="Validation.ApiKeyMaxLength" xml:space="preserve">
+    <value>ApiKey max length is 500.</value>
+  </data>
+  <data name="Validation.ApiSecretMaxLength" xml:space="preserve">
+    <value>ApiSecret max length is 500.</value>
   </data>
 </root>

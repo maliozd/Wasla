@@ -16,6 +16,8 @@
         <form method="post" action="/platform-connections/create">
             @Html.AntiForgeryToken()
 
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
             <div class="row g-3">
                 <div class="col-12 col-md-4">
                     <label class="form-label" asp-for="Platform"></label>
@@ -31,6 +33,7 @@
                 <div class="col-12 col-md-8">
                     <label class="form-label" asp-for="StoreId"></label>
                     <input class="form-control" asp-for="StoreId" />
+                    @* <div id="trendyolStoreIdHelp" class="form-text d-none">@L["PlatformConnections.TrendyolStoreIdHelp"]</div> *@
                     <span class="text-danger" asp-validation-for="StoreId"></span>
                 </div>
 
@@ -63,5 +66,19 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        (function () {
+            const select = document.querySelector("select[name='Platform']");
+            const help = document.getElementById("trendyolStoreIdHelp");
+            if (!select || !help) return;
+            function update() {
+                const v = (select.value || "").toLowerCase();
+                const show = v === "trendyolyemek" || v === "trendyolgo" || v === "trendyol";
+                help.classList.toggle("d-none", !show);
+            }
+            select.addEventListener("change", update);
+            update();
+        })();
+    </script>
 }
 

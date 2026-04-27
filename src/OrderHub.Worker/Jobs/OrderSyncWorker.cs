@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using OrderHub.Application.Abstractions.Orders.Services;
 using OrderHub.Infrastructure.Persistence.Central;
 
@@ -10,15 +11,36 @@ public sealed class OrderSyncWorker : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<OrderSyncWorker> _logger;
+    private readonly IConfiguration _config;
+    private readonly IHostEnvironment _env;
 
-    public OrderSyncWorker(IServiceScopeFactory scopeFactory, ILogger<OrderSyncWorker> logger)
+    public OrderSyncWorker(
+        IServiceScopeFactory scopeFactory,
+        ILogger<OrderSyncWorker> logger,
+        IConfiguration config,
+        IHostEnvironment env)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _config = config;
+        _env = env;
     }
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
+        var providerMode = (_config["Platforms:ProviderMode"] ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(providerMode))
+        {
+            // Backward compatible legacy flag.
+            var legacy = _config.GetValue<bool?>("Platform:UseMocks");
+            providerMode = legacy.HasValue ? (legacy.Value ? "Mock (legacy)" : "Real (legacy)") : "Mock (default)";
+        }
+
+        _logger.LogInformation(
+            "Platform provider mode: {ProviderMode}. Environment={EnvironmentName}",
+            providerMode,
+            _env.EnvironmentName);
+
         _logger.LogInformation("OrderSyncWorker started");
         return base.StartAsync(cancellationToken);
     }

@@ -7,26 +7,31 @@ using OrderHub.Web.Controllers;
 using OrderHub.Web.Models.PlatformConnections;
 using OrderHub.Web.Routing;
 using OrderHub.Web.Security;
+using Microsoft.Extensions.Localization;
+using OrderHub.Domain.Enums;
 
 namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Customer, Policy = "ManagePlatformConnections")]
 [Route("platform-connections")]
 public sealed class PlatformConnectionsController : BaseController
 {
     private readonly ICurrentCustomerService _currentCustomer;
     private readonly IPlatformConnectionService _connections;
     private readonly IValidator<CreatePlatformConnectionCommand> _createValidator;
+    private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
     public PlatformConnectionsController(
         ICurrentCustomerService currentCustomer,
         IPlatformConnectionService connections,
-        IValidator<CreatePlatformConnectionCommand> createValidator)
+        IValidator<CreatePlatformConnectionCommand> createValidator,
+        IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
         _currentCustomer = currentCustomer;
         _connections = connections;
         _createValidator = createValidator;
+        _localizer = localizer;
     }
 
     [HttpGet("")]
@@ -50,10 +55,81 @@ public sealed class PlatformConnectionsController : BaseController
         return View("Index", new PlatformConnectionListViewModel { Connections = rows });
     }
 
+    [HttpGet("{id:guid}/edit")]
+    public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var c = await _connections.GetByIdAsync(customer.Id, id, ct);
+        if (c is null) return NotFound();
+
+        var vm = new EditPlatformConnectionViewModel
+        {
+            Id = c.Id,
+            Platform = c.Platform,
+            StoreId = c.StoreId,
+            IsActive = c.IsActive,
+            ApiKey = string.Empty,
+            ApiSecret = string.Empty
+        };
+
+        return View("Edit", vm);
+    }
+
+    [ValidateAntiForgeryToken]
+    [HttpPost("{id:guid}/edit")]
+    public async Task<IActionResult> Edit(Guid id, EditPlatformConnectionViewModel model, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        if (!ModelState.IsValid) return View("Edit", model);
+
+        var cmd = new UpdatePlatformConnectionCommand(
+            Platform: model.Platform,
+            StoreId: model.StoreId,
+            IsActive: model.IsActive,
+            SyncIntervalSeconds: null,
+            SupplierId: null,
+            ExecutorEmail: null,
+            ApiKey: string.IsNullOrWhiteSpace(model.ApiKey) ? null : model.ApiKey,
+            ApiSecret: string.IsNullOrWhiteSpace(model.ApiSecret) ? null : model.ApiSecret);
+
+        var result = await _connections.UpdateAsync(customer.Id, id, cmd, ct);
+        if (!result.Succeeded)
+        {
+            if (string.Equals(result.ErrorCode, "Duplicate", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(nameof(EditPlatformConnectionViewModel.StoreId), _localizer["PlatformConnections.DuplicatePlatformStore"].Value);
+            }
+            else
+            {
+                ModelState.AddModelError(string.Empty, _localizer["PlatformConnections.UpdateFailed"].Value);
+            }
+            return View("Edit", model);
+        }
+
+        TempData["Success"] = _localizer["PlatformConnections.Updated"].Value;
+        return RedirectToAction("Index");
+    }
+
+    [ValidateAntiForgeryToken]
+    [HttpPost("{id:guid}/toggle-active")]
+    public async Task<IActionResult> ToggleActive(Guid id, [FromForm] bool isActive, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var ok = await _connections.SetActiveAsync(customer.Id, id, isActive, ct);
+        if (!ok) return NotFound(new { succeeded = false });
+
+        return Ok(new { succeeded = true });
+    }
+
     [HttpGet("create")]
     public IActionResult Create()
     {
-        if (!IsOwnerOrManager()) return Forbid();
         return View(new CreatePlatformConnectionViewModel());
     }
 
@@ -61,7 +137,6 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpPost("create")]
     public async Task<IActionResult> Create(CreatePlatformConnectionViewModel model, CancellationToken ct)
     {
-        if (!IsOwnerOrManager()) return Forbid();
         if (!ModelState.IsValid) return View(model);
 
         var customer = _currentCustomer.CurrentCustomer;
@@ -78,18 +153,25 @@ public sealed class PlatformConnectionsController : BaseController
         if (!validation.IsValid)
         {
             foreach (var e in validation.Errors)
-                ModelState.AddModelError(string.Empty, e.ErrorMessage);
+                ModelState.AddModelError(e.PropertyName, _localizer[e.ErrorMessage].Value);
             return View(model);
         }
 
         var result = await _connections.CreateAsync(customer.Id, cmd, ct);
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "İşlem başarısız.");
+            if (string.Equals(result.ErrorCode, "Duplicate", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(nameof(CreatePlatformConnectionViewModel.StoreId), _localizer["PlatformConnections.DuplicatePlatformStore"].Value);
+            }
+            else
+            {
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? _localizer["PlatformConnections.CreateFailed"].Value);
+            }
             return View(model);
         }
 
-        TempData["Success"] = "Platform bağlantısı oluşturuldu.";
+        TempData["Success"] = _localizer["Common.Saved"].Value;
         return RedirectToAction("Index");
     }
 
@@ -97,7 +179,6 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpPost("{id:guid}/activate")]
     public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
     {
-        if (!IsOwnerOrManager()) return Forbid();
         return await SetActive(id, true, ct);
     }
 
@@ -105,7 +186,6 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpPost("{id:guid}/deactivate")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
-        if (!IsOwnerOrManager()) return Forbid();
         return await SetActive(id, false, ct);
     }
 
@@ -117,7 +197,9 @@ public sealed class PlatformConnectionsController : BaseController
         var ok = await _connections.SetActiveAsync(customer.Id, id, isActive, ct);
         if (!ok) return NotFound();
 
-        TempData["Success"] = isActive ? "Bağlantı aktif edildi." : "Bağlantı pasif edildi.";
+        TempData["Success"] = isActive
+            ? _localizer["PlatformConnections.Activated"].Value
+            : _localizer["PlatformConnections.Deactivated"].Value;
         return RedirectToAction("Index");
     }
 }

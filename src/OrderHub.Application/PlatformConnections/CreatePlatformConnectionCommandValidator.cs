@@ -11,16 +11,16 @@ public sealed class CreatePlatformConnectionCommandValidator : AbstractValidator
             .IsInEnum();
 
         RuleFor(x => x.StoreId)
-            .NotEmpty().WithMessage("StoreId is required.")
-            .MaximumLength(100).WithMessage("StoreId max length is 100.");
+            .NotEmpty().WithMessage("Validation.StoreIdRequired")
+            .MaximumLength(100).WithMessage("Validation.StoreIdMaxLength");
 
         RuleFor(x => x.ApiKey)
-            .NotEmpty().WithMessage("ApiKey is required.")
-            .MaximumLength(500).WithMessage("ApiKey max length is 500.");
+            .NotEmpty().WithMessage("Validation.ApiKeyRequired")
+            .MaximumLength(500).WithMessage("Validation.ApiKeyMaxLength");
 
         RuleFor(x => x.ApiSecret)
-            .NotEmpty().WithMessage("ApiSecret is required.")
-            .MaximumLength(500).WithMessage("ApiSecret max length is 500.");
+            .NotEmpty().WithMessage("Validation.ApiSecretRequired")
+            .MaximumLength(500).WithMessage("Validation.ApiSecretMaxLength");
     }
 }
 

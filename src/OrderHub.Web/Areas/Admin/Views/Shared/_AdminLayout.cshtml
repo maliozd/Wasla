@@ -37,6 +37,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/css/adminlte.min.css" crossorigin="anonymous" />
     <link rel="stylesheet" href="~/css/orderhub-theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/orderhub-toast.css" asp-append-version="true" />
     @if (isRtl)
     {
         <link rel="stylesheet" href="~/css/rtl.css" asp-append-version="true" />
@@ -116,6 +117,8 @@
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/js/adminlte.min.js" crossorigin="anonymous"></script>
+    <script src="~/js/orderhub-toast.js" asp-append-version="true"></script>
+    <partial name="~/Views/Shared/_Notifications.cshtml" />
     <script src="~/js/theme-mode.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

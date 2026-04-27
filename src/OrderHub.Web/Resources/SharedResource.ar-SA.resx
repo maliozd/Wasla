@@ -732,6 +732,9 @@
   <data name="Validation.PasswordRequired" xml:space="preserve">
     <value>كلمة المرور مطلوبة.</value>
   </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>هذا الحقل مطلوب.</value>
+  </data>
   <data name="Validation.PlatformRequired" xml:space="preserve">
     <value>يرجى اختيار المنصة.</value>
   </data>
@@ -743,6 +746,12 @@
   </data>
   <data name="Validation.ApiSecretRequired" xml:space="preserve">
     <value>سر API مطلوب.</value>
+  </data>
+  <data name="PlatformConnections.CreateFailed" xml:space="preserve">
+    <value>تعذر إنشاء اتصال المنصة.</value>
+  </data>
+  <data name="PlatformConnections.ApiLeaveEmptyHelp" xml:space="preserve">
+    <value>اتركه فارغًا للاحتفاظ بالقيمة الحالية.</value>
   </data>
   <data name="Validation.BranchNameRequired" xml:space="preserve">
     <value>اسم الفرع مطلوب.</value>
@@ -1125,6 +1134,12 @@
   <data name="Orders.ActionFailed" xml:space="preserve">
     <value>فشل الإجراء. قد لا يكون الطلب قابلاً للإجراء الآن.</value>
   </data>
+  <data name="Orders.InvalidStartDate" xml:space="preserve">
+    <value>تاريخ البداية غير صالح.</value>
+  </data>
+  <data name="Orders.InvalidEndDate" xml:space="preserve">
+    <value>تاريخ النهاية غير صالح.</value>
+  </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>جديد</value>
   </data>
@@ -1139,5 +1154,65 @@
   </data>
   <data name="Orders.PlatformTrendyolGo" xml:space="preserve">
     <value>Trendyol GO</value>
+  </data>
+  <data name="PlatformConnections.TrendyolStoreIdHelp" xml:space="preserve">
+    <value>بالنسبة لـ Trendyol GO يتم استخدام Store Id كمعرّف المورّد (supplier id).</value>
+  </data>
+  <data name="PlatformConnections.Actions" xml:space="preserve">
+    <value>إجراءات</value>
+  </data>
+  <data name="PlatformConnections.Edit" xml:space="preserve">
+    <value>تعديل</value>
+  </data>
+  <data name="PlatformConnections.Update" xml:space="preserve">
+    <value>تحديث</value>
+  </data>
+  <data name="PlatformConnections.Updated" xml:space="preserve">
+    <value>تم تحديث اتصال المنصة.</value>
+  </data>
+  <data name="PlatformConnections.UpdateFailed" xml:space="preserve">
+    <value>تعذر تحديث اتصال المنصة.</value>
+  </data>
+  <data name="PlatformConnections.Active" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="PlatformConnections.Inactive" xml:space="preserve">
+    <value>غير نشط</value>
+  </data>
+  <data name="PlatformConnections.Activated" xml:space="preserve">
+    <value>تم تفعيل اتصال المنصة.</value>
+  </data>
+  <data name="PlatformConnections.Deactivated" xml:space="preserve">
+    <value>تم إلغاء تفعيل اتصال المنصة.</value>
+  </data>
+  <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
+    <value>تعذر تغيير حالة اتصال المنصة.</value>
+  </data>
+  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
+    <value>يوجد اتصال آخر بنفس المنصة ومعرّف المتجر.</value>
+  </data>
+  <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
+    <value>يلزم دور Owner أو Manager لإدارة اتصالات المنصة.</value>
+  </data>
+  <data name="PlatformConnections.ApiSecretLeaveEmptyHelp" xml:space="preserve">
+    <value>اتركه فارغًا للاحتفاظ بالسر الحالي.</value>
+  </data>
+  <data name="PlatformConnections.SupplierId" xml:space="preserve">
+    <value>Supplier Id</value>
+  </data>
+  <data name="PlatformConnections.ExecutorEmail" xml:space="preserve">
+    <value>Executor email</value>
+  </data>
+  <data name="PlatformConnections.SyncIntervalSeconds" xml:space="preserve">
+    <value>فاصل المزامنة (ث)</value>
+  </data>
+  <data name="Validation.StoreIdMaxLength" xml:space="preserve">
+    <value>الحد الأقصى لطول StoreId هو 100.</value>
+  </data>
+  <data name="Validation.ApiKeyMaxLength" xml:space="preserve">
+    <value>الحد الأقصى لطول ApiKey هو 500.</value>
+  </data>
+  <data name="Validation.ApiSecretMaxLength" xml:space="preserve">
+    <value>الحد الأقصى لطول ApiSecret هو 500.</value>
   </data>
 </root>
