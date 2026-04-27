@@ -7,6 +7,9 @@
     return;
   }
 
+  let notificationSettingsBindingsAbort = null;
+  let isSavingNotificationSettings = false;
+
   function isHexColor(v) {
     if (!v) return false;
     const s = String(v).trim();
@@ -223,7 +226,7 @@
       if (!resp.ok) {
         const base = O.getMessage("notificationSettingsLoadFailed");
         if (global.OrderHubToast) {
-          global.OrderHubToast.error(base + " (HTTP " + resp.status + ")");
+          global.OrderHubToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-load" });
         } else {
           O.showOrdersWarning("notification-settings-failed", base + " (HTTP " + resp.status + ")");
         }
@@ -250,7 +253,7 @@
       O.state.notificationSettings = mergeDefaultNotificationState(json);
     } catch (error) {
       if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsLoadException"));
+        global.OrderHubToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
       } else {
         O.showOrdersWarning("notification-settings-exception", O.getMessage("notificationSettingsLoadException"));
       }
@@ -259,9 +262,20 @@
   }
 
   function wireNotificationModalContent() {
+    if (notificationSettingsBindingsAbort) {
+      try { notificationSettingsBindingsAbort.abort(); } catch (e) { /* ignore */ }
+    }
+    notificationSettingsBindingsAbort = new AbortController();
+    const signal = notificationSettingsBindingsAbort.signal;
+
+    function on(el, evt, handler) {
+      if (!el) return;
+      el.addEventListener(evt, handler, { signal: signal });
+    }
+
     const toggle = document.getElementById("NewOrderSoundEnabledToggle");
     if (toggle) {
-      toggle.addEventListener("change", function () {
+      on(toggle, "change", function () {
         setModalEnabled(toggle.checked);
         updateNotificationStatusUi(getModalState());
       });
@@ -269,7 +283,7 @@
 
     const soundSel = document.getElementById("newOrderSoundSelect");
     if (soundSel) {
-      soundSel.addEventListener("change", function () {
+      on(soundSel, "change", function () {
         selectNotificationSound(soundSel.value);
         updateNotificationStatusUi(getModalState());
       });
@@ -277,7 +291,7 @@
 
     const testSelectedBtn = document.getElementById("testSelectedSoundBtn");
     if (testSelectedBtn) {
-      testSelectedBtn.addEventListener("click", async function () {
+      on(testSelectedBtn, "click", async function () {
         const st = getModalState();
         await O.audio.maybeRequestBrowserNotificationPermission(st);
         if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
@@ -295,7 +309,7 @@
 
     // Highlight swatches + custom color
     document.querySelectorAll(".oh-color-swatch[data-highlight-color]").forEach(function (btn) {
-      btn.addEventListener("click", function (e) {
+      on(btn, "click", function (e) {
         e.preventDefault();
         const c = btn.getAttribute("data-highlight-color") || "yellow";
         setSelectedHighlightColor(String(c).toLowerCase());
@@ -305,7 +319,7 @@
 
     const customColor = document.getElementById("NewOrderHighlightColorCustom");
     if (customColor) {
-      customColor.addEventListener("input", function () {
+      on(customColor, "input", function () {
         const v = String(customColor.value || "").trim();
         if (isHexColor(v)) {
           setSelectedHighlightColor(v.toLowerCase());
@@ -315,13 +329,13 @@
     }
 
     const hb = document.getElementById("NewOrderHighlightBehavior");
-    if (hb) hb.addEventListener("change", updateHighlightPreview);
+    if (hb) on(hb, "change", updateHighlightPreview);
     const hd = document.getElementById("NewOrderHighlightDurationSeconds");
-    if (hd) hd.addEventListener("change", updateHighlightPreview);
+    if (hd) on(hd, "change", updateHighlightPreview);
 
     const form = document.getElementById("notificationSettingsForm");
     if (form) {
-      form.addEventListener("submit", async function (e) {
+      on(form, "submit", async function (e) {
         e.preventDefault();
         await saveNotificationSettings("save");
         updateNotificationStatusUi(getModalState());
@@ -331,9 +345,13 @@
     // Stop preview sound when modal closes
     const modalEl = document.getElementById("notificationSettingsModal");
     if (modalEl) {
-      modalEl.addEventListener("hidden.bs.modal", function () {
+      on(modalEl, "hidden.bs.modal", function () {
         if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
           O.audio.stopCurrentPreviewSound();
+        }
+        if (notificationSettingsBindingsAbort) {
+          try { notificationSettingsBindingsAbort.abort(); } catch (e) { /* ignore */ }
+          notificationSettingsBindingsAbort = null;
         }
       });
     }
@@ -342,11 +360,16 @@
   }
 
   async function saveNotificationSettings() {
+    if (isSavingNotificationSettings) return;
     const form = document.getElementById("notificationSettingsForm");
     const body = document.getElementById("notificationSettingsModalBody");
     if (!form || !body) return;
 
+    const saveBtn = document.getElementById("saveNotificationsBtn");
+
     try {
+      isSavingNotificationSettings = true;
+      if (saveBtn) saveBtn.disabled = true;
       const state = getModalState();
       await O.audio.maybeRequestBrowserNotificationPermission(state);
 
@@ -367,13 +390,13 @@
         if (data && data.success) {
           await loadNotificationSettings();
           if (global.OrderHubToast) {
-            global.OrderHubToast.success(O.getMessage("settingsSaved"));
+            global.OrderHubToast.success(O.getMessage("settingsSaved"), { key: "notification-settings-save" });
           }
           setTimeout(function () { hideNotificationSettingsModal(); }, 200);
           return;
         }
         if (global.OrderHubToast) {
-          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"));
+          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
         }
         return;
       }
@@ -385,7 +408,7 @@
           wireNotificationModalContent();
         }
         if (global.OrderHubToast) {
-          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"));
+          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
         }
         O.debugWarn("Notification settings save failed", resp.status);
         return;
@@ -398,11 +421,14 @@
       }
     } catch (error) {
       if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsSaveException"));
+        global.OrderHubToast.error(O.getMessage("notificationSettingsSaveException"), { key: "notification-settings-save-ex" });
       } else {
         O.showOrdersWarning("notification-settings-save-exception", O.getMessage("notificationSettingsSaveException"));
       }
       O.debugWarn("saveNotificationSettings failed", error);
+    } finally {
+      isSavingNotificationSettings = false;
+      if (saveBtn) saveBtn.disabled = false;
     }
   }
 
@@ -412,7 +438,7 @@
       resp = await fetch(O.opts.notificationSettingsUrl, { headers: { "X-Requested-With": "fetch" } });
     } catch (error) {
       if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsModalOpenFailed"));
+        global.OrderHubToast.error(O.getMessage("notificationSettingsModalOpenFailed"), { key: "notification-settings-open" });
       } else {
         O.showOrdersWarning("notification-settings-modal-failed", O.getMessage("notificationSettingsModalOpenFailed"));
       }
@@ -424,7 +450,7 @@
     if (!resp.ok) {
       const base = O.getMessage("notificationSettingsModalOpenFailed");
       if (global.OrderHubToast) {
-        global.OrderHubToast.error(base + " (HTTP " + resp.status + ")");
+        global.OrderHubToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-open" });
       } else {
         O.showOrdersWarning("notification-settings-modal-http", base + " (HTTP " + resp.status + ")");
       }

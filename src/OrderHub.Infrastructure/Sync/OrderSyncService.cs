@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Orders.Services;
 using OrderHub.Application.Abstractions.Platform;
@@ -19,6 +21,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly ICustomerDbContextFactory _customerDbFactory;
     private readonly IEnumerable<IFoodPlatformClient> _platformClients;
     private readonly IOrderStatusMapper _statusMapper;
+    private readonly ILogger<OrderSyncService> _logger;
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
         new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
@@ -52,35 +55,128 @@ public sealed class OrderSyncService : IOrderSyncService
     public OrderSyncService(
         ICustomerDbContextFactory customerDbFactory,
         IEnumerable<IFoodPlatformClient> platformClients,
-        IOrderStatusMapper statusMapper)
+        IOrderStatusMapper statusMapper,
+        ILogger<OrderSyncService> logger)
     {
         _customerDbFactory = customerDbFactory;
         _platformClients = platformClients;
         _statusMapper = statusMapper;
+        _logger = logger;
     }
 
     public async Task SyncCustomerAsync(Guid customerId, CancellationToken ct)
     {
+        await SyncCustomerWithResultAsync(customerId, ct).ConfigureAwait(false);
+    }
+
+    public async Task<OrderSyncCustomerResult> SyncCustomerWithResultAsync(Guid customerId, CancellationToken ct)
+    {
+        var swCustomer = Stopwatch.StartNew();
         await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
         var now = DateTime.UtcNow;
-        var connections = await db.PlatformConnections
-            .Where(c =>
-                c.IsActive &&
-                (c.CircuitOpenUntil == null || c.CircuitOpenUntil <= now) &&
-                (c.LastSyncAttempt == null ||
-                 c.LastSyncAttempt.Value.AddSeconds(c.SyncIntervalSeconds) <= now))
-            .ToListAsync(ct)
-            .ConfigureAwait(false);
+        // Load all connections so we can log *why* a connection was skipped.
+        var allConnections = await db.PlatformConnections.ToListAsync(ct).ConfigureAwait(false);
+        var activeConnections = allConnections.Where(c => c.IsActive).ToList();
 
-        foreach (var connection in connections)
+        var dueConnections = activeConnections
+            .Where(c =>
+                (c.CircuitOpenUntil == null || c.CircuitOpenUntil <= now) &&
+                (c.LastSyncAttempt == null || c.LastSyncAttempt.Value.AddSeconds(c.SyncIntervalSeconds) <= now))
+            .ToList();
+
+        if (activeConnections.Count == 0)
         {
-            await SyncConnectionAsync(db, connection, ct).ConfigureAwait(false);
+            _logger.LogInformation(
+                "No active platform connections for customer {CustomerId}",
+                customerId);
+            return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0);
         }
+
+        if (dueConnections.Count == 0)
+        {
+            // Usually frequent; keep it Info but concise.
+            _logger.LogInformation(
+                "No due platform connections for customer {CustomerId}. ActiveConnections={ActiveConnectionCount}",
+                customerId,
+                activeConnections.Count);
+            return new OrderSyncCustomerResult(customerId, activeConnections.Count, 0, 0, 0, 0, 0, 0);
+        }
+
+        foreach (var c in activeConnections)
+        {
+            if (c.CircuitOpenUntil != null && c.CircuitOpenUntil > now)
+            {
+                _logger.LogInformation(
+                    "Skipping platform connection {ConnectionId} because circuit is open until {CircuitOpenUntilUtc}. CustomerId={CustomerId}, Platform={Platform}, StoreId={StoreId}",
+                    c.Id,
+                    c.CircuitOpenUntil,
+                    customerId,
+                    c.Platform,
+                    c.StoreId);
+            }
+            else if (c.LastSyncAttempt != null && c.LastSyncAttempt.Value.AddSeconds(c.SyncIntervalSeconds) > now)
+            {
+                _logger.LogDebug(
+                    "Skipping platform connection {ConnectionId} because sync interval has not elapsed. CustomerId={CustomerId}, Platform={Platform}, StoreId={StoreId}, LastAttemptUtc={LastAttemptUtc}, IntervalSeconds={IntervalSeconds}",
+                    c.Id,
+                    customerId,
+                    c.Platform,
+                    c.StoreId,
+                    c.LastSyncAttempt,
+                    c.SyncIntervalSeconds);
+            }
+        }
+
+        var fetched = 0;
+        var inserted = 0;
+        var updated = 0;
+        var skipped = 0;
+        var unchanged = 0;
+        var failedConnections = 0;
+
+        foreach (var connection in dueConnections)
+        {
+            var result = await SyncConnectionAsync(customerId, db, connection, ct).ConfigureAwait(false);
+            fetched += result.FetchedCount;
+            inserted += result.InsertedCount;
+            updated += result.UpdatedCount;
+            skipped += result.SkippedCount;
+            unchanged += result.UnchangedCount;
+            if (result.IsFailed) failedConnections++;
+        }
+
+        swCustomer.Stop();
+        _logger.LogInformation(
+            "Completed sync for customer {CustomerId}. Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnections}, ElapsedMs={ElapsedMs}",
+            customerId,
+            dueConnections.Count,
+            fetched,
+            inserted,
+            updated,
+            skipped,
+            unchanged,
+            failedConnections,
+            swCustomer.ElapsedMilliseconds);
+
+        return new OrderSyncCustomerResult(
+            customerId,
+            dueConnections.Count,
+            fetched,
+            inserted,
+            updated,
+            skipped,
+            unchanged,
+            failedConnections);
     }
 
-    private async Task SyncConnectionAsync(CustomerDbContext db, PlatformConnection connection, CancellationToken ct)
+    private async Task<OrderSyncConnectionResult> SyncConnectionAsync(
+        Guid customerId,
+        CustomerDbContext db,
+        PlatformConnection connection,
+        CancellationToken ct)
     {
+        var swConn = Stopwatch.StartNew();
         connection.LastSyncAttempt = DateTime.UtcNow;
 
         var syncLog = new SyncLog
@@ -98,19 +194,74 @@ public sealed class OrderSyncService : IOrderSyncService
                 throw new InvalidOperationException($"No IFoodPlatformClient registered for platform '{connection.Platform}'.");
             }
 
+            _logger.LogInformation(
+                "Starting platform sync. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, IsActive={IsActive}, SyncIntervalSeconds={SyncIntervalSeconds}, LastSuccessfulSyncAt={LastSuccessfulSyncAtUtc}, LastSyncAttemptAt={LastSyncAttemptAtUtc}, CircuitOpenUntil={CircuitOpenUntilUtc}",
+                customerId,
+                connection.Id,
+                connection.Platform,
+                connection.StoreId,
+                connection.IsActive,
+                connection.SyncIntervalSeconds,
+                connection.LastSuccessfulSync,
+                connection.LastSyncAttempt,
+                connection.CircuitOpenUntil);
+
+            // Provider-specific required config (recoverable): warn and short-circuit this connection
+            // to avoid repeating failures every cycle.
+            if (connection.Platform == FoodPlatform.TrendyolYemek && string.IsNullOrWhiteSpace(connection.SupplierId))
+            {
+                _logger.LogWarning(
+                    "Skipping {Platform} connection {ConnectionId} because required setting {SettingKey} is missing. CustomerId={CustomerId}, StoreId={StoreId}",
+                    connection.Platform,
+                    connection.Id,
+                    "SupplierId",
+                    customerId,
+                    connection.StoreId);
+
+                syncLog.Status = SyncStatus.Failed;
+                syncLog.FinishedAt = DateTime.UtcNow;
+                syncLog.ErrorMessage = "Missing required setting: SupplierId";
+                db.SyncLogs.Add(syncLog);
+                await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+                swConn.Stop();
+                return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, 0, 0, 0, 0, 0, IsFailed: true);
+            }
+
+            var swFetch = Stopwatch.StartNew();
             var externalOrders = await _fetchPipeline.ExecuteAsync(
                     async token => await client.FetchOrdersAsync(connection, token).ConfigureAwait(false),
                     ct)
                 .ConfigureAwait(false);
+            swFetch.Stop();
 
             syncLog.OrdersFetched = externalOrders.Count;
 
+            _logger.LogInformation(
+                "Provider returned {OrderCount} orders. Platform={Platform}, StoreId={StoreId}, ConnectionId={ConnectionId}, CustomerId={CustomerId}, FetchElapsedMs={FetchElapsedMs}, SampleExternalOrderIds={SampleExternalOrderIds}",
+                externalOrders.Count,
+                connection.Platform,
+                connection.StoreId,
+                connection.Id,
+                customerId,
+                swFetch.ElapsedMilliseconds,
+                externalOrders.Select(x => x.ExternalOrderId).Where(x => !string.IsNullOrWhiteSpace(x)).Take(10).ToArray());
+
+            var connInserted = 0;
+            var connUpdated = 0;
+            var connSkipped = 0;
+            var connUnchanged = 0;
+
+            var swUpsert = Stopwatch.StartNew();
             foreach (var external in externalOrders)
             {
-                var (inserted, updated) = await UpsertOrderAsync(db, external, ct).ConfigureAwait(false);
-                if (inserted) syncLog.OrdersInserted++;
-                if (updated) syncLog.OrdersUpdated++;
+                var r = await UpsertOrderAsync(db, external, ct).ConfigureAwait(false);
+                if (r.Inserted) { syncLog.OrdersInserted++; connInserted++; }
+                if (r.Updated) { syncLog.OrdersUpdated++; connUpdated++; }
+                if (r.Skipped) { connSkipped++; }
+                if (r.Unchanged) { connUnchanged++; }
             }
+            swUpsert.Stop();
 
             connection.ConsecutiveFailures = 0;
             connection.CircuitOpenUntil = null;
@@ -121,6 +272,33 @@ public sealed class OrderSyncService : IOrderSyncService
 
             db.SyncLogs.Add(syncLog);
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            swConn.Stop();
+            _logger.LogInformation(
+                "Completed platform sync. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, UpsertElapsedMs={UpsertElapsedMs}, ElapsedMs={ElapsedMs}",
+                customerId,
+                connection.Id,
+                connection.Platform,
+                connection.StoreId,
+                externalOrders.Count,
+                connInserted,
+                connUpdated,
+                connSkipped,
+                connUnchanged,
+                swUpsert.ElapsedMilliseconds,
+                swConn.ElapsedMilliseconds);
+
+            return new OrderSyncConnectionResult(
+                customerId,
+                connection.Id,
+                connection.Platform,
+                connection.StoreId,
+                externalOrders.Count,
+                connInserted,
+                connUpdated,
+                connSkipped,
+                connUnchanged,
+                IsFailed: false);
         }
         catch (Exception ex)
         {
@@ -146,14 +324,35 @@ public sealed class OrderSyncService : IOrderSyncService
             });
 
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            swConn.Stop();
+            _logger.LogError(
+                ex,
+                "Platform connection sync failed. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, ElapsedMs={ElapsedMs}",
+                customerId,
+                connection.Id,
+                connection.Platform,
+                connection.StoreId,
+                swConn.ElapsedMilliseconds);
+
+            return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, syncLog.OrdersFetched, syncLog.OrdersInserted, syncLog.OrdersUpdated, 0, 0, IsFailed: true);
         }
     }
 
-    private async Task<(bool Inserted, bool Updated)> UpsertOrderAsync(
+    private async Task<OrderUpsertResult> UpsertOrderAsync(
       CustomerDbContext db,
       ExternalOrderDto external,
       CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(external.ExternalOrderId))
+        {
+            _logger.LogWarning(
+                "Skipping external order because ExternalOrderId is missing. Platform={Platform}, ExternalOrderCode={ExternalOrderCode}",
+                external.Platform,
+                external.ExternalOrderCode);
+            return new OrderUpsertResult(false, false, true, false, null);
+        }
+
         var input = $"{external.Platform}:{external.ExternalOrderId}";
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         var key = Convert.ToBase64String(hash);
@@ -179,10 +378,20 @@ public sealed class OrderSyncService : IOrderSyncService
             db.Orders.Add(order);
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
 
-            return (Inserted: true, Updated: false);
+            _logger.LogDebug(
+                "Inserted order. OrderId={OrderId}, ExternalOrderId={ExternalOrderId}, Platform={Platform}, Status={Status}, ReceivedAtUtc={ReceivedAtUtc}",
+                order.Id,
+                order.ExternalOrderId,
+                order.Platform,
+                order.InternalStatus,
+                order.ReceivedAt);
+
+            return new OrderUpsertResult(true, false, false, false, order.ExternalOrderId);
         }
 
         var oldStatus = existing.InternalStatus;
+        var oldTotal = existing.TotalAmount;
+        var oldPlatformStatus = existing.PlatformStatus;
 
         await using var tx = await db.Database.BeginTransactionAsync(ct)
             .ConfigureAwait(false);
@@ -252,7 +461,17 @@ public sealed class OrderSyncService : IOrderSyncService
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         await tx.CommitAsync(ct).ConfigureAwait(false);
 
-        return (Inserted: false, Updated: true);
+        _logger.LogDebug(
+            "Updated order {ExternalOrderId}. Status {OldStatus} -> {NewStatus}, Total {OldTotal} -> {NewTotal}, PlatformStatus {OldPlatformStatus} -> {NewPlatformStatus}",
+            existing.ExternalOrderId,
+            oldStatus,
+            newStatus,
+            oldTotal,
+            existing.TotalAmount,
+            oldPlatformStatus,
+            existing.PlatformStatus);
+
+        return new OrderUpsertResult(false, true, false, false, existing.ExternalOrderId);
     }
 
     private static Order MapToOrderEntity(ExternalOrderDto external, string idempotencyKey, DateTime receivedAtUtc, OrderStatus internalStatus, DateTime nowUtc)

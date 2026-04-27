@@ -19,15 +19,18 @@ public sealed class OrdersController : BaseController
 {
     private readonly ICurrentCustomerService _currentCustomer;
     private readonly IOrderReadService _orders;
+    private readonly IOrderActionService _actions;
     private readonly ILogger<OrdersController> _logger;
 
     public OrdersController(
         ICurrentCustomerService currentCustomer,
         IOrderReadService orders,
+        IOrderActionService actions,
         ILogger<OrdersController> logger)
     {
         _currentCustomer = currentCustomer;
         _orders = orders;
+        _actions = actions;
         _logger = logger;
     }
 
@@ -195,6 +198,40 @@ public sealed class OrdersController : BaseController
         };
 
         return View("Details", vm);
+    }
+
+    [HttpPost("{id:guid}/approve")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Approve(Guid id, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        // MVP: Local status update only. A future iteration will call the provider API and reconcile status updates from the worker.
+        var ok = await _actions.TryUpdateStatusAsync(customer.Id, id, OrderStatus.Accepted, ct);
+        if (!ok)
+        {
+            return BadRequest(new { message = "Orders.ActionFailed" });
+        }
+
+        return Ok(new { message = "Orders.ApproveSuccess" });
+    }
+
+    [HttpPost("{id:guid}/reject")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reject(Guid id, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        // MVP: Local status update only. A future iteration will call the provider API and reconcile status updates from the worker.
+        var ok = await _actions.TryUpdateStatusAsync(customer.Id, id, OrderStatus.Cancelled, ct);
+        if (!ok)
+        {
+            return BadRequest(new { message = "Orders.ActionFailed" });
+        }
+
+        return Ok(new { message = "Orders.RejectSuccess" });
     }
 
     private static List<OrderListViewModel.Row> MapOrderRows(

@@ -1095,4 +1095,49 @@
   <data name="Admin.UpdatedAt" xml:space="preserve">
     <value>Updated at (UTC)</value>
   </data>
+  <data name="Orders.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Orders.Approve" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="Orders.Reject" xml:space="preserve">
+    <value>Reject</value>
+  </data>
+  <data name="Orders.ApproveConfirmTitle" xml:space="preserve">
+    <value>Approve this order?</value>
+  </data>
+  <data name="Orders.ApproveConfirmMessage" xml:space="preserve">
+    <value>This will mark the order as accepted.</value>
+  </data>
+  <data name="Orders.RejectConfirmTitle" xml:space="preserve">
+    <value>Reject this order?</value>
+  </data>
+  <data name="Orders.RejectConfirmMessage" xml:space="preserve">
+    <value>This will mark the order as cancelled.</value>
+  </data>
+  <data name="Orders.ApproveSuccess" xml:space="preserve">
+    <value>Order approved.</value>
+  </data>
+  <data name="Orders.RejectSuccess" xml:space="preserve">
+    <value>Order rejected.</value>
+  </data>
+  <data name="Orders.ActionFailed" xml:space="preserve">
+    <value>Action failed. This order may no longer be actionable.</value>
+  </data>
+  <data name="Orders.StatusNewBadge" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Orders.PlatformYemeksepeti" xml:space="preserve">
+    <value>Yemeksepeti</value>
+  </data>
+  <data name="Orders.PlatformGetirYemek" xml:space="preserve">
+    <value>GetirYemek</value>
+  </data>
+  <data name="Orders.PlatformTrendyolYemek" xml:space="preserve">
+    <value>TrendyolYemek</value>
+  </data>
+  <data name="Orders.PlatformTrendyolGo" xml:space="preserve">
+    <value>Trendyol GO</value>
+  </data>
 </root>

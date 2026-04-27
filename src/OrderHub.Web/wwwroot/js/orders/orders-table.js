@@ -168,17 +168,30 @@
     const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
     if (!container) return;
 
+    function setNewBadgeVisible(row, isVisible) {
+      const badge = row.querySelector("[data-new-badge]");
+      if (!badge) return;
+      if (isVisible) badge.classList.remove("d-none");
+      else badge.classList.add("d-none");
+    }
+
     const now = Date.now();
     for (const entry of Array.from(T.recentlyNewOrderIds.entries())) {
       const id = entry[0];
       const exp = entry[1];
       if (exp <= now) {
+        const row = container.querySelector("[data-order-id=\"" + id + "\"]");
+        if (row) {
+          row.classList.remove("order-row-new", "order-row-new-flash");
+          setNewBadgeVisible(row, false);
+        }
         T.recentlyNewOrderIds.delete(id);
         continue;
       }
       const row = container.querySelector("[data-order-id=\"" + id + "\"]");
       if (!row) continue;
       applyHighlightClassesToRow(row);
+      setNewBadgeVisible(row, true);
     }
   }
 

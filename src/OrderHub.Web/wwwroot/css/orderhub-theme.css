@@ -428,37 +428,7 @@ body.oh-tenant.oh-app .btn-outline-primary {
   background-color: color-mix(in srgb, var(--orderhub-primary) 12%, var(--orderhub-surface)) !important;
 }
 
-/* Notyf toasts: modern, soft, above modals (see orderhub-toast.js for base colors). */
-body.oh-tenant.oh-app .notyf {
-  z-index: 1090;
-}
-
-body.oh-tenant.oh-app .notyf__toast {
-  min-width: 320px;
-  max-width: 420px;
-  border-radius: 14px;
-  box-shadow: 0 12px 40px color-mix(in srgb, var(--orderhub-text) 16%, transparent),
-    0 2px 8px color-mix(in srgb, var(--orderhub-text) 8%, transparent) !important;
-  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
-  overflow: hidden;
-  padding: 0.75rem 1rem !important;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-body.oh-tenant.oh-app .notyf__message {
-  font-size: 0.9rem;
-  font-weight: 500;
-  padding: 0.2rem 0;
-  line-height: 1.4;
-  color: #fff;
-  text-shadow: 0 1px 1px color-mix(in srgb, #000 20%, transparent);
-}
-
-body.oh-tenant.oh-app .notyf__dismiss {
-  margin-right: 0.1rem;
-  opacity: 0.9;
-}
+/* Toast styling moved to orderhub-toast.css (custom system). */
 
 /* --- Tenant: subtle card + table base polish (non-orders pages) --- */
 body.oh-tenant.oh-app .oh-card,
@@ -476,4 +446,96 @@ body.oh-tenant.oh-app .table thead th {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--orderhub-muted);
+}
+
+/* Orders table: platform badge + actions */
+.platform-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 32px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  border: 1px solid var(--oh-border);
+  background: var(--oh-surface);
+  color: var(--oh-text);
+  white-space: nowrap;
+}
+
+.platform-badge__icon {
+  height: 20px;
+  width: auto;
+  max-width: 64px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.platform-badge__text {
+  line-height: 1;
+}
+
+.platform-badge--wordmark .platform-badge__text {
+  display: none;
+}
+
+.platform-badge--icon-missing .platform-badge__text {
+  display: inline;
+}
+
+.platform-badge--yemeksepeti {
+  background: rgba(238, 43, 36, .08);
+  border-color: rgba(238, 43, 36, .18);
+}
+
+.platform-badge--getiryemek {
+  background: rgba(93, 62, 188, .12);
+  border-color: rgba(93, 62, 188, .24);
+  color: #3f2a8a;
+}
+
+.platform-badge--trendyol {
+  background: rgba(247, 124, 0, .10);
+  border-color: rgba(247, 124, 0, .20);
+}
+
+[data-bs-theme="dark"] .platform-badge {
+  border-color: color-mix(in srgb, var(--oh-border) 85%, #fff);
+  background: color-mix(in srgb, var(--oh-surface) 88%, transparent);
+}
+
+[data-bs-theme="dark"] .platform-badge--yemeksepeti {
+  background: rgba(238, 43, 36, .14);
+  border-color: rgba(238, 43, 36, .26);
+}
+
+[data-bs-theme="dark"] .platform-badge--getiryemek {
+  background: rgba(93, 62, 188, .18);
+  border-color: rgba(93, 62, 188, .34);
+  color: #e7e0ff;
+}
+
+[data-bs-theme="dark"] .platform-badge--trendyol {
+  background: rgba(247, 124, 0, .16);
+  border-color: rgba(247, 124, 0, .28);
+}
+
+.oh-orders-actions {
+  display: inline-flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.oh-orders-actions .btn {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  border-radius: 0.55rem;
+}
+
+.oh-orders-new-badge {
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }

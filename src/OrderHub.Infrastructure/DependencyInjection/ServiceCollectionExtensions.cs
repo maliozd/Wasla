@@ -68,6 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICentralAdminCustomerService, CentralAdminCustomerService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IOrderReadService, OrderReadService>();
+        services.AddScoped<IOrderActionService, OrderActionService>();
         services.AddScoped<IPlatformConnectionService, PlatformConnectionService>();
         services.AddScoped<IBranchService, BranchService>();
         services.AddScoped<IUserNotificationSettingsService, UserNotificationSettingsService>();

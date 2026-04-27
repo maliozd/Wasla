@@ -1,0 +1,171 @@
+/* OrderHub custom toast system — load AFTER orderhub-theme.css */
+
+.orderhub-toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+/* Higher specificity to avoid being overridden by generic .card styles, etc. */
+body.oh-tenant.oh-app .orderhub-toast {
+  position: relative;
+  overflow: hidden;
+  width: min(430px, calc(100vw - 2rem));
+  min-height: 64px;
+
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+
+  padding: 1rem 1rem;
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, 0.42)
+    ) !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow:
+    0 22px 60px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+
+  color: #0f172a;
+  pointer-events: auto;
+  transform: translateX(24px);
+  opacity: 0;
+  animation: orderhubToastIn 0.22s ease-out forwards;
+}
+
+body.oh-tenant.oh-app .orderhub-toast::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 255, 255, 0.75),
+      transparent 36%
+    );
+  opacity: 0.85;
+}
+
+body.oh-tenant.oh-app .orderhub-toast.is-leaving {
+  animation: orderhubToastOut 0.18s ease-in forwards;
+}
+
+body.oh-tenant.oh-app .orderhub-toast::before {
+  content: "";
+  width: 6px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: var(--toast-accent);
+  position: relative;
+  z-index: 1;
+}
+
+body.oh-tenant.oh-app .orderhub-toast--success { --toast-accent: #10b981; }
+body.oh-tenant.oh-app .orderhub-toast--error { --toast-accent: #ef4444; }
+body.oh-tenant.oh-app .orderhub-toast--warning { --toast-accent: #f59e0b; }
+body.oh-tenant.oh-app .orderhub-toast--info { --toast-accent: #3b82f6; }
+
+body.oh-tenant.oh-app .orderhub-toast__message,
+body.oh-tenant.oh-app .orderhub-toast__close {
+  position: relative;
+  z-index: 1;
+}
+
+body.oh-tenant.oh-app .orderhub-toast__message {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+body.oh-tenant.oh-app .orderhub-toast__close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  opacity: 0.72;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.16s ease;
+}
+
+body.oh-tenant.oh-app .orderhub-toast__close:hover {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.12);
+  transform: scale(1.04);
+}
+
+@keyframes orderhubToastIn {
+  from {
+    transform: translateX(24px) translateY(-4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes orderhubToastOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.78),
+      rgba(15, 23, 42, 0.46)
+    ) !important;
+
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 22px 65px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast::after {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 255, 255, 0.14),
+      transparent 36%
+    );
+}
+
+[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast__close {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast__close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+

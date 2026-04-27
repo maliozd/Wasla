@@ -1095,4 +1095,49 @@
   <data name="Admin.UpdatedAt" xml:space="preserve">
     <value>Güncelleme (UTC)</value>
   </data>
+  <data name="Orders.Actions" xml:space="preserve">
+    <value>İşlemler</value>
+  </data>
+  <data name="Orders.Approve" xml:space="preserve">
+    <value>Onayla</value>
+  </data>
+  <data name="Orders.Reject" xml:space="preserve">
+    <value>Reddet</value>
+  </data>
+  <data name="Orders.ApproveConfirmTitle" xml:space="preserve">
+    <value>Bu sipariş onaylansın mı?</value>
+  </data>
+  <data name="Orders.ApproveConfirmMessage" xml:space="preserve">
+    <value>Bu işlem siparişi “Kabul Edildi” olarak işaretler.</value>
+  </data>
+  <data name="Orders.RejectConfirmTitle" xml:space="preserve">
+    <value>Bu sipariş reddedilsin mi?</value>
+  </data>
+  <data name="Orders.RejectConfirmMessage" xml:space="preserve">
+    <value>Bu işlem siparişi “İptal” olarak işaretler.</value>
+  </data>
+  <data name="Orders.ApproveSuccess" xml:space="preserve">
+    <value>Sipariş onaylandı.</value>
+  </data>
+  <data name="Orders.RejectSuccess" xml:space="preserve">
+    <value>Sipariş reddedildi.</value>
+  </data>
+  <data name="Orders.ActionFailed" xml:space="preserve">
+    <value>İşlem başarısız. Sipariş artık işlenebilir olmayabilir.</value>
+  </data>
+  <data name="Orders.StatusNewBadge" xml:space="preserve">
+    <value>Yeni</value>
+  </data>
+  <data name="Orders.PlatformYemeksepeti" xml:space="preserve">
+    <value>Yemeksepeti</value>
+  </data>
+  <data name="Orders.PlatformGetirYemek" xml:space="preserve">
+    <value>GetirYemek</value>
+  </data>
+  <data name="Orders.PlatformTrendyolYemek" xml:space="preserve">
+    <value>TrendyolYemek</value>
+  </data>
+  <data name="Orders.PlatformTrendyolGo" xml:space="preserve">
+    <value>Trendyol GO</value>
+  </data>
 </root>

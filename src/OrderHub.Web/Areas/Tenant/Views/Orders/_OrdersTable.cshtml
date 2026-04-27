@@ -24,13 +24,14 @@
             <th>@SortHeader("status", L["Orders.Status"])</th>
             <th class="text-end">@SortHeader("totalAmount", L["Orders.TotalAmount"])</th>
             <th class="text-end">@SortHeader("receivedAt", L["Orders.ReceivedAt"])</th>
+            <th class="text-end">@L["Orders.Actions"]</th>
         </tr>
         </thead>
         <tbody>
         @if (Model.Orders.Count == 0)
         {
             <tr>
-                <td colspan="6" class="text-center text-muted py-4">
+                <td colspan="7" class="text-center text-muted py-4">
                     @(Model.UseSimpleNoOrdersMessage ? L["Orders.NoOrdersFound"] : L["Orders.NoFilteredOrdersFound"])
                 </td>
             </tr>
@@ -40,7 +41,9 @@
             @foreach (var o in Model.Orders)
             {
                 <tr data-order-id="@o.Id" data-received-at="@o.ReceivedAtUtc.ToString("O")">
-                    <td>@o.Platform</td>
+                    <td>
+                        @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)o.Platform, DisplayName: (string?)null))
+                    </td>
                     <td>
                         <a href="/orders/details/@o.Id">@o.ExternalOrderCode</a>
                         <span class="order-sound-indicator d-none" data-order-speaker="@o.Id" title="@L["Orders.SoundPlayingTitle"]">
@@ -48,9 +51,31 @@
                         </span>
                     </td>
                     <td>@o.CustomerName</td>
-                    <td>@StatusLabel(o.Status)</td>
+                    <td>
+                        <span class="me-2">@StatusLabel(o.Status)</span>
+                        <span class="badge text-bg-primary d-none oh-orders-new-badge" data-new-badge>@L["Orders.StatusNewBadge"]</span>
+                    </td>
                     <td class="text-end">@o.TotalAmount.ToString("C")</td>
                     <td class="text-end">@o.ReceivedAtLocal.ToString("g")</td>
+                    <td class="text-end">
+                        @if (o.Status == OrderStatus.New)
+                        {
+                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+                                <button type="button"
+                                        class="btn btn-success btn-sm"
+                                        data-order-action="approve"
+                                        data-order-id="@o.Id">
+                                    @L["Orders.Approve"]
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-danger btn-sm"
+                                        data-order-action="reject"
+                                        data-order-id="@o.Id">
+                                    @L["Orders.Reject"]
+                                </button>
+                            </div>
+                        }
+                    </td>
                 </tr>
             }
         }

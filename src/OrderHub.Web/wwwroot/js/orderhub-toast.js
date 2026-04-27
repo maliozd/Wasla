@@ -1,75 +1,115 @@
-/**
- * OrderHub Notyf wrapper (modern toasts for Tenant UI).
- * Requires ~/lib/notyf/notyf.min.js
- */
+// OrderHub dependency-free toasts (Tenant UI).
 (function (global) {
   "use strict";
 
-  var DURATION = { success: 1350, error: 2800, warning: 2000, info: 2000 };
-  var instance = null;
+  if (global.OrderHubToast) return;
 
-  function getNotyf() {
-    if (instance) return instance;
-    if (typeof global.Notyf !== "function") {
-      return null;
-    }
-    instance = new global.Notyf({
-      duration: DURATION.info,
-      ripple: false,
-      dismissible: true,
-      position: { x: "right", y: "top" },
-      types: [
-        {
-          type: "success",
-          className: "orderhub-notyf orderhub-notyf--success notyf__toast--success",
-          background: "rgba(16, 185, 129, 0.92)",
-          icon: false
-        },
-        {
-          type: "error",
-          className: "orderhub-notyf orderhub-notyf--error notyf__toast--error",
-          background: "rgba(239, 68, 68, 0.94)",
-          icon: false
-        },
-        {
-          type: "warning",
-          className: "orderhub-notyf orderhub-notyf--warning",
-          background: "rgba(245, 158, 11, 0.92)",
-          icon: false
-        },
-        {
-          type: "info",
-          className: "orderhub-notyf orderhub-notyf--info",
-          background: "rgba(59, 130, 246, 0.92)",
-          icon: false
-        }
-      ]
-    });
-    return instance;
+  const DEFAULT_DURATION = { success: 1400, info: 1800, warning: 2200, error: 3000 };
+  const MAX_VISIBLE = 3;
+
+  let container = null;
+
+  function ensureContainer() {
+    if (container) return container;
+    const el = document.createElement("div");
+    el.className = "orderhub-toast-container";
+    el.setAttribute("role", "region");
+    el.setAttribute("aria-label", "OrderHub toasts");
+    document.body.appendChild(el);
+    container = el;
+    return container;
   }
 
-  function open(type, message, duration) {
-    var n = getNotyf();
-    if (!n) return;
-    n.open({ type: type, message: String(message || ""), duration: duration || DURATION[type] || DURATION.info });
+  function normalizeOptions(options) {
+    const o = options || {};
+    return {
+      key: o.key ? String(o.key) : null,
+      durationMs: typeof o.durationMs === "number" ? o.durationMs : null
+    };
+  }
+
+  function removeExistingWithKey(key) {
+    if (!key) return;
+    const el = ensureContainer().querySelector(".orderhub-toast[data-key=\"" + cssEscape(key) + "\"]");
+    if (el) removeToast(el);
+  }
+
+  function cssEscape(s) {
+    // Minimal escape for attribute selector usage
+    return String(s).replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
+  }
+
+  function trimToMaxVisible() {
+    const list = ensureContainer().querySelectorAll(".orderhub-toast");
+    if (list.length <= MAX_VISIBLE) return;
+    for (let i = 0; i < list.length - MAX_VISIBLE; i++) {
+      removeToast(list[i]);
+    }
+  }
+
+  function removeToast(toastEl) {
+    if (!toastEl) return;
+    if (toastEl.__leaving) return;
+    toastEl.__leaving = true;
+    toastEl.classList.add("is-leaving");
+    const cleanup = function () {
+      try {
+        toastEl.remove();
+      } catch (e) { /* ignore */ }
+    };
+    toastEl.addEventListener("animationend", cleanup, { once: true });
+    // Fallback in case animationend doesn't fire
+    setTimeout(cleanup, 250);
+  }
+
+  function show(type, message, options) {
+    const msg = String(message || "").trim();
+    if (!msg) return;
+
+    const opt = normalizeOptions(options);
+    const duration = opt.durationMs != null ? opt.durationMs : (DEFAULT_DURATION[type] || 1800);
+
+    if (opt.key) removeExistingWithKey(opt.key);
+
+    const c = ensureContainer();
+
+    const toast = document.createElement("div");
+    toast.className = "orderhub-toast orderhub-toast--" + type;
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    if (opt.key) toast.setAttribute("data-key", opt.key);
+
+    const msgEl = document.createElement("div");
+    msgEl.className = "orderhub-toast__message";
+    msgEl.textContent = msg;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "orderhub-toast__close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.innerHTML = "&times;";
+    closeBtn.addEventListener("click", function () {
+      removeToast(toast);
+    });
+
+    toast.appendChild(msgEl);
+    toast.appendChild(closeBtn);
+
+    c.appendChild(toast);
+    trimToMaxVisible();
+
+    const t = setTimeout(function () {
+      removeToast(toast);
+    }, Math.max(300, duration));
+
+    // If removed early, clear timer
+    toast.addEventListener("remove", function () { clearTimeout(t); });
   }
 
   global.OrderHubToast = {
-    success: function (message) {
-      var n = getNotyf();
-      if (!n) return;
-      n.success({ message: String(message || ""), duration: DURATION.success || 1350 });
-    },
-    error: function (message) {
-      var n = getNotyf();
-      if (!n) return;
-      n.error({ message: String(message || ""), duration: DURATION.error || 2800 });
-    },
-    warning: function (message) {
-      open("warning", message, DURATION.warning);
-    },
-    info: function (message) {
-      open("info", message, DURATION.info);
-    }
+    success: function (message, options) { show("success", message, options); },
+    error: function (message, options) { show("error", message, options); },
+    warning: function (message, options) { show("warning", message, options); },
+    info: function (message, options) { show("info", message, options); }
   };
 })(window);
