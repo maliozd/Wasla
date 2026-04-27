@@ -1,9 +1,37 @@
-// Orders table actions: approve/reject (MVP local update).
+// Orders table actions: approve/reject and post-approval lifecycle.
 (function (global) {
   "use strict";
 
   const O = global.OrderHubOrders;
   if (!O || !O.table || typeof O.table.refreshOrdersTable !== "function") return;
+
+  /** @type {Record<string, { confirmTitle: string, confirmMessage: string, fallbackSuccess: string, toastKey: string }>} */
+  var lifecycleByAction = {
+    "start-preparing": {
+      confirmTitle: "ordersStartPreparingConfirmTitle",
+      confirmMessage: "ordersStartPreparingConfirmMessage",
+      fallbackSuccess: "ordersStartPreparingSuccess",
+      toastKey: "order-start-preparing-success"
+    },
+    "mark-ready": {
+      confirmTitle: "ordersMarkReadyConfirmTitle",
+      confirmMessage: "ordersMarkReadyConfirmMessage",
+      fallbackSuccess: "ordersMarkReadySuccess",
+      toastKey: "order-mark-ready-success"
+    },
+    "hand-to-courier": {
+      confirmTitle: "ordersHandToCourierConfirmTitle",
+      confirmMessage: "ordersHandToCourierConfirmMessage",
+      fallbackSuccess: "ordersHandToCourierSuccess",
+      toastKey: "order-hand-to-courier-success"
+    },
+    "mark-delivered": {
+      confirmTitle: "ordersMarkDeliveredConfirmTitle",
+      confirmMessage: "ordersMarkDeliveredConfirmMessage",
+      fallbackSuccess: "ordersMarkDeliveredSuccess",
+      toastKey: "order-mark-delivered-success"
+    }
+  };
 
   function getCsrfToken() {
     const tokenInput =
@@ -48,8 +76,30 @@
     const action = btn.getAttribute("data-order-action");
     if (!orderId || !action) return;
 
-    const confirmTitleKey = action === "approve" ? "ordersApproveConfirmTitle" : "ordersRejectConfirmTitle";
-    const confirmMessageKey = action === "approve" ? "ordersApproveConfirmMessage" : "ordersRejectConfirmMessage";
+    var confirmTitleKey;
+    var confirmMessageKey;
+    var fallbackSuccess;
+    var toastKey;
+
+    if (action === "approve") {
+      confirmTitleKey = "ordersApproveConfirmTitle";
+      confirmMessageKey = "ordersApproveConfirmMessage";
+      fallbackSuccess = "ordersApproveSuccess";
+      toastKey = "order-approve-success";
+    } else if (action === "reject") {
+      confirmTitleKey = "ordersRejectConfirmTitle";
+      confirmMessageKey = "ordersRejectConfirmMessage";
+      fallbackSuccess = "ordersRejectSuccess";
+      toastKey = "order-reject-success";
+    } else {
+      var lc = lifecycleByAction[action];
+      if (!lc) return;
+      confirmTitleKey = lc.confirmTitle;
+      confirmMessageKey = lc.confirmMessage;
+      fallbackSuccess = lc.fallbackSuccess;
+      toastKey = lc.toastKey;
+    }
+
     const ok = global.confirm(localize(confirmTitleKey) + "\n\n" + localize(confirmMessageKey));
     if (!ok) return;
 
@@ -59,18 +109,24 @@
       const result = await postAction(url);
 
       if (!result.resp.ok) {
-        const msgKey = (result.payload && result.payload.message) ? String(result.payload.message) : "ordersActionFailed";
+        var defaultErr =
+          action === "approve" || action === "reject" ? "ordersActionFailed" : "ordersOrderActionFailed";
+        const msgKey = (result.payload && result.payload.message) ? String(result.payload.message) : defaultErr;
         toastError(msgKey, "order-action-error");
         return;
       }
 
       const msgKey = (result.payload && result.payload.message) ? String(result.payload.message) : null;
-      toastSuccess(msgKey, action === "approve" ? "ordersApproveSuccess" : "ordersRejectSuccess", "order-action-success");
+      toastSuccess(msgKey, fallbackSuccess, toastKey);
 
-      // Refresh the table using existing polling logic (safe + keeps new-order detection behavior).
-      await O.table.refreshOrdersTable();
+      try {
+        await O.table.refreshOrdersTable();
+      } catch (e2) {
+        toastError("tableRefreshFailed", "orders-table-refresh-error");
+        if (O.isDebugEnabled()) O.debugWarn("orders table refresh failed after order action", e2);
+      }
     } catch (e) {
-      toastError("ordersActionFailed", "order-action-error");
+      toastError(action === "approve" || action === "reject" ? "ordersActionFailed" : "ordersOrderActionFailed", "order-action-error");
       if (O.isDebugEnabled()) O.debugWarn("order action failed", e);
     } finally {
       btn.disabled = false;
@@ -93,4 +149,3 @@
     initActionDelegation();
   });
 })(window);
-

@@ -91,9 +91,17 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <form method="post" asp-area="Tenant" asp-controller="Auth" asp-action="Logout" class="px-3 py-1">
+                                    <a class="dropdown-item disabled" href="#" aria-disabled="true" tabindex="-1">
+                                        <i class="bi bi-gear me-2" aria-hidden="true"></i>@L["Account.Settings"]
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <form method="post" asp-area="Tenant" asp-controller="Auth" asp-action="Logout">
                                         @Html.AntiForgeryToken()
-                                        <button class="btn btn-sm btn-outline-danger w-100" type="submit">@L["Layout.Logout"]</button>
+                                        <button class="dropdown-item text-danger" type="submit">
+                                            <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>@L["Account.Logout"]
+                                        </button>
                                     </form>
                                 </li>
                             </ul>

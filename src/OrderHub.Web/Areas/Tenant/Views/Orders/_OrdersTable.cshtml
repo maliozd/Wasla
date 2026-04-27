@@ -75,6 +75,50 @@
                                 </button>
                             </div>
                         }
+                        else if (o.Status == OrderStatus.Accepted)
+                        {
+                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+                                <button type="button"
+                                        class="btn btn-primary btn-sm"
+                                        data-order-action="start-preparing"
+                                        data-order-id="@o.Id">
+                                    @L["Orders.StartPreparing"]
+                                </button>
+                            </div>
+                        }
+                        else if (o.Status == OrderStatus.Preparing)
+                        {
+                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+                                <button type="button"
+                                        class="btn btn-primary btn-sm"
+                                        data-order-action="mark-ready"
+                                        data-order-id="@o.Id">
+                                    @L["Orders.MarkReady"]
+                                </button>
+                            </div>
+                        }
+                        else if (o.Status == OrderStatus.ReadyForPickup)
+                        {
+                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+                                <button type="button"
+                                        class="btn btn-primary btn-sm"
+                                        data-order-action="hand-to-courier"
+                                        data-order-id="@o.Id">
+                                    @L["Orders.HandToCourier"]
+                                </button>
+                            </div>
+                        }
+                        else if (o.Status == OrderStatus.OnTheWay)
+                        {
+                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+                                <button type="button"
+                                        class="btn btn-primary btn-sm"
+                                        data-order-action="mark-delivered"
+                                        data-order-id="@o.Id">
+                                    @L["Orders.MarkDelivered"]
+                                </button>
+                            </div>
+                        }
                     </td>
                 </tr>
             }

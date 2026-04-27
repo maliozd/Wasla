@@ -753,6 +753,12 @@
   <data name="PlatformConnections.ApiLeaveEmptyHelp" xml:space="preserve">
     <value>Leave blank to keep the existing value.</value>
   </data>
+  <data name="Account.Settings" xml:space="preserve">
+    <value>Account settings</value>
+  </data>
+  <data name="Account.Logout" xml:space="preserve">
+    <value>Logout</value>
+  </data>
   <data name="Validation.BranchNameRequired" xml:space="preserve">
     <value>Branch name is required.</value>
   </data>
@@ -1131,14 +1137,83 @@
   <data name="Orders.RejectSuccess" xml:space="preserve">
     <value>Order rejected.</value>
   </data>
+  <data name="Orders.ApproveFailed" xml:space="preserve">
+    <value>Order could not be approved.</value>
+  </data>
+  <data name="Orders.RejectFailed" xml:space="preserve">
+    <value>Order could not be rejected.</value>
+  </data>
+  <data name="Orders.InvalidStatusForAction" xml:space="preserve">
+    <value>This order is no longer actionable.</value>
+  </data>
   <data name="Orders.ActionFailed" xml:space="preserve">
     <value>Action failed. This order may no longer be actionable.</value>
+  </data>
+  <data name="Orders.OrderActionFailed" xml:space="preserve">
+    <value>We could not complete this step with the platform. Try again or check your connection.</value>
+  </data>
+  <data name="Orders.StartPreparing" xml:space="preserve">
+    <value>Start preparing</value>
+  </data>
+  <data name="Orders.MarkReady" xml:space="preserve">
+    <value>Mark ready</value>
+  </data>
+  <data name="Orders.HandToCourier" xml:space="preserve">
+    <value>Hand to courier</value>
+  </data>
+  <data name="Orders.MarkDelivered" xml:space="preserve">
+    <value>Mark delivered</value>
+  </data>
+  <data name="Orders.StartPreparingConfirmTitle" xml:space="preserve">
+    <value>Start preparing this order?</value>
+  </data>
+  <data name="Orders.StartPreparingConfirmMessage" xml:space="preserve">
+    <value>This marks the order as being prepared in your kitchen.</value>
+  </data>
+  <data name="Orders.MarkReadyConfirmTitle" xml:space="preserve">
+    <value>Mark this order as ready?</value>
+  </data>
+  <data name="Orders.MarkReadyConfirmMessage" xml:space="preserve">
+    <value>This marks the order as ready for pickup or packaging.</value>
+  </data>
+  <data name="Orders.HandToCourierConfirmTitle" xml:space="preserve">
+    <value>Hand this order to the courier?</value>
+  </data>
+  <data name="Orders.HandToCourierConfirmMessage" xml:space="preserve">
+    <value>This marks the order as on the way to the customer.</value>
+  </data>
+  <data name="Orders.MarkDeliveredConfirmTitle" xml:space="preserve">
+    <value>Mark this order as delivered?</value>
+  </data>
+  <data name="Orders.MarkDeliveredConfirmMessage" xml:space="preserve">
+    <value>This marks the order as completed.</value>
+  </data>
+  <data name="Orders.StartPreparingSuccess" xml:space="preserve">
+    <value>Order is now being prepared.</value>
+  </data>
+  <data name="Orders.MarkReadySuccess" xml:space="preserve">
+    <value>Order marked as ready.</value>
+  </data>
+  <data name="Orders.HandToCourierSuccess" xml:space="preserve">
+    <value>Order handed to courier.</value>
+  </data>
+  <data name="Orders.MarkDeliveredSuccess" xml:space="preserve">
+    <value>Order marked as delivered.</value>
   </data>
   <data name="Orders.InvalidStartDate" xml:space="preserve">
     <value>Invalid start date.</value>
   </data>
   <data name="Orders.InvalidEndDate" xml:space="preserve">
     <value>Invalid end date.</value>
+  </data>
+  <data name="Orders.AutoApprove" xml:space="preserve">
+    <value>Auto Approve</value>
+  </data>
+  <data name="Orders.AutoApproveHelp" xml:space="preserve">
+    <value>Automatically approves new orders (coming soon).</value>
+  </data>
+  <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
+    <value>Auto approve is not available yet.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>New</value>

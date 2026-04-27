@@ -1,0 +1,10 @@
+{
+  "description": "Sanitized Partner / picking-style order status values used in mapping (OrderHub fetches a single string into ExternalStatus).",
+  "sampleStatusStrings": [
+    "RECEIVED",
+    "READY_FOR_PICKUP",
+    "DISPATCHED",
+    "DELIVERED",
+    "CANCELLED"
+  ]
+}

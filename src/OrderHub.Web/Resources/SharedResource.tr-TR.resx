@@ -753,6 +753,12 @@
   <data name="PlatformConnections.ApiLeaveEmptyHelp" xml:space="preserve">
     <value>Mevcut değeri korumak için boş bırakın.</value>
   </data>
+  <data name="Account.Settings" xml:space="preserve">
+    <value>Hesap ayarları</value>
+  </data>
+  <data name="Account.Logout" xml:space="preserve">
+    <value>Çıkış yap</value>
+  </data>
   <data name="Validation.BranchNameRequired" xml:space="preserve">
     <value>Şube adı gerekli.</value>
   </data>
@@ -1131,14 +1137,83 @@
   <data name="Orders.RejectSuccess" xml:space="preserve">
     <value>Sipariş reddedildi.</value>
   </data>
+  <data name="Orders.ApproveFailed" xml:space="preserve">
+    <value>Sipariş onaylanamadı.</value>
+  </data>
+  <data name="Orders.RejectFailed" xml:space="preserve">
+    <value>Sipariş reddedilemedi.</value>
+  </data>
+  <data name="Orders.InvalidStatusForAction" xml:space="preserve">
+    <value>Bu sipariş artık işlenebilir değil.</value>
+  </data>
   <data name="Orders.ActionFailed" xml:space="preserve">
     <value>İşlem başarısız. Sipariş artık işlenebilir olmayabilir.</value>
+  </data>
+  <data name="Orders.OrderActionFailed" xml:space="preserve">
+    <value>Bu adım platformla tamamlanamadı. Lütfen tekrar deneyin veya bağlantınızı kontrol edin.</value>
+  </data>
+  <data name="Orders.StartPreparing" xml:space="preserve">
+    <value>Hazırlamaya Başla</value>
+  </data>
+  <data name="Orders.MarkReady" xml:space="preserve">
+    <value>Hazır</value>
+  </data>
+  <data name="Orders.HandToCourier" xml:space="preserve">
+    <value>Kuryeye Teslim Et</value>
+  </data>
+  <data name="Orders.MarkDelivered" xml:space="preserve">
+    <value>Teslim Edildi</value>
+  </data>
+  <data name="Orders.StartPreparingConfirmTitle" xml:space="preserve">
+    <value>Hazırlamaya başlansın mı?</value>
+  </data>
+  <data name="Orders.StartPreparingConfirmMessage" xml:space="preserve">
+    <value>Sipariş mutfakta hazırlanıyor olarak işaretlenecek.</value>
+  </data>
+  <data name="Orders.MarkReadyConfirmTitle" xml:space="preserve">
+    <value>Sipariş hazır olarak işaretlensin mi?</value>
+  </data>
+  <data name="Orders.MarkReadyConfirmMessage" xml:space="preserve">
+    <value>Sipariş teslime veya paketlemeye hazır olarak işaretlenecek.</value>
+  </data>
+  <data name="Orders.HandToCourierConfirmTitle" xml:space="preserve">
+    <value>Sipariş kuryeye teslim edilsin mi?</value>
+  </data>
+  <data name="Orders.HandToCourierConfirmMessage" xml:space="preserve">
+    <value>Sipariş müşteriye yolda olarak işaretlenecek.</value>
+  </data>
+  <data name="Orders.MarkDeliveredConfirmTitle" xml:space="preserve">
+    <value>Sipariş teslim edildi olarak işaretlensin mi?</value>
+  </data>
+  <data name="Orders.MarkDeliveredConfirmMessage" xml:space="preserve">
+    <value>Sipariş tamamlandı olarak işaretlenecek.</value>
+  </data>
+  <data name="Orders.StartPreparingSuccess" xml:space="preserve">
+    <value>Sipariş hazırlanıyor olarak güncellendi.</value>
+  </data>
+  <data name="Orders.MarkReadySuccess" xml:space="preserve">
+    <value>Sipariş hazır olarak güncellendi.</value>
+  </data>
+  <data name="Orders.HandToCourierSuccess" xml:space="preserve">
+    <value>Sipariş kuryeye teslim edildi olarak güncellendi.</value>
+  </data>
+  <data name="Orders.MarkDeliveredSuccess" xml:space="preserve">
+    <value>Sipariş teslim edildi olarak güncellendi.</value>
   </data>
   <data name="Orders.InvalidStartDate" xml:space="preserve">
     <value>Başlangıç tarihi geçersiz.</value>
   </data>
   <data name="Orders.InvalidEndDate" xml:space="preserve">
     <value>Bitiş tarihi geçersiz.</value>
+  </data>
+  <data name="Orders.AutoApprove" xml:space="preserve">
+    <value>Otomatik Onay</value>
+  </data>
+  <data name="Orders.AutoApproveHelp" xml:space="preserve">
+    <value>Yeni siparişleri otomatik olarak onaylar (yakında).</value>
+  </data>
+  <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
+    <value>Otomatik onay şu an kullanılamıyor.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>Yeni</value>

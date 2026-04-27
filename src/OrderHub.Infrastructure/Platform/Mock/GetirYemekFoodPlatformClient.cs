@@ -31,22 +31,43 @@ public sealed class GetirYemekFoodPlatformClient : IFoodPlatformClient
         _ = await _secretManager.DecryptAsync(connection.EncryptedApiSecret, connection.EncryptionKeyVersion, ct);
 
         var count = Random.Shared.Next(0, 4);
-        return MockOrders.CreateOrders(Platform, connection, count);
+        var list = MockOrders.CreateOrders(Platform, connection, count);
+        return MockProviderOrderStatusStore.ApplyOverlays(Platform, list);
     }
 
-    public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
-        Task.CompletedTask;
+    // EN: Mock echo tokens (VERIFY/PREPARE/ON_THE_WAY/…) align with verify/prepare/handover/cancel in this dev client—not confirmed production codes.
+    // TR: Mock echo tokenları (VERIFY/PREPARE/…) bu dev istemcide verify/prepare/handover/cancel ile hizalıdır—kesin production kodu değildir.
+    // EN: Simplified Getir flow skips a separate ready endpoint; OrderHub keeps ReadyForPickup as shared internal step before handover; PREPARE vs DB gap is handled by sync merge.
+    // TR: Basitleştirilmiş Getir akışında ayrı ready endpoint yok; OrderHub ReadyForPickup'i handover öncesi ortak iç adım tutar; PREPARE ile DB farkını sync merge kapatır.
 
-    public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "VERIFY");
+        return Task.CompletedTask;
+    }
 
-    public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "PREPARE");
+        return Task.CompletedTask;
+    }
 
-    public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "ON_THE_WAY");
+        return Task.CompletedTask;
+    }
 
-    public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "DELIVERED");
+        return Task.CompletedTask;
+    }
+
+    public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "CANCELLED");
+        return Task.CompletedTask;
+    }
 }
 

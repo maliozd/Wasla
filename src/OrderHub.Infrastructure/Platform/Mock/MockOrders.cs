@@ -20,11 +20,10 @@ internal static class MockOrders
         var list = new List<ExternalOrderDto>(count);
         for (var i = 0; i < count; i++)
         {
-            // Mock behavior for MVP demo:
-            // - New orders are always generated as "New" (provider-like Created/New).
-            // - Existing orders may occasionally transition ONLY to final outcomes (Delivered/Cancelled).
-            // - Intermediate operational states are intentionally not simulated right now.
-            // TODO: Add explicit mock status progression mode for demo/testing.
+            // Mock behavior for MVP:
+            // - New orders use provider-like initial status strings (see GetInitialExternalStatus) that map to OrderStatus.New.
+            // - Reused order ids (upsert) may only jump to final outcomes (Delivered/Cancelled), not random intermediates
+            //   (intermediate echo strings come from IFoodPlatformClient + MockProviderOrderStatusStore after manual actions).
             var (externalOrderId, isExisting) = GetExternalOrderId(platform);
             var items = CreateItems(externalOrderId);
 
@@ -128,8 +127,8 @@ internal static class MockOrders
     private static string GetInitialExternalStatus(FoodPlatform platform) =>
         platform switch
         {
-            // Ensure these map to OrderStatus.New in DefaultOrderStatusMapper.
-            FoodPlatform.Yemeksepeti => "new",
+            // Partner / provider-shaped strings mapped to New (see DefaultOrderStatusMapper).
+            FoodPlatform.Yemeksepeti => "RECEIVED",
             FoodPlatform.GetirYemek => "CREATED",
             FoodPlatform.TrendyolYemek => "Created",
             _ => "unknown"
@@ -142,13 +141,13 @@ internal static class MockOrders
         var roll = Random.Shared.NextDouble();
         if (roll < 0.70) return GetInitialExternalStatus(platform);
 
-        var outcome = roll < 0.90 ? "delivered" : "cancelled";
+        var toDelivered = roll < 0.90;
 
         return platform switch
         {
-            FoodPlatform.Yemeksepeti => outcome, // delivered/cancelled
-            FoodPlatform.GetirYemek => outcome.ToUpperInvariant(), // DELIVERED/CANCELLED
-            FoodPlatform.TrendyolYemek => outcome == "delivered" ? "Delivered" : "Cancelled",
+            FoodPlatform.Yemeksepeti => toDelivered ? "DELIVERED" : "CANCELLED",
+            FoodPlatform.GetirYemek => toDelivered ? "DELIVERED" : "CANCELLED",
+            FoodPlatform.TrendyolYemek => toDelivered ? "Delivered" : "Cancelled",
             _ => GetInitialExternalStatus(platform)
         };
     }

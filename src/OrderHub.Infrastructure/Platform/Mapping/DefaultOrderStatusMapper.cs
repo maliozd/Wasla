@@ -28,10 +28,24 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         };
     }
 
+    // EN: Normalize partner-style strings (RECEIVED, …) plus legacy lowercase mocks into OrderHub's shared lifecycle; RECEIVED vs internal Accepted is reconciled at sync merge.
+    // TR: Partner stringlerini (RECEIVED, …) ve eski küçük harf mock'larını ortak lifecycle'a map ederiz; RECEIVED ile iç Accepted uyumu sync merge'da toparlanır.
     private static OrderStatus MapYemeksepeti(string status)
     {
-        var s = status.ToLowerInvariant();
-        return s switch
+        var s = (status ?? string.Empty).Trim();
+        if (s.Length == 0) return OrderStatus.New;
+
+        var u = s.ToUpperInvariant();
+        if (u is "RECEIVED") return OrderStatus.New;
+        if (u is "READY_FOR_PICKUP") return OrderStatus.ReadyForPickup;
+        if (u is "DISPATCHED") return OrderStatus.OnTheWay;
+        if (u is "DELIVERED") return OrderStatus.Delivered;
+        if (u is "CANCELLED" or "CANCELED") return OrderStatus.Cancelled;
+
+        var sLower = s.ToLowerInvariant();
+        if (sLower is "received") return OrderStatus.New;
+
+        return sLower switch
         {
             "new" => OrderStatus.New,
             "confirmed" or "accepted" => OrderStatus.Accepted,
@@ -45,16 +59,19 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         };
     }
 
+    // EN: Maps ExternalStatus tokens into OrderHub lifecycle; VERIFY/PREPARE/HANDOVER-style strings here are mock/dev echoes—not guaranteed production codes.
+    // TR: ExternalStatus token'larını OrderHub lifecycle'a map eder; VERIFY/PREPARE/HANDOVER burada mock/dev echo'dur—kesin production kodu garantisi yoktur.
     private static OrderStatus MapGetir(string status)
     {
-        var s = status.ToUpperInvariant();
-        return s switch
+        var u = (status ?? string.Empty).Trim().ToUpperInvariant();
+        return u switch
         {
             "CREATED" => OrderStatus.New,
+            "VERIFY" or "VERIFIED" => OrderStatus.Accepted,
             "CONFIRMED" or "ACCEPTED" => OrderStatus.Accepted,
-            "PREPARING" => OrderStatus.Preparing,
+            "PREPARE" or "PREPARING" => OrderStatus.Preparing,
             "READY" or "READY_FOR_PICKUP" => OrderStatus.ReadyForPickup,
-            "ON_THE_WAY" => OrderStatus.OnTheWay,
+            "ON_THE_WAY" or "DISPATCHED" or "HANDOVER" => OrderStatus.OnTheWay,
             "DELIVERED" => OrderStatus.Delivered,
             "CANCELLED" or "CANCELED" => OrderStatus.Cancelled,
             "FAILED" => OrderStatus.Failed,
@@ -62,13 +79,17 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         };
     }
 
+    // EN: Trendyol GO package statuses (and a few Turkish mock labels) fold into the same shared OrderHub statuses as the real integration.
+    // TR: Trendyol GO paket statüleri (ve birkaç Türkçe mock etiketi) gerçek entegrasyonla aynı ortak OrderHub statülerine indirgenir.
     private static OrderStatus MapTrendyol(string status)
     {
-        // Trendyol GO (real API) statuses + Turkish mock labels.
-        var s = (status ?? string.Empty).Trim();
-        if (s.Length == 0) return OrderStatus.New;
+        var t = (status ?? string.Empty).Trim();
+        if (t.Length == 0) return OrderStatus.New;
 
-        return s switch
+        if (t.Equals("Returned", StringComparison.OrdinalIgnoreCase))
+            return OrderStatus.Cancelled;
+
+        return t switch
         {
             // Trendyol GO
             "Created" => OrderStatus.New,
@@ -98,7 +119,8 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         var mapped = MapTrendyol(status);
         if (mapped == OrderStatus.New)
         {
-            // If the external status is not a known "New" synonym, warn.
+            // EN: Warn when Trendyol sends an unknown status string so we do not silently assume New without a trace.
+            // TR: Trendyol bilinmeyen statü string'i gönderdiğinde uyarı; sessizce New varsaymayalım.
             var s = (status ?? string.Empty).Trim();
             var isKnownNew =
                 s is "Created" or "Yeni" or "yeni" or "new" or "New";
@@ -111,4 +133,3 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         return mapped;
     }
 }
-

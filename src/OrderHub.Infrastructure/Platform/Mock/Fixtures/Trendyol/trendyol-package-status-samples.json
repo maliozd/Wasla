@@ -1,0 +1,13 @@
+{
+  "description": "Sanitized examples of Trendyol GO package status strings (field packageStatus) used for mapping. No credentials or PII.",
+  "samplePackageStatuses": [
+    "Created",
+    "Picking",
+    "Invoiced",
+    "Shipped",
+    "Delivered",
+    "Returned",
+    "Cancelled",
+    "UnSupplied"
+  ]
+}

@@ -7,6 +7,8 @@ using OrderHub.Domain.Enums;
 
 namespace OrderHub.Infrastructure.Platform.Mock;
 
+// EN: Mock echoes use Trendyol GO-style package statuses so they align with DefaultOrderStatusMapper and the real client contract.
+// TR: Mock yanıtları Trendyol GO paket statüleriyle uyumludur; DefaultOrderStatusMapper ve gerçek istemci sözleşmesiyle hizalanır.
 public sealed class TrendyolYemekFoodPlatformClient : IFoodPlatformClient
 {
     private readonly ISecretManager _secretManager;
@@ -31,22 +33,38 @@ public sealed class TrendyolYemekFoodPlatformClient : IFoodPlatformClient
         _ = await _secretManager.DecryptAsync(connection.EncryptedApiSecret, connection.EncryptionKeyVersion, ct);
 
         var count = Random.Shared.Next(0, 4);
-        return MockOrders.CreateOrders(Platform, connection, count);
+        var list = MockOrders.CreateOrders(Platform, connection, count);
+        return MockProviderOrderStatusStore.ApplyOverlays(Platform, list);
     }
 
-    public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "Picking");
+        return Task.CompletedTask;
+    }
 
-    public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "Invoiced");
+        return Task.CompletedTask;
+    }
 
-    public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "Shipped");
+        return Task.CompletedTask;
+    }
 
-    public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "Delivered");
+        return Task.CompletedTask;
+    }
 
-    public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) =>
-        Task.CompletedTask;
+    public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct)
+    {
+        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "UnSupplied");
+        return Task.CompletedTask;
+    }
 }
 

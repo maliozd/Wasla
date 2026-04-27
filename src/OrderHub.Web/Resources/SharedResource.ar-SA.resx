@@ -753,6 +753,12 @@
   <data name="PlatformConnections.ApiLeaveEmptyHelp" xml:space="preserve">
     <value>اتركه فارغًا للاحتفاظ بالقيمة الحالية.</value>
   </data>
+  <data name="Account.Settings" xml:space="preserve">
+    <value>إعدادات الحساب</value>
+  </data>
+  <data name="Account.Logout" xml:space="preserve">
+    <value>تسجيل الخروج</value>
+  </data>
   <data name="Validation.BranchNameRequired" xml:space="preserve">
     <value>اسم الفرع مطلوب.</value>
   </data>
@@ -1131,14 +1137,83 @@
   <data name="Orders.RejectSuccess" xml:space="preserve">
     <value>تم رفض الطلب.</value>
   </data>
+  <data name="Orders.ApproveFailed" xml:space="preserve">
+    <value>تعذر قبول الطلب.</value>
+  </data>
+  <data name="Orders.RejectFailed" xml:space="preserve">
+    <value>تعذر رفض الطلب.</value>
+  </data>
+  <data name="Orders.InvalidStatusForAction" xml:space="preserve">
+    <value>لم يعد هذا الطلب قابلاً للإجراء.</value>
+  </data>
   <data name="Orders.ActionFailed" xml:space="preserve">
     <value>فشل الإجراء. قد لا يكون الطلب قابلاً للإجراء الآن.</value>
+  </data>
+  <data name="Orders.OrderActionFailed" xml:space="preserve">
+    <value>تعذر إكمال هذه الخطوة مع المنصة. أعد المحاولة أو تحقق من الاتصال.</value>
+  </data>
+  <data name="Orders.StartPreparing" xml:space="preserve">
+    <value>بدء التحضير</value>
+  </data>
+  <data name="Orders.MarkReady" xml:space="preserve">
+    <value>جاهز</value>
+  </data>
+  <data name="Orders.HandToCourier" xml:space="preserve">
+    <value>تسليم للساعي</value>
+  </data>
+  <data name="Orders.MarkDelivered" xml:space="preserve">
+    <value>تم التسليم</value>
+  </data>
+  <data name="Orders.StartPreparingConfirmTitle" xml:space="preserve">
+    <value>هل تريد بدء تحضير هذا الطلب؟</value>
+  </data>
+  <data name="Orders.StartPreparingConfirmMessage" xml:space="preserve">
+    <value>سيتم وضع الطلب قيد التحضير في المطبخ.</value>
+  </data>
+  <data name="Orders.MarkReadyConfirmTitle" xml:space="preserve">
+    <value>هل تريد وضع الطلب كجاهز؟</value>
+  </data>
+  <data name="Orders.MarkReadyConfirmMessage" xml:space="preserve">
+    <value>سيتم وضع الطلب كجاهز للاستلام أو التعبئة.</value>
+  </data>
+  <data name="Orders.HandToCourierConfirmTitle" xml:space="preserve">
+    <value>هل تريد تسليم الطلب للساعي؟</value>
+  </data>
+  <data name="Orders.HandToCourierConfirmMessage" xml:space="preserve">
+    <value>سيتم وضع الطلب في الطريق إلى العميل.</value>
+  </data>
+  <data name="Orders.MarkDeliveredConfirmTitle" xml:space="preserve">
+    <value>هل تريد وضع الطلب كمُسلَّم؟</value>
+  </data>
+  <data name="Orders.MarkDeliveredConfirmMessage" xml:space="preserve">
+    <value>سيتم وضع الطلب كمكتمل.</value>
+  </data>
+  <data name="Orders.StartPreparingSuccess" xml:space="preserve">
+    <value>تم وضع الطلب قيد التحضير.</value>
+  </data>
+  <data name="Orders.MarkReadySuccess" xml:space="preserve">
+    <value>تم وضع الطلب كجاهز.</value>
+  </data>
+  <data name="Orders.HandToCourierSuccess" xml:space="preserve">
+    <value>تم تسليم الطلب للساعي.</value>
+  </data>
+  <data name="Orders.MarkDeliveredSuccess" xml:space="preserve">
+    <value>تم وضع الطلب كمُسلَّم.</value>
   </data>
   <data name="Orders.InvalidStartDate" xml:space="preserve">
     <value>تاريخ البداية غير صالح.</value>
   </data>
   <data name="Orders.InvalidEndDate" xml:space="preserve">
     <value>تاريخ النهاية غير صالح.</value>
+  </data>
+  <data name="Orders.AutoApprove" xml:space="preserve">
+    <value>الموافقة التلقائية</value>
+  </data>
+  <data name="Orders.AutoApproveHelp" xml:space="preserve">
+    <value>يقوم بالموافقة تلقائيًا على الطلبات الجديدة (قريبًا).</value>
+  </data>
+  <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
+    <value>الموافقة التلقائية غير متاحة بعد.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>جديد</value>

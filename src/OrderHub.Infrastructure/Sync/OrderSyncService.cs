@@ -401,10 +401,14 @@ public sealed class OrderSyncService : IOrderSyncService
         var oldTotal = existing.TotalAmount;
         var oldPlatformStatus = existing.PlatformStatus;
 
+        // EN: Provider status can lag behind local operator actions; merge instead of blindly overwriting InternalStatus so stale New/Accepted never undoes manual progress.
+        // TR: Provider statüsü paneldeki manuel aksiyonların gerisinde kalabilir; InternalStatus'u körlemesine ezmemek için merge ediyoruz; eski New/Accepted manuel ilerlemeyi geri almasın.
+        var mergedStatus = MergeInternalStatusForSync(existing.InternalStatus, newStatus);
+
         await using var tx = await db.Database.BeginTransactionAsync(ct)
             .ConfigureAwait(false);
 
-        existing.InternalStatus = newStatus;
+        existing.InternalStatus = mergedStatus;
         existing.PlatformStatus = external.ExternalStatus;
         existing.CustomerName = external.CustomerName;
         existing.TotalAmount = external.Total;
@@ -422,7 +426,7 @@ public sealed class OrderSyncService : IOrderSyncService
         ApplyStatusTransitionTimestamps(
             existing,
             oldStatus,
-            newStatus,
+            mergedStatus,
             nowUtc);
 
         await db.OrderItemOptions
@@ -470,9 +474,10 @@ public sealed class OrderSyncService : IOrderSyncService
         await tx.CommitAsync(ct).ConfigureAwait(false);
 
         _logger.LogDebug(
-            "Updated order {ExternalOrderId}. Status {OldStatus} -> {NewStatus}, Total {OldTotal} -> {NewTotal}, PlatformStatus {OldPlatformStatus} -> {NewPlatformStatus}",
+            "Updated order {ExternalOrderId}. Status {OldStatus} -> {MergedStatus} (external mapped {ExternalMappedStatus}), Total {OldTotal} -> {NewTotal}, PlatformStatus {OldPlatformStatus} -> {NewPlatformStatus}",
             existing.ExternalOrderId,
             oldStatus,
+            mergedStatus,
             newStatus,
             oldTotal,
             existing.TotalAmount,
@@ -533,6 +538,41 @@ public sealed class OrderSyncService : IOrderSyncService
 
         return order;
     }
+
+    // EN: Merge prevents downgrades when external/mock payloads lag behind OrderHub; terminals (Delivered/Cancelled/Failed) stay locked except allowed cancel/fail propagation.
+    // TR: Dış/mock payload OrderHub'un gerisinde kaldığında düşürme olmasın diye merge; terminal durumlar (Delivered/Cancelled/Failed) kilitlenir, iptal/hata ise kurallara göre geçer.
+    private static OrderStatus MergeInternalStatusForSync(OrderStatus existing, OrderStatus incomingFromExternal)
+    {
+        if (existing == OrderStatus.Delivered)
+            return existing;
+
+        if (existing == OrderStatus.Cancelled || existing == OrderStatus.Failed)
+            return existing;
+
+        if (incomingFromExternal == OrderStatus.Cancelled || incomingFromExternal == OrderStatus.Failed)
+            return incomingFromExternal;
+
+        var existingRank = OperationalProgressRank(existing);
+        var incomingRank = OperationalProgressRank(incomingFromExternal);
+
+        if (incomingRank < existingRank)
+            return existing;
+
+        return incomingFromExternal;
+    }
+
+    private static int OperationalProgressRank(OrderStatus status) => status switch
+    {
+        OrderStatus.New => 0,
+        OrderStatus.Accepted => 1,
+        OrderStatus.Preparing => 2,
+        OrderStatus.ReadyForPickup => 3,
+        OrderStatus.OnTheWay => 4,
+        OrderStatus.Delivered => 5,
+        OrderStatus.Cancelled => -1,
+        OrderStatus.Failed => -1,
+        _ => 0
+    };
 
     private static void ApplyStatusTransitionTimestamps(Order order, OrderStatus oldStatus, OrderStatus newStatus, DateTime nowUtc)
     {

@@ -1,0 +1,11 @@
+{
+  "description": "Mock echo tokens for GetirYemek (development only). Real API may use different fields; this project maps ExternalStatus strings from fetch. VERIFY/PREPARE/ON_THE_WAY are synthetic mock strings aligned to verify/prepare/handover/deliver — not production codes.",
+  "fetchInitial": "CREATED",
+  "mockLifecycleEchoes": {
+    "afterVerify": "VERIFY",
+    "afterMarkInvoicedInMock": "PREPARE",
+    "afterHandover": "ON_THE_WAY",
+    "afterDeliver": "DELIVERED",
+    "afterCancel": "CANCELLED"
+  }
+}

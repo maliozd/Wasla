@@ -211,14 +211,9 @@ public sealed class OrdersController : BaseController
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
 
-        // MVP: Local status update only. A future iteration will call the provider API and reconcile status updates from the worker.
-        var ok = await _actions.TryUpdateStatusAsync(customer.Id, id, OrderStatus.Accepted, ct);
-        if (!ok)
-        {
-            return BadRequest(new { message = "Orders.ActionFailed" });
-        }
-
-        return Ok(new { message = "Orders.ApproveSuccess" });
+        var result = await _actions.TryApproveAsync(customer.Id, id, ct);
+        if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: true) });
+        return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: true) });
     }
 
     [HttpPost("{id:guid}/reject")]
@@ -228,14 +223,79 @@ public sealed class OrdersController : BaseController
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
 
-        // MVP: Local status update only. A future iteration will call the provider API and reconcile status updates from the worker.
-        var ok = await _actions.TryUpdateStatusAsync(customer.Id, id, OrderStatus.Cancelled, ct);
-        if (!ok)
-        {
-            return BadRequest(new { message = "Orders.ActionFailed" });
-        }
+        var result = await _actions.TryRejectAsync(customer.Id, id, ct);
+        if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: false) });
+        return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: false) });
+    }
 
-        return Ok(new { message = "Orders.RejectSuccess" });
+    [HttpPost("{id:guid}/start-preparing")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> StartPreparing(Guid id, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var result = await _actions.MarkPreparingAsync(customer.Id, id, ct);
+        if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
+        return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
+    }
+
+    [HttpPost("{id:guid}/mark-ready")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkReady(Guid id, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var result = await _actions.MarkReadyForPickupAsync(customer.Id, id, ct);
+        if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
+        return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
+    }
+
+    [HttpPost("{id:guid}/hand-to-courier")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> HandToCourier(Guid id, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var result = await _actions.MarkOnTheWayAsync(customer.Id, id, ct);
+        if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
+        return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
+    }
+
+    [HttpPost("{id:guid}/mark-delivered")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkDelivered(Guid id, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var result = await _actions.MarkDeliveredAsync(customer.Id, id, ct);
+        if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
+        return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
+    }
+
+    /// <summary>Maps backend <c>Orders.*</c> message keys to client dictionary keys used by <c>orders-actions.js</c>.</summary>
+    private static string MapOrderActionClientMessageKey(string messageKey, bool? isApprove)
+    {
+        return messageKey switch
+        {
+            "Orders.InvalidStatusForAction" => "ordersInvalidStatusForAction",
+            "Orders.ActionFailed" => "ordersActionFailed",
+            "Orders.OrderActionFailed" => "ordersOrderActionFailed",
+            "Orders.ApproveFailed" => "ordersApproveFailed",
+            "Orders.RejectFailed" => "ordersRejectFailed",
+            "Orders.ApproveSuccess" => "ordersApproveSuccess",
+            "Orders.RejectSuccess" => "ordersRejectSuccess",
+            "Orders.StartPreparingSuccess" => "ordersStartPreparingSuccess",
+            "Orders.MarkReadySuccess" => "ordersMarkReadySuccess",
+            "Orders.HandToCourierSuccess" => "ordersHandToCourierSuccess",
+            "Orders.MarkDeliveredSuccess" => "ordersMarkDeliveredSuccess",
+            _ => isApprove == true ? "ordersApproveFailed"
+                : isApprove == false ? "ordersRejectFailed"
+                : "ordersOrderActionFailed"
+        };
     }
 
     private static List<OrderListViewModel.Row> MapOrderRows(
