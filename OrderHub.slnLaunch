@@ -1,0 +1,19 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "src\\OrderHub.Api\\OrderHub.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\OrderHub.Web\\OrderHub.Web.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\OrderHub.Worker\\OrderHub.Worker.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

@@ -21,7 +21,7 @@
             <div class="row g-3">
                 <div class="col-12 col-md-4">
                     <label class="form-label" asp-for="Platform"></label>
-                    <select class="form-select" asp-for="Platform">
+                    <select class="form-select" asp-for="Platform" id="platformSelect">
                         @foreach (var p in Enum.GetValues<FoodPlatform>())
                         {
                             <option value="@p">@p</option>
@@ -33,8 +33,22 @@
                 <div class="col-12 col-md-8">
                     <label class="form-label" asp-for="StoreId"></label>
                     <input class="form-control" asp-for="StoreId" />
-                    @* <div id="trendyolStoreIdHelp" class="form-text d-none">@L["PlatformConnections.TrendyolStoreIdHelp"]</div> *@
+                    <div id="trendyolStoreIdHelp" class="form-text d-none">@L["PlatformConnections.TrendyolStoreIdHelp"]</div>
                     <span class="text-danger" asp-validation-for="StoreId"></span>
+                </div>
+
+                <div class="col-12 col-md-6 trendyol-only d-none">
+                    <label class="form-label" asp-for="SupplierId"></label>
+                    <input class="form-control" asp-for="SupplierId" />
+                    <div class="form-text">@L["PlatformConnections.SupplierIdHelp"]</div>
+                    <span class="text-danger" asp-validation-for="SupplierId"></span>
+                </div>
+
+                <div class="col-12 col-md-6 trendyol-only d-none">
+                    <label class="form-label" asp-for="ExecutorEmail"></label>
+                    <input class="form-control" asp-for="ExecutorEmail" type="email" autocomplete="email" />
+                    <div class="form-text">@L["PlatformConnections.ExecutorEmailHelp"]</div>
+                    <span class="text-danger" asp-validation-for="ExecutorEmail"></span>
                 </div>
 
                 <div class="col-12 col-md-6">
@@ -66,19 +80,5 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
-    <script>
-        (function () {
-            const select = document.querySelector("select[name='Platform']");
-            const help = document.getElementById("trendyolStoreIdHelp");
-            if (!select || !help) return;
-            function update() {
-                const v = (select.value || "").toLowerCase();
-                const show = v === "trendyolyemek" || v === "trendyolgo" || v === "trendyol";
-                help.classList.toggle("d-none", !show);
-            }
-            select.addEventListener("change", update);
-            update();
-        })();
-    </script>
+    <script src="~/js/platform-connections/platform-connection-form.js" asp-append-version="true"></script>
 }
-

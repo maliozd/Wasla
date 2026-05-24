@@ -21,6 +21,15 @@ public sealed class CreatePlatformConnectionCommandValidator : AbstractValidator
         RuleFor(x => x.ApiSecret)
             .NotEmpty().WithMessage("Validation.ApiSecretRequired")
             .MaximumLength(500).WithMessage("Validation.ApiSecretMaxLength");
+
+        RuleFor(x => x.SupplierId)
+            .MaximumLength(100).WithMessage("Validation.SupplierIdMaxLength")
+            .When(x => !string.IsNullOrWhiteSpace(x.SupplierId));
+
+        RuleFor(x => x.ExecutorEmail)
+            .MaximumLength(200).WithMessage("Validation.ExecutorEmailMaxLength")
+            .EmailAddress().WithMessage("Validation.ExecutorEmailInvalid")
+            .When(x => !string.IsNullOrWhiteSpace(x.ExecutorEmail));
     }
 }
 

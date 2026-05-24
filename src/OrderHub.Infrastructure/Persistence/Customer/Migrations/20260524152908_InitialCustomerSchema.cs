@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCustomerSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -104,6 +104,8 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Platform = table.Column<int>(type: "int", nullable: false),
                     StoreId = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    SupplierId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    ExecutorEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     EncryptedApiKey = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     EncryptedApiSecret = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     EncryptionKeyVersion = table.Column<int>(type: "int", nullable: false),
@@ -140,6 +142,34 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SyncLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserNotificationSettings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    NewOrderSoundEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    NewOrderSoundName = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    NewOrderSoundRepeatCount = table.Column<int>(type: "int", nullable: false),
+                    NewOrderSoundVolume = table.Column<decimal>(type: "decimal(4,2)", precision: 4, scale: 2, nullable: false),
+                    ShowBrowserNotification = table.Column<bool>(type: "bit", nullable: false),
+                    NewOrderHighlightColor = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    NewOrderHighlightBehavior = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    NewOrderHighlightDurationSeconds = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserNotificationSettings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserNotificationSettings_AppUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AppUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -274,14 +304,17 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                 table: "SyncLogs",
                 column: "StartedAt",
                 descending: new bool[0]);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserNotificationSettings_UserId",
+                table: "UserNotificationSettings",
+                column: "UserId",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "AppUsers");
-
             migrationBuilder.DropTable(
                 name: "Branches");
 
@@ -298,7 +331,13 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                 name: "SyncLogs");
 
             migrationBuilder.DropTable(
+                name: "UserNotificationSettings");
+
+            migrationBuilder.DropTable(
                 name: "OrderItems");
+
+            migrationBuilder.DropTable(
+                name: "AppUsers");
 
             migrationBuilder.DropTable(
                 name: "Orders");

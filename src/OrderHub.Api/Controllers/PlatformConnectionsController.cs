@@ -34,7 +34,9 @@ public sealed class PlatformConnectionsController : ControllerBase
         string StoreId,
         string ApiKey,
         string ApiSecret,
-        bool IsActive = true);
+        bool IsActive = true,
+        string? SupplierId = null,
+        string? ExecutorEmail = null);
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ContractPlatformConnectionDto>>> GetList(CancellationToken ct)
@@ -68,7 +70,9 @@ public sealed class PlatformConnectionsController : ControllerBase
             request.StoreId,
             request.ApiKey,
             request.ApiSecret,
-            request.IsActive);
+            request.IsActive,
+            request.SupplierId,
+            request.ExecutorEmail);
 
         var validation = await _createValidator.ValidateAsync(cmd, ct);
         if (!validation.IsValid)

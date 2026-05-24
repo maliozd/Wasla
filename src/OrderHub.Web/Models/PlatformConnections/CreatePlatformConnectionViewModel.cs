@@ -23,5 +23,12 @@ public sealed class CreatePlatformConnectionViewModel
 
     [Display(Name = "Common.Active")]
     public bool IsActive { get; set; } = true;
+
+    [Display(Name = "PlatformConnections.SupplierId")]
+    public string? SupplierId { get; set; }
+
+    [Display(Name = "PlatformConnections.ExecutorEmail")]
+    [EmailAddress(ErrorMessage = "Validation.ExecutorEmailInvalid")]
+    public string? ExecutorEmail { get; set; }
 }
 

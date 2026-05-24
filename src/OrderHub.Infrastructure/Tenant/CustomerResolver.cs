@@ -30,7 +30,7 @@ public sealed class CustomerResolver : ICustomerResolver
 
         var customer = await _centralDb.Customers
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.PrimaryDomain == host, ct);
+            .FirstOrDefaultAsync(c => c.PrimaryDomain.ToLower() == normalized, ct);
 
         if (customer is null) return null;
         if (!customer.IsActive) return null;

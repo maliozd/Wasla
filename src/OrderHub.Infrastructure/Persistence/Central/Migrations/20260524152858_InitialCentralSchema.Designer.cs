@@ -12,8 +12,8 @@ using OrderHub.Infrastructure.Persistence.Central;
 namespace OrderHub.Infrastructure.Persistence.Central.Migrations
 {
     [DbContext(typeof(CentralDbContext))]
-    [Migration("20260426191208_AddCentralAdminUsers")]
-    partial class AddCentralAdminUsers
+    [Migration("20260524152858_InitialCentralSchema")]
+    partial class InitialCentralSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

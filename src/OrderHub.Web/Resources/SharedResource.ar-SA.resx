@@ -1290,4 +1290,19 @@
   <data name="Validation.ApiSecretMaxLength" xml:space="preserve">
     <value>الحد الأقصى لطول ApiSecret هو 500.</value>
   </data>
+  <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
+    <value>الحد الأقصى لطول Supplier Id هو 100.</value>
+  </data>
+  <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
+    <value>الحد الأقصى لطول Executor Email هو 200.</value>
+  </data>
+  <data name="Validation.ExecutorEmailInvalid" xml:space="preserve">
+    <value>أدخل عنوان بريد إلكتروني صالحاً.</value>
+  </data>
+  <data name="PlatformConnections.SupplierIdHelp" xml:space="preserve">
+    <value>معرّف المورّد لنقاط نهاية حزم Trendyol GO. يُستخدم Store Id عند تركه فارغاً.</value>
+  </data>
+  <data name="PlatformConnections.ExecutorEmailHelp" xml:space="preserve">
+    <value>مطلوب لطلبات Trendyol GO الحقيقية كرأس x-executor-user.</value>
+  </data>
 </root>

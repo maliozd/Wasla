@@ -1290,4 +1290,19 @@
   <data name="Validation.ApiSecretMaxLength" xml:space="preserve">
     <value>ApiSecret en fazla 500 karakter olabilir.</value>
   </data>
+  <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
+    <value>Supplier Id en fazla 100 karakter olabilir.</value>
+  </data>
+  <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
+    <value>Executor Email en fazla 200 karakter olabilir.</value>
+  </data>
+  <data name="Validation.ExecutorEmailInvalid" xml:space="preserve">
+    <value>Geçerli bir e-posta adresi girin.</value>
+  </data>
+  <data name="PlatformConnections.SupplierIdHelp" xml:space="preserve">
+    <value>Trendyol GO paket uç noktaları için supplier id. Boş bırakılırsa Store Id kullanılır.</value>
+  </data>
+  <data name="PlatformConnections.ExecutorEmailHelp" xml:space="preserve">
+    <value>Trendyol GO gerçek API isteklerinde x-executor-user başlığı için gereklidir.</value>
+  </data>
 </root>

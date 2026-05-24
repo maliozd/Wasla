@@ -3,6 +3,7 @@
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
     ViewData["Title"] = L["PlatformConnections.Edit"];
+    var isTrendyol = Model.Platform == OrderHub.Domain.Enums.FoodPlatform.TrendyolYemek;
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -27,10 +28,24 @@
                 <div class="col-12 col-md-8">
                     <label class="form-label" asp-for="StoreId"></label>
                     <input class="form-control" asp-for="StoreId" />
-                    <div id="trendyolStoreIdHelp" class="form-text @(Model.Platform == OrderHub.Domain.Enums.FoodPlatform.TrendyolYemek ? "" : "d-none")">
+                    <div id="trendyolStoreIdHelp" class="form-text @(isTrendyol ? "" : "d-none")">
                         @L["PlatformConnections.TrendyolStoreIdHelp"]
                     </div>
                     <span class="text-danger" asp-validation-for="StoreId"></span>
+                </div>
+
+                <div class="col-12 col-md-6 trendyol-only @(isTrendyol ? "" : "d-none")">
+                    <label class="form-label" asp-for="SupplierId"></label>
+                    <input class="form-control" asp-for="SupplierId" />
+                    <div class="form-text">@L["PlatformConnections.SupplierIdHelp"]</div>
+                    <span class="text-danger" asp-validation-for="SupplierId"></span>
+                </div>
+
+                <div class="col-12 col-md-6 trendyol-only @(isTrendyol ? "" : "d-none")">
+                    <label class="form-label" asp-for="ExecutorEmail"></label>
+                    <input class="form-control" asp-for="ExecutorEmail" type="email" autocomplete="email" />
+                    <div class="form-text">@L["PlatformConnections.ExecutorEmailHelp"]</div>
+                    <span class="text-danger" asp-validation-for="ExecutorEmail"></span>
                 </div>
 
                 <div class="col-12 col-md-8 d-flex align-items-end">
@@ -65,5 +80,5 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script src="~/js/platform-connections/platform-connection-form.js" asp-append-version="true"></script>
 }
-

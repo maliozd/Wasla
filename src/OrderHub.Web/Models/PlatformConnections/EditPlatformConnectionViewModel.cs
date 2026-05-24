@@ -23,5 +23,12 @@ public sealed class EditPlatformConnectionViewModel
 
     [Display(Name = "PlatformConnections.ApiSecret")]
     public string? ApiSecret { get; set; }
+
+    [Display(Name = "PlatformConnections.SupplierId")]
+    public string? SupplierId { get; set; }
+
+    [Display(Name = "PlatformConnections.ExecutorEmail")]
+    [EmailAddress(ErrorMessage = "Validation.ExecutorEmailInvalid")]
+    public string? ExecutorEmail { get; set; }
 }
 

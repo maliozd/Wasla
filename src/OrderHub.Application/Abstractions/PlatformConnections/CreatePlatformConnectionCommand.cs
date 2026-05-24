@@ -7,5 +7,7 @@ public sealed record CreatePlatformConnectionCommand(
     string StoreId,
     string ApiKey,
     string ApiSecret,
-    bool IsActive);
+    bool IsActive,
+    string? SupplierId = null,
+    string? ExecutorEmail = null);
 

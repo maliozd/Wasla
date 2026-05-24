@@ -12,8 +12,8 @@ using OrderHub.Infrastructure.Persistence.Customer;
 namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
 {
     [DbContext(typeof(CustomerDbContext))]
-    [Migration("20260426112456_AddTrendyolGoFieldsToPlatformConnections")]
-    partial class AddTrendyolGoFieldsToPlatformConnections
+    [Migration("20260524152908_InitialCustomerSchema")]
+    partial class InitialCustomerSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -456,6 +456,61 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                     b.ToTable("SyncLogs", (string)null);
                 });
 
+            modelBuilder.Entity("OrderHub.Domain.Entities.Customer.UserNotificationSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NewOrderHighlightBehavior")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("NewOrderHighlightColor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("NewOrderHighlightDurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("NewOrderSoundEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NewOrderSoundName")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("NewOrderSoundRepeatCount")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("NewOrderSoundVolume")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)");
+
+                    b.Property<bool>("ShowBrowserNotification")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserNotificationSettings_UserId");
+
+                    b.ToTable("UserNotificationSettings", (string)null);
+                });
+
             modelBuilder.Entity("OrderHub.Domain.Entities.Customer.OrderItem", b =>
                 {
                     b.HasOne("OrderHub.Domain.Entities.Customer.Order", "Order")
@@ -476,6 +531,17 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                         .IsRequired();
 
                     b.Navigation("OrderItem");
+                });
+
+            modelBuilder.Entity("OrderHub.Domain.Entities.Customer.UserNotificationSettings", b =>
+                {
+                    b.HasOne("OrderHub.Domain.Entities.Customer.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
                 });
 
             modelBuilder.Entity("OrderHub.Domain.Entities.Customer.Order", b =>

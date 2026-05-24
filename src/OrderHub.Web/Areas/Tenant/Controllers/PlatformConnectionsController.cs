@@ -69,6 +69,8 @@ public sealed class PlatformConnectionsController : BaseController
             Id = c.Id,
             Platform = c.Platform,
             StoreId = c.StoreId,
+            SupplierId = c.SupplierId,
+            ExecutorEmail = c.ExecutorEmail,
             IsActive = c.IsActive,
             ApiKey = string.Empty,
             ApiSecret = string.Empty
@@ -91,8 +93,8 @@ public sealed class PlatformConnectionsController : BaseController
             StoreId: model.StoreId,
             IsActive: model.IsActive,
             SyncIntervalSeconds: null,
-            SupplierId: null,
-            ExecutorEmail: null,
+            SupplierId: model.SupplierId,
+            ExecutorEmail: model.ExecutorEmail,
             ApiKey: string.IsNullOrWhiteSpace(model.ApiKey) ? null : model.ApiKey,
             ApiSecret: string.IsNullOrWhiteSpace(model.ApiSecret) ? null : model.ApiSecret);
 
@@ -147,7 +149,9 @@ public sealed class PlatformConnectionsController : BaseController
             model.StoreId,
             model.ApiKey,
             model.ApiSecret,
-            model.IsActive);
+            model.IsActive,
+            model.SupplierId,
+            model.ExecutorEmail);
 
         var validation = await _createValidator.ValidateAsync(cmd, ct);
         if (!validation.IsValid)

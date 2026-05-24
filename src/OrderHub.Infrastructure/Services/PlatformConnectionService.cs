@@ -96,6 +96,8 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         {
             Platform = command.Platform,
             StoreId = storeId,
+            SupplierId = string.IsNullOrWhiteSpace(command.SupplierId) ? null : command.SupplierId.Trim(),
+            ExecutorEmail = string.IsNullOrWhiteSpace(command.ExecutorEmail) ? null : command.ExecutorEmail.Trim(),
             EncryptedApiKey = encKey,
             EncryptedApiSecret = encSecret,
             EncryptionKeyVersion = keyVer,

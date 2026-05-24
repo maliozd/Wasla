@@ -1,15 +1,11 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using System.IO;
-using OrderHub.Infrastructure.Security;
-using Microsoft.EntityFrameworkCore;
 using OrderHub.Api.Middleware;
 using OrderHub.Api.Tenant;
 using OrderHub.Application.Abstractions.Orders.Services;
-using OrderHub.Application.Abstractions.Platform;
-using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.DependencyInjection;
+using OrderHub.Infrastructure.Security;
 using OrderHub.Infrastructure.Sync;
 using Serilog;
 

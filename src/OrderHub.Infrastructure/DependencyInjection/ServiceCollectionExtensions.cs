@@ -15,6 +15,7 @@ using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.Persistence.Central;
 using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Platform;
 using OrderHub.Infrastructure.Platform.Mock;
 using OrderHub.Infrastructure.Platform.Mapping;
 using OrderHub.Infrastructure.Platform.TrendyolGo;
@@ -39,19 +40,8 @@ public static class ServiceCollectionExtensions
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
 
-        // Provider selection:
-        // - Preferred: Platforms:ProviderMode = Mock|Real
-        // - Backward compatible: Platform:UseMocks (bool)
-        var providerModeRaw = configuration["Platforms:ProviderMode"];
-        var providerMode = string.IsNullOrWhiteSpace(providerModeRaw) ? "Mock" : providerModeRaw.Trim();
-
-        var useMocks = !string.Equals(providerMode, "Real", StringComparison.OrdinalIgnoreCase);
-        if (string.IsNullOrWhiteSpace(providerModeRaw))
-        {
-            // Back-compat: if ProviderMode is not set, honor old flag if present.
-            var legacyUseMocks = configuration.GetValue<bool?>("Platform:UseMocks");
-            if (legacyUseMocks.HasValue) useMocks = legacyUseMocks.Value;
-        }
+        var providerMode = ProviderModeResolver.Resolve(configuration);
+        var useMocks = providerMode.UseMocks;
 
         if (useMocks)
         {

@@ -1290,4 +1290,19 @@
   <data name="Validation.ApiSecretMaxLength" xml:space="preserve">
     <value>ApiSecret max length is 500.</value>
   </data>
+  <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
+    <value>Supplier Id max length is 100.</value>
+  </data>
+  <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
+    <value>Executor Email max length is 200.</value>
+  </data>
+  <data name="Validation.ExecutorEmailInvalid" xml:space="preserve">
+    <value>Enter a valid email address.</value>
+  </data>
+  <data name="PlatformConnections.SupplierIdHelp" xml:space="preserve">
+    <value>Supplier id for Trendyol GO package endpoints. Store Id is used when left empty.</value>
+  </data>
+  <data name="PlatformConnections.ExecutorEmailHelp" xml:space="preserve">
+    <value>Required for Trendyol GO real API requests as the x-executor-user header.</value>
+  </data>
 </root>

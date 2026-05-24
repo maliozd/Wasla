@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using OrderHub.Application.Abstractions.Orders.Services;
 using OrderHub.Infrastructure.Persistence.Central;
+using OrderHub.Infrastructure.Platform;
 
 namespace OrderHub.Worker.Jobs;
 
@@ -28,18 +29,24 @@ public sealed class OrderSyncWorker : BackgroundService
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
-        var providerMode = (_config["Platforms:ProviderMode"] ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(providerMode))
-        {
-            // Backward compatible legacy flag.
-            var legacy = _config.GetValue<bool?>("Platform:UseMocks");
-            providerMode = legacy.HasValue ? (legacy.Value ? "Mock (legacy)" : "Real (legacy)") : "Mock (default)";
-        }
+        var providerMode = ProviderModeResolver.Resolve(_config);
 
         _logger.LogInformation(
-            "Platform provider mode: {ProviderMode}. Environment={EnvironmentName}",
-            providerMode,
+            "Platform provider mode: {ProviderMode}. UseMocks={UseMocks}. Environment={EnvironmentName}",
+            providerMode.ModeLabel,
+            providerMode.UseMocks,
             _env.EnvironmentName);
+
+        if (providerMode.UseMocks)
+        {
+            _logger.LogInformation(
+                "Mock provider clients active for Yemeksepeti, GetirYemek and TrendyolYemek. Real platform APIs will not be called.");
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Real provider mode active. TrendyolYemek uses Trendyol GO HTTP client; Yemeksepeti and GetirYemek still use mock clients.");
+        }
 
         _logger.LogInformation("OrderSyncWorker started");
         return base.StartAsync(cancellationToken);
