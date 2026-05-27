@@ -76,8 +76,8 @@ public sealed class OrderSyncService : IOrderSyncService
 
         if (!await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false))
         {
-            _logger.LogInformation(
-                "Order sync skipped because tenant sync is disabled. CustomerId={CustomerId}",
+            _logger.LogWarning(
+                "Order sync skipped — tenant sync is disabled. CustomerId={CustomerId}",
                 customerId);
 
             return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0);
@@ -104,8 +104,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
         if (dueConnections.Count == 0)
         {
-            // Usually frequent; keep it Info but concise.
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "No due platform connections for customer {CustomerId}. ActiveConnections={ActiveConnectionCount}",
                 customerId,
                 activeConnections.Count);
@@ -143,10 +142,12 @@ public sealed class OrderSyncService : IOrderSyncService
         var skipped = 0;
         var unchanged = 0;
         var failedConnections = 0;
+        var connectionResults = new List<OrderSyncConnectionResult>(dueConnections.Count);
 
         foreach (var connection in dueConnections)
         {
             var result = await SyncConnectionAsync(customerId, db, connection, ct).ConfigureAwait(false);
+            connectionResults.Add(result);
             fetched += result.FetchedCount;
             inserted += result.InsertedCount;
             updated += result.UpdatedCount;
@@ -156,7 +157,7 @@ public sealed class OrderSyncService : IOrderSyncService
         }
 
         swCustomer.Stop();
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Completed sync for customer {CustomerId}. Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnections}, ElapsedMs={ElapsedMs}",
             customerId,
             dueConnections.Count,
@@ -168,6 +169,19 @@ public sealed class OrderSyncService : IOrderSyncService
             failedConnections,
             swCustomer.ElapsedMilliseconds);
 
+        var summaries = connectionResults
+            .Select(r => new OrderSyncConnectionSummary(
+                r.Platform.ToString(),
+                r.StoreId,
+                r.FetchedCount,
+                r.InsertedCount,
+                r.UpdatedCount,
+                r.SkippedCount,
+                r.UnchangedCount,
+                r.IsFailed,
+                r.ElapsedMs))
+            .ToList();
+
         return new OrderSyncCustomerResult(
             customerId,
             dueConnections.Count,
@@ -176,7 +190,8 @@ public sealed class OrderSyncService : IOrderSyncService
             updated,
             skipped,
             unchanged,
-            failedConnections);
+            failedConnections)
+        { Connections = summaries };
     }
 
     private static readonly Guid CustomerOperationalSettingsSingletonId =
@@ -217,7 +232,7 @@ public sealed class OrderSyncService : IOrderSyncService
                 throw new InvalidOperationException($"No IFoodPlatformClient registered for platform '{connection.Platform}'.");
             }
 
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Starting platform sync. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, IsActive={IsActive}, SyncIntervalSeconds={SyncIntervalSeconds}, LastSuccessfulSyncAt={LastSuccessfulSyncAtUtc}, LastSyncAttemptAt={LastSyncAttemptAtUtc}, CircuitOpenUntil={CircuitOpenUntilUtc}",
                 customerId,
                 connection.Id,
@@ -255,7 +270,8 @@ public sealed class OrderSyncService : IOrderSyncService
                     await db.SaveChangesAsync(ct).ConfigureAwait(false);
 
                     swConn.Stop();
-                    return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, 0, 0, 0, 0, 0, IsFailed: true);
+                    return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, 0, 0, 0, 0, 0, IsFailed: true)
+                        { ElapsedMs = swConn.ElapsedMilliseconds };
                 }
             }
 
@@ -268,7 +284,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
             syncLog.OrdersFetched = externalOrders.Count;
 
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Provider returned {OrderCount} orders. Platform={Platform}, StoreId={StoreId}, ConnectionId={ConnectionId}, CustomerId={CustomerId}, FetchElapsedMs={FetchElapsedMs}, SampleExternalOrderIds={SampleExternalOrderIds}",
                 externalOrders.Count,
                 connection.Platform,
@@ -305,7 +321,7 @@ public sealed class OrderSyncService : IOrderSyncService
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
 
             swConn.Stop();
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Completed platform sync. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, UpsertElapsedMs={UpsertElapsedMs}, ElapsedMs={ElapsedMs}",
                 customerId,
                 connection.Id,
@@ -329,7 +345,8 @@ public sealed class OrderSyncService : IOrderSyncService
                 connUpdated,
                 connSkipped,
                 connUnchanged,
-                IsFailed: false);
+                IsFailed: false)
+            { ElapsedMs = swConn.ElapsedMilliseconds };
         }
         catch (Exception ex)
         {
@@ -366,7 +383,8 @@ public sealed class OrderSyncService : IOrderSyncService
                 connection.StoreId,
                 swConn.ElapsedMilliseconds);
 
-            return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, syncLog.OrdersFetched, syncLog.OrdersInserted, syncLog.OrdersUpdated, 0, 0, IsFailed: true);
+            return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, syncLog.OrdersFetched, syncLog.OrdersInserted, syncLog.OrdersUpdated, 0, 0, IsFailed: true)
+                { ElapsedMs = swConn.ElapsedMilliseconds };
         }
     }
 

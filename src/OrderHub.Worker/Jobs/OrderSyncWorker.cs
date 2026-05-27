@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using OrderHub.Application.Abstractions.Orders.Services;
 using OrderHub.Infrastructure.Persistence.Central;
 using OrderHub.Infrastructure.Platform;
+using OrderHub.Worker.Console;
 
 namespace OrderHub.Worker.Jobs;
 
@@ -51,7 +52,15 @@ public sealed class OrderSyncWorker : BackgroundService
                 "Real provider mode active. TrendyolYemek uses Trendyol GO HTTP client; Yemeksepeti and GetirYemek still use mock clients.");
         }
 
-        _logger.LogInformation("OrderSyncWorker started");
+        if (_env.IsDevelopment())
+        {
+            WorkerConsole.WriteStartupBanner(providerMode.ModeLabel, _env.EnvironmentName, CycleIntervalSeconds);
+        }
+        else
+        {
+            _logger.LogInformation("OrderSyncWorker started");
+        }
+
         return base.StartAsync(cancellationToken);
     }
 
@@ -77,10 +86,11 @@ public sealed class OrderSyncWorker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Sync cycle failed catastrophically, will retry in {BackoffSeconds}s", CatastrophicFailureBackoffSeconds);
+                if (_env.IsDevelopment())
+                    WorkerConsole.WriteError($"Cycle failed — retrying in {CatastrophicFailureBackoffSeconds}s");
+
                 if (!await SafeDelayAsync(TimeSpan.FromSeconds(CatastrophicFailureBackoffSeconds), stoppingToken))
-                {
                     break;
-                }
             }
         }
     }
@@ -92,11 +102,18 @@ public sealed class OrderSyncWorker : BackgroundService
 
         var customers = await LoadActiveCustomersAsync(stoppingToken);
 
-        _logger.LogInformation(
-            "Order sync cycle started. StartedAtUtc={StartedAtUtc}, IntervalSeconds={IntervalSeconds}, ActiveCustomers={CustomerCount}",
-            cycleStartUtc,
-            CycleIntervalSeconds,
-            customers.Count);
+        if (_env.IsDevelopment())
+        {
+            WorkerConsole.WriteCycleStarted(cycleStartUtc, customers.Count, CycleIntervalSeconds);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Order sync cycle started. StartedAtUtc={StartedAtUtc}, IntervalSeconds={IntervalSeconds}, ActiveCustomers={CustomerCount}",
+                cycleStartUtc,
+                CycleIntervalSeconds,
+                customers.Count);
+        }
 
         var results = await SyncCustomersInParallelAsync(customers, stoppingToken);
 
@@ -106,9 +123,7 @@ public sealed class OrderSyncWorker : BackgroundService
 
         var remaining = TimeSpan.FromSeconds(CycleIntervalSeconds) - swCycle.Elapsed;
         if (remaining > TimeSpan.Zero)
-        {
             await Task.Delay(remaining, stoppingToken);
-        }
     }
 
     private async Task<List<ActiveCustomer>> LoadActiveCustomersAsync(CancellationToken ct)
@@ -151,7 +166,7 @@ public sealed class OrderSyncWorker : BackgroundService
 
         try
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Starting sync for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
                 customer.Id,
                 customer.Slug,
@@ -159,6 +174,9 @@ public sealed class OrderSyncWorker : BackgroundService
 
             var r = await syncer.SyncCustomerWithResultAsync(customer.Id, ct);
             results.Add(r);
+
+            if (_env.IsDevelopment())
+                WorkerConsole.WriteCustomerResult(customer.Name, r.Connections);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -173,6 +191,9 @@ public sealed class OrderSyncWorker : BackgroundService
                 customer.Id,
                 customer.Slug,
                 customer.Name);
+
+            if (_env.IsDevelopment())
+                WorkerConsole.WriteError($"Sync failed for {customer.Name} ({customer.Slug})");
         }
     }
 
@@ -191,17 +212,31 @@ public sealed class OrderSyncWorker : BackgroundService
             UnchangedCount: results.Sum(r => r.UnchangedCount),
             FailedConnections: results.Sum(r => r.FailedConnections));
 
-        _logger.LogInformation(
-            "Order sync cycle completed in {ElapsedMs} ms. Customers={CustomerCount}, Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnectionCount}",
-            elapsedMs,
-            totals.CustomerCount,
-            totals.ConnectionCount,
-            totals.FetchedCount,
-            totals.InsertedCount,
-            totals.UpdatedCount,
-            totals.SkippedCount,
-            totals.UnchangedCount,
-            totals.FailedConnections);
+        if (_env.IsDevelopment())
+        {
+            WorkerConsole.WriteCycleCompleted(
+                totals.CustomerCount,
+                totals.ConnectionCount,
+                totals.FetchedCount,
+                totals.InsertedCount,
+                totals.UpdatedCount,
+                totals.FailedConnections,
+                elapsedMs);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Order sync cycle completed in {ElapsedMs} ms. Customers={CustomerCount}, Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnectionCount}",
+                elapsedMs,
+                totals.CustomerCount,
+                totals.ConnectionCount,
+                totals.FetchedCount,
+                totals.InsertedCount,
+                totals.UpdatedCount,
+                totals.SkippedCount,
+                totals.UnchangedCount,
+                totals.FailedConnections);
+        }
     }
 
     private static async Task<bool> SafeDelayAsync(TimeSpan delay, CancellationToken ct)
