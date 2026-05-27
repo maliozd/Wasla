@@ -21,6 +21,7 @@ public sealed class OrdersController : BaseController
     private readonly ICurrentCustomerService _currentCustomer;
     private readonly IOrderReadService _orders;
     private readonly IOrderActionService _actions;
+    private readonly IOrderSyncSettingsService _orderSyncSettings;
     private readonly ILogger<OrdersController> _logger;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
@@ -28,12 +29,14 @@ public sealed class OrdersController : BaseController
         ICurrentCustomerService currentCustomer,
         IOrderReadService orders,
         IOrderActionService actions,
+        IOrderSyncSettingsService orderSyncSettings,
         ILogger<OrdersController> logger,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
         _currentCustomer = currentCustomer;
         _orders = orders;
         _actions = actions;
+        _orderSyncSettings = orderSyncSettings;
         _logger = logger;
         _localizer = localizer;
     }
@@ -53,55 +56,32 @@ public sealed class OrdersController : BaseController
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
 
-        var (safePage, safePageSize) = NormalizePaging(page, pageSize);
-        DefaultTodayIfNoDates(ref startDate, ref endDate);
-
-        var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
-        if (startUtc is null && !string.IsNullOrWhiteSpace(startDate))
-            ModelState.AddModelError("startDate", _localizer["Orders.InvalidStartDate"].Value);
-        if (endUtc is null && !string.IsNullOrWhiteSpace(endDate))
-            ModelState.AddModelError("endDate", _localizer["Orders.InvalidEndDate"].Value);
-
-        var result = await _orders.GetListAsync(
-            customer.Id,
-            platform,
-            status,
-            startUtc,
-            endUtc,
-            sortBy,
-            sortDirection,
-            safePage,
-            safePageSize,
-            ct);
-
-        LogDateFilter("Index", startDate, endDate, startDateParsed, endDateParsed, startUtc, endUtc, result.TotalCount);
-
-        var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
-        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
-        var vm = new OrderListViewModel
-        {
-            TotalCount = result.TotalCount,
-            TurkeyLocalToday = turkeyToday,
-            Orders = MapOrderRows(result.Items, tz),
-            Filters = new OrderFilterViewModel
-            {
-                Platform = platform,
-                Status = status,
-                StartDate = startDateParsed,
-                EndDate = endDateParsed,
-                SortBy = NormalizeSortBy(sortBy),
-                SortDirection = NormalizeSortDirection(sortDirection),
-                Page = safePage,
-                PageSize = safePageSize
-            }
-        };
-
-        vm.UseSimpleNoOrdersMessage = !platform.HasValue && !status.HasValue
-            && startDateParsed == turkeyToday
-            && endDateParsed == turkeyToday
-            && startDateParsed == endDateParsed;
+        var vm = await BuildOrderListViewModelAsync(
+            customer.Id, platform, status, startDate, endDate, sortBy, sortDirection, page, pageSize,
+            addDateValidationErrors: true, logDateFilterAs: "Index", ct);
 
         return View("Index", vm);
+    }
+
+    [HttpGet("sync-settings")]
+    public async Task<IActionResult> GetOrderSyncSettings(CancellationToken ct = default)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var r = await _orderSyncSettings.GetAsync(customer.Id, ct);
+        return Ok(new { orderSyncEnabled = r.OrderSyncEnabled });
+    }
+
+    [ValidateAntiForgeryToken]
+    [HttpPost("sync-settings")]
+    public async Task<IActionResult> UpdateOrderSyncSettings([FromForm] bool enabled, CancellationToken ct = default)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var r = await _orderSyncSettings.UpdateAsync(customer.Id, enabled, ct);
+        return Ok(new { orderSyncEnabled = r.OrderSyncEnabled });
     }
 
     [HttpGet("table")]
@@ -119,12 +99,46 @@ public sealed class OrdersController : BaseController
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
 
+        var vm = await BuildOrderListViewModelAsync(
+            customer.Id, platform, status, startDate, endDate, sortBy, sortDirection, page, pageSize,
+            addDateValidationErrors: false, logDateFilterAs: null, ct);
+
+        return PartialView("_OrdersTable", vm);
+    }
+
+    /// <summary>
+    /// Shared list query/projection for the Orders index page and the polling partial.
+    /// Both endpoints must return the same data shape; only validation/logging differ.
+    /// </summary>
+    private async Task<OrderListViewModel> BuildOrderListViewModelAsync(
+        Guid customerId,
+        FoodPlatform? platform,
+        OrderStatus? status,
+        string? startDate,
+        string? endDate,
+        string? sortBy,
+        string? sortDirection,
+        int page,
+        int pageSize,
+        bool addDateValidationErrors,
+        string? logDateFilterAs,
+        CancellationToken ct)
+    {
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
         DefaultTodayIfNoDates(ref startDate, ref endDate);
+
         var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
 
+        if (addDateValidationErrors)
+        {
+            if (startUtc is null && !string.IsNullOrWhiteSpace(startDate))
+                ModelState.AddModelError("startDate", _localizer["Orders.InvalidStartDate"].Value);
+            if (endUtc is null && !string.IsNullOrWhiteSpace(endDate))
+                ModelState.AddModelError("endDate", _localizer["Orders.InvalidEndDate"].Value);
+        }
+
         var result = await _orders.GetListAsync(
-            customer.Id,
+            customerId,
             platform,
             status,
             startUtc,
@@ -135,9 +149,15 @@ public sealed class OrdersController : BaseController
             safePageSize,
             ct);
 
+        if (logDateFilterAs is not null)
+        {
+            LogDateFilter(logDateFilterAs, startDate, endDate, startDateParsed, endDateParsed, startUtc, endUtc, result.TotalCount);
+        }
+
         var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
         var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
-        var vm = new OrderListViewModel
+
+        return new OrderListViewModel
         {
             TotalCount = result.TotalCount,
             TurkeyLocalToday = turkeyToday,
@@ -158,8 +178,6 @@ public sealed class OrdersController : BaseController
                 PageSize = safePageSize
             }
         };
-
-        return PartialView("_OrdersTable", vm);
     }
 
     [HttpGet("details/{id:guid}")]

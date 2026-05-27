@@ -60,6 +60,24 @@ public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<Us
     }
 }
 
+public class CustomerOperationalSettingsConfiguration : IEntityTypeConfiguration<CustomerOperationalSettings>
+{
+    public void Configure(EntityTypeBuilder<CustomerOperationalSettings> builder)
+    {
+        builder.ToTable("CustomerOperationalSettings");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.OrderSyncEnabled)
+            .IsRequired()
+            .HasDefaultValue(true);
+
+        // Single-row table pattern (enforced by always updating a known row id in the service).
+        builder.HasIndex(x => x.Id)
+            .IsUnique()
+            .HasDatabaseName("IX_CustomerOperationalSettings_Id");
+    }
+}
+
 public class PlatformConnectionConfiguration : IEntityTypeConfiguration<PlatformConnection>
 {
     public void Configure(EntityTypeBuilder<PlatformConnection> builder)

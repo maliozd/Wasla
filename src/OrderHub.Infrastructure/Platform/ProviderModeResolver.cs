@@ -2,28 +2,41 @@ using Microsoft.Extensions.Configuration;
 
 namespace OrderHub.Infrastructure.Platform;
 
+public enum PlatformProviderMode
+{
+    Mock,
+    Real
+}
+
+public sealed record ProviderModeResult(PlatformProviderMode Mode)
+{
+    public bool IsMock => Mode == PlatformProviderMode.Mock;
+    public string ModeLabel => Mode.ToString();
+}
+
 public static class ProviderModeResolver
 {
-    public sealed record Result(string ModeLabel, bool UseMocks);
+    private const string ConfigKey = "Platforms:ProviderMode";
 
-    public static Result Resolve(IConfiguration configuration)
+    public static ProviderModeResult Resolve(IConfiguration configuration)
     {
-        var providerModeRaw = configuration["Platforms:ProviderMode"];
-        if (!string.IsNullOrWhiteSpace(providerModeRaw))
+        var raw = configuration[ConfigKey];
+
+        if (string.IsNullOrWhiteSpace(raw))
         {
-            var mode = providerModeRaw.Trim();
-            var useMocks = !string.Equals(mode, "Real", StringComparison.OrdinalIgnoreCase);
-            return new Result(useMocks ? "Mock" : "Real", useMocks);
+            throw new InvalidOperationException(
+                $"{ConfigKey} is required. Allowed values: Mock, Real.");
         }
 
-        var legacyUseMocks = configuration.GetValue<bool?>("Platform:UseMocks");
-        if (legacyUseMocks.HasValue)
-        {
-            return new Result(
-                legacyUseMocks.Value ? "Mock (legacy Platform:UseMocks=true)" : "Real (legacy Platform:UseMocks=false)",
-                legacyUseMocks.Value);
-        }
+        var value = raw.Trim();
 
-        return new Result("Mock (default)", true);
+        if (string.Equals(value, "Mock", StringComparison.OrdinalIgnoreCase))
+            return new ProviderModeResult(PlatformProviderMode.Mock);
+
+        if (string.Equals(value, "Real", StringComparison.OrdinalIgnoreCase))
+            return new ProviderModeResult(PlatformProviderMode.Real);
+
+        throw new InvalidOperationException(
+            $"Invalid {ConfigKey} value '{value}'. Allowed values: Mock, Real.");
     }
 }

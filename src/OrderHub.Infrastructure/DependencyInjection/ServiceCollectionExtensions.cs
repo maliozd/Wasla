@@ -41,20 +41,18 @@ public static class ServiceCollectionExtensions
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
 
         var providerMode = ProviderModeResolver.Resolve(configuration);
-        var useMocks = providerMode.UseMocks;
 
-        if (useMocks)
+        // Yemeksepeti and GetirYemek still use mock clients in both modes;
+        // only TrendyolYemek switches to the real Trendyol GO HTTP client when ProviderMode=Real.
+        services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
+        services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
+
+        if (providerMode.IsMock)
         {
-            services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
-            services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
             services.AddSingleton<IFoodPlatformClient, TrendyolYemekFoodPlatformClient>();
         }
         else
         {
-            // Real clients will be wired up later (Prompt 2).
-            services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
-            services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
-
             services.AddHttpClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>((sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<TrendyolGoOptions>>().Value;
@@ -71,6 +69,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderActionService, OrderActionService>();
+        services.AddScoped<IOrderSyncSettingsService, OrderSyncSettingsService>();
         services.AddScoped<IPlatformConnectionService, PlatformConnectionService>();
         services.AddScoped<IBranchService, BranchService>();
         services.AddScoped<IUserNotificationSettingsService, UserNotificationSettingsService>();

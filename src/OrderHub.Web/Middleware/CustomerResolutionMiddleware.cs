@@ -8,6 +8,24 @@ public sealed class CustomerResolutionMiddleware
     private const string ItemKey = "CurrentCustomer";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
 
+    // Paths that must not require tenant resolution: admin area, static assets,
+    // culture switching, swagger/health probes, and the public access-required info page.
+    private static readonly string[] BypassPrefixes =
+    {
+        "/admin",
+        "/customer-access-required",
+        "/culture",
+        "/setlanguage",
+        "/swagger",
+        "/health",
+        "/css",
+        "/js",
+        "/lib",
+        "/images",
+        "/img",
+        "/favicon",
+    };
+
     private readonly RequestDelegate _next;
 
     public CustomerResolutionMiddleware(RequestDelegate next)
@@ -87,21 +105,11 @@ public sealed class CustomerResolutionMiddleware
         }
 
         if (string.Equals(p, "/", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/admin", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/customer-access-required", StringComparison.OrdinalIgnoreCase)) return true;
 
-        if (p.StartsWith("/culture", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/setlanguage", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/health", StringComparison.OrdinalIgnoreCase)) return true;
-
-        // Static files
-        if (p.StartsWith("/css", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/js", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/lib", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/images", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/img", StringComparison.OrdinalIgnoreCase)) return true;
-        if (p.StartsWith("/favicon", StringComparison.OrdinalIgnoreCase)) return true;
+        foreach (var prefix in BypassPrefixes)
+        {
+            if (p.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return true;
+        }
 
         return false;
     }

@@ -1215,6 +1215,33 @@
   <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
     <value>Auto approve is not available yet.</value>
   </data>
+  <data name="Orders.OrderSync" xml:space="preserve">
+    <value>Order Sync</value>
+  </data>
+  <data name="Orders.OrderSyncActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Orders.OrderSyncPassive" xml:space="preserve">
+    <value>Passive</value>
+  </data>
+  <data name="Orders.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Orders.Passive" xml:space="preserve">
+    <value>Passive</value>
+  </data>
+  <data name="Orders.OrderSyncEnabledMessage" xml:space="preserve">
+    <value>Order sync enabled.</value>
+  </data>
+  <data name="Orders.OrderSyncDisabledMessage" xml:space="preserve">
+    <value>Order sync disabled.</value>
+  </data>
+  <data name="Orders.OrderSyncUpdateFailed" xml:space="preserve">
+    <value>Order sync setting could not be updated.</value>
+  </data>
+  <data name="Orders.OrderSyncToggleAriaLabel" xml:space="preserve">
+    <value>Toggle order sync</value>
+  </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>New</value>
   </data>

@@ -10,6 +10,10 @@ namespace OrderHub.Worker.Jobs;
 
 public sealed class OrderSyncWorker : BackgroundService
 {
+    private const int CycleIntervalSeconds = 15;
+    private const int CatastrophicFailureBackoffSeconds = 30;
+    private const int MaxParallelCustomers = 5;
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<OrderSyncWorker> _logger;
     private readonly IConfiguration _config;
@@ -32,12 +36,11 @@ public sealed class OrderSyncWorker : BackgroundService
         var providerMode = ProviderModeResolver.Resolve(_config);
 
         _logger.LogInformation(
-            "Platform provider mode: {ProviderMode}. UseMocks={UseMocks}. Environment={EnvironmentName}",
+            "Platform provider mode: {ProviderMode}. ConfigKey=Platforms:ProviderMode. Environment={EnvironmentName}",
             providerMode.ModeLabel,
-            providerMode.UseMocks,
             _env.EnvironmentName);
 
-        if (providerMode.UseMocks)
+        if (providerMode.IsMock)
         {
             _logger.LogInformation(
                 "Mock provider clients active for Yemeksepeti, GetirYemek and TrendyolYemek. Real platform APIs will not be called.");
@@ -60,99 +63,11 @@ public sealed class OrderSyncWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        const int cycleIntervalSeconds = 15;
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var swCycle = Stopwatch.StartNew();
-                var cycleStartUtc = DateTime.UtcNow;
-
-                using var outerScope = _scopeFactory.CreateScope();
-                var central = outerScope.ServiceProvider.GetRequiredService<CentralDbContext>();
-
-                var customers = await central.Customers
-                    .AsNoTracking()
-                    .Where(c => c.IsActive)
-                    .Select(c => new { c.Id, c.Slug, c.Name })
-                    .ToListAsync(stoppingToken);
-
-                _logger.LogInformation(
-                    "Order sync cycle started. StartedAtUtc={StartedAtUtc}, IntervalSeconds={IntervalSeconds}, ActiveCustomers={CustomerCount}",
-                    cycleStartUtc,
-                    cycleIntervalSeconds,
-                    customers.Count);
-
-                var results = new ConcurrentBag<OrderSyncCustomerResult>();
-
-                await Parallel.ForEachAsync(
-                    customers,
-                    new ParallelOptions
-                    {
-                        MaxDegreeOfParallelism = 5,
-                        CancellationToken = stoppingToken
-                    },
-                    async (customer, innerCt) =>
-                    {
-                        using var innerScope = _scopeFactory.CreateScope();
-                        var syncer = innerScope.ServiceProvider.GetRequiredService<IOrderSyncService>();
-                        try
-                        {
-                            _logger.LogInformation(
-                                "Starting sync for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
-                                customer.Id,
-                                customer.Slug,
-                                customer.Name);
-
-                            var r = await syncer.SyncCustomerWithResultAsync(customer.Id, innerCt);
-                            results.Add(r);
-                        }
-                        catch (OperationCanceledException) when (innerCt.IsCancellationRequested)
-                        {
-                            throw;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(
-                                ex,
-                                "Sync failed for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
-                                customer.Id,
-                                customer.Slug,
-                                customer.Name);
-                            // swallow — one customer's failure must not stop others
-                        }
-                    });
-
-                swCycle.Stop();
-
-                var totals = new OrderSyncCycleTotals(
-                    CustomerCount: customers.Count,
-                    ConnectionCount: results.Sum(r => r.ConnectionCount),
-                    FetchedCount: results.Sum(r => r.FetchedCount),
-                    InsertedCount: results.Sum(r => r.InsertedCount),
-                    UpdatedCount: results.Sum(r => r.UpdatedCount),
-                    SkippedCount: results.Sum(r => r.SkippedCount),
-                    UnchangedCount: results.Sum(r => r.UnchangedCount),
-                    FailedConnections: results.Sum(r => r.FailedConnections));
-
-                _logger.LogInformation(
-                    "Order sync cycle completed in {ElapsedMs} ms. Customers={CustomerCount}, Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnectionCount}",
-                    swCycle.ElapsedMilliseconds,
-                    totals.CustomerCount,
-                    totals.ConnectionCount,
-                    totals.FetchedCount,
-                    totals.InsertedCount,
-                    totals.UpdatedCount,
-                    totals.SkippedCount,
-                    totals.UnchangedCount,
-                    totals.FailedConnections);
-
-                var remaining = TimeSpan.FromSeconds(cycleIntervalSeconds) - TimeSpan.FromMilliseconds(swCycle.ElapsedMilliseconds);
-                if (remaining > TimeSpan.Zero)
-                {
-                    await Task.Delay(remaining, stoppingToken);
-                }
+                await RunCycleAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -161,17 +76,146 @@ public sealed class OrderSyncWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Sync cycle failed catastrophically, will retry in 30s");
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
-                }
-                catch (OperationCanceledException)
+                _logger.LogError(ex, "Sync cycle failed catastrophically, will retry in {BackoffSeconds}s", CatastrophicFailureBackoffSeconds);
+                if (!await SafeDelayAsync(TimeSpan.FromSeconds(CatastrophicFailureBackoffSeconds), stoppingToken))
                 {
                     break;
                 }
             }
         }
     }
-}
 
+    private async Task RunCycleAsync(CancellationToken stoppingToken)
+    {
+        var swCycle = Stopwatch.StartNew();
+        var cycleStartUtc = DateTime.UtcNow;
+
+        var customers = await LoadActiveCustomersAsync(stoppingToken);
+
+        _logger.LogInformation(
+            "Order sync cycle started. StartedAtUtc={StartedAtUtc}, IntervalSeconds={IntervalSeconds}, ActiveCustomers={CustomerCount}",
+            cycleStartUtc,
+            CycleIntervalSeconds,
+            customers.Count);
+
+        var results = await SyncCustomersInParallelAsync(customers, stoppingToken);
+
+        swCycle.Stop();
+
+        LogCycleTotals(swCycle.ElapsedMilliseconds, customers.Count, results);
+
+        var remaining = TimeSpan.FromSeconds(CycleIntervalSeconds) - swCycle.Elapsed;
+        if (remaining > TimeSpan.Zero)
+        {
+            await Task.Delay(remaining, stoppingToken);
+        }
+    }
+
+    private async Task<List<ActiveCustomer>> LoadActiveCustomersAsync(CancellationToken ct)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+        return await central.Customers
+            .AsNoTracking()
+            .Where(c => c.IsActive)
+            .Select(c => new ActiveCustomer(c.Id, c.Slug, c.Name))
+            .ToListAsync(ct);
+    }
+
+    private async Task<ConcurrentBag<OrderSyncCustomerResult>> SyncCustomersInParallelAsync(
+        IReadOnlyList<ActiveCustomer> customers,
+        CancellationToken stoppingToken)
+    {
+        var results = new ConcurrentBag<OrderSyncCustomerResult>();
+
+        await Parallel.ForEachAsync(
+            customers,
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = MaxParallelCustomers,
+                CancellationToken = stoppingToken
+            },
+            (customer, innerCt) => SyncSingleCustomerAsync(customer, results, innerCt));
+
+        return results;
+    }
+
+    private async ValueTask SyncSingleCustomerAsync(
+        ActiveCustomer customer,
+        ConcurrentBag<OrderSyncCustomerResult> results,
+        CancellationToken ct)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var syncer = scope.ServiceProvider.GetRequiredService<IOrderSyncService>();
+
+        try
+        {
+            _logger.LogInformation(
+                "Starting sync for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
+                customer.Id,
+                customer.Slug,
+                customer.Name);
+
+            var r = await syncer.SyncCustomerWithResultAsync(customer.Id, ct);
+            results.Add(r);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // One customer's failure must not stop the others in the same cycle.
+            _logger.LogError(
+                ex,
+                "Sync failed for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
+                customer.Id,
+                customer.Slug,
+                customer.Name);
+        }
+    }
+
+    private void LogCycleTotals(
+        long elapsedMs,
+        int customerCount,
+        IEnumerable<OrderSyncCustomerResult> results)
+    {
+        var totals = new OrderSyncCycleTotals(
+            CustomerCount: customerCount,
+            ConnectionCount: results.Sum(r => r.ConnectionCount),
+            FetchedCount: results.Sum(r => r.FetchedCount),
+            InsertedCount: results.Sum(r => r.InsertedCount),
+            UpdatedCount: results.Sum(r => r.UpdatedCount),
+            SkippedCount: results.Sum(r => r.SkippedCount),
+            UnchangedCount: results.Sum(r => r.UnchangedCount),
+            FailedConnections: results.Sum(r => r.FailedConnections));
+
+        _logger.LogInformation(
+            "Order sync cycle completed in {ElapsedMs} ms. Customers={CustomerCount}, Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnectionCount}",
+            elapsedMs,
+            totals.CustomerCount,
+            totals.ConnectionCount,
+            totals.FetchedCount,
+            totals.InsertedCount,
+            totals.UpdatedCount,
+            totals.SkippedCount,
+            totals.UnchangedCount,
+            totals.FailedConnections);
+    }
+
+    private static async Task<bool> SafeDelayAsync(TimeSpan delay, CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(delay, ct);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private sealed record ActiveCustomer(Guid Id, string Slug, string Name);
+}

@@ -74,6 +74,15 @@ public sealed class OrderSyncService : IOrderSyncService
         var swCustomer = Stopwatch.StartNew();
         await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
+        if (!await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false))
+        {
+            _logger.LogInformation(
+                "Order sync skipped because tenant sync is disabled. CustomerId={CustomerId}",
+                customerId);
+
+            return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0);
+        }
+
         var now = DateTime.UtcNow;
         // Load all connections so we can log *why* a connection was skipped.
         var allConnections = await db.PlatformConnections.ToListAsync(ct).ConfigureAwait(false);
@@ -168,6 +177,20 @@ public sealed class OrderSyncService : IOrderSyncService
             skipped,
             unchanged,
             failedConnections);
+    }
+
+    private static readonly Guid CustomerOperationalSettingsSingletonId =
+        Guid.Parse("00000000-0000-0000-0000-000000000001");
+
+    private static async Task<bool> IsOrderSyncEnabledAsync(CustomerDbContext db, CancellationToken ct)
+    {
+        // When no settings row exists (e.g. older tenant DB), preserve existing behavior: sync enabled.
+        var row = await db.CustomerOperationalSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == CustomerOperationalSettingsSingletonId, ct)
+            .ConfigureAwait(false);
+
+        return row?.OrderSyncEnabled ?? true;
     }
 
     private async Task<OrderSyncConnectionResult> SyncConnectionAsync(

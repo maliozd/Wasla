@@ -3,14 +3,13 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Options;
 using OrderHub.Application.Abstractions.Tenant;
-using OrderHub.Infrastructure.Security;
 using OrderHub.Infrastructure.DependencyInjection;
+using OrderHub.Infrastructure.Security;
 using OrderHub.Web;
 using OrderHub.Web.Localization;
 using OrderHub.Web.Middleware;
 using OrderHub.Web.Security;
 using OrderHub.Web.Tenant;
-using System.Globalization;
 
 // Web needs encryption master key to decrypt CustomerDb connection strings
 AesSecretManager.ValidateMasterKeyOrThrow();

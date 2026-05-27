@@ -1215,6 +1215,33 @@
   <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
     <value>الموافقة التلقائية غير متاحة بعد.</value>
   </data>
+  <data name="Orders.OrderSync" xml:space="preserve">
+    <value>مزامنة الطلبات</value>
+  </data>
+  <data name="Orders.OrderSyncActive" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="Orders.OrderSyncPassive" xml:space="preserve">
+    <value>متوقف</value>
+  </data>
+  <data name="Orders.Active" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="Orders.Passive" xml:space="preserve">
+    <value>متوقف</value>
+  </data>
+  <data name="Orders.OrderSyncEnabledMessage" xml:space="preserve">
+    <value>تم تفعيل مزامنة الطلبات.</value>
+  </data>
+  <data name="Orders.OrderSyncDisabledMessage" xml:space="preserve">
+    <value>تم إيقاف مزامنة الطلبات.</value>
+  </data>
+  <data name="Orders.OrderSyncUpdateFailed" xml:space="preserve">
+    <value>تعذر تحديث إعداد مزامنة الطلبات.</value>
+  </data>
+  <data name="Orders.OrderSyncToggleAriaLabel" xml:space="preserve">
+    <value>تبديل مزامنة الطلبات</value>
+  </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>جديد</value>
   </data>
