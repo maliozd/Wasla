@@ -6,6 +6,8 @@ using OrderHub.Infrastructure.Sync;
 using OrderHub.Worker.Jobs;
 using Serilog;
 
+System.Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 AesSecretManager.ValidateMasterKeyOrThrow();
 
 var builder = Host.CreateApplicationBuilder(args);
