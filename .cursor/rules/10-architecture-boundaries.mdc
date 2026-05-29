@@ -1,0 +1,59 @@
+---
+description: Architecture boundaries for OrderHub
+alwaysApply: true
+---
+
+# Architecture Boundaries
+
+Keep these boundaries strict.
+
+## Web
+
+- Web controllers must not use EF Core directly.
+- Web controllers must not inject DbContext.
+- Web controllers must not use Infrastructure persistence classes directly.
+- Web controllers must not use provider clients directly.
+- Web middleware should not query EF directly.
+- Web should call Application services/use cases.
+- MVC ViewModels must be Web-specific.
+- Do not use Contracts DTOs as MVC ViewModels.
+- Razor views should receive Web ViewModels, not EF entities.
+
+Allowed exception:
+- Web `Program.cs` may call Infrastructure DI registration as the composition root.
+- Do not use this exception inside controllers, views, middleware, or page logic.
+
+## Application
+
+- Application contains use cases, commands, queries, results, and interfaces.
+- Application must not reference Web.
+- Application must not depend on Infrastructure implementation details.
+- Application should define interfaces that Infrastructure implements when needed.
+- Application should not leak EF Core types to Web.
+
+## Infrastructure
+
+- Infrastructure owns EF Core, DbContexts, migrations, repositories, persistence, integrations, encryption, and secrets.
+- Infrastructure implements Application interfaces.
+- Infrastructure must not reference Web.
+- Infrastructure can reference Application and Domain.
+- Provider API clients belong in Infrastructure.
+
+## Domain
+
+- Domain contains entities, enums, and core business concepts.
+- Domain should not depend on Web, Infrastructure, API, or CLI.
+- Keep Domain clean from framework-specific concerns where possible.
+
+## Contracts
+
+- Contracts are for API request/response models.
+- Contracts are not MVC ViewModels.
+- Contracts should not be used as Razor page models.
+
+## When unsure
+
+If a requested change crosses these boundaries:
+1. Stop and explain the boundary issue.
+2. Propose the minimal correct Application/Infrastructure/Web shape.
+3. Do not implement a shortcut that makes Web depend directly on EF or provider clients.

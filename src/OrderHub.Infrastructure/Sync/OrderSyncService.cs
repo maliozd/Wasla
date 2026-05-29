@@ -76,11 +76,11 @@ public sealed class OrderSyncService : IOrderSyncService
 
         if (!await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false))
         {
-            _logger.LogWarning(
+            _logger.LogDebug(
                 "Order sync skipped — tenant sync is disabled. CustomerId={CustomerId}",
                 customerId);
 
-            return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0);
+            return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0) { WasSyncDisabled = true };
         }
 
         var now = DateTime.UtcNow;

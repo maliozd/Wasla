@@ -38,6 +38,9 @@ public sealed record OrderSyncCustomerResult(
 {
     /// <summary>Per-connection summaries. Empty when sync was disabled or no connections were due.</summary>
     public IReadOnlyList<OrderSyncConnectionSummary> Connections { get; init; } = [];
+
+    /// <summary>True when the sync was skipped because the tenant has disabled order sync.</summary>
+    public bool WasSyncDisabled { get; init; }
 }
 
 public sealed record OrderSyncConnectionResult(

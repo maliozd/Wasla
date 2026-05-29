@@ -1,0 +1,51 @@
+---
+description: Localization and UI rules for OrderHub
+alwaysApply: true
+---
+
+# Localization and UI Rules
+
+OrderHub UI is localized.
+
+Supported cultures:
+- tr-TR
+- en-US
+- ar-SA
+
+Default/fallback culture:
+- tr-TR
+
+Rules:
+- Do not hardcode user-facing UI text in Razor, JavaScript, controllers, or validation messages.
+- Use SharedResource for new user-facing strings.
+- Add resource values for:
+  - `SharedResource.resx`
+  - `SharedResource.tr-TR.resx`
+  - `SharedResource.en-US.resx`
+  - `SharedResource.ar-SA.resx`
+- Use stable resource keys, for example:
+  - `Orders.NoOrdersFound`
+  - `Common.Save`
+  - `Notification.SoundCouldNotPlay`
+- JavaScript user-facing messages should be passed from Razor through a localized config object.
+- Do not translate database values or user-entered values.
+- Arabic must support RTL through existing localization/layout behavior.
+- Do not add user-facing strings only in Turkish or only in English.
+
+UI style:
+- Prefer clean Bootstrap 5/Razor UI.
+- Keep controls compact, aligned, and consistent.
+- Use existing layout/components before creating new patterns.
+- Avoid heavy frontend tooling.
+- Do not introduce React/Vue for MVP unless explicitly requested.
+- Keep tenant UI simple and operational.
+- Do not duplicate Notification Settings in the account dropdown.
+- Notification Settings should stay on the Orders page header unless explicitly moved.
+- Auto Approve and Order Sync are different concepts and should not be mixed.
+
+Orders page UI:
+- Filters should remain clear and predictable.
+- Platform/status filters may auto-apply if existing behavior does so.
+- Date filters should keep explicit Filter/Clear behavior if already implemented.
+- `/orders/table` polling behavior must not be broken.
+- Preserve existing IDs/classes used by JavaScript unless the task explicitly includes updating them.

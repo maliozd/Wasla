@@ -8,10 +8,17 @@ namespace OrderHub.Worker.Console;
 /// </summary>
 internal static class WorkerConsole
 {
-    // Column widths for the per-connection table.
-    private const int ColPlatform = 15;
-    private const int ColStore    = 10;
-    private const int ColNum      = 8;  // Fetched / Inserted / Updated / Skipped
+    // Table column widths.
+    private const int ColPlatform  = 16;
+    private const int ColStore     = 12;
+    private const int ColFetched   = 8;
+    private const int ColInserted  = 9;  // "Inserted" header is 8 chars
+    private const int ColUpdated   = 8;
+    private const int ColSkipped   = 8;
+
+    // Customer section fixed widths.
+    private const int CustomerNameWidth = 28;
+    private const int CustomerSepLen    = 60;
 
     private static readonly object _lock = new();
 
@@ -19,9 +26,9 @@ internal static class WorkerConsole
 
     public static void WriteStartupBanner(string providerMode, string environmentName, int intervalSeconds)
     {
-        const int W = 48;              // inner content width (between ╭ and ╮)
+        const int W = 48;
         const string Title = "OrderHub Worker";
-        int rightDashes = W - Title.Length - 3; // "─ " + Title + " " uses 3 + Title chars
+        int rightDashes = W - Title.Length - 3;
 
         var modeColor = providerMode.Equals("Real", StringComparison.OrdinalIgnoreCase)
             ? ConsoleColor.Yellow
@@ -30,18 +37,13 @@ internal static class WorkerConsole
         lock (_lock)
         {
             System.Console.WriteLine();
-
-            // ╭─ OrderHub Worker ───...───╮
             WriteC("╭─ ", ConsoleColor.DarkGray);
             WriteC(Title, ConsoleColor.Cyan);
             WriteC(" " + new string('─', rightDashes) + "╮", ConsoleColor.DarkGray);
             System.Console.WriteLine();
-
-            BannerRow("Mode        ", providerMode,        modeColor,            W);
-            BannerRow("Environment ", environmentName,     ConsoleColor.Cyan,    W);
-            BannerRow("Interval    ", $"{intervalSeconds}s", ConsoleColor.Gray,  W);
-
-            // ╰────...────╯
+            BannerRow("Mode        ", providerMode,           modeColor,           W);
+            BannerRow("Environment ", environmentName,        ConsoleColor.Cyan,   W);
+            BannerRow("Interval    ", $"{intervalSeconds}s",  ConsoleColor.Gray,   W);
             WriteC("╰" + new string('─', W) + "╯", ConsoleColor.DarkGray);
             System.Console.WriteLine();
             System.Console.WriteLine();
@@ -52,11 +54,12 @@ internal static class WorkerConsole
 
     public static void WriteCycleStarted(DateTime utcNow, int customerCount, int intervalSeconds)
     {
+        var localNow = utcNow.ToLocalTime();
         lock (_lock)
         {
             WriteC("▶", ConsoleColor.Cyan);
             System.Console.Write("  ");
-            WriteC(utcNow.ToString("HH:mm:ss"), ConsoleColor.DarkGray);
+            WriteC(localNow.ToString("dd.MM.yyyy HH:mm"), ConsoleColor.DarkGray);
             System.Console.Write("  ");
             WriteKv("customers", customerCount.ToString(), ConsoleColor.White);
             WriteKv("interval",  $"{intervalSeconds}s",   ConsoleColor.White, last: true);
@@ -68,6 +71,7 @@ internal static class WorkerConsole
         int customerCount, int connectionCount,
         int fetched, int inserted, int updated, int failed, long elapsedMs)
     {
+        var sepWidth = SafeWindowWidth();
         lock (_lock)
         {
             var topColor = failed > 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
@@ -81,82 +85,55 @@ internal static class WorkerConsole
             WriteKvNum("failed",   failed,   ConsoleColor.Red);
             WriteKv("elapsed", FormatElapsed(elapsedMs), ConsoleColor.DarkGray, last: true);
             System.Console.WriteLine();
+            WriteC(new string('-', sepWidth), ConsoleColor.DarkGray);
+            System.Console.WriteLine();
             System.Console.WriteLine();
         }
     }
 
-    // ── Customer / connection table ───────────────────────────────────────────
+    // ── Customer block ────────────────────────────────────────────────────────
 
-    public static void WriteCustomerResult(string customerName, IReadOnlyList<OrderSyncConnectionSummary> connections)
+    /// <summary>
+    /// Writes the customer block: header, separator, and either a disabled message
+    /// or the per-connection table. Does nothing when sync is active and no connections ran.
+    /// </summary>
+    public static void WriteCustomerResult(
+        string customerName,
+        bool syncDisabled,
+        IReadOnlyList<OrderSyncConnectionSummary> connections)
     {
-        if (connections.Count == 0)
+        if (!syncDisabled && connections.Count == 0)
             return;
 
         lock (_lock)
         {
             System.Console.WriteLine();
 
-            // Customer name
+            // Customer name + sync status on one line.
             System.Console.Write("  ");
-            WriteC(customerName, ConsoleColor.White);
-            System.Console.WriteLine();
-
-            // Header row
-            WriteTableRow(
-                "Platform", "Store", "Fetched", "Inserted", "Updated", "Skipped", "Time",
-                ConsoleColor.DarkGray, ConsoleColor.DarkGray,
-                ConsoleColor.DarkGray, ConsoleColor.DarkGray,
-                ConsoleColor.DarkGray, ConsoleColor.DarkGray,
-                ConsoleColor.DarkGray);
-
-            // Separator
+            WriteCell(customerName, CustomerNameWidth, ConsoleColor.White);
+            WriteC("Sync: ", ConsoleColor.DarkGray);
             WriteC(
-                "  " + new string('─', ColPlatform) +
-                "  " + new string('─', ColStore) +
-                "  " + new string('─', ColNum) +
-                "  " + new string('─', ColNum) +
-                "  " + new string('─', ColNum) +
-                "  " + new string('─', ColNum) +
-                "  " + new string('─', 7),
-                ConsoleColor.DarkGray);
+                syncDisabled ? "Disabled" : "Active",
+                syncDisabled ? ConsoleColor.Yellow : ConsoleColor.Green);
             System.Console.WriteLine();
 
-            // Data rows
-            foreach (var c in connections)
+            // Section separator.
+            WriteC("  " + new string('-', CustomerSepLen), ConsoleColor.DarkGray);
+            System.Console.WriteLine();
+
+            if (syncDisabled)
             {
-                var failedColor = c.IsFailed ? ConsoleColor.Red : ConsoleColor.DarkGray;
-
-                WriteTableRow(
-                    c.Platform,           c.StoreId,
-                    c.FetchedCount.ToString(),   c.InsertedCount.ToString(),
-                    c.UpdatedCount.ToString(),   c.SkippedCount.ToString(),
-                    FormatElapsed(c.ElapsedMs),
-                    ConsoleColor.Cyan,    ConsoleColor.Gray,
-                    c.FetchedCount  > 0 ? ConsoleColor.Cyan   : ConsoleColor.DarkGray,
-                    c.InsertedCount > 0 ? ConsoleColor.Green  : ConsoleColor.DarkGray,
-                    c.UpdatedCount  > 0 ? ConsoleColor.Yellow : ConsoleColor.DarkGray,
-                    c.SkippedCount  > 0 ? ConsoleColor.DarkYellow : ConsoleColor.DarkGray,
-                    ConsoleColor.DarkGray);
-
-                if (c.IsFailed)
-                {
-                    System.Console.Write("  ");
-                    WriteC("FAILED", ConsoleColor.Red);
-                }
-
+                WriteC("  Order sync is disabled for this tenant. Skipping provider sync.", ConsoleColor.DarkGray);
                 System.Console.WriteLine();
+                return;
             }
-        }
-    }
 
-    public static void WriteSyncDisabled(string customerName, string slug)
-    {
-        lock (_lock)
-        {
-            System.Console.Write("  ");
-            WriteC("○ ", ConsoleColor.DarkGray);
-            WriteC($"{customerName} ({slug}) — sync disabled", ConsoleColor.DarkGray);
-            System.Console.WriteLine();
+            // Table header + separator + data rows.
+            WriteTableHeader();
+            WriteTableSeparator();
+            foreach (var c in connections)
+                WriteConnectionRow(c);
         }
     }
 
@@ -180,11 +157,78 @@ internal static class WorkerConsole
         }
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // ── Private table helpers ─────────────────────────────────────────────────
+
+    private static void WriteTableHeader()
+    {
+        System.Console.Write("  ");
+        WriteCell("Platform",  ColPlatform, ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell("Store",     ColStore,    ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell("Fetched",   ColFetched,  ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell("Inserted",  ColInserted, ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell("Updated",   ColUpdated,  ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell("Skipped",   ColSkipped,  ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC("Time", ConsoleColor.DarkGray);
+        System.Console.WriteLine();
+    }
+
+    private static void WriteTableSeparator()
+    {
+        System.Console.Write("  ");
+        WriteC(new string('-', ColPlatform), ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC(new string('-', ColStore),    ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC(new string('-', ColFetched),  ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC(new string('-', ColInserted), ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC(new string('-', ColUpdated),  ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC(new string('-', ColSkipped),  ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC("------", ConsoleColor.DarkGray);
+        System.Console.WriteLine();
+    }
+
+    private static void WriteConnectionRow(OrderSyncConnectionSummary c)
+    {
+        System.Console.Write("  ");
+        WriteCell(c.Platform,  ColPlatform, ConsoleColor.Cyan);
+        System.Console.Write("  ");
+        WriteCell(c.StoreId,   ColStore,    ConsoleColor.Gray);
+        System.Console.Write("  ");
+        WriteCell(c.FetchedCount.ToString(),   ColFetched,
+            c.FetchedCount  > 0 ? ConsoleColor.Cyan        : ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell(c.InsertedCount.ToString(),  ColInserted,
+            c.InsertedCount > 0 ? ConsoleColor.Green       : ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell(c.UpdatedCount.ToString(),   ColUpdated,
+            c.UpdatedCount  > 0 ? ConsoleColor.Yellow      : ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell(c.SkippedCount.ToString(),   ColSkipped,
+            c.SkippedCount  > 0 ? ConsoleColor.DarkYellow  : ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC(FormatElapsed(c.ElapsedMs), ConsoleColor.DarkGray);
+        if (c.IsFailed)
+        {
+            System.Console.Write("  ");
+            WriteC("FAILED", ConsoleColor.Red);
+        }
+        System.Console.WriteLine();
+    }
+
+    // ── Private banner helper ─────────────────────────────────────────────────
 
     private static void BannerRow(string label, string value, ConsoleColor valueColor, int innerWidth)
     {
-        // │  [label(12)][value padded to innerWidth - 2 - label.Length]│
         int valueWidth = innerWidth - 2 - label.Length;
         WriteC("│", ConsoleColor.DarkGray);
         System.Console.Write("  " + label);
@@ -193,31 +237,11 @@ internal static class WorkerConsole
         System.Console.WriteLine();
     }
 
-    private static void WriteTableRow(
-        string col0, string col1, string col2, string col3, string col4, string col5, string col6,
-        ConsoleColor c0, ConsoleColor c1, ConsoleColor c2, ConsoleColor c3,
-        ConsoleColor c4, ConsoleColor c5, ConsoleColor c6)
-    {
-        System.Console.Write("  ");
-        WriteCell(col0, ColPlatform, c0);
-        System.Console.Write("  ");
-        WriteCell(col1, ColStore,    c1);
-        System.Console.Write("  ");
-        WriteCell(col2, ColNum,      c2);
-        System.Console.Write("  ");
-        WriteCell(col3, ColNum,      c3);
-        System.Console.Write("  ");
-        WriteCell(col4, ColNum,      c4);
-        System.Console.Write("  ");
-        WriteCell(col5, ColNum,      c5);
-        System.Console.Write("  ");
-        WriteC(col6, c6);
-    }
+    // ── Private primitives ────────────────────────────────────────────────────
 
     private static void WriteCell(string value, int width, ConsoleColor color)
     {
         WriteC(value, color);
-        // Padding in default color so only the text is colored, not trailing spaces.
         if (value.Length < width)
             System.Console.Write(new string(' ', width - value.Length));
     }
@@ -237,6 +261,19 @@ internal static class WorkerConsole
         System.Console.ForegroundColor = color;
         System.Console.Write(text);
         System.Console.ResetColor();
+    }
+
+    private static int SafeWindowWidth()
+    {
+        try
+        {
+            var w = System.Console.WindowWidth;
+            return Math.Clamp(w > 0 ? w - 1 : 80, 60, 100);
+        }
+        catch
+        {
+            return 80;
+        }
     }
 
     private static string FormatElapsed(long ms)

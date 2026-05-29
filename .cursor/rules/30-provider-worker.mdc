@@ -1,0 +1,85 @@
+---
+description: Provider mode, Worker, and order synchronization rules
+alwaysApply: true
+---
+
+# Provider and Worker Rules
+
+## Provider mode
+
+Canonical provider mode config:
+
+```json
+{
+  "Platforms": {
+    "ProviderMode": "Mock"
+  }
+}
+```
+
+Allowed values:
+- Mock
+- Real
+
+Rules:
+- Do not use `UseMocks` as a config key.
+- Do not read `Platform:UseMocks`.
+- Do not read `Platforms:UseMocks`.
+- `ProviderModeResolver` is the single source of truth for provider mode parsing.
+- Missing or invalid `Platforms:ProviderMode` should fail fast.
+- Do not silently default to Mock.
+- Do not reintroduce legacy/fallback provider mode config.
+- In Mock mode, real Trendyol GO HTTP client must not be instantiated or called.
+- Do not call tgoapis.com in Mock mode.
+- Do not tighten Real mode validation unless explicitly requested.
+
+Provider-specific options:
+- `Platform:TrendyolGo` may remain for Trendyol GO options if currently used.
+- Do not move provider-specific config unless explicitly requested.
+- This rule is about ProviderMode standardization, not provider-specific options.
+
+## Worker behavior
+
+- Worker process should keep running.
+- Web must not start/stop OS processes, systemd, Docker containers, or Windows services.
+- Tenant Order Sync Active/Passive controls whether that tenant is synced.
+- If tenant sync is disabled, Worker skips that tenant and logs it.
+- Existing orders must remain visible when sync is disabled.
+- Other tenants must not be affected by one tenant's sync setting.
+
+## Mock order rules
+
+- Newly generated mock orders must start as New/Created and appear as "Yeni".
+- Mock updates for existing orders may only move to final statuses:
+  - Delivered / Teslim Edildi
+  - Cancelled / İptal
+- Do not randomly move newly generated mock orders through intermediate statuses unless explicitly requested.
+
+## Order upsert rules
+
+- Preserve parent Order row, Id, and CreatedAt.
+- Update scalar fields.
+- Replace child OrderItems/Options safely.
+- Prefer `ExecuteDeleteAsync` for child rows if already used in the project.
+- Do not delete/reinsert parent Order.
+- Idempotency is based on Platform + ExternalOrderId.
+
+## Worker logging
+
+- Keep production logs machine-readable and useful.
+- Development console output may be cleaner and more visual, but do not build a full interactive TUI unless explicitly requested.
+- Do not clear the console repeatedly.
+- Do not hide warnings/errors.
+- Move verbose details to Debug when appropriate:
+  - CustomerId
+  - ConnectionId
+  - LastSuccessfulSyncAt
+  - LastSyncAttemptAt
+  - CircuitOpenUntil
+  - SampleExternalOrderIds
+- Keep important warnings/errors visible:
+  - provider exceptions
+  - failed sync
+  - circuit breaker events
+  - invalid ProviderMode
+  - Real HTTP errors in Real mode

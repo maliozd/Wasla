@@ -176,7 +176,7 @@ public sealed class OrderSyncWorker : BackgroundService
             results.Add(r);
 
             if (_env.IsDevelopment())
-                WorkerConsole.WriteCustomerResult(customer.Name, r.Connections);
+                WorkerConsole.WriteCustomerResult(customer.Name, r.WasSyncDisabled, r.Connections);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
