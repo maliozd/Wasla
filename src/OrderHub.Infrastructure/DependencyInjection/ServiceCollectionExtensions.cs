@@ -19,6 +19,7 @@ using OrderHub.Infrastructure.Platform;
 using OrderHub.Infrastructure.Platform.Mock;
 using OrderHub.Infrastructure.Platform.Mapping;
 using OrderHub.Infrastructure.Platform.TrendyolGo;
+using OrderHub.Infrastructure.Platform.Yemeksepeti;
 using OrderHub.Infrastructure.Security;
 using OrderHub.Infrastructure.Services;
 using OrderHub.Infrastructure.Tenant;
@@ -39,20 +40,33 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
+        services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
 
         var providerMode = ProviderModeResolver.Resolve(configuration);
 
-        // Yemeksepeti and GetirYemek still use mock clients in both modes;
-        // only TrendyolYemek switches to the real Trendyol GO HTTP client when ProviderMode=Real.
-        services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
-        services.AddSingleton<IFoodPlatformClient, GetirYemekFoodPlatformClient>();
-
         if (providerMode.IsMock)
         {
-            services.AddSingleton<IFoodPlatformClient, TrendyolYemekFoodPlatformClient>();
+            // Mock mode: all three platforms use mock clients. No real provider HTTP calls.
+            services.AddSingleton<IFoodPlatformClient, MockYemeksepetiFoodPlatformClient>();
+            services.AddSingleton<IFoodPlatformClient, MockGetirYemekFoodPlatformClient>();
+            services.AddSingleton<IFoodPlatformClient, MockTrendyolYemekFoodPlatformClient>();
         }
         else
         {
+            // Real mode:
+            //   Yemeksepeti → real YemeksepetiFoodPlatformClient (OAuth2 + Partner Picking API)
+            //   GetirYemek  → still mock (real client not yet implemented)
+            //   TrendyolYemek → real TrendyolGoFoodPlatformClient (Basic auth + Trendyol GO API)
+            services.AddHttpClient(YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName, (sp, client) =>
+            {
+                var opts = sp.GetRequiredService<IOptions<YemeksepetiOptions>>().Value;
+                client.BaseAddress = new Uri(opts.BaseUrl);
+                client.Timeout = opts.RequestTimeout;
+            });
+            services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
+
+            services.AddSingleton<IFoodPlatformClient, MockGetirYemekFoodPlatformClient>();
+
             services.AddHttpClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>((sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<TrendyolGoOptions>>().Value;
