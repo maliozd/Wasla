@@ -357,6 +357,36 @@ generatePrintBridgeToken.SetHandler(async (InvocationContext context) =>
         context.GetCancellationToken());
 });
 
+// --- seed-print-job (dev helper) ---
+var seedPrintJob = new Command("seed-print-job", "Create a pending receipt PrintJob for Print Bridge testing.");
+var optSpjSlug = new Option<string?>("--slug", "Customer slug in CentralDb");
+var optSpjCustomerId = new Option<string?>("--customer-id", "Customer id in CentralDb");
+seedPrintJob.AddOption(optSpjSlug);
+seedPrintJob.AddOption(optSpjCustomerId);
+seedPrintJob.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.SeedPrintJobAsync(
+        host,
+        p.GetValueForOption(optSpjSlug),
+        p.GetValueForOption(optSpjCustomerId),
+        context.GetCancellationToken());
+});
+
+// --- list-print-jobs ---
+var listPrintJobs = new Command("list-print-jobs", "List recent PrintJobs for a customer (dev/testing).");
+listPrintJobs.AddOption(optSpjSlug);
+listPrintJobs.AddOption(optSpjCustomerId);
+listPrintJobs.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.ListPrintJobsAsync(
+        host,
+        p.GetValueForOption(optSpjSlug),
+        p.GetValueForOption(optSpjCustomerId),
+        context.GetCancellationToken());
+});
+
 var root = new RootCommand("orderhub — operational CLI for customer onboarding, migrations, and secrets.")
 {
     addCustomer,
@@ -374,7 +404,9 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     listCustomers,
     encrypt,
     createUser,
-    generatePrintBridgeToken
+    generatePrintBridgeToken,
+    seedPrintJob,
+    listPrintJobs
 };
 
 return await root.InvokeAsync(args);

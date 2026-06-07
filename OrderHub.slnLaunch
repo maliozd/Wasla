@@ -1,6 +1,6 @@
 [
   {
-    "Name": "Web+Worker+API",
+    "Name": "Web+Worker+API + PrintBridge",
     "Projects": [
       {
         "Path": "src\\OrderHub.Web\\OrderHub.Web.csproj",
@@ -12,6 +12,10 @@
       },
       {
         "Path": "src\\OrderHub.Api\\OrderHub.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\OrderHub.PrintBridge\\OrderHub.PrintBridge.csproj",
         "Action": "Start"
       }
     ]

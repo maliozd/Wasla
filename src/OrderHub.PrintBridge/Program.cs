@@ -85,6 +85,25 @@ builder.Services.AddHostedService<PrintBridgeWorker>();
 var host = builder.Build();
 
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("OrderHub.PrintBridge.Startup");
+
+if (OperatingSystem.IsWindows())
+{
+    var installedPrinters = RawPrinterHelper.ListInstalledPrinters();
+    logger.LogInformation("Installed Windows printers ({Count}):", installedPrinters.Count);
+    foreach (var printerName in installedPrinters)
+        logger.LogInformation("  Printer: {PrinterName}", printerName);
+
+    if (!string.IsNullOrWhiteSpace(bridge.PrinterName))
+    {
+        var configuredFound = installedPrinters.Any(p =>
+            string.Equals(p, bridge.PrinterName, StringComparison.OrdinalIgnoreCase));
+        logger.LogInformation(
+            "Configured PrinterName={PrinterName}, FoundInWindows={Found}",
+            bridge.PrinterName,
+            configuredFound);
+    }
+}
+
 logger.LogInformation(
     "Effective config: BaseUrl={BaseUrl}, DryRun={DryRun}, PrinterMode={PrinterMode}, PrinterName={PrinterName}, BridgeName={BridgeName}, IdlePoll={IdlePoll}s, BusyPoll={BusyPoll}s, ErrorPoll={ErrorPoll}s, MaxJobsPerPoll={MaxJobsPerPoll}, ConfigPath={ConfigPath}, LogPath={LogPath}",
     orderHub.BaseUrl,

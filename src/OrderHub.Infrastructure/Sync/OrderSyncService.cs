@@ -307,6 +307,8 @@ public sealed class OrderSyncService : IOrderSyncService
             foreach (var external in externalOrders)
             {
                 var r = await UpsertOrderAsync(customerId, db, external, ct).ConfigureAwait(false);
+
+
                 if (r.Inserted) { syncLog.OrdersInserted++; connInserted++; }
                 if (r.Updated) { syncLog.OrdersUpdated++; connUpdated++; }
                 if (r.Skipped) { connSkipped++; }

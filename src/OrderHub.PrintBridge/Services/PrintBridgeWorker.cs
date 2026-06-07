@@ -127,21 +127,39 @@ public sealed class PrintBridgeWorker : BackgroundService
             if (_options.DryRun)
             {
                 _logger.LogInformation("DryRun receipt output for JobId={JobId}:\n{Receipt}", job.Id, receipt);
+                _logger.LogInformation("DryRun: no physical print was sent. JobId={JobId}", job.Id);
             }
             else
             {
+                _logger.LogInformation(
+                    "Print send attempted. JobId={JobId}, PrinterName={PrinterName}, CopyCount={CopyCount}",
+                    job.Id,
+                    _options.PrinterName,
+                    job.CopyCount);
                 await _printer.PrintAsync(_options.PrinterName, receipt, job.CopyCount, ct).ConfigureAwait(false);
                 _logger.LogInformation("Print succeeded. JobId={JobId}, CopyCount={CopyCount}", job.Id, job.CopyCount);
             }
 
-            await _client.MarkPrintedAsync(job.Id, ct).ConfigureAwait(false);
+            var printed = await _client.MarkPrintedAsync(job.Id, ct).ConfigureAwait(false);
+            _logger.LogInformation(
+                "mark-printed result. JobId={JobId}, Success={Success}, Skipped={Skipped}, Result={Result}",
+                job.Id,
+                printed.Success,
+                printed.Skipped,
+                printed.Result);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Print failed. JobId={JobId}", job.Id);
             try
             {
-                await _client.MarkFailedAsync(job.Id, ex.Message, ct).ConfigureAwait(false);
+                var failed = await _client.MarkFailedAsync(job.Id, ex.Message, ct).ConfigureAwait(false);
+                _logger.LogInformation(
+                    "mark-failed result. JobId={JobId}, Success={Success}, Skipped={Skipped}, Result={Result}",
+                    job.Id,
+                    failed.Success,
+                    failed.Skipped,
+                    failed.Result);
             }
             catch (Exception markEx)
             {

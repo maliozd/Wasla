@@ -8,6 +8,7 @@ using OrderHub.Application.Abstractions.Security;
 using OrderHub.Domain.Entities.Central;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
+using System.Text.Json;
 using OrderHub.Infrastructure.Persistence.Central;
 using OrderHub.Infrastructure.Security;
 using OrderHub.Infrastructure.Persistence.Customer;
@@ -1485,5 +1486,174 @@ internal static class CliCommands
         Console.WriteLine("Raw token (shown once — copy now):");
         Console.WriteLine(rawToken);
         return 0;
+    }
+
+    /// <summary>Development helper: creates a pending receipt PrintJob for Print Bridge testing.</summary>
+    public static async Task<int> SeedPrintJobAsync(
+        IHost host,
+        string? slug,
+        string? customerIdArg,
+        CancellationToken ct)
+    {
+        var customer = await ResolveCustomerAsync(host, slug, customerIdArg, ct).ConfigureAwait(false);
+        if (customer is null) return 2;
+
+        await using var db = await OpenCustomerDbAsync(host, customer, ct).ConfigureAwait(false);
+
+        var now = DateTime.UtcNow;
+        var externalOrderId = $"TEST-{now:yyyyMMddHHmmssfff}";
+        var order = new Order
+        {
+            Platform = FoodPlatform.Yemeksepeti,
+            ExternalOrderId = externalOrderId,
+            ExternalOrderCode = "TEST-001",
+            IdempotencyKey = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes($"Yemeksepeti:{externalOrderId}"))),
+            InternalStatus = OrderStatus.Accepted,
+            PlatformStatus = "Accepted",
+            CustomerName = "Test Customer",
+            CustomerPhone = "+905551112233",
+            CustomerAddress = "Test Address 1",
+            TotalAmount = 125.50m,
+            ReceivedAt = now,
+            CreatedAtPlatform = now,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        order.Items.Add(new OrderItem
+        {
+            ProductName = "Test Burger",
+            Quantity = 2,
+            UnitPrice = 50m,
+            TotalPrice = 100m,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        db.Orders.Add(order);
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        WriteLineStep($"Created test order {order.Id}");
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            tenantDisplayName = customer.Name,
+            platform = order.Platform.ToString(),
+            externalOrderCode = order.ExternalOrderCode,
+            receivedAtUtc = order.ReceivedAt,
+            customerName = order.CustomerName,
+            customerPhone = order.CustomerPhone,
+            deliveryAddress = order.CustomerAddress,
+            totalAmount = order.TotalAmount,
+            paymentMethod = "Cash",
+            items = order.Items.Select(i => new
+            {
+                productName = i.ProductName,
+                quantity = i.Quantity,
+                unitPrice = i.UnitPrice,
+                lineTotal = i.TotalPrice
+            }).ToList()
+        });
+
+        var job = new PrintJob
+        {
+            OrderId = order.Id,
+            Type = PrintJobType.Receipt,
+            Status = PrintJobStatus.Pending,
+            CopyCount = 1,
+            PayloadJson = payload,
+            AttemptCount = 0,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        db.PrintJobs.Add(job);
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        Console.WriteLine($"Pending PrintJob created. JobId={job.Id}, OrderId={order.Id}");
+        return 0;
+    }
+
+    public static async Task<int> ListPrintJobsAsync(
+        IHost host,
+        string? slug,
+        string? customerIdArg,
+        CancellationToken ct)
+    {
+        var customer = await ResolveCustomerAsync(host, slug, customerIdArg, ct).ConfigureAwait(false);
+        if (customer is null) return 2;
+
+        await using var db = await OpenCustomerDbAsync(host, customer, ct).ConfigureAwait(false);
+
+        var jobs = await db.PrintJobs.AsNoTracking()
+            .OrderByDescending(j => j.CreatedAt)
+            .Take(20)
+            .Select(j => new
+            {
+                j.Id,
+                j.OrderId,
+                Status = j.Status.ToString(),
+                j.AttemptCount,
+                j.LockedBy,
+                j.ErrorMessage,
+                j.LockedAt,
+                j.LastAttemptAt,
+                j.PrintedAt,
+                j.CreatedAt
+            })
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        if (jobs.Count == 0)
+        {
+            Console.WriteLine("No PrintJobs found.");
+            return 0;
+        }
+
+        foreach (var j in jobs)
+        {
+            Console.WriteLine(
+                $"{j.Id}  Status={j.Status}  Attempts={j.AttemptCount}  LockedBy={j.LockedBy ?? "-"}  Error={j.ErrorMessage ?? "-"}  PrintedAt={j.PrintedAt?.ToString("u") ?? "-"}");
+        }
+
+        return 0;
+    }
+
+    private static async Task<Customer?> ResolveCustomerAsync(
+        IHost host,
+        string? slug,
+        string? customerIdArg,
+        CancellationToken ct)
+    {
+        using var scope = host.Services.CreateScope();
+        var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+        if (!string.IsNullOrWhiteSpace(customerIdArg))
+        {
+            if (!Guid.TryParse(customerIdArg, out var id))
+            {
+                WriteError("--customer-id must be a valid GUID.");
+                return null;
+            }
+
+            return await central.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id && c.IsActive, ct)
+                .ConfigureAwait(false);
+        }
+
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            WriteError("Specify --slug or --customer-id.");
+            return null;
+        }
+
+        return await central.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slug.Trim() && c.IsActive, ct)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<CustomerDbContext> OpenCustomerDbAsync(IHost host, Customer customer, CancellationToken ct)
+    {
+        var secret = host.Services.GetRequiredService<ISecretManager>();
+        var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+            .ConfigureAwait(false);
+        var options = new DbContextOptionsBuilder<CustomerDbContext>().UseSqlServer(plain).Options;
+        return new CustomerDbContext(options);
     }
 }
