@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OrderHub.PrintBridge.Configuration;
 using OrderHub.PrintBridge.Models;
 using OrderHub.PrintBridge.Options;
+using OrderHub.PrintBridge.Printing;
 using OrderHub.PrintBridge.Services;
 
 namespace OrderHub.PrintBridge.UI;
@@ -34,7 +35,8 @@ public sealed class MainForm : Form
 
     private readonly TextBox _txtBaseUrl;
     private readonly TextBox _txtAgentToken;
-    private readonly TextBox _txtPrinterName;
+    private readonly ComboBox _cmbPrinterName;
+    private readonly Button _btnRefreshPrinters;
     private readonly TextBox _txtBridgeName;
     private readonly CheckBox _chkDryRun;
     private readonly NumericUpDown _numIdlePoll;
@@ -153,7 +155,28 @@ public sealed class MainForm : Form
         _txtBaseUrl = AddSettingsTextRow(settingsLayout, "Base URL", 0);
         _txtAgentToken = AddSettingsTextRow(settingsLayout, "Agent token", 1);
         _txtAgentToken.UseSystemPasswordChar = true;
-        _txtPrinterName = AddSettingsTextRow(settingsLayout, "Printer name", 2);
+
+        settingsLayout.Controls.Add(new Label { Text = "Printer name", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 2);
+        var printerPanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            AutoSize = true
+        };
+        printerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        printerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        _cmbPrinterName = new ComboBox
+        {
+            Dock = DockStyle.Fill,
+            DropDownStyle = ComboBoxStyle.DropDown,
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
+        };
+        _btnRefreshPrinters = new Button { Text = "Refresh", AutoSize = true, Anchor = AnchorStyles.Left };
+        _btnRefreshPrinters.Click += (_, _) => RefreshPrinterList();
+        printerPanel.Controls.Add(_cmbPrinterName, 0, 0);
+        printerPanel.Controls.Add(_btnRefreshPrinters, 1, 0);
+        settingsLayout.Controls.Add(printerPanel, 1, 2);
+
         _txtBridgeName = AddSettingsTextRow(settingsLayout, "Bridge name", 3);
 
         settingsLayout.Controls.Add(new Label { Text = "Dry run", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 4);
@@ -256,7 +279,7 @@ public sealed class MainForm : Form
         var (hub, bridge) = _settingsHolder.Snapshot();
         _txtBaseUrl.Text = hub.BaseUrl;
         _txtAgentToken.Text = hub.AgentToken;
-        _txtPrinterName.Text = bridge.PrinterName;
+        RefreshPrinterList(bridge.PrinterName);
         _txtBridgeName.Text = string.IsNullOrWhiteSpace(bridge.BridgeName)
             ? Environment.MachineName
             : bridge.BridgeName;
@@ -264,6 +287,40 @@ public sealed class MainForm : Form
         _numIdlePoll.Value = Math.Clamp(bridge.IdlePollIntervalSeconds, (int)_numIdlePoll.Minimum, (int)_numIdlePoll.Maximum);
         _numBusyPoll.Value = Math.Clamp(bridge.BusyPollIntervalSeconds, (int)_numBusyPoll.Minimum, (int)_numBusyPoll.Maximum);
         _numErrorPoll.Value = Math.Clamp(bridge.ErrorPollIntervalSeconds, (int)_numErrorPoll.Minimum, (int)_numErrorPoll.Maximum);
+    }
+
+    private void RefreshPrinterList(string? selectedPrinter = null)
+    {
+        var current = selectedPrinter ?? _cmbPrinterName.Text.Trim();
+        _cmbPrinterName.BeginUpdate();
+        try
+        {
+            _cmbPrinterName.Items.Clear();
+            foreach (var printer in RawPrinterHelper.ListInstalledPrinters())
+                _cmbPrinterName.Items.Add(printer);
+
+            if (!string.IsNullOrWhiteSpace(current))
+            {
+                var found = false;
+                foreach (var item in _cmbPrinterName.Items)
+                {
+                    if (string.Equals(item?.ToString(), current, StringComparison.OrdinalIgnoreCase))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                    _cmbPrinterName.Items.Insert(0, current);
+
+                _cmbPrinterName.Text = current;
+            }
+        }
+        finally
+        {
+            _cmbPrinterName.EndUpdate();
+        }
     }
 
     private void SaveSettings()
@@ -277,7 +334,7 @@ public sealed class MainForm : Form
         var bridge = new PrintBridgeOptions
         {
             PrinterMode = "WindowsPrinter",
-            PrinterName = _txtPrinterName.Text.Trim(),
+            PrinterName = _cmbPrinterName.Text.Trim(),
             BridgeName = string.IsNullOrWhiteSpace(_txtBridgeName.Text.Trim())
                 ? Environment.MachineName
                 : _txtBridgeName.Text.Trim(),

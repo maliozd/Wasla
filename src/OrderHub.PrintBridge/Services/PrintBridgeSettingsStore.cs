@@ -13,35 +13,63 @@ public sealed class PrintBridgeSettingsStore
 
     public AppSettingsDocument Load()
     {
-        var path = ResolveConfigPath();
-        if (!File.Exists(path))
-            return CreateDefaultDocument();
-
-        var json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions) ?? CreateDefaultDocument();
+        SeedProgramDataConfigIfMissing();
+        return ReadDocument(PrintBridgePaths.ProgramDataConfigPath);
     }
 
     public void Save(AppSettingsDocument document)
     {
         PrintBridgePaths.EnsureProgramDataDirectories();
-        var path = PrintBridgePaths.ProgramDataConfigPath;
-        var json = JsonSerializer.Serialize(document, JsonOptions);
-        File.WriteAllText(path, json);
+        WriteDocument(PrintBridgePaths.ProgramDataConfigPath, document);
     }
 
-    public void EnsureProgramDataConfigExists()
+    public void SeedProgramDataConfigIfMissing()
     {
         PrintBridgePaths.EnsureProgramDataDirectories();
         if (File.Exists(PrintBridgePaths.ProgramDataConfigPath))
             return;
 
-        Save(CreateDefaultDocument());
+        var initial = TryLoadExeLocalConfig() ?? CreateDefaultDocument();
+        NormalizeBridgeName(initial);
+        WriteDocument(PrintBridgePaths.ProgramDataConfigPath, initial);
     }
 
-    private static string ResolveConfigPath() =>
-        File.Exists(PrintBridgePaths.ProgramDataConfigPath)
-            ? PrintBridgePaths.ProgramDataConfigPath
-            : Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+    public bool ProgramDataConfigExists() =>
+        File.Exists(PrintBridgePaths.ProgramDataConfigPath);
+
+    private static AppSettingsDocument? TryLoadExeLocalConfig()
+    {
+        var exeLocalPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        if (!File.Exists(exeLocalPath))
+            return null;
+
+        try
+        {
+            return ReadDocument(exeLocalPath);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static AppSettingsDocument ReadDocument(string path)
+    {
+        var json = File.ReadAllText(path);
+        return JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions) ?? CreateDefaultDocument();
+    }
+
+    private static void WriteDocument(string path, AppSettingsDocument document)
+    {
+        var json = JsonSerializer.Serialize(document, JsonOptions);
+        File.WriteAllText(path, json);
+    }
+
+    private static void NormalizeBridgeName(AppSettingsDocument document)
+    {
+        if (string.IsNullOrWhiteSpace(document.PrintBridge.BridgeName))
+            document.PrintBridge.BridgeName = Environment.MachineName;
+    }
 
     private static AppSettingsDocument CreateDefaultDocument() =>
         new()

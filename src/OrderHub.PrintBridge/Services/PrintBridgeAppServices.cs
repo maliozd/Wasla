@@ -15,7 +15,6 @@ public static class PrintBridgeAppServices
         PrintBridgePaths.EnsureProgramDataDirectories();
 
         var store = new PrintBridgeSettingsStore();
-        store.EnsureProgramDataConfigExists();
         var document = store.Load();
 
         if (string.IsNullOrWhiteSpace(document.PrintBridge.BridgeName))

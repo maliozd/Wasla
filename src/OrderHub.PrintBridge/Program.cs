@@ -1,3 +1,4 @@
+using OrderHub.PrintBridge.Configuration;
 using OrderHub.PrintBridge.Services;
 using OrderHub.PrintBridge.UI;
 
@@ -12,7 +13,7 @@ internal static class Program
         {
             MessageBox.Show(
                 "OrderHub Print Bridge requires Windows.",
-                "OrderHub Print Bridge",
+                PrintBridgePaths.ProductDisplayName,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
             return;
@@ -21,6 +22,17 @@ internal static class Program
         ApplicationConfiguration.Initialize();
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+
+        using var singleInstance = SingleInstanceGuard.TryAcquire();
+        if (singleInstance is null)
+        {
+            MessageBox.Show(
+                "OrderHub Print Bridge is already running.\n\nOpen the existing app from the system tray icon.",
+                PrintBridgePaths.ProductDisplayName,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+            return;
+        }
 
         var services = PrintBridgeAppServices.Build();
         Application.Run(new TrayApplicationContext(services));

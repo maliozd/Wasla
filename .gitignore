@@ -359,6 +359,10 @@ healthchecksdb
 # OrderHub local build verification output (alternate dotnet build -o path)
 .build-verify/
 
+# OrderHub Print Bridge local overrides (never commit secrets)
+appsettings.Local.json
+**/appsettings.Local.json
+
 # OrderHub shared data-protection keys
 OrderHub-keys/
 **/OrderHub-keys/
