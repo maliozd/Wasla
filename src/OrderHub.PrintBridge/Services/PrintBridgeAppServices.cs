@@ -23,14 +23,18 @@ public static class PrintBridgeAppServices
         var holder = new PrintBridgeSettingsHolder();
         holder.Replace(document.OrderHub, document.PrintBridge);
 
+        var uiLogBuffer = new UiLogBuffer();
         var logPath = Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "orderhub-print-bridge-.log");
+        const string logTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}";
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .Enrich.FromLogContext()
-            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
+            .WriteTo.Sink(new UiLogBufferSink(uiLogBuffer))
+            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: logTemplate)
             .CreateLogger();
 
         var services = new ServiceCollection();
+        services.AddSingleton(uiLogBuffer);
         services.AddLogging(builder => builder.AddSerilog(dispose: true));
         services.AddSingleton(store);
         services.AddSingleton(holder);

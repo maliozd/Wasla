@@ -132,6 +132,47 @@ internal static class PrintBridgeUiTheme
         return button;
     }
 
+    public static Panel CreateMetricCard(string title, out Label valueLabel)
+    {
+        var card = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = CardBackground,
+            Padding = new Padding(14, 12, 14, 12),
+            Margin = new Padding(0, 0, 8, 8),
+            MinimumSize = new Size(160, 88)
+        };
+        card.Paint += (_, e) =>
+        {
+            var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
+            using var pen = new Pen(CardBorder);
+            e.Graphics.DrawRectangle(pen, rect);
+        };
+
+        var titleLabel = new Label
+        {
+            Text = title,
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+            ForeColor = TextMuted,
+            AutoSize = true,
+            Dock = DockStyle.Top,
+            Margin = new Padding(0, 0, 0, 6)
+        };
+
+        valueLabel = new Label
+        {
+            Text = "-",
+            Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
+            ForeColor = TextTitle,
+            AutoSize = true,
+            Dock = DockStyle.Top
+        };
+
+        card.Controls.Add(valueLabel);
+        card.Controls.Add(titleLabel);
+        return card;
+    }
+
     public static void StyleGrid(DataGridView grid)
     {
         grid.BackgroundColor = CardBackground;

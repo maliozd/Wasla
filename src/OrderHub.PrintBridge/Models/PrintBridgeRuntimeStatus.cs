@@ -12,4 +12,37 @@ public sealed class PrintBridgeRuntimeStatus
     public string BridgeName { get; init; } = string.Empty;
     public bool DryRun { get; init; }
     public IReadOnlyList<LocalPrintJobRecord> RecentJobs { get; init; } = Array.Empty<LocalPrintJobRecord>();
+    public int JobsTodayCount { get; init; }
+    public int FailedTodayCount { get; init; }
+    public TrayIconState TrayIconState { get; init; }
+    public string DeviceStatusSummary { get; init; } = "Connection Lost";
+
+    public static TrayIconState ResolveTrayIconState(
+        bool isRunning,
+        bool isConnected,
+        IReadOnlyList<LocalPrintJobRecord> jobs)
+    {
+        if (jobs.Any(j => j.Status == LocalPrintJobStatus.Printing))
+            return TrayIconState.Printing;
+
+        if (isRunning && !isConnected)
+            return TrayIconState.ConnectionLost;
+
+        if (isRunning)
+            return TrayIconState.Polling;
+
+        if (isConnected)
+            return TrayIconState.Connected;
+
+        return TrayIconState.ConnectionLost;
+    }
+
+    public static string DescribeDeviceStatus(TrayIconState state) => state switch
+    {
+        TrayIconState.Printing => "Printing",
+        TrayIconState.Polling => "Polling",
+        TrayIconState.Connected => "Connected",
+        TrayIconState.ConnectionLost => "Connection Lost",
+        _ => "Connection Lost"
+    };
 }

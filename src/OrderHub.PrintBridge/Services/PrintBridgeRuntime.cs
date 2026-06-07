@@ -50,11 +50,16 @@ public sealed class PrintBridgeRuntime : IDisposable
         lock (_sync)
         {
             var (hub, bridge) = _holder.Snapshot();
+            var recentJobs = _recentJobs.Select(CloneRecord).ToList();
+            var isConnected = _lastSuccessfulContactUtc.HasValue
+                && DateTime.UtcNow - _lastSuccessfulContactUtc.Value <= TimeSpan.FromSeconds(60);
+            var trayIconState = PrintBridgeRuntimeStatus.ResolveTrayIconState(_isRunning, isConnected, recentJobs);
+            var today = DateTime.Today;
+
             return new PrintBridgeRuntimeStatus
             {
                 IsRunning = _isRunning,
-                IsConnected = _lastSuccessfulContactUtc.HasValue
-                    && DateTime.UtcNow - _lastSuccessfulContactUtc.Value <= TimeSpan.FromSeconds(60),
+                IsConnected = isConnected,
                 LastSuccessfulContactUtc = _lastSuccessfulContactUtc,
                 LastPollUtc = _lastPollUtc,
                 LastError = _lastError,
@@ -64,7 +69,12 @@ public sealed class PrintBridgeRuntime : IDisposable
                     ? Environment.MachineName
                     : bridge.BridgeName,
                 DryRun = bridge.DryRun,
-                RecentJobs = _recentJobs.Select(CloneRecord).ToList()
+                RecentJobs = recentJobs,
+                JobsTodayCount = recentJobs.Count(j => ToLocalDate(j.DisplayTimeUtc) == today),
+                FailedTodayCount = recentJobs.Count(j =>
+                    j.Status == LocalPrintJobStatus.Failed && ToLocalDate(j.DisplayTimeUtc) == today),
+                TrayIconState = trayIconState,
+                DeviceStatusSummary = PrintBridgeRuntimeStatus.DescribeDeviceStatus(trayIconState)
             };
         }
     }
@@ -241,6 +251,7 @@ public sealed class PrintBridgeRuntime : IDisposable
             JobId = job.Id,
             OrderId = job.OrderId,
             OrderDisplay = ReceiptPayloadReader.TryGetOrderDisplay(job.PayloadJson),
+            JobType = job.Type,
             Status = LocalPrintJobStatus.Received,
             CreatedAtUtc = job.CreatedAtUtc,
             LastAttemptAtUtc = DateTime.UtcNow
@@ -400,6 +411,7 @@ public sealed class PrintBridgeRuntime : IDisposable
             JobId = source.JobId,
             OrderId = source.OrderId,
             OrderDisplay = source.OrderDisplay,
+            JobType = source.JobType,
             Status = source.Status,
             CreatedAtUtc = source.CreatedAtUtc,
             LastAttemptAtUtc = source.LastAttemptAtUtc,
@@ -407,6 +419,8 @@ public sealed class PrintBridgeRuntime : IDisposable
             ErrorMessage = source.ErrorMessage,
             StatusNote = source.StatusNote
         };
+
+    private static DateTime ToLocalDate(DateTime utc) => utc.ToLocalTime().Date;
 
     private void RaiseStatusChanged() => StatusChanged?.Invoke(this, EventArgs.Empty);
 

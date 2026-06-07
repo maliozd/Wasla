@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using OrderHub.PrintBridge.Configuration;
+using OrderHub.PrintBridge.Models;
 using OrderHub.PrintBridge.Services;
 
 namespace OrderHub.PrintBridge.UI;
@@ -30,7 +31,7 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _trayIcon = new NotifyIcon
         {
-            Icon = TrayIconFactory.Create(),
+            Icon = TrayIconFactory.Create(TrayIconState.ConnectionLost),
             Text = PrintBridgePaths.ProductDisplayName,
             Visible = true,
             ContextMenuStrip = menu
@@ -104,15 +105,37 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private void UpdateTrayMenu()
     {
-        _startStopMenuItem.Text = _runtime.IsRunning ? "Durdur" : "Başlat";
-        _trayIcon.Text = _runtime.IsRunning
-            ? $"{PrintBridgePaths.ProductDisplayName} (çalışıyor)"
-            : PrintBridgePaths.ProductDisplayName;
+        void Apply()
+        {
+            var status = _runtime.GetStatus();
+            _startStopMenuItem.Text = status.IsRunning ? "Durdur" : "Başlat";
+
+            _trayIcon.Text = status.TrayIconState switch
+            {
+                TrayIconState.Printing => $"{PrintBridgePaths.ProductDisplayName} (yazdırılıyor)",
+                TrayIconState.Polling => $"{PrintBridgePaths.ProductDisplayName} (dinleniyor)",
+                TrayIconState.Connected => $"{PrintBridgePaths.ProductDisplayName} (bağlı)",
+                TrayIconState.ConnectionLost => $"{PrintBridgePaths.ProductDisplayName} (bağlantı yok)",
+                _ => PrintBridgePaths.ProductDisplayName
+            };
+
+            var nextIcon = TrayIconFactory.Create(status.TrayIconState);
+            var previousIcon = _trayIcon.Icon;
+            _trayIcon.Icon = nextIcon;
+            if (previousIcon is not null)
+                previousIcon.Dispose();
+        }
+
+        if (_mainForm.IsHandleCreated && _mainForm.InvokeRequired)
+            _mainForm.BeginInvoke(Apply);
+        else
+            Apply();
     }
 
     private void ExitApplication()
     {
         _trayIcon.Visible = false;
+        _trayIcon.Icon?.Dispose();
         _trayIcon.Dispose();
         _mainForm.FormClosing -= OnMainFormClosing;
         _mainForm.Close();

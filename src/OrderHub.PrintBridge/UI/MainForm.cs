@@ -13,24 +13,24 @@ public sealed class MainForm : Form
     private readonly PrintBridgeRuntime _runtime;
     private readonly PrintBridgeSettingsStore _settingsStore;
     private readonly PrintBridgeSettingsHolder _settingsHolder;
-    private readonly System.Windows.Forms.Timer _refreshTimer;
+    private readonly UiLogBuffer _uiLogBuffer;
+    private readonly System.Windows.Forms.Timer _dashboardTimer;
+    private readonly System.Windows.Forms.Timer _jobsRefreshTimer;
 
     private TabControl _tabs = null!;
     private TabPage _statusTab = null!;
+    private TabPage _logsTab = null!;
     private TabPage _settingsTab = null!;
 
     private Label _headerBadge = null!;
-    private Label _connectionStatusValue = null!;
-    private Label _lastContactValue = null!;
-    private Label _baseUrlValue = null!;
-    private Label _printerValue = null!;
-    private Label _bridgeValue = null!;
-    private Label _printStatusValue = null!;
-    private Label _lastPollValue = null!;
-    private Label _lastErrorValue = null!;
-    private Label _lastPrintResultValue = null!;
+    private Label _deviceStatusValue = null!;
+    private Label _lastPollMetricValue = null!;
+    private Label _jobsTodayValue = null!;
+    private Label _failedTodayValue = null!;
     private DataGridView _recentJobsGrid = null!;
     private Label _recentJobsEmptyLabel = null!;
+    private IReadOnlyList<LocalPrintJobRecord> _jobsForGrid = Array.Empty<LocalPrintJobRecord>();
+    private TextBox _txtLogs = null!;
     private Button _btnTestConnection = null!;
     private Button _btnTestPrinter = null!;
     private Button _btnStartStop = null!;
@@ -54,6 +54,7 @@ public sealed class MainForm : Form
         _runtime = runtime;
         _settingsStore = services.GetRequiredService<PrintBridgeSettingsStore>();
         _settingsHolder = services.GetRequiredService<PrintBridgeSettingsHolder>();
+        _uiLogBuffer = services.GetRequiredService<UiLogBuffer>();
 
         Text = PrintBridgePaths.ProductDisplayName;
         StartPosition = FormStartPosition.CenterScreen;
@@ -69,25 +70,40 @@ public sealed class MainForm : Form
             Padding = new Point(8, 6)
         };
         _statusTab = new TabPage("Durum") { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
+        _logsTab = new TabPage("Loglar") { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
         _settingsTab = new TabPage("Ayarlar") { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
         _tabs.TabPages.Add(_statusTab);
+        _tabs.TabPages.Add(_logsTab);
         _tabs.TabPages.Add(_settingsTab);
         Controls.Add(_tabs);
 
         BuildStatusTab();
+        BuildLogsTab();
         BuildSettingsTab();
 
-        _refreshTimer = new System.Windows.Forms.Timer { Interval = 1000 };
-        _refreshTimer.Tick += (_, _) => RefreshStatus();
-        _refreshTimer.Start();
+        _dashboardTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+        _dashboardTimer.Tick += (_, _) => RefreshDashboard();
+        _dashboardTimer.Start();
+
+        _jobsRefreshTimer = new System.Windows.Forms.Timer { Interval = 5000 };
+        _jobsRefreshTimer.Tick += (_, _) => RefreshRecentJobsFromRuntime();
+        _jobsRefreshTimer.Start();
 
         _runtime.StatusChanged += OnRuntimeStatusChanged;
+        _uiLogBuffer.Changed += (_, _) => QueueRefreshLogs();
+        _tabs.SelectedIndexChanged += (_, _) =>
+        {
+            if (_tabs.SelectedTab == _logsTab)
+                RefreshLogs();
+        };
         LoadSettingsIntoForm();
 
         if (!IsHandleCreated)
             CreateHandle();
 
-        RefreshStatus();
+        RefreshDashboard();
+        RefreshRecentJobsFromRuntime();
+        RefreshLogs();
     }
 
     private void BuildStatusTab()
@@ -140,28 +156,27 @@ public sealed class MainForm : Form
         var cardsRow = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 2,
+            ColumnCount = 4,
             RowCount = 1,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 10)
         };
-        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
 
-        var connectionCard = PrintBridgeUiTheme.CreateCard("Bağlantı", out var connectionTable, 5);
-        _connectionStatusValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Durum", 0);
-        _lastContactValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Son başarılı bağlantı", 1);
-        _baseUrlValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Sunucu adresi", 2);
-        _printerValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Yazıcı", 3);
-        _bridgeValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Bilgisayar adı", 4);
-        cardsRow.Controls.Add(connectionCard, 0, 0);
+        var deviceStatusCard = PrintBridgeUiTheme.CreateMetricCard("Device Status", out _deviceStatusValue);
+        cardsRow.Controls.Add(deviceStatusCard, 0, 0);
 
-        var pollingCard = PrintBridgeUiTheme.CreateCard("Dinleme ve yazdırma", out var pollingTable, 4);
-        _printStatusValue = PrintBridgeUiTheme.AddStatusRow(pollingTable, "Dinleme durumu", 0);
-        _lastPollValue = PrintBridgeUiTheme.AddStatusRow(pollingTable, "Son kontrol", 1);
-        _lastErrorValue = PrintBridgeUiTheme.AddStatusRow(pollingTable, "Son hata", 2);
-        _lastPrintResultValue = PrintBridgeUiTheme.AddStatusRow(pollingTable, "Son yazdırma", 3);
-        cardsRow.Controls.Add(pollingCard, 1, 0);
+        var lastPollCard = PrintBridgeUiTheme.CreateMetricCard("Last Poll", out _lastPollMetricValue);
+        cardsRow.Controls.Add(lastPollCard, 1, 0);
+
+        var jobsTodayCard = PrintBridgeUiTheme.CreateMetricCard("Jobs Today", out _jobsTodayValue);
+        cardsRow.Controls.Add(jobsTodayCard, 2, 0);
+
+        var failedTodayCard = PrintBridgeUiTheme.CreateMetricCard("Failed Today", out _failedTodayValue);
+        cardsRow.Controls.Add(failedTodayCard, 3, 0);
         root.Controls.Add(cardsRow, 0, 1);
 
         var jobsGroup = new GroupBox
@@ -186,17 +201,19 @@ public sealed class MainForm : Form
             RowHeadersVisible = false
         };
         PrintBridgeUiTheme.StyleGrid(_recentJobsGrid);
-        _recentJobsGrid.Columns.Add("Time", "Saat");
-        _recentJobsGrid.Columns.Add("Order", "Sipariş / İş");
-        _recentJobsGrid.Columns.Add("Status", "Durum");
-        _recentJobsGrid.Columns.Add("Printer", "Yazıcı");
-        _recentJobsGrid.Columns.Add("Error", "Hata");
-        _recentJobsGrid.Columns["Time"]!.FillWeight = 18;
-        _recentJobsGrid.Columns["Order"]!.FillWeight = 24;
-        _recentJobsGrid.Columns["Status"]!.FillWeight = 16;
-        _recentJobsGrid.Columns["Printer"]!.FillWeight = 20;
-        _recentJobsGrid.Columns["Error"]!.FillWeight = 22;
+        _recentJobsGrid.Columns.Add("Time", "Time");
+        _recentJobsGrid.Columns.Add("Order", "Order");
+        _recentJobsGrid.Columns.Add("Type", "Type");
+        _recentJobsGrid.Columns.Add("Printer", "Printer");
+        _recentJobsGrid.Columns.Add("Status", "Status");
+        _recentJobsGrid.Columns["Time"]!.FillWeight = 16;
+        _recentJobsGrid.Columns["Order"]!.FillWeight = 28;
+        _recentJobsGrid.Columns["Type"]!.FillWeight = 14;
+        _recentJobsGrid.Columns["Printer"]!.FillWeight = 22;
+        _recentJobsGrid.Columns["Status"]!.FillWeight = 20;
         _recentJobsGrid.CellFormatting += OnRecentJobsCellFormatting;
+        _recentJobsGrid.CellToolTipTextNeeded += OnRecentJobsCellToolTipTextNeeded;
+        _recentJobsGrid.ShowCellToolTips = true;
         _recentJobsEmptyLabel = new Label
         {
             Text = "Bu oturumda henüz yazdırma işi işlenmedi.",
@@ -241,6 +258,70 @@ public sealed class MainForm : Form
 
         actionBar.Controls.Add(buttonPanel);
         root.Controls.Add(actionBar, 0, 3);
+    }
+
+    private void BuildLogsTab()
+    {
+        var root = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2
+        };
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        var toolbar = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Margin = new Padding(0, 0, 0, 8)
+        };
+
+        var btnClearLogs = PrintBridgeUiTheme.CreateActionButton("Clear Logs");
+        btnClearLogs.Click += (_, _) =>
+        {
+            _uiLogBuffer.Clear();
+            RefreshLogs();
+        };
+        toolbar.Controls.Add(btnClearLogs);
+
+        var btnCopyLogs = PrintBridgeUiTheme.CreateActionButton("Copy Logs");
+        btnCopyLogs.Click += (_, _) =>
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(_txtLogs.Text))
+                    Clipboard.SetText(_txtLogs.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Loglar kopyalanamadı: {ex.Message}", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        };
+        toolbar.Controls.Add(btnCopyLogs);
+
+        var btnOpenLogsFolder = PrintBridgeUiTheme.CreateActionButton("Log klasörünü aç");
+        btnOpenLogsFolder.Click += (_, _) => OpenLogsFolder();
+        toolbar.Controls.Add(btnOpenLogsFolder);
+
+        _txtLogs = new TextBox
+        {
+            Dock = DockStyle.Fill,
+            Multiline = true,
+            ReadOnly = true,
+            ScrollBars = ScrollBars.Both,
+            WordWrap = false,
+            Font = new Font("Consolas", 9F),
+            BackColor = Color.FromArgb(248, 249, 250),
+            BorderStyle = BorderStyle.FixedSingle
+        };
+
+        root.Controls.Add(toolbar, 0, 0);
+        root.Controls.Add(_txtLogs, 0, 1);
+        _logsTab.Controls.Add(root);
     }
 
     private void BuildSettingsTab()
@@ -413,9 +494,19 @@ public sealed class MainForm : Form
         table.Controls.Add(printerPanel, 1, row);
     }
 
-    private void OnRuntimeStatusChanged(object? sender, EventArgs e) => QueueRefreshStatus();
+    private void OnRuntimeStatusChanged(object? sender, EventArgs e)
+    {
+        QueueRefreshDashboard();
+        QueueRefreshRecentJobs();
+    }
 
-    private void QueueRefreshStatus()
+    private void QueueRefreshDashboard() => QueueUiAction(RefreshDashboard);
+
+    private void QueueRefreshRecentJobs() => QueueUiAction(RefreshRecentJobsFromRuntime);
+
+    private void QueueRefreshLogs() => QueueUiAction(RefreshLogs);
+
+    private void QueueUiAction(Action action)
     {
         if (IsDisposed)
             return;
@@ -424,9 +515,9 @@ public sealed class MainForm : Form
             CreateHandle();
 
         if (InvokeRequired)
-            BeginInvoke(RefreshStatus);
+            BeginInvoke(action);
         else
-            RefreshStatus();
+            action();
     }
 
     public void SelectSettingsTab() => _tabs.SelectedTab = _settingsTab;
@@ -558,7 +649,7 @@ public sealed class MainForm : Form
             });
             _settingsHolder.Replace(orderHub, bridge);
             MessageBox.Show("Ayarlar kaydedildi.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            RefreshStatus();
+            RefreshDashboard();
         }
         catch (Exception ex)
         {
@@ -629,56 +720,78 @@ public sealed class MainForm : Form
         }
     }
 
-    private void RefreshStatus()
+    private void RefreshDashboard()
     {
         if (InvokeRequired)
         {
-            BeginInvoke(RefreshStatus);
+            BeginInvoke(RefreshDashboard);
             return;
         }
 
         var status = _runtime.GetStatus();
 
-        _connectionStatusValue.Text = status.IsConnected ? "Bağlı" : "Bağlı değil";
-        _connectionStatusValue.ForeColor = status.IsConnected ? PrintBridgeUiTheme.Success : PrintBridgeUiTheme.Danger;
-        _lastContactValue.Text = FormatUtc(status.LastSuccessfulContactUtc);
-        _baseUrlValue.Text = string.IsNullOrWhiteSpace(status.BaseUrl) ? "(ayarlanmadı)" : status.BaseUrl;
-        _printerValue.Text = string.IsNullOrWhiteSpace(status.PrinterName) ? "(ayarlanmadı)" : status.PrinterName;
-        _bridgeValue.Text = status.BridgeName;
-
-        if (status.IsRunning)
+        _deviceStatusValue.Text = status.DeviceStatusSummary;
+        _deviceStatusValue.ForeColor = status.TrayIconState switch
         {
-            _printStatusValue.Text = status.DryRun ? "Çalışıyor (test modu)" : "Çalışıyor";
-            _printStatusValue.ForeColor = PrintBridgeUiTheme.Info;
-        }
-        else
-        {
-            _printStatusValue.Text = "Durduruldu";
-            _printStatusValue.ForeColor = PrintBridgeUiTheme.Inactive;
-        }
-
-        _lastPollValue.Text = FormatUtc(status.LastPollUtc);
-        _lastErrorValue.Text = string.IsNullOrWhiteSpace(status.LastError) ? "-" : status.LastError;
-        _lastErrorValue.ForeColor = string.IsNullOrWhiteSpace(status.LastError)
-            ? PrintBridgeUiTheme.TextTitle
-            : PrintBridgeUiTheme.Danger;
-
-        var latestJob = status.RecentJobs.FirstOrDefault();
-        _lastPrintResultValue.Text = latestJob is null
-            ? "-"
-            : $"{latestJob.StatusDisplay} · {FormatJobLabel(latestJob)}";
-        _lastPrintResultValue.ForeColor = latestJob?.Status switch
-        {
-            LocalPrintJobStatus.Printed => PrintBridgeUiTheme.Success,
-            LocalPrintJobStatus.Failed => PrintBridgeUiTheme.Danger,
-            LocalPrintJobStatus.Printing => PrintBridgeUiTheme.Warning,
-            LocalPrintJobStatus.Received => PrintBridgeUiTheme.Info,
+            TrayIconState.Printing => PrintBridgeUiTheme.Info,
+            TrayIconState.Polling => PrintBridgeUiTheme.Info,
+            TrayIconState.Connected => PrintBridgeUiTheme.Success,
+            TrayIconState.ConnectionLost => PrintBridgeUiTheme.Danger,
             _ => PrintBridgeUiTheme.TextTitle
         };
 
+        _lastPollMetricValue.Text = FormatUtc(status.LastPollUtc);
+        _lastPollMetricValue.ForeColor = PrintBridgeUiTheme.TextTitle;
+        _jobsTodayValue.Text = status.JobsTodayCount.ToString();
+        _jobsTodayValue.ForeColor = PrintBridgeUiTheme.TextTitle;
+        _failedTodayValue.Text = status.FailedTodayCount.ToString();
+        _failedTodayValue.ForeColor = status.FailedTodayCount > 0
+            ? PrintBridgeUiTheme.Danger
+            : PrintBridgeUiTheme.TextTitle;
+
         UpdateHeaderBadge(status);
         UpdateStartStopButton(status);
+    }
+
+    private void RefreshRecentJobsFromRuntime()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(RefreshRecentJobsFromRuntime);
+            return;
+        }
+
+        var status = _runtime.GetStatus();
         RefreshRecentJobs(status.RecentJobs, status.PrinterName);
+    }
+
+    private void RefreshLogs()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(RefreshLogs);
+            return;
+        }
+
+        if (_txtLogs is null || _txtLogs.IsDisposed)
+            return;
+
+        var previousSelectionStart = _txtLogs.SelectionStart;
+        var previousSelectionLength = _txtLogs.SelectionLength;
+        var wasAtEnd = _txtLogs.SelectionStart >= Math.Max(0, _txtLogs.TextLength - 1);
+
+        _txtLogs.Text = _uiLogBuffer.GetText();
+
+        if (wasAtEnd)
+        {
+            _txtLogs.SelectionStart = _txtLogs.TextLength;
+            _txtLogs.ScrollToCaret();
+        }
+        else
+        {
+            _txtLogs.SelectionStart = Math.Min(previousSelectionStart, _txtLogs.TextLength);
+            _txtLogs.SelectionLength = Math.Min(previousSelectionLength, _txtLogs.TextLength - _txtLogs.SelectionStart);
+        }
     }
 
     private void UpdateHeaderBadge(PrintBridgeRuntimeStatus status)
@@ -716,8 +829,11 @@ public sealed class MainForm : Form
 
     private void RefreshRecentJobs(IReadOnlyList<LocalPrintJobRecord> jobs, string printerName)
     {
+        _jobsForGrid = jobs;
         _recentJobsEmptyLabel.Visible = jobs.Count == 0;
         _recentJobsGrid.Visible = jobs.Count > 0;
+
+        var scrollIndex = _recentJobsGrid.FirstDisplayedScrollingRowIndex;
 
         _recentJobsGrid.SuspendLayout();
         try
@@ -728,15 +844,18 @@ public sealed class MainForm : Form
                 _recentJobsGrid.Rows.Add(
                     FormatUtc(job.DisplayTimeUtc),
                     FormatJobLabel(job),
-                    job.StatusDisplay,
+                    string.IsNullOrWhiteSpace(job.JobType) ? "-" : job.JobType,
                     string.IsNullOrWhiteSpace(printerName) ? "-" : printerName,
-                    job.ErrorMessage ?? string.Empty);
+                    job.StatusBadgeText);
             }
         }
         finally
         {
             _recentJobsGrid.ResumeLayout();
         }
+
+        if (scrollIndex >= 0 && scrollIndex < _recentJobsGrid.RowCount)
+            _recentJobsGrid.FirstDisplayedScrollingRowIndex = scrollIndex;
     }
 
     private static string FormatJobLabel(LocalPrintJobRecord job) =>
@@ -752,15 +871,35 @@ public sealed class MainForm : Form
         if (grid.Columns[e.ColumnIndex].Name != "Status" || e.Value is not string statusText || e.CellStyle is null)
             return;
 
-        e.CellStyle.ForeColor = statusText switch
+        var (backColor, foreColor) = statusText switch
         {
-            "Yazdırıldı" => PrintBridgeUiTheme.Success,
-            "Yazdırılıyor" => PrintBridgeUiTheme.Warning,
-            "Alındı" => PrintBridgeUiTheme.Info,
-            "Hatalı" => PrintBridgeUiTheme.Danger,
-            "Atlandı" => PrintBridgeUiTheme.Inactive,
-            _ => grid.DefaultCellStyle.ForeColor
+            "Printed" => (PrintBridgeUiTheme.Success, Color.White),
+            "Printing" => (PrintBridgeUiTheme.Info, Color.White),
+            "Pending" => (Color.FromArgb(255, 193, 7), Color.FromArgb(33, 37, 41)),
+            "Failed" => (PrintBridgeUiTheme.Danger, Color.White),
+            "Skipped" => (PrintBridgeUiTheme.Inactive, Color.White),
+            _ => (grid.DefaultCellStyle.BackColor, grid.DefaultCellStyle.ForeColor)
         };
+
+        e.CellStyle.BackColor = backColor;
+        e.CellStyle.ForeColor = foreColor;
+        e.CellStyle.SelectionBackColor = backColor;
+        e.CellStyle.SelectionForeColor = foreColor;
+        e.CellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+        e.CellStyle.Font = PrintBridgeUiTheme.BadgeFont;
+    }
+
+    private void OnRecentJobsCellToolTipTextNeeded(object? sender, DataGridViewCellToolTipTextNeededEventArgs e)
+    {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || sender is not DataGridView grid)
+            return;
+
+        if (grid.Columns[e.ColumnIndex].Name != "Status" || e.RowIndex >= _jobsForGrid.Count)
+            return;
+
+        var job = _jobsForGrid[e.RowIndex];
+        if (job.Status == LocalPrintJobStatus.Failed && !string.IsNullOrWhiteSpace(job.ErrorMessage))
+            e.ToolTipText = job.ErrorMessage;
     }
 
     private static string FormatUtc(DateTime? value) =>
@@ -773,8 +912,10 @@ public sealed class MainForm : Form
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
-        _refreshTimer.Stop();
-        _refreshTimer.Dispose();
+        _dashboardTimer.Stop();
+        _dashboardTimer.Dispose();
+        _jobsRefreshTimer.Stop();
+        _jobsRefreshTimer.Dispose();
         base.OnFormClosed(e);
     }
 }
