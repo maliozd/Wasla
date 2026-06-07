@@ -15,11 +15,11 @@ public sealed class LocalPrintJobRecord
 
     public string StatusDisplay => Status switch
     {
-        LocalPrintJobStatus.Received => "Received",
-        LocalPrintJobStatus.Printing => "Printing",
-        LocalPrintJobStatus.Printed => string.IsNullOrWhiteSpace(StatusNote) ? "Printed" : $"Printed ({StatusNote})",
-        LocalPrintJobStatus.Failed => "Failed",
-        LocalPrintJobStatus.Skipped => "Skipped",
+        LocalPrintJobStatus.Received => "Alındı",
+        LocalPrintJobStatus.Printing => "Yazdırılıyor",
+        LocalPrintJobStatus.Printed => string.IsNullOrWhiteSpace(StatusNote) ? "Yazdırıldı" : $"Yazdırıldı",
+        LocalPrintJobStatus.Failed => "Hatalı",
+        LocalPrintJobStatus.Skipped => "Atlandı",
         _ => Status.ToString()
     };
 

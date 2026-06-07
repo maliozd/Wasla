@@ -15,35 +15,38 @@ public sealed class MainForm : Form
     private readonly PrintBridgeSettingsHolder _settingsHolder;
     private readonly System.Windows.Forms.Timer _refreshTimer;
 
-    private readonly TabControl _tabs;
-    private readonly TabPage _statusTab;
-    private readonly TabPage _settingsTab;
+    private TabControl _tabs = null!;
+    private TabPage _statusTab = null!;
+    private TabPage _settingsTab = null!;
 
-    private readonly Label _connectionStatusValue;
-    private readonly Label _lastContactValue;
-    private readonly Label _baseUrlValue;
-    private readonly Label _printerValue;
-    private readonly Label _bridgeValue;
-    private readonly Label _printStatusValue;
-    private readonly Label _lastPollValue;
-    private readonly Label _lastErrorValue;
-    private readonly DataGridView _recentJobsGrid;
-    private readonly Label _recentJobsEmptyLabel;
-    private readonly Button _btnTestConnection;
-    private readonly Button _btnTestPrinter;
-    private readonly Button _btnStartStop;
-    private readonly Button _btnOpenLogs;
+    private Label _headerBadge = null!;
+    private Label _connectionStatusValue = null!;
+    private Label _lastContactValue = null!;
+    private Label _baseUrlValue = null!;
+    private Label _printerValue = null!;
+    private Label _bridgeValue = null!;
+    private Label _printStatusValue = null!;
+    private Label _lastPollValue = null!;
+    private Label _lastErrorValue = null!;
+    private Label _lastPrintResultValue = null!;
+    private DataGridView _recentJobsGrid = null!;
+    private Label _recentJobsEmptyLabel = null!;
+    private Button _btnTestConnection = null!;
+    private Button _btnTestPrinter = null!;
+    private Button _btnStartStop = null!;
+    private Button _btnOpenLogs = null!;
 
-    private readonly TextBox _txtBaseUrl;
-    private readonly TextBox _txtAgentToken;
-    private readonly ComboBox _cmbPrinterName;
-    private readonly Button _btnRefreshPrinters;
-    private readonly TextBox _txtBridgeName;
-    private readonly CheckBox _chkDryRun;
-    private readonly NumericUpDown _numIdlePoll;
-    private readonly NumericUpDown _numBusyPoll;
-    private readonly NumericUpDown _numErrorPoll;
-    private readonly Button _btnSaveSettings;
+    private TextBox _txtBaseUrl = null!;
+    private TextBox _txtAgentToken = null!;
+    private Button _btnToggleToken = null!;
+    private ComboBox _cmbPrinterName = null!;
+    private Button _btnRefreshPrinters = null!;
+    private TextBox _txtBridgeName = null!;
+    private CheckBox _chkDryRun = null!;
+    private NumericUpDown _numIdlePoll = null!;
+    private NumericUpDown _numBusyPoll = null!;
+    private NumericUpDown _numErrorPoll = null!;
+    private Button _btnSaveSettings = null!;
 
     public MainForm(ServiceProvider services, PrintBridgeRuntime runtime)
     {
@@ -54,50 +57,123 @@ public sealed class MainForm : Form
 
         Text = PrintBridgePaths.ProductDisplayName;
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(920, 620);
-        Size = new Size(960, 680);
+        MinimumSize = new Size(1000, 720);
+        Size = new Size(1040, 780);
         Font = new Font("Segoe UI", 9F);
+        BackColor = PrintBridgeUiTheme.PageBackground;
 
-        _tabs = new TabControl { Dock = DockStyle.Fill };
-        _statusTab = new TabPage("Status");
-        _settingsTab = new TabPage("Settings");
+        _tabs = new TabControl
+        {
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 9.5F),
+            Padding = new Point(8, 6)
+        };
+        _statusTab = new TabPage("Durum") { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
+        _settingsTab = new TabPage("Ayarlar") { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
         _tabs.TabPages.Add(_statusTab);
         _tabs.TabPages.Add(_settingsTab);
         Controls.Add(_tabs);
 
-        var statusLayout = new TableLayoutPanel
+        BuildStatusTab();
+        BuildSettingsTab();
+
+        _refreshTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+        _refreshTimer.Tick += (_, _) => RefreshStatus();
+        _refreshTimer.Start();
+
+        _runtime.StatusChanged += OnRuntimeStatusChanged;
+        LoadSettingsIntoForm();
+
+        if (!IsHandleCreated)
+            CreateHandle();
+
+        RefreshStatus();
+    }
+
+    private void BuildStatusTab()
+    {
+        var root = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 4,
-            Padding = new Padding(12)
+            Padding = new Padding(0)
         };
-        statusLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        statusLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        statusLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        statusLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        _statusTab.Controls.Add(statusLayout);
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _statusTab.Controls.Add(root);
 
-        var connectionGroup = CreateGroupBox("Connection");
-        var connectionTable = CreateTwoColumnTable(5);
-        _connectionStatusValue = AddStatusRow(connectionTable, "Status", 0);
-        _lastContactValue = AddStatusRow(connectionTable, "Last successful contact", 1);
-        _baseUrlValue = AddStatusRow(connectionTable, "Base URL", 2);
-        _printerValue = AddStatusRow(connectionTable, "Printer", 3);
-        _bridgeValue = AddStatusRow(connectionTable, "Bridge / machine", 4);
-        connectionGroup.Controls.Add(connectionTable);
-        statusLayout.Controls.Add(connectionGroup, 0, 0);
+        var header = new Panel { Dock = DockStyle.Fill, Height = 72, Margin = new Padding(0, 0, 0, 10) };
+        var title = new Label
+        {
+            Text = "OrderHub Print Bridge",
+            Font = PrintBridgeUiTheme.TitleFont,
+            ForeColor = PrintBridgeUiTheme.TextTitle,
+            AutoSize = true,
+            Location = new Point(0, 0)
+        };
+        var subtitle = new Label
+        {
+            Text = "Fiş yazdırma köprüsü",
+            Font = PrintBridgeUiTheme.SubtitleFont,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            AutoSize = true,
+            Location = new Point(0, 30)
+        };
+        _headerBadge = new Label
+        {
+            Text = "Durduruldu",
+            Font = PrintBridgeUiTheme.BadgeFont,
+            ForeColor = Color.White,
+            BackColor = PrintBridgeUiTheme.Inactive,
+            AutoSize = true,
+            Padding = new Padding(10, 4, 10, 4),
+            Location = new Point(0, 52)
+        };
+        header.Controls.Add(title);
+        header.Controls.Add(subtitle);
+        header.Controls.Add(_headerBadge);
+        root.Controls.Add(header, 0, 0);
 
-        var printGroup = CreateGroupBox("Print polling");
-        var printTable = CreateTwoColumnTable(3);
-        _printStatusValue = AddStatusRow(printTable, "Polling", 0);
-        _lastPollValue = AddStatusRow(printTable, "Last poll", 1);
-        _lastErrorValue = AddStatusRow(printTable, "Last error", 2);
-        printGroup.Controls.Add(printTable);
-        statusLayout.Controls.Add(printGroup, 0, 1);
+        var cardsRow = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 10)
+        };
+        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
 
-        var jobsGroup = CreateGroupBox("Recent jobs (this session)");
-        var jobsPanel = new Panel { Dock = DockStyle.Fill, MinimumSize = new Size(0, 160) };
+        var connectionCard = PrintBridgeUiTheme.CreateCard("Bağlantı", out var connectionTable, 5);
+        _connectionStatusValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Durum", 0);
+        _lastContactValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Son başarılı bağlantı", 1);
+        _baseUrlValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Sunucu adresi", 2);
+        _printerValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Yazıcı", 3);
+        _bridgeValue = PrintBridgeUiTheme.AddStatusRow(connectionTable, "Bilgisayar adı", 4);
+        cardsRow.Controls.Add(connectionCard, 0, 0);
+
+        var pollingCard = PrintBridgeUiTheme.CreateCard("Dinleme ve yazdırma", out var pollingTable, 4);
+        _printStatusValue = PrintBridgeUiTheme.AddStatusRow(pollingTable, "Dinleme durumu", 0);
+        _lastPollValue = PrintBridgeUiTheme.AddStatusRow(pollingTable, "Son kontrol", 1);
+        _lastErrorValue = PrintBridgeUiTheme.AddStatusRow(pollingTable, "Son hata", 2);
+        _lastPrintResultValue = PrintBridgeUiTheme.AddStatusRow(pollingTable, "Son yazdırma", 3);
+        cardsRow.Controls.Add(pollingCard, 1, 0);
+        root.Controls.Add(cardsRow, 0, 1);
+
+        var jobsGroup = new GroupBox
+        {
+            Text = "  Son işler (bu oturum)  ",
+            Dock = DockStyle.Fill,
+            Font = PrintBridgeUiTheme.SectionFont,
+            ForeColor = PrintBridgeUiTheme.TextTitle,
+            Padding = new Padding(10, 20, 10, 10),
+            Margin = new Padding(0, 0, 0, 10)
+        };
+        var jobsPanel = new Panel { Dock = DockStyle.Fill, MinimumSize = new Size(0, 240) };
         _recentJobsGrid = new DataGridView
         {
             Dock = DockStyle.Fill,
@@ -107,69 +183,208 @@ public sealed class MainForm : Form
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             MultiSelect = false,
-            RowHeadersVisible = false,
-            BackgroundColor = SystemColors.Window
+            RowHeadersVisible = false
         };
-        _recentJobsGrid.Columns.Add("Time", "Time");
-        _recentJobsGrid.Columns.Add("Job", "Job");
-        _recentJobsGrid.Columns.Add("Order", "Order");
-        _recentJobsGrid.Columns.Add("Status", "Status");
-        _recentJobsGrid.Columns.Add("Error", "Error");
+        PrintBridgeUiTheme.StyleGrid(_recentJobsGrid);
+        _recentJobsGrid.Columns.Add("Time", "Saat");
+        _recentJobsGrid.Columns.Add("Order", "Sipariş / İş");
+        _recentJobsGrid.Columns.Add("Status", "Durum");
+        _recentJobsGrid.Columns.Add("Printer", "Yazıcı");
+        _recentJobsGrid.Columns.Add("Error", "Hata");
+        _recentJobsGrid.Columns["Time"]!.FillWeight = 18;
+        _recentJobsGrid.Columns["Order"]!.FillWeight = 24;
+        _recentJobsGrid.Columns["Status"]!.FillWeight = 16;
+        _recentJobsGrid.Columns["Printer"]!.FillWeight = 20;
+        _recentJobsGrid.Columns["Error"]!.FillWeight = 22;
         _recentJobsGrid.CellFormatting += OnRecentJobsCellFormatting;
         _recentJobsEmptyLabel = new Label
         {
-            Text = "No jobs processed in this session.",
+            Text = "Bu oturumda henüz yazdırma işi işlenmedi.",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = SystemColors.GrayText
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            Font = new Font("Segoe UI", 10F)
         };
         jobsPanel.Controls.Add(_recentJobsGrid);
         jobsPanel.Controls.Add(_recentJobsEmptyLabel);
         jobsGroup.Controls.Add(jobsPanel);
-        statusLayout.Controls.Add(jobsGroup, 0, 2);
+        root.Controls.Add(jobsGroup, 0, 2);
 
+        var actionBar = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            Padding = new Padding(0, 8, 0, 0)
+        };
         var buttonPanel = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
             AutoSize = true,
             FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true,
-            Padding = new Padding(0, 8, 0, 0)
+            WrapContents = true
         };
-        _btnTestConnection = new Button { Text = "Test connection", AutoSize = true };
-        _btnTestConnection.Click += async (_, _) => await RunSafeAsync(TestConnectionAsync);
-        buttonPanel.Controls.Add(_btnTestConnection);
-
-        _btnTestPrinter = new Button { Text = "Test printer", AutoSize = true };
-        _btnTestPrinter.Click += async (_, _) => await RunSafeAsync(TestPrinterAsync);
-        buttonPanel.Controls.Add(_btnTestPrinter);
-
-        _btnStartStop = new Button { Text = "Start polling", AutoSize = true };
+        _btnStartStop = PrintBridgeUiTheme.CreateActionButton("Dinlemeyi başlat", primary: true);
         _btnStartStop.Click += (_, _) => TogglePolling();
         buttonPanel.Controls.Add(_btnStartStop);
 
-        _btnOpenLogs = new Button { Text = "Open logs folder", AutoSize = true };
+        _btnTestConnection = PrintBridgeUiTheme.CreateActionButton("Bağlantıyı test et");
+        _btnTestConnection.Click += async (_, _) => await RunSafeAsync(TestConnectionAsync);
+        buttonPanel.Controls.Add(_btnTestConnection);
+
+        _btnTestPrinter = PrintBridgeUiTheme.CreateActionButton("Yazıcıyı test et");
+        _btnTestPrinter.Click += async (_, _) => await RunSafeAsync(TestPrinterAsync);
+        buttonPanel.Controls.Add(_btnTestPrinter);
+
+        _btnOpenLogs = PrintBridgeUiTheme.CreateActionButton("Log klasörünü aç");
         _btnOpenLogs.Click += (_, _) => OpenLogsFolder();
         buttonPanel.Controls.Add(_btnOpenLogs);
-        statusLayout.Controls.Add(buttonPanel, 0, 3);
 
+        actionBar.Controls.Add(buttonPanel);
+        root.Controls.Add(actionBar, 0, 3);
+    }
+
+    private void BuildSettingsTab()
+    {
+        var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         var settingsLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            AutoSize = true,
+            Padding = new Padding(4),
+            Width = 900
+        };
+        settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+        settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        _txtBaseUrl = AddSettingsTextRow(settingsLayout, "Sunucu adresi", 0);
+        AddTokenRow(settingsLayout, 1);
+        AddPrinterRow(settingsLayout, 2);
+        _txtBridgeName = AddSettingsTextRow(settingsLayout, "Bilgisayar adı", 3);
+
+        var advancedGroup = new GroupBox
+        {
+            Text = "  Gelişmiş  ",
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            Font = PrintBridgeUiTheme.SectionFont,
+            ForeColor = PrintBridgeUiTheme.TextTitle,
+            Padding = new Padding(12, 18, 12, 12),
+            Margin = new Padding(0, 8, 0, 8)
+        };
+        var advancedLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            AutoSize = true
+        };
+        advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+        advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        advancedLayout.Controls.Add(new Label
+        {
+            Text = "Test modu",
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        }, 0, 0);
+        _chkDryRun = new CheckBox
+        {
+            Text = "Fişi yazıcıya gönderme, sadece logla",
+            AutoSize = true,
+            Anchor = AnchorStyles.Left
+        };
+        advancedLayout.Controls.Add(_chkDryRun, 1, 0);
+
+        _numIdlePoll = AddSettingsNumericRow(advancedLayout, "Boşta bekleme (sn)", 1, 1, 300, 5);
+        _numBusyPoll = AddSettingsNumericRow(advancedLayout, "Yoğunken bekleme (sn)", 2, 1, 60, 1);
+        _numErrorPoll = AddSettingsNumericRow(advancedLayout, "Hata sonrası bekleme (sn)", 3, 1, 300, 15);
+        advancedGroup.Controls.Add(advancedLayout);
+
+        settingsLayout.Controls.Add(advancedGroup, 0, 4);
+        settingsLayout.SetColumnSpan(advancedGroup, 2);
+
+        var savePanel = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = new Padding(0, 12, 0, 0)
+        };
+        _btnSaveSettings = PrintBridgeUiTheme.CreateActionButton("Ayarları kaydet", primary: true);
+        _btnSaveSettings.Click += (_, _) => SaveSettings();
+        savePanel.Controls.Add(_btnSaveSettings);
+        settingsLayout.Controls.Add(savePanel, 0, 5);
+        settingsLayout.SetColumnSpan(savePanel, 2);
+
+        scroll.Controls.Add(settingsLayout);
+
+        var settingsHint = new Label
+        {
+            Text = $"Ayarlar şuraya kaydedilir: {PrintBridgePaths.ProgramDataConfigPath}",
+            AutoSize = true,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            Dock = DockStyle.Bottom,
+            Padding = new Padding(4, 8, 4, 4)
+        };
+
+        var settingsHost = new Panel { Dock = DockStyle.Fill };
+        settingsHost.Controls.Add(scroll);
+        settingsHost.Controls.Add(settingsHint);
+        _settingsTab.Controls.Add(settingsHost);
+    }
+
+    private void AddTokenRow(TableLayoutPanel table, int row)
+    {
+        table.Controls.Add(new Label
+        {
+            Text = "Erişim anahtarı",
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        }, 0, row);
+
+        var tokenPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 9,
-            Padding = new Padding(12),
             AutoSize = true
         };
-        settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
-        settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        _settingsTab.Controls.Add(settingsLayout);
+        tokenPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        tokenPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        _txtAgentToken = new TextBox
+        {
+            Dock = DockStyle.Fill,
+            UseSystemPasswordChar = true,
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
+        };
+        _btnToggleToken = new Button
+        {
+            Text = "Göster",
+            AutoSize = true,
+            MinimumSize = new Size(72, 28),
+            FlatStyle = FlatStyle.Flat,
+            Margin = new Padding(8, 0, 0, 0)
+        };
+        _btnToggleToken.Click += (_, _) =>
+        {
+            _txtAgentToken.UseSystemPasswordChar = !_txtAgentToken.UseSystemPasswordChar;
+            _btnToggleToken.Text = _txtAgentToken.UseSystemPasswordChar ? "Göster" : "Gizle";
+        };
+        tokenPanel.Controls.Add(_txtAgentToken, 0, 0);
+        tokenPanel.Controls.Add(_btnToggleToken, 1, 0);
+        table.Controls.Add(tokenPanel, 1, row);
+    }
 
-        _txtBaseUrl = AddSettingsTextRow(settingsLayout, "Base URL", 0);
-        _txtAgentToken = AddSettingsTextRow(settingsLayout, "Agent token", 1);
-        _txtAgentToken.UseSystemPasswordChar = true;
+    private void AddPrinterRow(TableLayoutPanel table, int row)
+    {
+        table.Controls.Add(new Label
+        {
+            Text = "Yazıcı adı",
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        }, 0, row);
 
-        settingsLayout.Controls.Add(new Label { Text = "Printer name", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 2);
         var printerPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -184,48 +399,18 @@ public sealed class MainForm : Form
             DropDownStyle = ComboBoxStyle.DropDown,
             Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
-        _btnRefreshPrinters = new Button { Text = "Refresh", AutoSize = true, Anchor = AnchorStyles.Left };
+        _btnRefreshPrinters = new Button
+        {
+            Text = "Yenile",
+            AutoSize = true,
+            MinimumSize = new Size(72, 28),
+            FlatStyle = FlatStyle.Flat,
+            Margin = new Padding(8, 0, 0, 0)
+        };
         _btnRefreshPrinters.Click += (_, _) => RefreshPrinterList();
         printerPanel.Controls.Add(_cmbPrinterName, 0, 0);
         printerPanel.Controls.Add(_btnRefreshPrinters, 1, 0);
-        settingsLayout.Controls.Add(printerPanel, 1, 2);
-
-        _txtBridgeName = AddSettingsTextRow(settingsLayout, "Bridge name", 3);
-
-        settingsLayout.Controls.Add(new Label { Text = "Dry run", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 4);
-        _chkDryRun = new CheckBox { Text = "Log receipts only; do not send to printer", AutoSize = true, Anchor = AnchorStyles.Left };
-        settingsLayout.Controls.Add(_chkDryRun, 1, 4);
-
-        _numIdlePoll = AddSettingsNumericRow(settingsLayout, "Idle poll (seconds)", 5, 1, 300, 5);
-        _numBusyPoll = AddSettingsNumericRow(settingsLayout, "Busy poll (seconds)", 6, 1, 60, 1);
-        _numErrorPoll = AddSettingsNumericRow(settingsLayout, "Error poll (seconds)", 7, 1, 300, 15);
-
-        _btnSaveSettings = new Button { Text = "Save settings", AutoSize = true, Anchor = AnchorStyles.Left };
-        _btnSaveSettings.Click += (_, _) => SaveSettings();
-        settingsLayout.Controls.Add(new Panel(), 0, 8);
-        settingsLayout.Controls.Add(_btnSaveSettings, 1, 8);
-
-        var settingsHint = new Label
-        {
-            Text = $"Enter real BaseUrl, token, and printer here. Saved to {PrintBridgePaths.ProgramDataConfigPath} (not Program Files).",
-            AutoSize = true,
-            ForeColor = SystemColors.GrayText,
-            Dock = DockStyle.Bottom,
-            Padding = new Padding(12, 0, 12, 12)
-        };
-        _settingsTab.Controls.Add(settingsHint);
-
-        _refreshTimer = new System.Windows.Forms.Timer { Interval = 1000 };
-        _refreshTimer.Tick += (_, _) => RefreshStatus();
-        _refreshTimer.Start();
-
-        _runtime.StatusChanged += OnRuntimeStatusChanged;
-        LoadSettingsIntoForm();
-
-        if (!IsHandleCreated)
-            CreateHandle();
-
-        RefreshStatus();
+        table.Controls.Add(printerPanel, 1, row);
     }
 
     private void OnRuntimeStatusChanged(object? sender, EventArgs e) => QueueRefreshStatus();
@@ -246,41 +431,15 @@ public sealed class MainForm : Form
 
     public void SelectSettingsTab() => _tabs.SelectedTab = _settingsTab;
 
-    private static GroupBox CreateGroupBox(string title) =>
-        new()
-        {
-            Text = title,
-            Dock = DockStyle.Top,
-            AutoSize = true,
-            Padding = new Padding(10)
-        };
-
-    private static TableLayoutPanel CreateTwoColumnTable(int rows)
-    {
-        var table = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            AutoSize = true,
-            ColumnCount = 2
-        };
-        table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
-        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        for (var i = 0; i < rows; i++)
-            table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        return table;
-    }
-
-    private static Label AddStatusRow(TableLayoutPanel table, string label, int row)
-    {
-        table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
-        var value = new Label { Text = "-", AutoSize = true, Anchor = AnchorStyles.Left };
-        table.Controls.Add(value, 1, row);
-        return value;
-    }
-
     private static TextBox AddSettingsTextRow(TableLayoutPanel table, string label, int row)
     {
-        table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+        table.Controls.Add(new Label
+        {
+            Text = label,
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        }, 0, row);
         var textBox = new TextBox { Dock = DockStyle.Fill, Anchor = AnchorStyles.Left | AnchorStyles.Right };
         table.Controls.Add(textBox, 1, row);
         return textBox;
@@ -294,13 +453,19 @@ public sealed class MainForm : Form
         decimal max,
         decimal value)
     {
-        table.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+        table.Controls.Add(new Label
+        {
+            Text = label,
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        }, 0, row);
         var numeric = new NumericUpDown
         {
             Minimum = min,
             Maximum = max,
             Value = value,
-            Width = 100,
+            Width = 110,
             Anchor = AnchorStyles.Left
         };
         table.Controls.Add(numeric, 1, row);
@@ -384,15 +549,21 @@ public sealed class MainForm : Form
             return;
         }
 
-        _settingsStore.Save(new PrintBridgeSettingsStore.AppSettingsDocument
+        try
         {
-            OrderHub = orderHub,
-            PrintBridge = bridge
-        });
-        _settingsHolder.Replace(orderHub, bridge);
-
-        MessageBox.Show("Settings saved.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-        RefreshStatus();
+            _settingsStore.Save(new PrintBridgeSettingsStore.AppSettingsDocument
+            {
+                OrderHub = orderHub,
+                PrintBridge = bridge
+            });
+            _settingsHolder.Replace(orderHub, bridge);
+            MessageBox.Show("Ayarlar kaydedildi.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            RefreshStatus();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ayarlar kaydedilemedi: {ex.Message}", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void TogglePolling()
@@ -418,8 +589,8 @@ public sealed class MainForm : Form
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var health = await _runtime.TestConnectionAsync(cts.Token).ConfigureAwait(true);
         var details = string.IsNullOrWhiteSpace(health.CustomerName)
-            ? "Connection successful."
-            : $"Connection successful.\nCustomer: {health.CustomerName}\nDevice: {health.DeviceName}";
+            ? "Bağlantı başarılı."
+            : $"Bağlantı başarılı.\nMüşteri: {health.CustomerName}\nCihaz: {health.DeviceName}";
         MessageBox.Show(details, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
@@ -427,7 +598,7 @@ public sealed class MainForm : Form
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await _runtime.TestPrinterAsync(cts.Token).ConfigureAwait(true);
-        MessageBox.Show("Test print sent.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        MessageBox.Show("Test çıktısı yazıcıya gönderildi.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void OpenLogsFolder()
@@ -435,7 +606,7 @@ public sealed class MainForm : Form
         PrintBridgePaths.EnsureProgramDataDirectories();
         if (!Directory.Exists(PrintBridgePaths.ProgramDataLogDirectory))
         {
-            MessageBox.Show("Logs folder does not exist yet.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Log klasörü henüz oluşturulmadı.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 
@@ -467,25 +638,83 @@ public sealed class MainForm : Form
         }
 
         var status = _runtime.GetStatus();
-        _connectionStatusValue.Text = status.IsConnected ? "Connected" : "Not connected";
-        _connectionStatusValue.ForeColor = status.IsConnected ? Color.DarkGreen : Color.DarkRed;
+
+        _connectionStatusValue.Text = status.IsConnected ? "Bağlı" : "Bağlı değil";
+        _connectionStatusValue.ForeColor = status.IsConnected ? PrintBridgeUiTheme.Success : PrintBridgeUiTheme.Danger;
         _lastContactValue.Text = FormatUtc(status.LastSuccessfulContactUtc);
-        _baseUrlValue.Text = string.IsNullOrWhiteSpace(status.BaseUrl) ? "(not set)" : status.BaseUrl;
-        _printerValue.Text = string.IsNullOrWhiteSpace(status.PrinterName) ? "(not set)" : status.PrinterName;
+        _baseUrlValue.Text = string.IsNullOrWhiteSpace(status.BaseUrl) ? "(ayarlanmadı)" : status.BaseUrl;
+        _printerValue.Text = string.IsNullOrWhiteSpace(status.PrinterName) ? "(ayarlanmadı)" : status.PrinterName;
         _bridgeValue.Text = status.BridgeName;
-        _printStatusValue.Text = status.IsRunning
-            ? status.DryRun ? "Running (dry run)" : "Running"
-            : "Stopped";
-        _printStatusValue.ForeColor = status.IsRunning ? Color.DarkGreen : Color.DarkRed;
+
+        if (status.IsRunning)
+        {
+            _printStatusValue.Text = status.DryRun ? "Çalışıyor (test modu)" : "Çalışıyor";
+            _printStatusValue.ForeColor = PrintBridgeUiTheme.Info;
+        }
+        else
+        {
+            _printStatusValue.Text = "Durduruldu";
+            _printStatusValue.ForeColor = PrintBridgeUiTheme.Inactive;
+        }
+
         _lastPollValue.Text = FormatUtc(status.LastPollUtc);
         _lastErrorValue.Text = string.IsNullOrWhiteSpace(status.LastError) ? "-" : status.LastError;
+        _lastErrorValue.ForeColor = string.IsNullOrWhiteSpace(status.LastError)
+            ? PrintBridgeUiTheme.TextTitle
+            : PrintBridgeUiTheme.Danger;
 
-        _btnStartStop.Text = status.IsRunning ? "Stop polling" : "Start polling";
+        var latestJob = status.RecentJobs.FirstOrDefault();
+        _lastPrintResultValue.Text = latestJob is null
+            ? "-"
+            : $"{latestJob.StatusDisplay} · {FormatJobLabel(latestJob)}";
+        _lastPrintResultValue.ForeColor = latestJob?.Status switch
+        {
+            LocalPrintJobStatus.Printed => PrintBridgeUiTheme.Success,
+            LocalPrintJobStatus.Failed => PrintBridgeUiTheme.Danger,
+            LocalPrintJobStatus.Printing => PrintBridgeUiTheme.Warning,
+            LocalPrintJobStatus.Received => PrintBridgeUiTheme.Info,
+            _ => PrintBridgeUiTheme.TextTitle
+        };
 
-        RefreshRecentJobs(status.RecentJobs);
+        UpdateHeaderBadge(status);
+        UpdateStartStopButton(status);
+        RefreshRecentJobs(status.RecentJobs, status.PrinterName);
     }
 
-    private void RefreshRecentJobs(IReadOnlyList<LocalPrintJobRecord> jobs)
+    private void UpdateHeaderBadge(PrintBridgeRuntimeStatus status)
+    {
+        if (status.IsRunning && status.IsConnected)
+        {
+            _headerBadge.Text = status.DryRun ? "Çalışıyor (test)" : "Çalışıyor";
+            _headerBadge.BackColor = PrintBridgeUiTheme.Info;
+        }
+        else if (status.IsRunning)
+        {
+            _headerBadge.Text = "Çalışıyor";
+            _headerBadge.BackColor = PrintBridgeUiTheme.Info;
+        }
+        else if (status.IsConnected)
+        {
+            _headerBadge.Text = "Bağlı";
+            _headerBadge.BackColor = PrintBridgeUiTheme.Success;
+        }
+        else
+        {
+            _headerBadge.Text = "Durduruldu";
+            _headerBadge.BackColor = PrintBridgeUiTheme.Inactive;
+        }
+    }
+
+    private void UpdateStartStopButton(PrintBridgeRuntimeStatus status)
+    {
+        _btnStartStop.Text = status.IsRunning ? "Dinlemeyi durdur" : "Dinlemeyi başlat";
+        _btnStartStop.BackColor = status.IsRunning ? PrintBridgeUiTheme.Danger : PrintBridgeUiTheme.PrimaryButton;
+        _btnStartStop.FlatAppearance.MouseOverBackColor = status.IsRunning
+            ? Color.FromArgb(200, 45, 60)
+            : PrintBridgeUiTheme.PrimaryButtonHover;
+    }
+
+    private void RefreshRecentJobs(IReadOnlyList<LocalPrintJobRecord> jobs, string printerName)
     {
         _recentJobsEmptyLabel.Visible = jobs.Count == 0;
         _recentJobsGrid.Visible = jobs.Count > 0;
@@ -498,9 +727,9 @@ public sealed class MainForm : Form
             {
                 _recentJobsGrid.Rows.Add(
                     FormatUtc(job.DisplayTimeUtc),
-                    job.ShortJobId,
-                    string.IsNullOrWhiteSpace(job.OrderDisplay) ? job.OrderId.ToString("N")[..8] : job.OrderDisplay,
+                    FormatJobLabel(job),
                     job.StatusDisplay,
+                    string.IsNullOrWhiteSpace(printerName) ? "-" : printerName,
                     job.ErrorMessage ?? string.Empty);
             }
         }
@@ -509,6 +738,11 @@ public sealed class MainForm : Form
             _recentJobsGrid.ResumeLayout();
         }
     }
+
+    private static string FormatJobLabel(LocalPrintJobRecord job) =>
+        string.IsNullOrWhiteSpace(job.OrderDisplay)
+            ? job.ShortJobId
+            : $"{job.OrderDisplay} ({job.ShortJobId})";
 
     private static void OnRecentJobsCellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
@@ -520,11 +754,11 @@ public sealed class MainForm : Form
 
         e.CellStyle.ForeColor = statusText switch
         {
-            _ when statusText.StartsWith("Printed", StringComparison.OrdinalIgnoreCase) => Color.DarkGreen,
-            "Printing" => Color.DarkGoldenrod,
-            "Received" => Color.SteelBlue,
-            "Failed" => Color.DarkRed,
-            "Skipped" => Color.Gray,
+            "Yazdırıldı" => PrintBridgeUiTheme.Success,
+            "Yazdırılıyor" => PrintBridgeUiTheme.Warning,
+            "Alındı" => PrintBridgeUiTheme.Info,
+            "Hatalı" => PrintBridgeUiTheme.Danger,
+            "Atlandı" => PrintBridgeUiTheme.Inactive,
             _ => grid.DefaultCellStyle.ForeColor
         };
     }

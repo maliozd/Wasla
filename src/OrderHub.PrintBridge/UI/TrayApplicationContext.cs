@@ -20,13 +20,13 @@ public sealed class TrayApplicationContext : ApplicationContext
         _mainForm = new MainForm(services, _runtime);
         _mainForm.FormClosing += OnMainFormClosing;
 
-        _startStopMenuItem = new ToolStripMenuItem("Start Bridge", null, OnStartStopClicked);
+        _startStopMenuItem = new ToolStripMenuItem("Başlat", null, OnStartStopClicked);
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Open", null, (_, _) => ShowMainWindow());
+        menu.Items.Add("Aç", null, (_, _) => ShowMainWindow());
         menu.Items.Add(_startStopMenuItem);
-        menu.Items.Add("Settings", null, (_, _) => ShowSettings());
+        menu.Items.Add("Ayarlar", null, (_, _) => ShowSettings());
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Exit", null, (_, _) => ExitApplication());
+        menu.Items.Add("Çıkış", null, (_, _) => ExitApplication());
 
         _trayIcon = new NotifyIcon
         {
@@ -104,9 +104,9 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private void UpdateTrayMenu()
     {
-        _startStopMenuItem.Text = _runtime.IsRunning ? "Stop Bridge" : "Start Bridge";
+        _startStopMenuItem.Text = _runtime.IsRunning ? "Durdur" : "Başlat";
         _trayIcon.Text = _runtime.IsRunning
-            ? $"{PrintBridgePaths.ProductDisplayName} (running)"
+            ? $"{PrintBridgePaths.ProductDisplayName} (çalışıyor)"
             : PrintBridgePaths.ProductDisplayName;
     }
 
