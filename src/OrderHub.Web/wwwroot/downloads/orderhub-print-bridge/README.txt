@@ -14,8 +14,10 @@ Included plan note:
 
 Next steps:
 1. Open Print Bridge setup in OrderHub (/print-bridge/download).
-2. Generate a Print Bridge token from the Devices page (/print-bridge).
-3. Copy BaseUrl, AgentToken, and PrinterName into your Print Bridge config.
-4. Run OrderHub.PrintBridge from source or wait for the official installer.
+2. Install the printer driver and confirm Windows sees the printer.
+3. Generate a Print Bridge token from the Devices page (/print-bridge).
+4. Install and run OrderHub Print Bridge. It appears in the Windows system tray.
+5. Open the app from the tray icon and enter BaseUrl, AgentToken, and PrinterName in Settings.
+   Settings are stored at C:\ProgramData\OrderHub\PrintBridge\appsettings.json
 
 Do not put real tokens in files you share or commit to source control.

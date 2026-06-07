@@ -14,26 +14,24 @@ public sealed class OrderHubPrintBridgeClient
     };
 
     private readonly HttpClient _http;
-    private readonly OrderHubOptions _orderHub;
-    private readonly PrintBridgeOptions _bridge;
+    private readonly PrintBridgeSettingsHolder _holder;
     private readonly string _appVersion;
 
     public OrderHubPrintBridgeClient(
         HttpClient http,
-        OrderHubOptions orderHub,
-        PrintBridgeOptions bridge,
+        PrintBridgeSettingsHolder holder,
         string appVersion)
     {
         _http = http;
-        _orderHub = orderHub;
-        _bridge = bridge;
+        _holder = holder;
         _appVersion = appVersion;
     }
 
     public async Task<IReadOnlyList<PendingPrintJobDto>> GetPendingJobsAsync(CancellationToken ct)
     {
-        var max = Math.Clamp(_bridge.MaxJobsPerPoll, 1, 10);
-        var url = $"api/print-bridge/jobs/pending?max={max}";
+        var (_, bridge) = _holder.Snapshot();
+        var max = Math.Clamp(bridge.MaxJobsPerPoll, 1, 10);
+        var url = BuildAbsoluteUrl($"api/print-bridge/jobs/pending?max={max}");
         using var request = CreateRequest(HttpMethod.Get, url);
         using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
@@ -46,7 +44,7 @@ public sealed class OrderHubPrintBridgeClient
 
     public async Task<PrintJobActionResult> MarkPrintingAsync(Guid jobId, CancellationToken ct)
     {
-        var url = $"api/print-bridge/jobs/{jobId:D}/mark-printing";
+        var url = BuildAbsoluteUrl($"api/print-bridge/jobs/{jobId:D}/mark-printing");
         using var request = CreateRequest(HttpMethod.Post, url);
         using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
@@ -55,7 +53,7 @@ public sealed class OrderHubPrintBridgeClient
 
     public async Task<PrintJobActionResult> MarkPrintedAsync(Guid jobId, CancellationToken ct)
     {
-        var url = $"api/print-bridge/jobs/{jobId:D}/mark-printed";
+        var url = BuildAbsoluteUrl($"api/print-bridge/jobs/{jobId:D}/mark-printed");
         using var request = CreateRequest(HttpMethod.Post, url);
         using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
@@ -64,7 +62,7 @@ public sealed class OrderHubPrintBridgeClient
 
     public async Task<PrintJobActionResult> MarkFailedAsync(Guid jobId, string errorMessage, CancellationToken ct)
     {
-        var url = $"api/print-bridge/jobs/{jobId:D}/mark-failed";
+        var url = BuildAbsoluteUrl($"api/print-bridge/jobs/{jobId:D}/mark-failed");
         using var request = CreateRequest(HttpMethod.Post, url);
         request.Content = JsonContent.Create(new { errorMessage });
         using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
@@ -72,14 +70,21 @@ public sealed class OrderHubPrintBridgeClient
         return await ReadActionResultAsync(response, ct).ConfigureAwait(false);
     }
 
-    private HttpRequestMessage CreateRequest(HttpMethod method, string relativeUrl)
+    private string BuildAbsoluteUrl(string relativeUrl)
     {
-        var request = new HttpRequestMessage(method, relativeUrl);
-        request.Headers.TryAddWithoutValidation("X-PrintBridge-Token", _orderHub.AgentToken);
-        request.Headers.TryAddWithoutValidation("X-PrintBridge-Name", _bridge.BridgeName);
+        var (hub, _) = _holder.Snapshot();
+        return $"{hub.BaseUrl.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
+    }
+
+    private HttpRequestMessage CreateRequest(HttpMethod method, string url)
+    {
+        var (hub, bridge) = _holder.Snapshot();
+        var request = new HttpRequestMessage(method, url);
+        request.Headers.TryAddWithoutValidation("X-PrintBridge-Token", hub.AgentToken);
+        request.Headers.TryAddWithoutValidation("X-PrintBridge-Name", bridge.BridgeName);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Version", _appVersion);
-        if (!string.IsNullOrWhiteSpace(_bridge.PrinterName))
-            request.Headers.TryAddWithoutValidation("X-PrintBridge-Printer", _bridge.PrinterName);
+        if (!string.IsNullOrWhiteSpace(bridge.PrinterName))
+            request.Headers.TryAddWithoutValidation("X-PrintBridge-Printer", bridge.PrinterName);
         return request;
     }
 

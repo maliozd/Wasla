@@ -1369,7 +1369,7 @@
     <value>USB thermal receipt printer installed in Windows (e.g. Zilang 80mm)</value>
   </data>
   <data name="PrintBridge.RequirementLocalApp" xml:space="preserve">
-    <value>OrderHub Print Bridge running on the restaurant PC</value>
+    <value>OrderHub Print Bridge tray app running on the restaurant PC</value>
   </data>
   <data name="PrintBridge.SetupTitle" xml:space="preserve">
     <value>Setup steps</value>
@@ -1384,7 +1384,7 @@
     <value>Add the token and printer name to Print Bridge configuration.</value>
   </data>
   <data name="PrintBridge.SetupStepRun" xml:space="preserve">
-    <value>Start Print Bridge; it will print pending receipt jobs automatically.</value>
+    <value>Print Bridge polls for pending receipt jobs automatically while running in the system tray.</value>
   </data>
   <data name="PrintBridge.Download" xml:space="preserve">
     <value>Download placeholder package</value>
@@ -1630,10 +1630,10 @@
     <value>OrderHub Print Bridge Setup</value>
   </data>
   <data name="PrintBridge.DownloadDescription" xml:space="preserve">
-    <value>OrderHub Print Bridge is the local Windows app on your restaurant PC for automatic USB receipt printing.</value>
+    <value>OrderHub Print Bridge is a Windows tray application on your restaurant PC for automatic USB receipt printing.</value>
   </data>
   <data name="PrintBridge.DownloadRunsOnWindowsPc" xml:space="preserve">
-    <value>The browser does not need to stay open while Print Bridge is running.</value>
+    <value>It runs in the system tray in the background. Open the window from the tray icon. The browser does not need to stay open.</value>
   </data>
   <data name="PrintBridge.DownloadBadgeUsb" xml:space="preserve">
     <value>USB receipt printing</value>
@@ -1645,10 +1645,10 @@
     <value>Install or run it on the Windows PC connected to the USB receipt printer.</value>
   </data>
   <data name="PrintBridge.SetupStepConfigure" xml:space="preserve">
-    <value>Set BaseUrl, AgentToken, and PrinterName in your Print Bridge configuration.</value>
+    <value>Open Print Bridge from the system tray and set BaseUrl, AgentToken, and PrinterName in Settings.</value>
   </data>
   <data name="PrintBridge.SetupStepStartBridge" xml:space="preserve">
-    <value>Start the Print Bridge application.</value>
+    <value>Install and run OrderHub Print Bridge. It appears in the Windows system tray; open the window from the tray icon.</value>
   </data>
   <data name="PrintBridge.SetupStepTestOrder" xml:space="preserve">
     <value>Test printing with a new order.</value>

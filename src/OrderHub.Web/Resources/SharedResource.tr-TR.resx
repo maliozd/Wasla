@@ -1369,7 +1369,7 @@
     <value>Windows'a kurulu USB termal fiş yazıcısı (ör. Zilang 80mm)</value>
   </data>
   <data name="PrintBridge.RequirementLocalApp" xml:space="preserve">
-    <value>OrderHub Print Bridge uygulamasının restoran PC'sinde çalışması</value>
+    <value>OrderHub Print Bridge tepsi uygulamasının restoran PC'sinde çalışması</value>
   </data>
   <data name="PrintBridge.SetupTitle" xml:space="preserve">
     <value>Kurulum adımları</value>
@@ -1384,7 +1384,7 @@
     <value>Token'ı ve yazıcı adını Print Bridge yapılandırmasına ekleyin.</value>
   </data>
   <data name="PrintBridge.SetupStepRun" xml:space="preserve">
-    <value>Print Bridge'i başlatın; bekleyen fiş işlerini otomatik yazdırır.</value>
+    <value>Print Bridge sistem tepsisinde çalışırken bekleyen fiş işlerini otomatik olarak alır.</value>
   </data>
   <data name="PrintBridge.Download" xml:space="preserve">
     <value>Yer tutucu paketi indir</value>
@@ -1630,10 +1630,10 @@
     <value>OrderHub Print Bridge Kurulumu</value>
   </data>
   <data name="PrintBridge.DownloadDescription" xml:space="preserve">
-    <value>OrderHub Print Bridge, USB fiş yazıcısından otomatik yazdırma için restoran bilgisayarında çalışan yerel Windows uygulamasıdır.</value>
+    <value>OrderHub Print Bridge, USB fiş yazıcısından otomatik yazdırma için restoran bilgisayarında çalışan bir Windows tepsi uygulamasıdır.</value>
   </data>
   <data name="PrintBridge.DownloadRunsOnWindowsPc" xml:space="preserve">
-    <value>Print Bridge çalışırken tarayıcının açık kalması gerekmez.</value>
+    <value>Arka planda sistem tepsisinde çalışır. Pencereyi tepsi simgesinden açabilirsiniz. Tarayıcının açık kalması gerekmez.</value>
   </data>
   <data name="PrintBridge.DownloadBadgeUsb" xml:space="preserve">
     <value>USB fiş yazdırma</value>
@@ -1645,10 +1645,10 @@
     <value>USB fiş yazıcısına bağlı Windows bilgisayarda kurun veya çalıştırın.</value>
   </data>
   <data name="PrintBridge.SetupStepConfigure" xml:space="preserve">
-    <value>Print Bridge yapılandırmasında BaseUrl, AgentToken ve PrinterName değerlerini ayarlayın.</value>
+    <value>Print Bridge'i sistem tepsisinden açın ve Ayarlar sekmesinde BaseUrl, AgentToken ve PrinterName değerlerini girin.</value>
   </data>
   <data name="PrintBridge.SetupStepStartBridge" xml:space="preserve">
-    <value>Print Bridge uygulamasını başlatın.</value>
+    <value>OrderHub Print Bridge'i kurun ve çalıştırın. Windows sistem tepsisinde görünür; pencereyi tepsi simgesinden açın.</value>
   </data>
   <data name="PrintBridge.SetupStepTestOrder" xml:space="preserve">
     <value>Yeni bir sipariş ile fiş yazdırmayı test edin.</value>

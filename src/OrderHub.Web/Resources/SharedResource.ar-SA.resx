@@ -1369,7 +1369,7 @@
     <value>طابعة إيصالات حرارية USB مثبتة في Windows (مثل Zilang 80mm)</value>
   </data>
   <data name="PrintBridge.RequirementLocalApp" xml:space="preserve">
-    <value>تشغيل OrderHub Print Bridge على حاسوب المطعم</value>
+    <value>تشغيل تطبيق OrderHub Print Bridge في شريط النظام على حاسوب المطعم</value>
   </data>
   <data name="PrintBridge.SetupTitle" xml:space="preserve">
     <value>خطوات الإعداد</value>
@@ -1384,7 +1384,7 @@
     <value>أضف الرمز واسم الطابعة إلى إعدادات Print Bridge.</value>
   </data>
   <data name="PrintBridge.SetupStepRun" xml:space="preserve">
-    <value>شغّل Print Bridge؛ سيطبع مهام الإيصالات المعلقة تلقائياً.</value>
+    <value>يجلب Print Bridge مهام الإيصالات المعلقة تلقائياً أثناء عمله في شريط النظام.</value>
   </data>
   <data name="PrintBridge.Download" xml:space="preserve">
     <value>تنزيل الحزمة المؤقتة</value>
@@ -1630,10 +1630,10 @@
     <value>إعداد OrderHub Print Bridge</value>
   </data>
   <data name="PrintBridge.DownloadDescription" xml:space="preserve">
-    <value>OrderHub Print Bridge تطبيق Windows محلي على حاسوب المطعم للطباعة التلقائية عبر USB.</value>
+    <value>OrderHub Print Bridge تطبيق Windows يعمل من شريط النظام على حاسوب المطعم للطباعة التلقائية عبر USB.</value>
   </data>
   <data name="PrintBridge.DownloadRunsOnWindowsPc" xml:space="preserve">
-    <value>لا حاجة لإبقاء المتصفح مفتوحاً أثناء تشغيل Print Bridge.</value>
+    <value>يعمل في الخلفية من شريط النظام. افتح النافذة من أيقونة الشريط. لا حاجة لإبقاء المتصفح مفتوحاً.</value>
   </data>
   <data name="PrintBridge.DownloadBadgeUsb" xml:space="preserve">
     <value>طباعة إيصالات USB</value>
@@ -1645,10 +1645,10 @@
     <value>ثبّته أو شغّله على حاسوب Windows المتصل بطابعة الإيصالات USB.</value>
   </data>
   <data name="PrintBridge.SetupStepConfigure" xml:space="preserve">
-    <value>اضبط BaseUrl وAgentToken وPrinterName في إعدادات Print Bridge.</value>
+    <value>افتح Print Bridge من شريط النظام واضبط BaseUrl وAgentToken وPrinterName في الإعدادات.</value>
   </data>
   <data name="PrintBridge.SetupStepStartBridge" xml:space="preserve">
-    <value>شغّل تطبيق Print Bridge.</value>
+    <value>ثبّت وشغّل OrderHub Print Bridge. يظهر في شريط نظام Windows؛ افتح النافذة من أيقونة الشريط.</value>
   </data>
   <data name="PrintBridge.SetupStepTestOrder" xml:space="preserve">
     <value>اختبر الطباعة بطلب جديد.</value>
