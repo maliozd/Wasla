@@ -356,6 +356,9 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 
+# OrderHub local build verification output (alternate dotnet build -o path)
+.build-verify/
+
 # OrderHub shared data-protection keys
 OrderHub-keys/
 **/OrderHub-keys/
