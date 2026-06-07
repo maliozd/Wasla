@@ -359,6 +359,9 @@ healthchecksdb
 # OrderHub local build verification output (alternate dotnet build -o path)
 .build-verify/
 
+# OrderHub local HTTPS certificates (mkcert / setup-local-https.ps1)
+.certs/
+
 # OrderHub Print Bridge local overrides (never commit secrets)
 appsettings.Local.json
 **/appsettings.Local.json
