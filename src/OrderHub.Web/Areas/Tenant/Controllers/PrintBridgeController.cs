@@ -53,10 +53,36 @@ public sealed class PrintBridgeController : BaseController
 
         var deviceRows = await _devices.ListDevicesAsync(customer.Id, ct).ConfigureAwait(false);
         var quota = await _devices.GetDeviceQuotaAsync(customer.Id, ct).ConfigureAwait(false);
+        var apiBaseUrl = ResolveApiBaseUrl();
+
+        return View(BuildPageViewModel(deviceRows, quota, apiBaseUrl));
+    }
+
+    [HttpGet("download")]
+    public async Task<IActionResult> Setup(CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var quota = await _devices.GetDeviceQuotaAsync(customer.Id, ct).ConfigureAwait(false);
         var orderSettings = await _orderSettings.GetAsync(customer.Id, ct).ConfigureAwait(false);
         var apiBaseUrl = ResolveApiBaseUrl();
 
-        return View(BuildPageViewModel(deviceRows, quota, orderSettings, apiBaseUrl));
+        return View("Setup", new PrintBridgeSetupViewModel
+        {
+            PackageDownloadUrl = Url.Action(nameof(DownloadPackage), "PrintBridge", new { area = AreaNames.Tenant })
+                ?? "/print-bridge/download/package",
+            DevicesUrl = Url.Action(nameof(Index), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge",
+            ApiBaseUrl = apiBaseUrl,
+            ExampleConfigJson = BuildExampleConfigJson(apiBaseUrl),
+            AutoApproveNewOrders = orderSettings.AutoApproveNewOrders,
+            AutoPrintReceiptOnAutoApprove = orderSettings.AutoPrintReceiptOnAutoApprove,
+            ReceiptPrintCopyCount = orderSettings.ReceiptPrintCopyCount,
+            AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
+            ActiveDeviceCount = quota.ActiveDeviceCount,
+            CanCreateActiveDevice = quota.CanCreateActiveDevice,
+            ActiveCountExceedsLimit = quota.ActiveCountExceedsLimit
+        });
     }
 
     [HttpGet("devices")]
@@ -152,15 +178,21 @@ public sealed class PrintBridgeController : BaseController
                 deviceId = result.DeviceId,
                 deviceName = result.DeviceName,
                 token = result.RawToken,
+                tokenMode = "create",
                 message = _localizer["PrintBridge.DeviceCreatedSuccessfully"].Value,
-                tokenMessage = _localizer["PrintBridge.TokenCreatedCopyNow"].Value,
+                tokenTitle = _localizer["PrintBridge.TokenCreated"].Value,
+                tokenNotice = _localizer["PrintBridge.TokenShownOnce"].Value,
                 devices = deviceRows.Select(MapDeviceJson),
                 quota = MapQuotaJson(quota, deviceRows)
             });
         }
         catch (PrintBridgeDeviceLimitReachedException)
         {
-            return BadRequest(new { success = false, message = _localizer["PrintBridge.DeviceLimitReached"].Value });
+            return BadRequest(new
+            {
+                success = false,
+                message = _localizer["PrintBridge.DeviceLimitReached", PrintBridgeDeviceLimits.AllowedActiveDeviceCount].Value
+            });
         }
         catch (InvalidOperationException)
         {
@@ -187,7 +219,11 @@ public sealed class PrintBridgeController : BaseController
                 deviceId = result.DeviceId,
                 deviceName = result.DeviceName,
                 token = result.RawToken,
-                tokenMessage = _localizer["PrintBridge.TokenCreatedCopyNow"].Value,
+                tokenMode = "regenerate",
+                message = _localizer["PrintBridge.TokenRegenerated"].Value,
+                tokenTitle = _localizer["PrintBridge.TokenRegenerated"].Value,
+                tokenNotice = _localizer["PrintBridge.TokenShownOnce"].Value,
+                tokenWarning = _localizer["PrintBridge.OldTokenInvalidAfterRegenerate"].Value,
                 devices = deviceRows.Select(MapDeviceJson),
                 quota = MapQuotaJson(quota, deviceRows)
             });
@@ -224,12 +260,16 @@ public sealed class PrintBridgeController : BaseController
         }
         catch (PrintBridgeDeviceLimitReachedException)
         {
-            return BadRequest(new { success = false, message = _localizer["PrintBridge.DeviceLimitReached"].Value });
+            return BadRequest(new
+            {
+                success = false,
+                message = _localizer["PrintBridge.DeviceLimitReached", PrintBridgeDeviceLimits.AllowedActiveDeviceCount].Value
+            });
         }
     }
 
-    [HttpGet("download")]
-    public IActionResult Download()
+    [HttpGet("download/package")]
+    public IActionResult DownloadPackage()
     {
         var folder = Path.Combine(_environment.WebRootPath, "downloads", "orderhub-print-bridge");
         if (!Directory.Exists(folder))
@@ -262,16 +302,10 @@ public sealed class PrintBridgeController : BaseController
     private PrintBridgePageViewModel BuildPageViewModel(
         IReadOnlyList<PrintBridgeDeviceSummaryDto> deviceRows,
         PrintBridgeDeviceQuotaDto quota,
-        CustomerOrderSettingsResult orderSettings,
         string apiBaseUrl) =>
         new()
         {
-            DownloadUrl = Url.Action(nameof(Download), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/download",
-            ApiBaseUrl = apiBaseUrl,
-            ExampleConfigJson = BuildExampleConfigJson(apiBaseUrl),
-            AutoApproveNewOrders = orderSettings.AutoApproveNewOrders,
-            AutoPrintReceiptOnAutoApprove = orderSettings.AutoPrintReceiptOnAutoApprove,
-            ReceiptPrintCopyCount = orderSettings.ReceiptPrintCopyCount,
+            SetupUrl = Url.Action(nameof(Setup), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/download",
             Devices = deviceRows.Select(MapDevice).ToList(),
             AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
             ActiveDeviceCount = quota.ActiveDeviceCount,
@@ -306,7 +340,7 @@ public sealed class PrintBridgeController : BaseController
                 ErrorPollIntervalSeconds = 15,
                 MaxJobsPerPoll = 3,
                 DryRun = false,
-                BridgeName = ""
+                BridgeName = "Kitchen-PC"
             }
         };
 

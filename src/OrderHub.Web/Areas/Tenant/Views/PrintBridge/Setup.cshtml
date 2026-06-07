@@ -1,0 +1,219 @@
+@model OrderHub.Web.Models.PrintBridge.PrintBridgeSetupViewModel
+@using Microsoft.Extensions.Localization
+@using System.Text.Json
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["PrintBridge.DownloadTitle"];
+    var atLimit = !Model.CanCreateActiveDevice && !Model.ActiveCountExceedsLimit;
+    var nearLimit = Model.ActiveDeviceCount >= Model.AllowedActiveDeviceCount - 1 && Model.CanCreateActiveDevice;
+
+    var setupMessages = new
+    {
+        copied = L["PrintBridge.Copied"].Value,
+        copyFailed = L["PrintBridge.CopyFailed"].Value,
+        ordersActive = L["Orders.Active"].Value,
+        ordersPassive = L["Orders.Passive"].Value,
+        orderSettingsSaved = L["Orders.OrderSettingsSaved"].Value,
+        orderSettingsUpdateFailed = L["Orders.OrderSettingsUpdateFailed"].Value
+    };
+    var setupMessagesJson = JsonSerializer.Serialize(setupMessages);
+}
+
+<partial name="_PrintBridgeNav" />
+
+<div id="printBridgeSetupMessageHost"></div>
+
+<form id="printBridgeSetupAntiForgery" method="post" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                    <div>
+                        <h1 class="h4 mb-2">@L["PrintBridge.DownloadTitle"]</h1>
+                        <p class="text-muted mb-2">@L["PrintBridge.DownloadDescription"]</p>
+                        <p class="small text-muted mb-0">@L["PrintBridge.DownloadRunsOnWindowsPc"]</p>
+                    </div>
+                    <span class="badge text-bg-primary align-self-start">@L["PrintBridge.DownloadBadgeUsb"]</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-2"><i class="bi bi-layers me-1 text-primary"></i>@L["PrintBridge.IncludedDevicesTitle"]</h2>
+                <p class="text-muted small mb-3">@L["PrintBridge.IncludedDevicesDescription"]</p>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <span class="badge text-bg-secondary">@L["PrintBridge.IncludedDeviceCount", Model.AllowedActiveDeviceCount]</span>
+                    <span class="badge @(Model.ActiveCountExceedsLimit ? "text-bg-warning" : "text-bg-info")">
+                        @L["PrintBridge.ActiveDeviceCount", Model.ActiveDeviceCount]
+                    </span>
+                </div>
+                <p class="small text-muted mb-0">@L["PrintBridge.ExtraDevicesPaidLater"]</p>
+
+                @if (Model.ActiveCountExceedsLimit)
+                {
+                    <div class="alert alert-warning small py-2 mt-3 mb-0" role="alert">
+                        <div class="fw-semibold">@L["PrintBridge.DeviceLimitExceededWarning"]</div>
+                        <div class="mt-1">@L["PrintBridge.DeactivateExtraDevices"]</div>
+                    </div>
+                }
+                else if (atLimit)
+                {
+                    <div class="alert alert-info small py-2 mt-3 mb-0" role="alert">
+                        @L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount]
+                    </div>
+                }
+                else if (nearLimit)
+                {
+                    <div class="alert alert-info small py-2 mt-3 mb-0" role="alert">
+                        @L["PrintBridge.IncludedDevicesNearLimit", Model.ActiveDeviceCount, Model.AllowedActiveDeviceCount]
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-2"><i class="bi bi-download me-1 text-primary"></i>@L["PrintBridge.DownloadButton"]</h2>
+                <p class="text-muted small mb-3">@L["PrintBridge.DownloadPlaceholderNotice"]</p>
+                <a class="btn btn-primary btn-sm" href="@Model.PackageDownloadUrl">
+                    <i class="bi bi-box-arrow-down me-1"></i>@L["PrintBridge.DownloadButton"]
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-2"><i class="bi bi-list-ol me-1 text-primary"></i>@L["PrintBridge.SetupTitle"]</h2>
+                <ol class="small mb-0 ps-3">
+                    <li class="mb-2">@L["PrintBridge.SetupStepDownload"]</li>
+                    <li class="mb-2">@L["PrintBridge.SetupStepInstallOnWindowsPc"]</li>
+                    <li class="mb-2">@L["PrintBridge.SetupStepPrinter"]</li>
+                    <li class="mb-2">@L["PrintBridge.SetupStepToken"] <a href="@Model.DevicesUrl">@L["PrintBridge.NavDevices"]</a></li>
+                    <li class="mb-2">@L["PrintBridge.SetupStepConfigure"]</li>
+                    <li class="mb-2">@L["PrintBridge.SetupStepStartBridge"]</li>
+                    <li>@L["PrintBridge.SetupStepTestOrder"]</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                    <h2 class="h6 mb-0"><i class="bi bi-terminal me-1 text-primary"></i>@L["PrintBridge.PrinterNameHelper"]</h2>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="pbSetupCopyPsBtn">
+                        <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyPowerShellCommand"]
+                    </button>
+                </div>
+                <p class="text-muted small mb-2">@L["PrintBridge.PrinterNameHelperDescription"]</p>
+                <pre class="small bg-body-secondary rounded p-2 mb-0 font-monospace" id="pbSetupPsCommand">@Model.PowerShellPrinterCommand</pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                    <h2 class="h6 mb-0"><i class="bi bi-file-earmark-code me-1 text-primary"></i>@L["PrintBridge.ExampleConfig"]</h2>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="pbSetupCopyConfigBtn">
+                        <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyExampleConfig"]
+                    </button>
+                </div>
+                <p class="text-muted small mb-2">@L["PrintBridge.ExampleConfigHelp"]</p>
+                <pre class="small bg-body-secondary rounded p-3 mb-0 font-monospace" id="pbSetupExampleConfig">@Model.ExampleConfigJson</pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card oh-card">
+            <div class="card-body">
+                <h2 class="h6 mb-1"><i class="bi bi-receipt-cutoff me-1 text-primary"></i>@L["PrintBridge.ReceiptAutomationSettings"]</h2>
+                <p class="text-muted small mb-3">@L["PrintBridge.ReceiptAutomationSettingsHelp"]</p>
+
+                <form id="printBridgeSetupOrderSettingsForm" class="d-none" method="post" action="/print-bridge/order-settings">
+                    @Html.AntiForgeryToken()
+                </form>
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-4">
+                        <div class="border rounded p-3 h-100">
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="small fw-semibold">@L["Orders.AutoApprove"]</span>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="pbSetupAutoApproveToggle"
+                                           @(Model.AutoApproveNewOrders ? "checked" : null) />
+                                </div>
+                            </div>
+                            <p class="text-muted small mb-2">@L["PrintBridge.AutoApproveHelp"]</p>
+                            <span id="pbSetupAutoApproveBadge" class="badge @(Model.AutoApproveNewOrders ? "text-bg-success" : "text-bg-secondary")">
+                                @(Model.AutoApproveNewOrders ? L["Orders.Active"] : L["Orders.Passive"])
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="border rounded p-3 h-100">
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="small fw-semibold">@L["Orders.AutoPrintReceipt"]</span>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="pbSetupAutoPrintToggle"
+                                           @(Model.AutoPrintReceiptOnAutoApprove ? "checked" : null) />
+                                </div>
+                            </div>
+                            <p class="text-muted small mb-2">@L["PrintBridge.AutoPrintAfterApproveHelp"]</p>
+                            <span id="pbSetupAutoPrintBadge" class="badge @(Model.AutoPrintReceiptOnAutoApprove ? "text-bg-success" : "text-bg-secondary")">
+                                @(Model.AutoPrintReceiptOnAutoApprove ? L["Orders.Active"] : L["Orders.Passive"])
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="border rounded p-3 h-100">
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="small fw-semibold">@L["Orders.ReceiptPrintCopyCount"]</span>
+                                <select id="pbSetupReceiptCopyCountSelect" class="form-select form-select-sm" style="width: 4.5rem;">
+                                    @for (var copy = 1; copy <= 3; copy++)
+                                    {
+                                        if (Model.ReceiptPrintCopyCount == copy)
+                                        {
+                                            <option value="@copy" selected>@copy</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@copy">@copy</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <p class="text-muted small mb-0">@L["PrintBridge.ReceiptCopyCountHelp"]</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.OrderHubPrintBridgeSetup = {
+            messages: @Html.Raw(setupMessagesJson),
+            exampleConfig: @Html.Raw(JsonSerializer.Serialize(Model.ExampleConfigJson)),
+            powerShellCommand: @Html.Raw(JsonSerializer.Serialize(Model.PowerShellPrinterCommand)),
+            orderSettingsUrl: "/print-bridge/order-settings"
+        };
+    </script>
+    <script src="~/js/print-bridge/print-bridge-setup.js" asp-append-version="true"></script>
+}

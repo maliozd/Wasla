@@ -1453,7 +1453,37 @@
     <value>Copy token</value>
   </data>
   <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
-    <value>This token is shown only once. Copy and save it into your Print Bridge configuration.</value>
+    <value>This token is shown only once. Copy and save it into your Print Bridge configuration. If you lose it, regenerate the token.</value>
+  </data>
+  <data name="PrintBridge.TokenCreated" xml:space="preserve">
+    <value>Print Bridge token created</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
+    <value>Print Bridge token regenerated</value>
+  </data>
+  <data name="PrintBridge.TokenCopied" xml:space="preserve">
+    <value>Copied</value>
+  </data>
+  <data name="PrintBridge.TokenCopyFailed" xml:space="preserve">
+    <value>Could not copy token</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerateWarning" xml:space="preserve">
+    <value>The old token will stop working. Update your Print Bridge configuration with the new token.</value>
+  </data>
+  <data name="PrintBridge.OldTokenInvalidAfterRegenerate" xml:space="preserve">
+    <value>The old token is no longer valid. Save the new token in your Print Bridge configuration.</value>
+  </data>
+  <data name="PrintBridge.TokenNotAvailableRegenerate" xml:space="preserve">
+    <value>Token is not visible. Regenerate the token to see a new one.</value>
+  </data>
+  <data name="PrintBridge.ConfirmRegenerateToken" xml:space="preserve">
+    <value>Regenerate token for {0}?</value>
+  </data>
+  <data name="PrintBridge.Token" xml:space="preserve">
+    <value>Token</value>
+  </data>
+  <data name="PrintBridge.DismissTokenBox" xml:space="preserve">
+    <value>Close token box</value>
   </data>
   <data name="PrintBridge.TokenMasked" xml:space="preserve">
     <value>Token is no longer visible. Regenerate the token to see a new one.</value>
@@ -1513,7 +1543,7 @@
     <value>Could not update device.</value>
   </data>
   <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
-    <value>Your current plan includes 1 receipt printer connection. Additional connections will be billed later.</value>
+    <value>Your current plan includes {0} active Print Bridge devices. Additional connections will be available later as a paid add-on.</value>
   </data>
   <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
     <value>Active device count exceeds the current limit. Please deactivate extra devices.</value>
@@ -1565,5 +1595,80 @@
   </data>
   <data name="PrintBridge.OverviewDevicesTitle" xml:space="preserve">
     <value>Devices</value>
+  </data>
+  <data name="PrintBridge.NavDevices" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="PrintBridge.NavSetup" xml:space="preserve">
+    <value>Setup</value>
+  </data>
+  <data name="PrintBridge.DownloadTitle" xml:space="preserve">
+    <value>OrderHub Print Bridge Setup</value>
+  </data>
+  <data name="PrintBridge.DownloadDescription" xml:space="preserve">
+    <value>OrderHub Print Bridge is the local Windows app on your restaurant PC for automatic USB receipt printing.</value>
+  </data>
+  <data name="PrintBridge.DownloadRunsOnWindowsPc" xml:space="preserve">
+    <value>The browser does not need to stay open while Print Bridge is running.</value>
+  </data>
+  <data name="PrintBridge.DownloadBadgeUsb" xml:space="preserve">
+    <value>USB receipt printing</value>
+  </data>
+  <data name="PrintBridge.DownloadButton" xml:space="preserve">
+    <value>Download placeholder package</value>
+  </data>
+  <data name="PrintBridge.SetupStepInstallOnWindowsPc" xml:space="preserve">
+    <value>Install or run it on the Windows PC connected to the USB receipt printer.</value>
+  </data>
+  <data name="PrintBridge.SetupStepConfigure" xml:space="preserve">
+    <value>Set BaseUrl, AgentToken, and PrinterName in your Print Bridge configuration.</value>
+  </data>
+  <data name="PrintBridge.SetupStepStartBridge" xml:space="preserve">
+    <value>Start the Print Bridge application.</value>
+  </data>
+  <data name="PrintBridge.SetupStepTestOrder" xml:space="preserve">
+    <value>Test printing with a new order.</value>
+  </data>
+  <data name="PrintBridge.PrinterNameHelper" xml:space="preserve">
+    <value>Find Windows printer name</value>
+  </data>
+  <data name="PrintBridge.PrinterNameHelperDescription" xml:space="preserve">
+    <value>Run this PowerShell command to find your printer name.</value>
+  </data>
+  <data name="PrintBridge.ExampleConfig" xml:space="preserve">
+    <value>Example configuration</value>
+  </data>
+  <data name="PrintBridge.ExampleConfigHelp" xml:space="preserve">
+    <value>Replace AgentToken with the token you create on the Devices page.</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesTitle" xml:space="preserve">
+    <value>Included device limit</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesDescription" xml:space="preserve">
+    <value>Your plan includes the active Print Bridge device count shown below.</value>
+  </data>
+  <data name="PrintBridge.IncludedDeviceCount" xml:space="preserve">
+    <value>Included: {0} active devices</value>
+  </data>
+  <data name="PrintBridge.ExtraDevicesPaidLater" xml:space="preserve">
+    <value>Additional printer or device connections may require a paid add-on later.</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesNearLimit" xml:space="preserve">
+    <value>{0} of {1} active devices in use. You are approaching the limit.</value>
+  </data>
+  <data name="PrintBridge.ReceiptAutomationSettings" xml:space="preserve">
+    <value>Receipt automation settings</value>
+  </data>
+  <data name="PrintBridge.ReceiptAutomationSettingsHelp" xml:space="preserve">
+    <value>Configure automatic approval and receipt printing after approval.</value>
+  </data>
+  <data name="PrintBridge.AutoApproveHelp" xml:space="preserve">
+    <value>Automatically approves newly received orders.</value>
+  </data>
+  <data name="PrintBridge.AutoPrintAfterApproveHelp" xml:space="preserve">
+    <value>Creates a receipt print job after automatic approval.</value>
+  </data>
+  <data name="PrintBridge.ReceiptCopyCountHelp" xml:space="preserve">
+    <value>Number of receipt copies to generate for each print job (1–3).</value>
   </data>
 </root>

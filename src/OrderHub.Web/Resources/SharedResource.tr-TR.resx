@@ -1453,7 +1453,37 @@
     <value>Token kopyala</value>
   </data>
   <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
-    <value>Bu token yalnızca bir kez gösterilir. Print Bridge yapılandırmasına kopyalayıp kaydedin.</value>
+    <value>Bu token yalnızca bir kez gösterilir. Print Bridge yapılandırmasına kopyalayıp kaydedin. Kaybederseniz token yenileyin.</value>
+  </data>
+  <data name="PrintBridge.TokenCreated" xml:space="preserve">
+    <value>Print Bridge token oluşturuldu</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
+    <value>Print Bridge token yenilendi</value>
+  </data>
+  <data name="PrintBridge.TokenCopied" xml:space="preserve">
+    <value>Kopyalandı</value>
+  </data>
+  <data name="PrintBridge.TokenCopyFailed" xml:space="preserve">
+    <value>Token kopyalanamadı</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerateWarning" xml:space="preserve">
+    <value>Eski token artık çalışmayacaktır. Print Bridge yapılandırmasını yeni token ile güncelleyin.</value>
+  </data>
+  <data name="PrintBridge.OldTokenInvalidAfterRegenerate" xml:space="preserve">
+    <value>Eski token geçersizdir. Yeni tokenı Print Bridge yapılandırmasına kaydedin.</value>
+  </data>
+  <data name="PrintBridge.TokenNotAvailableRegenerate" xml:space="preserve">
+    <value>Token görüntülenemez. Görüntülemek için token yenileyin.</value>
+  </data>
+  <data name="PrintBridge.ConfirmRegenerateToken" xml:space="preserve">
+    <value>{0} için token yenilensin mi?</value>
+  </data>
+  <data name="PrintBridge.Token" xml:space="preserve">
+    <value>Token</value>
+  </data>
+  <data name="PrintBridge.DismissTokenBox" xml:space="preserve">
+    <value>Token kutusunu kapat</value>
   </data>
   <data name="PrintBridge.TokenMasked" xml:space="preserve">
     <value>Token artık görüntülenemez. Yeniden görmek için token yenileyin.</value>
@@ -1513,7 +1543,7 @@
     <value>Cihaz güncellenemedi.</value>
   </data>
   <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
-    <value>Mevcut paketinizde 1 fiş yazıcı bağlantısı bulunmaktadır. Ek bağlantılar daha sonra ücretlendirilecektir.</value>
+    <value>Mevcut paketinizde {0} aktif Print Bridge cihazı bulunmaktadır. Ek bağlantılar daha sonra ücretlendirilecektir.</value>
   </data>
   <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
     <value>Aktif cihaz sayısı mevcut limitin üzerinde. Lütfen fazla cihazları pasifleştirin.</value>
@@ -1565,5 +1595,80 @@
   </data>
   <data name="PrintBridge.OverviewDevicesTitle" xml:space="preserve">
     <value>Cihazlar</value>
+  </data>
+  <data name="PrintBridge.NavDevices" xml:space="preserve">
+    <value>Cihazlar</value>
+  </data>
+  <data name="PrintBridge.NavSetup" xml:space="preserve">
+    <value>Kurulum</value>
+  </data>
+  <data name="PrintBridge.DownloadTitle" xml:space="preserve">
+    <value>OrderHub Print Bridge Kurulumu</value>
+  </data>
+  <data name="PrintBridge.DownloadDescription" xml:space="preserve">
+    <value>OrderHub Print Bridge, USB fiş yazıcısından otomatik yazdırma için restoran bilgisayarında çalışan yerel Windows uygulamasıdır.</value>
+  </data>
+  <data name="PrintBridge.DownloadRunsOnWindowsPc" xml:space="preserve">
+    <value>Print Bridge çalışırken tarayıcının açık kalması gerekmez.</value>
+  </data>
+  <data name="PrintBridge.DownloadBadgeUsb" xml:space="preserve">
+    <value>USB fiş yazdırma</value>
+  </data>
+  <data name="PrintBridge.DownloadButton" xml:space="preserve">
+    <value>Yer tutucu paketi indir</value>
+  </data>
+  <data name="PrintBridge.SetupStepInstallOnWindowsPc" xml:space="preserve">
+    <value>USB fiş yazıcısına bağlı Windows bilgisayarda kurun veya çalıştırın.</value>
+  </data>
+  <data name="PrintBridge.SetupStepConfigure" xml:space="preserve">
+    <value>Print Bridge yapılandırmasında BaseUrl, AgentToken ve PrinterName değerlerini ayarlayın.</value>
+  </data>
+  <data name="PrintBridge.SetupStepStartBridge" xml:space="preserve">
+    <value>Print Bridge uygulamasını başlatın.</value>
+  </data>
+  <data name="PrintBridge.SetupStepTestOrder" xml:space="preserve">
+    <value>Yeni bir sipariş ile fiş yazdırmayı test edin.</value>
+  </data>
+  <data name="PrintBridge.PrinterNameHelper" xml:space="preserve">
+    <value>Windows yazıcı adını bulma</value>
+  </data>
+  <data name="PrintBridge.PrinterNameHelperDescription" xml:space="preserve">
+    <value>PowerShell'de aşağıdaki komutu çalıştırarak yazıcı adını bulun.</value>
+  </data>
+  <data name="PrintBridge.ExampleConfig" xml:space="preserve">
+    <value>Örnek yapılandırma</value>
+  </data>
+  <data name="PrintBridge.ExampleConfigHelp" xml:space="preserve">
+    <value>AgentToken değerini Cihazlar sayfasından oluşturduğunuz token ile değiştirin.</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesTitle" xml:space="preserve">
+    <value>Dahil cihaz limiti</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesDescription" xml:space="preserve">
+    <value>Paketinize dahil olan aktif Print Bridge cihaz sayısı aşağıdadır.</value>
+  </data>
+  <data name="PrintBridge.IncludedDeviceCount" xml:space="preserve">
+    <value>Dahil: {0} aktif cihaz</value>
+  </data>
+  <data name="PrintBridge.ExtraDevicesPaidLater" xml:space="preserve">
+    <value>Bundan fazla yazıcı veya cihaz bağlantısı ileride ücretli eklenti olarak sunulabilir.</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesNearLimit" xml:space="preserve">
+    <value>{0} / {1} aktif cihaz kullanılıyor. Limite yaklaşıyorsunuz.</value>
+  </data>
+  <data name="PrintBridge.ReceiptAutomationSettings" xml:space="preserve">
+    <value>Fiş otomasyonu ayarları</value>
+  </data>
+  <data name="PrintBridge.ReceiptAutomationSettingsHelp" xml:space="preserve">
+    <value>Yeni siparişlerin otomatik onayı ve onay sonrası fiş yazdırma akışını yapılandırın.</value>
+  </data>
+  <data name="PrintBridge.AutoApproveHelp" xml:space="preserve">
+    <value>Yeni gelen siparişleri otomatik olarak onaylar.</value>
+  </data>
+  <data name="PrintBridge.AutoPrintAfterApproveHelp" xml:space="preserve">
+    <value>Otomatik onay sonrası fiş yazdırma işi oluşturur.</value>
+  </data>
+  <data name="PrintBridge.ReceiptCopyCountHelp" xml:space="preserve">
+    <value>Her fiş için oluşturulacak kopya sayısı (1–3).</value>
   </data>
 </root>
