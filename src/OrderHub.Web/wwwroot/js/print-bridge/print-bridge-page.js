@@ -157,13 +157,13 @@
   }
 
   function formatLastSeen(iso) {
-    if (!iso) return messages.emptyValue || "—";
+    if (!iso) return messages.lastSeenNever || messages.emptyValue || "—";
     try {
       var d = new Date(iso);
-      if (isNaN(d.getTime())) return messages.emptyValue || "—";
+      if (isNaN(d.getTime())) return messages.lastSeenNever || messages.emptyValue || "—";
       return d.toLocaleString();
     } catch (_) {
-      return messages.emptyValue || "—";
+      return messages.lastSeenNever || messages.emptyValue || "—";
     }
   }
 
@@ -173,13 +173,21 @@
   }
 
   function deviceStatusBadge(device) {
-    if (!device.isActive) {
-      return { cls: "text-bg-secondary", text: messages.inactive || "Inactive" };
+    var status = device.connectionStatus || (device.isConnected ? "Connected" : "Disconnected");
+    switch (status) {
+      case "Inactive":
+        return { cls: "text-bg-secondary", text: messages.statusInactive || "Inactive" };
+      case "NeverConnected":
+        return { cls: "text-bg-warning", text: messages.statusNeverConnected || "Never connected" };
+      case "Connected":
+        return { cls: "text-bg-success", text: messages.statusConnected || "Connected" };
+      case "RecentlySeen":
+        return { cls: "text-bg-info", text: messages.statusRecentlySeen || "Recently seen" };
+      case "Disconnected":
+        return { cls: "text-bg-warning", text: messages.statusDisconnected || "Disconnected" };
+      default:
+        return { cls: "text-bg-secondary", text: messages.statusDisconnected || "Disconnected" };
     }
-    if (device.isConnected) {
-      return { cls: "text-bg-success", text: messages.connected || "Connected" };
-    }
-    return { cls: "text-bg-warning", text: messages.notConnected || "Not connected" };
   }
 
   function renderOverview(devices, quota) {
@@ -194,7 +202,7 @@
     var allowedCount = quota.allowedActiveDeviceCount != null ? quota.allowedActiveDeviceCount : 1;
     var connectedCount = quota.connectedDeviceCount != null
       ? quota.connectedDeviceCount
-      : devices.filter(function (d) { return d.isActive && d.isConnected; }).length;
+      : devices.filter(function (d) { return d.connectionStatus === "Connected" || d.isConnected; }).length;
     var exceeds = !!quota.activeCountExceedsLimit;
     var latestLastSeen = quota.latestLastSeenAtUtc || null;
 
@@ -214,9 +222,9 @@
       } else {
         badge.classList.remove("d-none");
         badge.textContent = overallConnected
-          ? (messages.connected || "Connected")
-          : (messages.notConnected || "Not connected");
-        badge.classList.remove("text-bg-success", "text-bg-secondary", "text-bg-warning");
+          ? (messages.statusConnected || "Connected")
+          : (messages.statusDisconnected || "Disconnected");
+        badge.classList.remove("text-bg-success", "text-bg-secondary", "text-bg-warning", "text-bg-info");
         badge.classList.add(overallConnected ? "text-bg-success" : "text-bg-secondary");
       }
     }
@@ -295,11 +303,17 @@
     }
 
     var rows = devices.map(function (device) {
+      var connection = deviceStatusBadge(device);
       var activeBadgeCls = device.isActive ? "text-bg-success" : "text-bg-secondary";
       var activeText = device.isActive ? (messages.ordersActive || "Active") : (messages.ordersPassive || "Passive");
       return (
         '<tr data-device-id="' + escapeHtml(device.id) + '">' +
-          '<td>' + escapeHtml(device.name) + '</td>' +
+          '<td class="fw-semibold">' + escapeHtml(device.name) + '</td>' +
+          '<td><span class="badge ' + connection.cls + '">' + escapeHtml(connection.text) + '</span></td>' +
+          '<td class="text-muted small">' + escapeHtml(formatLastSeen(device.lastSeenAtUtc)) + '</td>' +
+          '<td class="text-muted small">' + escapeHtml(displayValue(device.machineName)) + '</td>' +
+          '<td class="text-muted small">' + escapeHtml(displayValue(device.printerName)) + '</td>' +
+          '<td class="text-muted small">' + escapeHtml(displayValue(device.appVersion)) + '</td>' +
           '<td>' +
             '<div class="d-flex align-items-center gap-2">' +
               '<span class="badge ' + activeBadgeCls + ' pb-device-active-badge">' + escapeHtml(activeText) + '</span>' +
@@ -309,7 +323,6 @@
               '</div>' +
             '</div>' +
           '</td>' +
-          '<td class="text-muted small">' + escapeHtml(messages.tokenNotAvailableRegenerate || "") + '</td>' +
           '<td class="text-end">' +
             '<button type="button" class="btn btn-sm btn-outline-secondary pb-regenerate-token-btn" ' +
               'data-device-id="' + escapeHtml(device.id) + '" data-device-name="' + escapeHtml(device.name) + '">' +
@@ -325,8 +338,12 @@
         '<table class="table table-sm align-middle mb-0">' +
           '<thead><tr>' +
             '<th>' + escapeHtml(messages.deviceName || "Device") + '</th>' +
-            '<th>' + escapeHtml(messages.status || "Status") + '</th>' +
-            '<th>' + escapeHtml(messages.tokenColumn || "Token") + '</th>' +
+            '<th>' + escapeHtml(messages.connectionStatus || "Connection") + '</th>' +
+            '<th>' + escapeHtml(messages.lastSeen || "Last seen") + '</th>' +
+            '<th>' + escapeHtml(messages.machineName || "Machine") + '</th>' +
+            '<th>' + escapeHtml(messages.printerName || "Printer") + '</th>' +
+            '<th>' + escapeHtml(messages.appVersion || "Version") + '</th>' +
+            '<th>' + escapeHtml(messages.deviceActive || "Active") + '</th>' +
             '<th class="text-end">' + escapeHtml(messages.actions || "Actions") + '</th>' +
           '</tr></thead>' +
           '<tbody id="printBridgeDevicesTableBody">' + rows + '</tbody>' +

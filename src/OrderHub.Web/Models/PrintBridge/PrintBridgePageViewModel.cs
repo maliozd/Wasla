@@ -1,3 +1,5 @@
+using OrderHub.Application.Abstractions.Printing;
+
 namespace OrderHub.Web.Models.PrintBridge;
 
 public sealed class PrintBridgePageViewModel
@@ -18,9 +20,12 @@ public sealed class PrintBridgeDeviceRowViewModel
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public bool IsActive { get; set; }
-    public bool IsConnected { get; set; }
+    public PrintBridgeConnectionStatus ConnectionStatus { get; set; }
+    public string ConnectionStatusLabelKey { get; set; } = string.Empty;
     public DateTime? LastSeenAtUtc { get; set; }
     public string? MachineName { get; set; }
     public string? PrinterName { get; set; }
     public string? AppVersion { get; set; }
+
+    public bool IsConnected => ConnectionStatus == PrintBridgeConnectionStatus.Connected;
 }

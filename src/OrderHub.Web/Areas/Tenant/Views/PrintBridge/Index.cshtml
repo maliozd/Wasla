@@ -10,6 +10,8 @@
         id = d.Id,
         name = d.Name,
         isActive = d.IsActive,
+        connectionStatus = d.ConnectionStatus.ToString(),
+        connectionStatusLabelKey = d.ConnectionStatusLabelKey,
         isConnected = d.IsConnected,
         lastSeenAtUtc = d.LastSeenAtUtc,
         machineName = d.MachineName,
@@ -17,7 +19,7 @@
         appVersion = d.AppVersion
     });
 
-    var initialConnectedCount = Model.Devices.Count(d => d.IsActive && d.IsConnected);
+    var initialConnectedCount = Model.Devices.Count(d => d.IsConnected);
     var initialLatestLastSeen = Model.Devices
         .Where(d => d.LastSeenAtUtc.HasValue)
         .Select(d => d.LastSeenAtUtc)
@@ -60,10 +62,15 @@
         deactivateExtraDevices = L["PrintBridge.DeactivateExtraDevices"].Value,
         noDevicesYet = L["PrintBridge.NoDevicesYet"].Value,
         createFirstDevice = L["PrintBridge.CreateFirstDevice"].Value,
-        connected = L["PrintBridge.Connected"].Value,
-        notConnected = L["PrintBridge.NotConnected"].Value,
-        inactive = L["PrintBridge.Inactive"].Value,
+        statusConnected = L["PrintBridge.StatusConnected"].Value,
+        statusRecentlySeen = L["PrintBridge.StatusRecentlySeen"].Value,
+        statusDisconnected = L["PrintBridge.StatusDisconnected"].Value,
+        statusNeverConnected = L["PrintBridge.StatusNeverConnected"].Value,
+        statusInactive = L["PrintBridge.StatusInactive"].Value,
         lastSeen = L["PrintBridge.LastSeen"].Value,
+        lastSeenNever = L["PrintBridge.LastSeenNever"].Value,
+        connectionStatus = L["PrintBridge.ConnectionStatus"].Value,
+        deviceActive = L["PrintBridge.DeviceActive"].Value,
         activeDeviceCount = L["PrintBridge.ActiveDeviceCount"].Value,
         connectedDeviceCount = L["PrintBridge.ConnectedDeviceCount"].Value,
         allowedDeviceCountLabel = L["PrintBridge.AllowedDeviceCountLabel"].Value,

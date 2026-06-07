@@ -1587,6 +1587,30 @@
   <data name="PrintBridge.Inactive" xml:space="preserve">
     <value>غير نشط</value>
   </data>
+  <data name="PrintBridge.StatusConnected" xml:space="preserve">
+    <value>متصل</value>
+  </data>
+  <data name="PrintBridge.StatusRecentlySeen" xml:space="preserve">
+    <value>شوهد مؤخرًا</value>
+  </data>
+  <data name="PrintBridge.StatusDisconnected" xml:space="preserve">
+    <value>غير متصل</value>
+  </data>
+  <data name="PrintBridge.StatusNeverConnected" xml:space="preserve">
+    <value>لم يتصل أبدًا</value>
+  </data>
+  <data name="PrintBridge.StatusInactive" xml:space="preserve">
+    <value>غير نشط</value>
+  </data>
+  <data name="PrintBridge.LastSeenNever" xml:space="preserve">
+    <value>أبدًا</value>
+  </data>
+  <data name="PrintBridge.ConnectionStatus" xml:space="preserve">
+    <value>الاتصال</value>
+  </data>
+  <data name="PrintBridge.DeviceActive" xml:space="preserve">
+    <value>نشط</value>
+  </data>
   <data name="PrintBridge.OverviewLastSeen" xml:space="preserve">
     <value>آخر ظهور: {0}</value>
   </data>

@@ -56,7 +56,6 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
         }
 
         var now = DateTime.UtcNow;
-        var changed = false;
 
         if (!string.IsNullOrWhiteSpace(clientInfo.BridgeName))
         {
@@ -64,37 +63,22 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
             if (machineName.Length > 200)
                 machineName = machineName[..200];
 
-            if (device.MachineName != machineName)
-            {
-                device.MachineName = machineName;
-                changed = true;
-            }
+            device.MachineName = machineName;
         }
 
         if (!string.IsNullOrWhiteSpace(clientInfo.AppVersion))
-        {
             device.AppVersion = clientInfo.AppVersion.Trim();
-            changed = true;
-        }
 
         if (!string.IsNullOrWhiteSpace(clientInfo.PrinterName))
-        {
             device.PrinterName = clientInfo.PrinterName.Trim();
-            changed = true;
-        }
 
         if (!string.IsNullOrWhiteSpace(clientInfo.IpAddress))
-        {
             device.LastIpAddress = clientInfo.IpAddress.Trim();
-            changed = true;
-        }
 
         device.LastSeenAt = now;
         device.UpdatedAt = now;
-        changed = true;
 
-        if (changed)
-            await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
+        await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogDebug(
             "Print Bridge authenticated. DeviceId={DeviceId}, CustomerId={CustomerId}",

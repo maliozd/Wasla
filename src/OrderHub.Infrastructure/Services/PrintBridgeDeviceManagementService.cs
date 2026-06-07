@@ -9,8 +9,6 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManagementService
 {
-    private static readonly TimeSpan ConnectedThreshold = TimeSpan.FromMinutes(5);
-
     private readonly CentralDbContext _centralDb;
     private readonly ILogger<PrintBridgeDeviceManagementService> _logger;
 
@@ -53,7 +51,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
             d.MachineName,
             d.PrinterName,
             d.AppVersion,
-            d.IsActive && d.LastSeenAt.HasValue && now - d.LastSeenAt.Value <= ConnectedThreshold))
+            PrintBridgeConnectionStatusCalculator.Calculate(d.IsActive, d.LastSeenAt, now)))
             .ToList();
     }
 

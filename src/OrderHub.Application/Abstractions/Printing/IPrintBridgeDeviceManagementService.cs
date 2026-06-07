@@ -8,7 +8,13 @@ public sealed record PrintBridgeDeviceSummaryDto(
     string? MachineName,
     string? PrinterName,
     string? AppVersion,
-    bool IsConnected);
+    PrintBridgeConnectionStatus ConnectionStatus)
+{
+    public string ConnectionStatusLabelKey =>
+        PrintBridgeConnectionStatusCalculator.GetLabelKey(ConnectionStatus);
+
+    public bool IsConnected => ConnectionStatus == PrintBridgeConnectionStatus.Connected;
+}
 
 public sealed record PrintBridgeDeviceQuotaDto(
     int AllowedActiveDeviceCount,

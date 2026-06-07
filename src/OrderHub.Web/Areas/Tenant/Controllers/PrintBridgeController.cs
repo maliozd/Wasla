@@ -285,7 +285,8 @@ public sealed class PrintBridgeController : BaseController
             Id = d.Id,
             Name = d.Name,
             IsActive = d.IsActive,
-            IsConnected = d.IsConnected,
+            ConnectionStatus = d.ConnectionStatus,
+            ConnectionStatusLabelKey = d.ConnectionStatusLabelKey,
             LastSeenAtUtc = d.LastSeenAtUtc,
             MachineName = d.MachineName,
             PrinterName = d.PrinterName,
@@ -298,6 +299,8 @@ public sealed class PrintBridgeController : BaseController
             id = d.Id,
             name = d.Name,
             isActive = d.IsActive,
+            connectionStatus = d.ConnectionStatus.ToString(),
+            connectionStatusLabelKey = d.ConnectionStatusLabelKey,
             isConnected = d.IsConnected,
             lastSeenAtUtc = d.LastSeenAtUtc,
             machineName = d.MachineName,
@@ -309,7 +312,7 @@ public sealed class PrintBridgeController : BaseController
         PrintBridgeDeviceQuotaDto quota,
         IReadOnlyList<PrintBridgeDeviceSummaryDto>? devices = null)
     {
-        var connectedCount = devices?.Count(d => d.IsActive && d.IsConnected) ?? 0;
+        var connectedCount = devices?.Count(d => d.ConnectionStatus == PrintBridgeConnectionStatus.Connected) ?? 0;
         DateTime? latestLastSeen = devices?
             .Where(d => d.LastSeenAtUtc.HasValue)
             .Select(d => d.LastSeenAtUtc!.Value)

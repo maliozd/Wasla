@@ -1587,6 +1587,30 @@
   <data name="PrintBridge.Inactive" xml:space="preserve">
     <value>Inactive</value>
   </data>
+  <data name="PrintBridge.StatusConnected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="PrintBridge.StatusRecentlySeen" xml:space="preserve">
+    <value>Recently seen</value>
+  </data>
+  <data name="PrintBridge.StatusDisconnected" xml:space="preserve">
+    <value>Disconnected</value>
+  </data>
+  <data name="PrintBridge.StatusNeverConnected" xml:space="preserve">
+    <value>Never connected</value>
+  </data>
+  <data name="PrintBridge.StatusInactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="PrintBridge.LastSeenNever" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="PrintBridge.ConnectionStatus" xml:space="preserve">
+    <value>Connection</value>
+  </data>
+  <data name="PrintBridge.DeviceActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
   <data name="PrintBridge.OverviewLastSeen" xml:space="preserve">
     <value>Last seen: {0}</value>
   </data>

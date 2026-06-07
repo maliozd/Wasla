@@ -1587,6 +1587,30 @@
   <data name="PrintBridge.Inactive" xml:space="preserve">
     <value>Pasif</value>
   </data>
+  <data name="PrintBridge.StatusConnected" xml:space="preserve">
+    <value>Bağlı</value>
+  </data>
+  <data name="PrintBridge.StatusRecentlySeen" xml:space="preserve">
+    <value>Yakın zamanda görüldü</value>
+  </data>
+  <data name="PrintBridge.StatusDisconnected" xml:space="preserve">
+    <value>Bağlı değil</value>
+  </data>
+  <data name="PrintBridge.StatusNeverConnected" xml:space="preserve">
+    <value>Hiç bağlanmadı</value>
+  </data>
+  <data name="PrintBridge.StatusInactive" xml:space="preserve">
+    <value>Pasif</value>
+  </data>
+  <data name="PrintBridge.LastSeenNever" xml:space="preserve">
+    <value>Hiç</value>
+  </data>
+  <data name="PrintBridge.ConnectionStatus" xml:space="preserve">
+    <value>Bağlantı</value>
+  </data>
+  <data name="PrintBridge.DeviceActive" xml:space="preserve">
+    <value>Aktif</value>
+  </data>
   <data name="PrintBridge.OverviewLastSeen" xml:space="preserve">
     <value>Son görülme: {0}</value>
   </data>
