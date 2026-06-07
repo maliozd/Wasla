@@ -58,10 +58,17 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
         var now = DateTime.UtcNow;
         var changed = false;
 
-        if (!string.IsNullOrWhiteSpace(clientInfo.BridgeName) && device.Name != clientInfo.BridgeName)
+        if (!string.IsNullOrWhiteSpace(clientInfo.BridgeName))
         {
-            device.Name = clientInfo.BridgeName.Trim();
-            changed = true;
+            var machineName = clientInfo.BridgeName.Trim();
+            if (machineName.Length > 200)
+                machineName = machineName[..200];
+
+            if (device.MachineName != machineName)
+            {
+                device.MachineName = machineName;
+                changed = true;
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(clientInfo.AppVersion))
