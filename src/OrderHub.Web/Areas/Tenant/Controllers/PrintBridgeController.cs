@@ -71,7 +71,7 @@ public sealed class PrintBridgeController : BaseController
         return Ok(new
         {
             devices = deviceRows.Select(MapDeviceJson),
-            quota = MapQuotaJson(quota)
+            quota = MapQuotaJson(quota, deviceRows)
         });
     }
 
@@ -155,7 +155,7 @@ public sealed class PrintBridgeController : BaseController
                 message = _localizer["PrintBridge.DeviceCreatedSuccessfully"].Value,
                 tokenMessage = _localizer["PrintBridge.TokenCreatedCopyNow"].Value,
                 devices = deviceRows.Select(MapDeviceJson),
-                quota = MapQuotaJson(quota)
+                quota = MapQuotaJson(quota, deviceRows)
             });
         }
         catch (PrintBridgeDeviceLimitReachedException)
@@ -189,7 +189,7 @@ public sealed class PrintBridgeController : BaseController
                 token = result.RawToken,
                 tokenMessage = _localizer["PrintBridge.TokenCreatedCopyNow"].Value,
                 devices = deviceRows.Select(MapDeviceJson),
-                quota = MapQuotaJson(quota)
+                quota = MapQuotaJson(quota, deviceRows)
             });
         }
         catch (InvalidOperationException)
@@ -219,7 +219,7 @@ public sealed class PrintBridgeController : BaseController
                 success = true,
                 isActive,
                 devices = deviceRows.Select(MapDeviceJson),
-                quota = MapQuotaJson(quota)
+                quota = MapQuotaJson(quota, deviceRows)
             });
         }
         catch (PrintBridgeDeviceLimitReachedException)
@@ -339,12 +339,27 @@ public sealed class PrintBridgeController : BaseController
             appVersion = d.AppVersion
         };
 
-    private static object MapQuotaJson(PrintBridgeDeviceQuotaDto quota) =>
-        new
+    private static object MapQuotaJson(
+        PrintBridgeDeviceQuotaDto quota,
+        IReadOnlyList<PrintBridgeDeviceSummaryDto>? devices = null)
+    {
+        var connectedCount = devices?.Count(d => d.IsActive && d.IsConnected) ?? 0;
+        DateTime? latestLastSeen = devices?
+            .Where(d => d.LastSeenAtUtc.HasValue)
+            .Select(d => d.LastSeenAtUtc!.Value)
+            .DefaultIfEmpty()
+            .Max();
+        if (latestLastSeen == default)
+            latestLastSeen = null;
+
+        return new
         {
             allowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
             activeDeviceCount = quota.ActiveDeviceCount,
             canCreateActiveDevice = quota.CanCreateActiveDevice,
-            activeCountExceedsLimit = quota.ActiveCountExceedsLimit
+            activeCountExceedsLimit = quota.ActiveCountExceedsLimit,
+            connectedDeviceCount = connectedCount,
+            latestLastSeenAtUtc = latestLastSeen
         };
+    }
 }

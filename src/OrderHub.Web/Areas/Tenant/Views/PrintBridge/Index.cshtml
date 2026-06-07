@@ -17,12 +17,21 @@
         appVersion = d.AppVersion
     });
 
+    var initialConnectedCount = Model.Devices.Count(d => d.IsActive && d.IsConnected);
+    var initialLatestLastSeen = Model.Devices
+        .Where(d => d.LastSeenAtUtc.HasValue)
+        .Select(d => d.LastSeenAtUtc)
+        .OrderByDescending(d => d)
+        .FirstOrDefault();
+
     var initialQuota = new
     {
         allowedActiveDeviceCount = Model.AllowedActiveDeviceCount,
         activeDeviceCount = Model.ActiveDeviceCount,
         canCreateActiveDevice = Model.CanCreateActiveDevice,
-        activeCountExceedsLimit = Model.ActiveCountExceedsLimit
+        activeCountExceedsLimit = Model.ActiveCountExceedsLimit,
+        connectedDeviceCount = initialConnectedCount,
+        latestLastSeenAtUtc = initialLatestLastSeen
     };
 
     var pbMessages = new
@@ -50,8 +59,14 @@
         createFirstDevice = L["PrintBridge.CreateFirstDevice"].Value,
         connected = L["PrintBridge.Connected"].Value,
         notConnected = L["PrintBridge.NotConnected"].Value,
-        deviceInactive = L["PrintBridge.DeviceInactive"].Value,
+        inactive = L["PrintBridge.Inactive"].Value,
         lastSeen = L["PrintBridge.LastSeen"].Value,
+        activeDeviceCount = L["PrintBridge.ActiveDeviceCount"].Value,
+        connectedDeviceCount = L["PrintBridge.ConnectedDeviceCount"].Value,
+        allowedDeviceCountLabel = L["PrintBridge.AllowedDeviceCountLabel"].Value,
+        overviewLastSeen = L["PrintBridge.OverviewLastSeen"].Value,
+        overallConnectionStatus = L["PrintBridge.OverallConnectionStatus"].Value,
+        overviewDevicesTitle = L["PrintBridge.OverviewDevicesTitle"].Value,
         machineName = L["PrintBridge.MachineName"].Value,
         printerName = L["PrintBridge.PrinterName"].Value,
         appVersion = L["PrintBridge.AppVersion"].Value,

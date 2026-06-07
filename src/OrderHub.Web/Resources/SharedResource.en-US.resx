@@ -1545,4 +1545,25 @@
   <data name="PrintBridge.DeviceCreatedSuccessfully" xml:space="preserve">
     <value>Print Bridge device created.</value>
   </data>
+  <data name="PrintBridge.ActiveDeviceCount" xml:space="preserve">
+    <value>Active devices: {0}</value>
+  </data>
+  <data name="PrintBridge.ConnectedDeviceCount" xml:space="preserve">
+    <value>Connected devices: {0}</value>
+  </data>
+  <data name="PrintBridge.AllowedDeviceCountLabel" xml:space="preserve">
+    <value>Allowed: {0}</value>
+  </data>
+  <data name="PrintBridge.Inactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="PrintBridge.OverviewLastSeen" xml:space="preserve">
+    <value>Last seen: {0}</value>
+  </data>
+  <data name="PrintBridge.OverallConnectionStatus" xml:space="preserve">
+    <value>Overall connection status</value>
+  </data>
+  <data name="PrintBridge.OverviewDevicesTitle" xml:space="preserve">
+    <value>Devices</value>
+  </data>
 </root>

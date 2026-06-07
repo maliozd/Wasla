@@ -7,6 +7,11 @@
 
   var messages = cfg.messages || {};
   var currentToken = null;
+  var lastQuota = null;
+
+  function formatMsg(template, value) {
+    return String(template || "").replace("{0}", String(value == null ? "" : value));
+  }
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -132,7 +137,7 @@
 
   function deviceStatusBadge(device) {
     if (!device.isActive) {
-      return { cls: "text-bg-secondary", text: messages.deviceInactive || "Inactive" };
+      return { cls: "text-bg-secondary", text: messages.inactive || "Inactive" };
     }
     if (device.isConnected) {
       return { cls: "text-bg-success", text: messages.connected || "Connected" };
@@ -146,49 +151,100 @@
     if (!body) return;
 
     devices = devices || [];
-    var connectedCount = devices.filter(function (d) { return d.isActive && d.isConnected; }).length;
+    quota = quota || {};
 
+    var activeCount = quota.activeDeviceCount != null ? quota.activeDeviceCount : 0;
+    var allowedCount = quota.allowedActiveDeviceCount != null ? quota.allowedActiveDeviceCount : 1;
+    var connectedCount = quota.connectedDeviceCount != null
+      ? quota.connectedDeviceCount
+      : devices.filter(function (d) { return d.isActive && d.isConnected; }).length;
+    var exceeds = !!quota.activeCountExceedsLimit;
+    var latestLastSeen = quota.latestLastSeenAtUtc || null;
+
+    if (!latestLastSeen && devices.length > 0) {
+      devices.forEach(function (d) {
+        if (!d.lastSeenAtUtc) return;
+        if (!latestLastSeen || new Date(d.lastSeenAtUtc) > new Date(latestLastSeen)) {
+          latestLastSeen = d.lastSeenAtUtc;
+        }
+      });
+    }
+
+    var overallConnected = connectedCount > 0;
     if (badge) {
       if (devices.length === 0) {
         badge.classList.add("d-none");
       } else {
         badge.classList.remove("d-none");
-        badge.textContent = connectedCount > 0
+        badge.textContent = overallConnected
           ? (messages.connected || "Connected")
           : (messages.notConnected || "Not connected");
         badge.classList.remove("text-bg-success", "text-bg-secondary", "text-bg-warning");
-        badge.classList.add(connectedCount > 0 ? "text-bg-success" : "text-bg-secondary");
+        badge.classList.add(overallConnected ? "text-bg-success" : "text-bg-secondary");
       }
     }
 
     if (devices.length === 0) {
       body.innerHTML =
-        '<div class="text-center py-3">' +
-          '<p class="text-muted small mb-2">' + escapeHtml(messages.noDevicesYet || "") + '</p>' +
+        '<div class="text-center py-4">' +
+          '<i class="bi bi-printer text-muted fs-4 d-block mb-2" aria-hidden="true"></i>' +
+          '<p class="text-muted small mb-1">' + escapeHtml(messages.noDevicesYet || "") + '</p>' +
           '<p class="small mb-0">' + escapeHtml(messages.createFirstDevice || "") + '</p>' +
         '</div>';
       return;
     }
 
-    var rows = devices.map(function (device) {
+    var html = "";
+
+    if (exceeds) {
+      html +=
+        '<div class="alert alert-warning small py-2 mb-3" role="alert">' +
+          '<div class="fw-semibold">' + escapeHtml(messages.deviceLimitExceededWarning || "") + '</div>' +
+          '<div class="mt-1">' + escapeHtml(messages.deactivateExtraDevices || "") + '</div>' +
+        '</div>';
+    }
+
+    html +=
+      '<div class="border rounded p-2 mb-3 bg-body-tertiary">' +
+        '<div class="small fw-semibold mb-2">' + escapeHtml(messages.overallConnectionStatus || "") + '</div>' +
+        '<div class="row g-2 small">' +
+          '<div class="col-6 col-md-3">' +
+            '<div class="text-muted">' + escapeHtml(formatMsg(messages.activeDeviceCount, activeCount)) + '</div>' +
+          '</div>' +
+          '<div class="col-6 col-md-3">' +
+            '<div class="text-muted">' + escapeHtml(formatMsg(messages.allowedDeviceCountLabel, allowedCount)) + '</div>' +
+          '</div>' +
+          '<div class="col-6 col-md-3">' +
+            '<div class="text-muted">' + escapeHtml(formatMsg(messages.connectedDeviceCount, connectedCount)) + '</div>' +
+          '</div>' +
+          '<div class="col-6 col-md-3">' +
+            '<div class="text-muted">' + escapeHtml(formatMsg(messages.overviewLastSeen, formatLastSeen(latestLastSeen))) + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    html += '<div class="small text-muted text-uppercase mb-2">' + escapeHtml(messages.overviewDevicesTitle || "") + '</div>';
+
+    html += '<ul class="list-group list-group-flush small mb-0">';
+    devices.forEach(function (device) {
       var status = deviceStatusBadge(device);
-      return (
+      html +=
         '<li class="list-group-item px-0 py-2 border-0 border-bottom">' +
           '<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">' +
-            '<span class="small fw-semibold">' + escapeHtml(device.name) + '</span>' +
+            '<span class="fw-semibold">' + escapeHtml(device.name) + '</span>' +
             '<span class="badge ' + status.cls + '">' + escapeHtml(status.text) + '</span>' +
           '</div>' +
-          '<div class="small text-muted">' +
+          '<div class="text-muted">' +
             escapeHtml(messages.lastSeen || "Last seen") + ': ' + escapeHtml(formatLastSeen(device.lastSeenAtUtc)) +
             ' · ' + escapeHtml(messages.machineName || "Machine") + ': ' + escapeHtml(displayValue(device.machineName)) +
             ' · ' + escapeHtml(messages.printerName || "Printer") + ': ' + escapeHtml(displayValue(device.printerName)) +
             ' · ' + escapeHtml(messages.appVersion || "Version") + ': ' + escapeHtml(displayValue(device.appVersion)) +
           '</div>' +
-        '</li>'
-      );
-    }).join("");
+        '</li>';
+    });
+    html += '</ul>';
 
-    body.innerHTML = '<ul class="list-group list-group-flush small mb-0">' + rows + '</ul>';
+    body.innerHTML = html;
   }
 
   function renderDevicesTable(devices) {
@@ -244,6 +300,7 @@
 
   function updateQuotaUi(quota) {
     quota = quota || {};
+    lastQuota = quota;
     var canCreate = !!quota.canCreateActiveDevice;
     var exceeds = !!quota.activeCountExceedsLimit;
 
@@ -317,6 +374,9 @@
           var text = (e && e.message) || messages.tokenGenerateFailed || "Failed";
           showMessage(text, "danger");
           return refreshDevices();
+        })
+        .finally(function () {
+          if (lastQuota) updateQuotaUi(lastQuota);
         });
     });
   }

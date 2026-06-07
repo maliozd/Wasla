@@ -1545,4 +1545,25 @@
   <data name="PrintBridge.DeviceCreatedSuccessfully" xml:space="preserve">
     <value>تم إنشاء جهاز Print Bridge.</value>
   </data>
+  <data name="PrintBridge.ActiveDeviceCount" xml:space="preserve">
+    <value>الأجهزة النشطة: {0}</value>
+  </data>
+  <data name="PrintBridge.ConnectedDeviceCount" xml:space="preserve">
+    <value>الأجهزة المتصلة: {0}</value>
+  </data>
+  <data name="PrintBridge.AllowedDeviceCountLabel" xml:space="preserve">
+    <value>المسموح: {0}</value>
+  </data>
+  <data name="PrintBridge.Inactive" xml:space="preserve">
+    <value>غير نشط</value>
+  </data>
+  <data name="PrintBridge.OverviewLastSeen" xml:space="preserve">
+    <value>آخر ظهور: {0}</value>
+  </data>
+  <data name="PrintBridge.OverallConnectionStatus" xml:space="preserve">
+    <value>حالة الاتصال العامة</value>
+  </data>
+  <data name="PrintBridge.OverviewDevicesTitle" xml:space="preserve">
+    <value>الأجهزة</value>
+  </data>
 </root>
