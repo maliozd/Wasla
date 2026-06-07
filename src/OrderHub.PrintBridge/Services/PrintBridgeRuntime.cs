@@ -64,7 +64,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                     ? Environment.MachineName
                     : bridge.BridgeName,
                 DryRun = bridge.DryRun,
-                RecentJobs = _recentJobs.ToList()
+                RecentJobs = _recentJobs.Select(CloneRecord).ToList()
             };
         }
     }
@@ -193,7 +193,10 @@ public sealed class PrintBridgeRuntime : IDisposable
                 {
                     hadJobs = true;
                     foreach (var job in jobs)
+                    {
+                        RegisterJobReceived(job);
                         await ProcessJobAsync(job, stoppingToken).ConfigureAwait(false);
+                    }
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -231,19 +234,21 @@ public sealed class PrintBridgeRuntime : IDisposable
         _logger.LogInformation("OrderHub Print Bridge background loop stopped.");
     }
 
-    private async Task ProcessJobAsync(OrderHubPrintBridgeClient.PendingPrintJobDto job, CancellationToken ct)
+    private void RegisterJobReceived(OrderHubPrintBridgeClient.PendingPrintJobDto job)
     {
-        var record = new LocalPrintJobRecord
+        UpsertRecentJob(new LocalPrintJobRecord
         {
             JobId = job.Id,
             OrderId = job.OrderId,
             OrderDisplay = ReceiptPayloadReader.TryGetOrderDisplay(job.PayloadJson),
-            Status = LocalPrintJobStatus.Printing,
+            Status = LocalPrintJobStatus.Received,
             CreatedAtUtc = job.CreatedAtUtc,
             LastAttemptAtUtc = DateTime.UtcNow
-        };
-        UpsertRecentJob(record);
+        });
+    }
 
+    private async Task ProcessJobAsync(OrderHubPrintBridgeClient.PendingPrintJobDto job, CancellationToken ct)
+    {
         _logger.LogInformation("Job claim attempted. JobId={JobId}, OrderId={OrderId}", job.Id, job.OrderId);
 
         OrderHubPrintBridgeClient.PrintJobActionResult claim;
@@ -272,6 +277,7 @@ public sealed class PrintBridgeRuntime : IDisposable
             return;
         }
 
+        UpdateRecentJob(job.Id, LocalPrintJobStatus.Printing, statusNote: null);
         _logger.LogInformation("Job claim succeeded. JobId={JobId}", job.Id);
 
         try
@@ -282,6 +288,7 @@ public sealed class PrintBridgeRuntime : IDisposable
             if (bridge.DryRun)
             {
                 _logger.LogInformation("DryRun: no physical print was sent. JobId={JobId}", job.Id);
+                UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: "Dry run");
             }
             else
             {
@@ -291,13 +298,17 @@ public sealed class PrintBridgeRuntime : IDisposable
                     bridge.PrinterName,
                     job.CopyCount);
                 await _printer.PrintAsync(bridge.PrinterName, receipt, job.CopyCount, ct).ConfigureAwait(false);
-                _logger.LogInformation("Print succeeded. JobId={JobId}, CopyCount={CopyCount}", job.Id, job.CopyCount);
+                _logger.LogInformation(
+                    "Print job submitted to Windows queue. JobId={JobId}, PrinterName={PrinterName}, CharacterCount={CharacterCount}, CopyCount={CopyCount}",
+                    job.Id,
+                    bridge.PrinterName,
+                    receipt.Length,
+                    job.CopyCount);
+                UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: "Windows accepted the print job");
             }
 
             var printed = await _client.MarkPrintedAsync(job.Id, ct).ConfigureAwait(false);
-            if (printed.Success || printed.Skipped)
-                UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, null);
-            else
+            if (!printed.Success && !printed.Skipped)
                 UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, $"mark-printed: {printed.Result}");
 
             _logger.LogInformation(
@@ -343,24 +354,59 @@ public sealed class PrintBridgeRuntime : IDisposable
         RaiseStatusChanged();
     }
 
-    private void UpdateRecentJob(Guid jobId, LocalPrintJobStatus status, string? errorMessage)
+    private void UpdateRecentJob(
+        Guid jobId,
+        LocalPrintJobStatus status,
+        string? errorMessage = null,
+        string? statusNote = null)
     {
         lock (_sync)
         {
             var index = _recentJobs.FindIndex(j => j.JobId == jobId);
             if (index < 0)
-                return;
+            {
+                _recentJobs.Insert(0, new LocalPrintJobRecord
+                {
+                    JobId = jobId,
+                    Status = status,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    LastAttemptAtUtc = DateTime.UtcNow,
+                    ErrorMessage = errorMessage,
+                    StatusNote = statusNote
+                });
+            }
+            else
+            {
+                var existing = _recentJobs[index];
+                existing.Status = status;
+                existing.LastAttemptAtUtc = DateTime.UtcNow;
+                existing.ErrorMessage = errorMessage;
+                if (statusNote is not null)
+                    existing.StatusNote = statusNote;
+                if (status == LocalPrintJobStatus.Printed)
+                    existing.PrintedAtUtc = DateTime.UtcNow;
+            }
 
-            var existing = _recentJobs[index];
-            existing.Status = status;
-            existing.LastAttemptAtUtc = DateTime.UtcNow;
-            existing.ErrorMessage = errorMessage;
-            if (status == LocalPrintJobStatus.Printed)
-                existing.PrintedAtUtc = DateTime.UtcNow;
+            if (_recentJobs.Count > MaxRecentJobs)
+                _recentJobs.RemoveRange(MaxRecentJobs, _recentJobs.Count - MaxRecentJobs);
         }
 
         RaiseStatusChanged();
     }
+
+    private static LocalPrintJobRecord CloneRecord(LocalPrintJobRecord source) =>
+        new()
+        {
+            JobId = source.JobId,
+            OrderId = source.OrderId,
+            OrderDisplay = source.OrderDisplay,
+            Status = source.Status,
+            CreatedAtUtc = source.CreatedAtUtc,
+            LastAttemptAtUtc = source.LastAttemptAtUtc,
+            PrintedAtUtc = source.PrintedAtUtc,
+            ErrorMessage = source.ErrorMessage,
+            StatusNote = source.StatusNote
+        };
 
     private void RaiseStatusChanged() => StatusChanged?.Invoke(this, EventArgs.Empty);
 

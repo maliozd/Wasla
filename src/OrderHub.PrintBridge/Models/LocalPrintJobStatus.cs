@@ -2,7 +2,7 @@ namespace OrderHub.PrintBridge.Models;
 
 public enum LocalPrintJobStatus
 {
-    Pending,
+    Received,
     Printing,
     Printed,
     Failed,

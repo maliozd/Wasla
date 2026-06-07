@@ -28,6 +28,7 @@ public sealed class MainForm : Form
     private readonly Label _lastPollValue;
     private readonly Label _lastErrorValue;
     private readonly DataGridView _recentJobsGrid;
+    private readonly Label _recentJobsEmptyLabel;
     private readonly Button _btnTestConnection;
     private readonly Button _btnTestPrinter;
     private readonly Button _btnStartStop;
@@ -96,6 +97,7 @@ public sealed class MainForm : Form
         statusLayout.Controls.Add(printGroup, 0, 1);
 
         var jobsGroup = CreateGroupBox("Recent jobs (this session)");
+        var jobsPanel = new Panel { Dock = DockStyle.Fill, MinimumSize = new Size(0, 160) };
         _recentJobsGrid = new DataGridView
         {
             Dock = DockStyle.Fill,
@@ -104,15 +106,26 @@ public sealed class MainForm : Form
             AllowUserToDeleteRows = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            MultiSelect = false
+            MultiSelect = false,
+            RowHeadersVisible = false,
+            BackgroundColor = SystemColors.Window
         };
-        _recentJobsGrid.Columns.Add("JobId", "Job");
+        _recentJobsGrid.Columns.Add("Time", "Time");
+        _recentJobsGrid.Columns.Add("Job", "Job");
         _recentJobsGrid.Columns.Add("Order", "Order");
         _recentJobsGrid.Columns.Add("Status", "Status");
-        _recentJobsGrid.Columns.Add("Created", "Created");
-        _recentJobsGrid.Columns.Add("Printed", "Printed / attempt");
         _recentJobsGrid.Columns.Add("Error", "Error");
-        jobsGroup.Controls.Add(_recentJobsGrid);
+        _recentJobsGrid.CellFormatting += OnRecentJobsCellFormatting;
+        _recentJobsEmptyLabel = new Label
+        {
+            Text = "No jobs processed in this session.",
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = SystemColors.GrayText
+        };
+        jobsPanel.Controls.Add(_recentJobsGrid);
+        jobsPanel.Controls.Add(_recentJobsEmptyLabel);
+        jobsGroup.Controls.Add(jobsPanel);
         statusLayout.Controls.Add(jobsGroup, 0, 2);
 
         var buttonPanel = new FlowLayoutPanel
@@ -206,9 +219,29 @@ public sealed class MainForm : Form
         _refreshTimer.Tick += (_, _) => RefreshStatus();
         _refreshTimer.Start();
 
-        _runtime.StatusChanged += (_, _) => BeginInvoke(RefreshStatus);
+        _runtime.StatusChanged += OnRuntimeStatusChanged;
         LoadSettingsIntoForm();
+
+        if (!IsHandleCreated)
+            CreateHandle();
+
         RefreshStatus();
+    }
+
+    private void OnRuntimeStatusChanged(object? sender, EventArgs e) => QueueRefreshStatus();
+
+    private void QueueRefreshStatus()
+    {
+        if (IsDisposed)
+            return;
+
+        if (!IsHandleCreated)
+            CreateHandle();
+
+        if (InvokeRequired)
+            BeginInvoke(RefreshStatus);
+        else
+            RefreshStatus();
     }
 
     public void SelectSettingsTab() => _tabs.SelectedTab = _settingsTab;
@@ -427,6 +460,12 @@ public sealed class MainForm : Form
 
     private void RefreshStatus()
     {
+        if (InvokeRequired)
+        {
+            BeginInvoke(RefreshStatus);
+            return;
+        }
+
         var status = _runtime.GetStatus();
         _connectionStatusValue.Text = status.IsConnected ? "Connected" : "Not connected";
         _connectionStatusValue.ForeColor = status.IsConnected ? Color.DarkGreen : Color.DarkRed;
@@ -443,17 +482,51 @@ public sealed class MainForm : Form
 
         _btnStartStop.Text = status.IsRunning ? "Stop polling" : "Start polling";
 
-        _recentJobsGrid.Rows.Clear();
-        foreach (var job in status.RecentJobs)
+        RefreshRecentJobs(status.RecentJobs);
+    }
+
+    private void RefreshRecentJobs(IReadOnlyList<LocalPrintJobRecord> jobs)
+    {
+        _recentJobsEmptyLabel.Visible = jobs.Count == 0;
+        _recentJobsGrid.Visible = jobs.Count > 0;
+
+        _recentJobsGrid.SuspendLayout();
+        try
         {
-            _recentJobsGrid.Rows.Add(
-                job.ShortJobId,
-                string.IsNullOrWhiteSpace(job.OrderDisplay) ? job.OrderId.ToString("N")[..8] : job.OrderDisplay,
-                job.Status.ToString(),
-                FormatUtc(job.CreatedAtUtc),
-                FormatUtc(job.PrintedAtUtc ?? job.LastAttemptAtUtc),
-                job.ErrorMessage ?? string.Empty);
+            _recentJobsGrid.Rows.Clear();
+            foreach (var job in jobs)
+            {
+                _recentJobsGrid.Rows.Add(
+                    FormatUtc(job.DisplayTimeUtc),
+                    job.ShortJobId,
+                    string.IsNullOrWhiteSpace(job.OrderDisplay) ? job.OrderId.ToString("N")[..8] : job.OrderDisplay,
+                    job.StatusDisplay,
+                    job.ErrorMessage ?? string.Empty);
+            }
         }
+        finally
+        {
+            _recentJobsGrid.ResumeLayout();
+        }
+    }
+
+    private static void OnRecentJobsCellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+    {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || sender is not DataGridView grid)
+            return;
+
+        if (grid.Columns[e.ColumnIndex].Name != "Status" || e.Value is not string statusText || e.CellStyle is null)
+            return;
+
+        e.CellStyle.ForeColor = statusText switch
+        {
+            _ when statusText.StartsWith("Printed", StringComparison.OrdinalIgnoreCase) => Color.DarkGreen,
+            "Printing" => Color.DarkGoldenrod,
+            "Received" => Color.SteelBlue,
+            "Failed" => Color.DarkRed,
+            "Skipped" => Color.Gray,
+            _ => grid.DefaultCellStyle.ForeColor
+        };
     }
 
     private static string FormatUtc(DateTime? value) =>

@@ -11,4 +11,17 @@ public sealed class LocalPrintJobRecord
     public DateTime? LastAttemptAtUtc { get; set; }
     public DateTime? PrintedAtUtc { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? StatusNote { get; set; }
+
+    public string StatusDisplay => Status switch
+    {
+        LocalPrintJobStatus.Received => "Received",
+        LocalPrintJobStatus.Printing => "Printing",
+        LocalPrintJobStatus.Printed => string.IsNullOrWhiteSpace(StatusNote) ? "Printed" : $"Printed ({StatusNote})",
+        LocalPrintJobStatus.Failed => "Failed",
+        LocalPrintJobStatus.Skipped => "Skipped",
+        _ => Status.ToString()
+    };
+
+    public DateTime DisplayTimeUtc => PrintedAtUtc ?? LastAttemptAtUtc ?? CreatedAtUtc;
 }
