@@ -39,17 +39,19 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var exists = await db.PrintJobs
+        var hasActiveJob = await db.PrintJobs
             .AsNoTracking()
             .AnyAsync(
-                p => p.OrderId == orderId && p.Type == PrintJobType.Receipt,
+                p => p.OrderId == orderId
+                     && p.Type == PrintJobType.Receipt
+                     && (p.Status == PrintJobStatus.Pending || p.Status == PrintJobStatus.Printing),
                 ct)
             .ConfigureAwait(false);
 
-        if (exists)
+        if (hasActiveJob)
         {
             _logger.LogInformation(
-                "Receipt PrintJob skipped because it already exists. CustomerId={CustomerId}, OrderId={OrderId}",
+                "Receipt PrintJob skipped because an active job already exists. CustomerId={CustomerId}, OrderId={OrderId}",
                 customerId,
                 orderId);
             return false;

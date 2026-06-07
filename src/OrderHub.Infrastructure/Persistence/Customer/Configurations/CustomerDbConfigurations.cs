@@ -107,7 +107,6 @@ public class PrintJobConfiguration : IEntityTypeConfiguration<PrintJob>
         builder.Property(x => x.LockedBy).HasMaxLength(200);
 
         builder.HasIndex(x => new { x.OrderId, x.Type })
-            .IsUnique()
             .HasDatabaseName("IX_PrintJobs_OrderId_Type");
 
         builder.HasOne(x => x.Order)

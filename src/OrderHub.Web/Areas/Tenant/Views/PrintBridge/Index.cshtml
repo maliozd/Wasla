@@ -85,8 +85,56 @@
         actions = L["Common.Actions"].Value,
         regenerateToken = L["PrintBridge.RegenerateToken"].Value,
         emptyValue = "—",
-        allowedDeviceCount = L["PrintBridge.AllowedDeviceCount", Model.AllowedActiveDeviceCount].Value
+        allowedDeviceCount = L["PrintBridge.AllowedDeviceCount", Model.AllowedActiveDeviceCount].Value,
+        printJobsTitle = L["PrintBridge.PrintJobsTitle"].Value,
+        printJobsDescription = L["PrintBridge.PrintJobsDescription"].Value,
+        noPrintJobs = L["PrintBridge.NoPrintJobs"].Value,
+        refreshPrintJobs = L["PrintBridge.RefreshPrintJobs"].Value,
+        reprint = L["PrintBridge.Reprint"].Value,
+        reprintCreated = L["PrintBridge.ReprintCreated"].Value,
+        reprintFailed = L["PrintBridge.ReprintFailed"].Value,
+        reprintAlreadyPending = L["PrintBridge.ReprintAlreadyPending"].Value,
+        reprintOrderNotFound = L["PrintBridge.ReprintOrderNotFound"].Value,
+        reprintJobNotFound = L["PrintBridge.ReprintJobNotFound"].Value,
+        reprintNotAllowed = L["PrintBridge.ReprintNotAllowed"].Value,
+        confirmReprint = L["PrintBridge.ConfirmReprint"].Value,
+        printJobStatusPending = L["PrintBridge.PrintJobStatusPending"].Value,
+        printJobStatusPrinting = L["PrintBridge.PrintJobStatusPrinting"].Value,
+        printJobStatusPrinted = L["PrintBridge.PrintJobStatusPrinted"].Value,
+        printJobStatusFailed = L["PrintBridge.PrintJobStatusFailed"].Value,
+        printJobStatusCancelled = L["PrintBridge.PrintJobStatusCancelled"].Value,
+        printedAt = L["PrintBridge.PrintedAt"].Value,
+        lastAttemptAt = L["PrintBridge.LastAttemptAt"].Value,
+        attemptCount = L["PrintBridge.AttemptCount"].Value,
+        errorMessage = L["PrintBridge.ErrorMessage"].Value,
+        externalOrderId = L["PrintBridge.ExternalOrderId"].Value,
+        printDevice = L["PrintBridge.PrintDevice"].Value,
+        createdAt = L["PrintBridge.CreatedAt"].Value,
+        platform = L["Orders.Platform"].Value,
+        printJobStatus = L["Common.Status"].Value
     };
+
+    var initialPrintJobs = Model.PrintJobs.Select(j => new
+    {
+        id = j.Id,
+        orderId = j.OrderId,
+        orderDisplay = j.OrderDisplay,
+        externalOrderId = j.ExternalOrderId,
+        platform = j.Platform,
+        platformDisplayName = j.PlatformDisplayName,
+        status = j.Status,
+        statusLabel = L[j.StatusLabelKey].Value,
+        createdAtUtc = j.CreatedAtUtc,
+        lastAttemptAtUtc = j.LastAttemptAtUtc,
+        printedAtUtc = j.PrintedAtUtc,
+        attemptCount = j.AttemptCount,
+        errorMessage = j.ErrorMessage,
+        lockedBy = j.LockedBy,
+        orderCustomerName = j.OrderCustomerName,
+        totalAmount = j.TotalAmount,
+        canReprint = j.CanReprint
+    });
+
     var pbMessagesJson = JsonSerializer.Serialize(pbMessages);
 }
 
@@ -175,6 +223,23 @@
             </div>
         </div>
     </div>
+
+    <div class="col-12">
+        <div class="card oh-card">
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
+                    <div>
+                        <h2 class="h6 mb-1"><i class="bi bi-receipt me-1 text-primary"></i>@L["PrintBridge.PrintJobsTitle"]</h2>
+                        <p class="text-muted small mb-0">@L["PrintBridge.PrintJobsDescription"]</p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="printBridgeRefreshJobsBtn">
+                        <i class="bi bi-arrow-clockwise me-1"></i>@L["PrintBridge.RefreshPrintJobs"]
+                    </button>
+                </div>
+                <div id="printBridgeJobsPanel"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -185,9 +250,12 @@
             createDeviceUrl: "/print-bridge/devices/create",
             regenerateTokenUrlTemplate: "/print-bridge/devices/{id}/regenerate-token",
             setActiveUrlTemplate: "/print-bridge/devices/{id}/set-active",
+            printJobsUrl: "/print-bridge/print-jobs",
+            reprintUrlTemplate: "/print-bridge/print-jobs/{id}/reprint",
             initialState: {
                 devices: @Html.Raw(JsonSerializer.Serialize(initialDevices)),
-                quota: @Html.Raw(JsonSerializer.Serialize(initialQuota))
+                quota: @Html.Raw(JsonSerializer.Serialize(initialQuota)),
+                printJobs: @Html.Raw(JsonSerializer.Serialize(initialPrintJobs))
             }
         };
     </script>

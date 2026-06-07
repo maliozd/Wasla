@@ -13,6 +13,30 @@ public sealed class PrintBridgePageViewModel
     public int ActiveDeviceCount { get; set; }
     public bool CanCreateActiveDevice { get; set; } = true;
     public bool ActiveCountExceedsLimit { get; set; }
+
+    public IReadOnlyList<PrintJobHistoryRowViewModel> PrintJobs { get; set; } =
+        Array.Empty<PrintJobHistoryRowViewModel>();
+}
+
+public sealed class PrintJobHistoryRowViewModel
+{
+    public Guid Id { get; set; }
+    public Guid OrderId { get; set; }
+    public string OrderDisplay { get; set; } = string.Empty;
+    public string? ExternalOrderId { get; set; }
+    public string Platform { get; set; } = string.Empty;
+    public string PlatformDisplayName { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string StatusLabelKey { get; set; } = string.Empty;
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? LastAttemptAtUtc { get; set; }
+    public DateTime? PrintedAtUtc { get; set; }
+    public int AttemptCount { get; set; }
+    public string? ErrorMessage { get; set; }
+    public string? LockedBy { get; set; }
+    public string? OrderCustomerName { get; set; }
+    public decimal? TotalAmount { get; set; }
+    public bool CanReprint { get; set; }
 }
 
 public sealed class PrintBridgeDeviceRowViewModel

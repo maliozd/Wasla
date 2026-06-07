@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Domain.Enums;
 using OrderHub.Web.Controllers;
 using OrderHub.Web.Models.PrintBridge;
 using OrderHub.Web.Routing;
@@ -19,6 +20,7 @@ public sealed class PrintBridgeController : BaseController
 {
     private readonly ICurrentCustomerService _currentCustomer;
     private readonly IPrintBridgeDeviceManagementService _devices;
+    private readonly IPrintJobHistoryService _printJobHistory;
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
@@ -26,12 +28,14 @@ public sealed class PrintBridgeController : BaseController
     public PrintBridgeController(
         ICurrentCustomerService currentCustomer,
         IPrintBridgeDeviceManagementService devices,
+        IPrintJobHistoryService printJobHistory,
         IWebHostEnvironment environment,
         IConfiguration configuration,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
         _currentCustomer = currentCustomer;
         _devices = devices;
+        _printJobHistory = printJobHistory;
         _environment = environment;
         _configuration = configuration;
         _localizer = localizer;
@@ -45,9 +49,11 @@ public sealed class PrintBridgeController : BaseController
 
         var deviceRows = await _devices.ListDevicesAsync(customer.Id, ct).ConfigureAwait(false);
         var quota = await _devices.GetDeviceQuotaAsync(customer.Id, ct).ConfigureAwait(false);
-        var apiBaseUrl = ResolveApiBaseUrl();
+        var printJobs = await _printJobHistory
+            .GetRecentReceiptJobsAsync(customer.Id, PrintJobHistoryLimits.Default, ct)
+            .ConfigureAwait(false);
 
-        return View(BuildPageViewModel(deviceRows, quota, apiBaseUrl));
+        return View(BuildPageViewModel(deviceRows, quota, printJobs));
     }
 
     [HttpGet("download")]
@@ -200,6 +206,52 @@ public sealed class PrintBridgeController : BaseController
         }
     }
 
+    [HttpGet("print-jobs")]
+    public async Task<IActionResult> ListPrintJobs(CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var jobs = await _printJobHistory
+            .GetRecentReceiptJobsAsync(customer.Id, PrintJobHistoryLimits.Default, ct)
+            .ConfigureAwait(false);
+
+        return Ok(new { jobs = jobs.Select(MapPrintJobJson) });
+    }
+
+    [ValidateAntiForgeryToken]
+    [HttpPost("print-jobs/{jobId:guid}/reprint")]
+    public async Task<IActionResult> ReprintJob(Guid jobId, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var result = await _printJobHistory
+            .CreateReprintAsync(customer.Id, jobId, customer.Name, ct)
+            .ConfigureAwait(false);
+
+        if (!result.Success)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = _localizer[result.MessageKey].Value
+            });
+        }
+
+        var jobs = await _printJobHistory
+            .GetRecentReceiptJobsAsync(customer.Id, PrintJobHistoryLimits.Default, ct)
+            .ConfigureAwait(false);
+
+        return Ok(new
+        {
+            success = true,
+            message = _localizer[result.MessageKey].Value,
+            newPrintJobId = result.NewPrintJobId,
+            jobs = jobs.Select(MapPrintJobJson)
+        });
+    }
+
     [HttpGet("download/package")]
     public IActionResult DownloadPackage()
     {
@@ -234,7 +286,7 @@ public sealed class PrintBridgeController : BaseController
     private PrintBridgePageViewModel BuildPageViewModel(
         IReadOnlyList<PrintBridgeDeviceSummaryDto> deviceRows,
         PrintBridgeDeviceQuotaDto quota,
-        string apiBaseUrl) =>
+        IReadOnlyList<PrintJobHistoryItemDto> printJobs) =>
         new()
         {
             SetupUrl = Url.Action(nameof(Setup), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/download",
@@ -242,7 +294,8 @@ public sealed class PrintBridgeController : BaseController
             AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
             ActiveDeviceCount = quota.ActiveDeviceCount,
             CanCreateActiveDevice = quota.CanCreateActiveDevice,
-            ActiveCountExceedsLimit = quota.ActiveCountExceedsLimit
+            ActiveCountExceedsLimit = quota.ActiveCountExceedsLimit,
+            PrintJobs = printJobs.Select(MapPrintJob).ToList()
         };
 
     private string ResolveApiBaseUrl()
@@ -306,6 +359,70 @@ public sealed class PrintBridgeController : BaseController
             machineName = d.MachineName,
             printerName = d.PrinterName,
             appVersion = d.AppVersion
+        };
+
+    private PrintJobHistoryRowViewModel MapPrintJob(PrintJobHistoryItemDto job) =>
+        new()
+        {
+            Id = job.Id,
+            OrderId = job.OrderId,
+            OrderDisplay = ResolveOrderDisplay(job),
+            ExternalOrderId = job.ExternalOrderId,
+            Platform = job.Platform.ToString(),
+            PlatformDisplayName = LocalizePlatform(job.Platform),
+            Status = job.Status.ToString(),
+            StatusLabelKey = job.StatusLabelKey,
+            CreatedAtUtc = job.CreatedAtUtc,
+            LastAttemptAtUtc = job.LastAttemptAtUtc,
+            PrintedAtUtc = job.PrintedAtUtc,
+            AttemptCount = job.AttemptCount,
+            ErrorMessage = job.ErrorMessage,
+            LockedBy = job.LockedBy,
+            OrderCustomerName = job.OrderCustomerName,
+            TotalAmount = job.TotalAmount,
+            CanReprint = job.CanReprint
+        };
+
+    private object MapPrintJobJson(PrintJobHistoryItemDto job)
+    {
+        var row = MapPrintJob(job);
+        return new
+        {
+            id = row.Id,
+            orderId = row.OrderId,
+            orderDisplay = row.OrderDisplay,
+            externalOrderId = row.ExternalOrderId,
+            platform = row.Platform,
+            platformDisplayName = row.PlatformDisplayName,
+            status = row.Status,
+            statusLabelKey = row.StatusLabelKey,
+            statusLabel = _localizer[row.StatusLabelKey].Value,
+            createdAtUtc = row.CreatedAtUtc,
+            lastAttemptAtUtc = row.LastAttemptAtUtc,
+            printedAtUtc = row.PrintedAtUtc,
+            attemptCount = row.AttemptCount,
+            errorMessage = row.ErrorMessage,
+            lockedBy = row.LockedBy,
+            orderCustomerName = row.OrderCustomerName,
+            totalAmount = row.TotalAmount,
+            canReprint = row.CanReprint
+        };
+    }
+
+    private static string ResolveOrderDisplay(PrintJobHistoryItemDto job) =>
+        !string.IsNullOrWhiteSpace(job.ExternalOrderCode)
+            ? job.ExternalOrderCode.Trim()
+            : !string.IsNullOrWhiteSpace(job.ExternalOrderId)
+                ? job.ExternalOrderId.Trim()
+                : job.OrderId.ToString();
+
+    private string LocalizePlatform(FoodPlatform platform) =>
+        platform switch
+        {
+            FoodPlatform.Yemeksepeti => _localizer["Orders.PlatformYemeksepeti"].Value,
+            FoodPlatform.GetirYemek => _localizer["Orders.PlatformGetirYemek"].Value,
+            FoodPlatform.TrendyolYemek => _localizer["Orders.PlatformTrendyolYemek"].Value,
+            _ => platform.ToString()
         };
 
     private static object MapQuotaJson(

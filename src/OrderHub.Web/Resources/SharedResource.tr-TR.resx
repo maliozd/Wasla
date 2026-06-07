@@ -1695,4 +1695,76 @@
   <data name="PrintBridge.ReceiptCopyCountHelp" xml:space="preserve">
     <value>Her fiş için oluşturulacak kopya sayısı (1–3).</value>
   </data>
+  <data name="PrintBridge.PrintJobsTitle" xml:space="preserve">
+    <value>Son fiş işleri</value>
+  </data>
+  <data name="PrintBridge.PrintJobsDescription" xml:space="preserve">
+    <value>Bu restoran için son fiş yazdırma denemeleri. Yeniden yazdırmak için tekrar yazdır kullanın.</value>
+  </data>
+  <data name="PrintBridge.NoPrintJobs" xml:space="preserve">
+    <value>Henüz fiş yazdırma işi yok.</value>
+  </data>
+  <data name="PrintBridge.RefreshPrintJobs" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="PrintBridge.Reprint" xml:space="preserve">
+    <value>Tekrar yazdır</value>
+  </data>
+  <data name="PrintBridge.ReprintCreated" xml:space="preserve">
+    <value>Tekrar yazdırma işi oluşturuldu. Print Bridge kısa süre içinde alacaktır.</value>
+  </data>
+  <data name="PrintBridge.ReprintFailed" xml:space="preserve">
+    <value>Tekrar yazdırma işi oluşturulamadı.</value>
+  </data>
+  <data name="PrintBridge.ReprintAlreadyPending" xml:space="preserve">
+    <value>Bu sipariş için zaten bekleyen bir yazdırma işi var.</value>
+  </data>
+  <data name="PrintBridge.ReprintOrderNotFound" xml:space="preserve">
+    <value>Bu yazdırma işine ait sipariş artık bulunamıyor.</value>
+  </data>
+  <data name="PrintBridge.ReprintJobNotFound" xml:space="preserve">
+    <value>Yazdırma işi bulunamadı.</value>
+  </data>
+  <data name="PrintBridge.ReprintNotAllowed" xml:space="preserve">
+    <value>Tekrar yazdırma yalnızca yazdırılmış veya başarısız işler için kullanılabilir; bekleyen aktif iş olmamalıdır.</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusPending" xml:space="preserve">
+    <value>Bekliyor</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusPrinting" xml:space="preserve">
+    <value>Yazdırılıyor</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusPrinted" xml:space="preserve">
+    <value>Yazdırıldı</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusFailed" xml:space="preserve">
+    <value>Başarısız</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusCancelled" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="PrintBridge.PrintedAt" xml:space="preserve">
+    <value>Yazdırılma</value>
+  </data>
+  <data name="PrintBridge.LastAttemptAt" xml:space="preserve">
+    <value>Son deneme</value>
+  </data>
+  <data name="PrintBridge.AttemptCount" xml:space="preserve">
+    <value>Deneme</value>
+  </data>
+  <data name="PrintBridge.ErrorMessage" xml:space="preserve">
+    <value>Hata</value>
+  </data>
+  <data name="PrintBridge.ExternalOrderId" xml:space="preserve">
+    <value>Sipariş</value>
+  </data>
+  <data name="PrintBridge.PrintDevice" xml:space="preserve">
+    <value>Print Bridge</value>
+  </data>
+  <data name="PrintBridge.ConfirmReprint" xml:space="preserve">
+    <value>{0} için fiş tekrar yazdırılsın mı?</value>
+  </data>
+  <data name="PrintBridge.CreatedAt" xml:space="preserve">
+    <value>Oluşturulma</value>
+  </data>
 </root>
