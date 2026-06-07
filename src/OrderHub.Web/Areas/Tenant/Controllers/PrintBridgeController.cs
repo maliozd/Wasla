@@ -1,10 +1,8 @@
 using System.IO.Compression;
 using System.Text.Json;
-using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
-using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Web.Controllers;
@@ -21,8 +19,6 @@ public sealed class PrintBridgeController : BaseController
 {
     private readonly ICurrentCustomerService _currentCustomer;
     private readonly IPrintBridgeDeviceManagementService _devices;
-    private readonly ICustomerOrderSettingsService _orderSettings;
-    private readonly IValidator<UpdateCustomerOrderSettingsCommand> _orderSettingsValidator;
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
@@ -30,16 +26,12 @@ public sealed class PrintBridgeController : BaseController
     public PrintBridgeController(
         ICurrentCustomerService currentCustomer,
         IPrintBridgeDeviceManagementService devices,
-        ICustomerOrderSettingsService orderSettings,
-        IValidator<UpdateCustomerOrderSettingsCommand> orderSettingsValidator,
         IWebHostEnvironment environment,
         IConfiguration configuration,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
         _currentCustomer = currentCustomer;
         _devices = devices;
-        _orderSettings = orderSettings;
-        _orderSettingsValidator = orderSettingsValidator;
         _environment = environment;
         _configuration = configuration;
         _localizer = localizer;
@@ -65,7 +57,6 @@ public sealed class PrintBridgeController : BaseController
         if (customer is null) return NotFound();
 
         var quota = await _devices.GetDeviceQuotaAsync(customer.Id, ct).ConfigureAwait(false);
-        var orderSettings = await _orderSettings.GetAsync(customer.Id, ct).ConfigureAwait(false);
         var apiBaseUrl = ResolveApiBaseUrl();
 
         return View("Setup", new PrintBridgeSetupViewModel
@@ -75,9 +66,6 @@ public sealed class PrintBridgeController : BaseController
             DevicesUrl = Url.Action(nameof(Index), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge",
             ApiBaseUrl = apiBaseUrl,
             ExampleConfigJson = BuildExampleConfigJson(apiBaseUrl),
-            AutoApproveNewOrders = orderSettings.AutoApproveNewOrders,
-            AutoPrintReceiptOnAutoApprove = orderSettings.AutoPrintReceiptOnAutoApprove,
-            ReceiptPrintCopyCount = orderSettings.ReceiptPrintCopyCount,
             AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
             ActiveDeviceCount = quota.ActiveDeviceCount,
             CanCreateActiveDevice = quota.CanCreateActiveDevice,
@@ -99,62 +87,6 @@ public sealed class PrintBridgeController : BaseController
             devices = deviceRows.Select(MapDeviceJson),
             quota = MapQuotaJson(quota, deviceRows)
         });
-    }
-
-    [HttpGet("order-settings")]
-    public async Task<IActionResult> GetOrderSettings(CancellationToken ct)
-    {
-        var customer = _currentCustomer.CurrentCustomer;
-        if (customer is null) return NotFound();
-
-        var r = await _orderSettings.GetAsync(customer.Id, ct).ConfigureAwait(false);
-        return Ok(new
-        {
-            autoApproveNewOrders = r.AutoApproveNewOrders,
-            autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
-            receiptPrintCopyCount = r.ReceiptPrintCopyCount
-        });
-    }
-
-    [ValidateAntiForgeryToken]
-    [HttpPost("order-settings")]
-    public async Task<IActionResult> UpdateOrderSettings(
-        [FromForm] bool autoApproveNewOrders,
-        [FromForm] bool autoPrintReceiptOnAutoApprove,
-        [FromForm] int receiptPrintCopyCount,
-        CancellationToken ct)
-    {
-        var customer = _currentCustomer.CurrentCustomer;
-        if (customer is null) return NotFound();
-
-        var command = new UpdateCustomerOrderSettingsCommand(
-            autoApproveNewOrders,
-            autoPrintReceiptOnAutoApprove,
-            receiptPrintCopyCount);
-
-        var validation = await _orderSettingsValidator.ValidateAsync(command, ct).ConfigureAwait(false);
-        if (!validation.IsValid)
-        {
-            var firstError = validation.Errors.FirstOrDefault();
-            var messageKey = firstError?.ErrorMessage ?? "Orders.OrderSettingsUpdateFailed";
-            return BadRequest(new { message = _localizer[messageKey].Value });
-        }
-
-        try
-        {
-            var r = await _orderSettings.UpdateAsync(customer.Id, command, ct).ConfigureAwait(false);
-            return Ok(new
-            {
-                autoApproveNewOrders = r.AutoApproveNewOrders,
-                autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
-                receiptPrintCopyCount = r.ReceiptPrintCopyCount,
-                message = _localizer["Orders.OrderSettingsSaved"].Value
-            });
-        }
-        catch (InvalidOperationException)
-        {
-            return BadRequest(new { message = _localizer["Orders.OrderSettingsUpdateFailed"].Value });
-        }
     }
 
     [ValidateAntiForgeryToken]
