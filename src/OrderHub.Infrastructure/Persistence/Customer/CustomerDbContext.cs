@@ -23,6 +23,7 @@ public class CustomerDbContext : DbContext
     public DbSet<OrderItemOption> OrderItemOptions => Set<OrderItemOption>();
     public DbSet<SyncLog> SyncLogs => Set<SyncLog>();
     public DbSet<IntegrationError> IntegrationErrors => Set<IntegrationError>();
+    public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +37,7 @@ public class CustomerDbContext : DbContext
         modelBuilder.ApplyConfiguration(new OrderItemOptionConfiguration());
         modelBuilder.ApplyConfiguration(new SyncLogConfiguration());
         modelBuilder.ApplyConfiguration(new IntegrationErrorConfiguration());
+        modelBuilder.ApplyConfiguration(new PrintJobConfiguration());
     }
 
     /// <summary>

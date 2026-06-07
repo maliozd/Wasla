@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderHub.Application.Abstractions.Orders;
@@ -22,6 +23,8 @@ public sealed class OrdersController : BaseController
     private readonly IOrderReadService _orders;
     private readonly IOrderActionService _actions;
     private readonly IOrderSyncSettingsService _orderSyncSettings;
+    private readonly ICustomerOrderSettingsService _orderSettings;
+    private readonly IValidator<UpdateCustomerOrderSettingsCommand> _orderSettingsValidator;
     private readonly ILogger<OrdersController> _logger;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
@@ -30,6 +33,8 @@ public sealed class OrdersController : BaseController
         IOrderReadService orders,
         IOrderActionService actions,
         IOrderSyncSettingsService orderSyncSettings,
+        ICustomerOrderSettingsService orderSettings,
+        IValidator<UpdateCustomerOrderSettingsCommand> orderSettingsValidator,
         ILogger<OrdersController> logger,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
@@ -37,6 +42,8 @@ public sealed class OrdersController : BaseController
         _orders = orders;
         _actions = actions;
         _orderSyncSettings = orderSyncSettings;
+        _orderSettings = orderSettings;
+        _orderSettingsValidator = orderSettingsValidator;
         _logger = logger;
         _localizer = localizer;
     }
@@ -82,6 +89,62 @@ public sealed class OrdersController : BaseController
 
         var r = await _orderSyncSettings.UpdateAsync(customer.Id, enabled, ct);
         return Ok(new { orderSyncEnabled = r.OrderSyncEnabled });
+    }
+
+    [HttpGet("order-settings")]
+    public async Task<IActionResult> GetOrderSettings(CancellationToken ct = default)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var r = await _orderSettings.GetAsync(customer.Id, ct);
+        return Ok(new
+        {
+            autoApproveNewOrders = r.AutoApproveNewOrders,
+            autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
+            receiptPrintCopyCount = r.ReceiptPrintCopyCount
+        });
+    }
+
+    [ValidateAntiForgeryToken]
+    [HttpPost("order-settings")]
+    public async Task<IActionResult> UpdateOrderSettings(
+        [FromForm] bool autoApproveNewOrders,
+        [FromForm] bool autoPrintReceiptOnAutoApprove,
+        [FromForm] int receiptPrintCopyCount,
+        CancellationToken ct = default)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var command = new UpdateCustomerOrderSettingsCommand(
+            autoApproveNewOrders,
+            autoPrintReceiptOnAutoApprove,
+            receiptPrintCopyCount);
+
+        var validation = await _orderSettingsValidator.ValidateAsync(command, ct);
+        if (!validation.IsValid)
+        {
+            var firstError = validation.Errors.FirstOrDefault();
+            var messageKey = firstError?.ErrorMessage ?? "Orders.OrderSettingsUpdateFailed";
+            var message = _localizer[messageKey].Value;
+            return BadRequest(new { message });
+        }
+
+        try
+        {
+            var r = await _orderSettings.UpdateAsync(customer.Id, command, ct);
+            return Ok(new
+            {
+                autoApproveNewOrders = r.AutoApproveNewOrders,
+                autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
+                receiptPrintCopyCount = r.ReceiptPrintCopyCount
+            });
+        }
+        catch (ValidationException)
+        {
+            return BadRequest(new { message = _localizer["Orders.OrderSettingsUpdateFailed"].Value });
+        }
     }
 
     [HttpGet("table")]

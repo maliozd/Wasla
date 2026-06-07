@@ -71,10 +71,48 @@ public class CustomerOperationalSettingsConfiguration : IEntityTypeConfiguration
             .IsRequired()
             .HasDefaultValue(true);
 
+        builder.Property(x => x.AutoApproveNewOrders)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.AutoPrintReceiptOnAutoApprove)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.ReceiptPrintCopyCount)
+            .IsRequired()
+            .HasDefaultValue(1);
+
         // Single-row table pattern (enforced by always updating a known row id in the service).
         builder.HasIndex(x => x.Id)
             .IsUnique()
             .HasDatabaseName("IX_CustomerOperationalSettings_Id");
+    }
+}
+
+public class PrintJobConfiguration : IEntityTypeConfiguration<PrintJob>
+{
+    public void Configure(EntityTypeBuilder<PrintJob> builder)
+    {
+        builder.ToTable("PrintJobs");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Type).IsRequired();
+        builder.Property(x => x.Status).IsRequired();
+        builder.Property(x => x.CopyCount).IsRequired();
+        builder.Property(x => x.PrinterName).HasMaxLength(200);
+        builder.Property(x => x.PayloadJson).IsRequired();
+        builder.Property(x => x.AttemptCount).IsRequired();
+        builder.Property(x => x.ErrorMessage).HasMaxLength(1000);
+
+        builder.HasIndex(x => new { x.OrderId, x.Type })
+            .IsUnique()
+            .HasDatabaseName("IX_PrintJobs_OrderId_Type");
+
+        builder.HasOne(x => x.Order)
+            .WithMany()
+            .HasForeignKey(x => x.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

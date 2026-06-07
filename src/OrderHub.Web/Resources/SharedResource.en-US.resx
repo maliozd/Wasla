@@ -1210,10 +1210,31 @@
     <value>Auto Approve</value>
   </data>
   <data name="Orders.AutoApproveHelp" xml:space="preserve">
-    <value>Automatically approves new orders (coming soon).</value>
+    <value>Automatically approves newly synced orders.</value>
   </data>
   <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
-    <value>Auto approve is not available yet.</value>
+    <value>Could not save auto approve setting.</value>
+  </data>
+  <data name="Orders.AutoPrintReceipt" xml:space="preserve">
+    <value>Create Receipt After Auto Approve</value>
+  </data>
+  <data name="Orders.AutoPrintReceiptHelp" xml:space="preserve">
+    <value>Creates a pending receipt print job for auto-approved orders.</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCount" xml:space="preserve">
+    <value>Receipt Copy Count</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCountHelp" xml:space="preserve">
+    <value>Number of receipt copies for auto print jobs (max 3).</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCountOutOfRange" xml:space="preserve">
+    <value>Receipt copy count must be between 1 and 3.</value>
+  </data>
+  <data name="Orders.OrderSettingsSaved" xml:space="preserve">
+    <value>Order settings saved.</value>
+  </data>
+  <data name="Orders.OrderSettingsUpdateFailed" xml:space="preserve">
+    <value>Could not save order settings.</value>
   </data>
   <data name="Orders.OrderSync" xml:space="preserve">
     <value>Order Sync</value>

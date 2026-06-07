@@ -16,3 +16,11 @@ dotnet run --project src/OrderHub.Cli -- add-customer `
   --admin-email "admin@hardalburger.com" `
   --admin-password "Test123!" `
   --admin-name "Hardal Admin"
+
+dotnet run --project src/OrderHub.Cli -- add-customer `
+  --name "Pilavcı Rahim" `
+  --slug "pilavci-rahim" `
+  --domain "pilavcirahim.orderhub.local" `
+  --admin-email "admin@hpilavcirahim.com" `
+  --admin-password "Test123!" `
+  --admin-name "Osman Admin"

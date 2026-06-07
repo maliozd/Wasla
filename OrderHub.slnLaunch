@@ -1,6 +1,6 @@
 [
   {
-    "Name": "New Profile",
+    "Name": "Web+Worker+API",
     "Projects": [
       {
         "Path": "src\\OrderHub.Web\\OrderHub.Web.csproj",
@@ -8,6 +8,10 @@
       },
       {
         "Path": "src\\OrderHub.Worker\\OrderHub.Worker.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\OrderHub.Api\\OrderHub.Api.csproj",
         "Action": "Start"
       }
     ]

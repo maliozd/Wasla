@@ -1210,10 +1210,31 @@
     <value>Otomatik Onay</value>
   </data>
   <data name="Orders.AutoApproveHelp" xml:space="preserve">
-    <value>Yeni siparişleri otomatik olarak onaylar (yakında).</value>
+    <value>Yeni senkronize edilen siparişleri otomatik olarak onaylar.</value>
   </data>
   <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
-    <value>Otomatik onay şu an kullanılamıyor.</value>
+    <value>Otomatik onay ayarı kaydedilemedi.</value>
+  </data>
+  <data name="Orders.AutoPrintReceipt" xml:space="preserve">
+    <value>Otomatik Onay Sonrası Fiş Oluştur</value>
+  </data>
+  <data name="Orders.AutoPrintReceiptHelp" xml:space="preserve">
+    <value>Otomatik onaylanan siparişler için bekleyen fiş yazdırma işi oluşturur.</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCount" xml:space="preserve">
+    <value>Fiş Kopya Sayısı</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCountHelp" xml:space="preserve">
+    <value>Otomatik fiş işi için kopya sayısı (en fazla 3).</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCountOutOfRange" xml:space="preserve">
+    <value>Fiş kopya sayısı 1 ile 3 arasında olmalıdır.</value>
+  </data>
+  <data name="Orders.OrderSettingsSaved" xml:space="preserve">
+    <value>Sipariş ayarları kaydedildi.</value>
+  </data>
+  <data name="Orders.OrderSettingsUpdateFailed" xml:space="preserve">
+    <value>Sipariş ayarları kaydedilemedi.</value>
   </data>
   <data name="Orders.OrderSync" xml:space="preserve">
     <value>Sipariş Senkronizasyonu</value>

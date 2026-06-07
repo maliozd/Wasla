@@ -4,6 +4,7 @@ using System.Text;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Application.Abstractions.Orders.Services;
 using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Application.Platform.Dtos;
@@ -21,6 +22,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly ICustomerDbContextFactory _customerDbFactory;
     private readonly IEnumerable<IFoodPlatformClient> _platformClients;
     private readonly IOrderStatusMapper _statusMapper;
+    private readonly IOrderAutoApproveService _autoApprove;
     private readonly ILogger<OrderSyncService> _logger;
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
@@ -56,11 +58,13 @@ public sealed class OrderSyncService : IOrderSyncService
         ICustomerDbContextFactory customerDbFactory,
         IEnumerable<IFoodPlatformClient> platformClients,
         IOrderStatusMapper statusMapper,
+        IOrderAutoApproveService autoApprove,
         ILogger<OrderSyncService> logger)
     {
         _customerDbFactory = customerDbFactory;
         _platformClients = platformClients;
         _statusMapper = statusMapper;
+        _autoApprove = autoApprove;
         _logger = logger;
     }
 
@@ -302,7 +306,7 @@ public sealed class OrderSyncService : IOrderSyncService
             var swUpsert = Stopwatch.StartNew();
             foreach (var external in externalOrders)
             {
-                var r = await UpsertOrderAsync(db, external, ct).ConfigureAwait(false);
+                var r = await UpsertOrderAsync(customerId, db, external, ct).ConfigureAwait(false);
                 if (r.Inserted) { syncLog.OrdersInserted++; connInserted++; }
                 if (r.Updated) { syncLog.OrdersUpdated++; connUpdated++; }
                 if (r.Skipped) { connSkipped++; }
@@ -389,6 +393,7 @@ public sealed class OrderSyncService : IOrderSyncService
     }
 
     private async Task<OrderUpsertResult> UpsertOrderAsync(
+      Guid customerId,
       CustomerDbContext db,
       ExternalOrderDto external,
       CancellationToken ct)
@@ -434,6 +439,23 @@ public sealed class OrderSyncService : IOrderSyncService
                 order.Platform,
                 order.InternalStatus,
                 order.ReceivedAt);
+
+            try
+            {
+                await _autoApprove.ProcessNewlyInsertedOrderAsync(
+                    customerId,
+                    order.Id,
+                    order.InternalStatus,
+                    ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Auto-approve processing failed but sync continued. CustomerId={CustomerId}, OrderId={OrderId}",
+                    customerId,
+                    order.Id);
+            }
 
             return new OrderUpsertResult(true, false, false, false, order.ExternalOrderId);
         }

@@ -1210,10 +1210,31 @@
     <value>الموافقة التلقائية</value>
   </data>
   <data name="Orders.AutoApproveHelp" xml:space="preserve">
-    <value>يقوم بالموافقة تلقائيًا على الطلبات الجديدة (قريبًا).</value>
+    <value>يوافق تلقائيًا على الطلبات المزامنة حديثًا.</value>
   </data>
   <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
-    <value>الموافقة التلقائية غير متاحة بعد.</value>
+    <value>تعذر حفظ إعداد الموافقة التلقائية.</value>
+  </data>
+  <data name="Orders.AutoPrintReceipt" xml:space="preserve">
+    <value>إنشاء إيصال بعد الموافقة التلقائية</value>
+  </data>
+  <data name="Orders.AutoPrintReceiptHelp" xml:space="preserve">
+    <value>ينشئ مهمة طباعة إيصال معلقة للطلبات المعتمدة تلقائيًا.</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCount" xml:space="preserve">
+    <value>عدد نسخ الإيصال</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCountHelp" xml:space="preserve">
+    <value>عدد نسخ الإيصال لمهام الطباعة التلقائية (بحد أقصى 3).</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCountOutOfRange" xml:space="preserve">
+    <value>يجب أن يكون عدد نسخ الإيصال بين 1 و 3.</value>
+  </data>
+  <data name="Orders.OrderSettingsSaved" xml:space="preserve">
+    <value>تم حفظ إعدادات الطلبات.</value>
+  </data>
+  <data name="Orders.OrderSettingsUpdateFailed" xml:space="preserve">
+    <value>تعذر حفظ إعدادات الطلبات.</value>
   </data>
   <data name="Orders.OrderSync" xml:space="preserve">
     <value>مزامنة الطلبات</value>

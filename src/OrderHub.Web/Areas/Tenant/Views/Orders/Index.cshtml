@@ -26,6 +26,9 @@
         <form id="orderSyncSettingsForm" method="post" action="/orders/sync-settings" class="d-none">
             @Html.AntiForgeryToken()
         </form>
+        <form id="orderSettingsForm" method="post" action="/orders/order-settings" class="d-none">
+            @Html.AntiForgeryToken()
+        </form>
 
         <div class="orders-toggle-group d-inline-flex align-items-center gap-2 oh-orders-header-control">
             <span class="small text-muted text-nowrap" title="@L["Orders.OrderSync"]">@L["Orders.OrderSync"]</span>
@@ -45,6 +48,27 @@
                        title="@L["Orders.AutoApproveHelp"]" />
             </div>
             <span id="autoApproveStatusBadge" class="badge text-bg-secondary">@L["Orders.Passive"]</span>
+        </div>
+
+        <div class="orders-toggle-group d-inline-flex align-items-center gap-2 oh-orders-header-control">
+            <span class="small text-muted text-nowrap" title="@L["Orders.AutoPrintReceiptHelp"]">@L["Orders.AutoPrintReceipt"]</span>
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="autoPrintReceiptToggle"
+                       aria-label="@L["Orders.AutoPrintReceipt"]"
+                       title="@L["Orders.AutoPrintReceiptHelp"]" />
+            </div>
+            <span id="autoPrintReceiptStatusBadge" class="badge text-bg-secondary">@L["Orders.Passive"]</span>
+        </div>
+
+        <div class="orders-toggle-group d-inline-flex align-items-center gap-2 oh-orders-header-control">
+            <label class="small text-muted text-nowrap mb-0" for="receiptPrintCopyCountSelect" title="@L["Orders.ReceiptPrintCopyCountHelp"]">@L["Orders.ReceiptPrintCopyCount"]</label>
+            <select id="receiptPrintCopyCountSelect" class="form-select form-select-sm" style="width: 4.5rem;"
+                    aria-label="@L["Orders.ReceiptPrintCopyCount"]"
+                    title="@L["Orders.ReceiptPrintCopyCountHelp"]">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
         </div>
 
         <button type="button" class="btn btn-outline-secondary btn-sm flex-shrink-0" id="notificationSettingsBtn">
@@ -164,6 +188,7 @@
             notificationSettingsUrl: "/notification-settings",
             notificationSettingsJsonUrl: "/notification-settings/current",
             orderSyncSettingsUrl: "/orders/sync-settings",
+            orderSettingsUrl: "/orders/order-settings",
             pollingIntervalMs: 10000,
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
             {
@@ -228,46 +253,18 @@
                 ["ordersPassive"] = L["Orders.Passive"].Value,
                 ["orderSyncEnabledMessage"] = L["Orders.OrderSyncEnabledMessage"].Value,
                 ["orderSyncDisabledMessage"] = L["Orders.OrderSyncDisabledMessage"].Value,
-                ["orderSyncUpdateFailed"] = L["Orders.OrderSyncUpdateFailed"].Value
+                ["orderSyncUpdateFailed"] = L["Orders.OrderSyncUpdateFailed"].Value,
+                ["orderSettingsSaved"] = L["Orders.OrderSettingsSaved"].Value,
+                ["orderSettingsUpdateFailed"] = L["Orders.OrderSettingsUpdateFailed"].Value,
+                ["receiptPrintCopyCountOutOfRange"] = L["Orders.ReceiptPrintCopyCountOutOfRange"].Value
             }))
         };
-    </script>
-    <script>
-        (function () {
-            var O = window.OrderHubOrders;
-            var toggle = document.getElementById("autoApproveToggle");
-            var badge = document.getElementById("autoApproveStatusBadge");
-            if (!toggle) return;
-
-            function setAutoApproveState(enabled) {
-                toggle.checked = !!enabled;
-                if (!badge || !O) return;
-                badge.textContent = enabled ? O.getMessage("ordersActive") : O.getMessage("ordersPassive");
-                badge.classList.remove("text-bg-secondary", "text-bg-success");
-                badge.classList.add(enabled ? "text-bg-success" : "text-bg-secondary");
-            }
-
-            setAutoApproveState(false);
-
-            var msg = @Html.Raw(JsonSerializer.Serialize(new {
-                notAvailable = L["Orders.AutoApproveSaveFailed"].Value
-            }));
-
-            toggle.addEventListener("change", function () {
-                var attempted = toggle.checked;
-                setAutoApproveState(attempted);
-                // Minimal safe integration: no persistence unless backend support exists.
-                setAutoApproveState(false);
-                if (window.OrderHubToast) {
-                    window.OrderHubToast.info(msg.notAvailable, { key: "orders-auto-approve" });
-                }
-            });
-        })();
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-sync-settings.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-order-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-page.js" asp-append-version="true"></script>
