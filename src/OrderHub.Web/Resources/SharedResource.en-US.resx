@@ -1375,7 +1375,7 @@
     <value>Setup steps</value>
   </data>
   <data name="PrintBridge.SetupStepDownload" xml:space="preserve">
-    <value>Download OrderHub Print Bridge (coming soon).</value>
+    <value>Download the OrderHub Print Bridge placeholder package.</value>
   </data>
   <data name="PrintBridge.SetupStepToken" xml:space="preserve">
     <value>Generate a Print Bridge token on this page and save it securely (shown only once).</value>
@@ -1387,7 +1387,7 @@
     <value>Start Print Bridge; it will print pending receipt jobs automatically.</value>
   </data>
   <data name="PrintBridge.Download" xml:space="preserve">
-    <value>Download (coming soon)</value>
+    <value>Download placeholder package</value>
   </data>
   <data name="PrintBridge.GenerateToken" xml:space="preserve">
     <value>Generate Token</value>
@@ -1406,5 +1406,143 @@
   </data>
   <data name="PrintBridge.ApiHint" xml:space="preserve">
     <value>Print Bridge calls OrderHub API endpoints with the X-PrintBridge-Token header. Customer id is not sent in requests.</value>
+  </data>
+  <data name="PrintBridge.Description" xml:space="preserve">
+    <value>Manage the local Print Bridge app on your restaurant PC for automatic USB receipt printing.</value>
+  </data>
+  <data name="PrintBridge.OverviewTitle" xml:space="preserve">
+    <value>Status overview</value>
+  </data>
+  <data name="PrintBridge.OverviewHelp" xml:space="preserve">
+    <value>Print Bridge fetches receipt print jobs for approved orders and sends them to your USB thermal printer.</value>
+  </data>
+  <data name="PrintBridge.DeviceConnected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="PrintBridge.DeviceNotConnected" xml:space="preserve">
+    <value>Not connected</value>
+  </data>
+  <data name="PrintBridge.DeviceInactive" xml:space="preserve">
+    <value>Inactive device</value>
+  </data>
+  <data name="PrintBridge.LastSeen" xml:space="preserve">
+    <value>Last seen</value>
+  </data>
+  <data name="PrintBridge.MachineName" xml:space="preserve">
+    <value>Machine name</value>
+  </data>
+  <data name="PrintBridge.PrinterName" xml:space="preserve">
+    <value>Printer name</value>
+  </data>
+  <data name="PrintBridge.AppVersion" xml:space="preserve">
+    <value>App version</value>
+  </data>
+  <data name="PrintBridge.DevicesTitle" xml:space="preserve">
+    <value>Devices and token</value>
+  </data>
+  <data name="PrintBridge.DevicesHelp" xml:space="preserve">
+    <value>Create one device per restaurant PC. The token is shown only when created or regenerated.</value>
+  </data>
+  <data name="PrintBridge.CreateDevice" xml:space="preserve">
+    <value>Create device</value>
+  </data>
+  <data name="PrintBridge.RegenerateToken" xml:space="preserve">
+    <value>Regenerate token</value>
+  </data>
+  <data name="PrintBridge.CopyToken" xml:space="preserve">
+    <value>Copy token</value>
+  </data>
+  <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
+    <value>This token is shown only once. Copy and save it into your Print Bridge configuration.</value>
+  </data>
+  <data name="PrintBridge.TokenMasked" xml:space="preserve">
+    <value>Token is no longer visible. Regenerate the token to see a new one.</value>
+  </data>
+  <data name="PrintBridge.NoDevices" xml:space="preserve">
+    <value>No Print Bridge devices yet. Create a device to get started.</value>
+  </data>
+  <data name="PrintBridge.ReceiptSettingsTitle" xml:space="preserve">
+    <value>Receipt printing settings</value>
+  </data>
+  <data name="PrintBridge.ReceiptSettingsHelp" xml:space="preserve">
+    <value>Automatic approval for new orders and receipt creation after auto-approve.</value>
+  </data>
+  <data name="PrintBridge.DownloadSetupTitle" xml:space="preserve">
+    <value>Download and setup</value>
+  </data>
+  <data name="PrintBridge.DownloadPlaceholderNotice" xml:space="preserve">
+    <value>The Windows installer is not finalized yet. You can download a placeholder package with sample files for now.</value>
+  </data>
+  <data name="PrintBridge.SetupSteps" xml:space="preserve">
+    <value>Setup steps</value>
+  </data>
+  <data name="PrintBridge.SetupStepInstall" xml:space="preserve">
+    <value>Install or run it on the Windows PC connected to the USB receipt printer.</value>
+  </data>
+  <data name="PrintBridge.SetupStepPrinter" xml:space="preserve">
+    <value>Make sure the printer is installed in Windows.</value>
+  </data>
+  <data name="PrintBridge.SetupStepTest" xml:space="preserve">
+    <value>Test printing with a new order.</value>
+  </data>
+  <data name="PrintBridge.ExampleConfigTitle" xml:space="preserve">
+    <value>Example configuration</value>
+  </data>
+  <data name="PrintBridge.CopyExampleConfig" xml:space="preserve">
+    <value>Copy example config</value>
+  </data>
+  <data name="PrintBridge.FindPrinterTitle" xml:space="preserve">
+    <value>Find Windows printer name</value>
+  </data>
+  <data name="PrintBridge.CopyPowerShellCommand" xml:space="preserve">
+    <value>Copy PowerShell command</value>
+  </data>
+  <data name="PrintBridge.Copied" xml:space="preserve">
+    <value>Copied</value>
+  </data>
+  <data name="PrintBridge.CopyFailed" xml:space="preserve">
+    <value>Copy failed</value>
+  </data>
+  <data name="PrintBridge.RegenerateConfirm" xml:space="preserve">
+    <value>Regenerate token for {0}? The old token will stop working.</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerateFailed" xml:space="preserve">
+    <value>Could not regenerate token.</value>
+  </data>
+  <data name="PrintBridge.DeviceUpdateFailed" xml:space="preserve">
+    <value>Could not update device.</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
+    <value>Your current plan includes 1 receipt printer connection. Additional connections will be billed later.</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
+    <value>Active device count exceeds the current limit. Please deactivate extra devices.</value>
+  </data>
+  <data name="PrintBridge.AllowedDeviceCount" xml:space="preserve">
+    <value>Your current plan allows {0} active Print Bridge device.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesYet" xml:space="preserve">
+    <value>No Print Bridge devices yet.</value>
+  </data>
+  <data name="PrintBridge.CreateFirstDevice" xml:space="preserve">
+    <value>Create a device on the right to get started.</value>
+  </data>
+  <data name="PrintBridge.DeactivateExtraDevices" xml:space="preserve">
+    <value>Deactivate extra devices to bring the count back within the limit.</value>
+  </data>
+  <data name="PrintBridge.StatusOverview" xml:space="preserve">
+    <value>Status overview</value>
+  </data>
+  <data name="PrintBridge.Connected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="PrintBridge.NotConnected" xml:space="preserve">
+    <value>Not connected</value>
+  </data>
+  <data name="PrintBridge.TokenCreatedCopyNow" xml:space="preserve">
+    <value>Token created. This value is shown only once — copy it now.</value>
+  </data>
+  <data name="PrintBridge.DeviceCreatedSuccessfully" xml:space="preserve">
+    <value>Print Bridge device created.</value>
   </data>
 </root>

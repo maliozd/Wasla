@@ -1375,7 +1375,7 @@
     <value>خطوات الإعداد</value>
   </data>
   <data name="PrintBridge.SetupStepDownload" xml:space="preserve">
-    <value>تنزيل OrderHub Print Bridge (قريباً).</value>
+    <value>تنزيل حزمة OrderHub Print Bridge المؤقتة.</value>
   </data>
   <data name="PrintBridge.SetupStepToken" xml:space="preserve">
     <value>أنشئ رمز Print Bridge من هذه الصفحة واحفظه بأمان (يُعرض مرة واحدة فقط).</value>
@@ -1387,7 +1387,7 @@
     <value>شغّل Print Bridge؛ سيطبع مهام الإيصالات المعلقة تلقائياً.</value>
   </data>
   <data name="PrintBridge.Download" xml:space="preserve">
-    <value>تنزيل (قريباً)</value>
+    <value>تنزيل الحزمة المؤقتة</value>
   </data>
   <data name="PrintBridge.GenerateToken" xml:space="preserve">
     <value>إنشاء رمز</value>
@@ -1406,5 +1406,143 @@
   </data>
   <data name="PrintBridge.ApiHint" xml:space="preserve">
     <value>يستدعي Print Bridge نقاط OrderHub API باستخدام رأس X-PrintBridge-Token. لا يُرسل معرّف العميل في الطلبات.</value>
+  </data>
+  <data name="PrintBridge.Description" xml:space="preserve">
+    <value>أدر تطبيق Print Bridge المحلي على حاسوب المطعم للطباعة التلقائية عبر USB.</value>
+  </data>
+  <data name="PrintBridge.OverviewTitle" xml:space="preserve">
+    <value>ملخص الحالة</value>
+  </data>
+  <data name="PrintBridge.OverviewHelp" xml:space="preserve">
+    <value>يجلب Print Bridge مهام طباعة الإيصالات للطلبات المعتمدة ويرسلها إلى الطابعة الحرارية USB.</value>
+  </data>
+  <data name="PrintBridge.DeviceConnected" xml:space="preserve">
+    <value>متصل</value>
+  </data>
+  <data name="PrintBridge.DeviceNotConnected" xml:space="preserve">
+    <value>غير متصل</value>
+  </data>
+  <data name="PrintBridge.DeviceInactive" xml:space="preserve">
+    <value>جهاز غير نشط</value>
+  </data>
+  <data name="PrintBridge.LastSeen" xml:space="preserve">
+    <value>آخر ظهور</value>
+  </data>
+  <data name="PrintBridge.MachineName" xml:space="preserve">
+    <value>اسم الجهاز</value>
+  </data>
+  <data name="PrintBridge.PrinterName" xml:space="preserve">
+    <value>اسم الطابعة</value>
+  </data>
+  <data name="PrintBridge.AppVersion" xml:space="preserve">
+    <value>إصدار التطبيق</value>
+  </data>
+  <data name="PrintBridge.DevicesTitle" xml:space="preserve">
+    <value>الأجهزة والرمز</value>
+  </data>
+  <data name="PrintBridge.DevicesHelp" xml:space="preserve">
+    <value>أنشئ جهازاً لكل حاسوب مطعم. يُعرض الرمز فقط عند الإنشاء أو إعادة التوليد.</value>
+  </data>
+  <data name="PrintBridge.CreateDevice" xml:space="preserve">
+    <value>إنشاء جهاز</value>
+  </data>
+  <data name="PrintBridge.RegenerateToken" xml:space="preserve">
+    <value>إعادة توليد الرمز</value>
+  </data>
+  <data name="PrintBridge.CopyToken" xml:space="preserve">
+    <value>نسخ الرمز</value>
+  </data>
+  <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
+    <value>يُعرض هذا الرمز مرة واحدة فقط. انسخه واحفظه في إعدادات Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.TokenMasked" xml:space="preserve">
+    <value>الرمز لم يعد مرئياً. أعد توليد الرمز لرؤية رمز جديد.</value>
+  </data>
+  <data name="PrintBridge.NoDevices" xml:space="preserve">
+    <value>لا توجد أجهزة Print Bridge بعد. أنشئ جهازاً للبدء.</value>
+  </data>
+  <data name="PrintBridge.ReceiptSettingsTitle" xml:space="preserve">
+    <value>إعدادات طباعة الإيصال</value>
+  </data>
+  <data name="PrintBridge.ReceiptSettingsHelp" xml:space="preserve">
+    <value>الموافقة التلقائية على الطلبات الجديدة وإنشاء الإيصال بعد الموافقة التلقائية.</value>
+  </data>
+  <data name="PrintBridge.DownloadSetupTitle" xml:space="preserve">
+    <value>التنزيل والإعداد</value>
+  </data>
+  <data name="PrintBridge.DownloadPlaceholderNotice" xml:space="preserve">
+    <value>مثبت Windows غير جاهز بعد. يمكنك تنزيل حزمة مؤقتة تحتوي على ملفات نموذجية.</value>
+  </data>
+  <data name="PrintBridge.SetupSteps" xml:space="preserve">
+    <value>خطوات الإعداد</value>
+  </data>
+  <data name="PrintBridge.SetupStepInstall" xml:space="preserve">
+    <value>ثبّته أو شغّله على حاسوب Windows المتصل بطابعة الإيصالات USB.</value>
+  </data>
+  <data name="PrintBridge.SetupStepPrinter" xml:space="preserve">
+    <value>تأكد من تثبيت الطابعة في Windows.</value>
+  </data>
+  <data name="PrintBridge.SetupStepTest" xml:space="preserve">
+    <value>اختبر الطباعة بطلب جديد.</value>
+  </data>
+  <data name="PrintBridge.ExampleConfigTitle" xml:space="preserve">
+    <value>مثال على الإعدادات</value>
+  </data>
+  <data name="PrintBridge.CopyExampleConfig" xml:space="preserve">
+    <value>نسخ مثال الإعدادات</value>
+  </data>
+  <data name="PrintBridge.FindPrinterTitle" xml:space="preserve">
+    <value>العثور على اسم الطابعة في Windows</value>
+  </data>
+  <data name="PrintBridge.CopyPowerShellCommand" xml:space="preserve">
+    <value>نسخ أمر PowerShell</value>
+  </data>
+  <data name="PrintBridge.Copied" xml:space="preserve">
+    <value>تم النسخ</value>
+  </data>
+  <data name="PrintBridge.CopyFailed" xml:space="preserve">
+    <value>فشل النسخ</value>
+  </data>
+  <data name="PrintBridge.RegenerateConfirm" xml:space="preserve">
+    <value>إعادة توليد الرمز لـ {0}؟ سيتوقف الرمز القديم عن العمل.</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerateFailed" xml:space="preserve">
+    <value>تعذرت إعادة توليد الرمز.</value>
+  </data>
+  <data name="PrintBridge.DeviceUpdateFailed" xml:space="preserve">
+    <value>تعذر تحديث الجهاز.</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
+    <value>تتضمن خطتك الحالية اتصال طابعة إيصالات واحد. سيتم فرض رسوم على الاتصالات الإضافية لاحقاً.</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
+    <value>عدد الأجهزة النشطة يتجاوز الحد الحالي. يرجى إلغاء تفعيل الأجهزة الزائدة.</value>
+  </data>
+  <data name="PrintBridge.AllowedDeviceCount" xml:space="preserve">
+    <value>تسمح خطتك الحالية بـ {0} جهاز Print Bridge نشط.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesYet" xml:space="preserve">
+    <value>لا توجد أجهزة Print Bridge بعد.</value>
+  </data>
+  <data name="PrintBridge.CreateFirstDevice" xml:space="preserve">
+    <value>أنشئ جهازاً من الجانب الأيمن للبدء.</value>
+  </data>
+  <data name="PrintBridge.DeactivateExtraDevices" xml:space="preserve">
+    <value>ألغِ تفعيل الأجهزة الزائدة لإعادة العدد ضمن الحد.</value>
+  </data>
+  <data name="PrintBridge.StatusOverview" xml:space="preserve">
+    <value>ملخص الحالة</value>
+  </data>
+  <data name="PrintBridge.Connected" xml:space="preserve">
+    <value>متصل</value>
+  </data>
+  <data name="PrintBridge.NotConnected" xml:space="preserve">
+    <value>غير متصل</value>
+  </data>
+  <data name="PrintBridge.TokenCreatedCopyNow" xml:space="preserve">
+    <value>تم إنشاء الرمز. تُعرض هذه القيمة مرة واحدة فقط — انسخها الآن.</value>
+  </data>
+  <data name="PrintBridge.DeviceCreatedSuccessfully" xml:space="preserve">
+    <value>تم إنشاء جهاز Print Bridge.</value>
   </data>
 </root>

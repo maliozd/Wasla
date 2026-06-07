@@ -1,89 +1,268 @@
-@model OrderHub.Web.Models.PrintBridge.PrintBridgeHelpViewModel
+@model OrderHub.Web.Models.PrintBridge.PrintBridgePageViewModel
 @using Microsoft.Extensions.Localization
+@using System.Text.Json
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
     ViewData["Title"] = L["PrintBridge.Title"];
+
+    var initialDevices = Model.Devices.Select(d => new
+    {
+        id = d.Id,
+        name = d.Name,
+        isActive = d.IsActive,
+        isConnected = d.IsConnected,
+        lastSeenAtUtc = d.LastSeenAtUtc,
+        machineName = d.MachineName,
+        printerName = d.PrinterName,
+        appVersion = d.AppVersion
+    });
+
+    var initialQuota = new
+    {
+        allowedActiveDeviceCount = Model.AllowedActiveDeviceCount,
+        activeDeviceCount = Model.ActiveDeviceCount,
+        canCreateActiveDevice = Model.CanCreateActiveDevice,
+        activeCountExceedsLimit = Model.ActiveCountExceedsLimit
+    };
+
+    var pbMessages = new
+    {
+        tokenCreatedCopyNow = L["PrintBridge.TokenCreatedCopyNow"].Value,
+        deviceCreatedSuccessfully = L["PrintBridge.DeviceCreatedSuccessfully"].Value,
+        tokenGenerateFailed = L["PrintBridge.TokenGenerateFailed"].Value,
+        tokenRegenerateFailed = L["PrintBridge.TokenRegenerateFailed"].Value,
+        regenerateConfirm = L["PrintBridge.RegenerateConfirm"].Value,
+        copyToken = L["PrintBridge.CopyToken"].Value,
+        copied = L["PrintBridge.Copied"].Value,
+        copyFailed = L["PrintBridge.CopyFailed"].Value,
+        copyExampleConfig = L["PrintBridge.CopyExampleConfig"].Value,
+        copyPowerShell = L["PrintBridge.CopyPowerShellCommand"].Value,
+        ordersActive = L["Orders.Active"].Value,
+        ordersPassive = L["Orders.Passive"].Value,
+        orderSettingsSaved = L["Orders.OrderSettingsSaved"].Value,
+        orderSettingsUpdateFailed = L["Orders.OrderSettingsUpdateFailed"].Value,
+        deviceUpdateFailed = L["PrintBridge.DeviceUpdateFailed"].Value,
+        maskedToken = L["PrintBridge.TokenMasked"].Value,
+        deviceLimitReached = L["PrintBridge.DeviceLimitReached"].Value,
+        deviceLimitExceededWarning = L["PrintBridge.DeviceLimitExceededWarning"].Value,
+        deactivateExtraDevices = L["PrintBridge.DeactivateExtraDevices"].Value,
+        noDevicesYet = L["PrintBridge.NoDevicesYet"].Value,
+        createFirstDevice = L["PrintBridge.CreateFirstDevice"].Value,
+        connected = L["PrintBridge.Connected"].Value,
+        notConnected = L["PrintBridge.NotConnected"].Value,
+        deviceInactive = L["PrintBridge.DeviceInactive"].Value,
+        lastSeen = L["PrintBridge.LastSeen"].Value,
+        machineName = L["PrintBridge.MachineName"].Value,
+        printerName = L["PrintBridge.PrinterName"].Value,
+        appVersion = L["PrintBridge.AppVersion"].Value,
+        deviceName = L["PrintBridge.DeviceName"].Value,
+        status = L["Common.Status"].Value,
+        actions = L["Common.Actions"].Value,
+        regenerateToken = L["PrintBridge.RegenerateToken"].Value,
+        emptyValue = "—",
+        allowedDeviceCount = L["PrintBridge.AllowedDeviceCount", Model.AllowedActiveDeviceCount].Value
+    };
+    var pbMessagesJson = JsonSerializer.Serialize(pbMessages);
 }
 
-<div class="card oh-card">
-    <div class="card-body">
-        <h1 class="h4 mb-3">@L["PrintBridge.Title"]</h1>
-        <p class="text-muted">@L["PrintBridge.Intro"]</p>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h1 class="h4 mb-1">@L["PrintBridge.Title"]</h1>
+        <p class="text-muted small mb-0">@L["PrintBridge.Description"]</p>
+    </div>
+</div>
 
-        <h2 class="h6 mt-4">@L["PrintBridge.RequirementsTitle"]</h2>
-        <ul class="small">
-            <li>@L["PrintBridge.RequirementWindows"]</li>
-            <li>@L["PrintBridge.RequirementUsbPrinter"]</li>
-            <li>@L["PrintBridge.RequirementLocalApp"]</li>
-        </ul>
+<div id="printBridgeMessageHost"></div>
 
-        <h2 class="h6 mt-4">@L["PrintBridge.SetupTitle"]</h2>
-        <ol class="small">
-            <li>@L["PrintBridge.SetupStepDownload"]</li>
-            <li>@L["PrintBridge.SetupStepToken"]</li>
-            <li>@L["PrintBridge.SetupStepConfig"]</li>
-            <li>@L["PrintBridge.SetupStepRun"]</li>
-        </ol>
+<form id="printBridgeAntiForgery" method="post" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
 
-        <div class="d-flex flex-wrap gap-2 mt-3">
-            <a class="btn btn-outline-primary btn-sm" href="@Model.DownloadUrl">@L["PrintBridge.Download"]</a>
-            <button type="button" class="btn btn-primary btn-sm" id="printBridgeGenerateTokenBtn">@L["PrintBridge.GenerateToken"]</button>
+<div class="row g-3">
+    <div class="col-12 col-xl-6">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                    <div>
+                        <h2 class="h6 mb-1"><i class="bi bi-activity me-1 text-primary"></i>@L["PrintBridge.StatusOverview"]</h2>
+                        <p class="text-muted small mb-0">@L["PrintBridge.OverviewHelp"]</p>
+                    </div>
+                    <span id="printBridgeOverviewBadge" class="badge text-bg-secondary d-none"></span>
+                </div>
+                <div id="printBridgeOverviewBody"></div>
+            </div>
         </div>
+    </div>
 
-        <form id="printBridgeTokenForm" method="post" action="/print-bridge/generate-token" class="mt-3">
-            @Html.AntiForgeryToken()
-            <div class="row g-2 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label small" for="printBridgeDeviceName">@L["PrintBridge.DeviceName"]</label>
-                    <input class="form-control form-control-sm" id="printBridgeDeviceName" name="deviceName" type="text" maxlength="200" placeholder="@L["PrintBridge.DeviceNamePlaceholder"]" />
+    <div class="col-12 col-xl-6">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-1"><i class="bi bi-key me-1 text-primary"></i>@L["PrintBridge.DevicesTitle"]</h2>
+                <p class="text-muted small mb-2">@L["PrintBridge.DevicesHelp"]</p>
+                <p class="text-muted small mb-3" id="printBridgeAllowedCountText">@L["PrintBridge.AllowedDeviceCount", Model.AllowedActiveDeviceCount]</p>
+
+                <div id="printBridgeLimitExceededAlert" class="alert alert-warning small py-2 d-none" role="alert">
+                    <div class="fw-semibold">@L["PrintBridge.DeviceLimitExceededWarning"]</div>
+                    <div class="mt-1">@L["PrintBridge.DeactivateExtraDevices"]</div>
+                </div>
+
+                <div id="printBridgeLimitReachedAlert" class="alert alert-info small py-2 d-none" role="alert">
+                    @L["PrintBridge.DeviceLimitReached"]
+                </div>
+
+                <div class="row g-2 align-items-end mb-3" id="printBridgeCreateForm">
+                    <div class="col-sm-8">
+                        <label class="form-label small" for="printBridgeDeviceName">@L["PrintBridge.DeviceName"]</label>
+                        <input class="form-control form-control-sm" id="printBridgeDeviceName" type="text" maxlength="200"
+                               placeholder="@L["PrintBridge.DeviceNamePlaceholder"]" />
+                    </div>
+                    <div class="col-sm-4">
+                        <button type="button" class="btn btn-primary btn-sm w-100" id="printBridgeCreateDeviceBtn">
+                            <i class="bi bi-plus-lg me-1"></i>@L["PrintBridge.CreateDevice"]
+                        </button>
+                    </div>
+                </div>
+
+                <div id="printBridgeTokenBox" class="d-none border border-warning rounded p-3 mb-3 bg-warning-subtle">
+                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                        <span class="small fw-semibold text-warning-emphasis" id="printBridgeTokenMessage"></span>
+                        <button type="button" class="btn btn-sm btn-outline-dark" id="printBridgeCopyTokenBtn">
+                            <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyToken"]
+                        </button>
+                    </div>
+                    <code id="printBridgeTokenValue" class="d-block small user-select-all text-break"></code>
+                </div>
+
+                <div id="printBridgeDevicesPanel"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-1"><i class="bi bi-receipt me-1 text-primary"></i>@L["PrintBridge.ReceiptSettingsTitle"]</h2>
+                <p class="text-muted small mb-3">@L["PrintBridge.ReceiptSettingsHelp"]</p>
+
+                <form id="printBridgeOrderSettingsForm" class="d-none" method="post" action="/print-bridge/order-settings">
+                    @Html.AntiForgeryToken()
+                </form>
+
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div>
+                            <div class="small fw-semibold">@L["Orders.AutoApprove"]</div>
+                            <div class="text-muted small">@L["Orders.AutoApproveHelp"]</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="pbAutoApproveToggle"
+                                       @(Model.AutoApproveNewOrders ? "checked" : null) />
+                            </div>
+                            <span id="pbAutoApproveBadge" class="badge @(Model.AutoApproveNewOrders ? "text-bg-success" : "text-bg-secondary")">
+                                @(Model.AutoApproveNewOrders ? L["Orders.Active"] : L["Orders.Passive"])
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div>
+                            <div class="small fw-semibold">@L["Orders.AutoPrintReceipt"]</div>
+                            <div class="text-muted small">@L["Orders.AutoPrintReceiptHelp"]</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="pbAutoPrintReceiptToggle"
+                                       @(Model.AutoPrintReceiptOnAutoApprove ? "checked" : null) />
+                            </div>
+                            <span id="pbAutoPrintReceiptBadge" class="badge @(Model.AutoPrintReceiptOnAutoApprove ? "text-bg-success" : "text-bg-secondary")">
+                                @(Model.AutoPrintReceiptOnAutoApprove ? L["Orders.Active"] : L["Orders.Passive"])
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div>
+                            <div class="small fw-semibold">@L["Orders.ReceiptPrintCopyCount"]</div>
+                            <div class="text-muted small">@L["Orders.ReceiptPrintCopyCountHelp"]</div>
+                        </div>
+                        <select id="pbReceiptPrintCopyCountSelect" class="form-select form-select-sm" style="width: 5rem;">
+                            @for (var copy = 1; copy <= 3; copy++)
+                            {
+                                if (Model.ReceiptPrintCopyCount == copy)
+                                {
+                                    <option value="@copy" selected>@copy</option>
+                                }
+                                else
+                                {
+                                    <option value="@copy">@copy</option>
+                                }
+                            }
+                        </select>
+                    </div>
                 </div>
             </div>
-        </form>
+        </div>
+    </div>
 
-        <div id="printBridgeTokenResult" class="alert alert-warning small mt-3 d-none" role="alert"></div>
+    <div class="col-12 col-lg-6">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-1"><i class="bi bi-download me-1 text-primary"></i>@L["PrintBridge.DownloadSetupTitle"]</h2>
+                <p class="text-muted small mb-2">@L["PrintBridge.DownloadPlaceholderNotice"]</p>
+                <a class="btn btn-outline-primary btn-sm mb-3" href="@Model.DownloadUrl">
+                    <i class="bi bi-box-arrow-down me-1"></i>@L["PrintBridge.Download"]
+                </a>
 
-        <p class="text-muted small mt-4 mb-0">@L["PrintBridge.ApiHint"]</p>
+                <h3 class="h6 small text-uppercase text-muted mb-2">@L["PrintBridge.SetupSteps"]</h3>
+                <ol class="small mb-3 ps-3">
+                    <li>@L["PrintBridge.SetupStepDownload"]</li>
+                    <li>@L["PrintBridge.SetupStepInstall"]</li>
+                    <li>@L["PrintBridge.SetupStepPrinter"]</li>
+                    <li>@L["PrintBridge.SetupStepToken"]</li>
+                    <li>@L["PrintBridge.SetupStepConfig"]</li>
+                    <li>@L["PrintBridge.SetupStepRun"]</li>
+                    <li>@L["PrintBridge.SetupStepTest"]</li>
+                </ol>
+
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                    <span class="small fw-semibold">@L["PrintBridge.ExampleConfigTitle"]</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="printBridgeCopyConfigBtn">
+                        <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyExampleConfig"]
+                    </button>
+                </div>
+                <pre class="small bg-body-secondary rounded p-2 mb-3" id="printBridgeExampleConfig">@Model.ExampleConfigJson</pre>
+
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                    <span class="small fw-semibold">@L["PrintBridge.FindPrinterTitle"]</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="printBridgeCopyPsBtn">
+                        <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyPowerShellCommand"]
+                    </button>
+                </div>
+                <pre class="small bg-body-secondary rounded p-2 mb-0" id="printBridgePsCommand">@Model.PowerShellPrinterCommand</pre>
+
+                <p class="text-muted small mt-3 mb-0">@L["PrintBridge.ApiHint"]</p>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        (function () {
-            var btn = document.getElementById("printBridgeGenerateTokenBtn");
-            var form = document.getElementById("printBridgeTokenForm");
-            var result = document.getElementById("printBridgeTokenResult");
-            if (!btn || !form || !result) return;
-
-            var messages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
-                tokenGeneratedOnce = L["PrintBridge.TokenGeneratedOnce"].Value,
-                tokenGenerateFailed = L["PrintBridge.TokenGenerateFailed"].Value
-            }));
-
-            btn.addEventListener("click", function () {
-                var tokenInput = form.querySelector("input[name='__RequestVerificationToken']");
-                var deviceName = document.getElementById("printBridgeDeviceName");
-                var body = new URLSearchParams();
-                if (deviceName && deviceName.value) body.set("deviceName", deviceName.value);
-
-                var headers = { "X-Requested-With": "fetch" };
-                if (tokenInput) headers["RequestVerificationToken"] = tokenInput.value;
-
-                fetch(form.action, { method: "POST", headers: headers, body: body })
-                    .then(function (resp) {
-                        if (!resp.ok) throw new Error("failed");
-                        return resp.json();
-                    })
-                    .then(function (data) {
-                        result.classList.remove("d-none", "alert-danger");
-                        result.classList.add("alert-warning");
-                        result.textContent = (data.message || messages.tokenGeneratedOnce) + " " + (data.token || "");
-                    })
-                    .catch(function () {
-                        result.classList.remove("d-none", "alert-warning");
-                        result.classList.add("alert-danger");
-                        result.textContent = messages.tokenGenerateFailed;
-                    });
-            });
-        })();
+        window.OrderHubPrintBridge = {
+            messages: @Html.Raw(pbMessagesJson),
+            exampleConfig: @Html.Raw(JsonSerializer.Serialize(Model.ExampleConfigJson)),
+            powerShellCommand: @Html.Raw(JsonSerializer.Serialize(Model.PowerShellPrinterCommand)),
+            orderSettingsUrl: "/print-bridge/order-settings",
+            devicesUrl: "/print-bridge/devices",
+            createDeviceUrl: "/print-bridge/devices/create",
+            regenerateTokenUrlTemplate: "/print-bridge/devices/{id}/regenerate-token",
+            setActiveUrlTemplate: "/print-bridge/devices/{id}/set-active",
+            initialState: {
+                devices: @Html.Raw(JsonSerializer.Serialize(initialDevices)),
+                quota: @Html.Raw(JsonSerializer.Serialize(initialQuota))
+            }
+        };
     </script>
+    <script src="~/js/print-bridge/print-bridge-page.js" asp-append-version="true"></script>
 }
