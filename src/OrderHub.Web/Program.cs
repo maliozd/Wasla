@@ -59,9 +59,18 @@ if (!string.IsNullOrWhiteSpace(keyPath))
     }
 }
 
-var securePolicy = builder.Environment.IsDevelopment()
+// Development: allow auth cookies over local HTTP (e.g. *.orderhub.local:5200).
+// Production: keep HTTPS-only secure cookies.
+var authCookieSecurePolicy = builder.Environment.IsDevelopment()
     ? CookieSecurePolicy.SameAsRequest
     : CookieSecurePolicy.Always;
+
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = authCookieSecurePolicy;
+});
 
 builder.Services.AddAuthentication(options =>
     {
@@ -74,7 +83,7 @@ builder.Services.AddAuthentication(options =>
         options.Cookie.Name = "orderhub_auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = securePolicy;
+        options.Cookie.SecurePolicy = authCookieSecurePolicy;
         options.LoginPath = "/auth/login";
         options.LogoutPath = "/auth/logout";
         options.AccessDeniedPath = "/auth/login";
@@ -86,7 +95,7 @@ builder.Services.AddAuthentication(options =>
         options.Cookie.Name = "orderhub_central_admin";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = securePolicy;
+        options.Cookie.SecurePolicy = authCookieSecurePolicy;
         options.LoginPath = "/admin/login";
         options.LogoutPath = "/admin/logout";
         options.AccessDeniedPath = "/admin/login";
@@ -115,6 +124,11 @@ builder.Services.AddScoped<ICurrentCustomerService, CurrentCustomerService>();
 builder.Services.AddOrderHubInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+app.Logger.LogInformation(
+    "Environment={Environment}, AuthCookieSecurePolicy={SecurePolicy}",
+    app.Environment.EnvironmentName,
+    authCookieSecurePolicy);
 
 if (!app.Environment.IsDevelopment())
 {

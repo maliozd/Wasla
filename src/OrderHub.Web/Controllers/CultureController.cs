@@ -7,6 +7,13 @@ namespace OrderHub.Web.Controllers;
 [Route("culture")]
 public sealed class CultureController : Controller
 {
+    private readonly IWebHostEnvironment _environment;
+
+    public CultureController(IWebHostEnvironment environment)
+    {
+        _environment = environment;
+    }
+
     [HttpGet("set")]
     public IActionResult Set([FromQuery] string? culture, [FromQuery] string? returnUrl)
     {
@@ -21,7 +28,7 @@ public sealed class CultureController : Controller
                 IsEssential = true,
                 HttpOnly = false,
                 SameSite = SameSiteMode.Lax,
-                Secure = true
+                Secure = !_environment.IsDevelopment() || Request.IsHttps
             });
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
