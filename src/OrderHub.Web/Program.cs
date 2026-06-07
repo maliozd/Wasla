@@ -148,6 +148,7 @@ app.UseRequestLocalization(locOptions.Value);
 app.UseRouting();
 
 app.UseMiddleware<CustomerResolutionMiddleware>();
+app.UseMiddleware<PrintBridgeAuthMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

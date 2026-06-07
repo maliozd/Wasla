@@ -18,6 +18,7 @@ public sealed class CustomerResolutionMiddleware
         "/setlanguage",
         "/swagger",
         "/health",
+        "/api/print-bridge",
         "/css",
         "/js",
         "/lib",

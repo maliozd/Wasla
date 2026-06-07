@@ -194,7 +194,7 @@ public sealed class MainForm : Form
 
         var settingsHint = new Label
         {
-            Text = $"Settings are stored at {PrintBridgePaths.ProgramDataConfigPath}",
+            Text = $"Enter real BaseUrl, token, and printer here. Saved to {PrintBridgePaths.ProgramDataConfigPath} (not Program Files).",
             AutoSize = true,
             ForeColor = SystemColors.GrayText,
             Dock = DockStyle.Bottom,
@@ -376,15 +376,18 @@ public sealed class MainForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(GetUserErrorMessage(ex), PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
     private async Task TestConnectionAsync()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        await _runtime.TestConnectionAsync(cts.Token).ConfigureAwait(true);
-        MessageBox.Show("Connection successful.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        var health = await _runtime.TestConnectionAsync(cts.Token).ConfigureAwait(true);
+        var details = string.IsNullOrWhiteSpace(health.CustomerName)
+            ? "Connection successful."
+            : $"Connection successful.\nCustomer: {health.CustomerName}\nDevice: {health.DeviceName}";
+        MessageBox.Show(details, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private async Task TestPrinterAsync()
@@ -418,7 +421,7 @@ public sealed class MainForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(GetUserErrorMessage(ex), PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
@@ -455,6 +458,11 @@ public sealed class MainForm : Form
 
     private static string FormatUtc(DateTime? value) =>
         value.HasValue ? value.Value.ToLocalTime().ToString("g") : "-";
+
+    private static string GetUserErrorMessage(Exception ex) =>
+        ex is PrintBridgeConnectionException connectionEx
+            ? connectionEx.UserMessage
+            : ex.Message;
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {

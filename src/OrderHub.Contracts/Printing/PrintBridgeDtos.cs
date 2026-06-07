@@ -14,3 +14,9 @@ public sealed record PrintJobActionResponse(
     bool Success,
     bool Skipped,
     string Result);
+
+public sealed record PrintBridgeHealthResponse(
+    bool Success,
+    string CustomerName,
+    string DeviceName,
+    DateTime ServerTimeUtc);

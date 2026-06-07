@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OrderHub.Api.Printing;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Contracts.Printing;
+using OrderHub.Web.Printing;
 
-namespace OrderHub.Api.Controllers;
+namespace OrderHub.Web.Controllers;
 
 [ApiController]
 [Route("api/print-bridge")]
 [AllowAnonymous]
-public sealed class PrintBridgeController : ControllerBase
+public sealed class PrintBridgeApiController : ControllerBase
 {
     private readonly IPrintBridgeJobService _jobs;
 
-    public PrintBridgeController(IPrintBridgeJobService jobs)
+    public PrintBridgeApiController(IPrintBridgeJobService jobs)
     {
         _jobs = jobs;
     }
@@ -38,7 +38,8 @@ public sealed class PrintBridgeController : ControllerBase
         CancellationToken ct = default)
     {
         var auth = PrintBridgeContext.Get(HttpContext);
-        if (auth is null) return Unauthorized();
+        if (auth is null)
+            return Unauthorized();
 
         var jobs = await _jobs.GetPendingJobsAsync(auth.CustomerId, max, ct).ConfigureAwait(false);
         var items = jobs.Select(j => new PendingPrintJobItemDto(
@@ -56,7 +57,8 @@ public sealed class PrintBridgeController : ControllerBase
     public async Task<ActionResult<PrintJobActionResponse>> MarkPrinting(Guid jobId, CancellationToken ct = default)
     {
         var auth = PrintBridgeContext.Get(HttpContext);
-        if (auth is null) return Unauthorized();
+        if (auth is null)
+            return Unauthorized();
 
         var result = await _jobs.TryMarkPrintingAsync(auth.CustomerId, jobId, auth.DeviceName, ct)
             .ConfigureAwait(false);
@@ -68,7 +70,8 @@ public sealed class PrintBridgeController : ControllerBase
     public async Task<ActionResult<PrintJobActionResponse>> MarkPrinted(Guid jobId, CancellationToken ct = default)
     {
         var auth = PrintBridgeContext.Get(HttpContext);
-        if (auth is null) return Unauthorized();
+        if (auth is null)
+            return Unauthorized();
 
         var result = await _jobs.TryMarkPrintedAsync(auth.CustomerId, jobId, ct).ConfigureAwait(false);
         return Ok(MapClaimResult(result));
@@ -81,7 +84,8 @@ public sealed class PrintBridgeController : ControllerBase
         CancellationToken ct = default)
     {
         var auth = PrintBridgeContext.Get(HttpContext);
-        if (auth is null) return Unauthorized();
+        if (auth is null)
+            return Unauthorized();
 
         var result = await _jobs.TryMarkFailedAsync(
                 auth.CustomerId,

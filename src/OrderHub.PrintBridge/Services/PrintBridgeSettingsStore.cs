@@ -4,6 +4,13 @@ using OrderHub.PrintBridge.Options;
 
 namespace OrderHub.PrintBridge.Services;
 
+/// <summary>
+/// Loads and saves Print Bridge settings.
+/// Repo/exe-local appsettings.json is a safe empty sample only.
+/// Real customer values are entered in the tray app Settings UI and persisted under ProgramData.
+/// Loading order: ProgramData (if present) → else seed from exe-local appsettings.json or defaults → ProgramData.
+/// Runtime saves always write to ProgramData only.
+/// </summary>
 public sealed class PrintBridgeSettingsStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new()

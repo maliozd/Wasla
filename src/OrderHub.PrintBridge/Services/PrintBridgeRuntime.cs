@@ -131,9 +131,9 @@ public sealed class PrintBridgeRuntime : IDisposable
         RaiseStatusChanged();
     }
 
-    public async Task TestConnectionAsync(CancellationToken ct)
+    public async Task<OrderHubPrintBridgeClient.PrintBridgeHealthResult> TestConnectionAsync(CancellationToken ct)
     {
-        await _client.GetPendingJobsAsync(ct).ConfigureAwait(false);
+        var health = await _client.TestHealthAsync(ct).ConfigureAwait(false);
         lock (_sync)
         {
             _lastSuccessfulContactUtc = DateTime.UtcNow;
@@ -141,6 +141,7 @@ public sealed class PrintBridgeRuntime : IDisposable
         }
 
         RaiseStatusChanged();
+        return health;
     }
 
     public async Task TestPrinterAsync(CancellationToken ct)
@@ -203,7 +204,7 @@ public sealed class PrintBridgeRuntime : IDisposable
             {
                 hadError = true;
                 lock (_sync)
-                    _lastError = ex.Message;
+                    _lastError = GetUserErrorMessage(ex);
 
                 _logger.LogWarning(ex, "Print Bridge polling/processing failed.");
             }
@@ -362,4 +363,9 @@ public sealed class PrintBridgeRuntime : IDisposable
     }
 
     private void RaiseStatusChanged() => StatusChanged?.Invoke(this, EventArgs.Empty);
+
+    private static string GetUserErrorMessage(Exception ex) =>
+        ex is PrintBridgeConnectionException connectionEx
+            ? connectionEx.UserMessage
+            : ex.Message;
 }

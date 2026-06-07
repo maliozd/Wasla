@@ -50,7 +50,12 @@ public static class PrintBridgeAppServices
         services.AddSingleton(sp =>
         {
             var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("PrintBridgeApi");
-            return new OrderHubPrintBridgeClient(http, sp.GetRequiredService<PrintBridgeSettingsHolder>(), appVersion);
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<OrderHubPrintBridgeClient>();
+            return new OrderHubPrintBridgeClient(
+                http,
+                sp.GetRequiredService<PrintBridgeSettingsHolder>(),
+                logger,
+                appVersion);
         });
 
         services.AddSingleton<PrintBridgeRuntime>();
