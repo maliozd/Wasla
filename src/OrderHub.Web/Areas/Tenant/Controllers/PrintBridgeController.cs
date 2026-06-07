@@ -212,11 +212,8 @@ public sealed class PrintBridgeController : BaseController
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
 
-        var jobs = await _printJobHistory
-            .GetRecentReceiptJobsAsync(customer.Id, PrintJobHistoryLimits.Default, ct)
-            .ConfigureAwait(false);
-
-        return Ok(new { jobs = jobs.Select(MapPrintJobJson) });
+        var vm = await BuildPrintJobHistoryViewModelAsync(customer.Id, ct).ConfigureAwait(false);
+        return PartialView("_PrintJobHistory", vm);
     }
 
     [ValidateAntiForgeryToken]
@@ -239,16 +236,11 @@ public sealed class PrintBridgeController : BaseController
             });
         }
 
-        var jobs = await _printJobHistory
-            .GetRecentReceiptJobsAsync(customer.Id, PrintJobHistoryLimits.Default, ct)
-            .ConfigureAwait(false);
-
         return Ok(new
         {
             success = true,
             message = _localizer[result.MessageKey].Value,
-            newPrintJobId = result.NewPrintJobId,
-            jobs = jobs.Select(MapPrintJobJson)
+            newPrintJobId = result.NewPrintJobId
         });
     }
 
@@ -361,6 +353,20 @@ public sealed class PrintBridgeController : BaseController
             appVersion = d.AppVersion
         };
 
+    private async Task<PrintJobHistoryListViewModel> BuildPrintJobHistoryViewModelAsync(
+        Guid customerId,
+        CancellationToken ct)
+    {
+        var jobs = await _printJobHistory
+            .GetRecentReceiptJobsAsync(customerId, PrintJobHistoryLimits.Default, ct)
+            .ConfigureAwait(false);
+
+        return new PrintJobHistoryListViewModel
+        {
+            Jobs = jobs.Select(MapPrintJob).ToList()
+        };
+    }
+
     private PrintJobHistoryRowViewModel MapPrintJob(PrintJobHistoryItemDto job) =>
         new()
         {
@@ -382,32 +388,6 @@ public sealed class PrintBridgeController : BaseController
             TotalAmount = job.TotalAmount,
             CanReprint = job.CanReprint
         };
-
-    private object MapPrintJobJson(PrintJobHistoryItemDto job)
-    {
-        var row = MapPrintJob(job);
-        return new
-        {
-            id = row.Id,
-            orderId = row.OrderId,
-            orderDisplay = row.OrderDisplay,
-            externalOrderId = row.ExternalOrderId,
-            platform = row.Platform,
-            platformDisplayName = row.PlatformDisplayName,
-            status = row.Status,
-            statusLabelKey = row.StatusLabelKey,
-            statusLabel = _localizer[row.StatusLabelKey].Value,
-            createdAtUtc = row.CreatedAtUtc,
-            lastAttemptAtUtc = row.LastAttemptAtUtc,
-            printedAtUtc = row.PrintedAtUtc,
-            attemptCount = row.AttemptCount,
-            errorMessage = row.ErrorMessage,
-            lockedBy = row.LockedBy,
-            orderCustomerName = row.OrderCustomerName,
-            totalAmount = row.TotalAmount,
-            canReprint = row.CanReprint
-        };
-    }
 
     private static string ResolveOrderDisplay(PrintJobHistoryItemDto job) =>
         !string.IsNullOrWhiteSpace(job.ExternalOrderCode)

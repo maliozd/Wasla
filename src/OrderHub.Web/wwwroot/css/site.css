@@ -174,3 +174,25 @@ body {
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
+
+/* Print Bridge: print job history status rows */
+.oh-print-job-row > td {
+  transition: background-color 0.3s ease;
+}
+
+.oh-print-job-row--printing > td {
+  animation: ohPrintJobPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ohPrintJobPulse {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(13, 110, 253, 0.08); }
+}
+
+.oh-print-job-row--printed > td {
+  background-color: rgba(25, 135, 84, 0.06);
+}
+
+.oh-print-job-row--failed > td {
+  background-color: rgba(220, 53, 69, 0.06);
+}

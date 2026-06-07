@@ -1,0 +1,83 @@
+@model OrderHub.Web.Models.PrintBridge.PrintJobHistoryListViewModel
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using OrderHub.Web.Models.PrintBridge
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    var emptyValue = "—";
+}
+
+@if (Model.Jobs.Count == 0)
+{
+    <div class="text-center py-4">
+        <i class="bi bi-receipt text-muted fs-4 d-block mb-2" aria-hidden="true"></i>
+        <p class="text-muted small mb-0">@L["PrintBridge.NoPrintJobs"]</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 oh-print-job-history-table">
+            <thead>
+                <tr>
+                    <th>@L["PrintBridge.ExternalOrderId"]</th>
+                    <th>@L["Orders.Platform"]</th>
+                    <th>@L["Common.Status"]</th>
+                    <th>@L["PrintBridge.CreatedAt"]</th>
+                    <th>@L["PrintBridge.PrintedAt"]</th>
+                    <th>@L["PrintBridge.AttemptCount"]</th>
+                    <th>@L["PrintBridge.PrintDevice"]</th>
+                    <th class="text-end">@L["Common.Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var job in Model.Jobs)
+                {
+                    var badge = PrintJobStatusBadge.Get(job.Status);
+                    <tr class="oh-print-job-row @badge.RowClass" data-print-job-id="@job.Id" data-print-job-status="@job.Status">
+                        <td class="fw-semibold">@(string.IsNullOrWhiteSpace(job.OrderDisplay) ? emptyValue : job.OrderDisplay)</td>
+                        <td>
+                            <partial name="_PlatformBadge" model="@((object?)job.Platform, (string?)job.PlatformDisplayName)" />
+                        </td>
+                        <td>
+                            <span class="badge @badge.BadgeClass">@L[job.StatusLabelKey]</span>
+                        </td>
+                        <td class="text-muted small">@job.CreatedAtUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</td>
+                        <td class="text-muted small">
+                            @(job.PrintedAtUtc.HasValue
+                                ? job.PrintedAtUtc.Value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)
+                                : emptyValue)
+                        </td>
+                        <td class="text-muted small">@job.AttemptCount</td>
+                        <td class="text-muted small">@(string.IsNullOrWhiteSpace(job.LockedBy) ? emptyValue : job.LockedBy)</td>
+                        <td class="text-end">
+                            @if (job.CanReprint)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary pb-reprint-job-btn"
+                                        data-job-id="@job.Id"
+                                        data-order-display="@job.OrderDisplay">
+                                    <i class="bi bi-printer me-1"></i>@L["PrintBridge.Reprint"]
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">@emptyValue</span>
+                            }
+                        </td>
+                    </tr>
+                    @if (!string.IsNullOrWhiteSpace(job.ErrorMessage))
+                    {
+                        <tr class="table-light oh-print-job-error-row">
+                            <td colspan="8" class="py-1 px-3">
+                                <div class="text-danger small">
+                                    @L["PrintBridge.ErrorMessage"]: @job.ErrorMessage
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}

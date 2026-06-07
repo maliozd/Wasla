@@ -9,6 +9,8 @@
   var currentToken = null;
   var lastQuota = null;
   var reprintInFlight = {};
+  var printJobsRefreshInFlight = false;
+  var printJobsPollTimer = null;
 
   function formatMsg(template, value) {
     return String(template || "").replace("{0}", String(value == null ? "" : value));
@@ -537,147 +539,75 @@
     });
   }
 
-  function printJobStatusBadge(job) {
-    var status = job.status || "";
-    var text = job.statusLabel || status;
-    switch (status) {
-      case "Pending":
-        return { cls: "text-bg-secondary", text: text || messages.printJobStatusPending };
-      case "Printing":
-        return { cls: "text-bg-info", text: text || messages.printJobStatusPrinting };
-      case "Printed":
-        return { cls: "text-bg-success", text: text || messages.printJobStatusPrinted };
-      case "Failed":
-        return { cls: "text-bg-danger", text: text || messages.printJobStatusFailed };
-      case "Cancelled":
-        return { cls: "text-bg-secondary", text: text || messages.printJobStatusCancelled };
-      default:
-        return { cls: "text-bg-secondary", text: text || status };
-    }
-  }
-
-  function formatAmount(value) {
-    if (value == null || isNaN(Number(value))) return messages.emptyValue || "—";
-    try {
-      return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } catch (_) {
-      return String(value);
-    }
-  }
-
-  function renderPrintJobs(jobs) {
+  function refreshPrintJobsPartial() {
     var panel = document.getElementById("printBridgeJobsPanel");
-    if (!panel) return;
-
-    jobs = jobs || [];
-    if (jobs.length === 0) {
-      panel.innerHTML =
-        '<div class="text-center py-4">' +
-          '<i class="bi bi-receipt text-muted fs-4 d-block mb-2" aria-hidden="true"></i>' +
-          '<p class="text-muted small mb-0">' + escapeHtml(messages.noPrintJobs || "") + '</p>' +
-        '</div>';
-      return;
+    if (!panel || printJobsRefreshInFlight) {
+      return Promise.resolve();
     }
 
-    var rows = jobs.map(function (job) {
-      var status = printJobStatusBadge(job);
-      var reprintBtn = job.canReprint
-        ? '<button type="button" class="btn btn-sm btn-outline-primary pb-reprint-job-btn" ' +
-            'data-job-id="' + escapeHtml(job.id) + '" data-order-display="' + escapeHtml(job.orderDisplay || "") + '">' +
-            '<i class="bi bi-printer me-1"></i>' + escapeHtml(messages.reprint || "Reprint") +
-          '</button>'
-        : '<span class="text-muted small">—</span>';
-
-      var errorHtml = job.errorMessage
-        ? '<div class="text-danger small mt-1">' +
-            escapeHtml(messages.errorMessage || "Error") + ': ' + escapeHtml(job.errorMessage) +
-          '</div>'
-        : '';
-
-      return (
-        '<tr data-print-job-id="' + escapeHtml(job.id) + '">' +
-          '<td class="fw-semibold">' + escapeHtml(job.orderDisplay || messages.emptyValue || "—") + '</td>' +
-          '<td><span class="badge text-bg-light border text-dark">' + escapeHtml(job.platformDisplayName || job.platform || "") + '</span></td>' +
-          '<td><span class="badge ' + status.cls + '">' + escapeHtml(status.text) + '</span></td>' +
-          '<td class="text-muted small">' + escapeHtml(formatOptionalTime(job.createdAtUtc)) + '</td>' +
-          '<td class="text-muted small">' + escapeHtml(formatOptionalTime(job.printedAtUtc)) + '</td>' +
-          '<td class="text-muted small">' + escapeHtml(String(job.attemptCount == null ? 0 : job.attemptCount)) + '</td>' +
-          '<td class="text-muted small">' + escapeHtml(displayValue(job.lockedBy)) + '</td>' +
-          '<td class="text-end">' + reprintBtn + '</td>' +
-        '</tr>' +
-        (errorHtml ? '<tr class="table-light"><td colspan="8" class="py-1 px-3">' + errorHtml + '</td></tr>' : '')
-      );
-    }).join("");
-
-    panel.innerHTML =
-      '<div class="table-responsive">' +
-        '<table class="table table-sm align-middle mb-0">' +
-          '<thead><tr>' +
-            '<th>' + escapeHtml(messages.externalOrderId || "Order") + '</th>' +
-            '<th>' + escapeHtml(messages.platform || "Platform") + '</th>' +
-            '<th>' + escapeHtml(messages.printJobStatus || "Status") + '</th>' +
-            '<th>' + escapeHtml(messages.createdAt || "Created") + '</th>' +
-            '<th>' + escapeHtml(messages.printedAt || "Printed") + '</th>' +
-            '<th>' + escapeHtml(messages.attemptCount || "Attempts") + '</th>' +
-            '<th>' + escapeHtml(messages.printDevice || "Device") + '</th>' +
-            '<th class="text-end">' + escapeHtml(messages.actions || "Actions") + '</th>' +
-          '</tr></thead>' +
-          '<tbody>' + rows + '</tbody>' +
-        '</table>' +
-      '</div>';
-
-    bindReprintButtons();
-  }
-
-  function refreshPrintJobs() {
+    printJobsRefreshInFlight = true;
     return fetch(cfg.printJobsUrl || "/print-bridge/print-jobs", {
-      headers: { "X-Requested-With": "XMLHttpRequest" }
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin"
     })
       .then(function (resp) {
         if (!resp.ok) throw new Error("HTTP " + resp.status);
-        return resp.json();
+        return resp.text();
       })
-      .then(function (data) {
-        renderPrintJobs(data.jobs || []);
-        return data;
+      .then(function (html) {
+        panel.innerHTML = html;
+      })
+      .finally(function () {
+        printJobsRefreshInFlight = false;
       });
   }
 
-  function bindReprintButtons() {
-    document.querySelectorAll(".pb-reprint-job-btn").forEach(function (btn) {
-      if (btn.getAttribute("data-bound") === "1") return;
-      btn.setAttribute("data-bound", "1");
+  function startPrintJobsPolling() {
+    var intervalMs = cfg.printJobsPollIntervalMs || 3000;
+    if (printJobsPollTimer) {
+      clearInterval(printJobsPollTimer);
+    }
 
-      btn.addEventListener("click", function () {
-        var jobId = btn.getAttribute("data-job-id");
-        var orderDisplay = btn.getAttribute("data-order-display") || "";
-        if (!jobId || reprintInFlight[jobId]) return;
-
-        var confirmText = formatMsg(messages.confirmReprint || "Reprint receipt for {0}?", orderDisplay);
-        if (!window.confirm(confirmText)) return;
-
-        reprintInFlight[jobId] = true;
-        btn.disabled = true;
-
-        var url = (cfg.reprintUrlTemplate || "").replace("{id}", jobId);
-        postForm(url, {})
-          .then(function (data) {
-            showMessage(data.message || messages.reprintCreated, "success");
-            if (data.jobs) {
-              renderPrintJobs(data.jobs);
-            } else {
-              return refreshPrintJobs();
-            }
-          })
-          .catch(function (e) {
-            var text = (e && e.message) || messages.reprintFailed || "Reprint failed";
-            showMessage(text, "danger");
-          })
-          .finally(function () {
-            delete reprintInFlight[jobId];
-            btn.disabled = false;
-          });
+    printJobsPollTimer = setInterval(function () {
+      refreshPrintJobsPartial().catch(function () {
+        // Silent retry on next interval.
       });
+    }, intervalMs);
+  }
+
+  function bindPrintJobReprintDelegation() {
+    var panel = document.getElementById("printBridgeJobsPanel");
+    if (!panel || panel.getAttribute("data-reprint-bound") === "1") return;
+    panel.setAttribute("data-reprint-bound", "1");
+
+    panel.addEventListener("click", function (event) {
+      var btn = event.target.closest(".pb-reprint-job-btn");
+      if (!btn || !panel.contains(btn)) return;
+
+      var jobId = btn.getAttribute("data-job-id");
+      var orderDisplay = btn.getAttribute("data-order-display") || "";
+      if (!jobId || reprintInFlight[jobId]) return;
+
+      var confirmText = formatMsg(messages.confirmReprint || "Reprint receipt for {0}?", orderDisplay);
+      if (!window.confirm(confirmText)) return;
+
+      reprintInFlight[jobId] = true;
+      btn.disabled = true;
+
+      var url = (cfg.reprintUrlTemplate || "").replace("{id}", jobId);
+      postForm(url, {})
+        .then(function (data) {
+          showMessage(data.message || messages.reprintCreated, "success");
+          return refreshPrintJobsPartial();
+        })
+        .catch(function (e) {
+          var text = (e && e.message) || messages.reprintFailed || "Reprint failed";
+          showMessage(text, "danger");
+        })
+        .finally(function () {
+          delete reprintInFlight[jobId];
+          btn.disabled = false;
+        });
     });
   }
 
@@ -686,11 +616,9 @@
     if (!btn) return;
 
     btn.addEventListener("click", function () {
+      if (printJobsRefreshInFlight) return;
       btn.disabled = true;
-      refreshPrintJobs()
-        .catch(function () {
-          showMessage(messages.reprintFailed || "Refresh failed", "danger");
-        })
+      refreshPrintJobsPartial()
         .finally(function () {
           btn.disabled = false;
         });
@@ -724,10 +652,11 @@
     hideToken();
     if (cfg.initialState) {
       renderAll(cfg.initialState);
-      renderPrintJobs(cfg.initialState.printJobs || []);
     }
     bindCreateDevice();
     bindTokenActions();
+    bindPrintJobReprintDelegation();
     bindRefreshPrintJobs();
+    startPrintJobsPolling();
   });
 })();

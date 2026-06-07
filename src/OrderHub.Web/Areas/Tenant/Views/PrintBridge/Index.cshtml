@@ -102,38 +102,13 @@
         printJobStatusPrinting = L["PrintBridge.PrintJobStatusPrinting"].Value,
         printJobStatusPrinted = L["PrintBridge.PrintJobStatusPrinted"].Value,
         printJobStatusFailed = L["PrintBridge.PrintJobStatusFailed"].Value,
-        printJobStatusCancelled = L["PrintBridge.PrintJobStatusCancelled"].Value,
-        printedAt = L["PrintBridge.PrintedAt"].Value,
-        lastAttemptAt = L["PrintBridge.LastAttemptAt"].Value,
-        attemptCount = L["PrintBridge.AttemptCount"].Value,
-        errorMessage = L["PrintBridge.ErrorMessage"].Value,
-        externalOrderId = L["PrintBridge.ExternalOrderId"].Value,
-        printDevice = L["PrintBridge.PrintDevice"].Value,
-        createdAt = L["PrintBridge.CreatedAt"].Value,
-        platform = L["Orders.Platform"].Value,
-        printJobStatus = L["Common.Status"].Value
+        printJobStatusCancelled = L["PrintBridge.PrintJobStatusCancelled"].Value
     };
 
-    var initialPrintJobs = Model.PrintJobs.Select(j => new
+    var printJobHistoryModel = new OrderHub.Web.Models.PrintBridge.PrintJobHistoryListViewModel
     {
-        id = j.Id,
-        orderId = j.OrderId,
-        orderDisplay = j.OrderDisplay,
-        externalOrderId = j.ExternalOrderId,
-        platform = j.Platform,
-        platformDisplayName = j.PlatformDisplayName,
-        status = j.Status,
-        statusLabel = L[j.StatusLabelKey].Value,
-        createdAtUtc = j.CreatedAtUtc,
-        lastAttemptAtUtc = j.LastAttemptAtUtc,
-        printedAtUtc = j.PrintedAtUtc,
-        attemptCount = j.AttemptCount,
-        errorMessage = j.ErrorMessage,
-        lockedBy = j.LockedBy,
-        orderCustomerName = j.OrderCustomerName,
-        totalAmount = j.TotalAmount,
-        canReprint = j.CanReprint
-    });
+        Jobs = Model.PrintJobs
+    };
 
     var pbMessagesJson = JsonSerializer.Serialize(pbMessages);
 }
@@ -236,7 +211,9 @@
                         <i class="bi bi-arrow-clockwise me-1"></i>@L["PrintBridge.RefreshPrintJobs"]
                     </button>
                 </div>
-                <div id="printBridgeJobsPanel"></div>
+                <div id="printBridgeJobsPanel">
+                    <partial name="_PrintJobHistory" model="printJobHistoryModel" />
+                </div>
             </div>
         </div>
     </div>
@@ -252,10 +229,10 @@
             setActiveUrlTemplate: "/print-bridge/devices/{id}/set-active",
             printJobsUrl: "/print-bridge/print-jobs",
             reprintUrlTemplate: "/print-bridge/print-jobs/{id}/reprint",
+            printJobsPollIntervalMs: 3000,
             initialState: {
                 devices: @Html.Raw(JsonSerializer.Serialize(initialDevices)),
-                quota: @Html.Raw(JsonSerializer.Serialize(initialQuota)),
-                printJobs: @Html.Raw(JsonSerializer.Serialize(initialPrintJobs))
+                quota: @Html.Raw(JsonSerializer.Serialize(initialQuota))
             }
         };
     </script>
