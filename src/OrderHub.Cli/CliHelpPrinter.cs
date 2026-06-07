@@ -24,6 +24,7 @@ internal static class CliHelpPrinter
     [
         "encrypt",
         "hash-password",
+        "generate-print-bridge-token",
         "help"
     ];
 
@@ -74,6 +75,7 @@ internal static class CliHelpPrinter
         Console.WriteLine("Utility commands:");
         Console.WriteLine("  encrypt                   Encrypt a plaintext value using ENCRYPTION_MASTER_KEY.");
         Console.WriteLine("  hash-password             Print a BCrypt hash (no configuration or master key required).");
+        Console.WriteLine("  generate-print-bridge-token Register a Print Bridge device and print a one-time agent token.");
         Console.WriteLine("  help                      Show CLI help.");
         Console.WriteLine();
 

@@ -11,6 +11,7 @@ using OrderHub.Application.Abstractions.Notifications;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Application.Abstractions.PlatformConnections;
+using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.Persistence.Central;
@@ -90,6 +91,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPlatformConnectionService, PlatformConnectionService>();
         services.AddScoped<IBranchService, BranchService>();
         services.AddScoped<IUserNotificationSettingsService, UserNotificationSettingsService>();
+        services.AddScoped<IPrintBridgeAuthService, PrintBridgeAuthService>();
+        services.AddScoped<IPrintBridgeJobService, PrintBridgeJobService>();
+        services.AddScoped<IPrintBridgeDeviceManagementService, PrintBridgeDeviceManagementService>();
 
         return services;
     }

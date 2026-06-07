@@ -125,6 +125,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link @Active("/print-bridge")" asp-area="Tenant" asp-controller="PrintBridge" asp-action="Index">
+                            <i class="bi bi-printer me-2"></i><span class="nav-text">@L["PrintBridge.Title"]</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link @Active("/platform-connections")" asp-area="Tenant" asp-controller="PlatformConnections" asp-action="Index">
                             <i class="bi bi-plug me-2"></i><span class="nav-text">@L["Layout.PlatformConnections"]</span>
                         </a>

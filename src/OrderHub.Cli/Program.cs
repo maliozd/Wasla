@@ -49,7 +49,8 @@ if (string.Equals(args[0], "hash-password", StringComparison.OrdinalIgnoreCase))
 
 if (string.Equals(args[0], "add-central-admin", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(args[0], "reset-central-admin-password", StringComparison.OrdinalIgnoreCase) ||
-    string.Equals(args[0], "list-central-admins", StringComparison.OrdinalIgnoreCase))
+    string.Equals(args[0], "list-central-admins", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(args[0], "generate-print-bridge-token", StringComparison.OrdinalIgnoreCase))
 {
     // These commands operate on CentralDb only and do not require ENCRYPTION_MASTER_KEY.
 }
@@ -337,6 +338,25 @@ seedCustomerAdmin.SetHandler(async (InvocationContext context) =>
         context.GetCancellationToken());
 });
 
+// --- generate-print-bridge-token ---
+var generatePrintBridgeToken = new Command("generate-print-bridge-token", "Register a Print Bridge device and print a one-time agent token.");
+var optPbCustomerId = new Option<Guid?>("--customer-id", "Customer id in CentralDb");
+var optPbSlug = new Option<string?>("--slug", "Customer slug in CentralDb");
+var optPbDeviceName = new Option<string?>("--name", "Print Bridge device display name");
+generatePrintBridgeToken.AddOption(optPbCustomerId);
+generatePrintBridgeToken.AddOption(optPbSlug);
+generatePrintBridgeToken.AddOption(optPbDeviceName);
+generatePrintBridgeToken.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.GeneratePrintBridgeTokenAsync(
+        host,
+        p.GetValueForOption(optPbCustomerId),
+        p.GetValueForOption(optPbSlug),
+        p.GetValueForOption(optPbDeviceName),
+        context.GetCancellationToken());
+});
+
 var root = new RootCommand("orderhub — operational CLI for customer onboarding, migrations, and secrets.")
 {
     addCustomer,
@@ -353,7 +373,8 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     seedCustomerAdmin,
     listCustomers,
     encrypt,
-    createUser
+    createUser,
+    generatePrintBridgeToken
 };
 
 return await root.InvokeAsync(args);

@@ -98,6 +98,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<CustomerResolutionMiddleware>();
+app.UseMiddleware<PrintBridgeAuthMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1353,4 +1353,58 @@
   <data name="PlatformConnections.ExecutorEmailHelp" xml:space="preserve">
     <value>Required for Trendyol GO real API requests as the x-executor-user header.</value>
   </data>
+  <data name="PrintBridge.Title" xml:space="preserve">
+    <value>OrderHub Print Bridge</value>
+  </data>
+  <data name="PrintBridge.Intro" xml:space="preserve">
+    <value>OrderHub Print Bridge is a local Windows app on the restaurant PC. It polls OrderHub API for receipt print jobs and sends them to a USB thermal printer.</value>
+  </data>
+  <data name="PrintBridge.RequirementsTitle" xml:space="preserve">
+    <value>Requirements</value>
+  </data>
+  <data name="PrintBridge.RequirementWindows" xml:space="preserve">
+    <value>Windows operating system</value>
+  </data>
+  <data name="PrintBridge.RequirementUsbPrinter" xml:space="preserve">
+    <value>USB thermal receipt printer installed in Windows (e.g. Zilang 80mm)</value>
+  </data>
+  <data name="PrintBridge.RequirementLocalApp" xml:space="preserve">
+    <value>OrderHub Print Bridge running on the restaurant PC</value>
+  </data>
+  <data name="PrintBridge.SetupTitle" xml:space="preserve">
+    <value>Setup steps</value>
+  </data>
+  <data name="PrintBridge.SetupStepDownload" xml:space="preserve">
+    <value>Download OrderHub Print Bridge (coming soon).</value>
+  </data>
+  <data name="PrintBridge.SetupStepToken" xml:space="preserve">
+    <value>Generate a Print Bridge token on this page and save it securely (shown only once).</value>
+  </data>
+  <data name="PrintBridge.SetupStepConfig" xml:space="preserve">
+    <value>Add the token and printer name to Print Bridge configuration.</value>
+  </data>
+  <data name="PrintBridge.SetupStepRun" xml:space="preserve">
+    <value>Start Print Bridge; it will print pending receipt jobs automatically.</value>
+  </data>
+  <data name="PrintBridge.Download" xml:space="preserve">
+    <value>Download (coming soon)</value>
+  </data>
+  <data name="PrintBridge.GenerateToken" xml:space="preserve">
+    <value>Generate Token</value>
+  </data>
+  <data name="PrintBridge.DeviceName" xml:space="preserve">
+    <value>Device name</value>
+  </data>
+  <data name="PrintBridge.DeviceNamePlaceholder" xml:space="preserve">
+    <value>e.g. Kitchen PC</value>
+  </data>
+  <data name="PrintBridge.TokenGeneratedOnce" xml:space="preserve">
+    <value>Print Bridge token created. You can see this value only once — copy it now:</value>
+  </data>
+  <data name="PrintBridge.TokenGenerateFailed" xml:space="preserve">
+    <value>Could not generate Print Bridge token.</value>
+  </data>
+  <data name="PrintBridge.ApiHint" xml:space="preserve">
+    <value>Print Bridge calls OrderHub API endpoints with the X-PrintBridge-Token header. Customer id is not sent in requests.</value>
+  </data>
 </root>

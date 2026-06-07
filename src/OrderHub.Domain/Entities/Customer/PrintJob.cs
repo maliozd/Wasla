@@ -4,7 +4,7 @@ using OrderHub.Domain.Enums;
 namespace OrderHub.Domain.Entities.Customer;
 
 /// <summary>
-/// Pending or completed print job for a tenant order. Physical printing is handled by a future PrintAgent.
+/// Pending or completed print job for a tenant order. Physical printing is handled by OrderHub Print Bridge.
 /// </summary>
 public sealed class PrintJob : BaseEntity
 {
@@ -22,6 +22,10 @@ public sealed class PrintJob : BaseEntity
 
     public int AttemptCount { get; set; }
     public string? ErrorMessage { get; set; }
+
+    public DateTime? LockedAt { get; set; }
+    public string? LockedBy { get; set; }
+    public DateTime? LastAttemptAt { get; set; }
 
     public DateTime? PrintedAt { get; set; }
 }

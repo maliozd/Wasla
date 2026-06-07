@@ -9,6 +9,7 @@ using OrderHub.Domain.Entities.Central;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Persistence.Central;
+using OrderHub.Infrastructure.Security;
 using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Cli;
@@ -1410,5 +1411,79 @@ internal static class CliCommands
         var msg = ex.Message ?? "Unknown error";
         msg = msg.Replace("\r", " ").Replace("\n", " ").Trim();
         return msg.Length <= 500 ? msg : msg[..500];
+    }
+
+    public static async Task<int> GeneratePrintBridgeTokenAsync(
+        IHost host,
+        Guid? customerId,
+        string? slug,
+        string? deviceName,
+        CancellationToken ct)
+    {
+        using var scope = host.Services.CreateScope();
+        var centralDb = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+        Guid resolvedCustomerId;
+        if (customerId.HasValue && customerId.Value != Guid.Empty)
+        {
+            resolvedCustomerId = customerId.Value;
+        }
+        else if (!string.IsNullOrWhiteSpace(slug))
+        {
+            var customer = await centralDb.Customers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Slug == slug.Trim(), ct)
+                .ConfigureAwait(false);
+            if (customer is null)
+            {
+                WriteError($"Customer not found for slug '{slug}'.");
+                return 2;
+            }
+
+            resolvedCustomerId = customer.Id;
+        }
+        else
+        {
+            WriteError("Usage: generate-print-bridge-token --customer-id <guid> | --slug <slug> [--name <device-name>]");
+            return 2;
+        }
+
+        var customerActive = await centralDb.Customers
+            .AsNoTracking()
+            .AnyAsync(c => c.Id == resolvedCustomerId && c.IsActive, ct)
+            .ConfigureAwait(false);
+
+        if (!customerActive)
+        {
+            WriteError("Customer not found or inactive.");
+            return 2;
+        }
+
+        var name = string.IsNullOrWhiteSpace(deviceName) ? Environment.MachineName : deviceName.Trim();
+        if (name.Length > 200) name = name[..200];
+
+        var rawToken = PrintBridgeTokenHasher.GenerateRawToken();
+        var tokenHash = PrintBridgeTokenHasher.HashToken(rawToken);
+        var now = DateTime.UtcNow;
+
+        var device = new PrintBridgeDevice
+        {
+            CustomerId = resolvedCustomerId,
+            Name = name,
+            TokenHash = tokenHash,
+            IsActive = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        centralDb.PrintBridgeDevices.Add(device);
+        await centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        Console.WriteLine("Print Bridge device registered.");
+        Console.WriteLine($"DeviceId: {device.Id}");
+        Console.WriteLine($"DeviceName: {device.Name}");
+        Console.WriteLine("Raw token (shown once — copy now):");
+        Console.WriteLine(rawToken);
+        return 0;
     }
 }

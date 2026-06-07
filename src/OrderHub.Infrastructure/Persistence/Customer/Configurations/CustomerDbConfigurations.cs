@@ -104,6 +104,7 @@ public class PrintJobConfiguration : IEntityTypeConfiguration<PrintJob>
         builder.Property(x => x.PayloadJson).IsRequired();
         builder.Property(x => x.AttemptCount).IsRequired();
         builder.Property(x => x.ErrorMessage).HasMaxLength(1000);
+        builder.Property(x => x.LockedBy).HasMaxLength(200);
 
         builder.HasIndex(x => new { x.OrderId, x.Type })
             .IsUnique()

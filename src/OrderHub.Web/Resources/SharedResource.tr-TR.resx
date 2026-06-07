@@ -1353,4 +1353,58 @@
   <data name="PlatformConnections.ExecutorEmailHelp" xml:space="preserve">
     <value>Trendyol GO gerçek API isteklerinde x-executor-user başlığı için gereklidir.</value>
   </data>
+  <data name="PrintBridge.Title" xml:space="preserve">
+    <value>OrderHub Print Bridge</value>
+  </data>
+  <data name="PrintBridge.Intro" xml:space="preserve">
+    <value>OrderHub Print Bridge, restoran bilgisayarında çalışan yerel Windows uygulamasıdır. Otomatik fiş yazdırma işlerini OrderHub API üzerinden alır ve USB termal yazıcıya gönderir.</value>
+  </data>
+  <data name="PrintBridge.RequirementsTitle" xml:space="preserve">
+    <value>Gereksinimler</value>
+  </data>
+  <data name="PrintBridge.RequirementWindows" xml:space="preserve">
+    <value>Windows işletim sistemi</value>
+  </data>
+  <data name="PrintBridge.RequirementUsbPrinter" xml:space="preserve">
+    <value>Windows'a kurulu USB termal fiş yazıcısı (ör. Zilang 80mm)</value>
+  </data>
+  <data name="PrintBridge.RequirementLocalApp" xml:space="preserve">
+    <value>OrderHub Print Bridge uygulamasının restoran PC'sinde çalışması</value>
+  </data>
+  <data name="PrintBridge.SetupTitle" xml:space="preserve">
+    <value>Kurulum adımları</value>
+  </data>
+  <data name="PrintBridge.SetupStepDownload" xml:space="preserve">
+    <value>OrderHub Print Bridge uygulamasını indirin (yakında).</value>
+  </data>
+  <data name="PrintBridge.SetupStepToken" xml:space="preserve">
+    <value>Bu sayfadan bir Print Bridge token oluşturun ve güvenli bir yere kaydedin (yalnızca bir kez gösterilir).</value>
+  </data>
+  <data name="PrintBridge.SetupStepConfig" xml:space="preserve">
+    <value>Token'ı ve yazıcı adını Print Bridge yapılandırmasına ekleyin.</value>
+  </data>
+  <data name="PrintBridge.SetupStepRun" xml:space="preserve">
+    <value>Print Bridge'i başlatın; bekleyen fiş işlerini otomatik yazdırır.</value>
+  </data>
+  <data name="PrintBridge.Download" xml:space="preserve">
+    <value>İndir (yakında)</value>
+  </data>
+  <data name="PrintBridge.GenerateToken" xml:space="preserve">
+    <value>Token Oluştur</value>
+  </data>
+  <data name="PrintBridge.DeviceName" xml:space="preserve">
+    <value>Cihaz adı</value>
+  </data>
+  <data name="PrintBridge.DeviceNamePlaceholder" xml:space="preserve">
+    <value>Örn. Mutfak PC</value>
+  </data>
+  <data name="PrintBridge.TokenGeneratedOnce" xml:space="preserve">
+    <value>Print Bridge token oluşturuldu. Bu değeri yalnızca bir kez görebilirsiniz — şimdi kopyalayın:</value>
+  </data>
+  <data name="PrintBridge.TokenGenerateFailed" xml:space="preserve">
+    <value>Print Bridge token oluşturulamadı.</value>
+  </data>
+  <data name="PrintBridge.ApiHint" xml:space="preserve">
+    <value>Print Bridge, OrderHub API uç noktalarını X-PrintBridge-Token başlığı ile çağırır. Müşteri kimliği istekte gönderilmez.</value>
+  </data>
 </root>

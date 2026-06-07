@@ -23,7 +23,8 @@ public sealed class CustomerResolutionMiddleware
     {
         var path = context.Request.Path.Value ?? string.Empty;
         if (path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/health", StringComparison.OrdinalIgnoreCase))
+            path.StartsWith("/health", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/api/print-bridge", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
             return;
