@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using OrderHub.PrintBridge.Configuration;
 using OrderHub.PrintBridge.Models;
 using OrderHub.PrintBridge.Options;
 using OrderHub.PrintBridge.Printing;
@@ -13,6 +14,8 @@ public sealed class PrintBridgeRuntime : IDisposable
     private readonly ReceiptFormatter _formatter;
     private readonly IReceiptPrinter _printer;
     private readonly PrintBridgeSettingsHolder _holder;
+    private readonly LocalPrintJobHistoryStore _historyStore;
+    private readonly AppVersionInfo _appVersion;
     private readonly ILogger<PrintBridgeRuntime> _logger;
     private readonly object _sync = new();
     private readonly List<LocalPrintJobRecord> _recentJobs = [];
@@ -29,12 +32,16 @@ public sealed class PrintBridgeRuntime : IDisposable
         ReceiptFormatter formatter,
         IReceiptPrinter printer,
         PrintBridgeSettingsHolder holder,
+        LocalPrintJobHistoryStore historyStore,
+        AppVersionInfo appVersion,
         ILogger<PrintBridgeRuntime> logger)
     {
         _client = client;
         _formatter = formatter;
         _printer = printer;
         _holder = holder;
+        _historyStore = historyStore;
+        _appVersion = appVersion;
         _logger = logger;
     }
 
@@ -65,14 +72,21 @@ public sealed class PrintBridgeRuntime : IDisposable
                 LastError = _lastError,
                 BaseUrl = hub.BaseUrl,
                 PrinterName = bridge.PrinterName,
-                BridgeName = string.IsNullOrWhiteSpace(bridge.BridgeName)
+                DisplayName = bridge.DisplayName?.Trim() ?? string.Empty,
+                MachineName = string.IsNullOrWhiteSpace(bridge.MachineName)
                     ? Environment.MachineName
-                    : bridge.BridgeName,
+                    : bridge.MachineName,
+                AppVersion = _appVersion.Display,
                 DryRun = bridge.DryRun,
                 RecentJobs = recentJobs,
-                JobsTodayCount = recentJobs.Count(j => ToLocalDate(j.DisplayTimeUtc) == today),
-                FailedTodayCount = recentJobs.Count(j =>
-                    j.Status == LocalPrintJobStatus.Failed && ToLocalDate(j.DisplayTimeUtc) == today),
+                JobsTodayCount = GetJobsTodayCount(today, recentJobs),
+                FailedTodayCount = GetFailedTodayCount(today, recentJobs),
+                LastPrintTimeUtc = _historyStore.GetLastPrintTimeUtc(),
+                ServerConnectionStatus = PrintBridgeRuntimeStatus.ResolveServerConnectionStatus(
+                    _isRunning,
+                    isConnected,
+                    _lastError),
+                PrinterHealthStatus = WindowsPrinterHealth.Resolve(bridge),
                 TrayIconState = trayIconState
             };
         }
@@ -151,6 +165,29 @@ public sealed class PrintBridgeRuntime : IDisposable
 
         RaiseStatusChanged();
         return health;
+    }
+
+    public IReadOnlyList<LocalPrintJobRecord> GetPrintHistory(
+        PrintHistoryDateFilter filter,
+        string? orderSearch) =>
+        _historyStore.Query(filter, orderSearch);
+
+    public async Task<OrderHubPrintBridgeClient.ReprintJobResult> ReprintJobAsync(Guid jobId, CancellationToken ct)
+    {
+        var entry = _historyStore.FindByJobId(jobId);
+        if (entry is null || entry.Status != LocalPrintJobStatus.Printed)
+            throw new LocalizedApplicationException("Reprint.NotAllowed");
+
+        var result = await _client.RequestReprintAsync(jobId, ct).ConfigureAwait(false);
+        if (!result.Success)
+            throw new LocalizedApplicationException(result.MessageKey);
+
+        _logger.LogInformation(
+            "Reprint requested. SourceJobId={SourceJobId}, NewJobId={NewJobId}",
+            jobId,
+            result.NewPrintJobId);
+
+        return result;
     }
 
     public async Task TestPrinterAsync(CancellationToken ct)
@@ -245,12 +282,15 @@ public sealed class PrintBridgeRuntime : IDisposable
 
     private void RegisterJobReceived(OrderHubPrintBridgeClient.PendingPrintJobDto job)
     {
+        var (_, bridge, _) = _holder.Snapshot();
         UpsertRecentJob(new LocalPrintJobRecord
         {
             JobId = job.Id,
             OrderId = job.OrderId,
             OrderDisplay = ReceiptPayloadReader.TryGetOrderDisplay(job.PayloadJson),
+            Platform = ReceiptPayloadReader.TryGetPlatform(job.PayloadJson),
             JobType = job.Type,
+            PrinterName = bridge.PrinterName,
             Status = LocalPrintJobStatus.Received,
             CreatedAtUtc = job.CreatedAtUtc,
             LastAttemptAtUtc = DateTime.UtcNow
@@ -399,9 +439,20 @@ public sealed class PrintBridgeRuntime : IDisposable
 
             if (_recentJobs.Count > MaxRecentJobs)
                 _recentJobs.RemoveRange(MaxRecentJobs, _recentJobs.Count - MaxRecentJobs);
+
+            var persisted = index >= 0 ? _recentJobs[index] : _recentJobs[0];
+            PersistToHistory(persisted);
         }
 
         RaiseStatusChanged();
+    }
+
+    private void PersistToHistory(LocalPrintJobRecord record)
+    {
+        if (record.Status is LocalPrintJobStatus.Received or LocalPrintJobStatus.Printing)
+            return;
+
+        _historyStore.Record(CloneRecord(record));
     }
 
     private static LocalPrintJobRecord CloneRecord(LocalPrintJobRecord source) =>
@@ -410,7 +461,9 @@ public sealed class PrintBridgeRuntime : IDisposable
             JobId = source.JobId,
             OrderId = source.OrderId,
             OrderDisplay = source.OrderDisplay,
+            Platform = source.Platform,
             JobType = source.JobType,
+            PrinterName = source.PrinterName,
             Status = source.Status,
             CreatedAtUtc = source.CreatedAtUtc,
             LastAttemptAtUtc = source.LastAttemptAtUtc,
@@ -418,6 +471,38 @@ public sealed class PrintBridgeRuntime : IDisposable
             ErrorMessage = source.ErrorMessage,
             StatusNote = source.StatusNote
         };
+
+    private int GetJobsTodayCount(DateTime today, IReadOnlyList<LocalPrintJobRecord> recentJobs)
+    {
+        var count = _historyStore.CountForLocalDate(today);
+        foreach (var job in recentJobs)
+        {
+            if (ToLocalDate(job.DisplayTimeUtc) != today)
+                continue;
+
+            if (_historyStore.FindByJobId(job.JobId) is not null)
+                continue;
+
+            count++;
+        }
+
+        return count;
+    }
+
+    private int GetFailedTodayCount(DateTime today, IReadOnlyList<LocalPrintJobRecord> recentJobs)
+    {
+        var count = _historyStore.CountForLocalDate(today, LocalPrintJobStatus.Failed);
+        foreach (var job in recentJobs)
+        {
+            if (job.Status == LocalPrintJobStatus.Failed && ToLocalDate(job.DisplayTimeUtc) == today)
+            {
+                if (_historyStore.FindByJobId(job.JobId) is null)
+                    count++;
+            }
+        }
+
+        return count;
+    }
 
     private static DateTime ToLocalDate(DateTime utc) => utc.ToLocalTime().Date;
 

@@ -1,3 +1,5 @@
+using OrderHub.PrintBridge.Models;
+
 namespace OrderHub.PrintBridge.UI;
 
 internal static class PrintBridgeUiTheme
@@ -19,6 +21,10 @@ internal static class PrintBridgeUiTheme
     public static Font SubtitleFont => new("Segoe UI", 9.5F, FontStyle.Regular);
     public static Font BadgeFont => new("Segoe UI Semibold", 9F, FontStyle.Bold);
     public static Font SectionFont => new("Segoe UI Semibold", 10F, FontStyle.Bold);
+    public static Font MetricValueFont => new("Segoe UI Semibold", 16F, FontStyle.Bold);
+    public static Font MetricTimestampFont => new("Segoe UI Semibold", 11.5F, FontStyle.Bold);
+    public static int GridRowHeight => 46;
+    public static int GridHeaderHeight => 44;
 
     public static Panel CreateCard(string title, out TableLayoutPanel contentTable, int rows)
     {
@@ -132,7 +138,11 @@ internal static class PrintBridgeUiTheme
         return button;
     }
 
-    public static Panel CreateMetricCard(string title, out Label valueLabel, out Label titleLabel)
+    public static Panel CreateMetricCard(
+        string title,
+        out Label valueLabel,
+        out Label titleLabel,
+        Font? valueFont = null)
     {
         var card = new Panel
         {
@@ -140,7 +150,7 @@ internal static class PrintBridgeUiTheme
             BackColor = CardBackground,
             Padding = new Padding(14, 12, 14, 12),
             Margin = new Padding(0, 0, 8, 8),
-            MinimumSize = new Size(160, 88)
+            MinimumSize = new Size(180, 92)
         };
         card.Paint += (_, e) =>
         {
@@ -149,27 +159,41 @@ internal static class PrintBridgeUiTheme
             e.Graphics.DrawRectangle(pen, rect);
         };
 
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = new Padding(0)
+        };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
         titleLabel = new Label
         {
             Text = title,
             Font = new Font("Segoe UI", 9F, FontStyle.Regular),
             ForeColor = TextMuted,
             AutoSize = true,
-            Dock = DockStyle.Top,
+            Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 0, 6)
         };
 
         valueLabel = new Label
         {
             Text = "-",
-            Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
+            Font = valueFont ?? MetricValueFont,
             ForeColor = TextTitle,
-            AutoSize = true,
-            Dock = DockStyle.Top
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft,
+            AutoEllipsis = true,
+            Margin = new Padding(0)
         };
 
-        card.Controls.Add(valueLabel);
-        card.Controls.Add(titleLabel);
+        layout.Controls.Add(titleLabel, 0, 0);
+        layout.Controls.Add(valueLabel, 0, 1);
+        card.Controls.Add(layout);
         return card;
     }
 
@@ -184,10 +208,24 @@ internal static class PrintBridgeUiTheme
         grid.ColumnHeadersDefaultCellStyle.ForeColor = TextTitle;
         grid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
         grid.ColumnHeadersDefaultCellStyle.Padding = new Padding(6);
-        grid.ColumnHeadersHeight = 32;
+        grid.ColumnHeadersHeight = GridHeaderHeight;
+        grid.DefaultCellStyle.Font = new Font("Segoe UI", 9.5F);
+        grid.DefaultCellStyle.Padding = new Padding(8, 6, 8, 6);
         grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(207, 226, 255);
         grid.DefaultCellStyle.SelectionForeColor = TextTitle;
         grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 249, 250);
-        grid.RowTemplate.Height = 28;
+        grid.RowTemplate.Height = GridRowHeight;
+        grid.RowTemplate.MinimumHeight = 44;
     }
+
+    public static (Color BackColor, Color ForeColor) GetStatusBadgeColors(LocalPrintJobStatus status) =>
+        status switch
+        {
+            LocalPrintJobStatus.Printed => (Color.FromArgb(212, 237, 220), Color.FromArgb(21, 87, 36)),
+            LocalPrintJobStatus.Printing => (Color.FromArgb(207, 226, 255), Color.FromArgb(8, 66, 152)),
+            LocalPrintJobStatus.Received => (Color.FromArgb(255, 243, 205), Color.FromArgb(133, 100, 4)),
+            LocalPrintJobStatus.Failed => (Color.FromArgb(248, 215, 218), Color.FromArgb(114, 28, 36)),
+            LocalPrintJobStatus.Skipped => (Color.FromArgb(233, 236, 239), Inactive),
+            _ => (CardBackground, TextTitle)
+        };
 }

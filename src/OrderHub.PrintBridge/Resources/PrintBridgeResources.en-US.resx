@@ -1,106 +1,477 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="Button.ClearLogs" xml:space="preserve"><value>Clear logs</value></data>
-  <data name="Button.CopyLogs" xml:space="preserve"><value>Copy logs</value></data>
-  <data name="Button.HideToken" xml:space="preserve"><value>Hide</value></data>
-  <data name="Button.OpenLogsFolder" xml:space="preserve"><value>Open logs folder</value></data>
-  <data name="Button.Refresh" xml:space="preserve"><value>Refresh</value></data>
-  <data name="Button.SaveSettings" xml:space="preserve"><value>Save settings</value></data>
-  <data name="Button.ShowToken" xml:space="preserve"><value>Show</value></data>
-  <data name="Button.StartListening" xml:space="preserve"><value>Start listening</value></data>
-  <data name="Button.StopListening" xml:space="preserve"><value>Stop listening</value></data>
-  <data name="Button.TestConnection" xml:space="preserve"><value>Test connection</value></data>
-  <data name="Button.TestPrinter" xml:space="preserve"><value>Print test receipt</value></data>
-  <data name="Common.AppTitle" xml:space="preserve"><value>OrderHub Print Bridge</value></data>
-  <data name="Common.Dash" xml:space="preserve"><value>-</value></data>
-  <data name="Common.NotConfigured" xml:space="preserve"><value>(not configured)</value></data>
-  <data name="Common.Subtitle" xml:space="preserve"><value>Receipt printing bridge</value></data>
-  <data name="Connection.AuthenticationFailed" xml:space="preserve"><value>Authentication failed</value></data>
-  <data name="Connection.EndpointNotFound" xml:space="preserve"><value>Print Bridge endpoint was not found. Check server URL and version.</value></data>
-  <data name="Connection.Reconnected" xml:space="preserve"><value>Reconnected</value></data>
-  <data name="Connection.RequestFailed" xml:space="preserve"><value>Print Bridge request failed (HTTP {0}).</value></data>
-  <data name="Connection.ServerUnavailable" xml:space="preserve"><value>OrderHub server is unavailable. Try again later.</value></data>
-  <data name="Connection.ServerUnreachable" xml:space="preserve"><value>Could not reach OrderHub. Check server URL and that the server is running.</value></data>
-  <data name="Connection.SslError" xml:space="preserve"><value>SSL connection failed. Ensure Windows trusts the local HTTPS certificate.</value></data>
-  <data name="Connection.TokenInvalid" xml:space="preserve"><value>Print Bridge token is invalid or unauthorized. Check the token in Settings.</value></data>
-  <data name="Dashboard.DeviceStatus" xml:space="preserve"><value>Device Status</value></data>
-  <data name="Dashboard.FailedToday" xml:space="preserve"><value>Failed Today</value></data>
-  <data name="Dashboard.JobsToday" xml:space="preserve"><value>Jobs Today</value></data>
-  <data name="Dashboard.LastPoll" xml:space="preserve"><value>Last Poll</value></data>
-  <data name="Error.DryRunEnabled" xml:space="preserve"><value>Disable test mode to send a test print.</value></data>
-  <data name="Error.PrinterRequired" xml:space="preserve"><value>Printer name is required.</value></data>
-  <data name="Error.TestPrintFailed" xml:space="preserve"><value>Test print failed.</value></data>
-  <data name="JobStatus.Failed" xml:space="preserve"><value>Failed</value></data>
-  <data name="JobStatus.Pending" xml:space="preserve"><value>Pending</value></data>
-  <data name="JobStatus.Printed" xml:space="preserve"><value>Printed</value></data>
-  <data name="JobStatus.Printing" xml:space="preserve"><value>Printing</value></data>
-  <data name="JobStatus.Skipped" xml:space="preserve"><value>Skipped</value></data>
-  <data name="Language.Arabic" xml:space="preserve"><value>العربية</value></data>
-  <data name="Language.English" xml:space="preserve"><value>English</value></data>
-  <data name="Language.Turkish" xml:space="preserve"><value>Türkçe</value></data>
-  <data name="Message.AlreadyRunning" xml:space="preserve"><value>OrderHub Print Bridge is already running.{0}{0}Open the existing app from the system tray icon.</value></data>
-  <data name="Message.ConnectionSuccess" xml:space="preserve"><value>Connection successful.</value></data>
-  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve"><value>Connection successful.{0}Customer: {1}{0}Device: {2}</value></data>
-  <data name="Message.LogsCopyFailed" xml:space="preserve"><value>Could not copy logs: {0}</value></data>
-  <data name="Message.LogsFolderMissing" xml:space="preserve"><value>Logs folder has not been created yet.</value></data>
-  <data name="Message.RequiresWindows" xml:space="preserve"><value>OrderHub Print Bridge requires Windows.</value></data>
-  <data name="Message.SettingsSaved" xml:space="preserve"><value>Settings saved.</value></data>
-  <data name="Message.LanguageRestartRequired" xml:space="preserve"><value>Language changes will take effect after restarting Print Bridge.</value></data>
-  <data name="Message.SettingsSaveFailed" xml:space="preserve"><value>Could not save settings: {0}</value></data>
-  <data name="Message.TestPrintSent" xml:space="preserve"><value>Test print sent to printer.</value></data>
-  <data name="Printing.Completed" xml:space="preserve"><value>Printing completed</value></data>
-  <data name="Printing.Failed" xml:space="preserve"><value>Printing failed</value></data>
-  <data name="Printing.Started" xml:space="preserve"><value>Printing started</value></data>
-  <data name="RecentJobs.Column.Order" xml:space="preserve"><value>Order</value></data>
-  <data name="RecentJobs.Column.Printer" xml:space="preserve"><value>Printer</value></data>
-  <data name="RecentJobs.Column.Status" xml:space="preserve"><value>Status</value></data>
-  <data name="RecentJobs.Column.Time" xml:space="preserve"><value>Time</value></data>
-  <data name="RecentJobs.Column.Type" xml:space="preserve"><value>Type</value></data>
-  <data name="RecentJobs.Empty" xml:space="preserve"><value>No print jobs have been processed in this session yet.</value></data>
-  <data name="RecentJobs.Title" xml:space="preserve"><value>Recent Jobs (this session)</value></data>
-  <data name="Settings.Advanced" xml:space="preserve"><value>Advanced</value></data>
-  <data name="Settings.AgentToken" xml:space="preserve"><value>Access token</value></data>
-  <data name="Settings.BusyPollSeconds" xml:space="preserve"><value>Busy poll interval (sec)</value></data>
-  <data name="Settings.ComputerName" xml:space="preserve"><value>Computer name</value></data>
-  <data name="Settings.DryRunDescription" xml:space="preserve"><value>Do not send to printer, log only</value></data>
-  <data name="Settings.DryRunMode" xml:space="preserve"><value>Test mode</value></data>
-  <data name="Settings.ErrorPollSeconds" xml:space="preserve"><value>Error poll interval (sec)</value></data>
-  <data name="Settings.IdlePollSeconds" xml:space="preserve"><value>Idle poll interval (sec)</value></data>
-  <data name="Settings.Language" xml:space="preserve"><value>Language</value></data>
-  <data name="Settings.PrinterName" xml:space="preserve"><value>Printer name</value></data>
-  <data name="Settings.SavedPathHint" xml:space="preserve"><value>Settings are saved to: {0}</value></data>
-  <data name="Settings.ServerUrl" xml:space="preserve"><value>Server URL</value></data>
-  <data name="Status.Connected" xml:space="preserve"><value>Connected</value></data>
-  <data name="Status.ConnectionLost" xml:space="preserve"><value>Connection Lost</value></data>
-  <data name="Status.Disconnected" xml:space="preserve"><value>Disconnected</value></data>
-  <data name="Status.Error" xml:space="preserve"><value>Error</value></data>
-  <data name="Status.Offline" xml:space="preserve"><value>Offline</value></data>
-  <data name="Status.Online" xml:space="preserve"><value>Online</value></data>
-  <data name="Status.Polling" xml:space="preserve"><value>Polling</value></data>
-  <data name="Status.Printing" xml:space="preserve"><value>Printing</value></data>
-  <data name="Status.Ready" xml:space="preserve"><value>Ready</value></data>
-  <data name="Status.Running" xml:space="preserve"><value>Running</value></data>
-  <data name="Status.RunningDryRun" xml:space="preserve"><value>Running (test)</value></data>
-  <data name="Status.Stopped" xml:space="preserve"><value>Stopped</value></data>
-  <data name="Tab.Logs" xml:space="preserve"><value>Logs</value></data>
-  <data name="Tab.Settings" xml:space="preserve"><value>Settings</value></data>
-  <data name="Tab.Status" xml:space="preserve"><value>Status</value></data>
-  <data name="Tray.Exit" xml:space="preserve"><value>Exit</value></data>
-  <data name="Tray.Logs" xml:space="preserve"><value>Logs</value></data>
-  <data name="Tray.Open" xml:space="preserve"><value>Open</value></data>
-  <data name="Tray.RecentJobs" xml:space="preserve"><value>Recent Jobs</value></data>
-  <data name="Tray.Settings" xml:space="preserve"><value>Settings</value></data>
-  <data name="Tray.Start" xml:space="preserve"><value>Start</value></data>
-  <data name="Tray.Stop" xml:space="preserve"><value>Stop</value></data>
-  <data name="Tray.Tooltip.Connected" xml:space="preserve"><value>{0} (connected)</value></data>
-  <data name="Tray.Tooltip.ConnectionLost" xml:space="preserve"><value>{0} (connection lost)</value></data>
-  <data name="Tray.Tooltip.Polling" xml:space="preserve"><value>{0} (polling)</value></data>
-  <data name="Tray.Tooltip.Printing" xml:space="preserve"><value>{0} (printing)</value></data>
-  <data name="Validation.AgentTokenRequired" xml:space="preserve"><value>Access token is required.</value></data>
-  <data name="Validation.BaseUrlRequired" xml:space="preserve"><value>Server URL is required.</value></data>
-  <data name="Validation.PrinterRequired" xml:space="preserve"><value>Printer name is required when test mode is disabled.</value></data>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Button.ClearLogs" xml:space="preserve">
+    <value>Clear logs</value>
+  </data>
+  <data name="Button.CopyLogs" xml:space="preserve">
+    <value>Copy logs</value>
+  </data>
+  <data name="Button.HideToken" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="Button.OpenLogsFolder" xml:space="preserve">
+    <value>Open logs folder</value>
+  </data>
+  <data name="Button.Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Button.SaveSettings" xml:space="preserve">
+    <value>Save settings</value>
+  </data>
+  <data name="Button.ShowToken" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="Button.StartListening" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Button.StopListening" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Button.TestConnection" xml:space="preserve">
+    <value>Test connection</value>
+  </data>
+  <data name="Button.TestPrinter" xml:space="preserve">
+    <value>Print test receipt</value>
+  </data>
+  <data name="Common.AppTitle" xml:space="preserve">
+    <value>OrderHub Print Bridge</value>
+  </data>
+  <data name="Common.Dash" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="Common.NotConfigured" xml:space="preserve">
+    <value>(not configured)</value>
+  </data>
+  <data name="Common.Subtitle" xml:space="preserve">
+    <value>Receipt printing bridge</value>
+  </data>
+  <data name="Connection.AuthenticationFailed" xml:space="preserve">
+    <value>Authentication failed</value>
+  </data>
+  <data name="Connection.EndpointNotFound" xml:space="preserve">
+    <value>Print Bridge endpoint was not found. Check server URL and version.</value>
+  </data>
+  <data name="Connection.Reconnected" xml:space="preserve">
+    <value>Reconnected</value>
+  </data>
+  <data name="Connection.RequestFailed" xml:space="preserve">
+    <value>Print Bridge request failed (HTTP {0}).</value>
+  </data>
+  <data name="Connection.ServerUnavailable" xml:space="preserve">
+    <value>OrderHub server is unavailable. Try again later.</value>
+  </data>
+  <data name="Connection.ServerUnreachable" xml:space="preserve">
+    <value>Could not reach OrderHub. Check server URL and that the server is running.</value>
+  </data>
+  <data name="Connection.SslError" xml:space="preserve">
+    <value>SSL connection failed. Ensure Windows trusts the local HTTPS certificate.</value>
+  </data>
+  <data name="Connection.TokenInvalid" xml:space="preserve">
+    <value>Print Bridge token is invalid or unauthorized. Check the token in Settings.</value>
+  </data>
+  <data name="Dashboard.DeviceStatus" xml:space="preserve">
+    <value>Device Status</value>
+  </data>
+  <data name="Dashboard.FailedToday" xml:space="preserve">
+    <value>Failed Today</value>
+  </data>
+  <data name="Dashboard.JobsToday" xml:space="preserve">
+    <value>Jobs Today</value>
+  </data>
+  <data name="Dashboard.LastPoll" xml:space="preserve">
+    <value>Last Poll</value>
+  </data>
+  <data name="Error.DryRunEnabled" xml:space="preserve">
+    <value>Disable test mode to send a test print.</value>
+  </data>
+  <data name="Error.PrinterRequired" xml:space="preserve">
+    <value>Printer name is required.</value>
+  </data>
+  <data name="Error.TestPrintFailed" xml:space="preserve">
+    <value>Test print failed.</value>
+  </data>
+  <data name="JobStatus.Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="JobStatus.Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="JobStatus.Printed" xml:space="preserve">
+    <value>Printed</value>
+  </data>
+  <data name="JobStatus.Printing" xml:space="preserve">
+    <value>Printing</value>
+  </data>
+  <data name="JobStatus.Skipped" xml:space="preserve">
+    <value>Skipped</value>
+  </data>
+  <data name="JobStatusBadge.Failed" xml:space="preserve">
+    <value>⚠ Failed</value>
+  </data>
+  <data name="JobStatusBadge.Pending" xml:space="preserve">
+    <value>○ Pending</value>
+  </data>
+  <data name="JobStatusBadge.Printed" xml:space="preserve">
+    <value>✓ Printed</value>
+  </data>
+  <data name="JobStatusBadge.Printing" xml:space="preserve">
+    <value>⏳ Printing</value>
+  </data>
+  <data name="JobStatusBadge.Skipped" xml:space="preserve">
+    <value>– Skipped</value>
+  </data>
+  <data name="Language.Arabic" xml:space="preserve">
+    <value>العربية</value>
+  </data>
+  <data name="Language.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language.Turkish" xml:space="preserve">
+    <value>Türkçe</value>
+  </data>
+  <data name="Message.AlreadyRunning" xml:space="preserve">
+    <value>OrderHub Print Bridge is already running.{0}{0}Open the existing app from the system tray icon.</value>
+  </data>
+  <data name="Message.ConnectionSuccess" xml:space="preserve">
+    <value>Connection successful.</value>
+  </data>
+  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve">
+    <value>Connection successful.{0}Customer: {1}{0}Device: {2}</value>
+  </data>
+  <data name="Message.LogsCopyFailed" xml:space="preserve">
+    <value>Could not copy logs: {0}</value>
+  </data>
+  <data name="Message.LogsFolderMissing" xml:space="preserve">
+    <value>Logs folder has not been created yet.</value>
+  </data>
+  <data name="Message.RequiresWindows" xml:space="preserve">
+    <value>OrderHub Print Bridge requires Windows.</value>
+  </data>
+  <data name="Message.SettingsSaved" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="Message.LanguageRestartRequired" xml:space="preserve">
+    <value>Language changes will take effect after restarting Print Bridge.</value>
+  </data>
+  <data name="Message.SettingsSaveFailed" xml:space="preserve">
+    <value>Could not save settings: {0}</value>
+  </data>
+  <data name="Message.TestPrintSent" xml:space="preserve">
+    <value>Test print sent to printer.</value>
+  </data>
+  <data name="Printing.Completed" xml:space="preserve">
+    <value>Printing completed</value>
+  </data>
+  <data name="Printing.Failed" xml:space="preserve">
+    <value>Printing failed</value>
+  </data>
+  <data name="Printing.Started" xml:space="preserve">
+    <value>Printing started</value>
+  </data>
+  <data name="RecentJobs.Column.Order" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="RecentJobs.Column.Printer" xml:space="preserve">
+    <value>Printer</value>
+  </data>
+  <data name="RecentJobs.Column.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="RecentJobs.Column.Time" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="RecentJobs.Column.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="RecentJobs.Tooltip.JobId" xml:space="preserve">
+    <value>Job ID: {0}</value>
+  </data>
+  <data name="RecentJobs.Empty" xml:space="preserve">
+    <value>No print jobs have been processed in this session yet.</value>
+  </data>
+  <data name="RecentJobs.Title" xml:space="preserve">
+    <value>Recent Jobs (this session)</value>
+  </data>
+  <data name="Settings.Advanced" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <data name="Settings.AgentToken" xml:space="preserve">
+    <value>Access token</value>
+  </data>
+  <data name="Settings.BusyPollSeconds" xml:space="preserve">
+    <value>Busy poll interval (sec)</value>
+  </data>
+  <data name="Footer.Device" xml:space="preserve">
+    <value>Device: {0}</value>
+  </data>
+  <data name="Footer.Version" xml:space="preserve">
+    <value>Version: {0}</value>
+  </data>
+  <data name="Settings.ComputerName" xml:space="preserve">
+    <value>Computer name</value>
+  </data>
+  <data name="Settings.DeviceName" xml:space="preserve">
+    <value>Device name</value>
+  </data>
+  <data name="Settings.DeviceNamePlaceholder" xml:space="preserve">
+    <value>e.g. Front POS, Kitchen Printer</value>
+  </data>
+  <data name="Settings.MachineNameHint" xml:space="preserve">
+    <value>Machine: {0}</value>
+  </data>
+  <data name="Settings.DryRunDescription" xml:space="preserve">
+    <value>Do not send to printer, log only</value>
+  </data>
+  <data name="Settings.DryRunMode" xml:space="preserve">
+    <value>Test mode</value>
+  </data>
+  <data name="Settings.ErrorPollSeconds" xml:space="preserve">
+    <value>Error poll interval (sec)</value>
+  </data>
+  <data name="Settings.IdlePollSeconds" xml:space="preserve">
+    <value>Idle poll interval (sec)</value>
+  </data>
+  <data name="Settings.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings.PrinterName" xml:space="preserve">
+    <value>Printer name</value>
+  </data>
+  <data name="Settings.SavedPathHint" xml:space="preserve">
+    <value>Settings are saved to: {0}</value>
+  </data>
+  <data name="Settings.ServerUrl" xml:space="preserve">
+    <value>Server URL</value>
+  </data>
+  <data name="Status.Connected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="Status.ConnectionLost" xml:space="preserve">
+    <value>Connection Lost</value>
+  </data>
+  <data name="Status.Disconnected" xml:space="preserve">
+    <value>Disconnected</value>
+  </data>
+  <data name="Status.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Status.Offline" xml:space="preserve">
+    <value>Offline</value>
+  </data>
+  <data name="Status.Online" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="Status.Polling" xml:space="preserve">
+    <value>Running</value>
+  </data>
+  <data name="Status.Printing" xml:space="preserve">
+    <value>Printing</value>
+  </data>
+  <data name="Status.Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Status.Running" xml:space="preserve">
+    <value>Running</value>
+  </data>
+  <data name="Status.RunningDryRun" xml:space="preserve">
+    <value>Running (test)</value>
+  </data>
+  <data name="Status.Stopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="ConnectionStatus.Connected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="ConnectionStatus.Disconnected" xml:space="preserve">
+    <value>Disconnected</value>
+  </data>
+  <data name="ConnectionStatus.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="ConnectionStatus.Stopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="Dashboard.DeviceName" xml:space="preserve">
+    <value>Device Name</value>
+  </data>
+  <data name="Dashboard.LastContact" xml:space="preserve">
+    <value>Last Contact</value>
+  </data>
+  <data name="Dashboard.LastPrint" xml:space="preserve">
+    <value>Last Print</value>
+  </data>
+  <data name="Dashboard.LastSuccessfulPoll" xml:space="preserve">
+    <value>Last Successful Poll</value>
+  </data>
+  <data name="Dashboard.PrinterStatus" xml:space="preserve">
+    <value>Printer Status</value>
+  </data>
+  <data name="Dashboard.ServerStatus" xml:space="preserve">
+    <value>Server Connection</value>
+  </data>
+  <data name="Dashboard.Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="Platform.GetirYemek" xml:space="preserve">
+    <value>GetirYemek</value>
+  </data>
+  <data name="Platform.TrendyolYemek" xml:space="preserve">
+    <value>Trendyol Yemek</value>
+  </data>
+  <data name="Platform.Yemeksepeti" xml:space="preserve">
+    <value>Yemeksepeti</value>
+  </data>
+  <data name="PrintHistory.Column.Order" xml:space="preserve">
+    <value>Order Number</value>
+  </data>
+  <data name="PrintHistory.Column.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="PrintHistory.Column.Printer" xml:space="preserve">
+    <value>Printer</value>
+  </data>
+  <data name="PrintHistory.Column.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="PrintHistory.Column.Time" xml:space="preserve">
+    <value>Date/Time</value>
+  </data>
+  <data name="PrintHistory.Empty" xml:space="preserve">
+    <value>No print history records found.</value>
+  </data>
+  <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
+    <value>Last 30 Days</value>
+  </data>
+  <data name="PrintHistory.Filter.Last7Days" xml:space="preserve">
+    <value>Last 7 Days</value>
+  </data>
+  <data name="PrintHistory.Filter.Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="PrintHistory.Search" xml:space="preserve">
+    <value>Search orders</value>
+  </data>
+  <data name="PrintHistory.SearchPlaceholder" xml:space="preserve">
+    <value>Order number...</value>
+  </data>
+  <data name="PrintHistory.Title" xml:space="preserve">
+    <value>Print History</value>
+  </data>
+  <data name="PrinterStatus.DryRun" xml:space="preserve">
+    <value>Test mode</value>
+  </data>
+  <data name="PrinterStatus.NotConfigured" xml:space="preserve">
+    <value>Not configured</value>
+  </data>
+  <data name="PrinterStatus.NotFound" xml:space="preserve">
+    <value>Not found</value>
+  </data>
+  <data name="PrinterStatus.Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Reprint.AlreadyPending" xml:space="preserve">
+    <value>An active print job already exists for this order.</value>
+  </data>
+  <data name="Reprint.Button" xml:space="preserve">
+    <value>Reprint</value>
+  </data>
+  <data name="Reprint.Confirm" xml:space="preserve">
+    <value>Reprint receipt for {0}?</value>
+  </data>
+  <data name="Reprint.Created" xml:space="preserve">
+    <value>Reprint job created. Print Bridge will pick it up shortly.</value>
+  </data>
+  <data name="Reprint.Failed" xml:space="preserve">
+    <value>Reprint failed.</value>
+  </data>
+  <data name="Reprint.JobNotFound" xml:space="preserve">
+    <value>Print job not found.</value>
+  </data>
+  <data name="Reprint.NotAllowed" xml:space="preserve">
+    <value>Only successfully printed jobs can be reprinted.</value>
+  </data>
+  <data name="Reprint.OrderNotFound" xml:space="preserve">
+    <value>Order not found.</value>
+  </data>
+  <data name="Reprint.SelectPrintedJob" xml:space="preserve">
+    <value>Select a successfully printed job to reprint.</value>
+  </data>
+  <data name="Tab.Logs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="Tab.PrintHistory" xml:space="preserve">
+    <value>Print History</value>
+  </data>
+  <data name="Tab.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Tab.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Tray.ConnectionStatus" xml:space="preserve">
+    <value>● {0}</value>
+  </data>
+  <data name="Tray.Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="Tray.PrintHistory" xml:space="preserve">
+    <value>Print History</value>
+  </data>
+  <data name="Tray.PrinterTest" xml:space="preserve">
+    <value>Printer Test</value>
+  </data>
+  <data name="Tray.Logs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="Tray.Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Tray.RecentJobs" xml:space="preserve">
+    <value>Recent Jobs</value>
+  </data>
+  <data name="Tray.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Tray.Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Tray.Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Tray.Tooltip.Connected" xml:space="preserve">
+    <value>{0} (connected)</value>
+  </data>
+  <data name="Tray.Tooltip.ConnectionLost" xml:space="preserve">
+    <value>{0} (connection lost)</value>
+  </data>
+  <data name="Tray.Tooltip.Polling" xml:space="preserve">
+    <value>{0} (running)</value>
+  </data>
+  <data name="Tray.Tooltip.Printing" xml:space="preserve">
+    <value>{0} (printing)</value>
+  </data>
+  <data name="Validation.AgentTokenRequired" xml:space="preserve">
+    <value>Access token is required.</value>
+  </data>
+  <data name="Validation.BaseUrlRequired" xml:space="preserve">
+    <value>Server URL is required.</value>
+  </data>
+  <data name="Validation.PrinterRequired" xml:space="preserve">
+    <value>Printer name is required when test mode is disabled.</value>
+  </data>
+  <data name="JobType.Receipt" xml:space="preserve">
+    <value>Receipt</value>
+  </data>
 </root>

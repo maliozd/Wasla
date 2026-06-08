@@ -12,10 +12,12 @@ namespace OrderHub.Api.Controllers;
 public sealed class PrintBridgeController : ControllerBase
 {
     private readonly IPrintBridgeJobService _jobs;
+    private readonly IPrintJobHistoryService _history;
 
-    public PrintBridgeController(IPrintBridgeJobService jobs)
+    public PrintBridgeController(IPrintBridgeJobService jobs, IPrintJobHistoryService history)
     {
         _jobs = jobs;
+        _history = history;
     }
 
     [HttpGet("health")]
@@ -72,6 +74,19 @@ public sealed class PrintBridgeController : ControllerBase
 
         var result = await _jobs.TryMarkPrintedAsync(auth.CustomerId, jobId, ct).ConfigureAwait(false);
         return Ok(MapClaimResult(result));
+    }
+
+    [HttpPost("jobs/{jobId:guid}/reprint")]
+    public async Task<ActionResult<ReprintPrintJobResponse>> Reprint(Guid jobId, CancellationToken ct = default)
+    {
+        var auth = PrintBridgeContext.Get(HttpContext);
+        if (auth is null)
+            return Unauthorized();
+
+        var result = await _history.CreateReprintAsync(auth.CustomerId, jobId, auth.CustomerName, ct)
+            .ConfigureAwait(false);
+
+        return Ok(new ReprintPrintJobResponse(result.Success, result.MessageKey, result.NewPrintJobId));
     }
 
     [HttpPost("jobs/{jobId:guid}/mark-failed")]

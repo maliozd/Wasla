@@ -30,6 +30,17 @@ public sealed class PrintBridgeLocalizer
             : format;
     }
 
+    public string GetJobType(string? jobType)
+    {
+        if (string.IsNullOrWhiteSpace(jobType))
+            return GetString("Common.Dash");
+
+        var key = $"JobType.{jobType}";
+        var localized = ResourceManager.GetString(key, _cultureService.CurrentCulture)
+            ?? ResourceManager.GetString(key, CultureInfo.GetCultureInfo(SupportedCultures.Default));
+        return localized ?? jobType;
+    }
+
     public string GetJobStatus(LocalPrintJobStatus status) => status switch
     {
         LocalPrintJobStatus.Received => GetString("JobStatus.Pending"),
@@ -38,6 +49,16 @@ public sealed class PrintBridgeLocalizer
         LocalPrintJobStatus.Failed => GetString("JobStatus.Failed"),
         LocalPrintJobStatus.Skipped => GetString("JobStatus.Skipped"),
         _ => status.ToString()
+    };
+
+    public string GetJobStatusBadge(LocalPrintJobStatus status) => status switch
+    {
+        LocalPrintJobStatus.Printed => GetString("JobStatusBadge.Printed"),
+        LocalPrintJobStatus.Printing => GetString("JobStatusBadge.Printing"),
+        LocalPrintJobStatus.Received => GetString("JobStatusBadge.Pending"),
+        LocalPrintJobStatus.Failed => GetString("JobStatusBadge.Failed"),
+        LocalPrintJobStatus.Skipped => GetString("JobStatusBadge.Skipped"),
+        _ => GetJobStatus(status)
     };
 
     public string GetTrayIconState(TrayIconState state) => state switch
@@ -57,6 +78,60 @@ public sealed class PrintBridgeLocalizer
         TrayIconState.ConnectionLost => GetString("Tray.Tooltip.ConnectionLost", productName),
         _ => productName
     };
+
+    public string GetPlatform(string? platform)
+    {
+        if (string.IsNullOrWhiteSpace(platform))
+            return GetString("Common.Dash");
+
+        var key = $"Platform.{platform}";
+        var localized = ResourceManager.GetString(key, _cultureService.CurrentCulture)
+            ?? ResourceManager.GetString(key, CultureInfo.GetCultureInfo(SupportedCultures.Default));
+        return localized ?? platform;
+    }
+
+    public string GetServerConnectionStatus(BridgeServerConnectionStatus status) => status switch
+    {
+        BridgeServerConnectionStatus.Connected => GetString("ConnectionStatus.Connected"),
+        BridgeServerConnectionStatus.Disconnected => GetString("ConnectionStatus.Disconnected"),
+        BridgeServerConnectionStatus.Error => GetString("ConnectionStatus.Error"),
+        BridgeServerConnectionStatus.Stopped => GetString("ConnectionStatus.Stopped"),
+        _ => GetString("ConnectionStatus.Stopped")
+    };
+
+    public string GetPrinterHealthStatus(PrinterHealthStatus status) => status switch
+    {
+        PrinterHealthStatus.Ready => GetString("PrinterStatus.Ready"),
+        PrinterHealthStatus.NotConfigured => GetString("PrinterStatus.NotConfigured"),
+        PrinterHealthStatus.NotFound => GetString("PrinterStatus.NotFound"),
+        PrinterHealthStatus.DryRun => GetString("PrinterStatus.DryRun"),
+        _ => GetString("PrinterStatus.NotConfigured")
+    };
+
+    public string GetPrintHistoryFilter(PrintHistoryDateFilter filter) => filter switch
+    {
+        PrintHistoryDateFilter.Today => GetString("PrintHistory.Filter.Today"),
+        PrintHistoryDateFilter.Last7Days => GetString("PrintHistory.Filter.Last7Days"),
+        PrintHistoryDateFilter.Last30Days => GetString("PrintHistory.Filter.Last30Days"),
+        _ => GetString("PrintHistory.Filter.Today")
+    };
+
+    public string GetReprintMessage(string messageKey) => messageKey switch
+    {
+        "PrintBridge.ReprintCreated" or "Reprint.Created" => GetString("Reprint.Created"),
+        "PrintBridge.ReprintFailed" or "Reprint.Failed" => GetString("Reprint.Failed"),
+        "PrintBridge.ReprintAlreadyPending" or "Reprint.AlreadyPending" => GetString("Reprint.AlreadyPending"),
+        "PrintBridge.ReprintOrderNotFound" or "Reprint.OrderNotFound" => GetString("Reprint.OrderNotFound"),
+        "PrintBridge.ReprintJobNotFound" or "Reprint.JobNotFound" => GetString("Reprint.JobNotFound"),
+        "PrintBridge.ReprintNotAllowed" or "Reprint.NotAllowed" => GetString("Reprint.NotAllowed"),
+        _ => GetString("Reprint.Failed")
+    };
+
+    public string GetTrayConnectionLabel(PrintBridgeRuntimeStatus status)
+    {
+        var state = GetServerConnectionStatus(status.ServerConnectionStatus);
+        return GetString("Tray.ConnectionStatus", state);
+    }
 
     public string GetHeaderBadge(PrintBridgeRuntimeStatus status)
     {

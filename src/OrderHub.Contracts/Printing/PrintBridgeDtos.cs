@@ -20,3 +20,8 @@ public sealed record PrintBridgeHealthResponse(
     string CustomerName,
     string DeviceName,
     DateTime ServerTimeUtc);
+
+public sealed record ReprintPrintJobResponse(
+    bool Success,
+    string MessageKey,
+    Guid? NewPrintJobId);

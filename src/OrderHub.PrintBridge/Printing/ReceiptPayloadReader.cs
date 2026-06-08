@@ -9,6 +9,28 @@ internal static class ReceiptPayloadReader
         PropertyNameCaseInsensitive = true
     };
 
+    public static string? TryGetPlatform(string payloadJson)
+    {
+        if (string.IsNullOrWhiteSpace(payloadJson))
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(payloadJson);
+            var root = doc.RootElement;
+            if (TryGetString(root, "platform", out var platform) && !string.IsNullOrWhiteSpace(platform))
+                return platform.Trim();
+            if (TryGetString(root, "Platform", out platform) && !string.IsNullOrWhiteSpace(platform))
+                return platform.Trim();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+
+        return null;
+    }
+
     public static string? TryGetOrderDisplay(string payloadJson)
     {
         if (string.IsNullOrWhiteSpace(payloadJson))

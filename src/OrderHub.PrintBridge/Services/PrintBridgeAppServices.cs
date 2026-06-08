@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OrderHub.PrintBridge.Configuration;
@@ -18,14 +17,17 @@ public static class PrintBridgeAppServices
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
 
-        if (string.IsNullOrWhiteSpace(document.PrintBridge.BridgeName))
-            document.PrintBridge.BridgeName = Environment.MachineName;
+        if (string.IsNullOrWhiteSpace(document.PrintBridge.MachineName))
+            document.PrintBridge.MachineName = Environment.MachineName;
 
         var cultureService = new PrintBridgeCultureService();
         cultureService.Initialize(document.Ui.Language);
 
         var holder = new PrintBridgeSettingsHolder();
         holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+
+        var appVersion = new AppVersionInfo();
+        var historyStore = new LocalPrintJobHistoryStore();
 
         var uiLogBuffer = new UiLogBuffer();
         var logPath = Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "orderhub-print-bridge-.log");
@@ -46,6 +48,8 @@ public static class PrintBridgeAppServices
         services.AddSingleton(cultureService);
         services.AddSingleton<PrintBridgeLocalizer>();
         services.AddSingleton(holder);
+        services.AddSingleton(appVersion);
+        services.AddSingleton(historyStore);
         services.AddSingleton<ReceiptFormatter>();
 
         if (!OperatingSystem.IsWindows())
@@ -53,7 +57,6 @@ public static class PrintBridgeAppServices
 
         services.AddSingleton<IReceiptPrinter, WindowsReceiptPrinter>();
 
-        var appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
         services.AddHttpClient("PrintBridgeApi", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
@@ -67,7 +70,7 @@ public static class PrintBridgeAppServices
                 http,
                 sp.GetRequiredService<PrintBridgeSettingsHolder>(),
                 logger,
-                appVersion);
+                appVersion.HeaderValue);
         });
 
         services.AddSingleton<PrintBridgeRuntime>();
@@ -101,12 +104,13 @@ public static class PrintBridgeAppServices
         }
 
         logger.LogInformation(
-            "Effective config: BaseUrl={BaseUrl}, DryRun={DryRun}, PrinterMode={PrinterMode}, PrinterName={PrinterName}, BridgeName={BridgeName}, Language={Language}, IdlePoll={IdlePoll}s, BusyPoll={BusyPoll}s, ErrorPoll={ErrorPoll}s, MaxJobsPerPoll={MaxJobsPerPoll}, ConfigPath={ConfigPath}, LogPath={LogPath}",
+            "Effective config: BaseUrl={BaseUrl}, DryRun={DryRun}, PrinterMode={PrinterMode}, PrinterName={PrinterName}, DisplayName={DisplayName}, MachineName={MachineName}, Language={Language}, IdlePoll={IdlePoll}s, BusyPoll={BusyPoll}s, ErrorPoll={ErrorPoll}s, MaxJobsPerPoll={MaxJobsPerPoll}, ConfigPath={ConfigPath}, LogPath={LogPath}",
             hub.BaseUrl,
             bridge.DryRun,
             bridge.PrinterMode,
             string.IsNullOrWhiteSpace(bridge.PrinterName) ? "(not set)" : bridge.PrinterName,
-            bridge.BridgeName,
+            string.IsNullOrWhiteSpace(bridge.DisplayName) ? "(not set)" : bridge.DisplayName,
+            bridge.MachineName,
             ui.Language,
             bridge.IdlePollIntervalSeconds,
             bridge.BusyPollIntervalSeconds,

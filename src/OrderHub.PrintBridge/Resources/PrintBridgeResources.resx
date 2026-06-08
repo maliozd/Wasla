@@ -1,106 +1,477 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="Button.ClearLogs" xml:space="preserve"><value>Logları temizle</value></data>
-  <data name="Button.CopyLogs" xml:space="preserve"><value>Logları kopyala</value></data>
-  <data name="Button.HideToken" xml:space="preserve"><value>Gizle</value></data>
-  <data name="Button.OpenLogsFolder" xml:space="preserve"><value>Log klasörünü aç</value></data>
-  <data name="Button.Refresh" xml:space="preserve"><value>Yenile</value></data>
-  <data name="Button.SaveSettings" xml:space="preserve"><value>Ayarları kaydet</value></data>
-  <data name="Button.ShowToken" xml:space="preserve"><value>Göster</value></data>
-  <data name="Button.StartListening" xml:space="preserve"><value>Dinlemeyi başlat</value></data>
-  <data name="Button.StopListening" xml:space="preserve"><value>Dinlemeyi durdur</value></data>
-  <data name="Button.TestConnection" xml:space="preserve"><value>Bağlantıyı test et</value></data>
-  <data name="Button.TestPrinter" xml:space="preserve"><value>Yazıcıyı test et</value></data>
-  <data name="Common.AppTitle" xml:space="preserve"><value>OrderHub Print Bridge</value></data>
-  <data name="Common.Dash" xml:space="preserve"><value>-</value></data>
-  <data name="Common.NotConfigured" xml:space="preserve"><value>(ayarlanmadı)</value></data>
-  <data name="Common.Subtitle" xml:space="preserve"><value>Fiş yazdırma köprüsü</value></data>
-  <data name="Connection.AuthenticationFailed" xml:space="preserve"><value>Kimlik doğrulama başarısız</value></data>
-  <data name="Connection.EndpointNotFound" xml:space="preserve"><value>Print Bridge uç noktası bulunamadı. Sunucu adresini ve sürümü kontrol edin.</value></data>
-  <data name="Connection.Reconnected" xml:space="preserve"><value>Yeniden bağlandı</value></data>
-  <data name="Connection.RequestFailed" xml:space="preserve"><value>Print Bridge isteği başarısız oldu (HTTP {0}).</value></data>
-  <data name="Connection.ServerUnavailable" xml:space="preserve"><value>OrderHub sunucusu kullanılamıyor. Daha sonra tekrar deneyin.</value></data>
-  <data name="Connection.ServerUnreachable" xml:space="preserve"><value>OrderHub&apos;a ulaşılamadı. Sunucu adresini ve sunucunun çalıştığını kontrol edin.</value></data>
-  <data name="Connection.SslError" xml:space="preserve"><value>SSL bağlantısı başarısız. Windows&apos;un yerel HTTPS sertifikasına güvendiğinden emin olun.</value></data>
-  <data name="Connection.TokenInvalid" xml:space="preserve"><value>Print Bridge erişim anahtarı geçersiz veya yetkisiz. Ayarlardaki anahtarı kontrol edin.</value></data>
-  <data name="Dashboard.DeviceStatus" xml:space="preserve"><value>Cihaz Durumu</value></data>
-  <data name="Dashboard.FailedToday" xml:space="preserve"><value>Bugün Başarısız</value></data>
-  <data name="Dashboard.JobsToday" xml:space="preserve"><value>Bugünkü İşler</value></data>
-  <data name="Dashboard.LastPoll" xml:space="preserve"><value>Son Kontrol</value></data>
-  <data name="Error.DryRunEnabled" xml:space="preserve"><value>Test baskısı göndermek için test modunu kapatın.</value></data>
-  <data name="Error.PrinterRequired" xml:space="preserve"><value>Yazıcı adı gereklidir.</value></data>
-  <data name="Error.TestPrintFailed" xml:space="preserve"><value>Test baskısı başarısız oldu.</value></data>
-  <data name="JobStatus.Failed" xml:space="preserve"><value>Başarısız</value></data>
-  <data name="JobStatus.Pending" xml:space="preserve"><value>Bekliyor</value></data>
-  <data name="JobStatus.Printed" xml:space="preserve"><value>Yazdırıldı</value></data>
-  <data name="JobStatus.Printing" xml:space="preserve"><value>Yazdırılıyor</value></data>
-  <data name="JobStatus.Skipped" xml:space="preserve"><value>Atlandı</value></data>
-  <data name="Language.Arabic" xml:space="preserve"><value>العربية</value></data>
-  <data name="Language.English" xml:space="preserve"><value>English</value></data>
-  <data name="Language.Turkish" xml:space="preserve"><value>Türkçe</value></data>
-  <data name="Message.AlreadyRunning" xml:space="preserve"><value>OrderHub Print Bridge zaten çalışıyor.{0}{0}Mevcut uygulamayı sistem tepsisi simgesinden açın.</value></data>
-  <data name="Message.ConnectionSuccess" xml:space="preserve"><value>Bağlantı başarılı.</value></data>
-  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve"><value>Bağlantı başarılı.{0}Müşteri: {1}{0}Cihaz: {2}</value></data>
-  <data name="Message.LogsCopyFailed" xml:space="preserve"><value>Loglar kopyalanamadı: {0}</value></data>
-  <data name="Message.LogsFolderMissing" xml:space="preserve"><value>Log klasörü henüz oluşturulmadı.</value></data>
-  <data name="Message.RequiresWindows" xml:space="preserve"><value>OrderHub Print Bridge Windows gerektirir.</value></data>
-  <data name="Message.SettingsSaved" xml:space="preserve"><value>Ayarlar kaydedildi.</value></data>
-  <data name="Message.LanguageRestartRequired" xml:space="preserve"><value>Dil değişikliği uygulama yeniden başlatıldığında uygulanacaktır.</value></data>
-  <data name="Message.SettingsSaveFailed" xml:space="preserve"><value>Ayarlar kaydedilemedi: {0}</value></data>
-  <data name="Message.TestPrintSent" xml:space="preserve"><value>Test çıktısı yazıcıya gönderildi.</value></data>
-  <data name="Printing.Completed" xml:space="preserve"><value>Yazdırma tamamlandı</value></data>
-  <data name="Printing.Failed" xml:space="preserve"><value>Yazdırma başarısız</value></data>
-  <data name="Printing.Started" xml:space="preserve"><value>Yazdırma başladı</value></data>
-  <data name="RecentJobs.Column.Order" xml:space="preserve"><value>Sipariş</value></data>
-  <data name="RecentJobs.Column.Printer" xml:space="preserve"><value>Yazıcı</value></data>
-  <data name="RecentJobs.Column.Status" xml:space="preserve"><value>Durum</value></data>
-  <data name="RecentJobs.Column.Time" xml:space="preserve"><value>Saat</value></data>
-  <data name="RecentJobs.Column.Type" xml:space="preserve"><value>Tür</value></data>
-  <data name="RecentJobs.Empty" xml:space="preserve"><value>Bu oturumda henüz yazdırma işi işlenmedi.</value></data>
-  <data name="RecentJobs.Title" xml:space="preserve"><value>Son işler (bu oturum)</value></data>
-  <data name="Settings.Advanced" xml:space="preserve"><value>Gelişmiş</value></data>
-  <data name="Settings.AgentToken" xml:space="preserve"><value>Erişim anahtarı</value></data>
-  <data name="Settings.BusyPollSeconds" xml:space="preserve"><value>Yoğunken bekleme (sn)</value></data>
-  <data name="Settings.ComputerName" xml:space="preserve"><value>Bilgisayar adı</value></data>
-  <data name="Settings.DryRunDescription" xml:space="preserve"><value>Fişi yazıcıya gönderme, sadece logla</value></data>
-  <data name="Settings.DryRunMode" xml:space="preserve"><value>Test modu</value></data>
-  <data name="Settings.ErrorPollSeconds" xml:space="preserve"><value>Hata sonrası bekleme (sn)</value></data>
-  <data name="Settings.IdlePollSeconds" xml:space="preserve"><value>Boşta bekleme (sn)</value></data>
-  <data name="Settings.Language" xml:space="preserve"><value>Dil</value></data>
-  <data name="Settings.PrinterName" xml:space="preserve"><value>Yazıcı adı</value></data>
-  <data name="Settings.SavedPathHint" xml:space="preserve"><value>Ayarlar şuraya kaydedilir: {0}</value></data>
-  <data name="Settings.ServerUrl" xml:space="preserve"><value>Sunucu adresi</value></data>
-  <data name="Status.Connected" xml:space="preserve"><value>Bağlı</value></data>
-  <data name="Status.ConnectionLost" xml:space="preserve"><value>Bağlantı Yok</value></data>
-  <data name="Status.Disconnected" xml:space="preserve"><value>Bağlı değil</value></data>
-  <data name="Status.Error" xml:space="preserve"><value>Hata</value></data>
-  <data name="Status.Offline" xml:space="preserve"><value>Çevrimdışı</value></data>
-  <data name="Status.Online" xml:space="preserve"><value>Çevrimiçi</value></data>
-  <data name="Status.Polling" xml:space="preserve"><value>Dinleniyor</value></data>
-  <data name="Status.Printing" xml:space="preserve"><value>Yazdırılıyor</value></data>
-  <data name="Status.Ready" xml:space="preserve"><value>Hazır</value></data>
-  <data name="Status.Running" xml:space="preserve"><value>Çalışıyor</value></data>
-  <data name="Status.RunningDryRun" xml:space="preserve"><value>Çalışıyor (test)</value></data>
-  <data name="Status.Stopped" xml:space="preserve"><value>Durduruldu</value></data>
-  <data name="Tab.Logs" xml:space="preserve"><value>Loglar</value></data>
-  <data name="Tab.Settings" xml:space="preserve"><value>Ayarlar</value></data>
-  <data name="Tab.Status" xml:space="preserve"><value>Durum</value></data>
-  <data name="Tray.Exit" xml:space="preserve"><value>Çıkış</value></data>
-  <data name="Tray.Logs" xml:space="preserve"><value>Loglar</value></data>
-  <data name="Tray.Open" xml:space="preserve"><value>Aç</value></data>
-  <data name="Tray.RecentJobs" xml:space="preserve"><value>Son işler</value></data>
-  <data name="Tray.Settings" xml:space="preserve"><value>Ayarlar</value></data>
-  <data name="Tray.Start" xml:space="preserve"><value>Başlat</value></data>
-  <data name="Tray.Stop" xml:space="preserve"><value>Durdur</value></data>
-  <data name="Tray.Tooltip.Connected" xml:space="preserve"><value>{0} (bağlı)</value></data>
-  <data name="Tray.Tooltip.ConnectionLost" xml:space="preserve"><value>{0} (bağlantı yok)</value></data>
-  <data name="Tray.Tooltip.Polling" xml:space="preserve"><value>{0} (dinleniyor)</value></data>
-  <data name="Tray.Tooltip.Printing" xml:space="preserve"><value>{0} (yazdırılıyor)</value></data>
-  <data name="Validation.AgentTokenRequired" xml:space="preserve"><value>Erişim anahtarı gereklidir.</value></data>
-  <data name="Validation.BaseUrlRequired" xml:space="preserve"><value>Sunucu adresi gereklidir.</value></data>
-  <data name="Validation.PrinterRequired" xml:space="preserve"><value>Test modu kapalıyken yazıcı adı gereklidir.</value></data>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Button.ClearLogs" xml:space="preserve">
+    <value>Logları temizle</value>
+  </data>
+  <data name="Button.CopyLogs" xml:space="preserve">
+    <value>Logları kopyala</value>
+  </data>
+  <data name="Button.HideToken" xml:space="preserve">
+    <value>Gizle</value>
+  </data>
+  <data name="Button.OpenLogsFolder" xml:space="preserve">
+    <value>Log klasörünü aç</value>
+  </data>
+  <data name="Button.Refresh" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="Button.SaveSettings" xml:space="preserve">
+    <value>Ayarları kaydet</value>
+  </data>
+  <data name="Button.ShowToken" xml:space="preserve">
+    <value>Göster</value>
+  </data>
+  <data name="Button.StartListening" xml:space="preserve">
+    <value>Başlat</value>
+  </data>
+  <data name="Button.StopListening" xml:space="preserve">
+    <value>Durdur</value>
+  </data>
+  <data name="Button.TestConnection" xml:space="preserve">
+    <value>Bağlantıyı test et</value>
+  </data>
+  <data name="Button.TestPrinter" xml:space="preserve">
+    <value>Yazıcıyı test et</value>
+  </data>
+  <data name="Common.AppTitle" xml:space="preserve">
+    <value>OrderHub Print Bridge</value>
+  </data>
+  <data name="Common.Dash" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="Common.NotConfigured" xml:space="preserve">
+    <value>(ayarlanmadı)</value>
+  </data>
+  <data name="Common.Subtitle" xml:space="preserve">
+    <value>Fiş yazdırma köprüsü</value>
+  </data>
+  <data name="Connection.AuthenticationFailed" xml:space="preserve">
+    <value>Kimlik doğrulama başarısız</value>
+  </data>
+  <data name="Connection.EndpointNotFound" xml:space="preserve">
+    <value>Print Bridge uç noktası bulunamadı. Sunucu adresini ve sürümü kontrol edin.</value>
+  </data>
+  <data name="Connection.Reconnected" xml:space="preserve">
+    <value>Yeniden bağlandı</value>
+  </data>
+  <data name="Connection.RequestFailed" xml:space="preserve">
+    <value>Print Bridge isteği başarısız oldu (HTTP {0}).</value>
+  </data>
+  <data name="Connection.ServerUnavailable" xml:space="preserve">
+    <value>OrderHub sunucusu kullanılamıyor. Daha sonra tekrar deneyin.</value>
+  </data>
+  <data name="Connection.ServerUnreachable" xml:space="preserve">
+    <value>OrderHub'a ulaşılamadı. Sunucu adresini ve sunucunun çalıştığını kontrol edin.</value>
+  </data>
+  <data name="Connection.SslError" xml:space="preserve">
+    <value>SSL bağlantısı başarısız. Windows'un yerel HTTPS sertifikasına güvendiğinden emin olun.</value>
+  </data>
+  <data name="Connection.TokenInvalid" xml:space="preserve">
+    <value>Print Bridge erişim anahtarı geçersiz veya yetkisiz. Ayarlardaki anahtarı kontrol edin.</value>
+  </data>
+  <data name="Dashboard.DeviceStatus" xml:space="preserve">
+    <value>Cihaz Durumu</value>
+  </data>
+  <data name="Dashboard.FailedToday" xml:space="preserve">
+    <value>Bugün Başarısız</value>
+  </data>
+  <data name="Dashboard.JobsToday" xml:space="preserve">
+    <value>Bugünkü İşler</value>
+  </data>
+  <data name="Dashboard.LastPoll" xml:space="preserve">
+    <value>Son Kontrol</value>
+  </data>
+  <data name="Error.DryRunEnabled" xml:space="preserve">
+    <value>Test baskısı göndermek için test modunu kapatın.</value>
+  </data>
+  <data name="Error.PrinterRequired" xml:space="preserve">
+    <value>Yazıcı adı gereklidir.</value>
+  </data>
+  <data name="Error.TestPrintFailed" xml:space="preserve">
+    <value>Test baskısı başarısız oldu.</value>
+  </data>
+  <data name="JobStatus.Failed" xml:space="preserve">
+    <value>Başarısız</value>
+  </data>
+  <data name="JobStatus.Pending" xml:space="preserve">
+    <value>Bekliyor</value>
+  </data>
+  <data name="JobStatus.Printed" xml:space="preserve">
+    <value>Yazdırıldı</value>
+  </data>
+  <data name="JobStatus.Printing" xml:space="preserve">
+    <value>Yazdırılıyor</value>
+  </data>
+  <data name="JobStatus.Skipped" xml:space="preserve">
+    <value>Atlandı</value>
+  </data>
+  <data name="JobStatusBadge.Failed" xml:space="preserve">
+    <value>⚠ Başarısız</value>
+  </data>
+  <data name="JobStatusBadge.Pending" xml:space="preserve">
+    <value>○ Bekliyor</value>
+  </data>
+  <data name="JobStatusBadge.Printed" xml:space="preserve">
+    <value>✓ Yazdırıldı</value>
+  </data>
+  <data name="JobStatusBadge.Printing" xml:space="preserve">
+    <value>⏳ Yazdırılıyor</value>
+  </data>
+  <data name="JobStatusBadge.Skipped" xml:space="preserve">
+    <value>– Atlandı</value>
+  </data>
+  <data name="Language.Arabic" xml:space="preserve">
+    <value>العربية</value>
+  </data>
+  <data name="Language.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language.Turkish" xml:space="preserve">
+    <value>Türkçe</value>
+  </data>
+  <data name="Message.AlreadyRunning" xml:space="preserve">
+    <value>OrderHub Print Bridge zaten çalışıyor.{0}{0}Mevcut uygulamayı sistem tepsisi simgesinden açın.</value>
+  </data>
+  <data name="Message.ConnectionSuccess" xml:space="preserve">
+    <value>Bağlantı başarılı.</value>
+  </data>
+  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve">
+    <value>Bağlantı başarılı.{0}Müşteri: {1}{0}Cihaz: {2}</value>
+  </data>
+  <data name="Message.LogsCopyFailed" xml:space="preserve">
+    <value>Loglar kopyalanamadı: {0}</value>
+  </data>
+  <data name="Message.LogsFolderMissing" xml:space="preserve">
+    <value>Log klasörü henüz oluşturulmadı.</value>
+  </data>
+  <data name="Message.RequiresWindows" xml:space="preserve">
+    <value>OrderHub Print Bridge Windows gerektirir.</value>
+  </data>
+  <data name="Message.SettingsSaved" xml:space="preserve">
+    <value>Ayarlar kaydedildi.</value>
+  </data>
+  <data name="Message.LanguageRestartRequired" xml:space="preserve">
+    <value>Dil değişikliği uygulama yeniden başlatıldığında uygulanacaktır.</value>
+  </data>
+  <data name="Message.SettingsSaveFailed" xml:space="preserve">
+    <value>Ayarlar kaydedilemedi: {0}</value>
+  </data>
+  <data name="Message.TestPrintSent" xml:space="preserve">
+    <value>Test çıktısı yazıcıya gönderildi.</value>
+  </data>
+  <data name="Printing.Completed" xml:space="preserve">
+    <value>Yazdırma tamamlandı</value>
+  </data>
+  <data name="Printing.Failed" xml:space="preserve">
+    <value>Yazdırma başarısız</value>
+  </data>
+  <data name="Printing.Started" xml:space="preserve">
+    <value>Yazdırma başladı</value>
+  </data>
+  <data name="RecentJobs.Column.Order" xml:space="preserve">
+    <value>Sipariş</value>
+  </data>
+  <data name="RecentJobs.Column.Printer" xml:space="preserve">
+    <value>Yazıcı</value>
+  </data>
+  <data name="RecentJobs.Column.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="RecentJobs.Column.Time" xml:space="preserve">
+    <value>Saat</value>
+  </data>
+  <data name="RecentJobs.Column.Type" xml:space="preserve">
+    <value>Tür</value>
+  </data>
+  <data name="RecentJobs.Tooltip.JobId" xml:space="preserve">
+    <value>İş ID: {0}</value>
+  </data>
+  <data name="RecentJobs.Empty" xml:space="preserve">
+    <value>Bu oturumda henüz yazdırma işi işlenmedi.</value>
+  </data>
+  <data name="RecentJobs.Title" xml:space="preserve">
+    <value>Son işler (bu oturum)</value>
+  </data>
+  <data name="Settings.Advanced" xml:space="preserve">
+    <value>Gelişmiş</value>
+  </data>
+  <data name="Settings.AgentToken" xml:space="preserve">
+    <value>Erişim anahtarı</value>
+  </data>
+  <data name="Settings.BusyPollSeconds" xml:space="preserve">
+    <value>Yoğunken bekleme (sn)</value>
+  </data>
+  <data name="Footer.Device" xml:space="preserve">
+    <value>Cihaz: {0}</value>
+  </data>
+  <data name="Footer.Version" xml:space="preserve">
+    <value>Sürüm: {0}</value>
+  </data>
+  <data name="Settings.ComputerName" xml:space="preserve">
+    <value>Bilgisayar adı</value>
+  </data>
+  <data name="Settings.DeviceName" xml:space="preserve">
+    <value>Cihaz adı</value>
+  </data>
+  <data name="Settings.DeviceNamePlaceholder" xml:space="preserve">
+    <value>Örn. Kasadaki POS, Mutfak Yazıcısı</value>
+  </data>
+  <data name="Settings.MachineNameHint" xml:space="preserve">
+    <value>Makine: {0}</value>
+  </data>
+  <data name="Settings.DryRunDescription" xml:space="preserve">
+    <value>Fişi yazıcıya gönderme, sadece logla</value>
+  </data>
+  <data name="Settings.DryRunMode" xml:space="preserve">
+    <value>Test modu</value>
+  </data>
+  <data name="Settings.ErrorPollSeconds" xml:space="preserve">
+    <value>Hata sonrası bekleme (sn)</value>
+  </data>
+  <data name="Settings.IdlePollSeconds" xml:space="preserve">
+    <value>Boşta bekleme (sn)</value>
+  </data>
+  <data name="Settings.Language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="Settings.PrinterName" xml:space="preserve">
+    <value>Yazıcı adı</value>
+  </data>
+  <data name="Settings.SavedPathHint" xml:space="preserve">
+    <value>Ayarlar şuraya kaydedilir: {0}</value>
+  </data>
+  <data name="Settings.ServerUrl" xml:space="preserve">
+    <value>Sunucu adresi</value>
+  </data>
+  <data name="Status.Connected" xml:space="preserve">
+    <value>Bağlı</value>
+  </data>
+  <data name="Status.ConnectionLost" xml:space="preserve">
+    <value>Bağlantı Yok</value>
+  </data>
+  <data name="Status.Disconnected" xml:space="preserve">
+    <value>Bağlı değil</value>
+  </data>
+  <data name="Status.Error" xml:space="preserve">
+    <value>Hata</value>
+  </data>
+  <data name="Status.Offline" xml:space="preserve">
+    <value>Çevrimdışı</value>
+  </data>
+  <data name="Status.Online" xml:space="preserve">
+    <value>Çevrimiçi</value>
+  </data>
+  <data name="Status.Polling" xml:space="preserve">
+    <value>Çalışıyor</value>
+  </data>
+  <data name="Status.Printing" xml:space="preserve">
+    <value>Yazdırılıyor</value>
+  </data>
+  <data name="Status.Ready" xml:space="preserve">
+    <value>Hazır</value>
+  </data>
+  <data name="Status.Running" xml:space="preserve">
+    <value>Çalışıyor</value>
+  </data>
+  <data name="Status.RunningDryRun" xml:space="preserve">
+    <value>Çalışıyor (test)</value>
+  </data>
+  <data name="Status.Stopped" xml:space="preserve">
+    <value>Durduruldu</value>
+  </data>
+  <data name="ConnectionStatus.Connected" xml:space="preserve">
+    <value>Bağlı</value>
+  </data>
+  <data name="ConnectionStatus.Disconnected" xml:space="preserve">
+    <value>Bağlantı yok</value>
+  </data>
+  <data name="ConnectionStatus.Error" xml:space="preserve">
+    <value>Hata</value>
+  </data>
+  <data name="ConnectionStatus.Stopped" xml:space="preserve">
+    <value>Durduruldu</value>
+  </data>
+  <data name="Dashboard.DeviceName" xml:space="preserve">
+    <value>Cihaz Adı</value>
+  </data>
+  <data name="Dashboard.LastContact" xml:space="preserve">
+    <value>Son İletişim</value>
+  </data>
+  <data name="Dashboard.LastPrint" xml:space="preserve">
+    <value>Son Yazdırma</value>
+  </data>
+  <data name="Dashboard.LastSuccessfulPoll" xml:space="preserve">
+    <value>Son Başarılı Kontrol</value>
+  </data>
+  <data name="Dashboard.PrinterStatus" xml:space="preserve">
+    <value>Yazıcı Durumu</value>
+  </data>
+  <data name="Dashboard.ServerStatus" xml:space="preserve">
+    <value>Sunucu Bağlantısı</value>
+  </data>
+  <data name="Dashboard.Version" xml:space="preserve">
+    <value>Sürüm</value>
+  </data>
+  <data name="Platform.GetirYemek" xml:space="preserve">
+    <value>GetirYemek</value>
+  </data>
+  <data name="Platform.TrendyolYemek" xml:space="preserve">
+    <value>Trendyol Yemek</value>
+  </data>
+  <data name="Platform.Yemeksepeti" xml:space="preserve">
+    <value>Yemeksepeti</value>
+  </data>
+  <data name="PrintHistory.Column.Order" xml:space="preserve">
+    <value>Sipariş No</value>
+  </data>
+  <data name="PrintHistory.Column.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="PrintHistory.Column.Printer" xml:space="preserve">
+    <value>Yazıcı</value>
+  </data>
+  <data name="PrintHistory.Column.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="PrintHistory.Column.Time" xml:space="preserve">
+    <value>Tarih/Saat</value>
+  </data>
+  <data name="PrintHistory.Empty" xml:space="preserve">
+    <value>Kayıtlı yazdırma geçmişi yok.</value>
+  </data>
+  <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
+    <value>Son 30 Gün</value>
+  </data>
+  <data name="PrintHistory.Filter.Last7Days" xml:space="preserve">
+    <value>Son 7 Gün</value>
+  </data>
+  <data name="PrintHistory.Filter.Today" xml:space="preserve">
+    <value>Bugün</value>
+  </data>
+  <data name="PrintHistory.Search" xml:space="preserve">
+    <value>Sipariş ara</value>
+  </data>
+  <data name="PrintHistory.SearchPlaceholder" xml:space="preserve">
+    <value>Sipariş numarası...</value>
+  </data>
+  <data name="PrintHistory.Title" xml:space="preserve">
+    <value>Yazdırma Geçmişi</value>
+  </data>
+  <data name="PrinterStatus.DryRun" xml:space="preserve">
+    <value>Test modu</value>
+  </data>
+  <data name="PrinterStatus.NotConfigured" xml:space="preserve">
+    <value>Ayarlanmadı</value>
+  </data>
+  <data name="PrinterStatus.NotFound" xml:space="preserve">
+    <value>Bulunamadı</value>
+  </data>
+  <data name="PrinterStatus.Ready" xml:space="preserve">
+    <value>Hazır</value>
+  </data>
+  <data name="Reprint.AlreadyPending" xml:space="preserve">
+    <value>Bu sipariş için zaten bekleyen bir yazdırma işi var.</value>
+  </data>
+  <data name="Reprint.Button" xml:space="preserve">
+    <value>Yeniden yazdır</value>
+  </data>
+  <data name="Reprint.Confirm" xml:space="preserve">
+    <value>{0} için fiş yeniden yazdırılsın mı?</value>
+  </data>
+  <data name="Reprint.Created" xml:space="preserve">
+    <value>Yeniden yazdırma işi oluşturuldu. Print Bridge kısa süre içinde alacak.</value>
+  </data>
+  <data name="Reprint.Failed" xml:space="preserve">
+    <value>Yeniden yazdırma başarısız oldu.</value>
+  </data>
+  <data name="Reprint.JobNotFound" xml:space="preserve">
+    <value>Yazdırma işi bulunamadı.</value>
+  </data>
+  <data name="Reprint.NotAllowed" xml:space="preserve">
+    <value>Yalnızca başarıyla yazdırılmış işler yeniden yazdırılabilir.</value>
+  </data>
+  <data name="Reprint.OrderNotFound" xml:space="preserve">
+    <value>Sipariş bulunamadı.</value>
+  </data>
+  <data name="Reprint.SelectPrintedJob" xml:space="preserve">
+    <value>Yeniden yazdırmak için başarılı bir iş seçin.</value>
+  </data>
+  <data name="Tab.Logs" xml:space="preserve">
+    <value>Loglar</value>
+  </data>
+  <data name="Tab.PrintHistory" xml:space="preserve">
+    <value>Yazdırma Geçmişi</value>
+  </data>
+  <data name="Tab.Settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="Tab.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Tray.ConnectionStatus" xml:space="preserve">
+    <value>● {0}</value>
+  </data>
+  <data name="Tray.Exit" xml:space="preserve">
+    <value>Çıkış</value>
+  </data>
+  <data name="Tray.PrintHistory" xml:space="preserve">
+    <value>Yazdırma geçmişi</value>
+  </data>
+  <data name="Tray.PrinterTest" xml:space="preserve">
+    <value>Yazıcı testi</value>
+  </data>
+  <data name="Tray.Logs" xml:space="preserve">
+    <value>Loglar</value>
+  </data>
+  <data name="Tray.Open" xml:space="preserve">
+    <value>Aç</value>
+  </data>
+  <data name="Tray.RecentJobs" xml:space="preserve">
+    <value>Son işler</value>
+  </data>
+  <data name="Tray.Settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="Tray.Start" xml:space="preserve">
+    <value>Başlat</value>
+  </data>
+  <data name="Tray.Stop" xml:space="preserve">
+    <value>Durdur</value>
+  </data>
+  <data name="Tray.Tooltip.Connected" xml:space="preserve">
+    <value>{0} (bağlı)</value>
+  </data>
+  <data name="Tray.Tooltip.ConnectionLost" xml:space="preserve">
+    <value>{0} (bağlantı yok)</value>
+  </data>
+  <data name="Tray.Tooltip.Polling" xml:space="preserve">
+    <value>{0} (çalışıyor)</value>
+  </data>
+  <data name="Tray.Tooltip.Printing" xml:space="preserve">
+    <value>{0} (yazdırılıyor)</value>
+  </data>
+  <data name="Validation.AgentTokenRequired" xml:space="preserve">
+    <value>Erişim anahtarı gereklidir.</value>
+  </data>
+  <data name="Validation.BaseUrlRequired" xml:space="preserve">
+    <value>Sunucu adresi gereklidir.</value>
+  </data>
+  <data name="Validation.PrinterRequired" xml:space="preserve">
+    <value>Test modu kapalıyken yazıcı adı gereklidir.</value>
+  </data>
+  <data name="JobType.Receipt" xml:space="preserve">
+    <value>Fiş</value>
+  </data>
 </root>

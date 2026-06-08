@@ -71,6 +71,19 @@ public sealed class OrderHubPrintBridgeClient
         return await ReadActionResultAsync(response, ct).ConfigureAwait(false);
     }
 
+    public async Task<ReprintJobResult> RequestReprintAsync(Guid jobId, CancellationToken ct)
+    {
+        var path = $"api/print-bridge/jobs/{jobId:D}/reprint";
+        using var response = await SendAsync(HttpMethod.Post, path, ct).ConfigureAwait(false);
+        var payload = await response.Content.ReadFromJsonAsync<ReprintPrintJobResponse>(JsonOptions, ct)
+            .ConfigureAwait(false);
+
+        return new ReprintJobResult(
+            payload?.Success ?? false,
+            payload?.MessageKey ?? "Reprint.Failed",
+            payload?.NewPrintJobId);
+    }
+
     public async Task<PrintJobActionResult> MarkFailedAsync(Guid jobId, string errorMessage, CancellationToken ct)
     {
         var path = $"api/print-bridge/jobs/{jobId:D}/mark-failed";
@@ -155,7 +168,10 @@ public sealed class OrderHubPrintBridgeClient
         var (hub, bridge, _) = _holder.Snapshot();
         var request = new HttpRequestMessage(method, url);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Token", hub.AgentToken);
-        request.Headers.TryAddWithoutValidation("X-PrintBridge-Name", bridge.BridgeName);
+        var machineName = string.IsNullOrWhiteSpace(bridge.MachineName)
+            ? Environment.MachineName
+            : bridge.MachineName;
+        request.Headers.TryAddWithoutValidation("X-PrintBridge-Name", machineName);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Version", _appVersion);
         if (!string.IsNullOrWhiteSpace(bridge.PrinterName))
             request.Headers.TryAddWithoutValidation("X-PrintBridge-Printer", bridge.PrinterName);
@@ -224,4 +240,8 @@ public sealed class OrderHubPrintBridgeClient
         DateTime ServerTimeUtc);
 
     public sealed record PrintJobActionResult(bool Success, bool Skipped, string Result);
+
+    public sealed record ReprintJobResult(bool Success, string MessageKey, Guid? NewPrintJobId);
+
+    private sealed record ReprintPrintJobResponse(bool Success, string MessageKey, Guid? NewPrintJobId);
 }

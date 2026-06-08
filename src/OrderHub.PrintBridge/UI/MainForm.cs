@@ -1,3 +1,4 @@
+using System.Drawing.Drawing2D;
 using Microsoft.Extensions.DependencyInjection;
 using OrderHub.PrintBridge.Configuration;
 using OrderHub.PrintBridge.Localization;
@@ -8,7 +9,7 @@ using OrderHub.PrintBridge.Services;
 
 namespace OrderHub.PrintBridge.UI;
 
-public sealed class MainForm : Form
+public sealed partial class MainForm : Form
 {
     private readonly ServiceProvider _services;
     private readonly PrintBridgeRuntime _runtime;
@@ -23,19 +24,26 @@ public sealed class MainForm : Form
     private TabControl _tabs = null!;
     private TabPage _statusTab = null!;
     private TabPage _logsTab = null!;
+    private TabPage _historyTab = null!;
     private TabPage _settingsTab = null!;
 
     private Label _titleLabel = null!;
     private Label _subtitleLabel = null!;
     private Label _headerBadge = null!;
-    private Label _deviceStatusTitle = null!;
-    private Label _deviceStatusValue = null!;
-    private Label _lastPollTitle = null!;
-    private Label _lastPollMetricValue = null!;
+    private Label _footerDeviceLabel = null!;
+    private Label _footerVersionLabel = null!;
+    private Label _lastPrintTitle = null!;
+    private Label _lastPrintValue = null!;
     private Label _jobsTodayTitle = null!;
     private Label _jobsTodayValue = null!;
     private Label _failedTodayTitle = null!;
     private Label _failedTodayValue = null!;
+    private Label _serverStatusTitle = null!;
+    private Label _serverStatusValue = null!;
+    private Label _printerStatusTitle = null!;
+    private Label _printerStatusValue = null!;
+    private Label _lastContactTitle = null!;
+    private Label _lastContactValue = null!;
     private GroupBox _jobsGroup = null!;
     private DataGridView _recentJobsGrid = null!;
     private Label _recentJobsEmptyLabel = null!;
@@ -54,7 +62,8 @@ public sealed class MainForm : Form
     private Button _btnToggleToken = null!;
     private ComboBox _cmbPrinterName = null!;
     private Button _btnRefreshPrinters = null!;
-    private TextBox _txtBridgeName = null!;
+    private TextBox _txtDisplayName = null!;
+    private Label _lblMachineNameHint = null!;
     private CheckBox _chkDryRun = null!;
     private NumericUpDown _numIdlePoll = null!;
     private NumericUpDown _numBusyPoll = null!;
@@ -65,7 +74,7 @@ public sealed class MainForm : Form
     private Label _lblServerUrl = null!;
     private Label _lblAgentToken = null!;
     private Label _lblPrinterName = null!;
-    private Label _lblComputerName = null!;
+    private Label _lblDeviceName = null!;
     private GroupBox _advancedGroup = null!;
     private Label _lblDryRunMode = null!;
     private Label _lblIdlePoll = null!;
@@ -84,9 +93,6 @@ public sealed class MainForm : Form
         _cultureService = services.GetRequiredService<PrintBridgeCultureService>();
 
         Text = PrintBridgePaths.ProductDisplayName;
-        StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(1000, 720);
-        Size = new Size(1040, 780);
         Font = new Font("Segoe UI", 9F);
         BackColor = PrintBridgeUiTheme.PageBackground;
 
@@ -98,15 +104,23 @@ public sealed class MainForm : Form
         };
         _statusTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
         _logsTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
+        _historyTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
         _settingsTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
         _tabs.TabPages.Add(_statusTab);
         _tabs.TabPages.Add(_logsTab);
+        _tabs.TabPages.Add(_historyTab);
         _tabs.TabPages.Add(_settingsTab);
+
+        BuildFooter();
         Controls.Add(_tabs);
+        Controls.Add(_footerPanel);
 
         BuildStatusTab();
         BuildLogsTab();
+        BuildHistoryTab();
         BuildSettingsTab();
+
+        PrintBridgeWindowLayout.ApplyStartup(this, _settingsHolder.Snapshot().Ui);
 
         _dashboardTimer = new System.Windows.Forms.Timer { Interval = 1000 };
         _dashboardTimer.Tick += (_, _) => RefreshDashboard();
@@ -122,6 +136,8 @@ public sealed class MainForm : Form
         {
             if (_tabs.SelectedTab == _logsTab)
                 RefreshLogs();
+            else if (_tabs.SelectedTab == _historyTab)
+                RefreshPrintHistory();
         };
         PopulateLanguageCombo();
         LoadSettingsIntoForm();
@@ -140,15 +156,20 @@ public sealed class MainForm : Form
         Text = _localizer["Common.AppTitle"];
         _statusTab.Text = _localizer["Tab.Status"];
         _logsTab.Text = _localizer["Tab.Logs"];
+        _historyTab.Text = _localizer["Tab.PrintHistory"];
         _settingsTab.Text = _localizer["Tab.Settings"];
 
         _titleLabel.Text = _localizer["Common.AppTitle"];
         _subtitleLabel.Text = _localizer["Common.Subtitle"];
 
-        _deviceStatusTitle.Text = _localizer["Dashboard.DeviceStatus"];
-        _lastPollTitle.Text = _localizer["Dashboard.LastPoll"];
+        _lastPrintTitle.Text = _localizer["Dashboard.LastPrint"];
         _jobsTodayTitle.Text = _localizer["Dashboard.JobsToday"];
         _failedTodayTitle.Text = _localizer["Dashboard.FailedToday"];
+        _serverStatusTitle.Text = _localizer["Dashboard.ServerStatus"];
+        _printerStatusTitle.Text = _localizer["Dashboard.PrinterStatus"];
+        _lastContactTitle.Text = _localizer["Dashboard.LastContact"];
+
+        ApplyPrintHistoryLocalization();
 
         _jobsGroup.Text = $"  {_localizer["RecentJobs.Title"]}  ";
         _recentJobsEmptyLabel.Text = _localizer["RecentJobs.Empty"];
@@ -173,7 +194,8 @@ public sealed class MainForm : Form
         _lblServerUrl.Text = _localizer["Settings.ServerUrl"];
         _lblAgentToken.Text = _localizer["Settings.AgentToken"];
         _lblPrinterName.Text = _localizer["Settings.PrinterName"];
-        _lblComputerName.Text = _localizer["Settings.ComputerName"];
+        _lblDeviceName.Text = _localizer["Settings.DeviceName"];
+        _txtDisplayName.PlaceholderText = _localizer["Settings.DeviceNamePlaceholder"];
         _lblLanguage.Text = _localizer["Settings.Language"];
         _advancedGroup.Text = $"  {_localizer["Settings.Advanced"]}  ";
         _lblDryRunMode.Text = _localizer["Settings.DryRunMode"];
@@ -183,12 +205,68 @@ public sealed class MainForm : Form
         _lblErrorPoll.Text = _localizer["Settings.ErrorPollSeconds"];
         _settingsHint.Text = _localizer.GetString("Settings.SavedPathHint", PrintBridgePaths.ProgramDataConfigPath);
 
+        var machineName = _settingsHolder.Snapshot().Bridge.MachineName;
+        if (string.IsNullOrWhiteSpace(machineName))
+            machineName = Environment.MachineName;
+        _lblMachineNameHint.Text = _localizer.GetString("Settings.MachineNameHint", machineName);
+
         PrintBridgeRtl.Apply(this, _cultureService.IsRightToLeft);
     }
 
     public void SelectStatusTab() => _tabs.SelectedTab = _statusTab;
 
     public void SelectLogsTab() => _tabs.SelectedTab = _logsTab;
+
+    private Panel _footerPanel = null!;
+
+    private void BuildFooter()
+    {
+        _footerPanel = new Panel
+        {
+            Dock = DockStyle.Bottom,
+            Height = 30,
+            Padding = new Padding(12, 4, 12, 6),
+            BackColor = PrintBridgeUiTheme.PageBackground
+        };
+
+        var footerLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = new Padding(0)
+        };
+        footerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        footerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+
+        var footerFont = new Font("Segoe UI", 8.25F);
+        _footerDeviceLabel = new Label
+        {
+            Dock = DockStyle.Fill,
+            Font = footerFont,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            TextAlign = ContentAlignment.MiddleLeft,
+            AutoEllipsis = true
+        };
+        _footerVersionLabel = new Label
+        {
+            Dock = DockStyle.Fill,
+            Font = footerFont,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            TextAlign = ContentAlignment.MiddleRight,
+            AutoEllipsis = true
+        };
+
+        footerLayout.Controls.Add(_footerDeviceLabel, 0, 0);
+        footerLayout.Controls.Add(_footerVersionLabel, 1, 0);
+        _footerPanel.Controls.Add(footerLayout);
+    }
+
+    public void SelectPrintHistoryTab()
+    {
+        _tabs.SelectedTab = _historyTab;
+        RefreshPrintHistory();
+    }
 
     private void BuildStatusTab()
     {
@@ -248,31 +326,37 @@ public sealed class MainForm : Form
         header.Controls.Add(_headerBadge, 0, 2);
         root.Controls.Add(header, 0, 0);
 
-        var cardsRow = new TableLayoutPanel
+        var metricsRow = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 4,
+            ColumnCount = 6,
             RowCount = 1,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 10)
         };
-        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        for (var i = 0; i < 6; i++)
+            metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16.66F));
 
-        var deviceStatusCard = PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _deviceStatusValue, out _deviceStatusTitle);
-        cardsRow.Controls.Add(deviceStatusCard, 0, 0);
+        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _serverStatusValue, out _serverStatusTitle), 0, 0);
+        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _printerStatusValue, out _printerStatusTitle), 1, 0);
 
-        var lastPollCard = PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _lastPollMetricValue, out _lastPollTitle);
-        cardsRow.Controls.Add(lastPollCard, 1, 0);
+        var lastContactCard = PrintBridgeUiTheme.CreateMetricCard(
+            string.Empty,
+            out _lastContactValue,
+            out _lastContactTitle,
+            PrintBridgeUiTheme.MetricTimestampFont);
+        metricsRow.Controls.Add(lastContactCard, 2, 0);
 
-        var jobsTodayCard = PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _jobsTodayValue, out _jobsTodayTitle);
-        cardsRow.Controls.Add(jobsTodayCard, 2, 0);
+        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _jobsTodayValue, out _jobsTodayTitle), 3, 0);
+        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _failedTodayValue, out _failedTodayTitle), 4, 0);
 
-        var failedTodayCard = PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _failedTodayValue, out _failedTodayTitle);
-        cardsRow.Controls.Add(failedTodayCard, 3, 0);
-        root.Controls.Add(cardsRow, 0, 1);
+        var lastPrintCard = PrintBridgeUiTheme.CreateMetricCard(
+            string.Empty,
+            out _lastPrintValue,
+            out _lastPrintTitle,
+            PrintBridgeUiTheme.MetricTimestampFont);
+        metricsRow.Controls.Add(lastPrintCard, 5, 0);
+        root.Controls.Add(metricsRow, 0, 1);
 
         _jobsGroup = new GroupBox
         {
@@ -300,12 +384,17 @@ public sealed class MainForm : Form
         _recentJobsGrid.Columns.Add("Type", string.Empty);
         _recentJobsGrid.Columns.Add("Printer", string.Empty);
         _recentJobsGrid.Columns.Add("Status", string.Empty);
-        _recentJobsGrid.Columns["Time"]!.FillWeight = 16;
-        _recentJobsGrid.Columns["Order"]!.FillWeight = 28;
-        _recentJobsGrid.Columns["Type"]!.FillWeight = 14;
-        _recentJobsGrid.Columns["Printer"]!.FillWeight = 22;
-        _recentJobsGrid.Columns["Status"]!.FillWeight = 20;
-        _recentJobsGrid.CellFormatting += OnRecentJobsCellFormatting;
+        _recentJobsGrid.Columns["Time"]!.FillWeight = 22;
+        _recentJobsGrid.Columns["Time"]!.MinimumWidth = 150;
+        _recentJobsGrid.Columns["Order"]!.FillWeight = 34;
+        _recentJobsGrid.Columns["Order"]!.MinimumWidth = 160;
+        _recentJobsGrid.Columns["Type"]!.FillWeight = 12;
+        _recentJobsGrid.Columns["Type"]!.MinimumWidth = 72;
+        _recentJobsGrid.Columns["Printer"]!.FillWeight = 20;
+        _recentJobsGrid.Columns["Printer"]!.MinimumWidth = 100;
+        _recentJobsGrid.Columns["Status"]!.FillWeight = 16;
+        _recentJobsGrid.Columns["Status"]!.MinimumWidth = 112;
+        _recentJobsGrid.CellPainting += OnRecentJobsCellPainting;
         _recentJobsGrid.CellToolTipTextNeeded += OnRecentJobsCellToolTipTextNeeded;
         _recentJobsGrid.ShowCellToolTips = true;
         _recentJobsEmptyLabel = new Label
@@ -438,7 +527,7 @@ public sealed class MainForm : Form
         (_txtBaseUrl, _lblServerUrl) = AddSettingsTextRow(settingsLayout, 0);
         AddTokenRow(settingsLayout, 1);
         AddPrinterRow(settingsLayout, 2);
-        (_txtBridgeName, _lblComputerName) = AddSettingsTextRow(settingsLayout, 3);
+        AddDeviceNameRow(settingsLayout, 3);
         AddLanguageRow(settingsLayout, 4);
 
         _advancedGroup = new GroupBox
@@ -507,6 +596,41 @@ public sealed class MainForm : Form
         settingsHost.Controls.Add(scroll);
         settingsHost.Controls.Add(_settingsHint);
         _settingsTab.Controls.Add(settingsHost);
+    }
+
+    private void AddDeviceNameRow(TableLayoutPanel table, int row)
+    {
+        _lblDeviceName = new Label
+        {
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        };
+        table.Controls.Add(_lblDeviceName, 0, row);
+
+        var fieldPanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            AutoSize = true
+        };
+        _txtDisplayName = new TextBox
+        {
+            Dock = DockStyle.Fill,
+            MaxLength = 200
+        };
+        _lblMachineNameHint = new Label
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            Font = new Font("Segoe UI", 8.25F),
+            Margin = new Padding(0, 4, 0, 0)
+        };
+        fieldPanel.Controls.Add(_txtDisplayName, 0, 0);
+        fieldPanel.Controls.Add(_lblMachineNameHint, 0, 1);
+        table.Controls.Add(fieldPanel, 1, row);
     }
 
     private void AddLanguageRow(TableLayoutPanel table, int row)
@@ -612,6 +736,11 @@ public sealed class MainForm : Form
     {
         QueueRefreshDashboard();
         QueueRefreshRecentJobs();
+        QueueUiAction(() =>
+        {
+            if (_tabs.SelectedTab == _historyTab)
+                RefreshPrintHistory();
+        });
     }
 
     private void QueueRefreshDashboard() => QueueUiAction(RefreshDashboard);
@@ -715,9 +844,10 @@ public sealed class MainForm : Form
         _txtBaseUrl.Text = hub.BaseUrl;
         _txtAgentToken.Text = hub.AgentToken;
         RefreshPrinterList(bridge.PrinterName);
-        _txtBridgeName.Text = string.IsNullOrWhiteSpace(bridge.BridgeName)
-            ? Environment.MachineName
-            : bridge.BridgeName;
+        _txtDisplayName.Text = bridge.DisplayName ?? string.Empty;
+        _lblMachineNameHint.Text = _localizer.GetString(
+            "Settings.MachineNameHint",
+            string.IsNullOrWhiteSpace(bridge.MachineName) ? Environment.MachineName : bridge.MachineName);
         _chkDryRun.Checked = bridge.DryRun;
         _numIdlePoll.Value = Math.Clamp(bridge.IdlePollIntervalSeconds, (int)_numIdlePoll.Minimum, (int)_numIdlePoll.Maximum);
         _numBusyPoll.Value = Math.Clamp(bridge.BusyPollIntervalSeconds, (int)_numBusyPoll.Minimum, (int)_numBusyPoll.Maximum);
@@ -771,9 +901,8 @@ public sealed class MainForm : Form
         {
             PrinterMode = "WindowsPrinter",
             PrinterName = _cmbPrinterName.Text.Trim(),
-            BridgeName = string.IsNullOrWhiteSpace(_txtBridgeName.Text.Trim())
-                ? Environment.MachineName
-                : _txtBridgeName.Text.Trim(),
+            DisplayName = _txtDisplayName.Text.Trim(),
+            MachineName = Environment.MachineName,
             DryRun = _chkDryRun.Checked,
             IdlePollIntervalSeconds = (int)_numIdlePoll.Value,
             BusyPollIntervalSeconds = (int)_numBusyPoll.Value,
@@ -789,6 +918,7 @@ public sealed class MainForm : Form
 
         var previousLanguage = _settingsHolder.Ui.Language;
         var ui = _settingsHolder.Ui;
+        PrintBridgeWindowLayout.CaptureInto(ui, this);
         if (_cmbLanguage.SelectedItem is LanguageOption languageOption)
             ui.Language = languageOption.CultureName;
 
@@ -901,23 +1031,42 @@ public sealed class MainForm : Form
 
         var status = _runtime.GetStatus();
 
-        _deviceStatusValue.Text = _localizer.GetTrayIconState(status.TrayIconState);
-        _deviceStatusValue.ForeColor = status.TrayIconState switch
-        {
-            TrayIconState.Printing => PrintBridgeUiTheme.Info,
-            TrayIconState.Polling => PrintBridgeUiTheme.Info,
-            TrayIconState.Connected => PrintBridgeUiTheme.Success,
-            TrayIconState.ConnectionLost => PrintBridgeUiTheme.Danger,
-            _ => PrintBridgeUiTheme.TextTitle
-        };
+        var displayName = string.IsNullOrWhiteSpace(status.DisplayName)
+            ? _localizer["Common.NotConfigured"]
+            : status.DisplayName;
+        _footerDeviceLabel.Text = _localizer.GetString("Footer.Device", displayName);
+        _footerVersionLabel.Text = _localizer.GetString("Footer.Version", status.AppVersion);
 
-        _lastPollMetricValue.Text = FormatUtc(status.LastPollUtc, _localizer["Common.Dash"]);
-        _lastPollMetricValue.ForeColor = PrintBridgeUiTheme.TextTitle;
+        _lastPrintValue.Text = FormatUtc(status.LastPrintTimeUtc, _localizer["Common.Dash"]);
+        _lastPrintValue.ForeColor = PrintBridgeUiTheme.TextTitle;
         _jobsTodayValue.Text = status.JobsTodayCount.ToString();
         _jobsTodayValue.ForeColor = PrintBridgeUiTheme.TextTitle;
         _failedTodayValue.Text = status.FailedTodayCount.ToString();
         _failedTodayValue.ForeColor = status.FailedTodayCount > 0
             ? PrintBridgeUiTheme.Danger
+            : PrintBridgeUiTheme.TextTitle;
+
+        _serverStatusValue.Text = _localizer.GetServerConnectionStatus(status.ServerConnectionStatus);
+        _serverStatusValue.ForeColor = status.ServerConnectionStatus switch
+        {
+            BridgeServerConnectionStatus.Connected => PrintBridgeUiTheme.Success,
+            BridgeServerConnectionStatus.Disconnected => PrintBridgeUiTheme.Warning,
+            BridgeServerConnectionStatus.Error => PrintBridgeUiTheme.Danger,
+            _ => PrintBridgeUiTheme.Inactive
+        };
+
+        _printerStatusValue.Text = _localizer.GetPrinterHealthStatus(status.PrinterHealthStatus);
+        _printerStatusValue.ForeColor = status.PrinterHealthStatus switch
+        {
+            PrinterHealthStatus.Ready => PrintBridgeUiTheme.Success,
+            PrinterHealthStatus.DryRun => PrintBridgeUiTheme.Info,
+            PrinterHealthStatus.NotFound => PrintBridgeUiTheme.Danger,
+            _ => PrintBridgeUiTheme.Warning
+        };
+
+        _lastContactValue.Text = FormatUtc(status.LastSuccessfulContactUtc, _localizer["Common.Dash"]);
+        _lastContactValue.ForeColor = status.IsConnected
+            ? PrintBridgeUiTheme.Success
             : PrintBridgeUiTheme.TextTitle;
 
         UpdateHeaderBadge(status);
@@ -1004,9 +1153,9 @@ public sealed class MainForm : Form
                 _recentJobsGrid.Rows.Add(
                     FormatUtc(job.DisplayTimeUtc, _localizer["Common.Dash"]),
                     FormatJobLabel(job),
-                    string.IsNullOrWhiteSpace(job.JobType) ? _localizer["Common.Dash"] : job.JobType,
+                    _localizer.GetJobType(job.JobType),
                     string.IsNullOrWhiteSpace(printerName) ? _localizer["Common.Dash"] : printerName,
-                    _localizer.GetJobStatus(job.Status));
+                    _localizer.GetJobStatusBadge(job.Status));
             }
         }
         finally
@@ -1019,51 +1168,62 @@ public sealed class MainForm : Form
     }
 
     private static string FormatJobLabel(LocalPrintJobRecord job) =>
-        string.IsNullOrWhiteSpace(job.OrderDisplay)
-            ? job.ShortJobId
-            : $"{job.OrderDisplay} ({job.ShortJobId})";
+        string.IsNullOrWhiteSpace(job.OrderDisplay) ? job.ShortJobId : job.OrderDisplay;
 
-    private void OnRecentJobsCellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+    private string FormatJobOrderTooltip(LocalPrintJobRecord job)
     {
-        if (e.RowIndex < 0 || e.ColumnIndex < 0 || sender is not DataGridView grid)
-            return;
+        if (string.IsNullOrWhiteSpace(job.OrderDisplay))
+            return _localizer.GetString("RecentJobs.Tooltip.JobId", job.ShortJobId);
 
-        if (grid.Columns[e.ColumnIndex].Name != "Status" || e.CellStyle is null || e.RowIndex >= _jobsForGrid.Count)
-            return;
+        return $"{job.OrderDisplay}{Environment.NewLine}{_localizer.GetString("RecentJobs.Tooltip.JobId", job.ShortJobId)}";
+    }
 
-        var (backColor, foreColor) = _jobsForGrid[e.RowIndex].Status switch
-        {
-            LocalPrintJobStatus.Printed => (PrintBridgeUiTheme.Success, Color.White),
-            LocalPrintJobStatus.Printing => (PrintBridgeUiTheme.Info, Color.White),
-            LocalPrintJobStatus.Received => (Color.FromArgb(255, 193, 7), Color.FromArgb(33, 37, 41)),
-            LocalPrintJobStatus.Failed => (PrintBridgeUiTheme.Danger, Color.White),
-            LocalPrintJobStatus.Skipped => (PrintBridgeUiTheme.Inactive, Color.White),
-            _ => (grid.DefaultCellStyle.BackColor, grid.DefaultCellStyle.ForeColor)
-        };
+    private void OnRecentJobsCellPainting(object? sender, DataGridViewCellPaintingEventArgs e) =>
+        PaintStatusBadgeCell(sender, e, _jobsForGrid);
 
-        e.CellStyle.BackColor = backColor;
-        e.CellStyle.ForeColor = foreColor;
-        e.CellStyle.SelectionBackColor = backColor;
-        e.CellStyle.SelectionForeColor = foreColor;
-        e.CellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-        e.CellStyle.Font = PrintBridgeUiTheme.BadgeFont;
+    private static GraphicsPath CreateRoundedRectangle(Rectangle bounds, int radius)
+    {
+        var path = new GraphicsPath();
+        var diameter = radius * 2;
+        path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+        path.AddArc(bounds.Left, bounds.Bottom - diameter, diameter, diameter, 90, 90);
+        path.CloseFigure();
+        return path;
     }
 
     private void OnRecentJobsCellToolTipTextNeeded(object? sender, DataGridViewCellToolTipTextNeededEventArgs e)
     {
-        if (e.RowIndex < 0 || e.ColumnIndex < 0 || sender is not DataGridView grid)
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || sender is not DataGridView grid || e.RowIndex >= _jobsForGrid.Count)
             return;
 
-        if (grid.Columns[e.ColumnIndex].Name != "Status" || e.RowIndex >= _jobsForGrid.Count)
-            return;
-
+        var columnName = grid.Columns[e.ColumnIndex].Name;
         var job = _jobsForGrid[e.RowIndex];
-        if (job.Status == LocalPrintJobStatus.Failed && !string.IsNullOrWhiteSpace(job.ErrorMessage))
+
+        if (columnName == "Order")
+        {
+            e.ToolTipText = FormatJobOrderTooltip(job);
+            return;
+        }
+
+        if (columnName == "Status" &&
+            job.Status == LocalPrintJobStatus.Failed &&
+            !string.IsNullOrWhiteSpace(job.ErrorMessage))
+        {
             e.ToolTipText = job.ErrorMessage;
+            return;
+        }
+
+        var cellValue = grid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString();
+        if (!string.IsNullOrWhiteSpace(cellValue) && cellValue != _localizer["Common.Dash"])
+            e.ToolTipText = cellValue;
     }
 
-    private static string FormatUtc(DateTime? value, string dash) =>
-        value.HasValue ? value.Value.ToLocalTime().ToString("g") : dash;
+    private string FormatUtc(DateTime? value, string dash) =>
+        value.HasValue
+            ? value.Value.ToLocalTime().ToString("G", _cultureService.CurrentCulture)
+            : dash;
 
     private string GetUserErrorMessage(Exception ex)
     {
@@ -1071,13 +1231,23 @@ public sealed class MainForm : Form
             return _localizer.GetString(connectionEx.UserMessageKey, connectionEx.FormatArgs);
 
         if (ex is LocalizedApplicationException localized)
+        {
+            if (localized.ResourceKey.StartsWith("PrintBridge.Reprint", StringComparison.Ordinal)
+                || localized.ResourceKey.StartsWith("Reprint.", StringComparison.Ordinal))
+                return _localizer.GetReprintMessage(localized.ResourceKey);
+
             return _localizer.GetString(localized.ResourceKey, localized.Args);
+        }
 
         return ex.Message;
     }
 
+    public void PersistWindowLayout() =>
+        PrintBridgeWindowLayout.Persist(this, _settingsStore, _settingsHolder);
+
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
+        PersistWindowLayout();
         _dashboardTimer.Stop();
         _dashboardTimer.Dispose();
         _jobsRefreshTimer.Stop();

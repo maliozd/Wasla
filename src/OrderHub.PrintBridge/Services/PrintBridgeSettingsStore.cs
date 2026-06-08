@@ -37,7 +37,7 @@ public sealed class PrintBridgeSettingsStore
             return;
 
         var initial = TryLoadExeLocalConfig() ?? CreateDefaultDocument();
-        NormalizeBridgeName(initial);
+        NormalizeDeviceIdentity(initial);
         WriteDocument(PrintBridgePaths.ProgramDataConfigPath, initial);
     }
 
@@ -62,20 +62,59 @@ public sealed class PrintBridgeSettingsStore
 
     private static AppSettingsDocument ReadDocument(string path)
     {
-        var json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions) ?? CreateDefaultDocument();
+        try
+        {
+            var json = File.ReadAllText(path);
+            var document = JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions) ?? CreateDefaultDocument();
+            NormalizeDeviceIdentity(document);
+            return document;
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            if (string.Equals(path, PrintBridgePaths.ProgramDataConfigPath, StringComparison.OrdinalIgnoreCase))
+                TryBackupCorruptedFile(path);
+
+            return CreateDefaultDocument();
+        }
     }
 
     private static void WriteDocument(string path, AppSettingsDocument document)
     {
         var json = JsonSerializer.Serialize(document, JsonOptions);
-        File.WriteAllText(path, json);
+        var directory = Path.GetDirectoryName(path)!;
+        Directory.CreateDirectory(directory);
+        var tempPath = Path.Combine(directory, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, path, overwrite: true);
     }
 
-    private static void NormalizeBridgeName(AppSettingsDocument document)
+    private static void TryBackupCorruptedFile(string path)
     {
-        if (string.IsNullOrWhiteSpace(document.PrintBridge.BridgeName))
-            document.PrintBridge.BridgeName = Environment.MachineName;
+        try
+        {
+            if (!File.Exists(path))
+                return;
+
+            var backupPath = $"{path}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}";
+            File.Move(path, backupPath, overwrite: false);
+        }
+        catch
+        {
+        }
+    }
+
+    private static void NormalizeDeviceIdentity(AppSettingsDocument document)
+    {
+        var machineName = Environment.MachineName;
+        document.PrintBridge.MachineName = machineName;
+
+        if (string.IsNullOrWhiteSpace(document.PrintBridge.DisplayName)
+            && !string.IsNullOrWhiteSpace(document.PrintBridge.BridgeName))
+        {
+            var legacy = document.PrintBridge.BridgeName.Trim();
+            if (!string.Equals(legacy, machineName, StringComparison.OrdinalIgnoreCase))
+                document.PrintBridge.DisplayName = legacy;
+        }
     }
 
     private static AppSettingsDocument CreateDefaultDocument() =>

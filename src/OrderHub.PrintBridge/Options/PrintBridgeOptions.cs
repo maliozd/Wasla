@@ -18,5 +18,12 @@ public sealed class PrintBridgeOptions
 
     public bool DryRun { get; set; } = true;
 
+    /// <summary>User-facing device label (e.g. Kasadaki POS). Used in UI and future device management.</summary>
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>Windows machine name for diagnostics and server last-seen tracking.</summary>
+    public string MachineName { get; set; } = string.Empty;
+
+    /// <summary>Legacy setting migrated to <see cref="DisplayName"/> on load.</summary>
     public string BridgeName { get; set; } = string.Empty;
 }

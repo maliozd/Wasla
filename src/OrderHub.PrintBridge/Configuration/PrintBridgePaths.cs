@@ -18,6 +18,9 @@ public static class PrintBridgePaths
     public static string ProgramDataLogDirectory =>
         Path.Combine(ProgramDataRoot, "logs");
 
+    public static string ProgramDataHistoryPath =>
+        Path.Combine(ProgramDataRoot, "print-history.json");
+
     public static void EnsureProgramDataDirectories()
     {
         Directory.CreateDirectory(ProgramDataRoot);
