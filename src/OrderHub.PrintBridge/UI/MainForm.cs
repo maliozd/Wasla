@@ -1314,6 +1314,7 @@ public sealed partial class MainForm : Form
         _dashboardTimer.Dispose();
         _jobsRefreshTimer.Stop();
         _jobsRefreshTimer.Dispose();
+        DisposePrintHistoryUi();
         base.OnFormClosed(e);
     }
 }

@@ -27,7 +27,6 @@ public static class PrintBridgeAppServices
         holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
 
         var appVersion = new AppVersionInfo();
-        var historyStore = new LocalPrintJobHistoryStore();
 
         var uiLogBuffer = new UiLogBuffer();
         var logPath = Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "orderhub-print-bridge-.log");
@@ -49,7 +48,7 @@ public static class PrintBridgeAppServices
         services.AddSingleton<PrintBridgeLocalizer>();
         services.AddSingleton(holder);
         services.AddSingleton(appVersion);
-        services.AddSingleton(historyStore);
+        services.AddSingleton<LocalPrintJobHistoryStore>();
         services.AddSingleton<ReceiptFormatter>();
 
         if (!OperatingSystem.IsWindows())

@@ -108,6 +108,30 @@ public sealed class PrintBridgeLocalizer
         _ => GetString("PrinterStatus.NotConfigured")
     };
 
+    public string GetPrintHistoryJobTooltip(
+        LocalPrintJobRecord job,
+        string orderLabel,
+        string platformLabel,
+        string printerLabel,
+        string statusLabel,
+        string timeLabel)
+    {
+        var lines = new List<string>
+        {
+            GetString("PrintHistory.Tooltip.Order", orderLabel),
+            GetString("PrintHistory.Tooltip.Platform", platformLabel),
+            GetString("PrintHistory.Tooltip.Printer", printerLabel),
+            GetString("PrintHistory.Tooltip.JobId", job.JobId.ToString("D")),
+            GetString("PrintHistory.Tooltip.Status", statusLabel),
+            GetString("PrintHistory.Tooltip.Time", timeLabel)
+        };
+
+        if (job.Status == LocalPrintJobStatus.Failed && !string.IsNullOrWhiteSpace(job.ErrorMessage))
+            lines.Add(GetString("PrintHistory.Tooltip.Error", job.ErrorMessage!));
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
     public string GetPrintHistoryFilter(PrintHistoryDateFilter filter) => filter switch
     {
         PrintHistoryDateFilter.Today => GetString("PrintHistory.Filter.Today"),

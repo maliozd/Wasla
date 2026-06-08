@@ -6,11 +6,15 @@ namespace OrderHub.PrintBridge.UI;
 
 public sealed partial class MainForm
 {
+    private const int HistorySearchDebounceMs = 300;
+
     private DataGridView _historyGrid = null!;
     private Label _historyEmptyLabel = null!;
+    private Label _lblHistorySearch = null!;
     private ComboBox _historyFilterCombo = null!;
     private TextBox _historySearchBox = null!;
     private Button _btnReprint = null!;
+    private System.Windows.Forms.Timer? _historySearchDebounceTimer;
     private IReadOnlyList<LocalPrintJobRecord> _historyJobsForGrid = Array.Empty<LocalPrintJobRecord>();
 
     private void BuildHistoryTab()
@@ -46,15 +50,34 @@ public sealed partial class MainForm
         _historyFilterCombo.SelectedIndexChanged += (_, _) => RefreshPrintHistory();
         toolbar.Controls.Add(_historyFilterCombo);
 
+        _lblHistorySearch = new Label
+        {
+            AutoSize = true,
+            Margin = new Padding(8, 6, 4, 0),
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        };
+        toolbar.Controls.Add(_lblHistorySearch);
+
         _historySearchBox = new TextBox
         {
             Width = 220,
             Margin = new Padding(0, 0, 8, 0)
         };
-        _historySearchBox.TextChanged += (_, _) => RefreshPrintHistory();
+        _historySearchDebounceTimer = new System.Windows.Forms.Timer { Interval = HistorySearchDebounceMs };
+        _historySearchDebounceTimer.Tick += (_, _) =>
+        {
+            _historySearchDebounceTimer.Stop();
+            RefreshPrintHistory();
+        };
+        _historySearchBox.TextChanged += (_, _) =>
+        {
+            _historySearchDebounceTimer?.Stop();
+            _historySearchDebounceTimer?.Start();
+        };
         toolbar.Controls.Add(_historySearchBox);
 
         _btnReprint = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnReprint.Enabled = false;
         _btnReprint.Click += async (_, _) => await RunSafeAsync(ReprintSelectedHistoryJobAsync);
         toolbar.Controls.Add(_btnReprint);
 
@@ -109,7 +132,8 @@ public sealed partial class MainForm
     private void ApplyPrintHistoryLocalization()
     {
         _btnReprint.Text = _localizer["Reprint.Button"];
-        _historyEmptyLabel.Text = _localizer["PrintHistory.Empty"];
+        _lblHistorySearch.Text = _localizer["PrintHistory.Search"];
+        _historySearchBox.PlaceholderText = _localizer["PrintHistory.SearchPlaceholder"];
         _historyGrid.Columns["Time"]!.HeaderText = _localizer["PrintHistory.Column.Time"];
         _historyGrid.Columns["Order"]!.HeaderText = _localizer["PrintHistory.Column.Order"];
         _historyGrid.Columns["Platform"]!.HeaderText = _localizer["PrintHistory.Column.Platform"];
@@ -122,6 +146,8 @@ public sealed partial class MainForm
         _historyFilterCombo.Items.Add(_localizer["PrintHistory.Filter.Last7Days"]);
         _historyFilterCombo.Items.Add(_localizer["PrintHistory.Filter.Last30Days"]);
         _historyFilterCombo.SelectedIndex = selectedIndex;
+
+        RefreshPrintHistoryEmptyLabel();
     }
 
     private PrintHistoryDateFilter GetSelectedHistoryFilter() =>
@@ -148,6 +174,8 @@ public sealed partial class MainForm
         var jobs = _runtime.GetPrintHistory(filter, search);
         _historyJobsForGrid = jobs;
 
+        RefreshPrintHistoryEmptyLabel(search);
+
         _historyEmptyLabel.Visible = jobs.Count == 0;
         _historyGrid.Visible = jobs.Count > 0;
 
@@ -168,13 +196,25 @@ public sealed partial class MainForm
         }
         finally
         {
-            _historyGrid.ResumeLayout();
+            _historyGrid.ResumeLayout(performLayout: false);
+            _historyGrid.PerformLayout();
         }
 
         if (scrollIndex >= 0 && scrollIndex < _historyGrid.RowCount)
             _historyGrid.FirstDisplayedScrollingRowIndex = scrollIndex;
 
         UpdateReprintButtonState();
+    }
+
+    private void RefreshPrintHistoryEmptyLabel(string? search = null)
+    {
+        if (_historyEmptyLabel is null)
+            return;
+
+        search ??= _historySearchBox?.Text;
+        _historyEmptyLabel.Text = !string.IsNullOrWhiteSpace(search)
+            ? _localizer["PrintHistory.EmptyFiltered"]
+            : _localizer["PrintHistory.Empty"];
     }
 
     private void UpdateReprintButtonState()
@@ -238,6 +278,23 @@ public sealed partial class MainForm
             MessageBoxIcon.Information);
     }
 
+    private string FormatHistoryJobTooltip(LocalPrintJobRecord job)
+    {
+        var timeUtc = job.PrintedAtUtc ?? job.DisplayTimeUtc;
+        var timeLabel = FormatTimeTooltip(timeUtc);
+        var printerLabel = string.IsNullOrWhiteSpace(job.PrinterName)
+            ? _localizer["Common.Dash"]
+            : job.PrinterName;
+
+        return _localizer.GetPrintHistoryJobTooltip(
+            job,
+            FormatJobLabel(job),
+            _localizer.GetPlatform(job.Platform),
+            printerLabel,
+            _localizer.GetJobStatus(job.Status),
+            timeLabel);
+    }
+
     private void OnHistoryGridCellPainting(object? sender, DataGridViewCellPaintingEventArgs e) =>
         PaintStatusBadgeCell(sender, e, _historyJobsForGrid);
 
@@ -246,27 +303,18 @@ public sealed partial class MainForm
         if (e.RowIndex < 0 || e.ColumnIndex < 0 || sender is not DataGridView grid || e.RowIndex >= _historyJobsForGrid.Count)
             return;
 
-        var columnName = grid.Columns[e.ColumnIndex].Name;
         var job = _historyJobsForGrid[e.RowIndex];
+        e.ToolTipText = FormatHistoryJobTooltip(job);
+    }
 
-        if (columnName == "Time")
-        {
-            e.ToolTipText = FormatTimeTooltip(job.DisplayTimeUtc);
+    private void DisposePrintHistoryUi()
+    {
+        if (_historySearchDebounceTimer is null)
             return;
-        }
 
-        if (columnName == "Order")
-        {
-            e.ToolTipText = FormatJobOrderTooltip(job);
-            return;
-        }
-
-        if (columnName == "Status" &&
-            job.Status == LocalPrintJobStatus.Failed &&
-            !string.IsNullOrWhiteSpace(job.ErrorMessage))
-        {
-            e.ToolTipText = job.ErrorMessage;
-        }
+        _historySearchDebounceTimer.Stop();
+        _historySearchDebounceTimer.Dispose();
+        _historySearchDebounceTimer = null;
     }
 
     private void PaintStatusBadgeCell(

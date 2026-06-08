@@ -357,6 +357,30 @@
   <data name="PrintHistory.Empty" xml:space="preserve">
     <value>Kayıtlı yazdırma geçmişi yok.</value>
   </data>
+  <data name="PrintHistory.EmptyFiltered" xml:space="preserve">
+    <value>Seçili filtreye veya aramaya uygun kayıt bulunamadı.</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Error" xml:space="preserve">
+    <value>Hata: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.JobId" xml:space="preserve">
+    <value>İş kimliği: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Order" xml:space="preserve">
+    <value>Sipariş: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Platform" xml:space="preserve">
+    <value>Platform: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Printer" xml:space="preserve">
+    <value>Yazıcı: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Status" xml:space="preserve">
+    <value>Durum: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Time" xml:space="preserve">
+    <value>Zaman: {0}</value>
+  </data>
   <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
     <value>Son 30 Gün</value>
   </data>

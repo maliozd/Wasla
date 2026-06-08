@@ -357,6 +357,30 @@
   <data name="PrintHistory.Empty" xml:space="preserve">
     <value>لا يوجد سجل طباعة محفوظ.</value>
   </data>
+  <data name="PrintHistory.EmptyFiltered" xml:space="preserve">
+    <value>لا توجد سجلات تطابق الفلتر أو البحث المحدد.</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Error" xml:space="preserve">
+    <value>خطأ: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.JobId" xml:space="preserve">
+    <value>معرّف المهمة: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Order" xml:space="preserve">
+    <value>الطلب: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Platform" xml:space="preserve">
+    <value>المنصة: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Printer" xml:space="preserve">
+    <value>الطابعة: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Status" xml:space="preserve">
+    <value>الحالة: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Time" xml:space="preserve">
+    <value>الوقت: {0}</value>
+  </data>
   <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
     <value>آخر 30 يومًا</value>
   </data>

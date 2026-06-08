@@ -357,6 +357,30 @@
   <data name="PrintHistory.Empty" xml:space="preserve">
     <value>No print history records found.</value>
   </data>
+  <data name="PrintHistory.EmptyFiltered" xml:space="preserve">
+    <value>No records match the selected filter or search.</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Error" xml:space="preserve">
+    <value>Error: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.JobId" xml:space="preserve">
+    <value>Job ID: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Order" xml:space="preserve">
+    <value>Order: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Platform" xml:space="preserve">
+    <value>Platform: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Printer" xml:space="preserve">
+    <value>Printer: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Status" xml:space="preserve">
+    <value>Status: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Time" xml:space="preserve">
+    <value>Time: {0}</value>
+  </data>
   <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
     <value>Last 30 Days</value>
   </data>

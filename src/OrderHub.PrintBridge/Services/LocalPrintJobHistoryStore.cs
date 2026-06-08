@@ -1,10 +1,17 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using OrderHub.PrintBridge.Configuration;
 using OrderHub.PrintBridge.Models;
 
 namespace OrderHub.PrintBridge.Services;
 
+/// <summary>
+/// Local JSON-backed print job history for support and reprint (MVP).
+/// Retention policy: at most <see cref="MaxEntries"/> records; entries older than
+/// <see cref="RetentionDays"/> calendar days (UTC comparison on <see cref="LocalPrintJobRecord.DisplayTimeUtc"/>)
+/// are removed during <see cref="Prune"/>.
+/// </summary>
 public sealed class LocalPrintJobHistoryStore
 {
     private const int MaxEntries = 1000;
@@ -17,11 +24,13 @@ public sealed class LocalPrintJobHistoryStore
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
+    private readonly ILogger<LocalPrintJobHistoryStore> _logger;
     private readonly object _sync = new();
     private List<LocalPrintJobRecord> _entries;
 
-    public LocalPrintJobHistoryStore()
+    public LocalPrintJobHistoryStore(ILogger<LocalPrintJobHistoryStore> logger)
     {
+        _logger = logger;
         _entries = Load();
     }
 
@@ -50,11 +59,7 @@ public sealed class LocalPrintJobHistoryStore
 
             return _entries
                 .Where(e => e.DisplayTimeUtc >= cutoff)
-                .Where(e =>
-                    string.IsNullOrWhiteSpace(search)
-                    || (!string.IsNullOrWhiteSpace(e.OrderDisplay)
-                        && e.OrderDisplay.Contains(search, StringComparison.OrdinalIgnoreCase))
-                    || e.ShortJobId.Contains(search, StringComparison.OrdinalIgnoreCase))
+                .Where(e => MatchesSearch(e, search))
                 .OrderByDescending(e => e.DisplayTimeUtc)
                 .Select(CloneRecord)
                 .ToList();
@@ -94,6 +99,29 @@ public sealed class LocalPrintJobHistoryStore
         }
     }
 
+    private static bool MatchesSearch(LocalPrintJobRecord entry, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(entry.OrderDisplay)
+            && entry.OrderDisplay.Contains(search, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (entry.ShortJobId.Contains(search, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var orderIdText = entry.OrderId.ToString("D");
+        if (orderIdText.Contains(search, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var orderIdCompact = entry.OrderId.ToString("N");
+        if (orderIdCompact.Contains(search, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+
     private static DateTime ToLocalDate(DateTime utc) => utc.ToLocalTime().Date;
 
     private static DateTime GetCutoffUtc(PrintHistoryDateFilter filter)
@@ -120,34 +148,91 @@ public sealed class LocalPrintJobHistoryStore
 
     private List<LocalPrintJobRecord> Load()
     {
+        var path = PrintBridgePaths.ProgramDataHistoryPath;
+
         try
         {
-            if (!File.Exists(PrintBridgePaths.ProgramDataHistoryPath))
+            if (!File.Exists(path))
+            {
+                _logger.LogDebug("Print history file not found. Starting with empty history. Path={Path}", path);
                 return [];
+            }
 
-            var json = File.ReadAllText(PrintBridgePaths.ProgramDataHistoryPath);
+            var json = File.ReadAllText(path);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                _logger.LogWarning("Print history file is empty. Starting with empty history. Path={Path}", path);
+                return [];
+            }
+
             var document = JsonSerializer.Deserialize<HistoryDocument>(json, JsonOptions);
-            return document?.Entries?.Select(CloneRecord).ToList() ?? [];
+            var entries = document?.Entries?
+                .Where(IsValidEntry)
+                .Select(CloneRecord)
+                .ToList() ?? [];
+
+            _logger.LogInformation("Loaded {Count} print history entries from {Path}", entries.Count, path);
+            return entries;
         }
-        catch
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
+            _logger.LogWarning(
+                ex,
+                "Print history file is missing, unreadable, or corrupted. Backing up and starting with empty history. Path={Path}",
+                path);
+            BackupCorruptedFile(path);
             return [];
         }
     }
 
     private void Save()
     {
+        var path = PrintBridgePaths.ProgramDataHistoryPath;
+
         try
         {
             PrintBridgePaths.EnsureProgramDataDirectories();
             var document = new HistoryDocument { Entries = _entries.Select(CloneRecord).ToList() };
             var json = JsonSerializer.Serialize(document, JsonOptions);
-            File.WriteAllText(PrintBridgePaths.ProgramDataHistoryPath, json);
+            WriteAtomically(path, json);
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            _logger.LogWarning(
+                ex,
+                "Failed to persist print history. In-memory history remains available until next successful save. Path={Path}",
+                path);
         }
     }
+
+    private static void WriteAtomically(string path, string json)
+    {
+        var directory = Path.GetDirectoryName(path)!;
+        Directory.CreateDirectory(directory);
+        var tempPath = Path.Combine(directory, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, path, overwrite: true);
+    }
+
+    private void BackupCorruptedFile(string path)
+    {
+        try
+        {
+            if (!File.Exists(path))
+                return;
+
+            var backupPath = $"{path}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}";
+            File.Move(path, backupPath, overwrite: false);
+            _logger.LogWarning("Corrupted print history backed up to {BackupPath}", backupPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to back up corrupted print history file. Path={Path}", path);
+        }
+    }
+
+    private static bool IsValidEntry(LocalPrintJobRecord entry) =>
+        entry.JobId != Guid.Empty && entry.CreatedAtUtc != default;
 
     private static LocalPrintJobRecord CloneRecord(LocalPrintJobRecord source) =>
         new()
