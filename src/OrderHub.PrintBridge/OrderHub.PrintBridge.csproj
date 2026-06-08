@@ -12,6 +12,7 @@
 		<Version>1.0.0</Version>
 		<Product>OrderHub Print Bridge</Product>
 		<Description>Local Windows Print Bridge tray app for OrderHub receipt printing.</Description>
+		<ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
 	</PropertyGroup>
 
 	<ItemGroup>

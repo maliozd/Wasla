@@ -97,6 +97,7 @@ public sealed partial class MainForm : Form
 
         Text = PrintBridgePaths.ProductDisplayName;
         Font = new Font("Segoe UI", 9F);
+        AutoScaleMode = AutoScaleMode.Font;
         BackColor = PrintBridgeUiTheme.PageBackground;
 
         _tabs = new TabControl
@@ -213,7 +214,10 @@ public sealed partial class MainForm : Form
             machineName = Environment.MachineName;
         _lblMachineNameHint.Text = _localizer.GetString("Settings.MachineNameHint", machineName);
 
-        PrintBridgeRtl.Apply(this, _cultureService.IsRightToLeft);
+        var isRtl = _cultureService.IsRightToLeft;
+        _footerDeviceLabel.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+        _footerVersionLabel.TextAlign = isRtl ? ContentAlignment.MiddleLeft : ContentAlignment.MiddleRight;
+        PrintBridgeRtl.Apply(this, isRtl);
     }
 
     public void SelectStatusTab() => _tabs.SelectedTab = _statusTab;
@@ -227,8 +231,8 @@ public sealed partial class MainForm : Form
         _footerPanel = new Panel
         {
             Dock = DockStyle.Bottom,
-            Height = 30,
-            Padding = new Padding(12, 4, 12, 6),
+            Height = 34,
+            Padding = new Padding(12, 6, 12, 6),
             BackColor = PrintBridgeUiTheme.PageBackground
         };
 
@@ -337,8 +341,12 @@ public sealed partial class MainForm : Form
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 10)
         };
-        for (var i = 0; i < 6; i++)
-            metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16.66F));
+        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15F));
+        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15F));
+        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12F));
+        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12F));
+        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 26F));
 
         metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _serverStatusValue, out _serverStatusTitle), 0, 0);
         metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _printerStatusValue, out _printerStatusTitle), 1, 0);
@@ -347,7 +355,8 @@ public sealed partial class MainForm : Form
             string.Empty,
             out _lastContactValue,
             out _lastContactTitle,
-            PrintBridgeUiTheme.MetricTimestampFont);
+            PrintBridgeUiTheme.MetricTimestampFont,
+            valueAutoEllipsis: false);
         metricsRow.Controls.Add(lastContactCard, 2, 0);
 
         metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _jobsTodayValue, out _jobsTodayTitle), 3, 0);
@@ -357,7 +366,8 @@ public sealed partial class MainForm : Form
             string.Empty,
             out _lastPrintValue,
             out _lastPrintTitle,
-            PrintBridgeUiTheme.MetricTimestampFont);
+            PrintBridgeUiTheme.MetricTimestampFont,
+            valueAutoEllipsis: false);
         metricsRow.Controls.Add(lastPrintCard, 5, 0);
         root.Controls.Add(metricsRow, 0, 1);
 
@@ -387,8 +397,8 @@ public sealed partial class MainForm : Form
         _recentJobsGrid.Columns.Add("Type", string.Empty);
         _recentJobsGrid.Columns.Add("Printer", string.Empty);
         _recentJobsGrid.Columns.Add("Status", string.Empty);
-        _recentJobsGrid.Columns["Time"]!.FillWeight = 22;
-        _recentJobsGrid.Columns["Time"]!.MinimumWidth = 150;
+        _recentJobsGrid.Columns["Time"]!.FillWeight = 20;
+        _recentJobsGrid.Columns["Time"]!.MinimumWidth = 128;
         _recentJobsGrid.Columns["Order"]!.FillWeight = 34;
         _recentJobsGrid.Columns["Order"]!.MinimumWidth = 160;
         _recentJobsGrid.Columns["Type"]!.FillWeight = 12;
@@ -1244,6 +1254,12 @@ public sealed partial class MainForm : Form
         var columnName = grid.Columns[e.ColumnIndex].Name;
         var job = _jobsForGrid[e.RowIndex];
 
+        if (columnName == "Time")
+        {
+            e.ToolTipText = FormatTimeTooltip(job.DisplayTimeUtc);
+            return;
+        }
+
         if (columnName == "Order")
         {
             e.ToolTipText = FormatJobOrderTooltip(job);
@@ -1265,8 +1281,11 @@ public sealed partial class MainForm : Form
 
     private string FormatUtc(DateTime? value, string dash) =>
         value.HasValue
-            ? value.Value.ToLocalTime().ToString("G", _cultureService.CurrentCulture)
+            ? PrintBridgeDateTimeFormatter.FormatDashboardUtc(_cultureService.CurrentCulture, value.Value)
             : dash;
+
+    private string FormatTimeTooltip(DateTime utc) =>
+        PrintBridgeDateTimeFormatter.FormatTooltipUtc(_cultureService.CurrentCulture, utc);
 
     private string GetUserErrorMessage(Exception ex)
     {

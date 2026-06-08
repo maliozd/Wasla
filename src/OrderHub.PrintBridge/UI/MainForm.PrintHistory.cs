@@ -76,8 +76,8 @@ public sealed partial class MainForm
         _historyGrid.Columns.Add("Platform", string.Empty);
         _historyGrid.Columns.Add("Printer", string.Empty);
         _historyGrid.Columns.Add("Status", string.Empty);
-        _historyGrid.Columns["Time"]!.FillWeight = 22;
-        _historyGrid.Columns["Time"]!.MinimumWidth = 150;
+        _historyGrid.Columns["Time"]!.FillWeight = 20;
+        _historyGrid.Columns["Time"]!.MinimumWidth = 128;
         _historyGrid.Columns["Order"]!.FillWeight = 28;
         _historyGrid.Columns["Order"]!.MinimumWidth = 140;
         _historyGrid.Columns["Platform"]!.FillWeight = 16;
@@ -249,6 +249,12 @@ public sealed partial class MainForm
         var columnName = grid.Columns[e.ColumnIndex].Name;
         var job = _historyJobsForGrid[e.RowIndex];
 
+        if (columnName == "Time")
+        {
+            e.ToolTipText = FormatTimeTooltip(job.DisplayTimeUtc);
+            return;
+        }
+
         if (columnName == "Order")
         {
             e.ToolTipText = FormatJobOrderTooltip(job);
@@ -292,9 +298,13 @@ public sealed partial class MainForm
             badgeFont,
             new Size(int.MaxValue, int.MaxValue),
             TextFormatFlags.NoPadding);
-        var badgeWidth = Math.Min(textSize.Width + horizontalPadding * 2, e.CellBounds.Width - 8);
+        var horizontalMargin = 8;
+        var badgeWidth = Math.Min(textSize.Width + horizontalPadding * 2, e.CellBounds.Width - horizontalMargin * 2);
+        var badgeLeft = grid.RightToLeft == RightToLeft.Yes
+            ? e.CellBounds.Right - badgeWidth - horizontalMargin
+            : e.CellBounds.Left + horizontalMargin;
         var badgeRect = new Rectangle(
-            e.CellBounds.Left + (e.CellBounds.Width - badgeWidth) / 2,
+            badgeLeft,
             e.CellBounds.Top + (e.CellBounds.Height - badgeHeight) / 2,
             badgeWidth,
             badgeHeight);

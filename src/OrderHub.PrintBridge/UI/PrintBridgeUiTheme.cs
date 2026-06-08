@@ -21,8 +21,8 @@ internal static class PrintBridgeUiTheme
     public static Font SubtitleFont => new("Segoe UI", 9.5F, FontStyle.Regular);
     public static Font BadgeFont => new("Segoe UI Semibold", 9F, FontStyle.Bold);
     public static Font SectionFont => new("Segoe UI Semibold", 10F, FontStyle.Bold);
-    public static Font MetricValueFont => new("Segoe UI Semibold", 16F, FontStyle.Bold);
-    public static Font MetricTimestampFont => new("Segoe UI Semibold", 11.5F, FontStyle.Bold);
+    public static Font MetricValueFont => new("Segoe UI Semibold", 15F, FontStyle.Bold);
+    public static Font MetricTimestampFont => new("Segoe UI Semibold", 10.25F, FontStyle.Bold);
     public static int GridRowHeight => 46;
     public static int GridHeaderHeight => 44;
 
@@ -142,15 +142,16 @@ internal static class PrintBridgeUiTheme
         string title,
         out Label valueLabel,
         out Label titleLabel,
-        Font? valueFont = null)
+        Font? valueFont = null,
+        bool valueAutoEllipsis = true)
     {
         var card = new Panel
         {
             Dock = DockStyle.Fill,
             BackColor = CardBackground,
-            Padding = new Padding(14, 12, 14, 12),
+            Padding = new Padding(12, 10, 12, 10),
             Margin = new Padding(0, 0, 8, 8),
-            MinimumSize = new Size(180, 92)
+            MinimumSize = new Size(160, 88)
         };
         card.Paint += (_, e) =>
         {
@@ -172,11 +173,13 @@ internal static class PrintBridgeUiTheme
         titleLabel = new Label
         {
             Text = title,
-            Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+            Font = new Font("Segoe UI", 8.75F, FontStyle.Regular),
             ForeColor = TextMuted,
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, 0, 6)
+            AutoSize = false,
+            Height = 32,
+            Dock = DockStyle.Top,
+            AutoEllipsis = true,
+            Margin = new Padding(0, 0, 0, 4)
         };
 
         valueLabel = new Label
@@ -187,7 +190,7 @@ internal static class PrintBridgeUiTheme
             AutoSize = false,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true,
+            AutoEllipsis = valueAutoEllipsis,
             Margin = new Padding(0)
         };
 
