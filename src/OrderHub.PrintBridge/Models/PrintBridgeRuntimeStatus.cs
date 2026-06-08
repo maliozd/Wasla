@@ -15,7 +15,6 @@ public sealed class PrintBridgeRuntimeStatus
     public int JobsTodayCount { get; init; }
     public int FailedTodayCount { get; init; }
     public TrayIconState TrayIconState { get; init; }
-    public string DeviceStatusSummary { get; init; } = "Connection Lost";
 
     public static TrayIconState ResolveTrayIconState(
         bool isRunning,
@@ -36,13 +35,4 @@ public sealed class PrintBridgeRuntimeStatus
 
         return TrayIconState.ConnectionLost;
     }
-
-    public static string DescribeDeviceStatus(TrayIconState state) => state switch
-    {
-        TrayIconState.Printing => "Printing",
-        TrayIconState.Polling => "Polling",
-        TrayIconState.Connected => "Connected",
-        TrayIconState.ConnectionLost => "Connection Lost",
-        _ => "Connection Lost"
-    };
 }

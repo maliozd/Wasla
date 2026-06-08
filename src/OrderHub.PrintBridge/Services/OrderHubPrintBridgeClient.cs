@@ -46,7 +46,7 @@ public sealed class OrderHubPrintBridgeClient
 
     public async Task<IReadOnlyList<PendingPrintJobDto>> GetPendingJobsAsync(CancellationToken ct)
     {
-        var (_, bridge) = _holder.Snapshot();
+        var (_, bridge, _) = _holder.Snapshot();
         var max = Math.Clamp(bridge.MaxJobsPerPoll, 1, 10);
         var path = $"api/print-bridge/jobs/pending?max={max}";
         using var response = await SendAsync(HttpMethod.Get, path, ct).ConfigureAwait(false);
@@ -91,7 +91,7 @@ public sealed class OrderHubPrintBridgeClient
         HttpRequestMessage request,
         CancellationToken ct)
     {
-        var (hub, _) = _holder.Snapshot();
+        var (hub, _, _) = _holder.Snapshot();
         var baseUrl = hub.BaseUrl.TrimEnd('/');
 
         HttpResponseMessage response;
@@ -146,13 +146,13 @@ public sealed class OrderHubPrintBridgeClient
 
     private string BuildAbsoluteUrl(string relativeUrl)
     {
-        var (hub, _) = _holder.Snapshot();
+        var (hub, _, _) = _holder.Snapshot();
         return $"{hub.BaseUrl.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
     }
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string url)
     {
-        var (hub, bridge) = _holder.Snapshot();
+        var (hub, bridge, _) = _holder.Snapshot();
         var request = new HttpRequestMessage(method, url);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Token", hub.AgentToken);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Name", bridge.BridgeName);

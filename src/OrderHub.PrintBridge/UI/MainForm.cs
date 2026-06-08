@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using OrderHub.PrintBridge.Configuration;
+using OrderHub.PrintBridge.Localization;
 using OrderHub.PrintBridge.Models;
 using OrderHub.PrintBridge.Options;
 using OrderHub.PrintBridge.Printing;
@@ -14,6 +15,8 @@ public sealed class MainForm : Form
     private readonly PrintBridgeSettingsStore _settingsStore;
     private readonly PrintBridgeSettingsHolder _settingsHolder;
     private readonly UiLogBuffer _uiLogBuffer;
+    private readonly PrintBridgeLocalizer _localizer;
+    private readonly PrintBridgeCultureService _cultureService;
     private readonly System.Windows.Forms.Timer _dashboardTimer;
     private readonly System.Windows.Forms.Timer _jobsRefreshTimer;
 
@@ -22,11 +25,18 @@ public sealed class MainForm : Form
     private TabPage _logsTab = null!;
     private TabPage _settingsTab = null!;
 
+    private Label _titleLabel = null!;
+    private Label _subtitleLabel = null!;
     private Label _headerBadge = null!;
+    private Label _deviceStatusTitle = null!;
     private Label _deviceStatusValue = null!;
+    private Label _lastPollTitle = null!;
     private Label _lastPollMetricValue = null!;
+    private Label _jobsTodayTitle = null!;
     private Label _jobsTodayValue = null!;
+    private Label _failedTodayTitle = null!;
     private Label _failedTodayValue = null!;
+    private GroupBox _jobsGroup = null!;
     private DataGridView _recentJobsGrid = null!;
     private Label _recentJobsEmptyLabel = null!;
     private IReadOnlyList<LocalPrintJobRecord> _jobsForGrid = Array.Empty<LocalPrintJobRecord>();
@@ -35,6 +45,9 @@ public sealed class MainForm : Form
     private Button _btnTestPrinter = null!;
     private Button _btnStartStop = null!;
     private Button _btnOpenLogs = null!;
+    private Button _btnClearLogs = null!;
+    private Button _btnCopyLogs = null!;
+    private Button _btnOpenLogsFolderTab = null!;
 
     private TextBox _txtBaseUrl = null!;
     private TextBox _txtAgentToken = null!;
@@ -47,6 +60,18 @@ public sealed class MainForm : Form
     private NumericUpDown _numBusyPoll = null!;
     private NumericUpDown _numErrorPoll = null!;
     private Button _btnSaveSettings = null!;
+    private ComboBox _cmbLanguage = null!;
+    private Label _lblLanguage = null!;
+    private Label _lblServerUrl = null!;
+    private Label _lblAgentToken = null!;
+    private Label _lblPrinterName = null!;
+    private Label _lblComputerName = null!;
+    private GroupBox _advancedGroup = null!;
+    private Label _lblDryRunMode = null!;
+    private Label _lblIdlePoll = null!;
+    private Label _lblBusyPoll = null!;
+    private Label _lblErrorPoll = null!;
+    private Label _settingsHint = null!;
 
     public MainForm(ServiceProvider services, PrintBridgeRuntime runtime)
     {
@@ -55,6 +80,8 @@ public sealed class MainForm : Form
         _settingsStore = services.GetRequiredService<PrintBridgeSettingsStore>();
         _settingsHolder = services.GetRequiredService<PrintBridgeSettingsHolder>();
         _uiLogBuffer = services.GetRequiredService<UiLogBuffer>();
+        _localizer = services.GetRequiredService<PrintBridgeLocalizer>();
+        _cultureService = services.GetRequiredService<PrintBridgeCultureService>();
 
         Text = PrintBridgePaths.ProductDisplayName;
         StartPosition = FormStartPosition.CenterScreen;
@@ -69,9 +96,9 @@ public sealed class MainForm : Form
             Font = new Font("Segoe UI", 9.5F),
             Padding = new Point(8, 6)
         };
-        _statusTab = new TabPage("Durum") { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
-        _logsTab = new TabPage("Loglar") { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
-        _settingsTab = new TabPage("Ayarlar") { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
+        _statusTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
+        _logsTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
+        _settingsTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
         _tabs.TabPages.Add(_statusTab);
         _tabs.TabPages.Add(_logsTab);
         _tabs.TabPages.Add(_settingsTab);
@@ -96,15 +123,72 @@ public sealed class MainForm : Form
             if (_tabs.SelectedTab == _logsTab)
                 RefreshLogs();
         };
+        PopulateLanguageCombo();
         LoadSettingsIntoForm();
 
         if (!IsHandleCreated)
             CreateHandle();
 
+        ApplyStartupLocalization();
         RefreshDashboard();
         RefreshRecentJobsFromRuntime();
         RefreshLogs();
     }
+
+    private void ApplyStartupLocalization()
+    {
+        Text = _localizer["Common.AppTitle"];
+        _statusTab.Text = _localizer["Tab.Status"];
+        _logsTab.Text = _localizer["Tab.Logs"];
+        _settingsTab.Text = _localizer["Tab.Settings"];
+
+        _titleLabel.Text = _localizer["Common.AppTitle"];
+        _subtitleLabel.Text = _localizer["Common.Subtitle"];
+
+        _deviceStatusTitle.Text = _localizer["Dashboard.DeviceStatus"];
+        _lastPollTitle.Text = _localizer["Dashboard.LastPoll"];
+        _jobsTodayTitle.Text = _localizer["Dashboard.JobsToday"];
+        _failedTodayTitle.Text = _localizer["Dashboard.FailedToday"];
+
+        _jobsGroup.Text = $"  {_localizer["RecentJobs.Title"]}  ";
+        _recentJobsEmptyLabel.Text = _localizer["RecentJobs.Empty"];
+        _recentJobsGrid.Columns["Time"]!.HeaderText = _localizer["RecentJobs.Column.Time"];
+        _recentJobsGrid.Columns["Order"]!.HeaderText = _localizer["RecentJobs.Column.Order"];
+        _recentJobsGrid.Columns["Type"]!.HeaderText = _localizer["RecentJobs.Column.Type"];
+        _recentJobsGrid.Columns["Printer"]!.HeaderText = _localizer["RecentJobs.Column.Printer"];
+        _recentJobsGrid.Columns["Status"]!.HeaderText = _localizer["RecentJobs.Column.Status"];
+
+        _btnTestConnection.Text = _localizer["Button.TestConnection"];
+        _btnTestPrinter.Text = _localizer["Button.TestPrinter"];
+        _btnOpenLogs.Text = _localizer["Button.OpenLogsFolder"];
+        _btnOpenLogsFolderTab.Text = _localizer["Button.OpenLogsFolder"];
+        _btnClearLogs.Text = _localizer["Button.ClearLogs"];
+        _btnCopyLogs.Text = _localizer["Button.CopyLogs"];
+        _btnSaveSettings.Text = _localizer["Button.SaveSettings"];
+        _btnRefreshPrinters.Text = _localizer["Button.Refresh"];
+        _btnToggleToken.Text = _txtAgentToken.UseSystemPasswordChar
+            ? _localizer["Button.ShowToken"]
+            : _localizer["Button.HideToken"];
+
+        _lblServerUrl.Text = _localizer["Settings.ServerUrl"];
+        _lblAgentToken.Text = _localizer["Settings.AgentToken"];
+        _lblPrinterName.Text = _localizer["Settings.PrinterName"];
+        _lblComputerName.Text = _localizer["Settings.ComputerName"];
+        _lblLanguage.Text = _localizer["Settings.Language"];
+        _advancedGroup.Text = $"  {_localizer["Settings.Advanced"]}  ";
+        _lblDryRunMode.Text = _localizer["Settings.DryRunMode"];
+        _chkDryRun.Text = _localizer["Settings.DryRunDescription"];
+        _lblIdlePoll.Text = _localizer["Settings.IdlePollSeconds"];
+        _lblBusyPoll.Text = _localizer["Settings.BusyPollSeconds"];
+        _lblErrorPoll.Text = _localizer["Settings.ErrorPollSeconds"];
+        _settingsHint.Text = _localizer.GetString("Settings.SavedPathHint", PrintBridgePaths.ProgramDataConfigPath);
+
+        PrintBridgeRtl.Apply(this, _cultureService.IsRightToLeft);
+    }
+
+    public void SelectStatusTab() => _tabs.SelectedTab = _statusTab;
+
+    public void SelectLogsTab() => _tabs.SelectedTab = _logsTab;
 
     private void BuildStatusTab()
     {
@@ -121,36 +205,47 @@ public sealed class MainForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         _statusTab.Controls.Add(root);
 
-        var header = new Panel { Dock = DockStyle.Fill, Height = 72, Margin = new Padding(0, 0, 0, 10) };
-        var title = new Label
+        var header = new TableLayoutPanel
         {
-            Text = "OrderHub Print Bridge",
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 10)
+        };
+        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _titleLabel = new Label
+        {
             Font = PrintBridgeUiTheme.TitleFont,
             ForeColor = PrintBridgeUiTheme.TextTitle,
             AutoSize = true,
-            Location = new Point(0, 0)
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 0, 2)
         };
-        var subtitle = new Label
+        _subtitleLabel = new Label
         {
-            Text = "Fiş yazdırma köprüsü",
             Font = PrintBridgeUiTheme.SubtitleFont,
             ForeColor = PrintBridgeUiTheme.TextMuted,
             AutoSize = true,
-            Location = new Point(0, 30)
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 0, 6)
         };
         _headerBadge = new Label
         {
-            Text = "Durduruldu",
             Font = PrintBridgeUiTheme.BadgeFont,
             ForeColor = Color.White,
             BackColor = PrintBridgeUiTheme.Inactive,
             AutoSize = true,
             Padding = new Padding(10, 4, 10, 4),
-            Location = new Point(0, 52)
+            Dock = DockStyle.Left,
+            Margin = new Padding(0, 0, 0, 0)
         };
-        header.Controls.Add(title);
-        header.Controls.Add(subtitle);
-        header.Controls.Add(_headerBadge);
+        header.Controls.Add(_titleLabel, 0, 0);
+        header.Controls.Add(_subtitleLabel, 0, 1);
+        header.Controls.Add(_headerBadge, 0, 2);
         root.Controls.Add(header, 0, 0);
 
         var cardsRow = new TableLayoutPanel
@@ -166,22 +261,21 @@ public sealed class MainForm : Form
         cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
         cardsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
 
-        var deviceStatusCard = PrintBridgeUiTheme.CreateMetricCard("Device Status", out _deviceStatusValue);
+        var deviceStatusCard = PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _deviceStatusValue, out _deviceStatusTitle);
         cardsRow.Controls.Add(deviceStatusCard, 0, 0);
 
-        var lastPollCard = PrintBridgeUiTheme.CreateMetricCard("Last Poll", out _lastPollMetricValue);
+        var lastPollCard = PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _lastPollMetricValue, out _lastPollTitle);
         cardsRow.Controls.Add(lastPollCard, 1, 0);
 
-        var jobsTodayCard = PrintBridgeUiTheme.CreateMetricCard("Jobs Today", out _jobsTodayValue);
+        var jobsTodayCard = PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _jobsTodayValue, out _jobsTodayTitle);
         cardsRow.Controls.Add(jobsTodayCard, 2, 0);
 
-        var failedTodayCard = PrintBridgeUiTheme.CreateMetricCard("Failed Today", out _failedTodayValue);
+        var failedTodayCard = PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _failedTodayValue, out _failedTodayTitle);
         cardsRow.Controls.Add(failedTodayCard, 3, 0);
         root.Controls.Add(cardsRow, 0, 1);
 
-        var jobsGroup = new GroupBox
+        _jobsGroup = new GroupBox
         {
-            Text = "  Son işler (bu oturum)  ",
             Dock = DockStyle.Fill,
             Font = PrintBridgeUiTheme.SectionFont,
             ForeColor = PrintBridgeUiTheme.TextTitle,
@@ -201,11 +295,11 @@ public sealed class MainForm : Form
             RowHeadersVisible = false
         };
         PrintBridgeUiTheme.StyleGrid(_recentJobsGrid);
-        _recentJobsGrid.Columns.Add("Time", "Time");
-        _recentJobsGrid.Columns.Add("Order", "Order");
-        _recentJobsGrid.Columns.Add("Type", "Type");
-        _recentJobsGrid.Columns.Add("Printer", "Printer");
-        _recentJobsGrid.Columns.Add("Status", "Status");
+        _recentJobsGrid.Columns.Add("Time", string.Empty);
+        _recentJobsGrid.Columns.Add("Order", string.Empty);
+        _recentJobsGrid.Columns.Add("Type", string.Empty);
+        _recentJobsGrid.Columns.Add("Printer", string.Empty);
+        _recentJobsGrid.Columns.Add("Status", string.Empty);
         _recentJobsGrid.Columns["Time"]!.FillWeight = 16;
         _recentJobsGrid.Columns["Order"]!.FillWeight = 28;
         _recentJobsGrid.Columns["Type"]!.FillWeight = 14;
@@ -216,7 +310,6 @@ public sealed class MainForm : Form
         _recentJobsGrid.ShowCellToolTips = true;
         _recentJobsEmptyLabel = new Label
         {
-            Text = "Bu oturumda henüz yazdırma işi işlenmedi.",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
             ForeColor = PrintBridgeUiTheme.TextMuted,
@@ -224,8 +317,8 @@ public sealed class MainForm : Form
         };
         jobsPanel.Controls.Add(_recentJobsGrid);
         jobsPanel.Controls.Add(_recentJobsEmptyLabel);
-        jobsGroup.Controls.Add(jobsPanel);
-        root.Controls.Add(jobsGroup, 0, 2);
+        _jobsGroup.Controls.Add(jobsPanel);
+        root.Controls.Add(_jobsGroup, 0, 2);
 
         var actionBar = new Panel
         {
@@ -240,19 +333,19 @@ public sealed class MainForm : Form
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = true
         };
-        _btnStartStop = PrintBridgeUiTheme.CreateActionButton("Dinlemeyi başlat", primary: true);
+        _btnStartStop = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
         _btnStartStop.Click += (_, _) => TogglePolling();
         buttonPanel.Controls.Add(_btnStartStop);
 
-        _btnTestConnection = PrintBridgeUiTheme.CreateActionButton("Bağlantıyı test et");
+        _btnTestConnection = PrintBridgeUiTheme.CreateActionButton(string.Empty);
         _btnTestConnection.Click += async (_, _) => await RunSafeAsync(TestConnectionAsync);
         buttonPanel.Controls.Add(_btnTestConnection);
 
-        _btnTestPrinter = PrintBridgeUiTheme.CreateActionButton("Yazıcıyı test et");
+        _btnTestPrinter = PrintBridgeUiTheme.CreateActionButton(string.Empty);
         _btnTestPrinter.Click += async (_, _) => await RunSafeAsync(TestPrinterAsync);
         buttonPanel.Controls.Add(_btnTestPrinter);
 
-        _btnOpenLogs = PrintBridgeUiTheme.CreateActionButton("Log klasörünü aç");
+        _btnOpenLogs = PrintBridgeUiTheme.CreateActionButton(string.Empty);
         _btnOpenLogs.Click += (_, _) => OpenLogsFolder();
         buttonPanel.Controls.Add(_btnOpenLogs);
 
@@ -280,16 +373,16 @@ public sealed class MainForm : Form
             Margin = new Padding(0, 0, 0, 8)
         };
 
-        var btnClearLogs = PrintBridgeUiTheme.CreateActionButton("Clear Logs");
-        btnClearLogs.Click += (_, _) =>
+        _btnClearLogs = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnClearLogs.Click += (_, _) =>
         {
             _uiLogBuffer.Clear();
             RefreshLogs();
         };
-        toolbar.Controls.Add(btnClearLogs);
+        toolbar.Controls.Add(_btnClearLogs);
 
-        var btnCopyLogs = PrintBridgeUiTheme.CreateActionButton("Copy Logs");
-        btnCopyLogs.Click += (_, _) =>
+        _btnCopyLogs = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnCopyLogs.Click += (_, _) =>
         {
             try
             {
@@ -298,14 +391,18 @@ public sealed class MainForm : Form
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Loglar kopyalanamadı: {ex.Message}", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    _localizer.GetString("Message.LogsCopyFailed", ex.Message),
+                    PrintBridgePaths.ProductDisplayName,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             }
         };
-        toolbar.Controls.Add(btnCopyLogs);
+        toolbar.Controls.Add(_btnCopyLogs);
 
-        var btnOpenLogsFolder = PrintBridgeUiTheme.CreateActionButton("Log klasörünü aç");
-        btnOpenLogsFolder.Click += (_, _) => OpenLogsFolder();
-        toolbar.Controls.Add(btnOpenLogsFolder);
+        _btnOpenLogsFolderTab = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnOpenLogsFolderTab.Click += (_, _) => OpenLogsFolder();
+        toolbar.Controls.Add(_btnOpenLogsFolderTab);
 
         _txtLogs = new TextBox
         {
@@ -338,14 +435,14 @@ public sealed class MainForm : Form
         settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
         settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        _txtBaseUrl = AddSettingsTextRow(settingsLayout, "Sunucu adresi", 0);
+        (_txtBaseUrl, _lblServerUrl) = AddSettingsTextRow(settingsLayout, 0);
         AddTokenRow(settingsLayout, 1);
         AddPrinterRow(settingsLayout, 2);
-        _txtBridgeName = AddSettingsTextRow(settingsLayout, "Bilgisayar adı", 3);
+        (_txtBridgeName, _lblComputerName) = AddSettingsTextRow(settingsLayout, 3);
+        AddLanguageRow(settingsLayout, 4);
 
-        var advancedGroup = new GroupBox
+        _advancedGroup = new GroupBox
         {
-            Text = "  Gelişmiş  ",
             Dock = DockStyle.Top,
             AutoSize = true,
             Font = PrintBridgeUiTheme.SectionFont,
@@ -362,28 +459,27 @@ public sealed class MainForm : Form
         advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
         advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        advancedLayout.Controls.Add(new Label
+        _lblDryRunMode = new Label
         {
-            Text = "Test modu",
             AutoSize = true,
             Anchor = AnchorStyles.Left,
             ForeColor = PrintBridgeUiTheme.TextMuted
-        }, 0, 0);
+        };
+        advancedLayout.Controls.Add(_lblDryRunMode, 0, 0);
         _chkDryRun = new CheckBox
         {
-            Text = "Fişi yazıcıya gönderme, sadece logla",
             AutoSize = true,
             Anchor = AnchorStyles.Left
         };
         advancedLayout.Controls.Add(_chkDryRun, 1, 0);
 
-        _numIdlePoll = AddSettingsNumericRow(advancedLayout, "Boşta bekleme (sn)", 1, 1, 300, 5);
-        _numBusyPoll = AddSettingsNumericRow(advancedLayout, "Yoğunken bekleme (sn)", 2, 1, 60, 1);
-        _numErrorPoll = AddSettingsNumericRow(advancedLayout, "Hata sonrası bekleme (sn)", 3, 1, 300, 15);
-        advancedGroup.Controls.Add(advancedLayout);
+        (_numIdlePoll, _lblIdlePoll) = AddSettingsNumericRow(advancedLayout, 1, 1, 300, 5);
+        (_numBusyPoll, _lblBusyPoll) = AddSettingsNumericRow(advancedLayout, 2, 1, 60, 1);
+        (_numErrorPoll, _lblErrorPoll) = AddSettingsNumericRow(advancedLayout, 3, 1, 300, 15);
+        _advancedGroup.Controls.Add(advancedLayout);
 
-        settingsLayout.Controls.Add(advancedGroup, 0, 4);
-        settingsLayout.SetColumnSpan(advancedGroup, 2);
+        settingsLayout.Controls.Add(_advancedGroup, 0, 5);
+        settingsLayout.SetColumnSpan(_advancedGroup, 2);
 
         var savePanel = new FlowLayoutPanel
         {
@@ -391,17 +487,16 @@ public sealed class MainForm : Form
             FlowDirection = FlowDirection.LeftToRight,
             Margin = new Padding(0, 12, 0, 0)
         };
-        _btnSaveSettings = PrintBridgeUiTheme.CreateActionButton("Ayarları kaydet", primary: true);
+        _btnSaveSettings = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
         _btnSaveSettings.Click += (_, _) => SaveSettings();
         savePanel.Controls.Add(_btnSaveSettings);
-        settingsLayout.Controls.Add(savePanel, 0, 5);
+        settingsLayout.Controls.Add(savePanel, 0, 6);
         settingsLayout.SetColumnSpan(savePanel, 2);
 
         scroll.Controls.Add(settingsLayout);
 
-        var settingsHint = new Label
+        _settingsHint = new Label
         {
-            Text = $"Ayarlar şuraya kaydedilir: {PrintBridgePaths.ProgramDataConfigPath}",
             AutoSize = true,
             ForeColor = PrintBridgeUiTheme.TextMuted,
             Dock = DockStyle.Bottom,
@@ -410,19 +505,38 @@ public sealed class MainForm : Form
 
         var settingsHost = new Panel { Dock = DockStyle.Fill };
         settingsHost.Controls.Add(scroll);
-        settingsHost.Controls.Add(settingsHint);
+        settingsHost.Controls.Add(_settingsHint);
         _settingsTab.Controls.Add(settingsHost);
+    }
+
+    private void AddLanguageRow(TableLayoutPanel table, int row)
+    {
+        _lblLanguage = new Label
+        {
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        };
+        table.Controls.Add(_lblLanguage, 0, row);
+
+        _cmbLanguage = new ComboBox
+        {
+            Dock = DockStyle.Fill,
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
+        };
+        table.Controls.Add(_cmbLanguage, 1, row);
     }
 
     private void AddTokenRow(TableLayoutPanel table, int row)
     {
-        table.Controls.Add(new Label
+        _lblAgentToken = new Label
         {
-            Text = "Erişim anahtarı",
             AutoSize = true,
             Anchor = AnchorStyles.Left,
             ForeColor = PrintBridgeUiTheme.TextMuted
-        }, 0, row);
+        };
+        table.Controls.Add(_lblAgentToken, 0, row);
 
         var tokenPanel = new TableLayoutPanel
         {
@@ -440,7 +554,6 @@ public sealed class MainForm : Form
         };
         _btnToggleToken = new Button
         {
-            Text = "Göster",
             AutoSize = true,
             MinimumSize = new Size(72, 28),
             FlatStyle = FlatStyle.Flat,
@@ -449,7 +562,9 @@ public sealed class MainForm : Form
         _btnToggleToken.Click += (_, _) =>
         {
             _txtAgentToken.UseSystemPasswordChar = !_txtAgentToken.UseSystemPasswordChar;
-            _btnToggleToken.Text = _txtAgentToken.UseSystemPasswordChar ? "Göster" : "Gizle";
+            _btnToggleToken.Text = _txtAgentToken.UseSystemPasswordChar
+                ? _localizer["Button.ShowToken"]
+                : _localizer["Button.HideToken"];
         };
         tokenPanel.Controls.Add(_txtAgentToken, 0, 0);
         tokenPanel.Controls.Add(_btnToggleToken, 1, 0);
@@ -458,13 +573,13 @@ public sealed class MainForm : Form
 
     private void AddPrinterRow(TableLayoutPanel table, int row)
     {
-        table.Controls.Add(new Label
+        _lblPrinterName = new Label
         {
-            Text = "Yazıcı adı",
             AutoSize = true,
             Anchor = AnchorStyles.Left,
             ForeColor = PrintBridgeUiTheme.TextMuted
-        }, 0, row);
+        };
+        table.Controls.Add(_lblPrinterName, 0, row);
 
         var printerPanel = new TableLayoutPanel
         {
@@ -482,7 +597,6 @@ public sealed class MainForm : Form
         };
         _btnRefreshPrinters = new Button
         {
-            Text = "Yenile",
             AutoSize = true,
             MinimumSize = new Size(72, 28),
             FlatStyle = FlatStyle.Flat,
@@ -522,35 +636,34 @@ public sealed class MainForm : Form
 
     public void SelectSettingsTab() => _tabs.SelectedTab = _settingsTab;
 
-    private static TextBox AddSettingsTextRow(TableLayoutPanel table, string label, int row)
+    private static (TextBox TextBox, Label Label) AddSettingsTextRow(TableLayoutPanel table, int row)
     {
-        table.Controls.Add(new Label
+        var label = new Label
         {
-            Text = label,
             AutoSize = true,
             Anchor = AnchorStyles.Left,
             ForeColor = PrintBridgeUiTheme.TextMuted
-        }, 0, row);
+        };
+        table.Controls.Add(label, 0, row);
         var textBox = new TextBox { Dock = DockStyle.Fill, Anchor = AnchorStyles.Left | AnchorStyles.Right };
         table.Controls.Add(textBox, 1, row);
-        return textBox;
+        return (textBox, label);
     }
 
-    private static NumericUpDown AddSettingsNumericRow(
+    private static (NumericUpDown Numeric, Label Label) AddSettingsNumericRow(
         TableLayoutPanel table,
-        string label,
         int row,
         decimal min,
         decimal max,
         decimal value)
     {
-        table.Controls.Add(new Label
+        var label = new Label
         {
-            Text = label,
             AutoSize = true,
             Anchor = AnchorStyles.Left,
             ForeColor = PrintBridgeUiTheme.TextMuted
-        }, 0, row);
+        };
+        table.Controls.Add(label, 0, row);
         var numeric = new NumericUpDown
         {
             Minimum = min,
@@ -560,12 +673,45 @@ public sealed class MainForm : Form
             Anchor = AnchorStyles.Left
         };
         table.Controls.Add(numeric, 1, row);
-        return numeric;
+        return (numeric, label);
+    }
+
+    private void PopulateLanguageCombo()
+    {
+        _cmbLanguage.Items.Clear();
+        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Turkish, "Türkçe"));
+        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.English, "English"));
+        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Arabic, "العربية"));
+    }
+
+    private void SelectSavedLanguage()
+    {
+        var savedLanguage = _settingsHolder.Ui.Language;
+        var selectedCulture = string.IsNullOrWhiteSpace(savedLanguage)
+            ? _cultureService.CurrentCulture.Name
+            : SupportedCultures.NormalizeOrDefault(savedLanguage);
+
+        for (var i = 0; i < _cmbLanguage.Items.Count; i++)
+        {
+            if (_cmbLanguage.Items[i] is LanguageOption option &&
+                string.Equals(option.CultureName, selectedCulture, StringComparison.OrdinalIgnoreCase))
+            {
+                _cmbLanguage.SelectedIndex = i;
+                return;
+            }
+        }
+
+        _cmbLanguage.SelectedIndex = 0;
+    }
+
+    private sealed record LanguageOption(string CultureName, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
     }
 
     private void LoadSettingsIntoForm()
     {
-        var (hub, bridge) = _settingsHolder.Snapshot();
+        var (hub, bridge, ui) = _settingsHolder.Snapshot();
         _txtBaseUrl.Text = hub.BaseUrl;
         _txtAgentToken.Text = hub.AgentToken;
         RefreshPrinterList(bridge.PrinterName);
@@ -576,6 +722,7 @@ public sealed class MainForm : Form
         _numIdlePoll.Value = Math.Clamp(bridge.IdlePollIntervalSeconds, (int)_numIdlePoll.Minimum, (int)_numIdlePoll.Maximum);
         _numBusyPoll.Value = Math.Clamp(bridge.BusyPollIntervalSeconds, (int)_numBusyPoll.Minimum, (int)_numBusyPoll.Maximum);
         _numErrorPoll.Value = Math.Clamp(bridge.ErrorPollIntervalSeconds, (int)_numErrorPoll.Minimum, (int)_numErrorPoll.Maximum);
+        SelectSavedLanguage();
     }
 
     private void RefreshPrinterList(string? selectedPrinter = null)
@@ -634,26 +781,46 @@ public sealed class MainForm : Form
             MaxJobsPerPoll = _settingsHolder.Snapshot().Bridge.MaxJobsPerPoll
         };
 
-        if (!PrintBridgeSettingsValidator.TryValidate(orderHub, bridge, out var error))
+        if (!PrintBridgeSettingsValidator.TryValidate(orderHub, bridge, out var errorKey))
         {
-            MessageBox.Show(error, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(_localizer[errorKey!], PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
+
+        var previousLanguage = _settingsHolder.Ui.Language;
+        var ui = _settingsHolder.Ui;
+        if (_cmbLanguage.SelectedItem is LanguageOption languageOption)
+            ui.Language = languageOption.CultureName;
+
+        var previousNormalized = string.IsNullOrWhiteSpace(previousLanguage)
+            ? _cultureService.CurrentCulture.Name
+            : SupportedCultures.NormalizeOrDefault(previousLanguage);
+        var newNormalized = SupportedCultures.NormalizeOrDefault(ui.Language);
+        var languageChanged = !string.Equals(previousNormalized, newNormalized, StringComparison.OrdinalIgnoreCase);
 
         try
         {
             _settingsStore.Save(new PrintBridgeSettingsStore.AppSettingsDocument
             {
                 OrderHub = orderHub,
-                PrintBridge = bridge
+                PrintBridge = bridge,
+                Ui = ui
             });
-            _settingsHolder.Replace(orderHub, bridge);
-            MessageBox.Show("Ayarlar kaydedildi.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            _settingsHolder.Replace(orderHub, bridge, ui);
+
+            var message = languageChanged
+                ? _localizer["Message.LanguageRestartRequired"]
+                : _localizer["Message.SettingsSaved"];
+            MessageBox.Show(message, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
             RefreshDashboard();
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Ayarlar kaydedilemedi: {ex.Message}", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(
+                _localizer.GetString("Message.SettingsSaveFailed", ex.Message),
+                PrintBridgePaths.ProductDisplayName,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
     }
 
@@ -680,8 +847,12 @@ public sealed class MainForm : Form
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var health = await _runtime.TestConnectionAsync(cts.Token).ConfigureAwait(true);
         var details = string.IsNullOrWhiteSpace(health.CustomerName)
-            ? "Bağlantı başarılı."
-            : $"Bağlantı başarılı.\nMüşteri: {health.CustomerName}\nCihaz: {health.DeviceName}";
+            ? _localizer["Message.ConnectionSuccess"]
+            : _localizer.GetString(
+                "Message.ConnectionSuccessWithDetails",
+                Environment.NewLine,
+                health.CustomerName,
+                health.DeviceName);
         MessageBox.Show(details, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
@@ -689,7 +860,7 @@ public sealed class MainForm : Form
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await _runtime.TestPrinterAsync(cts.Token).ConfigureAwait(true);
-        MessageBox.Show("Test çıktısı yazıcıya gönderildi.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        MessageBox.Show(_localizer["Message.TestPrintSent"], PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void OpenLogsFolder()
@@ -697,7 +868,7 @@ public sealed class MainForm : Form
         PrintBridgePaths.EnsureProgramDataDirectories();
         if (!Directory.Exists(PrintBridgePaths.ProgramDataLogDirectory))
         {
-            MessageBox.Show("Log klasörü henüz oluşturulmadı.", PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(_localizer["Message.LogsFolderMissing"], PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 
@@ -730,7 +901,7 @@ public sealed class MainForm : Form
 
         var status = _runtime.GetStatus();
 
-        _deviceStatusValue.Text = status.DeviceStatusSummary;
+        _deviceStatusValue.Text = _localizer.GetTrayIconState(status.TrayIconState);
         _deviceStatusValue.ForeColor = status.TrayIconState switch
         {
             TrayIconState.Printing => PrintBridgeUiTheme.Info,
@@ -740,7 +911,7 @@ public sealed class MainForm : Form
             _ => PrintBridgeUiTheme.TextTitle
         };
 
-        _lastPollMetricValue.Text = FormatUtc(status.LastPollUtc);
+        _lastPollMetricValue.Text = FormatUtc(status.LastPollUtc, _localizer["Common.Dash"]);
         _lastPollMetricValue.ForeColor = PrintBridgeUiTheme.TextTitle;
         _jobsTodayValue.Text = status.JobsTodayCount.ToString();
         _jobsTodayValue.ForeColor = PrintBridgeUiTheme.TextTitle;
@@ -796,31 +967,20 @@ public sealed class MainForm : Form
 
     private void UpdateHeaderBadge(PrintBridgeRuntimeStatus status)
     {
-        if (status.IsRunning && status.IsConnected)
-        {
-            _headerBadge.Text = status.DryRun ? "Çalışıyor (test)" : "Çalışıyor";
-            _headerBadge.BackColor = PrintBridgeUiTheme.Info;
-        }
-        else if (status.IsRunning)
-        {
-            _headerBadge.Text = "Çalışıyor";
-            _headerBadge.BackColor = PrintBridgeUiTheme.Info;
-        }
-        else if (status.IsConnected)
-        {
-            _headerBadge.Text = "Bağlı";
+        _headerBadge.Text = _localizer.GetHeaderBadge(status);
+        if (!status.IsRunning && status.IsConnected)
             _headerBadge.BackColor = PrintBridgeUiTheme.Success;
-        }
+        else if (status.IsRunning)
+            _headerBadge.BackColor = PrintBridgeUiTheme.Info;
         else
-        {
-            _headerBadge.Text = "Durduruldu";
             _headerBadge.BackColor = PrintBridgeUiTheme.Inactive;
-        }
     }
 
     private void UpdateStartStopButton(PrintBridgeRuntimeStatus status)
     {
-        _btnStartStop.Text = status.IsRunning ? "Dinlemeyi durdur" : "Dinlemeyi başlat";
+        _btnStartStop.Text = status.IsRunning
+            ? _localizer["Button.StopListening"]
+            : _localizer["Button.StartListening"];
         _btnStartStop.BackColor = status.IsRunning ? PrintBridgeUiTheme.Danger : PrintBridgeUiTheme.PrimaryButton;
         _btnStartStop.FlatAppearance.MouseOverBackColor = status.IsRunning
             ? Color.FromArgb(200, 45, 60)
@@ -842,11 +1002,11 @@ public sealed class MainForm : Form
             foreach (var job in jobs)
             {
                 _recentJobsGrid.Rows.Add(
-                    FormatUtc(job.DisplayTimeUtc),
+                    FormatUtc(job.DisplayTimeUtc, _localizer["Common.Dash"]),
                     FormatJobLabel(job),
-                    string.IsNullOrWhiteSpace(job.JobType) ? "-" : job.JobType,
-                    string.IsNullOrWhiteSpace(printerName) ? "-" : printerName,
-                    job.StatusBadgeText);
+                    string.IsNullOrWhiteSpace(job.JobType) ? _localizer["Common.Dash"] : job.JobType,
+                    string.IsNullOrWhiteSpace(printerName) ? _localizer["Common.Dash"] : printerName,
+                    _localizer.GetJobStatus(job.Status));
             }
         }
         finally
@@ -863,21 +1023,21 @@ public sealed class MainForm : Form
             ? job.ShortJobId
             : $"{job.OrderDisplay} ({job.ShortJobId})";
 
-    private static void OnRecentJobsCellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+    private void OnRecentJobsCellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
         if (e.RowIndex < 0 || e.ColumnIndex < 0 || sender is not DataGridView grid)
             return;
 
-        if (grid.Columns[e.ColumnIndex].Name != "Status" || e.Value is not string statusText || e.CellStyle is null)
+        if (grid.Columns[e.ColumnIndex].Name != "Status" || e.CellStyle is null || e.RowIndex >= _jobsForGrid.Count)
             return;
 
-        var (backColor, foreColor) = statusText switch
+        var (backColor, foreColor) = _jobsForGrid[e.RowIndex].Status switch
         {
-            "Printed" => (PrintBridgeUiTheme.Success, Color.White),
-            "Printing" => (PrintBridgeUiTheme.Info, Color.White),
-            "Pending" => (Color.FromArgb(255, 193, 7), Color.FromArgb(33, 37, 41)),
-            "Failed" => (PrintBridgeUiTheme.Danger, Color.White),
-            "Skipped" => (PrintBridgeUiTheme.Inactive, Color.White),
+            LocalPrintJobStatus.Printed => (PrintBridgeUiTheme.Success, Color.White),
+            LocalPrintJobStatus.Printing => (PrintBridgeUiTheme.Info, Color.White),
+            LocalPrintJobStatus.Received => (Color.FromArgb(255, 193, 7), Color.FromArgb(33, 37, 41)),
+            LocalPrintJobStatus.Failed => (PrintBridgeUiTheme.Danger, Color.White),
+            LocalPrintJobStatus.Skipped => (PrintBridgeUiTheme.Inactive, Color.White),
             _ => (grid.DefaultCellStyle.BackColor, grid.DefaultCellStyle.ForeColor)
         };
 
@@ -902,13 +1062,19 @@ public sealed class MainForm : Form
             e.ToolTipText = job.ErrorMessage;
     }
 
-    private static string FormatUtc(DateTime? value) =>
-        value.HasValue ? value.Value.ToLocalTime().ToString("g") : "-";
+    private static string FormatUtc(DateTime? value, string dash) =>
+        value.HasValue ? value.Value.ToLocalTime().ToString("g") : dash;
 
-    private static string GetUserErrorMessage(Exception ex) =>
-        ex is PrintBridgeConnectionException connectionEx
-            ? connectionEx.UserMessage
-            : ex.Message;
+    private string GetUserErrorMessage(Exception ex)
+    {
+        if (ex is PrintBridgeConnectionException connectionEx)
+            return _localizer.GetString(connectionEx.UserMessageKey, connectionEx.FormatArgs);
+
+        if (ex is LocalizedApplicationException localized)
+            return _localizer.GetString(localized.ResourceKey, localized.Args);
+
+        return ex.Message;
+    }
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {

@@ -49,7 +49,7 @@ public sealed class PrintBridgeRuntime : IDisposable
     {
         lock (_sync)
         {
-            var (hub, bridge) = _holder.Snapshot();
+            var (hub, bridge, _) = _holder.Snapshot();
             var recentJobs = _recentJobs.Select(CloneRecord).ToList();
             var isConnected = _lastSuccessfulContactUtc.HasValue
                 && DateTime.UtcNow - _lastSuccessfulContactUtc.Value <= TimeSpan.FromSeconds(60);
@@ -73,8 +73,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                 JobsTodayCount = recentJobs.Count(j => ToLocalDate(j.DisplayTimeUtc) == today),
                 FailedTodayCount = recentJobs.Count(j =>
                     j.Status == LocalPrintJobStatus.Failed && ToLocalDate(j.DisplayTimeUtc) == today),
-                TrayIconState = trayIconState,
-                DeviceStatusSummary = PrintBridgeRuntimeStatus.DescribeDeviceStatus(trayIconState)
+                TrayIconState = trayIconState
             };
         }
     }
@@ -86,9 +85,9 @@ public sealed class PrintBridgeRuntime : IDisposable
             if (_isRunning)
                 return;
 
-            var (hub, bridge) = _holder.Snapshot();
-            if (!PrintBridgeSettingsValidator.TryValidate(hub, bridge, out var error))
-                throw new InvalidOperationException(error);
+            var (hub, bridge, _) = _holder.Snapshot();
+            if (!PrintBridgeSettingsValidator.TryValidate(hub, bridge, out var errorKey))
+                throw new LocalizedApplicationException(errorKey!);
 
             _cts = new CancellationTokenSource();
             _isRunning = true;
@@ -156,12 +155,12 @@ public sealed class PrintBridgeRuntime : IDisposable
 
     public async Task TestPrinterAsync(CancellationToken ct)
     {
-        var (_, bridge) = _holder.Snapshot();
+        var (_, bridge, _) = _holder.Snapshot();
         if (bridge.DryRun)
-            throw new InvalidOperationException("Disable Dry Run to send a test print.");
+            throw new LocalizedApplicationException("Error.DryRunEnabled");
 
         if (string.IsNullOrWhiteSpace(bridge.PrinterName))
-            throw new InvalidOperationException("Printer name is required.");
+            throw new LocalizedApplicationException("Error.PrinterRequired");
 
         var receipt = $"OrderHub Print Bridge{Environment.NewLine}Test print{Environment.NewLine}{DateTime.Now:G}";
         await _printer.PrintAsync(bridge.PrinterName, receipt, 1, ct).ConfigureAwait(false);
@@ -178,7 +177,7 @@ public sealed class PrintBridgeRuntime : IDisposable
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var (_, bridge) = _holder.Snapshot();
+            var (_, bridge, _) = _holder.Snapshot();
             var waitSeconds = Math.Max(1, bridge.IdlePollIntervalSeconds);
             var hadJobs = false;
             var hadError = false;
@@ -293,7 +292,7 @@ public sealed class PrintBridgeRuntime : IDisposable
 
         try
         {
-            var (_, bridge) = _holder.Snapshot();
+            var (_, bridge, _) = _holder.Snapshot();
             var receipt = _formatter.Format(job.PayloadJson);
 
             if (bridge.DryRun)
@@ -426,6 +425,8 @@ public sealed class PrintBridgeRuntime : IDisposable
 
     private static string GetUserErrorMessage(Exception ex) =>
         ex is PrintBridgeConnectionException connectionEx
-            ? connectionEx.UserMessage
-            : ex.Message;
+            ? connectionEx.UserMessageKey
+            : ex is LocalizedApplicationException localized
+                ? localized.ResourceKey
+                : ex.Message;
 }

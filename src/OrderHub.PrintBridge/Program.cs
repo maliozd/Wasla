@@ -1,4 +1,6 @@
+using System.Globalization;
 using OrderHub.PrintBridge.Configuration;
+using OrderHub.PrintBridge.Localization;
 using OrderHub.PrintBridge.Services;
 using OrderHub.PrintBridge.UI;
 
@@ -9,10 +11,12 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
+        var startupCulture = InitializeStartupCulture();
+
         if (!OperatingSystem.IsWindows())
         {
             MessageBox.Show(
-                "OrderHub Print Bridge requires Windows.",
+                PrintBridgeLocalizer.GetStringForCulture("Message.RequiresWindows", startupCulture),
                 PrintBridgePaths.ProductDisplayName,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
@@ -27,7 +31,7 @@ internal static class Program
         if (singleInstance is null)
         {
             MessageBox.Show(
-                "OrderHub Print Bridge is already running.\n\nOpen the existing app from the system tray icon.",
+                PrintBridgeLocalizer.GetStringForCulture("Message.AlreadyRunning", startupCulture, Environment.NewLine),
                 PrintBridgePaths.ProductDisplayName,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
@@ -36,5 +40,20 @@ internal static class Program
 
         var services = PrintBridgeAppServices.Build();
         Application.Run(new TrayApplicationContext(services));
+    }
+
+    private static string InitializeStartupCulture()
+    {
+        PrintBridgePaths.EnsureProgramDataDirectories();
+        var store = new PrintBridgeSettingsStore();
+        store.SeedProgramDataConfigIfMissing();
+        var document = store.Load();
+        var cultureName = SupportedCultures.ResolveStartupCulture(document.Ui.Language);
+        var culture = CultureInfo.GetCultureInfo(cultureName);
+        Thread.CurrentThread.CurrentUICulture = culture;
+        Thread.CurrentThread.CurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        return cultureName;
     }
 }

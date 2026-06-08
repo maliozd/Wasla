@@ -82,12 +82,14 @@ public sealed class PrintBridgeSettingsStore
         new()
         {
             OrderHub = new OrderHubOptions(),
-            PrintBridge = new PrintBridgeOptions { DryRun = true }
+            PrintBridge = new PrintBridgeOptions { DryRun = true },
+            Ui = new UiOptions()
         };
 
     public sealed class AppSettingsDocument
     {
         public OrderHubOptions OrderHub { get; set; } = new();
         public PrintBridgeOptions PrintBridge { get; set; } = new();
+        public UiOptions Ui { get; set; } = new();
     }
 }

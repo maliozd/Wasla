@@ -132,7 +132,7 @@ internal static class PrintBridgeUiTheme
         return button;
     }
 
-    public static Panel CreateMetricCard(string title, out Label valueLabel)
+    public static Panel CreateMetricCard(string title, out Label valueLabel, out Label titleLabel)
     {
         var card = new Panel
         {
@@ -149,7 +149,7 @@ internal static class PrintBridgeUiTheme
             e.Graphics.DrawRectangle(pen, rect);
         };
 
-        var titleLabel = new Label
+        titleLabel = new Label
         {
             Text = title,
             Font = new Font("Segoe UI", 9F, FontStyle.Regular),

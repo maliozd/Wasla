@@ -4,27 +4,27 @@ namespace OrderHub.PrintBridge.Services;
 
 public static class PrintBridgeSettingsValidator
 {
-    public static bool TryValidate(OrderHubOptions orderHub, PrintBridgeOptions bridge, out string? errorMessage)
+    public static bool TryValidate(OrderHubOptions orderHub, PrintBridgeOptions bridge, out string? errorKey)
     {
         if (string.IsNullOrWhiteSpace(orderHub.BaseUrl))
         {
-            errorMessage = "OrderHub BaseUrl is required.";
+            errorKey = "Validation.BaseUrlRequired";
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(orderHub.AgentToken))
         {
-            errorMessage = "Agent token is required.";
+            errorKey = "Validation.AgentTokenRequired";
             return false;
         }
 
         if (!bridge.DryRun && string.IsNullOrWhiteSpace(bridge.PrinterName))
         {
-            errorMessage = "Printer name is required when DryRun is disabled.";
+            errorKey = "Validation.PrinterRequired";
             return false;
         }
 
-        errorMessage = null;
+        errorKey = null;
         return true;
     }
 }

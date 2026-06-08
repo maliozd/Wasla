@@ -3,20 +3,24 @@ namespace OrderHub.PrintBridge.Services;
 public sealed class PrintBridgeConnectionException : Exception
 {
     public PrintBridgeConnectionException(
-        string userMessage,
+        string userMessageKey,
         string endpointPath,
         string baseUrl,
+        object[]? formatArgs = null,
         int? statusCode = null,
         Exception? innerException = null)
-        : base(userMessage, innerException)
+        : base(userMessageKey, innerException)
     {
-        UserMessage = userMessage;
+        UserMessageKey = userMessageKey;
+        FormatArgs = formatArgs ?? [];
         EndpointPath = endpointPath;
         BaseUrl = baseUrl;
         StatusCode = statusCode;
     }
 
-    public string UserMessage { get; }
+    public string UserMessageKey { get; }
+
+    public object[] FormatArgs { get; }
 
     public string EndpointPath { get; }
 
@@ -30,34 +34,23 @@ public sealed class PrintBridgeConnectionException : Exception
         int statusCode,
         string? responseBody)
     {
-        var userMessage = statusCode switch
+        var (key, args) = statusCode switch
         {
-            401 or 403 =>
-                "Print Bridge token is invalid or unauthorized. Check the token in Settings.",
-            404 =>
-                "Print Bridge endpoint was not found. Check Base URL and server version.",
-            >= 500 =>
-                "OrderHub server is unavailable. Try again later.",
-            _ => $"Print Bridge request failed (HTTP {statusCode})."
+            401 or 403 => ("Connection.TokenInvalid", Array.Empty<object>()),
+            404 => ("Connection.EndpointNotFound", Array.Empty<object>()),
+            >= 500 => ("Connection.ServerUnavailable", Array.Empty<object>()),
+            _ => ("Connection.RequestFailed", new object[] { statusCode })
         };
 
-        var ex = new PrintBridgeConnectionException(userMessage, endpointPath, baseUrl, statusCode);
+        var ex = new PrintBridgeConnectionException(key, endpointPath, baseUrl, args, statusCode);
         if (!string.IsNullOrWhiteSpace(responseBody))
             ex.Data["ResponseBody"] = responseBody;
         return ex;
     }
 
     public static PrintBridgeConnectionException SslError(string endpointPath, string baseUrl, Exception inner) =>
-        new(
-            "SSL connection failed. Ensure Windows trusts the local HTTPS certificate (see docs/local-https.md).",
-            endpointPath,
-            baseUrl,
-            innerException: inner);
+        new("Connection.SslError", endpointPath, baseUrl, innerException: inner);
 
     public static PrintBridgeConnectionException ServerUnavailable(string endpointPath, string baseUrl, Exception inner) =>
-        new(
-            "Could not reach OrderHub. Check Base URL and that the server is running.",
-            endpointPath,
-            baseUrl,
-            innerException: inner);
+        new("Connection.ServerUnreachable", endpointPath, baseUrl, innerException: inner);
 }
