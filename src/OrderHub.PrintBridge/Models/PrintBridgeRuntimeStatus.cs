@@ -10,6 +10,7 @@ public sealed class PrintBridgeRuntimeStatus
     public string BaseUrl { get; init; } = string.Empty;
     public string PrinterName { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
+    public bool ServerDeviceNameResolved { get; init; }
     public string MachineName { get; init; } = string.Empty;
     public string AppVersion { get; init; } = string.Empty;
     public bool DryRun { get; init; }

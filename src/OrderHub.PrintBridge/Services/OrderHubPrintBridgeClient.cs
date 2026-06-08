@@ -41,7 +41,8 @@ public sealed class OrderHubPrintBridgeClient
         return new PrintBridgeHealthResult(
             payload?.CustomerName ?? string.Empty,
             payload?.DeviceName ?? string.Empty,
-            payload?.ServerTimeUtc ?? DateTime.UtcNow);
+            payload?.ServerTimeUtc ?? DateTime.UtcNow,
+            payload?.MachineName);
     }
 
     public async Task<IReadOnlyList<PendingPrintJobDto>> GetPendingJobsAsync(CancellationToken ct)
@@ -218,7 +219,11 @@ public sealed class OrderHubPrintBridgeClient
             payload?.Result ?? "unknown");
     }
 
-    public sealed record PrintBridgeHealthResult(string CustomerName, string DeviceName, DateTime ServerTimeUtc);
+    public sealed record PrintBridgeHealthResult(
+        string CustomerName,
+        string DeviceName,
+        DateTime ServerTimeUtc,
+        string? MachineName = null);
 
     public sealed record PendingPrintJobDto(
         Guid Id,
@@ -237,7 +242,8 @@ public sealed class OrderHubPrintBridgeClient
         bool Success,
         string CustomerName,
         string DeviceName,
-        DateTime ServerTimeUtc);
+        DateTime ServerTimeUtc,
+        string? MachineName);
 
     public sealed record PrintJobActionResult(bool Success, bool Skipped, string Result);
 

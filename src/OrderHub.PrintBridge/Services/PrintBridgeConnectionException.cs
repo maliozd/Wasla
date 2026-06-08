@@ -28,6 +28,8 @@ public sealed class PrintBridgeConnectionException : Exception
 
     public int? StatusCode { get; }
 
+    public bool IsTokenAuthFailure => StatusCode is 401 or 403;
+
     public static PrintBridgeConnectionException FromResponse(
         string endpointPath,
         string baseUrl,

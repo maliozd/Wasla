@@ -73,6 +73,7 @@ public static class PrintBridgeAppServices
                 appVersion.HeaderValue);
         });
 
+        services.AddSingleton<PrintBridgeDeviceMetadataSync>();
         services.AddSingleton<PrintBridgeRuntime>();
 
         var provider = services.BuildServiceProvider();

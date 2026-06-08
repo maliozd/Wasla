@@ -15,6 +15,7 @@ public sealed partial class MainForm : Form
     private readonly PrintBridgeRuntime _runtime;
     private readonly PrintBridgeSettingsStore _settingsStore;
     private readonly PrintBridgeSettingsHolder _settingsHolder;
+    private readonly PrintBridgeDeviceMetadataSync _deviceMetadataSync;
     private readonly UiLogBuffer _uiLogBuffer;
     private readonly PrintBridgeLocalizer _localizer;
     private readonly PrintBridgeCultureService _cultureService;
@@ -63,6 +64,7 @@ public sealed partial class MainForm : Form
     private ComboBox _cmbPrinterName = null!;
     private Button _btnRefreshPrinters = null!;
     private TextBox _txtDisplayName = null!;
+    private Label _lblDeviceNameManaged = null!;
     private Label _lblMachineNameHint = null!;
     private CheckBox _chkDryRun = null!;
     private NumericUpDown _numIdlePoll = null!;
@@ -88,6 +90,7 @@ public sealed partial class MainForm : Form
         _runtime = runtime;
         _settingsStore = services.GetRequiredService<PrintBridgeSettingsStore>();
         _settingsHolder = services.GetRequiredService<PrintBridgeSettingsHolder>();
+        _deviceMetadataSync = services.GetRequiredService<PrintBridgeDeviceMetadataSync>();
         _uiLogBuffer = services.GetRequiredService<UiLogBuffer>();
         _localizer = services.GetRequiredService<PrintBridgeLocalizer>();
         _cultureService = services.GetRequiredService<PrintBridgeCultureService>();
@@ -195,7 +198,7 @@ public sealed partial class MainForm : Form
         _lblAgentToken.Text = _localizer["Settings.AgentToken"];
         _lblPrinterName.Text = _localizer["Settings.PrinterName"];
         _lblDeviceName.Text = _localizer["Settings.DeviceName"];
-        _txtDisplayName.PlaceholderText = _localizer["Settings.DeviceNamePlaceholder"];
+        _lblDeviceNameManaged.Text = _localizer["Settings.DeviceNameManagedFromWeb"];
         _lblLanguage.Text = _localizer["Settings.Language"];
         _advancedGroup.Text = $"  {_localizer["Settings.Advanced"]}  ";
         _lblDryRunMode.Text = _localizer["Settings.DryRunMode"];
@@ -612,15 +615,18 @@ public sealed partial class MainForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 2,
+            RowCount = 3,
             AutoSize = true
         };
         _txtDisplayName = new TextBox
         {
             Dock = DockStyle.Fill,
-            MaxLength = 200
+            MaxLength = 200,
+            ReadOnly = true,
+            BackColor = SystemColors.Control,
+            TabStop = false
         };
-        _lblMachineNameHint = new Label
+        _lblDeviceNameManaged = new Label
         {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -628,8 +634,17 @@ public sealed partial class MainForm : Form
             Font = new Font("Segoe UI", 8.25F),
             Margin = new Padding(0, 4, 0, 0)
         };
+        _lblMachineNameHint = new Label
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            Font = new Font("Segoe UI", 8.25F),
+            Margin = new Padding(0, 2, 0, 0)
+        };
         fieldPanel.Controls.Add(_txtDisplayName, 0, 0);
-        fieldPanel.Controls.Add(_lblMachineNameHint, 0, 1);
+        fieldPanel.Controls.Add(_lblDeviceNameManaged, 0, 1);
+        fieldPanel.Controls.Add(_lblMachineNameHint, 0, 2);
         table.Controls.Add(fieldPanel, 1, row);
     }
 
@@ -735,6 +750,7 @@ public sealed partial class MainForm : Form
     private void OnRuntimeStatusChanged(object? sender, EventArgs e)
     {
         QueueRefreshDashboard();
+        QueueUiAction(SyncDeviceNameFieldFromHolder);
         QueueRefreshRecentJobs();
         QueueUiAction(() =>
         {
@@ -838,13 +854,26 @@ public sealed partial class MainForm : Form
         public override string ToString() => DisplayName;
     }
 
+    private void SyncDeviceNameFieldFromHolder()
+    {
+        if (_txtDisplayName is null)
+            return;
+
+        var bridge = _settingsHolder.Snapshot().Bridge;
+        _txtDisplayName.Text = bridge.ServerDeviceNameResolved
+            ? bridge.DisplayName ?? string.Empty
+            : string.Empty;
+    }
+
     private void LoadSettingsIntoForm()
     {
         var (hub, bridge, ui) = _settingsHolder.Snapshot();
         _txtBaseUrl.Text = hub.BaseUrl;
         _txtAgentToken.Text = hub.AgentToken;
         RefreshPrinterList(bridge.PrinterName);
-        _txtDisplayName.Text = bridge.DisplayName ?? string.Empty;
+        _txtDisplayName.Text = bridge.ServerDeviceNameResolved
+            ? bridge.DisplayName ?? string.Empty
+            : string.Empty;
         _lblMachineNameHint.Text = _localizer.GetString(
             "Settings.MachineNameHint",
             string.IsNullOrWhiteSpace(bridge.MachineName) ? Environment.MachineName : bridge.MachineName);
@@ -891,17 +920,28 @@ public sealed partial class MainForm : Form
 
     private void SaveSettings()
     {
+        var previous = _settingsHolder.Snapshot();
         var orderHub = new OrderHubOptions
         {
             BaseUrl = _txtBaseUrl.Text.Trim(),
             AgentToken = _txtAgentToken.Text.Trim()
         };
 
+        var tokenChanged = !string.Equals(
+            previous.OrderHub.AgentToken,
+            orderHub.AgentToken,
+            StringComparison.Ordinal);
+
+        if (tokenChanged)
+            _deviceMetadataSync.ClearOnTokenChange();
+
+        var currentBridge = _settingsHolder.Snapshot().Bridge;
         var bridge = new PrintBridgeOptions
         {
             PrinterMode = "WindowsPrinter",
             PrinterName = _cmbPrinterName.Text.Trim(),
-            DisplayName = _txtDisplayName.Text.Trim(),
+            DisplayName = currentBridge.DisplayName,
+            ServerDeviceNameResolved = currentBridge.ServerDeviceNameResolved,
             MachineName = Environment.MachineName,
             DryRun = _chkDryRun.Checked,
             IdlePollIntervalSeconds = (int)_numIdlePoll.Value,
@@ -976,6 +1016,7 @@ public sealed partial class MainForm : Form
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var health = await _runtime.TestConnectionAsync(cts.Token).ConfigureAwait(true);
+        SyncDeviceNameFieldFromHolder();
         var details = string.IsNullOrWhiteSpace(health.CustomerName)
             ? _localizer["Message.ConnectionSuccess"]
             : _localizer.GetString(
@@ -983,7 +1024,10 @@ public sealed partial class MainForm : Form
                 Environment.NewLine,
                 health.CustomerName,
                 health.DeviceName);
+        if (!string.IsNullOrWhiteSpace(health.DeviceName))
+            details += $"{Environment.NewLine}{_localizer["Message.DeviceNameLoadedFromServer"]}";
         MessageBox.Show(details, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        RefreshDashboard();
     }
 
     private async Task TestPrinterAsync()
@@ -1031,10 +1075,9 @@ public sealed partial class MainForm : Form
 
         var status = _runtime.GetStatus();
 
-        var displayName = string.IsNullOrWhiteSpace(status.DisplayName)
-            ? _localizer["Common.NotConfigured"]
-            : status.DisplayName;
-        _footerDeviceLabel.Text = _localizer.GetString("Footer.Device", displayName);
+        _footerDeviceLabel.Text = _localizer.GetString(
+            "Footer.Device",
+            _localizer.GetFooterDeviceName(status));
         _footerVersionLabel.Text = _localizer.GetString("Footer.Version", status.AppVersion);
 
         _lastPrintValue.Text = FormatUtc(status.LastPrintTimeUtc, _localizer["Common.Dash"]);

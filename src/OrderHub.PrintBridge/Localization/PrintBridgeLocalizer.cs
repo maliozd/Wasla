@@ -133,6 +133,14 @@ public sealed class PrintBridgeLocalizer
         return GetString("Tray.ConnectionStatus", state);
     }
 
+    public string GetFooterDeviceName(PrintBridgeRuntimeStatus status)
+    {
+        if (status.ServerDeviceNameResolved && !string.IsNullOrWhiteSpace(status.DisplayName))
+            return status.DisplayName;
+
+        return GetString("Footer.NotConnected");
+    }
+
     public string GetHeaderBadge(PrintBridgeRuntimeStatus status)
     {
         if (status.IsRunning && status.IsConnected)

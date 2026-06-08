@@ -19,7 +19,8 @@ public sealed record PrintBridgeHealthResponse(
     bool Success,
     string CustomerName,
     string DeviceName,
-    DateTime ServerTimeUtc);
+    DateTime ServerTimeUtc,
+    string? MachineName = null);
 
 public sealed record ReprintPrintJobResponse(
     bool Success,

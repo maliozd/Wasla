@@ -14,6 +14,7 @@ public sealed class PrintBridgeRuntime : IDisposable
     private readonly ReceiptFormatter _formatter;
     private readonly IReceiptPrinter _printer;
     private readonly PrintBridgeSettingsHolder _holder;
+    private readonly PrintBridgeDeviceMetadataSync _deviceMetadataSync;
     private readonly LocalPrintJobHistoryStore _historyStore;
     private readonly AppVersionInfo _appVersion;
     private readonly ILogger<PrintBridgeRuntime> _logger;
@@ -32,6 +33,7 @@ public sealed class PrintBridgeRuntime : IDisposable
         ReceiptFormatter formatter,
         IReceiptPrinter printer,
         PrintBridgeSettingsHolder holder,
+        PrintBridgeDeviceMetadataSync deviceMetadataSync,
         LocalPrintJobHistoryStore historyStore,
         AppVersionInfo appVersion,
         ILogger<PrintBridgeRuntime> logger)
@@ -40,6 +42,7 @@ public sealed class PrintBridgeRuntime : IDisposable
         _formatter = formatter;
         _printer = printer;
         _holder = holder;
+        _deviceMetadataSync = deviceMetadataSync;
         _historyStore = historyStore;
         _appVersion = appVersion;
         _logger = logger;
@@ -73,6 +76,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                 BaseUrl = hub.BaseUrl,
                 PrinterName = bridge.PrinterName,
                 DisplayName = bridge.DisplayName?.Trim() ?? string.Empty,
+                ServerDeviceNameResolved = bridge.ServerDeviceNameResolved,
                 MachineName = string.IsNullOrWhiteSpace(bridge.MachineName)
                     ? Environment.MachineName
                     : bridge.MachineName,
@@ -156,15 +160,27 @@ public sealed class PrintBridgeRuntime : IDisposable
 
     public async Task<OrderHubPrintBridgeClient.PrintBridgeHealthResult> TestConnectionAsync(CancellationToken ct)
     {
-        var health = await _client.TestHealthAsync(ct).ConfigureAwait(false);
-        lock (_sync)
+        try
         {
-            _lastSuccessfulContactUtc = DateTime.UtcNow;
-            _lastError = null;
-        }
+            var health = await _client.TestHealthAsync(ct).ConfigureAwait(false);
+            _deviceMetadataSync.TryApplyFromHealth(health);
+            lock (_sync)
+            {
+                _lastSuccessfulContactUtc = DateTime.UtcNow;
+                _lastError = null;
+            }
 
-        RaiseStatusChanged();
-        return health;
+            RaiseStatusChanged();
+            return health;
+        }
+        catch (PrintBridgeConnectionException ex) when (ex.IsTokenAuthFailure)
+        {
+            _deviceMetadataSync.MarkUnresolved();
+            lock (_sync)
+                _lastError = GetUserErrorMessage(ex);
+            RaiseStatusChanged();
+            throw;
+        }
     }
 
     public IReadOnlyList<LocalPrintJobRecord> GetPrintHistory(
@@ -226,14 +242,17 @@ public sealed class PrintBridgeRuntime : IDisposable
 
             try
             {
-                var jobs = await _client.GetPendingJobsAsync(stoppingToken).ConfigureAwait(false);
-                _logger.LogInformation("Polling result: pending job count={Count}", jobs.Count);
+                var health = await _client.TestHealthAsync(stoppingToken).ConfigureAwait(false);
+                _deviceMetadataSync.TryApplyFromHealth(health);
 
                 lock (_sync)
                 {
                     _lastSuccessfulContactUtc = DateTime.UtcNow;
                     _lastError = null;
                 }
+
+                var jobs = await _client.GetPendingJobsAsync(stoppingToken).ConfigureAwait(false);
+                _logger.LogInformation("Polling result: pending job count={Count}", jobs.Count);
 
                 if (jobs.Count > 0)
                 {
@@ -252,6 +271,9 @@ public sealed class PrintBridgeRuntime : IDisposable
             catch (Exception ex)
             {
                 hadError = true;
+                if (ex is PrintBridgeConnectionException connectionEx && connectionEx.IsTokenAuthFailure)
+                    _deviceMetadataSync.MarkUnresolved();
+
                 lock (_sync)
                     _lastError = GetUserErrorMessage(ex);
 

@@ -31,7 +31,8 @@ public sealed class PrintBridgeController : ControllerBase
             true,
             auth.CustomerName,
             auth.DeviceName,
-            DateTime.UtcNow));
+            DateTime.UtcNow,
+            auth.MachineName));
     }
 
     [HttpGet("jobs/pending")]

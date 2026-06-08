@@ -150,6 +150,9 @@
   <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve">
     <value>Bağlantı başarılı.{0}Müşteri: {1}{0}Cihaz: {2}</value>
   </data>
+  <data name="Message.DeviceNameLoadedFromServer" xml:space="preserve">
+    <value>Cihaz adı sunucudan yüklendi.</value>
+  </data>
   <data name="Message.LogsCopyFailed" xml:space="preserve">
     <value>Loglar kopyalanamadı: {0}</value>
   </data>
@@ -216,6 +219,9 @@
   <data name="Footer.Device" xml:space="preserve">
     <value>Cihaz: {0}</value>
   </data>
+  <data name="Footer.NotConnected" xml:space="preserve">
+    <value>Bağlı değil</value>
+  </data>
   <data name="Footer.Version" xml:space="preserve">
     <value>Sürüm: {0}</value>
   </data>
@@ -225,8 +231,8 @@
   <data name="Settings.DeviceName" xml:space="preserve">
     <value>Cihaz adı</value>
   </data>
-  <data name="Settings.DeviceNamePlaceholder" xml:space="preserve">
-    <value>Örn. Kasadaki POS, Mutfak Yazıcısı</value>
+  <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
+    <value>OrderHub Web panelinden yönetilir</value>
   </data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Makine: {0}</value>

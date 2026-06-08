@@ -18,8 +18,11 @@ public sealed class PrintBridgeOptions
 
     public bool DryRun { get; set; } = true;
 
-    /// <summary>User-facing device label (e.g. Kasadaki POS). Used in UI and future device management.</summary>
+    /// <summary>User-facing device label (e.g. Kasadaki POS). Synced from OrderHub Web panel.</summary>
     public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>Whether <see cref="DisplayName"/> was resolved from the server for the current token.</summary>
+    public bool ServerDeviceNameResolved { get; set; }
 
     /// <summary>Windows machine name for diagnostics and server last-seen tracking.</summary>
     public string MachineName { get; set; } = string.Empty;

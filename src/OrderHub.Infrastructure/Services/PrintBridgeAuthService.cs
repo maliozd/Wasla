@@ -89,6 +89,7 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
             device.Id,
             device.CustomerId,
             device.Customer.Name,
-            device.Name);
+            device.Name,
+            string.IsNullOrWhiteSpace(device.MachineName) ? null : device.MachineName);
     }
 }
