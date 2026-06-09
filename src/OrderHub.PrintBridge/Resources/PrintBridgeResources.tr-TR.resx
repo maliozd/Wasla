@@ -162,8 +162,26 @@
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>OrderHub Print Bridge Windows gerektirir.</value>
   </data>
+  <data name="Message.ConnectionCouldNotBeVerified" xml:space="preserve">
+    <value>Bağlantı doğrulanamadı. Sunucu adresini ve erişim tokenını kontrol edin.</value>
+  </data>
+  <data name="Message.ServerUnreachable" xml:space="preserve">
+    <value>Sunucuya ulaşılamıyor. Sunucu adresini ve sunucunun çalıştığını kontrol edin.</value>
+  </data>
   <data name="Message.SettingsSaved" xml:space="preserve">
     <value>Ayarlar kaydedildi.</value>
+  </data>
+  <data name="Message.SettingsSavedConnectionVerified" xml:space="preserve">
+    <value>Ayarlar kaydedildi. Bağlantı doğrulandı.</value>
+  </data>
+  <data name="Message.SslCertificateError" xml:space="preserve">
+    <value>SSL sertifika hatası. HTTPS sertifikasının Windows tarafından güvenilir olduğundan emin olun.</value>
+  </data>
+  <data name="Message.TokenInvalidUnauthorized" xml:space="preserve">
+    <value>Token geçersiz veya bu cihaz için yetkili değil.</value>
+  </data>
+  <data name="Message.ValidatingConnection" xml:space="preserve">
+    <value>Bağlantı doğrulanıyor...</value>
   </data>
   <data name="Message.LanguageRestartRequired" xml:space="preserve">
     <value>Dil değişikliği uygulama yeniden başlatıldığında uygulanacaktır.</value>
@@ -495,8 +513,17 @@
   <data name="Validation.AgentTokenRequired" xml:space="preserve">
     <value>Erişim anahtarı gereklidir.</value>
   </data>
+  <data name="Settings.Validation.Failed" xml:space="preserve">
+    <value>Bağlantı doğrulanamadı</value>
+  </data>
+  <data name="Settings.Validation.Verified" xml:space="preserve">
+    <value>Bağlantı doğrulandı</value>
+  </data>
   <data name="Validation.BaseUrlRequired" xml:space="preserve">
     <value>Sunucu adresi gereklidir.</value>
+  </data>
+  <data name="Validation.InvalidServerUrl" xml:space="preserve">
+    <value>Geçersiz sunucu adresi. http:// veya https:// ile başlayan geçerli bir adres girin.</value>
   </data>
   <data name="Validation.PrinterRequired" xml:space="preserve">
     <value>Test modu kapalıyken yazıcı adı gereklidir.</value>

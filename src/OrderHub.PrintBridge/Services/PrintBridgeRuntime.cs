@@ -158,20 +158,25 @@ public sealed class PrintBridgeRuntime : IDisposable
         RaiseStatusChanged();
     }
 
+    public async Task<OrderHubPrintBridgeClient.PrintBridgeHealthResult> ValidateConnectionAsync(CancellationToken ct)
+    {
+        var health = await _client.TestHealthAsync(ct).ConfigureAwait(false);
+        _deviceMetadataSync.ApplyFromHealth(health);
+        lock (_sync)
+        {
+            _lastSuccessfulContactUtc = DateTime.UtcNow;
+            _lastError = null;
+        }
+
+        RaiseStatusChanged();
+        return health;
+    }
+
     public async Task<OrderHubPrintBridgeClient.PrintBridgeHealthResult> TestConnectionAsync(CancellationToken ct)
     {
         try
         {
-            var health = await _client.TestHealthAsync(ct).ConfigureAwait(false);
-            _deviceMetadataSync.TryApplyFromHealth(health);
-            lock (_sync)
-            {
-                _lastSuccessfulContactUtc = DateTime.UtcNow;
-                _lastError = null;
-            }
-
-            RaiseStatusChanged();
-            return health;
+            return await ValidateConnectionAsync(ct).ConfigureAwait(false);
         }
         catch (PrintBridgeConnectionException ex) when (ex.IsTokenAuthFailure)
         {
@@ -243,7 +248,7 @@ public sealed class PrintBridgeRuntime : IDisposable
             try
             {
                 var health = await _client.TestHealthAsync(stoppingToken).ConfigureAwait(false);
-                _deviceMetadataSync.TryApplyFromHealth(health);
+                _deviceMetadataSync.ApplyFromHealth(health);
 
                 lock (_sync)
                 {

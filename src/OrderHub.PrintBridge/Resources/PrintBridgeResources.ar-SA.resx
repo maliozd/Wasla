@@ -162,8 +162,26 @@
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>يتطلب OrderHub Print Bridge نظام Windows.</value>
   </data>
+  <data name="Message.ConnectionCouldNotBeVerified" xml:space="preserve">
+    <value>تعذر التحقق من الاتصال. يرجى التحقق من عنوان الخادم ورمز الوصول.</value>
+  </data>
+  <data name="Message.ServerUnreachable" xml:space="preserve">
+    <value>تعذر الوصول إلى الخادم. تحقق من عنوان الخادم وأنه يعمل.</value>
+  </data>
   <data name="Message.SettingsSaved" xml:space="preserve">
     <value>تم حفظ الإعدادات.</value>
+  </data>
+  <data name="Message.SettingsSavedConnectionVerified" xml:space="preserve">
+    <value>تم حفظ الإعدادات والتحقق من الاتصال.</value>
+  </data>
+  <data name="Message.SslCertificateError" xml:space="preserve">
+    <value>خطأ في شهادة SSL. تأكد من أن Windows يثق بشهادة HTTPS.</value>
+  </data>
+  <data name="Message.TokenInvalidUnauthorized" xml:space="preserve">
+    <value>الرمز غير صالح أو غير مصرح لهذا الجهاز.</value>
+  </data>
+  <data name="Message.ValidatingConnection" xml:space="preserve">
+    <value>جارٍ التحقق من الاتصال...</value>
   </data>
   <data name="Message.LanguageRestartRequired" xml:space="preserve">
     <value>سيتم تطبيق تغيير اللغة بعد إعادة تشغيل Print Bridge.</value>
@@ -495,8 +513,17 @@
   <data name="Validation.AgentTokenRequired" xml:space="preserve">
     <value>رمز الوصول مطلوب.</value>
   </data>
+  <data name="Settings.Validation.Failed" xml:space="preserve">
+    <value>تعذر التحقق من الاتصال</value>
+  </data>
+  <data name="Settings.Validation.Verified" xml:space="preserve">
+    <value>تم التحقق من الاتصال</value>
+  </data>
   <data name="Validation.BaseUrlRequired" xml:space="preserve">
     <value>عنوان الخادم مطلوب.</value>
+  </data>
+  <data name="Validation.InvalidServerUrl" xml:space="preserve">
+    <value>عنوان خادم غير صالح. أدخل عنوانًا صالحًا يبدأ بـ http:// أو https://.</value>
   </data>
   <data name="Validation.PrinterRequired" xml:space="preserve">
     <value>اسم الطابعة مطلوب عند تعطيل وضع الاختبار.</value>

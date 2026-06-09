@@ -162,8 +162,26 @@
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>OrderHub Print Bridge requires Windows.</value>
   </data>
+  <data name="Message.ConnectionCouldNotBeVerified" xml:space="preserve">
+    <value>Connection could not be verified. Please check the server URL and access token.</value>
+  </data>
+  <data name="Message.ServerUnreachable" xml:space="preserve">
+    <value>Server unreachable. Check the server URL and that the server is running.</value>
+  </data>
   <data name="Message.SettingsSaved" xml:space="preserve">
     <value>Settings saved.</value>
+  </data>
+  <data name="Message.SettingsSavedConnectionVerified" xml:space="preserve">
+    <value>Settings saved. Connection verified.</value>
+  </data>
+  <data name="Message.SslCertificateError" xml:space="preserve">
+    <value>SSL certificate error. Ensure the HTTPS certificate is trusted by Windows.</value>
+  </data>
+  <data name="Message.TokenInvalidUnauthorized" xml:space="preserve">
+    <value>Token is invalid or not authorized for this device.</value>
+  </data>
+  <data name="Message.ValidatingConnection" xml:space="preserve">
+    <value>Validating connection...</value>
   </data>
   <data name="Message.LanguageRestartRequired" xml:space="preserve">
     <value>Language changes will take effect after restarting Print Bridge.</value>
@@ -495,8 +513,17 @@
   <data name="Validation.AgentTokenRequired" xml:space="preserve">
     <value>Access token is required.</value>
   </data>
+  <data name="Settings.Validation.Failed" xml:space="preserve">
+    <value>Connection could not be verified</value>
+  </data>
+  <data name="Settings.Validation.Verified" xml:space="preserve">
+    <value>Connection verified</value>
+  </data>
   <data name="Validation.BaseUrlRequired" xml:space="preserve">
     <value>Server URL is required.</value>
+  </data>
+  <data name="Validation.InvalidServerUrl" xml:space="preserve">
+    <value>Invalid server URL. Enter a valid address starting with http:// or https://.</value>
   </data>
   <data name="Validation.PrinterRequired" xml:space="preserve">
     <value>Printer name is required when test mode is disabled.</value>

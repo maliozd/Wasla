@@ -20,8 +20,14 @@ public sealed class PrintBridgeDeviceMetadataSync
         _logger = logger;
     }
 
-    public bool TryApplyFromHealth(OrderHubPrintBridgeClient.PrintBridgeHealthResult health)
+    public bool ApplyFromHealth(OrderHubPrintBridgeClient.PrintBridgeHealthResult health)
     {
+        _logger.LogInformation(
+            "Device metadata received. CustomerName={CustomerName}, DeviceName={DeviceName}, ServerTimeUtc={ServerTimeUtc}",
+            string.IsNullOrWhiteSpace(health.CustomerName) ? "(empty)" : health.CustomerName,
+            string.IsNullOrWhiteSpace(health.DeviceName) ? "(empty)" : health.DeviceName,
+            health.ServerTimeUtc);
+
         var deviceName = health.DeviceName?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(deviceName))
             return false;
@@ -39,7 +45,7 @@ public sealed class PrintBridgeDeviceMetadataSync
             if (changed)
             {
                 Persist(hub, bridge, ui);
-                _logger.LogInformation("Device display name synced from server: {DisplayName}", deviceName);
+                _logger.LogInformation("Device display name updated: {DisplayName}", deviceName);
             }
 
             return changed;

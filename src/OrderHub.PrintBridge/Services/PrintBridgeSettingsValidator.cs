@@ -12,6 +12,13 @@ public static class PrintBridgeSettingsValidator
             return false;
         }
 
+        if (!Uri.TryCreate(orderHub.BaseUrl.Trim(), UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            errorKey = "Validation.InvalidServerUrl";
+            return false;
+        }
+
         if (string.IsNullOrWhiteSpace(orderHub.AgentToken))
         {
             errorKey = "Validation.AgentTokenRequired";

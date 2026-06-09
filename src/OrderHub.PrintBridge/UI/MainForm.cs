@@ -590,8 +590,9 @@ public sealed partial class MainForm : Form
             Margin = new Padding(0, 12, 0, 0)
         };
         _btnSaveSettings = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
-        _btnSaveSettings.Click += (_, _) => SaveSettings();
+        _btnSaveSettings.Click += async (_, _) => await SaveSettingsAsync().ConfigureAwait(true);
         savePanel.Controls.Add(_btnSaveSettings);
+        InitializeSettingsSaveUi(savePanel);
         settingsLayout.Controls.Add(savePanel, 0, 6);
         settingsLayout.SetColumnSpan(savePanel, 2);
 
@@ -609,6 +610,8 @@ public sealed partial class MainForm : Form
         settingsHost.Controls.Add(scroll);
         settingsHost.Controls.Add(_settingsHint);
         _settingsTab.Controls.Add(settingsHost);
+
+        WireConnectionSettingsChangeHandlers();
     }
 
     private void AddDeviceNameRow(TableLayoutPanel table, int row)
@@ -925,82 +928,6 @@ public sealed partial class MainForm : Form
         finally
         {
             _cmbPrinterName.EndUpdate();
-        }
-    }
-
-    private void SaveSettings()
-    {
-        var previous = _settingsHolder.Snapshot();
-        var orderHub = new OrderHubOptions
-        {
-            BaseUrl = _txtBaseUrl.Text.Trim(),
-            AgentToken = _txtAgentToken.Text.Trim()
-        };
-
-        var tokenChanged = !string.Equals(
-            previous.OrderHub.AgentToken,
-            orderHub.AgentToken,
-            StringComparison.Ordinal);
-
-        if (tokenChanged)
-            _deviceMetadataSync.ClearOnTokenChange();
-
-        var currentBridge = _settingsHolder.Snapshot().Bridge;
-        var bridge = new PrintBridgeOptions
-        {
-            PrinterMode = "WindowsPrinter",
-            PrinterName = _cmbPrinterName.Text.Trim(),
-            DisplayName = currentBridge.DisplayName,
-            ServerDeviceNameResolved = currentBridge.ServerDeviceNameResolved,
-            MachineName = Environment.MachineName,
-            DryRun = _chkDryRun.Checked,
-            IdlePollIntervalSeconds = (int)_numIdlePoll.Value,
-            BusyPollIntervalSeconds = (int)_numBusyPoll.Value,
-            ErrorPollIntervalSeconds = (int)_numErrorPoll.Value,
-            MaxJobsPerPoll = _settingsHolder.Snapshot().Bridge.MaxJobsPerPoll
-        };
-
-        if (!PrintBridgeSettingsValidator.TryValidate(orderHub, bridge, out var errorKey))
-        {
-            MessageBox.Show(_localizer[errorKey!], PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        var previousLanguage = _settingsHolder.Ui.Language;
-        var ui = _settingsHolder.Ui;
-        PrintBridgeWindowLayout.CaptureInto(ui, this);
-        if (_cmbLanguage.SelectedItem is LanguageOption languageOption)
-            ui.Language = languageOption.CultureName;
-
-        var previousNormalized = string.IsNullOrWhiteSpace(previousLanguage)
-            ? _cultureService.CurrentCulture.Name
-            : SupportedCultures.NormalizeOrDefault(previousLanguage);
-        var newNormalized = SupportedCultures.NormalizeOrDefault(ui.Language);
-        var languageChanged = !string.Equals(previousNormalized, newNormalized, StringComparison.OrdinalIgnoreCase);
-
-        try
-        {
-            _settingsStore.Save(new PrintBridgeSettingsStore.AppSettingsDocument
-            {
-                OrderHub = orderHub,
-                PrintBridge = bridge,
-                Ui = ui
-            });
-            _settingsHolder.Replace(orderHub, bridge, ui);
-
-            var message = languageChanged
-                ? _localizer["Message.LanguageRestartRequired"]
-                : _localizer["Message.SettingsSaved"];
-            MessageBox.Show(message, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            RefreshDashboard();
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(
-                _localizer.GetString("Message.SettingsSaveFailed", ex.Message),
-                PrintBridgePaths.ProductDisplayName,
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
         }
     }
 
