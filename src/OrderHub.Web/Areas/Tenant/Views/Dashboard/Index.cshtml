@@ -1,114 +1,220 @@
 @model OrderHub.Web.Models.Dashboard.DashboardViewModel
+@using System.Globalization
+@using OrderHub.Application.Orders
+@using OrderHub.Application.Time
 @using OrderHub.Domain.Enums
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
     ViewData["Title"] = L["Dashboard.Title"];
+    var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
+    var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
+    var todayLabel = turkeyToday.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture);
+    var averageOrderValue = Model.TodayOrderCount > 0
+        ? Model.TodayRevenue / Model.TodayOrderCount
+        : 0m;
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">@L["Dashboard.Title"]</h1>
-    <span class="text-muted small">@L["Common.Today"]</span>
-</div>
+<div class="oh-dashboard">
+    <header class="oh-dash-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="oh-dash-header__title h4 mb-1">@L["Dashboard.Title"]</h1>
+            <p class="oh-dash-header__subtitle text-muted small mb-0">@L["Dashboard.TodayOverview"]</p>
+        </div>
+        <div class="oh-dash-header__scope text-md-end">
+            <span class="badge rounded-pill text-bg-light border oh-dash-today-badge">
+                @L.GetString("Dashboard.TodayDateLabel", L["Common.Today"], todayLabel)
+            </span>
+        </div>
+    </header>
 
-<div class="row g-3 mb-4">
-    <div class="col-12 col-md-3">
-        <div class="card oh-card">
-            <div class="card-body">
-                <div class="text-muted small">@L["Dashboard.TodayOrders"]</div>
-                <div class="display-6 fw-semibold">@Model.TodayOrderCount</div>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4">
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--orders">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-receipt"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.TodayOrders"]</div>
+                    <div class="oh-dash-kpi__value">@Model.TodayOrderCount</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.OrdersReceivedToday"]</div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-12 col-md-3">
-        <div class="card oh-card">
-            <div class="card-body">
-                <div class="text-muted small">@L["Dashboard.TodayRevenue"]</div>
-                <div class="display-6 fw-semibold">@Model.TodayRevenue.ToString("C")</div>
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--revenue">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-cash-stack"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.TodayRevenue"]</div>
+                    <div class="oh-dash-kpi__value">@Model.TodayRevenue.ToString("C", CultureInfo.CurrentCulture)</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.TotalOrderAmountToday"]</div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-12 col-md-3">
-        <div class="card oh-card">
-            <div class="card-body">
-                <div class="text-muted small">@L["Dashboard.ActiveOrders"]</div>
-                <div class="display-6 fw-semibold">@Model.ActiveOrderCount</div>
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--active">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-lightning-charge"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.ActiveOrders"]</div>
+                    <div class="oh-dash-kpi__value">@Model.ActiveOrderCount</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.CurrentlyActiveOrders"]</div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-12 col-md-3">
-        <div class="card oh-card">
-            <div class="card-body">
-                <div class="text-muted small">@L["Dashboard.CancelledOrders"]</div>
-                <div class="display-6 fw-semibold">@Model.CancelledOrderCount</div>
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--cancelled">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-x-circle"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.CancelledOrders"]</div>
+                    <div class="oh-dash-kpi__value">@Model.CancelledOrderCount</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.CancelledToday"]</div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="row g-3">
-    <div class="col-lg-7">
-        <div class="card oh-card">
-            <div class="card-body">
-                <h2 class="h6 mb-3">@L["Dashboard.RecentOrders"]</h2>
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle mb-0">
-                        <thead>
-                        <tr>
-                            <th>@L["Orders.Platform"]</th>
-                            <th>@L["Orders.ExternalCode"]</th>
-                            <th>@L["Orders.Customer"]</th>
-                            <th>@L["Orders.Total"]</th>
-                            <th>@L["Orders.Status"]</th>
-                            <th>@L["Orders.ReceivedAt"]</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var o in Model.RecentOrders)
-                        {
-                            <tr>
-                                <td>@o.Platform</td>
-                                <td class="small">@o.ExternalOrderCode</td>
-                                <td class="small">@o.CustomerName</td>
-                                <td>@o.TotalAmount.ToString("C")</td>
-                                <td><span class="badge text-bg-light border">@StatusLabel(o.Status)</span></td>
-                                <td class="small">@o.ReceivedAtUtc.ToString("u")</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--average">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-calculator"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.AverageOrderValue"]</div>
+                    <div class="oh-dash-kpi__value">@averageOrderValue.ToString("C", CultureInfo.CurrentCulture)</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.AverageValuePerOrder"]</div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-5">
-        <div class="card oh-card">
-            <div class="card-body">
-                <h2 class="h6 mb-3">@L["Dashboard.PlatformSummary"]</h2>
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle mb-0">
-                        <thead>
-                        <tr>
-                            <th>@L["Orders.Platform"]</th>
-                            <th class="text-end">@L["Orders.Count"]</th>
-                            <th class="text-end">@L["Orders.Total"]</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var p in Model.PlatformSummary)
-                        {
-                            <tr>
-                                <td>@p.Platform</td>
-                                <td class="text-end">@p.Count</td>
-                                <td class="text-end">@p.Revenue.ToString("C")</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card oh-card oh-dash-section">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                        <div>
+                            <h2 class="oh-dash-section__title h6 mb-1">@L["Dashboard.RecentOrders"]</h2>
+                            <p class="oh-dash-section__subtitle text-muted small mb-0">@L["Dashboard.LatestOrdersReceivedToday"]</p>
+                        </div>
+                        <a href="/orders" class="btn btn-sm btn-outline-primary">@L["Dashboard.ViewAll"]</a>
+                    </div>
+
+                    @if (Model.RecentOrders.Count == 0)
+                    {
+                        <div class="oh-dash-empty text-center py-5">
+                            <div class="oh-dash-empty__icon text-muted mb-2" aria-hidden="true">
+                                <i class="bi bi-inbox"></i>
+                            </div>
+                            <p class="oh-dash-empty__title mb-1">@L["Dashboard.NoOrdersYetToday"]</p>
+                            <p class="oh-dash-empty__hint text-muted small mb-0">@L["Dashboard.NewOrdersWillAppearHere"]</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0 oh-dash-table">
+                                <thead>
+                                <tr>
+                                    <th>@L["Dashboard.Platform"]</th>
+                                    <th>@L["Dashboard.Code"]</th>
+                                    <th>@L["Dashboard.Customer"]</th>
+                                    <th class="text-end">@L["Dashboard.Total"]</th>
+                                    <th>@L["Dashboard.Status"]</th>
+                                    <th class="text-end">@L["Dashboard.Received"]</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var o in Model.RecentOrders)
+                                {
+                                    <tr>
+                                        <td>
+                                            @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)o.Platform, DisplayName: (string?)null))
+                                        </td>
+                                        <td>
+                                            <a href="/orders/details/@o.Id" class="oh-dash-order-code">@o.ExternalOrderCode</a>
+                                        </td>
+                                        <td class="oh-dash-customer">@(string.IsNullOrWhiteSpace(o.CustomerName) ? "—" : o.CustomerName)</td>
+                                        <td class="text-end fw-medium">@o.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</td>
+                                        <td>
+                                            <span class="@StatusBadgeClass(o.Status)">@StatusLabel(o.Status)</span>
+                                        </td>
+                                        <td class="text-end text-muted small oh-dash-received">@FormatReceivedAt(o.ReceivedAtUtc, tz, turkeyToday)</td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card oh-card oh-dash-section">
+                <div class="card-body">
+                    <h2 class="oh-dash-section__title h6 mb-1">@L["Dashboard.PlatformSummary"]</h2>
+                    <p class="oh-dash-section__subtitle text-muted small mb-3">@L["Dashboard.OrdersByPlatformToday"]</p>
+
+                    @if (Model.PlatformSummary.Count == 0)
+                    {
+                        <div class="oh-dash-empty text-center py-4">
+                            <p class="oh-dash-empty__title text-muted mb-0">@L["Dashboard.NoPlatformSummary"]</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="oh-dash-platform-list">
+                            @foreach (var p in Model.PlatformSummary)
+                            {
+                                var share = Model.TodayRevenue > 0
+                                    ? Math.Round(p.Revenue / Model.TodayRevenue * 100m, 1)
+                                    : 0m;
+                                <div class="oh-dash-platform-item">
+                                    <div class="oh-dash-platform-item__header">
+                                        @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)p.Platform, DisplayName: (string?)null))
+                                        <div class="oh-dash-platform-item__stats">
+                                            <span class="oh-dash-platform-item__count">
+                                                @p.Count <span class="text-muted">@L["Dashboard.Orders"]</span>
+                                            </span>
+                                            <span class="oh-dash-platform-item__revenue">@p.Revenue.ToString("C", CultureInfo.CurrentCulture)</span>
+                                        </div>
+                                    </div>
+                                    @if (share > 0)
+                                    {
+                                        <div class="oh-dash-platform-item__share">
+                                            <div class="oh-dash-platform-item__bar" role="presentation">
+                                                <span class="oh-dash-platform-item__bar-fill" style="width: @(share.ToString(CultureInfo.InvariantCulture))%"></span>
+                                            </div>
+                                            <span class="oh-dash-platform-item__pct small text-muted">
+                                                @L.GetString("Dashboard.ShareOfTotal", share.ToString("0.#", CultureInfo.CurrentCulture))
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+@functions {
+    private static string StatusBadgeClass(OrderStatus status) => status switch
+    {
+        OrderStatus.New => "oh-dash-status oh-dash-status--new",
+        OrderStatus.Accepted => "oh-dash-status oh-dash-status--accepted",
+        OrderStatus.Preparing or OrderStatus.ReadyForPickup or OrderStatus.OnTheWay => "oh-dash-status oh-dash-status--progress",
+        OrderStatus.Delivered => "oh-dash-status oh-dash-status--delivered",
+        OrderStatus.Cancelled => "oh-dash-status oh-dash-status--cancelled",
+        OrderStatus.Failed => "oh-dash-status oh-dash-status--failed",
+        _ => "oh-dash-status"
+    };
+
+    private static string FormatReceivedAt(DateTime receivedAtUtc, TimeZoneInfo timeZone, DateOnly turkeyToday)
+    {
+        var local = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(receivedAtUtc, DateTimeKind.Utc),
+            timeZone);
+
+        return DateOnly.FromDateTime(local) == turkeyToday
+            ? local.ToString("t", CultureInfo.CurrentCulture)
+            : local.ToString("g", CultureInfo.CurrentCulture);
+    }
+}

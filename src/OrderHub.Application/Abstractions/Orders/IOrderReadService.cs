@@ -16,6 +16,7 @@ public interface IOrderReadService
         string? sortDirection,
         int page,
         int pageSize,
+        string? search,
         CancellationToken ct);
 
     Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct);

@@ -15,6 +15,16 @@ public sealed class OrderListViewModel
     /// <summary>When no rows, use a simple "no orders" string instead of "no matches for filters" (e.g. default today, no extra filters).</summary>
     public bool UseSimpleNoOrdersMessage { get; set; }
 
+    /// <summary>Base path for list links, e.g. /orders or /orders/history.</summary>
+    public string ListBasePath { get; set; } = "/orders";
+
+    /// <summary>When true, table shows read-only history actions (no live order workflow buttons).</summary>
+    public bool IsHistoryPage { get; set; }
+
+    public int TotalPages => Filters.PageSize > 0
+        ? Math.Max(1, (int)Math.Ceiling((double)TotalCount / Filters.PageSize))
+        : 1;
+
     public sealed class Row
     {
         public Guid Id { get; set; }

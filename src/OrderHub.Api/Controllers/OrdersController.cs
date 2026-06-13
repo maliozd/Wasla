@@ -48,6 +48,7 @@ public sealed class OrdersController : ControllerBase
             sortDirection: null,
             page,
             pageSize,
+            search: null,
             ct);
 
         var items = result.Items.Select(o => new OrderListItemDto(

@@ -27,6 +27,7 @@ public sealed class OrderReadService : IOrderReadService
         string? sortDirection,
         int page,
         int pageSize,
+        string? search,
         CancellationToken ct)
     {
         page = Math.Max(1, page);
@@ -39,6 +40,16 @@ public sealed class OrderReadService : IOrderReadService
         if (status.HasValue) q = q.Where(o => o.InternalStatus == status.Value);
         if (startDateUtc.HasValue) q = q.Where(o => o.ReceivedAt >= startDateUtc.Value);
         if (endDateUtc.HasValue) q = q.Where(o => o.ReceivedAt < endDateUtc.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            q = q.Where(o =>
+                o.ExternalOrderCode.Contains(term) ||
+                o.ExternalOrderId.Contains(term) ||
+                o.CustomerName.Contains(term) ||
+                (o.CustomerPhone != null && o.CustomerPhone.Contains(term)));
+        }
 
         var safeSortBy = string.IsNullOrWhiteSpace(sortBy) ? "receivedAt" : sortBy.Trim();
         var safeSortDirection = string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";

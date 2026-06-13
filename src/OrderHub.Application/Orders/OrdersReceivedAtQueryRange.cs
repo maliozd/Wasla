@@ -15,6 +15,13 @@ public static class OrdersReceivedAtQueryRange
         return DateOnly.FromDateTime(localNow);
     }
 
+    /// <summary>Default inclusive history window: last 7 local calendar days ending today.</summary>
+    public static (DateOnly Start, DateOnly End) GetDefaultHistoryRange()
+    {
+        var today = GetTurkeyLocalToday();
+        return (today.AddDays(-6), today);
+    }
+
     /// <summary>
     /// Converts optional local start/end dates (same calendar semantics as the orders UI) to UTC for querying.
     /// </summary>

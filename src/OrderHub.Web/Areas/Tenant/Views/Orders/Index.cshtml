@@ -23,59 +23,17 @@
     </div>
 
     <div class="orders-header-actions d-flex align-items-center justify-content-end flex-wrap gap-2 ms-auto">
-        <form id="orderSyncSettingsForm" method="post" action="/orders/sync-settings" class="d-none">
-            @Html.AntiForgeryToken()
-        </form>
-        <form id="orderSettingsForm" method="post" action="/orders/order-settings" class="d-none">
-            @Html.AntiForgeryToken()
-        </form>
-
-        <div class="orders-toggle-group d-inline-flex align-items-center gap-2 oh-orders-header-control">
-            <span class="small text-muted text-nowrap" title="@L["Orders.OrderSync"]">@L["Orders.OrderSync"]</span>
-            <div class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" role="switch" id="orderSyncToggle"
-                       aria-label="@L["Orders.OrderSyncToggleAriaLabel"]"
-                       title="@L["Orders.OrderSync"]" />
-            </div>
-            <span id="orderSyncStatusBadge" class="badge text-bg-secondary">…</span>
+        <div class="orders-automation-status d-flex align-items-center flex-wrap gap-2 oh-orders-header-control" aria-label="@L["Settings.OrderSettings.Title"]">
+            <span id="automationStatusSync" class="badge text-bg-secondary">…</span>
+            <span class="text-muted d-none d-sm-inline" aria-hidden="true">·</span>
+            <span id="automationStatusAutoApprove" class="badge text-bg-secondary">…</span>
+            <span class="text-muted d-none d-sm-inline" aria-hidden="true">·</span>
+            <span id="automationStatusReceipt" class="badge text-bg-secondary">…</span>
+            <a class="btn btn-link btn-sm py-0 px-1 text-nowrap" href="/settings/order">@L["Orders.ManageSettings"]</a>
         </div>
-
-        <div class="orders-toggle-group d-inline-flex align-items-center gap-2 oh-orders-header-control">
-            <span class="small text-muted text-nowrap" title="@L["Orders.AutoApproveHelp"]">@L["Orders.AutoApprove"]</span>
-            <div class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" role="switch" id="autoApproveToggle"
-                       aria-label="@L["Orders.AutoApprove"]"
-                       title="@L["Orders.AutoApproveHelp"]" />
-            </div>
-            <span id="autoApproveStatusBadge" class="badge text-bg-secondary">@L["Orders.Passive"]</span>
-        </div>
-
-        <div class="orders-toggle-group d-inline-flex align-items-center gap-2 oh-orders-header-control">
-            <span class="small text-muted text-nowrap" title="@L["Orders.AutoPrintReceiptHelp"]">@L["Orders.AutoPrintReceipt"]</span>
-            <div class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" role="switch" id="autoPrintReceiptToggle"
-                       aria-label="@L["Orders.AutoPrintReceipt"]"
-                       title="@L["Orders.AutoPrintReceiptHelp"]" />
-            </div>
-            <span id="autoPrintReceiptStatusBadge" class="badge text-bg-secondary">@L["Orders.Passive"]</span>
-        </div>
-
-        <div class="orders-toggle-group d-inline-flex align-items-center gap-2 oh-orders-header-control">
-            <label class="small text-muted text-nowrap mb-0" for="receiptPrintCopyCountSelect" title="@L["Orders.ReceiptPrintCopyCountHelp"]">@L["Orders.ReceiptPrintCopyCount"]</label>
-            <select id="receiptPrintCopyCountSelect" class="form-select form-select-sm" style="width: 4.5rem;"
-                    aria-label="@L["Orders.ReceiptPrintCopyCount"]"
-                    title="@L["Orders.ReceiptPrintCopyCountHelp"]">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-            </select>
-        </div>
-
-        <button type="button" class="btn btn-outline-secondary btn-sm flex-shrink-0" id="notificationSettingsBtn">
-            <i class="bi bi-bell me-1"></i>@L["Notification.Settings"]
-        </button>
 
         <span class="text-muted small text-nowrap flex-shrink-0">@L["Orders.TotalCount"]: <span id="ordersTotalCount">@Model.TotalCount</span></span>
+        <a class="btn btn-sm btn-outline-secondary text-nowrap" href="/orders/history">@L["Orders.History.ViewOrderHistory"]</a>
     </div>
 </div>
 
@@ -167,18 +125,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="notificationSettingsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable" style="max-width: 520px">
-        <div class="modal-content">
-            <form id="notificationSettingsForm" method="post" action="/notification-settings">
-                @Html.AntiForgeryToken()
-                <div id="notificationSettingsModalBody" class="p-3 text-muted small">
-                    @L["Notification.Loading"]
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 </div>
 
 @section Scripts {
@@ -254,17 +200,19 @@
                 ["orderSyncEnabledMessage"] = L["Orders.OrderSyncEnabledMessage"].Value,
                 ["orderSyncDisabledMessage"] = L["Orders.OrderSyncDisabledMessage"].Value,
                 ["orderSyncUpdateFailed"] = L["Orders.OrderSyncUpdateFailed"].Value,
-                ["orderSettingsSaved"] = L["Orders.OrderSettingsSaved"].Value,
-                ["orderSettingsUpdateFailed"] = L["Orders.OrderSettingsUpdateFailed"].Value,
-                ["receiptPrintCopyCountOutOfRange"] = L["Orders.ReceiptPrintCopyCountOutOfRange"].Value
+                ["automationStatusSyncActive"] = L["Orders.AutomationStatus.SyncActive"].Value,
+                ["automationStatusSyncDisabled"] = L["Orders.AutomationStatus.SyncDisabled"].Value,
+                ["automationStatusAutoApproveActive"] = L["Orders.AutomationStatus.AutoApproveActive"].Value,
+                ["automationStatusAutoApproveDisabled"] = L["Orders.AutomationStatus.AutoApproveDisabled"].Value,
+                ["automationStatusReceiptPrintingActive"] = L["Orders.AutomationStatus.ReceiptPrintingActive"].Value,
+                ["automationStatusReceiptPrintingDisabled"] = L["Orders.AutomationStatus.ReceiptPrintingDisabled"].Value
             }))
         };
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-sync-settings.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-order-settings.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-page.js" asp-append-version="true"></script>

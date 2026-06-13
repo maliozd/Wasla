@@ -1,0 +1,99 @@
+@model OrderHub.Web.Models.Orders.OrderListViewModel
+@using System.Globalization
+@using OrderHub.Domain.Enums
+@using OrderHub.Web.Models.Orders
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+
+@{
+    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
+}
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle mb-0 oh-orders-table">
+        <thead>
+        <tr>
+            <th>@SortHeader("platform", L["Orders.History.Platform"])</th>
+            <th>@L["Orders.History.Code"]</th>
+            <th>@SortHeader("customerName", L["Orders.History.Customer"])</th>
+            <th>@SortHeader("status", L["Orders.History.Status"])</th>
+            <th class="text-end">@SortHeader("totalAmount", L["Orders.History.Total"])</th>
+            <th class="text-end">@SortHeader("receivedAt", L["Orders.History.Received"])</th>
+            <th class="text-end">@L["Orders.History.Actions"]</th>
+        </tr>
+        </thead>
+        <tbody>
+        @if (Model.Orders.Count == 0)
+        {
+            <tr>
+                <td colspan="7" class="text-center text-muted py-5">
+                    <div class="mb-1 fw-medium">@L["Orders.History.NoOrdersFound"]</div>
+                    <div class="small">@L["Orders.History.NoOrdersFoundDescription"]</div>
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var o in Model.Orders)
+            {
+                <tr>
+                    <td>
+                        @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)o.Platform, DisplayName: (string?)null))
+                    </td>
+                    <td>
+                        <a href="/orders/details/@o.Id?from=history">@o.ExternalOrderCode</a>
+                    </td>
+                    <td>@o.CustomerName</td>
+                    <td>
+                        <span class="@StatusBadgeClass(o.Status)">@StatusLabel(o.Status)</span>
+                    </td>
+                    <td class="text-end">@o.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</td>
+                    <td class="text-end">@o.ReceivedAtLocal.ToString("g", CultureInfo.CurrentCulture)</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" href="/orders/details/@o.Id?from=history">@L["Orders.History.ViewDetails"]</a>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>
+
+@functions {
+    private static string StatusBadgeClass(OrderStatus status) => status switch
+    {
+        OrderStatus.New => "oh-dash-status oh-dash-status--new",
+        OrderStatus.Accepted => "oh-dash-status oh-dash-status--accepted",
+        OrderStatus.Preparing or OrderStatus.ReadyForPickup or OrderStatus.OnTheWay => "oh-dash-status oh-dash-status--progress",
+        OrderStatus.Delivered => "oh-dash-status oh-dash-status--delivered",
+        OrderStatus.Cancelled => "oh-dash-status oh-dash-status--cancelled",
+        OrderStatus.Failed => "oh-dash-status oh-dash-status--failed",
+        _ => "oh-dash-status"
+    };
+
+    private Microsoft.AspNetCore.Html.IHtmlContent SortHeader(string sortBy, string title)
+    {
+        var currentBy = Model.Filters.SortBy;
+        var currentDir = Model.Filters.SortDirection;
+
+        var nextDir = "asc";
+        if (string.Equals(currentBy, sortBy, StringComparison.OrdinalIgnoreCase))
+        {
+            nextDir = string.Equals(currentDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
+        }
+        else
+        {
+            nextDir = sortBy == "receivedAt" ? "desc" : "asc";
+        }
+
+        var arrow = string.Empty;
+        if (string.Equals(currentBy, sortBy, StringComparison.OrdinalIgnoreCase))
+        {
+            arrow = string.Equals(currentDir, "asc", StringComparison.OrdinalIgnoreCase) ? " ↑" : " ↓";
+        }
+
+        var href = OrderListUrlHelper.Build(Model.ListBasePath, Model.Filters, page: 1, sortBy: sortBy, sortDirection: nextDir);
+        var html = $"<a href=\"{href}\">{System.Net.WebUtility.HtmlEncode(title)}{arrow}</a>";
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+}

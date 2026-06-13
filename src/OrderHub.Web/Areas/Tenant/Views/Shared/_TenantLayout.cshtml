@@ -19,6 +19,13 @@
     var customerName = CurrentCustomer.CurrentCustomer?.Name ?? Context.Request.Host.Host;
 
     string Active(string href) => path.Equals(href, StringComparison.OrdinalIgnoreCase) || path.StartsWith(href + "/", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    string ActiveOrders() => path.Equals("/orders", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/orders/details/", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var isOrderSettings = path.Equals("/settings/order", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/settings/order/", StringComparison.OrdinalIgnoreCase)
+        || path.Equals("/settings/order-automation", StringComparison.OrdinalIgnoreCase);
+    var isAccountSettings = path.Equals("/settings/account", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/settings/account/", StringComparison.OrdinalIgnoreCase);
+    var settingsActive = isOrderSettings || isAccountSettings;
 }
 <!DOCTYPE html>
 <html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")">
@@ -112,16 +119,21 @@
         </nav>
 
         <aside class="app-sidebar" id="app-sidebar-tenant" role="navigation" aria-label="Tenant">
-            <nav class="sidebar-menu p-3">
-                <ul class="nav flex-column">
+            <nav class="sidebar-menu p-3 d-flex flex-column h-100">
+                <ul class="nav flex-column oh-sidebar-nav-main">
                     <li class="nav-item">
                         <a class="nav-link @Active("/dashboard")" asp-area="Tenant" asp-controller="Dashboard" asp-action="Index">
                             <i class="bi bi-speedometer2 me-2"></i><span class="nav-text">@L["Layout.Dashboard"]</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @Active("/orders")" asp-area="Tenant" asp-controller="Orders" asp-action="Index">
+                        <a class="nav-link @ActiveOrders()" asp-area="Tenant" asp-controller="Orders" asp-action="Index">
                             <i class="bi bi-bag me-2"></i><span class="nav-text">@L["Layout.Orders"]</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @Active("/orders/history")" asp-area="Tenant" asp-controller="Orders" asp-action="History">
+                            <i class="bi bi-clock-history me-2"></i><span class="nav-text">@L["Layout.OrderHistory"]</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -140,6 +152,44 @@
                         </a>
                     </li>
                 </ul>
+
+                <div class="oh-sidebar-settings mt-auto pt-2">
+                    <div class="dropup position-static w-100">
+                        <button type="button"
+                                class="nav-link dropdown-toggle oh-sidebar-settings-toggle w-100 border-0 bg-transparent text-start d-flex align-items-center @(settingsActive ? "active" : "")"
+                                id="tenantSettingsMenuToggle"
+                                data-bs-toggle="dropdown"
+                                data-bs-auto-close="true"
+                                aria-expanded="@(settingsActive ? "true" : "false")"
+                                aria-haspopup="true"
+                                aria-controls="tenantSettingsMenu">
+                            <i class="bi bi-gear me-2"></i><span class="nav-text">@L["Navigation.Settings"]</span>
+                        </button>
+                        <ul class="dropdown-menu oh-sidebar-settings-menu w-100 mb-1"
+                            id="tenantSettingsMenu"
+                            role="menu"
+                            aria-labelledby="tenantSettingsMenuToggle">
+                            <li role="none">
+                                <a class="dropdown-item @(isOrderSettings ? "active" : "")"
+                                   role="menuitem"
+                                   asp-area="Tenant"
+                                   asp-controller="OrderSettings"
+                                   asp-action="Index">
+                                    @L["Navigation.OrderSettings"]
+                                </a>
+                            </li>
+                            <li role="none">
+                                <a class="dropdown-item @(isAccountSettings ? "active" : "")"
+                                   role="menuitem"
+                                   asp-area="Tenant"
+                                   asp-controller="AccountSettings"
+                                   asp-action="Index">
+                                    @L["Navigation.AccountSettings"]
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </nav>
         </aside>
 

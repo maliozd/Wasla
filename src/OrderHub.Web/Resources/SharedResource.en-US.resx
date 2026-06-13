@@ -195,6 +195,9 @@
   <data name="Layout.Orders" xml:space="preserve">
     <value>Orders</value>
   </data>
+  <data name="Layout.OrderHistory" xml:space="preserve">
+    <value>Order History</value>
+  </data>
   <data name="Layout.PlatformConnections" xml:space="preserve">
     <value>Platform Connections</value>
   </data>
@@ -206,6 +209,15 @@
   </data>
   <data name="Layout.Settings" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="Navigation.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Navigation.OrderSettings" xml:space="preserve">
+    <value>Order Settings</value>
+  </data>
+  <data name="Navigation.AccountSettings" xml:space="preserve">
+    <value>Account Settings</value>
   </data>
   <data name="Layout.Layout" xml:space="preserve">
     <value>Layout</value>
@@ -357,6 +369,66 @@
   <data name="Dashboard.NoPlatformSummary" xml:space="preserve">
     <value>No platform summary yet.</value>
   </data>
+  <data name="Dashboard.TodayOverview" xml:space="preserve">
+    <value>Today's overview</value>
+  </data>
+  <data name="Dashboard.TodayDateLabel" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="Dashboard.OrdersReceivedToday" xml:space="preserve">
+    <value>Orders received today</value>
+  </data>
+  <data name="Dashboard.TotalOrderAmountToday" xml:space="preserve">
+    <value>Total order amount today</value>
+  </data>
+  <data name="Dashboard.CurrentlyActiveOrders" xml:space="preserve">
+    <value>Currently active orders</value>
+  </data>
+  <data name="Dashboard.CancelledToday" xml:space="preserve">
+    <value>Cancelled today</value>
+  </data>
+  <data name="Dashboard.AverageOrderValue" xml:space="preserve">
+    <value>Average Order Value</value>
+  </data>
+  <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
+    <value>Average value per order</value>
+  </data>
+  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
+    <value>Latest orders received today</value>
+  </data>
+  <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
+    <value>Orders by platform today</value>
+  </data>
+  <data name="Dashboard.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Dashboard.Code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="Dashboard.Customer" xml:space="preserve">
+    <value>Customer</value>
+  </data>
+  <data name="Dashboard.Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Dashboard.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Dashboard.Received" xml:space="preserve">
+    <value>Received</value>
+  </data>
+  <data name="Dashboard.Orders" xml:space="preserve">
+    <value>orders</value>
+  </data>
+  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
+    <value>No orders yet today.</value>
+  </data>
+  <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
+    <value>New orders will appear here automatically.</value>
+  </data>
+  <data name="Dashboard.ShareOfTotal" xml:space="preserve">
+    <value>{0}% of total</value>
+  </data>
   <data name="Orders.Title" xml:space="preserve">
     <value>Orders</value>
   </data>
@@ -377,6 +449,84 @@
   </data>
   <data name="Orders.Clear" xml:space="preserve">
     <value>Clear</value>
+  </data>
+  <data name="Orders.History.Title" xml:space="preserve">
+    <value>Order History</value>
+  </data>
+  <data name="Orders.History.Subtitle" xml:space="preserve">
+    <value>Search and review previous orders.</value>
+  </data>
+  <data name="Orders.History.StartDate" xml:space="preserve">
+    <value>Start Date</value>
+  </data>
+  <data name="Orders.History.EndDate" xml:space="preserve">
+    <value>End Date</value>
+  </data>
+  <data name="Orders.History.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Orders.History.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Orders.History.Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Orders.History.SearchPlaceholder" xml:space="preserve">
+    <value>Order code, customer name, or phone</value>
+  </data>
+  <data name="Orders.History.Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Orders.History.Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Orders.History.TotalResults" xml:space="preserve">
+    <value>Total results</value>
+  </data>
+  <data name="Orders.History.NoOrdersFound" xml:space="preserve">
+    <value>No orders found.</value>
+  </data>
+  <data name="Orders.History.NoOrdersFoundDescription" xml:space="preserve">
+    <value>Try changing the date range or filters.</value>
+  </data>
+  <data name="Orders.History.ViewDetails" xml:space="preserve">
+    <value>View Details</value>
+  </data>
+  <data name="Orders.History.PageSize" xml:space="preserve">
+    <value>Page size</value>
+  </data>
+  <data name="Orders.History.Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Orders.History.Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Orders.History.Received" xml:space="preserve">
+    <value>Received</value>
+  </data>
+  <data name="Orders.History.Code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="Orders.History.Customer" xml:space="preserve">
+    <value>Customer</value>
+  </data>
+  <data name="Orders.History.Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Orders.History.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Orders.History.ViewOrderHistory" xml:space="preserve">
+    <value>Order History</value>
+  </data>
+  <data name="Orders.History.BackToOrders" xml:space="preserve">
+    <value>Back to Orders</value>
+  </data>
+  <data name="Orders.History.PageIndicator" xml:space="preserve">
+    <value>Page {0} of {1}</value>
+  </data>
+  <data name="Orders.History.PaginationLabel" xml:space="preserve">
+    <value>Order history pagination</value>
   </data>
   <data name="Orders.Today" xml:space="preserve">
     <value>Today</value>
@@ -413,6 +563,87 @@
   </data>
   <data name="Orders.DetailsTitle" xml:space="preserve">
     <value>Order Details</value>
+  </data>
+  <data name="Orders.Details.Title" xml:space="preserve">
+    <value>Order Details</value>
+  </data>
+  <data name="Orders.Details.Customer" xml:space="preserve">
+    <value>Customer</value>
+  </data>
+  <data name="Orders.Details.Phone" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="Orders.Details.Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="Orders.Details.Delivery" xml:space="preserve">
+    <value>Delivery</value>
+  </data>
+  <data name="Orders.Details.Summary" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="Orders.Details.Items" xml:space="preserve">
+    <value>Items</value>
+  </data>
+  <data name="Orders.Details.Product" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Orders.Details.Quantity" xml:space="preserve">
+    <value>Qty</value>
+  </data>
+  <data name="Orders.Details.Unit" xml:space="preserve">
+    <value>Unit</value>
+  </data>
+  <data name="Orders.Details.Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Orders.Details.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Orders.Details.Code" xml:space="preserve">
+    <value>Order Code</value>
+  </data>
+  <data name="Orders.Details.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Orders.Details.Received" xml:space="preserve">
+    <value>Received</value>
+  </data>
+  <data name="Orders.Details.PaymentMethod" xml:space="preserve">
+    <value>Payment Method</value>
+  </data>
+  <data name="Orders.Details.OrderMetadata" xml:space="preserve">
+    <value>Order Information</value>
+  </data>
+  <data name="Orders.Details.NoItemsFound" xml:space="preserve">
+    <value>No items found for this order.</value>
+  </data>
+  <data name="Orders.Details.BackToOrders" xml:space="preserve">
+    <value>Back to Orders</value>
+  </data>
+  <data name="Orders.Details.BackToOrderHistory" xml:space="preserve">
+    <value>Back to Order History</value>
+  </data>
+  <data name="Orders.Details.AcceptedAt" xml:space="preserve">
+    <value>Accepted</value>
+  </data>
+  <data name="Orders.Details.DeliveryFee" xml:space="preserve">
+    <value>Delivery Fee</value>
+  </data>
+  <data name="Orders.Details.ServiceFee" xml:space="preserve">
+    <value>Service Fee</value>
+  </data>
+  <data name="PaymentMethod.Cash" xml:space="preserve">
+    <value>Cash</value>
+  </data>
+  <data name="PaymentMethod.CreditCard" xml:space="preserve">
+    <value>Credit Card</value>
+  </data>
+  <data name="PaymentMethod.OnlinePayment" xml:space="preserve">
+    <value>Online Payment</value>
+  </data>
+  <data name="PaymentMethod.Unknown" xml:space="preserve">
+    <value>Unknown</value>
   </data>
   <data name="Orders.Summary" xml:space="preserve">
     <value>Summary</value>
@@ -1262,6 +1493,93 @@
   </data>
   <data name="Orders.OrderSyncToggleAriaLabel" xml:space="preserve">
     <value>Toggle order sync</value>
+  </data>
+  <data name="Orders.AutomationStatus.SyncActive" xml:space="preserve">
+    <value>Sync Active</value>
+  </data>
+  <data name="Orders.AutomationStatus.SyncDisabled" xml:space="preserve">
+    <value>Sync Disabled</value>
+  </data>
+  <data name="Orders.AutomationStatus.AutoApproveActive" xml:space="preserve">
+    <value>Auto Approve Active</value>
+  </data>
+  <data name="Orders.AutomationStatus.AutoApproveDisabled" xml:space="preserve">
+    <value>Auto Approve Disabled</value>
+  </data>
+  <data name="Orders.AutomationStatus.ReceiptPrintingActive" xml:space="preserve">
+    <value>Receipt Printing Active</value>
+  </data>
+  <data name="Orders.AutomationStatus.ReceiptPrintingDisabled" xml:space="preserve">
+    <value>Receipt Printing Disabled</value>
+  </data>
+  <data name="Orders.ManageSettings" xml:space="preserve">
+    <value>Manage settings</value>
+  </data>
+  <data name="Settings.OrderSettings.Title" xml:space="preserve">
+    <value>Order Settings</value>
+  </data>
+  <data name="Settings.OrderSettings.Subtitle" xml:space="preserve">
+    <value>Manage order synchronization, auto approval, receipt printing, and notifications.</value>
+  </data>
+  <data name="Settings.OrderSynchronization.Title" xml:space="preserve">
+    <value>Order Synchronization</value>
+  </data>
+  <data name="Settings.OrderSynchronization.Description" xml:space="preserve">
+    <value>Control whether OrderHub should receive and sync orders from connected platforms.</value>
+  </data>
+  <data name="Settings.OrderSynchronization.EnableOrderSync" xml:space="preserve">
+    <value>Enable Order Sync</value>
+  </data>
+  <data name="Settings.AutoApproval.Title" xml:space="preserve">
+    <value>Auto Approval</value>
+  </data>
+  <data name="Settings.AutoApproval.Description" xml:space="preserve">
+    <value>Automatically approve incoming orders when possible.</value>
+  </data>
+  <data name="Settings.AutoApproval.EnableAutoApprove" xml:space="preserve">
+    <value>Enable Auto Approve</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.Title" xml:space="preserve">
+    <value>Receipt Printing</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.Description" xml:space="preserve">
+    <value>Configure when and how receipt print jobs are created.</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.CreateReceiptAfterAutoApprove" xml:space="preserve">
+    <value>Create Receipt After Auto Approve</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.ReceiptCopyCount" xml:space="preserve">
+    <value>Receipt Copy Count</value>
+  </data>
+  <data name="Settings.Notifications.Title" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Settings.Notifications.Description" xml:space="preserve">
+    <value>Configure how the customer web panel alerts the user about new orders.</value>
+  </data>
+  <data name="Settings.Notifications.ManageNotificationSettings" xml:space="preserve">
+    <value>Manage Notification Settings</value>
+  </data>
+  <data name="Settings.SavedSuccessfully" xml:space="preserve">
+    <value>Settings saved successfully.</value>
+  </data>
+  <data name="Settings.SaveFailed" xml:space="preserve">
+    <value>Settings could not be saved.</value>
+  </data>
+  <data name="Settings.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Settings.Passive" xml:space="preserve">
+    <value>Passive</value>
+  </data>
+  <data name="Settings.AccountSettings.Title" xml:space="preserve">
+    <value>Account Settings</value>
+  </data>
+  <data name="Settings.AccountSettings.Subtitle" xml:space="preserve">
+    <value>Manage account and profile settings.</value>
+  </data>
+  <data name="Settings.AccountSettings.ComingSoon" xml:space="preserve">
+    <value>Account settings will be available here later.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>New</value>

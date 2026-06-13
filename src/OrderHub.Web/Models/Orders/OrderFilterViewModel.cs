@@ -15,10 +15,13 @@ public sealed class OrderFilterViewModel
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 25;
 
+    public string? Search { get; set; }
+
     public bool HasAnyFilter =>
         Platform.HasValue ||
         Status.HasValue ||
         StartDate.HasValue ||
-        EndDate.HasValue;
+        EndDate.HasValue ||
+        !string.IsNullOrWhiteSpace(Search);
 }
 

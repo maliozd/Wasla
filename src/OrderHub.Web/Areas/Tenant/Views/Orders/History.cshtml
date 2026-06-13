@@ -1,0 +1,130 @@
+@model OrderHub.Web.Models.Orders.OrderListViewModel
+@using OrderHub.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Orders.History.Title"];
+    var f = Model.Filters;
+    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
+    var dateRangeLabel = f.StartDate.HasValue && f.EndDate.HasValue
+        ? $"{f.StartDate.Value.ToString("d")} – {f.EndDate.Value.ToString("d")}"
+        : null;
+}
+
+<div class="oh-orders-page oh-order-history-page">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3 oh-orders-header">
+        <div>
+            <h1 class="h4 mb-1">@L["Orders.History.Title"]</h1>
+            <p class="text-muted small mb-0">@L["Orders.History.Subtitle"]</p>
+        </div>
+        <div class="d-flex flex-column align-items-md-end gap-2">
+            <div class="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+                <span class="text-muted small text-nowrap">
+                    @L["Orders.History.TotalResults"]: <strong>@Model.TotalCount</strong>
+                </span>
+                @if (!string.IsNullOrEmpty(dateRangeLabel))
+                {
+                    <span class="badge rounded-pill text-bg-light border">@dateRangeLabel</span>
+                }
+            </div>
+            <a class="btn btn-sm btn-outline-secondary" href="/orders">@L["Orders.History.BackToOrders"]</a>
+        </div>
+    </div>
+
+    <div class="card oh-card mb-3 oh-orders-filters">
+        <div class="card-body">
+            <form method="get" action="/orders/history" class="row g-3 align-items-end">
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label" for="historyStartDate">@L["Orders.History.StartDate"]</label>
+                    <input id="historyStartDate" class="form-control" type="date" name="startDate" value="@(f.StartDate?.ToString("yyyy-MM-dd"))" required />
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label" for="historyEndDate">@L["Orders.History.EndDate"]</label>
+                    <input id="historyEndDate" class="form-control" type="date" name="endDate" value="@(f.EndDate?.ToString("yyyy-MM-dd"))" required />
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <label class="form-label" for="historyPlatform">@L["Orders.History.Platform"]</label>
+                    <select id="historyPlatform" class="form-select" name="platform">
+                        <option value="">@L["Common.AllPlatforms"]</option>
+                        @foreach (var p in Enum.GetValues<FoodPlatform>())
+                        {
+                            if (f.Platform == p)
+                            {
+                                <option value="@p" selected>@p</option>
+                            }
+                            else
+                            {
+                                <option value="@p">@p</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <label class="form-label" for="historyStatus">@L["Orders.History.Status"]</label>
+                    <select id="historyStatus" class="form-select" name="status">
+                        <option value="">@L["Common.AllStatuses"]</option>
+                        @foreach (var s in Enum.GetValues<OrderStatus>())
+                        {
+                            if (f.Status == s)
+                            {
+                                <option value="@s" selected>@StatusLabel(s)</option>
+                            }
+                            else
+                            {
+                                <option value="@s">@StatusLabel(s)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-lg-2">
+                    <label class="form-label" for="historyPageSize">@L["Orders.History.PageSize"]</label>
+                    <select id="historyPageSize" class="form-select" name="pageSize">
+                        @foreach (var size in new[] { 25, 50, 100 })
+                        {
+                            if (f.PageSize == size)
+                            {
+                                <option value="@size" selected>@size</option>
+                            }
+                            else
+                            {
+                                <option value="@size">@size</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="historySearch">@L["Orders.History.Search"]</label>
+                    <input id="historySearch" class="form-control" type="search" name="search" value="@f.Search"
+                           placeholder="@L["Orders.History.SearchPlaceholder"]" autocomplete="off" />
+                </div>
+                <div class="col-12 d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary" type="submit">@L["Orders.History.Filter"]</button>
+                    <a class="btn btn-outline-secondary" href="/orders/history">@L["Orders.History.Clear"]</a>
+                </div>
+
+                <input type="hidden" name="sortBy" value="@f.SortBy" />
+                <input type="hidden" name="sortDirection" value="@f.SortDirection" />
+                <input type="hidden" name="page" value="1" />
+            </form>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="mt-2">
+                    <div class="text-danger small">
+                        @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@e.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card oh-card oh-orders-table-card">
+        <div class="card-body p-0 p-md-3">
+            @await Html.PartialAsync("_OrdersHistoryTable", Model)
+            @await Html.PartialAsync("_OrderListPagination", Model)
+        </div>
+    </div>
+</div>

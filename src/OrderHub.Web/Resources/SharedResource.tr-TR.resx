@@ -195,6 +195,9 @@
   <data name="Layout.Orders" xml:space="preserve">
     <value>Siparişler</value>
   </data>
+  <data name="Layout.OrderHistory" xml:space="preserve">
+    <value>Sipariş Geçmişi</value>
+  </data>
   <data name="Layout.PlatformConnections" xml:space="preserve">
     <value>Platform Bağlantıları</value>
   </data>
@@ -206,6 +209,15 @@
   </data>
   <data name="Layout.Settings" xml:space="preserve">
     <value>Ayarlar</value>
+  </data>
+  <data name="Navigation.Settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="Navigation.OrderSettings" xml:space="preserve">
+    <value>Sipariş Ayarları</value>
+  </data>
+  <data name="Navigation.AccountSettings" xml:space="preserve">
+    <value>Hesap Ayarları</value>
   </data>
   <data name="Layout.Layout" xml:space="preserve">
     <value>Düzen</value>
@@ -357,6 +369,66 @@
   <data name="Dashboard.NoPlatformSummary" xml:space="preserve">
     <value>Henüz platform özeti yok.</value>
   </data>
+  <data name="Dashboard.TodayOverview" xml:space="preserve">
+    <value>Bugünün özeti</value>
+  </data>
+  <data name="Dashboard.TodayDateLabel" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="Dashboard.OrdersReceivedToday" xml:space="preserve">
+    <value>Bugün alınan siparişler</value>
+  </data>
+  <data name="Dashboard.TotalOrderAmountToday" xml:space="preserve">
+    <value>Bugünkü toplam sipariş tutarı</value>
+  </data>
+  <data name="Dashboard.CurrentlyActiveOrders" xml:space="preserve">
+    <value>Şu an aktif siparişler</value>
+  </data>
+  <data name="Dashboard.CancelledToday" xml:space="preserve">
+    <value>Bugün iptal edilenler</value>
+  </data>
+  <data name="Dashboard.AverageOrderValue" xml:space="preserve">
+    <value>Ortalama Sipariş Tutarı</value>
+  </data>
+  <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
+    <value>Sipariş başına ortalama tutar</value>
+  </data>
+  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
+    <value>Bugün alınan son siparişler</value>
+  </data>
+  <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
+    <value>Bugün platforma göre siparişler</value>
+  </data>
+  <data name="Dashboard.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Dashboard.Code" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="Dashboard.Customer" xml:space="preserve">
+    <value>Müşteri</value>
+  </data>
+  <data name="Dashboard.Total" xml:space="preserve">
+    <value>Toplam</value>
+  </data>
+  <data name="Dashboard.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Dashboard.Received" xml:space="preserve">
+    <value>Alındı</value>
+  </data>
+  <data name="Dashboard.Orders" xml:space="preserve">
+    <value>sipariş</value>
+  </data>
+  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
+    <value>Bugün henüz sipariş yok.</value>
+  </data>
+  <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
+    <value>Yeni siparişler burada otomatik görünecek.</value>
+  </data>
+  <data name="Dashboard.ShareOfTotal" xml:space="preserve">
+    <value>Toplamın %{0}'i</value>
+  </data>
   <data name="Orders.Title" xml:space="preserve">
     <value>Siparişler</value>
   </data>
@@ -377,6 +449,84 @@
   </data>
   <data name="Orders.Clear" xml:space="preserve">
     <value>Temizle</value>
+  </data>
+  <data name="Orders.History.Title" xml:space="preserve">
+    <value>Sipariş Geçmişi</value>
+  </data>
+  <data name="Orders.History.Subtitle" xml:space="preserve">
+    <value>Önceki siparişleri arayın ve inceleyin.</value>
+  </data>
+  <data name="Orders.History.StartDate" xml:space="preserve">
+    <value>Başlangıç Tarihi</value>
+  </data>
+  <data name="Orders.History.EndDate" xml:space="preserve">
+    <value>Bitiş Tarihi</value>
+  </data>
+  <data name="Orders.History.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Orders.History.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Orders.History.Search" xml:space="preserve">
+    <value>Ara</value>
+  </data>
+  <data name="Orders.History.SearchPlaceholder" xml:space="preserve">
+    <value>Sipariş kodu, müşteri adı veya telefon</value>
+  </data>
+  <data name="Orders.History.Filter" xml:space="preserve">
+    <value>Filtrele</value>
+  </data>
+  <data name="Orders.History.Clear" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="Orders.History.TotalResults" xml:space="preserve">
+    <value>Toplam sonuç</value>
+  </data>
+  <data name="Orders.History.NoOrdersFound" xml:space="preserve">
+    <value>Sipariş bulunamadı.</value>
+  </data>
+  <data name="Orders.History.NoOrdersFoundDescription" xml:space="preserve">
+    <value>Tarih aralığını veya filtreleri değiştirmeyi deneyin.</value>
+  </data>
+  <data name="Orders.History.ViewDetails" xml:space="preserve">
+    <value>Detayları Gör</value>
+  </data>
+  <data name="Orders.History.PageSize" xml:space="preserve">
+    <value>Sayfa boyutu</value>
+  </data>
+  <data name="Orders.History.Previous" xml:space="preserve">
+    <value>Önceki</value>
+  </data>
+  <data name="Orders.History.Next" xml:space="preserve">
+    <value>Sonraki</value>
+  </data>
+  <data name="Orders.History.Received" xml:space="preserve">
+    <value>Alındı</value>
+  </data>
+  <data name="Orders.History.Code" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="Orders.History.Customer" xml:space="preserve">
+    <value>Müşteri</value>
+  </data>
+  <data name="Orders.History.Total" xml:space="preserve">
+    <value>Toplam</value>
+  </data>
+  <data name="Orders.History.Actions" xml:space="preserve">
+    <value>İşlemler</value>
+  </data>
+  <data name="Orders.History.ViewOrderHistory" xml:space="preserve">
+    <value>Sipariş Geçmişi</value>
+  </data>
+  <data name="Orders.History.BackToOrders" xml:space="preserve">
+    <value>Siparişlere Dön</value>
+  </data>
+  <data name="Orders.History.PageIndicator" xml:space="preserve">
+    <value>Sayfa {0} / {1}</value>
+  </data>
+  <data name="Orders.History.PaginationLabel" xml:space="preserve">
+    <value>Sipariş geçmişi sayfalama</value>
   </data>
   <data name="Orders.Today" xml:space="preserve">
     <value>Bugün</value>
@@ -413,6 +563,87 @@
   </data>
   <data name="Orders.DetailsTitle" xml:space="preserve">
     <value>Sipariş Detayı</value>
+  </data>
+  <data name="Orders.Details.Title" xml:space="preserve">
+    <value>Sipariş Detayı</value>
+  </data>
+  <data name="Orders.Details.Customer" xml:space="preserve">
+    <value>Müşteri</value>
+  </data>
+  <data name="Orders.Details.Phone" xml:space="preserve">
+    <value>Telefon</value>
+  </data>
+  <data name="Orders.Details.Address" xml:space="preserve">
+    <value>Adres</value>
+  </data>
+  <data name="Orders.Details.Delivery" xml:space="preserve">
+    <value>Teslimat</value>
+  </data>
+  <data name="Orders.Details.Summary" xml:space="preserve">
+    <value>Özet</value>
+  </data>
+  <data name="Orders.Details.Items" xml:space="preserve">
+    <value>Ürünler</value>
+  </data>
+  <data name="Orders.Details.Product" xml:space="preserve">
+    <value>Ürün</value>
+  </data>
+  <data name="Orders.Details.Quantity" xml:space="preserve">
+    <value>Adet</value>
+  </data>
+  <data name="Orders.Details.Unit" xml:space="preserve">
+    <value>Birim</value>
+  </data>
+  <data name="Orders.Details.Total" xml:space="preserve">
+    <value>Toplam</value>
+  </data>
+  <data name="Orders.Details.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Orders.Details.Code" xml:space="preserve">
+    <value>Sipariş Kodu</value>
+  </data>
+  <data name="Orders.Details.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Orders.Details.Received" xml:space="preserve">
+    <value>Alındı</value>
+  </data>
+  <data name="Orders.Details.PaymentMethod" xml:space="preserve">
+    <value>Ödeme Yöntemi</value>
+  </data>
+  <data name="Orders.Details.OrderMetadata" xml:space="preserve">
+    <value>Sipariş Bilgileri</value>
+  </data>
+  <data name="Orders.Details.NoItemsFound" xml:space="preserve">
+    <value>Bu sipariş için ürün bulunamadı.</value>
+  </data>
+  <data name="Orders.Details.BackToOrders" xml:space="preserve">
+    <value>Siparişlere Dön</value>
+  </data>
+  <data name="Orders.Details.BackToOrderHistory" xml:space="preserve">
+    <value>Sipariş Geçmişine Dön</value>
+  </data>
+  <data name="Orders.Details.AcceptedAt" xml:space="preserve">
+    <value>Onaylandı</value>
+  </data>
+  <data name="Orders.Details.DeliveryFee" xml:space="preserve">
+    <value>Teslimat Ücreti</value>
+  </data>
+  <data name="Orders.Details.ServiceFee" xml:space="preserve">
+    <value>Hizmet Bedeli</value>
+  </data>
+  <data name="PaymentMethod.Cash" xml:space="preserve">
+    <value>Nakit</value>
+  </data>
+  <data name="PaymentMethod.CreditCard" xml:space="preserve">
+    <value>Kredi Kartı</value>
+  </data>
+  <data name="PaymentMethod.OnlinePayment" xml:space="preserve">
+    <value>Online Ödeme</value>
+  </data>
+  <data name="PaymentMethod.Unknown" xml:space="preserve">
+    <value>Bilinmiyor</value>
   </data>
   <data name="Orders.Summary" xml:space="preserve">
     <value>Özet</value>
@@ -1262,6 +1493,93 @@
   </data>
   <data name="Orders.OrderSyncToggleAriaLabel" xml:space="preserve">
     <value>Sipariş senkronizasyonunu aç/kapat</value>
+  </data>
+  <data name="Orders.AutomationStatus.SyncActive" xml:space="preserve">
+    <value>Senkronizasyon Aktif</value>
+  </data>
+  <data name="Orders.AutomationStatus.SyncDisabled" xml:space="preserve">
+    <value>Senkronizasyon Kapalı</value>
+  </data>
+  <data name="Orders.AutomationStatus.AutoApproveActive" xml:space="preserve">
+    <value>Otomatik Onay Aktif</value>
+  </data>
+  <data name="Orders.AutomationStatus.AutoApproveDisabled" xml:space="preserve">
+    <value>Otomatik Onay Kapalı</value>
+  </data>
+  <data name="Orders.AutomationStatus.ReceiptPrintingActive" xml:space="preserve">
+    <value>Fiş Yazdırma Aktif</value>
+  </data>
+  <data name="Orders.AutomationStatus.ReceiptPrintingDisabled" xml:space="preserve">
+    <value>Fiş Yazdırma Kapalı</value>
+  </data>
+  <data name="Orders.ManageSettings" xml:space="preserve">
+    <value>Ayarları yönet</value>
+  </data>
+  <data name="Settings.OrderSettings.Title" xml:space="preserve">
+    <value>Sipariş Ayarları</value>
+  </data>
+  <data name="Settings.OrderSettings.Subtitle" xml:space="preserve">
+    <value>Sipariş senkronizasyonu, otomatik onay, fiş yazdırma ve bildirimleri yönetin.</value>
+  </data>
+  <data name="Settings.OrderSynchronization.Title" xml:space="preserve">
+    <value>Sipariş Senkronizasyonu</value>
+  </data>
+  <data name="Settings.OrderSynchronization.Description" xml:space="preserve">
+    <value>OrderHub'ın bağlı platformlardan sipariş alıp senkronize etmesini kontrol edin.</value>
+  </data>
+  <data name="Settings.OrderSynchronization.EnableOrderSync" xml:space="preserve">
+    <value>Sipariş Senkronizasyonunu Etkinleştir</value>
+  </data>
+  <data name="Settings.AutoApproval.Title" xml:space="preserve">
+    <value>Otomatik Onay</value>
+  </data>
+  <data name="Settings.AutoApproval.Description" xml:space="preserve">
+    <value>Mümkün olduğunda gelen siparişleri otomatik onaylayın.</value>
+  </data>
+  <data name="Settings.AutoApproval.EnableAutoApprove" xml:space="preserve">
+    <value>Otomatik Onayı Etkinleştir</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.Title" xml:space="preserve">
+    <value>Fiş Yazdırma</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.Description" xml:space="preserve">
+    <value>Fiş yazdırma işlerinin ne zaman ve nasıl oluşturulacağını yapılandırın.</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.CreateReceiptAfterAutoApprove" xml:space="preserve">
+    <value>Otomatik Onay Sonrası Fiş Oluştur</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.ReceiptCopyCount" xml:space="preserve">
+    <value>Fiş Kopya Sayısı</value>
+  </data>
+  <data name="Settings.Notifications.Title" xml:space="preserve">
+    <value>Bildirimler</value>
+  </data>
+  <data name="Settings.Notifications.Description" xml:space="preserve">
+    <value>Müşteri web panelinin yeni siparişler hakkında nasıl uyarı vereceğini yapılandırın.</value>
+  </data>
+  <data name="Settings.Notifications.ManageNotificationSettings" xml:space="preserve">
+    <value>Bildirim Ayarlarını Yönet</value>
+  </data>
+  <data name="Settings.SavedSuccessfully" xml:space="preserve">
+    <value>Ayarlar başarıyla kaydedildi.</value>
+  </data>
+  <data name="Settings.SaveFailed" xml:space="preserve">
+    <value>Ayarlar kaydedilemedi.</value>
+  </data>
+  <data name="Settings.Active" xml:space="preserve">
+    <value>Aktif</value>
+  </data>
+  <data name="Settings.Passive" xml:space="preserve">
+    <value>Pasif</value>
+  </data>
+  <data name="Settings.AccountSettings.Title" xml:space="preserve">
+    <value>Hesap Ayarları</value>
+  </data>
+  <data name="Settings.AccountSettings.Subtitle" xml:space="preserve">
+    <value>Hesap ve profil ayarlarını yönetin.</value>
+  </data>
+  <data name="Settings.AccountSettings.ComingSoon" xml:space="preserve">
+    <value>Hesap ayarları daha sonra burada kullanılabilir olacaktır.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>Yeni</value>

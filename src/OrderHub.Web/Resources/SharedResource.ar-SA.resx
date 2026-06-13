@@ -195,6 +195,9 @@
   <data name="Layout.Orders" xml:space="preserve">
     <value>الطلبات</value>
   </data>
+  <data name="Layout.OrderHistory" xml:space="preserve">
+    <value>سجل الطلبات</value>
+  </data>
   <data name="Layout.PlatformConnections" xml:space="preserve">
     <value>اتصالات المنصات</value>
   </data>
@@ -206,6 +209,15 @@
   </data>
   <data name="Layout.Settings" xml:space="preserve">
     <value>الإعدادات</value>
+  </data>
+  <data name="Navigation.Settings" xml:space="preserve">
+    <value>الإعدادات</value>
+  </data>
+  <data name="Navigation.OrderSettings" xml:space="preserve">
+    <value>إعدادات الطلبات</value>
+  </data>
+  <data name="Navigation.AccountSettings" xml:space="preserve">
+    <value>إعدادات الحساب</value>
   </data>
   <data name="Layout.Layout" xml:space="preserve">
     <value>التخطيط</value>
@@ -357,6 +369,66 @@
   <data name="Dashboard.NoPlatformSummary" xml:space="preserve">
     <value>لا يوجد ملخص منصات بعد.</value>
   </data>
+  <data name="Dashboard.TodayOverview" xml:space="preserve">
+    <value>نظرة عامة على اليوم</value>
+  </data>
+  <data name="Dashboard.TodayDateLabel" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="Dashboard.OrdersReceivedToday" xml:space="preserve">
+    <value>الطلبات المستلمة اليوم</value>
+  </data>
+  <data name="Dashboard.TotalOrderAmountToday" xml:space="preserve">
+    <value>إجمالي مبلغ الطلبات اليوم</value>
+  </data>
+  <data name="Dashboard.CurrentlyActiveOrders" xml:space="preserve">
+    <value>الطلبات النشطة حاليًا</value>
+  </data>
+  <data name="Dashboard.CancelledToday" xml:space="preserve">
+    <value>ملغاة اليوم</value>
+  </data>
+  <data name="Dashboard.AverageOrderValue" xml:space="preserve">
+    <value>متوسط قيمة الطلب</value>
+  </data>
+  <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
+    <value>متوسط القيمة لكل طلب</value>
+  </data>
+  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
+    <value>أحدث الطلبات المستلمة اليوم</value>
+  </data>
+  <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
+    <value>الطلبات حسب المنصة اليوم</value>
+  </data>
+  <data name="Dashboard.Platform" xml:space="preserve">
+    <value>المنصة</value>
+  </data>
+  <data name="Dashboard.Code" xml:space="preserve">
+    <value>الرمز</value>
+  </data>
+  <data name="Dashboard.Customer" xml:space="preserve">
+    <value>العميل</value>
+  </data>
+  <data name="Dashboard.Total" xml:space="preserve">
+    <value>الإجمالي</value>
+  </data>
+  <data name="Dashboard.Status" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="Dashboard.Received" xml:space="preserve">
+    <value>الاستلام</value>
+  </data>
+  <data name="Dashboard.Orders" xml:space="preserve">
+    <value>طلبات</value>
+  </data>
+  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
+    <value>لا توجد طلبات اليوم بعد.</value>
+  </data>
+  <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
+    <value>ستظهر الطلبات الجديدة هنا تلقائيًا.</value>
+  </data>
+  <data name="Dashboard.ShareOfTotal" xml:space="preserve">
+    <value>{0}% من الإجمالي</value>
+  </data>
   <data name="Orders.Title" xml:space="preserve">
     <value>الطلبات</value>
   </data>
@@ -377,6 +449,84 @@
   </data>
   <data name="Orders.Clear" xml:space="preserve">
     <value>مسح</value>
+  </data>
+  <data name="Orders.History.Title" xml:space="preserve">
+    <value>سجل الطلبات</value>
+  </data>
+  <data name="Orders.History.Subtitle" xml:space="preserve">
+    <value>ابحث عن الطلبات السابقة واستعرضها.</value>
+  </data>
+  <data name="Orders.History.StartDate" xml:space="preserve">
+    <value>تاريخ البداية</value>
+  </data>
+  <data name="Orders.History.EndDate" xml:space="preserve">
+    <value>تاريخ النهاية</value>
+  </data>
+  <data name="Orders.History.Platform" xml:space="preserve">
+    <value>المنصة</value>
+  </data>
+  <data name="Orders.History.Status" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="Orders.History.Search" xml:space="preserve">
+    <value>بحث</value>
+  </data>
+  <data name="Orders.History.SearchPlaceholder" xml:space="preserve">
+    <value>رمز الطلب أو اسم العميل أو الهاتف</value>
+  </data>
+  <data name="Orders.History.Filter" xml:space="preserve">
+    <value>تصفية</value>
+  </data>
+  <data name="Orders.History.Clear" xml:space="preserve">
+    <value>مسح</value>
+  </data>
+  <data name="Orders.History.TotalResults" xml:space="preserve">
+    <value>إجمالي النتائج</value>
+  </data>
+  <data name="Orders.History.NoOrdersFound" xml:space="preserve">
+    <value>لم يتم العثور على طلبات.</value>
+  </data>
+  <data name="Orders.History.NoOrdersFoundDescription" xml:space="preserve">
+    <value>جرّب تغيير نطاق التاريخ أو عوامل التصفية.</value>
+  </data>
+  <data name="Orders.History.ViewDetails" xml:space="preserve">
+    <value>عرض التفاصيل</value>
+  </data>
+  <data name="Orders.History.PageSize" xml:space="preserve">
+    <value>حجم الصفحة</value>
+  </data>
+  <data name="Orders.History.Previous" xml:space="preserve">
+    <value>السابق</value>
+  </data>
+  <data name="Orders.History.Next" xml:space="preserve">
+    <value>التالي</value>
+  </data>
+  <data name="Orders.History.Received" xml:space="preserve">
+    <value>تاريخ الاستلام</value>
+  </data>
+  <data name="Orders.History.Code" xml:space="preserve">
+    <value>الرمز</value>
+  </data>
+  <data name="Orders.History.Customer" xml:space="preserve">
+    <value>العميل</value>
+  </data>
+  <data name="Orders.History.Total" xml:space="preserve">
+    <value>الإجمالي</value>
+  </data>
+  <data name="Orders.History.Actions" xml:space="preserve">
+    <value>الإجراءات</value>
+  </data>
+  <data name="Orders.History.ViewOrderHistory" xml:space="preserve">
+    <value>سجل الطلبات</value>
+  </data>
+  <data name="Orders.History.BackToOrders" xml:space="preserve">
+    <value>العودة إلى الطلبات</value>
+  </data>
+  <data name="Orders.History.PageIndicator" xml:space="preserve">
+    <value>الصفحة {0} من {1}</value>
+  </data>
+  <data name="Orders.History.PaginationLabel" xml:space="preserve">
+    <value>ترقيم صفحات سجل الطلبات</value>
   </data>
   <data name="Orders.Today" xml:space="preserve">
     <value>اليوم</value>
@@ -413,6 +563,87 @@
   </data>
   <data name="Orders.DetailsTitle" xml:space="preserve">
     <value>تفاصيل الطلب</value>
+  </data>
+  <data name="Orders.Details.Title" xml:space="preserve">
+    <value>تفاصيل الطلب</value>
+  </data>
+  <data name="Orders.Details.Customer" xml:space="preserve">
+    <value>العميل</value>
+  </data>
+  <data name="Orders.Details.Phone" xml:space="preserve">
+    <value>الهاتف</value>
+  </data>
+  <data name="Orders.Details.Address" xml:space="preserve">
+    <value>العنوان</value>
+  </data>
+  <data name="Orders.Details.Delivery" xml:space="preserve">
+    <value>التوصيل</value>
+  </data>
+  <data name="Orders.Details.Summary" xml:space="preserve">
+    <value>الملخص</value>
+  </data>
+  <data name="Orders.Details.Items" xml:space="preserve">
+    <value>المنتجات</value>
+  </data>
+  <data name="Orders.Details.Product" xml:space="preserve">
+    <value>المنتج</value>
+  </data>
+  <data name="Orders.Details.Quantity" xml:space="preserve">
+    <value>الكمية</value>
+  </data>
+  <data name="Orders.Details.Unit" xml:space="preserve">
+    <value>الوحدة</value>
+  </data>
+  <data name="Orders.Details.Total" xml:space="preserve">
+    <value>الإجمالي</value>
+  </data>
+  <data name="Orders.Details.Platform" xml:space="preserve">
+    <value>المنصة</value>
+  </data>
+  <data name="Orders.Details.Code" xml:space="preserve">
+    <value>رمز الطلب</value>
+  </data>
+  <data name="Orders.Details.Status" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="Orders.Details.Received" xml:space="preserve">
+    <value>تم الاستلام</value>
+  </data>
+  <data name="Orders.Details.PaymentMethod" xml:space="preserve">
+    <value>طريقة الدفع</value>
+  </data>
+  <data name="Orders.Details.OrderMetadata" xml:space="preserve">
+    <value>معلومات الطلب</value>
+  </data>
+  <data name="Orders.Details.NoItemsFound" xml:space="preserve">
+    <value>لم يتم العثور على منتجات لهذا الطلب.</value>
+  </data>
+  <data name="Orders.Details.BackToOrders" xml:space="preserve">
+    <value>العودة إلى الطلبات</value>
+  </data>
+  <data name="Orders.Details.BackToOrderHistory" xml:space="preserve">
+    <value>العودة إلى سجل الطلبات</value>
+  </data>
+  <data name="Orders.Details.AcceptedAt" xml:space="preserve">
+    <value>تمت الموافقة</value>
+  </data>
+  <data name="Orders.Details.DeliveryFee" xml:space="preserve">
+    <value>رسوم التوصيل</value>
+  </data>
+  <data name="Orders.Details.ServiceFee" xml:space="preserve">
+    <value>رسوم الخدمة</value>
+  </data>
+  <data name="PaymentMethod.Cash" xml:space="preserve">
+    <value>نقداً</value>
+  </data>
+  <data name="PaymentMethod.CreditCard" xml:space="preserve">
+    <value>بطاقة ائتمان</value>
+  </data>
+  <data name="PaymentMethod.OnlinePayment" xml:space="preserve">
+    <value>دفع إلكتروني</value>
+  </data>
+  <data name="PaymentMethod.Unknown" xml:space="preserve">
+    <value>غير معروف</value>
   </data>
   <data name="Orders.Summary" xml:space="preserve">
     <value>الملخص</value>
@@ -1262,6 +1493,93 @@
   </data>
   <data name="Orders.OrderSyncToggleAriaLabel" xml:space="preserve">
     <value>تبديل مزامنة الطلبات</value>
+  </data>
+  <data name="Orders.AutomationStatus.SyncActive" xml:space="preserve">
+    <value>المزامنة نشطة</value>
+  </data>
+  <data name="Orders.AutomationStatus.SyncDisabled" xml:space="preserve">
+    <value>المزامنة معطلة</value>
+  </data>
+  <data name="Orders.AutomationStatus.AutoApproveActive" xml:space="preserve">
+    <value>الموافقة التلقائية نشطة</value>
+  </data>
+  <data name="Orders.AutomationStatus.AutoApproveDisabled" xml:space="preserve">
+    <value>الموافقة التلقائية معطلة</value>
+  </data>
+  <data name="Orders.AutomationStatus.ReceiptPrintingActive" xml:space="preserve">
+    <value>طباعة الإيصال نشطة</value>
+  </data>
+  <data name="Orders.AutomationStatus.ReceiptPrintingDisabled" xml:space="preserve">
+    <value>طباعة الإيصال معطلة</value>
+  </data>
+  <data name="Orders.ManageSettings" xml:space="preserve">
+    <value>إدارة الإعدادات</value>
+  </data>
+  <data name="Settings.OrderSettings.Title" xml:space="preserve">
+    <value>إعدادات الطلبات</value>
+  </data>
+  <data name="Settings.OrderSettings.Subtitle" xml:space="preserve">
+    <value>إدارة مزامنة الطلبات والموافقة التلقائية وطباعة الإيصالات والإشعارات.</value>
+  </data>
+  <data name="Settings.OrderSynchronization.Title" xml:space="preserve">
+    <value>مزامنة الطلبات</value>
+  </data>
+  <data name="Settings.OrderSynchronization.Description" xml:space="preserve">
+    <value>تحكم فيما إذا كان OrderHub يستقبل ويزامن الطلبات من المنصات المتصلة.</value>
+  </data>
+  <data name="Settings.OrderSynchronization.EnableOrderSync" xml:space="preserve">
+    <value>تفعيل مزامنة الطلبات</value>
+  </data>
+  <data name="Settings.AutoApproval.Title" xml:space="preserve">
+    <value>الموافقة التلقائية</value>
+  </data>
+  <data name="Settings.AutoApproval.Description" xml:space="preserve">
+    <value>الموافقة تلقائياً على الطلبات الواردة عندما يكون ذلك ممكناً.</value>
+  </data>
+  <data name="Settings.AutoApproval.EnableAutoApprove" xml:space="preserve">
+    <value>تفعيل الموافقة التلقائية</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.Title" xml:space="preserve">
+    <value>طباعة الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.Description" xml:space="preserve">
+    <value>تكوين وقت وكيفية إنشاء مهام طباعة الإيصالات.</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.CreateReceiptAfterAutoApprove" xml:space="preserve">
+    <value>إنشاء إيصال بعد الموافقة التلقائية</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.ReceiptCopyCount" xml:space="preserve">
+    <value>عدد نسخ الإيصال</value>
+  </data>
+  <data name="Settings.Notifications.Title" xml:space="preserve">
+    <value>الإشعارات</value>
+  </data>
+  <data name="Settings.Notifications.Description" xml:space="preserve">
+    <value>تكوين كيفية تنبيه لوحة الويب للعميل بشأن الطلبات الجديدة.</value>
+  </data>
+  <data name="Settings.Notifications.ManageNotificationSettings" xml:space="preserve">
+    <value>إدارة إعدادات الإشعارات</value>
+  </data>
+  <data name="Settings.SavedSuccessfully" xml:space="preserve">
+    <value>تم حفظ الإعدادات بنجاح.</value>
+  </data>
+  <data name="Settings.SaveFailed" xml:space="preserve">
+    <value>تعذر حفظ الإعدادات.</value>
+  </data>
+  <data name="Settings.Active" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="Settings.Passive" xml:space="preserve">
+    <value>غير نشط</value>
+  </data>
+  <data name="Settings.AccountSettings.Title" xml:space="preserve">
+    <value>إعدادات الحساب</value>
+  </data>
+  <data name="Settings.AccountSettings.Subtitle" xml:space="preserve">
+    <value>إدارة إعدادات الحساب والملف الشخصي.</value>
+  </data>
+  <data name="Settings.AccountSettings.ComingSoon" xml:space="preserve">
+    <value>ستتوفر إعدادات الحساب هنا لاحقاً.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>جديد</value>

@@ -64,10 +64,40 @@ public sealed class OrdersController : BaseController
         if (customer is null) return NotFound();
 
         var vm = await BuildOrderListViewModelAsync(
-            customer.Id, platform, status, startDate, endDate, sortBy, sortDirection, page, pageSize,
+            customer.Id, platform, status, startDate, endDate, search: null,
+            sortBy, sortDirection, page, pageSize,
+            useHistoryDefaults: false,
             addDateValidationErrors: true, logDateFilterAs: "Index", ct);
 
         return View("Index", vm);
+    }
+
+    [HttpGet("history")]
+    public async Task<IActionResult> History(
+        [FromQuery] FoodPlatform? platform,
+        [FromQuery] OrderStatus? status,
+        [FromQuery] string? startDate,
+        [FromQuery] string? endDate,
+        [FromQuery] string? search,
+        [FromQuery] string? sortBy = "receivedAt",
+        [FromQuery] string? sortDirection = "desc",
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var vm = await BuildOrderListViewModelAsync(
+            customer.Id, platform, status, startDate, endDate, search,
+            sortBy, sortDirection, page, pageSize,
+            useHistoryDefaults: true,
+            addDateValidationErrors: true, logDateFilterAs: "History", ct);
+
+        vm.ListBasePath = "/orders/history";
+        vm.IsHistoryPage = true;
+
+        return View("History", vm);
     }
 
     [HttpGet("sync-settings")]
@@ -163,7 +193,9 @@ public sealed class OrdersController : BaseController
         if (customer is null) return NotFound();
 
         var vm = await BuildOrderListViewModelAsync(
-            customer.Id, platform, status, startDate, endDate, sortBy, sortDirection, page, pageSize,
+            customer.Id, platform, status, startDate, endDate, search: null,
+            sortBy, sortDirection, page, pageSize,
+            useHistoryDefaults: false,
             addDateValidationErrors: false, logDateFilterAs: null, ct);
 
         return PartialView("_OrdersTable", vm);
@@ -179,18 +211,21 @@ public sealed class OrdersController : BaseController
         OrderStatus? status,
         string? startDate,
         string? endDate,
+        string? search,
         string? sortBy,
         string? sortDirection,
         int page,
         int pageSize,
+        bool useHistoryDefaults,
         bool addDateValidationErrors,
         string? logDateFilterAs,
         CancellationToken ct)
     {
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
-        DefaultTodayIfNoDates(ref startDate, ref endDate);
+        DefaultDateRangeIfNoDates(ref startDate, ref endDate, useHistoryDefaults);
 
         var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
+        var trimmedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 
         if (addDateValidationErrors)
         {
@@ -210,6 +245,7 @@ public sealed class OrdersController : BaseController
             sortDirection,
             safePage,
             safePageSize,
+            trimmedSearch,
             ct);
 
         if (logDateFilterAs is not null)
@@ -219,15 +255,20 @@ public sealed class OrdersController : BaseController
 
         var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
         var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
+        var defaultHistory = OrdersReceivedAtQueryRange.GetDefaultHistoryRange();
 
         return new OrderListViewModel
         {
             TotalCount = result.TotalCount,
             TurkeyLocalToday = turkeyToday,
-            UseSimpleNoOrdersMessage = !platform.HasValue && !status.HasValue
-                && startDateParsed == turkeyToday
-                && endDateParsed == turkeyToday
-                && startDateParsed == endDateParsed,
+            UseSimpleNoOrdersMessage = useHistoryDefaults
+                ? !platform.HasValue && !status.HasValue && string.IsNullOrWhiteSpace(trimmedSearch)
+                    && startDateParsed == defaultHistory.Start
+                    && endDateParsed == defaultHistory.End
+                : !platform.HasValue && !status.HasValue
+                    && startDateParsed == turkeyToday
+                    && endDateParsed == turkeyToday
+                    && startDateParsed == endDateParsed,
             Orders = MapOrderRows(result.Items, tz),
             Filters = new OrderFilterViewModel
             {
@@ -235,6 +276,7 @@ public sealed class OrdersController : BaseController
                 Status = status,
                 StartDate = startDateParsed,
                 EndDate = endDateParsed,
+                Search = trimmedSearch,
                 SortBy = NormalizeSortBy(sortBy),
                 SortDirection = NormalizeSortDirection(sortDirection),
                 Page = safePage,
@@ -244,13 +286,25 @@ public sealed class OrdersController : BaseController
     }
 
     [HttpGet("details/{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Details(Guid id, [FromQuery] string? from, CancellationToken ct)
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
 
         var order = await _orders.GetByIdAsync(customer.Id, id, ct);
         if (order is null) return NotFound();
+
+        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
+        var receivedLocal = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(order.ReceivedAtUtc, DateTimeKind.Utc),
+            tz);
+        DateTime? acceptedLocal = order.AcceptedAtUtc.HasValue
+            ? TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.SpecifyKind(order.AcceptedAtUtc.Value, DateTimeKind.Utc),
+                tz)
+            : null;
+
+        var fromHistory = string.Equals(from, "history", StringComparison.OrdinalIgnoreCase);
 
         var vm = new OrderDetailViewModel
         {
@@ -265,8 +319,14 @@ public sealed class OrdersController : BaseController
             TotalAmount = order.TotalAmount,
             DeliveryFee = order.DeliveryFee,
             ServiceFee = order.ServiceFee,
+            PaymentMethod = order.PaymentMethod,
             CreatedAtPlatformUtc = order.CreatedAtPlatformUtc,
             ReceivedAtUtc = order.ReceivedAtUtc,
+            ReceivedAtLocal = receivedLocal,
+            AcceptedAtUtc = order.AcceptedAtUtc,
+            AcceptedAtLocal = acceptedLocal,
+            BackUrl = fromHistory ? "/orders/history" : "/orders",
+            BackFromHistory = fromHistory,
             Items = order.Items.Select(i => new OrderDetailViewModel.ItemRow
             {
                 ProductName = i.ProductName,
@@ -443,6 +503,23 @@ public sealed class OrdersController : BaseController
             var s = y.ToString("yyyy-MM-dd");
             startDate = s;
             endDate = s;
+        }
+    }
+
+    private static void DefaultDateRangeIfNoDates(ref string? startDate, ref string? endDate, bool useHistoryDefaults)
+    {
+        if (!string.IsNullOrWhiteSpace(startDate) || !string.IsNullOrWhiteSpace(endDate))
+            return;
+
+        if (useHistoryDefaults)
+        {
+            var (historyStart, historyEnd) = OrdersReceivedAtQueryRange.GetDefaultHistoryRange();
+            startDate = historyStart.ToString("yyyy-MM-dd");
+            endDate = historyEnd.ToString("yyyy-MM-dd");
+        }
+        else
+        {
+            DefaultTodayIfNoDates(ref startDate, ref endDate);
         }
     }
 

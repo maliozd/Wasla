@@ -18,8 +18,16 @@ public sealed class OrderDetailViewModel
     public decimal DeliveryFee { get; set; }
     public decimal ServiceFee { get; set; }
 
+    public PaymentMethod PaymentMethod { get; set; }
+
     public DateTime CreatedAtPlatformUtc { get; set; }
     public DateTime ReceivedAtUtc { get; set; }
+    public DateTime ReceivedAtLocal { get; set; }
+    public DateTime? AcceptedAtUtc { get; set; }
+    public DateTime? AcceptedAtLocal { get; set; }
+
+    public string BackUrl { get; set; } = "/orders";
+    public bool BackFromHistory { get; set; }
 
     public List<ItemRow> Items { get; set; } = new();
 

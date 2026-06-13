@@ -18,10 +18,10 @@
 
 /* Global base: pages that load only site.css (e.g. auth) without orderhub-theme. */
 html {
-  scrollbar-gutter: stable;
   min-height: 100%;
   position: relative;
   font-size: 14px;
+  scrollbar-gutter: auto;
 }
 
 @media (min-width: 768px) {

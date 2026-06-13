@@ -1,0 +1,20 @@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Settings.AccountSettings.Title"];
+}
+
+<div class="oh-account-settings-page">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="h4 mb-1">@L["Settings.AccountSettings.Title"]</h1>
+            <p class="text-muted small mb-0">@L["Settings.AccountSettings.Subtitle"]</p>
+        </div>
+    </div>
+
+    <div class="card oh-card">
+        <div class="card-body py-4">
+            <p class="text-muted mb-0">@L["Settings.AccountSettings.ComingSoon"]</p>
+        </div>
+    </div>
+</div>

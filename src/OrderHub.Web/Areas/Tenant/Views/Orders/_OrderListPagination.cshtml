@@ -1,0 +1,46 @@
+@model OrderHub.Web.Models.Orders.OrderListViewModel
+@using OrderHub.Web.Models.Orders
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+
+@{
+    var f = Model.Filters;
+    var basePath = Model.ListBasePath;
+    var totalPages = Model.TotalPages;
+    var currentPage = f.Page;
+    var hasPrevious = currentPage > 1;
+    var hasNext = currentPage < totalPages;
+}
+
+@if (Model.TotalCount > 0)
+{
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 px-0 px-md-1 pt-3 oh-order-history-pagination">
+        <div class="small text-muted">
+            @L["Orders.History.PageIndicator", currentPage, totalPages]
+        </div>
+        <nav aria-label="@L["Orders.History.PaginationLabel"]">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(hasPrevious ? "" : "disabled")">
+                    @if (hasPrevious)
+                    {
+                        <a class="page-link" href="@OrderListUrlHelper.Build(basePath, f, page: currentPage - 1)">@L["Orders.History.Previous"]</a>
+                    }
+                    else
+                    {
+                        <span class="page-link">@L["Orders.History.Previous"]</span>
+                    }
+                </li>
+                <li class="page-item @(hasNext ? "" : "disabled")">
+                    @if (hasNext)
+                    {
+                        <a class="page-link" href="@OrderListUrlHelper.Build(basePath, f, page: currentPage + 1)">@L["Orders.History.Next"]</a>
+                    }
+                    else
+                    {
+                        <span class="page-link">@L["Orders.History.Next"]</span>
+                    }
+                </li>
+            </ul>
+        </nav>
+    </div>
+}
