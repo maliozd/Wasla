@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Domain.Entities.Customer;
 
 namespace OrderHub.Infrastructure.Printing;
@@ -12,8 +13,13 @@ internal static class ReceiptPayloadBuilder
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public static string Build(Order order, string? tenantDisplayName)
+    public static string Build(
+        Order order,
+        string? tenantDisplayName,
+        ReceiptTemplateSettings? template = null)
     {
+        var subtotal = order.Items.Sum(i => i.TotalPrice);
+
         var payload = new ReceiptPayloadSnapshot
         {
             TenantDisplayName = string.IsNullOrWhiteSpace(tenantDisplayName) ? null : tenantDisplayName.Trim(),
@@ -24,10 +30,13 @@ internal static class ReceiptPayloadBuilder
             CustomerName = NullIfEmpty(order.CustomerName),
             CustomerPhone = NullIfEmpty(order.CustomerPhone),
             DeliveryAddress = NullIfEmpty(order.CustomerAddress),
+            Subtotal = subtotal > 0 ? subtotal : null,
+            DeliveryFee = order.DeliveryFee > 0 ? order.DeliveryFee : null,
             TotalAmount = order.TotalAmount,
             PaymentMethod = order.PaymentMethod == Domain.Enums.PaymentMethod.Unknown
                 ? null
                 : order.PaymentMethod.ToString(),
+            Template = template is null ? null : MapTemplate(template),
             Items = order.Items.Select(item => new ReceiptItemSnapshot
             {
                 ProductName = item.ProductName,
@@ -48,6 +57,26 @@ internal static class ReceiptPayloadBuilder
         return JsonSerializer.Serialize(payload, JsonOptions);
     }
 
+    private static ReceiptTemplatePayload MapTemplate(ReceiptTemplateSettings template) =>
+        new()
+        {
+            HeaderText = template.ReceiptHeaderText,
+            FooterText = template.ReceiptFooterText,
+            ShowRestaurantName = template.ShowRestaurantName,
+            ShowPlatformName = template.ShowPlatformName,
+            ShowReceivedTime = template.ShowReceivedTime,
+            ShowCustomerName = template.ShowCustomerName,
+            ShowCustomerPhone = template.ShowCustomerPhone,
+            ShowDeliveryAddress = template.ShowDeliveryAddress,
+            ShowProductNotes = template.ShowProductNotes,
+            ShowProductOptions = template.ShowProductOptions,
+            ShowSubtotal = template.ShowSubtotal,
+            ShowDiscount = template.ShowDiscount,
+            ShowDeliveryFee = template.ShowDeliveryFee,
+            ShowPaymentMethod = template.ShowPaymentMethod,
+            ShowFooterMessage = template.ShowFooterMessage
+        };
+
     private static string? NullIfEmpty(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -61,9 +90,31 @@ internal static class ReceiptPayloadBuilder
         public string? CustomerName { get; init; }
         public string? CustomerPhone { get; init; }
         public string? DeliveryAddress { get; init; }
+        public decimal? Subtotal { get; init; }
+        public decimal? DeliveryFee { get; init; }
         public decimal TotalAmount { get; init; }
         public string? PaymentMethod { get; init; }
+        public ReceiptTemplatePayload? Template { get; init; }
         public List<ReceiptItemSnapshot> Items { get; init; } = [];
+    }
+
+    private sealed class ReceiptTemplatePayload
+    {
+        public string? HeaderText { get; init; }
+        public string? FooterText { get; init; }
+        public bool ShowRestaurantName { get; init; } = true;
+        public bool ShowPlatformName { get; init; } = true;
+        public bool ShowReceivedTime { get; init; } = true;
+        public bool ShowCustomerName { get; init; } = true;
+        public bool ShowCustomerPhone { get; init; } = true;
+        public bool ShowDeliveryAddress { get; init; } = true;
+        public bool ShowProductNotes { get; init; } = true;
+        public bool ShowProductOptions { get; init; } = true;
+        public bool ShowSubtotal { get; init; } = true;
+        public bool ShowDiscount { get; init; }
+        public bool ShowDeliveryFee { get; init; } = true;
+        public bool ShowPaymentMethod { get; init; }
+        public bool ShowFooterMessage { get; init; } = true;
     }
 
     private sealed class ReceiptItemSnapshot

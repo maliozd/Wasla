@@ -28,7 +28,12 @@
 
   function setTopbarVar() {
     const el = document.getElementById("ohAppHeader");
-    if (!el) return;
+    if (!el) {
+      if (document.body && document.body.classList.contains("oh-tenant")) {
+        document.documentElement.style.setProperty("--oh-topbar-h", "0px");
+      }
+      return;
+    }
     const h = Math.round(el.getBoundingClientRect().height);
     document.documentElement.style.setProperty(
       "--oh-topbar-h",

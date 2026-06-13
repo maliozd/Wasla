@@ -1,26 +1,21 @@
 @model OrderHub.Web.Models.Dashboard.DashboardViewModel
 @using System.Globalization
-@using OrderHub.Application.Orders
-@using OrderHub.Application.Time
-@using OrderHub.Domain.Enums
-@using Microsoft.Extensions.Localization
-@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@using OrderHub.Web.Ui
+@using OrderHub.Web.Models.Ui
 @{
     ViewData["Title"] = L["Dashboard.Title"];
-    var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
-    var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
+    var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
     var todayLabel = turkeyToday.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture);
     var averageOrderValue = Model.TodayOrderCount > 0
         ? Model.TodayRevenue / Model.TodayOrderCount
         : 0m;
-    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
 <div class="oh-dashboard">
-    <header class="oh-dash-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
-        <div>
-            <h1 class="oh-dash-header__title h4 mb-1">@L["Dashboard.Title"]</h1>
-            <p class="oh-dash-header__subtitle text-muted small mb-0">@L["Dashboard.TodayOverview"]</p>
+    <header class="oh-customer-page-header oh-dash-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+        <div class="oh-customer-page-header__main">
+            <h1 class="oh-customer-page-header__title oh-dash-header__title h4 mb-1">@L["Dashboard.Title"]</h1>
+            <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["Dashboard.TodayOverview"]</p>
         </div>
         <div class="oh-dash-header__scope text-md-end">
             <span class="badge rounded-pill text-bg-light border oh-dash-today-badge">
@@ -89,14 +84,14 @@
                     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
                         <div>
                             <h2 class="oh-dash-section__title h6 mb-1">@L["Dashboard.RecentOrders"]</h2>
-                            <p class="oh-dash-section__subtitle text-muted small mb-0">@L["Dashboard.LatestOrdersReceivedToday"]</p>
+                            <p class="text-muted small mb-0">@L["Dashboard.LatestOrdersReceivedToday"]</p>
                         </div>
                         <a href="/orders" class="btn btn-sm btn-outline-primary">@L["Dashboard.ViewAll"]</a>
                     </div>
 
                     @if (Model.RecentOrders.Count == 0)
                     {
-                        <div class="oh-dash-empty text-center py-5">
+                        <div class="oh-customer-empty-state oh-dash-empty text-center py-5">
                             <div class="oh-dash-empty__icon text-muted mb-2" aria-hidden="true">
                                 <i class="bi bi-inbox"></i>
                             </div>
@@ -128,12 +123,12 @@
                                         <td>
                                             <a href="/orders/details/@o.Id" class="oh-dash-order-code">@o.ExternalOrderCode</a>
                                         </td>
-                                        <td class="oh-dash-customer">@(string.IsNullOrWhiteSpace(o.CustomerName) ? "—" : o.CustomerName)</td>
+                                        <td class="oh-dash-customer">@OrderUiHelper.DisplayOrDash(o.CustomerName)</td>
                                         <td class="text-end fw-medium">@o.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</td>
                                         <td>
-                                            <span class="@StatusBadgeClass(o.Status)">@StatusLabel(o.Status)</span>
+                                            @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(o.Status))
                                         </td>
-                                        <td class="text-end text-muted small oh-dash-received">@FormatReceivedAt(o.ReceivedAtUtc, tz, turkeyToday)</td>
+                                        <td class="text-end text-muted small oh-dash-received">@OrderUiHelper.FormatReceivedAtUtc(o.ReceivedAtUtc, tz, turkeyToday)</td>
                                     </tr>
                                 }
                                 </tbody>
@@ -148,11 +143,11 @@
             <div class="card oh-card oh-dash-section">
                 <div class="card-body">
                     <h2 class="oh-dash-section__title h6 mb-1">@L["Dashboard.PlatformSummary"]</h2>
-                    <p class="oh-dash-section__subtitle text-muted small mb-3">@L["Dashboard.OrdersByPlatformToday"]</p>
+                    <p class="text-muted small mb-3">@L["Dashboard.OrdersByPlatformToday"]</p>
 
                     @if (Model.PlatformSummary.Count == 0)
                     {
-                        <div class="oh-dash-empty text-center py-4">
+                        <div class="oh-customer-empty-state oh-dash-empty text-center py-4">
                             <p class="oh-dash-empty__title text-muted mb-0">@L["Dashboard.NoPlatformSummary"]</p>
                         </div>
                     }
@@ -194,27 +189,3 @@
         </div>
     </div>
 </div>
-
-@functions {
-    private static string StatusBadgeClass(OrderStatus status) => status switch
-    {
-        OrderStatus.New => "oh-dash-status oh-dash-status--new",
-        OrderStatus.Accepted => "oh-dash-status oh-dash-status--accepted",
-        OrderStatus.Preparing or OrderStatus.ReadyForPickup or OrderStatus.OnTheWay => "oh-dash-status oh-dash-status--progress",
-        OrderStatus.Delivered => "oh-dash-status oh-dash-status--delivered",
-        OrderStatus.Cancelled => "oh-dash-status oh-dash-status--cancelled",
-        OrderStatus.Failed => "oh-dash-status oh-dash-status--failed",
-        _ => "oh-dash-status"
-    };
-
-    private static string FormatReceivedAt(DateTime receivedAtUtc, TimeZoneInfo timeZone, DateOnly turkeyToday)
-    {
-        var local = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.SpecifyKind(receivedAtUtc, DateTimeKind.Utc),
-            timeZone);
-
-        return DateOnly.FromDateTime(local) == turkeyToday
-            ? local.ToString("t", CultureInfo.CurrentCulture)
-            : local.ToString("g", CultureInfo.CurrentCulture);
-    }
-}

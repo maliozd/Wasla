@@ -3,12 +3,22 @@
   "use strict";
 
   const O = global.OrderHubOrders;
-  if (!O || !O.audio || !O.notificationSettings) {
-    return;
+  if (!O) return;
+
+  if (!O.table) {
+    O.table = {
+      knownOrderIds: new Set(),
+      recentlyNewOrderIds: new Map(),
+      hintShownForUnlock: false,
+      NEW_ORDER_HIGHLIGHT_MS: 30000
+    };
   }
 
   const T = O.table;
 
+  function isLiveDisplayPage() {
+    return O.opts.pageMode === "liveDisplay";
+  }
   /** YYYY-MM-DD in local time (same as date input / server default-today). */
   function localDateYmd() {
     const d = new Date();
@@ -23,7 +33,7 @@
 
   /** Default live: page 1, receivedAt desc, and date range is "today" (incl. empty URL: server uses today). */
   function isDefaultLiveOrdersView() {
-    const p = new URLSearchParams(global.location.search);
+    if (isLiveDisplayPage()) return true;    const p = new URLSearchParams(global.location.search);
     const sortBy = (p.get("sortBy") || p.get("sort") || "receivedAt").toLowerCase();
     const sortDirection = (p.get("sortDirection") || p.get("dir") || "desc").toLowerCase();
     const page = (p.get("page") || "1").trim();
@@ -51,6 +61,19 @@
       if (id) ids.push(id);
     });
     return { ids: ids, tmp: tmp };
+  }
+
+  function updateLastUpdatedTimestamps() {
+    try {
+      const text = new Date().toLocaleTimeString();
+      ["ordersLastUpdated", "ordersLiveDisplayLastUpdated"].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      });
+    } catch (e) {      if (O.isDebugEnabled()) {
+        O.debugWarn("updateLastUpdatedTimestamps failed", e);
+      }
+    }
   }
 
   function updateTotalCountFromTmp(tmp) {
@@ -217,15 +240,33 @@
     });
   }
 
+  function buildPollUrl() {
+    if (isLiveDisplayPage()) {
+      const u = new URL(global.location.origin + O.opts.tableUrl);
+      const ymd = O.opts.todayYmd || localDateYmd();
+      if (ymd) {
+        u.searchParams.set("startDate", ymd);
+        u.searchParams.set("endDate", ymd);
+      }
+      u.searchParams.set("page", "1");
+      u.searchParams.set("pageSize", String(O.opts.liveDisplayPageSize || 100));
+      u.searchParams.set("sortBy", "receivedAt");
+      u.searchParams.set("sortDirection", "desc");
+      return u;
+    }
+
+    const u = new URL(global.location.origin + O.opts.tableUrl);
+    u.search = global.location.search || "";
+    return u;
+  }
+
   async function refreshOrdersTable() {
     const live = isDefaultLiveOrdersView();
     var audioPlayedOk = "-";
 
     try {
-      const u = new URL(global.location.origin + O.opts.tableUrl);
-      u.search = global.location.search || "";
+      const u = buildPollUrl();
       u.searchParams.set("_", String(Date.now()));
-
       const resp = await fetch(u.toString(), {
         headers: { "X-Requested-With": "XMLHttpRequest" }
       });
@@ -284,6 +325,11 @@
 
       container.innerHTML = html;
       updateTotalCountFromTmp(tmp);
+      updateLastUpdatedTimestamps();
+
+      if (O.viewMode && typeof O.viewMode.syncFromTable === "function") {
+        O.viewMode.syncFromTable();
+      }
 
       if (live && newIds.length > 0) {
         markOrdersAsRecentlyNew(newIds);
@@ -292,8 +338,7 @@
       captureKnownOrderIdsFromContainer();
       applyNewOrderVisualState();
 
-      if (live && newIds.length > 0 && O.state.notificationSettings) {
-        const st = O.state.notificationSettings;
+      if (!isLiveDisplayPage() && live && newIds.length > 0 && O.state.notificationSettings && O.audio) {        const st = O.state.notificationSettings;
         if (st.newOrderSoundEnabled) {
           if (!O.audio.isSoundUnlocked()) {
             if (!T.hintShownForUnlock) {

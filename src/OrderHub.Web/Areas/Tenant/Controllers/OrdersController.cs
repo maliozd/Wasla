@@ -10,6 +10,7 @@ using OrderHub.Web.Controllers;
 using OrderHub.Web.Models.Orders;
 using OrderHub.Web.Routing;
 using OrderHub.Web.Security;
+using OrderHub.Web.Ui;
 using Microsoft.Extensions.Localization;
 
 namespace OrderHub.Web.Areas.Tenant.Controllers;
@@ -62,6 +63,9 @@ public sealed class OrdersController : BaseController
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
+
+        if (IsLegacyFullscreenRequest())
+            return RedirectToAction(nameof(LiveDisplay));
 
         var vm = await BuildOrderListViewModelAsync(
             customer.Id, platform, status, startDate, endDate, search: null,
@@ -199,6 +203,23 @@ public sealed class OrdersController : BaseController
             addDateValidationErrors: false, logDateFilterAs: null, ct);
 
         return PartialView("_OrdersTable", vm);
+    }
+
+    [HttpGet("live-display")]
+    public async Task<IActionResult> LiveDisplay(CancellationToken ct = default)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null) return NotFound();
+
+        var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
+        var vm = await BuildOrderListViewModelAsync(
+            customer.Id, null, null, today, today, search: null,
+            sortBy: "receivedAt", sortDirection: "desc", page: 1, pageSize: 100,
+            useHistoryDefaults: false,
+            addDateValidationErrors: false, logDateFilterAs: null, ct);
+
+        ViewData["CustomerName"] = customer.Name;
+        return View("LiveDisplay", vm);
     }
 
     /// <summary>
@@ -442,19 +463,36 @@ public sealed class OrdersController : BaseController
     private static List<OrderListViewModel.Row> MapOrderRows(
         IReadOnlyList<OrderListResult.Row> items,
         TimeZoneInfo timeZone) =>
-        items.Select(o => new OrderListViewModel.Row
+        items.Select(o =>
         {
-            Id = o.Id,
-            Platform = o.Platform,
-            ExternalOrderCode = o.ExternalOrderCode,
-            CustomerName = o.CustomerName,
-            TotalAmount = o.TotalAmount,
-            Status = o.Status,
-            ReceivedAtUtc = o.ReceivedAtUtc,
-            ReceivedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
-                DateTime.SpecifyKind(o.ReceivedAtUtc, DateTimeKind.Utc),
-                timeZone)
+            var imageSeed = OrderProductImageHelper.BuildImageSeed(o.Id, o.ExternalOrderCode, o.FirstProductName);
+            return new OrderListViewModel.Row
+            {
+                Id = o.Id,
+                Platform = o.Platform,
+                ExternalOrderCode = o.ExternalOrderCode,
+                CustomerName = o.CustomerName,
+                TotalAmount = o.TotalAmount,
+                Status = o.Status,
+                ReceivedAtUtc = o.ReceivedAtUtc,
+                ReceivedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
+                    DateTime.SpecifyKind(o.ReceivedAtUtc, DateTimeKind.Utc),
+                    timeZone),
+                ItemCount = o.ItemCount,
+                FirstProductName = o.FirstProductName,
+                DisplayImageUrl = OrderProductImageHelper.ResolveDisplayImageUrl(null, imageSeed)
+            };
         }).ToList();
+
+    private bool IsLegacyFullscreenRequest()
+    {
+        if (!Request.Query.TryGetValue("fullscreen", out var value))
+            return false;
+
+        var v = value.ToString().Trim();
+        return v.Equals("1", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("true", StringComparison.OrdinalIgnoreCase);
+    }
 
     private void LogDateFilter(
         string action,

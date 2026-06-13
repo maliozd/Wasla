@@ -28,27 +28,40 @@ public sealed class ReceiptFormatter
         if (payload is null)
             return Normalize("OrderHub Receipt\nInvalid payload.", normalizeTurkishChars);
 
-        var sb = new StringBuilder();
-        AppendCentered(sb, payload.TenantDisplayName);
-        AppendSeparator(sb);
+        var template = payload.Template;
+        var useTemplate = template is not null;
 
-        if (!string.IsNullOrWhiteSpace(payload.Platform))
+        var sb = new StringBuilder();
+
+        var header = ResolveHeader(payload, template, useTemplate);
+        AppendCentered(sb, header);
+
+        if (!string.IsNullOrWhiteSpace(header))
+            AppendSeparator(sb);
+
+        if (ShouldShow(template, useTemplate, t => t.ShowPlatformName) && !string.IsNullOrWhiteSpace(payload.Platform))
             AppendLine(sb, "Platform", payload.Platform);
+
         if (!string.IsNullOrWhiteSpace(payload.ExternalOrderCode))
             AppendLine(sb, "Order", payload.ExternalOrderCode);
         else if (!string.IsNullOrWhiteSpace(payload.ExternalOrderId))
             AppendLine(sb, "Order", payload.ExternalOrderId);
 
-        if (payload.ReceivedAtUtc != default)
+        if (ShouldShow(template, useTemplate, t => t.ShowReceivedTime) && payload.ReceivedAtUtc != default)
             AppendLine(sb, "Received", payload.ReceivedAtUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture));
 
-        AppendSeparator(sb);
+        var hasCustomerBlock = (ShouldShow(template, useTemplate, t => t.ShowCustomerName) && !string.IsNullOrWhiteSpace(payload.CustomerName))
+            || (ShouldShow(template, useTemplate, t => t.ShowCustomerPhone) && !string.IsNullOrWhiteSpace(payload.CustomerPhone))
+            || (ShouldShow(template, useTemplate, t => t.ShowDeliveryAddress) && !string.IsNullOrWhiteSpace(payload.DeliveryAddress));
 
-        if (!string.IsNullOrWhiteSpace(payload.CustomerName))
+        if (hasCustomerBlock)
+            AppendSeparator(sb);
+
+        if (ShouldShow(template, useTemplate, t => t.ShowCustomerName) && !string.IsNullOrWhiteSpace(payload.CustomerName))
             AppendLine(sb, "Customer", payload.CustomerName);
-        if (!string.IsNullOrWhiteSpace(payload.CustomerPhone))
+        if (ShouldShow(template, useTemplate, t => t.ShowCustomerPhone) && !string.IsNullOrWhiteSpace(payload.CustomerPhone))
             AppendLine(sb, "Phone", payload.CustomerPhone);
-        if (!string.IsNullOrWhiteSpace(payload.DeliveryAddress))
+        if (ShouldShow(template, useTemplate, t => t.ShowDeliveryAddress) && !string.IsNullOrWhiteSpace(payload.DeliveryAddress))
             AppendWrapped(sb, "Address", payload.DeliveryAddress);
 
         if (payload.Items is { Count: > 0 })
@@ -59,14 +72,13 @@ public sealed class ReceiptFormatter
                 var qty = item.Quantity > 0 ? item.Quantity : 1;
                 AppendWrapped(sb, null, $"{qty}x {item.ProductName}");
 
-                if (item.UnitPrice > 0)
-                    AppendLine(sb, "  Unit", item.UnitPrice.ToString("0.00", CultureInfo.InvariantCulture));
                 if (item.LineTotal > 0)
                     AppendLine(sb, "  Line", item.LineTotal.ToString("0.00", CultureInfo.InvariantCulture));
-                if (!string.IsNullOrWhiteSpace(item.Notes))
+
+                if (ShouldShow(template, useTemplate, t => t.ShowProductNotes) && !string.IsNullOrWhiteSpace(item.Notes))
                     AppendWrapped(sb, "  Note", item.Notes);
 
-                if (item.Options is { Count: > 0 })
+                if (ShouldShow(template, useTemplate, t => t.ShowProductOptions) && item.Options is { Count: > 0 })
                 {
                     foreach (var opt in item.Options)
                     {
@@ -79,10 +91,28 @@ public sealed class ReceiptFormatter
 
         AppendSeparator(sb);
 
+        if (ShouldShow(template, useTemplate, t => t.ShowSubtotal) && payload.Subtotal is > 0)
+            AppendLine(sb, "Subtotal", payload.Subtotal.Value.ToString("0.00", CultureInfo.InvariantCulture));
+
+        if (ShouldShow(template, useTemplate, t => t.ShowDeliveryFee) && payload.DeliveryFee is > 0)
+            AppendLine(sb, "Delivery", payload.DeliveryFee.Value.ToString("0.00", CultureInfo.InvariantCulture));
+
         if (payload.TotalAmount > 0)
             AppendLine(sb, "TOTAL", payload.TotalAmount.ToString("0.00", CultureInfo.InvariantCulture));
-        if (!string.IsNullOrWhiteSpace(payload.PaymentMethod))
+
+        if (ShouldShow(template, useTemplate, t => t.ShowPaymentMethod) && !string.IsNullOrWhiteSpace(payload.PaymentMethod))
             AppendLine(sb, "Payment", payload.PaymentMethod);
+
+        if (ShouldShow(template, useTemplate, t => t.ShowFooterMessage))
+        {
+            var footer = ResolveFooter(payload, template, useTemplate);
+            if (!string.IsNullOrWhiteSpace(footer))
+            {
+                AppendSeparator(sb);
+                foreach (var line in footer.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    AppendCentered(sb, line);
+            }
+        }
 
         sb.AppendLine();
         sb.AppendLine();
@@ -90,6 +120,33 @@ public sealed class ReceiptFormatter
 
         return Normalize(sb.ToString(), normalizeTurkishChars);
     }
+
+    private static string? ResolveHeader(ReceiptPayload payload, ReceiptTemplatePayload? template, bool useTemplate)
+    {
+        if (useTemplate && template is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(template.HeaderText))
+                return template.HeaderText.Trim();
+            if (template.ShowRestaurantName && !string.IsNullOrWhiteSpace(payload.TenantDisplayName))
+                return payload.TenantDisplayName.Trim();
+            return null;
+        }
+
+        return string.IsNullOrWhiteSpace(payload.TenantDisplayName) ? null : payload.TenantDisplayName.Trim();
+    }
+
+    private static string? ResolveFooter(ReceiptPayload payload, ReceiptTemplatePayload? template, bool useTemplate)
+    {
+        if (useTemplate && template is not null && !string.IsNullOrWhiteSpace(template.FooterText))
+            return template.FooterText.Trim();
+        return null;
+    }
+
+    private static bool ShouldShow(
+        ReceiptTemplatePayload? template,
+        bool useTemplate,
+        Func<ReceiptTemplatePayload, bool> selector) =>
+        !useTemplate || template is null || selector(template);
 
     private static void AppendCentered(StringBuilder sb, string? text)
     {
@@ -181,9 +238,31 @@ public sealed class ReceiptFormatter
         public string? CustomerName { get; set; }
         public string? CustomerPhone { get; set; }
         public string? DeliveryAddress { get; set; }
+        public decimal? Subtotal { get; set; }
+        public decimal? DeliveryFee { get; set; }
         public decimal TotalAmount { get; set; }
         public string? PaymentMethod { get; set; }
+        public ReceiptTemplatePayload? Template { get; set; }
         public List<ReceiptItem>? Items { get; set; }
+    }
+
+    private sealed class ReceiptTemplatePayload
+    {
+        public string? HeaderText { get; set; }
+        public string? FooterText { get; set; }
+        public bool ShowRestaurantName { get; set; } = true;
+        public bool ShowPlatformName { get; set; } = true;
+        public bool ShowReceivedTime { get; set; } = true;
+        public bool ShowCustomerName { get; set; } = true;
+        public bool ShowCustomerPhone { get; set; } = true;
+        public bool ShowDeliveryAddress { get; set; } = true;
+        public bool ShowProductNotes { get; set; } = true;
+        public bool ShowProductOptions { get; set; } = true;
+        public bool ShowSubtotal { get; set; } = true;
+        public bool ShowDiscount { get; set; }
+        public bool ShowDeliveryFee { get; set; } = true;
+        public bool ShowPaymentMethod { get; set; }
+        public bool ShowFooterMessage { get; set; } = true;
     }
 
     private sealed class ReceiptItem

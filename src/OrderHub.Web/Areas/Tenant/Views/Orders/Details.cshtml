@@ -1,23 +1,18 @@
 @model OrderHub.Web.Models.Orders.OrderDetailViewModel
 @using System.Globalization
-@using OrderHub.Application.Orders
-@using OrderHub.Application.Time
-@using OrderHub.Domain.Enums
-@using Microsoft.Extensions.Localization
-@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@using OrderHub.Web.Ui
+@using OrderHub.Web.Models.Ui
 @{
     ViewData["Title"] = L["Orders.Details.Title"];
-    var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
-    var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
-    var receivedLabel = FormatReceivedAt(Model.ReceivedAtUtc, tz, turkeyToday);
-    var phoneTel = PhoneTelHref(Model.CustomerPhone);
-    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
+    var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
+    var receivedLabel = OrderUiHelper.FormatReceivedAtUtc(Model.ReceivedAtUtc, tz, turkeyToday);
+    var phoneTel = OrderUiHelper.PhoneTelHref(Model.CustomerPhone);
 }
 
 <div class="oh-order-details">
-    <header class="oh-order-details__header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
-        <div class="oh-order-details__header-main min-w-0">
-            <h1 class="oh-order-details__title h4 mb-2">@L["Orders.Details.Title"]</h1>
+    <header class="oh-customer-page-header oh-order-details__header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+        <div class="oh-order-details__header-main oh-customer-page-header__main min-w-0">
+            <h1 class="oh-customer-page-header__title oh-order-details__title h4 mb-2">@L["Orders.Details.Title"]</h1>
             <div class="d-flex flex-wrap align-items-center gap-2">
                 @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
                 <span class="oh-order-details__code font-monospace">@Model.ExternalOrderCode</span>
@@ -26,7 +21,7 @@
             </div>
         </div>
         <div class="oh-order-details__header-actions d-flex flex-wrap align-items-center gap-2 ms-auto">
-            <span class="@StatusBadgeClass(Model.Status)">@StatusLabel(Model.Status)</span>
+            @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
             <a class="btn btn-sm btn-outline-secondary" href="@Model.BackUrl">
                 <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
                 @(Model.BackFromHistory ? L["Orders.Details.BackToOrderHistory"] : L["Orders.Details.BackToOrders"])
@@ -39,7 +34,7 @@
             <div class="oh-order-details-stat">
                 <div class="oh-order-details-stat__label">@L["Orders.Details.Status"]</div>
                 <div class="oh-order-details-stat__value">
-                    <span class="@StatusBadgeClass(Model.Status)">@StatusLabel(Model.Status)</span>
+                    @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
                 </div>
             </div>
         </div>
@@ -70,7 +65,7 @@
             <div class="card oh-card oh-order-details-card">
                 <div class="card-body">
                     <h2 class="oh-order-details-card__title h6 mb-3">@L["Orders.Details.Customer"]</h2>
-                    <p class="oh-order-details-customer-name fw-semibold mb-3">@DisplayOrDash(Model.CustomerName)</p>
+                    <p class="oh-order-details-customer-name fw-semibold mb-3">@OrderUiHelper.DisplayOrDash(Model.CustomerName)</p>
                     <dl class="oh-order-details-dl mb-0">
                         <div class="oh-order-details-dl__row">
                             <dt>@L["Orders.Details.Phone"]</dt>
@@ -81,7 +76,7 @@
                                 }
                                 else
                                 {
-                                    @DisplayOrDash(Model.CustomerPhone)
+                                    @OrderUiHelper.DisplayOrDash(Model.CustomerPhone)
                                 }
                             </dd>
                         </div>
@@ -95,7 +90,7 @@
                     <dl class="oh-order-details-dl mb-0">
                         <div class="oh-order-details-dl__row">
                             <dt>@L["Orders.Details.Address"]</dt>
-                            <dd class="oh-order-details-address">@DisplayOrDash(Model.CustomerAddress)</dd>
+                            <dd class="oh-order-details-address">@OrderUiHelper.DisplayOrDash(Model.CustomerAddress)</dd>
                         </div>
                     </dl>
                 </div>
@@ -128,7 +123,7 @@
                         }
                         <div class="oh-order-details-dl__row">
                             <dt>@L["Orders.Details.PaymentMethod"]</dt>
-                            <dd>@PaymentMethodLabel(Model.PaymentMethod)</dd>
+                            <dd>@OrderUiHelper.PaymentMethodLabel(Model.PaymentMethod, L)</dd>
                         </div>
                     </dl>
                 </div>
@@ -141,7 +136,7 @@
                     <h2 class="oh-order-details-card__title h6 mb-3">@L["Orders.Details.Items"]</h2>
                     @if (Model.Items.Count == 0)
                     {
-                        <div class="oh-order-details-empty text-center py-4">
+                        <div class="oh-customer-empty-state oh-order-details-empty text-center py-4">
                             <p class="text-muted mb-0">@L["Orders.Details.NoItemsFound"]</p>
                         </div>
                     }
@@ -219,40 +214,3 @@
         </div>
     </div>
 </div>
-
-@functions {
-    private static string DisplayOrDash(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? "—" : value;
-
-    private static string? PhoneTelHref(string? phone)
-    {
-        if (string.IsNullOrWhiteSpace(phone)) return null;
-        var digits = new string(phone.Where(c => char.IsDigit(c) || c == '+').ToArray());
-        return digits.Length >= 7 ? "tel:" + digits : null;
-    }
-
-    private string PaymentMethodLabel(PaymentMethod method) =>
-        method == PaymentMethod.Unknown ? "—" : L[$"PaymentMethod.{method}"].Value;
-
-    private static string StatusBadgeClass(OrderStatus status) => status switch
-    {
-        OrderStatus.New => "oh-dash-status oh-dash-status--new",
-        OrderStatus.Accepted => "oh-dash-status oh-dash-status--accepted",
-        OrderStatus.Preparing or OrderStatus.ReadyForPickup or OrderStatus.OnTheWay => "oh-dash-status oh-dash-status--progress",
-        OrderStatus.Delivered => "oh-dash-status oh-dash-status--delivered",
-        OrderStatus.Cancelled => "oh-dash-status oh-dash-status--cancelled",
-        OrderStatus.Failed => "oh-dash-status oh-dash-status--failed",
-        _ => "oh-dash-status"
-    };
-
-    private static string FormatReceivedAt(DateTime receivedAtUtc, TimeZoneInfo timeZone, DateOnly turkeyToday)
-    {
-        var local = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.SpecifyKind(receivedAtUtc, DateTimeKind.Utc),
-            timeZone);
-
-        return DateOnly.FromDateTime(local) == turkeyToday
-            ? local.ToString("t", CultureInfo.CurrentCulture)
-            : local.ToString("g", CultureInfo.CurrentCulture);
-    }
-}

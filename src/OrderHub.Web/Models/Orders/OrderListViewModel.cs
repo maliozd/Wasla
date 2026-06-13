@@ -37,6 +37,15 @@ public sealed class OrderListViewModel
 
         /// <summary>Received time in Turkey local zone for table display (DB stores UTC in <see cref="ReceivedAtUtc" />).</summary>
         public DateTime ReceivedAtLocal { get; set; }
+
+        /// <summary>Display-only: number of line items on the order.</summary>
+        public int ItemCount { get; set; }
+
+        /// <summary>Display-only: first line item product name for card image fallback.</summary>
+        public string? FirstProductName { get; set; }
+
+        /// <summary>Display-only: resolved product/card image URL for compact/kitchen views.</summary>
+        public string DisplayImageUrl { get; set; } = string.Empty;
     }
 }
 

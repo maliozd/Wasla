@@ -1,0 +1,266 @@
+@model OrderHub.Web.Models.Settings.ReceiptPrinterSettingsPageViewModel
+@using System.Collections.Generic
+@using System.Text.Json
+@using OrderHub.Application.Abstractions.Printing
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@using OrderHub.Web.Models.Ui
+@{
+    ViewData["Title"] = L["Settings.ReceiptPrinterSettings.Title"];
+    var status = Model.PrintBridgeStatus;
+}
+
+<div class="oh-order-settings-page oh-receipt-printer-settings-page">
+    @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
+    {
+        Title = L["Settings.ReceiptPrinterSettings.Title"].Value,
+        Subtitle = L["Settings.ReceiptPrinterSettings.Subtitle"].Value
+    })
+
+    <div id="ordersMessageHost"></div>
+    <div id="receiptTemplateMessageHost" class="mb-2"></div>
+
+    <form id="orderSettingsForm" method="post" action="/orders/order-settings" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+    <form id="receiptTemplateSettingsForm" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <div class="row g-3 oh-receipt-settings-layout">
+        <div class="col-lg-7">
+            <div class="card oh-card oh-settings-card">
+                <div class="card-body p-0">
+                    <section class="oh-settings-section">
+                        <div class="oh-settings-section-row">
+                            <div class="oh-settings-section-text">
+                                <h2 class="h6 mb-1">@L["Settings.ReceiptCreation.Title"]</h2>
+                                <p class="text-muted small mb-0">@L["Settings.ReceiptCreation.Description"]</p>
+                            </div>
+                            <div class="oh-settings-section-controls">
+                                <span class="small text-muted text-nowrap">@L["Settings.ReceiptCreation.CreateReceiptAfterAutoApprove"]</span>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="autoPrintReceiptToggle"
+                                           aria-label="@L["Settings.ReceiptCreation.CreateReceiptAfterAutoApprove"]"
+                                           title="@L["Orders.AutoPrintReceiptHelp"]" />
+                                </div>
+                                <span id="autoPrintReceiptStatusBadge" class="badge text-bg-secondary">@L["Settings.Passive"]</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="oh-settings-section">
+                        <div class="oh-settings-section-row">
+                            <div class="oh-settings-section-text">
+                                <h2 class="h6 mb-1">@L["Settings.PrintCopies.Title"]</h2>
+                                <p class="text-muted small mb-0">@L["Settings.PrintCopies.Description"]</p>
+                            </div>
+                            <div class="oh-settings-section-controls">
+                                <label class="small text-muted mb-0 text-nowrap" for="receiptPrintCopyCountSelect">@L["Settings.PrintCopies.ReceiptCopyCount"]</label>
+                                <select id="receiptPrintCopyCountSelect" class="form-select form-select-sm oh-settings-copy-select"
+                                        aria-label="@L["Settings.PrintCopies.ReceiptCopyCount"]"
+                                        title="@L["Orders.ReceiptPrintCopyCountHelp"]">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="oh-settings-section">
+                        <div class="oh-settings-section-row oh-settings-section-row--stacked">
+                            <div class="oh-settings-section-text">
+                                <h2 class="h6 mb-1">@L["Settings.ReceiptContent.Title"]</h2>
+                                <p class="text-muted small mb-0">@L["Settings.ReceiptContent.Description"]</p>
+                            </div>
+                        </div>
+                        <div class="oh-receipt-field-group">
+                            <div class="small fw-semibold text-muted mb-2">@L["Settings.ReceiptContent.RequiredFields"]</div>
+                            <ul class="list-unstyled oh-receipt-field-list mb-3">
+                                <li class="oh-receipt-field-row oh-receipt-field-row--locked"><span>@L["Settings.ReceiptContent.ShowOrderCode"]</span><span class="badge text-bg-light border">@L["Settings.ReceiptContent.Required"]</span></li>
+                                <li class="oh-receipt-field-row oh-receipt-field-row--locked"><span>@L["Settings.ReceiptContent.ShowProductName"]</span><span class="badge text-bg-light border">@L["Settings.ReceiptContent.Required"]</span></li>
+                                <li class="oh-receipt-field-row oh-receipt-field-row--locked"><span>@L["Settings.ReceiptContent.ShowQuantity"]</span><span class="badge text-bg-light border">@L["Settings.ReceiptContent.Required"]</span></li>
+                                <li class="oh-receipt-field-row oh-receipt-field-row--locked"><span>@L["Settings.ReceiptContent.ShowItemTotal"]</span><span class="badge text-bg-light border">@L["Settings.ReceiptContent.Required"]</span></li>
+                                <li class="oh-receipt-field-row oh-receipt-field-row--locked"><span>@L["Settings.ReceiptContent.ShowGrandTotal"]</span><span class="badge text-bg-light border">@L["Settings.ReceiptContent.Required"]</span></li>
+                            </ul>
+                            <div class="small fw-semibold text-muted mb-2">@L["Settings.ReceiptContent.OptionalFields"]</div>
+                            <ul class="list-unstyled oh-receipt-field-list">
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowRestaurantName"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showRestaurantName" id="tplShowRestaurantName" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowPlatformName"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showPlatformName" id="tplShowPlatformName" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowReceivedTime"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showReceivedTime" id="tplShowReceivedTime" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowCustomerName"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showCustomerName" id="tplShowCustomerName" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowCustomerPhone"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showCustomerPhone" id="tplShowCustomerPhone" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowDeliveryAddress"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showDeliveryAddress" id="tplShowDeliveryAddress" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowProductNotes"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showProductNotes" id="tplShowProductNotes" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowProductOptions"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showProductOptions" id="tplShowProductOptions" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowSubtotal"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showSubtotal" id="tplShowSubtotal" /></div></li>
+                                <li class="oh-receipt-field-row oh-receipt-field-row--disabled"><span>@L["Settings.ReceiptContent.ShowDiscount"]</span><span class="badge text-bg-secondary">@L["Settings.ReceiptContent.ComingSoon"]</span></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowDeliveryFee"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showDeliveryFee" id="tplShowDeliveryFee" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowPaymentMethod"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showPaymentMethod" id="tplShowPaymentMethod" /></div></li>
+                                <li class="oh-receipt-field-row"><span>@L["Settings.ReceiptContent.ShowFooterMessage"]</span><div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showFooterMessage" id="tplShowFooterMessage" /></div></li>
+                                <li class="oh-receipt-field-row oh-receipt-field-row--disabled"><span>@L["Settings.ReceiptContent.ShowQrCode"]</span><span class="badge text-bg-secondary">@L["Settings.ReceiptContent.ComingSoon"]</span></li>
+                                <li class="oh-receipt-field-row oh-receipt-field-row--disabled"><span>@L["Settings.ReceiptContent.ShowTaxVat"]</span><span class="badge text-bg-secondary">@L["Settings.ReceiptContent.ComingSoon"]</span></li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section class="oh-settings-section">
+                        <div class="oh-settings-section-row oh-settings-section-row--stacked">
+                            <div class="oh-settings-section-text">
+                                <h2 class="h6 mb-1">@L["Settings.ReceiptMessages.Title"]</h2>
+                                <p class="text-muted small mb-0">@L["Settings.ReceiptMessages.Description"]</p>
+                            </div>
+                        </div>
+                        <div class="oh-receipt-message-fields px-3 pb-3">
+                            <div class="mb-3">
+                                <label class="form-label small mb-1" for="receiptHeaderText">@L["Settings.ReceiptMessages.Header"]</label>
+                                <input type="text" class="form-control form-control-sm" id="receiptHeaderText" maxlength="@ReceiptTemplateLimits.HeaderMaxLength" autocomplete="off" />
+                                <div class="form-text" id="receiptHeaderTextHelp">@L["Settings.ReceiptMessages.HeaderMax", ReceiptTemplateLimits.HeaderMaxLength]</div>
+                            </div>
+                            <div>
+                                <label class="form-label small mb-1" for="receiptFooterText">@L["Settings.ReceiptMessages.Footer"]</label>
+                                <textarea class="form-control form-control-sm" id="receiptFooterText" rows="2" maxlength="@ReceiptTemplateLimits.FooterMaxLength"></textarea>
+                                <div class="form-text" id="receiptFooterTextHelp">@L["Settings.ReceiptMessages.FooterMax", ReceiptTemplateLimits.FooterMaxLength]</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    @if (status is { HasDevices: true })
+                    {
+                        <section class="oh-settings-section">
+                            <div class="oh-settings-section-row oh-settings-section-row--stacked">
+                                <div class="oh-settings-section-text">
+                                    <h2 class="h6 mb-1">@L["Settings.PrinterStatus.Title"]</h2>
+                                    <p class="text-muted small mb-0">@L["Settings.PrinterStatus.Description"]</p>
+                                </div>
+                            </div>
+                            <dl class="oh-settings-status-list small mb-0">
+                                <div class="oh-settings-status-item">
+                                    <dt class="text-muted">@L["PrintBridge.DeviceName"]</dt>
+                                    <dd class="mb-0">@status.DeviceName</dd>
+                                </div>
+                                <div class="oh-settings-status-item">
+                                    <dt class="text-muted">@L["PrintBridge.ConnectionStatus"]</dt>
+                                    <dd class="mb-0">@L[status.ConnectionStatusLabelKey]</dd>
+                                </div>
+                                <div class="oh-settings-status-item">
+                                    <dt class="text-muted">@L["PrintBridge.LastSeen"]</dt>
+                                    <dd class="mb-0">
+                                        @if (status.LastSeenAtUtc.HasValue)
+                                        {
+                                            @status.LastSeenAtUtc.Value.ToLocalTime().ToString("g")
+                                        }
+                                        else
+                                        {
+                                            @L["PrintBridge.LastSeenNever"]
+                                        }
+                                    </dd>
+                                </div>
+                            </dl>
+                            <div class="oh-settings-subrow oh-settings-subrow--actions">
+                                <a class="btn btn-outline-primary btn-sm" asp-area="Tenant" asp-controller="PrintBridge" asp-action="Index">
+                                    <i class="bi bi-printer me-1"></i>@L["Settings.PrinterStatus.ManagePrintBridge"]
+                                </a>
+                            </div>
+                        </section>
+                    }
+
+                    <section class="oh-settings-section">
+                        <div class="oh-settings-section-row oh-settings-section-row--stacked">
+                            <div class="oh-settings-section-text">
+                                <h2 class="h6 mb-1">@L["Settings.TestReceipt.Title"]</h2>
+                                <p class="text-muted small mb-0">@L["Settings.TestReceipt.Description"]</p>
+                            </div>
+                        </div>
+                        <div class="oh-settings-subrow oh-settings-subrow--actions">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="testReceiptBtn" disabled>
+                                <i class="bi bi-printer me-1"></i>@L["Settings.TestReceipt.PrintTestReceipt"]
+                            </button>
+                        </div>
+                    </section>
+
+                    <div class="oh-settings-section oh-settings-section--actions border-top">
+                        <div class="d-flex justify-content-end px-3 py-3">
+                            <button type="button" class="btn btn-primary btn-sm" id="saveReceiptTemplateBtn">
+                                <i class="bi bi-check2 me-1"></i>@L["Settings.Save"]
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card oh-card oh-receipt-preview-card">
+                <div class="card-body">
+                    <h2 class="h6 mb-1">@L["Settings.ReceiptPreview.Title"]</h2>
+                    <p class="text-muted small mb-3">@L["Settings.ReceiptPreview.Description"]</p>
+                    <div class="oh-receipt-preview" id="receiptPreviewPanel" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.orderHubOrdersOptions = {
+            orderSettingsUrl: "/orders/order-settings",
+            messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["genericError"] = L["Orders.GenericError"].Value,
+                ["alertClose"] = L["Common.Close"].Value,
+                ["ordersActive"] = L["Settings.Active"].Value,
+                ["ordersPassive"] = L["Settings.Passive"].Value,
+                ["orderSettingsSaved"] = L["Settings.SavedSuccessfully"].Value,
+                ["orderSettingsUpdateFailed"] = L["Settings.SaveFailed"].Value,
+                ["receiptPrintCopyCountOutOfRange"] = L["Orders.ReceiptPrintCopyCountOutOfRange"].Value
+            }))
+        };
+        window.orderHubReceiptTemplateOptions = {
+            templateSettingsUrl: "/settings/receipt-printer/template-settings",
+            customerDisplayName: @Html.Raw(JsonSerializer.Serialize(Model.CustomerDisplayName)),
+            headerMaxLength: @ReceiptTemplateLimits.HeaderMaxLength,
+            footerMaxLength: @ReceiptTemplateLimits.FooterMaxLength,
+            defaultFooterText: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptMessages.DefaultFooter"].Value)),
+            sample: {
+                platform: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SamplePlatform"].Value)),
+                orderCode: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleOrder"].Value)),
+                customerName: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleCustomer"].Value)),
+                customerPhone: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SamplePhone"].Value)),
+                address: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleAddress"].Value)),
+                itemName: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleItem"].Value)),
+                itemNote: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleNote"].Value)),
+                itemOption: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleOption"].Value)),
+                paymentMethod: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SamplePayment"].Value)),
+                subtotal: "120.00",
+                deliveryFee: "15.00",
+                total: "135.00",
+                receivedAt: @Html.Raw(JsonSerializer.Serialize(DateTime.Now.ToString("g")))
+            },
+            messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["saved"] = L["Settings.SavedSuccessfully"].Value,
+                ["saveFailed"] = L["Settings.SaveFailed"].Value,
+                ["headerTooLong"] = L["Settings.ReceiptMessages.HeaderTooLong"].Value,
+                ["footerTooLong"] = L["Settings.ReceiptMessages.FooterTooLong"].Value,
+                ["previewLabel"] = L["Settings.ReceiptPreview.PreviewLabel"].Value,
+                ["platform"] = L["Settings.ReceiptContent.ShowPlatformName"].Value,
+                ["order"] = L["Settings.ReceiptContent.ShowOrderCode"].Value,
+                ["received"] = L["Settings.ReceiptContent.ShowReceivedTime"].Value,
+                ["customer"] = L["Settings.ReceiptContent.ShowCustomerName"].Value,
+                ["phone"] = L["Settings.ReceiptContent.ShowCustomerPhone"].Value,
+                ["address"] = L["Settings.ReceiptContent.ShowDeliveryAddress"].Value,
+                ["subtotal"] = L["Settings.ReceiptContent.ShowSubtotal"].Value,
+                ["delivery"] = L["Settings.ReceiptContent.ShowDeliveryFee"].Value,
+                ["total"] = L["Settings.ReceiptContent.ShowGrandTotal"].Value,
+                ["payment"] = L["Settings.ReceiptContent.ShowPaymentMethod"].Value,
+                ["note"] = L["Settings.ReceiptContent.ShowProductNotes"].Value
+            }))
+        };
+    </script>
+    <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-order-settings.js" asp-append-version="true"></script>
+    <script src="~/js/settings/receipt-printer-settings-page.js" asp-append-version="true"></script>
+}

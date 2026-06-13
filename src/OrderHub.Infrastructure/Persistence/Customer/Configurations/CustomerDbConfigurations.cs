@@ -83,6 +83,9 @@ public class CustomerOperationalSettingsConfiguration : IEntityTypeConfiguration
             .IsRequired()
             .HasDefaultValue(1);
 
+        builder.Property(x => x.ReceiptTemplateSettingsJson)
+            .HasColumnType("nvarchar(max)");
+
         // Single-row table pattern (enforced by always updating a known row id in the service).
         builder.HasIndex(x => x.Id)
             .IsUnique()

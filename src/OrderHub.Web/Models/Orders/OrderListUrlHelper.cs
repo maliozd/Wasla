@@ -34,4 +34,35 @@ public static class OrderListUrlHelper
 
         return query.Count == 0 ? basePath : basePath + "?" + string.Join("&", query);
     }
+
+    public static SortHeaderLink BuildSortHeaderLink(
+        string basePath,
+        OrderFilterViewModel filters,
+        string sortBy,
+        string title)
+    {
+        var currentBy = filters.SortBy;
+        var currentDir = filters.SortDirection;
+
+        var nextDir = "asc";
+        if (string.Equals(currentBy, sortBy, StringComparison.OrdinalIgnoreCase))
+        {
+            nextDir = string.Equals(currentDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
+        }
+        else
+        {
+            nextDir = sortBy == "receivedAt" ? "desc" : "asc";
+        }
+
+        var arrow = string.Empty;
+        if (string.Equals(currentBy, sortBy, StringComparison.OrdinalIgnoreCase))
+        {
+            arrow = string.Equals(currentDir, "asc", StringComparison.OrdinalIgnoreCase) ? " ↑" : " ↓";
+        }
+
+        var href = Build(basePath, filters, page: 1, sortBy: sortBy, sortDirection: nextDir);
+        return new SortHeaderLink(href, title, arrow);
+    }
 }
+
+public sealed record SortHeaderLink(string Href, string Title, string Arrow);

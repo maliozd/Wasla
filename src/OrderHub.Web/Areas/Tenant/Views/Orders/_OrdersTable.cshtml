@@ -40,7 +40,12 @@
         {
             @foreach (var o in Model.Orders)
             {
-                <tr data-order-id="@o.Id" data-received-at="@o.ReceivedAtUtc.ToString("O")">
+                <tr data-order-id="@o.Id"
+                    data-order-status="@o.Status"
+                    data-received-at="@o.ReceivedAtUtc.ToString("O")"
+                    data-display-image="@o.DisplayImageUrl"
+                    data-item-count="@o.ItemCount"
+                    data-first-product="@o.FirstProductName">
                     <td>
                         @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)o.Platform, DisplayName: (string?)null))
                     </td>

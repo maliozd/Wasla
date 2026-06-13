@@ -98,7 +98,9 @@ public sealed class OrderReadService : IOrderReadService
                 o.InternalStatus,
                 o.PlatformStatus,
                 o.CreatedAtPlatform,
-                o.ReceivedAt))
+                o.ReceivedAt,
+                o.Items.Count,
+                o.Items.OrderBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault()))
             .ToListAsync(ct);
 
         return new OrderListResult

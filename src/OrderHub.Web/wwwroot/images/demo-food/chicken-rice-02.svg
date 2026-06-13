@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-label="Demo chicken rice">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff3d6"/>
+      <stop offset="100%" stop-color="#e8c27a"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="240" fill="url(#bg2)"/>
+  <rect x="36" y="118" width="248" height="78" rx="24" fill="#faf0d7" stroke="#d8b56a" stroke-width="4"/>
+  <ellipse cx="160" cy="132" rx="88" ry="28" fill="#f0dfaa"/>
+  <path d="M88 126c24-18 52-24 72-24s48 6 72 24c-18 8-40 12-72 12s-54-4-72-12z" fill="#d08a3f"/>
+  <rect x="112" y="96" width="28" height="18" rx="8" fill="#b56d2d" transform="rotate(-8 126 105)"/>
+  <rect x="148" y="92" width="30" height="20" rx="8" fill="#c07a34"/>
+  <rect x="184" y="98" width="26" height="16" rx="8" fill="#b56d2d" transform="rotate(10 197 106)"/>
+</svg>

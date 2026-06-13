@@ -191,123 +191,66 @@
   }
 
   function deviceStatusBadge(device) {
+    if (!device.isActive) {
+      return { cls: "text-bg-secondary", text: messages.statusUnknown || "Unknown" };
+    }
+
     var status = device.connectionStatus || (device.isConnected ? "Connected" : "Disconnected");
     switch (status) {
-      case "Inactive":
-        return { cls: "text-bg-secondary", text: messages.statusInactive || "Inactive" };
-      case "NeverConnected":
-        return { cls: "text-bg-warning", text: messages.statusNeverConnected || "Never connected" };
       case "Connected":
-        return { cls: "text-bg-success", text: messages.statusConnected || "Connected" };
+        return { cls: "text-bg-success", text: messages.statusOnline || "Online" };
       case "RecentlySeen":
-        return { cls: "text-bg-info", text: messages.statusRecentlySeen || "Recently seen" };
+        return { cls: "text-bg-warning", text: messages.statusOffline || "Offline" };
+      case "NeverConnected":
+        return { cls: "text-bg-warning", text: messages.statusOffline || "Offline" };
       case "Disconnected":
-        return { cls: "text-bg-warning", text: messages.statusDisconnected || "Disconnected" };
+        return { cls: "text-bg-warning", text: messages.statusOffline || "Offline" };
+      case "Inactive":
+        return { cls: "text-bg-secondary", text: messages.statusInactive || messages.statusUnknown || "Unknown" };
       default:
-        return { cls: "text-bg-secondary", text: messages.statusDisconnected || "Disconnected" };
+        return { cls: "text-bg-secondary", text: messages.statusUnknown || "Unknown" };
     }
   }
 
-  function renderOverview(devices, quota) {
-    var body = document.getElementById("printBridgeOverviewBody");
-    var badge = document.getElementById("printBridgeOverviewBadge");
-    if (!body) return;
+  function formatVersion(value) {
+    if (value == null || String(value).trim() === "") {
+      return messages.versionUnknown || messages.emptyValue || "Unknown";
+    }
+    return String(value);
+  }
 
+  function updateSummaryCards(devices, quota) {
     devices = devices || [];
     quota = quota || {};
 
     var activeCount = quota.activeDeviceCount != null ? quota.activeDeviceCount : 0;
     var allowedCount = quota.allowedActiveDeviceCount != null ? quota.allowedActiveDeviceCount : 1;
-    var connectedCount = quota.connectedDeviceCount != null
-      ? quota.connectedDeviceCount
-      : devices.filter(function (d) { return d.connectionStatus === "Connected" || d.isConnected; }).length;
-    var exceeds = !!quota.activeCountExceedsLimit;
     var latestLastSeen = quota.latestLastSeenAtUtc || null;
+    var lastName = quota.lastConnectedDeviceName || null;
 
-    if (!latestLastSeen && devices.length > 0) {
+    if (!lastName && devices.length > 0) {
       devices.forEach(function (d) {
         if (!d.lastSeenAtUtc) return;
         if (!latestLastSeen || new Date(d.lastSeenAtUtc) > new Date(latestLastSeen)) {
           latestLastSeen = d.lastSeenAtUtc;
+          lastName = d.name;
         }
       });
     }
 
-    var overallConnected = connectedCount > 0;
-    if (badge) {
-      if (devices.length === 0) {
-        badge.classList.add("d-none");
-      } else {
-        badge.classList.remove("d-none");
-        badge.textContent = overallConnected
-          ? (messages.statusConnected || "Connected")
-          : (messages.statusDisconnected || "Disconnected");
-        badge.classList.remove("text-bg-success", "text-bg-secondary", "text-bg-warning", "text-bg-info");
-        badge.classList.add(overallConnected ? "text-bg-success" : "text-bg-secondary");
-      }
+    var activeEl = document.getElementById("printBridgeSummaryActive");
+    var includedEl = document.getElementById("printBridgeSummaryIncluded");
+    var lastDeviceEl = document.getElementById("printBridgeSummaryLastDevice");
+    var lastSeenEl = document.getElementById("printBridgeSummaryLastSeen");
+
+    if (activeEl) activeEl.textContent = String(activeCount);
+    if (includedEl) includedEl.textContent = String(allowedCount);
+    if (lastDeviceEl) {
+      lastDeviceEl.textContent = lastName || messages.lastConnectedNone || messages.emptyValue || "—";
     }
-
-    if (devices.length === 0) {
-      body.innerHTML =
-        '<div class="text-center py-4">' +
-          '<i class="bi bi-printer text-muted fs-4 d-block mb-2" aria-hidden="true"></i>' +
-          '<p class="text-muted small mb-1">' + escapeHtml(messages.noDevicesYet || "") + '</p>' +
-          '<p class="small mb-0">' + escapeHtml(messages.createFirstDevice || "") + '</p>' +
-        '</div>';
-      return;
+    if (lastSeenEl) {
+      lastSeenEl.textContent = (messages.lastSeen || "Last seen") + ": " + formatLastSeen(latestLastSeen);
     }
-
-    var html = "";
-
-    if (exceeds) {
-      html +=
-        '<div class="alert alert-warning small py-2 mb-3" role="alert">' +
-          '<div class="fw-semibold">' + escapeHtml(messages.deviceLimitExceededWarning || "") + '</div>' +
-          '<div class="mt-1">' + escapeHtml(messages.deactivateExtraDevices || "") + '</div>' +
-        '</div>';
-    }
-
-    html +=
-      '<div class="border rounded p-2 mb-3 bg-body-tertiary">' +
-        '<div class="small fw-semibold mb-2">' + escapeHtml(messages.overallConnectionStatus || "") + '</div>' +
-        '<div class="row g-2 small">' +
-          '<div class="col-6 col-md-3">' +
-            '<div class="text-muted">' + escapeHtml(formatMsg(messages.activeDeviceCount, activeCount)) + '</div>' +
-          '</div>' +
-          '<div class="col-6 col-md-3">' +
-            '<div class="text-muted">' + escapeHtml(formatMsg(messages.allowedDeviceCountLabel, allowedCount)) + '</div>' +
-          '</div>' +
-          '<div class="col-6 col-md-3">' +
-            '<div class="text-muted">' + escapeHtml(formatMsg(messages.connectedDeviceCount, connectedCount)) + '</div>' +
-          '</div>' +
-          '<div class="col-6 col-md-3">' +
-            '<div class="text-muted">' + escapeHtml(formatMsg(messages.overviewLastSeen, formatLastSeen(latestLastSeen))) + '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
-    html += '<div class="small text-muted text-uppercase mb-2">' + escapeHtml(messages.overviewDevicesTitle || "") + '</div>';
-
-    html += '<ul class="list-group list-group-flush small mb-0">';
-    devices.forEach(function (device) {
-      var status = deviceStatusBadge(device);
-      html +=
-        '<li class="list-group-item px-0 py-2 border-0 border-bottom">' +
-          '<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">' +
-            '<span class="fw-semibold">' + escapeHtml(device.name) + '</span>' +
-            '<span class="badge ' + status.cls + '">' + escapeHtml(status.text) + '</span>' +
-          '</div>' +
-          '<div class="text-muted">' +
-            escapeHtml(messages.lastSeen || "Last seen") + ': ' + escapeHtml(formatLastSeen(device.lastSeenAtUtc)) +
-            ' · ' + escapeHtml(messages.machineName || "Machine") + ': ' + escapeHtml(displayValue(device.machineName)) +
-            ' · ' + escapeHtml(messages.printerName || "Printer") + ': ' + escapeHtml(displayValue(device.printerName)) +
-            ' · ' + escapeHtml(messages.appVersion || "Version") + ': ' + escapeHtml(displayValue(device.appVersion)) +
-          '</div>' +
-        '</li>';
-    });
-    html += '</ul>';
-
-    body.innerHTML = html;
   }
 
   function renderDevicesTable(devices) {
@@ -316,7 +259,31 @@
 
     devices = devices || [];
     if (devices.length === 0) {
-      panel.innerHTML = '<div class="text-muted small py-2">' + escapeHtml(messages.noDevicesYet || "") + '</div>';
+      panel.innerHTML =
+        '<div class="oh-print-bridge-empty text-center py-5">' +
+          '<div class="oh-print-bridge-empty__icon text-muted mb-2" aria-hidden="true"><i class="bi bi-hdd-network fs-3"></i></div>' +
+          '<div class="fw-semibold mb-1">' + escapeHtml(messages.noDevicesTitle || "") + '</div>' +
+          '<p class="text-muted small mb-3">' + escapeHtml(messages.noDevicesDescription || "") + '</p>' +
+          '<div class="d-flex flex-wrap justify-content-center gap-2">' +
+            '<button type="button" class="btn btn-primary btn-sm" id="printBridgeEmptyAddDeviceBtn">' +
+              '<i class="bi bi-plus-lg me-1"></i>' + escapeHtml(messages.addDevice || messages.createDevice || "Add device") +
+            '</button>' +
+            '<a class="btn btn-outline-secondary btn-sm" href="' + escapeHtml(cfg.packageDownloadUrl || cfg.setupUrl || "/print-bridge/download") + '">' +
+              '<i class="bi bi-download me-1"></i>' + escapeHtml(messages.download || "Download") +
+            '</a>' +
+          '</div>' +
+        '</div>';
+
+      var emptyAddBtn = document.getElementById("printBridgeEmptyAddDeviceBtn");
+      if (emptyAddBtn) {
+        emptyAddBtn.addEventListener("click", function () {
+          var nameInput = document.getElementById("printBridgeDeviceName");
+          if (nameInput) {
+            nameInput.focus();
+            nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        });
+      }
       return;
     }
 
@@ -324,28 +291,37 @@
       var connection = deviceStatusBadge(device);
       var activeBadgeCls = device.isActive ? "text-bg-success" : "text-bg-secondary";
       var activeText = device.isActive ? (messages.ordersActive || "Active") : (messages.ordersPassive || "Passive");
+      var printerHint = displayValue(device.printerName);
       return (
         '<tr data-device-id="' + escapeHtml(device.id) + '">' +
-          '<td class="fw-semibold">' + escapeHtml(device.name) + '</td>' +
-          '<td><span class="badge ' + connection.cls + '">' + escapeHtml(connection.text) + '</span></td>' +
-          '<td class="text-muted small">' + escapeHtml(formatLastSeen(device.lastSeenAtUtc)) + '</td>' +
-          '<td class="text-muted small">' + escapeHtml(displayValue(device.machineName)) + '</td>' +
-          '<td class="text-muted small">' + escapeHtml(displayValue(device.printerName)) + '</td>' +
-          '<td class="text-muted small">' + escapeHtml(displayValue(device.appVersion)) + '</td>' +
           '<td>' +
-            '<div class="d-flex align-items-center gap-2">' +
+            '<div class="fw-semibold">' + escapeHtml(device.name) + '</div>' +
+            (printerHint !== (messages.emptyValue || "—")
+              ? '<div class="text-muted small">' + escapeHtml(messages.printerName || "Printer") + ': ' + escapeHtml(printerHint) + '</div>'
+              : '') +
+          '</td>' +
+          '<td class="text-muted small">' + escapeHtml(displayValue(device.machineName)) + '</td>' +
+          '<td>' +
+            '<div class="d-flex flex-wrap align-items-center gap-1">' +
+              '<span class="badge ' + connection.cls + '">' + escapeHtml(connection.text) + '</span>' +
               '<span class="badge ' + activeBadgeCls + ' pb-device-active-badge">' + escapeHtml(activeText) + '</span>' +
-              '<div class="form-check form-switch m-0">' +
-                '<input class="form-check-input pb-device-active-toggle" type="checkbox" role="switch" ' +
-                  'data-device-id="' + escapeHtml(device.id) + '" ' + (device.isActive ? "checked" : "") + ' />' +
-              '</div>' +
             '</div>' +
           '</td>' +
-          '<td class="text-end">' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary pb-regenerate-token-btn" ' +
-              'data-device-id="' + escapeHtml(device.id) + '" data-device-name="' + escapeHtml(device.name) + '">' +
-              '<i class="bi bi-arrow-repeat me-1"></i>' + escapeHtml(messages.regenerateToken || "Regenerate") +
-            '</button>' +
+          '<td class="text-muted small text-nowrap">' + escapeHtml(formatLastSeen(device.lastSeenAtUtc)) + '</td>' +
+          '<td class="text-muted small">' + escapeHtml(formatVersion(device.appVersion)) + '</td>' +
+          '<td>' +
+            '<div class="d-flex flex-wrap align-items-center gap-2">' +
+              '<div class="form-check form-switch m-0">' +
+                '<input class="form-check-input pb-device-active-toggle" type="checkbox" role="switch" ' +
+                  'data-device-id="' + escapeHtml(device.id) + '" ' +
+                  'aria-label="' + escapeHtml(messages.deviceActive || "Active") + '" ' +
+                  (device.isActive ? "checked" : "") + ' />' +
+              '</div>' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary pb-regenerate-token-btn" ' +
+                'data-device-id="' + escapeHtml(device.id) + '" data-device-name="' + escapeHtml(device.name) + '">' +
+                '<i class="bi bi-arrow-repeat me-1"></i>' + escapeHtml(messages.regenerateToken || "Regenerate") +
+              '</button>' +
+            '</div>' +
           '</td>' +
         '</tr>'
       );
@@ -353,15 +329,13 @@
 
     panel.innerHTML =
       '<div class="table-responsive">' +
-        '<table class="table table-sm align-middle mb-0">' +
+        '<table class="table table-sm align-middle mb-0 oh-print-bridge-devices-table">' +
           '<thead><tr>' +
             '<th>' + escapeHtml(messages.deviceName || "Device") + '</th>' +
-            '<th>' + escapeHtml(messages.connectionStatus || "Connection") + '</th>' +
+            '<th>' + escapeHtml(messages.localAlias || messages.machineName || "Computer") + '</th>' +
+            '<th>' + escapeHtml(messages.status || "Status") + '</th>' +
             '<th>' + escapeHtml(messages.lastSeen || "Last seen") + '</th>' +
-            '<th>' + escapeHtml(messages.machineName || "Machine") + '</th>' +
-            '<th>' + escapeHtml(messages.printerName || "Printer") + '</th>' +
             '<th>' + escapeHtml(messages.appVersion || "Version") + '</th>' +
-            '<th>' + escapeHtml(messages.deviceActive || "Active") + '</th>' +
             '<th class="text-end">' + escapeHtml(messages.actions || "Actions") + '</th>' +
           '</tr></thead>' +
           '<tbody id="printBridgeDevicesTableBody">' + rows + '</tbody>' +
@@ -397,7 +371,7 @@
 
   function renderAll(state) {
     if (!state) return;
-    renderOverview(state.devices, state.quota);
+    updateSummaryCards(state.devices, state.quota);
     renderDevicesTable(state.devices);
     updateQuotaUi(state.quota);
   }

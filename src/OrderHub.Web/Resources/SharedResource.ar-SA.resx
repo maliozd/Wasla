@@ -216,6 +216,9 @@
   <data name="Navigation.OrderSettings" xml:space="preserve">
     <value>إعدادات الطلبات</value>
   </data>
+  <data name="Navigation.ReceiptPrinterSettings" xml:space="preserve">
+    <value>إعدادات الإيصال والطابعة</value>
+  </data>
   <data name="Navigation.AccountSettings" xml:space="preserve">
     <value>إعدادات الحساب</value>
   </data>
@@ -560,6 +563,75 @@
   </data>
   <data name="Orders.TotalCount" xml:space="preserve">
     <value>الإجمالي</value>
+  </data>
+  <data name="Orders.Fullscreen" xml:space="preserve">
+    <value>ملء الشاشة</value>
+  </data>
+  <data name="Orders.OpenLiveDisplay" xml:space="preserve">
+    <value>فتح العرض المباشر</value>
+  </data>
+  <data name="Orders.LiveDisplay.Title" xml:space="preserve">
+    <value>العرض المباشر</value>
+  </data>
+  <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
+    <value>إغلاق العرض</value>
+  </data>
+  <data name="Orders.LiveDisplay.FullscreenHintPrefix" xml:space="preserve">
+    <value>اضغط</value>
+  </data>
+  <data name="Orders.LiveDisplay.FullscreenHintSuffix" xml:space="preserve">
+    <value>لملء الشاشة</value>
+  </data>
+  <data name="Orders.LiveDisplay.BackToOrders" xml:space="preserve">
+    <value>العودة إلى الطلبات</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
+    <value>آخر تحديث</value>
+  </data>
+  <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
+    <value>تم حظر النافذة المنبثقة. يتم فتح العرض المباشر في هذا التبويب.</value>
+  </data>
+  <data name="Orders.ItemsMore" xml:space="preserve">
+    <value>+{0} عناصر</value>
+  </data>
+  <data name="Orders.ViewMode.Label" xml:space="preserve">
+    <value>عرض الطلبات</value>
+  </data>
+  <data name="Orders.ViewMode.Table" xml:space="preserve">
+    <value>جدول</value>
+  </data>
+  <data name="Orders.ViewMode.Compact" xml:space="preserve">
+    <value>مضغوط</value>
+  </data>
+  <data name="Orders.ViewMode.Kitchen" xml:space="preserve">
+    <value>مطبخ</value>
+  </data>
+  <data name="Orders.KitchenMode" xml:space="preserve">
+    <value>وضع المطبخ</value>
+  </data>
+  <data name="Orders.ExitFullscreen" xml:space="preserve">
+    <value>الخروج من ملء الشاشة</value>
+  </data>
+  <data name="Orders.NormalView" xml:space="preserve">
+    <value>العرض العادي</value>
+  </data>
+  <data name="Orders.TodaysOrders" xml:space="preserve">
+    <value>طلبات اليوم</value>
+  </data>
+  <data name="Orders.ActiveOrders" xml:space="preserve">
+    <value>الطلبات النشطة</value>
+  </data>
+  <data name="Orders.CancelledOrders" xml:space="preserve">
+    <value>الطلبات الملغاة</value>
+  </data>
+  <data name="Orders.NoLiveOrders" xml:space="preserve">
+    <value>لا توجد طلبات حية.</value>
+  </data>
+  <data name="Orders.NoLiveOrdersDescription" xml:space="preserve">
+    <value>ستظهر الطلبات الجديدة هنا تلقائياً.</value>
+  </data>
+  <data name="Orders.FullscreenEnterFailed" xml:space="preserve">
+    <value>تعذر الدخول إلى وضع ملء الشاشة.</value>
   </data>
   <data name="Orders.DetailsTitle" xml:space="preserve">
     <value>تفاصيل الطلب</value>
@@ -1519,7 +1591,7 @@
     <value>إعدادات الطلبات</value>
   </data>
   <data name="Settings.OrderSettings.Subtitle" xml:space="preserve">
-    <value>إدارة مزامنة الطلبات والموافقة التلقائية وطباعة الإيصالات والإشعارات.</value>
+    <value>إدارة مزامنة الطلبات والموافقة التلقائية والإشعارات.</value>
   </data>
   <data name="Settings.OrderSynchronization.Title" xml:space="preserve">
     <value>مزامنة الطلبات</value>
@@ -1550,6 +1622,192 @@
   </data>
   <data name="Settings.ReceiptPrinting.ReceiptCopyCount" xml:space="preserve">
     <value>عدد نسخ الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptPrinterSettings.Title" xml:space="preserve">
+    <value>إعدادات الإيصال والطابعة</value>
+  </data>
+  <data name="Settings.ReceiptPrinterSettings.Subtitle" xml:space="preserve">
+    <value>إدارة إنشاء الإيصالات وعدد النسخ وتفضيلات الطابعة.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Title" xml:space="preserve">
+    <value>إنشاء الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
+    <value>تكوين وقت إنشاء مهام طباعة الإيصالات.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.CreateReceiptAfterAutoApprove" xml:space="preserve">
+    <value>إنشاء إيصال بعد الموافقة التلقائية</value>
+  </data>
+  <data name="Settings.PrintCopies.Title" xml:space="preserve">
+    <value>نسخ الطباعة</value>
+  </data>
+  <data name="Settings.PrintCopies.Description" xml:space="preserve">
+    <value>اختر عدد نسخ الإيصال التي يجب إنشاؤها.</value>
+  </data>
+  <data name="Settings.PrintCopies.ReceiptCopyCount" xml:space="preserve">
+    <value>عدد نسخ الإيصال</value>
+  </data>
+  <data name="Settings.PrinterStatus.Title" xml:space="preserve">
+    <value>حالة الطابعة / Print Bridge</value>
+  </data>
+  <data name="Settings.PrinterStatus.Description" xml:space="preserve">
+    <value>عرض حالة اتصال Print Bridge أو الطابعة الحالية.</value>
+  </data>
+  <data name="Settings.PrinterStatus.ManagePrintBridge" xml:space="preserve">
+    <value>إدارة Print Bridge</value>
+  </data>
+  <data name="Settings.Save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="Settings.ReceiptContent.Title" xml:space="preserve">
+    <value>محتوى الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptContent.Description" xml:space="preserve">
+    <value>اختر المعلومات التي تظهر على الإيصالات المطبوعة.</value>
+  </data>
+  <data name="Settings.ReceiptContent.RequiredFields" xml:space="preserve">
+    <value>الحقول المطلوبة</value>
+  </data>
+  <data name="Settings.ReceiptContent.OptionalFields" xml:space="preserve">
+    <value>الحقول الاختيارية</value>
+  </data>
+  <data name="Settings.ReceiptContent.Required" xml:space="preserve">
+    <value>مطلوب</value>
+  </data>
+  <data name="Settings.ReceiptContent.ComingSoon" xml:space="preserve">
+    <value>قريباً</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowOrderCode" xml:space="preserve">
+    <value>رمز الطلب</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductName" xml:space="preserve">
+    <value>اسم المنتج</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowQuantity" xml:space="preserve">
+    <value>الكمية</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowItemTotal" xml:space="preserve">
+    <value>إجمالي البند</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowGrandTotal" xml:space="preserve">
+    <value>الإجمالي الكلي</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowRestaurantName" xml:space="preserve">
+    <value>اسم المطعم</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPlatformName" xml:space="preserve">
+    <value>اسم المنصة</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowReceivedTime" xml:space="preserve">
+    <value>وقت استلام الطلب</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerName" xml:space="preserve">
+    <value>اسم العميل</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerPhone" xml:space="preserve">
+    <value>هاتف العميل</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryAddress" xml:space="preserve">
+    <value>عنوان التسليم</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductNotes" xml:space="preserve">
+    <value>ملاحظات المنتج</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductOptions" xml:space="preserve">
+    <value>خيارات / إضافات المنتج</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowSubtotal" xml:space="preserve">
+    <value>المجموع الفرعي</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDiscount" xml:space="preserve">
+    <value>الخصم</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryFee" xml:space="preserve">
+    <value>رسوم التوصيل</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPaymentMethod" xml:space="preserve">
+    <value>طريقة الدفع</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowFooterMessage" xml:space="preserve">
+    <value>رسالة التذييل</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowQrCode" xml:space="preserve">
+    <value>رمز QR</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowTaxVat" xml:space="preserve">
+    <value>معلومات الضريبة / VAT</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Title" xml:space="preserve">
+    <value>رسائل الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Description" xml:space="preserve">
+    <value>خصص نص رأس الإيصال ورسالة التذييل.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Header" xml:space="preserve">
+    <value>رأس الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Footer" xml:space="preserve">
+    <value>رسالة التذييل</value>
+  </data>
+  <data name="Settings.ReceiptMessages.DefaultFooter" xml:space="preserve">
+    <value>شكراً لطلبكم.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderMax" xml:space="preserve">
+    <value>بحد أقصى {0} حرفاً.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.FooterMax" xml:space="preserve">
+    <value>بحد أقصى {0} حرفاً.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderTooLong" xml:space="preserve">
+    <value>رأس الإيصال طويل جداً.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.FooterTooLong" xml:space="preserve">
+    <value>رسالة التذييل طويلة جداً.</value>
+  </data>
+  <data name="Settings.ReceiptPreview.Title" xml:space="preserve">
+    <value>معاينة الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptPreview.Description" xml:space="preserve">
+    <value>عاين شكل الإيصال باستخدام بيانات نموذجية.</value>
+  </data>
+  <data name="Settings.ReceiptPreview.PreviewLabel" xml:space="preserve">
+    <value>معاينة</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePlatform" xml:space="preserve">
+    <value>Trendyol Yemek</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleOrder" xml:space="preserve">
+    <value>TY-45821</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleCustomer" xml:space="preserve">
+    <value>فاطمة أحمد</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePhone" xml:space="preserve">
+    <value>0532 000 00 00</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleAddress" xml:space="preserve">
+    <value>شارع أتاتورك رقم 12</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleItem" xml:space="preserve">
+    <value>أرز بالدجاج</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleNote" xml:space="preserve">
+    <value>حار قليلاً</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleOption" xml:space="preserve">
+    <value>صلصة إضافية</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePayment" xml:space="preserve">
+    <value>عبر الإنترنت</value>
+  </data>
+  <data name="Settings.TestReceipt.Title" xml:space="preserve">
+    <value>إيصال تجريبي</value>
+  </data>
+  <data name="Settings.TestReceipt.Description" xml:space="preserve">
+    <value>ستتوفر طباعة الإيصال التجريبي بعد إضافة دعم اختبار الطابعة.</value>
+  </data>
+  <data name="Settings.TestReceipt.PrintTestReceipt" xml:space="preserve">
+    <value>طباعة إيصال تجريبي</value>
   </data>
   <data name="Settings.Notifications.Title" xml:space="preserve">
     <value>الإشعارات</value>
@@ -2084,5 +2342,77 @@
   </data>
   <data name="PrintBridge.CreatedAt" xml:space="preserve">
     <value>تاريخ الإنشاء</value>
+  </data>
+  <data name="PrintBridge.Subtitle" xml:space="preserve">
+    <value>إدارة أجهزة جسر الطابعة المحلية المستخدمة للطباعة التلقائية للإيصالات.</value>
+  </data>
+  <data name="PrintBridge.ActiveDevices" xml:space="preserve">
+    <value>الأجهزة النشطة</value>
+  </data>
+  <data name="PrintBridge.IncludedDevices" xml:space="preserve">
+    <value>الأجهزة المشمولة</value>
+  </data>
+  <data name="PrintBridge.LastConnectedDevice" xml:space="preserve">
+    <value>آخر جهاز متصل</value>
+  </data>
+  <data name="PrintBridge.LastConnectedNone" xml:space="preserve">
+    <value>لا يوجد بعد</value>
+  </data>
+  <data name="PrintBridge.PrintJobsToday" xml:space="preserve">
+    <value>مهام الطباعة اليوم</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitNote" xml:space="preserve">
+    <value>يُشمل حتى {0} أجهزة Print Bridge نشطة. قد تتطلب الأجهزة الإضافية إضافة مدفوعة لاحقًا.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesTitle" xml:space="preserve">
+    <value>لا توجد أجهزة Print Bridge بعد.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesDescription" xml:space="preserve">
+    <value>أنشئ جهازًا وثبّت Print Bridge على الكمبيوتر المتصل بطابعة الإيصالات.</value>
+  </data>
+  <data name="PrintBridge.AddDevice" xml:space="preserve">
+    <value>إضافة جهاز</value>
+  </data>
+  <data name="PrintBridge.SetupDescription" xml:space="preserve">
+    <value>Print Bridge هو تطبيق Windows محلي يربط الطابعة الحرارية المثبتة لديك بـ OrderHub.</value>
+  </data>
+  <data name="PrintBridge.SetupInstructions" xml:space="preserve">
+    <value>تعليمات الإعداد</value>
+  </data>
+  <data name="PrintBridge.Troubleshooting" xml:space="preserve">
+    <value>استكشاف الأخطاء</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
+    <value>تأكد من تشغيل Print Bridge على جهاز Windows المتصل بالطابعة.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint2" xml:space="preserve">
+    <value>تحقق من حفظ Base URL ورمز الجهاز بشكل صحيح في تطبيق Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint3" xml:space="preserve">
+    <value>إذا كان الجهاز غير متصل، أعد تشغيل Print Bridge واستخدم اختبار الاتصال.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint4" xml:space="preserve">
+    <value>تأكد من تثبيت الطابعة في Windows.</value>
+  </data>
+  <data name="PrintBridge.ReceiptPrinterSettings" xml:space="preserve">
+    <value>إعدادات الإيصال والطابعة</value>
+  </data>
+  <data name="PrintBridge.Online" xml:space="preserve">
+    <value>متصل</value>
+  </data>
+  <data name="PrintBridge.Offline" xml:space="preserve">
+    <value>غير متصل</value>
+  </data>
+  <data name="PrintBridge.Unknown" xml:space="preserve">
+    <value>غير معروف</value>
+  </data>
+  <data name="PrintBridge.VersionUnknown" xml:space="preserve">
+    <value>غير معروف</value>
+  </data>
+  <data name="PrintBridge.LocalAlias" xml:space="preserve">
+    <value>الاسم المحلي</value>
+  </data>
+  <data name="PrintBridge.Status" xml:space="preserve">
+    <value>الحالة</value>
   </data>
 </root>

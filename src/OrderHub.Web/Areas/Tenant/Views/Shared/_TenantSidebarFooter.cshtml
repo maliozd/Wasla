@@ -1,0 +1,51 @@
+@using System.Security.Claims
+@using System.Globalization
+@{
+    var returnUrl = (Context.Request.Path.Value ?? "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : "");
+    var culture = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
+    var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
+    var currentLangLabel = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+        ? "English"
+        : (isRtl ? "العربية" : "Türkçe");
+    var userName = User?.Identity?.IsAuthenticated == true
+        ? (User.FindFirstValue(ClaimTypes.Name) ?? L["Layout.User"].Value)
+        : L["Layout.Guest"].Value;
+}
+
+<div class="oh-sidebar-footer-controls">
+    <div class="oh-sidebar-footer-row oh-sidebar-footer-row--compact">
+        <div class="dropup position-static flex-grow-1 min-w-0">
+            <button type="button"
+                    class="nav-link dropdown-toggle oh-sidebar-footer-toggle w-100 border-0 bg-transparent text-start d-flex align-items-center"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="true"
+                    aria-label="@L["Layout.Language"]"
+                    aria-expanded="false">
+                <i class="bi bi-translate me-2" aria-hidden="true"></i><span class="footer-label nav-text">@currentLangLabel</span>
+            </button>
+            <ul class="dropdown-menu oh-sidebar-settings-menu w-100 mb-1">
+                <li>
+                    <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="tr-TR" asp-route-returnUrl="@returnUrl">Türkçe</a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="en-US" asp-route-returnUrl="@returnUrl">English</a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ar-SA" asp-route-returnUrl="@returnUrl">العربية</a>
+                </li>
+            </ul>
+        </div>
+        <button type="button" class="oh-sidebar-footer-action oh-theme-toggle flex-shrink-0"
+                aria-pressed="false" aria-label="@L["Layout.Theme"]"
+                data-go-dark="@L["Layout.DarkMode"]" data-go-light="@L["Layout.LightMode"]">
+            <i class="bi bi-moon-stars oh-theme-moon" aria-hidden="true"></i>
+            <i class="bi bi-sun oh-theme-sun d-none" aria-hidden="true"></i>
+        </button>
+    </div>
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <div class="oh-sidebar-user" aria-label="@L["Layout.UserMenu"]">
+            <i class="bi bi-person-circle me-2" aria-hidden="true"></i><span class="oh-sidebar-user-label text-truncate">@userName</span>
+        </div>
+    }
+</div>

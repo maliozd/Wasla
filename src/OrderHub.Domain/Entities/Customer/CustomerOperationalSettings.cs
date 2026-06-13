@@ -15,5 +15,10 @@ public sealed class CustomerOperationalSettings : BaseEntity
     public bool AutoPrintReceiptOnAutoApprove { get; set; }
 
     public int ReceiptPrintCopyCount { get; set; } = 1;
+
+    /// <summary>
+    /// JSON-serialized receipt template/content settings.
+    /// </summary>
+    public string? ReceiptTemplateSettingsJson { get; set; }
 }
 

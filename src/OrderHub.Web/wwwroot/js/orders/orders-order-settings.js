@@ -5,6 +5,12 @@
   const O = global.OrderHubOrders;
   if (!O) return;
 
+  let cachedSettings = {
+    autoApproveNewOrders: false,
+    autoPrintReceiptOnAutoApprove: false,
+    receiptPrintCopyCount: 1
+  };
+
   function getToken() {
     const f = document.getElementById("orderSettingsForm");
     if (!f) return null;
@@ -22,6 +28,12 @@
     const autoApproveEnabled = !!settings.autoApproveNewOrders;
     const autoPrintEnabled = !!settings.autoPrintReceiptOnAutoApprove;
     const copyCount = settings.receiptPrintCopyCount || 1;
+
+    cachedSettings = {
+      autoApproveNewOrders: autoApproveEnabled,
+      autoPrintReceiptOnAutoApprove: autoPrintEnabled,
+      receiptPrintCopyCount: copyCount
+    };
 
     if (autoApproveToggle) autoApproveToggle.checked = autoApproveEnabled;
     if (autoPrintToggle) autoPrintToggle.checked = autoPrintEnabled;
@@ -49,11 +61,17 @@
     const autoPrintToggle = document.getElementById("autoPrintReceiptToggle");
     const copyCountSelect = document.getElementById("receiptPrintCopyCountSelect");
 
-    return {
-      autoApproveNewOrders: !!(autoApproveToggle && autoApproveToggle.checked),
-      autoPrintReceiptOnAutoApprove: !!(autoPrintToggle && autoPrintToggle.checked),
-      receiptPrintCopyCount: copyCountSelect ? parseInt(copyCountSelect.value, 10) || 1 : 1
+    const next = {
+      autoApproveNewOrders: cachedSettings.autoApproveNewOrders,
+      autoPrintReceiptOnAutoApprove: cachedSettings.autoPrintReceiptOnAutoApprove,
+      receiptPrintCopyCount: cachedSettings.receiptPrintCopyCount
     };
+
+    if (autoApproveToggle) next.autoApproveNewOrders = !!autoApproveToggle.checked;
+    if (autoPrintToggle) next.autoPrintReceiptOnAutoApprove = !!autoPrintToggle.checked;
+    if (copyCountSelect) next.receiptPrintCopyCount = parseInt(copyCountSelect.value, 10) || 1;
+
+    return next;
   }
 
   async function loadCurrent() {

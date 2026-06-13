@@ -8,12 +8,13 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
 [Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
-[Route("settings/order")]
+[Route("settings/orders")]
 public sealed class OrderSettingsController : BaseController
 {
     [HttpGet("")]
     public IActionResult Index() => View();
 
+    [HttpGet("/settings/order")]
     [HttpGet("/settings/order-automation")]
-    public IActionResult LegacyRedirect() => RedirectPermanent("/settings/order");
+    public IActionResult LegacyRedirect() => RedirectPermanent("/settings/orders");
 }

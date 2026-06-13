@@ -19,6 +19,8 @@ public sealed class OrderListResult
         OrderStatus Status,
         string PlatformStatus,
         DateTime CreatedAtPlatformUtc,
-        DateTime ReceivedAtUtc);
+        DateTime ReceivedAtUtc,
+        int ItemCount,
+        string? FirstProductName);
 }
 

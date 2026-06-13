@@ -11,13 +11,13 @@
         : null;
 }
 
-<div class="oh-orders-page oh-order-history-page">
-    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3 oh-orders-header">
-        <div>
-            <h1 class="h4 mb-1">@L["Orders.History.Title"]</h1>
-            <p class="text-muted small mb-0">@L["Orders.History.Subtitle"]</p>
+<div class="oh-order-history-page">
+    <header class="oh-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+        <div class="oh-customer-page-header__main">
+            <h1 class="oh-customer-page-header__title h4 mb-1">@L["Orders.History.Title"]</h1>
+            <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["Orders.History.Subtitle"]</p>
         </div>
-        <div class="d-flex flex-column align-items-md-end gap-2">
+        <div class="oh-customer-page-header__actions d-flex flex-column align-items-md-end gap-2">
             <div class="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
                 <span class="text-muted small text-nowrap">
                     @L["Orders.History.TotalResults"]: <strong>@Model.TotalCount</strong>
@@ -29,9 +29,9 @@
             </div>
             <a class="btn btn-sm btn-outline-secondary" href="/orders">@L["Orders.History.BackToOrders"]</a>
         </div>
-    </div>
+    </header>
 
-    <div class="card oh-card mb-3 oh-orders-filters">
+    <div class="card oh-card mb-3 oh-order-history-filters">
         <div class="card-body">
             <form method="get" action="/orders/history" class="row g-3 align-items-end">
                 <div class="col-12 col-md-6 col-lg-3">
@@ -121,7 +121,7 @@
         </div>
     </div>
 
-    <div class="card oh-card oh-orders-table-card">
+    <div class="card oh-card oh-order-history-table-card">
         <div class="card-body p-0 p-md-3">
             @await Html.PartialAsync("_OrdersHistoryTable", Model)
             @await Html.PartialAsync("_OrderListPagination", Model)

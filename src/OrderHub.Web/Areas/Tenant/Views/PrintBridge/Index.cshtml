@@ -33,7 +33,9 @@
         canCreateActiveDevice = Model.CanCreateActiveDevice,
         activeCountExceedsLimit = Model.ActiveCountExceedsLimit,
         connectedDeviceCount = initialConnectedCount,
-        latestLastSeenAtUtc = initialLatestLastSeen
+        latestLastSeenAtUtc = initialLatestLastSeen,
+        printJobsTodayCount = Model.PrintJobsTodayCount,
+        lastConnectedDeviceName = Model.LastConnectedDeviceName
     };
 
     var pbMessages = new
@@ -52,7 +54,6 @@
         tokenCopied = L["PrintBridge.TokenCopied"].Value,
         tokenCopyFailed = L["PrintBridge.TokenCopyFailed"].Value,
         dismissTokenBox = L["PrintBridge.DismissTokenBox"].Value,
-        tokenColumn = L["PrintBridge.Token"].Value,
         ordersActive = L["Orders.Active"].Value,
         ordersPassive = L["Orders.Passive"].Value,
         deviceUpdateFailed = L["PrintBridge.DeviceUpdateFailed"].Value,
@@ -60,32 +61,31 @@
         deviceLimitReached = L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount].Value,
         deviceLimitExceededWarning = L["PrintBridge.DeviceLimitExceededWarning"].Value,
         deactivateExtraDevices = L["PrintBridge.DeactivateExtraDevices"].Value,
-        noDevicesYet = L["PrintBridge.NoDevicesYet"].Value,
-        createFirstDevice = L["PrintBridge.CreateFirstDevice"].Value,
-        statusConnected = L["PrintBridge.StatusConnected"].Value,
+        noDevicesTitle = L["PrintBridge.NoDevicesTitle"].Value,
+        noDevicesDescription = L["PrintBridge.NoDevicesDescription"].Value,
+        addDevice = L["PrintBridge.AddDevice"].Value,
+        createDevice = L["PrintBridge.CreateDevice"].Value,
+        download = L["PrintBridge.Download"].Value,
+        statusOnline = L["PrintBridge.Online"].Value,
+        statusOffline = L["PrintBridge.Offline"].Value,
+        statusUnknown = L["PrintBridge.Unknown"].Value,
         statusRecentlySeen = L["PrintBridge.StatusRecentlySeen"].Value,
-        statusDisconnected = L["PrintBridge.StatusDisconnected"].Value,
         statusNeverConnected = L["PrintBridge.StatusNeverConnected"].Value,
         statusInactive = L["PrintBridge.StatusInactive"].Value,
         lastSeen = L["PrintBridge.LastSeen"].Value,
         lastSeenNever = L["PrintBridge.LastSeenNever"].Value,
-        connectionStatus = L["PrintBridge.ConnectionStatus"].Value,
-        deviceActive = L["PrintBridge.DeviceActive"].Value,
-        activeDeviceCount = L["PrintBridge.ActiveDeviceCount"].Value,
-        connectedDeviceCount = L["PrintBridge.ConnectedDeviceCount"].Value,
-        allowedDeviceCountLabel = L["PrintBridge.AllowedDeviceCountLabel"].Value,
-        overviewLastSeen = L["PrintBridge.OverviewLastSeen"].Value,
-        overallConnectionStatus = L["PrintBridge.OverallConnectionStatus"].Value,
-        overviewDevicesTitle = L["PrintBridge.OverviewDevicesTitle"].Value,
+        versionUnknown = L["PrintBridge.VersionUnknown"].Value,
+        deviceName = L["PrintBridge.DeviceName"].Value,
+        localAlias = L["PrintBridge.LocalAlias"].Value,
+        status = L["PrintBridge.Status"].Value,
+        appVersion = L["PrintBridge.AppVersion"].Value,
         machineName = L["PrintBridge.MachineName"].Value,
         printerName = L["PrintBridge.PrinterName"].Value,
-        appVersion = L["PrintBridge.AppVersion"].Value,
-        deviceName = L["PrintBridge.DeviceName"].Value,
-        status = L["Common.Status"].Value,
+        deviceActive = L["PrintBridge.DeviceActive"].Value,
         actions = L["Common.Actions"].Value,
         regenerateToken = L["PrintBridge.RegenerateToken"].Value,
         emptyValue = "—",
-        allowedDeviceCount = L["PrintBridge.AllowedDeviceCount", Model.AllowedActiveDeviceCount].Value,
+        lastConnectedNone = L["PrintBridge.LastConnectedNone"].Value,
         printJobsTitle = L["PrintBridge.PrintJobsTitle"].Value,
         printJobsDescription = L["PrintBridge.PrintJobsDescription"].Value,
         noPrintJobs = L["PrintBridge.NoPrintJobs"].Value,
@@ -111,18 +111,25 @@
     };
 
     var pbMessagesJson = JsonSerializer.Serialize(pbMessages);
+    var lastConnectedDisplay = Model.LastConnectedDeviceName ?? L["PrintBridge.LastConnectedNone"].Value;
 }
 
+<div class="oh-print-bridge-page">
 <partial name="_PrintBridgeNav" />
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-        <h1 class="h4 mb-1">@L["PrintBridge.NavDevices"]</h1>
-        <p class="text-muted small mb-0">@L["PrintBridge.Description"]</p>
+<div class="oh-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+    <div class="oh-customer-page-header__main">
+        <h1 class="oh-customer-page-header__title h4 mb-1">@L["PrintBridge.Title"]</h1>
+        <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["PrintBridge.Subtitle"]</p>
     </div>
-    <a class="btn btn-outline-primary btn-sm" href="@Model.SetupUrl">
-        <i class="bi bi-download me-1"></i>@L["PrintBridge.NavSetup"]
-    </a>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <a class="btn btn-outline-secondary btn-sm" href="@Model.ReceiptPrinterSettingsUrl">
+            <i class="bi bi-receipt me-1"></i>@L["PrintBridge.ReceiptPrinterSettings"]
+        </a>
+        <a class="btn btn-outline-primary btn-sm" href="@Model.SetupUrl">
+            <i class="bi bi-download me-1"></i>@L["PrintBridge.Download"]
+        </a>
+    </div>
 </div>
 
 <div id="printBridgeMessageHost"></div>
@@ -131,47 +138,67 @@
     @Html.AntiForgeryToken()
 </form>
 
-<div class="row g-3">
-    <div class="col-12 col-xl-6">
-        <div class="card oh-card h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                    <div>
-                        <h2 class="h6 mb-1"><i class="bi bi-activity me-1 text-primary"></i>@L["PrintBridge.StatusOverview"]</h2>
-                        <p class="text-muted small mb-0">@L["PrintBridge.OverviewHelp"]</p>
-                    </div>
-                    <span id="printBridgeOverviewBadge" class="badge text-bg-secondary d-none"></span>
-                </div>
-                <div id="printBridgeOverviewBody"></div>
-            </div>
+<div class="alert alert-info small py-2 mb-3" role="note">
+    @L["PrintBridge.DeviceLimitNote", Model.AllowedActiveDeviceCount]
+</div>
+
+<div id="printBridgeLimitExceededAlert" class="alert alert-warning small py-2 mb-3 d-none" role="alert">
+    <div class="fw-semibold">@L["PrintBridge.DeviceLimitExceededWarning"]</div>
+    <div class="mt-1">@L["PrintBridge.DeactivateExtraDevices"]</div>
+</div>
+
+<div id="printBridgeLimitReachedAlert" class="alert alert-secondary small py-2 mb-3 d-none" role="alert">
+    @L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount]
+</div>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
+    <div class="col">
+        <div class="oh-print-bridge-stat">
+            <div class="oh-print-bridge-stat__label">@L["PrintBridge.ActiveDevices"]</div>
+            <div class="oh-print-bridge-stat__value" id="printBridgeSummaryActive">@Model.ActiveDeviceCount</div>
         </div>
     </div>
+    <div class="col">
+        <div class="oh-print-bridge-stat">
+            <div class="oh-print-bridge-stat__label">@L["PrintBridge.IncludedDevices"]</div>
+            <div class="oh-print-bridge-stat__value" id="printBridgeSummaryIncluded">@Model.AllowedActiveDeviceCount</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="oh-print-bridge-stat">
+            <div class="oh-print-bridge-stat__label">@L["PrintBridge.LastConnectedDevice"]</div>
+            <div class="oh-print-bridge-stat__value oh-print-bridge-stat__value--text" id="printBridgeSummaryLastDevice">@lastConnectedDisplay</div>
+            <div class="oh-print-bridge-stat__hint text-muted small" id="printBridgeSummaryLastSeen">@L["PrintBridge.LastSeenNever"]</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="oh-print-bridge-stat">
+            <div class="oh-print-bridge-stat__label">@L["PrintBridge.PrintJobsToday"]</div>
+            <div class="oh-print-bridge-stat__value" id="printBridgeSummaryPrintJobsToday">@Model.PrintJobsTodayCount</div>
+        </div>
+    </div>
+</div>
 
-    <div class="col-12 col-xl-6">
-        <div class="card oh-card h-100">
+<div class="row g-3">
+    <div class="col-12 col-xl-8">
+        <div class="card oh-card oh-print-bridge-devices-card">
             <div class="card-body">
-                <h2 class="h6 mb-1"><i class="bi bi-key me-1 text-primary"></i>@L["PrintBridge.DevicesTitle"]</h2>
-                <p class="text-muted small mb-2">@L["PrintBridge.DevicesHelp"]</p>
-                <p class="text-muted small mb-3" id="printBridgeAllowedCountText">@L["PrintBridge.AllowedDeviceCount", Model.AllowedActiveDeviceCount]</p>
-
-                <div id="printBridgeLimitExceededAlert" class="alert alert-warning small py-2 d-none" role="alert">
-                    <div class="fw-semibold">@L["PrintBridge.DeviceLimitExceededWarning"]</div>
-                    <div class="mt-1">@L["PrintBridge.DeactivateExtraDevices"]</div>
-                </div>
-
-                <div id="printBridgeLimitReachedAlert" class="alert alert-info small py-2 d-none" role="alert">
-                    @L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount]
+                <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                    <div>
+                        <h2 class="h6 mb-1">@L["PrintBridge.DevicesTitle"]</h2>
+                        <p class="text-muted small mb-0">@L["PrintBridge.DevicesHelp"]</p>
+                    </div>
                 </div>
 
                 <div class="row g-2 align-items-end mb-3" id="printBridgeCreateForm">
-                    <div class="col-sm-8">
+                    <div class="col-md-8">
                         <label class="form-label small" for="printBridgeDeviceName">@L["PrintBridge.DeviceName"]</label>
                         <input class="form-control form-control-sm" id="printBridgeDeviceName" type="text" maxlength="200"
                                placeholder="@L["PrintBridge.DeviceNamePlaceholder"]" />
                     </div>
-                    <div class="col-sm-4">
+                    <div class="col-md-4">
                         <button type="button" class="btn btn-primary btn-sm w-100" id="printBridgeCreateDeviceBtn">
-                            <i class="bi bi-plus-lg me-1"></i>@L["PrintBridge.CreateDevice"]
+                            <i class="bi bi-plus-lg me-1"></i>@L["PrintBridge.AddDevice"]
                         </button>
                     </div>
                 </div>
@@ -199,12 +226,41 @@
         </div>
     </div>
 
+    <div class="col-12 col-xl-4 d-flex flex-column gap-3">
+        <div class="card oh-card">
+            <div class="card-body">
+                <h2 class="h6 mb-2">@L["PrintBridge.SetupTitle"]</h2>
+                <p class="text-muted small mb-3">@L["PrintBridge.SetupDescription"]</p>
+                <div class="d-flex flex-column gap-2">
+                    <a class="btn btn-outline-primary btn-sm" href="@Model.PackageDownloadUrl">
+                        <i class="bi bi-download me-1"></i>@L["PrintBridge.Download"]
+                    </a>
+                    <a class="btn btn-outline-secondary btn-sm" href="@Model.SetupUrl">
+                        <i class="bi bi-book me-1"></i>@L["PrintBridge.SetupInstructions"]
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card oh-card">
+            <div class="card-body">
+                <h2 class="h6 mb-2">@L["PrintBridge.Troubleshooting"]</h2>
+                <ul class="oh-print-bridge-troubleshooting list-unstyled small text-muted mb-0">
+                    <li>@L["PrintBridge.TroubleshootingHint1"]</li>
+                    <li>@L["PrintBridge.TroubleshootingHint2"]</li>
+                    <li>@L["PrintBridge.TroubleshootingHint3"]</li>
+                    <li>@L["PrintBridge.TroubleshootingHint4"]</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <div class="col-12">
         <div class="card oh-card">
             <div class="card-body">
                 <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
                     <div>
-                        <h2 class="h6 mb-1"><i class="bi bi-receipt me-1 text-primary"></i>@L["PrintBridge.PrintJobsTitle"]</h2>
+                        <h2 class="h6 mb-1">@L["PrintBridge.PrintJobsTitle"]</h2>
                         <p class="text-muted small mb-0">@L["PrintBridge.PrintJobsDescription"]</p>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="printBridgeRefreshJobsBtn">
@@ -218,6 +274,7 @@
         </div>
     </div>
 </div>
+</div>
 
 @section Scripts {
     <script>
@@ -230,6 +287,8 @@
             printJobsUrl: "/print-bridge/print-jobs",
             reprintUrlTemplate: "/print-bridge/print-jobs/{id}/reprint",
             printJobsPollIntervalMs: 3000,
+            setupUrl: "@Model.SetupUrl",
+            packageDownloadUrl: "@Model.PackageDownloadUrl",
             initialState: {
                 devices: @Html.Raw(JsonSerializer.Serialize(initialDevices)),
                 quota: @Html.Raw(JsonSerializer.Serialize(initialQuota))

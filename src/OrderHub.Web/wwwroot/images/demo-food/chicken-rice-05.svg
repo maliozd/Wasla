@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-label="Demo chicken rice">
+  <rect width="320" height="240" fill="#fff6e8"/>
+  <path d="M48 156c24-42 64-66 112-66s88 24 112 66c-28 18-64 28-112 28S76 174 48 156z" fill="#f3e2b8" stroke="#d7bc72" stroke-width="4"/>
+  <path d="M88 142c18-20 42-30 72-30s54 10 72 30c-16 10-40 16-72 16s-56-6-72-16z" fill="#d28d3f"/>
+  <path d="M118 118c10 12 24 18 42 18s32-6 42-18c-10 6-24 10-42 10s-32-4-42-10z" fill="#b56f2c"/>
+  <path d="M138 108c8 10 18 14 30 14s22-4 30-14c-8 5-18 8-30 8s-22-3-30-8z" fill="#a86428"/>
+</svg>

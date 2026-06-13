@@ -129,6 +129,9 @@ namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(1);
 
+                    b.Property<string>("ReceiptTemplateSettingsJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 

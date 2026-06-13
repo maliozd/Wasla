@@ -1,0 +1,12 @@
+<div class="modal fade" id="notificationSettingsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable oh-notification-settings-modal">
+        <div class="modal-content">
+            <form id="notificationSettingsForm" method="post" action="/notification-settings">
+                @Html.AntiForgeryToken()
+                <div id="notificationSettingsModalBody" class="p-3 text-muted small">
+                    @L["Notification.Loading"]
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

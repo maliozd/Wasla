@@ -14,6 +14,16 @@ public sealed class PrintBridgePageViewModel
     public bool CanCreateActiveDevice { get; set; } = true;
     public bool ActiveCountExceedsLimit { get; set; }
 
+    public int PrintJobsTodayCount { get; set; }
+
+    public string? LastConnectedDeviceName { get; set; }
+
+    public DateTime? LastConnectedAtUtc { get; set; }
+
+    public string ReceiptPrinterSettingsUrl { get; set; } = "/settings/receipt-printer";
+
+    public string PackageDownloadUrl { get; set; } = "/print-bridge/download/package";
+
     public IReadOnlyList<PrintJobHistoryRowViewModel> PrintJobs { get; set; } =
         Array.Empty<PrintJobHistoryRowViewModel>();
 }

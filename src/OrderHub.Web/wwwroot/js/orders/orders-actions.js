@@ -134,12 +134,11 @@
   }
 
   function initActionDelegation() {
-    const host = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
-    if (!host) return;
-    host.addEventListener("click", function (ev) {
+    document.addEventListener("click", function (ev) {
       const t = ev.target;
       const btn = t && t.closest ? t.closest("[data-order-action][data-order-id]") : null;
       if (!btn) return;
+      if (!btn.closest("#ordersTableHost") && !btn.closest("#ordersCardsHost") && !btn.closest("#ordersLiveDisplayCardsHost")) return;
       ev.preventDefault();
       handleActionClick(btn);
     });

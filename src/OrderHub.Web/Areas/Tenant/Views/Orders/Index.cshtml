@@ -29,10 +29,21 @@
             <span id="automationStatusAutoApprove" class="badge text-bg-secondary">…</span>
             <span class="text-muted d-none d-sm-inline" aria-hidden="true">·</span>
             <span id="automationStatusReceipt" class="badge text-bg-secondary">…</span>
-            <a class="btn btn-link btn-sm py-0 px-1 text-nowrap" href="/settings/order">@L["Orders.ManageSettings"]</a>
+            <a class="btn btn-link btn-sm py-0 px-1 text-nowrap" href="/settings/orders">@L["Orders.ManageSettings"]</a>
         </div>
 
         <span class="text-muted small text-nowrap flex-shrink-0">@L["Orders.TotalCount"]: <span id="ordersTotalCount">@Model.TotalCount</span></span>
+
+        <div class="btn-group btn-group-sm oh-orders-view-mode flex-shrink-0" role="group" aria-label="@L["Orders.ViewMode.Label"]">
+            <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
+            <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
+            <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
+        </div>
+
+        <button type="button" id="ordersOpenLiveDisplay" class="btn btn-sm btn-outline-primary text-nowrap"
+                title="@L["Orders.OpenLiveDisplay"]">
+            <i class="bi bi-display me-1" aria-hidden="true"></i>@L["Orders.OpenLiveDisplay"]
+        </button>
         <a class="btn btn-sm btn-outline-secondary text-nowrap" href="/orders/history">@L["Orders.History.ViewOrderHistory"]</a>
     </div>
 </div>
@@ -117,12 +128,16 @@
     </div>
 </div>
 
-<div class="card oh-card oh-orders-table-card">
+<div id="ordersCardsHost" class="oh-orders-cards-host d-none" role="list" hidden></div>
+
+<div id="ordersNormalTableSlot">
+<div class="card oh-card oh-orders-table-card oh-orders-normal-content">
     <div class="card-body p-0 p-md-3">
         <div id="ordersTableHost" class="oh-orders-table-host">
             @await Html.PartialAsync("_OrdersTable", Model)
         </div>
     </div>
+</div>
 </div>
 
 </div>
@@ -136,6 +151,8 @@
             orderSyncSettingsUrl: "/orders/sync-settings",
             orderSettingsUrl: "/orders/order-settings",
             pollingIntervalMs: 10000,
+            todayYmd: "@today.ToString("yyyy-MM-dd")",
+            defaultFoodImage: "/images/demo-food/chicken-rice-01.svg",
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
             {
                 ["genericError"] = L["Orders.GenericError"].Value,
@@ -205,7 +222,16 @@
                 ["automationStatusAutoApproveActive"] = L["Orders.AutomationStatus.AutoApproveActive"].Value,
                 ["automationStatusAutoApproveDisabled"] = L["Orders.AutomationStatus.AutoApproveDisabled"].Value,
                 ["automationStatusReceiptPrintingActive"] = L["Orders.AutomationStatus.ReceiptPrintingActive"].Value,
-                ["automationStatusReceiptPrintingDisabled"] = L["Orders.AutomationStatus.ReceiptPrintingDisabled"].Value
+                ["automationStatusReceiptPrintingDisabled"] = L["Orders.AutomationStatus.ReceiptPrintingDisabled"].Value,
+
+                ["fullscreenEnterFailed"] = L["Orders.FullscreenEnterFailed"].Value,
+                ["liveDisplayPopupBlocked"] = L["Orders.LiveDisplay.PopupBlocked"].Value,
+                ["noLiveOrders"] = L["Orders.NoLiveOrders"].Value,
+                ["noLiveOrdersDescription"] = L["Orders.NoLiveOrdersDescription"].Value,
+                ["itemsMore"] = L["Orders.ItemsMore"].Value,
+                ["ordersFullscreenCustomer"] = L["Orders.Customer"].Value,
+                ["ordersFullscreenTotal"] = L["Orders.TotalAmount"].Value,
+                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value
             }))
         };
     </script>
@@ -213,6 +239,8 @@
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-view-mode.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-open-live-display.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-page.js" asp-append-version="true"></script>

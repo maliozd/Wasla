@@ -216,6 +216,9 @@
   <data name="Navigation.OrderSettings" xml:space="preserve">
     <value>Order Settings</value>
   </data>
+  <data name="Navigation.ReceiptPrinterSettings" xml:space="preserve">
+    <value>Receipt &amp; Printer Settings</value>
+  </data>
   <data name="Navigation.AccountSettings" xml:space="preserve">
     <value>Account Settings</value>
   </data>
@@ -560,6 +563,75 @@
   </data>
   <data name="Orders.TotalCount" xml:space="preserve">
     <value>Total</value>
+  </data>
+  <data name="Orders.Fullscreen" xml:space="preserve">
+    <value>Fullscreen</value>
+  </data>
+  <data name="Orders.OpenLiveDisplay" xml:space="preserve">
+    <value>Open Live Display</value>
+  </data>
+  <data name="Orders.LiveDisplay.Title" xml:space="preserve">
+    <value>Live Display</value>
+  </data>
+  <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
+    <value>Close Display</value>
+  </data>
+  <data name="Orders.LiveDisplay.FullscreenHintPrefix" xml:space="preserve">
+    <value>Press</value>
+  </data>
+  <data name="Orders.LiveDisplay.FullscreenHintSuffix" xml:space="preserve">
+    <value>for fullscreen</value>
+  </data>
+  <data name="Orders.LiveDisplay.BackToOrders" xml:space="preserve">
+    <value>Back to Orders</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
+    <value>Last updated</value>
+  </data>
+  <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
+    <value>Popup was blocked. Opening live display in this tab.</value>
+  </data>
+  <data name="Orders.ItemsMore" xml:space="preserve">
+    <value>+{0} items</value>
+  </data>
+  <data name="Orders.ViewMode.Label" xml:space="preserve">
+    <value>Order display view</value>
+  </data>
+  <data name="Orders.ViewMode.Table" xml:space="preserve">
+    <value>Table</value>
+  </data>
+  <data name="Orders.ViewMode.Compact" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="Orders.ViewMode.Kitchen" xml:space="preserve">
+    <value>Kitchen</value>
+  </data>
+  <data name="Orders.KitchenMode" xml:space="preserve">
+    <value>Kitchen Mode</value>
+  </data>
+  <data name="Orders.ExitFullscreen" xml:space="preserve">
+    <value>Exit Fullscreen</value>
+  </data>
+  <data name="Orders.NormalView" xml:space="preserve">
+    <value>Normal View</value>
+  </data>
+  <data name="Orders.TodaysOrders" xml:space="preserve">
+    <value>Today's Orders</value>
+  </data>
+  <data name="Orders.ActiveOrders" xml:space="preserve">
+    <value>Active Orders</value>
+  </data>
+  <data name="Orders.CancelledOrders" xml:space="preserve">
+    <value>Cancelled Orders</value>
+  </data>
+  <data name="Orders.NoLiveOrders" xml:space="preserve">
+    <value>No live orders.</value>
+  </data>
+  <data name="Orders.NoLiveOrdersDescription" xml:space="preserve">
+    <value>New orders will appear here automatically.</value>
+  </data>
+  <data name="Orders.FullscreenEnterFailed" xml:space="preserve">
+    <value>Could not enter fullscreen mode.</value>
   </data>
   <data name="Orders.DetailsTitle" xml:space="preserve">
     <value>Order Details</value>
@@ -1519,7 +1591,7 @@
     <value>Order Settings</value>
   </data>
   <data name="Settings.OrderSettings.Subtitle" xml:space="preserve">
-    <value>Manage order synchronization, auto approval, receipt printing, and notifications.</value>
+    <value>Manage order synchronization, automatic approval, and notifications.</value>
   </data>
   <data name="Settings.OrderSynchronization.Title" xml:space="preserve">
     <value>Order Synchronization</value>
@@ -1550,6 +1622,192 @@
   </data>
   <data name="Settings.ReceiptPrinting.ReceiptCopyCount" xml:space="preserve">
     <value>Receipt Copy Count</value>
+  </data>
+  <data name="Settings.ReceiptPrinterSettings.Title" xml:space="preserve">
+    <value>Receipt &amp; Printer Settings</value>
+  </data>
+  <data name="Settings.ReceiptPrinterSettings.Subtitle" xml:space="preserve">
+    <value>Manage receipt creation, print copies, and printer-related preferences.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Title" xml:space="preserve">
+    <value>Receipt Creation</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
+    <value>Configure when receipt print jobs are created.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.CreateReceiptAfterAutoApprove" xml:space="preserve">
+    <value>Create Receipt After Auto Approve</value>
+  </data>
+  <data name="Settings.PrintCopies.Title" xml:space="preserve">
+    <value>Print Copies</value>
+  </data>
+  <data name="Settings.PrintCopies.Description" xml:space="preserve">
+    <value>Choose how many receipt copies should be created.</value>
+  </data>
+  <data name="Settings.PrintCopies.ReceiptCopyCount" xml:space="preserve">
+    <value>Receipt Copy Count</value>
+  </data>
+  <data name="Settings.PrinterStatus.Title" xml:space="preserve">
+    <value>Printer / Print Bridge Status</value>
+  </data>
+  <data name="Settings.PrinterStatus.Description" xml:space="preserve">
+    <value>View the current Print Bridge or printer connection status.</value>
+  </data>
+  <data name="Settings.PrinterStatus.ManagePrintBridge" xml:space="preserve">
+    <value>Manage Print Bridge</value>
+  </data>
+  <data name="Settings.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Settings.ReceiptContent.Title" xml:space="preserve">
+    <value>Receipt Content</value>
+  </data>
+  <data name="Settings.ReceiptContent.Description" xml:space="preserve">
+    <value>Choose which information appears on printed receipts.</value>
+  </data>
+  <data name="Settings.ReceiptContent.RequiredFields" xml:space="preserve">
+    <value>Required fields</value>
+  </data>
+  <data name="Settings.ReceiptContent.OptionalFields" xml:space="preserve">
+    <value>Optional fields</value>
+  </data>
+  <data name="Settings.ReceiptContent.Required" xml:space="preserve">
+    <value>Required</value>
+  </data>
+  <data name="Settings.ReceiptContent.ComingSoon" xml:space="preserve">
+    <value>Coming soon</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowOrderCode" xml:space="preserve">
+    <value>Order code</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductName" xml:space="preserve">
+    <value>Product name</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowQuantity" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowItemTotal" xml:space="preserve">
+    <value>Item total</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowGrandTotal" xml:space="preserve">
+    <value>Grand total</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowRestaurantName" xml:space="preserve">
+    <value>Restaurant name</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPlatformName" xml:space="preserve">
+    <value>Platform name</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowReceivedTime" xml:space="preserve">
+    <value>Order received time</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerName" xml:space="preserve">
+    <value>Customer name</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerPhone" xml:space="preserve">
+    <value>Customer phone</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryAddress" xml:space="preserve">
+    <value>Delivery address</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductNotes" xml:space="preserve">
+    <value>Product notes</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductOptions" xml:space="preserve">
+    <value>Product options / extras</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowSubtotal" xml:space="preserve">
+    <value>Subtotal</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDiscount" xml:space="preserve">
+    <value>Discount</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryFee" xml:space="preserve">
+    <value>Delivery fee</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPaymentMethod" xml:space="preserve">
+    <value>Payment method</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowFooterMessage" xml:space="preserve">
+    <value>Footer message</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowQrCode" xml:space="preserve">
+    <value>QR code</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowTaxVat" xml:space="preserve">
+    <value>Tax / VAT information</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Title" xml:space="preserve">
+    <value>Receipt Messages</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Description" xml:space="preserve">
+    <value>Customize the receipt header and footer text.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Header" xml:space="preserve">
+    <value>Receipt Header</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Footer" xml:space="preserve">
+    <value>Footer Message</value>
+  </data>
+  <data name="Settings.ReceiptMessages.DefaultFooter" xml:space="preserve">
+    <value>Thank you for your order.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderMax" xml:space="preserve">
+    <value>Maximum {0} characters.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.FooterMax" xml:space="preserve">
+    <value>Maximum {0} characters.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderTooLong" xml:space="preserve">
+    <value>Receipt header is too long.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.FooterTooLong" xml:space="preserve">
+    <value>Footer message is too long.</value>
+  </data>
+  <data name="Settings.ReceiptPreview.Title" xml:space="preserve">
+    <value>Receipt Preview</value>
+  </data>
+  <data name="Settings.ReceiptPreview.Description" xml:space="preserve">
+    <value>Preview the receipt layout using sample data.</value>
+  </data>
+  <data name="Settings.ReceiptPreview.PreviewLabel" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePlatform" xml:space="preserve">
+    <value>Trendyol Yemek</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleOrder" xml:space="preserve">
+    <value>TY-45821</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleCustomer" xml:space="preserve">
+    <value>Jane Doe</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePhone" xml:space="preserve">
+    <value>+1 555 0100</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleAddress" xml:space="preserve">
+    <value>12 Main Street</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleItem" xml:space="preserve">
+    <value>Chicken Rice</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleNote" xml:space="preserve">
+    <value>Mild spice</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleOption" xml:space="preserve">
+    <value>Extra sauce</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePayment" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="Settings.TestReceipt.Title" xml:space="preserve">
+    <value>Test Receipt</value>
+  </data>
+  <data name="Settings.TestReceipt.Description" xml:space="preserve">
+    <value>Test receipt printing will be available after printer test support is added.</value>
+  </data>
+  <data name="Settings.TestReceipt.PrintTestReceipt" xml:space="preserve">
+    <value>Print Test Receipt</value>
   </data>
   <data name="Settings.Notifications.Title" xml:space="preserve">
     <value>Notifications</value>
@@ -2084,5 +2342,77 @@
   </data>
   <data name="PrintBridge.CreatedAt" xml:space="preserve">
     <value>Created</value>
+  </data>
+  <data name="PrintBridge.Subtitle" xml:space="preserve">
+    <value>Manage local printer bridge devices used for automatic receipt printing.</value>
+  </data>
+  <data name="PrintBridge.ActiveDevices" xml:space="preserve">
+    <value>Active Devices</value>
+  </data>
+  <data name="PrintBridge.IncludedDevices" xml:space="preserve">
+    <value>Included Devices</value>
+  </data>
+  <data name="PrintBridge.LastConnectedDevice" xml:space="preserve">
+    <value>Last Connected Device</value>
+  </data>
+  <data name="PrintBridge.LastConnectedNone" xml:space="preserve">
+    <value>None yet</value>
+  </data>
+  <data name="PrintBridge.PrintJobsToday" xml:space="preserve">
+    <value>Print Jobs Today</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitNote" xml:space="preserve">
+    <value>Up to {0} active Print Bridge devices are included. Additional devices may require a paid add-on later.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesTitle" xml:space="preserve">
+    <value>No Print Bridge devices yet.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesDescription" xml:space="preserve">
+    <value>Create a device and install Print Bridge on the computer connected to your receipt printer.</value>
+  </data>
+  <data name="PrintBridge.AddDevice" xml:space="preserve">
+    <value>Add Device</value>
+  </data>
+  <data name="PrintBridge.SetupDescription" xml:space="preserve">
+    <value>Print Bridge is a local Windows app that connects your installed thermal printer to OrderHub.</value>
+  </data>
+  <data name="PrintBridge.SetupInstructions" xml:space="preserve">
+    <value>Setup Instructions</value>
+  </data>
+  <data name="PrintBridge.Troubleshooting" xml:space="preserve">
+    <value>Troubleshooting</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
+    <value>Make sure Print Bridge is running on the Windows computer connected to the printer.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint2" xml:space="preserve">
+    <value>Check that the Base URL and device token are saved correctly in the Print Bridge app.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint3" xml:space="preserve">
+    <value>If the device is offline, restart Print Bridge and use Test Connection.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint4" xml:space="preserve">
+    <value>Make sure the printer is installed in Windows.</value>
+  </data>
+  <data name="PrintBridge.ReceiptPrinterSettings" xml:space="preserve">
+    <value>Receipt &amp; Printer Settings</value>
+  </data>
+  <data name="PrintBridge.Online" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="PrintBridge.Offline" xml:space="preserve">
+    <value>Offline</value>
+  </data>
+  <data name="PrintBridge.Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="PrintBridge.VersionUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="PrintBridge.LocalAlias" xml:space="preserve">
+    <value>Local Alias</value>
+  </data>
+  <data name="PrintBridge.Status" xml:space="preserve">
+    <value>Status</value>
   </data>
 </root>

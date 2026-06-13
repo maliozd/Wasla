@@ -1,0 +1,6 @@
+@model OrderHub.Web.Models.Ui.OrderListSortHeaderModel
+@using OrderHub.Web.Models.Orders
+@{
+    var link = OrderListUrlHelper.BuildSortHeaderLink(Model.BasePath, Model.Filters, Model.SortBy, Model.Title);
+}
+<a href="@link.Href">@link.Title@link.Arrow</a>

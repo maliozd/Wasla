@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Persistence.Customer;
@@ -20,13 +21,16 @@ public interface IReceiptPrintJobService
 public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 {
     private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly IReceiptTemplateSettingsService _templateSettings;
     private readonly ILogger<ReceiptPrintJobService> _logger;
 
     public ReceiptPrintJobService(
         ICustomerDbContextFactory dbFactory,
+        IReceiptTemplateSettingsService templateSettings,
         ILogger<ReceiptPrintJobService> logger)
     {
         _dbFactory = dbFactory;
+        _templateSettings = templateSettings;
         _logger = logger;
     }
 
@@ -75,6 +79,9 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
         var safeCopyCount = Math.Clamp(copyCount, 1, 3);
         var nowUtc = DateTime.UtcNow;
+        var template = await _templateSettings
+            .GetAsync(customerId, tenantDisplayName, ct)
+            .ConfigureAwait(false);
 
         var job = new PrintJob
         {
@@ -82,7 +89,7 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
             Type = PrintJobType.Receipt,
             Status = PrintJobStatus.Pending,
             CopyCount = safeCopyCount,
-            PayloadJson = ReceiptPayloadBuilder.Build(order, tenantDisplayName),
+            PayloadJson = ReceiptPayloadBuilder.Build(order, tenantDisplayName, template),
             AttemptCount = 0,
             CreatedAt = nowUtc,
             UpdatedAt = nowUtc

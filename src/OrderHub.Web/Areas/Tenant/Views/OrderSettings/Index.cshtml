@@ -2,17 +2,17 @@
 @using System.Text.Json
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@using OrderHub.Web.Models.Ui
 @{
     ViewData["Title"] = L["Settings.OrderSettings.Title"];
 }
 
 <div class="oh-order-settings-page">
-    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-        <div>
-            <h1 class="h4 mb-1">@L["Settings.OrderSettings.Title"]</h1>
-            <p class="text-muted small mb-0">@L["Settings.OrderSettings.Subtitle"]</p>
-        </div>
-    </div>
+    @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
+    {
+        Title = L["Settings.OrderSettings.Title"].Value,
+        Subtitle = L["Settings.OrderSettings.Subtitle"].Value
+    })
 
     <div id="ordersMessageHost"></div>
 
@@ -62,36 +62,6 @@
             </section>
 
             <section class="oh-settings-section">
-                <div class="oh-settings-section-row oh-settings-section-row--stacked">
-                    <div class="oh-settings-section-text">
-                        <h2 class="h6 mb-1">@L["Settings.ReceiptPrinting.Title"]</h2>
-                        <p class="text-muted small mb-0">@L["Settings.ReceiptPrinting.Description"]</p>
-                    </div>
-                </div>
-                <div class="oh-settings-subrow">
-                    <span class="small text-muted">@L["Settings.ReceiptPrinting.CreateReceiptAfterAutoApprove"]</span>
-                    <div class="oh-settings-section-controls">
-                        <div class="form-check form-switch m-0">
-                            <input class="form-check-input" type="checkbox" role="switch" id="autoPrintReceiptToggle"
-                                   aria-label="@L["Settings.ReceiptPrinting.CreateReceiptAfterAutoApprove"]"
-                                   title="@L["Orders.AutoPrintReceiptHelp"]" />
-                        </div>
-                        <span id="autoPrintReceiptStatusBadge" class="badge text-bg-secondary">@L["Settings.Passive"]</span>
-                    </div>
-                </div>
-                <div class="oh-settings-subrow">
-                    <label class="small text-muted mb-0" for="receiptPrintCopyCountSelect">@L["Settings.ReceiptPrinting.ReceiptCopyCount"]</label>
-                    <select id="receiptPrintCopyCountSelect" class="form-select form-select-sm oh-settings-copy-select"
-                            aria-label="@L["Settings.ReceiptPrinting.ReceiptCopyCount"]"
-                            title="@L["Orders.ReceiptPrintCopyCountHelp"]">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                    </select>
-                </div>
-            </section>
-
-            <section class="oh-settings-section">
                 <div class="oh-settings-section-row">
                     <div class="oh-settings-section-text">
                         <h2 class="h6 mb-1">@L["Settings.Notifications.Title"]</h2>
@@ -108,18 +78,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="notificationSettingsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable" style="max-width: 520px">
-        <div class="modal-content">
-            <form id="notificationSettingsForm" method="post" action="/notification-settings">
-                @Html.AntiForgeryToken()
-                <div id="notificationSettingsModalBody" class="p-3 text-muted small">
-                    @L["Notification.Loading"]
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_NotificationSettingsModalShell")
 
 @section Scripts {
     <script>

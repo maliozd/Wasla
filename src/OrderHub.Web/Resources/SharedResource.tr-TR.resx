@@ -216,6 +216,9 @@
   <data name="Navigation.OrderSettings" xml:space="preserve">
     <value>Sipariş Ayarları</value>
   </data>
+  <data name="Navigation.ReceiptPrinterSettings" xml:space="preserve">
+    <value>Fiş ve Yazıcı Ayarları</value>
+  </data>
   <data name="Navigation.AccountSettings" xml:space="preserve">
     <value>Hesap Ayarları</value>
   </data>
@@ -560,6 +563,75 @@
   </data>
   <data name="Orders.TotalCount" xml:space="preserve">
     <value>Toplam</value>
+  </data>
+  <data name="Orders.Fullscreen" xml:space="preserve">
+    <value>Tam Ekran</value>
+  </data>
+  <data name="Orders.OpenLiveDisplay" xml:space="preserve">
+    <value>Canlı Ekranı Aç</value>
+  </data>
+  <data name="Orders.LiveDisplay.Title" xml:space="preserve">
+    <value>Canlı Sipariş Ekranı</value>
+  </data>
+  <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
+    <value>Ekranı Kapat</value>
+  </data>
+  <data name="Orders.LiveDisplay.FullscreenHintPrefix" xml:space="preserve">
+    <value>Tam ekran için</value>
+  </data>
+  <data name="Orders.LiveDisplay.FullscreenHintSuffix" xml:space="preserve">
+    <value>tuşuna basın</value>
+  </data>
+  <data name="Orders.LiveDisplay.BackToOrders" xml:space="preserve">
+    <value>Siparişlere Dön</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
+    <value>Son güncelleme</value>
+  </data>
+  <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
+    <value>Açılır pencere engellendi. Canlı ekran bu sekmede açılıyor.</value>
+  </data>
+  <data name="Orders.ItemsMore" xml:space="preserve">
+    <value>+{0} ürün</value>
+  </data>
+  <data name="Orders.ViewMode.Label" xml:space="preserve">
+    <value>Sipariş görünümü</value>
+  </data>
+  <data name="Orders.ViewMode.Table" xml:space="preserve">
+    <value>Tablo</value>
+  </data>
+  <data name="Orders.ViewMode.Compact" xml:space="preserve">
+    <value>Kompakt</value>
+  </data>
+  <data name="Orders.ViewMode.Kitchen" xml:space="preserve">
+    <value>Mutfak</value>
+  </data>
+  <data name="Orders.KitchenMode" xml:space="preserve">
+    <value>Mutfak Modu</value>
+  </data>
+  <data name="Orders.ExitFullscreen" xml:space="preserve">
+    <value>Tam Ekrandan Çık</value>
+  </data>
+  <data name="Orders.NormalView" xml:space="preserve">
+    <value>Normal Görünüm</value>
+  </data>
+  <data name="Orders.TodaysOrders" xml:space="preserve">
+    <value>Bugünkü Siparişler</value>
+  </data>
+  <data name="Orders.ActiveOrders" xml:space="preserve">
+    <value>Aktif Siparişler</value>
+  </data>
+  <data name="Orders.CancelledOrders" xml:space="preserve">
+    <value>İptal Edilen Siparişler</value>
+  </data>
+  <data name="Orders.NoLiveOrders" xml:space="preserve">
+    <value>Canlı sipariş yok.</value>
+  </data>
+  <data name="Orders.NoLiveOrdersDescription" xml:space="preserve">
+    <value>Yeni siparişler burada otomatik olarak görünecektir.</value>
+  </data>
+  <data name="Orders.FullscreenEnterFailed" xml:space="preserve">
+    <value>Tam ekran moduna geçilemedi.</value>
   </data>
   <data name="Orders.DetailsTitle" xml:space="preserve">
     <value>Sipariş Detayı</value>
@@ -1519,7 +1591,7 @@
     <value>Sipariş Ayarları</value>
   </data>
   <data name="Settings.OrderSettings.Subtitle" xml:space="preserve">
-    <value>Sipariş senkronizasyonu, otomatik onay, fiş yazdırma ve bildirimleri yönetin.</value>
+    <value>Sipariş senkronizasyonu, otomatik onay ve bildirimleri yönetin.</value>
   </data>
   <data name="Settings.OrderSynchronization.Title" xml:space="preserve">
     <value>Sipariş Senkronizasyonu</value>
@@ -1550,6 +1622,192 @@
   </data>
   <data name="Settings.ReceiptPrinting.ReceiptCopyCount" xml:space="preserve">
     <value>Fiş Kopya Sayısı</value>
+  </data>
+  <data name="Settings.ReceiptPrinterSettings.Title" xml:space="preserve">
+    <value>Fiş ve Yazıcı Ayarları</value>
+  </data>
+  <data name="Settings.ReceiptPrinterSettings.Subtitle" xml:space="preserve">
+    <value>Fiş oluşturma, kopya sayısı ve yazıcı tercihlerini yönetin.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Title" xml:space="preserve">
+    <value>Fiş Oluşturma</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
+    <value>Fiş yazdırma işlerinin ne zaman oluşturulacağını yapılandırın.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.CreateReceiptAfterAutoApprove" xml:space="preserve">
+    <value>Otomatik Onay Sonrası Fiş Oluştur</value>
+  </data>
+  <data name="Settings.PrintCopies.Title" xml:space="preserve">
+    <value>Fiş Kopya Sayısı</value>
+  </data>
+  <data name="Settings.PrintCopies.Description" xml:space="preserve">
+    <value>Kaç adet fiş kopyası oluşturulacağını seçin.</value>
+  </data>
+  <data name="Settings.PrintCopies.ReceiptCopyCount" xml:space="preserve">
+    <value>Fiş Kopya Sayısı</value>
+  </data>
+  <data name="Settings.PrinterStatus.Title" xml:space="preserve">
+    <value>Yazıcı / Print Bridge Durumu</value>
+  </data>
+  <data name="Settings.PrinterStatus.Description" xml:space="preserve">
+    <value>Print Bridge veya yazıcı bağlantı durumunu görüntüleyin.</value>
+  </data>
+  <data name="Settings.PrinterStatus.ManagePrintBridge" xml:space="preserve">
+    <value>Print Bridge'i Yönet</value>
+  </data>
+  <data name="Settings.Save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="Settings.ReceiptContent.Title" xml:space="preserve">
+    <value>Fiş İçeriği</value>
+  </data>
+  <data name="Settings.ReceiptContent.Description" xml:space="preserve">
+    <value>Fişte hangi bilgilerin görüneceğini seçin.</value>
+  </data>
+  <data name="Settings.ReceiptContent.RequiredFields" xml:space="preserve">
+    <value>Zorunlu alanlar</value>
+  </data>
+  <data name="Settings.ReceiptContent.OptionalFields" xml:space="preserve">
+    <value>İsteğe bağlı alanlar</value>
+  </data>
+  <data name="Settings.ReceiptContent.Required" xml:space="preserve">
+    <value>Zorunlu</value>
+  </data>
+  <data name="Settings.ReceiptContent.ComingSoon" xml:space="preserve">
+    <value>Yakında</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowOrderCode" xml:space="preserve">
+    <value>Sipariş kodu</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductName" xml:space="preserve">
+    <value>Ürün adı</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowQuantity" xml:space="preserve">
+    <value>Adet</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowItemTotal" xml:space="preserve">
+    <value>Kalem toplamı</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowGrandTotal" xml:space="preserve">
+    <value>Genel toplam</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowRestaurantName" xml:space="preserve">
+    <value>Restoran adı</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPlatformName" xml:space="preserve">
+    <value>Platform adı</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowReceivedTime" xml:space="preserve">
+    <value>Sipariş alınma zamanı</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerName" xml:space="preserve">
+    <value>Müşteri adı</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerPhone" xml:space="preserve">
+    <value>Müşteri telefonu</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryAddress" xml:space="preserve">
+    <value>Teslimat adresi</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductNotes" xml:space="preserve">
+    <value>Ürün notları</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductOptions" xml:space="preserve">
+    <value>Ürün seçenekleri / ekstralar</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowSubtotal" xml:space="preserve">
+    <value>Ara toplam</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDiscount" xml:space="preserve">
+    <value>İndirim</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryFee" xml:space="preserve">
+    <value>Teslimat ücreti</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPaymentMethod" xml:space="preserve">
+    <value>Ödeme yöntemi</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowFooterMessage" xml:space="preserve">
+    <value>Alt mesaj</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowQrCode" xml:space="preserve">
+    <value>QR kod</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowTaxVat" xml:space="preserve">
+    <value>KDV / vergi bilgisi</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Title" xml:space="preserve">
+    <value>Fiş Mesajları</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Description" xml:space="preserve">
+    <value>Fiş başlığı ve alt mesajını özelleştirin.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Header" xml:space="preserve">
+    <value>Fiş Başlığı</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Footer" xml:space="preserve">
+    <value>Alt Mesaj</value>
+  </data>
+  <data name="Settings.ReceiptMessages.DefaultFooter" xml:space="preserve">
+    <value>Bizi tercih ettiğiniz için teşekkür ederiz.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderMax" xml:space="preserve">
+    <value>En fazla {0} karakter.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.FooterMax" xml:space="preserve">
+    <value>En fazla {0} karakter.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderTooLong" xml:space="preserve">
+    <value>Fiş başlığı çok uzun.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.FooterTooLong" xml:space="preserve">
+    <value>Alt mesaj çok uzun.</value>
+  </data>
+  <data name="Settings.ReceiptPreview.Title" xml:space="preserve">
+    <value>Fiş Önizleme</value>
+  </data>
+  <data name="Settings.ReceiptPreview.Description" xml:space="preserve">
+    <value>Örnek verilerle fiş görünümünü önizleyin.</value>
+  </data>
+  <data name="Settings.ReceiptPreview.PreviewLabel" xml:space="preserve">
+    <value>Önizleme</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePlatform" xml:space="preserve">
+    <value>Trendyol Yemek</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleOrder" xml:space="preserve">
+    <value>TY-45821</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleCustomer" xml:space="preserve">
+    <value>Ayşe Yılmaz</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePhone" xml:space="preserve">
+    <value>0532 000 00 00</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleAddress" xml:space="preserve">
+    <value>Atatürk Cad. No:12 Kadıköy</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleItem" xml:space="preserve">
+    <value>Tavuk Pilav</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleNote" xml:space="preserve">
+    <value>Az acılı</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleOption" xml:space="preserve">
+    <value>Ekstra sos</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePayment" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="Settings.TestReceipt.Title" xml:space="preserve">
+    <value>Test Fişi</value>
+  </data>
+  <data name="Settings.TestReceipt.Description" xml:space="preserve">
+    <value>Yazıcı test desteği eklendikten sonra test fişi yazdırma kullanılabilir olacaktır.</value>
+  </data>
+  <data name="Settings.TestReceipt.PrintTestReceipt" xml:space="preserve">
+    <value>Test Fişi Yazdır</value>
   </data>
   <data name="Settings.Notifications.Title" xml:space="preserve">
     <value>Bildirimler</value>
@@ -2084,5 +2342,77 @@
   </data>
   <data name="PrintBridge.CreatedAt" xml:space="preserve">
     <value>Oluşturulma</value>
+  </data>
+  <data name="PrintBridge.Subtitle" xml:space="preserve">
+    <value>Otomatik fiş yazdırma için kullanılan yerel yazıcı köprüsü cihazlarını yönetin.</value>
+  </data>
+  <data name="PrintBridge.ActiveDevices" xml:space="preserve">
+    <value>Aktif Cihazlar</value>
+  </data>
+  <data name="PrintBridge.IncludedDevices" xml:space="preserve">
+    <value>Dahil Cihazlar</value>
+  </data>
+  <data name="PrintBridge.LastConnectedDevice" xml:space="preserve">
+    <value>Son Bağlanan Cihaz</value>
+  </data>
+  <data name="PrintBridge.LastConnectedNone" xml:space="preserve">
+    <value>Henüz yok</value>
+  </data>
+  <data name="PrintBridge.PrintJobsToday" xml:space="preserve">
+    <value>Bugünkü Yazdırma İşleri</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitNote" xml:space="preserve">
+    <value>En fazla {0} aktif Print Bridge cihazı dahildir. Ek cihazlar için ileride ücretli eklenti gerekebilir.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesTitle" xml:space="preserve">
+    <value>Henüz Print Bridge cihazı yok.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesDescription" xml:space="preserve">
+    <value>Bir cihaz oluşturun ve fiş yazıcınıza bağlı bilgisayara Print Bridge yükleyin.</value>
+  </data>
+  <data name="PrintBridge.AddDevice" xml:space="preserve">
+    <value>Cihaz Ekle</value>
+  </data>
+  <data name="PrintBridge.SetupDescription" xml:space="preserve">
+    <value>Print Bridge, kurulu termal yazıcınızı OrderHub'a bağlayan yerel bir Windows uygulamasıdır.</value>
+  </data>
+  <data name="PrintBridge.SetupInstructions" xml:space="preserve">
+    <value>Kurulum Talimatları</value>
+  </data>
+  <data name="PrintBridge.Troubleshooting" xml:space="preserve">
+    <value>Sorun Giderme</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
+    <value>Print Bridge'in yazıcıya bağlı Windows bilgisayarında çalıştığından emin olun.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint2" xml:space="preserve">
+    <value>Print Bridge uygulamasında Base URL ve cihaz token'ının doğru kaydedildiğini kontrol edin.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint3" xml:space="preserve">
+    <value>Cihaz çevrimdışıysa Print Bridge'i yeniden başlatın ve Bağlantıyı Test Et'i kullanın.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint4" xml:space="preserve">
+    <value>Yazıcının Windows'ta kurulu olduğundan emin olun.</value>
+  </data>
+  <data name="PrintBridge.ReceiptPrinterSettings" xml:space="preserve">
+    <value>Fiş ve Yazıcı Ayarları</value>
+  </data>
+  <data name="PrintBridge.Online" xml:space="preserve">
+    <value>Çevrimiçi</value>
+  </data>
+  <data name="PrintBridge.Offline" xml:space="preserve">
+    <value>Çevrimdışı</value>
+  </data>
+  <data name="PrintBridge.Unknown" xml:space="preserve">
+    <value>Bilinmiyor</value>
+  </data>
+  <data name="PrintBridge.VersionUnknown" xml:space="preserve">
+    <value>Bilinmiyor</value>
+  </data>
+  <data name="PrintBridge.LocalAlias" xml:space="preserve">
+    <value>Yerel Ad</value>
+  </data>
+  <data name="PrintBridge.Status" xml:space="preserve">
+    <value>Durum</value>
   </data>
 </root>

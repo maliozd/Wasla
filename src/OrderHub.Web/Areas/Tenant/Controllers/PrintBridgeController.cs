@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Application.Orders;
+using OrderHub.Application.Time;
 using OrderHub.Domain.Enums;
 using OrderHub.Web.Controllers;
 using OrderHub.Web.Models.PrintBridge;
@@ -278,17 +280,41 @@ public sealed class PrintBridgeController : BaseController
     private PrintBridgePageViewModel BuildPageViewModel(
         IReadOnlyList<PrintBridgeDeviceSummaryDto> deviceRows,
         PrintBridgeDeviceQuotaDto quota,
-        IReadOnlyList<PrintJobHistoryItemDto> printJobs) =>
-        new()
+        IReadOnlyList<PrintJobHistoryItemDto> printJobs)
+    {
+        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
+        var turkeyToday = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
+        var printJobsTodayCount = printJobs.Count(j =>
+        {
+            var local = TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.SpecifyKind(j.CreatedAtUtc, DateTimeKind.Utc),
+                tz);
+            return DateOnly.FromDateTime(local) == turkeyToday;
+        });
+
+        var lastConnected = deviceRows
+            .Where(d => d.LastSeenAtUtc.HasValue)
+            .OrderByDescending(d => d.LastSeenAtUtc)
+            .FirstOrDefault();
+
+        return new PrintBridgePageViewModel
         {
             SetupUrl = Url.Action(nameof(Setup), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/download",
+            PackageDownloadUrl = Url.Action(nameof(DownloadPackage), "PrintBridge", new { area = AreaNames.Tenant })
+                ?? "/print-bridge/download/package",
+            ReceiptPrinterSettingsUrl = Url.Action(nameof(ReceiptPrinterSettingsController.Index), "ReceiptPrinterSettings", new { area = AreaNames.Tenant })
+                ?? "/settings/receipt-printer",
             Devices = deviceRows.Select(MapDevice).ToList(),
             AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
             ActiveDeviceCount = quota.ActiveDeviceCount,
             CanCreateActiveDevice = quota.CanCreateActiveDevice,
             ActiveCountExceedsLimit = quota.ActiveCountExceedsLimit,
+            PrintJobsTodayCount = printJobsTodayCount,
+            LastConnectedDeviceName = lastConnected?.Name,
+            LastConnectedAtUtc = lastConnected?.LastSeenAtUtc,
             PrintJobs = printJobs.Select(MapPrintJob).ToList()
         };
+    }
 
     private string ResolveApiBaseUrl()
     {
@@ -418,6 +444,11 @@ public sealed class PrintBridgeController : BaseController
         if (latestLastSeen == default)
             latestLastSeen = null;
 
+        var lastConnected = devices?
+            .Where(d => d.LastSeenAtUtc.HasValue)
+            .OrderByDescending(d => d.LastSeenAtUtc)
+            .FirstOrDefault();
+
         return new
         {
             allowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
@@ -425,7 +456,8 @@ public sealed class PrintBridgeController : BaseController
             canCreateActiveDevice = quota.CanCreateActiveDevice,
             activeCountExceedsLimit = quota.ActiveCountExceedsLimit,
             connectedDeviceCount = connectedCount,
-            latestLastSeenAtUtc = latestLastSeen
+            latestLastSeenAtUtc = latestLastSeen,
+            lastConnectedDeviceName = lastConnected?.Name
         };
     }
 }
