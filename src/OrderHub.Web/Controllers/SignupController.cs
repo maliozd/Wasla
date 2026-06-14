@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
-using OrderHub.Application.Abstractions.Onboarding;
+using OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 using OrderHub.Application.Abstractions.Plans;
 using OrderHub.Infrastructure.Options;
 using OrderHub.Web.Models.Signup;

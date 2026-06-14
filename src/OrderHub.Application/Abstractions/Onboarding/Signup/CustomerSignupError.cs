@@ -1,4 +1,4 @@
-namespace OrderHub.Application.Abstractions.Onboarding;
+namespace OrderHub.Application.Abstractions.Onboarding.Signup;
 
 public enum CustomerSignupError
 {

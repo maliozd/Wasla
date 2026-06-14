@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
-using OrderHub.Application.Abstractions.Onboarding;
+using OrderHub.Application.Abstractions.Onboarding.Checkout;
+using OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 using OrderHub.Application.Abstractions.Plans;
 using OrderHub.Domain.Enums;
 using OrderHub.Web.Models.Checkout;

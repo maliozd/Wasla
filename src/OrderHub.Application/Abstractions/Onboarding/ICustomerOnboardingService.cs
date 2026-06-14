@@ -1,3 +1,5 @@
+using OrderHub.Application.Abstractions.Onboarding.Signup;
+
 namespace OrderHub.Application.Abstractions.Onboarding;
 
 public interface ICustomerOnboardingService

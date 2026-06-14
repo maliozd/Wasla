@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OrderHub.Application.Abstractions.Onboarding;
+using OrderHub.Application.Abstractions.Onboarding.Checkout;
+using OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 using OrderHub.Application.Abstractions.Plans;
 using OrderHub.Application.Onboarding;
 using OrderHub.Domain.Entities.Central;

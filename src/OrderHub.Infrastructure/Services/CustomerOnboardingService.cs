@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OrderHub.Application;
 using OrderHub.Application.Abstractions.Onboarding;
+using OrderHub.Application.Abstractions.Onboarding.Signup;
 using OrderHub.Application.Abstractions.Plans;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Domain.Entities.Central;

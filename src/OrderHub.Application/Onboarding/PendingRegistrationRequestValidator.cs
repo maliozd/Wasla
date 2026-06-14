@@ -1,5 +1,5 @@
 using FluentValidation;
-using OrderHub.Application.Abstractions.Onboarding;
+using OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 using OrderHub.Application.Abstractions.Plans;
 using OrderHub.Application.Onboarding;
 

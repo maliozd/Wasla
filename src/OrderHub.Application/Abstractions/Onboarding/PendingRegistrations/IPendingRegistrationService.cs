@@ -1,4 +1,6 @@
-namespace OrderHub.Application.Abstractions.Onboarding;
+using OrderHub.Application.Abstractions.Onboarding.Checkout;
+
+namespace OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 
 public interface IPendingRegistrationService
 {

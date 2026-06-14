@@ -1,6 +1,6 @@
-namespace OrderHub.Application.Abstractions.Onboarding;
-
 using OrderHub.Domain.Enums;
+
+namespace OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 
 public sealed record PendingRegistrationSummary(
     Guid Id,

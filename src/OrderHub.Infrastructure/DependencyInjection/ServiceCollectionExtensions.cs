@@ -14,6 +14,7 @@ using OrderHub.Application.Abstractions.PlatformConnections;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Onboarding;
+using OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 using OrderHub.Application.Abstractions.Plans;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.Options;
