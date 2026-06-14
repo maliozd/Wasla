@@ -2083,7 +2083,7 @@
     <value>OrderHub Print Bridge is a local Windows app on the restaurant PC. It polls OrderHub API for receipt print jobs and sends them to a USB thermal printer.</value>
   </data>
   <data name="PrintBridge.RequirementsTitle" xml:space="preserve">
-    <value>Requirements</value>
+    <value>Installation requirements</value>
   </data>
   <data name="PrintBridge.RequirementWindows" xml:space="preserve">
     <value>Windows operating system</value>
@@ -2356,10 +2356,109 @@
     <value>Manage local Windows Print Bridge devices used for automatic receipt printing.</value>
   </data>
   <data name="PrintBridge.SetupPageTitle" xml:space="preserve">
-    <value>Print Bridge Setup</value>
+    <value>Print Bridge setup</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>Connect the Windows computer that has the receipt printer installed to OrderHub.</value>
+    <value>Install the Print Bridge app on your Windows computer so OrderHub can print order receipts automatically.</value>
+  </data>
+  <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
+    <value>Print Bridge package</value>
+  </data>
+  <data name="PrintBridge.DownloadCardText" xml:space="preserve">
+    <value>Download the portable setup package for the Windows PC connected to your receipt printer.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
+    <value>It will be available here after the package is built.</value>
+  </data>
+  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
+    <value>Connection details</value>
+  </data>
+  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
+    <value>Server address</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
+    <value>Device token</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenMasked" xml:space="preserve">
+    <value>••••••••••••••••••••</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenMaskedHelp" xml:space="preserve">
+    <value>A token was created for device {0}. For security, the token is shown only once at creation. If you lost it, create a new token on the devices page.</value>
+  </data>
+  <data name="PrintBridge.NoDeviceWarning" xml:space="preserve">
+    <value>No Print Bridge device has been created yet.</value>
+  </data>
+  <data name="PrintBridge.CreateDeviceAction" xml:space="preserve">
+    <value>Create device</value>
+  </data>
+  <data name="PrintBridge.ManageDevicesAction" xml:space="preserve">
+    <value>Manage devices</value>
+  </data>
+  <data name="PrintBridge.SetupStepsTitle" xml:space="preserve">
+    <value>Setup steps</value>
+  </data>
+  <data name="PrintBridge.SetupStep1" xml:space="preserve">
+    <value>Download the Print Bridge package</value>
+  </data>
+  <data name="PrintBridge.SetupStep2" xml:space="preserve">
+    <value>Extract the ZIP file</value>
+  </data>
+  <data name="PrintBridge.SetupStep3" xml:space="preserve">
+    <value>Run the OrderHub.PrintBridge app</value>
+  </data>
+  <data name="PrintBridge.SetupStep4" xml:space="preserve">
+    <value>Enter the connection address below in the app</value>
+  </data>
+  <data name="PrintBridge.SetupStep5" xml:space="preserve">
+    <value>Paste your device token into the app</value>
+  </data>
+  <data name="PrintBridge.SetupStep6" xml:space="preserve">
+    <value>Test the connection</value>
+  </data>
+  <data name="PrintBridge.SetupStep7" xml:space="preserve">
+    <value>Select your printer and save</value>
+  </data>
+  <data name="PrintBridge.Requirement1" xml:space="preserve">
+    <value>Windows 10 or Windows 11</value>
+  </data>
+  <data name="PrintBridge.Requirement2" xml:space="preserve">
+    <value>Thermal printer installed in Windows</value>
+  </data>
+  <data name="PrintBridge.Requirement3" xml:space="preserve">
+    <value>Internet connection</value>
+  </data>
+  <data name="PrintBridge.Requirement4" xml:space="preserve">
+    <value>OrderHub device token</value>
+  </data>
+  <data name="PrintBridge.Requirement5" xml:space="preserve">
+    <value>The computer running the app must stay on</value>
+  </data>
+  <data name="PrintBridge.FaqConnectionFailed" xml:space="preserve">
+    <value>What should I do if the connection fails?</value>
+  </data>
+  <data name="PrintBridge.FaqConnectionFailedAnswer" xml:space="preserve">
+    <value>Check the server address and token. Use the Test Connection button.</value>
+  </data>
+  <data name="PrintBridge.FaqPrinterMissing" xml:space="preserve">
+    <value>What if the printer is not listed?</value>
+  </data>
+  <data name="PrintBridge.FaqPrinterMissingAnswer" xml:space="preserve">
+    <value>Make sure the printer is installed in Windows. Refresh the printer list in Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.FaqNoReceipt" xml:space="preserve">
+    <value>What if receipts are not printing?</value>
+  </data>
+  <data name="PrintBridge.FaqNoReceiptAnswer" xml:space="preserve">
+    <value>Use the Test Connection button. Check printer selection and that test mode is off.</value>
+  </data>
+  <data name="PrintBridge.FaqTokenChanged" xml:space="preserve">
+    <value>What if the token changes?</value>
+  </data>
+  <data name="PrintBridge.FaqTokenChangedAnswer" xml:space="preserve">
+    <value>If the token changed, save Print Bridge settings and reconnect.</value>
+  </data>
+  <data name="PrintBridge.Copy" xml:space="preserve">
+    <value>Copy</value>
   </data>
   <data name="PrintBridge.CreateDeviceToken" xml:space="preserve">
     <value>Create device token</value>
@@ -2404,10 +2503,10 @@
     <value>Print Bridge is currently provided as a portable Windows package (.zip). Download the package, extract it on the Windows computer connected to the receipt printer, and run OrderHub.PrintBridge.exe. Open Settings, paste the device token, select your printer, turn off Test mode for real printing, and save settings to connect.</value>
   </data>
   <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
-    <value>Portable Windows Package</value>
+    <value>Windows Portable Package</value>
   </data>
   <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
-    <value>The Print Bridge package is not prepared yet.</value>
+    <value>The setup package is not ready yet.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>The portable package will be available here after deployment packaging is complete.</value>
@@ -2494,7 +2593,7 @@
     <value>USB receipt printing</value>
   </data>
   <data name="PrintBridge.DownloadButton" xml:space="preserve">
-    <value>Download Print Bridge Package</value>
+    <value>Download Print Bridge</value>
   </data>
   <data name="PrintBridge.SetupStepInstallOnWindowsPc" xml:space="preserve">
     <value>Install or run it on the Windows PC connected to the USB receipt printer.</value>

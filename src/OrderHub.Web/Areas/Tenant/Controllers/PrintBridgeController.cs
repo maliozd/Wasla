@@ -68,7 +68,8 @@ public sealed class PrintBridgeController : BaseController
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
 
-        var quota = await _devices.GetDeviceQuotaAsync(customer.Id, ct).ConfigureAwait(false);
+        var deviceRows = await _devices.ListDevicesAsync(customer.Id, ct).ConfigureAwait(false);
+        var activeDevice = deviceRows.FirstOrDefault(d => d.IsActive);
         var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
         var packageFileName = PrintBridgePackagePaths.GetPackageFileName(_configuration);
         var packageAvailable = System.IO.File.Exists(packagePath);
@@ -81,10 +82,9 @@ public sealed class PrintBridgeController : BaseController
             ServerUrl = ResolveCustomerWebBaseUrl(),
             PackageAvailable = packageAvailable,
             PackageFileName = packageFileName,
-            AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
-            ActiveDeviceCount = quota.ActiveDeviceCount,
-            CanCreateActiveDevice = quota.CanCreateActiveDevice,
-            ActiveCountExceedsLimit = quota.ActiveCountExceedsLimit
+            HasActiveDevice = activeDevice is not null,
+            ActiveDeviceName = activeDevice?.Name,
+            IsDevelopment = _environment.IsDevelopment()
         });
     }
 

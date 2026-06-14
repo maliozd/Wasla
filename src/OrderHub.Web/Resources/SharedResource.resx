@@ -516,22 +516,145 @@
   <data name="Checkout.RegisterAgain" xml:space="preserve">
     <value>Yeniden kayıt ol</value>
   </data>
+  <data name="PrintBridge.SetupPageTitle" xml:space="preserve">
+    <value>Print Bridge kurulumu</value>
+  </data>
+  <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
+    <value>OrderHub'un sipariş fişlerini otomatik yazdırabilmesi için Windows bilgisayarınıza Print Bridge uygulamasını kurun.</value>
+  </data>
+  <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
+    <value>Print Bridge paketi</value>
+  </data>
+  <data name="PrintBridge.DownloadCardText" xml:space="preserve">
+    <value>Fiş yazıcısına bağlı Windows bilgisayarınız için taşınabilir kurulum paketini indirin.</value>
+  </data>
+  <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
+    <value>Windows Portable Paket</value>
+  </data>
+  <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
+    <value>Kurulum paketi henüz hazırlanmadı.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
+    <value>Paket oluşturulduktan sonra burada indirilebilir.</value>
+  </data>
+  <data name="PrintBridge.DownloadButton" xml:space="preserve">
+    <value>Print Bridge'i indir</value>
+  </data>
+  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
+    <value>Bağlantı bilgileri</value>
+  </data>
+  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
+    <value>Sunucu adresi</value>
+  </data>
+  <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
+    <value>Sunucu adresi şu an gösterilemiyor.</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
+    <value>Cihaz token'ı</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenMasked" xml:space="preserve">
+    <value>••••••••••••••••••••</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenMaskedHelp" xml:space="preserve">
+    <value>{0} cihazı için token oluşturuldu. Token yalnızca oluşturma sırasında bir kez gösterilir.</value>
+  </data>
+  <data name="PrintBridge.NoDeviceWarning" xml:space="preserve">
+    <value>Henüz Print Bridge cihazı oluşturulmamış.</value>
+  </data>
+  <data name="PrintBridge.CreateDeviceAction" xml:space="preserve">
+    <value>Cihaz oluştur</value>
+  </data>
+  <data name="PrintBridge.ManageDevicesAction" xml:space="preserve">
+    <value>Cihazları yönet</value>
+  </data>
+  <data name="PrintBridge.SetupStepsTitle" xml:space="preserve">
+    <value>Kurulum adımları</value>
+  </data>
+  <data name="PrintBridge.SetupStep1" xml:space="preserve">
+    <value>Print Bridge paketini indirin</value>
+  </data>
+  <data name="PrintBridge.SetupStep2" xml:space="preserve">
+    <value>ZIP dosyasını çıkarın</value>
+  </data>
+  <data name="PrintBridge.SetupStep3" xml:space="preserve">
+    <value>OrderHub.PrintBridge uygulamasını çalıştırın</value>
+  </data>
+  <data name="PrintBridge.SetupStep4" xml:space="preserve">
+    <value>Aşağıdaki bağlantı adresini uygulamaya girin</value>
+  </data>
+  <data name="PrintBridge.SetupStep5" xml:space="preserve">
+    <value>Cihaz token'ınızı uygulamaya yapıştırın</value>
+  </data>
+  <data name="PrintBridge.SetupStep6" xml:space="preserve">
+    <value>Bağlantıyı test edin</value>
+  </data>
+  <data name="PrintBridge.SetupStep7" xml:space="preserve">
+    <value>Yazıcınızı seçip kaydedin</value>
+  </data>
+  <data name="PrintBridge.RequirementsTitle" xml:space="preserve">
+    <value>Kurulum gereksinimleri</value>
+  </data>
+  <data name="PrintBridge.Requirement1" xml:space="preserve">
+    <value>Windows 10 veya Windows 11</value>
+  </data>
+  <data name="PrintBridge.Requirement2" xml:space="preserve">
+    <value>Windows'a tanıtılmış termal yazıcı</value>
+  </data>
+  <data name="PrintBridge.Requirement3" xml:space="preserve">
+    <value>İnternet bağlantısı</value>
+  </data>
+  <data name="PrintBridge.Requirement4" xml:space="preserve">
+    <value>OrderHub cihaz token'ı</value>
+  </data>
+  <data name="PrintBridge.Requirement5" xml:space="preserve">
+    <value>Uygulamanın çalıştığı bilgisayar açık kalmalı</value>
+  </data>
+  <data name="PrintBridge.Troubleshooting" xml:space="preserve">
+    <value>Sorun giderme</value>
+  </data>
+  <data name="PrintBridge.FaqConnectionFailed" xml:space="preserve">
+    <value>Bağlantı başarısız olursa ne yapmalıyım?</value>
+  </data>
+  <data name="PrintBridge.FaqConnectionFailedAnswer" xml:space="preserve">
+    <value>Sunucu adresi ve token'ı kontrol edin. Test Connection butonunu kullanın.</value>
+  </data>
+  <data name="PrintBridge.FaqPrinterMissing" xml:space="preserve">
+    <value>Yazıcı listede görünmüyorsa ne yapmalıyım?</value>
+  </data>
+  <data name="PrintBridge.FaqPrinterMissingAnswer" xml:space="preserve">
+    <value>Yazıcının Windows'ta yüklü olduğundan emin olun.</value>
+  </data>
+  <data name="PrintBridge.FaqNoReceipt" xml:space="preserve">
+    <value>Fiş çıkmıyorsa ne yapmalıyım?</value>
+  </data>
+  <data name="PrintBridge.FaqNoReceiptAnswer" xml:space="preserve">
+    <value>Test Connection butonunu kullanın.</value>
+  </data>
+  <data name="PrintBridge.FaqTokenChanged" xml:space="preserve">
+    <value>Token değişirse ne yapmalıyım?</value>
+  </data>
+  <data name="PrintBridge.FaqTokenChangedAnswer" xml:space="preserve">
+    <value>Token değiştiyse Print Bridge ayarlarını kaydedip yeniden bağlanın.</value>
+  </data>
+  <data name="PrintBridge.Copy" xml:space="preserve">
+    <value>Kopyala</value>
+  </data>
+  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
+    <value>Sunucu adresini kopyala</value>
+  </data>
+  <data name="PrintBridge.Copied" xml:space="preserve">
+    <value>Kopyalandı</value>
+  </data>
+  <data name="PrintBridge.CopyFailed" xml:space="preserve">
+    <value>Kopyalama başarısız oldu</value>
+  </data>
   <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
     <value>Adım 1 — Print Bridge paketini indirin</value>
   </data>
   <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
     <value>Print Bridge şu an taşınabilir bir Windows paketi (.zip) olarak sunulur. Paketi indirin, fiş yazıcısına bağlı Windows bilgisayarda zip dosyasını açın ve OrderHub.PrintBridge.exe dosyasını çalıştırın.</value>
   </data>
-  <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
-    <value>Taşınabilir Windows Paketi</value>
-  </data>
-  <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
-    <value>Print Bridge paketi henüz hazırlanmadı.</value>
-  </data>
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
-  </data>
-  <data name="PrintBridge.DownloadButton" xml:space="preserve">
-    <value>Print Bridge Paketini İndir</value>
   </data>
 </root>

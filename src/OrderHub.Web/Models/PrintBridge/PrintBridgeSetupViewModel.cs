@@ -9,9 +9,7 @@ public sealed class PrintBridgeSetupViewModel
     public string? ServerUrl { get; set; }
     public bool PackageAvailable { get; set; }
     public string PackageFileName { get; set; } = DefaultPackageFileName;
-
-    public int AllowedActiveDeviceCount { get; set; } = 3;
-    public int ActiveDeviceCount { get; set; }
-    public bool CanCreateActiveDevice { get; set; } = true;
-    public bool ActiveCountExceedsLimit { get; set; }
+    public bool HasActiveDevice { get; set; }
+    public string? ActiveDeviceName { get; set; }
+    public bool IsDevelopment { get; set; }
 }

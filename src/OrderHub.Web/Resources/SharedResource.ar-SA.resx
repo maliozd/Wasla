@@ -2083,7 +2083,7 @@
     <value>OrderHub Print Bridge تطبيق Windows محلي على حاسوب المطعم. يجلب مهام طباعة الإيصالات من OrderHub API ويرسلها إلى طابعة حرارية USB.</value>
   </data>
   <data name="PrintBridge.RequirementsTitle" xml:space="preserve">
-    <value>المتطلبات</value>
+    <value>متطلبات التثبيت</value>
   </data>
   <data name="PrintBridge.RequirementWindows" xml:space="preserve">
     <value>نظام تشغيل Windows</value>
@@ -2359,7 +2359,106 @@
     <value>إعداد Print Bridge</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>اربط جهاز Windows الذي يحتوي على طابعة الفواتير بـ OrderHub.</value>
+    <value>ثبّت تطبيق Print Bridge على جهاز Windows ليتمكن OrderHub من طباعة فواتير الطلبات تلقائيًا.</value>
+  </data>
+  <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
+    <value>حزمة Print Bridge</value>
+  </data>
+  <data name="PrintBridge.DownloadCardText" xml:space="preserve">
+    <value>حمّل حزمة التثبيت المحمولة لجهاز Windows المتصل بطابعة الفواتير.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
+    <value>ستكون متاحة هنا بعد إنشاء الحزمة.</value>
+  </data>
+  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
+    <value>معلومات الاتصال</value>
+  </data>
+  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
+    <value>عنوان الخادم</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
+    <value>رمز الجهاز</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenMasked" xml:space="preserve">
+    <value>••••••••••••••••••••</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenMaskedHelp" xml:space="preserve">
+    <value>تم إنشاء رمز للجهاز {0}. لأسباب أمنية، يُعرض الرمز مرة واحدة فقط عند الإنشاء.</value>
+  </data>
+  <data name="PrintBridge.NoDeviceWarning" xml:space="preserve">
+    <value>لم يتم إنشاء جهاز Print Bridge بعد.</value>
+  </data>
+  <data name="PrintBridge.CreateDeviceAction" xml:space="preserve">
+    <value>إنشاء جهاز</value>
+  </data>
+  <data name="PrintBridge.ManageDevicesAction" xml:space="preserve">
+    <value>إدارة الأجهزة</value>
+  </data>
+  <data name="PrintBridge.SetupStepsTitle" xml:space="preserve">
+    <value>خطوات الإعداد</value>
+  </data>
+  <data name="PrintBridge.SetupStep1" xml:space="preserve">
+    <value>حمّل حزمة Print Bridge</value>
+  </data>
+  <data name="PrintBridge.SetupStep2" xml:space="preserve">
+    <value>استخرج ملف ZIP</value>
+  </data>
+  <data name="PrintBridge.SetupStep3" xml:space="preserve">
+    <value>شغّل تطبيق OrderHub.PrintBridge</value>
+  </data>
+  <data name="PrintBridge.SetupStep4" xml:space="preserve">
+    <value>أدخل عنوان الاتصال أدناه في التطبيق</value>
+  </data>
+  <data name="PrintBridge.SetupStep5" xml:space="preserve">
+    <value>الصق رمز الجهاز في التطبيق</value>
+  </data>
+  <data name="PrintBridge.SetupStep6" xml:space="preserve">
+    <value>اختبر الاتصال</value>
+  </data>
+  <data name="PrintBridge.SetupStep7" xml:space="preserve">
+    <value>اختر الطابعة واحفظ الإعدادات</value>
+  </data>
+  <data name="PrintBridge.Requirement1" xml:space="preserve">
+    <value>Windows 10 أو Windows 11</value>
+  </data>
+  <data name="PrintBridge.Requirement2" xml:space="preserve">
+    <value>طابعة حرارية مثبتة في Windows</value>
+  </data>
+  <data name="PrintBridge.Requirement3" xml:space="preserve">
+    <value>اتصال بالإنترنت</value>
+  </data>
+  <data name="PrintBridge.Requirement4" xml:space="preserve">
+    <value>رمز جهاز OrderHub</value>
+  </data>
+  <data name="PrintBridge.Requirement5" xml:space="preserve">
+    <value>يجب أن يبقى الجهاز الذي يشغّل التطبيق قيد التشغيل</value>
+  </data>
+  <data name="PrintBridge.FaqConnectionFailed" xml:space="preserve">
+    <value>ماذا أفعل إذا فشل الاتصال؟</value>
+  </data>
+  <data name="PrintBridge.FaqConnectionFailedAnswer" xml:space="preserve">
+    <value>تحقق من عنوان الخادم والرمز. استخدم زر Test Connection.</value>
+  </data>
+  <data name="PrintBridge.FaqPrinterMissing" xml:space="preserve">
+    <value>ماذا لو لم تظهر الطابعة في القائمة؟</value>
+  </data>
+  <data name="PrintBridge.FaqPrinterMissingAnswer" xml:space="preserve">
+    <value>تأكد من تثبيت الطابعة في Windows. حدّث قائمة الطابعات في Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.FaqNoReceipt" xml:space="preserve">
+    <value>ماذا لو لم تُطبع الفواتير؟</value>
+  </data>
+  <data name="PrintBridge.FaqNoReceiptAnswer" xml:space="preserve">
+    <value>استخدم زر Test Connection. تحقق من اختيار الطابعة وإيقاف وضع الاختبار.</value>
+  </data>
+  <data name="PrintBridge.FaqTokenChanged" xml:space="preserve">
+    <value>ماذا لو تغيّر الرمز؟</value>
+  </data>
+  <data name="PrintBridge.FaqTokenChangedAnswer" xml:space="preserve">
+    <value>إذا تغيّر الرمز، احفظ إعدادات Print Bridge وأعد الاتصال.</value>
+  </data>
+  <data name="PrintBridge.Copy" xml:space="preserve">
+    <value>نسخ</value>
   </data>
   <data name="PrintBridge.CreateDeviceToken" xml:space="preserve">
     <value>إنشاء رمز جهاز</value>

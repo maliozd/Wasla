@@ -2975,6 +2975,49 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   position: relative;
 }
 
+.oh-print-bridge-setup-steps {
+  padding-inline-start: 1.25rem;
+  margin-bottom: 0;
+}
+
+.oh-print-bridge-setup-steps li {
+  margin-bottom: 0.45rem;
+}
+
+.oh-print-bridge-setup-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.oh-print-bridge-download-card .badge,
+.oh-print-bridge-connection-card .badge {
+  white-space: nowrap;
+}
+
+.oh-print-bridge-faq .accordion-button {
+  font-weight: 600;
+  color: var(--color-text, inherit);
+  background: transparent;
+  box-shadow: none;
+}
+
+.oh-print-bridge-faq .accordion-button:not(.collapsed) {
+  color: var(--orderhub-primary);
+  background: color-mix(in srgb, var(--orderhub-primary) 8%, transparent);
+}
+
+.oh-print-bridge-faq .accordion-item {
+  border-inline: 0;
+  border-radius: 0;
+}
+
+.oh-print-bridge-faq .accordion-item:first-of-type {
+  border-top: 0;
+}
+
+.oh-print-bridge-faq .accordion-item:last-of-type {
+  border-bottom: 0;
+}
+
 .oh-print-bridge-guide-step__badge {
   display: inline-flex;
   align-items: center;
