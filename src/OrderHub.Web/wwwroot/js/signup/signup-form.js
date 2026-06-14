@@ -366,6 +366,19 @@
         }
     }
 
+    function localizeCompareValidation() {
+        var confirmInput = document.getElementById("signupConfirmPassword");
+        if (!confirmInput || !config.passwordMismatchText) {
+            return;
+        }
+
+        confirmInput.setAttribute("data-val-compare", config.passwordMismatchText);
+        var form = document.getElementById("signupForm");
+        if (form && window.jQuery && jQuery.validator && jQuery.validator.unobtrusive) {
+            jQuery.validator.unobtrusive.parse(form);
+        }
+    }
+
     function initPasswordToggles() {
         document.querySelectorAll(".signup-password-toggle").forEach(function (button) {
             button.addEventListener("click", function () {
@@ -488,6 +501,7 @@
     }
 
     initPasswordToggles();
+    localizeCompareValidation();
     updateDomainPreview();
     updatePhoneUi();
 })();

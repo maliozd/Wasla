@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -52,6 +53,7 @@ public sealed class SignupController : Controller
     public async Task<IActionResult> Index(SignupViewModel model, CancellationToken ct)
     {
         await PopulateReferenceDataAsync(model, ct);
+        LocalizeModelStateErrors();
 
         if (!ModelState.IsValid)
             return View(model);
@@ -390,6 +392,23 @@ public sealed class SignupController : Controller
         nameof(PendingRegistrationRequest.BillingPeriod) => nameof(SignupViewModel.BillingPeriod),
         _ => string.Empty
     };
+
+    private void LocalizeModelStateErrors()
+    {
+        foreach (var state in ModelState.Values)
+        {
+            for (var i = 0; i < state.Errors.Count; i++)
+            {
+                var raw = state.Errors[i].ErrorMessage;
+                if (string.IsNullOrEmpty(raw))
+                    continue;
+
+                var localized = LocalizeValidationMessage(raw);
+                if (!string.Equals(localized, raw, StringComparison.Ordinal))
+                    state.Errors[i] = new ModelError(localized);
+            }
+        }
+    }
 
     private string LocalizeValidationMessage(string message)
     {

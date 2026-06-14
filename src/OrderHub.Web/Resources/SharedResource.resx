@@ -396,6 +396,12 @@
   <data name="Common.HidePassword" xml:space="preserve">
     <value>Şifreyi gizle</value>
   </data>
+  <data name="Auth.ShowPassword" xml:space="preserve">
+    <value>Şifreyi göster</value>
+  </data>
+  <data name="Auth.HidePassword" xml:space="preserve">
+    <value>Şifreyi gizle</value>
+  </data>
   <data name="Signup.CityLabel" xml:space="preserve">
     <value>Şehir / İl</value>
   </data>
