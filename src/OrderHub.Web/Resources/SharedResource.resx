@@ -447,6 +447,9 @@
   <data name="Validation.LocationUrlInvalid" xml:space="preserve">
     <value>Geçerli bir harita bağlantısı girin.</value>
   </data>
+  <data name="Validation.PasswordMismatch" xml:space="preserve">
+    <value>Şifreler eşleşmiyor.</value>
+  </data>
   <data name="Checkout.ReviewTitle" xml:space="preserve">
     <value>Ödeme özeti</value>
   </data>

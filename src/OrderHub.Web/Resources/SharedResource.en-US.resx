@@ -327,6 +327,12 @@
   <data name="Auth.Password" xml:space="preserve">
     <value>Password</value>
   </data>
+  <data name="Auth.ShowPassword" xml:space="preserve">
+    <value>Show password</value>
+  </data>
+  <data name="Auth.HidePassword" xml:space="preserve">
+    <value>Hide password</value>
+  </data>
   <data name="Auth.LoginButton" xml:space="preserve">
     <value>Sign in</value>
   </data>
@@ -3007,6 +3013,7 @@
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Subdomain may only contain lowercase letters, numbers, hyphens, and underscores.</value></data>
   <data name="Validation.FullNameRequired" xml:space="preserve"><value>Full name is required.</value></data>
   <data name="Validation.ConfirmPasswordRequired" xml:space="preserve"><value>Password confirmation is required.</value></data>
+  <data name="Validation.PasswordMismatch" xml:space="preserve"><value>Passwords do not match.</value></data>
   <data name="Validation.PasswordMinLength" xml:space="preserve"><value>Password must be at least 8 characters.</value></data>
   <data name="Validation.PlanInvalid" xml:space="preserve"><value>Invalid plan selection.</value></data>
   <data name="Validation.BillingPeriodInvalid" xml:space="preserve"><value>Invalid billing period.</value></data>

@@ -52,7 +52,16 @@
 
                         <div class="mb-3">
                             <label class="form-label" asp-for="Password">@L["Auth.Password"]</label>
-                            <input class="form-control" asp-for="Password" type="password" autocomplete="current-password" />
+                            <div class="input-group">
+                                <input class="form-control" asp-for="Password" type="password" autocomplete="current-password" id="login-password" />
+                                <button class="btn btn-outline-secondary" type="button" id="toggle-password"
+                                        title="@L["Auth.ShowPassword"]"
+                                        aria-label="@L["Auth.ShowPassword"]"
+                                        data-show-label="@L["Auth.ShowPassword"]"
+                                        data-hide-label="@L["Auth.HidePassword"]">
+                                    <span id="toggle-password-icon">&#128065;</span>
+                                </button>
+                            </div>
                             <span class="text-danger" asp-validation-for="Password"></span>
                         </div>
 
@@ -66,6 +75,21 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @await Html.PartialAsync("_ValidationScriptsPartial")
+<script>
+(function () {
+    var btn = document.getElementById('toggle-password');
+    var input = document.getElementById('login-password');
+    if (!btn || !input) return;
+    btn.addEventListener('click', function () {
+        var isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        var label = isPassword ? btn.dataset.hideLabel : btn.dataset.showLabel;
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+        document.getElementById('toggle-password-icon').textContent = isPassword ? '\uD83D\uDE48' : '\uD83D\uDC41';
+    });
+}());
+</script>
 </body>
 </html>
 

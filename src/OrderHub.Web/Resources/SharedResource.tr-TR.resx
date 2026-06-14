@@ -327,6 +327,12 @@
   <data name="Auth.Password" xml:space="preserve">
     <value>Şifre</value>
   </data>
+  <data name="Auth.ShowPassword" xml:space="preserve">
+    <value>Şifreyi göster</value>
+  </data>
+  <data name="Auth.HidePassword" xml:space="preserve">
+    <value>Şifreyi gizle</value>
+  </data>
   <data name="Auth.LoginButton" xml:space="preserve">
     <value>Giriş Yap</value>
   </data>
@@ -3001,6 +3007,7 @@
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Alt alan adı yalnızca küçük harf, rakam, tire ve alt çizgi içerebilir.</value></data>
   <data name="Validation.FullNameRequired" xml:space="preserve"><value>Ad soyad gereklidir.</value></data>
   <data name="Validation.ConfirmPasswordRequired" xml:space="preserve"><value>Şifre tekrarı gereklidir.</value></data>
+  <data name="Validation.PasswordMismatch" xml:space="preserve"><value>Şifreler eşleşmiyor.</value></data>
   <data name="Validation.PasswordMinLength" xml:space="preserve"><value>Şifre en az 8 karakter olmalıdır.</value></data>
   <data name="Validation.PlanInvalid" xml:space="preserve"><value>Geçersiz plan seçimi.</value></data>
   <data name="Validation.BillingPeriodInvalid" xml:space="preserve"><value>Geçersiz faturalandırma dönemi.</value></data>
