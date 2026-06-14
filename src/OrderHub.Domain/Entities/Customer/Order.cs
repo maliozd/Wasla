@@ -35,10 +35,26 @@ public class Order : BaseEntity
     /// </summary>
     public string PlatformStatus { get; set; } = string.Empty;
 
-    // --- Customer-facing data ---
+    // --- End-customer (food orderer) data ---
+    // CustomerName, CustomerPhone, and CustomerAddress refer to the restaurant's own
+    // end customer who placed the order, not the SaaS tenant/business using Wasla.
 
+    /// <summary>
+    /// Name of the end customer who placed the food order (not the restaurant tenant).
+    /// Keep Customer terminology for order-level recipient fields.
+    /// </summary>
     public string CustomerName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Phone number of the end customer who placed the food order (not the restaurant tenant).
+    /// Keep Customer terminology for order-level recipient fields.
+    /// </summary>
     public string CustomerPhone { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Delivery or contact address of the end customer who placed the food order (not the restaurant tenant).
+    /// Keep Customer terminology for order-level recipient fields.
+    /// </summary>
     public string CustomerAddress { get; set; } = string.Empty;
 
     // --- Money ---

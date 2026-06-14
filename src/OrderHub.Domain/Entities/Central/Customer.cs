@@ -4,10 +4,17 @@ using OrderHub.Domain.Enums;
 namespace OrderHub.Domain.Entities.Central;
 
 /// <summary>
-/// Represents a customer (a restaurant tenant) in the central registry.
-/// Each customer has its own dedicated database.
+/// Central registry record for a restaurant business using Wasla (the SaaS tenant).
+/// Each record has its own dedicated tenant database (<see cref="DatabaseName"/>).
 /// This entity lives ONLY in CentralDb.
 /// </summary>
+/// <remarks>
+/// Terminology note: despite the name <c>Customer</c>, this entity represents the
+/// tenant (restaurant/business), not an end customer who places a food order.
+/// Order-level fields such as <c>CustomerName</c> on <see cref="OrderHub.Domain.Entities.Customer.Order"/>
+/// refer to the food orderer and must keep Customer terminology.
+/// A future rename of this type to Tenant is planned; see docs/tenant-vs-customer.md.
+/// </remarks>
 public class Customer : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
