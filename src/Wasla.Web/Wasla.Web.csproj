@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Wasla.Web</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wasla.Contracts\Wasla.Contracts.csproj" />
+    <ProjectReference Include="..\Wasla.Application\Wasla.Application.csproj" />
+    <ProjectReference Include="..\Wasla.Infrastructure\Wasla.Infrastructure.csproj" />
+    <ProjectReference Include="..\Wasla.Domain\Wasla.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+  </ItemGroup>
+
+</Project>

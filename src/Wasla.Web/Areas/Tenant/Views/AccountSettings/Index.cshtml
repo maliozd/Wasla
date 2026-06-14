@@ -1,0 +1,20 @@
+﻿@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@using Wasla.Web.Models.Ui
+@{
+    ViewData["Title"] = L["Settings.AccountSettings.Title"];
+}
+
+<div class="oh-account-settings-page">
+    @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
+    {
+        Title = L["Settings.AccountSettings.Title"].Value,
+        Subtitle = L["Settings.AccountSettings.Subtitle"].Value
+    })
+
+    <div class="card oh-card">
+        <div class="card-body py-4">
+            <p class="text-muted mb-0">@L["Settings.AccountSettings.ComingSoon"]</p>
+        </div>
+    </div>
+</div>

@@ -12,7 +12,7 @@ Examples:
 - The entity resolved by subdomain/domain and stored in CentralDb
 - The owner of a dedicated tenant database (orders, users, branches, platform connections)
 
-In code today, this concept is mostly named `Customer` in CentralDb (e.g. `OrderHub.Domain.Entities.Central.Customer`). That name is legacy and is a candidate for a future rename to `Tenant`.
+In code today, this concept is mostly named `Customer` in CentralDb (e.g. `Wasla.Domain.Entities.Central.Customer`). That name is legacy and is a candidate for a future rename to `Tenant`.
 
 ## Customer (end customer)
 
@@ -69,5 +69,5 @@ Do not rename these in passing during unrelated tasks. Use a dedicated migration
 
 ## Related code references
 
-- End-customer fields: `src/OrderHub.Domain/Entities/Customer/Order.cs`
-- SaaS tenant registry: `src/OrderHub.Domain/Entities/Central/Customer.cs`
+- End-customer fields: `src/Wasla.Domain/Entities/Customer/Order.cs`
+- SaaS tenant registry: `src/Wasla.Domain/Entities/Central/Customer.cs`

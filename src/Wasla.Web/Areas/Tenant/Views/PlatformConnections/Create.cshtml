@@ -1,0 +1,84 @@
+﻿@model Wasla.Web.Models.PlatformConnections.CreatePlatformConnectionViewModel
+@using Wasla.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["PlatformConnections.Create"];
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">@L["PlatformConnections.Create"]</h1>
+    <a class="btn btn-sm btn-outline-primary" href="/platform-connections">@L["PlatformConnections.Back"]</a>
+</div>
+
+<div class="card oh-card">
+    <div class="card-body">
+        <form method="post" action="/platform-connections/create">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" asp-for="Platform"></label>
+                    <select class="form-select" asp-for="Platform" id="platformSelect">
+                        @foreach (var p in Enum.GetValues<FoodPlatform>())
+                        {
+                            <option value="@p">@p</option>
+                        }
+                    </select>
+                    <span class="text-danger" asp-validation-for="Platform"></span>
+                </div>
+
+                <div class="col-12 col-md-8">
+                    <label class="form-label" asp-for="StoreId"></label>
+                    <input class="form-control" asp-for="StoreId" />
+                    <div id="trendyolStoreIdHelp" class="form-text d-none">@L["PlatformConnections.TrendyolStoreIdHelp"]</div>
+                    <span class="text-danger" asp-validation-for="StoreId"></span>
+                </div>
+
+                <div class="col-12 col-md-6 trendyol-only d-none">
+                    <label class="form-label" asp-for="SupplierId"></label>
+                    <input class="form-control" asp-for="SupplierId" />
+                    <div class="form-text">@L["PlatformConnections.SupplierIdHelp"]</div>
+                    <span class="text-danger" asp-validation-for="SupplierId"></span>
+                </div>
+
+                <div class="col-12 col-md-6 trendyol-only d-none">
+                    <label class="form-label" asp-for="ExecutorEmail"></label>
+                    <input class="form-control" asp-for="ExecutorEmail" type="email" autocomplete="email" />
+                    <div class="form-text">@L["PlatformConnections.ExecutorEmailHelp"]</div>
+                    <span class="text-danger" asp-validation-for="ExecutorEmail"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label" asp-for="ApiKey"></label>
+                    <input class="form-control" asp-for="ApiKey" />
+                    <span class="text-danger" asp-validation-for="ApiKey"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label" asp-for="ApiSecret"></label>
+                    <input class="form-control" asp-for="ApiSecret" />
+                    <span class="text-danger" asp-validation-for="ApiSecret"></span>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" asp-for="IsActive" />
+                        <label class="form-check-label" asp-for="IsActive"></label>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <button class="btn btn-primary" type="submit">@L["Common.Save"]</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script src="~/js/platform-connections/platform-connection-form.js" asp-append-version="true"></script>
+}

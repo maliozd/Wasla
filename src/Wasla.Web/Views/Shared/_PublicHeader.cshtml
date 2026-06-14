@@ -1,0 +1,44 @@
+﻿@model string
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    var returnUrl = Model ?? "/";
+    var culture = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
+    var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
+}
+<header class="border-bottom bg-white">
+    <div class="container py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <div class="oh-logo-mark rounded-3 d-flex align-items-center justify-content-center">
+                <i class="bi bi-basket2-fill text-white"></i>
+            </div>
+            <div>
+                <div class="fw-bold text-dark">@L["Landing.Title"]</div>
+                <div class="small text-muted">@L["Landing.Subtitle"]</div>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button" aria-label="@L["Common.Language"]">
+                    <i class="bi bi-translate me-1"></i>@L["Common.Language"]
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="tr-TR" asp-route-returnUrl="@returnUrl">Türkçe</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="en-US" asp-route-returnUrl="@returnUrl">English</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ar-SA" asp-route-returnUrl="@returnUrl">العربية</a>
+                    </li>
+                </ul>
+            </div>
+            <a class="btn btn-outline-secondary" href="/#pricing">@L["Pricing.NavTitle"]</a>
+            <a class="btn btn-primary" href="/signup">@L["Signup.StartNow"]</a>
+            <a class="btn btn-outline-primary" asp-area="Tenant" asp-controller="Auth" asp-action="Login">@L["Landing.CustomerLogin"]</a>
+        </div>
+    </div>
+</header>
+

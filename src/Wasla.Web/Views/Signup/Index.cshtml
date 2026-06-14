@@ -1,0 +1,330 @@
+﻿@model Wasla.Web.Models.Signup.SignupViewModel
+@using System.Globalization
+@using System.Text.Json
+@using Microsoft.Extensions.Localization
+@using Wasla.Application.Abstractions.Plans
+@using Wasla.Domain.Enums
+@using BusinessPhoneTypeEnum = Wasla.Domain.Enums.BusinessPhoneType
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IWaslaPlanCatalog PlanCatalog
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = L["Signup.Title"];
+    var domainPreview = string.IsNullOrWhiteSpace(Model.Slug)
+        ? $"your-name.{Model.MarketingBaseDomain}"
+        : $"{Model.Slug}.{Model.MarketingBaseDomain}";
+    var publicPlans = PlanCatalog.GetPublicPlans();
+    var trCulture = CultureInfo.GetCultureInfo("tr-TR");
+    var planSummaries = publicPlans.Select(plan =>
+    {
+        var name = L[plan.DisplayNameKey].Value;
+        var yearlyPrice = plan.IsContactSales
+            ? L["Signup.PlanPrice.Enterprise.Yearly"].Value
+            : string.Format(trCulture, "{0:N0} TL / yıl", (plan.MonthlyPrice ?? 0m) * 10m);
+        return new
+        {
+            code = plan.PlanCode,
+            packageTitle = string.Format(L["Signup.SelectedPlanPackageLabel"].Value, name),
+            description = L[plan.DescriptionKey].Value,
+            monthlyPrice = L[plan.PriceLabelKey].Value,
+            yearlyPrice,
+            deviceLimit = L[plan.DeviceLimitKey].Value,
+            features = plan.FeatureKeys.Select(key => L[key].Value).ToArray(),
+            isContactSales = plan.IsContactSales,
+            showYearlyNote = !plan.IsContactSales
+        };
+    }).ToArray();
+    var signupConfig = new
+    {
+        cities = Model.Cities.Select(c => new { id = c.Id, name = c.Name, phoneAreaCode = c.PhoneAreaCode }),
+        districtsUrl = Url.Action("Districts", "Signup"),
+        neighborhoodsUrl = Url.Action("Neighborhoods", "Signup"),
+        streetsUrl = Url.Action("Streets", "Signup"),
+        selectDistrictText = L["Signup.SelectDistrict"].Value,
+        neighborhoodManualHint = L["Signup.NeighborhoodManualHint"].Value,
+        streetManualHint = L["Signup.StreetManualHint"].Value,
+        showPasswordText = L["Common.ShowPassword"].Value,
+        hidePasswordText = L["Common.HidePassword"].Value,
+        passwordMismatchText = L["Validation.PasswordMismatch"].Value,
+        mobileHint = L["Signup.MobilePhoneHint"].Value,
+        defaultCountryCode = "+90",
+        plans = planSummaries,
+        selectedPlanTitle = L["Signup.SelectedPlanTitle"].Value,
+        selectedPlanIncludes = L["Signup.SelectedPlanIncludes"].Value,
+        yearlyAdvantageNote = L["Signup.YearlyAdvantageNote"].Value
+    };
+}
+<div class="oh-signup-page py-4 py-md-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xl-9">
+                <div class="text-center mb-4">
+                    <h1 class="h3 fw-bold mb-2">@L["Signup.Title"]</h1>
+                    <p class="text-secondary mb-0">@L["Signup.Subtitle"]</p>
+                </div>
+
+                <div class="card border-0 shadow-sm oh-signup-card">
+                    <div class="card-body p-4 p-md-5">
+                        <form asp-action="Index" method="post" novalidate id="signupForm">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                            <section class="oh-signup-section mb-4">
+                                <div class="oh-signup-step-label mb-3">
+                                    <span class="oh-signup-step-num">1</span>
+                                    <span class="fw-semibold">@L["Signup.StepPlan"]</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="PlanCode" class="form-label"></label>
+                                        <select asp-for="PlanCode" class="form-select" id="signupPlanCode">
+                                            @foreach (var plan in publicPlans)
+                                            {
+                                                <option value="@plan.PlanCode"
+                                                        data-contact-sales="@(plan.IsContactSales ? "true" : "false")"
+                                                        selected="@(string.Equals(plan.PlanCode, Model.PlanCode, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">
+                                                    @L[plan.DisplayNameKey]
+                                                </option>
+                                            }
+                                        </select>
+                                        <span asp-validation-for="PlanCode" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6" id="signupBillingCol">
+                                        <label asp-for="BillingPeriod" class="form-label"></label>
+                                        <select asp-for="BillingPeriod" class="form-select" id="signupBillingPeriod">
+                                            <option value="Monthly">@L["Signup.BillingMonthly"]</option>
+                                            <option value="Yearly">@L["Signup.BillingYearly"]</option>
+                                        </select>
+                                        <div class="form-text">@L["Signup.BillingNote"]</div>
+                                        <span asp-validation-for="BillingPeriod" class="text-danger small"></span>
+                                    </div>
+                                </div>
+
+                                <div id="signupPlanSummary" class="oh-signup-plan-summary mt-3" aria-live="polite">
+                                    <div class="small text-muted mb-1">@L["Signup.SelectedPlanTitle"]</div>
+                                    <div class="fw-semibold" id="signupPlanSummaryName"></div>
+                                    <div class="text-secondary small" id="signupPlanSummaryDescription"></div>
+                                    <div class="fw-semibold mt-2" id="signupPlanSummaryPrice"></div>
+                                    <div class="small text-muted mt-1 d-none" id="signupPlanSummaryYearlyNote">@L["Signup.YearlyAdvantageNote"]</div>
+                                    <div class="small text-primary mt-2" id="signupPlanSummaryDevice"></div>
+                                    <div class="small fw-semibold mt-3 mb-1">@L["Signup.SelectedPlanIncludes"]</div>
+                                    <ul class="small text-secondary mb-0 ps-3" id="signupPlanSummaryFeatures"></ul>
+                                </div>
+                            </section>
+
+                            <div id="signupEnterpriseNotice" class="alert alert-info mb-4 @(Model.IsContactSalesPlan ? "" : "d-none")" role="status">
+                                <div class="fw-semibold mb-1">@L["Signup.EnterpriseNoticeTitle"]</div>
+                                <p class="small mb-3">@L["Signup.EnterpriseNoticeBody"]</p>
+                                <a class="btn btn-outline-primary rounded-pill" href="mailto:support@wasla.local">@L["Pricing.Cta.RequestOffer"]</a>
+                            </div>
+
+                            <div id="signupSelfServiceSections" class="@(Model.IsContactSalesPlan ? "d-none" : "")">
+                            <section class="oh-signup-section mb-4">
+                                <div class="oh-signup-step-label mb-3">
+                                    <span class="oh-signup-step-num">2</span>
+                                    <span class="fw-semibold">@L["Signup.StepBusiness"]</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label asp-for="BusinessName" class="form-label"></label>
+                                        <input asp-for="BusinessName" class="form-control" id="signupBusinessName" autocomplete="organization" />
+                                        <span asp-validation-for="BusinessName" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">@L["Signup.BusinessType"]</label>
+                                        <div class="oh-signup-business-types border rounded p-3 bg-body-tertiary">
+                                            @foreach (var option in Model.BusinessTypeOptions)
+                                            {
+                                                var checkboxId = $"businessType-{option.Code}";
+                                                var isChecked = Model.SelectedBusinessTypeCodes.Contains(option.Code, StringComparer.OrdinalIgnoreCase);
+                                                <div class="form-check">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           name="SelectedBusinessTypeCodes"
+                                                           value="@option.Code"
+                                                           id="@checkboxId"
+                                                           @(isChecked ? "checked" : null) />
+                                                    <label class="form-check-label" for="@checkboxId">@option.DisplayName</label>
+                                                </div>
+                                            }
+                                        </div>
+                                        <span asp-validation-for="SelectedBusinessTypeCodes" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="Slug" class="form-label"></label>
+                                        <div class="input-group">
+                                            <input asp-for="Slug" class="form-control" id="signupSlug" pattern="[a-z0-9][a-z0-9_-]*" />
+                                            <span class="input-group-text text-muted">.@Model.MarketingBaseDomain</span>
+                                        </div>
+                                        <div class="form-text">
+                                            @L["Signup.SlugHelp"]
+                                            <span id="signupDomainPreview" class="fw-semibold">@domainPreview</span>
+                                        </div>
+                                        <span asp-validation-for="Slug" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="oh-signup-section mb-4">
+                                <div class="oh-signup-step-label mb-3">
+                                    <span class="oh-signup-step-num">3</span>
+                                    <span class="fw-semibold">@L["Signup.StepAddress"]</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label asp-for="Country" class="form-label"></label>
+                                        <input asp-for="Country" class="form-control" id="signupCountry" autocomplete="country-name" readonly />
+                                        <span asp-validation-for="Country" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="CityId" class="form-label">@L["Signup.CityLabel"]</label>
+                                        <select asp-for="CityId" asp-items="Model.CityOptions" class="form-select" id="signupCityId"></select>
+                                        <span asp-validation-for="CityId" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="DistrictId" class="form-label">@L["Signup.DistrictLabel"]</label>
+                                        <select asp-for="DistrictId" asp-items="Model.DistrictOptions" class="form-select" id="signupDistrictId"></select>
+                                        <span asp-validation-for="DistrictId" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="Neighborhood" class="form-label"></label>
+                                        <input asp-for="Neighborhood" class="form-control" id="signupNeighborhood" list="signupNeighborhoodList" autocomplete="off" />
+                                        <input type="hidden" asp-for="NeighborhoodId" id="signupNeighborhoodId" />
+                                        <datalist id="signupNeighborhoodList"></datalist>
+                                        <div id="signupNeighborhoodHint" class="form-text"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="PostalCode" class="form-label"></label>
+                                        <input asp-for="PostalCode" class="form-control" autocomplete="postal-code" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label asp-for="StreetAddress" class="form-label"></label>
+                                        <input asp-for="StreetAddress" class="form-control" id="signupStreetAddress" list="signupStreetList" autocomplete="street-address" />
+                                        <input type="hidden" asp-for="StreetId" id="signupStreetId" />
+                                        <datalist id="signupStreetList"></datalist>
+                                        <div id="signupStreetHint" class="form-text"></div>
+                                        <span asp-validation-for="StreetAddress" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="BuildingNumber" class="form-label"></label>
+                                        <input asp-for="BuildingNumber" class="form-control" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="Floor" class="form-label"></label>
+                                        <input asp-for="Floor" class="form-control" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="DoorNumber" class="form-label"></label>
+                                        <input asp-for="DoorNumber" class="form-control" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="AddressNote" class="form-label"></label>
+                                        <input asp-for="AddressNote" class="form-control" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="LocationUrl" class="form-label"></label>
+                                        <input asp-for="LocationUrl" class="form-control" placeholder="@L["Signup.LocationUrlPlaceholder"]" inputmode="url" />
+                                        <div class="form-text">@L["Signup.LocationUrlHelp"]</div>
+                                        <span asp-validation-for="LocationUrl" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="oh-signup-section mb-4">
+                                <div class="oh-signup-step-label mb-3">
+                                    <span class="oh-signup-step-num">4</span>
+                                    <span class="fw-semibold">@L["Signup.StepContact"]</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label asp-for="BusinessPhoneType" class="form-label"></label>
+                                        <select asp-for="BusinessPhoneType" class="form-select" id="signupBusinessPhoneType">
+                                            <option value="@nameof(BusinessPhoneTypeEnum.Mobile)">@L["Signup.PhoneTypeMobile"]</option>
+                                            <option value="@nameof(BusinessPhoneTypeEnum.Landline)">@L["Signup.PhoneTypeLandline"]</option>
+                                        </select>
+                                        <span asp-validation-for="BusinessPhoneType" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label asp-for="BusinessPhone" class="form-label"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="signupPhonePrefix">+90</span>
+                                            <input asp-for="BusinessPhone" class="form-control" id="signupBusinessPhone" autocomplete="tel" inputmode="tel" aria-describedby="signupPhoneHint" />
+                                        </div>
+                                        <div id="signupPhoneHint" class="form-text oh-signup-phone-hint"></div>
+                                        <span asp-validation-for="BusinessPhone" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="BusinessEmail" class="form-label"></label>
+                                        <input asp-for="BusinessEmail" class="form-control" placeholder="@L["Signup.BusinessEmailPlaceholder"]" autocomplete="email" inputmode="email" />
+                                        <div class="form-text">@L["Signup.BusinessEmailHelp"]</div>
+                                        <span asp-validation-for="BusinessEmail" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="oh-signup-section">
+                                <div class="oh-signup-step-label mb-3">
+                                    <span class="oh-signup-step-num">5</span>
+                                    <span class="fw-semibold">@L["Signup.StepOwner"]</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label asp-for="OwnerFullName" class="form-label"></label>
+                                        <input asp-for="OwnerFullName" class="form-control" autocomplete="name" />
+                                        <span asp-validation-for="OwnerFullName" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="OwnerEmail" class="form-label"></label>
+                                        <input asp-for="OwnerEmail" class="form-control" autocomplete="email" />
+                                        <span asp-validation-for="OwnerEmail" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="OwnerPhone" class="form-label"></label>
+                                        <input asp-for="OwnerPhone" class="form-control" autocomplete="tel" inputmode="tel" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="Password" class="form-label"></label>
+                                        <div class="input-group">
+                                            <input asp-for="Password" type="password" class="form-control" id="signupPassword" autocomplete="new-password" />
+                                            <button type="button" class="btn btn-outline-secondary signup-password-toggle" data-target="signupPassword" aria-label="@L["Common.ShowPassword"]" title="@L["Common.ShowPassword"]">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                        <span asp-validation-for="Password" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="ConfirmPassword" class="form-label"></label>
+                                        <div class="input-group">
+                                            <input asp-for="ConfirmPassword" type="password" class="form-control" id="signupConfirmPassword" autocomplete="new-password" />
+                                            <button type="button" class="btn btn-outline-secondary signup-password-toggle" data-target="signupConfirmPassword" aria-label="@L["Common.ShowPassword"]" title="@L["Common.ShowPassword"]">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                                <p class="text-secondary small mt-3 mb-3">@L["Signup.SetupLaterNote"]</p>
+                                <button type="submit" id="signupSubmitButton" class="btn btn-primary btn-lg rounded-pill px-4">
+                                    <i class="bi bi-arrow-right-circle me-2" aria-hidden="true"></i>@L["Signup.ContinueToPayment"]
+                                </button>
+                            </section>
+                            </div>
+                            <input type="hidden" id="signupBaseDomain" value="@Model.MarketingBaseDomain" />
+                        </form>
+                    </div>
+                </div>
+
+                <p class="text-center text-muted small mt-3 mb-0">
+                    @L["Signup.AlreadyHaveAccount"]
+                    <a href="/customer-access-required">@L["Landing.CustomerLogin"]</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script type="application/json" id="signupFormConfig">@Html.Raw(JsonSerializer.Serialize(signupConfig))</script>
+    <script src="~/js/signup/signup-form.js" asp-append-version="true"></script>
+}

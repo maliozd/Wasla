@@ -1,0 +1,38 @@
+﻿@model Wasla.Web.Models.Checkout.CheckoutResultViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = L["Checkout.SuccessTitle"];
+}
+<div class="oh-signup-page py-4 py-md-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm oh-signup-card">
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <div class="mb-3 text-success">
+                            <i class="bi bi-check-circle-fill" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                        </div>
+                        <h1 class="h4 fw-bold mb-2">@L["Checkout.SuccessTitle"]</h1>
+                        <p class="text-secondary mb-2">@L["Checkout.SuccessMessage"]</p>
+                        <p class="text-muted small mb-4">@L["Checkout.SuccessNextPhase"]</p>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.BusinessName))
+                        {
+                            <div class="text-start bg-body-tertiary rounded p-3 mb-4 small">
+                                <div><strong>@L["Signup.PendingLabelRestaurant"]:</strong> @Model.BusinessName</div>
+                                @if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
+                                {
+                                    <div class="mt-1"><strong>@L["Signup.PendingLabelOrderHubAddress"]:</strong> <code>@Model.PrimaryDomain</code></div>
+                                }
+                            </div>
+                        }
+
+                        <a class="btn btn-primary rounded-pill" href="/">@L["Signup.PendingBackHome"]</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
