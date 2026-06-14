@@ -21,11 +21,23 @@ public sealed class HomeController : Controller
     }
 
     [AllowAnonymous]
+    [HttpGet("/tenant-address-required")]
+    public IActionResult TenantAddressRequired([FromQuery] string? returnUrl = null)
+    {
+        ViewData["ReturnUrl"] = returnUrl;
+        ViewData["SignupUrl"] = BuildSignupUrl();
+        return View();
+    }
+
+    [AllowAnonymous]
     [HttpGet("/customer-access-required")]
     public IActionResult CustomerAccessRequired([FromQuery] string? returnUrl = null)
     {
-        ViewData["ReturnUrl"] = returnUrl;
-        return View();
+        var redirect = "/tenant-address-required";
+        if (!string.IsNullOrWhiteSpace(returnUrl))
+            redirect += $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
+
+        return Redirect(redirect);
     }
 
     [AllowAnonymous]

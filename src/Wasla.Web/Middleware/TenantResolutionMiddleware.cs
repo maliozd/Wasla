@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Net;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.Options;
@@ -17,6 +18,7 @@ public sealed class TenantResolutionMiddleware
         "/admin",
         "/signup",
         "/checkout",
+        "/tenant-address-required",
         "/customer-access-required",
         "/tenant-not-found",
         "/culture",
@@ -72,7 +74,7 @@ public sealed class TenantResolutionMiddleware
                 if (string.IsNullOrWhiteSpace(attemptedUrl))
                     attemptedUrl = "/auth/login";
                 var encodedReturnUrl = Uri.EscapeDataString(attemptedUrl);
-                context.Response.Redirect($"/customer-access-required?returnUrl={encodedReturnUrl}");
+                context.Response.Redirect($"/tenant-address-required?returnUrl={encodedReturnUrl}");
                 return;
             }
 
@@ -136,6 +138,13 @@ public sealed class TenantResolutionMiddleware
         if (normalizedHost == "localhost") return true;
         if (normalizedHost == normalizedDomain) return true;
         if (normalizedHost == $"www.{normalizedDomain}") return true;
+
+        var hostForIpCheck = normalizedHost;
+        if (hostForIpCheck.StartsWith('[') && hostForIpCheck.EndsWith(']'))
+            hostForIpCheck = hostForIpCheck[1..^1];
+
+        if (IPAddress.TryParse(hostForIpCheck, out _))
+            return true;
 
         return false;
     }

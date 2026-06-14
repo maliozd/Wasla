@@ -696,4 +696,19 @@
   <data name="TenantNotFound.BackToSignup" xml:space="preserve">
     <value>Kayıt sayfasına dön</value>
   </data>
+  <data name="TenantAddressRequired.PageTitle" xml:space="preserve">
+    <value>Restoran paneli adresi gerekli</value>
+  </data>
+  <data name="TenantAddressRequired.Title" xml:space="preserve">
+    <value>Restoran paneli adresi gerekli</value>
+  </data>
+  <data name="TenantAddressRequired.Description" xml:space="preserve">
+    <value>Panel girişi için restoranınıza özel Wasla adresini kullanmalısınız.</value>
+  </data>
+  <data name="TenantAddressRequired.Example" xml:space="preserve">
+    <value>Örnek: bahce-tadi.wasla.local</value>
+  </data>
+  <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
+    <value>Kayıt sayfasına dön</value>
+  </data>
 </root>

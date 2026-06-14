@@ -3033,4 +3033,9 @@
   <data name="TenantNotFound.InfoLine3" xml:space="preserve"><value>Ödeme ve hesap hazırlama adımı tamamlandıktan sonra restoran paneli açılacaktır.</value></data>
   <data name="TenantNotFound.HostLabel" xml:space="preserve"><value>Kontrol edilen adres: {0}</value></data>
   <data name="TenantNotFound.BackToSignup" xml:space="preserve"><value>Kayıt sayfasına dön</value></data>
+  <data name="TenantAddressRequired.PageTitle" xml:space="preserve"><value>Restoran paneli adresi gerekli</value></data>
+  <data name="TenantAddressRequired.Title" xml:space="preserve"><value>Restoran paneli adresi gerekli</value></data>
+  <data name="TenantAddressRequired.Description" xml:space="preserve"><value>Panel girişi için restoranınıza özel Wasla adresini kullanmalısınız.</value></data>
+  <data name="TenantAddressRequired.Example" xml:space="preserve"><value>Örnek: bahce-tadi.wasla.local</value></data>
+  <data name="TenantAddressRequired.BackToSignup" xml:space="preserve"><value>Kayıt sayfasına dön</value></data>
 </root>

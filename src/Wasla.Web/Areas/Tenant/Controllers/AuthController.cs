@@ -75,7 +75,7 @@ public sealed class AuthController : Controller
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null)
         {
-            return Redirect("/customer-access-required");
+            return Redirect("/tenant-address-required");
         }
 
         var payload = _signupCompletionTokens.ValidateAndConsume(token);

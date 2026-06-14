@@ -3039,4 +3039,9 @@
   <data name="TenantNotFound.InfoLine3" xml:space="preserve"><value>Your restaurant panel will open after payment and account setup are completed.</value></data>
   <data name="TenantNotFound.HostLabel" xml:space="preserve"><value>Address checked: {0}</value></data>
   <data name="TenantNotFound.BackToSignup" xml:space="preserve"><value>Back to signup</value></data>
+  <data name="TenantAddressRequired.PageTitle" xml:space="preserve"><value>Restaurant panel address required</value></data>
+  <data name="TenantAddressRequired.Title" xml:space="preserve"><value>Restaurant panel address required</value></data>
+  <data name="TenantAddressRequired.Description" xml:space="preserve"><value>To sign in to your panel, use your restaurant's dedicated Wasla address.</value></data>
+  <data name="TenantAddressRequired.Example" xml:space="preserve"><value>Example: bahce-tadi.wasla.local</value></data>
+  <data name="TenantAddressRequired.BackToSignup" xml:space="preserve"><value>Back to signup</value></data>
 </root>
