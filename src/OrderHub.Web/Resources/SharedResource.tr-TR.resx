@@ -2893,9 +2893,9 @@
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>İşletme adı gereklidir.</value></data>
   <data name="Validation.BusinessTypeRequired" xml:space="preserve"><value>En az bir işletme türü seçin.</value></data>
   <data name="Validation.BusinessTypeInvalid" xml:space="preserve"><value>Seçilen işletme türü geçersiz.</value></data>
-  <data name="Validation.CityRequired" xml:space="preserve"><value>Şehir seçimi gereklidir.</value></data>
-  <data name="Validation.DistrictRequired" xml:space="preserve"><value>İlçe seçimi gereklidir.</value></data>
-  <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>Seçilen şehir ve ilçe eşleşmiyor.</value></data>
+  <data name="Validation.CityRequired" xml:space="preserve"><value>Şehir / İl seçiniz.</value></data>
+  <data name="Validation.DistrictRequired" xml:space="preserve"><value>İlçe seçiniz.</value></data>
+  <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>Seçilen ilçe seçilen şehre ait değil.</value></data>
   <data name="Validation.StreetAddressRequired" xml:space="preserve"><value>Cadde veya sokak bilgisi gereklidir.</value></data>
   <data name="Validation.NeighborhoodInvalid" xml:space="preserve"><value>Seçilen mahalle geçersiz.</value></data>
   <data name="Validation.StreetInvalid" xml:space="preserve"><value>Seçilen cadde/sokak geçersiz.</value></data>

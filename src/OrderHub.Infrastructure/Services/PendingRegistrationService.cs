@@ -100,6 +100,23 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             .Select(x => x.Id)
             .ToListAsync(ct);
 
+        var cityName = request.City?.Trim() ?? string.Empty;
+        var districtName = request.District?.Trim() ?? string.Empty;
+        if (request.CityId is int cityId && request.DistrictId is int districtId)
+        {
+            var resolvedCityDistrict = await _referenceData.ResolveCityDistrictAsync(
+                cityId,
+                districtId,
+                request.Country,
+                ct);
+
+            if (resolvedCityDistrict is not null)
+            {
+                cityName = resolvedCityDistrict.CityName;
+                districtName = resolvedCityDistrict.DistrictName;
+            }
+        }
+
         var now = DateTime.UtcNow;
         var expiryDays = Math.Max(1, _options.PendingRegistrationExpiryDays);
         var registration = new PendingRegistration
@@ -120,8 +137,8 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             DistrictId = request.DistrictId,
             NeighborhoodId = request.NeighborhoodId,
             StreetId = request.StreetId,
-            City = request.City.Trim(),
-            District = request.District.Trim(),
+            City = cityName,
+            District = districtName,
             Neighborhood = string.IsNullOrWhiteSpace(request.Neighborhood) ? null : request.Neighborhood.Trim(),
             StreetAddress = string.IsNullOrWhiteSpace(request.StreetAddress) ? null : request.StreetAddress.Trim(),
             BuildingNumber = string.IsNullOrWhiteSpace(request.BuildingNumber) ? null : request.BuildingNumber.Trim(),

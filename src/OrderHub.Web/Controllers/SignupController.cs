@@ -53,6 +53,9 @@ public sealed class SignupController : Controller
     {
         await PopulateReferenceDataAsync(model, ct);
 
+        ModelState.Remove(nameof(SignupViewModel.City));
+        ModelState.Remove(nameof(SignupViewModel.District));
+
         if (!ModelState.IsValid)
             return View(model);
 
@@ -74,51 +77,9 @@ public sealed class SignupController : Controller
             return View(model);
         }
 
-        var cityName = model.City;
-        var districtName = model.District;
-        var neighborhoodName = model.Neighborhood;
-        var streetAddress = model.StreetAddress;
-        int? neighborhoodId = model.NeighborhoodId;
-        int? streetId = model.StreetId;
-
-        if (IsTurkey(model.Country) && model.CityId is int cityId && model.DistrictId is int districtId)
-        {
-            var resolved = await _referenceData.ResolveCityDistrictAsync(cityId, districtId, model.Country, ct);
-            if (resolved is null)
-            {
-                ModelState.AddModelError(nameof(model.DistrictId), _localizer["Validation.CityDistrictInvalid"].Value);
-                return View(model);
-            }
-
-            cityName = resolved.CityName;
-            districtName = resolved.DistrictName;
-
-            if (model.NeighborhoodId is int resolvedNeighborhoodId)
-            {
-                var neighborhood = await _referenceData.ResolveNeighborhoodAsync(districtId, resolvedNeighborhoodId, ct);
-                if (neighborhood is null)
-                {
-                    ModelState.AddModelError(nameof(model.NeighborhoodId), _localizer["Validation.NeighborhoodInvalid"].Value);
-                    return View(model);
-                }
-
-                neighborhoodName = neighborhood.NeighborhoodName;
-                neighborhoodId = neighborhood.NeighborhoodId;
-
-                if (model.StreetId is int resolvedStreetId)
-                {
-                    var street = await _referenceData.ResolveStreetAsync(resolvedNeighborhoodId, resolvedStreetId, ct);
-                    if (street is null)
-                    {
-                        ModelState.AddModelError(nameof(model.StreetId), _localizer["Validation.StreetInvalid"].Value);
-                        return View(model);
-                    }
-
-                    streetAddress = FormatStreetDisplay(street.StreetName, street.StreetType);
-                    streetId = street.StreetId;
-                }
-            }
-        }
+        var address = await ResolveAddressAsync(model, ct);
+        if (address is null)
+            return View(model);
 
         var request = new PendingRegistrationRequest(
             model.PlanCode,
@@ -132,12 +93,12 @@ public sealed class SignupController : Controller
             model.Country,
             model.CityId,
             model.DistrictId,
-            neighborhoodId,
-            streetId,
-            cityName,
-            districtName,
-            neighborhoodName,
-            streetAddress,
+            address.NeighborhoodId,
+            address.StreetId,
+            address.CityName,
+            address.DistrictName,
+            address.NeighborhoodName,
+            address.StreetAddress,
             model.BuildingNumber,
             model.Floor,
             model.DoorNumber,
@@ -300,6 +261,78 @@ public sealed class SignupController : Controller
             })
             .ToList();
     }
+
+    private async Task<ResolvedSignupAddress?> ResolveAddressAsync(SignupViewModel model, CancellationToken ct)
+    {
+        string? cityName = null;
+        string? districtName = null;
+        var neighborhoodName = model.Neighborhood;
+        var streetAddress = model.StreetAddress;
+        int? neighborhoodId = model.NeighborhoodId;
+        int? streetId = model.StreetId;
+
+        if (IsTurkey(model.Country))
+        {
+            if (model.CityId is not int cityId || cityId <= 0
+                || model.DistrictId is not int districtId || districtId <= 0)
+            {
+                return null;
+            }
+
+            var resolved = await _referenceData.ResolveCityDistrictAsync(cityId, districtId, model.Country, ct);
+            if (resolved is null)
+            {
+                ModelState.AddModelError(nameof(model.DistrictId), _localizer["Validation.CityDistrictInvalid"].Value);
+                return null;
+            }
+
+            cityName = resolved.CityName;
+            districtName = resolved.DistrictName;
+            model.City = cityName;
+            model.District = districtName;
+
+            if (model.NeighborhoodId is int resolvedNeighborhoodId)
+            {
+                var neighborhood = await _referenceData.ResolveNeighborhoodAsync(districtId, resolvedNeighborhoodId, ct);
+                if (neighborhood is null)
+                {
+                    ModelState.AddModelError(nameof(model.NeighborhoodId), _localizer["Validation.NeighborhoodInvalid"].Value);
+                    return null;
+                }
+
+                neighborhoodName = neighborhood.NeighborhoodName;
+                neighborhoodId = neighborhood.NeighborhoodId;
+
+                if (model.StreetId is int resolvedStreetId)
+                {
+                    var street = await _referenceData.ResolveStreetAsync(resolvedNeighborhoodId, resolvedStreetId, ct);
+                    if (street is null)
+                    {
+                        ModelState.AddModelError(nameof(model.StreetId), _localizer["Validation.StreetInvalid"].Value);
+                        return null;
+                    }
+
+                    streetAddress = FormatStreetDisplay(street.StreetName, street.StreetType);
+                    streetId = street.StreetId;
+                }
+            }
+        }
+        else
+        {
+            cityName = model.City?.Trim();
+            districtName = model.District?.Trim();
+        }
+
+        return new ResolvedSignupAddress(cityName, districtName, neighborhoodName, streetAddress, neighborhoodId, streetId);
+    }
+
+    private sealed record ResolvedSignupAddress(
+        string? CityName,
+        string? DistrictName,
+        string? NeighborhoodName,
+        string? StreetAddress,
+        int? NeighborhoodId,
+        int? StreetId);
 
     private void ApplySignupError(PendingRegistrationResult result)
     {

@@ -29,9 +29,11 @@ public sealed class SignupViewModel
     [Display(Name = "Signup.Country")]
     public string Country { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Validation.CityRequired")]
     [Display(Name = "Signup.CityLabel")]
     public int? CityId { get; set; }
 
+    [Required(ErrorMessage = "Validation.DistrictRequired")]
     [Display(Name = "Signup.DistrictLabel")]
     public int? DistrictId { get; set; }
 
@@ -39,13 +41,9 @@ public sealed class SignupViewModel
 
     public int? StreetId { get; set; }
 
-    [Required(ErrorMessage = "Validation.Required")]
-    [Display(Name = "Signup.City")]
-    public string City { get; set; } = string.Empty;
+    public string? City { get; set; }
 
-    [Required(ErrorMessage = "Validation.Required")]
-    [Display(Name = "Signup.District")]
-    public string District { get; set; } = string.Empty;
+    public string? District { get; set; }
 
     [Display(Name = "Signup.Neighborhood")]
     public string? Neighborhood { get; set; }

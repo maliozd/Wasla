@@ -2898,7 +2898,7 @@
   <data name="Validation.BusinessTypeInvalid" xml:space="preserve"><value>نوع العمل المحدد غير صالح.</value></data>
   <data name="Validation.CityRequired" xml:space="preserve"><value>اختيار المدينة مطلوب.</value></data>
   <data name="Validation.DistrictRequired" xml:space="preserve"><value>اختيار المنطقة مطلوب.</value></data>
-  <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>المدينة والمنطقة المحددتان غير متطابقتين.</value></data>
+  <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>المنطقة المحددة لا تنتمي إلى المدينة المحددة.</value></data>
   <data name="Validation.StreetAddressRequired" xml:space="preserve"><value>معلومات الشارع مطلوبة.</value></data>
   <data name="Validation.NeighborhoodInvalid" xml:space="preserve"><value>الحي المحدد غير صالح.</value></data>
   <data name="Validation.StreetInvalid" xml:space="preserve"><value>الشارع المحدد غير صالح.</value></data>

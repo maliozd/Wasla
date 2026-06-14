@@ -59,28 +59,33 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
         RuleFor(x => x.CityId)
             .NotNull()
             .WithMessage("Validation.CityRequired")
+            .GreaterThan(0)
+            .WithMessage("Validation.CityRequired")
             .When(IsTurkey);
 
         RuleFor(x => x.DistrictId)
             .NotNull()
             .WithMessage("Validation.DistrictRequired")
+            .GreaterThan(0)
+            .WithMessage("Validation.DistrictRequired")
             .When(IsTurkey);
 
-        RuleFor(x => x)
-            .MustAsync(async (request, ct) =>
+        RuleFor(x => x.DistrictId)
+            .MustAsync(async (request, districtId, ct) =>
             {
-                if (!IsTurkey(request) || request.CityId is null || request.DistrictId is null)
+                if (!IsTurkey(request) || request.CityId is null or <= 0 || districtId is null or <= 0)
                     return true;
 
                 var resolved = await referenceData.ResolveCityDistrictAsync(
                     request.CityId.Value,
-                    request.DistrictId.Value,
+                    districtId.Value,
                     request.Country,
                     ct);
 
                 return resolved is not null;
             })
-            .WithMessage("Validation.CityDistrictInvalid");
+            .WithMessage("Validation.CityDistrictInvalid")
+            .When(x => IsTurkey(x) && x.CityId is > 0 && x.DistrictId is > 0);
 
         RuleFor(x => x)
             .MustAsync(async (request, ct) =>
@@ -112,13 +117,8 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
             })
             .WithMessage("Validation.StreetInvalid");
 
-        RuleFor(x => x.City)
-            .NotEmpty()
-            .MaximumLength(100);
-
-        RuleFor(x => x.District)
-            .NotEmpty()
-            .MaximumLength(100);
+        RuleFor(x => x.City).MaximumLength(100).When(x => !string.IsNullOrWhiteSpace(x.City));
+        RuleFor(x => x.District).MaximumLength(100).When(x => !string.IsNullOrWhiteSpace(x.District));
 
         RuleFor(x => x.StreetAddress)
             .NotEmpty()

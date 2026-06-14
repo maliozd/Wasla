@@ -426,6 +426,15 @@
   <data name="Validation.BusinessTypeRequired" xml:space="preserve">
     <value>En az bir işletme türü seçin.</value>
   </data>
+  <data name="Validation.CityRequired" xml:space="preserve">
+    <value>Şehir / İl seçiniz.</value>
+  </data>
+  <data name="Validation.DistrictRequired" xml:space="preserve">
+    <value>İlçe seçiniz.</value>
+  </data>
+  <data name="Validation.CityDistrictInvalid" xml:space="preserve">
+    <value>Seçilen ilçe seçilen şehre ait değil.</value>
+  </data>
   <data name="Validation.StreetAddressRequired" xml:space="preserve">
     <value>Cadde veya sokak bilgisi gereklidir.</value>
   </data>
