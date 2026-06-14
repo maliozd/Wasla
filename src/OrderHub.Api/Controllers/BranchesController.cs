@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Tenant;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Api.Controllers;
 
@@ -12,9 +12,9 @@ namespace OrderHub.Api.Controllers;
 public sealed class BranchesController : ControllerBase
 {
     private readonly ICurrentTenantService _currentTenant;
-    private readonly ICustomerDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _customerDbFactory;
 
-    public BranchesController(ICurrentTenantService currentTenant, ICustomerDbContextFactory customerDbFactory)
+    public BranchesController(ICurrentTenantService currentTenant, ITenantDbContextFactory customerDbFactory)
     {
         _currentTenant = currentTenant;
         _customerDbFactory = customerDbFactory;

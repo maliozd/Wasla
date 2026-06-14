@@ -2,17 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 
-namespace OrderHub.Infrastructure.Persistence.Customer;
+namespace OrderHub.Infrastructure.Persistence.Tenant;
 
 /// <summary>
-/// Only used for scaffolding CustomerDbContext migrations. At runtime, real
-/// customer connections are resolved per-tenant by ICustomerDbContextFactory.
+/// Only used for scaffolding TenantDbContext migrations. At runtime, real
+/// customer connections are resolved per-tenant by ITenantDbContextFactory.
 /// This factory points at a design-time scratch database whose only purpose
 /// is to generate migration files. It is never queried by the API or Worker.
 /// </summary>
-public sealed class CustomerDesignTimeDbContextFactory : IDesignTimeDbContextFactory<CustomerDbContext>
+public sealed class TenantDesignTimeDbContextFactory : IDesignTimeDbContextFactory<TenantDbContext>
 {
-    public CustomerDbContext CreateDbContext(string[] args)
+    public TenantDbContext CreateDbContext(string[] args)
     {
         var solutionRoot = FindSolutionRoot();
         var apiAppSettings = Path.Combine(solutionRoot, "src", "OrderHub.Api", "appsettings.json");
@@ -31,11 +31,11 @@ public sealed class CustomerDesignTimeDbContextFactory : IDesignTimeDbContextFac
                      "Set 'ConnectionStrings:CustomerDbDesignTime' in appsettings.json, " +
                      "or ensure 'ConnectionStrings:CentralDb' is set so a design-time DB name can be derived.");
 
-        var options = new DbContextOptionsBuilder<CustomerDbContext>()
+        var options = new DbContextOptionsBuilder<TenantDbContext>()
             .UseSqlServer(cs)
             .Options;
 
-        return new CustomerDbContext(options);
+        return new TenantDbContext(options);
     }
 
     private static string? BuildFromCentral(IConfiguration configuration)

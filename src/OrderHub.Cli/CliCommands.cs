@@ -13,7 +13,7 @@ using System.Text.Json;
 using OrderHub.Infrastructure.Persistence.Central;
 using OrderHub.Infrastructure.ReferenceData;
 using OrderHub.Infrastructure.Security;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Cli;
 
@@ -287,14 +287,14 @@ internal static class CliCommands
             dbCreated = true;
 
             var customerConnString = BuildCustomerConnectionString(server, sqlAuth, dbName);
-            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+            var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(customerConnString)
                 .Options;
             var migrationNow = DateTime.UtcNow;
             string migrationResult;
             try
             {
-                await using var db = new CustomerDbContext(options);
+                await using var db = new TenantDbContext(options);
                 WriteLineStep("Applying CustomerDb migrations…");
                 await db.Database.MigrateAsync(ct).ConfigureAwait(false);
                 migrationResult = "Success";
@@ -331,7 +331,7 @@ internal static class CliCommands
             await central.SaveChangesAsync(ct).ConfigureAwait(false);
             insertedCentral = customer;
 
-            await using (var userDb = new CustomerDbContext(options))
+            await using (var userDb = new TenantDbContext(options))
             {
                 WriteLineStep("Creating admin user…");
                 var appUser = new AppUser
@@ -532,11 +532,11 @@ internal static class CliCommands
 
             var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
-            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+            var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
                 .Options;
 
-            await using (var db = new CustomerDbContext(options))
+            await using (var db = new TenantDbContext(options))
             {
                 var pending = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
                 Console.WriteLine($"Pending CustomerDb migrations: {pending.Count}");
@@ -645,8 +645,8 @@ internal static class CliCommands
                     try
                     {
                         var plain = await secret.DecryptAsync(c.EncryptedConnectionString, c.EncryptionKeyVersion, ct).ConfigureAwait(false);
-                        var options = new DbContextOptionsBuilder<CustomerDbContext>().UseSqlServer(plain).Options;
-                        await using var db = new CustomerDbContext(options);
+                        var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(plain).Options;
+                        await using var db = new TenantDbContext(options);
                         var p = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
                         if (p.Count == 0)
                             Console.WriteLine($"  (dry-run) {c.Slug}: up to date");
@@ -672,10 +672,10 @@ internal static class CliCommands
                 {
                     var plain = await secret.DecryptAsync(c.EncryptedConnectionString, c.EncryptionKeyVersion, ct)
                         .ConfigureAwait(false);
-                    var options = new DbContextOptionsBuilder<CustomerDbContext>()
+                    var options = new DbContextOptionsBuilder<TenantDbContext>()
                         .UseSqlServer(plain)
                         .Options;
-                    await using var db = new CustomerDbContext(options);
+                    await using var db = new TenantDbContext(options);
 
                     await db.Database.MigrateAsync(ct).ConfigureAwait(false);
                     Console.ForegroundColor = ConsoleColor.Green;
@@ -780,8 +780,8 @@ internal static class CliCommands
                 try
                 {
                     var plain = await secret.DecryptAsync(c.EncryptedConnectionString, c.EncryptionKeyVersion, ct).ConfigureAwait(false);
-                    var options = new DbContextOptionsBuilder<CustomerDbContext>().UseSqlServer(plain).Options;
-                    await using var db = new CustomerDbContext(options);
+                    var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(plain).Options;
+                    await using var db = new TenantDbContext(options);
                     var applied = (await db.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
                     var latest = applied.Count > 0 ? applied[^1] : "(none)";
                     var pending = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
@@ -911,10 +911,10 @@ internal static class CliCommands
 
             var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
-            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+            var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
                 .Options;
-            await using var db = new CustomerDbContext(options);
+            await using var db = new TenantDbContext(options);
 
             var emailNorm = email.Trim();
             if (await db.AppUsers.AnyAsync(u => u.Email == emailNorm, ct).ConfigureAwait(false))
@@ -1016,11 +1016,11 @@ internal static class CliCommands
 
             var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
-            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+            var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
                 .Options;
 
-            await using (var db = new CustomerDbContext(options))
+            await using (var db = new TenantDbContext(options))
             {
                 WriteLineStep("Dropping CustomerDb (if exists)…");
                 await db.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
@@ -1104,7 +1104,7 @@ internal static class CliCommands
 
             var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
-            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+            var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
                 .Options;
 
@@ -1113,7 +1113,7 @@ internal static class CliCommands
 
             try
             {
-                await using var db = new CustomerDbContext(options);
+                await using var db = new TenantDbContext(options);
                 WriteLineStep("Dropping CustomerDb (if exists)…");
                 await db.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
 
@@ -1185,14 +1185,14 @@ internal static class CliCommands
                 try
                 {
                     var plain = await secret.DecryptAsync(c.EncryptedConnectionString, c.EncryptionKeyVersion, ct).ConfigureAwait(false);
-                    var options = new DbContextOptionsBuilder<CustomerDbContext>().UseSqlServer(plain).Options;
+                    var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(plain).Options;
 
                     var migrationNow = DateTime.UtcNow;
                     var migrationResult = "Unknown";
 
                     try
                     {
-                        await using var db = new CustomerDbContext(options);
+                        await using var db = new TenantDbContext(options);
                         await db.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
                         await db.Database.MigrateAsync(ct).ConfigureAwait(false);
                         migrationResult = "Success";
@@ -1285,11 +1285,11 @@ internal static class CliCommands
 
             var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
-            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+            var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
                 .Options;
 
-            await using var db = new CustomerDbContext(options);
+            await using var db = new TenantDbContext(options);
 
             var emailNorm = adminEmail.Trim();
             var exists = await db.AppUsers.AnyAsync(u => u.Email == emailNorm, ct).ConfigureAwait(false);
@@ -1700,12 +1700,12 @@ internal static class CliCommands
             .ConfigureAwait(false);
     }
 
-    private static async Task<CustomerDbContext> OpenCustomerDbAsync(IHost host, Customer customer, CancellationToken ct)
+    private static async Task<TenantDbContext> OpenCustomerDbAsync(IHost host, Customer customer, CancellationToken ct)
     {
         var secret = host.Services.GetRequiredService<ISecretManager>();
         var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
             .ConfigureAwait(false);
-        var options = new DbContextOptionsBuilder<CustomerDbContext>().UseSqlServer(plain).Options;
-        return new CustomerDbContext(options);
+        var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(plain).Options;
+        return new TenantDbContext(options);
     }
 }

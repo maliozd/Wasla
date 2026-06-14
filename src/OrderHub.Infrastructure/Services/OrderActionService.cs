@@ -4,18 +4,18 @@ using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Infrastructure.Services;
 
 public sealed class OrderActionService : IOrderActionService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<OrderActionService> _logger;
     private readonly IEnumerable<IFoodPlatformClient> _clients;
 
     public OrderActionService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         IEnumerable<IFoodPlatformClient> clients,
         ILogger<OrderActionService> logger)
     {

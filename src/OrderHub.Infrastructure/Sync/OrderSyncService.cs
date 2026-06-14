@@ -10,7 +10,7 @@ using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Application.Platform.Dtos;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 using Polly;
 using Polly.Retry;
 using Polly.Timeout;
@@ -19,7 +19,7 @@ namespace OrderHub.Infrastructure.Sync;
 
 public sealed class OrderSyncService : IOrderSyncService
 {
-    private readonly ICustomerDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _customerDbFactory;
     private readonly IEnumerable<IFoodPlatformClient> _platformClients;
     private readonly IOrderStatusMapper _statusMapper;
     private readonly IOrderAutoApproveService _autoApprove;
@@ -55,7 +55,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
 
     public OrderSyncService(
-        ICustomerDbContextFactory customerDbFactory,
+        ITenantDbContextFactory customerDbFactory,
         IEnumerable<IFoodPlatformClient> platformClients,
         IOrderStatusMapper statusMapper,
         IOrderAutoApproveService autoApprove,
@@ -201,7 +201,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private static readonly Guid CustomerOperationalSettingsSingletonId =
         Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    private static async Task<bool> IsOrderSyncEnabledAsync(CustomerDbContext db, CancellationToken ct)
+    private static async Task<bool> IsOrderSyncEnabledAsync(TenantDbContext db, CancellationToken ct)
     {
         // When no settings row exists (e.g. older tenant DB), preserve existing behavior: sync enabled.
         var row = await db.CustomerOperationalSettings
@@ -214,7 +214,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
     private async Task<OrderSyncConnectionResult> SyncConnectionAsync(
         Guid customerId,
-        CustomerDbContext db,
+        TenantDbContext db,
         PlatformConnection connection,
         CancellationToken ct)
     {
@@ -396,7 +396,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
     private async Task<OrderUpsertResult> UpsertOrderAsync(
       Guid customerId,
-      CustomerDbContext db,
+      TenantDbContext db,
       ExternalOrderDto external,
       CancellationToken ct)
     {

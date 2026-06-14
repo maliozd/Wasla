@@ -3,18 +3,18 @@ using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 using OrderHub.Infrastructure.Printing;
 
 namespace OrderHub.Infrastructure.Services;
 
 public sealed class PrintJobHistoryService : IPrintJobHistoryService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<PrintJobHistoryService> _logger;
 
     public PrintJobHistoryService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         ILogger<PrintJobHistoryService> logger)
     {
         _dbFactory = dbFactory;

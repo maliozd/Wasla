@@ -2,16 +2,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Infrastructure.Services;
 
 public sealed class OrderReadService : IOrderReadService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<OrderReadService> _logger;
 
-    public OrderReadService(ICustomerDbContextFactory dbFactory, ILogger<OrderReadService> logger)
+    public OrderReadService(ITenantDbContextFactory dbFactory, ILogger<OrderReadService> logger)
     {
         _dbFactory = dbFactory;
         _logger = logger;

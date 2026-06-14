@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OrderHub.Domain.Entities.Customer;
 
-namespace OrderHub.Infrastructure.Persistence.Customer.Configurations;
+namespace OrderHub.Infrastructure.Persistence.Tenant.Configurations;
 
 public class BranchConfiguration : IEntityTypeConfiguration<Branch>
 {

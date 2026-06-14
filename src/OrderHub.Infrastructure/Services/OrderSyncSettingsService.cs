@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Domain.Entities.Customer;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Infrastructure.Services;
 
@@ -9,9 +9,9 @@ public sealed class OrderSyncSettingsService : IOrderSyncSettingsService
 {
     private static readonly Guid SingletonId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
 
-    public OrderSyncSettingsService(ICustomerDbContextFactory dbFactory)
+    public OrderSyncSettingsService(ITenantDbContextFactory dbFactory)
     {
         _dbFactory = dbFactory;
     }

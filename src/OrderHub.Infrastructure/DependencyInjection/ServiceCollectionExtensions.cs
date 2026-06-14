@@ -21,7 +21,7 @@ using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.Options;
 using OrderHub.Infrastructure.Plans;
 using OrderHub.Infrastructure.Persistence.Central;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 using OrderHub.Infrastructure.Platform;
 using OrderHub.Infrastructure.Platform.Mock;
 using OrderHub.Infrastructure.Platform.Mapping;
@@ -43,7 +43,7 @@ public static class ServiceCollectionExtensions
             options.UseSqlServer(configuration.GetConnectionString("CentralDb")));
 
         services.AddSingleton<ISecretManager, AesSecretManager>();
-        services.AddSingleton<ICustomerDbContextFactory, CustomerDbContextFactory>();
+        services.AddSingleton<ITenantDbContextFactory, TenantDbContextFactory>();
         services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));

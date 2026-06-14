@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Domain.Entities.Customer;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Infrastructure.Services;
 
@@ -11,12 +11,12 @@ public sealed class CustomerOrderSettingsService : ICustomerOrderSettingsService
 {
     private static readonly Guid SingletonId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly IValidator<UpdateCustomerOrderSettingsCommand> _validator;
     private readonly ILogger<CustomerOrderSettingsService> _logger;
 
     public CustomerOrderSettingsService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         IValidator<UpdateCustomerOrderSettingsCommand> validator,
         ILogger<CustomerOrderSettingsService> logger)
     {

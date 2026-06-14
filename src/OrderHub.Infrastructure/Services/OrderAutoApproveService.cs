@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Infrastructure.Services;
 
@@ -11,13 +11,13 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
     private static readonly Guid CustomerOperationalSettingsSingletonId =
         Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly IOrderActionService _orderActions;
     private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly ILogger<OrderAutoApproveService> _logger;
 
     public OrderAutoApproveService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         IOrderActionService orderActions,
         IOrderReceiptCreationService receiptCreation,
         ILogger<OrderAutoApproveService> logger)

@@ -1,17 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Domain.Entities.Customer;
-using OrderHub.Infrastructure.Persistence.Customer.Configurations;
+using OrderHub.Infrastructure.Persistence.Tenant.Configurations;
 
-namespace OrderHub.Infrastructure.Persistence.Customer;
+namespace OrderHub.Infrastructure.Persistence.Tenant;
 
 /// <summary>
 /// Per-customer database context. One physical database per restaurant.
 /// The connection string is resolved per-request/per-sync from CentralDb
-/// and passed in via ICustomerDbContextFactory.
+/// and passed in via ITenantDbContextFactory.
 /// </summary>
-public class CustomerDbContext : DbContext
+public class TenantDbContext : DbContext
 {
-    public CustomerDbContext(DbContextOptions<CustomerDbContext> options) : base(options) { }
+    public TenantDbContext(DbContextOptions<TenantDbContext> options) : base(options) { }
 
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<AppUser> AppUsers => Set<AppUser>();

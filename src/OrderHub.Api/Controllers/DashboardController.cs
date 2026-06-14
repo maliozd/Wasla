@@ -6,7 +6,7 @@ using OrderHub.Contracts.Dashboard;
 using OrderHub.Contracts.Enums;
 using OrderHub.Contracts.Orders;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Api.Controllers;
 
@@ -16,9 +16,9 @@ namespace OrderHub.Api.Controllers;
 public sealed class DashboardController : ControllerBase
 {
     private readonly ICurrentTenantService _currentTenant;
-    private readonly ICustomerDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _customerDbFactory;
 
-    public DashboardController(ICurrentTenantService currentTenant, ICustomerDbContextFactory customerDbFactory)
+    public DashboardController(ICurrentTenantService currentTenant, ITenantDbContextFactory customerDbFactory)
     {
         _currentTenant = currentTenant;
         _customerDbFactory = customerDbFactory;

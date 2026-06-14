@@ -1,15 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Infrastructure.Services;
 
 public sealed class AuthValidationService : IAuthValidationService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
 
-    public AuthValidationService(ICustomerDbContextFactory dbFactory)
+    public AuthValidationService(ITenantDbContextFactory dbFactory)
     {
         _dbFactory = dbFactory;
     }

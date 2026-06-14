@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Domain.Entities.Customer;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Infrastructure.Services;
 
@@ -19,12 +19,12 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly IValidator<UpdateReceiptTemplateSettingsCommand> _validator;
     private readonly ILogger<ReceiptTemplateSettingsService> _logger;
 
     public ReceiptTemplateSettingsService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         IValidator<UpdateReceiptTemplateSettingsCommand> validator,
         ILogger<ReceiptTemplateSettingsService> logger)
     {

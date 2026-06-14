@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Application.Auth.Services;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 
 namespace OrderHub.Infrastructure.Services;
 
@@ -14,12 +14,12 @@ public sealed class AuthService : IAuthService
 {
     private static readonly string DummyHash = BCrypt.Net.BCrypt.HashPassword("dummy-never-matches");
 
-    private readonly ICustomerDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _customerDbFactory;
     private readonly ICurrentTenantService _currentTenantService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AuthService(
-        ICustomerDbContextFactory customerDbFactory,
+        ITenantDbContextFactory customerDbFactory,
         ICurrentTenantService currentTenantService,
         IHttpContextAccessor httpContextAccessor)
     {

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Customer;
+using OrderHub.Infrastructure.Persistence.Tenant;
 using OrderHub.Infrastructure.Printing;
 
 namespace OrderHub.Infrastructure.Services;
@@ -20,12 +20,12 @@ public interface IReceiptPrintJobService
 
 public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly IReceiptTemplateSettingsService _templateSettings;
     private readonly ILogger<ReceiptPrintJobService> _logger;
 
     public ReceiptPrintJobService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         IReceiptTemplateSettingsService templateSettings,
         ILogger<ReceiptPrintJobService> logger)
     {

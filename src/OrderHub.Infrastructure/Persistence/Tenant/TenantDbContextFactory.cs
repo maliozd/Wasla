@@ -3,42 +3,42 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OrderHub.Application.Abstractions.Security;
 
-namespace OrderHub.Infrastructure.Persistence.Customer;
+namespace OrderHub.Infrastructure.Persistence.Tenant;
 
-public sealed class CustomerDbContextFactory : ICustomerDbContextFactory
+public sealed class TenantDbContextFactory : ITenantDbContextFactory
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ISecretManager _secretManager;
 
-    private readonly ConcurrentDictionary<Guid, Lazy<Task<DbContextOptions<CustomerDbContext>>>> _optionsCache = new();
+    private readonly ConcurrentDictionary<Guid, Lazy<Task<DbContextOptions<TenantDbContext>>>> _optionsCache = new();
 
-    public CustomerDbContextFactory(IServiceScopeFactory scopeFactory, ISecretManager secretManager)
+    public TenantDbContextFactory(IServiceScopeFactory scopeFactory, ISecretManager secretManager)
     {
         _scopeFactory = scopeFactory;
         _secretManager = secretManager;
     }
 
-    public async Task<CustomerDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+    public async Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
     {
         var lazy = _optionsCache.GetOrAdd(
             customerId,
-            id => new Lazy<Task<DbContextOptions<CustomerDbContext>>>(
+            id => new Lazy<Task<DbContextOptions<TenantDbContext>>>(
                 () => BuildOptionsAsync(id, CancellationToken.None)));
 
         try
         {
             var options = await lazy.Value.ConfigureAwait(false);
-            return new CustomerDbContext(options);
+            return new TenantDbContext(options);
         }
         catch
         {
             _optionsCache.TryRemove(
-                new KeyValuePair<Guid, Lazy<Task<DbContextOptions<CustomerDbContext>>>>(customerId, lazy));
+                new KeyValuePair<Guid, Lazy<Task<DbContextOptions<TenantDbContext>>>>(customerId, lazy));
             throw;
         }
     }
 
-    private async Task<DbContextOptions<CustomerDbContext>> BuildOptionsAsync(Guid customerId, CancellationToken ct)
+    private async Task<DbContextOptions<TenantDbContext>> BuildOptionsAsync(Guid customerId, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var centralDb = scope.ServiceProvider.GetRequiredService<OrderHub.Infrastructure.Persistence.Central.CentralDbContext>();
@@ -57,7 +57,7 @@ public sealed class CustomerDbContextFactory : ICustomerDbContextFactory
             .DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
             .ConfigureAwait(false);
 
-        var builder = new DbContextOptionsBuilder<CustomerDbContext>();
+        var builder = new DbContextOptionsBuilder<TenantDbContext>();
         builder.UseSqlServer(connectionString);
 
         return builder.Options;
