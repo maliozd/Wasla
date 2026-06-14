@@ -1,6 +1,6 @@
 namespace OrderHub.Web.Areas.Admin.Models;
 
-public sealed class CentralAdminCustomerListItemViewModel
+public sealed class CentralAdminTenantDetailViewModel
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -12,5 +12,5 @@ public sealed class CentralAdminCustomerListItemViewModel
     public DateTime? LastMigrationAt { get; set; }
     public string? LastMigrationResult { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
-

@@ -93,7 +93,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IAuthValidationService, AuthValidationService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
-        services.AddScoped<ICentralAdminCustomerService, CentralAdminCustomerService>();
+        services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderActionService, OrderActionService>();

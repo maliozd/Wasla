@@ -13,10 +13,10 @@ namespace OrderHub.Web.Areas.Admin.Controllers;
 [Route("admin/customers")]
 public sealed class CustomersController : Controller
 {
-    private readonly ICentralAdminCustomerService _customers;
+    private readonly ICentralAdminTenantService _customers;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public CustomersController(ICentralAdminCustomerService customers, IStringLocalizer<SharedResource> localizer)
+    public CustomersController(ICentralAdminTenantService customers, IStringLocalizer<SharedResource> localizer)
     {
         _customers = customers;
         _localizer = localizer;
@@ -31,7 +31,7 @@ public sealed class CustomersController : Controller
             TotalCustomers = data.TotalCustomers,
             ActiveCustomers = data.ActiveCustomers,
             InactiveCustomers = data.InactiveCustomers,
-            Customers = data.Customers.Select(c => new CentralAdminCustomerListItemViewModel
+            Customers = data.Customers.Select(c => new CentralAdminTenantListItemViewModel
             {
                 Id = c.Id,
                 Name = c.Name,
@@ -54,7 +54,7 @@ public sealed class CustomersController : Controller
         var c = await _customers.GetCustomerAsync(id, ct).ConfigureAwait(false);
         if (c is null) return NotFound(_localizer["Admin.CustomerNotFound"].Value);
 
-        var vm = new CentralAdminCustomerDetailViewModel
+        var vm = new CentralAdminTenantDetailViewModel
         {
             Id = c.Id,
             Name = c.Name,

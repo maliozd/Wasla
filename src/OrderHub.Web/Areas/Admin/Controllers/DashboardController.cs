@@ -12,9 +12,9 @@ namespace OrderHub.Web.Areas.Admin.Controllers;
 [Route("admin")]
 public sealed class DashboardController : Controller
 {
-    private readonly ICentralAdminCustomerService _customers;
+    private readonly ICentralAdminTenantService _customers;
 
-    public DashboardController(ICentralAdminCustomerService customers)
+    public DashboardController(ICentralAdminTenantService customers)
     {
         _customers = customers;
     }
@@ -28,7 +28,7 @@ public sealed class DashboardController : Controller
             TotalCustomers = data.TotalCustomers,
             ActiveCustomers = data.ActiveCustomers,
             InactiveCustomers = data.InactiveCustomers,
-            Customers = data.Customers.Select(c => new CentralAdminCustomerListItemViewModel
+            Customers = data.Customers.Select(c => new CentralAdminTenantListItemViewModel
             {
                 Id = c.Id,
                 Name = c.Name,

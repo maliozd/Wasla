@@ -5,12 +5,12 @@ using OrderHub.Infrastructure.Persistence.Central;
 
 namespace OrderHub.Infrastructure.Services;
 
-public sealed class CentralAdminCustomerService : ICentralAdminCustomerService
+public sealed class CentralAdminTenantService : ICentralAdminTenantService
 {
     private readonly CentralDbContext _db;
-    private readonly ILogger<CentralAdminCustomerService> _logger;
+    private readonly ILogger<CentralAdminTenantService> _logger;
 
-    public CentralAdminCustomerService(CentralDbContext db, ILogger<CentralAdminCustomerService> logger)
+    public CentralAdminTenantService(CentralDbContext db, ILogger<CentralAdminTenantService> logger)
     {
         _db = db;
         _logger = logger;
@@ -39,7 +39,7 @@ public sealed class CentralAdminCustomerService : ICentralAdminCustomerService
         };
     }
 
-    public async Task<CentralAdminCustomerDetailResult?> GetCustomerAsync(Guid customerId, CancellationToken ct)
+    public async Task<CentralAdminTenantDetailResult?> GetCustomerAsync(Guid customerId, CancellationToken ct)
     {
         var c = await _db.Customers
             .AsNoTracking()
@@ -54,7 +54,7 @@ public sealed class CentralAdminCustomerService : ICentralAdminCustomerService
         var entity = await _db.Customers.FirstOrDefaultAsync(x => x.Id == customerId, ct).ConfigureAwait(false);
         if (entity is null)
         {
-            _logger.LogInformation("SetCustomerActiveState: customer {Id} not found", customerId);
+            _logger.LogInformation("SetCustomerActiveState: tenant {Id} not found", customerId);
             return false;
         }
 
@@ -65,7 +65,7 @@ public sealed class CentralAdminCustomerService : ICentralAdminCustomerService
         return true;
     }
 
-    private static CentralAdminCustomerListItemDto MapListItem(Domain.Entities.Central.Customer c) => new()
+    private static CentralAdminTenantListItemDto MapListItem(Domain.Entities.Central.Customer c) => new()
     {
         Id = c.Id,
         Name = c.Name,
@@ -79,7 +79,7 @@ public sealed class CentralAdminCustomerService : ICentralAdminCustomerService
         CreatedAt = c.CreatedAt
     };
 
-    private static CentralAdminCustomerDetailResult MapDetail(Domain.Entities.Central.Customer c) => new()
+    private static CentralAdminTenantDetailResult MapDetail(Domain.Entities.Central.Customer c) => new()
     {
         Id = c.Id,
         Name = c.Name,

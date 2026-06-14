@@ -5,11 +5,11 @@ public sealed class CentralAdminDashboardResult
     public int TotalCustomers { get; init; }
     public int ActiveCustomers { get; init; }
     public int InactiveCustomers { get; init; }
-    public IReadOnlyList<CentralAdminCustomerListItemDto> Customers { get; init; } =
-        Array.Empty<CentralAdminCustomerListItemDto>();
+    public IReadOnlyList<CentralAdminTenantListItemDto> Customers { get; init; } =
+        Array.Empty<CentralAdminTenantListItemDto>();
 }
 
-public sealed class CentralAdminCustomerListItemDto
+public sealed class CentralAdminTenantListItemDto
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -24,9 +24,9 @@ public sealed class CentralAdminCustomerListItemDto
 }
 
 /// <summary>
-/// Safe read model for a single customer (no connection string fields).
+/// Safe read model for a single tenant (no connection string fields).
 /// </summary>
-public sealed class CentralAdminCustomerDetailResult
+public sealed class CentralAdminTenantDetailResult
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
