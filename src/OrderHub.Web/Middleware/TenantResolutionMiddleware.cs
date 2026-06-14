@@ -16,6 +16,7 @@ public sealed class TenantResolutionMiddleware
         "/signup",
         "/checkout",
         "/customer-access-required",
+        "/tenant-not-found",
         "/culture",
         "/setlanguage",
         "/swagger",
@@ -87,9 +88,9 @@ public sealed class TenantResolutionMiddleware
         {
             logger.LogInformation("No tenant for host {Host}", host);
 
-            // Subdomain request but no matching tenant: keep the existing behavior.
-            context.Response.StatusCode = StatusCodes.Status404NotFound;
-            await context.Response.WriteAsync("Tenant not found");
+            // Subdomain request but no matching tenant: block access with a friendly page.
+            var encodedHost = Uri.EscapeDataString(host);
+            context.Response.Redirect($"/tenant-not-found?host={encodedHost}");
             return;
         }
 

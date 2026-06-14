@@ -666,4 +666,22 @@
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
   </data>
+  <data name="TenantNotFound.Title" xml:space="preserve">
+    <value>Bu Wasla adresi henüz aktif değil</value>
+  </data>
+  <data name="TenantNotFound.Description" xml:space="preserve">
+    <value>Bu adrese bağlı bir işletme paneli bulunamadı. Kayıt işleminizi tamamlamadıysanız kayıt sayfasına dönebilirsiniz.</value>
+  </data>
+  <data name="TenantNotFound.DevLine1" xml:space="preserve">
+    <value>Bu Wasla adresi henüz aktif değil.</value>
+  </data>
+  <data name="TenantNotFound.DevLine2" xml:space="preserve">
+    <value>Bu domain için tenant kaydı bulunamadı.</value>
+  </data>
+  <data name="TenantNotFound.DevLine3" xml:space="preserve">
+    <value>Kayıt akışında ödeme/provisioning tamamlanmadan tenant paneli açılmaz.</value>
+  </data>
+  <data name="TenantNotFound.BackToSignup" xml:space="preserve">
+    <value>Kayıt sayfasına dön</value>
+  </data>
 </root>
