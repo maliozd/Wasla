@@ -52,7 +52,6 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IOrderHubPlanCatalog, OrderHubPlanCatalog>();
         services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
-        services.AddScoped<ICustomerOnboardingService, CustomerOnboardingService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
 
