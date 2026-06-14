@@ -1,6 +1,6 @@
-# OrderHub – Local Development (EN)
+﻿# Wasla â€“ Local Development (EN)
 
-This document explains how to run the OrderHub MVP demo flow locally.
+This document explains how to run the Wasla MVP demo flow locally.
 
 ## Prerequisites
 
@@ -10,7 +10,7 @@ This document explains how to run the OrderHub MVP demo flow locally.
 
 ## 1) Master key (required)
 
-OrderHub requires a master key for encrypting/decrypting sensitive data.
+Wasla requires a master key for encrypting/decrypting sensitive data.
 
 PowerShell:
 
@@ -30,13 +30,13 @@ Central admin uses **separate** cookie authentication from tenant users. Configu
 Generate a hash (no master key required):
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- hash-password --password "YourPasswordHere!"
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- hash-password --password "YourPasswordHere!"
 ```
 
 Then set (example):
 
 ```powershell
-[Environment]::SetEnvironmentVariable("CentralAdmin__Email", "admin@orderhub.local", "User")
+[Environment]::SetEnvironmentVariable("CentralAdmin__Email", "admin@wasla.local", "User")
 [Environment]::SetEnvironmentVariable("CentralAdmin__PasswordHash", "<paste BCrypt hash from previous command>", "User")
 ```
 
@@ -59,18 +59,18 @@ CentralDb and each CustomerDb have **separate** EF Core migration histories. Aft
 | Command | When to use it |
 |--------|-----------------|
 | `migrate-central` | After a **CentralDb** model/migration change (registry / `Customer` table in the central database). |
-| `migrate-customer` | Update **one** tenant’s customer database (e.g. `dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --slug demo`). |
-| `migrate-all-customers` | After a **CustomerDb** migration change — applies to **all active** customers (use this most often in dev when you have multiple tenants). |
+| `migrate-customer` | Update **one** tenantâ€™s customer database (e.g. `dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-customer --slug demo`). |
+| `migrate-all-customers` | After a **CustomerDb** migration change â€” applies to **all active** customers (use this most often in dev when you have multiple tenants). |
 | `migration-status` | Inspect latest applied and pending migrations for Central and each active customer. |
 
 Examples (from repo root, with `ENCRYPTION_MASTER_KEY` set):
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-central
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --slug demo
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --customer-id "00000000-0000-0000-0000-000000000000"
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migration-status
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-central
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-customer --slug demo
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-customer --customer-id "00000000-0000-0000-0000-000000000000"
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-all-customers
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migration-status
 ```
 
 Optional: `migrate-all-customers --dry-run` (list pending only) and `--only slug1 --only slug2` (filter slugs).
@@ -84,7 +84,7 @@ If you added new CustomerDb entities (e.g. `UserNotificationSettings`) and you s
 Run:
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-all-customers
 ```
 
 ## 3.1) Destructive customer reset/delete (CLI)
@@ -94,32 +94,32 @@ These commands are **development/staging friendly** and **destructive**. They re
 ### Delete customer completely (CentralDb record + drop CustomerDb)
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- delete-customer --slug ahmet --confirm
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- delete-customer --slug ahmet --confirm
 ```
 
 ### Reset only a customer database (keeps CentralDb customer record)
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- reset-customer-db --slug ahmet --confirm
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- reset-customer-db --slug ahmet --confirm
 ```
 
 After a reset, recreate an Owner admin user:
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- seed-customer-admin --slug ahmet --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- seed-customer-admin --slug ahmet --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
 ```
 
 ### Reset all active customer databases
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- reset-all-customer-dbs --confirm
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- reset-all-customer-dbs --confirm
 ```
 
 ### Recommended clean local flow
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- delete-customer --slug ahmet --confirm
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- add-customer --name "Ahmet Restaurant" --slug ahmet --domain ahmet.orderhub.local --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- delete-customer --slug ahmet --confirm
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- add-customer --name "Ahmet Restaurant" --slug ahmet --domain ahmet.wasla.local --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
 ```
 
 ## 4) Create a customer (CLI)
@@ -129,7 +129,7 @@ Creates a tenant/customer record, creates+migrates the CustomerDb, and creates a
 Example:
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- add-customer `
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- add-customer `
   --name "Demo Restaurant" `
   --slug demo `
   --domain demo.local `
@@ -148,7 +148,7 @@ Windows hosts:
 ## 5) Run Web
 
 ```powershell
-dotnet run --project .\src\OrderHub.Web\OrderHub.Web.csproj
+dotnet run --project .\src\Wasla.Web\Wasla.Web.csproj
 ```
 
 Browse:
@@ -173,7 +173,7 @@ Duplicate rule:
 ## 7) Run Worker (sync)
 
 ```powershell
-dotnet run --project .\src\OrderHub.Worker\OrderHub.Worker.csproj
+dotnet run --project .\src\Wasla.Worker\Wasla.Worker.csproj
 ```
 
 Run it again:

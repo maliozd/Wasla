@@ -49,7 +49,7 @@
     <value>طباعة إيصال تجريبي</value>
   </data>
   <data name="Common.AppTitle" xml:space="preserve">
-    <value>OrderHub Print Bridge</value>
+    <value>Wasla Print Bridge</value>
   </data>
   <data name="Common.Dash" xml:space="preserve">
     <value>-</value>
@@ -73,10 +73,10 @@
     <value>فشل طلب Print Bridge (HTTP {0}).</value>
   </data>
   <data name="Connection.ServerUnavailable" xml:space="preserve">
-    <value>خادم OrderHub غير متاح. حاول مرة أخرى لاحقاً.</value>
+    <value>خادم Wasla غير متاح. حاول مرة أخرى لاحقاً.</value>
   </data>
   <data name="Connection.ServerUnreachable" xml:space="preserve">
-    <value>تعذر الوصول إلى OrderHub. تحقق من عنوان الخادم وأنه يعمل.</value>
+    <value>تعذر الوصول إلى Wasla. تحقق من عنوان الخادم وأنه يعمل.</value>
   </data>
   <data name="Connection.SslError" xml:space="preserve">
     <value>فشل اتصال SSL. تأكد من أن Windows يثق بشهادة HTTPS المحلية.</value>
@@ -145,7 +145,7 @@
     <value>Türkçe</value>
   </data>
   <data name="Message.AlreadyRunning" xml:space="preserve">
-    <value>OrderHub Print Bridge يعمل بالفعل.{0}{0}افتح التطبيق الحالي من أيقونة شريط المهام.</value>
+    <value>Wasla Print Bridge يعمل بالفعل.{0}{0}افتح التطبيق الحالي من أيقونة شريط المهام.</value>
   </data>
   <data name="Message.ConnectionSuccess" xml:space="preserve">
     <value>تم الاتصال بنجاح.</value>
@@ -163,7 +163,7 @@
     <value>لم يتم إنشاء مجلد السجلات بعد.</value>
   </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
-    <value>يتطلب OrderHub Print Bridge نظام Windows.</value>
+    <value>يتطلب Wasla Print Bridge نظام Windows.</value>
   </data>
   <data name="Message.ConnectionCouldNotBeVerified" xml:space="preserve">
     <value>تعذر التحقق من الاتصال. يرجى التحقق من عنوان الخادم ورمز الوصول.</value>
@@ -253,7 +253,7 @@
     <value>اسم الجهاز</value>
   </data>
   <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
-    <value>يُدار من لوحة OrderHub Web</value>
+    <value>يُدار من لوحة Wasla Web</value>
   </data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>الجهاز الفعلي: {0}</value>
@@ -283,10 +283,10 @@
     <value>عنوان الخادم</value>
   </data>
   <data name="Settings.ServerUrlHelp" xml:space="preserve">
-    <value>انسخ هذا من صفحة إعداد Print Bridge في لوحة OrderHub Web.</value>
+    <value>انسخ هذا من صفحة إعداد Print Bridge في لوحة Wasla Web.</value>
   </data>
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
-    <value>الصق رمز الجهاز الذي تم إنشاؤه من لوحة OrderHub Web.</value>
+    <value>الصق رمز الجهاز الذي تم إنشاؤه من لوحة Wasla Web.</value>
   </data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>وضع الاختبار مفعّل. لن تُطبع الفواتير؛ سيتم تسجيل المهام فقط.</value>

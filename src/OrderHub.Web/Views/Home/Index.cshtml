@@ -5,7 +5,7 @@
 @inject IOrderHubPlanCatalog PlanCatalog
 @{
     Layout = null;
-    ViewData["Title"] = "OrderHub";
+    ViewData["Title"] = "Wasla";
     var returnUrl = (Context.Request.Path.Value ?? "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : "");
     var culture = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
@@ -82,7 +82,7 @@
                 <div class="col-lg-6">
                     <div class="oh-hero-illu rounded-4 border bg-white p-3 p-md-4 shadow">
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                            <span class="fw-semibold text-dark">OrderHub</span>
+                            <span class="fw-semibold text-dark">Wasla</span>
                             <span class="badge rounded-pill oh-badge-live">@L["Landing.Live"]</span>
                         </div>
                         <div class="oh-illu-rows">
@@ -287,7 +287,7 @@
                             @if (plan.IsContactSales)
                             {
                                 <a class="btn @(plan.IsRecommended ? "btn-primary" : "btn-outline-primary") w-100 rounded-pill mt-auto"
-                                   href="mailto:support@orderhub.local">@L[plan.CtaLabelKey]</a>
+                                   href="mailto:support@wasla.local">@L[plan.CtaLabelKey]</a>
                             }
                             else
                             {
@@ -340,7 +340,7 @@
 
 <footer class="oh-landing-footer border-top py-4">
     <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="text-muted small">© @DateTime.UtcNow.Year OrderHub</div>
+        <div class="text-muted small">© @DateTime.UtcNow.Year Wasla</div>
         <div class="small text-muted">@L["Landing.FooterTagline"]</div>
     </div>
 </footer>

@@ -251,7 +251,7 @@ internal static class CliCommands
         }
 
         var pascal = SlugToPascalCase(slug);
-        var dbName = $"OrderHub_{pascal}";
+        var dbName = $"Wasla_{pascal}";
         if (!SqlDbNameRegex.IsMatch(dbName))
         {
             WriteError($"Derived database name '{dbName}' is invalid.");

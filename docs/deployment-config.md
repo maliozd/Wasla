@@ -1,8 +1,8 @@
-# OrderHub — Deployment configuration checklist
+﻿# OrderHub â€” Deployment configuration checklist
 
 This document lists the settings required for **production** and **stage** deployments of OrderHub.
 
-It is based on the current repository configuration audit. Committed `appsettings.Production.json` files are **thin** (mostly provider mode and Trendyol GO URL). If server environment variables are missing, applications may inherit **local/dev defaults** from base `appsettings.json` (LocalDB, `orderhub.local`, `localhost`, `Mock` provider mode).
+It is based on the current repository configuration audit. Committed `appsettings.Production.json` files are **thin** (mostly provider mode and Trendyol GO URL). If server environment variables are missing, applications may inherit **local/dev defaults** from base `appsettings.json` (LocalDB, `wasla.local`, `localhost`, `Mock` provider mode).
 
 **Do not commit real secrets.** Set sensitive values on the server via environment variables, a secret store, or a protected config layer.
 
@@ -12,7 +12,7 @@ It is based on the current repository configuration audit. Committed `appsetting
 
 ASP.NET Core maps nested JSON keys to environment variables using `__` (double underscore).
 
-Example: `OrderHub:CustomerOnboarding:MarketingBaseDomain` → `OrderHub__CustomerOnboarding__MarketingBaseDomain`
+Example: `OrderHub:CustomerOnboarding:MarketingBaseDomain` â†’ `OrderHub__CustomerOnboarding__MarketingBaseDomain`
 
 ### Database
 
@@ -34,7 +34,7 @@ Used when public signup is enabled (Web). Maps to `OrderHub:CustomerOnboarding` 
 |----------|--------------|-------|
 | `OrderHub__CustomerOnboarding__MarketingBaseDomain` | **Web** | Base domain for marketing host and signup subdomains (`{slug}.{domain}`). |
 | `OrderHub__CustomerOnboarding__ServerInstance` | **Web** | SQL Server instance for new customer database creation. |
-| `OrderHub__CustomerOnboarding__SqlAuth` | **Web** | `trusted` (Windows auth) or `sql:username:password`. **Do not put real passwords in committed config** — prefer env var on server. |
+| `OrderHub__CustomerOnboarding__SqlAuth` | **Web** | `trusted` (Windows auth) or `sql:username:password`. **Do not put real passwords in committed config** â€” prefer env var on server. |
 | `OrderHub__CustomerOnboarding__TrialDays` | **Web** (optional) | Trial length in days. Default in code: `14`. |
 
 ### Security
@@ -43,8 +43,8 @@ Used when public signup is enabled (Web). Maps to `OrderHub:CustomerOnboarding` 
 |----------|--------------|-------|
 | `ENCRYPTION_MASTER_KEY` | **Web**, **Worker**, **Api**, **Cli** (most commands) | Base64-encoded 32-byte key. **Required at startup** for encrypting/decrypting customer connection strings and platform secrets. Not stored in appsettings. |
 | `DataProtection__KeyPath` | **Web**, **Api** (recommended) | Folder for persistent ASP.NET Data Protection keys. See [Data Protection](#4-data-protection). |
-| `CentralAdmin__Email` | — | Referenced in local dev docs only. **Current code** authenticates central admins from **CentralDb** (`CentralAdminUsers` table), not from these env vars. |
-| `CentralAdmin__PasswordHash` | — | Same as above. Provision admins with Cli: `add-central-admin`. |
+| `CentralAdmin__Email` | â€” | Referenced in local dev docs only. **Current code** authenticates central admins from **CentralDb** (`CentralAdminUsers` table), not from these env vars. |
+| `CentralAdmin__PasswordHash` | â€” | Same as above. Provision admins with Cli: `add-central-admin`. |
 
 **Central admin provisioning (current implementation):**
 
@@ -68,7 +68,7 @@ There is no separate `CustomerWebBaseUrl` / `PublicWebBaseUrl` in committed apps
 
 | Variable | Required for | Notes |
 |----------|--------------|-------|
-| `Platforms__ProviderMode` | **Web**, **Worker**, **Api** | `Mock` or `Real`. **Required** — missing value causes startup failure in provider resolution. Web and Worker **must use the same value**. See [Provider mode](#5-provider-mode). |
+| `Platforms__ProviderMode` | **Web**, **Worker**, **Api** | `Mock` or `Real`. **Required** â€” missing value causes startup failure in provider resolution. Web and Worker **must use the same value**. See [Provider mode](#5-provider-mode). |
 
 ### Provider settings (URLs and options)
 
@@ -106,7 +106,7 @@ Print Bridge is a **desktop client** (`OrderHub.PrintBridge`). It does not use t
 | Server base URL | Print Bridge client `OrderHub:BaseUrl` | Tenant HTTPS URL, e.g. `https://restaurant.example.com` |
 | Device token | Print Bridge client `OrderHub:AgentToken` | Generated in **tenant Web UI** (Print Bridge devices page). Never commit tokens. |
 | Example / download package | `wwwroot/downloads/orderhub-print-bridge/` | Sample `appsettings.sample.json` ships with empty `BaseUrl` and `AgentToken`. |
-| Web setup helper | `OrderHub__ApiBaseUrl` | If this stays `http://localhost:59451`, generated setup snippets will show localhost — **override on production Web**. |
+| Web setup helper | `OrderHub__ApiBaseUrl` | If this stays `http://localhost:59451`, generated setup snippets will show localhost â€” **override on production Web**. |
 
 ---
 
@@ -175,14 +175,14 @@ These values are **acceptable for local development** but **must not leak** into
 | Dev/local value | Where it appears | Production risk |
 |-----------------|------------------|-----------------|
 | `(localdb)\MSSQLLocalDB` | Web, Worker, Api, Cli `appsettings.json` | App connects to LocalDB instead of server SQL |
-| `orderhub.local` | `OrderHub:CustomerOnboarding:MarketingBaseDomain` | Signup creates `*.orderhub.local` tenants |
+| `wasla.local` | `OrderHub:CustomerOnboarding:MarketingBaseDomain` | Signup creates `*.wasla.local` tenants |
 | `http://localhost:59451` | `OrderHub:ApiBaseUrl` | Print Bridge setup shows localhost |
 | `Platforms:ProviderMode` = `Mock` | Base appsettings | No real order sync; mock data only |
 | `https://stageapi.tgoapis.com` | Base Trendyol GO URL (Worker/Api) | Stage API used if Production overlay not loaded |
 | `../../.certs/orderhub-local.pfx` | Web `appsettings.Development.json` | Dev HTTPS cert path; not for production |
 | PFX password in Development config | Web `appsettings.Development.json` | Dev-only; never deploy Development config as Production |
 | `C:\OrderHub-keys` | Api `appsettings.json` | Windows-specific path; set explicitly per environment |
-| `*.orderhub.local` launch URLs | Web `launchSettings.json` | IDE-only; not used on server |
+| `*.wasla.local` launch URLs | Web `launchSettings.json` | IDE-only; not used on server |
 | `trusted` SQL auth for onboarding | Default `SqlAuth` | May be wrong on Linux/cloud SQL; use explicit SQL auth if needed |
 
 **Important:** `appsettings.Production.json` in the repo currently overrides **provider mode** and **Trendyol production URL** only. It does **not** override connection strings, marketing domain, or API base URL. Treat environment variables (or server-specific config) as the source of truth for those.
@@ -212,7 +212,7 @@ DataProtection__KeyPath=__REPLACE_WITH_WRITABLE_KEY_FOLDER__
 
 ## 5. Provider mode
 
-Configuration key: `Platforms:ProviderMode` → env `Platforms__ProviderMode`
+Configuration key: `Platforms:ProviderMode` â†’ env `Platforms__ProviderMode`
 
 | Value | Behavior |
 |-------|----------|
@@ -222,7 +222,7 @@ Configuration key: `Platforms:ProviderMode` → env `Platforms__ProviderMode`
 ### Rules
 
 1. **Web and Worker must use the same mode** for consistent order sync and UI behavior.
-2. Value is **required** — empty or invalid values cause startup errors (`ProviderModeResolver`).
+2. Value is **required** â€” empty or invalid values cause startup errors (`ProviderModeResolver`).
 3. **Do not set `Real`** until tenant platform connections have valid credentials in the database.
 4. **GetirYemek:** even in `Real` mode, the current codebase may still register a **mock** GetirYemek client. Plan live Getir testing accordingly.
 5. **Yemeksepeti / Trendyol:** Real mode uses configured `Platform:*` URLs; tenant-specific API keys are stored encrypted per connection.
@@ -271,7 +271,7 @@ Run after deploying Web, Worker, and Api with production/stage environment varia
 - [ ] Customer login page opens on a tenant subdomain
 - [ ] Admin area (`/admin`) opens
 - [ ] Tenant subdomain resolves (DNS + reverse proxy)
-- [ ] New signup does **not** create `*.orderhub.local` domains (check `MarketingBaseDomain` override)
+- [ ] New signup does **not** create `*.wasla.local` domains (check `MarketingBaseDomain` override)
 - [ ] No LocalDB connection errors in logs
 
 ### Security & data
@@ -279,7 +279,7 @@ Run after deploying Web, Worker, and Api with production/stage environment varia
 - [ ] `ENCRYPTION_MASTER_KEY` is set (process starts without missing-key error)
 - [ ] `DataProtection__KeyPath` exists and is writable by the app pool / service account
 - [ ] Central admin can log in (user exists in CentralDb via Cli)
-- [ ] Restart Web — tenant/admin sessions behave as expected (persistent Data Protection)
+- [ ] Restart Web â€” tenant/admin sessions behave as expected (persistent Data Protection)
 
 ### Database
 
@@ -316,9 +316,9 @@ Run after deploying Web, Worker, and Api with production/stage environment varia
 
 ## 8. Related documentation
 
-- [LOCAL_DEVELOPMENT_EN.md](./LOCAL_DEVELOPMENT_EN.md) — local setup, master key, migrations
-- [LOCAL_DEVELOPMENT_TR.md](./LOCAL_DEVELOPMENT_TR.md) — Turkish local setup guide
-- [local-https.md](./local-https.md) — mkcert and `*.orderhub.local` (development only)
+- [LOCAL_DEVELOPMENT_EN.md](./LOCAL_DEVELOPMENT_EN.md) â€” local setup, master key, migrations
+- [LOCAL_DEVELOPMENT_TR.md](./LOCAL_DEVELOPMENT_TR.md) â€” Turkish local setup guide
+- [local-https.md](./local-https.md) â€” mkcert and `*.wasla.local` (development only)
 
 ---
 
@@ -330,4 +330,4 @@ Run after deploying Web, Worker, and Api with production/stage environment varia
 | `appsettings.Development.json` | Local HTTPS cert, stage Trendyol URL, detailed errors |
 | `appsettings.Production.json` | Provider `Real` + Trendyol production URL (Web, Worker, Api) |
 | Environment variables | **Server source of truth** for secrets, SQL, domains, Data Protection |
-| `launchSettings.json` | IDE only — not used in server deployment |
+| `launchSettings.json` | IDE only â€” not used in server deployment |

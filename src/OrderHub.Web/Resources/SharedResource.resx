@@ -175,7 +175,7 @@
     <value>Hemen Başla</value>
   </data>
   <data name="Signup.Title" xml:space="preserve">
-    <value>OrderHub hesabı oluştur</value>
+    <value>Wasla hesabı oluştur</value>
   </data>
   <data name="Signup.Subtitle" xml:space="preserve">
     <value>Restoranınızı online sipariş platformlarına bağlayın ve tek yerden yönetin.</value>
@@ -367,7 +367,7 @@
     <value>Restoranınız</value>
   </data>
   <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve">
-    <value>OrderHub adresiniz</value>
+    <value>Wasla adresiniz</value>
   </data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve">
     <value>Paketiniz</value>
@@ -520,7 +520,7 @@
     <value>Print Bridge kurulumu</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>OrderHub'un sipariş fişlerini otomatik yazdırabilmesi için Windows bilgisayarınıza Print Bridge uygulamasını kurun.</value>
+    <value>Wasla'nın sipariş fişlerini otomatik yazdırabilmesi için Windows bilgisayarınıza Print Bridge uygulamasını kurun.</value>
   </data>
   <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
     <value>Print Bridge paketi</value>
@@ -577,7 +577,7 @@
     <value>ZIP dosyasını çıkarın</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>OrderHub.PrintBridge uygulamasını çalıştırın</value>
+    <value>Wasla Print Bridge uygulamasını çalıştırın</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
     <value>Aşağıdaki bağlantı adresini uygulamaya girin</value>
@@ -604,7 +604,7 @@
     <value>İnternet bağlantısı</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>OrderHub cihaz token'ı</value>
+    <value>Wasla cihaz token'ı</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>Uygulamanın çalıştığı bilgisayar açık kalmalı</value>

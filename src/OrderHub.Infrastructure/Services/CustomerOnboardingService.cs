@@ -20,7 +20,7 @@ namespace OrderHub.Infrastructure.Services;
 public sealed class CustomerOnboardingService : ICustomerOnboardingService
 {
     private static readonly Regex SlugRegex = new(@"^[a-z0-9][a-z0-9_-]*$", RegexOptions.Compiled);
-    private static readonly Regex SqlDbNameRegex = new(@"^OrderHub_[A-Za-z][A-Za-z0-9_]*$", RegexOptions.Compiled);
+    private static readonly Regex SqlDbNameRegex = new(@"^Wasla_[A-Za-z][A-Za-z0-9_]*$", RegexOptions.Compiled);
 
     private readonly CentralDbContext _central;
     private readonly ISecretManager _secretManager;
@@ -81,7 +81,7 @@ public sealed class CustomerOnboardingService : ICustomerOnboardingService
 
         var primaryDomain = BuildPrimaryDomain(slug);
         var pascal = SlugToPascalCase(slug);
-        var dbName = $"OrderHub_{pascal}";
+        var dbName = $"Wasla_{pascal}";
         if (!SqlDbNameRegex.IsMatch(dbName))
         {
             return new CustomerSignupResult(false, null, null, null, null, CustomerSignupError.InvalidSlug);

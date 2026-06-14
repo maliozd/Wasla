@@ -4,7 +4,7 @@ public sealed class CustomerOnboardingOptions
 {
     public const string SectionName = "OrderHub:CustomerOnboarding";
 
-    public string MarketingBaseDomain { get; set; } = "orderhub.local";
+    public string MarketingBaseDomain { get; set; } = "wasla.local";
 
     public string ServerInstance { get; set; } = "(localdb)\\MSSQLLocalDB";
 

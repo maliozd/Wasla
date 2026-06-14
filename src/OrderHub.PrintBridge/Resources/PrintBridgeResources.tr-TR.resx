@@ -49,7 +49,7 @@
     <value>Yazıcıyı test et</value>
   </data>
   <data name="Common.AppTitle" xml:space="preserve">
-    <value>OrderHub Print Bridge</value>
+    <value>Wasla Print Bridge</value>
   </data>
   <data name="Common.Dash" xml:space="preserve">
     <value>-</value>
@@ -73,10 +73,10 @@
     <value>Print Bridge isteği başarısız oldu (HTTP {0}).</value>
   </data>
   <data name="Connection.ServerUnavailable" xml:space="preserve">
-    <value>OrderHub sunucusu kullanılamıyor. Daha sonra tekrar deneyin.</value>
+    <value>Wasla sunucusu kullanılamıyor. Daha sonra tekrar deneyin.</value>
   </data>
   <data name="Connection.ServerUnreachable" xml:space="preserve">
-    <value>OrderHub'a ulaşılamadı. Sunucu adresini ve sunucunun çalıştığını kontrol edin.</value>
+    <value>Wasla'ya ulaşılamadı. Sunucu adresini ve sunucunun çalıştığını kontrol edin.</value>
   </data>
   <data name="Connection.SslError" xml:space="preserve">
     <value>SSL bağlantısı başarısız. Windows'un yerel HTTPS sertifikasına güvendiğinden emin olun.</value>
@@ -145,7 +145,7 @@
     <value>Türkçe</value>
   </data>
   <data name="Message.AlreadyRunning" xml:space="preserve">
-    <value>OrderHub Print Bridge zaten çalışıyor.{0}{0}Mevcut uygulamayı sistem tepsisi simgesinden açın.</value>
+    <value>Wasla Print Bridge zaten çalışıyor.{0}{0}Mevcut uygulamayı sistem tepsisi simgesinden açın.</value>
   </data>
   <data name="Message.ConnectionSuccess" xml:space="preserve">
     <value>Bağlantı başarılı.</value>
@@ -163,7 +163,7 @@
     <value>Log klasörü henüz oluşturulmadı.</value>
   </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
-    <value>OrderHub Print Bridge Windows gerektirir.</value>
+    <value>Wasla Print Bridge Windows gerektirir.</value>
   </data>
   <data name="Message.ConnectionCouldNotBeVerified" xml:space="preserve">
     <value>Bağlantı doğrulanamadı. Sunucu adresini ve erişim tokenını kontrol edin.</value>
@@ -253,7 +253,7 @@
     <value>Cihaz adı</value>
   </data>
   <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
-    <value>OrderHub Web panelinden yönetilir</value>
+    <value>Wasla Web panelinden yönetilir</value>
   </data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Makine: {0}</value>
@@ -283,10 +283,10 @@
     <value>Sunucu adresi</value>
   </data>
   <data name="Settings.ServerUrlHelp" xml:space="preserve">
-    <value>Bu adresi OrderHub Web panelindeki Print Bridge kurulum sayfasından kopyalayın.</value>
+    <value>Bu adresi Wasla Web panelindeki Print Bridge kurulum sayfasından kopyalayın.</value>
   </data>
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
-    <value>OrderHub Web panelinden oluşturulan cihaz tokenını yapıştırın.</value>
+    <value>Wasla Web panelinden oluşturulan cihaz tokenını yapıştırın.</value>
   </data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Test modu açık. Fişler yazdırılmaz; işler yalnızca loglanır.</value>

@@ -220,7 +220,7 @@ public sealed class PrintBridgeRuntime : IDisposable
         if (string.IsNullOrWhiteSpace(bridge.PrinterName))
             throw new LocalizedApplicationException("Error.PrinterRequired");
 
-        var receipt = $"OrderHub Print Bridge{Environment.NewLine}Test print{Environment.NewLine}{DateTime.Now:G}";
+        var receipt = $"Wasla Print Bridge{Environment.NewLine}Test print{Environment.NewLine}{DateTime.Now:G}";
         await _printer.PrintAsync(bridge.PrinterName, receipt, 1, ct).ConfigureAwait(false);
     }
 

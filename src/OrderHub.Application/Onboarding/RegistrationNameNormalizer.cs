@@ -6,7 +6,7 @@ namespace OrderHub.Application.Onboarding;
 public static class RegistrationNameNormalizer
 {
     private static readonly Regex SlugPattern = new(@"^[a-z0-9][a-z0-9_-]*$", RegexOptions.Compiled);
-    private static readonly Regex DatabaseNamePattern = new(@"^OrderHub_[A-Za-z][A-Za-z0-9_]*$", RegexOptions.Compiled);
+    private static readonly Regex DatabaseNamePattern = new(@"^Wasla_[A-Za-z][A-Za-z0-9_]*$", RegexOptions.Compiled);
     private static readonly Regex WordSplitPattern = new(@"[\s\-_\.]+", RegexOptions.Compiled);
 
     public static bool IsValidSlugFormat(string slug) =>
@@ -64,7 +64,7 @@ public static class RegistrationNameNormalizer
         if (parts.Length == 0)
             return string.Empty;
 
-        return $"OrderHub_{string.Concat(parts)}";
+        return $"Wasla_{string.Concat(parts)}";
     }
 
     public static string BuildPrimaryDomain(string slug, string marketingBaseDomain)

@@ -1,16 +1,16 @@
-# OrderHub – Yerel Geliştirme (TR)
+﻿# Wasla â€“ Yerel GeliÅŸtirme (TR)
 
-Bu doküman, OrderHub MVP demo akışını yerelde çalıştırmak içindir.
+Bu dokÃ¼man, Wasla MVP demo akÄ±ÅŸÄ±nÄ± yerelde Ã§alÄ±ÅŸtÄ±rmak iÃ§indir.
 
-## Önkoşullar
+## Ã–nkoÅŸullar
 
 - .NET SDK (repo `net8.0` hedefli)
-- SQL Server / LocalDB (varsayılan CentralDb bağlantısı LocalDB)
-- `dotnet-ef` aracı (migrasyonlar için)
+- SQL Server / LocalDB (varsayÄ±lan CentralDb baÄŸlantÄ±sÄ± LocalDB)
+- `dotnet-ef` aracÄ± (migrasyonlar iÃ§in)
 
 ## 1) Master key (zorunlu)
 
-OrderHub, hassas verileri şifrelemek/çözmek için bir master key ister.
+Wasla, hassas verileri ÅŸifrelemek/Ã§Ã¶zmek iÃ§in bir master key ister.
 
 PowerShell:
 
@@ -21,30 +21,30 @@ $key = [Convert]::ToBase64String($bytes)
 setx ENCRYPTION_MASTER_KEY $key
 ```
 
-Yeni terminal açın (env değişkeni yeniden yüklensin).
+Yeni terminal aÃ§Ä±n (env deÄŸiÅŸkeni yeniden yÃ¼klensin).
 
-## 1.1) Merkez yönetim (Web `/admin`)
+## 1.1) Merkez yÃ¶netim (Web `/admin`)
 
-Merkez yönetim, tenant kullanıcılarından **ayrı** çerez kimlik doğrulaması kullanır. Gerçek sırları repoya koymayın; **kullanıcı ortam değişkenleri** ile yapılandırın. Parola yalnızca **BCrypt hash** olarak saklanmalı.
+Merkez yÃ¶netim, tenant kullanÄ±cÄ±larÄ±ndan **ayrÄ±** Ã§erez kimlik doÄŸrulamasÄ± kullanÄ±r. GerÃ§ek sÄ±rlarÄ± repoya koymayÄ±n; **kullanÄ±cÄ± ortam deÄŸiÅŸkenleri** ile yapÄ±landÄ±rÄ±n. Parola yalnÄ±zca **BCrypt hash** olarak saklanmalÄ±.
 
-Hash üretmek (master key gerekmez):
-
-```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- hash-password --password "ParolaBurada!"
-```
-
-Örnek env ayarı:
+Hash Ã¼retmek (master key gerekmez):
 
 ```powershell
-[Environment]::SetEnvironmentVariable("CentralAdmin__Email", "admin@orderhub.local", "User")
-[Environment]::SetEnvironmentVariable("CentralAdmin__PasswordHash", "<önceki komutun BCrypt çıktısı>", "User")
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- hash-password --password "ParolaBurada!"
 ```
 
-Visual Studio / Rider / terminali yeniden başlatın. `/admin/login` üzerinden giriş yapın.
+Ã–rnek env ayarÄ±:
+
+```powershell
+[Environment]::SetEnvironmentVariable("CentralAdmin__Email", "admin@wasla.local", "User")
+[Environment]::SetEnvironmentVariable("CentralAdmin__PasswordHash", "<Ã¶nceki komutun BCrypt Ã§Ä±ktÄ±sÄ±>", "User")
+```
+
+Visual Studio / Rider / terminali yeniden baÅŸlatÄ±n. `/admin/login` Ã¼zerinden giriÅŸ yapÄ±n.
 
 ## 2) Build
 
-Repo kökünde:
+Repo kÃ¶kÃ¼nde:
 
 ```powershell
 dotnet clean
@@ -52,84 +52,84 @@ dotnet restore
 dotnet build
 ```
 
-## 3) Veritabanı migrasyonları (CLI)
+## 3) VeritabanÄ± migrasyonlarÄ± (CLI)
 
-CentralDb ile her CustomerDb’nin **ayrı** EF Core migrasyon geçmişi vardır. Yeni kod çektikten sonra şema ile uygulamanın uyumlu olması için migrasyonları uygulayın (ör. `PlatformConnections` üzerinde `SupplierId`, `ExecutorEmail` gibi yeni sütunlar).
+CentralDb ile her CustomerDbâ€™nin **ayrÄ±** EF Core migrasyon geÃ§miÅŸi vardÄ±r. Yeni kod Ã§ektikten sonra ÅŸema ile uygulamanÄ±n uyumlu olmasÄ± iÃ§in migrasyonlarÄ± uygulayÄ±n (Ã¶r. `PlatformConnections` Ã¼zerinde `SupplierId`, `ExecutorEmail` gibi yeni sÃ¼tunlar).
 
 | Komut | Ne zaman? |
 |------|-----------|
-| `migrate-central` | **CentralDb** model/migrasyonu değişince (merkez veritabanındaki kayıt / `Customer` tablosu). |
-| `migrate-customer` | **Tek** kiracının veritabanını güncellemek için (ör. `--slug demo`). |
-| `migrate-all-customers` | **CustomerDb** migrasyonu değişince — **tüm aktif** müşterilere uygular (birden çok tenant varken geliştirme ortamında en sık bu). |
-| `migration-status` | Central ve her aktif müşteri için uygulanan ve bekleyen migrasyonları gösterir. |
+| `migrate-central` | **CentralDb** model/migrasyonu deÄŸiÅŸince (merkez veritabanÄ±ndaki kayÄ±t / `Customer` tablosu). |
+| `migrate-customer` | **Tek** kiracÄ±nÄ±n veritabanÄ±nÄ± gÃ¼ncellemek iÃ§in (Ã¶r. `--slug demo`). |
+| `migrate-all-customers` | **CustomerDb** migrasyonu deÄŸiÅŸince â€” **tÃ¼m aktif** mÃ¼ÅŸterilere uygular (birden Ã§ok tenant varken geliÅŸtirme ortamÄ±nda en sÄ±k bu). |
+| `migration-status` | Central ve her aktif mÃ¼ÅŸteri iÃ§in uygulanan ve bekleyen migrasyonlarÄ± gÃ¶sterir. |
 
-Örnekler (repo kökü, `ENCRYPTION_MASTER_KEY` tanımlıyken):
+Ã–rnekler (repo kÃ¶kÃ¼, `ENCRYPTION_MASTER_KEY` tanÄ±mlÄ±yken):
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-central
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --slug demo
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-customer --customer-id "00000000-0000-0000-0000-000000000000"
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migration-status
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-central
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-customer --slug demo
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-customer --customer-id "00000000-0000-0000-0000-000000000000"
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-all-customers
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migration-status
 ```
 
-İsteğe bağlı: `migrate-all-customers --dry-run` (sadece bekleyen listesi) ve `--only slug1 --only slug2` (slug filtresi).
+Ä°steÄŸe baÄŸlÄ±: `migrate-all-customers --dry-run` (sadece bekleyen listesi) ve `--only slug1 --only slug2` (slug filtresi).
 
-**Sorun giderme:** Web veya Worker **Invalid column name** (eksik sütun vb.) hatası verirse `migrate-all-customers` (ve merkez şeması değiştiyse `migrate-central`) çalıştırın, ardından uygulamayı yeniden başlatın.
+**Sorun giderme:** Web veya Worker **Invalid column name** (eksik sÃ¼tun vb.) hatasÄ± verirse `migrate-all-customers` (ve merkez ÅŸemasÄ± deÄŸiÅŸtiyse `migrate-central`) Ã§alÄ±ÅŸtÄ±rÄ±n, ardÄ±ndan uygulamayÄ± yeniden baÅŸlatÄ±n.
 
-CustomerDb’ye yeni tablolar/alanlar eklendiyse (ör. `UserNotificationSettings`) ve şu tarz hatalar görürseniz:
+CustomerDbâ€™ye yeni tablolar/alanlar eklendiyse (Ã¶r. `UserNotificationSettings`) ve ÅŸu tarz hatalar gÃ¶rÃ¼rseniz:
 - `Invalid column name 'NewOrderSoundEnabled'`
 - `Invalid object name 'UserNotificationSettings'`
 
-Şunu çalıştırın:
+Åžunu Ã§alÄ±ÅŸtÄ±rÄ±n:
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- migrate-all-customers
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- migrate-all-customers
 ```
 
-## 3.1) Yıkıcı müşteri sıfırlama/silme (CLI)
+## 3.1) YÄ±kÄ±cÄ± mÃ¼ÅŸteri sÄ±fÄ±rlama/silme (CLI)
 
-Bu komutlar **geliştirme/staging** içindir ve **yıkıcıdır**. `--confirm` zorunludur. Production ortamında `--force-production` olmadan çalışmayı reddeder.
+Bu komutlar **geliÅŸtirme/staging** iÃ§indir ve **yÄ±kÄ±cÄ±dÄ±r**. `--confirm` zorunludur. Production ortamÄ±nda `--force-production` olmadan Ã§alÄ±ÅŸmayÄ± reddeder.
 
-### Müşteriyi tamamen sil (CentralDb kaydı + CustomerDb drop)
+### MÃ¼ÅŸteriyi tamamen sil (CentralDb kaydÄ± + CustomerDb drop)
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- delete-customer --slug ahmet --confirm
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- delete-customer --slug ahmet --confirm
 ```
 
-### Sadece müşteri veritabanını sıfırla (CentralDb müşteri kaydı kalır)
+### Sadece mÃ¼ÅŸteri veritabanÄ±nÄ± sÄ±fÄ±rla (CentralDb mÃ¼ÅŸteri kaydÄ± kalÄ±r)
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- reset-customer-db --slug ahmet --confirm
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- reset-customer-db --slug ahmet --confirm
 ```
 
-Reset sonrası Owner admin kullanıcı oluşturma:
+Reset sonrasÄ± Owner admin kullanÄ±cÄ± oluÅŸturma:
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- seed-customer-admin --slug ahmet --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- seed-customer-admin --slug ahmet --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
 ```
 
-### Tüm aktif müşteri veritabanlarını sıfırla
+### TÃ¼m aktif mÃ¼ÅŸteri veritabanlarÄ±nÄ± sÄ±fÄ±rla
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- reset-all-customer-dbs --confirm
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- reset-all-customer-dbs --confirm
 ```
 
-### Önerilen temiz yerel akış
+### Ã–nerilen temiz yerel akÄ±ÅŸ
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- delete-customer --slug ahmet --confirm
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- add-customer --name "Ahmet Restoran" --slug ahmet --domain ahmet.orderhub.local --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- delete-customer --slug ahmet --confirm
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- add-customer --name "Ahmet Restoran" --slug ahmet --domain ahmet.wasla.local --admin-email admin@ahmet.com --admin-password "Demo123!" --admin-name "Ahmet Admin"
 ```
 
-## 4) Müşteri oluşturma (CLI)
+## 4) MÃ¼ÅŸteri oluÅŸturma (CLI)
 
-Bir tenant/customer kaydı oluşturur, CustomerDb’yi yaratır/migrate eder ve admin kullanıcı ekler.
+Bir tenant/customer kaydÄ± oluÅŸturur, CustomerDbâ€™yi yaratÄ±r/migrate eder ve admin kullanÄ±cÄ± ekler.
 
-Örnek:
+Ã–rnek:
 
 ```powershell
-dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- add-customer `
+dotnet run --project .\src\Wasla.Cli\Wasla.Cli.csproj -- add-customer `
   --name "Demo Restoran" `
   --slug demo `
   --domain demo.local `
@@ -139,45 +139,45 @@ dotnet run --project .\src\OrderHub.Cli\OrderHub.Cli.csproj -- add-customer `
   --sql-auth trusted
 ```
 
-> Not: Domain çözümlemesi `PrimaryDomain` üzerinden yapılır. Yerelde test için hosts dosyasına eşleme yapın.
+> Not: Domain Ã§Ã¶zÃ¼mlemesi `PrimaryDomain` Ã¼zerinden yapÄ±lÄ±r. Yerelde test iÃ§in hosts dosyasÄ±na eÅŸleme yapÄ±n.
 
 Windows hosts:
 - `C:\Windows\System32\drivers\etc\hosts`
-- Satır ekleyin: `127.0.0.1 demo.local`
+- SatÄ±r ekleyin: `127.0.0.1 demo.local`
 
-## 5) Web’i çalıştırma
+## 5) Webâ€™i Ã§alÄ±ÅŸtÄ±rma
 
 ```powershell
-dotnet run --project .\src\OrderHub.Web\OrderHub.Web.csproj
+dotnet run --project .\src\Wasla.Web\Wasla.Web.csproj
 ```
 
-Tarayıcı:
+TarayÄ±cÄ±:
 - `https://demo.local:<port>/auth/login`
 
-Giriş yaptıktan sonra:
+GiriÅŸ yaptÄ±ktan sonra:
 - `/dashboard`
 - `/platform-connections`
 - `/orders`
 - `/branches`
 
-## 6) Platform bağlantısı ekleme
+## 6) Platform baÄŸlantÄ±sÄ± ekleme
 
-Web’de:
-- Platform seçin
+Webâ€™de:
+- Platform seÃ§in
 - StoreId girin
 - ApiKey / ApiSecret girin
 
 Duplicate kontrol:
-- Aynı Platform + aynı StoreId engellenir.
+- AynÄ± Platform + aynÄ± StoreId engellenir.
 
-## 7) Worker çalıştırma (sync)
+## 7) Worker Ã§alÄ±ÅŸtÄ±rma (sync)
 
 ```powershell
-dotnet run --project .\src\OrderHub.Worker\OrderHub.Worker.csproj
+dotnet run --project .\src\Wasla.Worker\Wasla.Worker.csproj
 ```
 
-Tekrar çalıştırın:
-- Siparişler **duplicate olmamalı**
+Tekrar Ã§alÄ±ÅŸtÄ±rÄ±n:
+- SipariÅŸler **duplicate olmamalÄ±**
 - Order parent silinip tekrar eklenmemeli
-- Items/Options duplicate olmamalı
+- Items/Options duplicate olmamalÄ±
 

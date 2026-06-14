@@ -1,13 +1,13 @@
-# Local HTTPS for OrderHub tenant domains
+﻿# Local HTTPS for Wasla tenant domains
 
 ## Why the SSL error happens
 
-OrderHub tenants use host-based URLs such as:
+Wasla tenants use host-based URLs such as:
 
-- `https://pilavcirahim.orderhub.local:7200`
-- `https://sushim.orderhub.local:7200`
+- `https://pilavcirahim.wasla.local:7200`
+- `https://sushim.wasla.local:7200`
 
-The default ASP.NET Core development certificate is issued for `localhost`, not for `*.orderhub.local`. Browsers and clients such as **OrderHub Print Bridge** therefore reject the connection with errors like:
+The default ASP.NET Core development certificate is issued for `localhost`, not for `*.wasla.local`. Browsers and clients such as **Wasla Print Bridge** therefore reject the connection with errors like:
 
 > The SSL connection could not be established
 
@@ -60,28 +60,28 @@ The script:
 1. Creates `.certs/` (gitignored)
 2. Runs `mkcert -install` to trust the local root CA in Windows
 3. Generates:
-   - `.certs/orderhub-local.pem`
-   - `.certs/orderhub-local-key.pem`
-   for `*.orderhub.local`, `orderhub.local`, and `localhost`
-4. Converts to `.certs/orderhub-local.pfx` (password: `orderhub-dev`)
+   - `.certs/Wasla-local.pem`
+   - `.certs/Wasla-local-key.pem`
+   for `*.wasla.local`, `wasla.local`, and `localhost`
+4. Converts to `.certs/Wasla-local.pfx` (password: `Wasla-dev`)
 
 ### Manual mkcert commands
 
 ```powershell
 mkcert -install
-mkcert -cert-file .certs/orderhub-local.pem -key-file .certs/orderhub-local-key.pem "*.orderhub.local" orderhub.local localhost
+mkcert -cert-file .certs/Wasla-local.pem -key-file .certs/Wasla-local-key.pem "*.wasla.local" wasla.local localhost
 ```
 
-### Manual PEM → PFX conversion
+### Manual PEM â†’ PFX conversion
 
 If OpenSSL is available (Git for Windows includes it):
 
 ```powershell
 openssl pkcs12 -export `
-  -out .certs/orderhub-local.pfx `
-  -inkey .certs/orderhub-local-key.pem `
-  -in .certs/orderhub-local.pem `
-  -password pass:orderhub-dev
+  -out .certs/Wasla-local.pfx `
+  -inkey .certs/Wasla-local-key.pem `
+  -in .certs/Wasla-local.pem `
+  -password pass:Wasla-dev
 ```
 
 Git for Windows OpenSSL is often at:
@@ -94,25 +94,25 @@ Install Git for Windows if needed: [https://git-scm.com/download/win](https://gi
 
 ---
 
-## 3. Configure OrderHub.Web (Development)
+## 3. Configure Wasla.Web (Development)
 
-`src/OrderHub.Web/appsettings.Development.json` includes Kestrel certificate settings:
+`src/Wasla.Web/appsettings.Development.json` includes Kestrel certificate settings:
 
 ```json
 "Kestrel": {
   "Certificates": {
     "Default": {
-      "Path": "../../.certs/orderhub-local.pfx",
-      "Password": "orderhub-dev"
+      "Path": "../../.certs/Wasla-local.pfx",
+      "Password": "Wasla-dev"
     }
   }
 }
 ```
 
-The path is relative to the **Web project content root** (`src/OrderHub.Web/`), which resolves to the repo-root `.certs/` folder when you run:
+The path is relative to the **Web project content root** (`src/Wasla.Web/`), which resolves to the repo-root `.certs/` folder when you run:
 
 ```powershell
-dotnet run --project src\OrderHub.Web\OrderHub.Web.csproj
+dotnet run --project src\Wasla.Web\Wasla.Web.csproj
 ```
 
 If you publish or run from a different output directory, copy the PFX or adjust the path locally (do not commit machine-specific absolute paths).
@@ -126,7 +126,7 @@ If you publish or run from a different output directory, copy the PFX or adjust 
 
 ## 4. Hosts file
 
-Map tenant domains to the machine that runs OrderHub Web.
+Map tenant domains to the machine that runs Wasla Web.
 
 ### Same PC (typical)
 
@@ -135,9 +135,9 @@ Edit as Administrator:
 `C:\Windows\System32\drivers\etc\hosts`
 
 ```
-127.0.0.1 pilavcirahim.orderhub.local
-127.0.0.1 sushim.orderhub.local
-127.0.0.1 orderhub.local
+127.0.0.1 pilavcirahim.wasla.local
+127.0.0.1 sushim.wasla.local
+127.0.0.1 wasla.local
 ```
 
 ### Another PC on the LAN (optional)
@@ -145,7 +145,7 @@ Edit as Administrator:
 On the **client PC**, map the tenant hostname to the **Web host machine LAN IP**:
 
 ```
-192.168.1.50 pilavcirahim.orderhub.local
+192.168.1.50 pilavcirahim.wasla.local
 ```
 
 On that client PC you must also trust the mkcert root CA (run `mkcert -install` there after copying/exporting the CA), or HTTPS will still fail.
@@ -155,19 +155,19 @@ On that client PC you must also trust the mkcert root CA (run `mkcert -install` 
 ## 5. Run and test Web
 
 ```powershell
-dotnet run --project src\OrderHub.Web\OrderHub.Web.csproj
+dotnet run --project src\Wasla.Web\Wasla.Web.csproj
 ```
 
 Open:
 
-`https://pilavcirahim.orderhub.local:7200/auth/login`
+`https://pilavcirahim.wasla.local:7200/auth/login`
 
 ### Testing checklist
 
 - [ ] Run `.\scripts\dev\setup-local-https.ps1`
 - [ ] Hosts file entries added
 - [ ] Run Web
-- [ ] Open `https://pilavcirahim.orderhub.local:7200/auth/login`
+- [ ] Open `https://pilavcirahim.wasla.local:7200/auth/login`
 - [ ] Browser shows no certificate warning
 - [ ] Login succeeds and dashboard opens
 - [ ] Print Bridge **Test connection** succeeds (no SSL error)
@@ -179,13 +179,13 @@ Open:
 In the Print Bridge tray app **Settings**, set:
 
 ```
-BaseUrl: https://pilavcirahim.orderhub.local:7200
+BaseUrl: https://pilavcirahim.wasla.local:7200
 ```
 
 Requirements:
 
 - Windows trusts the mkcert root CA (`mkcert -install` on that PC)
-- Kestrel uses the generated PFX covering `*.orderhub.local`
+- Kestrel uses the generated PFX covering `*.wasla.local`
 - Hosts file resolves the tenant domain to the Web host
 
 Print Bridge does **not** ignore SSL errors by default. Fix trust at the OS level with mkcert.
@@ -197,7 +197,7 @@ Print Bridge does **not** ignore SSL errors by default. Fix trust at the OS leve
 For quick tests without HTTPS, you can still use:
 
 ```
-http://pilavcirahim.orderhub.local:5200
+http://pilavcirahim.wasla.local:5200
 ```
 
 Development auth cookies support HTTP (`CookieSecurePolicy.SameAsRequest`). Print Bridge can use the same HTTP BaseUrl locally. HTTPS is recommended when testing Print Bridge SSL behavior before production.

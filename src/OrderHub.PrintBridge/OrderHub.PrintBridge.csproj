@@ -10,8 +10,8 @@
 		<RootNamespace>OrderHub.PrintBridge</RootNamespace>
 		<AssemblyName>OrderHub.PrintBridge</AssemblyName>
 		<Version>1.0.0</Version>
-		<Product>OrderHub Print Bridge</Product>
-		<Description>Local Windows Print Bridge tray app for OrderHub receipt printing.</Description>
+		<Product>Wasla Print Bridge</Product>
+		<Description>Local Windows Print Bridge tray app for Wasla receipt printing.</Description>
 		<ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
 	</PropertyGroup>
 

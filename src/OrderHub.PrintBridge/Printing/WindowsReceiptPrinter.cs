@@ -57,7 +57,7 @@ internal static class RawPrinterHelper
     {
         var docInfo = new DOCINFOA
         {
-            pDocName = "OrderHub Receipt",
+            pDocName = "Wasla Receipt",
             pDataType = "RAW"
         };
 

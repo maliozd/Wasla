@@ -1,26 +1,26 @@
-dotnet run --project src/OrderHub.Cli -- add-customer `
+﻿dotnet run --project src/Wasla.Cli -- add-customer `
   --name "SushiM" `
   --slug "sushim" `
-  --domain "sushim.orderhub.local" `
+  --domain "sushim.wasla.local" `
   --admin-email "admin@sushim.com" `
   --admin-password "Test123!" `
   --admin-name "Meryem Admin"
 
 
-hardalburger.orderhub.local
+hardalburger.wasla.local
 
-dotnet run --project src/OrderHub.Cli -- add-customer `
+dotnet run --project src/Wasla.Cli -- add-customer `
   --name "Hardal Burger" `
   --slug "hardalburger" `
-  --domain "hardalburger.orderhub.local" `
+  --domain "hardalburger.wasla.local" `
   --admin-email "admin@hardalburger.com" `
   --admin-password "Test123!" `
   --admin-name "Hardal Admin"
 
-dotnet run --project src/OrderHub.Cli -- add-customer `
-  --name "Pilavcı Rahim" `
+dotnet run --project src/Wasla.Cli -- add-customer `
+  --name "PilavcÄ± Rahim" `
   --slug "pilavci-rahim" `
-  --domain "pilavcirahim.orderhub.local" `
+  --domain "pilavcirahim.wasla.local" `
   --admin-email "admin@hpilavcirahim.com" `
   --admin-password "Test123!" `
   --admin-name "Osman Admin"

@@ -28,7 +28,7 @@ public sealed class ReceiptFormatter
         }
 
         if (payload is null)
-            return Normalize("OrderHub Receipt\nInvalid payload.", normalizeTurkishChars);
+            return Normalize("Wasla Receipt\nInvalid payload.", normalizeTurkishChars);
 
         var template = payload.Template;
         var useTemplate = template is not null;

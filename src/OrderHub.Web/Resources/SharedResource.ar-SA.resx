@@ -253,7 +253,7 @@
     <value>السمة</value>
   </data>
   <data name="Layout.CentralAdmin" xml:space="preserve">
-    <value>OrderHub — الإدارة المركزية</value>
+    <value>Wasla — الإدارة المركزية</value>
   </data>
   <data name="Layout.Customers" xml:space="preserve">
     <value>العملاء</value>
@@ -271,7 +271,7 @@
     <value>تبديل القائمة</value>
   </data>
   <data name="Landing.Title" xml:space="preserve">
-    <value>OrderHub</value>
+    <value>Wasla</value>
   </data>
   <data name="Landing.Subtitle" xml:space="preserve">
     <value>إدارة الطلبات متعددة المنصات</value>
@@ -1306,7 +1306,7 @@
     <value>افتح رابط تسجيل الدخول الخاص بعملك — عادة نطاق فرعي على نطاق المشغل.</value>
   </data>
   <data name="Landing.CustomerOnlyExample" xml:space="preserve">
-    <value>مثال: companyname.orderhub.local/auth/login</value>
+    <value>مثال: companyname.wasla.local/auth/login</value>
   </data>
   <data name="Landing.BackToHome" xml:space="preserve">
     <value>العودة إلى الصفحة الرئيسية</value>
@@ -1408,7 +1408,7 @@
     <value>الموقع العام</value>
   </data>
   <data name="Admin.CentralAdmin" xml:space="preserve">
-    <value>OrderHub — الإدارة المركزية</value>
+    <value>Wasla — الإدارة المركزية</value>
   </data>
   <data name="Admin.CustomerNotFound" xml:space="preserve">
     <value>العميل غير موجود.</value>
@@ -1612,7 +1612,7 @@
     <value>مزامنة الطلبات</value>
   </data>
   <data name="Settings.OrderSynchronization.Description" xml:space="preserve">
-    <value>تحكم فيما إذا كان OrderHub يستقبل ويزامن الطلبات من المنصات المتصلة.</value>
+    <value>تحكم فيما إذا كان Wasla يستقبل ويزامن الطلبات من المنصات المتصلة.</value>
   </data>
   <data name="Settings.OrderSynchronization.EnableOrderSync" xml:space="preserve">
     <value>تفعيل مزامنة الطلبات</value>
@@ -2077,10 +2077,10 @@
     <value>مطلوب لطلبات Trendyol GO الحقيقية كرأس x-executor-user.</value>
   </data>
   <data name="PrintBridge.Title" xml:space="preserve">
-    <value>OrderHub Print Bridge</value>
+    <value>Wasla Print Bridge</value>
   </data>
   <data name="PrintBridge.Intro" xml:space="preserve">
-    <value>OrderHub Print Bridge تطبيق Windows محلي على حاسوب المطعم. يجلب مهام طباعة الإيصالات من OrderHub API ويرسلها إلى طابعة حرارية USB.</value>
+    <value>Wasla Print Bridge تطبيق Windows محلي على حاسوب المطعم. يجلب مهام طباعة الإيصالات من Wasla API ويرسلها إلى طابعة حرارية USB.</value>
   </data>
   <data name="PrintBridge.RequirementsTitle" xml:space="preserve">
     <value>متطلبات التثبيت</value>
@@ -2092,7 +2092,7 @@
     <value>طابعة إيصالات حرارية USB مثبتة في Windows (مثل Zilang 80mm)</value>
   </data>
   <data name="PrintBridge.RequirementLocalApp" xml:space="preserve">
-    <value>تشغيل تطبيق OrderHub Print Bridge في شريط النظام على حاسوب المطعم</value>
+    <value>تشغيل تطبيق Wasla Print Bridge في شريط النظام على حاسوب المطعم</value>
   </data>
   <data name="PrintBridge.SetupTitle" xml:space="preserve">
     <value>خطوات الإعداد</value>
@@ -2128,7 +2128,7 @@
     <value>تعذر إنشاء رمز Print Bridge.</value>
   </data>
   <data name="PrintBridge.ApiHint" xml:space="preserve">
-    <value>يستدعي Print Bridge نقاط OrderHub API باستخدام رأس X-PrintBridge-Token. لا يُرسل معرّف العميل في الطلبات.</value>
+    <value>يستدعي Print Bridge نقاط Wasla API باستخدام رأس X-PrintBridge-Token. لا يُرسل معرّف العميل في الطلبات.</value>
   </data>
   <data name="PrintBridge.Description" xml:space="preserve">
     <value>أدر تطبيق Print Bridge المحلي على حاسوب المطعم للطباعة التلقائية عبر USB.</value>
@@ -2359,7 +2359,7 @@
     <value>إعداد Print Bridge</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>ثبّت تطبيق Print Bridge على جهاز Windows ليتمكن OrderHub من طباعة فواتير الطلبات تلقائيًا.</value>
+    <value>ثبّت تطبيق Print Bridge على جهاز Windows ليتمكن Wasla من طباعة فواتير الطلبات تلقائيًا.</value>
   </data>
   <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
     <value>حزمة Print Bridge</value>
@@ -2404,7 +2404,7 @@
     <value>استخرج ملف ZIP</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>شغّل تطبيق OrderHub.PrintBridge</value>
+    <value>شغّل تطبيق Wasla Print Bridge</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
     <value>أدخل عنوان الاتصال أدناه في التطبيق</value>
@@ -2428,7 +2428,7 @@
     <value>اتصال بالإنترنت</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>رمز جهاز OrderHub</value>
+    <value>رمز جهاز Wasla</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>يجب أن يبقى الجهاز الذي يشغّل التطبيق قيد التشغيل</value>
@@ -2476,7 +2476,7 @@
     <value>ما هو Print Bridge؟</value>
   </data>
   <data name="PrintBridge.WhatIsPrintBridgeText" xml:space="preserve">
-    <value>Print Bridge هو تطبيق Windows محلي يعمل على الجهاز المتصل بطابعة الفواتير. يستقبل مهام الطباعة من OrderHub ويرسلها إلى طابعة Windows المحلية.</value>
+    <value>Print Bridge هو تطبيق Windows محلي يعمل على الجهاز المتصل بطابعة الفواتير. يستقبل مهام الطباعة من Wasla ويرسلها إلى طابعة Windows المحلية.</value>
   </data>
   <data name="PrintBridge.BeforeYouStartTitle" xml:space="preserve">
     <value>قبل أن تبدأ</value>
@@ -2488,7 +2488,7 @@
     <value>يجب تشغيل Print Bridge على جهاز Windows المتصل بالطابعة.</value>
   </data>
   <data name="PrintBridge.BeforeYouStartItem3" xml:space="preserve">
-    <value>يجب إنشاء رمز جهاز من لوحة OrderHub Web.</value>
+    <value>يجب إنشاء رمز جهاز من لوحة Wasla Web.</value>
   </data>
   <data name="PrintBridge.BeforeYouStartItem4" xml:space="preserve">
     <value>يجب لصق الرمز في إعدادات تطبيق Print Bridge.</value>
@@ -2515,7 +2515,7 @@
     <value>الخطوة 2 — إنشاء رمز جهاز</value>
   </data>
   <data name="PrintBridge.GuideStep2Text" xml:space="preserve">
-    <value>انتقل إلى OrderHub Print Bridge &gt; الأجهزة. أدخل اسم جهاز مثل "Kitchen PC" أو "Cashier PC" أو "Vivo"، أنشئ رمزاً وانسخ الرمز المُنشأ.</value>
+    <value>انتقل إلى Wasla Print Bridge &gt; الأجهزة. أدخل اسم جهاز مثل "Kitchen PC" أو "Cashier PC" أو "Vivo"، أنشئ رمزاً وانسخ الرمز المُنشأ.</value>
   </data>
   <data name="PrintBridge.GuideStep2Action" xml:space="preserve">
     <value>انتقل إلى الأجهزة</value>
@@ -2533,7 +2533,7 @@
     <value>الخطوة 4 — الصق الرمز</value>
   </data>
   <data name="PrintBridge.GuideStep4Text" xml:space="preserve">
-    <value>الصق رمز الجهاز المنسوخ في حقل رمز الجهاز. يأتي الرمز من لوحة OrderHub Web.</value>
+    <value>الصق رمز الجهاز المنسوخ في حقل رمز الجهاز. يأتي الرمز من لوحة Wasla Web.</value>
   </data>
   <data name="PrintBridge.GuideStep5Title" xml:space="preserve">
     <value>الخطوة 5 — اختر الطابعة</value>
@@ -2557,7 +2557,7 @@
     <value>عنوان الخادم (معلومات)</value>
   </data>
   <data name="PrintBridge.ServerUrlInfoText" xml:space="preserve">
-    <value>يوفر OrderHub هذا العنوان. عادةً لا تحتاج إلى تغييره. يعرض تطبيق Print Bridge عنوان الخادم ضمن الإعدادات المتقدمة.</value>
+    <value>يوفر Wasla هذا العنوان. عادةً لا تحتاج إلى تغييره. يعرض تطبيق Print Bridge عنوان الخادم ضمن الإعدادات المتقدمة.</value>
   </data>
   <data name="PrintBridge.TroubleshootingGuide1" xml:space="preserve">
     <value>تأكد من تشغيل تطبيق Print Bridge.</value>
@@ -2581,10 +2581,10 @@
     <value>استخدم حفظ الإعدادات في تطبيق Print Bridge لاختبار الاتصال.</value>
   </data>
   <data name="PrintBridge.DownloadTitle" xml:space="preserve">
-    <value>إعداد OrderHub Print Bridge</value>
+    <value>إعداد Wasla Print Bridge</value>
   </data>
   <data name="PrintBridge.DownloadDescription" xml:space="preserve">
-    <value>OrderHub Print Bridge تطبيق Windows يعمل من شريط النظام على حاسوب المطعم للطباعة التلقائية عبر USB.</value>
+    <value>Wasla Print Bridge تطبيق Windows يعمل من شريط النظام على حاسوب المطعم للطباعة التلقائية عبر USB.</value>
   </data>
   <data name="PrintBridge.DownloadRunsOnWindowsPc" xml:space="preserve">
     <value>يعمل في الخلفية من شريط النظام. افتح النافذة من أيقونة الشريط. لا حاجة لإبقاء المتصفح مفتوحاً.</value>
@@ -2602,7 +2602,7 @@
     <value>افتح Print Bridge من شريط النظام واضبط BaseUrl وAgentToken وPrinterName في الإعدادات.</value>
   </data>
   <data name="PrintBridge.SetupStepStartBridge" xml:space="preserve">
-    <value>ثبّت وشغّل OrderHub Print Bridge. يظهر في شريط نظام Windows؛ افتح النافذة من أيقونة الشريط.</value>
+    <value>ثبّت وشغّل Wasla Print Bridge. يظهر في شريط نظام Windows؛ افتح النافذة من أيقونة الشريط.</value>
   </data>
   <data name="PrintBridge.SetupStepTestOrder" xml:space="preserve">
     <value>اختبر الطباعة بطلب جديد.</value>
@@ -2785,7 +2785,7 @@
     <value>أضف جهازاً أعلاه أو أعد إنشاء رمز جهاز موجود لعرض رمز الجهاز هنا.</value>
   </data>
   <data name="PrintBridge.SetupDescription" xml:space="preserve">
-    <value>Print Bridge هو تطبيق Windows محلي يربط الطابعة الحرارية المثبتة لديك بـ OrderHub.</value>
+    <value>Print Bridge هو تطبيق Windows محلي يربط الطابعة الحرارية المثبتة لديك بـ Wasla.</value>
   </data>
   <data name="PrintBridge.SetupInstructions" xml:space="preserve">
     <value>تعليمات الإعداد</value>
@@ -2880,7 +2880,7 @@
   <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>إعداد ودعم مخصص</value></data>
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>اتفاق وحدود مخصصة</value></data>
   <data name="Signup.StartNow" xml:space="preserve"><value>ابدأ الآن</value></data>
-  <data name="Signup.Title" xml:space="preserve"><value>إنشاء حساب OrderHub</value></data>
+  <data name="Signup.Title" xml:space="preserve"><value>إنشاء حساب Wasla</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>اربط مطعمك بمنصات الطلبات عبر الإنترنت وأدر كل شيء من مكان واحد.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>اختيار الخطة</value></data>
   <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>اختيارك</value></data>
@@ -2947,7 +2947,7 @@
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>العودة إلى الصفحة الرئيسية</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>متابعة الدفع</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>مطعمك</value></data>
-  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>عنوان OrderHub الخاص بك</value></data>
+  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>عنوان Wasla الخاص بك</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>باقتك</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>فترة الدفع</value></data>
   <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>بعد إتمام الدفع:</value></data>
@@ -3011,7 +3011,7 @@
   <data name="Validation.PlanInvalid" xml:space="preserve"><value>اختيار خطة غير صالح.</value></data>
   <data name="Validation.BillingPeriodInvalid" xml:space="preserve"><value>فترة فوترة غير صالحة.</value></data>
   <data name="Auth.WelcomeInvalid" xml:space="preserve"><value>رابط تسجيل الدخول غير صالح أو منتهٍ. يرجى تسجيل الدخول.</value></data>
-  <data name="Onboarding.Title" xml:space="preserve"><value>مرحبًا بك في OrderHub</value></data>
+  <data name="Onboarding.Title" xml:space="preserve"><value>مرحبًا بك في Wasla</value></data>
   <data name="Onboarding.Subtitle" xml:space="preserve"><value>أكمل الخطوات أدناه للبدء. يمكنك العودة في أي وقت.</value></data>
   <data name="Onboarding.StepPlatformsTitle" xml:space="preserve"><value>ربط المنصات</value></data>
   <data name="Onboarding.StepPlatformsDescription" xml:space="preserve"><value>أضف روابط المنصات المدعومة.</value></data>

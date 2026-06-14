@@ -7,7 +7,7 @@ namespace OrderHub.PrintBridge.Configuration;
 public static class PrintBridgePaths
 {
     public const string ServiceName = "OrderHubPrintBridge";
-    public const string ProductDisplayName = "OrderHub Print Bridge";
+    public const string ProductDisplayName = "Wasla Print Bridge";
 
     public static string ProgramDataRoot =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "OrderHub", "PrintBridge");

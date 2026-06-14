@@ -105,7 +105,7 @@ public sealed class SignupViewModel
     [Display(Name = "Signup.ConfirmPassword")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    public string MarketingBaseDomain { get; set; } = "orderhub.local";
+    public string MarketingBaseDomain { get; set; } = "wasla.local";
 
     public IReadOnlyList<SelectListItem> PlanOptions { get; set; } = Array.Empty<SelectListItem>();
 

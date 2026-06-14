@@ -49,7 +49,7 @@
     <value>Print test receipt</value>
   </data>
   <data name="Common.AppTitle" xml:space="preserve">
-    <value>OrderHub Print Bridge</value>
+    <value>Wasla Print Bridge</value>
   </data>
   <data name="Common.Dash" xml:space="preserve">
     <value>-</value>
@@ -73,10 +73,10 @@
     <value>Print Bridge request failed (HTTP {0}).</value>
   </data>
   <data name="Connection.ServerUnavailable" xml:space="preserve">
-    <value>OrderHub server is unavailable. Try again later.</value>
+    <value>Wasla server is unavailable. Try again later.</value>
   </data>
   <data name="Connection.ServerUnreachable" xml:space="preserve">
-    <value>Could not reach OrderHub. Check server URL and that the server is running.</value>
+    <value>Could not reach Wasla. Check server URL and that the server is running.</value>
   </data>
   <data name="Connection.SslError" xml:space="preserve">
     <value>SSL connection failed. Ensure Windows trusts the local HTTPS certificate.</value>
@@ -145,7 +145,7 @@
     <value>Türkçe</value>
   </data>
   <data name="Message.AlreadyRunning" xml:space="preserve">
-    <value>OrderHub Print Bridge is already running.{0}{0}Open the existing app from the system tray icon.</value>
+    <value>Wasla Print Bridge is already running.{0}{0}Open the existing app from the system tray icon.</value>
   </data>
   <data name="Message.ConnectionSuccess" xml:space="preserve">
     <value>Connection successful.</value>
@@ -163,7 +163,7 @@
     <value>Logs folder has not been created yet.</value>
   </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
-    <value>OrderHub Print Bridge requires Windows.</value>
+    <value>Wasla Print Bridge requires Windows.</value>
   </data>
   <data name="Message.ConnectionCouldNotBeVerified" xml:space="preserve">
     <value>Connection could not be verified. Please check the server URL and access token.</value>
@@ -253,7 +253,7 @@
     <value>Device name</value>
   </data>
   <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
-    <value>Managed from OrderHub Web panel</value>
+    <value>Managed from Wasla Web panel</value>
   </data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Machine: {0}</value>
@@ -283,10 +283,10 @@
     <value>Server URL</value>
   </data>
   <data name="Settings.ServerUrlHelp" xml:space="preserve">
-    <value>Copy this from the OrderHub Web Print Bridge setup page.</value>
+    <value>Copy this from the Wasla Web Print Bridge setup page.</value>
   </data>
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
-    <value>Paste the device token generated from the OrderHub Web panel.</value>
+    <value>Paste the device token generated from the Wasla Web panel.</value>
   </data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Test mode is enabled. Receipts will not be printed; jobs will only be logged.</value>

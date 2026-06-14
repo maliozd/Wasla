@@ -253,7 +253,7 @@
     <value>Theme</value>
   </data>
   <data name="Layout.CentralAdmin" xml:space="preserve">
-    <value>OrderHub — Central admin</value>
+    <value>Wasla — Central admin</value>
   </data>
   <data name="Layout.Customers" xml:space="preserve">
     <value>Customers</value>
@@ -271,7 +271,7 @@
     <value>Toggle menu</value>
   </data>
   <data name="Landing.Title" xml:space="preserve">
-    <value>OrderHub</value>
+    <value>Wasla</value>
   </data>
   <data name="Landing.Subtitle" xml:space="preserve">
     <value>Multi-platform order management</value>
@@ -1306,7 +1306,7 @@
     <value>Open the private login link for your business — usually a subdomain on your operator’s domain.</value>
   </data>
   <data name="Landing.CustomerOnlyExample" xml:space="preserve">
-    <value>Example: companyname.orderhub.local/auth/login</value>
+    <value>Example: companyname.wasla.local/auth/login</value>
   </data>
   <data name="Landing.BackToHome" xml:space="preserve">
     <value>Back to home</value>
@@ -1408,7 +1408,7 @@
     <value>Public site</value>
   </data>
   <data name="Admin.CentralAdmin" xml:space="preserve">
-    <value>OrderHub — Central admin</value>
+    <value>Wasla — Central admin</value>
   </data>
   <data name="Admin.CustomerNotFound" xml:space="preserve">
     <value>Customer not found.</value>
@@ -1612,7 +1612,7 @@
     <value>Order Synchronization</value>
   </data>
   <data name="Settings.OrderSynchronization.Description" xml:space="preserve">
-    <value>Control whether OrderHub should receive and sync orders from connected platforms.</value>
+    <value>Control whether Wasla should receive and sync orders from connected platforms.</value>
   </data>
   <data name="Settings.OrderSynchronization.EnableOrderSync" xml:space="preserve">
     <value>Enable Order Sync</value>
@@ -2077,10 +2077,10 @@
     <value>Required for Trendyol GO real API requests as the x-executor-user header.</value>
   </data>
   <data name="PrintBridge.Title" xml:space="preserve">
-    <value>OrderHub Print Bridge</value>
+    <value>Wasla Print Bridge</value>
   </data>
   <data name="PrintBridge.Intro" xml:space="preserve">
-    <value>OrderHub Print Bridge is a local Windows app on the restaurant PC. It polls OrderHub API for receipt print jobs and sends them to a USB thermal printer.</value>
+    <value>Wasla Print Bridge is a local Windows app on the restaurant PC. It polls Wasla API for receipt print jobs and sends them to a USB thermal printer.</value>
   </data>
   <data name="PrintBridge.RequirementsTitle" xml:space="preserve">
     <value>Installation requirements</value>
@@ -2092,7 +2092,7 @@
     <value>USB thermal receipt printer installed in Windows (e.g. Zilang 80mm)</value>
   </data>
   <data name="PrintBridge.RequirementLocalApp" xml:space="preserve">
-    <value>OrderHub Print Bridge tray app running on the restaurant PC</value>
+    <value>Wasla Print Bridge tray app running on the restaurant PC</value>
   </data>
   <data name="PrintBridge.SetupTitle" xml:space="preserve">
     <value>Setup steps</value>
@@ -2128,7 +2128,7 @@
     <value>Could not generate Print Bridge token.</value>
   </data>
   <data name="PrintBridge.ApiHint" xml:space="preserve">
-    <value>Print Bridge calls OrderHub API endpoints with the X-PrintBridge-Token header. Customer id is not sent in requests.</value>
+    <value>Print Bridge calls Wasla API endpoints with the X-PrintBridge-Token header. Customer id is not sent in requests.</value>
   </data>
   <data name="PrintBridge.Description" xml:space="preserve">
     <value>Manage the local Print Bridge app on your restaurant PC for automatic USB receipt printing.</value>
@@ -2359,7 +2359,7 @@
     <value>Print Bridge setup</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>Install the Print Bridge app on your Windows computer so OrderHub can print order receipts automatically.</value>
+    <value>Install the Print Bridge app on your Windows computer so Wasla can print order receipts automatically.</value>
   </data>
   <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
     <value>Print Bridge package</value>
@@ -2404,7 +2404,7 @@
     <value>Extract the ZIP file</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Run the OrderHub.PrintBridge app</value>
+    <value>Run the Wasla Print Bridge app</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
     <value>Enter the connection address below in the app</value>
@@ -2428,7 +2428,7 @@
     <value>Internet connection</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>OrderHub device token</value>
+    <value>Wasla device token</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>The computer running the app must stay on</value>
@@ -2476,7 +2476,7 @@
     <value>What is Print Bridge?</value>
   </data>
   <data name="PrintBridge.WhatIsPrintBridgeText" xml:space="preserve">
-    <value>Print Bridge is a local Windows app that runs on the computer connected to the receipt printer. It receives print jobs from OrderHub and sends them to the local Windows printer.</value>
+    <value>Print Bridge is a local Windows app that runs on the computer connected to the receipt printer. It receives print jobs from Wasla and sends them to the local Windows printer.</value>
   </data>
   <data name="PrintBridge.BeforeYouStartTitle" xml:space="preserve">
     <value>Before you start</value>
@@ -2488,7 +2488,7 @@
     <value>Print Bridge must run on the Windows computer connected to the printer.</value>
   </data>
   <data name="PrintBridge.BeforeYouStartItem3" xml:space="preserve">
-    <value>A device token must be created from the OrderHub web panel.</value>
+    <value>A device token must be created from the Wasla web panel.</value>
   </data>
   <data name="PrintBridge.BeforeYouStartItem4" xml:space="preserve">
     <value>The token must be pasted into the Print Bridge app settings.</value>
@@ -2515,7 +2515,7 @@
     <value>Step 2 — Create a device token</value>
   </data>
   <data name="PrintBridge.GuideStep2Text" xml:space="preserve">
-    <value>Go to OrderHub Print Bridge &gt; Devices. Enter a device name such as "Kitchen PC", "Cashier PC", or "Vivo", create a token, and copy the generated token.</value>
+    <value>Go to Wasla Print Bridge &gt; Devices. Enter a device name such as "Kitchen PC", "Cashier PC", or "Vivo", create a token, and copy the generated token.</value>
   </data>
   <data name="PrintBridge.GuideStep2Action" xml:space="preserve">
     <value>Go to Devices</value>
@@ -2533,7 +2533,7 @@
     <value>Step 4 — Paste the token</value>
   </data>
   <data name="PrintBridge.GuideStep4Text" xml:space="preserve">
-    <value>Paste the copied device token into the Device token field. The token comes from the OrderHub web panel.</value>
+    <value>Paste the copied device token into the Device token field. The token comes from the Wasla web panel.</value>
   </data>
   <data name="PrintBridge.GuideStep5Title" xml:space="preserve">
     <value>Step 5 — Select the printer</value>
@@ -2557,7 +2557,7 @@
     <value>Server URL (informational)</value>
   </data>
   <data name="PrintBridge.ServerUrlInfoText" xml:space="preserve">
-    <value>This address is provided by OrderHub. You normally should not change it. The Print Bridge app shows the server URL under Advanced settings.</value>
+    <value>This address is provided by Wasla. You normally should not change it. The Print Bridge app shows the server URL under Advanced settings.</value>
   </data>
   <data name="PrintBridge.TroubleshootingGuide1" xml:space="preserve">
     <value>Make sure the Print Bridge app is running.</value>
@@ -2581,10 +2581,10 @@
     <value>Use Save settings in the Print Bridge app to test the connection.</value>
   </data>
   <data name="PrintBridge.DownloadTitle" xml:space="preserve">
-    <value>OrderHub Print Bridge Setup</value>
+    <value>Wasla Print Bridge Setup</value>
   </data>
   <data name="PrintBridge.DownloadDescription" xml:space="preserve">
-    <value>OrderHub Print Bridge is a Windows tray application on your restaurant PC for automatic USB receipt printing.</value>
+    <value>Wasla Print Bridge is a Windows tray application on your restaurant PC for automatic USB receipt printing.</value>
   </data>
   <data name="PrintBridge.DownloadRunsOnWindowsPc" xml:space="preserve">
     <value>It runs in the system tray in the background. Open the window from the tray icon. The browser does not need to stay open.</value>
@@ -2602,7 +2602,7 @@
     <value>Open Print Bridge from the system tray and set BaseUrl, AgentToken, and PrinterName in Settings.</value>
   </data>
   <data name="PrintBridge.SetupStepStartBridge" xml:space="preserve">
-    <value>Install and run OrderHub Print Bridge. It appears in the Windows system tray; open the window from the tray icon.</value>
+    <value>Install and run Wasla Print Bridge. It appears in the Windows system tray; open the window from the tray icon.</value>
   </data>
   <data name="PrintBridge.SetupStepTestOrder" xml:space="preserve">
     <value>Test printing with a new order.</value>
@@ -2785,7 +2785,7 @@
     <value>Add a device above or regenerate an existing device token to view the device token here.</value>
   </data>
   <data name="PrintBridge.SetupDescription" xml:space="preserve">
-    <value>Print Bridge is a local Windows app that connects your installed thermal printer to OrderHub.</value>
+    <value>Print Bridge is a local Windows app that connects your installed thermal printer to Wasla.</value>
   </data>
   <data name="PrintBridge.SetupInstructions" xml:space="preserve">
     <value>Setup Instructions</value>
@@ -2880,7 +2880,7 @@
   <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Custom setup and support</value></data>
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Custom agreement and limits</value></data>
   <data name="Signup.StartNow" xml:space="preserve"><value>Start Now</value></data>
-  <data name="Signup.Title" xml:space="preserve"><value>Create your OrderHub account</value></data>
+  <data name="Signup.Title" xml:space="preserve"><value>Create your Wasla account</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Connect your restaurant to online order platforms and manage everything in one place.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>Choose plan</value></data>
   <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>Your selection</value></data>
@@ -2947,7 +2947,7 @@
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>Back to homepage</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Continue to payment</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Your restaurant</value></data>
-  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Your OrderHub address</value></data>
+  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Your Wasla address</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Your package</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Payment period</value></data>
   <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>After payment is complete:</value></data>
@@ -3011,7 +3011,7 @@
   <data name="Validation.PlanInvalid" xml:space="preserve"><value>Invalid plan selection.</value></data>
   <data name="Validation.BillingPeriodInvalid" xml:space="preserve"><value>Invalid billing period.</value></data>
   <data name="Auth.WelcomeInvalid" xml:space="preserve"><value>Sign-in link is invalid or expired. Please log in.</value></data>
-  <data name="Onboarding.Title" xml:space="preserve"><value>Welcome to OrderHub</value></data>
+  <data name="Onboarding.Title" xml:space="preserve"><value>Welcome to Wasla</value></data>
   <data name="Onboarding.Subtitle" xml:space="preserve"><value>Complete the steps below to get started. You can return anytime.</value></data>
   <data name="Onboarding.StepPlatformsTitle" xml:space="preserve"><value>Platform connections</value></data>
   <data name="Onboarding.StepPlatformsDescription" xml:space="preserve"><value>Add your supported platform connections.</value></data>
