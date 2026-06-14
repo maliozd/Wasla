@@ -60,9 +60,9 @@ public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<Us
     }
 }
 
-public class CustomerOperationalSettingsConfiguration : IEntityTypeConfiguration<CustomerOperationalSettings>
+public class TenantOperationalSettingsConfiguration : IEntityTypeConfiguration<TenantOperationalSettings>
 {
-    public void Configure(EntityTypeBuilder<CustomerOperationalSettings> builder)
+    public void Configure(EntityTypeBuilder<TenantOperationalSettings> builder)
     {
         builder.ToTable("CustomerOperationalSettings");
         builder.HasKey(x => x.Id);

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Branches;
 using OrderHub.Infrastructure.Persistence.Customer;
 
@@ -6,9 +6,9 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class BranchService : IBranchService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
 
-    public BranchService(ICustomerDbContextFactory dbFactory)
+    public BranchService(ITenantDbContextFactory dbFactory)
     {
         _dbFactory = dbFactory;
     }

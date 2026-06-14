@@ -11,7 +11,7 @@ using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
 {
-    [DbContext(typeof(CustomerDbContext))]
+    [DbContext(typeof(TenantDbContext))]
     [Migration("20260524152908_InitialCustomerSchema")]
     partial class InitialCustomerSchema
     {

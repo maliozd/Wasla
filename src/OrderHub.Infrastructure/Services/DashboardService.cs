@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Dashboard;
 using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Persistence.Customer;
@@ -7,9 +7,9 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class DashboardService : IDashboardService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
 
-    public DashboardService(ICustomerDbContextFactory dbFactory)
+    public DashboardService(ITenantDbContextFactory dbFactory)
     {
         _dbFactory = dbFactory;
     }

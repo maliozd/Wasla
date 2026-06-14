@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -103,7 +103,7 @@ public sealed class CustomerOnboardingService : ICustomerOnboardingService
             dbCreated = true;
 
             var customerConnString = BuildCustomerConnectionString(dbName);
-            var options = new DbContextOptionsBuilder<CustomerDbContext>()
+            var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(customerConnString)
                 .Options;
 
@@ -111,7 +111,7 @@ public sealed class CustomerOnboardingService : ICustomerOnboardingService
             string migrationResult;
             try
             {
-                await using var db = new CustomerDbContext(options);
+                await using var db = new TenantDbContext(options);
                 await db.Database.MigrateAsync(ct);
                 migrationResult = "Success";
             }
@@ -134,7 +134,7 @@ public sealed class CustomerOnboardingService : ICustomerOnboardingService
                 DatabaseName = dbName,
                 EncryptedConnectionString = encrypted,
                 EncryptionKeyVersion = keyVersion,
-                SchemaVersion = CustomerDbSchemaVersions.Current,
+                SchemaVersion = TenantDbSchemaVersions.Current,
                 LastMigrationAt = migrationNow,
                 LastMigrationResult = migrationResult,
                 IsActive = true,
@@ -168,7 +168,7 @@ public sealed class CustomerOnboardingService : ICustomerOnboardingService
             insertedCustomer = customer;
 
             Guid userId;
-            await using (var userDb = new CustomerDbContext(options))
+            await using (var userDb = new TenantDbContext(options))
             {
                 var appUser = new AppUser
                 {

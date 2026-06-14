@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Infrastructure.Persistence.Customer.Configurations;
 
@@ -7,16 +7,16 @@ namespace OrderHub.Infrastructure.Persistence.Customer;
 /// <summary>
 /// Per-customer database context. One physical database per restaurant.
 /// The connection string is resolved per-request/per-sync from CentralDb
-/// and passed in via ICustomerDbContextFactory.
+/// and passed in via ITenantDbContextFactory.
 /// </summary>
-public class CustomerDbContext : DbContext
+public class TenantDbContext : DbContext
 {
-    public CustomerDbContext(DbContextOptions<CustomerDbContext> options) : base(options) { }
+    public TenantDbContext(DbContextOptions<TenantDbContext> options) : base(options) { }
 
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<UserNotificationSettings> UserNotificationSettings => Set<UserNotificationSettings>();
-    public DbSet<CustomerOperationalSettings> CustomerOperationalSettings => Set<CustomerOperationalSettings>();
+    public DbSet<TenantOperationalSettings> TenantOperationalSettings => Set<TenantOperationalSettings>();
     public DbSet<PlatformConnection> PlatformConnections => Set<PlatformConnection>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
@@ -30,7 +30,7 @@ public class CustomerDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BranchConfiguration());
         modelBuilder.ApplyConfiguration(new AppUserConfiguration());
         modelBuilder.ApplyConfiguration(new UserNotificationSettingsConfiguration());
-        modelBuilder.ApplyConfiguration(new CustomerOperationalSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantOperationalSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new PlatformConnectionConfiguration());
         modelBuilder.ApplyConfiguration(new OrderConfiguration());
         modelBuilder.ApplyConfiguration(new OrderItemConfiguration());

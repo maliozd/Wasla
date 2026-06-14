@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Infrastructure.Persistence.Customer;
@@ -9,9 +9,9 @@ public sealed class OrderSyncSettingsService : IOrderSyncSettingsService
 {
     private static readonly Guid SingletonId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
 
-    public OrderSyncSettingsService(ICustomerDbContextFactory dbFactory)
+    public OrderSyncSettingsService(ITenantDbContextFactory dbFactory)
     {
         _dbFactory = dbFactory;
     }
@@ -20,7 +20,7 @@ public sealed class OrderSyncSettingsService : IOrderSyncSettingsService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var row = await db.CustomerOperationalSettings
+        var row = await db.TenantOperationalSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
             .ConfigureAwait(false);
@@ -33,20 +33,20 @@ public sealed class OrderSyncSettingsService : IOrderSyncSettingsService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var row = await db.CustomerOperationalSettings
+        var row = await db.TenantOperationalSettings
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
             .ConfigureAwait(false);
 
         if (row is null)
         {
-            row = new CustomerOperationalSettings
+            row = new TenantOperationalSettings
             {
                 Id = SingletonId,
                 OrderSyncEnabled = enabled,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            db.CustomerOperationalSettings.Add(row);
+            db.TenantOperationalSettings.Add(row);
         }
         else
         {

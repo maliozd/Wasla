@@ -10,8 +10,8 @@ using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
 {
-    [DbContext(typeof(CustomerDbContext))]
-    partial class CustomerDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(TenantDbContext))]
+    partial class TenantDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

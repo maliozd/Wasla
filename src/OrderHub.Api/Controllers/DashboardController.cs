@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Tenant;
@@ -16,9 +16,9 @@ namespace OrderHub.Api.Controllers;
 public sealed class DashboardController : ControllerBase
 {
     private readonly ICurrentTenantService _currentTenant;
-    private readonly ICustomerDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _customerDbFactory;
 
-    public DashboardController(ICurrentTenantService currentTenant, ICustomerDbContextFactory customerDbFactory)
+    public DashboardController(ICurrentTenantService currentTenant, ITenantDbContextFactory customerDbFactory)
     {
         _currentTenant = currentTenant;
         _customerDbFactory = customerDbFactory;

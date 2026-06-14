@@ -10,7 +10,7 @@ public sealed record UpdateCustomerOrderSettingsCommand(
     bool AutoPrintReceiptOnAutoApprove,
     int ReceiptPrintCopyCount);
 
-public interface ICustomerOrderSettingsService
+public interface ITenantOrderSettingsService
 {
     Task<CustomerOrderSettingsResult> GetAsync(Guid customerId, CancellationToken ct);
     Task<CustomerOrderSettingsResult> UpdateAsync(Guid customerId, UpdateCustomerOrderSettingsCommand command, CancellationToken ct);

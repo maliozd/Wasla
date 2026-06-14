@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using BCrypt.Net;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -14,16 +14,16 @@ public sealed class AuthService : IAuthService
 {
     private static readonly string DummyHash = BCrypt.Net.BCrypt.HashPassword("dummy-never-matches");
 
-    private readonly ICustomerDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _tenantDbFactory;
     private readonly ICurrentTenantService _currentTenantService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AuthService(
-        ICustomerDbContextFactory customerDbFactory,
+        ITenantDbContextFactory tenantDbFactory,
         ICurrentTenantService currentTenantService,
         IHttpContextAccessor httpContextAccessor)
     {
-        _customerDbFactory = customerDbFactory;
+        _tenantDbFactory = tenantDbFactory;
         _currentTenantService = currentTenantService;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -36,7 +36,7 @@ public sealed class AuthService : IAuthService
         var tenant = _currentTenantService.CurrentTenant;
         if (tenant is null) return false;
 
-        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct).ConfigureAwait(false);
+        await using var db = await _tenantDbFactory.CreateAsync(tenant.Id, ct).ConfigureAwait(false);
 
         var user = await db.AppUsers
             .AsNoTracking()

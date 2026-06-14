@@ -11,7 +11,7 @@ using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Infrastructure.Persistence.Customer.Migrations
 {
-    [DbContext(typeof(CustomerDbContext))]
+    [DbContext(typeof(TenantDbContext))]
     [Migration("20260606210933_AddAutoApproveAndPrintJobs")]
     partial class AddAutoApproveAndPrintJobs
     {

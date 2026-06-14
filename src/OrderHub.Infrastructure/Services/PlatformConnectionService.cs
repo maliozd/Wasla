@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using OrderHub.Application.Abstractions.PlatformConnections;
 using OrderHub.Application.Abstractions.Security;
@@ -9,12 +9,12 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class PlatformConnectionService : IPlatformConnectionService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly ISecretManager _secret;
     private readonly IValidator<CreatePlatformConnectionCommand> _validator;
 
     public PlatformConnectionService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         ISecretManager secret,
         IValidator<CreatePlatformConnectionCommand> validator)
     {

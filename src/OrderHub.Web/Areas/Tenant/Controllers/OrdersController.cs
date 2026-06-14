@@ -24,7 +24,7 @@ public sealed class OrdersController : BaseController
     private readonly IOrderReadService _orders;
     private readonly IOrderActionService _actions;
     private readonly IOrderSyncSettingsService _orderSyncSettings;
-    private readonly ICustomerOrderSettingsService _orderSettings;
+    private readonly ITenantOrderSettingsService _orderSettings;
     private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly IValidator<UpdateCustomerOrderSettingsCommand> _orderSettingsValidator;
     private readonly ILogger<OrdersController> _logger;
@@ -35,7 +35,7 @@ public sealed class OrdersController : BaseController
         IOrderReadService orders,
         IOrderActionService actions,
         IOrderSyncSettingsService orderSyncSettings,
-        ICustomerOrderSettingsService orderSettings,
+        ITenantOrderSettingsService orderSettings,
         IOrderReceiptCreationService receiptCreation,
         IValidator<UpdateCustomerOrderSettingsCommand> orderSettingsValidator,
         ILogger<OrdersController> logger,

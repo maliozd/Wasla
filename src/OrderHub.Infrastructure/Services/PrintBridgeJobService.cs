@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Domain.Enums;
@@ -10,10 +10,10 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
 {
     private const int MaxPendingLimit = 10;
 
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<PrintBridgeJobService> _logger;
 
-    public PrintBridgeJobService(ICustomerDbContextFactory dbFactory, ILogger<PrintBridgeJobService> logger)
+    public PrintBridgeJobService(ITenantDbContextFactory dbFactory, ILogger<PrintBridgeJobService> logger)
     {
         _dbFactory = dbFactory;
         _logger = logger;

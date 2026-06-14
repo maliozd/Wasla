@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Application.Abstractions.Platform;
@@ -10,12 +10,12 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class OrderActionService : IOrderActionService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<OrderActionService> _logger;
     private readonly IEnumerable<IFoodPlatformClient> _clients;
 
     public OrderActionService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         IEnumerable<IFoodPlatformClient> clients,
         ILogger<OrderActionService> logger)
     {

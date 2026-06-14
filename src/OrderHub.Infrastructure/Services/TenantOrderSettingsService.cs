@@ -7,18 +7,18 @@ using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Infrastructure.Services;
 
-public sealed class CustomerOrderSettingsService : ICustomerOrderSettingsService
+public sealed class TenantOrderSettingsService : ITenantOrderSettingsService
 {
     private static readonly Guid SingletonId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly IValidator<UpdateCustomerOrderSettingsCommand> _validator;
-    private readonly ILogger<CustomerOrderSettingsService> _logger;
+    private readonly ILogger<TenantOrderSettingsService> _logger;
 
-    public CustomerOrderSettingsService(
-        ICustomerDbContextFactory dbFactory,
+    public TenantOrderSettingsService(
+        ITenantDbContextFactory dbFactory,
         IValidator<UpdateCustomerOrderSettingsCommand> validator,
-        ILogger<CustomerOrderSettingsService> logger)
+        ILogger<TenantOrderSettingsService> logger)
     {
         _dbFactory = dbFactory;
         _validator = validator;
@@ -29,7 +29,7 @@ public sealed class CustomerOrderSettingsService : ICustomerOrderSettingsService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var row = await db.CustomerOperationalSettings
+        var row = await db.TenantOperationalSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
             .ConfigureAwait(false);
@@ -61,13 +61,13 @@ public sealed class CustomerOrderSettingsService : ICustomerOrderSettingsService
 
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var row = await db.CustomerOperationalSettings
+        var row = await db.TenantOperationalSettings
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
             .ConfigureAwait(false);
 
         if (row is null)
         {
-            row = new CustomerOperationalSettings
+            row = new TenantOperationalSettings
             {
                 Id = SingletonId,
                 OrderSyncEnabled = true,
@@ -77,7 +77,7 @@ public sealed class CustomerOrderSettingsService : ICustomerOrderSettingsService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            db.CustomerOperationalSettings.Add(row);
+            db.TenantOperationalSettings.Add(row);
         }
         else
         {
@@ -102,6 +102,6 @@ public sealed class CustomerOrderSettingsService : ICustomerOrderSettingsService
     private static CustomerOrderSettingsResult DefaultResult() =>
         new(AutoApproveNewOrders: false, AutoPrintReceiptOnAutoApprove: false, ReceiptPrintCopyCount: 1);
 
-    private static CustomerOrderSettingsResult Map(CustomerOperationalSettings row) =>
+    private static CustomerOrderSettingsResult Map(TenantOperationalSettings row) =>
         new(row.AutoApproveNewOrders, row.AutoPrintReceiptOnAutoApprove, row.ReceiptPrintCopyCount);
 }

@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using OrderHub.Application.Abstractions.Notifications;
 using OrderHub.Application.Notifications;
@@ -8,11 +8,11 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class UserNotificationSettingsService : IUserNotificationSettingsService
 {
-    private readonly ICustomerDbContextFactory _dbFactory;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly IValidator<UpdateNotificationSettingsCommand> _validator;
 
     public UserNotificationSettingsService(
-        ICustomerDbContextFactory dbFactory,
+        ITenantDbContextFactory dbFactory,
         IValidator<UpdateNotificationSettingsCommand> validator)
     {
         _dbFactory = dbFactory;

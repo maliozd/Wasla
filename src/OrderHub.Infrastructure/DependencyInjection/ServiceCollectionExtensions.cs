@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -43,7 +43,7 @@ public static class ServiceCollectionExtensions
             options.UseSqlServer(configuration.GetConnectionString("CentralDb")));
 
         services.AddSingleton<ISecretManager, AesSecretManager>();
-        services.AddSingleton<ICustomerDbContextFactory, CustomerDbContextFactory>();
+        services.AddSingleton<ITenantDbContextFactory, TenantDbContextFactory>();
         services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
@@ -98,7 +98,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderActionService, OrderActionService>();
         services.AddScoped<IOrderSyncSettingsService, OrderSyncSettingsService>();
-        services.AddScoped<ICustomerOrderSettingsService, CustomerOrderSettingsService>();
+        services.AddScoped<ITenantOrderSettingsService, TenantOrderSettingsService>();
         services.AddScoped<IReceiptTemplateSettingsService, ReceiptTemplateSettingsService>();
         services.AddScoped<IOrderAutoApproveService, OrderAutoApproveService>();
         services.AddScoped<IOrderReceiptCreationService, OrderReceiptCreationService>();
