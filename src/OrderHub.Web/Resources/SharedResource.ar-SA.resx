@@ -2810,6 +2810,9 @@
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>هاتف أرضي</value></data>
   <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>مثال: +90 5__ ___ __ __</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>هاتف العمل</value></data>
+  <data name="Signup.BusinessEmail" xml:space="preserve"><value>بريد العمل الإلكتروني</value></data>
+  <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@yourrestaurant.com</value></data>
+  <data name="Signup.BusinessEmailHelp" xml:space="preserve"><value>إذا كان متاحًا، يمكنك إضافة البريد الإلكتروني العام لمطعمك.</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>الهاتف</value></data>
   <data name="Signup.City" xml:space="preserve"><value>المدينة / المحافظة</value></data>
   <data name="Signup.Country" xml:space="preserve"><value>الدولة</value></data>
@@ -2817,6 +2820,16 @@
   <data name="Signup.Neighborhood" xml:space="preserve"><value>الحي</value></data>
   <data name="Signup.AddressLine1" xml:space="preserve"><value>العنوان</value></data>
   <data name="Signup.AddressLine2" xml:space="preserve"><value>تفاصيل إضافية للعنوان</value></data>
+  <data name="Signup.StreetAddress" xml:space="preserve"><value>الشارع / الزقاق</value></data>
+  <data name="Signup.BuildingNumber" xml:space="preserve"><value>رقم المبنى</value></data>
+  <data name="Signup.Floor" xml:space="preserve"><value>الطابق</value></data>
+  <data name="Signup.DoorNumber" xml:space="preserve"><value>رقم الشقة / الباب</value></data>
+  <data name="Signup.AddressNote" xml:space="preserve"><value>ملاحظة العنوان</value></data>
+  <data name="Signup.LocationUrl" xml:space="preserve"><value>رابط موقع الخريطة</value></data>
+  <data name="Signup.LocationUrlPlaceholder" xml:space="preserve"><value>https://maps.app.goo.gl/...</value></data>
+  <data name="Signup.LocationUrlHelp" xml:space="preserve"><value>إذا كان متاحًا، يمكنك إضافة رابط موقع مطعمك على خرائط Google.</value></data>
+  <data name="Signup.NeighborhoodManualHint" xml:space="preserve"><value>إذا لم يكن في القائمة، يمكنك كتابة اسم الحي يدويًا.</value></data>
+  <data name="Signup.StreetManualHint" xml:space="preserve"><value>إذا لم يكن في القائمة، يمكنك كتابة اسم الشارع يدويًا.</value></data>
   <data name="Signup.PostalCode" xml:space="preserve"><value>الرمز البريدي</value></data>
   <data name="Signup.StepAddress" xml:space="preserve"><value>تفاصيل العنوان</value></data>
   <data name="Signup.Slug" xml:space="preserve"><value>النطاق الفرعي</value></data>
@@ -2886,6 +2899,10 @@
   <data name="Validation.CityRequired" xml:space="preserve"><value>اختيار المدينة مطلوب.</value></data>
   <data name="Validation.DistrictRequired" xml:space="preserve"><value>اختيار المنطقة مطلوب.</value></data>
   <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>المدينة والمنطقة المحددتان غير متطابقتين.</value></data>
+  <data name="Validation.StreetAddressRequired" xml:space="preserve"><value>معلومات الشارع مطلوبة.</value></data>
+  <data name="Validation.NeighborhoodInvalid" xml:space="preserve"><value>الحي المحدد غير صالح.</value></data>
+  <data name="Validation.StreetInvalid" xml:space="preserve"><value>الشارع المحدد غير صالح.</value></data>
+  <data name="Validation.LocationUrlInvalid" xml:space="preserve"><value>أدخل رابط خريطة صالحًا.</value></data>
   <data name="Validation.BusinessPhoneTypeInvalid" xml:space="preserve"><value>نوع الهاتف غير صالح.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>النطاق الفرعي مطلوب.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>يجب أن يحتوي النطاق الفرعي على أحرف صغيرة وأرقام وشرطات وشرطات سفلية فقط.</value></data>

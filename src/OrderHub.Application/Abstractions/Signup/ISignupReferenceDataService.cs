@@ -8,6 +8,10 @@ public interface ISignupReferenceDataService
 
     Task<IReadOnlyList<SignupDistrictOption>> GetDistrictsByCityIdAsync(int cityId, CancellationToken ct);
 
+    Task<IReadOnlyList<SignupNeighborhoodOption>> GetNeighborhoodsByDistrictIdAsync(int districtId, CancellationToken ct);
+
+    Task<IReadOnlyList<SignupStreetOption>> GetStreetsByNeighborhoodIdAsync(int neighborhoodId, CancellationToken ct);
+
     Task<SignupCityOption?> GetCityByIdAsync(int cityId, CancellationToken ct);
 
     Task<IReadOnlyList<SignupBusinessTypeOption>> ResolveBusinessTypesByCodesAsync(
@@ -18,5 +22,15 @@ public interface ISignupReferenceDataService
         int cityId,
         int districtId,
         string countryCode,
+        CancellationToken ct);
+
+    Task<SignupNeighborhoodNames?> ResolveNeighborhoodAsync(
+        int districtId,
+        int neighborhoodId,
+        CancellationToken ct);
+
+    Task<SignupStreetNames?> ResolveStreetAsync(
+        int neighborhoodId,
+        int streetId,
         CancellationToken ct);
 }

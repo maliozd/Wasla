@@ -2807,6 +2807,9 @@
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Sabit hat</value></data>
   <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Örnek format: +90 5__ ___ __ __</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>İşletme telefonu</value></data>
+  <data name="Signup.BusinessEmail" xml:space="preserve"><value>İşletme e-postası</value></data>
+  <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@restoraniniz.com</value></data>
+  <data name="Signup.BusinessEmailHelp" xml:space="preserve"><value>Varsa restoranınızın genel iletişim e-postasını ekleyebilirsiniz.</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>Telefon</value></data>
   <data name="Signup.City" xml:space="preserve"><value>Şehir / İl</value></data>
   <data name="Signup.Country" xml:space="preserve"><value>Ülke</value></data>
@@ -2814,6 +2817,16 @@
   <data name="Signup.Neighborhood" xml:space="preserve"><value>Mahalle</value></data>
   <data name="Signup.AddressLine1" xml:space="preserve"><value>Açık adres</value></data>
   <data name="Signup.AddressLine2" xml:space="preserve"><value>Adres devamı</value></data>
+  <data name="Signup.StreetAddress" xml:space="preserve"><value>Cadde / Sokak</value></data>
+  <data name="Signup.BuildingNumber" xml:space="preserve"><value>Bina no</value></data>
+  <data name="Signup.Floor" xml:space="preserve"><value>Kat</value></data>
+  <data name="Signup.DoorNumber" xml:space="preserve"><value>Daire / Kapı no</value></data>
+  <data name="Signup.AddressNote" xml:space="preserve"><value>Adres notu</value></data>
+  <data name="Signup.LocationUrl" xml:space="preserve"><value>Harita konum linki</value></data>
+  <data name="Signup.LocationUrlPlaceholder" xml:space="preserve"><value>https://maps.app.goo.gl/...</value></data>
+  <data name="Signup.LocationUrlHelp" xml:space="preserve"><value>Varsa restoranınızın Google Maps konum bağlantısını ekleyebilirsiniz.</value></data>
+  <data name="Signup.NeighborhoodManualHint" xml:space="preserve"><value>Listede yoksa mahalle adını elle yazabilirsiniz.</value></data>
+  <data name="Signup.StreetManualHint" xml:space="preserve"><value>Listede yoksa cadde veya sokak adını elle yazabilirsiniz.</value></data>
   <data name="Signup.PostalCode" xml:space="preserve"><value>Posta kodu</value></data>
   <data name="Signup.StepAddress" xml:space="preserve"><value>Adres bilgileri</value></data>
   <data name="Signup.Slug" xml:space="preserve"><value>Alt alan adı</value></data>
@@ -2883,6 +2896,10 @@
   <data name="Validation.CityRequired" xml:space="preserve"><value>Şehir seçimi gereklidir.</value></data>
   <data name="Validation.DistrictRequired" xml:space="preserve"><value>İlçe seçimi gereklidir.</value></data>
   <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>Seçilen şehir ve ilçe eşleşmiyor.</value></data>
+  <data name="Validation.StreetAddressRequired" xml:space="preserve"><value>Cadde veya sokak bilgisi gereklidir.</value></data>
+  <data name="Validation.NeighborhoodInvalid" xml:space="preserve"><value>Seçilen mahalle geçersiz.</value></data>
+  <data name="Validation.StreetInvalid" xml:space="preserve"><value>Seçilen cadde/sokak geçersiz.</value></data>
+  <data name="Validation.LocationUrlInvalid" xml:space="preserve"><value>Geçerli bir harita bağlantısı girin.</value></data>
   <data name="Validation.BusinessPhoneTypeInvalid" xml:space="preserve"><value>Telefon türü geçersiz.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Alt alan adı gereklidir.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Alt alan adı yalnızca küçük harf, rakam, tire ve alt çizgi içerebilir.</value></data>

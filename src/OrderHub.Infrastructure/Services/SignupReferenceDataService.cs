@@ -39,6 +39,22 @@ public sealed class SignupReferenceDataService : ISignupReferenceDataService
             .Select(x => new SignupDistrictOption(x.Id, x.Name))
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<SignupNeighborhoodOption>> GetNeighborhoodsByDistrictIdAsync(int districtId, CancellationToken ct) =>
+        await _central.Neighborhoods.AsNoTracking()
+            .Where(x => x.IsActive && x.DistrictId == districtId)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Name)
+            .Select(x => new SignupNeighborhoodOption(x.Id, x.Name))
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<SignupStreetOption>> GetStreetsByNeighborhoodIdAsync(int neighborhoodId, CancellationToken ct) =>
+        await _central.Streets.AsNoTracking()
+            .Where(x => x.IsActive && x.NeighborhoodId == neighborhoodId)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Name)
+            .Select(x => new SignupStreetOption(x.Id, x.Name, x.StreetType))
+            .ToListAsync(ct);
+
     public async Task<SignupCityOption?> GetCityByIdAsync(int cityId, CancellationToken ct) =>
         await _central.Cities.AsNoTracking()
             .Where(x => x.IsActive && x.Id == cityId)
@@ -84,6 +100,24 @@ public sealed class SignupReferenceDataService : ISignupReferenceDataService
             select new SignupCityDistrictNames(c.Id, c.Name, d.Id, d.Name))
             .FirstOrDefaultAsync(ct);
     }
+
+    public async Task<SignupNeighborhoodNames?> ResolveNeighborhoodAsync(
+        int districtId,
+        int neighborhoodId,
+        CancellationToken ct) =>
+        await _central.Neighborhoods.AsNoTracking()
+            .Where(x => x.IsActive && x.Id == neighborhoodId && x.DistrictId == districtId)
+            .Select(x => new SignupNeighborhoodNames(x.Id, x.Name))
+            .FirstOrDefaultAsync(ct);
+
+    public async Task<SignupStreetNames?> ResolveStreetAsync(
+        int neighborhoodId,
+        int streetId,
+        CancellationToken ct) =>
+        await _central.Streets.AsNoTracking()
+            .Where(x => x.IsActive && x.Id == streetId && x.NeighborhoodId == neighborhoodId)
+            .Select(x => new SignupStreetNames(x.Id, x.Name, x.StreetType))
+            .FirstOrDefaultAsync(ct);
 
     private static string NormalizeCountryCode(string countryCode) =>
         string.Equals(countryCode.Trim(), "Türkiye", StringComparison.OrdinalIgnoreCase)

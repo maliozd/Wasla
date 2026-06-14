@@ -2810,6 +2810,9 @@
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Landline</value></data>
   <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Example format: +90 5__ ___ __ __</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>Business phone</value></data>
+  <data name="Signup.BusinessEmail" xml:space="preserve"><value>Business email</value></data>
+  <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@yourrestaurant.com</value></data>
+  <data name="Signup.BusinessEmailHelp" xml:space="preserve"><value>If available, you can add your restaurant's general contact email.</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>Phone</value></data>
   <data name="Signup.City" xml:space="preserve"><value>City / Province</value></data>
   <data name="Signup.Country" xml:space="preserve"><value>Country</value></data>
@@ -2817,6 +2820,16 @@
   <data name="Signup.Neighborhood" xml:space="preserve"><value>Neighborhood</value></data>
   <data name="Signup.AddressLine1" xml:space="preserve"><value>Street address</value></data>
   <data name="Signup.AddressLine2" xml:space="preserve"><value>Address line 2</value></data>
+  <data name="Signup.StreetAddress" xml:space="preserve"><value>Street / Avenue</value></data>
+  <data name="Signup.BuildingNumber" xml:space="preserve"><value>Building no</value></data>
+  <data name="Signup.Floor" xml:space="preserve"><value>Floor</value></data>
+  <data name="Signup.DoorNumber" xml:space="preserve"><value>Apartment / Door no</value></data>
+  <data name="Signup.AddressNote" xml:space="preserve"><value>Address note</value></data>
+  <data name="Signup.LocationUrl" xml:space="preserve"><value>Map location link</value></data>
+  <data name="Signup.LocationUrlPlaceholder" xml:space="preserve"><value>https://maps.app.goo.gl/...</value></data>
+  <data name="Signup.LocationUrlHelp" xml:space="preserve"><value>If available, you can add your restaurant's Google Maps location link.</value></data>
+  <data name="Signup.NeighborhoodManualHint" xml:space="preserve"><value>If not listed, you can type the neighborhood name manually.</value></data>
+  <data name="Signup.StreetManualHint" xml:space="preserve"><value>If not listed, you can type the street name manually.</value></data>
   <data name="Signup.PostalCode" xml:space="preserve"><value>Postal code</value></data>
   <data name="Signup.StepAddress" xml:space="preserve"><value>Address details</value></data>
   <data name="Signup.Slug" xml:space="preserve"><value>Subdomain</value></data>
@@ -2886,6 +2899,10 @@
   <data name="Validation.CityRequired" xml:space="preserve"><value>City selection is required.</value></data>
   <data name="Validation.DistrictRequired" xml:space="preserve"><value>District selection is required.</value></data>
   <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>The selected city and district do not match.</value></data>
+  <data name="Validation.StreetAddressRequired" xml:space="preserve"><value>Street information is required.</value></data>
+  <data name="Validation.NeighborhoodInvalid" xml:space="preserve"><value>The selected neighborhood is invalid.</value></data>
+  <data name="Validation.StreetInvalid" xml:space="preserve"><value>The selected street is invalid.</value></data>
+  <data name="Validation.LocationUrlInvalid" xml:space="preserve"><value>Enter a valid map link.</value></data>
   <data name="Validation.BusinessPhoneTypeInvalid" xml:space="preserve"><value>Phone type is invalid.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Subdomain is required.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Subdomain may only contain lowercase letters, numbers, hyphens, and underscores.</value></data>

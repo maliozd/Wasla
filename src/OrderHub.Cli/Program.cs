@@ -130,6 +130,16 @@ seedTurkeyReferenceData.SetHandler(async (InvocationContext context) =>
     context.ExitCode = await CliCommands.SeedTurkeyReferenceDataAsync(host, context.GetCancellationToken());
 });
 
+// --- seed-address-reference-data ---
+var seedAddressReferenceData = new Command(
+    "seed-address-reference-data",
+    "Import address reference data into CentralDb (idempotent; neighborhoods/streets when data files are available).");
+
+seedAddressReferenceData.SetHandler(async (InvocationContext context) =>
+{
+    context.ExitCode = await CliCommands.SeedAddressReferenceDataAsync(host, context.GetCancellationToken());
+});
+
 // --- migrate-customer ---
 var migrateCustomer = new Command("migrate-customer", "Apply pending CustomerDb migrations for a single customer.");
 
@@ -405,6 +415,7 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     listCentralAdmins,
     migrateCentral,
     seedTurkeyReferenceData,
+    seedAddressReferenceData,
     migrateCustomer,
     migrateAll,
     migrationStatus,

@@ -40,6 +40,12 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
             .NotEmpty()
             .MaximumLength(50);
 
+        RuleFor(x => x.BusinessEmail)
+            .EmailAddress()
+            .WithMessage("Validation.EmailInvalid")
+            .MaximumLength(256)
+            .When(x => !string.IsNullOrWhiteSpace(x.BusinessEmail));
+
         RuleFor(x => x.Slug)
             .NotEmpty()
             .MaximumLength(100)
@@ -76,6 +82,36 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
             })
             .WithMessage("Validation.CityDistrictInvalid");
 
+        RuleFor(x => x)
+            .MustAsync(async (request, ct) =>
+            {
+                if (!IsTurkey(request) || request.DistrictId is null || request.NeighborhoodId is null)
+                    return true;
+
+                var resolved = await referenceData.ResolveNeighborhoodAsync(
+                    request.DistrictId.Value,
+                    request.NeighborhoodId.Value,
+                    ct);
+
+                return resolved is not null;
+            })
+            .WithMessage("Validation.NeighborhoodInvalid");
+
+        RuleFor(x => x)
+            .MustAsync(async (request, ct) =>
+            {
+                if (!IsTurkey(request) || request.NeighborhoodId is null || request.StreetId is null)
+                    return true;
+
+                var resolved = await referenceData.ResolveStreetAsync(
+                    request.NeighborhoodId.Value,
+                    request.StreetId.Value,
+                    ct);
+
+                return resolved is not null;
+            })
+            .WithMessage("Validation.StreetInvalid");
+
         RuleFor(x => x.City)
             .NotEmpty()
             .MaximumLength(100);
@@ -84,9 +120,15 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
             .NotEmpty()
             .MaximumLength(100);
 
-        RuleFor(x => x.AddressLine1)
+        RuleFor(x => x.StreetAddress)
             .NotEmpty()
+            .WithMessage("Validation.StreetAddressRequired")
             .MaximumLength(300);
+
+        RuleFor(x => x.LocationUrl)
+            .Must(MapLocationUrlValidator.IsValidOptionalUrl)
+            .WithMessage("Validation.LocationUrlInvalid")
+            .When(x => !string.IsNullOrWhiteSpace(x.LocationUrl));
 
         RuleFor(x => x.OwnerFullName)
             .NotEmpty()
@@ -111,9 +153,13 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
                        || string.Equals(p, "Yearly", StringComparison.OrdinalIgnoreCase))
             .WithMessage("Validation.BillingPeriodInvalid");
 
-        RuleFor(x => x.Neighborhood).MaximumLength(100).When(x => !string.IsNullOrWhiteSpace(x.Neighborhood));
-        RuleFor(x => x.AddressLine2).MaximumLength(300).When(x => !string.IsNullOrWhiteSpace(x.AddressLine2));
+        RuleFor(x => x.Neighborhood).MaximumLength(150).When(x => !string.IsNullOrWhiteSpace(x.Neighborhood));
+        RuleFor(x => x.BuildingNumber).MaximumLength(30).When(x => !string.IsNullOrWhiteSpace(x.BuildingNumber));
+        RuleFor(x => x.Floor).MaximumLength(20).When(x => !string.IsNullOrWhiteSpace(x.Floor));
+        RuleFor(x => x.DoorNumber).MaximumLength(20).When(x => !string.IsNullOrWhiteSpace(x.DoorNumber));
+        RuleFor(x => x.AddressNote).MaximumLength(300).When(x => !string.IsNullOrWhiteSpace(x.AddressNote));
         RuleFor(x => x.PostalCode).MaximumLength(20).When(x => !string.IsNullOrWhiteSpace(x.PostalCode));
+        RuleFor(x => x.LocationUrl).MaximumLength(500).When(x => !string.IsNullOrWhiteSpace(x.LocationUrl));
         RuleFor(x => x.OwnerPhone).MaximumLength(50).When(x => !string.IsNullOrWhiteSpace(x.OwnerPhone));
     }
 

@@ -16,6 +16,7 @@ internal static class CliHelpPrinter
     [
         "migrate-central",
         "seed-turkey-reference-data",
+        "seed-address-reference-data",
         "migrate-customer",
         "migrate-all-customers",
         "migration-status"
@@ -65,6 +66,7 @@ internal static class CliHelpPrinter
         Console.WriteLine("Migration commands:");
         Console.WriteLine("  migrate-central           Apply pending CentralDb migrations.");
         Console.WriteLine("  seed-turkey-reference-data Seed all 81 Turkish cities and districts into CentralDb.");
+        Console.WriteLine("  seed-address-reference-data Import address reference data (country, city, district; neighborhoods/streets when files are available).");
         Console.WriteLine("  migrate-customer          Apply pending CustomerDb migrations for one customer.");
         Console.WriteLine("  migrate-all-customers     Apply pending CustomerDb migrations for all active customers.");
         Console.WriteLine("  migration-status          Show CentralDb and CustomerDb migration status.");

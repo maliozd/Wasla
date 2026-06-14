@@ -28,11 +28,17 @@ public class PendingRegistration
 
     public string BusinessPhone { get; set; } = default!;
 
+    public string? BusinessEmail { get; set; }
+
     public string Country { get; set; } = default!;
 
     public int? CityId { get; set; }
 
     public int? DistrictId { get; set; }
+
+    public int? NeighborhoodId { get; set; }
+
+    public int? StreetId { get; set; }
 
     public string City { get; set; } = default!;
 
@@ -40,11 +46,19 @@ public class PendingRegistration
 
     public string? Neighborhood { get; set; }
 
-    public string AddressLine1 { get; set; } = default!;
+    public string? StreetAddress { get; set; }
 
-    public string? AddressLine2 { get; set; }
+    public string? BuildingNumber { get; set; }
+
+    public string? Floor { get; set; }
+
+    public string? DoorNumber { get; set; }
+
+    public string? AddressNote { get; set; }
 
     public string? PostalCode { get; set; }
+
+    public string? LocationUrl { get; set; }
 
     public string OwnerFullName { get; set; } = default!;
 

@@ -58,10 +58,20 @@
     var initialSlug = slugInput ? slugInput.value : "";
     var citySelect = document.getElementById("signupCityId");
     var districtSelect = document.getElementById("signupDistrictId");
+    var neighborhoodInput = document.getElementById("signupNeighborhood");
+    var neighborhoodIdInput = document.getElementById("signupNeighborhoodId");
+    var neighborhoodList = document.getElementById("signupNeighborhoodList");
+    var neighborhoodHint = document.getElementById("signupNeighborhoodHint");
+    var streetInput = document.getElementById("signupStreetAddress");
+    var streetIdInput = document.getElementById("signupStreetId");
+    var streetList = document.getElementById("signupStreetList");
+    var streetHint = document.getElementById("signupStreetHint");
     var phoneTypeSelect = document.getElementById("signupBusinessPhoneType");
     var phonePrefix = document.getElementById("signupPhonePrefix");
     var phoneHint = document.getElementById("signupPhoneHint");
     var citiesById = {};
+    var neighborhoodsCache = [];
+    var streetsCache = [];
 
     if (Array.isArray(config.cities)) {
         config.cities.forEach(function (city) {
@@ -167,10 +177,14 @@
     function loadDistricts(cityId, selectedDistrictId) {
         if (!districtSelect || !cityId) {
             setDistrictDisabled(true);
+            clearNeighborhoodFields();
+            clearStreetFields();
             return;
         }
 
         setDistrictDisabled(true);
+        clearNeighborhoodFields();
+        clearStreetFields();
         fetch((config.districtsUrl || "/signup/districts") + "?cityId=" + encodeURIComponent(cityId), {
             headers: { Accept: "application/json" }
         })
@@ -185,6 +199,145 @@
             .catch(function () {
                 populateDistrictOptions([], null);
                 setDistrictDisabled(true);
+            });
+    }
+
+    function clearNeighborhoodFields() {
+        neighborhoodsCache = [];
+        if (neighborhoodList) neighborhoodList.innerHTML = "";
+        if (neighborhoodInput) neighborhoodInput.value = "";
+        if (neighborhoodIdInput) neighborhoodIdInput.value = "";
+        if (neighborhoodHint) neighborhoodHint.textContent = config.neighborhoodManualHint || "";
+    }
+
+    function clearStreetFields() {
+        streetsCache = [];
+        if (streetList) streetList.innerHTML = "";
+        if (streetInput) streetInput.value = "";
+        if (streetIdInput) streetIdInput.value = "";
+        if (streetHint) streetHint.textContent = config.streetManualHint || "";
+    }
+
+    function populateDatalist(listElement, items, valueKey) {
+        if (!listElement) return;
+        listElement.innerHTML = "";
+        items.forEach(function (item) {
+            var option = document.createElement("option");
+            option.value = item[valueKey];
+            listElement.appendChild(option);
+        });
+    }
+
+    function syncReferenceSelection(textValue, cache, idInput, nameKey) {
+        if (!idInput) return;
+        var normalized = (textValue || "").trim();
+        if (!normalized) {
+            idInput.value = "";
+            return;
+        }
+
+        var match = null;
+        for (var i = 0; i < cache.length; i++) {
+            if (cache[i][nameKey] === normalized) {
+                match = cache[i];
+                break;
+            }
+        }
+
+        idInput.value = match ? String(match.id) : "";
+    }
+
+    function loadNeighborhoods(districtId, selectedNeighborhoodId, selectedNeighborhoodName) {
+        if (!districtId) {
+            clearNeighborhoodFields();
+            clearStreetFields();
+            return;
+        }
+
+        clearNeighborhoodFields();
+        clearStreetFields();
+
+        fetch((config.neighborhoodsUrl || "/signup/neighborhoods") + "?districtId=" + encodeURIComponent(districtId), {
+            headers: { Accept: "application/json" }
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error("neighborhoods");
+                return response.json();
+            })
+            .then(function (neighborhoods) {
+                neighborhoodsCache = neighborhoods || [];
+                populateDatalist(neighborhoodList, neighborhoodsCache, "name");
+
+                if (neighborhoodHint) {
+                    neighborhoodHint.textContent = neighborhoodsCache.length > 0
+                        ? ""
+                        : (config.neighborhoodManualHint || "");
+                }
+
+                if (selectedNeighborhoodId && neighborhoodIdInput) {
+                    neighborhoodIdInput.value = String(selectedNeighborhoodId);
+                }
+
+                if (selectedNeighborhoodName && neighborhoodInput) {
+                    neighborhoodInput.value = selectedNeighborhoodName;
+                }
+
+                if (neighborhoodIdInput && neighborhoodIdInput.value) {
+                    loadStreets(neighborhoodIdInput.value, streetIdInput ? streetIdInput.value : null, streetInput ? streetInput.value : null);
+                }
+            })
+            .catch(function () {
+                neighborhoodsCache = [];
+                if (neighborhoodHint) {
+                    neighborhoodHint.textContent = config.neighborhoodManualHint || "";
+                }
+            });
+    }
+
+    function loadStreets(neighborhoodId, selectedStreetId, selectedStreetName) {
+        if (!neighborhoodId) {
+            clearStreetFields();
+            return;
+        }
+
+        clearStreetFields();
+
+        fetch((config.streetsUrl || "/signup/streets") + "?neighborhoodId=" + encodeURIComponent(neighborhoodId), {
+            headers: { Accept: "application/json" }
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error("streets");
+                return response.json();
+            })
+            .then(function (streets) {
+                streetsCache = (streets || []).map(function (street) {
+                    return {
+                        id: street.id,
+                        name: street.displayName || street.name,
+                        streetType: street.streetType
+                    };
+                });
+                populateDatalist(streetList, streetsCache, "name");
+
+                if (streetHint) {
+                    streetHint.textContent = streetsCache.length > 0
+                        ? ""
+                        : (config.streetManualHint || "");
+                }
+
+                if (selectedStreetId && streetIdInput) {
+                    streetIdInput.value = String(selectedStreetId);
+                }
+
+                if (selectedStreetName && streetInput) {
+                    streetInput.value = selectedStreetName;
+                }
+            })
+            .catch(function () {
+                streetsCache = [];
+                if (streetHint) {
+                    streetHint.textContent = config.streetManualHint || "";
+                }
             });
     }
 
@@ -264,6 +417,11 @@
 
     if (citySelect) {
         var initialDistrictId = districtSelect ? districtSelect.value : "";
+        var initialNeighborhoodId = neighborhoodIdInput ? neighborhoodIdInput.value : "";
+        var initialNeighborhoodName = neighborhoodInput ? neighborhoodInput.value : "";
+        var initialStreetId = streetIdInput ? streetIdInput.value : "";
+        var initialStreetName = streetInput ? streetInput.value : "";
+
         citySelect.addEventListener("change", function () {
             loadDistricts(citySelect.value, null);
             updatePhoneUi();
@@ -278,6 +436,51 @@
         } else {
             setDistrictDisabled(true);
         }
+    }
+
+    if (districtSelect) {
+        districtSelect.addEventListener("change", function () {
+            loadNeighborhoods(districtSelect.value, null, null);
+        });
+
+        if (districtSelect.value) {
+            loadNeighborhoods(
+                districtSelect.value,
+                neighborhoodIdInput ? neighborhoodIdInput.value : null,
+                neighborhoodInput ? neighborhoodInput.value : null);
+        } else if (neighborhoodHint) {
+            neighborhoodHint.textContent = config.neighborhoodManualHint || "";
+        }
+    }
+
+    if (neighborhoodInput) {
+        neighborhoodInput.addEventListener("input", function () {
+            syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
+            if (neighborhoodIdInput && neighborhoodIdInput.value) {
+                loadStreets(neighborhoodIdInput.value, null, null);
+            } else {
+                clearStreetFields();
+            }
+        });
+
+        neighborhoodInput.addEventListener("change", function () {
+            syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
+            if (neighborhoodIdInput && neighborhoodIdInput.value) {
+                loadStreets(neighborhoodIdInput.value, null, null);
+            } else {
+                clearStreetFields();
+            }
+        });
+    }
+
+    if (streetInput) {
+        streetInput.addEventListener("input", function () {
+            syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name");
+        });
+
+        streetInput.addEventListener("change", function () {
+            syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name");
+        });
     }
 
     if (phoneTypeSelect) {

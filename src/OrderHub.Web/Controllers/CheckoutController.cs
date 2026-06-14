@@ -185,10 +185,22 @@ public sealed class CheckoutController : Controller
 
     private static string BuildAddressSummary(PendingRegistrationCheckoutDetails details)
     {
-        var parts = new List<string> { details.AddressLine1.Trim() };
+        var parts = new List<string>();
 
-        if (!string.IsNullOrWhiteSpace(details.AddressLine2))
-            parts.Add(details.AddressLine2.Trim());
+        if (!string.IsNullOrWhiteSpace(details.StreetAddress))
+            parts.Add(details.StreetAddress.Trim());
+
+        if (!string.IsNullOrWhiteSpace(details.BuildingNumber))
+            parts.Add($"No: {details.BuildingNumber.Trim()}");
+
+        if (!string.IsNullOrWhiteSpace(details.Floor))
+            parts.Add($"Kat: {details.Floor.Trim()}");
+
+        if (!string.IsNullOrWhiteSpace(details.DoorNumber))
+            parts.Add($"Daire: {details.DoorNumber.Trim()}");
+
+        if (!string.IsNullOrWhiteSpace(details.AddressNote))
+            parts.Add(details.AddressNote.Trim());
 
         if (!string.IsNullOrWhiteSpace(details.Neighborhood))
             parts.Add(details.Neighborhood.Trim());

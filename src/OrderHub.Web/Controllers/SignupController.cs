@@ -76,6 +76,11 @@ public sealed class SignupController : Controller
 
         var cityName = model.City;
         var districtName = model.District;
+        var neighborhoodName = model.Neighborhood;
+        var streetAddress = model.StreetAddress;
+        int? neighborhoodId = model.NeighborhoodId;
+        int? streetId = model.StreetId;
+
         if (IsTurkey(model.Country) && model.CityId is int cityId && model.DistrictId is int districtId)
         {
             var resolved = await _referenceData.ResolveCityDistrictAsync(cityId, districtId, model.Country, ct);
@@ -87,6 +92,32 @@ public sealed class SignupController : Controller
 
             cityName = resolved.CityName;
             districtName = resolved.DistrictName;
+
+            if (model.NeighborhoodId is int resolvedNeighborhoodId)
+            {
+                var neighborhood = await _referenceData.ResolveNeighborhoodAsync(districtId, resolvedNeighborhoodId, ct);
+                if (neighborhood is null)
+                {
+                    ModelState.AddModelError(nameof(model.NeighborhoodId), _localizer["Validation.NeighborhoodInvalid"].Value);
+                    return View(model);
+                }
+
+                neighborhoodName = neighborhood.NeighborhoodName;
+                neighborhoodId = neighborhood.NeighborhoodId;
+
+                if (model.StreetId is int resolvedStreetId)
+                {
+                    var street = await _referenceData.ResolveStreetAsync(resolvedNeighborhoodId, resolvedStreetId, ct);
+                    if (street is null)
+                    {
+                        ModelState.AddModelError(nameof(model.StreetId), _localizer["Validation.StreetInvalid"].Value);
+                        return View(model);
+                    }
+
+                    streetAddress = FormatStreetDisplay(street.StreetName, street.StreetType);
+                    streetId = street.StreetId;
+                }
+            }
         }
 
         var request = new PendingRegistrationRequest(
@@ -96,16 +127,23 @@ public sealed class SignupController : Controller
             model.SelectedBusinessTypeCodes,
             model.BusinessPhoneType,
             model.BusinessPhone,
+            model.BusinessEmail,
             model.Slug,
             model.Country,
             model.CityId,
             model.DistrictId,
+            neighborhoodId,
+            streetId,
             cityName,
             districtName,
-            model.Neighborhood,
-            model.AddressLine1,
-            model.AddressLine2,
+            neighborhoodName,
+            streetAddress,
+            model.BuildingNumber,
+            model.Floor,
+            model.DoorNumber,
+            model.AddressNote,
             model.PostalCode,
+            model.LocationUrl,
             model.OwnerFullName,
             model.OwnerEmail,
             model.OwnerPhone,
@@ -142,6 +180,32 @@ public sealed class SignupController : Controller
 
         var districts = await _referenceData.GetDistrictsByCityIdAsync(cityId, ct);
         return Json(districts.Select(d => new { id = d.Id, name = d.Name }));
+    }
+
+    [HttpGet("neighborhoods")]
+    public async Task<IActionResult> Neighborhoods([FromQuery] int districtId, CancellationToken ct)
+    {
+        if (districtId <= 0)
+            return BadRequest();
+
+        var neighborhoods = await _referenceData.GetNeighborhoodsByDistrictIdAsync(districtId, ct);
+        return Json(neighborhoods.Select(n => new { id = n.Id, name = n.Name }));
+    }
+
+    [HttpGet("streets")]
+    public async Task<IActionResult> Streets([FromQuery] int neighborhoodId, CancellationToken ct)
+    {
+        if (neighborhoodId <= 0)
+            return BadRequest();
+
+        var streets = await _referenceData.GetStreetsByNeighborhoodIdAsync(neighborhoodId, ct);
+        return Json(streets.Select(s => new
+        {
+            id = s.Id,
+            name = s.Name,
+            streetType = s.StreetType,
+            displayName = FormatStreetDisplay(s.Name, s.StreetType)
+        }));
     }
 
     [HttpGet("pending/{id:guid}")]
@@ -271,6 +335,7 @@ public sealed class SignupController : Controller
         nameof(PendingRegistrationRequest.BusinessTypeCodes) => nameof(SignupViewModel.SelectedBusinessTypeCodes),
         nameof(PendingRegistrationRequest.BusinessPhoneType) => nameof(SignupViewModel.BusinessPhoneType),
         nameof(PendingRegistrationRequest.BusinessPhone) => nameof(SignupViewModel.BusinessPhone),
+        nameof(PendingRegistrationRequest.BusinessEmail) => nameof(SignupViewModel.BusinessEmail),
         nameof(PendingRegistrationRequest.Slug) => nameof(SignupViewModel.Slug),
         nameof(PendingRegistrationRequest.Country) => nameof(SignupViewModel.Country),
         nameof(PendingRegistrationRequest.CityId) => nameof(SignupViewModel.CityId),
@@ -278,9 +343,15 @@ public sealed class SignupController : Controller
         nameof(PendingRegistrationRequest.City) => nameof(SignupViewModel.City),
         nameof(PendingRegistrationRequest.District) => nameof(SignupViewModel.District),
         nameof(PendingRegistrationRequest.Neighborhood) => nameof(SignupViewModel.Neighborhood),
-        nameof(PendingRegistrationRequest.AddressLine1) => nameof(SignupViewModel.AddressLine1),
-        nameof(PendingRegistrationRequest.AddressLine2) => nameof(SignupViewModel.AddressLine2),
+        nameof(PendingRegistrationRequest.NeighborhoodId) => nameof(SignupViewModel.NeighborhoodId),
+        nameof(PendingRegistrationRequest.StreetId) => nameof(SignupViewModel.StreetId),
+        nameof(PendingRegistrationRequest.StreetAddress) => nameof(SignupViewModel.StreetAddress),
+        nameof(PendingRegistrationRequest.BuildingNumber) => nameof(SignupViewModel.BuildingNumber),
+        nameof(PendingRegistrationRequest.Floor) => nameof(SignupViewModel.Floor),
+        nameof(PendingRegistrationRequest.DoorNumber) => nameof(SignupViewModel.DoorNumber),
+        nameof(PendingRegistrationRequest.AddressNote) => nameof(SignupViewModel.AddressNote),
         nameof(PendingRegistrationRequest.PostalCode) => nameof(SignupViewModel.PostalCode),
+        nameof(PendingRegistrationRequest.LocationUrl) => nameof(SignupViewModel.LocationUrl),
         nameof(PendingRegistrationRequest.OwnerFullName) => nameof(SignupViewModel.OwnerFullName),
         nameof(PendingRegistrationRequest.OwnerEmail) => nameof(SignupViewModel.OwnerEmail),
         nameof(PendingRegistrationRequest.OwnerPhone) => nameof(SignupViewModel.OwnerPhone),
@@ -300,4 +371,7 @@ public sealed class SignupController : Controller
         string.Equals(country.Trim(), "Türkiye", StringComparison.OrdinalIgnoreCase)
         || string.Equals(country.Trim(), "Turkey", StringComparison.OrdinalIgnoreCase)
         || string.Equals(country.Trim(), "TR", StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatStreetDisplay(string name, string? streetType) =>
+        string.IsNullOrWhiteSpace(streetType) ? name.Trim() : $"{name.Trim()} {streetType.Trim()}";
 }

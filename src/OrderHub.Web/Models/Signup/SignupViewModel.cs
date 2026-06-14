@@ -35,6 +35,10 @@ public sealed class SignupViewModel
     [Display(Name = "Signup.DistrictLabel")]
     public int? DistrictId { get; set; }
 
+    public int? NeighborhoodId { get; set; }
+
+    public int? StreetId { get; set; }
+
     [Required(ErrorMessage = "Validation.Required")]
     [Display(Name = "Signup.City")]
     public string City { get; set; } = string.Empty;
@@ -46,15 +50,27 @@ public sealed class SignupViewModel
     [Display(Name = "Signup.Neighborhood")]
     public string? Neighborhood { get; set; }
 
-    [Required(ErrorMessage = "Validation.AddressRequired")]
-    [Display(Name = "Signup.AddressLine1")]
-    public string AddressLine1 { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Validation.StreetAddressRequired")]
+    [Display(Name = "Signup.StreetAddress")]
+    public string? StreetAddress { get; set; }
 
-    [Display(Name = "Signup.AddressLine2")]
-    public string? AddressLine2 { get; set; }
+    [Display(Name = "Signup.BuildingNumber")]
+    public string? BuildingNumber { get; set; }
+
+    [Display(Name = "Signup.Floor")]
+    public string? Floor { get; set; }
+
+    [Display(Name = "Signup.DoorNumber")]
+    public string? DoorNumber { get; set; }
+
+    [Display(Name = "Signup.AddressNote")]
+    public string? AddressNote { get; set; }
 
     [Display(Name = "Signup.PostalCode")]
     public string? PostalCode { get; set; }
+
+    [Display(Name = "Signup.LocationUrl")]
+    public string? LocationUrl { get; set; }
 
     [Display(Name = "Signup.BusinessPhoneType")]
     public string BusinessPhoneType { get; set; } = "Mobile";
@@ -62,6 +78,10 @@ public sealed class SignupViewModel
     [Required(ErrorMessage = "Validation.Required")]
     [Display(Name = "Signup.BusinessPhone")]
     public string BusinessPhone { get; set; } = string.Empty;
+
+    [EmailAddress(ErrorMessage = "Validation.EmailInvalid")]
+    [Display(Name = "Signup.BusinessEmail")]
+    public string? BusinessEmail { get; set; }
 
     [Required(ErrorMessage = "Validation.FullNameRequired")]
     [Display(Name = "Signup.OwnerFullName")]

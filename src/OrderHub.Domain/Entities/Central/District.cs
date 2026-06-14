@@ -13,4 +13,6 @@ public class District
     public bool IsActive { get; set; }
 
     public City City { get; set; } = default!;
+
+    public ICollection<Neighborhood> Neighborhoods { get; set; } = new List<Neighborhood>();
 }

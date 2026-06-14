@@ -446,6 +446,32 @@ internal static class CliCommands
         }
     }
 
+    public static async Task<int> SeedAddressReferenceDataAsync(IHost host, CancellationToken ct)
+    {
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var turkeyLogger = scope.ServiceProvider.GetRequiredService<ILogger<TurkeyReferenceDataSeeder>>();
+            var importerLogger = scope.ServiceProvider.GetRequiredService<ILogger<AddressReferenceDataImporter>>();
+            var turkeySeeder = new TurkeyReferenceDataSeeder(central, turkeyLogger);
+            var importer = new AddressReferenceDataImporter(central, turkeySeeder, importerLogger);
+
+            var result = await importer.ImportAsync(ct).ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(
+                $"✓ seed-address-reference-data completed. Countries inserted={result.CountriesInserted}, cities inserted={result.CitiesInserted}, districts inserted={result.DistrictsInserted}, neighborhoods inserted={result.NeighborhoodsInserted}, streets inserted={result.StreetsInserted}, total cities={result.TotalCities}.");
+            Console.ResetColor();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError($"seed-address-reference-data failed: {ex.Message}");
+            return 1;
+        }
+    }
+
     public static async Task<int> MigrateCustomerAsync(
         IHost host,
         string? slug,

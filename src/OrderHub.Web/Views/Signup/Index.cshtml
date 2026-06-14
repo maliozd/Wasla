@@ -38,7 +38,11 @@
     {
         cities = Model.Cities.Select(c => new { id = c.Id, name = c.Name, phoneAreaCode = c.PhoneAreaCode }),
         districtsUrl = Url.Action("Districts", "Signup"),
+        neighborhoodsUrl = Url.Action("Neighborhoods", "Signup"),
+        streetsUrl = Url.Action("Streets", "Signup"),
         selectDistrictText = L["Signup.SelectDistrict"].Value,
+        neighborhoodManualHint = L["Signup.NeighborhoodManualHint"].Value,
+        streetManualHint = L["Signup.StreetManualHint"].Value,
         showPasswordText = L["Common.ShowPassword"].Value,
         hidePasswordText = L["Common.HidePassword"].Value,
         mobileHint = L["Signup.MobilePhoneHint"].Value,
@@ -183,20 +187,44 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="Neighborhood" class="form-label"></label>
-                                        <input asp-for="Neighborhood" class="form-control" />
+                                        <input asp-for="Neighborhood" class="form-control" id="signupNeighborhood" list="signupNeighborhoodList" autocomplete="off" />
+                                        <input type="hidden" asp-for="NeighborhoodId" id="signupNeighborhoodId" />
+                                        <datalist id="signupNeighborhoodList"></datalist>
+                                        <div id="signupNeighborhoodHint" class="form-text"></div>
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="PostalCode" class="form-label"></label>
                                         <input asp-for="PostalCode" class="form-control" autocomplete="postal-code" />
                                     </div>
-                                    <div class="col-12">
-                                        <label asp-for="AddressLine1" class="form-label"></label>
-                                        <input asp-for="AddressLine1" class="form-control" autocomplete="street-address" />
-                                        <span asp-validation-for="AddressLine1" class="text-danger small"></span>
+                                    <div class="col-md-8">
+                                        <label asp-for="StreetAddress" class="form-label"></label>
+                                        <input asp-for="StreetAddress" class="form-control" id="signupStreetAddress" list="signupStreetList" autocomplete="street-address" />
+                                        <input type="hidden" asp-for="StreetId" id="signupStreetId" />
+                                        <datalist id="signupStreetList"></datalist>
+                                        <div id="signupStreetHint" class="form-text"></div>
+                                        <span asp-validation-for="StreetAddress" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="BuildingNumber" class="form-label"></label>
+                                        <input asp-for="BuildingNumber" class="form-control" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="Floor" class="form-label"></label>
+                                        <input asp-for="Floor" class="form-control" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="DoorNumber" class="form-label"></label>
+                                        <input asp-for="DoorNumber" class="form-control" />
                                     </div>
                                     <div class="col-12">
-                                        <label asp-for="AddressLine2" class="form-label"></label>
-                                        <input asp-for="AddressLine2" class="form-control" />
+                                        <label asp-for="AddressNote" class="form-label"></label>
+                                        <input asp-for="AddressNote" class="form-control" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="LocationUrl" class="form-label"></label>
+                                        <input asp-for="LocationUrl" class="form-control" placeholder="@L["Signup.LocationUrlPlaceholder"]" inputmode="url" />
+                                        <div class="form-text">@L["Signup.LocationUrlHelp"]</div>
+                                        <span asp-validation-for="LocationUrl" class="text-danger small"></span>
                                     </div>
                                 </div>
                             </section>
@@ -223,6 +251,12 @@
                                         </div>
                                         <div id="signupPhoneHint" class="form-text oh-signup-phone-hint"></div>
                                         <span asp-validation-for="BusinessPhone" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="BusinessEmail" class="form-label"></label>
+                                        <input asp-for="BusinessEmail" class="form-control" placeholder="@L["Signup.BusinessEmailPlaceholder"]" autocomplete="email" inputmode="email" />
+                                        <div class="form-text">@L["Signup.BusinessEmailHelp"]</div>
+                                        <span asp-validation-for="BusinessEmail" class="text-danger small"></span>
                                     </div>
                                 </div>
                             </section>

@@ -288,6 +288,15 @@
   <data name="Signup.BusinessPhone" xml:space="preserve">
     <value>İşletme telefonu</value>
   </data>
+  <data name="Signup.BusinessEmail" xml:space="preserve">
+    <value>İşletme e-postası</value>
+  </data>
+  <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve">
+    <value>info@restoraniniz.com</value>
+  </data>
+  <data name="Signup.BusinessEmailHelp" xml:space="preserve">
+    <value>Varsa restoranınızın genel iletişim e-postasını ekleyebilirsiniz.</value>
+  </data>
   <data name="Signup.District" xml:space="preserve">
     <value>İlçe</value>
   </data>
@@ -299,6 +308,36 @@
   </data>
   <data name="Signup.AddressLine2" xml:space="preserve">
     <value>Adres devamı</value>
+  </data>
+  <data name="Signup.StreetAddress" xml:space="preserve">
+    <value>Cadde / Sokak</value>
+  </data>
+  <data name="Signup.BuildingNumber" xml:space="preserve">
+    <value>Bina no</value>
+  </data>
+  <data name="Signup.Floor" xml:space="preserve">
+    <value>Kat</value>
+  </data>
+  <data name="Signup.DoorNumber" xml:space="preserve">
+    <value>Daire / Kapı no</value>
+  </data>
+  <data name="Signup.AddressNote" xml:space="preserve">
+    <value>Adres notu</value>
+  </data>
+  <data name="Signup.LocationUrl" xml:space="preserve">
+    <value>Harita konum linki</value>
+  </data>
+  <data name="Signup.LocationUrlPlaceholder" xml:space="preserve">
+    <value>https://maps.app.goo.gl/...</value>
+  </data>
+  <data name="Signup.LocationUrlHelp" xml:space="preserve">
+    <value>Varsa restoranınızın Google Maps konum bağlantısını ekleyebilirsiniz.</value>
+  </data>
+  <data name="Signup.NeighborhoodManualHint" xml:space="preserve">
+    <value>Listede yoksa mahalle adını elle yazabilirsiniz.</value>
+  </data>
+  <data name="Signup.StreetManualHint" xml:space="preserve">
+    <value>Listede yoksa cadde veya sokak adını elle yazabilirsiniz.</value>
   </data>
   <data name="Signup.PostalCode" xml:space="preserve">
     <value>Posta kodu</value>
@@ -386,6 +425,18 @@
   </data>
   <data name="Validation.BusinessTypeRequired" xml:space="preserve">
     <value>En az bir işletme türü seçin.</value>
+  </data>
+  <data name="Validation.StreetAddressRequired" xml:space="preserve">
+    <value>Cadde veya sokak bilgisi gereklidir.</value>
+  </data>
+  <data name="Validation.NeighborhoodInvalid" xml:space="preserve">
+    <value>Seçilen mahalle geçersiz.</value>
+  </data>
+  <data name="Validation.StreetInvalid" xml:space="preserve">
+    <value>Seçilen cadde/sokak geçersiz.</value>
+  </data>
+  <data name="Validation.LocationUrlInvalid" xml:space="preserve">
+    <value>Geçerli bir harita bağlantısı girin.</value>
   </data>
   <data name="Checkout.ReviewTitle" xml:space="preserve">
     <value>Ödeme özeti</value>

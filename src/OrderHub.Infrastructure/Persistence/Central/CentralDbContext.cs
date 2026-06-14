@@ -5,8 +5,11 @@ using CustomerMembership = OrderHub.Domain.Entities.Central.CustomerMembership;
 using PendingRegistration = OrderHub.Domain.Entities.Central.PendingRegistration;
 using PrintBridgeDevice = OrderHub.Domain.Entities.Central.PrintBridgeDevice;
 using BusinessType = OrderHub.Domain.Entities.Central.BusinessType;
+using Country = OrderHub.Domain.Entities.Central.Country;
 using City = OrderHub.Domain.Entities.Central.City;
 using District = OrderHub.Domain.Entities.Central.District;
+using Neighborhood = OrderHub.Domain.Entities.Central.Neighborhood;
+using Street = OrderHub.Domain.Entities.Central.Street;
 using PendingRegistrationBusinessType = OrderHub.Domain.Entities.Central.PendingRegistrationBusinessType;
 using OrderHub.Infrastructure.Persistence.Central.Configurations;
 
@@ -25,8 +28,11 @@ public class CentralDbContext : DbContext
     public DbSet<PrintBridgeDevice> PrintBridgeDevices => Set<PrintBridgeDevice>();
     public DbSet<PendingRegistration> PendingRegistrations => Set<PendingRegistration>();
     public DbSet<BusinessType> BusinessTypes => Set<BusinessType>();
+    public DbSet<Country> Countries => Set<Country>();
     public DbSet<City> Cities => Set<City>();
     public DbSet<District> Districts => Set<District>();
+    public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
+    public DbSet<Street> Streets => Set<Street>();
     public DbSet<PendingRegistrationBusinessType> PendingRegistrationBusinessTypes => Set<PendingRegistrationBusinessType>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -37,8 +43,11 @@ public class CentralDbContext : DbContext
         modelBuilder.ApplyConfiguration(new PrintBridgeDeviceConfiguration());
         modelBuilder.ApplyConfiguration(new PendingRegistrationConfiguration());
         modelBuilder.ApplyConfiguration(new BusinessTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new CountryConfiguration());
         modelBuilder.ApplyConfiguration(new CityConfiguration());
         modelBuilder.ApplyConfiguration(new DistrictConfiguration());
+        modelBuilder.ApplyConfiguration(new NeighborhoodConfiguration());
+        modelBuilder.ApplyConfiguration(new StreetConfiguration());
         modelBuilder.ApplyConfiguration(new PendingRegistrationBusinessTypeConfiguration());
     }
 }
