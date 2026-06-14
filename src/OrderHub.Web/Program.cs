@@ -59,7 +59,7 @@ if (!string.IsNullOrWhiteSpace(keyPath))
     }
 }
 
-// Development: allow auth cookies over local HTTP (e.g. *.orderhub.local:5200).
+// Development: allow auth cookies over local HTTP (e.g. *.wasla.local:5200).
 // Production: keep HTTPS-only secure cookies.
 var authCookieSecurePolicy = builder.Environment.IsDevelopment()
     ? CookieSecurePolicy.SameAsRequest

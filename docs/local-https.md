@@ -164,6 +164,8 @@ On that client PC you must also trust the mkcert root CA (run `mkcert -install` 
 dotnet run --project src\OrderHub.Web\OrderHub.Web.csproj
 ```
 
+Restart Web if it was already running so Kestrel reloads `.certs/wasla-local.pfx`.
+
 Open:
 
 - `https://wasla.local:7200`
@@ -216,7 +218,7 @@ Development auth cookies support HTTP (`CookieSecurePolicy.SameAsRequest`). Prin
 
 | Symptom | Likely cause |
 |--------|----------------|
-| Browser cert warning (`NET::ERR_CERT_COMMON_NAME_INVALID`) | Still using legacy `orderhub-local.pfx`, `mkcert -install` not run, or wrong PFX path |
+| Browser cert warning (`NET::ERR_CERT_COMMON_NAME_INVALID`) | Still using legacy `orderhub-local.pfx`, `mkcert -install` not run, wrong PFX path, or Web not restarted after regenerating cert |
 | Print Bridge SSL error | mkcert CA not trusted, wrong BaseUrl, or hosts entry missing |
 | Kestrel cannot load PFX | Script not run, or path wrong when using custom output folder |
 | Login loop on HTTP | See auth cookie Development settings in `Program.cs` |

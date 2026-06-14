@@ -66,17 +66,24 @@ if (-not $mkcert) {
 Write-Ok "Found mkcert at: $($mkcert.Source)"
 
 Write-Step "Installing local mkcert root CA (if not already trusted)"
+$previousErrorPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 try {
-    & mkcert -install
+    $installOutput = & mkcert -install 2>&1
+    $installOutput | ForEach-Object { Write-Host $_ }
+    $installText = ($installOutput | Out-String)
+    if ($LASTEXITCODE -ne 0 -and $installText -notmatch 'already installed') {
+        Write-Note "mkcert -install failed. You may need to run PowerShell as Administrator."
+        exit 1
+    }
     Write-Ok "mkcert root CA is installed/trusted."
 }
-catch {
-    Write-Note "mkcert -install failed. You may need to run PowerShell as Administrator."
-    Write-Host $_.Exception.Message
-    exit 1
+finally {
+    $ErrorActionPreference = $previousErrorPreference
 }
 
 Write-Step "Generating certificate for Wasla local domains"
+$ErrorActionPreference = "Continue"
 & mkcert `
     -cert-file $pemFile `
     -key-file $keyFile `
@@ -84,6 +91,11 @@ Write-Step "Generating certificate for Wasla local domains"
     "wasla.local" `
     "localhost" `
     "127.0.0.1"
+$ErrorActionPreference = $previousErrorPreference
+if ($LASTEXITCODE -ne 0) {
+    Write-Note "mkcert certificate generation failed."
+    exit 1
+}
 
 Write-Ok "Created:"
 Write-Host "  $pemFile"
@@ -129,6 +141,27 @@ Write-Step "Converting PEM to PFX"
 
 Write-Ok "Created: $pfxFile"
 
+Write-Step "Verifying certificate names"
+$ErrorActionPreference = "Continue"
+try {
+    $certInfo = & $openssl pkcs12 -in $pfxFile -passin "pass:$PfxPassword" -nokeys -clcerts 2>&1 |
+        & $openssl x509 -noout -subject -ext subjectAltName 2>&1
+    if ($certInfo) {
+        Write-Ok "Certificate covers:"
+        $certInfo | ForEach-Object { Write-Host "  $_" }
+    }
+    else {
+        Write-Note "Could not read certificate details from PFX."
+    }
+}
+catch {
+    Write-Note "Certificate verification step failed. PFX was still created."
+    Write-Host $_.Exception.Message
+}
+finally {
+    $ErrorActionPreference = $previousErrorPreference
+}
+
 Write-Step "Next steps"
 Write-Host @"
 1. Add hosts entries on this PC (run Notepad as Administrator, edit):
@@ -143,7 +176,7 @@ Write-Host @"
 2. Ensure src/OrderHub.Web/appsettings.Development.json contains Kestrel certificate config
    pointing to ../../.certs/wasla-local.pfx (relative to the Web project directory).
 
-3. Run Web:
+3. Run Web (restart if it was already running so Kestrel reloads the new PFX):
      dotnet run --project src\OrderHub.Web\OrderHub.Web.csproj
 
 4. Test in browser:
