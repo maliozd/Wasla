@@ -183,6 +183,12 @@
   <data name="Common.Loading" xml:space="preserve">
     <value>جاري التحميل…</value>
   </data>
+  <data name="Common.ShowPassword" xml:space="preserve">
+    <value>إظهار كلمة المرور</value>
+  </data>
+  <data name="Common.HidePassword" xml:space="preserve">
+    <value>إخفاء كلمة المرور</value>
+  </data>
   <data name="Common.AllPlatforms" xml:space="preserve">
     <value>كل المنصات</value>
   </data>
@@ -2789,6 +2795,15 @@
   <data name="Signup.BusinessName" xml:space="preserve"><value>اسم العمل / المطعم</value></data>
   <data name="Signup.BusinessType" xml:space="preserve"><value>نوع العمل</value></data>
   <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>مثال: مطعم، مقهى</value></data>
+  <data name="Signup.CityLabel" xml:space="preserve"><value>المدينة / المحافظة</value></data>
+  <data name="Signup.DistrictLabel" xml:space="preserve"><value>المنطقة</value></data>
+  <data name="Signup.SelectCity" xml:space="preserve"><value>اختر المدينة</value></data>
+  <data name="Signup.SelectDistrict" xml:space="preserve"><value>اختر المنطقة</value></data>
+  <data name="Signup.StepContact" xml:space="preserve"><value>معلومات الاتصال</value></data>
+  <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>نوع الهاتف</value></data>
+  <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>جوال</value></data>
+  <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>هاتف أرضي</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>مثال: +90 5__ ___ __ __</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>هاتف العمل</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>الهاتف</value></data>
   <data name="Signup.City" xml:space="preserve"><value>المدينة / المحافظة</value></data>
@@ -2861,6 +2876,12 @@
   <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>تُقدَّم خطة Enterprise بحدود واتفاق مخصص. تواصل معنا لطلب عرض بدلًا من نموذج التسجيل الذاتي.</value></data>
   <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>يرجى التواصل معنا لخطة Enterprise.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>اسم العمل مطلوب.</value></data>
+  <data name="Validation.BusinessTypeRequired" xml:space="preserve"><value>اختر نوع عمل واحدًا على الأقل.</value></data>
+  <data name="Validation.BusinessTypeInvalid" xml:space="preserve"><value>نوع العمل المحدد غير صالح.</value></data>
+  <data name="Validation.CityRequired" xml:space="preserve"><value>اختيار المدينة مطلوب.</value></data>
+  <data name="Validation.DistrictRequired" xml:space="preserve"><value>اختيار المنطقة مطلوب.</value></data>
+  <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>المدينة والمنطقة المحددتان غير متطابقتين.</value></data>
+  <data name="Validation.BusinessPhoneTypeInvalid" xml:space="preserve"><value>نوع الهاتف غير صالح.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>النطاق الفرعي مطلوب.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>يجب أن يحتوي النطاق الفرعي على أحرف صغيرة وأرقام وشرطات وشرطات سفلية فقط.</value></data>
   <data name="Validation.FullNameRequired" xml:space="preserve"><value>الاسم الكامل مطلوب.</value></data>

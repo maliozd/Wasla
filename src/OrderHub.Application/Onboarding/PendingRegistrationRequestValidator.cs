@@ -1,21 +1,40 @@
 using FluentValidation;
 using OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 using OrderHub.Application.Abstractions.Plans;
+using OrderHub.Application.Abstractions.Signup;
 using OrderHub.Application.Onboarding;
+using OrderHub.Domain.Enums;
 
 namespace OrderHub.Application.Onboarding;
 
 public sealed class PendingRegistrationRequestValidator : AbstractValidator<PendingRegistrationRequest>
 {
-    public PendingRegistrationRequestValidator(IOrderHubPlanCatalog planCatalog)
+    public PendingRegistrationRequestValidator(
+        IOrderHubPlanCatalog planCatalog,
+        ISignupReferenceDataService referenceData)
     {
         RuleFor(x => x.BusinessName)
             .NotEmpty()
             .MaximumLength(200);
 
-        RuleFor(x => x.BusinessType)
+        RuleFor(x => x.BusinessTypeCodes)
             .NotEmpty()
-            .MaximumLength(100);
+            .WithMessage("Validation.BusinessTypeRequired");
+
+        RuleFor(x => x.BusinessTypeCodes)
+            .MustAsync(async (codes, ct) =>
+            {
+                var resolved = await referenceData.ResolveBusinessTypesByCodesAsync(codes, ct);
+                return resolved.Count == codes.Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            })
+            .WithMessage("Validation.BusinessTypeInvalid")
+            .When(x => x.BusinessTypeCodes.Count > 0);
+
+        RuleFor(x => x.BusinessPhoneType)
+            .NotEmpty()
+            .Must(type => string.Equals(type, nameof(BusinessPhoneType.Mobile), StringComparison.OrdinalIgnoreCase)
+                          || string.Equals(type, nameof(BusinessPhoneType.Landline), StringComparison.OrdinalIgnoreCase))
+            .WithMessage("Validation.BusinessPhoneTypeInvalid");
 
         RuleFor(x => x.BusinessPhone)
             .NotEmpty()
@@ -30,6 +49,32 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
         RuleFor(x => x.Country)
             .NotEmpty()
             .MaximumLength(100);
+
+        RuleFor(x => x.CityId)
+            .NotNull()
+            .WithMessage("Validation.CityRequired")
+            .When(IsTurkey);
+
+        RuleFor(x => x.DistrictId)
+            .NotNull()
+            .WithMessage("Validation.DistrictRequired")
+            .When(IsTurkey);
+
+        RuleFor(x => x)
+            .MustAsync(async (request, ct) =>
+            {
+                if (!IsTurkey(request) || request.CityId is null || request.DistrictId is null)
+                    return true;
+
+                var resolved = await referenceData.ResolveCityDistrictAsync(
+                    request.CityId.Value,
+                    request.DistrictId.Value,
+                    request.Country,
+                    ct);
+
+                return resolved is not null;
+            })
+            .WithMessage("Validation.CityDistrictInvalid");
 
         RuleFor(x => x.City)
             .NotEmpty()
@@ -71,4 +116,9 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
         RuleFor(x => x.PostalCode).MaximumLength(20).When(x => !string.IsNullOrWhiteSpace(x.PostalCode));
         RuleFor(x => x.OwnerPhone).MaximumLength(50).When(x => !string.IsNullOrWhiteSpace(x.OwnerPhone));
     }
+
+    private static bool IsTurkey(PendingRegistrationRequest request) =>
+        string.Equals(request.Country.Trim(), "Türkiye", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(request.Country.Trim(), "Turkey", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(request.Country.Trim(), "TR", StringComparison.OrdinalIgnoreCase);
 }

@@ -14,6 +14,8 @@ public sealed class CheckoutReviewViewModel
 
     public string BusinessName { get; set; } = string.Empty;
 
+    public string BusinessTypesDisplay { get; set; } = string.Empty;
+
     public string PrimaryDomain { get; set; } = string.Empty;
 
     public string BusinessPhone { get; set; } = string.Empty;

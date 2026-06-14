@@ -183,6 +183,12 @@
   <data name="Common.Loading" xml:space="preserve">
     <value>Yükleniyor…</value>
   </data>
+  <data name="Common.ShowPassword" xml:space="preserve">
+    <value>Şifreyi göster</value>
+  </data>
+  <data name="Common.HidePassword" xml:space="preserve">
+    <value>Şifreyi gizle</value>
+  </data>
   <data name="Common.AllPlatforms" xml:space="preserve">
     <value>Tüm Platformlar</value>
   </data>
@@ -2786,6 +2792,15 @@
   <data name="Signup.BusinessName" xml:space="preserve"><value>İşletme / restoran adı</value></data>
   <data name="Signup.BusinessType" xml:space="preserve"><value>İşletme türü</value></data>
   <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>Örn. Restoran, kafe</value></data>
+  <data name="Signup.CityLabel" xml:space="preserve"><value>Şehir / İl</value></data>
+  <data name="Signup.DistrictLabel" xml:space="preserve"><value>İlçe</value></data>
+  <data name="Signup.SelectCity" xml:space="preserve"><value>Şehir seçin</value></data>
+  <data name="Signup.SelectDistrict" xml:space="preserve"><value>İlçe seçin</value></data>
+  <data name="Signup.StepContact" xml:space="preserve"><value>İletişim bilgileri</value></data>
+  <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>Telefon türü</value></data>
+  <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>Cep telefonu</value></data>
+  <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Sabit hat</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Örnek format: +90 5__ ___ __ __</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>İşletme telefonu</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>Telefon</value></data>
   <data name="Signup.City" xml:space="preserve"><value>Şehir / İl</value></data>
@@ -2858,6 +2873,12 @@
   <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>Enterprise planı özel limitler ve anlaşma ile sunulur. Kayıt formu yerine bizimle iletişime geçerek teklif isteyebilirsiniz.</value></data>
   <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Enterprise planı için lütfen bizimle iletişime geçin.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>İşletme adı gereklidir.</value></data>
+  <data name="Validation.BusinessTypeRequired" xml:space="preserve"><value>En az bir işletme türü seçin.</value></data>
+  <data name="Validation.BusinessTypeInvalid" xml:space="preserve"><value>Seçilen işletme türü geçersiz.</value></data>
+  <data name="Validation.CityRequired" xml:space="preserve"><value>Şehir seçimi gereklidir.</value></data>
+  <data name="Validation.DistrictRequired" xml:space="preserve"><value>İlçe seçimi gereklidir.</value></data>
+  <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>Seçilen şehir ve ilçe eşleşmiyor.</value></data>
+  <data name="Validation.BusinessPhoneTypeInvalid" xml:space="preserve"><value>Telefon türü geçersiz.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Alt alan adı gereklidir.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Alt alan adı yalnızca küçük harf, rakam, tire ve alt çizgi içerebilir.</value></data>
   <data name="Validation.FullNameRequired" xml:space="preserve"><value>Ad soyad gereklidir.</value></data>

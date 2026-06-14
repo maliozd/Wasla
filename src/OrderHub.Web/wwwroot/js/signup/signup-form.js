@@ -33,6 +33,17 @@
         return builder.replace(/^-+|-+$/g, "");
     }
 
+    function readConfig() {
+        var el = document.getElementById("signupFormConfig");
+        if (!el) return {};
+        try {
+            return JSON.parse(el.textContent || "{}");
+        } catch {
+            return {};
+        }
+    }
+
+    var config = readConfig();
     var slugInput = document.getElementById("signupSlug");
     var businessNameInput = document.getElementById("signupBusinessName");
     var preview = document.getElementById("signupDomainPreview");
@@ -44,6 +55,18 @@
     var baseDomain = baseDomainEl ? baseDomainEl.value : "";
     var slugManuallyEdited = false;
     var initialSlug = slugInput ? slugInput.value : "";
+    var citySelect = document.getElementById("signupCityId");
+    var districtSelect = document.getElementById("signupDistrictId");
+    var phoneTypeSelect = document.getElementById("signupBusinessPhoneType");
+    var phonePrefix = document.getElementById("signupPhonePrefix");
+    var phoneHint = document.getElementById("signupPhoneHint");
+    var citiesById = {};
+
+    if (Array.isArray(config.cities)) {
+        config.cities.forEach(function (city) {
+            citiesById[city.id] = city;
+        });
+    }
 
     if (slugInput && initialSlug.trim().length > 0) {
         slugManuallyEdited = true;
@@ -70,6 +93,104 @@
         }
     }
 
+    function setDistrictDisabled(disabled) {
+        if (!districtSelect) return;
+        districtSelect.disabled = disabled;
+        if (disabled) {
+            districtSelect.value = "";
+        }
+    }
+
+    function populateDistrictOptions(districts, selectedId) {
+        if (!districtSelect) return;
+        districtSelect.innerHTML = "";
+        var placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = config.selectDistrictText || "";
+        districtSelect.appendChild(placeholder);
+
+        districts.forEach(function (district) {
+            var option = document.createElement("option");
+            option.value = String(district.id);
+            option.textContent = district.name;
+            if (selectedId && String(selectedId) === String(district.id)) {
+                option.selected = true;
+            }
+            districtSelect.appendChild(option);
+        });
+    }
+
+    function loadDistricts(cityId, selectedDistrictId) {
+        if (!districtSelect || !cityId) {
+            setDistrictDisabled(true);
+            return;
+        }
+
+        setDistrictDisabled(true);
+        fetch((config.districtsUrl || "/signup/districts") + "?cityId=" + encodeURIComponent(cityId), {
+            headers: { Accept: "application/json" }
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error("districts");
+                return response.json();
+            })
+            .then(function (districts) {
+                populateDistrictOptions(districts, selectedDistrictId);
+                setDistrictDisabled(false);
+            })
+            .catch(function () {
+                populateDistrictOptions([], null);
+                setDistrictDisabled(true);
+            });
+    }
+
+    function getSelectedCity() {
+        if (!citySelect || !citySelect.value) return null;
+        return citiesById[Number(citySelect.value)] || null;
+    }
+
+    function updatePhoneUi() {
+        if (!phoneTypeSelect) return;
+        var isMobile = phoneTypeSelect.value === "Mobile";
+        var city = getSelectedCity();
+
+        if (phonePrefix) {
+            phonePrefix.textContent = config.defaultCountryCode || "+90";
+        }
+
+        if (phoneHint) {
+            if (isMobile) {
+                phoneHint.textContent = config.mobileHint || "";
+            } else if (city && city.phoneAreaCode) {
+                phoneHint.textContent = (config.defaultCountryCode || "+90") + " " + city.phoneAreaCode;
+            } else {
+                phoneHint.textContent = "";
+            }
+        }
+    }
+
+    function initPasswordToggles() {
+        document.querySelectorAll(".signup-password-toggle").forEach(function (button) {
+            button.addEventListener("click", function () {
+                var targetId = button.getAttribute("data-target");
+                var input = targetId ? document.getElementById(targetId) : null;
+                if (!input) return;
+
+                var isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                var icon = button.querySelector("i");
+                if (icon) {
+                    icon.classList.toggle("bi-eye", !isPassword);
+                    icon.classList.toggle("bi-eye-slash", isPassword);
+                }
+
+                var label = isPassword ? (config.hidePasswordText || "") : (config.showPasswordText || "");
+                button.setAttribute("aria-label", label);
+                button.setAttribute("title", label);
+            });
+        });
+    }
+
     if (planSelect) {
         planSelect.addEventListener("change", updatePlanUi);
         updatePlanUi();
@@ -93,5 +214,29 @@
         });
     }
 
+    if (citySelect) {
+        var initialDistrictId = districtSelect ? districtSelect.value : "";
+        citySelect.addEventListener("change", function () {
+            loadDistricts(citySelect.value, null);
+            updatePhoneUi();
+        });
+
+        if (citySelect.value) {
+            if (!districtSelect || districtSelect.options.length <= 1) {
+                loadDistricts(citySelect.value, initialDistrictId);
+            } else {
+                setDistrictDisabled(false);
+            }
+        } else {
+            setDistrictDisabled(true);
+        }
+    }
+
+    if (phoneTypeSelect) {
+        phoneTypeSelect.addEventListener("change", updatePhoneUi);
+    }
+
+    initPasswordToggles();
     updateDomainPreview();
+    updatePhoneUi();
 })();

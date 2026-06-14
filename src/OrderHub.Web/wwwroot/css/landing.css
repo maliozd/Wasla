@@ -254,6 +254,8 @@ main {
 /* Pricing */
 .oh-pricing-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border: 1px solid var(--oh-landing-border);
   border-radius: 1rem;
@@ -316,4 +318,14 @@ main {
   font-weight: 700;
   background: rgba(255, 107, 53, 0.12);
   color: var(--oh-landing-primary-dark);
+}
+
+.oh-signup-business-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.35rem 1rem;
+}
+
+.oh-signup-phone-hint {
+  font-size: 0.8rem;
 }

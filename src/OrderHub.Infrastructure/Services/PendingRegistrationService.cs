@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using OrderHub.Application.Abstractions.Onboarding.Checkout;
 using OrderHub.Application.Abstractions.Onboarding.PendingRegistrations;
 using OrderHub.Application.Abstractions.Plans;
+using OrderHub.Application.Abstractions.Signup;
 using OrderHub.Application.Onboarding;
 using OrderHub.Domain.Entities.Central;
 using OrderHub.Domain.Enums;
@@ -23,17 +24,20 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
 
     private readonly CentralDbContext _central;
     private readonly IOrderHubPlanCatalog _planCatalog;
+    private readonly ISignupReferenceDataService _referenceData;
     private readonly CustomerOnboardingOptions _options;
     private readonly ILogger<PendingRegistrationService> _logger;
 
     public PendingRegistrationService(
         CentralDbContext central,
         IOrderHubPlanCatalog planCatalog,
+        ISignupReferenceDataService referenceData,
         IOptions<CustomerOnboardingOptions> options,
         ILogger<PendingRegistrationService> logger)
     {
         _central = central;
         _planCatalog = planCatalog;
+        _referenceData = referenceData;
         _options = options.Value;
         _logger = logger;
     }
@@ -88,6 +92,14 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.DuplicateDatabaseName);
         }
 
+        var businessTypes = await _referenceData.ResolveBusinessTypesByCodesAsync(request.BusinessTypeCodes, ct);
+        var businessTypeDisplay = string.Join(", ", businessTypes.Select(x => x.DisplayName));
+        var businessTypeCodes = businessTypes.Select(x => x.Code).ToList();
+        var businessTypeIds = await _central.BusinessTypes.AsNoTracking()
+            .Where(x => businessTypeCodes.Contains(x.Code))
+            .Select(x => x.Id)
+            .ToListAsync(ct);
+
         var now = DateTime.UtcNow;
         var expiryDays = Math.Max(1, _options.PendingRegistrationExpiryDays);
         var registration = new PendingRegistration
@@ -96,12 +108,15 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             PlanCode = plan.PlanCode,
             BillingPeriod = NormalizeBillingPeriod(request.BillingPeriod),
             BusinessName = request.BusinessName.Trim(),
-            BusinessType = request.BusinessType.Trim(),
+            BusinessType = businessTypeDisplay,
+            BusinessPhoneType = ParseBusinessPhoneType(request.BusinessPhoneType),
             Slug = slug,
             PrimaryDomain = primaryDomain,
             DatabaseName = databaseName,
-            BusinessPhone = request.BusinessPhone.Trim(),
+            BusinessPhone = NormalizeBusinessPhone(request.BusinessPhone),
             Country = request.Country.Trim(),
+            CityId = request.CityId,
+            DistrictId = request.DistrictId,
             City = request.City.Trim(),
             District = request.District.Trim(),
             Neighborhood = string.IsNullOrWhiteSpace(request.Neighborhood) ? null : request.Neighborhood.Trim(),
@@ -119,6 +134,15 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
 
         try
         {
+            foreach (var businessTypeId in businessTypeIds)
+            {
+                registration.BusinessTypes.Add(new PendingRegistrationBusinessType
+                {
+                    PendingRegistrationId = registration.Id,
+                    BusinessTypeId = businessTypeId
+                });
+            }
+
             _central.PendingRegistrations.Add(registration);
             await _central.SaveChangesAsync(ct);
 
@@ -173,6 +197,17 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         if (row is null)
             return null;
 
+        var businessTypesDisplay = await (
+            from link in _central.PendingRegistrationBusinessTypes.AsNoTracking()
+            join bt in _central.BusinessTypes.AsNoTracking() on link.BusinessTypeId equals bt.Id
+            where link.PendingRegistrationId == registrationId
+            orderby bt.SortOrder
+            select bt.DisplayName).ToListAsync(ct);
+
+        var businessTypesLabel = businessTypesDisplay.Count > 0
+            ? string.Join(", ", businessTypesDisplay)
+            : row.BusinessType ?? string.Empty;
+
         var monthly = CheckoutSimulatedPricing.GetMonthlyPriceTry(row.PlanCode);
         var total = CheckoutSimulatedPricing.GetTotalPriceTry(row.PlanCode, row.BillingPeriod);
 
@@ -182,6 +217,7 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             row.BillingPeriod,
             row.BusinessName,
             row.PrimaryDomain,
+            businessTypesLabel,
             row.BusinessPhone,
             row.OwnerFullName,
             row.OwnerEmail,
@@ -372,4 +408,11 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
 
     private static string NormalizeBillingPeriod(string billingPeriod) =>
         string.Equals(billingPeriod, "Yearly", StringComparison.OrdinalIgnoreCase) ? "Yearly" : "Monthly";
+
+    private static BusinessPhoneType ParseBusinessPhoneType(string value) =>
+        string.Equals(value, nameof(BusinessPhoneType.Landline), StringComparison.OrdinalIgnoreCase)
+            ? BusinessPhoneType.Landline
+            : BusinessPhoneType.Mobile;
+
+    private static string NormalizeBusinessPhone(string value) => value.Trim();
 }

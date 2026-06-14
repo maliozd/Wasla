@@ -336,6 +336,42 @@
   <data name="Signup.PendingTestNote" xml:space="preserve">
     <value>Test ortamında ödeme adımı simüle edilecektir.</value>
   </data>
+  <data name="Common.ShowPassword" xml:space="preserve">
+    <value>Şifreyi göster</value>
+  </data>
+  <data name="Common.HidePassword" xml:space="preserve">
+    <value>Şifreyi gizle</value>
+  </data>
+  <data name="Signup.CityLabel" xml:space="preserve">
+    <value>Şehir / İl</value>
+  </data>
+  <data name="Signup.DistrictLabel" xml:space="preserve">
+    <value>İlçe</value>
+  </data>
+  <data name="Signup.SelectCity" xml:space="preserve">
+    <value>Şehir seçin</value>
+  </data>
+  <data name="Signup.SelectDistrict" xml:space="preserve">
+    <value>İlçe seçin</value>
+  </data>
+  <data name="Signup.StepContact" xml:space="preserve">
+    <value>İletişim bilgileri</value>
+  </data>
+  <data name="Signup.BusinessPhoneType" xml:space="preserve">
+    <value>Telefon türü</value>
+  </data>
+  <data name="Signup.PhoneTypeMobile" xml:space="preserve">
+    <value>Cep telefonu</value>
+  </data>
+  <data name="Signup.PhoneTypeLandline" xml:space="preserve">
+    <value>Sabit hat</value>
+  </data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve">
+    <value>Örnek format: +90 5__ ___ __ __</value>
+  </data>
+  <data name="Validation.BusinessTypeRequired" xml:space="preserve">
+    <value>En az bir işletme türü seçin.</value>
+  </data>
   <data name="Checkout.ReviewTitle" xml:space="preserve">
     <value>Ödeme özeti</value>
   </data>

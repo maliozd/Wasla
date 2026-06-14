@@ -8,6 +8,7 @@ public sealed record PendingRegistrationCheckoutDetails(
     string BillingPeriod,
     string BusinessName,
     string PrimaryDomain,
+    string BusinessTypesDisplay,
     string BusinessPhone,
     string OwnerFullName,
     string OwnerEmail,

@@ -166,6 +166,7 @@ public sealed class CheckoutController : Controller
             PlanDisplayName = planDisplay,
             BillingPeriod = details.BillingPeriod,
             BusinessName = details.BusinessName,
+            BusinessTypesDisplay = details.BusinessTypesDisplay,
             PrimaryDomain = details.PrimaryDomain,
             BusinessPhone = details.BusinessPhone,
             OwnerFullName = details.OwnerFullName,

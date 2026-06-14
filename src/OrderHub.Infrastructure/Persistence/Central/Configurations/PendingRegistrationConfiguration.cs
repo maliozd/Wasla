@@ -15,7 +15,8 @@ public class PendingRegistrationConfiguration : IEntityTypeConfiguration<Pending
         builder.Property(x => x.PlanCode).IsRequired().HasMaxLength(50);
         builder.Property(x => x.BillingPeriod).IsRequired().HasMaxLength(20);
         builder.Property(x => x.BusinessName).IsRequired().HasMaxLength(200);
-        builder.Property(x => x.BusinessType).IsRequired().HasMaxLength(100);
+        builder.Property(x => x.BusinessType).HasMaxLength(300);
+        builder.Property(x => x.BusinessPhoneType).IsRequired();
         builder.Property(x => x.Slug).IsRequired().HasMaxLength(100);
         builder.Property(x => x.PrimaryDomain).IsRequired().HasMaxLength(255);
         builder.Property(x => x.DatabaseName).IsRequired().HasMaxLength(128);
@@ -23,6 +24,16 @@ public class PendingRegistrationConfiguration : IEntityTypeConfiguration<Pending
         builder.Property(x => x.Country).IsRequired().HasMaxLength(100);
         builder.Property(x => x.City).IsRequired().HasMaxLength(100);
         builder.Property(x => x.District).IsRequired().HasMaxLength(100);
+
+        builder.HasOne<City>()
+            .WithMany()
+            .HasForeignKey(x => x.CityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<District>()
+            .WithMany()
+            .HasForeignKey(x => x.DistrictId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(x => x.Neighborhood).HasMaxLength(100);
         builder.Property(x => x.AddressLine1).IsRequired().HasMaxLength(300);
         builder.Property(x => x.AddressLine2).HasMaxLength(300);

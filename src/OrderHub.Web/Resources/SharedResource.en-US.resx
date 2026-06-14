@@ -183,6 +183,12 @@
   <data name="Common.Loading" xml:space="preserve">
     <value>Loading…</value>
   </data>
+  <data name="Common.ShowPassword" xml:space="preserve">
+    <value>Show password</value>
+  </data>
+  <data name="Common.HidePassword" xml:space="preserve">
+    <value>Hide password</value>
+  </data>
   <data name="Common.AllPlatforms" xml:space="preserve">
     <value>All Platforms</value>
   </data>
@@ -2789,6 +2795,15 @@
   <data name="Signup.BusinessName" xml:space="preserve"><value>Business / restaurant name</value></data>
   <data name="Signup.BusinessType" xml:space="preserve"><value>Business type</value></data>
   <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>e.g. Restaurant, café</value></data>
+  <data name="Signup.CityLabel" xml:space="preserve"><value>City / Province</value></data>
+  <data name="Signup.DistrictLabel" xml:space="preserve"><value>District</value></data>
+  <data name="Signup.SelectCity" xml:space="preserve"><value>Select city</value></data>
+  <data name="Signup.SelectDistrict" xml:space="preserve"><value>Select district</value></data>
+  <data name="Signup.StepContact" xml:space="preserve"><value>Contact information</value></data>
+  <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>Phone type</value></data>
+  <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>Mobile</value></data>
+  <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Landline</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Example format: +90 5__ ___ __ __</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>Business phone</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>Phone</value></data>
   <data name="Signup.City" xml:space="preserve"><value>City / Province</value></data>
@@ -2861,6 +2876,12 @@
   <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>The Enterprise plan is offered with custom limits and agreement. Contact us to request an offer instead of using the self-service signup form.</value></data>
   <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Please contact us for the Enterprise plan.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>Business name is required.</value></data>
+  <data name="Validation.BusinessTypeRequired" xml:space="preserve"><value>Select at least one business type.</value></data>
+  <data name="Validation.BusinessTypeInvalid" xml:space="preserve"><value>The selected business type is invalid.</value></data>
+  <data name="Validation.CityRequired" xml:space="preserve"><value>City selection is required.</value></data>
+  <data name="Validation.DistrictRequired" xml:space="preserve"><value>District selection is required.</value></data>
+  <data name="Validation.CityDistrictInvalid" xml:space="preserve"><value>The selected city and district do not match.</value></data>
+  <data name="Validation.BusinessPhoneTypeInvalid" xml:space="preserve"><value>Phone type is invalid.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Subdomain is required.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Subdomain may only contain lowercase letters, numbers, hyphens, and underscores.</value></data>
   <data name="Validation.FullNameRequired" xml:space="preserve"><value>Full name is required.</value></data>

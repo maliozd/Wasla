@@ -1,6 +1,9 @@
 @model OrderHub.Web.Models.Signup.SignupViewModel
+@using System.Text.Json
 @using Microsoft.Extensions.Localization
 @using OrderHub.Application.Abstractions.Plans
+@using OrderHub.Domain.Enums
+@using BusinessPhoneTypeEnum = OrderHub.Domain.Enums.BusinessPhoneType
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @inject IOrderHubPlanCatalog PlanCatalog
 @{
@@ -10,6 +13,16 @@
         ? $"your-name.{Model.MarketingBaseDomain}"
         : $"{Model.Slug}.{Model.MarketingBaseDomain}";
     var publicPlans = PlanCatalog.GetPublicPlans();
+    var signupConfig = new
+    {
+        cities = Model.Cities.Select(c => new { id = c.Id, name = c.Name, phoneAreaCode = c.PhoneAreaCode }),
+        districtsUrl = Url.Action("Districts", "Signup"),
+        selectDistrictText = L["Signup.SelectDistrict"].Value,
+        showPasswordText = L["Common.ShowPassword"].Value,
+        hidePasswordText = L["Common.HidePassword"].Value,
+        mobileHint = L["Signup.MobilePhoneHint"].Value,
+        defaultCountryCode = "+90"
+    };
 }
 <div class="oh-signup-page py-4 py-md-5">
     <div class="container">
@@ -22,7 +35,7 @@
 
                 <div class="card border-0 shadow-sm oh-signup-card">
                     <div class="card-body p-4 p-md-5">
-                        <form asp-action="Index" method="post" novalidate>
+                        <form asp-action="Index" method="post" novalidate id="signupForm">
                             @Html.AntiForgeryToken()
                             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
@@ -76,15 +89,25 @@
                                         <input asp-for="BusinessName" class="form-control" id="signupBusinessName" autocomplete="organization" />
                                         <span asp-validation-for="BusinessName" class="text-danger small"></span>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label asp-for="BusinessType" class="form-label"></label>
-                                        <input asp-for="BusinessType" class="form-control" placeholder="@L["Signup.BusinessTypePlaceholder"]" />
-                                        <span asp-validation-for="BusinessType" class="text-danger small"></span>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label asp-for="BusinessPhone" class="form-label"></label>
-                                        <input asp-for="BusinessPhone" class="form-control" autocomplete="tel" />
-                                        <span asp-validation-for="BusinessPhone" class="text-danger small"></span>
+                                    <div class="col-12">
+                                        <label class="form-label">@L["Signup.BusinessType"]</label>
+                                        <div class="oh-signup-business-types border rounded p-3 bg-body-tertiary">
+                                            @foreach (var option in Model.BusinessTypeOptions)
+                                            {
+                                                var checkboxId = $"businessType-{option.Code}";
+                                                var isChecked = Model.SelectedBusinessTypeCodes.Contains(option.Code, StringComparer.OrdinalIgnoreCase);
+                                                <div class="form-check">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           name="SelectedBusinessTypeCodes"
+                                                           value="@option.Code"
+                                                           id="@checkboxId"
+                                                           @(isChecked ? "checked" : null) />
+                                                    <label class="form-check-label" for="@checkboxId">@option.DisplayName</label>
+                                                </div>
+                                            }
+                                        </div>
+                                        <span asp-validation-for="SelectedBusinessTypeCodes" class="text-danger small"></span>
                                     </div>
                                     <div class="col-12">
                                         <label asp-for="Slug" class="form-label"></label>
@@ -109,18 +132,18 @@
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label asp-for="Country" class="form-label"></label>
-                                        <input asp-for="Country" class="form-control" autocomplete="country-name" />
+                                        <input asp-for="Country" class="form-control" id="signupCountry" autocomplete="country-name" readonly />
                                         <span asp-validation-for="Country" class="text-danger small"></span>
                                     </div>
                                     <div class="col-md-4">
-                                        <label asp-for="City" class="form-label"></label>
-                                        <input asp-for="City" class="form-control" autocomplete="address-level2" />
-                                        <span asp-validation-for="City" class="text-danger small"></span>
+                                        <label asp-for="CityId" class="form-label">@L["Signup.CityLabel"]</label>
+                                        <select asp-for="CityId" asp-items="Model.CityOptions" class="form-select" id="signupCityId"></select>
+                                        <span asp-validation-for="CityId" class="text-danger small"></span>
                                     </div>
                                     <div class="col-md-4">
-                                        <label asp-for="District" class="form-label"></label>
-                                        <input asp-for="District" class="form-control" autocomplete="address-level3" />
-                                        <span asp-validation-for="District" class="text-danger small"></span>
+                                        <label asp-for="DistrictId" class="form-label">@L["Signup.DistrictLabel"]</label>
+                                        <select asp-for="DistrictId" asp-items="Model.DistrictOptions" class="form-select" id="signupDistrictId"></select>
+                                        <span asp-validation-for="DistrictId" class="text-danger small"></span>
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="Neighborhood" class="form-label"></label>
@@ -142,9 +165,35 @@
                                 </div>
                             </section>
 
-                            <section class="oh-signup-section">
+                            <section class="oh-signup-section mb-4">
                                 <div class="oh-signup-step-label mb-3">
                                     <span class="oh-signup-step-num">4</span>
+                                    <span class="fw-semibold">@L["Signup.StepContact"]</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label asp-for="BusinessPhoneType" class="form-label"></label>
+                                        <select asp-for="BusinessPhoneType" class="form-select" id="signupBusinessPhoneType">
+                                            <option value="@nameof(BusinessPhoneTypeEnum.Mobile)">@L["Signup.PhoneTypeMobile"]</option>
+                                            <option value="@nameof(BusinessPhoneTypeEnum.Landline)">@L["Signup.PhoneTypeLandline"]</option>
+                                        </select>
+                                        <span asp-validation-for="BusinessPhoneType" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label asp-for="BusinessPhone" class="form-label"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="signupPhonePrefix">+90</span>
+                                            <input asp-for="BusinessPhone" class="form-control" id="signupBusinessPhone" autocomplete="tel" inputmode="tel" aria-describedby="signupPhoneHint" />
+                                        </div>
+                                        <div id="signupPhoneHint" class="form-text oh-signup-phone-hint"></div>
+                                        <span asp-validation-for="BusinessPhone" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="oh-signup-section">
+                                <div class="oh-signup-step-label mb-3">
+                                    <span class="oh-signup-step-num">5</span>
                                     <span class="fw-semibold">@L["Signup.StepOwner"]</span>
                                 </div>
                                 <div class="row g-3">
@@ -160,16 +209,26 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="OwnerPhone" class="form-label"></label>
-                                        <input asp-for="OwnerPhone" class="form-control" autocomplete="tel" />
+                                        <input asp-for="OwnerPhone" class="form-control" autocomplete="tel" inputmode="tel" />
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="Password" class="form-label"></label>
-                                        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                                        <div class="input-group">
+                                            <input asp-for="Password" type="password" class="form-control" id="signupPassword" autocomplete="new-password" />
+                                            <button type="button" class="btn btn-outline-secondary signup-password-toggle" data-target="signupPassword" aria-label="@L["Common.ShowPassword"]" title="@L["Common.ShowPassword"]">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
                                         <span asp-validation-for="Password" class="text-danger small"></span>
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="ConfirmPassword" class="form-label"></label>
-                                        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                                        <div class="input-group">
+                                            <input asp-for="ConfirmPassword" type="password" class="form-control" id="signupConfirmPassword" autocomplete="new-password" />
+                                            <button type="button" class="btn btn-outline-secondary signup-password-toggle" data-target="signupConfirmPassword" aria-label="@L["Common.ShowPassword"]" title="@L["Common.ShowPassword"]">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
                                         <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                                     </div>
                                 </div>
@@ -195,5 +254,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script type="application/json" id="signupFormConfig">@Html.Raw(JsonSerializer.Serialize(signupConfig))</script>
     <script src="~/js/signup/signup-form.js" asp-append-version="true"></script>
 }

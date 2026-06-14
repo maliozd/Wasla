@@ -265,7 +265,7 @@
                 @foreach (var plan in PlanCatalog.GetPublicPlans())
                 {
                     <div class="col-md-6 col-xl-3">
-                        <div class="oh-pricing-card h-100 @(plan.IsRecommended ? "oh-pricing-card--featured" : "")">
+                        <div class="oh-pricing-card h-100 d-flex flex-column @(plan.IsRecommended ? "oh-pricing-card--featured" : "")">
                             @if (plan.IsRecommended)
                             {
                                 <div class="oh-pricing-badge">@L["Pricing.Recommended"]</div>
@@ -278,7 +278,7 @@
                             <div class="oh-pricing-device-limit small fw-semibold text-primary mb-3">
                                 <i class="bi bi-printer me-1" aria-hidden="true"></i>@L[plan.DeviceLimitKey]
                             </div>
-                            <ul class="oh-pricing-features list-unstyled small mb-4">
+                            <ul class="oh-pricing-features list-unstyled small mb-4 flex-grow-1">
                                 @foreach (var featureKey in plan.FeatureKeys)
                                 {
                                     <li><i class="bi bi-check2 text-success me-2" aria-hidden="true"></i>@L[featureKey]</li>
@@ -286,12 +286,12 @@
                             </ul>
                             @if (plan.IsContactSales)
                             {
-                                <a class="btn @(plan.IsRecommended ? "btn-primary" : "btn-outline-primary") w-100 rounded-pill"
+                                <a class="btn @(plan.IsRecommended ? "btn-primary" : "btn-outline-primary") w-100 rounded-pill mt-auto"
                                    href="mailto:support@orderhub.local">@L[plan.CtaLabelKey]</a>
                             }
                             else
                             {
-                                <a class="btn @(plan.IsRecommended ? "btn-primary" : "btn-outline-primary") w-100 rounded-pill"
+                                <a class="btn @(plan.IsRecommended ? "btn-primary" : "btn-outline-primary") w-100 rounded-pill mt-auto"
                                    asp-controller="Signup" asp-action="Index" asp-route-plan="@plan.PlanCode">
                                     @L[plan.CtaLabelKey]
                                 </a>

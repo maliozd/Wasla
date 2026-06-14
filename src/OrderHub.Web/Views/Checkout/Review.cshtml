@@ -41,6 +41,11 @@
                         <dl class="row small mb-4">
                             <dt class="col-sm-4">@L["Signup.PendingLabelRestaurant"]</dt>
                             <dd class="col-sm-8">@Model.BusinessName</dd>
+                            @if (!string.IsNullOrWhiteSpace(Model.BusinessTypesDisplay))
+                            {
+                                <dt class="col-sm-4">@L["Signup.BusinessType"]</dt>
+                                <dd class="col-sm-8">@Model.BusinessTypesDisplay</dd>
+                            }
                             <dt class="col-sm-4">@L["Signup.PendingLabelOrderHubAddress"]</dt>
                             <dd class="col-sm-8"><code>@Model.PrimaryDomain</code></dd>
                             <dt class="col-sm-4">@L["Signup.BusinessPhone"]</dt>
