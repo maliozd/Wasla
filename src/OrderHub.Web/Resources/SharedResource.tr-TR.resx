@@ -3025,10 +3025,12 @@
   <data name="Onboarding.Open" xml:space="preserve"><value>Aç</value></data>
   <data name="Onboarding.GoToDashboard" xml:space="preserve"><value>Panele git</value></data>
   <data name="Onboarding.GoToOrders" xml:space="preserve"><value>Siparişlere git</value></data>
+  <data name="TenantNotFound.PageTitle" xml:space="preserve"><value>Bu Wasla adresi aktif değil</value></data>
   <data name="TenantNotFound.Title" xml:space="preserve"><value>Bu Wasla adresi henüz aktif değil</value></data>
-  <data name="TenantNotFound.Description" xml:space="preserve"><value>Bu adrese bağlı bir işletme paneli bulunamadı. Kayıt işleminizi tamamlamadıysanız kayıt sayfasına dönebilirsiniz.</value></data>
-  <data name="TenantNotFound.DevLine1" xml:space="preserve"><value>Bu Wasla adresi henüz aktif değil.</value></data>
-  <data name="TenantNotFound.DevLine2" xml:space="preserve"><value>Bu domain için tenant kaydı bulunamadı.</value></data>
-  <data name="TenantNotFound.DevLine3" xml:space="preserve"><value>Kayıt akışında ödeme/provisioning tamamlanmadan tenant paneli açılmaz.</value></data>
+  <data name="TenantNotFound.Description" xml:space="preserve"><value>Bu adres için aktif bir restoran paneli bulunamadı. Kayıt işlemini tamamlamadıysanız kayıt sayfasına dönebilirsiniz.</value></data>
+  <data name="TenantNotFound.InfoLine1" xml:space="preserve"><value>Bu Wasla adresi henüz aktif değil.</value></data>
+  <data name="TenantNotFound.InfoLine2" xml:space="preserve"><value>Bu alan adı için aktif restoran paneli bulunamadı.</value></data>
+  <data name="TenantNotFound.InfoLine3" xml:space="preserve"><value>Ödeme ve hesap hazırlama adımı tamamlandıktan sonra restoran paneli açılacaktır.</value></data>
+  <data name="TenantNotFound.HostLabel" xml:space="preserve"><value>Kontrol edilen adres: {0}</value></data>
   <data name="TenantNotFound.BackToSignup" xml:space="preserve"><value>Kayıt sayfasına dön</value></data>
 </root>

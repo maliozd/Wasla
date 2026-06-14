@@ -666,20 +666,32 @@
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
   </data>
+  <data name="Landing.Title" xml:space="preserve">
+    <value>Wasla</value>
+  </data>
+  <data name="Landing.Subtitle" xml:space="preserve">
+    <value>Çoklu platform sipariş yönetimi</value>
+  </data>
+  <data name="TenantNotFound.PageTitle" xml:space="preserve">
+    <value>Bu Wasla adresi aktif değil</value>
+  </data>
   <data name="TenantNotFound.Title" xml:space="preserve">
     <value>Bu Wasla adresi henüz aktif değil</value>
   </data>
   <data name="TenantNotFound.Description" xml:space="preserve">
-    <value>Bu adrese bağlı bir işletme paneli bulunamadı. Kayıt işleminizi tamamlamadıysanız kayıt sayfasına dönebilirsiniz.</value>
+    <value>Bu adres için aktif bir restoran paneli bulunamadı. Kayıt işlemini tamamlamadıysanız kayıt sayfasına dönebilirsiniz.</value>
   </data>
-  <data name="TenantNotFound.DevLine1" xml:space="preserve">
+  <data name="TenantNotFound.InfoLine1" xml:space="preserve">
     <value>Bu Wasla adresi henüz aktif değil.</value>
   </data>
-  <data name="TenantNotFound.DevLine2" xml:space="preserve">
-    <value>Bu domain için tenant kaydı bulunamadı.</value>
+  <data name="TenantNotFound.InfoLine2" xml:space="preserve">
+    <value>Bu alan adı için aktif restoran paneli bulunamadı.</value>
   </data>
-  <data name="TenantNotFound.DevLine3" xml:space="preserve">
-    <value>Kayıt akışında ödeme/provisioning tamamlanmadan tenant paneli açılmaz.</value>
+  <data name="TenantNotFound.InfoLine3" xml:space="preserve">
+    <value>Ödeme ve hesap hazırlama adımı tamamlandıktan sonra restoran paneli açılacaktır.</value>
+  </data>
+  <data name="TenantNotFound.HostLabel" xml:space="preserve">
+    <value>Kontrol edilen adres: {0}</value>
   </data>
   <data name="TenantNotFound.BackToSignup" xml:space="preserve">
     <value>Kayıt sayfasına dön</value>

@@ -11,14 +11,13 @@
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
     var requestedHost = ViewData["RequestedHost"] as string;
     var signupUrl = ViewData["SignupUrl"] as string ?? "/signup";
-    var showDevDetails = ViewData["ShowDevDetails"] as bool? == true;
 }
 <!DOCTYPE html>
 <html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@L["TenantNotFound.Title"] - Wasla</title>
+    <title>@L["TenantNotFound.PageTitle"] - Wasla</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -72,22 +71,19 @@
                 <p class="text-secondary mb-0">@L["TenantNotFound.Description"]</p>
             </div>
 
-            @if (showDevDetails)
-            {
-                <div class="alert alert-light border small mb-4">
-                    <ul class="mb-0 ps-3">
-                        <li>@L["TenantNotFound.DevLine1"]</li>
-                        <li>@L["TenantNotFound.DevLine2"]</li>
-                        <li>@L["TenantNotFound.DevLine3"]</li>
-                    </ul>
-                    @if (!string.IsNullOrWhiteSpace(requestedHost))
-                    {
-                        <div class="mt-3 text-muted">
-                            <i class="bi bi-globe2 me-1"></i>@requestedHost
-                        </div>
-                    }
-                </div>
-            }
+            <div class="alert alert-light border small mb-4">
+                <ul class="mb-0 ps-3">
+                    <li>@L["TenantNotFound.InfoLine1"]</li>
+                    <li>@L["TenantNotFound.InfoLine2"]</li>
+                    <li>@L["TenantNotFound.InfoLine3"]</li>
+                </ul>
+                @if (!string.IsNullOrWhiteSpace(requestedHost))
+                {
+                    <div class="mt-3 text-muted">
+                        <i class="bi bi-globe2 me-1"></i>@L["TenantNotFound.HostLabel", requestedHost]
+                    </div>
+                }
+            </div>
 
             <div class="d-flex flex-wrap gap-2 justify-content-center">
                 <a class="btn btn-primary" href="@signupUrl">

@@ -9,12 +9,10 @@ namespace OrderHub.Web.Controllers;
 public sealed class HomeController : Controller
 {
     private readonly CustomerOnboardingOptions _onboardingOptions;
-    private readonly IWebHostEnvironment _environment;
 
-    public HomeController(IOptions<CustomerOnboardingOptions> onboardingOptions, IWebHostEnvironment environment)
+    public HomeController(IOptions<CustomerOnboardingOptions> onboardingOptions)
     {
         _onboardingOptions = onboardingOptions.Value;
-        _environment = environment;
     }
 
     public IActionResult Index()
@@ -36,7 +34,6 @@ public sealed class HomeController : Controller
     {
         ViewData["RequestedHost"] = host;
         ViewData["SignupUrl"] = BuildSignupUrl();
-        ViewData["ShowDevDetails"] = _environment.IsDevelopment();
         Response.StatusCode = StatusCodes.Status404NotFound;
         return View();
     }

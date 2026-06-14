@@ -3031,10 +3031,12 @@
   <data name="Onboarding.Open" xml:space="preserve"><value>فتح</value></data>
   <data name="Onboarding.GoToDashboard" xml:space="preserve"><value>الذهاب إلى اللوحة</value></data>
   <data name="Onboarding.GoToOrders" xml:space="preserve"><value>الذهاب إلى الطلبات</value></data>
+  <data name="TenantNotFound.PageTitle" xml:space="preserve"><value>عنوان Wasla هذا غير نشط</value></data>
   <data name="TenantNotFound.Title" xml:space="preserve"><value>عنوان Wasla هذا غير نشط بعد</value></data>
-  <data name="TenantNotFound.Description" xml:space="preserve"><value>لم يتم العثور على لوحة عمل مرتبطة بهذا العنوان. إذا لم تكمل التسجيل، يمكنك العودة إلى صفحة التسجيل.</value></data>
-  <data name="TenantNotFound.DevLine1" xml:space="preserve"><value>عنوان Wasla هذا غير نشط بعد.</value></data>
-  <data name="TenantNotFound.DevLine2" xml:space="preserve"><value>لم يتم العثور على سجل tenant لهذا النطاق.</value></data>
-  <data name="TenantNotFound.DevLine3" xml:space="preserve"><value>لا تُفتح لوحة tenant إلا بعد إكمال الدفع والتجهيز في مسار التسجيل.</value></data>
+  <data name="TenantNotFound.Description" xml:space="preserve"><value>لم يتم العثور على لوحة مطعم نشطة لهذا العنوان. إذا لم تكمل التسجيل، يمكنك العودة إلى صفحة التسجيل.</value></data>
+  <data name="TenantNotFound.InfoLine1" xml:space="preserve"><value>عنوان Wasla هذا غير نشط بعد.</value></data>
+  <data name="TenantNotFound.InfoLine2" xml:space="preserve"><value>لم يتم العثور على لوحة مطعم نشطة لهذا النطاق.</value></data>
+  <data name="TenantNotFound.InfoLine3" xml:space="preserve"><value>ستُفتح لوحة المطعم بعد إكمال الدفع وإعداد الحساب.</value></data>
+  <data name="TenantNotFound.HostLabel" xml:space="preserve"><value>العنوان الذي تم التحقق منه: {0}</value></data>
   <data name="TenantNotFound.BackToSignup" xml:space="preserve"><value>العودة إلى التسجيل</value></data>
 </root>
