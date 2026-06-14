@@ -372,9 +372,17 @@ OrderHub-keys/
 **/OrderHub-keys/
 
 # Local secrets / env files
+enc-key.txt
+enc-secret.txt
+enc-*.txt
 *.env
+*.env.*
 *.env.local
 secrets.json
+secrets/
+Secrets/
+*.key
+*.pem
 
 # OS junk
 .DS_Store
