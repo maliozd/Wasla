@@ -5,7 +5,7 @@ namespace OrderHub.Web.Middleware;
 
 public sealed class TenantResolutionMiddleware
 {
-    private const string ItemKey = "CurrentCustomer";
+    private const string ItemKey = "CurrentTenant";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
 
     // Paths that must not require tenant resolution: admin area, static assets,
@@ -74,7 +74,7 @@ public sealed class TenantResolutionMiddleware
             return;
         }
 
-        var cacheKey = $"customer:{host.ToLowerInvariant()}";
+        var cacheKey = $"tenant:{host.ToLowerInvariant()}";
         if (cache.TryGetValue(cacheKey, out ResolvedTenantDto? cachedTenant) && cachedTenant is not null)
         {
             context.Items[ItemKey] = cachedTenant;

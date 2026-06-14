@@ -16,7 +16,7 @@ using OrderHub.Web.Security;
 namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
 [Route("print-bridge")]
 public sealed class PrintBridgeController : BaseController
 {

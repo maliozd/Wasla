@@ -5,7 +5,7 @@ namespace OrderHub.Api.Middleware;
 
 public sealed class TenantResolutionMiddleware
 {
-    private const string ItemKey = "CurrentCustomer";
+    private const string ItemKey = "CurrentTenant";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
 
     private readonly RequestDelegate _next;
@@ -38,7 +38,7 @@ public sealed class TenantResolutionMiddleware
             return;
         }
 
-        var cacheKey = $"customer:{host.ToLowerInvariant()}";
+        var cacheKey = $"tenant:{host.ToLowerInvariant()}";
 
         if (cache.TryGetValue(cacheKey, out ResolvedTenantDto? cachedTenant) && cachedTenant is not null)
         {

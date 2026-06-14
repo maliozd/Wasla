@@ -4,7 +4,7 @@ namespace OrderHub.Api.Tenant;
 
 public sealed class CurrentTenantService : ICurrentTenantService
 {
-    private const string ItemKey = "CurrentCustomer";
+    private const string ItemKey = "CurrentTenant";
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public CurrentTenantService(IHttpContextAccessor httpContextAccessor)

@@ -23,7 +23,7 @@ public sealed class TenantResolver : ITenantResolver
         if (string.IsNullOrWhiteSpace(host)) return null;
 
         var normalized = host.Trim().ToLowerInvariant();
-        var cacheKey = $"customer:{normalized}";
+        var cacheKey = $"tenant:{normalized}";
 
         if (_cache.TryGetValue(cacheKey, out ResolvedTenantDto? cached) && cached is not null)
             return cached;

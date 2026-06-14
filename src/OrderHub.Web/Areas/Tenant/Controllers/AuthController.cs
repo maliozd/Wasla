@@ -104,7 +104,7 @@ public sealed class AuthController : Controller
         _ = ct;
         var claims = new List<Claim>
         {
-            new("CustomerId", session.CustomerId.ToString()),
+            new("TenantId", session.CustomerId.ToString()),
             new("UserId", session.UserId.ToString()),
             new("Email", session.Email),
             new("Role", session.Role.ToString()),
@@ -114,21 +114,21 @@ public sealed class AuthController : Controller
             new(ClaimTypes.Name, session.FullName),
         };
 
-        var identity = new ClaimsIdentity(claims, AuthSchemes.Customer);
+        var identity = new ClaimsIdentity(claims, AuthSchemes.Tenant);
         var principal = new ClaimsPrincipal(identity);
 
         await HttpContext.SignInAsync(
-            AuthSchemes.Customer,
+            AuthSchemes.Tenant,
             principal,
             new AuthenticationProperties { IsPersistent = true, IssuedUtc = DateTimeOffset.UtcNow });
     }
 
-    [Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
+    [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
     [ValidateAntiForgeryToken]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync(AuthSchemes.Customer);
+        await HttpContext.SignOutAsync(AuthSchemes.Tenant);
         return Redirect("/auth/login");
     }
 }

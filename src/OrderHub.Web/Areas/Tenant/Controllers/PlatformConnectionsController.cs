@@ -13,7 +13,7 @@ using OrderHub.Domain.Enums;
 namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Customer, Policy = "ManagePlatformConnections")]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = "ManagePlatformConnections")]
 [Route("platform-connections")]
 public sealed class PlatformConnectionsController : BaseController
 {

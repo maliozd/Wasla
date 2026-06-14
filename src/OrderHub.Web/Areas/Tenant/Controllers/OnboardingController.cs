@@ -7,7 +7,7 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
 [Route("onboarding")]
-[Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
 public sealed class OnboardingController : Controller
 {
     [HttpGet("")]

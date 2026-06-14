@@ -74,11 +74,11 @@ builder.Services.AddAntiforgery(options =>
 
 builder.Services.AddAuthentication(options =>
     {
-        options.DefaultScheme = AuthSchemes.Customer;
-        options.DefaultAuthenticateScheme = AuthSchemes.Customer;
-        options.DefaultChallengeScheme = AuthSchemes.Customer;
+        options.DefaultScheme = AuthSchemes.Tenant;
+        options.DefaultAuthenticateScheme = AuthSchemes.Tenant;
+        options.DefaultChallengeScheme = AuthSchemes.Tenant;
     })
-    .AddCookie(AuthSchemes.Customer, options =>
+    .AddCookie(AuthSchemes.Tenant, options =>
     {
         options.Cookie.Name = "orderhub_auth";
         options.Cookie.HttpOnly = true;

@@ -10,7 +10,7 @@ using OrderHub.Web.Security;
 namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
 [Route("dashboard")]
 public sealed class DashboardController : BaseController
 {

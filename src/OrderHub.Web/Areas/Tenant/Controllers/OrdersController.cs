@@ -16,7 +16,7 @@ using Microsoft.Extensions.Localization;
 namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
 [Route("orders")]
 public sealed class OrdersController : BaseController
 {

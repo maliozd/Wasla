@@ -14,7 +14,7 @@ using ValidationException = FluentValidation.ValidationException;
 namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
 [Route("settings/receipt-printer")]
 public sealed class ReceiptPrinterSettingsController : BaseController
 {

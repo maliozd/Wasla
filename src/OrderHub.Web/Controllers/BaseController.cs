@@ -5,8 +5,8 @@ namespace OrderHub.Web.Controllers;
 
 public abstract class BaseController : Controller
 {
-    protected Guid CurrentCustomerId =>
-        Guid.Parse(User.FindFirstValue("CustomerId")!);
+    protected Guid CurrentTenantId =>
+        Guid.Parse(User.FindFirstValue("TenantId")!);
 
     protected Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("UserId")!);

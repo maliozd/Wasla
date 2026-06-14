@@ -49,7 +49,7 @@ public sealed class AuthService : IAuthService
 
         var claims = new List<Claim>
         {
-            new("CustomerId", tenant.Id.ToString()),
+            new("TenantId", tenant.Id.ToString()),
             new("UserId", user.Id.ToString()),
             new("Role", user.Role.ToString()),
             new(ClaimTypes.Role, user.Role.ToString()),

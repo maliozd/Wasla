@@ -11,7 +11,7 @@ using OrderHub.Web.Security;
 namespace OrderHub.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Customer)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
 [Route("notification-settings")]
 public sealed class NotificationSettingsController : BaseController
 {
