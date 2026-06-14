@@ -142,7 +142,9 @@ public sealed class CheckoutController : Controller
     private CheckoutReviewViewModel MapReviewViewModel(PendingRegistrationCheckoutDetails details)
     {
         var plan = _planCatalog.FindByCode(details.PlanCode);
-        var planDisplay = plan is not null ? _localizer[plan.DisplayNameKey].Value : details.PlanCode;
+        var planDisplay = plan is not null
+            ? _localizer[plan.DisplayNameKey].Value
+            : _localizer["Checkout.UnknownPlanLabel"].Value;
 
         var canSimulate = details.Status is PendingRegistrationStatus.AwaitingPayment
             or PendingRegistrationStatus.PaymentFailed;

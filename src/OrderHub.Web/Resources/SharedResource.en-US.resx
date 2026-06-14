@@ -2824,12 +2824,17 @@
   <data name="Signup.PendingNextStep3" xml:space="preserve"><value>You can start connecting your platforms</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>In the test environment, the payment step will be simulated.</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Payment summary</value></data>
-  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Review your registration details and simulate the payment result.</value></data>
+  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Review your selected package and restaurant details. In this test environment, the payment outcome will be simulated.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Real payment integration is not active yet. Payment outcome is simulated on this screen.</value></data>
+  <data name="Checkout.SectionPackageInfo" xml:space="preserve"><value>Package details</value></data>
+  <data name="Checkout.SectionRestaurantInfo" xml:space="preserve"><value>Restaurant details</value></data>
+  <data name="Checkout.SectionAccountOwner" xml:space="preserve"><value>Account owner</value></data>
   <data name="Checkout.SectionRegistration" xml:space="preserve"><value>Registration summary</value></data>
   <data name="Checkout.SectionPricing" xml:space="preserve"><value>Pricing summary</value></data>
   <data name="Checkout.AddressSummary" xml:space="preserve"><value>Address</value></data>
   <data name="Checkout.PlanLabel" xml:space="preserve"><value>Plan</value></data>
+  <data name="Checkout.OwnerFullNameLabel" xml:space="preserve"><value>Authorized person</value></data>
+  <data name="Checkout.UnknownPlanLabel" xml:space="preserve"><value>Standard package</value></data>
   <data name="Checkout.MonthlyReferencePrice" xml:space="preserve"><value>Monthly reference price</value></data>
   <data name="Checkout.TotalAmount" xml:space="preserve"><value>Total amount</value></data>
   <data name="Checkout.SimulateSuccess" xml:space="preserve"><value>Simulate successful payment</value></data>
@@ -2837,17 +2842,17 @@
   <data name="Checkout.CancelRegistration" xml:space="preserve"><value>Cancel registration</value></data>
   <data name="Checkout.SuccessTitle" xml:space="preserve"><value>Payment simulated as successful</value></data>
   <data name="Checkout.SuccessMessage" xml:space="preserve"><value>Payment was simulated as successful.</value></data>
-  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>Your account will be prepared in the next phase.</value></data>
+  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>Your restaurant panel will be prepared in the next step.</value></data>
   <data name="Checkout.FailedTitle" xml:space="preserve"><value>Payment simulated as failed</value></data>
   <data name="Checkout.FailedMessage" xml:space="preserve"><value>Payment was simulated as failed.</value></data>
-  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>No account workspace was created.</value></data>
+  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>Your restaurant panel was not created. You can try the payment step again if you wish.</value></data>
   <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Registration cancelled</value></data>
   <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Registration was cancelled. You can register again if you wish.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>Return to payment step</value></data>
   <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Register again</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>Payment has already been simulated as successful for this registration.</value></data>
   <data name="Checkout.StatusCancelled" xml:space="preserve"><value>This registration has been cancelled.</value></data>
-  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>Account provisioning is already complete for this registration.</value></data>
+  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>The restaurant panel for this registration is already prepared.</value></data>
   <data name="Checkout.StatusExpired" xml:space="preserve"><value>This registration has expired. Please register again.</value></data>
   <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>Already have an account?</value></data>
   <data name="Signup.SlugUnavailable" xml:space="preserve"><value>This subdomain is already taken.</value></data>

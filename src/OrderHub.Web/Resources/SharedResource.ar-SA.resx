@@ -2824,12 +2824,17 @@
   <data name="Signup.PendingNextStep3" xml:space="preserve"><value>يمكنك البدء بربط المنصات</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>في بيئة الاختبار، سيتم محاكاة خطوة الدفع.</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>ملخص الدفع</value></data>
-  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>راجع بيانات التسجيل ومحاكاة نتيجة الدفع.</value></data>
+  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>راجع الباقة المختارة وبيانات المطعم. في بيئة الاختبار هذه، سيتم محاكاة نتيجة الدفع.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>تكامل الدفع الحقيقي غير مفعّل بعد. تتم محاكاة نتيجة الدفع في هذه الشاشة.</value></data>
+  <data name="Checkout.SectionPackageInfo" xml:space="preserve"><value>معلومات الباقة</value></data>
+  <data name="Checkout.SectionRestaurantInfo" xml:space="preserve"><value>معلومات المطعم</value></data>
+  <data name="Checkout.SectionAccountOwner" xml:space="preserve"><value>صاحب الحساب</value></data>
   <data name="Checkout.SectionRegistration" xml:space="preserve"><value>ملخص التسجيل</value></data>
   <data name="Checkout.SectionPricing" xml:space="preserve"><value>ملخص السعر</value></data>
   <data name="Checkout.AddressSummary" xml:space="preserve"><value>العنوان</value></data>
   <data name="Checkout.PlanLabel" xml:space="preserve"><value>الخطة</value></data>
+  <data name="Checkout.OwnerFullNameLabel" xml:space="preserve"><value>الشخص المخوّل</value></data>
+  <data name="Checkout.UnknownPlanLabel" xml:space="preserve"><value>باقة قياسية</value></data>
   <data name="Checkout.MonthlyReferencePrice" xml:space="preserve"><value>السعر الشهري المرجعي</value></data>
   <data name="Checkout.TotalAmount" xml:space="preserve"><value>المبلغ الإجمالي</value></data>
   <data name="Checkout.SimulateSuccess" xml:space="preserve"><value>محاكاة دفع ناجح</value></data>
@@ -2837,17 +2842,17 @@
   <data name="Checkout.CancelRegistration" xml:space="preserve"><value>إلغاء التسجيل</value></data>
   <data name="Checkout.SuccessTitle" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح</value></data>
   <data name="Checkout.SuccessMessage" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح.</value></data>
-  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>سيتم تجهيز حسابك في المرحلة التالية.</value></data>
+  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>سيتم تجهيز لوحة مطعمك في الخطوة التالية.</value></data>
   <data name="Checkout.FailedTitle" xml:space="preserve"><value>تمت محاكاة فشل الدفع</value></data>
   <data name="Checkout.FailedMessage" xml:space="preserve"><value>تمت محاكاة فشل الدفع.</value></data>
-  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>لم يتم إنشاء مساحة عمل للحساب.</value></data>
+  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>لم يتم إنشاء لوحة مطعمك. يمكنك إعادة محاولة خطوة الدفع إذا رغبت.</value></data>
   <data name="Checkout.CancelledTitle" xml:space="preserve"><value>تم إلغاء التسجيل</value></data>
   <data name="Checkout.CancelledMessage" xml:space="preserve"><value>تم إلغاء التسجيل. يمكنك التسجيل مرة أخرى إذا رغبت.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>العودة إلى خطوة الدفع</value></data>
   <data name="Checkout.RegisterAgain" xml:space="preserve"><value>التسجيل مرة أخرى</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح مسبقاً لهذا التسجيل.</value></data>
   <data name="Checkout.StatusCancelled" xml:space="preserve"><value>تم إلغاء هذا التسجيل.</value></data>
-  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>اكتمل تجهيز الحساب لهذا التسجيل.</value></data>
+  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>تم تجهيز لوحة المطعم لهذا التسجيل.</value></data>
   <data name="Checkout.StatusExpired" xml:space="preserve"><value>انتهت صلاحية هذا التسجيل. يرجى التسجيل مرة أخرى.</value></data>
   <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>لديك حساب بالفعل؟</value></data>
   <data name="Signup.SlugUnavailable" xml:space="preserve"><value>هذا النطاق الفرعي مستخدم بالفعل.</value></data>

@@ -1,6 +1,5 @@
 @model OrderHub.Web.Models.Checkout.CheckoutReviewViewModel
 @using Microsoft.Extensions.Localization
-@using OrderHub.Domain.Enums
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
     Layout = "_PublicLayout";
@@ -23,21 +22,36 @@
                             <div class="alert alert-info small" role="status">@L[Model.StatusNoticeKey]</div>
                         }
 
-                        <div class="alert alert-secondary small" role="note">@L["Checkout.SimulationNotice"]</div>
-
-                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionRegistration"]</h2>
+                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionPackageInfo"]</h2>
                         <dl class="row small mb-4">
-                            <dt class="col-sm-4">@L["Signup.Plan"]</dt>
+                            <dt class="col-sm-4">@L["Signup.PendingLabelPackage"]</dt>
                             <dd class="col-sm-8">@Model.PlanDisplayName</dd>
-                            <dt class="col-sm-4">@L["Signup.BillingPeriod"]</dt>
+                            <dt class="col-sm-4">@L["Signup.PendingLabelPaymentPeriod"]</dt>
                             <dd class="col-sm-8">@billingLabel</dd>
-                            <dt class="col-sm-4">@L["Signup.BusinessName"]</dt>
+                            @if (Model.IsYearlyBilling)
+                            {
+                                <dt class="col-sm-4">@L["Checkout.MonthlyReferencePrice"]</dt>
+                                <dd class="col-sm-8">@Model.MonthlyPriceTry.ToString("N0") TRY</dd>
+                            }
+                            <dt class="col-sm-4">@L["Checkout.TotalAmount"]</dt>
+                            <dd class="col-sm-8 fw-semibold">@Model.TotalPriceTry.ToString("N0") TRY</dd>
+                        </dl>
+
+                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionRestaurantInfo"]</h2>
+                        <dl class="row small mb-4">
+                            <dt class="col-sm-4">@L["Signup.PendingLabelRestaurant"]</dt>
                             <dd class="col-sm-8">@Model.BusinessName</dd>
-                            <dt class="col-sm-4">@L["Signup.SlugHelp"]</dt>
+                            <dt class="col-sm-4">@L["Signup.PendingLabelOrderHubAddress"]</dt>
                             <dd class="col-sm-8"><code>@Model.PrimaryDomain</code></dd>
                             <dt class="col-sm-4">@L["Signup.BusinessPhone"]</dt>
                             <dd class="col-sm-8">@Model.BusinessPhone</dd>
-                            <dt class="col-sm-4">@L["Signup.OwnerFullName"]</dt>
+                            <dt class="col-sm-4">@L["Checkout.AddressSummary"]</dt>
+                            <dd class="col-sm-8">@Model.AddressSummary</dd>
+                        </dl>
+
+                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionAccountOwner"]</h2>
+                        <dl class="row small mb-4">
+                            <dt class="col-sm-4">@L["Checkout.OwnerFullNameLabel"]</dt>
                             <dd class="col-sm-8">@Model.OwnerFullName</dd>
                             <dt class="col-sm-4">@L["Signup.OwnerEmail"]</dt>
                             <dd class="col-sm-8">@Model.OwnerEmail</dd>
@@ -46,40 +60,23 @@
                                 <dt class="col-sm-4">@L["Signup.OwnerPhone"]</dt>
                                 <dd class="col-sm-8">@Model.OwnerPhone</dd>
                             }
-                            <dt class="col-sm-4">@L["Checkout.AddressSummary"]</dt>
-                            <dd class="col-sm-8">@Model.AddressSummary</dd>
                         </dl>
-
-                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionPricing"]</h2>
-                        <div class="bg-body-tertiary rounded p-3 mb-4">
-                            <dl class="row small mb-0">
-                                <dt class="col-sm-6">@L["Checkout.PlanLabel"]</dt>
-                                <dd class="col-sm-6 text-sm-end">@Model.PlanDisplayName</dd>
-                                <dt class="col-sm-6">@L["Signup.BillingPeriod"]</dt>
-                                <dd class="col-sm-6 text-sm-end">@billingLabel</dd>
-                                @if (Model.IsYearlyBilling)
-                                {
-                                    <dt class="col-sm-6">@L["Checkout.MonthlyReferencePrice"]</dt>
-                                    <dd class="col-sm-6 text-sm-end">@Model.MonthlyPriceTry.ToString("N0") TRY</dd>
-                                }
-                                <dt class="col-sm-6 fw-semibold">@L["Checkout.TotalAmount"]</dt>
-                                <dd class="col-sm-6 text-sm-end fw-semibold">@Model.TotalPriceTry.ToString("N0") TRY</dd>
-                            </dl>
-                        </div>
 
                         @if (Model.CanSimulatePayment)
                         {
                             <div class="d-flex flex-column flex-sm-row flex-wrap gap-2">
                                 <form asp-action="SimulateSuccess" asp-route-id="@Model.RegistrationId" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-primary rounded-pill">
-                                        <i class="bi bi-check-circle me-1" aria-hidden="true"></i>@L["Checkout.SimulateSuccess"]
+                                    <button type="submit" class="btn btn-primary rounded-pill d-inline-flex align-items-center gap-2">
+                                        <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                        <span>@L["Checkout.SimulateSuccess"]</span>
                                     </button>
                                 </form>
                                 <form asp-action="SimulateFailed" asp-route-id="@Model.RegistrationId" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-outline-danger rounded-pill">
-                                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>@L["Checkout.SimulateFailed"]
+                                    <button type="submit" class="btn btn-outline-danger rounded-pill d-inline-flex align-items-center gap-2">
+                                        <i class="bi bi-x-circle" aria-hidden="true"></i>
+                                        <span>@L["Checkout.SimulateFailed"]</span>
                                     </button>
                                 </form>
                             </div>

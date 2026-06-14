@@ -21,10 +21,10 @@
                         @if (!string.IsNullOrWhiteSpace(Model.BusinessName))
                         {
                             <div class="text-start bg-body-tertiary rounded p-3 mb-4 small">
-                                <div><strong>@L["Signup.BusinessName"]:</strong> @Model.BusinessName</div>
+                                <div><strong>@L["Signup.PendingLabelRestaurant"]:</strong> @Model.BusinessName</div>
                                 @if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
                                 {
-                                    <div class="mt-1"><strong>@L["Signup.SlugHelp"]</strong> <code>@Model.PrimaryDomain</code></div>
+                                    <div class="mt-1"><strong>@L["Signup.PendingLabelOrderHubAddress"]:</strong> <code>@Model.PrimaryDomain</code></div>
                                 }
                             </div>
                         }

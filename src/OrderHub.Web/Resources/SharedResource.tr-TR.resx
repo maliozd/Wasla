@@ -2821,12 +2821,17 @@
   <data name="Signup.PendingNextStep3" xml:space="preserve"><value>Platform bağlantılarını kurmaya başlayabilirsiniz</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>Test ortamında ödeme adımı simüle edilecektir.</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Ödeme özeti</value></data>
-  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Kayıt bilgilerinizi kontrol edin ve ödeme sonucunu simüle edin.</value></data>
+  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu test ortamında ödeme sonucu simüle edilecektir.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Gerçek ödeme entegrasyonu henüz aktif değil. Bu ekranda ödeme sonucu simüle edilir.</value></data>
+  <data name="Checkout.SectionPackageInfo" xml:space="preserve"><value>Paket bilgileri</value></data>
+  <data name="Checkout.SectionRestaurantInfo" xml:space="preserve"><value>Restoran bilgileri</value></data>
+  <data name="Checkout.SectionAccountOwner" xml:space="preserve"><value>Hesap sahibi</value></data>
   <data name="Checkout.SectionRegistration" xml:space="preserve"><value>Kayıt özeti</value></data>
   <data name="Checkout.SectionPricing" xml:space="preserve"><value>Ücret özeti</value></data>
   <data name="Checkout.AddressSummary" xml:space="preserve"><value>Adres</value></data>
   <data name="Checkout.PlanLabel" xml:space="preserve"><value>Plan</value></data>
+  <data name="Checkout.OwnerFullNameLabel" xml:space="preserve"><value>Yetkili kişi</value></data>
+  <data name="Checkout.UnknownPlanLabel" xml:space="preserve"><value>Standart paket</value></data>
   <data name="Checkout.MonthlyReferencePrice" xml:space="preserve"><value>Aylık referans fiyat</value></data>
   <data name="Checkout.TotalAmount" xml:space="preserve"><value>Toplam tutar</value></data>
   <data name="Checkout.SimulateSuccess" xml:space="preserve"><value>Ödemeyi başarılı simüle et</value></data>
@@ -2834,17 +2839,17 @@
   <data name="Checkout.CancelRegistration" xml:space="preserve"><value>Kaydı iptal et</value></data>
   <data name="Checkout.SuccessTitle" xml:space="preserve"><value>Ödeme başarılı olarak simüle edildi</value></data>
   <data name="Checkout.SuccessMessage" xml:space="preserve"><value>Ödeme başarılı olarak simüle edildi.</value></data>
-  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>Bir sonraki fazda hesabınız hazırlanacak.</value></data>
+  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>Bir sonraki adımda restoran paneliniz hazırlanacak.</value></data>
   <data name="Checkout.FailedTitle" xml:space="preserve"><value>Ödeme başarısız olarak simüle edildi</value></data>
   <data name="Checkout.FailedMessage" xml:space="preserve"><value>Ödeme başarısız olarak simüle edildi.</value></data>
-  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>Hesap çalışma alanı oluşturulmadı.</value></data>
+  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>Restoran paneliniz oluşturulmadı. İsterseniz ödeme adımını tekrar deneyebilirsiniz.</value></data>
   <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Kayıt iptal edildi</value></data>
   <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Kayıt iptal edildi. İsterseniz yeniden kayıt oluşturabilirsiniz.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>Ödeme adımına dön</value></data>
   <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Yeniden kayıt ol</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>Bu kayıt için ödeme zaten başarılı olarak simüle edildi.</value></data>
   <data name="Checkout.StatusCancelled" xml:space="preserve"><value>Bu kayıt iptal edilmiş.</value></data>
-  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>Bu kayıt için hesap hazırlama tamamlanmış.</value></data>
+  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>Bu kayıt için restoran paneli hazırlanmış.</value></data>
   <data name="Checkout.StatusExpired" xml:space="preserve"><value>Bu kayıt süresi dolmuş. Lütfen yeniden kayıt oluşturun.</value></data>
   <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>Zaten hesabınız var mı?</value></data>
   <data name="Signup.SlugUnavailable" xml:space="preserve"><value>Bu alt alan adı zaten kullanılıyor.</value></data>
