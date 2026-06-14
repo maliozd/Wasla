@@ -4,11 +4,11 @@ using OrderHub.Domain.Entities.Central;
 
 namespace OrderHub.Infrastructure.Persistence.Central.Configurations;
 
-public sealed class CustomerMembershipConfiguration : IEntityTypeConfiguration<CustomerMembership>
+public sealed class TenantMembershipConfiguration : IEntityTypeConfiguration<TenantMembership>
 {
-    public void Configure(EntityTypeBuilder<CustomerMembership> builder)
+    public void Configure(EntityTypeBuilder<TenantMembership> builder)
     {
-        builder.ToTable("CustomerMemberships");
+        builder.ToTable("TenantMemberships");
 
         builder.HasKey(m => m.Id);
 
@@ -20,11 +20,11 @@ public sealed class CustomerMembershipConfiguration : IEntityTypeConfiguration<C
         builder.Property(m => m.Country).HasMaxLength(100);
         builder.Property(m => m.BusinessType).HasMaxLength(100);
 
-        builder.HasIndex(m => m.CustomerId).IsUnique().HasDatabaseName("IX_CustomerMemberships_CustomerId");
+        builder.HasIndex(m => m.TenantId).IsUnique().HasDatabaseName("IX_TenantMemberships_TenantId");
 
-        builder.HasOne(m => m.Customer)
+        builder.HasOne(m => m.Tenant)
             .WithOne()
-            .HasForeignKey<CustomerMembership>(m => m.CustomerId)
+            .HasForeignKey<TenantMembership>(m => m.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

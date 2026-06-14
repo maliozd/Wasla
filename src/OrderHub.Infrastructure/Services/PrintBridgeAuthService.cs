@@ -36,7 +36,7 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
         }
 
         var device = await _centralDb.PrintBridgeDevices
-            .Include(d => d.Customer)
+            .Include(d => d.Tenant)
             .FirstOrDefaultAsync(d => d.TokenHash == tokenHash && d.IsActive, ct)
             .ConfigureAwait(false);
 
@@ -46,12 +46,12 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
             return null;
         }
 
-        if (device.Customer is null || !device.Customer.IsActive)
+        if (device.Tenant is null || !device.Tenant.IsActive)
         {
             _logger.LogWarning(
-                "Print Bridge authentication failed: customer inactive. DeviceId={DeviceId}, CustomerId={CustomerId}",
+                "Print Bridge authentication failed: tenant inactive. DeviceId={DeviceId}, TenantId={TenantId}",
                 device.Id,
-                device.CustomerId);
+                device.TenantId);
             return null;
         }
 
@@ -81,14 +81,14 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
         await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogDebug(
-            "Print Bridge authenticated. DeviceId={DeviceId}, CustomerId={CustomerId}",
+            "Print Bridge authenticated. DeviceId={DeviceId}, TenantId={TenantId}",
             device.Id,
-            device.CustomerId);
+            device.TenantId);
 
         return new PrintBridgeAuthContext(
             device.Id,
-            device.CustomerId,
-            device.Customer.Name,
+            device.TenantId,
+            device.Tenant.Name,
             device.Name,
             string.IsNullOrWhiteSpace(device.MachineName) ? null : device.MachineName);
     }

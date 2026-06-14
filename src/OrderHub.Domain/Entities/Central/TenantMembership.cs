@@ -4,14 +4,14 @@ using OrderHub.Domain.Enums;
 namespace OrderHub.Domain.Entities.Central;
 
 /// <summary>
-/// Minimal subscription/membership record for a customer tenant.
+/// Minimal subscription/membership record for a tenant.
 /// Billing provider integration is not implemented yet.
 /// </summary>
-public class CustomerMembership : BaseEntity
+public class TenantMembership : BaseEntity
 {
-    public Guid CustomerId { get; set; }
+    public Guid TenantId { get; set; }
 
-    public Customer Customer { get; set; } = null!;
+    public Tenant Tenant { get; set; } = null!;
 
     public string PlanCode { get; set; } = string.Empty;
 

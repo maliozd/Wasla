@@ -18,7 +18,7 @@ public sealed class CentralAdminTenantService : ICentralAdminTenantService
 
     public async Task<CentralAdminDashboardResult> GetDashboardAsync(CancellationToken ct)
     {
-        var rows = await _db.Customers
+        var rows = await _db.Tenants
             .AsNoTracking()
             .OrderBy(c => c.Slug)
             .ToListAsync(ct)
@@ -41,7 +41,7 @@ public sealed class CentralAdminTenantService : ICentralAdminTenantService
 
     public async Task<CentralAdminTenantDetailResult?> GetCustomerAsync(Guid customerId, CancellationToken ct)
     {
-        var c = await _db.Customers
+        var c = await _db.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == customerId, ct)
             .ConfigureAwait(false);
@@ -51,7 +51,7 @@ public sealed class CentralAdminTenantService : ICentralAdminTenantService
 
     public async Task<bool> SetCustomerActiveStateAsync(Guid customerId, bool isActive, CancellationToken ct)
     {
-        var entity = await _db.Customers.FirstOrDefaultAsync(x => x.Id == customerId, ct).ConfigureAwait(false);
+        var entity = await _db.Tenants.FirstOrDefaultAsync(x => x.Id == customerId, ct).ConfigureAwait(false);
         if (entity is null)
         {
             _logger.LogInformation("SetCustomerActiveState: tenant {Id} not found", customerId);
@@ -65,7 +65,7 @@ public sealed class CentralAdminTenantService : ICentralAdminTenantService
         return true;
     }
 
-    private static CentralAdminTenantListItemDto MapListItem(Domain.Entities.Central.Customer c) => new()
+    private static CentralAdminTenantListItemDto MapListItem(Domain.Entities.Central.Tenant c) => new()
     {
         Id = c.Id,
         Name = c.Name,
@@ -79,7 +79,7 @@ public sealed class CentralAdminTenantService : ICentralAdminTenantService
         CreatedAt = c.CreatedAt
     };
 
-    private static CentralAdminTenantDetailResult MapDetail(Domain.Entities.Central.Customer c) => new()
+    private static CentralAdminTenantDetailResult MapDetail(Domain.Entities.Central.Tenant c) => new()
     {
         Id = c.Id,
         Name = c.Name,

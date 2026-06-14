@@ -23,12 +23,12 @@ public sealed class PrintBridgeDeviceConfiguration : IEntityTypeConfiguration<Pr
             .IsUnique()
             .HasDatabaseName("IX_PrintBridgeDevices_TokenHash");
 
-        builder.HasIndex(x => x.CustomerId)
-            .HasDatabaseName("IX_PrintBridgeDevices_CustomerId");
+        builder.HasIndex(x => x.TenantId)
+            .HasDatabaseName("IX_PrintBridgeDevices_TenantId");
 
-        builder.HasOne(x => x.Customer)
+        builder.HasOne(x => x.Tenant)
             .WithMany()
-            .HasForeignKey(x => x.CustomerId)
+            .HasForeignKey(x => x.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

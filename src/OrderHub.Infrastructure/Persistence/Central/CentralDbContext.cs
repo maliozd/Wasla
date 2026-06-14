@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using CentralCustomer = OrderHub.Domain.Entities.Central.Customer;
+using CentralTenant = OrderHub.Domain.Entities.Central.Tenant;
 using CentralAdminUser = OrderHub.Domain.Entities.Central.CentralAdminUser;
-using CustomerMembership = OrderHub.Domain.Entities.Central.CustomerMembership;
+using TenantMembership = OrderHub.Domain.Entities.Central.TenantMembership;
 using PendingRegistration = OrderHub.Domain.Entities.Central.PendingRegistration;
 using PrintBridgeDevice = OrderHub.Domain.Entities.Central.PrintBridgeDevice;
 using BusinessType = OrderHub.Domain.Entities.Central.BusinessType;
@@ -16,14 +16,14 @@ using OrderHub.Infrastructure.Persistence.Central.Configurations;
 namespace OrderHub.Infrastructure.Persistence.Central;
 
 /// <summary>
-/// Central database context. Holds the customer registry and nothing else.
+/// Central database context. Holds the tenant registry and nothing else.
 /// This DB is reached through a static, well-known connection string from config.
 /// </summary>
 public class CentralDbContext : DbContext
 {
     public CentralDbContext(DbContextOptions<CentralDbContext> options) : base(options) { }
-    public DbSet<CentralCustomer> Customers => Set<CentralCustomer>();
-    public DbSet<CustomerMembership> CustomerMemberships => Set<CustomerMembership>();
+    public DbSet<CentralTenant> Tenants => Set<CentralTenant>();
+    public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<CentralAdminUser> CentralAdminUsers => Set<CentralAdminUser>();
     public DbSet<PrintBridgeDevice> PrintBridgeDevices => Set<PrintBridgeDevice>();
     public DbSet<PendingRegistration> PendingRegistrations => Set<PendingRegistration>();
@@ -37,8 +37,8 @@ public class CentralDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfiguration(new CustomerConfiguration());
-        modelBuilder.ApplyConfiguration(new CustomerMembershipConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantMembershipConfiguration());
         modelBuilder.ApplyConfiguration(new CentralAdminUserConfiguration());
         modelBuilder.ApplyConfiguration(new PrintBridgeDeviceConfiguration());
         modelBuilder.ApplyConfiguration(new PendingRegistrationConfiguration());

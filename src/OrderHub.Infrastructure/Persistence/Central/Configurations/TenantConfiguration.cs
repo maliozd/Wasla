@@ -1,14 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using CentralCustomer = OrderHub.Domain.Entities.Central.Customer;
+using CentralTenant = OrderHub.Domain.Entities.Central.Tenant;
 
 namespace OrderHub.Infrastructure.Persistence.Central.Configurations;
 
-public class CustomerConfiguration : IEntityTypeConfiguration<CentralCustomer>
+public class TenantConfiguration : IEntityTypeConfiguration<CentralTenant>
 {
-    public void Configure(EntityTypeBuilder<CentralCustomer> builder)
+    public void Configure(EntityTypeBuilder<CentralTenant> builder)
     {
-        builder.ToTable("Customers");
+        builder.ToTable("Tenants");
 
         builder.HasKey(c => c.Id);
 
@@ -24,11 +24,11 @@ public class CustomerConfiguration : IEntityTypeConfiguration<CentralCustomer>
         builder.Property(c => c.SubscriptionStatus).HasConversion<int>();
 
         // Primary lookup path for every single web request - must be indexed and unique.
-        builder.HasIndex(c => c.PrimaryDomain).IsUnique().HasDatabaseName("IX_Customers_PrimaryDomain");
+        builder.HasIndex(c => c.PrimaryDomain).IsUnique().HasDatabaseName("IX_Tenants_PrimaryDomain");
 
-        builder.HasIndex(c => c.Slug).IsUnique().HasDatabaseName("IX_Customers_Slug");
+        builder.HasIndex(c => c.Slug).IsUnique().HasDatabaseName("IX_Tenants_Slug");
 
-        // For worker: "give me all active customers". Filtered index for efficiency.
-        builder.HasIndex(c => c.IsActive).HasDatabaseName("IX_Customers_IsActive");
+        // For worker: "give me all active tenants". Filtered index for efficiency.
+        builder.HasIndex(c => c.IsActive).HasDatabaseName("IX_Tenants_IsActive");
     }
 }

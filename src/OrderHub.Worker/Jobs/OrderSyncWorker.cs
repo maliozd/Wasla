@@ -131,7 +131,7 @@ public sealed class OrderSyncWorker : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
 
-        return await central.Customers
+        return await central.Tenants
             .AsNoTracking()
             .Where(c => c.IsActive)
             .Select(c => new ActiveCustomer(c.Id, c.Slug, c.Name))

@@ -43,7 +43,7 @@ public sealed class TenantDbContextFactory : ITenantDbContextFactory
         using var scope = _scopeFactory.CreateScope();
         var centralDb = scope.ServiceProvider.GetRequiredService<OrderHub.Infrastructure.Persistence.Central.CentralDbContext>();
 
-        var customer = await centralDb.Customers
+        var customer = await centralDb.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == customerId, ct)
             .ConfigureAwait(false);

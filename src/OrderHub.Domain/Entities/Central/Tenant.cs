@@ -9,13 +9,12 @@ namespace OrderHub.Domain.Entities.Central;
 /// This entity lives ONLY in CentralDb.
 /// </summary>
 /// <remarks>
-/// Terminology note: despite the name <c>Customer</c>, this entity represents the
-/// tenant (restaurant/business), not an end customer who places a food order.
-/// Order-level fields such as <c>CustomerName</c> on <see cref="OrderHub.Domain.Entities.Customer.Order"/>
-/// refer to the food orderer and must keep Customer terminology.
-/// A future rename of this type to Tenant is planned; see docs/tenant-vs-customer.md.
+/// Terminology note: this entity represents the tenant (restaurant/business), not an
+/// end customer who places a food order. Order-level fields such as <c>CustomerName</c>
+/// on <see cref="OrderHub.Domain.Entities.Customer.Order"/> refer to the food orderer
+/// and must keep Customer terminology.
 /// </remarks>
-public class Customer : BaseEntity
+public class Tenant : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
 

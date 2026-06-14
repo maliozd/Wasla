@@ -80,7 +80,7 @@ public class PendingRegistration
 
     public string? SimulatedPaymentReference { get; set; }
 
-    public Guid? CustomerId { get; set; }
+    public Guid? TenantId { get; set; }
 
     public DateTime? ProvisionedAtUtc { get; set; }
 

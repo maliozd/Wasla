@@ -28,7 +28,7 @@ public sealed class TenantResolver : ITenantResolver
         if (_cache.TryGetValue(cacheKey, out ResolvedTenantDto? cached) && cached is not null)
             return cached;
 
-        var tenant = await _centralDb.Customers
+        var tenant = await _centralDb.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.PrimaryDomain.ToLower() == normalized, ct);
 

@@ -263,7 +263,7 @@ internal static class CliCommands
             : sqlServer.Trim();
 
         var dbCreated = false;
-        Customer? insertedCentral = null;
+        Tenant? insertedCentral = null;
 
         try
         {
@@ -271,7 +271,7 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var exists = await central.Customers
+            var exists = await central.Tenants
                 .AsNoTracking()
                 .AnyAsync(c => c.Slug == slug || c.PrimaryDomain == domain, ct)
                 .ConfigureAwait(false);
@@ -310,7 +310,7 @@ internal static class CliCommands
 
             var customerId = Guid.NewGuid();
             var now = DateTime.UtcNow;
-            var customer = new Customer
+            var customer = new Tenant
             {
                 Id = customerId,
                 Name = name,
@@ -327,7 +327,7 @@ internal static class CliCommands
                 UpdatedAt = now
             };
 
-            central.Customers.Add(customer);
+            central.Tenants.Add(customer);
             await central.SaveChangesAsync(ct).ConfigureAwait(false);
             insertedCentral = customer;
 
@@ -514,8 +514,8 @@ internal static class CliCommands
 
             var slugNorm = slug?.Trim() ?? string.Empty;
             var customer = customerId is { } id
-                ? await central.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
-                : await central.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
+                ? await central.Tenants.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
+                : await central.Tenants.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
 
             if (customer is null)
             {
@@ -551,7 +551,7 @@ internal static class CliCommands
                 Console.WriteLine($"Latest applied CustomerDb migration: {latest}");
             }
 
-            var tracked = await central.Customers.FirstOrDefaultAsync(c => c.Id == customer.Id, ct).ConfigureAwait(false);
+            var tracked = await central.Tenants.FirstOrDefaultAsync(c => c.Id == customer.Id, ct).ConfigureAwait(false);
             if (tracked is not null)
             {
                 var when = DateTime.UtcNow;
@@ -577,14 +577,14 @@ internal static class CliCommands
                 if (idForTrack is null && !string.IsNullOrWhiteSpace(slug))
                 {
                     var slugN = slug.Trim();
-                    var c2 = await central2.Customers.AsNoTracking()
+                    var c2 = await central2.Tenants.AsNoTracking()
                         .FirstOrDefaultAsync(x => x.Slug == slugN, ct)
                         .ConfigureAwait(false);
                     idForTrack = c2?.Id;
                 }
                 if (idForTrack is { } trackId)
                 {
-                    var tracked = await central2.Customers.FirstOrDefaultAsync(c => c.Id == trackId, ct).ConfigureAwait(false);
+                    var tracked = await central2.Tenants.FirstOrDefaultAsync(c => c.Id == trackId, ct).ConfigureAwait(false);
                     if (tracked is not null)
                     {
                         tracked.LastMigrationAt = DateTime.UtcNow;
@@ -616,7 +616,7 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var query = central.Customers.AsNoTracking().Where(c => c.IsActive);
+            var query = central.Tenants.AsNoTracking().Where(c => c.IsActive);
             var list = (await query.ToListAsync(ct).ConfigureAwait(false)).OrderBy(c => c.Slug).ToList();
 
             if (onlySlugs is { Length: > 0 })
@@ -682,7 +682,7 @@ internal static class CliCommands
                     Console.WriteLine($"✓ {c.Slug}  ({c.DatabaseName})");
                     Console.ResetColor();
 
-                    var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
+                    var tracked = await central.Tenants.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
                     if (tracked is not null)
                     {
                         var when = DateTime.UtcNow;
@@ -703,7 +703,7 @@ internal static class CliCommands
 
                     try
                     {
-                        var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
+                        var tracked = await central.Tenants.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
                         if (tracked is not null)
                         {
                             var when = DateTime.UtcNow;
@@ -762,7 +762,7 @@ internal static class CliCommands
                     Console.WriteLine($"  {m}");
             }
 
-            var customers = await central.Customers
+            var customers = await central.Tenants
                 .AsNoTracking()
                 .Where(c => c.IsActive)
                 .OrderBy(c => c.Slug)
@@ -816,7 +816,7 @@ internal static class CliCommands
         {
             using var scope = host.Services.CreateScope();
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
-            var rows = await central.Customers
+            var rows = await central.Tenants
                 .AsNoTracking()
                 .Where(c => c.IsActive)
                 .OrderBy(c => c.Slug)
@@ -894,7 +894,7 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var customer = await central.Customers
+            var customer = await central.Tenants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Slug == customerSlug, ct)
                 .ConfigureAwait(false);
@@ -1001,8 +1001,8 @@ internal static class CliCommands
 
             var slugNorm = slug?.Trim() ?? string.Empty;
             var customer = customerId is { } id
-                ? await central.Customers.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
-                : await central.Customers.FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
+                ? await central.Tenants.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
+                : await central.Tenants.FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
 
             if (customer is null)
             {
@@ -1027,7 +1027,7 @@ internal static class CliCommands
             }
 
             WriteLineStep("Deleting CentralDb customer record…");
-            central.Customers.Remove(customer);
+            central.Tenants.Remove(customer);
             await central.SaveChangesAsync(ct).ConfigureAwait(false);
 
             Console.ForegroundColor = ConsoleColor.Green;
@@ -1089,8 +1089,8 @@ internal static class CliCommands
 
             var slugNorm = slug?.Trim() ?? string.Empty;
             var customer = customerId is { } id
-                ? await central.Customers.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
-                : await central.Customers.FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
+                ? await central.Tenants.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
+                : await central.Tenants.FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
 
             if (customer is null)
             {
@@ -1128,7 +1128,7 @@ internal static class CliCommands
             }
             finally
             {
-                var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == customer.Id, ct).ConfigureAwait(false);
+                var tracked = await central.Tenants.FirstOrDefaultAsync(x => x.Id == customer.Id, ct).ConfigureAwait(false);
                 if (tracked is not null)
                 {
                     tracked.LastMigrationAt = migrationNow;
@@ -1167,7 +1167,7 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var customers = await central.Customers
+            var customers = await central.Tenants
                 .AsNoTracking()
                 .Where(c => c.IsActive)
                 .OrderBy(c => c.Slug)
@@ -1204,7 +1204,7 @@ internal static class CliCommands
                     }
                     finally
                     {
-                        var tracked = await central.Customers.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
+                        var tracked = await central.Tenants.FirstOrDefaultAsync(x => x.Id == c.Id, ct).ConfigureAwait(false);
                         if (tracked is not null)
                         {
                             tracked.LastMigrationAt = migrationNow;
@@ -1272,7 +1272,7 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var customer = await central.Customers
+            var customer = await central.Tenants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Slug == slug.Trim(), ct)
                 .ConfigureAwait(false);
@@ -1483,7 +1483,7 @@ internal static class CliCommands
         }
         else if (!string.IsNullOrWhiteSpace(slug))
         {
-            var customer = await centralDb.Customers
+            var customer = await centralDb.Tenants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Slug == slug.Trim(), ct)
                 .ConfigureAwait(false);
@@ -1501,7 +1501,7 @@ internal static class CliCommands
             return 2;
         }
 
-        var customerActive = await centralDb.Customers
+        var customerActive = await centralDb.Tenants
             .AsNoTracking()
             .AnyAsync(c => c.Id == resolvedCustomerId && c.IsActive, ct)
             .ConfigureAwait(false);
@@ -1521,7 +1521,7 @@ internal static class CliCommands
 
         var device = new PrintBridgeDevice
         {
-            CustomerId = resolvedCustomerId,
+            TenantId = resolvedCustomerId,
             Name = name,
             TokenHash = tokenHash,
             IsActive = true,
@@ -1669,7 +1669,7 @@ internal static class CliCommands
         return 0;
     }
 
-    private static async Task<Customer?> ResolveCustomerAsync(
+    private static async Task<Tenant?> ResolveCustomerAsync(
         IHost host,
         string? slug,
         string? customerIdArg,
@@ -1686,7 +1686,7 @@ internal static class CliCommands
                 return null;
             }
 
-            return await central.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id && c.IsActive, ct)
+            return await central.Tenants.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id && c.IsActive, ct)
                 .ConfigureAwait(false);
         }
 
@@ -1696,11 +1696,11 @@ internal static class CliCommands
             return null;
         }
 
-        return await central.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slug.Trim() && c.IsActive, ct)
+        return await central.Tenants.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slug.Trim() && c.IsActive, ct)
             .ConfigureAwait(false);
     }
 
-    private static async Task<TenantDbContext> OpenCustomerDbAsync(IHost host, Customer customer, CancellationToken ct)
+    private static async Task<TenantDbContext> OpenCustomerDbAsync(IHost host, Tenant customer, CancellationToken ct)
     {
         var secret = host.Services.GetRequiredService<ISecretManager>();
         var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)

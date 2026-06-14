@@ -3,13 +3,13 @@ using OrderHub.Domain.Common;
 namespace OrderHub.Domain.Entities.Central;
 
 /// <summary>
-/// Registered Print Bridge instance for a customer tenant. Lives in CentralDb only.
+/// Registered Print Bridge instance for a tenant. Lives in CentralDb only.
 /// Authentication uses hashed token; raw token is shown once at generation time.
 /// </summary>
 public sealed class PrintBridgeDevice : BaseEntity
 {
-    public Guid CustomerId { get; set; }
-    public Customer? Customer { get; set; }
+    public Guid TenantId { get; set; }
+    public Tenant? Tenant { get; set; }
 
     public string Name { get; set; } = string.Empty;
 

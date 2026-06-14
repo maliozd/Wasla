@@ -50,7 +50,7 @@ public sealed class OrderReceiptCreationService : IOrderReceiptCreationService
 
         try
         {
-            var tenantDisplayName = await _centralDb.Customers
+            var tenantDisplayName = await _centralDb.Tenants
                 .AsNoTracking()
                 .Where(c => c.Id == customerId)
                 .Select(c => c.Name)
