@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +9,7 @@ using OrderHub.Application.Time;
 using OrderHub.Domain.Enums;
 using OrderHub.Web.Controllers;
 using OrderHub.Web.Models.PrintBridge;
+using OrderHub.Web.PrintBridge;
 using OrderHub.Web.Routing;
 using OrderHub.Web.Security;
 
@@ -69,6 +69,9 @@ public sealed class PrintBridgeController : BaseController
         if (customer is null) return NotFound();
 
         var quota = await _devices.GetDeviceQuotaAsync(customer.Id, ct).ConfigureAwait(false);
+        var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
+        var packageFileName = PrintBridgePackagePaths.GetPackageFileName(_configuration);
+        var packageAvailable = System.IO.File.Exists(packagePath);
 
         return View(new PrintBridgeSetupViewModel
         {
@@ -76,6 +79,8 @@ public sealed class PrintBridgeController : BaseController
                 ?? "/print-bridge/download/package",
             DevicesUrl = Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices",
             ServerUrl = ResolveCustomerWebBaseUrl(),
+            PackageAvailable = packageAvailable,
+            PackageFileName = packageFileName,
             AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
             ActiveDeviceCount = quota.ActiveDeviceCount,
             CanCreateActiveDevice = quota.CanCreateActiveDevice,
@@ -255,32 +260,12 @@ public sealed class PrintBridgeController : BaseController
     [HttpGet("download/package")]
     public IActionResult DownloadPackage()
     {
-        var folder = Path.Combine(_environment.WebRootPath, "downloads", "orderhub-print-bridge");
-        if (!Directory.Exists(folder))
+        var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
+        if (!System.IO.File.Exists(packagePath))
             return NotFound();
 
-        var files = Directory.GetFiles(folder)
-            .Where(f => !string.Equals(Path.GetFileName(f), ".gitkeep", StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (files.Count == 0)
-            return NotFound();
-
-        using var memory = new MemoryStream();
-        using (var archive = new ZipArchive(memory, ZipArchiveMode.Create, leaveOpen: true))
-        {
-            foreach (var filePath in files)
-            {
-                var entryName = Path.GetFileName(filePath);
-                var entry = archive.CreateEntry(entryName, CompressionLevel.Fastest);
-                using var entryStream = entry.Open();
-                using var fileStream = System.IO.File.OpenRead(filePath);
-                fileStream.CopyTo(entryStream);
-            }
-        }
-
-        memory.Position = 0;
-        return File(memory.ToArray(), "application/zip", "OrderHub-PrintBridge-Placeholder.zip");
+        var fileName = Path.GetFileName(packagePath);
+        return PhysicalFile(packagePath, "application/zip", fileName);
     }
 
     private PrintBridgePageViewModel BuildPageViewModel(

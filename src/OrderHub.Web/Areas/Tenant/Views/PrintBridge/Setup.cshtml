@@ -35,10 +35,24 @@
     <div class="card-body">
         <div class="oh-print-bridge-guide-step__badge">1</div>
         <h2 class="h6 mb-2">@L["PrintBridge.GuideStep1Title"]</h2>
+        <p class="text-muted small mb-2">
+            <span class="badge text-bg-secondary">@L["PrintBridge.PackageTypeLabel"]</span>
+        </p>
         <p class="text-muted small mb-3">@L["PrintBridge.GuideStep1Text"]</p>
-        <a class="btn btn-primary btn-sm" href="@Model.PackageDownloadUrl">
-            <i class="bi bi-download me-1"></i>@L["PrintBridge.DownloadButton"]
-        </a>
+        @if (Model.PackageAvailable)
+        {
+            <a class="btn btn-primary btn-sm" href="@Model.PackageDownloadUrl">
+                <i class="bi bi-download me-1"></i>@L["PrintBridge.DownloadButton"]
+            </a>
+            <p class="small text-muted mt-2 mb-0">@Model.PackageFileName</p>
+        }
+        else
+        {
+            <div class="alert alert-warning small py-2 mb-2" role="alert">
+                @L["PrintBridge.PackageNotPrepared"]
+            </div>
+            <p class="small text-muted mb-0">@L["PrintBridge.PackageNotPreparedHint"]</p>
+        }
     </div>
 </section>
 

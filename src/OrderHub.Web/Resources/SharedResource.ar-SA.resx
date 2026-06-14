@@ -2092,7 +2092,7 @@
     <value>خطوات الإعداد</value>
   </data>
   <data name="PrintBridge.SetupStepDownload" xml:space="preserve">
-    <value>تنزيل حزمة OrderHub Print Bridge المؤقتة.</value>
+    <value>تنزيل حزمة Print Bridge المحمولة لنظام Windows.</value>
   </data>
   <data name="PrintBridge.SetupStepToken" xml:space="preserve">
     <value>أنشئ رمز Print Bridge من هذه الصفحة واحفظه بأمان (يُعرض مرة واحدة فقط).</value>
@@ -2104,7 +2104,7 @@
     <value>يجلب Print Bridge مهام الإيصالات المعلقة تلقائياً أثناء عمله في شريط النظام.</value>
   </data>
   <data name="PrintBridge.Download" xml:space="preserve">
-    <value>تنزيل الحزمة المؤقتة</value>
+    <value>تنزيل الحزمة</value>
   </data>
   <data name="PrintBridge.GenerateToken" xml:space="preserve">
     <value>إنشاء رمز</value>
@@ -2215,10 +2215,10 @@
     <value>الموافقة التلقائية على الطلبات الجديدة وإنشاء الإيصال بعد الموافقة التلقائية.</value>
   </data>
   <data name="PrintBridge.DownloadSetupTitle" xml:space="preserve">
-    <value>التنزيل والإعداد</value>
+    <value>تنزيل الحزمة</value>
   </data>
   <data name="PrintBridge.DownloadPlaceholderNotice" xml:space="preserve">
-    <value>مثبت Windows غير جاهز بعد. يمكنك تنزيل حزمة مؤقتة تحتوي على ملفات نموذجية.</value>
+    <value>يُوزَّع Print Bridge كحزمة Windows محمولة (.zip). سيكون التنزيل متاحاً هنا عند تجهيز الحزمة.</value>
   </data>
   <data name="PrintBridge.SetupSteps" xml:space="preserve">
     <value>خطوات الإعداد</value>
@@ -2392,10 +2392,19 @@
     <value>يجب تعطيل وضع الاختبار للطباعة الفعلية.</value>
   </data>
   <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
-    <value>الخطوة 1 — تنزيل Print Bridge</value>
+    <value>الخطوة 1 — تنزيل حزمة Print Bridge</value>
   </data>
   <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
-    <value>نزّل حزمة Print Bridge وشغّلها على جهاز Windows المتصل بطابعة الفواتير.</value>
+    <value>يُقدَّم Print Bridge حالياً كحزمة Windows محمولة (.zip). نزّل الحزمة، واستخرجها على جهاز Windows المتصل بطابعة الفواتير، وشغّل OrderHub.PrintBridge.exe. افتح الإعدادات، والصق رمز الجهاز، واختر الطابعة، وأوقف وضع الاختبار للطباعة الفعلية، واحفظ الإعدادات للاتصال.</value>
+  </data>
+  <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
+    <value>حزمة Windows محمولة</value>
+  </data>
+  <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
+    <value>حزمة Print Bridge غير جاهزة بعد.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
+    <value>ستكون الحزمة المحمولة متاحة للتنزيل هنا بعد اكتمال تجهيز حزمة النشر.</value>
   </data>
   <data name="PrintBridge.GuideStep2Title" xml:space="preserve">
     <value>الخطوة 2 — إنشاء رمز جهاز</value>
@@ -2479,7 +2488,7 @@
     <value>طباعة إيصالات USB</value>
   </data>
   <data name="PrintBridge.DownloadButton" xml:space="preserve">
-    <value>تنزيل الحزمة المؤقتة</value>
+    <value>تنزيل حزمة Print Bridge</value>
   </data>
   <data name="PrintBridge.SetupStepInstallOnWindowsPc" xml:space="preserve">
     <value>ثبّته أو شغّله على حاسوب Windows المتصل بطابعة الإيصالات USB.</value>

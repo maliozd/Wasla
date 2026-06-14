@@ -2092,7 +2092,7 @@
     <value>Setup steps</value>
   </data>
   <data name="PrintBridge.SetupStepDownload" xml:space="preserve">
-    <value>Download the OrderHub Print Bridge placeholder package.</value>
+    <value>Download the portable Print Bridge Windows package.</value>
   </data>
   <data name="PrintBridge.SetupStepToken" xml:space="preserve">
     <value>Generate a Print Bridge token on this page and save it securely (shown only once).</value>
@@ -2104,7 +2104,7 @@
     <value>Print Bridge polls for pending receipt jobs automatically while running in the system tray.</value>
   </data>
   <data name="PrintBridge.Download" xml:space="preserve">
-    <value>Download placeholder package</value>
+    <value>Download package</value>
   </data>
   <data name="PrintBridge.GenerateToken" xml:space="preserve">
     <value>Generate Token</value>
@@ -2215,10 +2215,10 @@
     <value>Automatic approval for new orders and receipt creation after auto-approve.</value>
   </data>
   <data name="PrintBridge.DownloadSetupTitle" xml:space="preserve">
-    <value>Download and setup</value>
+    <value>Download package</value>
   </data>
   <data name="PrintBridge.DownloadPlaceholderNotice" xml:space="preserve">
-    <value>The Windows installer is not finalized yet. You can download a placeholder package with sample files for now.</value>
+    <value>Print Bridge is distributed as a portable Windows package (.zip). Download will be available here when the package is prepared.</value>
   </data>
   <data name="PrintBridge.SetupSteps" xml:space="preserve">
     <value>Setup steps</value>
@@ -2392,10 +2392,19 @@
     <value>Test mode must be disabled for real printing.</value>
   </data>
   <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
-    <value>Step 1 — Download Print Bridge</value>
+    <value>Step 1 — Download the Print Bridge package</value>
   </data>
   <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
-    <value>Download the Print Bridge package and run it on the Windows computer connected to the receipt printer.</value>
+    <value>Print Bridge is currently provided as a portable Windows package (.zip). Download the package, extract it on the Windows computer connected to the receipt printer, and run OrderHub.PrintBridge.exe. Open Settings, paste the device token, select your printer, turn off Test mode for real printing, and save settings to connect.</value>
+  </data>
+  <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
+    <value>Portable Windows Package</value>
+  </data>
+  <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
+    <value>The Print Bridge package is not prepared yet.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
+    <value>The portable package will be available here after deployment packaging is complete.</value>
   </data>
   <data name="PrintBridge.GuideStep2Title" xml:space="preserve">
     <value>Step 2 — Create a device token</value>
@@ -2479,7 +2488,7 @@
     <value>USB receipt printing</value>
   </data>
   <data name="PrintBridge.DownloadButton" xml:space="preserve">
-    <value>Download placeholder package</value>
+    <value>Download Print Bridge Package</value>
   </data>
   <data name="PrintBridge.SetupStepInstallOnWindowsPc" xml:space="preserve">
     <value>Install or run it on the Windows PC connected to the USB receipt printer.</value>

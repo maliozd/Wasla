@@ -267,4 +267,22 @@
   <data name="Signup.EnterpriseContactOnly" xml:space="preserve">
     <value>Enterprise planı için lütfen bizimle iletişime geçin.</value>
   </data>
+  <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
+    <value>Adım 1 — Print Bridge paketini indirin</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
+    <value>Print Bridge şu an taşınabilir bir Windows paketi (.zip) olarak sunulur. Paketi indirin, fiş yazıcısına bağlı Windows bilgisayarda zip dosyasını açın ve OrderHub.PrintBridge.exe dosyasını çalıştırın.</value>
+  </data>
+  <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
+    <value>Taşınabilir Windows Paketi</value>
+  </data>
+  <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
+    <value>Print Bridge paketi henüz hazırlanmadı.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
+    <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
+  </data>
+  <data name="PrintBridge.DownloadButton" xml:space="preserve">
+    <value>Print Bridge Paketini İndir</value>
+  </data>
 </root>

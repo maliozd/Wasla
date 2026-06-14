@@ -360,6 +360,13 @@ healthchecksdb
 .build-verify/
 .build-out/
 
+# OrderHub Print Bridge portable package (generated; copy to wwwroot for local download testing)
+src/OrderHub.Web/wwwroot/downloads/orderhub-print-bridge/*.zip
+
+# Packaging scripts (not build output; [Rr]elease/ above would otherwise ignore this folder)
+!scripts/release/
+!scripts/release/**
+
 # OrderHub local HTTPS certificates (mkcert / setup-local-https.ps1)
 .certs/
 
