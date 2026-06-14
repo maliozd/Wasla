@@ -2803,6 +2803,20 @@
   <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>Enterprise için teklif alın</value></data>
   <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>Enterprise planı özel limitler ve anlaşma ile sunulur. Kayıt formu yerine bizimle iletişime geçerek teklif isteyebilirsiniz.</value></data>
   <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Enterprise planı için lütfen bizimle iletişime geçin.</value></data>
+  <data name="Signup.PendingTitle" xml:space="preserve"><value>Hesabınız neredeyse hazır</value></data>
+  <data name="Signup.PendingSubtitle" xml:space="preserve"><value>Bilgilerinizi aldık. Devam etmek için ödeme adımını tamamlayın.</value></data>
+  <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>Ödeme tamamlandığında restoran paneliniz otomatik olarak hazırlanacaktır.</value></data>
+  <data name="Signup.PendingBackHome" xml:space="preserve"><value>Ana sayfaya dön</value></data>
+  <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Ödemeye devam et</value></data>
+  <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Restoranınız</value></data>
+  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>OrderHub adresiniz</value></data>
+  <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Paketiniz</value></data>
+  <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Ödeme dönemi</value></data>
+  <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>Ödeme tamamlandıktan sonra:</value></data>
+  <data name="Signup.PendingNextStep1" xml:space="preserve"><value>Restoran paneliniz oluşturulur</value></data>
+  <data name="Signup.PendingNextStep2" xml:space="preserve"><value>Yönetici hesabınız aktif edilir</value></data>
+  <data name="Signup.PendingNextStep3" xml:space="preserve"><value>Platform bağlantılarını kurmaya başlayabilirsiniz</value></data>
+  <data name="Signup.PendingTestNote" xml:space="preserve"><value>Test ortamında ödeme adımı simüle edilecektir.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>İşletme adı gereklidir.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Alt alan adı gereklidir.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Alt alan adı yalnızca küçük harf, rakam, tire ve alt çizgi içerebilir.</value></data>

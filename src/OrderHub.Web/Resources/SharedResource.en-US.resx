@@ -2806,6 +2806,20 @@
   <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>Request an Enterprise offer</value></data>
   <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>The Enterprise plan is offered with custom limits and agreement. Contact us to request an offer instead of using the self-service signup form.</value></data>
   <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Please contact us for the Enterprise plan.</value></data>
+  <data name="Signup.PendingTitle" xml:space="preserve"><value>Your account is almost ready</value></data>
+  <data name="Signup.PendingSubtitle" xml:space="preserve"><value>We received your details. Complete the payment step to continue.</value></data>
+  <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>After payment is complete, your restaurant panel will be prepared automatically.</value></data>
+  <data name="Signup.PendingBackHome" xml:space="preserve"><value>Back to homepage</value></data>
+  <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Continue to payment</value></data>
+  <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Your restaurant</value></data>
+  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Your OrderHub address</value></data>
+  <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Your package</value></data>
+  <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Payment period</value></data>
+  <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>After payment is complete:</value></data>
+  <data name="Signup.PendingNextStep1" xml:space="preserve"><value>Your restaurant panel is created</value></data>
+  <data name="Signup.PendingNextStep2" xml:space="preserve"><value>Your admin account is activated</value></data>
+  <data name="Signup.PendingNextStep3" xml:space="preserve"><value>You can start connecting your platforms</value></data>
+  <data name="Signup.PendingTestNote" xml:space="preserve"><value>In the test environment, the payment step will be simulated.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>Business name is required.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Subdomain is required.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Subdomain may only contain lowercase letters, numbers, hyphens, and underscores.</value></data>

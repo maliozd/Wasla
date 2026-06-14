@@ -2806,6 +2806,20 @@
   <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>اطلب عرضًا لخطة Enterprise</value></data>
   <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>تُقدَّم خطة Enterprise بحدود واتفاق مخصص. تواصل معنا لطلب عرض بدلًا من نموذج التسجيل الذاتي.</value></data>
   <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>يرجى التواصل معنا لخطة Enterprise.</value></data>
+  <data name="Signup.PendingTitle" xml:space="preserve"><value>حسابك جاهز تقريباً</value></data>
+  <data name="Signup.PendingSubtitle" xml:space="preserve"><value>استلمنا بياناتك. أكمل خطوة الدفع للمتابعة.</value></data>
+  <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>بعد إتمام الدفع، سيتم تجهيز لوحة مطعمك تلقائياً.</value></data>
+  <data name="Signup.PendingBackHome" xml:space="preserve"><value>العودة إلى الصفحة الرئيسية</value></data>
+  <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>متابعة الدفع</value></data>
+  <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>مطعمك</value></data>
+  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>عنوان OrderHub الخاص بك</value></data>
+  <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>باقتك</value></data>
+  <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>فترة الدفع</value></data>
+  <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>بعد إتمام الدفع:</value></data>
+  <data name="Signup.PendingNextStep1" xml:space="preserve"><value>يتم إنشاء لوحة مطعمك</value></data>
+  <data name="Signup.PendingNextStep2" xml:space="preserve"><value>يتم تفعيل حساب المدير</value></data>
+  <data name="Signup.PendingNextStep3" xml:space="preserve"><value>يمكنك البدء بربط المنصات</value></data>
+  <data name="Signup.PendingTestNote" xml:space="preserve"><value>في بيئة الاختبار، سيتم محاكاة خطوة الدفع.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>اسم العمل مطلوب.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>النطاق الفرعي مطلوب.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>يجب أن يحتوي النطاق الفرعي على أحرف صغيرة وأرقام وشرطات وشرطات سفلية فقط.</value></data>
