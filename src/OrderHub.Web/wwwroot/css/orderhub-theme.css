@@ -696,35 +696,353 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-settings-menu {
   margin-top: 0;
 }
 
+.oh-settings-section-controls--stacked {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.oh-receipt-language-select,
+.oh-receipt-timing-select {
+  min-width: 10.5rem;
+}
+
+.oh-receipt-creation-help {
+  max-width: 16rem;
+  text-align: end;
+  line-height: 1.35;
+}
+
+.oh-receipt-language-note {
+  max-width: 16rem;
+  text-align: end;
+  line-height: 1.35;
+}
+
+.oh-receipt-preview-paper--rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.oh-receipt-preview-paper--rtl .oh-receipt-preview-line {
+  flex-direction: row-reverse;
+}
+
+.oh-receipt-preview-paper--rtl .oh-receipt-preview-header,
+.oh-receipt-preview-paper--rtl .oh-receipt-preview-footer {
+  text-align: center;
+}
+
 .oh-receipt-field-group {
-  padding: 0 1.25rem 1rem;
+  padding: 0;
+}
+
+.oh-receipt-editor-layout {
+  align-items: flex-start;
+}
+
+.oh-receipt-editor-layout .oh-receipt-editor-card {
+  height: auto !important;
+}
+
+.oh-receipt-editor-card .oh-receipt-editor-section {
+  border-bottom: 0;
+  padding: 1.25rem 1.5rem 0;
+}
+
+.oh-receipt-editor-section .oh-settings-section-row--stacked {
+  margin-bottom: 1.125rem;
+}
+
+.oh-receipt-editor-section .oh-settings-section-text .h6 {
+  margin-bottom: 0.35rem !important;
+}
+
+.oh-receipt-editor-card .oh-settings-section--actions {
+  margin-top: 0;
+  border-top-color: color-mix(in srgb, var(--oh-border) 55%, transparent) !important;
+}
+
+.oh-receipt-editor-card .oh-settings-section--actions > .d-flex {
+  padding: 1rem 1.5rem 1.125rem !important;
+}
+
+.oh-receipt-required-block {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 48%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--oh-border) 8%, transparent);
+}
+
+.oh-receipt-required-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.oh-receipt-required-block-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--oh-text);
+}
+
+.oh-receipt-required-block-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  color: var(--orderhub-muted);
+  line-height: 1.35;
+}
+
+.oh-receipt-required-block-note .bi {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.oh-receipt-required-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.oh-receipt-required-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--oh-text);
+  background: color-mix(in srgb, var(--oh-surface-elevated, var(--oh-surface)) 98%, transparent);
+  border: 1px solid color-mix(in srgb, var(--oh-border) 42%, transparent);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.oh-receipt-content-accordion {
+  --bs-accordion-border-color: color-mix(in srgb, var(--oh-border) 45%, transparent);
+  --bs-accordion-btn-bg: transparent;
+  --bs-accordion-active-bg: color-mix(in srgb, var(--oh-primary, #0d6efd) 5%, transparent);
+  --bs-accordion-active-color: var(--oh-text);
+  --bs-accordion-btn-color: var(--oh-text);
+  --bs-accordion-btn-focus-box-shadow: none;
+  --bs-accordion-body-padding-x: 1rem;
+  --bs-accordion-body-padding-y: 0.5rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 45%, transparent);
+}
+
+.oh-receipt-content-accordion .accordion-item {
+  border-color: color-mix(in srgb, var(--oh-border) 38%, transparent);
+  background: transparent;
+}
+
+.oh-receipt-content-accordion .accordion-item:last-of-type {
+  border-bottom: 0;
+}
+
+.oh-receipt-content-accordion .accordion-item:has(.accordion-button:not(.collapsed)) {
+  background: color-mix(in srgb, var(--oh-border) 7%, transparent);
+}
+
+.oh-receipt-content-accordion .accordion-button {
+  padding: 0.9rem 1rem;
+  min-height: 3.25rem;
+  font-size: 0.84rem;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
+}
+
+.oh-receipt-content-accordion .accordion-button:hover {
+  background: color-mix(in srgb, var(--oh-border) 12%, transparent);
+}
+
+.oh-receipt-content-accordion .accordion-button:not(.collapsed) {
+  box-shadow: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--oh-border) 30%, transparent);
+}
+
+.oh-receipt-content-accordion .accordion-button::after {
+  width: 0.8rem;
+  height: 0.8rem;
+  background-size: 0.8rem;
+  flex-shrink: 0;
+  margin-inline-start: 0.65rem;
+  opacity: 0.65;
+}
+
+.oh-receipt-accordion-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  text-align: start;
+  padding-inline-end: 0.25rem;
+}
+
+.oh-receipt-accordion-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.oh-receipt-accordion-title {
+  font-weight: 600;
+  font-size: 0.84rem;
+  line-height: 1.3;
+}
+
+.oh-receipt-accordion-desc {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--orderhub-muted);
+  line-height: 1.35;
+}
+
+.oh-receipt-accordion-enabled-badge {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--orderhub-muted) !important;
+  background: color-mix(in srgb, var(--oh-border) 18%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 40%, transparent) !important;
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+}
+
+.oh-receipt-content-accordion .accordion-body {
+  padding-top: 0.35rem;
+  padding-bottom: 0.65rem;
 }
 
 .oh-receipt-field-list {
   margin-bottom: 0;
 }
 
+.oh-receipt-field-list--coming-soon {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed color-mix(in srgb, var(--oh-border) 32%, transparent);
+}
+
 .oh-receipt-field-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--oh-border) 45%, transparent);
-  font-size: 0.9rem;
+  gap: 0.85rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.15rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--oh-border) 28%, transparent);
+  font-size: 0.84rem;
 }
 
 .oh-receipt-field-row:last-child {
   border-bottom: 0;
 }
 
-.oh-receipt-field-row--locked {
+.oh-receipt-field-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.oh-receipt-field-row__label {
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.oh-receipt-field-row__hint {
+  font-size: 0.73rem;
+  color: var(--orderhub-muted);
+  line-height: 1.35;
+}
+
+.oh-receipt-field-row .form-check {
+  flex-shrink: 0;
+  padding-top: 0.15rem;
+}
+
+.oh-receipt-field-row--coming-soon {
+  opacity: 0.9;
+}
+
+.oh-receipt-field-row--coming-soon .oh-receipt-field-row__label {
   color: var(--orderhub-muted);
 }
 
-.oh-receipt-field-row--disabled {
-  color: var(--orderhub-muted);
-  opacity: 0.85;
+.oh-receipt-coming-soon-badge {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--orderhub-muted) !important;
+  background: color-mix(in srgb, var(--oh-border) 16%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 36%, transparent) !important;
+  padding: 0.25rem 0.45rem;
+  border-radius: 999px;
+}
+
+.oh-receipt-message-fields {
+  margin: 0.5rem 0.15rem 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 36%, transparent);
+  background: color-mix(in srgb, var(--oh-surface-elevated, var(--oh-surface)) 96%, transparent);
+}
+
+.oh-receipt-message-field--muted {
+  opacity: 0.65;
+}
+
+.oh-receipt-message-field--muted textarea:disabled {
+  background: color-mix(in srgb, var(--oh-border) 12%, transparent);
+  cursor: not-allowed;
+}
+
+.oh-receipt-editor-layout .oh-receipt-preview-card .card-body {
+  padding: 1.25rem 1.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .oh-receipt-editor-card .oh-receipt-editor-section {
+    padding-inline: 1rem;
+  }
+
+  .oh-receipt-editor-card .oh-settings-section--actions > .d-flex {
+    padding-inline: 1rem !important;
+  }
+
+  .oh-receipt-accordion-header-inner {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 0.35rem;
+  }
+
+  .oh-receipt-accordion-enabled-badge {
+    margin-inline-start: 0;
+  }
+
+  .oh-receipt-field-row {
+    flex-wrap: wrap;
+    padding-inline: 0;
+  }
+
+  .oh-receipt-field-row .form-check {
+    margin-inline-start: auto;
+  }
 }
 
 .oh-receipt-preview-card {
@@ -732,18 +1050,28 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-settings-menu {
   top: 1rem;
 }
 
+.oh-receipt-preview {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 12rem;
+}
+
 .oh-receipt-preview-paper {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.78rem;
-  line-height: 1.35;
+  font-size: 0.76rem;
+  line-height: 1.38;
+  width: 100%;
+  max-width: 16.5rem;
   background: #fff;
   color: #111;
-  border: 1px dashed color-mix(in srgb, var(--oh-border) 80%, transparent);
-  border-radius: 0.5rem;
-  padding: 0.85rem 0.75rem;
-  max-width: 18rem;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 70%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.9rem 0.7rem;
   margin: 0 auto;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 .oh-receipt-preview-header,
@@ -836,7 +1164,198 @@ body.oh-tenant.oh-app .btn-outline-primary {
   --bs-btn-border-color: color-mix(in srgb, var(--orderhub-primary) 40%, var(--orderhub-surface));
 }
 
-/* --- Orders page visual (does not override order row flash) --- */
+/* --- Orders page header + toolbar --- */
+.orders-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.orders-page-header__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.orders-page-header__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--oh-text);
+}
+
+.orders-page-header__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--orderhub-muted);
+  line-height: 1.4;
+}
+
+.orders-page-header__metric.orders-total-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  min-width: 6.875rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 55%, transparent);
+  border-radius: 0.875rem;
+  background: var(--oh-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--oh-text) 5%, transparent);
+  text-align: center;
+}
+
+.orders-page-header__metric-value,
+.orders-total-card__number {
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--oh-text);
+  letter-spacing: -0.02em;
+}
+
+.orders-page-header__metric-label,
+.orders-total-card__label {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--orderhub-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.orders-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 70%, transparent);
+  border-radius: 1rem;
+  background: var(--oh-surface);
+  margin-bottom: 1rem;
+}
+
+.orders-toolbar-left,
+.orders-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.orders-toolbar-right {
+  justify-content: flex-end;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.oh-orders-status-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.oh-orders-status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.oh-orders-status-chip--active {
+  background: color-mix(in srgb, var(--bs-success) 10%, var(--oh-surface));
+  border-color: color-mix(in srgb, var(--bs-success) 28%, transparent);
+  color: color-mix(in srgb, var(--bs-success) 80%, var(--oh-text));
+}
+
+.oh-orders-status-chip--muted {
+  background: color-mix(in srgb, var(--oh-border) 20%, var(--oh-surface));
+  border-color: color-mix(in srgb, var(--oh-border) 45%, transparent);
+  color: var(--orderhub-muted);
+}
+
+.orders-manage-settings {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--orderhub-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--oh-border) 50%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--oh-border) 10%, var(--oh-surface));
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.orders-manage-settings:hover {
+  color: var(--orderhub-primary);
+  border-color: color-mix(in srgb, var(--orderhub-primary) 35%, var(--oh-border));
+  background: color-mix(in srgb, var(--orderhub-primary) 6%, var(--oh-surface));
+  text-decoration: none;
+}
+
+.orders-toolbar-right .oh-orders-view-mode {
+  flex-shrink: 0;
+}
+
+.orders-toolbar-right .oh-orders-view-mode .btn,
+.orders-toolbar-right > .btn {
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.75rem;
+  min-height: 2rem;
+  line-height: 1.2;
+}
+
+.orders-toolbar-right .oh-orders-view-mode .btn {
+  border-color: color-mix(in srgb, var(--oh-border) 65%, transparent);
+}
+
+@media (max-width: 767.98px) {
+  .orders-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .orders-page-header__metric.orders-total-card {
+    align-self: flex-start;
+  }
+
+  .orders-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .orders-toolbar-right {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .orders-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .orders-toolbar-right {
+    margin-left: auto;
+  }
+}
+
 .oh-orders-page .oh-orders-filters .card-body {
   padding: 1.1rem 1.25rem;
 }

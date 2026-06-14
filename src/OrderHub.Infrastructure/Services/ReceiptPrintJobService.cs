@@ -80,7 +80,7 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
         var safeCopyCount = Math.Clamp(copyCount, 1, 3);
         var nowUtc = DateTime.UtcNow;
         var template = await _templateSettings
-            .GetAsync(customerId, tenantDisplayName, ct)
+            .GetAsync(customerId, tenantDisplayName, null, ct)
             .ConfigureAwait(false);
 
         var job = new PrintJob

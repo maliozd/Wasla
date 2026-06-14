@@ -1,5 +1,7 @@
 namespace OrderHub.Application.Abstractions.Printing;
 
+using OrderHub.Application.Printing;
+
 public static class ReceiptTemplateLimits
 {
     public const int HeaderMaxLength = 60;
@@ -25,16 +27,19 @@ public sealed class ReceiptTemplateSettings
     public bool ShowDeliveryFee { get; set; } = true;
     public bool ShowPaymentMethod { get; set; }
     public bool ShowFooterMessage { get; set; } = true;
+    public string ReceiptLanguage { get; set; } = ReceiptLanguageCodes.Turkish;
     public string? ReceiptHeaderText { get; set; }
     public string? ReceiptFooterText { get; set; }
 
-    public static ReceiptTemplateSettings CreateDefaults(string? customerDisplayName)
+    public static ReceiptTemplateSettings CreateDefaults(string? customerDisplayName, string? defaultReceiptLanguage = null)
     {
-        var name = NormalizeSingleLine(customerDisplayName);
+        var language = ReceiptLanguageCodes.Normalize(defaultReceiptLanguage);
         return new ReceiptTemplateSettings
         {
-            ReceiptHeaderText = string.IsNullOrWhiteSpace(name) ? null : name,
-            ReceiptFooterText = "Thank you for your order."
+            ShowRestaurantName = true,
+            ReceiptLanguage = language,
+            ReceiptHeaderText = null,
+            ReceiptFooterText = ReceiptLabelLocalizer.GetDefaultFooter(language)
         };
     }
 
@@ -80,11 +85,12 @@ public sealed record UpdateReceiptTemplateSettingsCommand(
     bool ShowDeliveryFee,
     bool ShowPaymentMethod,
     bool ShowFooterMessage,
+    string ReceiptLanguage,
     string? ReceiptHeaderText,
     string? ReceiptFooterText);
 
 public interface IReceiptTemplateSettingsService
 {
-    Task<ReceiptTemplateSettings> GetAsync(Guid customerId, string? customerDisplayName, CancellationToken ct);
+    Task<ReceiptTemplateSettings> GetAsync(Guid customerId, string? customerDisplayName, string? defaultReceiptLanguage, CancellationToken ct);
     Task<ReceiptTemplateSettings> UpdateAsync(Guid customerId, string? customerDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct);
 }

@@ -564,6 +564,9 @@
   <data name="Orders.TotalCount" xml:space="preserve">
     <value>Toplam</value>
   </data>
+  <data name="Orders.TotalOrders" xml:space="preserve">
+    <value>Toplam Sipariş</value>
+  </data>
   <data name="Orders.Fullscreen" xml:space="preserve">
     <value>Tam Ekran</value>
   </data>
@@ -1633,7 +1636,28 @@
     <value>Fiş Oluşturma</value>
   </data>
   <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
-    <value>Fiş yazdırma işlerinin ne zaman oluşturulacağını yapılandırın.</value>
+    <value>Fiş yazdırma işinin hangi aşamada oluşturulacağını seçin.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.TimingLabel" xml:space="preserve">
+    <value>Fiş Oluşturma Zamanı</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnAccepted" xml:space="preserve">
+    <value>Sipariş onaylandığında</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnAcceptedDescription" xml:space="preserve">
+    <value>Sipariş otomatik veya manuel olarak onaylandığında fiş oluşturulur.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnPreparing" xml:space="preserve">
+    <value>Hazırlanmaya başladığında</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Manual" xml:space="preserve">
+    <value>Manuel oluştur</value>
+  </data>
+  <data name="Settings.ReceiptCreation.ManualDescription" xml:space="preserve">
+    <value>Fişler otomatik oluşturulmaz; gerektiğinde manuel yazdırılır.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.ComingSoon" xml:space="preserve">
+    <value>Yakında</value>
   </data>
   <data name="Settings.ReceiptCreation.CreateReceiptAfterAutoApprove" xml:space="preserve">
     <value>Otomatik Onay Sonrası Fiş Oluştur</value>
@@ -1646,6 +1670,33 @@
   </data>
   <data name="Settings.PrintCopies.ReceiptCopyCount" xml:space="preserve">
     <value>Fiş Kopya Sayısı</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Title" xml:space="preserve">
+    <value>Fiş Dili</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Description" xml:space="preserve">
+    <value>Yazdırılan fişlerde kullanılacak dili seçin.</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.SelectLabel" xml:space="preserve">
+    <value>Fiş Dili</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Turkish" xml:space="preserve">
+    <value>Türkçe</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.English" xml:space="preserve">
+    <value>İngilizce</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Arabic" xml:space="preserve">
+    <value>Arapça</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Russian" xml:space="preserve">
+    <value>Rusça</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.ArabicPrinterNote" xml:space="preserve">
+    <value>Arapça fiş yazdırma, yazıcı ve kod sayfası desteğine bağlıdır.</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Invalid" xml:space="preserve">
+    <value>Geçersiz fiş dili.</value>
   </data>
   <data name="Settings.PrinterStatus.Title" xml:space="preserve">
     <value>Yazıcı / Print Bridge Durumu</value>
@@ -1666,10 +1717,82 @@
     <value>Fişte hangi bilgilerin görüneceğini seçin.</value>
   </data>
   <data name="Settings.ReceiptContent.RequiredFields" xml:space="preserve">
-    <value>Zorunlu alanlar</value>
+    <value>Zorunlu Alanlar</value>
   </data>
-  <data name="Settings.ReceiptContent.OptionalFields" xml:space="preserve">
-    <value>İsteğe bağlı alanlar</value>
+  <data name="Settings.ReceiptContent.AlwaysIncluded" xml:space="preserve">
+    <value>Bu alanlar fişte her zaman yazdırılır.</value>
+  </data>
+  <data name="Settings.ReceiptContent.EnabledCount" xml:space="preserve">
+    <value>{0}/{1} etkin</value>
+  </data>
+  <data name="Settings.ReceiptContent.OrderInformation" xml:space="preserve">
+    <value>Sipariş Bilgileri</value>
+  </data>
+  <data name="Settings.ReceiptContent.OrderInformationDescription" xml:space="preserve">
+    <value>Platform, restoran ve sipariş zamanı alanları.</value>
+  </data>
+  <data name="Settings.ReceiptContent.CustomerDelivery" xml:space="preserve">
+    <value>Müşteri ve Teslimat</value>
+  </data>
+  <data name="Settings.ReceiptContent.CustomerDeliveryDescription" xml:space="preserve">
+    <value>Müşteri adı, telefon ve adres bilgileri.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ProductDetails" xml:space="preserve">
+    <value>Ürün Detayları</value>
+  </data>
+  <data name="Settings.ReceiptContent.ProductDetailsDescription" xml:space="preserve">
+    <value>Ürün notları ve seçeneklerini yönetin.</value>
+  </data>
+  <data name="Settings.ReceiptContent.AmountDetails" xml:space="preserve">
+    <value>Tutar Detayları</value>
+  </data>
+  <data name="Settings.ReceiptContent.AmountDetailsDescription" xml:space="preserve">
+    <value>Tutar dökümünde gösterilecek alanları seçin.</value>
+  </data>
+  <data name="Settings.ReceiptContent.MessagesExtras" xml:space="preserve">
+    <value>Mesajlar ve Ekstralar</value>
+  </data>
+  <data name="Settings.ReceiptContent.MessagesExtrasDescription" xml:space="preserve">
+    <value>Fiş başlığı, alt mesaj ve ek alanları yönetin.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ComingSoonHint" xml:space="preserve">
+    <value>Bu alan daha sonra desteklenecek.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowRestaurantNameHint" xml:space="preserve">
+    <value>Fişin üst kısmında restoran adını gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPlatformNameHint" xml:space="preserve">
+    <value>Siparişin geldiği platformu gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowReceivedTimeHint" xml:space="preserve">
+    <value>Siparişin alındığı zamanı gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPaymentMethodHint" xml:space="preserve">
+    <value>Ödeme yöntemini fişte gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerNameHint" xml:space="preserve">
+    <value>Müşteri adını fişte gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerPhoneHint" xml:space="preserve">
+    <value>Müşteri telefonunu fişte gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryAddressHint" xml:space="preserve">
+    <value>Teslimat adresini fişte gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductNotesHint" xml:space="preserve">
+    <value>Müşterinin ürüne özel notlarını gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductOptionsHint" xml:space="preserve">
+    <value>Sos, ekstra ürün ve seçenekleri gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowSubtotalHint" xml:space="preserve">
+    <value>Ara toplam satırını fişte gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryFeeHint" xml:space="preserve">
+    <value>Teslimat ücreti satırını fişte gösterir.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowFooterMessageHint" xml:space="preserve">
+    <value>Fişin alt kısmında teşekkür veya bilgi mesajı gösterir.</value>
   </data>
   <data name="Settings.ReceiptContent.Required" xml:space="preserve">
     <value>Zorunlu</value>
@@ -1746,6 +1869,9 @@
   <data name="Settings.ReceiptMessages.Header" xml:space="preserve">
     <value>Fiş Başlığı</value>
   </data>
+  <data name="Settings.ReceiptMessages.HeaderHint" xml:space="preserve">
+    <value>İsteğe bağlı özel başlık. Boş bırakırsanız restoran adı ayarı kullanılır.</value>
+  </data>
   <data name="Settings.ReceiptMessages.Footer" xml:space="preserve">
     <value>Alt Mesaj</value>
   </data>
@@ -1768,7 +1894,7 @@
     <value>Fiş Önizleme</value>
   </data>
   <data name="Settings.ReceiptPreview.Description" xml:space="preserve">
-    <value>Örnek verilerle fiş görünümünü önizleyin.</value>
+    <value>Seçimlerin fişte nasıl görüneceğini yaklaşık olarak gösterir.</value>
   </data>
   <data name="Settings.ReceiptPreview.PreviewLabel" xml:space="preserve">
     <value>Önizleme</value>
@@ -1822,7 +1948,10 @@
     <value>Ayarlar başarıyla kaydedildi.</value>
   </data>
   <data name="Settings.SaveFailed" xml:space="preserve">
-    <value>Ayarlar kaydedilemedi.</value>
+    <value>Ayarlar kaydedilemedi. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="Settings.Saving" xml:space="preserve">
+    <value>Kaydediliyor...</value>
   </data>
   <data name="Settings.Active" xml:space="preserve">
     <value>Aktif</value>

@@ -8,6 +8,10 @@ public sealed class UpdateReceiptTemplateSettingsCommandValidator
 {
     public UpdateReceiptTemplateSettingsCommandValidator()
     {
+        RuleFor(x => x.ReceiptLanguage)
+            .Must(v => string.IsNullOrWhiteSpace(v) || ReceiptLanguageCodes.IsSupported(v))
+            .WithMessage("Settings.ReceiptLanguage.Invalid");
+
         RuleFor(x => x.ReceiptHeaderText)
             .Must(v => string.IsNullOrWhiteSpace(v)
                 || (ReceiptTemplateSettings.NormalizeSingleLine(v, ReceiptTemplateLimits.HeaderMaxLength)?.Length ?? 0) <= ReceiptTemplateLimits.HeaderMaxLength)

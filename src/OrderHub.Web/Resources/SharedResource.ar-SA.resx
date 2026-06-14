@@ -564,6 +564,9 @@
   <data name="Orders.TotalCount" xml:space="preserve">
     <value>الإجمالي</value>
   </data>
+  <data name="Orders.TotalOrders" xml:space="preserve">
+    <value>إجمالي الطلبات</value>
+  </data>
   <data name="Orders.Fullscreen" xml:space="preserve">
     <value>ملء الشاشة</value>
   </data>
@@ -1633,7 +1636,28 @@
     <value>إنشاء الإيصال</value>
   </data>
   <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
-    <value>تكوين وقت إنشاء مهام طباعة الإيصالات.</value>
+    <value>اختر متى يجب إنشاء مهام طباعة الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.TimingLabel" xml:space="preserve">
+    <value>توقيت إنشاء الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnAccepted" xml:space="preserve">
+    <value>عند تأكيد الطلب</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnAcceptedDescription" xml:space="preserve">
+    <value>يُنشأ الإيصال عند تأكيد الطلب، سواء تلقائياً أو يدوياً.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnPreparing" xml:space="preserve">
+    <value>عند بدء التحضير</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Manual" xml:space="preserve">
+    <value>إنشاء يدوي</value>
+  </data>
+  <data name="Settings.ReceiptCreation.ManualDescription" xml:space="preserve">
+    <value>لا تُنشأ الإيصالات تلقائياً؛ اطبع يدوياً عند الحاجة.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.ComingSoon" xml:space="preserve">
+    <value>قريباً</value>
   </data>
   <data name="Settings.ReceiptCreation.CreateReceiptAfterAutoApprove" xml:space="preserve">
     <value>إنشاء إيصال بعد الموافقة التلقائية</value>
@@ -1646,6 +1670,33 @@
   </data>
   <data name="Settings.PrintCopies.ReceiptCopyCount" xml:space="preserve">
     <value>عدد نسخ الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Title" xml:space="preserve">
+    <value>لغة الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Description" xml:space="preserve">
+    <value>اختر اللغة المستخدمة في الإيصالات المطبوعة.</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.SelectLabel" xml:space="preserve">
+    <value>لغة الإيصال</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Turkish" xml:space="preserve">
+    <value>التركية</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.English" xml:space="preserve">
+    <value>الإنجليزية</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Arabic" xml:space="preserve">
+    <value>العربية</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Russian" xml:space="preserve">
+    <value>الروسية</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.ArabicPrinterNote" xml:space="preserve">
+    <value>طباعة الإيصال بالعربية تعتمد على دعم الطابعة وصفحة الترميز.</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Invalid" xml:space="preserve">
+    <value>لغة إيصال غير صالحة.</value>
   </data>
   <data name="Settings.PrinterStatus.Title" xml:space="preserve">
     <value>حالة الطابعة / Print Bridge</value>
@@ -1668,8 +1719,83 @@
   <data name="Settings.ReceiptContent.RequiredFields" xml:space="preserve">
     <value>الحقول المطلوبة</value>
   </data>
-  <data name="Settings.ReceiptContent.OptionalFields" xml:space="preserve">
-    <value>الحقول الاختيارية</value>
+  <data name="Settings.ReceiptContent.RequiredFieldsDescription" xml:space="preserve">
+    <value>تظهر دائماً على الإيصالات.</value>
+  </data>
+  <data name="Settings.ReceiptContent.AlwaysIncluded" xml:space="preserve">
+    <value>تُطبع هذه الحقول دائماً على الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptContent.EnabledCount" xml:space="preserve">
+    <value>{0}/{1} مفعّل</value>
+  </data>
+  <data name="Settings.ReceiptContent.OrderInformation" xml:space="preserve">
+    <value>معلومات الطلب</value>
+  </data>
+  <data name="Settings.ReceiptContent.OrderInformationDescription" xml:space="preserve">
+    <value>حقول المطعم والمنصة ووقت الطلب.</value>
+  </data>
+  <data name="Settings.ReceiptContent.CustomerDelivery" xml:space="preserve">
+    <value>العميل والتسليم</value>
+  </data>
+  <data name="Settings.ReceiptContent.CustomerDeliveryDescription" xml:space="preserve">
+    <value>اسم العميل والهاتف والعنوان.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ProductDetails" xml:space="preserve">
+    <value>تفاصيل المنتج</value>
+  </data>
+  <data name="Settings.ReceiptContent.ProductDetailsDescription" xml:space="preserve">
+    <value>إدارة ملاحظات وخيارات المنتج.</value>
+  </data>
+  <data name="Settings.ReceiptContent.AmountDetails" xml:space="preserve">
+    <value>تفاصيل المبالغ</value>
+  </data>
+  <data name="Settings.ReceiptContent.AmountDetailsDescription" xml:space="preserve">
+    <value>اختر حقول تفصيل المبالغ.</value>
+  </data>
+  <data name="Settings.ReceiptContent.MessagesExtras" xml:space="preserve">
+    <value>الرسائل والإضافات</value>
+  </data>
+  <data name="Settings.ReceiptContent.MessagesExtrasDescription" xml:space="preserve">
+    <value>إدارة العنوان والرسالة السفلية والعناصر الإضافية.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ComingSoonHint" xml:space="preserve">
+    <value>سيتم دعم هذا الحقل لاحقاً.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowRestaurantNameHint" xml:space="preserve">
+    <value>يعرض اسم المطعم في أعلى الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPlatformNameHint" xml:space="preserve">
+    <value>يعرض المنصة التي جاء منها الطلب.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowReceivedTimeHint" xml:space="preserve">
+    <value>يعرض وقت استلام الطلب.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPaymentMethodHint" xml:space="preserve">
+    <value>يعرض طريقة الدفع على الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerNameHint" xml:space="preserve">
+    <value>يعرض اسم العميل على الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerPhoneHint" xml:space="preserve">
+    <value>يعرض هاتف العميل على الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryAddressHint" xml:space="preserve">
+    <value>يعرض عنوان التسليم على الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductNotesHint" xml:space="preserve">
+    <value>يعرض ملاحظات العميل على المنتجات.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductOptionsHint" xml:space="preserve">
+    <value>يعرض الصلصات والإضافات والخيارات.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowSubtotalHint" xml:space="preserve">
+    <value>يعرض سطر المجموع الفرعي على الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryFeeHint" xml:space="preserve">
+    <value>يعرض سطر رسوم التسليم على الإيصال.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowFooterMessageHint" xml:space="preserve">
+    <value>يعرض رسالة شكر أو معلومات في الأسفل.</value>
   </data>
   <data name="Settings.ReceiptContent.Required" xml:space="preserve">
     <value>مطلوب</value>
@@ -1746,6 +1872,9 @@
   <data name="Settings.ReceiptMessages.Header" xml:space="preserve">
     <value>رأس الإيصال</value>
   </data>
+  <data name="Settings.ReceiptMessages.HeaderHint" xml:space="preserve">
+    <value>عنوان مخصص اختياري. إذا تُرك فارغاً، يُستخدم إعداد اسم المطعم.</value>
+  </data>
   <data name="Settings.ReceiptMessages.Footer" xml:space="preserve">
     <value>رسالة التذييل</value>
   </data>
@@ -1768,7 +1897,7 @@
     <value>معاينة الإيصال</value>
   </data>
   <data name="Settings.ReceiptPreview.Description" xml:space="preserve">
-    <value>عاين شكل الإيصال باستخدام بيانات نموذجية.</value>
+    <value>يعرض تقريباً كيف ستظهر اختياراتك على الإيصال.</value>
   </data>
   <data name="Settings.ReceiptPreview.PreviewLabel" xml:space="preserve">
     <value>معاينة</value>
@@ -1822,7 +1951,10 @@
     <value>تم حفظ الإعدادات بنجاح.</value>
   </data>
   <data name="Settings.SaveFailed" xml:space="preserve">
-    <value>تعذر حفظ الإعدادات.</value>
+    <value>تعذر حفظ الإعدادات. يرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="Settings.Saving" xml:space="preserve">
+    <value>جارٍ الحفظ...</value>
   </data>
   <data name="Settings.Active" xml:space="preserve">
     <value>نشط</value>

@@ -26,6 +26,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\OrderHub.Application\OrderHub.Application.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

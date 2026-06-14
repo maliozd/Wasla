@@ -564,6 +564,9 @@
   <data name="Orders.TotalCount" xml:space="preserve">
     <value>Total</value>
   </data>
+  <data name="Orders.TotalOrders" xml:space="preserve">
+    <value>Total Orders</value>
+  </data>
   <data name="Orders.Fullscreen" xml:space="preserve">
     <value>Fullscreen</value>
   </data>
@@ -1633,7 +1636,28 @@
     <value>Receipt Creation</value>
   </data>
   <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
-    <value>Configure when receipt print jobs are created.</value>
+    <value>Choose when receipt print jobs should be created.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.TimingLabel" xml:space="preserve">
+    <value>Receipt Creation Timing</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnAccepted" xml:space="preserve">
+    <value>When order is accepted</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnAcceptedDescription" xml:space="preserve">
+    <value>A receipt is created when the order is accepted, whether automatically or manually.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnPreparing" xml:space="preserve">
+    <value>When preparing starts</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Manual" xml:space="preserve">
+    <value>Create manually</value>
+  </data>
+  <data name="Settings.ReceiptCreation.ManualDescription" xml:space="preserve">
+    <value>Receipts are not created automatically; print manually when needed.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.ComingSoon" xml:space="preserve">
+    <value>Coming soon</value>
   </data>
   <data name="Settings.ReceiptCreation.CreateReceiptAfterAutoApprove" xml:space="preserve">
     <value>Create Receipt After Auto Approve</value>
@@ -1646,6 +1670,33 @@
   </data>
   <data name="Settings.PrintCopies.ReceiptCopyCount" xml:space="preserve">
     <value>Receipt Copy Count</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Title" xml:space="preserve">
+    <value>Receipt Language</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Description" xml:space="preserve">
+    <value>Choose the language used on printed receipts.</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.SelectLabel" xml:space="preserve">
+    <value>Receipt Language</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Turkish" xml:space="preserve">
+    <value>Turkish</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Arabic" xml:space="preserve">
+    <value>Arabic</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Russian" xml:space="preserve">
+    <value>Russian</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.ArabicPrinterNote" xml:space="preserve">
+    <value>Arabic receipt printing depends on printer and code page support.</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Invalid" xml:space="preserve">
+    <value>Invalid receipt language.</value>
   </data>
   <data name="Settings.PrinterStatus.Title" xml:space="preserve">
     <value>Printer / Print Bridge Status</value>
@@ -1668,8 +1719,83 @@
   <data name="Settings.ReceiptContent.RequiredFields" xml:space="preserve">
     <value>Required fields</value>
   </data>
-  <data name="Settings.ReceiptContent.OptionalFields" xml:space="preserve">
-    <value>Optional fields</value>
+  <data name="Settings.ReceiptContent.RequiredFieldsDescription" xml:space="preserve">
+    <value>Always included on receipts.</value>
+  </data>
+  <data name="Settings.ReceiptContent.AlwaysIncluded" xml:space="preserve">
+    <value>These fields are always printed on receipts.</value>
+  </data>
+  <data name="Settings.ReceiptContent.EnabledCount" xml:space="preserve">
+    <value>{0}/{1} enabled</value>
+  </data>
+  <data name="Settings.ReceiptContent.OrderInformation" xml:space="preserve">
+    <value>Order information</value>
+  </data>
+  <data name="Settings.ReceiptContent.OrderInformationDescription" xml:space="preserve">
+    <value>Restaurant, platform, and order time fields.</value>
+  </data>
+  <data name="Settings.ReceiptContent.CustomerDelivery" xml:space="preserve">
+    <value>Customer &amp; delivery</value>
+  </data>
+  <data name="Settings.ReceiptContent.CustomerDeliveryDescription" xml:space="preserve">
+    <value>Customer name, phone, and address fields.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ProductDetails" xml:space="preserve">
+    <value>Product details</value>
+  </data>
+  <data name="Settings.ReceiptContent.ProductDetailsDescription" xml:space="preserve">
+    <value>Manage product notes and options.</value>
+  </data>
+  <data name="Settings.ReceiptContent.AmountDetails" xml:space="preserve">
+    <value>Amount details</value>
+  </data>
+  <data name="Settings.ReceiptContent.AmountDetailsDescription" xml:space="preserve">
+    <value>Choose amount breakdown fields.</value>
+  </data>
+  <data name="Settings.ReceiptContent.MessagesExtras" xml:space="preserve">
+    <value>Messages &amp; extras</value>
+  </data>
+  <data name="Settings.ReceiptContent.MessagesExtrasDescription" xml:space="preserve">
+    <value>Manage header, footer, and extra receipt elements.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ComingSoonHint" xml:space="preserve">
+    <value>This field will be supported later.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowRestaurantNameHint" xml:space="preserve">
+    <value>Shows the restaurant name at the top of the receipt.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPlatformNameHint" xml:space="preserve">
+    <value>Shows which platform the order came from.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowReceivedTimeHint" xml:space="preserve">
+    <value>Shows when the order was received.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPaymentMethodHint" xml:space="preserve">
+    <value>Shows the payment method on the receipt.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerNameHint" xml:space="preserve">
+    <value>Shows the customer name on the receipt.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerPhoneHint" xml:space="preserve">
+    <value>Shows the customer phone on the receipt.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryAddressHint" xml:space="preserve">
+    <value>Shows the delivery address on the receipt.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductNotesHint" xml:space="preserve">
+    <value>Shows customer notes for products.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductOptionsHint" xml:space="preserve">
+    <value>Shows sauces, extras, and modifiers.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowSubtotalHint" xml:space="preserve">
+    <value>Shows the subtotal line on the receipt.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryFeeHint" xml:space="preserve">
+    <value>Shows the delivery fee line on the receipt.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowFooterMessageHint" xml:space="preserve">
+    <value>Shows a thank-you or info message at the bottom.</value>
   </data>
   <data name="Settings.ReceiptContent.Required" xml:space="preserve">
     <value>Required</value>
@@ -1746,6 +1872,9 @@
   <data name="Settings.ReceiptMessages.Header" xml:space="preserve">
     <value>Receipt Header</value>
   </data>
+  <data name="Settings.ReceiptMessages.HeaderHint" xml:space="preserve">
+    <value>Optional custom title. When empty, the restaurant name setting is used.</value>
+  </data>
   <data name="Settings.ReceiptMessages.Footer" xml:space="preserve">
     <value>Footer Message</value>
   </data>
@@ -1768,7 +1897,7 @@
     <value>Receipt Preview</value>
   </data>
   <data name="Settings.ReceiptPreview.Description" xml:space="preserve">
-    <value>Preview the receipt layout using sample data.</value>
+    <value>Approximately shows how your choices will appear on the receipt.</value>
   </data>
   <data name="Settings.ReceiptPreview.PreviewLabel" xml:space="preserve">
     <value>Preview</value>
@@ -1822,7 +1951,10 @@
     <value>Settings saved successfully.</value>
   </data>
   <data name="Settings.SaveFailed" xml:space="preserve">
-    <value>Settings could not be saved.</value>
+    <value>Settings could not be saved. Please try again.</value>
+  </data>
+  <data name="Settings.Saving" xml:space="preserve">
+    <value>Saving...</value>
   </data>
   <data name="Settings.Active" xml:space="preserve">
     <value>Active</value>

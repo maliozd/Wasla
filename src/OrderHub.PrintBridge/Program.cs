@@ -24,8 +24,8 @@ internal static class Program
         }
 
         ApplicationConfiguration.Initialize();
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
+        System.Windows.Forms.Application.EnableVisualStyles();
+        System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
 
         using var singleInstance = SingleInstanceGuard.TryAcquire();
         if (singleInstance is null)
@@ -39,7 +39,7 @@ internal static class Program
         }
 
         var services = PrintBridgeAppServices.Build();
-        Application.Run(new TrayApplicationContext(services));
+        System.Windows.Forms.Application.Run(new TrayApplicationContext(services));
     }
 
     private static string InitializeStartupCulture()

@@ -33,7 +33,11 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
         _logger = logger;
     }
 
-    public async Task<ReceiptTemplateSettings> GetAsync(Guid customerId, string? customerDisplayName, CancellationToken ct)
+    public async Task<ReceiptTemplateSettings> GetAsync(
+        Guid customerId,
+        string? customerDisplayName,
+        string? defaultReceiptLanguage,
+        CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
@@ -42,7 +46,7 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
             .ConfigureAwait(false);
 
-        return Deserialize(row?.ReceiptTemplateSettingsJson, customerDisplayName);
+        return Deserialize(row?.ReceiptTemplateSettingsJson, customerDisplayName, defaultReceiptLanguage);
     }
 
     public async Task<ReceiptTemplateSettings> UpdateAsync(
@@ -86,19 +90,41 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
         return settings;
     }
 
-    private static ReceiptTemplateSettings Deserialize(string? json, string? customerDisplayName)
+    private static ReceiptTemplateSettings Deserialize(string? json, string? customerDisplayName, string? defaultReceiptLanguage)
     {
+        var fallbackLanguage = ReceiptLanguageCodes.Normalize(defaultReceiptLanguage);
+
         if (string.IsNullOrWhiteSpace(json))
-            return ReceiptTemplateSettings.CreateDefaults(customerDisplayName);
+            return ReceiptTemplateSettings.CreateDefaults(customerDisplayName, fallbackLanguage);
 
         try
         {
             var settings = JsonSerializer.Deserialize<ReceiptTemplateSettings>(json, JsonOptions);
-            return settings ?? ReceiptTemplateSettings.CreateDefaults(customerDisplayName);
+            if (settings is null)
+                return ReceiptTemplateSettings.CreateDefaults(customerDisplayName, fallbackLanguage);
+
+            NormalizeLegacyHeaderText(settings, customerDisplayName);
+            settings.ReceiptLanguage = ReceiptLanguageCodes.Normalize(settings.ReceiptLanguage, fallbackLanguage);
+            return settings;
         }
         catch (JsonException)
         {
-            return ReceiptTemplateSettings.CreateDefaults(customerDisplayName);
+            return ReceiptTemplateSettings.CreateDefaults(customerDisplayName, fallbackLanguage);
+        }
+    }
+
+    private static void NormalizeLegacyHeaderText(ReceiptTemplateSettings settings, string? customerDisplayName)
+    {
+        // Older defaults stored tenant display name in ReceiptHeaderText, which bypassed ShowRestaurantName.
+        if (string.IsNullOrWhiteSpace(customerDisplayName) || string.IsNullOrWhiteSpace(settings.ReceiptHeaderText))
+            return;
+
+        if (string.Equals(
+                settings.ReceiptHeaderText.Trim(),
+                customerDisplayName.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            settings.ReceiptHeaderText = null;
         }
     }
 
@@ -121,6 +147,7 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
             ShowDeliveryFee = command.ShowDeliveryFee,
             ShowPaymentMethod = command.ShowPaymentMethod,
             ShowFooterMessage = command.ShowFooterMessage,
+            ReceiptLanguage = ReceiptLanguageCodes.Normalize(command.ReceiptLanguage),
             ReceiptHeaderText = ReceiptTemplateSettings.NormalizeSingleLine(command.ReceiptHeaderText, ReceiptTemplateLimits.HeaderMaxLength),
             ReceiptFooterText = ReceiptTemplateSettings.NormalizeFooter(command.ReceiptFooterText)
         };

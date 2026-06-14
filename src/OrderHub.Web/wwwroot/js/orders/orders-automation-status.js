@@ -8,8 +8,8 @@
   function setBadge(el, active, activeLabel, disabledLabel) {
     if (!el) return;
     el.textContent = active ? activeLabel : disabledLabel;
-    el.classList.remove("text-bg-secondary", "text-bg-success");
-    el.classList.add(active ? "text-bg-success" : "text-bg-secondary");
+    el.classList.remove("oh-orders-status-chip--active", "oh-orders-status-chip--muted");
+    el.classList.add(active ? "oh-orders-status-chip--active" : "oh-orders-status-chip--muted");
   }
 
   async function loadStatus() {

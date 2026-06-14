@@ -52,9 +52,8 @@
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const data = await resp.json();
     setUi(!!data.orderSyncEnabled);
-    O.showMessage(
-      data.orderSyncEnabled ? O.getMessage("orderSyncEnabledMessage") : O.getMessage("orderSyncDisabledMessage"),
-      "info"
+    O.showSettingsSaveSuccess(
+      data.orderSyncEnabled ? O.getMessage("orderSyncEnabledMessage") : O.getMessage("orderSyncDisabledMessage")
     );
   }
 
@@ -64,12 +63,15 @@
 
     toggle.addEventListener("change", function () {
       const next = !!toggle.checked;
-      // Optimistic UI, but revert on failure.
+      const previous = !next;
+      toggle.disabled = true;
       update(next).catch(function (e) {
         if (O.isDebugEnabled()) O.debugWarn("OrderSync update failed", e);
-        toggle.checked = !next;
-        setUi(!next);
-        O.showOrdersWarning("order-sync-update-failed", O.getMessage("orderSyncUpdateFailed"));
+        toggle.checked = previous;
+        setUi(previous);
+        O.showSettingsSaveError(O.getMessage("orderSyncUpdateFailed"));
+      }).finally(function () {
+        toggle.disabled = false;
       });
     });
   }

@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OrderHub.Application.Abstractions.Printing;
+using OrderHub.Application.Printing;
 
 namespace OrderHub.PrintBridge.Printing;
 
@@ -30,6 +32,9 @@ public sealed class ReceiptFormatter
 
         var template = payload.Template;
         var useTemplate = template is not null;
+        var language = ResolveLanguage(template, useTemplate);
+        var culture = ReceiptLabelLocalizer.GetCulture(language);
+        string L(string key) => ReceiptLabelLocalizer.GetLabel(language, key);
 
         var sb = new StringBuilder();
 
@@ -40,15 +45,15 @@ public sealed class ReceiptFormatter
             AppendSeparator(sb);
 
         if (ShouldShow(template, useTemplate, t => t.ShowPlatformName) && !string.IsNullOrWhiteSpace(payload.Platform))
-            AppendLine(sb, "Platform", payload.Platform);
+            AppendLine(sb, L(ReceiptLabelLocalizer.Platform), payload.Platform);
 
         if (!string.IsNullOrWhiteSpace(payload.ExternalOrderCode))
-            AppendLine(sb, "Order", payload.ExternalOrderCode);
+            AppendLine(sb, L(ReceiptLabelLocalizer.Order), payload.ExternalOrderCode);
         else if (!string.IsNullOrWhiteSpace(payload.ExternalOrderId))
-            AppendLine(sb, "Order", payload.ExternalOrderId);
+            AppendLine(sb, L(ReceiptLabelLocalizer.Order), payload.ExternalOrderId);
 
         if (ShouldShow(template, useTemplate, t => t.ShowReceivedTime) && payload.ReceivedAtUtc != default)
-            AppendLine(sb, "Received", payload.ReceivedAtUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture));
+            AppendLine(sb, L(ReceiptLabelLocalizer.Received), payload.ReceivedAtUtc.ToLocalTime().ToString("g", culture));
 
         var hasCustomerBlock = (ShouldShow(template, useTemplate, t => t.ShowCustomerName) && !string.IsNullOrWhiteSpace(payload.CustomerName))
             || (ShouldShow(template, useTemplate, t => t.ShowCustomerPhone) && !string.IsNullOrWhiteSpace(payload.CustomerPhone))
@@ -58,11 +63,11 @@ public sealed class ReceiptFormatter
             AppendSeparator(sb);
 
         if (ShouldShow(template, useTemplate, t => t.ShowCustomerName) && !string.IsNullOrWhiteSpace(payload.CustomerName))
-            AppendLine(sb, "Customer", payload.CustomerName);
+            AppendLine(sb, L(ReceiptLabelLocalizer.Customer), payload.CustomerName);
         if (ShouldShow(template, useTemplate, t => t.ShowCustomerPhone) && !string.IsNullOrWhiteSpace(payload.CustomerPhone))
-            AppendLine(sb, "Phone", payload.CustomerPhone);
+            AppendLine(sb, L(ReceiptLabelLocalizer.Phone), payload.CustomerPhone);
         if (ShouldShow(template, useTemplate, t => t.ShowDeliveryAddress) && !string.IsNullOrWhiteSpace(payload.DeliveryAddress))
-            AppendWrapped(sb, "Address", payload.DeliveryAddress);
+            AppendWrapped(sb, L(ReceiptLabelLocalizer.Address), payload.DeliveryAddress);
 
         if (payload.Items is { Count: > 0 })
         {
@@ -73,10 +78,10 @@ public sealed class ReceiptFormatter
                 AppendWrapped(sb, null, $"{qty}x {item.ProductName}");
 
                 if (item.LineTotal > 0)
-                    AppendLine(sb, "  Line", item.LineTotal.ToString("0.00", CultureInfo.InvariantCulture));
+                    AppendLine(sb, "  " + L(ReceiptLabelLocalizer.Line), item.LineTotal.ToString("0.00", CultureInfo.InvariantCulture));
 
                 if (ShouldShow(template, useTemplate, t => t.ShowProductNotes) && !string.IsNullOrWhiteSpace(item.Notes))
-                    AppendWrapped(sb, "  Note", item.Notes);
+                    AppendWrapped(sb, "  " + L(ReceiptLabelLocalizer.Note), item.Notes);
 
                 if (ShouldShow(template, useTemplate, t => t.ShowProductOptions) && item.Options is { Count: > 0 })
                 {
@@ -92,16 +97,16 @@ public sealed class ReceiptFormatter
         AppendSeparator(sb);
 
         if (ShouldShow(template, useTemplate, t => t.ShowSubtotal) && payload.Subtotal is > 0)
-            AppendLine(sb, "Subtotal", payload.Subtotal.Value.ToString("0.00", CultureInfo.InvariantCulture));
+            AppendLine(sb, L(ReceiptLabelLocalizer.Subtotal), payload.Subtotal.Value.ToString("0.00", CultureInfo.InvariantCulture));
 
         if (ShouldShow(template, useTemplate, t => t.ShowDeliveryFee) && payload.DeliveryFee is > 0)
-            AppendLine(sb, "Delivery", payload.DeliveryFee.Value.ToString("0.00", CultureInfo.InvariantCulture));
+            AppendLine(sb, L(ReceiptLabelLocalizer.Delivery), payload.DeliveryFee.Value.ToString("0.00", CultureInfo.InvariantCulture));
 
         if (payload.TotalAmount > 0)
-            AppendLine(sb, "TOTAL", payload.TotalAmount.ToString("0.00", CultureInfo.InvariantCulture));
+            AppendLine(sb, L(ReceiptLabelLocalizer.Total), payload.TotalAmount.ToString("0.00", CultureInfo.InvariantCulture));
 
         if (ShouldShow(template, useTemplate, t => t.ShowPaymentMethod) && !string.IsNullOrWhiteSpace(payload.PaymentMethod))
-            AppendLine(sb, "Payment", payload.PaymentMethod);
+            AppendLine(sb, L(ReceiptLabelLocalizer.Payment), payload.PaymentMethod);
 
         if (ShouldShow(template, useTemplate, t => t.ShowFooterMessage))
         {
@@ -119,6 +124,13 @@ public sealed class ReceiptFormatter
         sb.AppendLine();
 
         return Normalize(sb.ToString(), normalizeTurkishChars);
+    }
+
+    private static string ResolveLanguage(ReceiptTemplatePayload? template, bool useTemplate)
+    {
+        if (useTemplate && template is not null && !string.IsNullOrWhiteSpace(template.Language))
+            return ReceiptLanguageCodes.Normalize(template.Language);
+        return ReceiptLanguageCodes.Turkish;
     }
 
     private static string? ResolveHeader(ReceiptPayload payload, ReceiptTemplatePayload? template, bool useTemplate)
@@ -250,6 +262,7 @@ public sealed class ReceiptFormatter
     {
         public string? HeaderText { get; set; }
         public string? FooterText { get; set; }
+        public string? Language { get; set; }
         public bool ShowRestaurantName { get; set; } = true;
         public bool ShowPlatformName { get; set; } = true;
         public bool ShowReceivedTime { get; set; } = true;

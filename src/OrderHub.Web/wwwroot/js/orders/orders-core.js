@@ -76,6 +76,10 @@
   function showMessage(message, type) {
     if (global.OrderHubToast) {
       const m = String(message || "");
+      if (type === "success" && global.OrderHubToast.success) {
+        global.OrderHubToast.success(m);
+        return;
+      }
       if (type === "error" && global.OrderHubToast.error) {
         global.OrderHubToast.error(m);
         return;
@@ -91,11 +95,32 @@
     }
     const host = document.getElementById("ordersMessageHost");
     if (!host) return;
-    const cls = type === "error" ? "alert-danger" : (type === "warning" ? "alert-warning" : "alert-info");
+    const cls = type === "error" ? "alert-danger" : (type === "warning" ? "alert-warning" : (type === "success" ? "alert-success" : "alert-info"));
     host.innerHTML = "<div class=\"alert " + cls + " py-2 mb-2\">" + escapeHtml(message) + "</div>";
     setTimeout(function () {
       if (host.innerHTML) host.innerHTML = "";
     }, 4000);
+  }
+
+  const SETTINGS_SAVE_TOAST_KEY = "settings-save";
+  const SETTINGS_SAVE_TOAST_DURATION_MS = 3000;
+
+  function showSettingsSaveSuccess(message) {
+    const m = message || getMessage("orderSettingsSaved") || getMessage("settingsSaved");
+    if (global.OrderHubToast && typeof global.OrderHubToast.success === "function") {
+      global.OrderHubToast.success(m, { key: SETTINGS_SAVE_TOAST_KEY, durationMs: SETTINGS_SAVE_TOAST_DURATION_MS });
+      return;
+    }
+    showMessage(m, "success");
+  }
+
+  function showSettingsSaveError(message) {
+    const m = message || getMessage("orderSettingsUpdateFailed") || getMessage("settingsSaveFailed");
+    if (global.OrderHubToast && typeof global.OrderHubToast.error === "function") {
+      global.OrderHubToast.error(m, { key: SETTINGS_SAVE_TOAST_KEY, durationMs: SETTINGS_SAVE_TOAST_DURATION_MS });
+      return;
+    }
+    showMessage(m, "error");
   }
 
   global.OrderHubOrders = {
@@ -109,6 +134,8 @@
     escapeHtml: escapeHtml,
     showOrdersWarning: showOrdersWarning,
     showMessage: showMessage,
+    showSettingsSaveSuccess: showSettingsSaveSuccess,
+    showSettingsSaveError: showSettingsSaveError,
     state: {
       notificationSettings: null
     },

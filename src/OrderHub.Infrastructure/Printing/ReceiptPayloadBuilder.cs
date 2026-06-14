@@ -74,7 +74,8 @@ internal static class ReceiptPayloadBuilder
             ShowDiscount = template.ShowDiscount,
             ShowDeliveryFee = template.ShowDeliveryFee,
             ShowPaymentMethod = template.ShowPaymentMethod,
-            ShowFooterMessage = template.ShowFooterMessage
+            ShowFooterMessage = template.ShowFooterMessage,
+            Language = template.ReceiptLanguage
         };
 
     private static string? NullIfEmpty(string? value) =>
@@ -115,6 +116,7 @@ internal static class ReceiptPayloadBuilder
         public bool ShowDeliveryFee { get; init; } = true;
         public bool ShowPaymentMethod { get; init; }
         public bool ShowFooterMessage { get; init; } = true;
+        public string Language { get; init; } = ReceiptLanguageCodes.Turkish;
     }
 
     private sealed class ReceiptItemSnapshot

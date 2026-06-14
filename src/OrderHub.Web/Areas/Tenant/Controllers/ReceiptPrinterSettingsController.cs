@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -56,7 +57,7 @@ public sealed class ReceiptPrinterSettingsController : BaseController
         if (customer is null) return NotFound();
 
         var settings = await _templateSettings
-            .GetAsync(customer.Id, customer.Name, ct)
+            .GetAsync(customer.Id, customer.Name, ResolveDefaultReceiptLanguage(), ct)
             .ConfigureAwait(false);
 
         return Ok(MapTemplateResponse(settings));
@@ -102,9 +103,13 @@ public sealed class ReceiptPrinterSettingsController : BaseController
         showDeliveryFee = settings.ShowDeliveryFee,
         showPaymentMethod = settings.ShowPaymentMethod,
         showFooterMessage = settings.ShowFooterMessage,
+        receiptLanguage = settings.ReceiptLanguage,
         receiptHeaderText = settings.ReceiptHeaderText,
         receiptFooterText = settings.ReceiptFooterText
     };
+
+    private static string ResolveDefaultReceiptLanguage() =>
+        ReceiptLanguageCodes.Normalize(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
     private static PrintBridgeStatusSummaryViewModel? BuildPrintBridgeStatus(
         IReadOnlyList<PrintBridgeDeviceSummaryDto> devices)

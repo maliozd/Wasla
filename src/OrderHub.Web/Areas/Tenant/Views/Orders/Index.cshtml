@@ -16,31 +16,35 @@
 }
 
 <div class="oh-orders-page">
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 oh-orders-header">
-    <div class="orders-header-left">
-        <h1 class="h4 mb-0">@L["Orders.Title"]</h1>
-        <p class="text-muted small mb-0 mt-1">@L["Orders.Today"] — @L["Orders.DefaultTodayInfo"]</p>
+<div class="orders-page-header">
+    <div class="orders-page-header__main">
+        <h1 class="orders-page-header__title">@L["Orders.Title"]</h1>
+        <p class="orders-page-header__subtitle">
+            @L["Orders.Today"] — @today.ToString("d") · @L["Orders.LastUpdated"]: <span id="ordersLastUpdated">-</span>
+        </p>
     </div>
+    <div class="orders-page-header__metric orders-total-card" aria-live="polite">
+        <span class="orders-page-header__metric-value orders-total-card__number" id="ordersTotalCount">@Model.TotalCount</span>
+        <span class="orders-page-header__metric-label orders-total-card__label">@L["Orders.TotalOrders"]</span>
+    </div>
+</div>
 
-    <div class="orders-header-actions d-flex align-items-center justify-content-end flex-wrap gap-2 ms-auto">
-        <div class="orders-automation-status d-flex align-items-center flex-wrap gap-2 oh-orders-header-control" aria-label="@L["Settings.OrderSettings.Title"]">
-            <span id="automationStatusSync" class="badge text-bg-secondary">…</span>
-            <span class="text-muted d-none d-sm-inline" aria-hidden="true">·</span>
-            <span id="automationStatusAutoApprove" class="badge text-bg-secondary">…</span>
-            <span class="text-muted d-none d-sm-inline" aria-hidden="true">·</span>
-            <span id="automationStatusReceipt" class="badge text-bg-secondary">…</span>
-            <a class="btn btn-link btn-sm py-0 px-1 text-nowrap" href="/settings/orders">@L["Orders.ManageSettings"]</a>
+<div class="orders-toolbar">
+    <div class="orders-toolbar-left">
+        <div class="oh-orders-status-group" aria-label="@L["Settings.OrderSettings.Title"]">
+            <span id="automationStatusSync" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
+            <span id="automationStatusAutoApprove" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
+            <span id="automationStatusReceipt" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
         </div>
-
-        <span class="text-muted small text-nowrap flex-shrink-0">@L["Orders.TotalCount"]: <span id="ordersTotalCount">@Model.TotalCount</span></span>
-
-        <div class="btn-group btn-group-sm oh-orders-view-mode flex-shrink-0" role="group" aria-label="@L["Orders.ViewMode.Label"]">
+        <a class="orders-manage-settings" href="/settings/orders">@L["Orders.ManageSettings"]</a>
+    </div>
+    <div class="orders-toolbar-right">
+        <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
         </div>
-
-        <button type="button" id="ordersOpenLiveDisplay" class="btn btn-sm btn-outline-primary text-nowrap"
+        <button type="button" id="ordersOpenLiveDisplay" class="btn btn-sm btn-primary text-nowrap"
                 title="@L["Orders.OpenLiveDisplay"]">
             <i class="bi bi-display me-1" aria-hidden="true"></i>@L["Orders.OpenLiveDisplay"]
         </button>
