@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Infrastructure.Options;
 
 namespace OrderHub.Web.Middleware;
 
@@ -41,6 +43,7 @@ public sealed class TenantResolutionMiddleware
         HttpContext context,
         IMemoryCache cache,
         ITenantResolver resolver,
+        IOptions<CustomerOnboardingOptions> onboardingOptions,
         ILogger<TenantResolutionMiddleware> logger)
     {
         var path = context.Request.Path.Value ?? string.Empty;
@@ -58,8 +61,10 @@ public sealed class TenantResolutionMiddleware
             return;
         }
 
-        // Public marketing / root host (e.g. orderhub.local): no tenant. Block /auth (tenant login) with info page.
-        if (!IsSubdomainRequest(host))
+        var marketingBaseDomain = onboardingOptions.Value.MarketingBaseDomain;
+
+        // Central/public hosts serve landing, signup, and checkout without tenant resolution.
+        if (IsCentralPublicHost(host, marketingBaseDomain))
         {
             if (path.StartsWith("/auth", StringComparison.OrdinalIgnoreCase))
             {
@@ -71,6 +76,13 @@ public sealed class TenantResolutionMiddleware
                 return;
             }
 
+            await _next(context);
+            return;
+        }
+
+        // Non-tenant hosts that are not under the marketing domain fall through to normal routing.
+        if (!IsTenantHost(host, marketingBaseDomain))
+        {
             await _next(context);
             return;
         }
@@ -108,8 +120,6 @@ public sealed class TenantResolutionMiddleware
             p = p.TrimEnd('/');
         }
 
-        if (string.Equals(p, "/", StringComparison.OrdinalIgnoreCase)) return true;
-
         foreach (var prefix in BypassPrefixes)
         {
             if (p.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return true;
@@ -118,11 +128,31 @@ public sealed class TenantResolutionMiddleware
         return false;
     }
 
-    private static bool IsSubdomainRequest(string host)
+    private static bool IsCentralPublicHost(string host, string marketingBaseDomain)
     {
-        // ahmet.orderhub.local => 3 parts (subdomain + base + tld)
-        // orderhub.local => 2 parts (marketing host)
-        var parts = host.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return parts.Length >= 3;
+        var normalizedHost = NormalizeHost(host);
+        var normalizedDomain = NormalizeDomain(marketingBaseDomain);
+
+        if (normalizedHost == "localhost") return true;
+        if (normalizedHost == normalizedDomain) return true;
+        if (normalizedHost == $"www.{normalizedDomain}") return true;
+
+        return false;
     }
+
+    private static bool IsTenantHost(string host, string marketingBaseDomain)
+    {
+        if (IsCentralPublicHost(host, marketingBaseDomain)) return false;
+
+        var normalizedHost = NormalizeHost(host);
+        var normalizedDomain = NormalizeDomain(marketingBaseDomain);
+
+        return normalizedHost.EndsWith("." + normalizedDomain, StringComparison.Ordinal);
+    }
+
+    private static string NormalizeHost(string host) =>
+        host.Trim().TrimEnd('.').ToLowerInvariant();
+
+    private static string NormalizeDomain(string marketingBaseDomain) =>
+        marketingBaseDomain.Trim().TrimStart('.').TrimEnd('.').ToLowerInvariant();
 }
