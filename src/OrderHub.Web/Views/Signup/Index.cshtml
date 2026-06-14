@@ -1,4 +1,5 @@
 @model OrderHub.Web.Models.Signup.SignupViewModel
+@using System.Globalization
 @using System.Text.Json
 @using Microsoft.Extensions.Localization
 @using OrderHub.Application.Abstractions.Plans
@@ -13,6 +14,26 @@
         ? $"your-name.{Model.MarketingBaseDomain}"
         : $"{Model.Slug}.{Model.MarketingBaseDomain}";
     var publicPlans = PlanCatalog.GetPublicPlans();
+    var trCulture = CultureInfo.GetCultureInfo("tr-TR");
+    var planSummaries = publicPlans.Select(plan =>
+    {
+        var name = L[plan.DisplayNameKey].Value;
+        var yearlyPrice = plan.IsContactSales
+            ? L["Signup.PlanPrice.Enterprise.Yearly"].Value
+            : string.Format(trCulture, "{0:N0} TL / yıl", (plan.MonthlyPrice ?? 0m) * 10m);
+        return new
+        {
+            code = plan.PlanCode,
+            packageTitle = string.Format(L["Signup.SelectedPlanPackageLabel"].Value, name),
+            description = L[plan.DescriptionKey].Value,
+            monthlyPrice = L[plan.PriceLabelKey].Value,
+            yearlyPrice,
+            deviceLimit = L[plan.DeviceLimitKey].Value,
+            features = plan.FeatureKeys.Select(key => L[key].Value).ToArray(),
+            isContactSales = plan.IsContactSales,
+            showYearlyNote = !plan.IsContactSales
+        };
+    }).ToArray();
     var signupConfig = new
     {
         cities = Model.Cities.Select(c => new { id = c.Id, name = c.Name, phoneAreaCode = c.PhoneAreaCode }),
@@ -21,7 +42,11 @@
         showPasswordText = L["Common.ShowPassword"].Value,
         hidePasswordText = L["Common.HidePassword"].Value,
         mobileHint = L["Signup.MobilePhoneHint"].Value,
-        defaultCountryCode = "+90"
+        defaultCountryCode = "+90",
+        plans = planSummaries,
+        selectedPlanTitle = L["Signup.SelectedPlanTitle"].Value,
+        selectedPlanIncludes = L["Signup.SelectedPlanIncludes"].Value,
+        yearlyAdvantageNote = L["Signup.YearlyAdvantageNote"].Value
     };
 }
 <div class="oh-signup-page py-4 py-md-5">
@@ -61,13 +86,24 @@
                                     </div>
                                     <div class="col-md-6" id="signupBillingCol">
                                         <label asp-for="BillingPeriod" class="form-label"></label>
-                                        <select asp-for="BillingPeriod" class="form-select">
+                                        <select asp-for="BillingPeriod" class="form-select" id="signupBillingPeriod">
                                             <option value="Monthly">@L["Signup.BillingMonthly"]</option>
                                             <option value="Yearly">@L["Signup.BillingYearly"]</option>
                                         </select>
                                         <div class="form-text">@L["Signup.BillingNote"]</div>
                                         <span asp-validation-for="BillingPeriod" class="text-danger small"></span>
                                     </div>
+                                </div>
+
+                                <div id="signupPlanSummary" class="oh-signup-plan-summary mt-3" aria-live="polite">
+                                    <div class="small text-muted mb-1">@L["Signup.SelectedPlanTitle"]</div>
+                                    <div class="fw-semibold" id="signupPlanSummaryName"></div>
+                                    <div class="text-secondary small" id="signupPlanSummaryDescription"></div>
+                                    <div class="fw-semibold mt-2" id="signupPlanSummaryPrice"></div>
+                                    <div class="small text-muted mt-1 d-none" id="signupPlanSummaryYearlyNote">@L["Signup.YearlyAdvantageNote"]</div>
+                                    <div class="small text-primary mt-2" id="signupPlanSummaryDevice"></div>
+                                    <div class="small fw-semibold mt-3 mb-1">@L["Signup.SelectedPlanIncludes"]</div>
+                                    <ul class="small text-secondary mb-0 ps-3" id="signupPlanSummaryFeatures"></ul>
                                 </div>
                             </section>
 

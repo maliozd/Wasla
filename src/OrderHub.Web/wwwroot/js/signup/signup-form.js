@@ -48,6 +48,7 @@
     var businessNameInput = document.getElementById("signupBusinessName");
     var preview = document.getElementById("signupDomainPreview");
     var planSelect = document.getElementById("signupPlanCode");
+    var billingSelect = document.getElementById("signupBillingPeriod");
     var enterpriseNotice = document.getElementById("signupEnterpriseNotice");
     var selfServiceSections = document.getElementById("signupSelfServiceSections");
     var billingCol = document.getElementById("signupBillingCol");
@@ -78,6 +79,48 @@
         preview.textContent = slug + "." + baseDomain;
     }
 
+    function findSelectedPlan() {
+        if (!planSelect || !Array.isArray(config.plans)) return null;
+        var code = planSelect.value;
+        for (var i = 0; i < config.plans.length; i++) {
+            if (config.plans[i].code === code) {
+                return config.plans[i];
+            }
+        }
+        return config.plans[0] || null;
+    }
+
+    function updatePlanSummary() {
+        var plan = findSelectedPlan();
+        var nameEl = document.getElementById("signupPlanSummaryName");
+        var descriptionEl = document.getElementById("signupPlanSummaryDescription");
+        var priceEl = document.getElementById("signupPlanSummaryPrice");
+        var yearlyNoteEl = document.getElementById("signupPlanSummaryYearlyNote");
+        var deviceEl = document.getElementById("signupPlanSummaryDevice");
+        var featuresEl = document.getElementById("signupPlanSummaryFeatures");
+
+        if (!plan || !nameEl || !descriptionEl || !priceEl || !deviceEl || !featuresEl) {
+            return;
+        }
+
+        var isYearly = billingSelect && billingSelect.value === "Yearly";
+        nameEl.textContent = plan.packageTitle || "";
+        descriptionEl.textContent = plan.description || "";
+        priceEl.textContent = isYearly ? (plan.yearlyPrice || plan.monthlyPrice || "") : (plan.monthlyPrice || "");
+
+        if (yearlyNoteEl) {
+            yearlyNoteEl.classList.toggle("d-none", !(isYearly && plan.showYearlyNote));
+        }
+
+        deviceEl.textContent = plan.deviceLimit || "";
+        featuresEl.innerHTML = "";
+        (plan.features || []).forEach(function (feature) {
+            var item = document.createElement("li");
+            item.textContent = feature;
+            featuresEl.appendChild(item);
+        });
+    }
+
     function updatePlanUi() {
         if (!planSelect) return;
         var option = planSelect.options[planSelect.selectedIndex];
@@ -91,6 +134,7 @@
         if (billingCol) {
             billingCol.classList.toggle("d-none", isContactSales);
         }
+        updatePlanSummary();
     }
 
     function setDistrictDisabled(disabled) {
@@ -194,6 +238,10 @@
     if (planSelect) {
         planSelect.addEventListener("change", updatePlanUi);
         updatePlanUi();
+    }
+
+    if (billingSelect) {
+        billingSelect.addEventListener("change", updatePlanSummary);
     }
 
     if (slugInput) {

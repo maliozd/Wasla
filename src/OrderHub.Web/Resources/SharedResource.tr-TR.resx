@@ -2781,6 +2781,11 @@
   <data name="Signup.Title" xml:space="preserve"><value>OrderHub hesabı oluştur</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Restoranınızı online sipariş platformlarına bağlayın ve tek yerden yönetin.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>Plan seçimi</value></data>
+  <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>Seçiminiz</value></data>
+  <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>{0} Paketi</value></data>
+  <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>Bu paketle:</value></data>
+  <data name="Signup.YearlyAdvantageNote" xml:space="preserve"><value>Yıllık ödemede 2 ay avantajlı fiyat.</value></data>
+  <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>Özel teklif</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>İşletme bilgileri</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>Hesap sahibi</value></data>
   <data name="Signup.StepCreate" xml:space="preserve"><value>Hesabı oluştur</value></data>

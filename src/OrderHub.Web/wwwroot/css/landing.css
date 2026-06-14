@@ -326,6 +326,17 @@ main {
   gap: 0.35rem 1rem;
 }
 
+.oh-signup-plan-summary {
+  background: var(--bs-body-tertiary, #f8f9fa);
+  border: 1px solid var(--oh-landing-border, #e9ecef);
+  border-radius: 0.75rem;
+  padding: 1rem 1.15rem;
+}
+
+.oh-signup-plan-summary ul li {
+  margin-bottom: 0.25rem;
+}
+
 .oh-signup-phone-hint {
   font-size: 0.8rem;
 }
