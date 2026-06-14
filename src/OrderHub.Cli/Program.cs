@@ -120,6 +120,16 @@ migrateCentral.SetHandler(async (InvocationContext context) =>
     context.ExitCode = await CliCommands.MigrateCentralAsync(host, context.GetCancellationToken());
 });
 
+// --- seed-turkey-reference-data ---
+var seedTurkeyReferenceData = new Command(
+    "seed-turkey-reference-data",
+    "Seed all 81 Turkish cities and districts into CentralDb (idempotent).");
+
+seedTurkeyReferenceData.SetHandler(async (InvocationContext context) =>
+{
+    context.ExitCode = await CliCommands.SeedTurkeyReferenceDataAsync(host, context.GetCancellationToken());
+});
+
 // --- migrate-customer ---
 var migrateCustomer = new Command("migrate-customer", "Apply pending CustomerDb migrations for a single customer.");
 
@@ -394,6 +404,7 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     resetCentralAdminPassword,
     listCentralAdmins,
     migrateCentral,
+    seedTurkeyReferenceData,
     migrateCustomer,
     migrateAll,
     migrationStatus,

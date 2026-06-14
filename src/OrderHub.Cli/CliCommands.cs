@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Domain.Entities.Central;
 using OrderHub.Domain.Entities.Customer;
 using OrderHub.Domain.Enums;
 using System.Text.Json;
 using OrderHub.Infrastructure.Persistence.Central;
+using OrderHub.Infrastructure.ReferenceData;
 using OrderHub.Infrastructure.Security;
 using OrderHub.Infrastructure.Persistence.Customer;
 
@@ -416,6 +418,30 @@ internal static class CliCommands
         catch (Exception ex)
         {
             WriteError($"migrate-central failed: {ex.Message}");
+            return 1;
+        }
+    }
+
+    public static async Task<int> SeedTurkeyReferenceDataAsync(IHost host, CancellationToken ct)
+    {
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<TurkeyReferenceDataSeeder>>();
+            var seeder = new TurkeyReferenceDataSeeder(central, logger);
+
+            var result = await seeder.SeedAsync(ct).ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(
+                $"✓ seed-turkey-reference-data completed. Cities inserted={result.CitiesInserted}, districts inserted={result.DistrictsInserted}, total cities={result.TotalCities}.");
+            Console.ResetColor();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            WriteError($"seed-turkey-reference-data failed: {ex.Message}");
             return 1;
         }
     }

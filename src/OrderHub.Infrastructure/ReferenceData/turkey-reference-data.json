@@ -1,0 +1,1626 @@
+{
+    "countryCode":  "TR",
+    "cities":  [
+                   {
+                       "plateCode":  "01",
+                       "name":  "Adana",
+                       "phoneAreaCode":  "322",
+                       "sortOrder":  1,
+                       "districts":  [
+                                         "Aladağ",
+                                         "Ceyhan",
+                                         "Çukurova",
+                                         "Feke",
+                                         "İmamoğlu",
+                                         "Karaisalı",
+                                         "Karataş",
+                                         "Kozan",
+                                         "Pozantı",
+                                         "Saimbeyli",
+                                         "Sarıçam",
+                                         "Seyhan",
+                                         "Tufanbeyli",
+                                         "Yumurtalık",
+                                         "Yüreğir"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "02",
+                       "name":  "Adıyaman",
+                       "phoneAreaCode":  "416",
+                       "sortOrder":  2,
+                       "districts":  [
+                                         "Besni",
+                                         "Çelikhan",
+                                         "Gerger",
+                                         "Gölbaşı",
+                                         "Kahta",
+                                         "Merkez",
+                                         "Samsat",
+                                         "Sincik",
+                                         "Tut"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "03",
+                       "name":  "Afyonkarahisar",
+                       "phoneAreaCode":  "272",
+                       "sortOrder":  3,
+                       "districts":  [
+                                         "Başmakçı",
+                                         "Bayat",
+                                         "Bolvadin",
+                                         "Çay",
+                                         "Çobanlar",
+                                         "Dazkırı",
+                                         "Dinar",
+                                         "Emirdağ",
+                                         "Evciler",
+                                         "Hocalar",
+                                         "İhsaniye",
+                                         "İscehisar",
+                                         "Kızılören",
+                                         "Merkez",
+                                         "Sandıklı",
+                                         "Sinanpaşa",
+                                         "Şuhut",
+                                         "Sultandağı"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "04",
+                       "name":  "Ağrı",
+                       "phoneAreaCode":  "472",
+                       "sortOrder":  4,
+                       "districts":  [
+                                         "Diyadin",
+                                         "Doğubayazıt",
+                                         "Eleşkirt",
+                                         "Hamur",
+                                         "Merkez",
+                                         "Patnos",
+                                         "Taşlıçay",
+                                         "Tutak"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "05",
+                       "name":  "Amasya",
+                       "phoneAreaCode":  "358",
+                       "sortOrder":  5,
+                       "districts":  [
+                                         "Göynücek",
+                                         "Gümüşhacıköy",
+                                         "Hamamözü",
+                                         "Merkez",
+                                         "Merzifon",
+                                         "Suluova",
+                                         "Taşova"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "06",
+                       "name":  "Ankara",
+                       "phoneAreaCode":  "312",
+                       "sortOrder":  6,
+                       "districts":  [
+                                         "Akyurt",
+                                         "Altındağ",
+                                         "Ayaş",
+                                         "Bala",
+                                         "Beypazarı",
+                                         "Çamlıdere",
+                                         "Çankaya",
+                                         "Çubuk",
+                                         "Elmadağ",
+                                         "Etimesgut",
+                                         "Evren",
+                                         "Gölbaşı",
+                                         "Güdül",
+                                         "Haymana",
+                                         "Kahramankazan",
+                                         "Kalecik",
+                                         "Keçiören",
+                                         "Kızılcahamam",
+                                         "Mamak",
+                                         "Nallıhan",
+                                         "Polatlı",
+                                         "Pursaklar",
+                                         "Şereflikoçhisar",
+                                         "Sincan",
+                                         "Yenimahalle"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "07",
+                       "name":  "Antalya",
+                       "phoneAreaCode":  "242",
+                       "sortOrder":  7,
+                       "districts":  [
+                                         "Akseki",
+                                         "Aksu",
+                                         "Alanya",
+                                         "Demre",
+                                         "Döşemealtı",
+                                         "Elmalı",
+                                         "Finike",
+                                         "Gazipaşa",
+                                         "Gündoğmuş",
+                                         "İbradı",
+                                         "Kaş",
+                                         "Kemer",
+                                         "Kepez",
+                                         "Konyaaltı",
+                                         "Korkuteli",
+                                         "Kumluca",
+                                         "Manavgat",
+                                         "Muratpaşa",
+                                         "Serik"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "08",
+                       "name":  "Artvin",
+                       "phoneAreaCode":  "466",
+                       "sortOrder":  8,
+                       "districts":  [
+                                         "Ardanuç",
+                                         "Arhavi",
+                                         "Borçka",
+                                         "Hopa",
+                                         "Kemalpaşa",
+                                         "Merkez",
+                                         "Murgul",
+                                         "Şavşat",
+                                         "Yusufeli"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "09",
+                       "name":  "Aydın",
+                       "phoneAreaCode":  "256",
+                       "sortOrder":  9,
+                       "districts":  [
+                                         "Bozdoğan",
+                                         "Buharkent",
+                                         "Çine",
+                                         "Didim",
+                                         "Efeler",
+                                         "Germencik",
+                                         "İncirliova",
+                                         "Karacasu",
+                                         "Karpuzlu",
+                                         "Koçarlı",
+                                         "Köşk",
+                                         "Kuşadası",
+                                         "Kuyucak",
+                                         "Nazilli",
+                                         "Söke",
+                                         "Sultanhisar",
+                                         "Yenipazar"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "10",
+                       "name":  "Balıkesir",
+                       "phoneAreaCode":  "266",
+                       "sortOrder":  10,
+                       "districts":  [
+                                         "Altıeylül",
+                                         "Ayvalık",
+                                         "Balya",
+                                         "Bandırma",
+                                         "Bigadiç",
+                                         "Burhaniye",
+                                         "Dursunbey",
+                                         "Edremit",
+                                         "Erdek",
+                                         "Gömeç",
+                                         "Gönen",
+                                         "Havran",
+                                         "İvrindi",
+                                         "Karesi",
+                                         "Kepsut",
+                                         "Manyas",
+                                         "Marmara",
+                                         "Savaştepe",
+                                         "Sındırgı",
+                                         "Susurluk"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "11",
+                       "name":  "Bilecik",
+                       "phoneAreaCode":  "228",
+                       "sortOrder":  11,
+                       "districts":  [
+                                         "Bozüyük",
+                                         "Gölpazarı",
+                                         "İnhisar",
+                                         "Merkez",
+                                         "Osmaneli",
+                                         "Pazaryeri",
+                                         "Söğüt",
+                                         "Yenipazar"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "12",
+                       "name":  "Bingöl",
+                       "phoneAreaCode":  "426",
+                       "sortOrder":  12,
+                       "districts":  [
+                                         "Adaklı",
+                                         "Genç",
+                                         "Karlıova",
+                                         "Kiğı",
+                                         "Merkez",
+                                         "Solhan",
+                                         "Yayladere",
+                                         "Yedisu"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "13",
+                       "name":  "Bitlis",
+                       "phoneAreaCode":  "434",
+                       "sortOrder":  13,
+                       "districts":  [
+                                         "Adilcevaz",
+                                         "Ahlat",
+                                         "Güroymak",
+                                         "Hizan",
+                                         "Merkez",
+                                         "Mutki",
+                                         "Tatvan"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "14",
+                       "name":  "Bolu",
+                       "phoneAreaCode":  "374",
+                       "sortOrder":  14,
+                       "districts":  [
+                                         "Dörtdivan",
+                                         "Gerede",
+                                         "Göynük",
+                                         "Kıbrıscık",
+                                         "Mengen",
+                                         "Merkez",
+                                         "Mudurnu",
+                                         "Seben",
+                                         "Yeniçağa"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "15",
+                       "name":  "Burdur",
+                       "phoneAreaCode":  "248",
+                       "sortOrder":  15,
+                       "districts":  [
+                                         "Ağlasun",
+                                         "Altınyayla",
+                                         "Bucak",
+                                         "Çavdır",
+                                         "Çeltikçi",
+                                         "Gölhisar",
+                                         "Karamanlı",
+                                         "Kemer",
+                                         "Merkez",
+                                         "Tefenni",
+                                         "Yeşilova"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "16",
+                       "name":  "Bursa",
+                       "phoneAreaCode":  "224",
+                       "sortOrder":  16,
+                       "districts":  [
+                                         "Büyükorhan",
+                                         "Gemlik",
+                                         "Gürsu",
+                                         "Harmancık",
+                                         "İnegöl",
+                                         "İznik",
+                                         "Karacabey",
+                                         "Keles",
+                                         "Kestel",
+                                         "Mudanya",
+                                         "Mustafakemalpaşa",
+                                         "Nilüfer",
+                                         "Orhaneli",
+                                         "Orhangazi",
+                                         "Osmangazi",
+                                         "Yenişehir",
+                                         "Yıldırım"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "17",
+                       "name":  "Çanakkale",
+                       "phoneAreaCode":  "286",
+                       "sortOrder":  17,
+                       "districts":  [
+                                         "Ayvacık",
+                                         "Bayramiç",
+                                         "Biga",
+                                         "Bozcaada",
+                                         "Çan",
+                                         "Eceabat",
+                                         "Ezine",
+                                         "Gelibolu",
+                                         "Gökçeada",
+                                         "Lapseki",
+                                         "Merkez",
+                                         "Yenice"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "18",
+                       "name":  "Çankırı",
+                       "phoneAreaCode":  "376",
+                       "sortOrder":  18,
+                       "districts":  [
+                                         "Atkaracalar",
+                                         "Bayramören",
+                                         "Çerkeş",
+                                         "Eldivan",
+                                         "Ilgaz",
+                                         "Kızılırmak",
+                                         "Korgun",
+                                         "Kurşunlu",
+                                         "Merkez",
+                                         "Orta",
+                                         "Şabanözü",
+                                         "Yapraklı"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "19",
+                       "name":  "Çorum",
+                       "phoneAreaCode":  "364",
+                       "sortOrder":  19,
+                       "districts":  [
+                                         "Alaca",
+                                         "Bayat",
+                                         "Boğazkale",
+                                         "Dodurga",
+                                         "İskilip",
+                                         "Kargı",
+                                         "Laçin",
+                                         "Mecitözü",
+                                         "Merkez",
+                                         "Oğuzlar",
+                                         "Ortaköy",
+                                         "Osmancık",
+                                         "Sungurlu",
+                                         "Uğurludağ"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "20",
+                       "name":  "Denizli",
+                       "phoneAreaCode":  "258",
+                       "sortOrder":  20,
+                       "districts":  [
+                                         "Acıpayam",
+                                         "Babadağ",
+                                         "Baklan",
+                                         "Bekilli",
+                                         "Beyağaç",
+                                         "Bozkurt",
+                                         "Buldan",
+                                         "Çal",
+                                         "Çameli",
+                                         "Çardak",
+                                         "Çivril",
+                                         "Güney",
+                                         "Honaz",
+                                         "Kale",
+                                         "Merkezefendi",
+                                         "Pamukkale",
+                                         "Sarayköy",
+                                         "Serinhisar",
+                                         "Tavas"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "21",
+                       "name":  "Diyarbakır",
+                       "phoneAreaCode":  "412",
+                       "sortOrder":  21,
+                       "districts":  [
+                                         "Bağlar",
+                                         "Bismil",
+                                         "Çermik",
+                                         "Çınar",
+                                         "Çüngüş",
+                                         "Dicle",
+                                         "Eğil",
+                                         "Ergani",
+                                         "Hani",
+                                         "Hazro",
+                                         "Kayapınar",
+                                         "Kocaköy",
+                                         "Kulp",
+                                         "Lice",
+                                         "Silvan",
+                                         "Sur",
+                                         "Yenişehir"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "22",
+                       "name":  "Edirne",
+                       "phoneAreaCode":  "284",
+                       "sortOrder":  22,
+                       "districts":  [
+                                         "Enez",
+                                         "Havsa",
+                                         "İpsala",
+                                         "Keşan",
+                                         "Lalapaşa",
+                                         "Meriç",
+                                         "Merkez",
+                                         "Süloğlu",
+                                         "Uzunköprü"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "23",
+                       "name":  "Elazığ",
+                       "phoneAreaCode":  "424",
+                       "sortOrder":  23,
+                       "districts":  [
+                                         "Ağın",
+                                         "Alacakaya",
+                                         "Arıcak",
+                                         "Baskil",
+                                         "Karakoçan",
+                                         "Keban",
+                                         "Kovancılar",
+                                         "Maden",
+                                         "Merkez",
+                                         "Palu",
+                                         "Sivrice"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "24",
+                       "name":  "Erzincan",
+                       "phoneAreaCode":  "446",
+                       "sortOrder":  24,
+                       "districts":  [
+                                         "Çayırlı",
+                                         "İliç",
+                                         "Kemah",
+                                         "Kemaliye",
+                                         "Merkez",
+                                         "Otlukbeli",
+                                         "Refahiye",
+                                         "Tercan",
+                                         "Üzümlü"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "25",
+                       "name":  "Erzurum",
+                       "phoneAreaCode":  "442",
+                       "sortOrder":  25,
+                       "districts":  [
+                                         "Aşkale",
+                                         "Aziziye",
+                                         "Çat",
+                                         "Hınıs",
+                                         "Horasan",
+                                         "İspir",
+                                         "Karaçoban",
+                                         "Karayazı",
+                                         "Köprüköy",
+                                         "Narman",
+                                         "Oltu",
+                                         "Olur",
+                                         "Palandöken",
+                                         "Pasinler",
+                                         "Pazaryolu",
+                                         "Şenkaya",
+                                         "Tekman",
+                                         "Tortum",
+                                         "Uzundere",
+                                         "Yakutiye"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "26",
+                       "name":  "Eskişehir",
+                       "phoneAreaCode":  "222",
+                       "sortOrder":  26,
+                       "districts":  [
+                                         "Alpu",
+                                         "Beylikova",
+                                         "Çifteler",
+                                         "Günyüzü",
+                                         "Han",
+                                         "İnönü",
+                                         "Mahmudiye",
+                                         "Mihalgazi",
+                                         "Mihalıççık",
+                                         "Odunpazarı",
+                                         "Sarıcakaya",
+                                         "Seyitgazi",
+                                         "Sivrihisar",
+                                         "Tepebaşı"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "27",
+                       "name":  "Gaziantep",
+                       "phoneAreaCode":  "342",
+                       "sortOrder":  27,
+                       "districts":  [
+                                         "Araban",
+                                         "İslahiye",
+                                         "Karkamış",
+                                         "Nizip",
+                                         "Nurdağı",
+                                         "Oğuzeli",
+                                         "Şahinbey",
+                                         "Şehitkamil",
+                                         "Yavuzeli"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "28",
+                       "name":  "Giresun",
+                       "phoneAreaCode":  "454",
+                       "sortOrder":  28,
+                       "districts":  [
+                                         "Alucra",
+                                         "Bulancak",
+                                         "Çamoluk",
+                                         "Çanakçı",
+                                         "Dereli",
+                                         "Doğankent",
+                                         "Espiye",
+                                         "Eynesil",
+                                         "Görele",
+                                         "Güce",
+                                         "Keşap",
+                                         "Merkez",
+                                         "Piraziz",
+                                         "Şebinkarahisar",
+                                         "Tirebolu",
+                                         "Yağlıdere"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "29",
+                       "name":  "Gümüşhane",
+                       "phoneAreaCode":  "456",
+                       "sortOrder":  29,
+                       "districts":  [
+                                         "Kelkit",
+                                         "Köse",
+                                         "Kürtün",
+                                         "Merkez",
+                                         "Şiran",
+                                         "Torul"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "30",
+                       "name":  "Hakkari",
+                       "phoneAreaCode":  "438",
+                       "sortOrder":  30,
+                       "districts":  [
+                                         "Çukurca",
+                                         "Derecik",
+                                         "Merkez",
+                                         "Şemdinli",
+                                         "Yüksekova"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "31",
+                       "name":  "Hatay",
+                       "phoneAreaCode":  "326",
+                       "sortOrder":  31,
+                       "districts":  [
+                                         "Altınözü",
+                                         "Antakya",
+                                         "Arsuz",
+                                         "Belen",
+                                         "Defne",
+                                         "Dörtyol",
+                                         "Erzin",
+                                         "Hassa",
+                                         "İskenderun",
+                                         "Kırıkhan",
+                                         "Kumlu",
+                                         "Payas",
+                                         "Reyhanlı",
+                                         "Samandağ",
+                                         "Yayladağı"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "32",
+                       "name":  "Isparta",
+                       "phoneAreaCode":  "246",
+                       "sortOrder":  32,
+                       "districts":  [
+                                         "Aksu",
+                                         "Atabey",
+                                         "Eğirdir",
+                                         "Gelendost",
+                                         "Gönen",
+                                         "Keçiborlu",
+                                         "Merkez",
+                                         "Şarkikaraağaç",
+                                         "Senirkent",
+                                         "Sütçüler",
+                                         "Uluborlu",
+                                         "Yalvaç",
+                                         "Yenişarbademli"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "33",
+                       "name":  "Mersin",
+                       "phoneAreaCode":  "324",
+                       "sortOrder":  33,
+                       "districts":  [
+                                         "Akdeniz",
+                                         "Anamur",
+                                         "Aydıncık",
+                                         "Bozyazı",
+                                         "Çamlıyayla",
+                                         "Erdemli",
+                                         "Gülnar",
+                                         "Mezitli",
+                                         "Mut",
+                                         "Silifke",
+                                         "Tarsus",
+                                         "Toroslar",
+                                         "Yenişehir"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "34",
+                       "name":  "İstanbul",
+                       "phoneAreaCode":  "212",
+                       "sortOrder":  34,
+                       "districts":  [
+                                         "Adalar",
+                                         "Arnavutköy",
+                                         "Ataşehir",
+                                         "Avcılar",
+                                         "Bağcılar",
+                                         "Bahçelievler",
+                                         "Bakırköy",
+                                         "Başakşehir",
+                                         "Bayrampaşa",
+                                         "Beşiktaş",
+                                         "Beykoz",
+                                         "Beylikdüzü",
+                                         "Beyoğlu",
+                                         "Büyükçekmece",
+                                         "Çatalca",
+                                         "Çekmeköy",
+                                         "Esenler",
+                                         "Esenyurt",
+                                         "Eyüpsultan",
+                                         "Fatih",
+                                         "Gaziosmanpaşa",
+                                         "Güngören",
+                                         "Kadıköy",
+                                         "Kağıthane",
+                                         "Kartal",
+                                         "Küçükçekmece",
+                                         "Maltepe",
+                                         "Pendik",
+                                         "Sancaktepe",
+                                         "Sarıyer",
+                                         "Şile",
+                                         "Silivri",
+                                         "Şişli",
+                                         "Sultanbeyli",
+                                         "Sultangazi",
+                                         "Tuzla",
+                                         "Ümraniye",
+                                         "Üsküdar",
+                                         "Zeytinburnu"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "35",
+                       "name":  "İzmir",
+                       "phoneAreaCode":  "232",
+                       "sortOrder":  35,
+                       "districts":  [
+                                         "Aliağa",
+                                         "Balçova",
+                                         "Bayındır",
+                                         "Bayraklı",
+                                         "Bergama",
+                                         "Beydağ",
+                                         "Bornova",
+                                         "Buca",
+                                         "Çeşme",
+                                         "Çiğli",
+                                         "Dikili",
+                                         "Foça",
+                                         "Gaziemir",
+                                         "Güzelbahçe",
+                                         "Karabağlar",
+                                         "Karaburun",
+                                         "Karşıyaka",
+                                         "Kemalpaşa",
+                                         "Kınık",
+                                         "Kiraz",
+                                         "Konak",
+                                         "Menderes",
+                                         "Menemen",
+                                         "Narlıdere",
+                                         "Ödemiş",
+                                         "Seferihisar",
+                                         "Selçuk",
+                                         "Tire",
+                                         "Torbalı",
+                                         "Urla"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "36",
+                       "name":  "Kars",
+                       "phoneAreaCode":  "474",
+                       "sortOrder":  36,
+                       "districts":  [
+                                         "Akyaka",
+                                         "Arpaçay",
+                                         "Digor",
+                                         "Kağızman",
+                                         "Merkez",
+                                         "Sarıkamış",
+                                         "Selim",
+                                         "Susuz"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "37",
+                       "name":  "Kastamonu",
+                       "phoneAreaCode":  "366",
+                       "sortOrder":  37,
+                       "districts":  [
+                                         "Abana",
+                                         "Ağlı",
+                                         "Araç",
+                                         "Azdavay",
+                                         "Bozkurt",
+                                         "Çatalzeytin",
+                                         "Cide",
+                                         "Daday",
+                                         "Devrekani",
+                                         "Doğanyurt",
+                                         "Hanönü",
+                                         "İhsangazi",
+                                         "İnebolu",
+                                         "Küre",
+                                         "Merkez",
+                                         "Pınarbaşı",
+                                         "Şenpazar",
+                                         "Seydiler",
+                                         "Taşköprü",
+                                         "Tosya"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "38",
+                       "name":  "Kayseri",
+                       "phoneAreaCode":  "352",
+                       "sortOrder":  38,
+                       "districts":  [
+                                         "Akkışla",
+                                         "Bünyan",
+                                         "Develi",
+                                         "Felahiye",
+                                         "Hacılar",
+                                         "İncesu",
+                                         "Kocasinan",
+                                         "Melikgazi",
+                                         "Özvatan",
+                                         "Pınarbaşı",
+                                         "Sarıoğlan",
+                                         "Sarız",
+                                         "Talas",
+                                         "Tomarza",
+                                         "Yahyalı",
+                                         "Yeşilhisar"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "39",
+                       "name":  "Kırklareli",
+                       "phoneAreaCode":  "288",
+                       "sortOrder":  39,
+                       "districts":  [
+                                         "Babaeski",
+                                         "Demirköy",
+                                         "Kofçaz",
+                                         "Lüleburgaz",
+                                         "Merkez",
+                                         "Pehlivanköy",
+                                         "Pınarhisar",
+                                         "Vize"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "40",
+                       "name":  "Kırşehir",
+                       "phoneAreaCode":  "386",
+                       "sortOrder":  40,
+                       "districts":  [
+                                         "Akçakent",
+                                         "Akpınar",
+                                         "Boztepe",
+                                         "Çiçekdağı",
+                                         "Kaman",
+                                         "Merkez",
+                                         "Mucur"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "41",
+                       "name":  "Kocaeli",
+                       "phoneAreaCode":  "262",
+                       "sortOrder":  41,
+                       "districts":  [
+                                         "Başiskele",
+                                         "Çayırova",
+                                         "Darıca",
+                                         "Derince",
+                                         "Dilovası",
+                                         "Gebze",
+                                         "Gölcük",
+                                         "İzmit",
+                                         "Kandıra",
+                                         "Karamürsel",
+                                         "Kartepe",
+                                         "Körfez"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "42",
+                       "name":  "Konya",
+                       "phoneAreaCode":  "332",
+                       "sortOrder":  42,
+                       "districts":  [
+                                         "Ahırlı",
+                                         "Akören",
+                                         "Akşehir",
+                                         "Altınekin",
+                                         "Beyşehir",
+                                         "Bozkır",
+                                         "Çeltik",
+                                         "Cihanbeyli",
+                                         "Çumra",
+                                         "Derbent",
+                                         "Derebucak",
+                                         "Doğanhisar",
+                                         "Emirgazi",
+                                         "Ereğli",
+                                         "Güneysınır",
+                                         "Hadim",
+                                         "Halkapınar",
+                                         "Hüyük",
+                                         "Ilgın",
+                                         "Kadınhanı",
+                                         "Karapınar",
+                                         "Karatay",
+                                         "Kulu",
+                                         "Meram",
+                                         "Sarayönü",
+                                         "Selçuklu",
+                                         "Seydişehir",
+                                         "Taşkent",
+                                         "Tuzlukçu",
+                                         "Yalıhüyük",
+                                         "Yunak"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "43",
+                       "name":  "Kütahya",
+                       "phoneAreaCode":  "274",
+                       "sortOrder":  43,
+                       "districts":  [
+                                         "Altıntaş",
+                                         "Aslanapa",
+                                         "Çavdarhisar",
+                                         "Domaniç",
+                                         "Dumlupınar",
+                                         "Emet",
+                                         "Gediz",
+                                         "Hisarcık",
+                                         "Merkez",
+                                         "Pazarlar",
+                                         "Şaphane",
+                                         "Simav",
+                                         "Tavşanlı"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "44",
+                       "name":  "Malatya",
+                       "phoneAreaCode":  "422",
+                       "sortOrder":  44,
+                       "districts":  [
+                                         "Akçadağ",
+                                         "Arapgir",
+                                         "Arguvan",
+                                         "Battalgazi",
+                                         "Darende",
+                                         "Doğanşehir",
+                                         "Doğanyol",
+                                         "Hekimhan",
+                                         "Kale",
+                                         "Kuluncak",
+                                         "Pütürge",
+                                         "Yazıhan",
+                                         "Yeşilyurt"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "45",
+                       "name":  "Manisa",
+                       "phoneAreaCode":  "236",
+                       "sortOrder":  45,
+                       "districts":  [
+                                         "Ahmetli",
+                                         "Akhisar",
+                                         "Alaşehir",
+                                         "Demirci",
+                                         "Gölmarmara",
+                                         "Gördes",
+                                         "Kırkağaç",
+                                         "Köprübaşı",
+                                         "Kula",
+                                         "Salihli",
+                                         "Sarıgöl",
+                                         "Saruhanlı",
+                                         "Şehzadeler",
+                                         "Selendi",
+                                         "Soma",
+                                         "Turgutlu",
+                                         "Yunusemre"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "46",
+                       "name":  "Kahramanmaraş",
+                       "phoneAreaCode":  "344",
+                       "sortOrder":  46,
+                       "districts":  [
+                                         "Afşin",
+                                         "Andırın",
+                                         "Çağlayancerit",
+                                         "Dulkadiroğlu",
+                                         "Ekinözü",
+                                         "Elbistan",
+                                         "Göksun",
+                                         "Nurhak",
+                                         "Onikişubat",
+                                         "Pazarcık",
+                                         "Türkoğlu"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "47",
+                       "name":  "Mardin",
+                       "phoneAreaCode":  "482",
+                       "sortOrder":  47,
+                       "districts":  [
+                                         "Artuklu",
+                                         "Dargeçit",
+                                         "Derik",
+                                         "Kızıltepe",
+                                         "Mazıdağı",
+                                         "Midyat",
+                                         "Nusaybin",
+                                         "Ömerli",
+                                         "Savur",
+                                         "Yeşilli"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "48",
+                       "name":  "Muğla",
+                       "phoneAreaCode":  "252",
+                       "sortOrder":  48,
+                       "districts":  [
+                                         "Bodrum",
+                                         "Dalaman",
+                                         "Datça",
+                                         "Fethiye",
+                                         "Kavaklıdere",
+                                         "Köyceğiz",
+                                         "Marmaris",
+                                         "Menteşe",
+                                         "Milas",
+                                         "Ortaca",
+                                         "Seydikemer",
+                                         "Ula",
+                                         "Yatağan"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "49",
+                       "name":  "Muş",
+                       "phoneAreaCode":  "436",
+                       "sortOrder":  49,
+                       "districts":  [
+                                         "Bulanık",
+                                         "Hasköy",
+                                         "Korkut",
+                                         "Malazgirt",
+                                         "Merkez",
+                                         "Varto"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "50",
+                       "name":  "Nevşehir",
+                       "phoneAreaCode":  "384",
+                       "sortOrder":  50,
+                       "districts":  [
+                                         "Acıgöl",
+                                         "Avanos",
+                                         "Derinkuyu",
+                                         "Gülşehir",
+                                         "Hacıbektaş",
+                                         "Kozaklı",
+                                         "Merkez",
+                                         "Ürgüp"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "51",
+                       "name":  "Niğde",
+                       "phoneAreaCode":  "388",
+                       "sortOrder":  51,
+                       "districts":  [
+                                         "Altunhisar",
+                                         "Bor",
+                                         "Çamardı",
+                                         "Çiftlik",
+                                         "Merkez",
+                                         "Ulukışla"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "52",
+                       "name":  "Ordu",
+                       "phoneAreaCode":  "452",
+                       "sortOrder":  52,
+                       "districts":  [
+                                         "Akkuş",
+                                         "Altınordu",
+                                         "Aybastı",
+                                         "Çamaş",
+                                         "Çatalpınar",
+                                         "Çaybaşı",
+                                         "Fatsa",
+                                         "Gölköy",
+                                         "Gülyalı",
+                                         "Gürgentepe",
+                                         "İkizce",
+                                         "Kabadüz",
+                                         "Kabataş",
+                                         "Korgan",
+                                         "Kumru",
+                                         "Mesudiye",
+                                         "Perşembe",
+                                         "Ulubey",
+                                         "Ünye"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "53",
+                       "name":  "Rize",
+                       "phoneAreaCode":  "464",
+                       "sortOrder":  53,
+                       "districts":  [
+                                         "Ardeşen",
+                                         "Çamlıhemşin",
+                                         "Çayeli",
+                                         "Derepazarı",
+                                         "Fındıklı",
+                                         "Güneysu",
+                                         "Hemşin",
+                                         "İkizdere",
+                                         "İyidere",
+                                         "Kalkandere",
+                                         "Merkez",
+                                         "Pazar"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "54",
+                       "name":  "Sakarya",
+                       "phoneAreaCode":  "264",
+                       "sortOrder":  54,
+                       "districts":  [
+                                         "Adapazarı",
+                                         "Akyazı",
+                                         "Arifiye",
+                                         "Erenler",
+                                         "Ferizli",
+                                         "Geyve",
+                                         "Hendek",
+                                         "Karapürçek",
+                                         "Karasu",
+                                         "Kaynarca",
+                                         "Kocaali",
+                                         "Pamukova",
+                                         "Sapanca",
+                                         "Serdivan",
+                                         "Söğütlü",
+                                         "Taraklı"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "55",
+                       "name":  "Samsun",
+                       "phoneAreaCode":  "362",
+                       "sortOrder":  55,
+                       "districts":  [
+                                         "19 Mayıs",
+                                         "Alaçam",
+                                         "Asarcık",
+                                         "Atakum",
+                                         "Ayvacık",
+                                         "Bafra",
+                                         "Canik",
+                                         "Çarşamba",
+                                         "Havza",
+                                         "İlkadım",
+                                         "Kavak",
+                                         "Ladik",
+                                         "Salıpazarı",
+                                         "Tekkeköy",
+                                         "Terme",
+                                         "Vezirköprü",
+                                         "Yakakent"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "56",
+                       "name":  "Siirt",
+                       "phoneAreaCode":  "484",
+                       "sortOrder":  56,
+                       "districts":  [
+                                         "Baykan",
+                                         "Eruh",
+                                         "Kurtalan",
+                                         "Merkez",
+                                         "Pervari",
+                                         "Şirvan",
+                                         "Tillo"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "57",
+                       "name":  "Sinop",
+                       "phoneAreaCode":  "368",
+                       "sortOrder":  57,
+                       "districts":  [
+                                         "Ayancık",
+                                         "Boyabat",
+                                         "Dikmen",
+                                         "Durağan",
+                                         "Erfelek",
+                                         "Gerze",
+                                         "Merkez",
+                                         "Saraydüzü",
+                                         "Türkeli"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "58",
+                       "name":  "Sivas",
+                       "phoneAreaCode":  "346",
+                       "sortOrder":  58,
+                       "districts":  [
+                                         "Akıncılar",
+                                         "Altınyayla",
+                                         "Divriği",
+                                         "Doğanşar",
+                                         "Gemerek",
+                                         "Gölova",
+                                         "Gürün",
+                                         "Hafik",
+                                         "İmranlı",
+                                         "Kangal",
+                                         "Koyulhisar",
+                                         "Merkez",
+                                         "Şarkışla",
+                                         "Suşehri",
+                                         "Ulaş",
+                                         "Yıldızeli",
+                                         "Zara"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "59",
+                       "name":  "Tekirdağ",
+                       "phoneAreaCode":  "282",
+                       "sortOrder":  59,
+                       "districts":  [
+                                         "Çerkezköy",
+                                         "Çorlu",
+                                         "Ergene",
+                                         "Hayrabolu",
+                                         "Kapaklı",
+                                         "Malkara",
+                                         "Marmaraereğlisi",
+                                         "Muratlı",
+                                         "Saray",
+                                         "Şarköy",
+                                         "Süleymanpaşa"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "60",
+                       "name":  "Tokat",
+                       "phoneAreaCode":  "356",
+                       "sortOrder":  60,
+                       "districts":  [
+                                         "Almus",
+                                         "Artova",
+                                         "Başçiftlik",
+                                         "Erbaa",
+                                         "Merkez",
+                                         "Niksar",
+                                         "Pazar",
+                                         "Reşadiye",
+                                         "Sulusaray",
+                                         "Turhal",
+                                         "Yeşilyurt",
+                                         "Zile"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "61",
+                       "name":  "Trabzon",
+                       "phoneAreaCode":  "462",
+                       "sortOrder":  61,
+                       "districts":  [
+                                         "Akçaabat",
+                                         "Araklı",
+                                         "Arsin",
+                                         "Beşikdüzü",
+                                         "Çarşıbaşı",
+                                         "Çaykara",
+                                         "Dernekpazarı",
+                                         "Düzköy",
+                                         "Hayrat",
+                                         "Köprübaşı",
+                                         "Maçka",
+                                         "Of",
+                                         "Ortahisar",
+                                         "Şalpazarı",
+                                         "Sürmene",
+                                         "Tonya",
+                                         "Vakfıkebir",
+                                         "Yomra"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "62",
+                       "name":  "Tunceli",
+                       "phoneAreaCode":  "428",
+                       "sortOrder":  62,
+                       "districts":  [
+                                         "Çemişgezek",
+                                         "Hozat",
+                                         "Mazgirt",
+                                         "Merkez",
+                                         "Nazımiye",
+                                         "Ovacık",
+                                         "Pertek",
+                                         "Pülümür"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "63",
+                       "name":  "Şanlıurfa",
+                       "phoneAreaCode":  "414",
+                       "sortOrder":  63,
+                       "districts":  [
+                                         "Akçakale",
+                                         "Birecik",
+                                         "Bozova",
+                                         "Ceylanpınar",
+                                         "Eyyübiye",
+                                         "Halfeti",
+                                         "Haliliye",
+                                         "Harran",
+                                         "Hilvan",
+                                         "Karaköprü",
+                                         "Siverek",
+                                         "Suruç",
+                                         "Viranşehir"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "64",
+                       "name":  "Uşak",
+                       "phoneAreaCode":  "276",
+                       "sortOrder":  64,
+                       "districts":  [
+                                         "Banaz",
+                                         "Eşme",
+                                         "Karahallı",
+                                         "Merkez",
+                                         "Sivaslı",
+                                         "Ulubey"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "65",
+                       "name":  "Van",
+                       "phoneAreaCode":  "432",
+                       "sortOrder":  65,
+                       "districts":  [
+                                         "Bahçesaray",
+                                         "Başkale",
+                                         "Çaldıran",
+                                         "Çatak",
+                                         "Edremit",
+                                         "Erciş",
+                                         "Gevaş",
+                                         "Gürpınar",
+                                         "İpekyolu",
+                                         "Muradiye",
+                                         "Özalp",
+                                         "Saray",
+                                         "Tuşba"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "66",
+                       "name":  "Yozgat",
+                       "phoneAreaCode":  "354",
+                       "sortOrder":  66,
+                       "districts":  [
+                                         "Akdağmadeni",
+                                         "Aydıncık",
+                                         "Boğazlıyan",
+                                         "Çandır",
+                                         "Çayıralan",
+                                         "Çekerek",
+                                         "Kadışehri",
+                                         "Merkez",
+                                         "Saraykent",
+                                         "Sarıkaya",
+                                         "Şefaatli",
+                                         "Sorgun",
+                                         "Yenifakılı",
+                                         "Yerköy"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "67",
+                       "name":  "Zonguldak",
+                       "phoneAreaCode":  "372",
+                       "sortOrder":  67,
+                       "districts":  [
+                                         "Alaplı",
+                                         "Çaycuma",
+                                         "Devrek",
+                                         "Ereğli",
+                                         "Gökçebey",
+                                         "Kilimli",
+                                         "Kozlu",
+                                         "Merkez"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "68",
+                       "name":  "Aksaray",
+                       "phoneAreaCode":  "382",
+                       "sortOrder":  68,
+                       "districts":  [
+                                         "Ağaçören",
+                                         "Eskil",
+                                         "Gülağaç",
+                                         "Güzelyurt",
+                                         "Merkez",
+                                         "Ortaköy",
+                                         "Sarıyahşi",
+                                         "Sultanhanı"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "69",
+                       "name":  "Bayburt",
+                       "phoneAreaCode":  "458",
+                       "sortOrder":  69,
+                       "districts":  [
+                                         "Aydıntepe",
+                                         "Demirözü",
+                                         "Merkez"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "70",
+                       "name":  "Karaman",
+                       "phoneAreaCode":  "338",
+                       "sortOrder":  70,
+                       "districts":  [
+                                         "Ayrancı",
+                                         "Başyayla",
+                                         "Ermenek",
+                                         "Kazımkarabekir",
+                                         "Merkez",
+                                         "Sarıveliler"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "71",
+                       "name":  "Kırıkkale",
+                       "phoneAreaCode":  "318",
+                       "sortOrder":  71,
+                       "districts":  [
+                                         "Bahşılı",
+                                         "Balışeyh",
+                                         "Çelebi",
+                                         "Delice",
+                                         "Karakeçili",
+                                         "Keskin",
+                                         "Merkez",
+                                         "Sulakyurt",
+                                         "Yahşihan"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "72",
+                       "name":  "Batman",
+                       "phoneAreaCode":  "488",
+                       "sortOrder":  72,
+                       "districts":  [
+                                         "Beşiri",
+                                         "Gercüş",
+                                         "Hasankeyf",
+                                         "Kozluk",
+                                         "Merkez",
+                                         "Sason"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "73",
+                       "name":  "Şırnak",
+                       "phoneAreaCode":  "486",
+                       "sortOrder":  73,
+                       "districts":  [
+                                         "Beytüşşebap",
+                                         "Cizre",
+                                         "Güçlükonak",
+                                         "İdil",
+                                         "Merkez",
+                                         "Silopi",
+                                         "Uludere"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "74",
+                       "name":  "Bartın",
+                       "phoneAreaCode":  "378",
+                       "sortOrder":  74,
+                       "districts":  [
+                                         "Amasra",
+                                         "Kurucaşile",
+                                         "Merkez",
+                                         "Ulus"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "75",
+                       "name":  "Ardahan",
+                       "phoneAreaCode":  "478",
+                       "sortOrder":  75,
+                       "districts":  [
+                                         "Çıldır",
+                                         "Damal",
+                                         "Göle",
+                                         "Hanak",
+                                         "Merkez",
+                                         "Posof"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "76",
+                       "name":  "Iğdır",
+                       "phoneAreaCode":  "476",
+                       "sortOrder":  76,
+                       "districts":  [
+                                         "Aralık",
+                                         "Karakoyunlu",
+                                         "Merkez",
+                                         "Tuzluca"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "77",
+                       "name":  "Yalova",
+                       "phoneAreaCode":  "226",
+                       "sortOrder":  77,
+                       "districts":  [
+                                         "Altınova",
+                                         "Armutlu",
+                                         "Çiftlikköy",
+                                         "Çınarcık",
+                                         "Merkez",
+                                         "Termal"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "78",
+                       "name":  "Karabük",
+                       "phoneAreaCode":  "370",
+                       "sortOrder":  78,
+                       "districts":  [
+                                         "Eflani",
+                                         "Eskipazar",
+                                         "Merkez",
+                                         "Ovacık",
+                                         "Safranbolu",
+                                         "Yenice"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "79",
+                       "name":  "Kilis",
+                       "phoneAreaCode":  "348",
+                       "sortOrder":  79,
+                       "districts":  [
+                                         "Elbeyli",
+                                         "Merkez",
+                                         "Musabeyli",
+                                         "Polateli"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "80",
+                       "name":  "Osmaniye",
+                       "phoneAreaCode":  "328",
+                       "sortOrder":  80,
+                       "districts":  [
+                                         "Bahçe",
+                                         "Düziçi",
+                                         "Hasanbeyli",
+                                         "Kadirli",
+                                         "Merkez",
+                                         "Sumbas",
+                                         "Toprakkale"
+                                     ]
+                   },
+                   {
+                       "plateCode":  "81",
+                       "name":  "Düzce",
+                       "phoneAreaCode":  "380",
+                       "sortOrder":  81,
+                       "districts":  [
+                                         "Akçakoca",
+                                         "Çilimli",
+                                         "Cumayeri",
+                                         "Gölyaka",
+                                         "Gümüşova",
+                                         "Kaynaşlı",
+                                         "Merkez",
+                                         "Yığılca"
+                                     ]
+                   }
+               ]
+}

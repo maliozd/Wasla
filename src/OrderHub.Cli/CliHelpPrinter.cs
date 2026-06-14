@@ -15,6 +15,7 @@ internal static class CliHelpPrinter
     private static readonly string[] MigrationCommands =
     [
         "migrate-central",
+        "seed-turkey-reference-data",
         "migrate-customer",
         "migrate-all-customers",
         "migration-status"
@@ -63,6 +64,7 @@ internal static class CliHelpPrinter
 
         Console.WriteLine("Migration commands:");
         Console.WriteLine("  migrate-central           Apply pending CentralDb migrations.");
+        Console.WriteLine("  seed-turkey-reference-data Seed all 81 Turkish cities and districts into CentralDb.");
         Console.WriteLine("  migrate-customer          Apply pending CustomerDb migrations for one customer.");
         Console.WriteLine("  migrate-all-customers     Apply pending CustomerDb migrations for all active customers.");
         Console.WriteLine("  migration-status          Show CentralDb and CustomerDb migration status.");

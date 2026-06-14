@@ -31,4 +31,8 @@
     <ProjectReference Include="..\OrderHub.Domain\OrderHub.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="ReferenceData\turkey-reference-data.json" />
+  </ItemGroup>
+
 </Project>
