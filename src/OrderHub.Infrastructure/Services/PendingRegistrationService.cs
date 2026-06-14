@@ -52,14 +52,6 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         return !await IsSlugOrDomainTakenAsync(normalized, primaryDomain, ct);
     }
 
-    public async Task<bool> IsDatabaseNameAvailableAsync(string databaseName, CancellationToken ct)
-    {
-        if (!RegistrationNameNormalizer.IsValidDatabaseNameFormat(databaseName))
-            return false;
-
-        return !await IsDatabaseNameTakenAsync(databaseName, ct);
-    }
-
     public async Task<PendingRegistrationResult> SubmitAsync(PendingRegistrationRequest request, CancellationToken ct)
     {
         var slug = RegistrationNameNormalizer.NormalizeSlug(request.Slug);

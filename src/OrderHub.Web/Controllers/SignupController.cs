@@ -53,9 +53,6 @@ public sealed class SignupController : Controller
     {
         await PopulateReferenceDataAsync(model, ct);
 
-        ModelState.Remove(nameof(SignupViewModel.City));
-        ModelState.Remove(nameof(SignupViewModel.District));
-
         if (!ModelState.IsValid)
             return View(model);
 

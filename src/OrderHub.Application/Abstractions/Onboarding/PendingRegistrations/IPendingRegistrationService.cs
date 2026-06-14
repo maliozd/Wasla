@@ -6,8 +6,6 @@ public interface IPendingRegistrationService
 {
     Task<bool> IsSlugAvailableAsync(string slug, CancellationToken ct);
 
-    Task<bool> IsDatabaseNameAvailableAsync(string databaseName, CancellationToken ct);
-
     Task<PendingRegistrationResult> SubmitAsync(PendingRegistrationRequest request, CancellationToken ct);
 
     Task<PendingRegistrationSummary?> GetSummaryAsync(Guid registrationId, CancellationToken ct);
