@@ -15,18 +15,18 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("auth")]
 public sealed class AuthController : Controller
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly IAuthValidationService _authValidation;
     private readonly ISignupCompletionTokenService _signupCompletionTokens;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public AuthController(
-        ICurrentTenantService currentCustomer,
+        ICurrentTenantService currentTenant,
         IAuthValidationService authValidation,
         ISignupCompletionTokenService signupCompletionTokens,
         IStringLocalizer<SharedResource> localizer)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _authValidation = authValidation;
         _signupCompletionTokens = signupCompletionTokens;
         _localizer = localizer;
@@ -46,14 +46,14 @@ public sealed class AuthController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null)
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null)
         {
             ModelState.AddModelError(string.Empty, _localizer["Auth.TenantContextMissing"].Value);
             return View(model);
         }
 
-        var session = await _authValidation.ValidateAsync(customer.Id, model.Email, model.Password, ct);
+        var session = await _authValidation.ValidateAsync(tenant.Id, model.Email, model.Password, ct);
         if (session is null)
         {
             ModelState.AddModelError(string.Empty, _localizer["Auth.InvalidCredentials"].Value);
@@ -72,14 +72,14 @@ public sealed class AuthController : Controller
     [HttpGet("welcome")]
     public async Task<IActionResult> Welcome([FromQuery] string? token, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null)
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null)
         {
             return Redirect("/customer-access-required");
         }
 
         var payload = _signupCompletionTokens.ValidateAndConsume(token);
-        if (payload is null || payload.CustomerId != customer.Id)
+        if (payload is null || payload.CustomerId != tenant.Id)
         {
             TempData["AuthMessage"] = _localizer["Auth.WelcomeInvalid"].Value;
             return Redirect("/auth/login");

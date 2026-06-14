@@ -15,22 +15,22 @@ namespace OrderHub.Api.Controllers;
 [Authorize]
 public sealed class DashboardController : ControllerBase
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly ICustomerDbContextFactory _customerDbFactory;
 
-    public DashboardController(ICurrentTenantService currentCustomer, ICustomerDbContextFactory customerDbFactory)
+    public DashboardController(ICurrentTenantService currentTenant, ICustomerDbContextFactory customerDbFactory)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _customerDbFactory = customerDbFactory;
     }
 
     [HttpGet("summary")]
     public async Task<IActionResult> Summary(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound("Customer not found");
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound("Tenant not found");
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct);
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
@@ -90,10 +90,10 @@ public sealed class DashboardController : ControllerBase
     [HttpGet("today")]
     public async Task<ActionResult<DashboardSummaryDto>> Today(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound("Customer not found");
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound("Tenant not found");
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct);
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);

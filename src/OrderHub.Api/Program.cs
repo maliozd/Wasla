@@ -97,7 +97,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<CustomerResolutionMiddleware>();
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseMiddleware<PrintBridgeAuthMiddleware>();
 
 app.UseAuthentication();

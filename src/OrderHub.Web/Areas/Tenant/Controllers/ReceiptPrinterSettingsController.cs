@@ -18,18 +18,18 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("settings/receipt-printer")]
 public sealed class ReceiptPrinterSettingsController : BaseController
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly IPrintBridgeDeviceManagementService _devices;
     private readonly IReceiptTemplateSettingsService _templateSettings;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
     public ReceiptPrinterSettingsController(
-        ICurrentTenantService currentCustomer,
+        ICurrentTenantService currentTenant,
         IPrintBridgeDeviceManagementService devices,
         IReceiptTemplateSettingsService templateSettings,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _devices = devices;
         _templateSettings = templateSettings;
         _localizer = localizer;
@@ -38,14 +38,14 @@ public sealed class ReceiptPrinterSettingsController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var deviceRows = await _devices.ListDevicesAsync(customer.Id, ct).ConfigureAwait(false);
+        var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
 
         return View(new ReceiptPrinterSettingsPageViewModel
         {
-            CustomerDisplayName = customer.Name,
+            CustomerDisplayName = tenant.Name,
             PrintBridgeStatus = BuildPrintBridgeStatus(deviceRows)
         });
     }
@@ -53,11 +53,11 @@ public sealed class ReceiptPrinterSettingsController : BaseController
     [HttpGet("template-settings")]
     public async Task<IActionResult> GetTemplateSettings(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         var settings = await _templateSettings
-            .GetAsync(customer.Id, customer.Name, ResolveDefaultReceiptLanguage(), ct)
+            .GetAsync(tenant.Id, tenant.Name, ResolveDefaultReceiptLanguage(), ct)
             .ConfigureAwait(false);
 
         return Ok(MapTemplateResponse(settings));
@@ -69,13 +69,13 @@ public sealed class ReceiptPrinterSettingsController : BaseController
         [FromBody] UpdateReceiptTemplateSettingsCommand command,
         CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         try
         {
             var settings = await _templateSettings
-                .UpdateAsync(customer.Id, customer.Name, command, ct)
+                .UpdateAsync(tenant.Id, tenant.Name, command, ct)
                 .ConfigureAwait(false);
 
             return Ok(MapTemplateResponse(settings));

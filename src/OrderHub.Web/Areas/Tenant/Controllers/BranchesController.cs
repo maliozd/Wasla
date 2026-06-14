@@ -15,13 +15,13 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("branches")]
 public sealed class BranchesController : BaseController
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly IBranchService _branches;
     private readonly IValidator<CreateBranchCommand> _createValidator;
 
-    public BranchesController(ICurrentTenantService currentCustomer, IBranchService branches, IValidator<CreateBranchCommand> createValidator)
+    public BranchesController(ICurrentTenantService currentTenant, IBranchService branches, IValidator<CreateBranchCommand> createValidator)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _branches = branches;
         _createValidator = createValidator;
     }
@@ -29,10 +29,10 @@ public sealed class BranchesController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var list = await _branches.GetListAsync(customer.Id, ct);
+        var list = await _branches.GetListAsync(tenant.Id, ct);
         var rows = list.Select(b => new BranchListViewModel.Row
         {
             Id = b.Id,
@@ -56,8 +56,8 @@ public sealed class BranchesController : BaseController
     {
         if (!ModelState.IsValid) return View(model);
 
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         var cmd = new CreateBranchCommand(model.Name, model.Address, model.IsActive);
         var validation = await _createValidator.ValidateAsync(cmd, ct);
@@ -68,7 +68,7 @@ public sealed class BranchesController : BaseController
             return View(model);
         }
 
-        await _branches.CreateAsync(customer.Id, cmd, ct);
+        await _branches.CreateAsync(tenant.Id, cmd, ct);
 
         TempData["Success"] = "Şube oluşturuldu.";
         return RedirectToAction("Index");

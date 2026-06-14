@@ -15,16 +15,16 @@ public sealed class AuthService : IAuthService
     private static readonly string DummyHash = BCrypt.Net.BCrypt.HashPassword("dummy-never-matches");
 
     private readonly ICustomerDbContextFactory _customerDbFactory;
-    private readonly ICurrentTenantService _currentCustomerService;
+    private readonly ICurrentTenantService _currentTenantService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AuthService(
         ICustomerDbContextFactory customerDbFactory,
-        ICurrentTenantService currentCustomerService,
+        ICurrentTenantService currentTenantService,
         IHttpContextAccessor httpContextAccessor)
     {
         _customerDbFactory = customerDbFactory;
-        _currentCustomerService = currentCustomerService;
+        _currentTenantService = currentTenantService;
         _httpContextAccessor = httpContextAccessor;
     }
 
@@ -33,10 +33,10 @@ public sealed class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(email)) return false;
         if (string.IsNullOrEmpty(password)) return false;
 
-        var customer = _currentCustomerService.CurrentTenant;
-        if (customer is null) return false;
+        var tenant = _currentTenantService.CurrentTenant;
+        if (tenant is null) return false;
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct).ConfigureAwait(false);
+        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct).ConfigureAwait(false);
 
         var user = await db.AppUsers
             .AsNoTracking()
@@ -49,7 +49,7 @@ public sealed class AuthService : IAuthService
 
         var claims = new List<Claim>
         {
-            new("CustomerId", customer.Id.ToString()),
+            new("CustomerId", tenant.Id.ToString()),
             new("UserId", user.Id.ToString()),
             new("Role", user.Role.ToString()),
             new(ClaimTypes.Role, user.Role.ToString()),

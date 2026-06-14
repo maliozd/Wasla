@@ -16,12 +16,12 @@ namespace OrderHub.Api.Controllers;
 [Authorize]
 public sealed class OrdersController : ControllerBase
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly IOrderReadService _orders;
 
-    public OrdersController(ICurrentTenantService currentCustomer, IOrderReadService orders)
+    public OrdersController(ICurrentTenantService currentTenant, IOrderReadService orders)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _orders = orders;
     }
 
@@ -30,8 +30,8 @@ public sealed class OrdersController : ControllerBase
         [FromQuery] OrderListQuery query,
         CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound("Customer not found");
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound("Tenant not found");
 
         var page = Math.Max(1, query.Page);
         var pageSize = Math.Clamp(query.PageSize, 1, 200);
@@ -39,7 +39,7 @@ public sealed class OrdersController : ControllerBase
         var (utcStart, utcEndExclusive) = OrdersReceivedAtQueryRange.FromApiDateTimes(query.StartDate, query.EndDate);
 
         var result = await _orders.GetListAsync(
-            customer.Id,
+            tenant.Id,
             query.Platform.HasValue ? (FoodPlatformDomain?)(int)query.Platform.Value : null,
             query.Status.HasValue ? (OrderStatusDomain?)(int)query.Status.Value : null,
             utcStart,
@@ -68,10 +68,10 @@ public sealed class OrdersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ContractOrderDetailDto>> GetById([FromRoute] Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound("Customer not found");
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound("Tenant not found");
 
-        var order = await _orders.GetByIdAsync(customer.Id, id, ct);
+        var order = await _orders.GetByIdAsync(tenant.Id, id, ct);
         if (order is null) return NotFound();
 
         var items = order.Items.Select(i => new OrderItemDto(

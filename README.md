@@ -69,7 +69,7 @@ Put these under `src/OrderHub.Application/Abstractions/`:
 
 ### 3. Tenant Resolution
 - `Infrastructure/Tenant/CurrentCustomerService.cs` — reads `HttpContext.Items["CurrentCustomer"]`
-- `Api/Middleware/CustomerResolutionMiddleware.cs`:
+- `Api/Middleware/TenantResolutionMiddleware.cs`:
   1. Extract host from `HttpContext.Request.Host`
   2. Check `IMemoryCache` (5-minute TTL)
   3. If cache miss → query CentralDb: `PrimaryDomain == host && IsActive`
@@ -177,7 +177,7 @@ For both `OrderHub.Api` and `OrderHub.Worker`:
 - Serilog bootstrap (Console + File sinks)
 - `AddDbContext<CentralDbContext>` with config connection string
 - Register `ISecretManager`, `ICustomerDbContextFactory`, `ICurrentCustomerService`, `IAuthService`, `IOrderSyncService`, all three `IFoodPlatformClient`s, `IOrderStatusMapper`
-- API adds `UseMiddleware<CustomerResolutionMiddleware>()` **before** `UseAuthentication()`
+- API adds `UseMiddleware<TenantResolutionMiddleware>()` **before** `UseAuthentication()`
 
 ### 13. Initial Migrations
 Generate two separate migration sets:

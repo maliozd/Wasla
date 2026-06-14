@@ -11,12 +11,12 @@ namespace OrderHub.Api.Controllers;
 [Authorize]
 public sealed class BranchesController : ControllerBase
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly ICustomerDbContextFactory _customerDbFactory;
 
-    public BranchesController(ICurrentTenantService currentCustomer, ICustomerDbContextFactory customerDbFactory)
+    public BranchesController(ICurrentTenantService currentTenant, ICustomerDbContextFactory customerDbFactory)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _customerDbFactory = customerDbFactory;
     }
 
@@ -25,10 +25,10 @@ public sealed class BranchesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetList(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound("Customer not found");
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound("Tenant not found");
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct);
 
         var branches = await db.Branches
             .AsNoTracking()
@@ -50,15 +50,15 @@ public sealed class BranchesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBranchRequest request, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound("Customer not found");
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound("Tenant not found");
 
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             return BadRequest("Name is required");
         }
 
-        await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
+        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct);
 
         var entity = new OrderHub.Domain.Entities.Customer.Branch
         {

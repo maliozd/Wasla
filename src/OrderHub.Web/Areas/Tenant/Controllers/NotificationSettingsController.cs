@@ -15,18 +15,18 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("notification-settings")]
 public sealed class NotificationSettingsController : BaseController
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly IUserNotificationSettingsService _settings;
     private readonly IValidator<UpdateNotificationSettingsCommand> _validator;
     private readonly IWebHostEnvironment _env;
 
     public NotificationSettingsController(
-        ICurrentTenantService currentCustomer,
+        ICurrentTenantService currentTenant,
         IUserNotificationSettingsService settings,
         IValidator<UpdateNotificationSettingsCommand> validator,
         IWebHostEnvironment env)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _settings = settings;
         _validator = validator;
         _env = env;
@@ -35,10 +35,10 @@ public sealed class NotificationSettingsController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Get(CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var s = await _settings.GetAsync(customer.Id, CurrentUserId, ct);
+        var s = await _settings.GetAsync(tenant.Id, CurrentUserId, ct);
         var sounds = ResolveSounds();
 
         var vm = new NotificationSettingsViewModel
@@ -60,10 +60,10 @@ public sealed class NotificationSettingsController : BaseController
     [HttpGet("current")]
     public async Task<IActionResult> Current(CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var s = await _settings.GetAsync(customer.Id, CurrentUserId, ct);
+        var s = await _settings.GetAsync(tenant.Id, CurrentUserId, ct);
         var percent = ToPercent(s.NewOrderSoundVolume);
         var sounds = ResolveSounds();
         return Ok(new
@@ -85,8 +85,8 @@ public sealed class NotificationSettingsController : BaseController
     [HttpPost("")]
     public async Task<IActionResult> Post([FromForm] NotificationSettingsViewModel model, CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         if (!IsValidPercent(model.NewOrderSoundVolumePercent))
         {
@@ -124,7 +124,7 @@ public sealed class NotificationSettingsController : BaseController
             return PartialView("_NotificationSettingsModal", model);
         }
 
-        await _settings.UpdateAsync(customer.Id, CurrentUserId, cmd, ct);
+        await _settings.UpdateAsync(tenant.Id, CurrentUserId, cmd, ct);
 
         if (WantsSettingsJsonResponse())
             return Json(new { success = true });

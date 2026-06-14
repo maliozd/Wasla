@@ -20,7 +20,7 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("orders")]
 public sealed class OrdersController : BaseController
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly IOrderReadService _orders;
     private readonly IOrderActionService _actions;
     private readonly IOrderSyncSettingsService _orderSyncSettings;
@@ -31,7 +31,7 @@ public sealed class OrdersController : BaseController
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
     public OrdersController(
-        ICurrentTenantService currentCustomer,
+        ICurrentTenantService currentTenant,
         IOrderReadService orders,
         IOrderActionService actions,
         IOrderSyncSettingsService orderSyncSettings,
@@ -41,7 +41,7 @@ public sealed class OrdersController : BaseController
         ILogger<OrdersController> logger,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _orders = orders;
         _actions = actions;
         _orderSyncSettings = orderSyncSettings;
@@ -64,14 +64,14 @@ public sealed class OrdersController : BaseController
         [FromQuery] int pageSize = 25,
         CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         if (IsLegacyFullscreenRequest())
             return RedirectToAction(nameof(LiveDisplay));
 
         var vm = await BuildOrderListViewModelAsync(
-            customer.Id, platform, status, startDate, endDate, search: null,
+            tenant.Id, platform, status, startDate, endDate, search: null,
             sortBy, sortDirection, page, pageSize,
             useHistoryDefaults: false,
             addDateValidationErrors: true, logDateFilterAs: "Index", ct);
@@ -92,11 +92,11 @@ public sealed class OrdersController : BaseController
         [FromQuery] int pageSize = 25,
         CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         var vm = await BuildOrderListViewModelAsync(
-            customer.Id, platform, status, startDate, endDate, search,
+            tenant.Id, platform, status, startDate, endDate, search,
             sortBy, sortDirection, page, pageSize,
             useHistoryDefaults: true,
             addDateValidationErrors: true, logDateFilterAs: "History", ct);
@@ -110,10 +110,10 @@ public sealed class OrdersController : BaseController
     [HttpGet("sync-settings")]
     public async Task<IActionResult> GetOrderSyncSettings(CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var r = await _orderSyncSettings.GetAsync(customer.Id, ct);
+        var r = await _orderSyncSettings.GetAsync(tenant.Id, ct);
         return Ok(new { orderSyncEnabled = r.OrderSyncEnabled });
     }
 
@@ -121,20 +121,20 @@ public sealed class OrdersController : BaseController
     [HttpPost("sync-settings")]
     public async Task<IActionResult> UpdateOrderSyncSettings([FromForm] bool enabled, CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var r = await _orderSyncSettings.UpdateAsync(customer.Id, enabled, ct);
+        var r = await _orderSyncSettings.UpdateAsync(tenant.Id, enabled, ct);
         return Ok(new { orderSyncEnabled = r.OrderSyncEnabled });
     }
 
     [HttpGet("order-settings")]
     public async Task<IActionResult> GetOrderSettings(CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var r = await _orderSettings.GetAsync(customer.Id, ct);
+        var r = await _orderSettings.GetAsync(tenant.Id, ct);
         return Ok(new
         {
             autoApproveNewOrders = r.AutoApproveNewOrders,
@@ -152,8 +152,8 @@ public sealed class OrdersController : BaseController
         [FromForm] int receiptPrintCopyCount,
         CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         var command = new UpdateCustomerOrderSettingsCommand(
             autoApproveNewOrders,
@@ -171,7 +171,7 @@ public sealed class OrdersController : BaseController
 
         try
         {
-            var r = await _orderSettings.UpdateAsync(customer.Id, command, ct);
+            var r = await _orderSettings.UpdateAsync(tenant.Id, command, ct);
             return Ok(new
             {
                 autoApproveNewOrders = r.AutoApproveNewOrders,
@@ -198,11 +198,11 @@ public sealed class OrdersController : BaseController
         [FromQuery] int pageSize = 25,
         CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         var vm = await BuildOrderListViewModelAsync(
-            customer.Id, platform, status, startDate, endDate, search: null,
+            tenant.Id, platform, status, startDate, endDate, search: null,
             sortBy, sortDirection, page, pageSize,
             useHistoryDefaults: false,
             addDateValidationErrors: false, logDateFilterAs: null, ct);
@@ -213,17 +213,17 @@ public sealed class OrdersController : BaseController
     [HttpGet("live-display")]
     public async Task<IActionResult> LiveDisplay(CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
         var vm = await BuildOrderListViewModelAsync(
-            customer.Id, null, null, today, today, search: null,
+            tenant.Id, null, null, today, today, search: null,
             sortBy: "receivedAt", sortDirection: "desc", page: 1, pageSize: 100,
             useHistoryDefaults: false,
             addDateValidationErrors: false, logDateFilterAs: null, ct);
 
-        ViewData["CustomerName"] = customer.Name;
+        ViewData["CustomerName"] = tenant.Name;
         return View("LiveDisplay", vm);
     }
 
@@ -314,10 +314,10 @@ public sealed class OrdersController : BaseController
     [HttpGet("details/{id:guid}")]
     public async Task<IActionResult> Details(Guid id, [FromQuery] string? from, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var order = await _orders.GetByIdAsync(customer.Id, id, ct);
+        var order = await _orders.GetByIdAsync(tenant.Id, id, ct);
         if (order is null) return NotFound();
 
         var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
@@ -375,13 +375,13 @@ public sealed class OrdersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Approve(Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var result = await _actions.TryApproveAsync(customer.Id, id, ct);
+        var result = await _actions.TryApproveAsync(tenant.Id, id, ct);
         if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: true) });
 
-        await _receiptCreation.TryCreateOnOrderAcceptedAsync(customer.Id, id, ct).ConfigureAwait(false);
+        await _receiptCreation.TryCreateOnOrderAcceptedAsync(tenant.Id, id, ct).ConfigureAwait(false);
 
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: true) });
     }
@@ -390,10 +390,10 @@ public sealed class OrdersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Reject(Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var result = await _actions.TryRejectAsync(customer.Id, id, ct);
+        var result = await _actions.TryRejectAsync(tenant.Id, id, ct);
         if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: false) });
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: false) });
     }
@@ -402,10 +402,10 @@ public sealed class OrdersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> StartPreparing(Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var result = await _actions.MarkPreparingAsync(customer.Id, id, ct);
+        var result = await _actions.MarkPreparingAsync(tenant.Id, id, ct);
         if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
     }
@@ -414,10 +414,10 @@ public sealed class OrdersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> MarkReady(Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var result = await _actions.MarkReadyForPickupAsync(customer.Id, id, ct);
+        var result = await _actions.MarkReadyForPickupAsync(tenant.Id, id, ct);
         if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
     }
@@ -426,10 +426,10 @@ public sealed class OrdersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> HandToCourier(Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var result = await _actions.MarkOnTheWayAsync(customer.Id, id, ct);
+        var result = await _actions.MarkOnTheWayAsync(tenant.Id, id, ct);
         if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
     }
@@ -438,10 +438,10 @@ public sealed class OrdersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> MarkDelivered(Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var result = await _actions.MarkDeliveredAsync(customer.Id, id, ct);
+        var result = await _actions.MarkDeliveredAsync(tenant.Id, id, ct);
         if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
     }

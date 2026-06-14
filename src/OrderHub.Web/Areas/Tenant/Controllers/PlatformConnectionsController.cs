@@ -17,18 +17,18 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("platform-connections")]
 public sealed class PlatformConnectionsController : BaseController
 {
-    private readonly ICurrentTenantService _currentCustomer;
+    private readonly ICurrentTenantService _currentTenant;
     private readonly IPlatformConnectionService _connections;
     private readonly IValidator<CreatePlatformConnectionCommand> _createValidator;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
     public PlatformConnectionsController(
-        ICurrentTenantService currentCustomer,
+        ICurrentTenantService currentTenant,
         IPlatformConnectionService connections,
         IValidator<CreatePlatformConnectionCommand> createValidator,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
-        _currentCustomer = currentCustomer;
+        _currentTenant = currentTenant;
         _connections = connections;
         _createValidator = createValidator;
         _localizer = localizer;
@@ -37,10 +37,10 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var list = await _connections.GetListAsync(customer.Id, ct);
+        var list = await _connections.GetListAsync(tenant.Id, ct);
         var rows = list.Select(x => new PlatformConnectionListViewModel.Row
         {
             Id = x.Id,
@@ -58,10 +58,10 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpGet("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var c = await _connections.GetByIdAsync(customer.Id, id, ct);
+        var c = await _connections.GetByIdAsync(tenant.Id, id, ct);
         if (c is null) return NotFound();
 
         var vm = new EditPlatformConnectionViewModel
@@ -83,8 +83,8 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpPost("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, EditPlatformConnectionViewModel model, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         if (!ModelState.IsValid) return View("Edit", model);
 
@@ -98,7 +98,7 @@ public sealed class PlatformConnectionsController : BaseController
             ApiKey: string.IsNullOrWhiteSpace(model.ApiKey) ? null : model.ApiKey,
             ApiSecret: string.IsNullOrWhiteSpace(model.ApiSecret) ? null : model.ApiSecret);
 
-        var result = await _connections.UpdateAsync(customer.Id, id, cmd, ct);
+        var result = await _connections.UpdateAsync(tenant.Id, id, cmd, ct);
         if (!result.Succeeded)
         {
             if (string.Equals(result.ErrorCode, "Duplicate", StringComparison.OrdinalIgnoreCase))
@@ -120,10 +120,10 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpPost("{id:guid}/toggle-active")]
     public async Task<IActionResult> ToggleActive(Guid id, [FromForm] bool isActive, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var ok = await _connections.SetActiveAsync(customer.Id, id, isActive, ct);
+        var ok = await _connections.SetActiveAsync(tenant.Id, id, isActive, ct);
         if (!ok) return NotFound(new { succeeded = false });
 
         return Ok(new { succeeded = true });
@@ -141,8 +141,8 @@ public sealed class PlatformConnectionsController : BaseController
     {
         if (!ModelState.IsValid) return View(model);
 
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
         var cmd = new CreatePlatformConnectionCommand(
             model.Platform,
@@ -161,7 +161,7 @@ public sealed class PlatformConnectionsController : BaseController
             return View(model);
         }
 
-        var result = await _connections.CreateAsync(customer.Id, cmd, ct);
+        var result = await _connections.CreateAsync(tenant.Id, cmd, ct);
         if (!result.Succeeded)
         {
             if (string.Equals(result.ErrorCode, "Duplicate", StringComparison.OrdinalIgnoreCase))
@@ -195,10 +195,10 @@ public sealed class PlatformConnectionsController : BaseController
 
     private async Task<IActionResult> SetActive(Guid id, bool isActive, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentTenant;
-        if (customer is null) return NotFound();
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
 
-        var ok = await _connections.SetActiveAsync(customer.Id, id, isActive, ct);
+        var ok = await _connections.SetActiveAsync(tenant.Id, id, isActive, ct);
         if (!ok) return NotFound();
 
         TempData["Success"] = isActive

@@ -3,7 +3,7 @@ using OrderHub.Application.Abstractions.Tenant;
 
 namespace OrderHub.Web.Middleware;
 
-public sealed class CustomerResolutionMiddleware
+public sealed class TenantResolutionMiddleware
 {
     private const string ItemKey = "CurrentCustomer";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
@@ -31,7 +31,7 @@ public sealed class CustomerResolutionMiddleware
 
     private readonly RequestDelegate _next;
 
-    public CustomerResolutionMiddleware(RequestDelegate next)
+    public TenantResolutionMiddleware(RequestDelegate next)
     {
         _next = next;
     }
@@ -40,7 +40,7 @@ public sealed class CustomerResolutionMiddleware
         HttpContext context,
         IMemoryCache cache,
         ITenantResolver resolver,
-        ILogger<CustomerResolutionMiddleware> logger)
+        ILogger<TenantResolutionMiddleware> logger)
     {
         var path = context.Request.Path.Value ?? string.Empty;
         if (IsBypassPath(path))
@@ -75,26 +75,26 @@ public sealed class CustomerResolutionMiddleware
         }
 
         var cacheKey = $"customer:{host.ToLowerInvariant()}";
-        if (cache.TryGetValue(cacheKey, out ResolvedTenantDto? cachedCustomer) && cachedCustomer is not null)
+        if (cache.TryGetValue(cacheKey, out ResolvedTenantDto? cachedTenant) && cachedTenant is not null)
         {
-            context.Items[ItemKey] = cachedCustomer;
+            context.Items[ItemKey] = cachedTenant;
             await _next(context);
             return;
         }
 
-        var customer = await resolver.ResolveByHostAsync(host, context.RequestAborted);
-        if (customer is null)
+        var tenant = await resolver.ResolveByHostAsync(host, context.RequestAborted);
+        if (tenant is null)
         {
-            logger.LogInformation("No customer for host {Host}", host);
+            logger.LogInformation("No tenant for host {Host}", host);
 
             // Subdomain request but no matching tenant: keep the existing behavior.
             context.Response.StatusCode = StatusCodes.Status404NotFound;
-            await context.Response.WriteAsync("Customer not found");
+            await context.Response.WriteAsync("Tenant not found");
             return;
         }
 
-        context.Items[ItemKey] = customer;
-        cache.Set(cacheKey, customer, CacheTtl);
+        context.Items[ItemKey] = tenant;
+        cache.Set(cacheKey, tenant, CacheTtl);
 
         await _next(context);
     }
@@ -125,4 +125,3 @@ public sealed class CustomerResolutionMiddleware
         return parts.Length >= 3;
     }
 }
-

@@ -28,14 +28,14 @@ public sealed class TenantResolver : ITenantResolver
         if (_cache.TryGetValue(cacheKey, out ResolvedTenantDto? cached) && cached is not null)
             return cached;
 
-        var customer = await _centralDb.Customers
+        var tenant = await _centralDb.Customers
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.PrimaryDomain.ToLower() == normalized, ct);
 
-        if (customer is null) return null;
-        if (!customer.IsActive) return null;
+        if (tenant is null) return null;
+        if (!tenant.IsActive) return null;
 
-        var dto = new ResolvedTenantDto(customer.Id, customer.Name, customer.Slug, customer.PrimaryDomain);
+        var dto = new ResolvedTenantDto(tenant.Id, tenant.Name, tenant.Slug, tenant.PrimaryDomain);
         _cache.Set(cacheKey, dto, CacheTtl);
         return dto;
     }
