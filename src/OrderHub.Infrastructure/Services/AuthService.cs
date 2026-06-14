@@ -15,12 +15,12 @@ public sealed class AuthService : IAuthService
     private static readonly string DummyHash = BCrypt.Net.BCrypt.HashPassword("dummy-never-matches");
 
     private readonly ICustomerDbContextFactory _customerDbFactory;
-    private readonly ICurrentCustomerService _currentCustomerService;
+    private readonly ICurrentTenantService _currentCustomerService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AuthService(
         ICustomerDbContextFactory customerDbFactory,
-        ICurrentCustomerService currentCustomerService,
+        ICurrentTenantService currentCustomerService,
         IHttpContextAccessor httpContextAccessor)
     {
         _customerDbFactory = customerDbFactory;
@@ -33,7 +33,7 @@ public sealed class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(email)) return false;
         if (string.IsNullOrEmpty(password)) return false;
 
-        var customer = _currentCustomerService.CurrentCustomer;
+        var customer = _currentCustomerService.CurrentTenant;
         if (customer is null) return false;
 
         await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct).ConfigureAwait(false);

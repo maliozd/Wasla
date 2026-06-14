@@ -20,7 +20,7 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("print-bridge")]
 public sealed class PrintBridgeController : BaseController
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IPrintBridgeDeviceManagementService _devices;
     private readonly IPrintJobHistoryService _printJobHistory;
     private readonly IWebHostEnvironment _environment;
@@ -28,7 +28,7 @@ public sealed class PrintBridgeController : BaseController
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
     public PrintBridgeController(
-        ICurrentCustomerService currentCustomer,
+        ICurrentTenantService currentCustomer,
         IPrintBridgeDeviceManagementService devices,
         IPrintJobHistoryService printJobHistory,
         IWebHostEnvironment environment,
@@ -50,7 +50,7 @@ public sealed class PrintBridgeController : BaseController
     [HttpGet("devices")]
     public async Task<IActionResult> Devices(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var deviceRows = await _devices.ListDevicesAsync(customer.Id, ct).ConfigureAwait(false);
@@ -65,7 +65,7 @@ public sealed class PrintBridgeController : BaseController
     [HttpGet("setup")]
     public async Task<IActionResult> Setup(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var deviceRows = await _devices.ListDevicesAsync(customer.Id, ct).ConfigureAwait(false);
@@ -95,7 +95,7 @@ public sealed class PrintBridgeController : BaseController
     [HttpGet("devices/list")]
     public async Task<IActionResult> ListDevices(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var deviceRows = await _devices.ListDevicesAsync(customer.Id, ct).ConfigureAwait(false);
@@ -112,7 +112,7 @@ public sealed class PrintBridgeController : BaseController
     [HttpPost("devices/create")]
     public async Task<IActionResult> CreateDevice([FromForm] string? deviceName, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         try
@@ -155,7 +155,7 @@ public sealed class PrintBridgeController : BaseController
     [HttpPost("devices/{deviceId:guid}/regenerate-token")]
     public async Task<IActionResult> RegenerateToken(Guid deviceId, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         try
@@ -189,7 +189,7 @@ public sealed class PrintBridgeController : BaseController
     [HttpPost("devices/{deviceId:guid}/set-active")]
     public async Task<IActionResult> SetDeviceActive(Guid deviceId, [FromForm] bool isActive, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         try
@@ -222,7 +222,7 @@ public sealed class PrintBridgeController : BaseController
     [HttpGet("print-jobs")]
     public async Task<IActionResult> ListPrintJobs(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var vm = await BuildPrintJobHistoryViewModelAsync(customer.Id, ct).ConfigureAwait(false);
@@ -233,7 +233,7 @@ public sealed class PrintBridgeController : BaseController
     [HttpPost("print-jobs/{jobId:guid}/reprint")]
     public async Task<IActionResult> ReprintJob(Guid jobId, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var result = await _printJobHistory

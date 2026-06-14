@@ -14,10 +14,10 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("dashboard")]
 public sealed class DashboardController : BaseController
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IDashboardService _dashboard;
 
-    public DashboardController(ICurrentCustomerService currentCustomer, IDashboardService dashboard)
+    public DashboardController(ICurrentTenantService currentCustomer, IDashboardService dashboard)
     {
         _currentCustomer = currentCustomer;
         _dashboard = dashboard;
@@ -26,7 +26,7 @@ public sealed class DashboardController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var dto = await _dashboard.GetTodayAsync(customer.Id, ct);

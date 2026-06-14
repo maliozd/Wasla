@@ -17,13 +17,13 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("platform-connections")]
 public sealed class PlatformConnectionsController : BaseController
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IPlatformConnectionService _connections;
     private readonly IValidator<CreatePlatformConnectionCommand> _createValidator;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
     public PlatformConnectionsController(
-        ICurrentCustomerService currentCustomer,
+        ICurrentTenantService currentCustomer,
         IPlatformConnectionService connections,
         IValidator<CreatePlatformConnectionCommand> createValidator,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
@@ -37,7 +37,7 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var list = await _connections.GetListAsync(customer.Id, ct);
@@ -58,7 +58,7 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpGet("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var c = await _connections.GetByIdAsync(customer.Id, id, ct);
@@ -83,7 +83,7 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpPost("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, EditPlatformConnectionViewModel model, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         if (!ModelState.IsValid) return View("Edit", model);
@@ -120,7 +120,7 @@ public sealed class PlatformConnectionsController : BaseController
     [HttpPost("{id:guid}/toggle-active")]
     public async Task<IActionResult> ToggleActive(Guid id, [FromForm] bool isActive, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var ok = await _connections.SetActiveAsync(customer.Id, id, isActive, ct);
@@ -141,7 +141,7 @@ public sealed class PlatformConnectionsController : BaseController
     {
         if (!ModelState.IsValid) return View(model);
 
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var cmd = new CreatePlatformConnectionCommand(
@@ -195,7 +195,7 @@ public sealed class PlatformConnectionsController : BaseController
 
     private async Task<IActionResult> SetActive(Guid id, bool isActive, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var ok = await _connections.SetActiveAsync(customer.Id, id, isActive, ct);

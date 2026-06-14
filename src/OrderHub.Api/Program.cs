@@ -55,7 +55,7 @@ catch
         .SetApplicationName("OrderHub");
 }
 
-builder.Services.AddScoped<ICurrentCustomerService, CurrentCustomerService>();
+builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 

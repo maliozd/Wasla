@@ -15,11 +15,11 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("branches")]
 public sealed class BranchesController : BaseController
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IBranchService _branches;
     private readonly IValidator<CreateBranchCommand> _createValidator;
 
-    public BranchesController(ICurrentCustomerService currentCustomer, IBranchService branches, IValidator<CreateBranchCommand> createValidator)
+    public BranchesController(ICurrentTenantService currentCustomer, IBranchService branches, IValidator<CreateBranchCommand> createValidator)
     {
         _currentCustomer = currentCustomer;
         _branches = branches;
@@ -29,7 +29,7 @@ public sealed class BranchesController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var list = await _branches.GetListAsync(customer.Id, ct);
@@ -56,7 +56,7 @@ public sealed class BranchesController : BaseController
     {
         if (!ModelState.IsValid) return View(model);
 
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var cmd = new CreateBranchCommand(model.Name, model.Address, model.IsActive);

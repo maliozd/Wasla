@@ -39,7 +39,7 @@ public sealed class CustomerResolutionMiddleware
     public async Task InvokeAsync(
         HttpContext context,
         IMemoryCache cache,
-        ICustomerResolver resolver,
+        ITenantResolver resolver,
         ILogger<CustomerResolutionMiddleware> logger)
     {
         var path = context.Request.Path.Value ?? string.Empty;
@@ -75,7 +75,7 @@ public sealed class CustomerResolutionMiddleware
         }
 
         var cacheKey = $"customer:{host.ToLowerInvariant()}";
-        if (cache.TryGetValue(cacheKey, out ResolvedCustomerDto? cachedCustomer) && cachedCustomer is not null)
+        if (cache.TryGetValue(cacheKey, out ResolvedTenantDto? cachedCustomer) && cachedCustomer is not null)
         {
             context.Items[ItemKey] = cachedCustomer;
             await _next(context);

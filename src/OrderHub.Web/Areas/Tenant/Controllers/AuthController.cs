@@ -15,13 +15,13 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("auth")]
 public sealed class AuthController : Controller
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IAuthValidationService _authValidation;
     private readonly ISignupCompletionTokenService _signupCompletionTokens;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public AuthController(
-        ICurrentCustomerService currentCustomer,
+        ICurrentTenantService currentCustomer,
         IAuthValidationService authValidation,
         ISignupCompletionTokenService signupCompletionTokens,
         IStringLocalizer<SharedResource> localizer)
@@ -46,7 +46,7 @@ public sealed class AuthController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null)
         {
             ModelState.AddModelError(string.Empty, _localizer["Auth.TenantContextMissing"].Value);
@@ -72,7 +72,7 @@ public sealed class AuthController : Controller
     [HttpGet("welcome")]
     public async Task<IActionResult> Welcome([FromQuery] string? token, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null)
         {
             return Redirect("/customer-access-required");

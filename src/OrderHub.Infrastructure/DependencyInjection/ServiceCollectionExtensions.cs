@@ -89,7 +89,7 @@ public static class ServiceCollectionExtensions
             });
         }
 
-        services.AddScoped<ICustomerResolver, CustomerResolver>();
+        services.AddScoped<ITenantResolver, TenantResolver>();
 
         services.AddScoped<IAuthValidationService, AuthValidationService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();

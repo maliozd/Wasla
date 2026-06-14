@@ -15,10 +15,10 @@ namespace OrderHub.Api.Controllers;
 [Authorize]
 public sealed class DashboardController : ControllerBase
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly ICustomerDbContextFactory _customerDbFactory;
 
-    public DashboardController(ICurrentCustomerService currentCustomer, ICustomerDbContextFactory customerDbFactory)
+    public DashboardController(ICurrentTenantService currentCustomer, ICustomerDbContextFactory customerDbFactory)
     {
         _currentCustomer = currentCustomer;
         _customerDbFactory = customerDbFactory;
@@ -27,7 +27,7 @@ public sealed class DashboardController : ControllerBase
     [HttpGet("summary")]
     public async Task<IActionResult> Summary(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound("Customer not found");
 
         await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);
@@ -90,7 +90,7 @@ public sealed class DashboardController : ControllerBase
     [HttpGet("today")]
     public async Task<ActionResult<DashboardSummaryDto>> Today(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound("Customer not found");
 
         await using var db = await _customerDbFactory.CreateAsync(customer.Id, ct);

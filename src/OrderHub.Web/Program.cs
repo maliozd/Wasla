@@ -120,7 +120,7 @@ builder.Services
         options.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(SharedResource));
     });
 
-builder.Services.AddScoped<ICurrentCustomerService, CurrentCustomerService>();
+builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddOrderHubInfrastructure(builder.Configuration);
 
 var app = builder.Build();

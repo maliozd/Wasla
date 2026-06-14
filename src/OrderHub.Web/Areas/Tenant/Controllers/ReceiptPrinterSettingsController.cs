@@ -18,13 +18,13 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("settings/receipt-printer")]
 public sealed class ReceiptPrinterSettingsController : BaseController
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IPrintBridgeDeviceManagementService _devices;
     private readonly IReceiptTemplateSettingsService _templateSettings;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
     public ReceiptPrinterSettingsController(
-        ICurrentCustomerService currentCustomer,
+        ICurrentTenantService currentCustomer,
         IPrintBridgeDeviceManagementService devices,
         IReceiptTemplateSettingsService templateSettings,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
@@ -38,7 +38,7 @@ public sealed class ReceiptPrinterSettingsController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var deviceRows = await _devices.ListDevicesAsync(customer.Id, ct).ConfigureAwait(false);
@@ -53,7 +53,7 @@ public sealed class ReceiptPrinterSettingsController : BaseController
     [HttpGet("template-settings")]
     public async Task<IActionResult> GetTemplateSettings(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var settings = await _templateSettings
@@ -69,7 +69,7 @@ public sealed class ReceiptPrinterSettingsController : BaseController
         [FromBody] UpdateReceiptTemplateSettingsCommand command,
         CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         try

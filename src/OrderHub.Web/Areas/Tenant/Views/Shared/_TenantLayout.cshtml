@@ -6,7 +6,7 @@
 
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
 
-@inject ICurrentCustomerService CurrentCustomer
+@inject ICurrentTenantService CurrentTenant
 
 @{
 
@@ -16,7 +16,7 @@
 
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
 
-    var customerName = CurrentCustomer.CurrentCustomer?.Name ?? Context.Request.Host.Host;
+    var customerName = CurrentTenant.CurrentTenant?.Name ?? Context.Request.Host.Host;
 
 
 

@@ -15,12 +15,12 @@ namespace OrderHub.Api.Controllers;
 [Authorize]
 public sealed class PlatformConnectionsController : ControllerBase
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IPlatformConnectionService _connections;
     private readonly IValidator<CreatePlatformConnectionCommand> _createValidator;
 
     public PlatformConnectionsController(
-        ICurrentCustomerService currentCustomer,
+        ICurrentTenantService currentCustomer,
         IPlatformConnectionService connections,
         IValidator<CreatePlatformConnectionCommand> createValidator)
     {
@@ -41,7 +41,7 @@ public sealed class PlatformConnectionsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ContractPlatformConnectionDto>>> GetList(CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound("Customer not found");
 
         var list = await _connections.GetListAsync(customer.Id, ct);
@@ -62,7 +62,7 @@ public sealed class PlatformConnectionsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePlatformConnectionRequest request, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound("Customer not found");
 
         var cmd = new CreatePlatformConnectionCommand(
@@ -99,7 +99,7 @@ public sealed class PlatformConnectionsController : ControllerBase
     [HttpPatch("{id:guid}/active")]
     public async Task<IActionResult> SetActive([FromRoute] Guid id, [FromBody] UpdatePlatformConnectionActiveRequest request, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound("Customer not found");
 
         var ok = await _connections.SetActiveAsync(customer.Id, id, request.IsActive, ct);

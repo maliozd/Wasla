@@ -16,10 +16,10 @@ namespace OrderHub.Api.Controllers;
 [Authorize]
 public sealed class OrdersController : ControllerBase
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IOrderReadService _orders;
 
-    public OrdersController(ICurrentCustomerService currentCustomer, IOrderReadService orders)
+    public OrdersController(ICurrentTenantService currentCustomer, IOrderReadService orders)
     {
         _currentCustomer = currentCustomer;
         _orders = orders;
@@ -30,7 +30,7 @@ public sealed class OrdersController : ControllerBase
         [FromQuery] OrderListQuery query,
         CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound("Customer not found");
 
         var page = Math.Max(1, query.Page);
@@ -68,7 +68,7 @@ public sealed class OrdersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ContractOrderDetailDto>> GetById([FromRoute] Guid id, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound("Customer not found");
 
         var order = await _orders.GetByIdAsync(customer.Id, id, ct);

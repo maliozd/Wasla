@@ -15,13 +15,13 @@ namespace OrderHub.Web.Areas.Tenant.Controllers;
 [Route("notification-settings")]
 public sealed class NotificationSettingsController : BaseController
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IUserNotificationSettingsService _settings;
     private readonly IValidator<UpdateNotificationSettingsCommand> _validator;
     private readonly IWebHostEnvironment _env;
 
     public NotificationSettingsController(
-        ICurrentCustomerService currentCustomer,
+        ICurrentTenantService currentCustomer,
         IUserNotificationSettingsService settings,
         IValidator<UpdateNotificationSettingsCommand> validator,
         IWebHostEnvironment env)
@@ -35,7 +35,7 @@ public sealed class NotificationSettingsController : BaseController
     [HttpGet("")]
     public async Task<IActionResult> Get(CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var s = await _settings.GetAsync(customer.Id, CurrentUserId, ct);
@@ -60,7 +60,7 @@ public sealed class NotificationSettingsController : BaseController
     [HttpGet("current")]
     public async Task<IActionResult> Current(CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         var s = await _settings.GetAsync(customer.Id, CurrentUserId, ct);
@@ -85,7 +85,7 @@ public sealed class NotificationSettingsController : BaseController
     [HttpPost("")]
     public async Task<IActionResult> Post([FromForm] NotificationSettingsViewModel model, CancellationToken ct = default)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound();
 
         if (!IsValidPercent(model.NewOrderSoundVolumePercent))

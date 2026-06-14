@@ -12,10 +12,10 @@ namespace OrderHub.Api.Controllers;
 [Route("api/auth")]
 public sealed class AuthController : ControllerBase
 {
-    private readonly ICurrentCustomerService _currentCustomer;
+    private readonly ICurrentTenantService _currentCustomer;
     private readonly IAuthValidationService _authValidation;
 
-    public AuthController(ICurrentCustomerService currentCustomer, IAuthValidationService authValidation)
+    public AuthController(ICurrentTenantService currentCustomer, IAuthValidationService authValidation)
     {
         _currentCustomer = currentCustomer;
         _authValidation = authValidation;
@@ -26,7 +26,7 @@ public sealed class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Validate([FromBody] LoginRequest request, CancellationToken ct)
     {
-        var customer = _currentCustomer.CurrentCustomer;
+        var customer = _currentCustomer.CurrentTenant;
         if (customer is null) return NotFound("Customer not found");
 
         var session = await _authValidation.ValidateAsync(customer.Id, request.Email, request.Password, ct);
