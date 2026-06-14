@@ -6,6 +6,7 @@
   if (!O) return;
 
   const STORAGE_KEY = "orderhub.orders.viewMode";
+  const FILTERS_OPEN_KEY = "orderhub.orders.filtersOpen";
   const MODES = ["table", "compact", "kitchen"];
 
   const STATUS_SORT = {
@@ -28,6 +29,7 @@
   ]);
 
   let currentMode = "table";
+  let filtersManuallyOpen = false;
 
   function localize(key) {
     return O.getMessage(key);
@@ -53,9 +55,23 @@
     return "table";
   }
 
+  function readFiltersOpenState() {
+    try {
+      return sessionStorage.getItem(FILTERS_OPEN_KEY) === "true";
+    } catch (e) {
+      return false;
+    }
+  }
+
   function persistMode(mode) {
     try {
       localStorage.setItem(STORAGE_KEY, mode);
+    } catch (e) { /* ignore */ }
+  }
+
+  function persistFiltersOpenState(open) {
+    try {
+      sessionStorage.setItem(FILTERS_OPEN_KEY, open ? "true" : "false");
     } catch (e) { /* ignore */ }
   }
 
@@ -143,14 +159,132 @@
     return template.replace("{0}", String(extraCount));
   }
 
+  function formatCardReceived(row, mode) {
+    const iso = row.receivedAt;
+    if (iso) {
+      try {
+        const d = new Date(iso);
+        if (!isNaN(d.getTime())) {
+          const timeStr = d.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Europe/Istanbul"
+          });
+          const dateStr = d.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+          const todayYmd = O.opts.todayYmd || "";
+
+          if (mode === "kitchen") {
+            if (dateStr === todayYmd) return timeStr;
+            return d.toLocaleString(undefined, {
+              timeZone: "Europe/Istanbul",
+              dateStyle: "short",
+              timeStyle: "short"
+            });
+          }
+          if (mode === "compact" && dateStr === todayYmd) {
+            return timeStr;
+          }
+
+          return d.toLocaleString(undefined, {
+            timeZone: "Europe/Istanbul",
+            dateStyle: "short",
+            timeStyle: "short"
+          });
+        }
+      } catch (_) { /* ignore */ }
+    }
+    return row.received;
+  }
+
   function buildImageHtml(row, mode) {
     const src = row.displayImage || O.opts.defaultFoodImage || "/images/demo-food/chicken-rice-01.svg";
     const alt = row.firstProductName || row.customer || "";
     return (
-      "<div class=\"oh-orders-card__image-wrap oh-orders-card__image-wrap--" + mode + "\">" +
-      "<img class=\"oh-orders-card__image\" src=\"" + O.escapeHtml(src) + "\" alt=\"" + O.escapeHtml(alt) + "\" loading=\"lazy\" />" +
+      "<div class=\"orders-card-image orders-card-image--" + mode + "\">" +
+      "<img src=\"" + O.escapeHtml(src) + "\" alt=\"" + O.escapeHtml(alt) + "\" loading=\"lazy\" />" +
       "</div>"
     );
+  }
+
+  function buildTopRowHtml(row) {
+    const badge = statusBadgeClass(row.status);
+    return (
+      "<div class=\"orders-card-top\">" +
+      "<div class=\"orders-card-badges\">" +
+      "<div class=\"orders-card-platform\">" + row.platformHtml + "</div>" +
+      "<span class=\"" + badge + " orders-card-status\">" + O.escapeHtml(row.statusText) + "</span>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function buildActionsHtml(actionsHtml) {
+    if (!actionsHtml) return "";
+    return "<div class=\"orders-card-actions\">" + actionsHtml + "</div>";
+  }
+
+  function buildCompactCard(row) {
+    const muted =
+      row.status === "Delivered" || row.status === "Cancelled" || row.status === "Failed"
+        ? " orders-card--muted"
+        : "";
+    const actionsHtml = scaleActionsHtml(row.actionsHtml, "compact");
+    const receivedDisplay = formatCardReceived(row, "compact");
+    const customerLabel = localize("ordersFullscreenCustomer");
+
+    return (
+      "<article class=\"orders-card orders-card--compact oh-orders-card oh-orders-card--compact" + muted + "\" role=\"listitem\" data-order-id=\"" + O.escapeHtml(row.id) + "\">" +
+      buildImageHtml(row, "compact") +
+      "<div class=\"orders-card-body\">" +
+      buildTopRowHtml(row) +
+      "<div class=\"orders-card-code\">" + row.codeHtml + "</div>" +
+      "<div class=\"orders-card-customer\"><span class=\"orders-card-meta__label\">" + O.escapeHtml(customerLabel) + ":</span> " + O.escapeHtml(row.customer) + "</div>" +
+      "<div class=\"orders-card-meta orders-card-meta--compact\">" +
+      "<span class=\"orders-card-meta__amount\">" + O.escapeHtml(row.total) + "</span>" +
+      "<span class=\"orders-card-meta__sep\" aria-hidden=\"true\">·</span>" +
+      "<span class=\"orders-card-meta__time\">" + O.escapeHtml(receivedDisplay) + "</span>" +
+      "</div>" +
+      buildActionsHtml(actionsHtml) +
+      "</div>" +
+      "</article>"
+    );
+  }
+
+  function buildKitchenCard(row) {
+    const muted =
+      row.status === "Delivered" || row.status === "Cancelled" || row.status === "Failed"
+        ? " orders-card--muted"
+        : "";
+    const actionsHtml = scaleActionsHtml(row.actionsHtml, "kitchen");
+    const receivedDisplay = formatCardReceived(row, "kitchen");
+    const customerLabel = localize("ordersFullscreenCustomer");
+    const totalLabel = localize("ordersFullscreenTotal");
+    const receivedLabel = localize("ordersFullscreenReceived");
+    const moreItemsHtml = row.itemCount > 1
+      ? "<div class=\"orders-card-items-more text-muted\">" + O.escapeHtml(formatItemsMore(row.itemCount - 1)) + "</div>"
+      : "";
+
+    return (
+      "<article class=\"orders-card orders-card--kitchen oh-orders-card oh-orders-card--kitchen" + muted + "\" role=\"listitem\" data-order-id=\"" + O.escapeHtml(row.id) + "\">" +
+      buildImageHtml(row, "kitchen") +
+      "<div class=\"orders-card-body\">" +
+      buildTopRowHtml(row) +
+      "<div class=\"orders-card-code\">" + row.codeHtml + "</div>" +
+      "<div class=\"orders-card-customer\"><span class=\"orders-card-meta__label\">" + O.escapeHtml(customerLabel) + ":</span> " + O.escapeHtml(row.customer) + "</div>" +
+      moreItemsHtml +
+      "<div class=\"orders-card-meta orders-card-meta--kitchen\">" +
+      "<div class=\"orders-card-meta__row\"><span class=\"orders-card-meta__label\">" + O.escapeHtml(totalLabel) + ":</span> " + O.escapeHtml(row.total) + "</div>" +
+      "<div class=\"orders-card-meta__row\"><span class=\"orders-card-meta__label\">" + O.escapeHtml(receivedLabel) + ":</span> " + O.escapeHtml(receivedDisplay) + "</div>" +
+      "</div>" +
+      buildActionsHtml(actionsHtml) +
+      "</div>" +
+      "</article>"
+    );
+  }
+
+  function buildCardHtml(row, mode) {
+    if (mode === "kitchen") return buildKitchenCard(row);
+    return buildCompactCard(row);
   }
 
   function renderEmptyState(host) {
@@ -160,38 +294,6 @@
       "<div class=\"oh-orders-empty__title fw-semibold mb-1\">" + O.escapeHtml(localize("noLiveOrders")) + "</div>" +
       "<div class=\"oh-orders-empty__desc text-muted\">" + O.escapeHtml(localize("noLiveOrdersDescription")) + "</div>" +
       "</div>";
-  }
-
-  function buildCardHtml(row, mode) {
-    const muted =
-      row.status === "Delivered" || row.status === "Cancelled" || row.status === "Failed"
-        ? " oh-orders-card--muted"
-        : "";
-    const badge = statusBadgeClass(row.status);
-    const actionsHtml = scaleActionsHtml(row.actionsHtml, mode);
-    const moreItemsHtml = row.itemCount > 1
-      ? "<div class=\"oh-orders-card__more-items text-muted small\">" + O.escapeHtml(formatItemsMore(row.itemCount - 1)) + "</div>"
-      : "";
-
-    return (
-      "<article class=\"oh-orders-card oh-orders-card--" + mode + muted + "\" role=\"listitem\" data-order-id=\"" + O.escapeHtml(row.id) + "\">" +
-      buildImageHtml(row, mode) +
-      "<div class=\"oh-orders-card__content\">" +
-      "<div class=\"oh-orders-card__head\">" +
-      "<div class=\"oh-orders-card__platform\">" + row.platformHtml + "</div>" +
-      "<span class=\"" + badge + "\">" + O.escapeHtml(row.statusText) + "</span>" +
-      "</div>" +
-      "<div class=\"oh-orders-card__code\">" + row.codeHtml + "</div>" +
-      moreItemsHtml +
-      "<div class=\"oh-orders-card__customer\"><span class=\"oh-orders-card__label\">" + O.escapeHtml(localize("ordersFullscreenCustomer")) + "</span> " + O.escapeHtml(row.customer) + "</div>" +
-      "<div class=\"oh-orders-card__meta\">" +
-      "<span><span class=\"oh-orders-card__label\">" + O.escapeHtml(localize("ordersFullscreenTotal")) + "</span> " + O.escapeHtml(row.total) + "</span>" +
-      "<span><span class=\"oh-orders-card__label\">" + O.escapeHtml(localize("ordersFullscreenReceived")) + "</span> " + O.escapeHtml(row.received) + "</span>" +
-      "</div>" +
-      (actionsHtml ? "<div class=\"oh-orders-card__actions\">" + actionsHtml + "</div>" : "") +
-      "</div>" +
-      "</article>"
-    );
   }
 
   function renderCards(host, rows, mode) {
@@ -255,6 +357,42 @@
     });
   }
 
+  function updateFilterToggleUi(visible) {
+    const toggle = document.getElementById("ordersFilterToggle");
+    if (!toggle) return;
+
+    toggle.textContent = visible
+      ? localize("hideFilters")
+      : localize("showFilters");
+    toggle.setAttribute("aria-expanded", visible ? "true" : "false");
+  }
+
+  function applyFilterVisibility() {
+    if (isLiveDisplayPage()) return;
+
+    const panel = document.getElementById("ordersFiltersPanel");
+    const toggle = document.getElementById("ordersFilterToggle");
+    const isCardView = currentMode === "compact" || currentMode === "kitchen";
+    const visible = !isCardView || filtersManuallyOpen;
+
+    if (panel) {
+      panel.classList.toggle("d-none", !visible);
+      panel.hidden = !visible;
+    }
+
+    if (toggle) {
+      toggle.classList.toggle("d-none", !isCardView);
+    }
+
+    updateFilterToggleUi(visible);
+  }
+
+  function toggleFiltersPanel() {
+    filtersManuallyOpen = !filtersManuallyOpen;
+    persistFiltersOpenState(filtersManuallyOpen);
+    applyFilterVisibility();
+  }
+
   function applyLayoutVisibility() {
     const tableSlot = getTableSlot();
     const cardsHost = getCardsHost();
@@ -275,6 +413,8 @@
       cardsHost.classList.toggle("d-none", !showCards);
       cardsHost.hidden = !showCards;
     }
+
+    applyFilterVisibility();
   }
 
   function setMode(mode, options) {
@@ -316,9 +456,19 @@
     });
   }
 
+  function bindFilterToggle() {
+    const toggle = document.getElementById("ordersFilterToggle");
+    if (!toggle) return;
+    toggle.addEventListener("click", function () {
+      toggleFiltersPanel();
+    });
+  }
+
   function init() {
+    filtersManuallyOpen = readFiltersOpenState();
     setMode(readStoredMode(), { persist: false });
     bindSelectors();
+    bindFilterToggle();
   }
 
   O.viewMode = {

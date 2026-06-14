@@ -450,6 +450,12 @@
   <data name="Orders.Filter" xml:space="preserve">
     <value>Filtrele</value>
   </data>
+  <data name="Orders.ShowFilters" xml:space="preserve">
+    <value>Filtreleri Göster</value>
+  </data>
+  <data name="Orders.HideFilters" xml:space="preserve">
+    <value>Filtreleri Gizle</value>
+  </data>
   <data name="Orders.Clear" xml:space="preserve">
     <value>Temizle</value>
   </data>

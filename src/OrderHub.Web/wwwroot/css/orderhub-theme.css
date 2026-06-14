@@ -1895,6 +1895,21 @@ body.oh-tenant.oh-app .table thead th {
   color: var(--color-text);
 }
 
+.orders-filter-toggle {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--orderhub-muted);
+  align-self: flex-start;
+}
+
+.orders-filter-toggle:hover,
+.orders-filter-toggle:focus-visible {
+  color: var(--orderhub-primary);
+  text-decoration: none;
+}
+
+.orders-card-grid,
 .oh-orders-cards-host {
   display: grid;
   gap: 0.75rem;
@@ -1903,142 +1918,246 @@ body.oh-tenant.oh-app .table thead th {
   box-sizing: border-box;
 }
 
+body.oh-orders-view-compact .orders-card-grid,
 body.oh-orders-view-compact .oh-orders-cards-host,
 body.oh-orders-live-display.oh-orders-view-compact .oh-live-display-cards {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
 }
 
+body.oh-orders-view-kitchen .orders-card-grid,
 body.oh-orders-view-kitchen .oh-orders-cards-host,
 body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
 }
 
+@media (min-width: 1400px) {
+  body.oh-orders-view-kitchen .orders-card-grid,
+  body.oh-orders-view-kitchen .oh-orders-cards-host,
+  body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  }
+}
+
+.orders-card,
 .oh-orders-card {
   background: var(--oh-surface);
   border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
   border-radius: 0.75rem;
-  padding: 0.85rem 0.95rem;
   box-shadow: var(--orderhub-shadow);
-  display: flex;
-  gap: 0.75rem;
   min-width: 0;
-  align-items: stretch;
+  overflow: hidden;
 }
 
+.orders-card--compact,
 .oh-orders-card--compact {
+  display: flex;
   flex-direction: row;
-}
-
-.oh-orders-card--kitchen {
-  flex-direction: column;
-  padding: 1.1rem 1.15rem;
+  align-items: stretch;
   gap: 0.75rem;
-  border-radius: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  min-height: 7.5rem;
 }
 
+.orders-card--kitchen,
+.oh-orders-card--kitchen {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.85rem;
+}
+
+.orders-card--muted,
 .oh-orders-card--muted {
   opacity: 0.72;
 }
 
+.orders-card-image,
 .oh-orders-card__image-wrap {
   overflow: hidden;
-  border-radius: 0.55rem;
-  background: color-mix(in srgb, var(--oh-border) 35%, var(--oh-surface));
   flex-shrink: 0;
+  background: color-mix(in srgb, var(--oh-border) 28%, var(--oh-surface));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+.orders-card-image--compact,
 .oh-orders-card__image-wrap--compact {
-  width: 72px;
-  min-width: 72px;
-  height: 72px;
+  width: 80px;
+  min-width: 80px;
+  height: 80px;
+  border-radius: 0.55rem;
 }
 
+.orders-card-image--kitchen,
 .oh-orders-card__image-wrap--kitchen {
   width: 100%;
-  height: 140px;
+  height: clamp(140px, 22vw, 168px);
+  border-radius: 0.65rem;
+  margin-bottom: 0.75rem;
 }
 
+.orders-card-image img,
 .oh-orders-card__image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
   display: block;
+  object-fit: contain;
+  object-position: center;
 }
 
+.orders-card-image--kitchen img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.orders-card-body,
 .oh-orders-card__content {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.35rem;
 }
 
+.orders-card--kitchen .orders-card-body,
 .oh-orders-card--kitchen .oh-orders-card__content {
-  gap: 0.75rem;
-}
-
-.oh-orders-card__more-items {
-  margin-top: -0.15rem;
-}
-
-.oh-orders-card__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.oh-orders-card__code {
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.oh-orders-card--kitchen .oh-orders-card__code {
-  font-size: 1.35rem;
-}
-
-.oh-orders-card__code a {
-  text-decoration: none;
-}
-
-.oh-orders-card__customer {
-  font-size: 0.92rem;
-}
-
-.oh-orders-card--kitchen .oh-orders-card__customer {
-  font-size: 1.1rem;
-}
-
-.oh-orders-card__label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--orderhub-muted);
-}
-
-.oh-orders-card--kitchen .oh-orders-card__label {
-  font-size: 0.8rem;
-}
-
-.oh-orders-card__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-  font-size: 0.9rem;
-}
-
-.oh-orders-card--kitchen .oh-orders-card__meta {
-  font-size: 1.05rem;
-}
-
-.oh-orders-card__actions .oh-orders-actions {
-  justify-content: flex-start;
   gap: 0.45rem;
 }
 
+.orders-card-top,
+.oh-orders-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.orders-card-badges {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.orders-card-platform .platform-badge {
+  max-width: 100%;
+}
+
+.orders-card-status {
+  flex-shrink: 0;
+}
+
+.orders-card-code,
+.oh-orders-card__code {
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--oh-text);
+}
+
+.orders-card--kitchen .orders-card-code,
+.oh-orders-card--kitchen .oh-orders-card__code {
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.orders-card-code a,
+.oh-orders-card__code a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.orders-card-code a:hover,
+.oh-orders-card__code a:hover {
+  color: var(--orderhub-primary);
+}
+
+.orders-card-customer,
+.oh-orders-card__customer {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--oh-text);
+}
+
+.orders-card--kitchen .orders-card-customer,
+.oh-orders-card--kitchen .oh-orders-card__customer {
+  font-size: 1rem;
+}
+
+.orders-card-items-more,
+.oh-orders-card__more-items {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.orders-card-meta__label,
+.oh-orders-card__label {
+  font-size: inherit;
+  font-weight: 500;
+  color: var(--orderhub-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.orders-card-meta--compact,
+.oh-orders-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--orderhub-muted);
+  margin-top: 0.1rem;
+}
+
+.orders-card-meta__amount {
+  font-weight: 600;
+  color: var(--oh-text);
+}
+
+.orders-card-meta__sep {
+  opacity: 0.55;
+}
+
+.orders-card-meta--kitchen {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9375rem;
+  margin-top: 0.15rem;
+}
+
+.orders-card-meta__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.orders-card-actions,
+.oh-orders-card__actions {
+  margin-top: auto;
+  padding-top: 0.45rem;
+}
+
+.orders-card-actions .oh-orders-actions,
+.oh-orders-card__actions .oh-orders-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.4rem;
+}
+
+.orders-card--compact .orders-card-actions .btn,
+.oh-orders-card--compact .oh-orders-card__actions .btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+.orders-card--kitchen .orders-card-actions .btn-lg,
 .oh-orders-card--kitchen .oh-orders-card__actions .btn-lg {
   min-height: 2.75rem;
   padding: 0.5rem 1rem;
@@ -2819,16 +2938,19 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
 [data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-page .oh-print-bridge-stat,
 [data-bs-theme="dark"] body.oh-tenant.oh-app .orders-page-header__metric.orders-total-card,
 [data-bs-theme="dark"] body.oh-tenant.oh-app .orders-toolbar,
+[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-card,
 [data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-card {
   background: var(--color-surface) !important;
   border-color: var(--color-border) !important;
   box-shadow: none !important;
 }
 
+[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-card:hover,
 [data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-card:hover {
   border-color: var(--color-border-strong) !important;
 }
 
+[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-card-image,
 [data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-card__image-wrap {
   background: var(--color-surface-muted);
 }

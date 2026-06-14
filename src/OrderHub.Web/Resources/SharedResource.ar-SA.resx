@@ -450,6 +450,12 @@
   <data name="Orders.Filter" xml:space="preserve">
     <value>تصفية</value>
   </data>
+  <data name="Orders.ShowFilters" xml:space="preserve">
+    <value>إظهار الفلاتر</value>
+  </data>
+  <data name="Orders.HideFilters" xml:space="preserve">
+    <value>إخفاء الفلاتر</value>
+  </data>
   <data name="Orders.Clear" xml:space="preserve">
     <value>مسح</value>
   </data>

@@ -52,6 +52,14 @@
     </div>
 </div>
 
+<button type="button"
+        id="ordersFilterToggle"
+        class="btn btn-sm btn-link orders-filter-toggle d-none px-0 mb-2"
+        aria-expanded="false"
+        aria-controls="ordersFiltersPanel">
+    @L["Orders.ShowFilters"]
+</button>
+
 @if (!isDefaultLive)
 {
     <div class="alert alert-info small py-2 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" role="status">
@@ -62,7 +70,7 @@
 
 <div id="ordersMessageHost"></div>
 
-<div class="card oh-card mb-3 oh-orders-filters">
+<div id="ordersFiltersPanel" class="card oh-card mb-3 oh-orders-filters">
     <div class="card-body">
         <form id="ordersFilterForm" method="get" action="/orders" class="row g-3 align-items-end">
             <div class="col-12 col-md-3">
@@ -132,7 +140,7 @@
     </div>
 </div>
 
-<div id="ordersCardsHost" class="oh-orders-cards-host d-none" role="list" hidden></div>
+<div id="ordersCardsHost" class="orders-card-grid oh-orders-cards-host d-none" role="list" hidden></div>
 
 <div id="ordersNormalTableSlot">
 <div class="card oh-card oh-orders-table-card oh-orders-normal-content">
@@ -235,7 +243,9 @@
                 ["itemsMore"] = L["Orders.ItemsMore"].Value,
                 ["ordersFullscreenCustomer"] = L["Orders.Customer"].Value,
                 ["ordersFullscreenTotal"] = L["Orders.TotalAmount"].Value,
-                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value
+                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value,
+                ["showFilters"] = L["Orders.ShowFilters"].Value,
+                ["hideFilters"] = L["Orders.HideFilters"].Value
             }))
         };
     </script>
