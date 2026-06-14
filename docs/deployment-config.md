@@ -179,7 +179,7 @@ These values are **acceptable for local development** but **must not leak** into
 | `http://localhost:59451` | `OrderHub:ApiBaseUrl` | Print Bridge setup shows localhost |
 | `Platforms:ProviderMode` = `Mock` | Base appsettings | No real order sync; mock data only |
 | `https://stageapi.tgoapis.com` | Base Trendyol GO URL (Worker/Api) | Stage API used if Production overlay not loaded |
-| `../../.certs/orderhub-local.pfx` | Web `appsettings.Development.json` | Dev HTTPS cert path; not for production |
+| `../../.certs/wasla-local.pfx` | Web `appsettings.Development.json` | Dev HTTPS cert path; not for production |
 | PFX password in Development config | Web `appsettings.Development.json` | Dev-only; never deploy Development config as Production |
 | `C:\OrderHub-keys` | Api `appsettings.json` | Windows-specific path; set explicitly per environment |
 | `*.wasla.local` launch URLs | Web `launchSettings.json` | IDE-only; not used on server |

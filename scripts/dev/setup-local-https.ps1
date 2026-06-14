@@ -1,18 +1,21 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Generates a trusted local HTTPS certificate for OrderHub tenant domains using mkcert.
+    Generates a trusted local HTTPS certificate for Wasla tenant domains using mkcert.
 
 .DESCRIPTION
     Run from the repository root:
         .\scripts\dev\setup-local-https.ps1
 
-    Creates .certs/orderhub-local.pem, orderhub-local-key.pem, and orderhub-local.pfx
-    for *.orderhub.local, orderhub.local, and localhost.
+    Creates .certs/wasla-local.pem, wasla-local-key.pem, and wasla-local.pfx
+    for *.wasla.local, wasla.local, localhost, and 127.0.0.1.
     Generated files are gitignored and must not be committed.
+
+    Legacy: older setups may still have .certs/orderhub-local.* from the OrderHub era.
+    Those files are not used by current Kestrel config; regenerate with this script.
 #>
 param(
-    [string] $PfxPassword = "orderhub-dev"
+    [string] $PfxPassword = "wasla-dev"
 )
 
 $ErrorActionPreference = "Stop"
@@ -33,7 +36,7 @@ function Write-Ok([string] $Message) {
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 Set-Location $RepoRoot
 
-Write-Step "OrderHub local HTTPS setup"
+Write-Step "Wasla local HTTPS setup"
 Write-Host "Repository root: $RepoRoot"
 
 $CertsDir = Join-Path $RepoRoot ".certs"
@@ -42,9 +45,9 @@ if (-not (Test-Path $CertsDir)) {
     Write-Ok "Created .certs directory."
 }
 
-$pemFile = Join-Path $CertsDir "orderhub-local.pem"
-$keyFile = Join-Path $CertsDir "orderhub-local-key.pem"
-$pfxFile = Join-Path $CertsDir "orderhub-local.pfx"
+$pemFile = Join-Path $CertsDir "wasla-local.pem"
+$keyFile = Join-Path $CertsDir "wasla-local-key.pem"
+$pfxFile = Join-Path $CertsDir "wasla-local.pfx"
 
 $mkcert = Get-Command mkcert -ErrorAction SilentlyContinue
 if (-not $mkcert) {
@@ -73,13 +76,14 @@ catch {
     exit 1
 }
 
-Write-Step "Generating certificate for tenant domains"
+Write-Step "Generating certificate for Wasla local domains"
 & mkcert `
     -cert-file $pemFile `
     -key-file $keyFile `
-    "*.orderhub.local" `
-    "orderhub.local" `
-    "localhost"
+    "*.wasla.local" `
+    "wasla.local" `
+    "localhost" `
+    "127.0.0.1"
 
 Write-Ok "Created:"
 Write-Host "  $pemFile"
@@ -110,7 +114,7 @@ if (-not $openssl) {
     Write-Host "Or install OpenSSL and ensure openssl.exe is available in PATH."
     Write-Host ""
     Write-Host "PEM files were created successfully. Convert to PFX manually with:"
-    Write-Host "  openssl pkcs12 -export -out .certs/orderhub-local.pfx -inkey .certs/orderhub-local-key.pem -in .certs/orderhub-local.pem -password pass:orderhub-dev"
+    Write-Host "  openssl pkcs12 -export -out .certs/wasla-local.pfx -inkey .certs/wasla-local-key.pem -in .certs/wasla-local.pem -password pass:wasla-dev"
     exit 1
 }
 
@@ -131,21 +135,23 @@ Write-Host @"
      C:\Windows\System32\drivers\etc\hosts
 
    Example:
-     127.0.0.1 pilavcirahim.orderhub.local
-     127.0.0.1 sushim.orderhub.local
-     127.0.0.1 orderhub.local
+     127.0.0.1 bahce-tadi.wasla.local
+     127.0.0.1 pilavcirahim.wasla.local
+     127.0.0.1 sushim.wasla.local
+     127.0.0.1 wasla.local
 
 2. Ensure src/OrderHub.Web/appsettings.Development.json contains Kestrel certificate config
-   pointing to ../../.certs/orderhub-local.pfx (relative to the Web project directory).
+   pointing to ../../.certs/wasla-local.pfx (relative to the Web project directory).
 
 3. Run Web:
      dotnet run --project src\OrderHub.Web\OrderHub.Web.csproj
 
 4. Test in browser:
-     https://pilavcirahim.orderhub.local:7200/auth/login
+     https://wasla.local:7200
+     https://bahce-tadi.wasla.local:7200/auth/login
 
 5. Configure Print Bridge BaseUrl:
-     https://pilavcirahim.orderhub.local:7200
+     https://bahce-tadi.wasla.local:7200
 
 See docs/local-https.md for full details and LAN testing notes.
 "@
