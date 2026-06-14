@@ -2343,6 +2343,129 @@
   <data name="PrintBridge.NavSetup" xml:space="preserve">
     <value>الإعداد</value>
   </data>
+  <data name="PrintBridge.DevicesPageTitle" xml:space="preserve">
+    <value>أجهزة Print Bridge</value>
+  </data>
+  <data name="PrintBridge.DevicesPageSubtitle" xml:space="preserve">
+    <value>إدارة أجهزة Print Bridge المحلية على Windows المستخدمة للطباعة التلقائية للفواتير.</value>
+  </data>
+  <data name="PrintBridge.SetupPageTitle" xml:space="preserve">
+    <value>إعداد Print Bridge</value>
+  </data>
+  <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
+    <value>اربط جهاز Windows الذي يحتوي على طابعة الفواتير بـ OrderHub.</value>
+  </data>
+  <data name="PrintBridge.CreateDeviceToken" xml:space="preserve">
+    <value>إنشاء رمز جهاز</value>
+  </data>
+  <data name="PrintBridge.ConnectedDevicesTitle" xml:space="preserve">
+    <value>الأجهزة المتصلة</value>
+  </data>
+  <data name="PrintBridge.DevicesSetupHint" xml:space="preserve">
+    <value>هل تقوم بإعداد جهاز جديد؟</value>
+  </data>
+  <data name="PrintBridge.GotoSetupLink" xml:space="preserve">
+    <value>انتقل إلى الإعداد.</value>
+  </data>
+  <data name="PrintBridge.WhatIsPrintBridgeTitle" xml:space="preserve">
+    <value>ما هو Print Bridge؟</value>
+  </data>
+  <data name="PrintBridge.WhatIsPrintBridgeText" xml:space="preserve">
+    <value>Print Bridge هو تطبيق Windows محلي يعمل على الجهاز المتصل بطابعة الفواتير. يستقبل مهام الطباعة من OrderHub ويرسلها إلى طابعة Windows المحلية.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartTitle" xml:space="preserve">
+    <value>قبل أن تبدأ</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem1" xml:space="preserve">
+    <value>يجب تثبيت طابعة الفواتير في Windows.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem2" xml:space="preserve">
+    <value>يجب تشغيل Print Bridge على جهاز Windows المتصل بالطابعة.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem3" xml:space="preserve">
+    <value>يجب إنشاء رمز جهاز من لوحة OrderHub Web.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem4" xml:space="preserve">
+    <value>يجب لصق الرمز في إعدادات تطبيق Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem5" xml:space="preserve">
+    <value>يجب تعطيل وضع الاختبار للطباعة الفعلية.</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
+    <value>الخطوة 1 — تنزيل Print Bridge</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
+    <value>نزّل حزمة Print Bridge وشغّلها على جهاز Windows المتصل بطابعة الفواتير.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Title" xml:space="preserve">
+    <value>الخطوة 2 — إنشاء رمز جهاز</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Text" xml:space="preserve">
+    <value>انتقل إلى OrderHub Print Bridge &gt; الأجهزة. أدخل اسم جهاز مثل "Kitchen PC" أو "Cashier PC" أو "Vivo"، أنشئ رمزاً وانسخ الرمز المُنشأ.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Action" xml:space="preserve">
+    <value>انتقل إلى الأجهزة</value>
+  </data>
+  <data name="PrintBridge.GuideStep3Title" xml:space="preserve">
+    <value>الخطوة 3 — افتح تبويب الإعدادات في تطبيق Print Bridge</value>
+  </data>
+  <data name="PrintBridge.GuideStep3Text" xml:space="preserve">
+    <value>افتح تطبيق Print Bridge على Windows وانقر على تبويب الإعدادات في الأعلى.</value>
+  </data>
+  <data name="PrintBridge.GuideSettingsTabPlaceholder" xml:space="preserve">
+    <value>تبويب الإعدادات</value>
+  </data>
+  <data name="PrintBridge.GuideStep4Title" xml:space="preserve">
+    <value>الخطوة 4 — الصق الرمز</value>
+  </data>
+  <data name="PrintBridge.GuideStep4Text" xml:space="preserve">
+    <value>الصق رمز الجهاز المنسوخ في حقل رمز الجهاز. يأتي الرمز من لوحة OrderHub Web.</value>
+  </data>
+  <data name="PrintBridge.GuideStep5Title" xml:space="preserve">
+    <value>الخطوة 5 — اختر الطابعة</value>
+  </data>
+  <data name="PrintBridge.GuideStep5Text" xml:space="preserve">
+    <value>اختر طابعة الفواتير المثبتة في Windows من قائمة اسم الطابعة. إذا لم تظهر الطابعة، انقر تحديث. مثال: POS-58</value>
+  </data>
+  <data name="PrintBridge.GuideStep6Title" xml:space="preserve">
+    <value>الخطوة 6 — تحقق من وضع الاختبار</value>
+  </data>
+  <data name="PrintBridge.GuideStep6Text" xml:space="preserve">
+    <value>للطباعة الفعلية للفواتير، أوقف وضع الاختبار. إذا كان "عدم الإرسال إلى الطابعة، تسجيل فقط" مفعّلاً، فلن يرسل Print Bridge أي مخرجات إلى الطابعة.</value>
+  </data>
+  <data name="PrintBridge.GuideStep7Title" xml:space="preserve">
+    <value>الخطوة 7 — احفظ الإعدادات واختبر الاتصال</value>
+  </data>
+  <data name="PrintBridge.GuideStep7Text" xml:space="preserve">
+    <value>انقر حفظ الإعدادات. يجب أن يتحقق التطبيق من الرمز ويتصل بالخادم. عند النجاح، يظهر اسم الجهاز ويظهر الجهاز متصلاً في صفحة الأجهزة.</value>
+  </data>
+  <data name="PrintBridge.ServerUrlInfoTitle" xml:space="preserve">
+    <value>عنوان الخادم (معلومات)</value>
+  </data>
+  <data name="PrintBridge.ServerUrlInfoText" xml:space="preserve">
+    <value>يوفر OrderHub هذا العنوان. عادةً لا تحتاج إلى تغييره. يعرض تطبيق Print Bridge عنوان الخادم ضمن الإعدادات المتقدمة.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide1" xml:space="preserve">
+    <value>تأكد من تشغيل تطبيق Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide2" xml:space="preserve">
+    <value>تأكد من تثبيت الطابعة في Windows.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide3" xml:space="preserve">
+    <value>تأكد من نسخ رمز الجهاز الصحيح.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide4" xml:space="preserve">
+    <value>إذا تم تجديد الرمز، فلن يعمل الرمز القديم.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide5" xml:space="preserve">
+    <value>إذا لم تظهر الطابعة، انقر تحديث.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide6" xml:space="preserve">
+    <value>إذا كان وضع الاختبار مفعّلاً، فلن تُطبع الفواتير.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide7" xml:space="preserve">
+    <value>استخدم حفظ الإعدادات في تطبيق Print Bridge لاختبار الاتصال.</value>
+  </data>
   <data name="PrintBridge.DownloadTitle" xml:space="preserve">
     <value>إعداد OrderHub Print Bridge</value>
   </data>
@@ -2514,6 +2637,39 @@
   <data name="PrintBridge.AddDevice" xml:space="preserve">
     <value>إضافة جهاز</value>
   </data>
+  <data name="PrintBridge.SetupInformationTitle" xml:space="preserve">
+    <value>معلومات إعداد Print Bridge</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction1" xml:space="preserve">
+    <value>افتح تطبيق Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction2" xml:space="preserve">
+    <value>الصق عنوان Server URL أدناه في حقل Server URL.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction3" xml:space="preserve">
+    <value>الصق رمز الجهاز الذي تم إنشاؤه في حقل Access Token.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction4" xml:space="preserve">
+    <value>اختر الطابعة واضغط Save Settings.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction5" xml:space="preserve">
+    <value>إذا نجح الاتصال، سيظهر اسم الجهاز تلقائياً.</value>
+  </data>
+  <data name="PrintBridge.ServerUrl" xml:space="preserve">
+    <value>عنوان الخادم</value>
+  </data>
+  <data name="PrintBridge.DeviceToken" xml:space="preserve">
+    <value>رمز الجهاز</value>
+  </data>
+  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
+    <value>نسخ عنوان الخادم</value>
+  </data>
+  <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
+    <value>تعذر تحديد عنوان الخادم. افتح هذه الصفحة من نطاق العميل أو تواصل مع المسؤول.</value>
+  </data>
+  <data name="PrintBridge.TokenPendingHint" xml:space="preserve">
+    <value>أضف جهازاً أعلاه أو أعد إنشاء رمز جهاز موجود لعرض رمز الجهاز هنا.</value>
+  </data>
   <data name="PrintBridge.SetupDescription" xml:space="preserve">
     <value>Print Bridge هو تطبيق Windows محلي يربط الطابعة الحرارية المثبتة لديك بـ OrderHub.</value>
   </data>
@@ -2527,7 +2683,7 @@
     <value>تأكد من تشغيل Print Bridge على جهاز Windows المتصل بالطابعة.</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint2" xml:space="preserve">
-    <value>تحقق من حفظ Base URL ورمز الجهاز بشكل صحيح في تطبيق Print Bridge.</value>
+    <value>تحقق من حفظ عنوان الخادم ورمز الجهاز بشكل صحيح في تطبيق Print Bridge.</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint3" xml:space="preserve">
     <value>إذا كان الجهاز غير متصل، أعد تشغيل Print Bridge واستخدم اختبار الاتصال.</value>
@@ -2556,4 +2712,111 @@
   <data name="PrintBridge.Status" xml:space="preserve">
     <value>الحالة</value>
   </data>
+  <data name="Pricing.NavTitle" xml:space="preserve"><value>الأسعار</value></data>
+  <data name="Pricing.Title" xml:space="preserve"><value>اختر الخطة المناسبة لعملك</value></data>
+  <data name="Pricing.Subtitle" xml:space="preserve"><value>اربط مطعمك بمنصات الطلبات من مكان واحد. تكامل الدفع قريبًا.</value></data>
+  <data name="Pricing.ViewPlans" xml:space="preserve"><value>عرض الخطط</value></data>
+  <data name="Pricing.Recommended" xml:space="preserve"><value>موصى به</value></data>
+  <data name="Pricing.PerMonth" xml:space="preserve"><value>شهر</value></data>
+  <data name="Pricing.Monthly" xml:space="preserve"><value>شهري</value></data>
+  <data name="Pricing.ContactSales" xml:space="preserve"><value>تسعير مخصص</value></data>
+  <data name="Pricing.ContactUs" xml:space="preserve"><value>تواصل معنا</value></data>
+  <data name="Pricing.ChoosePlan" xml:space="preserve"><value>اختر الخطة</value></data>
+  <data name="Pricing.Cta.StartStarter" xml:space="preserve"><value>ابدأ مع Starter</value></data>
+  <data name="Pricing.Cta.StartPro" xml:space="preserve"><value>ابدأ مع Pro</value></data>
+  <data name="Pricing.Cta.StartProPlus" xml:space="preserve"><value>ابدأ مع Pro+</value></data>
+  <data name="Pricing.Cta.RequestOffer" xml:space="preserve"><value>اطلب عرضًا</value></data>
+  <data name="Pricing.BillingNote" xml:space="preserve"><value>الأسعار إرشادية. الفوترة الفعلية غير مفعّلة بعد.</value></data>
+  <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
+  <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>للمطاعم الصغيرة والإعداد لأول مرة</value></data>
+  <data name="Pricing.Plan.Starter.Price" xml:space="preserve"><value>300 ليرة تركية / شهر</value></data>
+  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>جهاز Print Bridge نشط واحد</value></data>
+  <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>لوحة طلبات أساسية</value></data>
+  <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>ربط المنصات المدعومة</value></data>
+  <data name="Pricing.Plan.Starter.Feature3" xml:space="preserve"><value>إعدادات إيصال أساسية</value></data>
+  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>جهاز Print Bridge نشط واحد</value></data>
+  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>سجل الطلبات</value></data>
+  <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
+  <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>للمطاعم النشطة</value></data>
+  <data name="Pricing.Plan.Pro.Price" xml:space="preserve"><value>600 ليرة تركية / شهر</value></data>
+  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 أجهزة Print Bridge نشطة</value></data>
+  <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>كل ما في Starter</value></data>
+  <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>مزامنة تلقائية للطلبات</value></data>
+  <data name="Pricing.Plan.Pro.Feature3" xml:space="preserve"><value>دعم الموافقة التلقائية حيثما متاح</value></data>
+  <data name="Pricing.Plan.Pro.Feature4" xml:space="preserve"><value>شاشة مطبخ مباشرة</value></data>
+  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>3 أجهزة Print Bridge نشطة</value></data>
+  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>سجل الطلبات والتقارير</value></data>
+  <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
+  <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>للمطاعم المزدحمة أو العمليات الأكبر</value></data>
+  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve"><value>1,200 ليرة تركية / شهر</value></data>
+  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 أجهزة Print Bridge نشطة</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>كل ما في Pro</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 أجهزة Print Bridge نشطة</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>استخدام أجهزة أكثر مرونة</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve"><value>مناسب لمحطات متعددة</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve"><value>دعم إعداد ذو أولوية</value></data>
+  <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve"><value>Enterprise</value></data>
+  <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve"><value>للسلاسل والشركات ذات المتطلبات المخصصة</value></data>
+  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve"><value>يبدأ من 2,500 ليرة تركية / شهر</value></data>
+  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve"><value>أجهزة Print Bridge غير محدودة / حسب اتفاق مخصص</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve"><value>كل ما في Pro+</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>أجهزة Print Bridge غير محدودة / مخصصة</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>دعم فروع متعددة</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>تكاملات مخصصة</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>إعداد ودعم مخصص</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>اتفاق وحدود مخصصة</value></data>
+  <data name="Signup.StartNow" xml:space="preserve"><value>ابدأ الآن</value></data>
+  <data name="Signup.Title" xml:space="preserve"><value>إنشاء حساب OrderHub</value></data>
+  <data name="Signup.Subtitle" xml:space="preserve"><value>اربط مطعمك بمنصات الطلبات عبر الإنترنت وأدر كل شيء من مكان واحد.</value></data>
+  <data name="Signup.StepPlan" xml:space="preserve"><value>اختيار الخطة</value></data>
+  <data name="Signup.StepBusiness" xml:space="preserve"><value>بيانات العمل</value></data>
+  <data name="Signup.StepOwner" xml:space="preserve"><value>حساب المالك</value></data>
+  <data name="Signup.StepCreate" xml:space="preserve"><value>إنشاء الحساب</value></data>
+  <data name="Signup.Plan" xml:space="preserve"><value>الخطة</value></data>
+  <data name="Signup.BillingPeriod" xml:space="preserve"><value>فترة الفوترة</value></data>
+  <data name="Signup.BillingMonthly" xml:space="preserve"><value>شهري</value></data>
+  <data name="Signup.BillingYearly" xml:space="preserve"><value>سنوي</value></data>
+  <data name="Signup.BillingNote" xml:space="preserve"><value>تكامل الدفع غير مفعّل بعد. يتم حفظ اختيارك للتسجيل.</value></data>
+  <data name="Signup.BusinessName" xml:space="preserve"><value>اسم العمل / المطعم</value></data>
+  <data name="Signup.BusinessType" xml:space="preserve"><value>نوع العمل</value></data>
+  <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>مثال: مطعم، مقهى</value></data>
+  <data name="Signup.Phone" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Signup.City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Signup.Country" xml:space="preserve"><value>الدولة</value></data>
+  <data name="Signup.Slug" xml:space="preserve"><value>النطاق الفرعي (slug)</value></data>
+  <data name="Signup.SlugHelp" xml:space="preserve"><value>عنوان تسجيل الدخول:</value></data>
+  <data name="Signup.OwnerFullName" xml:space="preserve"><value>الاسم الكامل</value></data>
+  <data name="Signup.OwnerEmail" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Signup.Password" xml:space="preserve"><value>كلمة المرور</value></data>
+  <data name="Signup.ConfirmPassword" xml:space="preserve"><value>تأكيد كلمة المرور</value></data>
+  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>يمكنك إكمال ربط المنصات والإعدادات الأخرى بعد التسجيل.</value></data>
+  <data name="Signup.CreateAccount" xml:space="preserve"><value>إنشاء الحساب</value></data>
+  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>لديك حساب بالفعل؟</value></data>
+  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>هذا النطاق الفرعي مستخدم بالفعل.</value></data>
+  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>تعذر إنشاء الحساب. حاول مرة أخرى أو تواصل مع الدعم.</value></data>
+  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>اطلب عرضًا لخطة Enterprise</value></data>
+  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>تُقدَّم خطة Enterprise بحدود واتفاق مخصص. تواصل معنا لطلب عرض بدلًا من نموذج التسجيل الذاتي.</value></data>
+  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>يرجى التواصل معنا لخطة Enterprise.</value></data>
+  <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>اسم العمل مطلوب.</value></data>
+  <data name="Validation.SlugRequired" xml:space="preserve"><value>النطاق الفرعي مطلوب.</value></data>
+  <data name="Validation.SlugInvalid" xml:space="preserve"><value>يجب أن يحتوي النطاق الفرعي على أحرف صغيرة وأرقام وشرطات وشرطات سفلية فقط.</value></data>
+  <data name="Validation.FullNameRequired" xml:space="preserve"><value>الاسم الكامل مطلوب.</value></data>
+  <data name="Validation.ConfirmPasswordRequired" xml:space="preserve"><value>تأكيد كلمة المرور مطلوب.</value></data>
+  <data name="Validation.PasswordMinLength" xml:space="preserve"><value>يجب أن تكون كلمة المرور 8 أحرف على الأقل.</value></data>
+  <data name="Validation.PlanInvalid" xml:space="preserve"><value>اختيار خطة غير صالح.</value></data>
+  <data name="Validation.BillingPeriodInvalid" xml:space="preserve"><value>فترة فوترة غير صالحة.</value></data>
+  <data name="Auth.WelcomeInvalid" xml:space="preserve"><value>رابط تسجيل الدخول غير صالح أو منتهٍ. يرجى تسجيل الدخول.</value></data>
+  <data name="Onboarding.Title" xml:space="preserve"><value>مرحبًا بك في OrderHub</value></data>
+  <data name="Onboarding.Subtitle" xml:space="preserve"><value>أكمل الخطوات أدناه للبدء. يمكنك العودة في أي وقت.</value></data>
+  <data name="Onboarding.StepPlatformsTitle" xml:space="preserve"><value>ربط المنصات</value></data>
+  <data name="Onboarding.StepPlatformsDescription" xml:space="preserve"><value>أضف روابط المنصات المدعومة.</value></data>
+  <data name="Onboarding.StepReceiptTitle" xml:space="preserve"><value>إعدادات الإيصال</value></data>
+  <data name="Onboarding.StepReceiptDescription" xml:space="preserve"><value>اضبط لغة الإيصال وعدد النسخ والمحتوى.</value></data>
+  <data name="Onboarding.StepPrintBridgeTitle" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Onboarding.StepPrintBridgeDescription" xml:space="preserve"><value>إعداد الطابعة المحلية.</value></data>
+  <data name="Onboarding.StepSettingsTitle" xml:space="preserve"><value>إعدادات العمل</value></data>
+  <data name="Onboarding.StepSettingsDescription" xml:space="preserve"><value>راجع إعدادات الحساب والتشغيل.</value></data>
+  <data name="Onboarding.Open" xml:space="preserve"><value>فتح</value></data>
+  <data name="Onboarding.GoToDashboard" xml:space="preserve"><value>الذهاب إلى اللوحة</value></data>
+  <data name="Onboarding.GoToOrders" xml:space="preserve"><value>الذهاب إلى الطلبات</value></data>
 </root>

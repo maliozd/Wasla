@@ -13,6 +13,7 @@ public sealed class CustomerResolutionMiddleware
     private static readonly string[] BypassPrefixes =
     {
         "/admin",
+        "/signup",
         "/customer-access-required",
         "/culture",
         "/setlanguage",

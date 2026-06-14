@@ -266,10 +266,10 @@
           '<p class="text-muted small mb-3">' + escapeHtml(messages.noDevicesDescription || "") + '</p>' +
           '<div class="d-flex flex-wrap justify-content-center gap-2">' +
             '<button type="button" class="btn btn-primary btn-sm" id="printBridgeEmptyAddDeviceBtn">' +
-              '<i class="bi bi-plus-lg me-1"></i>' + escapeHtml(messages.addDevice || messages.createDevice || "Add device") +
+              '<i class="bi bi-key me-1"></i>' + escapeHtml(messages.addDevice || messages.createDevice || "Create token") +
             '</button>' +
-            '<a class="btn btn-outline-secondary btn-sm" href="' + escapeHtml(cfg.packageDownloadUrl || cfg.setupUrl || "/print-bridge/download") + '">' +
-              '<i class="bi bi-download me-1"></i>' + escapeHtml(messages.download || "Download") +
+            '<a class="btn btn-outline-secondary btn-sm" href="' + escapeHtml(cfg.setupUrl || "/print-bridge/setup") + '">' +
+              '<i class="bi bi-book me-1"></i>' + escapeHtml(messages.goToSetup || "Setup") +
             '</a>' +
           '</div>' +
         '</div>';
@@ -377,7 +377,7 @@
   }
 
   function refreshDevices() {
-    return fetch(cfg.devicesUrl || "/print-bridge/devices", {
+    return fetch(cfg.devicesUrl || "/print-bridge/devices/list", {
       headers: { "X-Requested-With": "XMLHttpRequest" }
     })
       .then(function (resp) {
@@ -595,6 +595,27 @@
       refreshPrintJobsPartial()
         .finally(function () {
           btn.disabled = false;
+        });
+    });
+  }
+
+  function bindServerUrlCopy() {
+    var btn = document.getElementById("printBridgeCopyServerUrlBtn");
+    var valueEl = document.getElementById("printBridgeServerUrlValue");
+    if (!btn || !valueEl) return;
+
+    btn.addEventListener("click", function () {
+      var text = (valueEl.textContent || "").trim();
+      if (!text) {
+        text = (cfg.serverUrl || "").trim();
+      }
+      if (!text) {
+        showMessage(messages.copyFailed || "Copy failed", "danger");
+        return;
+      }
+      copyText(text, btn, { successMessage: messages.copied || messages.tokenCopied })
+        .catch(function () {
+          showMessage(messages.copyFailed || messages.tokenCopyFailed, "danger");
         });
     });
   }

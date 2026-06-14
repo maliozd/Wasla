@@ -1,143 +1,125 @@
 @model OrderHub.Web.Models.PrintBridge.PrintBridgeSetupViewModel
 @using Microsoft.Extensions.Localization
-@using System.Text.Json
 @inject IStringLocalizer<OrderHub.Web.SharedResource> L
 @{
-    ViewData["Title"] = L["PrintBridge.DownloadTitle"];
-    var atLimit = !Model.CanCreateActiveDevice && !Model.ActiveCountExceedsLimit;
-    var nearLimit = Model.ActiveDeviceCount >= Model.AllowedActiveDeviceCount - 1 && Model.CanCreateActiveDevice;
-
-    var setupMessages = new
-    {
-        copied = L["PrintBridge.Copied"].Value,
-        copyFailed = L["PrintBridge.CopyFailed"].Value
-    };
-    var setupMessagesJson = JsonSerializer.Serialize(setupMessages);
+    ViewData["Title"] = L["PrintBridge.SetupPageTitle"];
 }
 
-<partial name="_PrintBridgeNav" />
-
-<div id="printBridgeSetupMessageHost"></div>
-
-<div class="row g-3">
-    <div class="col-12">
-        <div class="card oh-card">
-            <div class="card-body">
-                <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
-                    <div>
-                        <h1 class="h4 mb-2">@L["PrintBridge.DownloadTitle"]</h1>
-                        <p class="text-muted mb-2">@L["PrintBridge.DownloadDescription"]</p>
-                        <p class="small text-muted mb-0">@L["PrintBridge.DownloadRunsOnWindowsPc"]</p>
-                    </div>
-                    <span class="badge text-bg-primary align-self-start">@L["PrintBridge.DownloadBadgeUsb"]</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-        <div class="card oh-card h-100">
-            <div class="card-body">
-                <h2 class="h6 mb-2"><i class="bi bi-layers me-1 text-primary"></i>@L["PrintBridge.IncludedDevicesTitle"]</h2>
-                <p class="text-muted small mb-3">@L["PrintBridge.IncludedDevicesDescription"]</p>
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                    <span class="badge text-bg-secondary">@L["PrintBridge.IncludedDeviceCount", Model.AllowedActiveDeviceCount]</span>
-                    <span class="badge @(Model.ActiveCountExceedsLimit ? "text-bg-warning" : "text-bg-info")">
-                        @L["PrintBridge.ActiveDeviceCount", Model.ActiveDeviceCount]
-                    </span>
-                </div>
-                <p class="small text-muted mb-0">@L["PrintBridge.ExtraDevicesPaidLater"]</p>
-
-                @if (Model.ActiveCountExceedsLimit)
-                {
-                    <div class="alert alert-warning small py-2 mt-3 mb-0" role="alert">
-                        <div class="fw-semibold">@L["PrintBridge.DeviceLimitExceededWarning"]</div>
-                        <div class="mt-1">@L["PrintBridge.DeactivateExtraDevices"]</div>
-                    </div>
-                }
-                else if (atLimit)
-                {
-                    <div class="alert alert-info small py-2 mt-3 mb-0" role="alert">
-                        @L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount]
-                    </div>
-                }
-                else if (nearLimit)
-                {
-                    <div class="alert alert-info small py-2 mt-3 mb-0" role="alert">
-                        @L["PrintBridge.IncludedDevicesNearLimit", Model.ActiveDeviceCount, Model.AllowedActiveDeviceCount]
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-        <div class="card oh-card h-100">
-            <div class="card-body">
-                <h2 class="h6 mb-2"><i class="bi bi-download me-1 text-primary"></i>@L["PrintBridge.DownloadButton"]</h2>
-                <p class="text-muted small mb-3">@L["PrintBridge.DownloadPlaceholderNotice"]</p>
-                <a class="btn btn-primary btn-sm" href="@Model.PackageDownloadUrl">
-                    <i class="bi bi-box-arrow-down me-1"></i>@L["PrintBridge.DownloadButton"]
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-        <div class="card oh-card h-100">
-            <div class="card-body">
-                <h2 class="h6 mb-2"><i class="bi bi-list-ol me-1 text-primary"></i>@L["PrintBridge.SetupTitle"]</h2>
-                <ol class="small mb-0 ps-3">
-                    <li class="mb-2">@L["PrintBridge.SetupStepDownload"]</li>
-                    <li class="mb-2">@L["PrintBridge.SetupStepInstallOnWindowsPc"]</li>
-                    <li class="mb-2">@L["PrintBridge.SetupStepPrinter"]</li>
-                    <li class="mb-2">@L["PrintBridge.SetupStepToken"] <a href="@Model.DevicesUrl">@L["PrintBridge.NavDevices"]</a></li>
-                    <li class="mb-2">@L["PrintBridge.SetupStepConfigure"]</li>
-                    <li class="mb-2">@L["PrintBridge.SetupStepStartBridge"]</li>
-                    <li>@L["PrintBridge.SetupStepTestOrder"]</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-        <div class="card oh-card h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                    <h2 class="h6 mb-0"><i class="bi bi-terminal me-1 text-primary"></i>@L["PrintBridge.PrinterNameHelper"]</h2>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="pbSetupCopyPsBtn">
-                        <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyPowerShellCommand"]
-                    </button>
-                </div>
-                <p class="text-muted small mb-2">@L["PrintBridge.PrinterNameHelperDescription"]</p>
-                <pre class="small bg-body-secondary rounded p-2 mb-0 font-monospace" id="pbSetupPsCommand">@Model.PowerShellPrinterCommand</pre>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12">
-        <div class="card oh-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                    <h2 class="h6 mb-0"><i class="bi bi-file-earmark-code me-1 text-primary"></i>@L["PrintBridge.ExampleConfig"]</h2>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="pbSetupCopyConfigBtn">
-                        <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyExampleConfig"]
-                    </button>
-                </div>
-                <p class="text-muted small mb-2">@L["PrintBridge.ExampleConfigHelp"]</p>
-                <pre class="small bg-body-secondary rounded p-3 mb-0 font-monospace" id="pbSetupExampleConfig">@Model.ExampleConfigJson</pre>
-            </div>
-        </div>
-    </div>
+<div class="oh-print-bridge-page oh-print-bridge-setup-page">
+<div class="oh-customer-page-header mb-3">
+    <h1 class="oh-customer-page-header__title h4 mb-1">@L["PrintBridge.SetupPageTitle"]</h1>
+    <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["PrintBridge.SetupPageSubtitle"]</p>
 </div>
 
-@section Scripts {
-    <script>
-        window.OrderHubPrintBridgeSetup = {
-            messages: @Html.Raw(setupMessagesJson),
-            exampleConfig: @Html.Raw(JsonSerializer.Serialize(Model.ExampleConfigJson)),
-            powerShellCommand: @Html.Raw(JsonSerializer.Serialize(Model.PowerShellPrinterCommand))
-        };
-    </script>
-    <script src="~/js/print-bridge/print-bridge-setup.js" asp-append-version="true"></script>
+<section class="oh-print-bridge-guide-section card oh-card mb-3">
+    <div class="card-body">
+        <h2 class="h6 mb-2">@L["PrintBridge.WhatIsPrintBridgeTitle"]</h2>
+        <p class="text-muted small mb-0">@L["PrintBridge.WhatIsPrintBridgeText"]</p>
+    </div>
+</section>
+
+<section class="oh-print-bridge-guide-section card oh-card mb-3">
+    <div class="card-body">
+        <h2 class="h6 mb-2">@L["PrintBridge.BeforeYouStartTitle"]</h2>
+        <ul class="oh-print-bridge-guide-checklist small text-muted mb-0">
+            <li>@L["PrintBridge.BeforeYouStartItem1"]</li>
+            <li>@L["PrintBridge.BeforeYouStartItem2"]</li>
+            <li>@L["PrintBridge.BeforeYouStartItem3"]</li>
+            <li>@L["PrintBridge.BeforeYouStartItem4"]</li>
+            <li>@L["PrintBridge.BeforeYouStartItem5"]</li>
+        </ul>
+    </div>
+</section>
+
+<section class="oh-print-bridge-guide-step card oh-card mb-3">
+    <div class="card-body">
+        <div class="oh-print-bridge-guide-step__badge">1</div>
+        <h2 class="h6 mb-2">@L["PrintBridge.GuideStep1Title"]</h2>
+        <p class="text-muted small mb-3">@L["PrintBridge.GuideStep1Text"]</p>
+        <a class="btn btn-primary btn-sm" href="@Model.PackageDownloadUrl">
+            <i class="bi bi-download me-1"></i>@L["PrintBridge.DownloadButton"]
+        </a>
+    </div>
+</section>
+
+<section class="oh-print-bridge-guide-step card oh-card mb-3">
+    <div class="card-body">
+        <div class="oh-print-bridge-guide-step__badge">2</div>
+        <h2 class="h6 mb-2">@L["PrintBridge.GuideStep2Title"]</h2>
+        <p class="text-muted small mb-3">@L["PrintBridge.GuideStep2Text"]</p>
+        <a class="btn btn-outline-primary btn-sm" href="@Model.DevicesUrl">
+            <i class="bi bi-hdd-network me-1"></i>@L["PrintBridge.GuideStep2Action"]
+        </a>
+    </div>
+</section>
+
+<section class="oh-print-bridge-guide-step card oh-card mb-3">
+    <div class="card-body">
+        <div class="oh-print-bridge-guide-step__badge">3</div>
+        <h2 class="h6 mb-2">@L["PrintBridge.GuideStep3Title"]</h2>
+        <p class="text-muted small mb-0">@L["PrintBridge.GuideStep3Text"]</p>
+        <div class="oh-print-bridge-guide-placeholder mt-3" aria-hidden="true">
+            <i class="bi bi-window-sidebar"></i>
+            <span>@L["PrintBridge.GuideSettingsTabPlaceholder"]</span>
+        </div>
+    </div>
+</section>
+
+<section class="oh-print-bridge-guide-step card oh-card mb-3">
+    <div class="card-body">
+        <div class="oh-print-bridge-guide-step__badge">4</div>
+        <h2 class="h6 mb-2">@L["PrintBridge.GuideStep4Title"]</h2>
+        <p class="text-muted small mb-0">@L["PrintBridge.GuideStep4Text"]</p>
+    </div>
+</section>
+
+<section class="oh-print-bridge-guide-step card oh-card mb-3">
+    <div class="card-body">
+        <div class="oh-print-bridge-guide-step__badge">5</div>
+        <h2 class="h6 mb-2">@L["PrintBridge.GuideStep5Title"]</h2>
+        <p class="text-muted small mb-0">@L["PrintBridge.GuideStep5Text"]</p>
+    </div>
+</section>
+
+<section class="oh-print-bridge-guide-step card oh-card mb-3">
+    <div class="card-body">
+        <div class="oh-print-bridge-guide-step__badge">6</div>
+        <h2 class="h6 mb-2">@L["PrintBridge.GuideStep6Title"]</h2>
+        <p class="text-muted small mb-0">@L["PrintBridge.GuideStep6Text"]</p>
+    </div>
+</section>
+
+<section class="oh-print-bridge-guide-step card oh-card mb-3">
+    <div class="card-body">
+        <div class="oh-print-bridge-guide-step__badge">7</div>
+        <h2 class="h6 mb-2">@L["PrintBridge.GuideStep7Title"]</h2>
+        <p class="text-muted small mb-0">@L["PrintBridge.GuideStep7Text"]</p>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.ServerUrl))
+{
+    <section class="oh-print-bridge-guide-section card oh-card mb-3 oh-print-bridge-server-url-info">
+        <div class="card-body">
+            <h2 class="h6 mb-2 text-muted">@L["PrintBridge.ServerUrlInfoTitle"]</h2>
+            <p class="text-muted small mb-2">@L["PrintBridge.ServerUrlInfoText"]</p>
+            <code class="small user-select-all d-inline-block px-2 py-1 rounded border bg-body">@Model.ServerUrl</code>
+        </div>
+    </section>
 }
+
+<section class="oh-print-bridge-guide-section card oh-card mb-3">
+    <div class="card-body">
+        <h2 class="h6 mb-2">@L["PrintBridge.Troubleshooting"]</h2>
+        <ul class="oh-print-bridge-troubleshooting list-unstyled small text-muted mb-0">
+            <li>@L["PrintBridge.TroubleshootingGuide1"]</li>
+            <li>@L["PrintBridge.TroubleshootingGuide2"]</li>
+            <li>@L["PrintBridge.TroubleshootingGuide3"]</li>
+            <li>@L["PrintBridge.TroubleshootingGuide4"]</li>
+            <li>@L["PrintBridge.TroubleshootingGuide5"]</li>
+            <li>@L["PrintBridge.TroubleshootingGuide6"]</li>
+            <li>@L["PrintBridge.TroubleshootingGuide7"]</li>
+        </ul>
+    </div>
+</section>
+</div>

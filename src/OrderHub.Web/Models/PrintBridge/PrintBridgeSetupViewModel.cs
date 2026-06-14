@@ -3,11 +3,8 @@ namespace OrderHub.Web.Models.PrintBridge;
 public sealed class PrintBridgeSetupViewModel
 {
     public string PackageDownloadUrl { get; set; } = "/print-bridge/download/package";
-    public string DevicesUrl { get; set; } = "/print-bridge";
-    public string ApiBaseUrl { get; set; } = string.Empty;
-    public string ExampleConfigJson { get; set; } = string.Empty;
-    public string PowerShellPrinterCommand { get; set; } =
-        "Get-Printer | Select-Object Name, DriverName, PortName, PrinterStatus";
+    public string DevicesUrl { get; set; } = "/print-bridge/devices";
+    public string? ServerUrl { get; set; }
 
     public int AllowedActiveDeviceCount { get; set; } = 3;
     public int ActiveDeviceCount { get; set; }

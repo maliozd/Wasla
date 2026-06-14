@@ -30,6 +30,11 @@
                 <div class="card-body p-4">
                     <h1 class="h4 mb-3">@L["Auth.LoginTitle"]</h1>
 
+                    @if (TempData["AuthMessage"] is string authMessage && !string.IsNullOrWhiteSpace(authMessage))
+                    {
+                        <div class="alert alert-warning">@authMessage</div>
+                    }
+
                     @if (!ViewData.ModelState.IsValid)
                     {
                         <div class="alert alert-danger">@L["Auth.InvalidCredentials"]</div>

@@ -2343,6 +2343,129 @@
   <data name="PrintBridge.NavSetup" xml:space="preserve">
     <value>Setup</value>
   </data>
+  <data name="PrintBridge.DevicesPageTitle" xml:space="preserve">
+    <value>Print Bridge Devices</value>
+  </data>
+  <data name="PrintBridge.DevicesPageSubtitle" xml:space="preserve">
+    <value>Manage local Windows Print Bridge devices used for automatic receipt printing.</value>
+  </data>
+  <data name="PrintBridge.SetupPageTitle" xml:space="preserve">
+    <value>Print Bridge Setup</value>
+  </data>
+  <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
+    <value>Connect the Windows computer that has the receipt printer installed to OrderHub.</value>
+  </data>
+  <data name="PrintBridge.CreateDeviceToken" xml:space="preserve">
+    <value>Create device token</value>
+  </data>
+  <data name="PrintBridge.ConnectedDevicesTitle" xml:space="preserve">
+    <value>Connected devices</value>
+  </data>
+  <data name="PrintBridge.DevicesSetupHint" xml:space="preserve">
+    <value>Setting up a new computer?</value>
+  </data>
+  <data name="PrintBridge.GotoSetupLink" xml:space="preserve">
+    <value>Go to Setup.</value>
+  </data>
+  <data name="PrintBridge.WhatIsPrintBridgeTitle" xml:space="preserve">
+    <value>What is Print Bridge?</value>
+  </data>
+  <data name="PrintBridge.WhatIsPrintBridgeText" xml:space="preserve">
+    <value>Print Bridge is a local Windows app that runs on the computer connected to the receipt printer. It receives print jobs from OrderHub and sends them to the local Windows printer.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartTitle" xml:space="preserve">
+    <value>Before you start</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem1" xml:space="preserve">
+    <value>The receipt printer must be installed in Windows.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem2" xml:space="preserve">
+    <value>Print Bridge must run on the Windows computer connected to the printer.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem3" xml:space="preserve">
+    <value>A device token must be created from the OrderHub web panel.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem4" xml:space="preserve">
+    <value>The token must be pasted into the Print Bridge app settings.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem5" xml:space="preserve">
+    <value>Test mode must be disabled for real printing.</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
+    <value>Step 1 — Download Print Bridge</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
+    <value>Download the Print Bridge package and run it on the Windows computer connected to the receipt printer.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Title" xml:space="preserve">
+    <value>Step 2 — Create a device token</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Text" xml:space="preserve">
+    <value>Go to OrderHub Print Bridge &gt; Devices. Enter a device name such as "Kitchen PC", "Cashier PC", or "Vivo", create a token, and copy the generated token.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Action" xml:space="preserve">
+    <value>Go to Devices</value>
+  </data>
+  <data name="PrintBridge.GuideStep3Title" xml:space="preserve">
+    <value>Step 3 — Open the Settings tab in the Print Bridge app</value>
+  </data>
+  <data name="PrintBridge.GuideStep3Text" xml:space="preserve">
+    <value>Open the Windows Print Bridge app and click the Settings tab at the top.</value>
+  </data>
+  <data name="PrintBridge.GuideSettingsTabPlaceholder" xml:space="preserve">
+    <value>Settings tab</value>
+  </data>
+  <data name="PrintBridge.GuideStep4Title" xml:space="preserve">
+    <value>Step 4 — Paste the token</value>
+  </data>
+  <data name="PrintBridge.GuideStep4Text" xml:space="preserve">
+    <value>Paste the copied device token into the Device token field. The token comes from the OrderHub web panel.</value>
+  </data>
+  <data name="PrintBridge.GuideStep5Title" xml:space="preserve">
+    <value>Step 5 — Select the printer</value>
+  </data>
+  <data name="PrintBridge.GuideStep5Text" xml:space="preserve">
+    <value>Select the installed Windows receipt printer from the Printer name dropdown. If the printer is not visible, click Refresh. Example: POS-58</value>
+  </data>
+  <data name="PrintBridge.GuideStep6Title" xml:space="preserve">
+    <value>Step 6 — Check Test mode</value>
+  </data>
+  <data name="PrintBridge.GuideStep6Text" xml:space="preserve">
+    <value>For real receipt printing, turn off Test mode. If "Do not send to printer, log only" is enabled, Print Bridge will only write logs and will not send output to the printer.</value>
+  </data>
+  <data name="PrintBridge.GuideStep7Title" xml:space="preserve">
+    <value>Step 7 — Save settings and test connection</value>
+  </data>
+  <data name="PrintBridge.GuideStep7Text" xml:space="preserve">
+    <value>Click Save settings. The app should validate the token and connect to the server. If successful, the device name should appear and the device should show online on the Devices page.</value>
+  </data>
+  <data name="PrintBridge.ServerUrlInfoTitle" xml:space="preserve">
+    <value>Server URL (informational)</value>
+  </data>
+  <data name="PrintBridge.ServerUrlInfoText" xml:space="preserve">
+    <value>This address is provided by OrderHub. You normally should not change it. The Print Bridge app shows the server URL under Advanced settings.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide1" xml:space="preserve">
+    <value>Make sure the Print Bridge app is running.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide2" xml:space="preserve">
+    <value>Make sure the printer is installed in Windows.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide3" xml:space="preserve">
+    <value>Make sure the correct device token was copied.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide4" xml:space="preserve">
+    <value>If the token was renewed, the old token no longer works.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide5" xml:space="preserve">
+    <value>If the printer does not appear, click Refresh.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide6" xml:space="preserve">
+    <value>If Test mode is enabled, receipts will not be printed.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide7" xml:space="preserve">
+    <value>Use Save settings in the Print Bridge app to test the connection.</value>
+  </data>
   <data name="PrintBridge.DownloadTitle" xml:space="preserve">
     <value>OrderHub Print Bridge Setup</value>
   </data>
@@ -2514,6 +2637,39 @@
   <data name="PrintBridge.AddDevice" xml:space="preserve">
     <value>Add Device</value>
   </data>
+  <data name="PrintBridge.SetupInformationTitle" xml:space="preserve">
+    <value>Print Bridge Setup Information</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction1" xml:space="preserve">
+    <value>Open the Print Bridge app.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction2" xml:space="preserve">
+    <value>Paste the Server URL below into the Server URL field.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction3" xml:space="preserve">
+    <value>Paste the generated device token into the Access Token field.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction4" xml:space="preserve">
+    <value>Select your printer and click Save Settings.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction5" xml:space="preserve">
+    <value>If the connection succeeds, the device name will appear automatically.</value>
+  </data>
+  <data name="PrintBridge.ServerUrl" xml:space="preserve">
+    <value>Server URL</value>
+  </data>
+  <data name="PrintBridge.DeviceToken" xml:space="preserve">
+    <value>Device Token</value>
+  </data>
+  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
+    <value>Copy Server URL</value>
+  </data>
+  <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
+    <value>Server URL could not be determined. Open this page from your customer domain or contact your administrator.</value>
+  </data>
+  <data name="PrintBridge.TokenPendingHint" xml:space="preserve">
+    <value>Add a device above or regenerate an existing device token to view the device token here.</value>
+  </data>
   <data name="PrintBridge.SetupDescription" xml:space="preserve">
     <value>Print Bridge is a local Windows app that connects your installed thermal printer to OrderHub.</value>
   </data>
@@ -2527,7 +2683,7 @@
     <value>Make sure Print Bridge is running on the Windows computer connected to the printer.</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint2" xml:space="preserve">
-    <value>Check that the Base URL and device token are saved correctly in the Print Bridge app.</value>
+    <value>Verify the Server URL and device token are saved correctly in the Print Bridge app.</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint3" xml:space="preserve">
     <value>If the device is offline, restart Print Bridge and use Test Connection.</value>
@@ -2556,4 +2712,111 @@
   <data name="PrintBridge.Status" xml:space="preserve">
     <value>Status</value>
   </data>
+  <data name="Pricing.NavTitle" xml:space="preserve"><value>Pricing</value></data>
+  <data name="Pricing.Title" xml:space="preserve"><value>Choose the plan that fits your business</value></data>
+  <data name="Pricing.Subtitle" xml:space="preserve"><value>Connect your restaurant to online order platforms from one place. Payment integration coming soon.</value></data>
+  <data name="Pricing.ViewPlans" xml:space="preserve"><value>View Plans</value></data>
+  <data name="Pricing.Recommended" xml:space="preserve"><value>Recommended</value></data>
+  <data name="Pricing.PerMonth" xml:space="preserve"><value>month</value></data>
+  <data name="Pricing.Monthly" xml:space="preserve"><value>Monthly</value></data>
+  <data name="Pricing.ContactSales" xml:space="preserve"><value>Custom pricing</value></data>
+  <data name="Pricing.ContactUs" xml:space="preserve"><value>Contact us</value></data>
+  <data name="Pricing.ChoosePlan" xml:space="preserve"><value>Choose plan</value></data>
+  <data name="Pricing.Cta.StartStarter" xml:space="preserve"><value>Start with Starter</value></data>
+  <data name="Pricing.Cta.StartPro" xml:space="preserve"><value>Start with Pro</value></data>
+  <data name="Pricing.Cta.StartProPlus" xml:space="preserve"><value>Start with Pro+</value></data>
+  <data name="Pricing.Cta.RequestOffer" xml:space="preserve"><value>Request offer</value></data>
+  <data name="Pricing.BillingNote" xml:space="preserve"><value>Prices are indicative. Real billing is not active yet.</value></data>
+  <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
+  <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>For small restaurants and first-time setup</value></data>
+  <data name="Pricing.Plan.Starter.Price" xml:space="preserve"><value>300 TL / month</value></data>
+  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>1 active Print Bridge device</value></data>
+  <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>Basic order dashboard</value></data>
+  <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>Supported platform connections</value></data>
+  <data name="Pricing.Plan.Starter.Feature3" xml:space="preserve"><value>Basic receipt settings</value></data>
+  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>1 active Print Bridge device</value></data>
+  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>Order history</value></data>
+  <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
+  <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>For active restaurants</value></data>
+  <data name="Pricing.Plan.Pro.Price" xml:space="preserve"><value>600 TL / month</value></data>
+  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 active Print Bridge devices</value></data>
+  <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>Everything in Starter</value></data>
+  <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>Automatic order synchronization</value></data>
+  <data name="Pricing.Plan.Pro.Feature3" xml:space="preserve"><value>Auto approve support where available</value></data>
+  <data name="Pricing.Plan.Pro.Feature4" xml:space="preserve"><value>Live kitchen display</value></data>
+  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>3 active Print Bridge devices</value></data>
+  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>Order history and reports</value></data>
+  <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
+  <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>For busy restaurants or larger operations</value></data>
+  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve"><value>1,200 TL / month</value></data>
+  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 active Print Bridge devices</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>Everything in Pro</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 active Print Bridge devices</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>More flexible device usage</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve"><value>Better fit for multiple stations</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve"><value>Priority setup support</value></data>
+  <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve"><value>Enterprise</value></data>
+  <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve"><value>For chains and businesses with custom requirements</value></data>
+  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve"><value>Starting from 2,500 TL / month</value></data>
+  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve"><value>Unlimited / custom Print Bridge devices</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve"><value>Everything in Pro+</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>Unlimited / custom Print Bridge devices</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>Multi-branch support</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>Custom integrations</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Custom setup and support</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Custom agreement and limits</value></data>
+  <data name="Signup.StartNow" xml:space="preserve"><value>Start Now</value></data>
+  <data name="Signup.Title" xml:space="preserve"><value>Create your OrderHub account</value></data>
+  <data name="Signup.Subtitle" xml:space="preserve"><value>Connect your restaurant to online order platforms and manage everything in one place.</value></data>
+  <data name="Signup.StepPlan" xml:space="preserve"><value>Choose plan</value></data>
+  <data name="Signup.StepBusiness" xml:space="preserve"><value>Business details</value></data>
+  <data name="Signup.StepOwner" xml:space="preserve"><value>Owner account</value></data>
+  <data name="Signup.StepCreate" xml:space="preserve"><value>Create account</value></data>
+  <data name="Signup.Plan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Signup.BillingPeriod" xml:space="preserve"><value>Billing period</value></data>
+  <data name="Signup.BillingMonthly" xml:space="preserve"><value>Monthly</value></data>
+  <data name="Signup.BillingYearly" xml:space="preserve"><value>Yearly</value></data>
+  <data name="Signup.BillingNote" xml:space="preserve"><value>Payment integration is not active yet. Your selection is stored for registration.</value></data>
+  <data name="Signup.BusinessName" xml:space="preserve"><value>Business / restaurant name</value></data>
+  <data name="Signup.BusinessType" xml:space="preserve"><value>Business type</value></data>
+  <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>e.g. Restaurant, café</value></data>
+  <data name="Signup.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Signup.City" xml:space="preserve"><value>City</value></data>
+  <data name="Signup.Country" xml:space="preserve"><value>Country</value></data>
+  <data name="Signup.Slug" xml:space="preserve"><value>Subdomain (slug)</value></data>
+  <data name="Signup.SlugHelp" xml:space="preserve"><value>Your sign-in address:</value></data>
+  <data name="Signup.OwnerFullName" xml:space="preserve"><value>Full name</value></data>
+  <data name="Signup.OwnerEmail" xml:space="preserve"><value>Email</value></data>
+  <data name="Signup.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Signup.ConfirmPassword" xml:space="preserve"><value>Confirm password</value></data>
+  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>You can complete platform connections and other settings after registration.</value></data>
+  <data name="Signup.CreateAccount" xml:space="preserve"><value>Create account</value></data>
+  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>Already have an account?</value></data>
+  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>This subdomain is already taken.</value></data>
+  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>Could not create the account. Please try again or contact support.</value></data>
+  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>Request an Enterprise offer</value></data>
+  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>The Enterprise plan is offered with custom limits and agreement. Contact us to request an offer instead of using the self-service signup form.</value></data>
+  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Please contact us for the Enterprise plan.</value></data>
+  <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>Business name is required.</value></data>
+  <data name="Validation.SlugRequired" xml:space="preserve"><value>Subdomain is required.</value></data>
+  <data name="Validation.SlugInvalid" xml:space="preserve"><value>Subdomain may only contain lowercase letters, numbers, hyphens, and underscores.</value></data>
+  <data name="Validation.FullNameRequired" xml:space="preserve"><value>Full name is required.</value></data>
+  <data name="Validation.ConfirmPasswordRequired" xml:space="preserve"><value>Password confirmation is required.</value></data>
+  <data name="Validation.PasswordMinLength" xml:space="preserve"><value>Password must be at least 8 characters.</value></data>
+  <data name="Validation.PlanInvalid" xml:space="preserve"><value>Invalid plan selection.</value></data>
+  <data name="Validation.BillingPeriodInvalid" xml:space="preserve"><value>Invalid billing period.</value></data>
+  <data name="Auth.WelcomeInvalid" xml:space="preserve"><value>Sign-in link is invalid or expired. Please log in.</value></data>
+  <data name="Onboarding.Title" xml:space="preserve"><value>Welcome to OrderHub</value></data>
+  <data name="Onboarding.Subtitle" xml:space="preserve"><value>Complete the steps below to get started. You can return anytime.</value></data>
+  <data name="Onboarding.StepPlatformsTitle" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="Onboarding.StepPlatformsDescription" xml:space="preserve"><value>Add your supported platform connections.</value></data>
+  <data name="Onboarding.StepReceiptTitle" xml:space="preserve"><value>Receipt settings</value></data>
+  <data name="Onboarding.StepReceiptDescription" xml:space="preserve"><value>Configure receipt language, copies, and content.</value></data>
+  <data name="Onboarding.StepPrintBridgeTitle" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Onboarding.StepPrintBridgeDescription" xml:space="preserve"><value>Set up local printer connectivity.</value></data>
+  <data name="Onboarding.StepSettingsTitle" xml:space="preserve"><value>Business settings</value></data>
+  <data name="Onboarding.StepSettingsDescription" xml:space="preserve"><value>Review account and operational settings.</value></data>
+  <data name="Onboarding.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Onboarding.GoToDashboard" xml:space="preserve"><value>Go to dashboard</value></data>
+  <data name="Onboarding.GoToOrders" xml:space="preserve"><value>Go to orders</value></data>
 </root>

@@ -2340,6 +2340,129 @@
   <data name="PrintBridge.NavSetup" xml:space="preserve">
     <value>Kurulum</value>
   </data>
+  <data name="PrintBridge.DevicesPageTitle" xml:space="preserve">
+    <value>Print Bridge Cihazları</value>
+  </data>
+  <data name="PrintBridge.DevicesPageSubtitle" xml:space="preserve">
+    <value>Otomatik fiş yazdırma için kullanılan yerel Windows Print Bridge cihazlarını yönetin.</value>
+  </data>
+  <data name="PrintBridge.SetupPageTitle" xml:space="preserve">
+    <value>Print Bridge Kurulumu</value>
+  </data>
+  <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
+    <value>Fiş yazıcısının kurulu olduğu Windows bilgisayarını OrderHub'a bağlayın.</value>
+  </data>
+  <data name="PrintBridge.CreateDeviceToken" xml:space="preserve">
+    <value>Cihaz tokenı oluştur</value>
+  </data>
+  <data name="PrintBridge.ConnectedDevicesTitle" xml:space="preserve">
+    <value>Bağlı cihazlar</value>
+  </data>
+  <data name="PrintBridge.DevicesSetupHint" xml:space="preserve">
+    <value>Yeni bir bilgisayar mı kuruyorsunuz?</value>
+  </data>
+  <data name="PrintBridge.GotoSetupLink" xml:space="preserve">
+    <value>Kurulum sayfasına gidin.</value>
+  </data>
+  <data name="PrintBridge.WhatIsPrintBridgeTitle" xml:space="preserve">
+    <value>Print Bridge nedir?</value>
+  </data>
+  <data name="PrintBridge.WhatIsPrintBridgeText" xml:space="preserve">
+    <value>Print Bridge, fiş yazıcısına bağlı bilgisayarda çalışan yerel bir Windows uygulamasıdır. OrderHub'dan gelen yazdırma işlerini alır ve yerel Windows yazıcısına gönderir.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartTitle" xml:space="preserve">
+    <value>Başlamadan önce</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem1" xml:space="preserve">
+    <value>Fiş yazıcısı Windows'ta kurulu olmalıdır.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem2" xml:space="preserve">
+    <value>Print Bridge, yazıcıya bağlı Windows bilgisayarda çalışmalıdır.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem3" xml:space="preserve">
+    <value>OrderHub web panelinden bir cihaz tokenı oluşturulmalıdır.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem4" xml:space="preserve">
+    <value>Token, Print Bridge uygulaması ayarlarına yapıştırılmalıdır.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem5" xml:space="preserve">
+    <value>Gerçek yazdırma için test modu kapalı olmalıdır.</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
+    <value>Adım 1 — Print Bridge'i indirin</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
+    <value>Print Bridge paketini indirin ve fiş yazıcısına bağlı Windows bilgisayarda çalıştırın.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Title" xml:space="preserve">
+    <value>Adım 2 — Cihaz tokenı oluşturun</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Text" xml:space="preserve">
+    <value>OrderHub Print Bridge &gt; Cihazlar sayfasına gidin. "Mutfak PC", "Kasa PC" veya "Vivo" gibi bir cihaz adı girin, token oluşturun ve oluşturulan tokenı kopyalayın.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Action" xml:space="preserve">
+    <value>Cihazlar sayfasına git</value>
+  </data>
+  <data name="PrintBridge.GuideStep3Title" xml:space="preserve">
+    <value>Adım 3 — Print Bridge uygulamasında Ayarlar sekmesini açın</value>
+  </data>
+  <data name="PrintBridge.GuideStep3Text" xml:space="preserve">
+    <value>Windows Print Bridge uygulamasını açın ve üstteki Ayarlar sekmesine tıklayın.</value>
+  </data>
+  <data name="PrintBridge.GuideSettingsTabPlaceholder" xml:space="preserve">
+    <value>Ayarlar sekmesi</value>
+  </data>
+  <data name="PrintBridge.GuideStep4Title" xml:space="preserve">
+    <value>Adım 4 — Tokenı yapıştırın</value>
+  </data>
+  <data name="PrintBridge.GuideStep4Text" xml:space="preserve">
+    <value>Kopyaladığınız cihaz tokenını Cihaz tokenı alanına yapıştırın. Token OrderHub web panelinden oluşturulur.</value>
+  </data>
+  <data name="PrintBridge.GuideStep5Title" xml:space="preserve">
+    <value>Adım 5 — Yazıcıyı seçin</value>
+  </data>
+  <data name="PrintBridge.GuideStep5Text" xml:space="preserve">
+    <value>Yazıcı adı listesinden kurulu Windows fiş yazıcısını seçin. Yazıcı görünmüyorsa Yenile'ye tıklayın. Örnek: POS-58</value>
+  </data>
+  <data name="PrintBridge.GuideStep6Title" xml:space="preserve">
+    <value>Adım 6 — Test modunu kontrol edin</value>
+  </data>
+  <data name="PrintBridge.GuideStep6Text" xml:space="preserve">
+    <value>Gerçek fiş yazdırma için test modunu kapatın. "Yazıcıya gönderme, sadece logla" seçeneği açıksa Print Bridge yalnızca log yazar, yazıcıya çıktı göndermez.</value>
+  </data>
+  <data name="PrintBridge.GuideStep7Title" xml:space="preserve">
+    <value>Adım 7 — Ayarları kaydedin ve bağlantıyı test edin</value>
+  </data>
+  <data name="PrintBridge.GuideStep7Text" xml:space="preserve">
+    <value>Ayarları kaydet'e tıklayın. Uygulama tokenı doğrular ve sunucuya bağlanır. Başarılı olursa cihaz adı görünür ve cihaz Cihazlar sayfasında çevrimiçi olur.</value>
+  </data>
+  <data name="PrintBridge.ServerUrlInfoTitle" xml:space="preserve">
+    <value>Sunucu adresi (bilgi)</value>
+  </data>
+  <data name="PrintBridge.ServerUrlInfoText" xml:space="preserve">
+    <value>Bu adres OrderHub tarafından sağlanır. Genellikle değiştirmeniz gerekmez. Print Bridge uygulaması Gelişmiş ayarlarda sunucu adresini gösterir.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide1" xml:space="preserve">
+    <value>Print Bridge uygulamasının çalıştığından emin olun.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide2" xml:space="preserve">
+    <value>Yazıcının Windows'ta kurulu olduğundan emin olun.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide3" xml:space="preserve">
+    <value>Doğru cihaz tokenının kopyalandığından emin olun.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide4" xml:space="preserve">
+    <value>Token yenilendiyse eski token artık çalışmaz.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide5" xml:space="preserve">
+    <value>Yazıcı görünmüyorsa Yenile'ye tıklayın.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide6" xml:space="preserve">
+    <value>Test modu açıksa fişler yazdırılmaz.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide7" xml:space="preserve">
+    <value>Print Bridge uygulamasında ayarları kaydederek bağlantıyı test edin.</value>
+  </data>
   <data name="PrintBridge.DownloadTitle" xml:space="preserve">
     <value>OrderHub Print Bridge Kurulumu</value>
   </data>
@@ -2511,6 +2634,39 @@
   <data name="PrintBridge.AddDevice" xml:space="preserve">
     <value>Cihaz Ekle</value>
   </data>
+  <data name="PrintBridge.SetupInformationTitle" xml:space="preserve">
+    <value>Print Bridge Kurulum Bilgileri</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction1" xml:space="preserve">
+    <value>Print Bridge uygulamasını açın.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction2" xml:space="preserve">
+    <value>Server URL alanına aşağıdaki adresi yapıştırın.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction3" xml:space="preserve">
+    <value>Access Token alanına oluşturulan cihaz tokenını yapıştırın.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction4" xml:space="preserve">
+    <value>Yazıcınızı seçip Save Settings butonuna basın.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction5" xml:space="preserve">
+    <value>Bağlantı başarılıysa cihaz adı otomatik görünecektir.</value>
+  </data>
+  <data name="PrintBridge.ServerUrl" xml:space="preserve">
+    <value>Sunucu Adresi</value>
+  </data>
+  <data name="PrintBridge.DeviceToken" xml:space="preserve">
+    <value>Cihaz Tokenı</value>
+  </data>
+  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
+    <value>Sunucu Adresini Kopyala</value>
+  </data>
+  <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
+    <value>Sunucu adresi belirlenemedi. Lütfen müşteri alan adınız üzerinden bu sayfayı açın veya yöneticinize başvurun.</value>
+  </data>
+  <data name="PrintBridge.TokenPendingHint" xml:space="preserve">
+    <value>Cihaz tokenını görmek için yukarıdan bir cihaz ekleyin veya mevcut bir cihazın tokenını yenileyin.</value>
+  </data>
   <data name="PrintBridge.SetupDescription" xml:space="preserve">
     <value>Print Bridge, kurulu termal yazıcınızı OrderHub'a bağlayan yerel bir Windows uygulamasıdır.</value>
   </data>
@@ -2524,7 +2680,7 @@
     <value>Print Bridge'in yazıcıya bağlı Windows bilgisayarında çalıştığından emin olun.</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint2" xml:space="preserve">
-    <value>Print Bridge uygulamasında Base URL ve cihaz token'ının doğru kaydedildiğini kontrol edin.</value>
+    <value>Print Bridge uygulamasında Sunucu Adresi ve cihaz tokenının doğru kaydedildiğini kontrol edin.</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint3" xml:space="preserve">
     <value>Cihaz çevrimdışıysa Print Bridge'i yeniden başlatın ve Bağlantıyı Test Et'i kullanın.</value>
@@ -2553,4 +2709,111 @@
   <data name="PrintBridge.Status" xml:space="preserve">
     <value>Durum</value>
   </data>
+  <data name="Pricing.NavTitle" xml:space="preserve"><value>Fiyatlandırma</value></data>
+  <data name="Pricing.Title" xml:space="preserve"><value>İşletmenize uygun planı seçin</value></data>
+  <data name="Pricing.Subtitle" xml:space="preserve"><value>Online sipariş yönetimine tek panelden başlayın. Ödeme entegrasyonu yakında eklenecek.</value></data>
+  <data name="Pricing.ViewPlans" xml:space="preserve"><value>Planları Gör</value></data>
+  <data name="Pricing.Recommended" xml:space="preserve"><value>Önerilen</value></data>
+  <data name="Pricing.PerMonth" xml:space="preserve"><value>ay</value></data>
+  <data name="Pricing.Monthly" xml:space="preserve"><value>Aylık</value></data>
+  <data name="Pricing.ContactSales" xml:space="preserve"><value>Özel fiyat</value></data>
+  <data name="Pricing.ContactUs" xml:space="preserve"><value>Bize ulaşın</value></data>
+  <data name="Pricing.ChoosePlan" xml:space="preserve"><value>Planı seç</value></data>
+  <data name="Pricing.Cta.StartStarter" xml:space="preserve"><value>Starter ile Başla</value></data>
+  <data name="Pricing.Cta.StartPro" xml:space="preserve"><value>Pro ile Başla</value></data>
+  <data name="Pricing.Cta.StartProPlus" xml:space="preserve"><value>Pro+ ile Başla</value></data>
+  <data name="Pricing.Cta.RequestOffer" xml:space="preserve"><value>Teklif Al</value></data>
+  <data name="Pricing.BillingNote" xml:space="preserve"><value>Fiyatlar bilgilendirme amaçlıdır. Gerçek faturalandırma henüz aktif değildir.</value></data>
+  <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
+  <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>Küçük restoranlar ve ilk kurulum için</value></data>
+  <data name="Pricing.Plan.Starter.Price" xml:space="preserve"><value>300 TL / ay</value></data>
+  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>1 aktif Print Bridge cihazı</value></data>
+  <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>Temel sipariş paneli</value></data>
+  <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>Desteklenen platform bağlantıları</value></data>
+  <data name="Pricing.Plan.Starter.Feature3" xml:space="preserve"><value>Temel fiş ayarları</value></data>
+  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>1 aktif Print Bridge cihazı</value></data>
+  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>Sipariş geçmişi</value></data>
+  <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
+  <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>Aktif restoranlar için</value></data>
+  <data name="Pricing.Plan.Pro.Price" xml:space="preserve"><value>600 TL / ay</value></data>
+  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 aktif Print Bridge cihazı</value></data>
+  <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>Starter'daki her şey</value></data>
+  <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>Otomatik sipariş senkronizasyonu</value></data>
+  <data name="Pricing.Plan.Pro.Feature3" xml:space="preserve"><value>Uygun olduğunda otomatik onay desteği</value></data>
+  <data name="Pricing.Plan.Pro.Feature4" xml:space="preserve"><value>Canlı mutfak ekranı</value></data>
+  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>3 aktif Print Bridge cihazı</value></data>
+  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>Sipariş geçmişi ve raporlar</value></data>
+  <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
+  <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>Yoğun restoranlar ve daha büyük operasyonlar için</value></data>
+  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve"><value>1.200 TL / ay</value></data>
+  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 aktif Print Bridge cihazı</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>Pro'daki her şey</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 aktif Print Bridge cihazı</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>Daha esnek cihaz kullanımı</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve"><value>Çoklu istasyonlar için uygun</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve"><value>Öncelikli kurulum desteği</value></data>
+  <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve"><value>Enterprise</value></data>
+  <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve"><value>Zincirler ve özel gereksinimleri olan işletmeler için</value></data>
+  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve"><value>2.500 TL'den başlayan</value></data>
+  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve"><value>Sınırsız / özel anlaşmaya göre Print Bridge cihazı</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve"><value>Pro+'daki her şey</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>Sınırsız / özel Print Bridge cihazları</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>Çoklu şube desteği</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>Özel entegrasyonlar</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Özel kurulum ve destek</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Özel anlaşma ve limitler</value></data>
+  <data name="Signup.StartNow" xml:space="preserve"><value>Hemen Başla</value></data>
+  <data name="Signup.Title" xml:space="preserve"><value>OrderHub hesabı oluştur</value></data>
+  <data name="Signup.Subtitle" xml:space="preserve"><value>Restoranınızı online sipariş platformlarına bağlayın ve tek yerden yönetin.</value></data>
+  <data name="Signup.StepPlan" xml:space="preserve"><value>Plan seçimi</value></data>
+  <data name="Signup.StepBusiness" xml:space="preserve"><value>İşletme bilgileri</value></data>
+  <data name="Signup.StepOwner" xml:space="preserve"><value>Hesap sahibi</value></data>
+  <data name="Signup.StepCreate" xml:space="preserve"><value>Hesabı oluştur</value></data>
+  <data name="Signup.Plan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Signup.BillingPeriod" xml:space="preserve"><value>Faturalandırma dönemi</value></data>
+  <data name="Signup.BillingMonthly" xml:space="preserve"><value>Aylık</value></data>
+  <data name="Signup.BillingYearly" xml:space="preserve"><value>Yıllık</value></data>
+  <data name="Signup.BillingNote" xml:space="preserve"><value>Ödeme entegrasyonu henüz aktif değil. Seçiminiz kayıt için saklanır.</value></data>
+  <data name="Signup.BusinessName" xml:space="preserve"><value>İşletme / restoran adı</value></data>
+  <data name="Signup.BusinessType" xml:space="preserve"><value>İşletme türü</value></data>
+  <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>Örn. Restoran, kafe</value></data>
+  <data name="Signup.Phone" xml:space="preserve"><value>Telefon</value></data>
+  <data name="Signup.City" xml:space="preserve"><value>Şehir</value></data>
+  <data name="Signup.Country" xml:space="preserve"><value>Ülke</value></data>
+  <data name="Signup.Slug" xml:space="preserve"><value>Alt alan adı (slug)</value></data>
+  <data name="Signup.SlugHelp" xml:space="preserve"><value>Giriş adresiniz:</value></data>
+  <data name="Signup.OwnerFullName" xml:space="preserve"><value>Ad soyad</value></data>
+  <data name="Signup.OwnerEmail" xml:space="preserve"><value>E-posta</value></data>
+  <data name="Signup.Password" xml:space="preserve"><value>Şifre</value></data>
+  <data name="Signup.ConfirmPassword" xml:space="preserve"><value>Şifre tekrar</value></data>
+  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>Platform bağlantıları ve diğer ayarları kayıttan sonra tamamlayabilirsiniz.</value></data>
+  <data name="Signup.CreateAccount" xml:space="preserve"><value>Hesabı oluştur</value></data>
+  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>Zaten hesabınız var mı?</value></data>
+  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>Bu alt alan adı zaten kullanılıyor.</value></data>
+  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>Hesap oluşturulamadı. Lütfen tekrar deneyin veya destek ile iletişime geçin.</value></data>
+  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>Enterprise için teklif alın</value></data>
+  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>Enterprise planı özel limitler ve anlaşma ile sunulur. Kayıt formu yerine bizimle iletişime geçerek teklif isteyebilirsiniz.</value></data>
+  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Enterprise planı için lütfen bizimle iletişime geçin.</value></data>
+  <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>İşletme adı gereklidir.</value></data>
+  <data name="Validation.SlugRequired" xml:space="preserve"><value>Alt alan adı gereklidir.</value></data>
+  <data name="Validation.SlugInvalid" xml:space="preserve"><value>Alt alan adı yalnızca küçük harf, rakam, tire ve alt çizgi içerebilir.</value></data>
+  <data name="Validation.FullNameRequired" xml:space="preserve"><value>Ad soyad gereklidir.</value></data>
+  <data name="Validation.ConfirmPasswordRequired" xml:space="preserve"><value>Şifre tekrarı gereklidir.</value></data>
+  <data name="Validation.PasswordMinLength" xml:space="preserve"><value>Şifre en az 8 karakter olmalıdır.</value></data>
+  <data name="Validation.PlanInvalid" xml:space="preserve"><value>Geçersiz plan seçimi.</value></data>
+  <data name="Validation.BillingPeriodInvalid" xml:space="preserve"><value>Geçersiz faturalandırma dönemi.</value></data>
+  <data name="Auth.WelcomeInvalid" xml:space="preserve"><value>Oturum bağlantısı geçersiz veya süresi dolmuş. Lütfen giriş yapın.</value></data>
+  <data name="Onboarding.Title" xml:space="preserve"><value>OrderHub'a hoş geldiniz</value></data>
+  <data name="Onboarding.Subtitle" xml:space="preserve"><value>Başlamak için aşağıdaki adımları tamamlayın. İstediğiniz zaman geri dönebilirsiniz.</value></data>
+  <data name="Onboarding.StepPlatformsTitle" xml:space="preserve"><value>Platform bağlantıları</value></data>
+  <data name="Onboarding.StepPlatformsDescription" xml:space="preserve"><value>Desteklenen platform bağlantılarınızı ekleyin.</value></data>
+  <data name="Onboarding.StepReceiptTitle" xml:space="preserve"><value>Fiş ayarları</value></data>
+  <data name="Onboarding.StepReceiptDescription" xml:space="preserve"><value>Fiş dili, kopya sayısı ve içeriği yapılandırın.</value></data>
+  <data name="Onboarding.StepPrintBridgeTitle" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Onboarding.StepPrintBridgeDescription" xml:space="preserve"><value>Yerel yazıcı bağlantısını kurun.</value></data>
+  <data name="Onboarding.StepSettingsTitle" xml:space="preserve"><value>İşletme ayarları</value></data>
+  <data name="Onboarding.StepSettingsDescription" xml:space="preserve"><value>Hesap ve operasyon ayarlarını gözden geçirin.</value></data>
+  <data name="Onboarding.Open" xml:space="preserve"><value>Aç</value></data>
+  <data name="Onboarding.GoToDashboard" xml:space="preserve"><value>Panele git</value></data>
+  <data name="Onboarding.GoToOrders" xml:space="preserve"><value>Siparişlere git</value></data>
 </root>

@@ -848,6 +848,18 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-settings-menu {
   min-width: 12.5rem;
 }
 
+body.oh-tenant.oh-app .oh-onboarding-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--orderhub-primary) 12%, transparent);
+  color: var(--orderhub-primary);
+  font-size: 1.1rem;
+}
+
 /* --- Tenant: order settings single card --- */
 .oh-settings-card .oh-settings-section {
   padding: 1rem 1.25rem;
@@ -2900,6 +2912,117 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
   overflow: auto;
 }
 
+.oh-print-bridge-setup-info {
+  background: var(--color-surface-muted, rgba(0, 0, 0, 0.02));
+}
+
+.oh-print-bridge-setup-steps li {
+  margin-bottom: 0.35rem;
+}
+
+.oh-print-bridge-setup-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.oh-print-bridge-setup-value {
+  min-height: 2.5rem;
+  max-height: 6rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Print Bridge sidebar sub-navigation */
+body.oh-tenant.oh-app .oh-sidebar-nav-group {
+  margin-bottom: 0.15rem;
+}
+
+body.oh-tenant.oh-app .oh-sidebar-nav-group__head {
+  font-weight: 600;
+}
+
+body.oh-tenant.oh-app .oh-sidebar-nav-sub {
+  list-style: none;
+  margin: 0.15rem 0 0.35rem;
+  padding: 0 0 0 0.35rem;
+}
+
+body.oh-tenant.oh-app .oh-sidebar-nav-sub__link {
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.75rem 0.35rem 2rem !important;
+  border-radius: 0.375rem;
+  color: var(--color-sidebar-muted, rgba(255, 255, 255, 0.72));
+}
+
+body.oh-tenant.oh-app .oh-sidebar-nav-sub__link:hover,
+body.oh-tenant.oh-app .oh-sidebar-nav-sub__link:focus-visible {
+  color: var(--color-sidebar-text, #fff);
+  background: color-mix(in srgb, var(--orderhub-primary) 8%, transparent);
+}
+
+body.oh-tenant.oh-app .oh-sidebar-nav-sub__link.active {
+  color: var(--orderhub-primary);
+  background: color-mix(in srgb, var(--orderhub-primary) 12%, transparent);
+  font-weight: 600;
+}
+
+body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
+  display: none;
+}
+
+/* Print Bridge setup guide */
+.oh-print-bridge-setup-page .oh-print-bridge-guide-step {
+  position: relative;
+}
+
+.oh-print-bridge-guide-step__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  background: var(--orderhub-primary);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.oh-print-bridge-guide-checklist {
+  padding-inline-start: 1.25rem;
+  margin-bottom: 0;
+}
+
+.oh-print-bridge-guide-checklist li {
+  margin-bottom: 0.35rem;
+}
+
+.oh-print-bridge-guide-checklist li:last-child {
+  margin-bottom: 0;
+}
+
+.oh-print-bridge-guide-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px dashed var(--color-border, #dee2e6);
+  border-radius: 0.5rem;
+  background: var(--color-surface-muted, rgba(0, 0, 0, 0.02));
+  color: var(--color-text-muted, #6c757d);
+  font-size: 0.875rem;
+}
+
+.oh-print-bridge-guide-placeholder i {
+  font-size: 1.35rem;
+  opacity: 0.75;
+}
+
+.oh-print-bridge-server-url-info {
+  border-style: dashed !important;
+}
+
 .oh-print-bridge-troubleshooting li {
   position: relative;
   padding-inline-start: 1.1rem;
@@ -3259,8 +3382,24 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
   color: var(--color-warning) !important;
 }
 
+[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-nav-sub__link {
+  color: var(--color-sidebar-muted);
+}
+
+[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-nav-sub__link.active {
+  color: var(--orderhub-primary);
+  background: color-mix(in srgb, var(--orderhub-primary) 16%, transparent);
+}
+
+[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-guide-placeholder {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
 [data-bs-theme="dark"] body.oh-tenant.oh-app #printBridgeTokenBox pre,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-token-value {
+[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-token-value,
+[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-setup-value {
   background: var(--color-surface-muted) !important;
   border-color: var(--color-border-strong) !important;
   color: var(--color-text) !important;

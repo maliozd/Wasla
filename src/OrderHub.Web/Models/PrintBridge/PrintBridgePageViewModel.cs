@@ -4,7 +4,8 @@ namespace OrderHub.Web.Models.PrintBridge;
 
 public sealed class PrintBridgePageViewModel
 {
-    public string SetupUrl { get; set; } = "/print-bridge/download";
+    public string SetupUrl { get; set; } = "/print-bridge/setup";
+    public string DevicesUrl { get; set; } = "/print-bridge/devices";
 
     public IReadOnlyList<PrintBridgeDeviceRowViewModel> Devices { get; set; } =
         Array.Empty<PrintBridgeDeviceRowViewModel>();
@@ -23,6 +24,9 @@ public sealed class PrintBridgePageViewModel
     public string ReceiptPrinterSettingsUrl { get; set; } = "/settings/receipt-printer";
 
     public string PackageDownloadUrl { get; set; } = "/print-bridge/download/package";
+
+    /// <summary>Customer web base URL for Print Bridge desktop Server URL field (trailing slash).</summary>
+    public string? ServerUrl { get; set; }
 
     public IReadOnlyList<PrintJobHistoryRowViewModel> PrintJobs { get; set; } =
         Array.Empty<PrintJobHistoryRowViewModel>();

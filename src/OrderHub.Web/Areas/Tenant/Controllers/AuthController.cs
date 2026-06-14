@@ -17,15 +17,18 @@ public sealed class AuthController : Controller
 {
     private readonly ICurrentCustomerService _currentCustomer;
     private readonly IAuthValidationService _authValidation;
+    private readonly ISignupCompletionTokenService _signupCompletionTokens;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public AuthController(
         ICurrentCustomerService currentCustomer,
         IAuthValidationService authValidation,
+        ISignupCompletionTokenService signupCompletionTokens,
         IStringLocalizer<SharedResource> localizer)
     {
         _currentCustomer = currentCustomer;
         _authValidation = authValidation;
+        _signupCompletionTokens = signupCompletionTokens;
         _localizer = localizer;
     }
 
@@ -57,6 +60,48 @@ public sealed class AuthController : Controller
             return View(model);
         }
 
+        await SignInSessionAsync(session, ct);
+
+        if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+            return Redirect(model.ReturnUrl);
+
+        return Redirect("/dashboard");
+    }
+
+    [AllowAnonymous]
+    [HttpGet("welcome")]
+    public async Task<IActionResult> Welcome([FromQuery] string? token, CancellationToken ct)
+    {
+        var customer = _currentCustomer.CurrentCustomer;
+        if (customer is null)
+        {
+            return Redirect("/customer-access-required");
+        }
+
+        var payload = _signupCompletionTokens.ValidateAndConsume(token);
+        if (payload is null || payload.CustomerId != customer.Id)
+        {
+            TempData["AuthMessage"] = _localizer["Auth.WelcomeInvalid"].Value;
+            return Redirect("/auth/login");
+        }
+
+        await SignInSessionAsync(payload, ct);
+        return Redirect("/onboarding");
+    }
+
+    private async Task SignInSessionAsync(AuthSessionResult session, CancellationToken ct)
+    {
+        await SignInSessionAsync(new SignupCompletionPayload(
+            session.CustomerId,
+            session.UserId,
+            session.Email,
+            session.FullName,
+            session.Role), ct);
+    }
+
+    private async Task SignInSessionAsync(SignupCompletionPayload session, CancellationToken ct)
+    {
+        _ = ct;
         var claims = new List<Claim>
         {
             new("CustomerId", session.CustomerId.ToString()),
@@ -76,11 +121,6 @@ public sealed class AuthController : Controller
             AuthSchemes.Customer,
             principal,
             new AuthenticationProperties { IsPersistent = true, IssuedUtc = DateTimeOffset.UtcNow });
-
-        if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-            return Redirect(model.ReturnUrl);
-
-        return Redirect("/dashboard");
     }
 
     [Authorize(AuthenticationSchemes = AuthSchemes.Customer)]

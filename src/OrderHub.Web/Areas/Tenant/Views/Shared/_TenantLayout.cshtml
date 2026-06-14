@@ -24,6 +24,13 @@
 
     string ActiveOrders() => path.Equals("/orders", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/orders/details/", StringComparison.OrdinalIgnoreCase) ? "active" : "";
 
+    var printBridgeSection = path.Equals("/print-bridge", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/print-bridge/", StringComparison.OrdinalIgnoreCase);
+    var printBridgeDevicesActive = path.Equals("/print-bridge/devices", StringComparison.OrdinalIgnoreCase)
+        || path.Equals("/print-bridge", StringComparison.OrdinalIgnoreCase);
+    var printBridgeSetupActive = path.Equals("/print-bridge/setup", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/print-bridge/download", StringComparison.OrdinalIgnoreCase);
+
 }
 
 <!DOCTYPE html>
@@ -138,13 +145,40 @@
 
                     </li>
 
-                    <li class="nav-item">
+                    <li class="nav-item oh-sidebar-nav-group @(printBridgeSection ? "oh-sidebar-nav-group--open" : "")">
 
-                        <a class="nav-link @Active("/print-bridge")" asp-area="Tenant" asp-controller="PrintBridge" asp-action="Index">
+                        <a class="nav-link oh-sidebar-nav-group__head @(printBridgeSection ? "active" : "")"
+                           asp-area="Tenant" asp-controller="PrintBridge" asp-action="Devices">
 
                             <i class="bi bi-printer me-2"></i><span class="nav-text">@L["PrintBridge.Title"]</span>
 
                         </a>
+
+                        <ul class="oh-sidebar-nav-sub nav flex-column">
+
+                            <li class="nav-item">
+
+                                <a class="nav-link oh-sidebar-nav-sub__link @(printBridgeDevicesActive ? "active" : "")"
+                                   href="/print-bridge/devices">
+
+                                    <span class="nav-text">@L["PrintBridge.NavDevices"]</span>
+
+                                </a>
+
+                            </li>
+
+                            <li class="nav-item">
+
+                                <a class="nav-link oh-sidebar-nav-sub__link @(printBridgeSetupActive ? "active" : "")"
+                                   href="/print-bridge/setup">
+
+                                    <span class="nav-text">@L["PrintBridge.NavSetup"]</span>
+
+                                </a>
+
+                            </li>
+
+                        </ul>
 
                     </li>
 

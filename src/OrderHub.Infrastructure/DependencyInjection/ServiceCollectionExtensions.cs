@@ -13,7 +13,12 @@ using OrderHub.Application.Abstractions.Platform;
 using OrderHub.Application.Abstractions.PlatformConnections;
 using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Application.Abstractions.Security;
+using OrderHub.Application.Abstractions.Onboarding;
+using OrderHub.Application.Abstractions.Plans;
+using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Tenant;
+using OrderHub.Infrastructure.Options;
+using OrderHub.Infrastructure.Plans;
 using OrderHub.Infrastructure.Persistence.Central;
 using OrderHub.Infrastructure.Persistence.Customer;
 using OrderHub.Infrastructure.Platform;
@@ -42,6 +47,11 @@ public static class ServiceCollectionExtensions
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
         services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
+        services.Configure<CustomerOnboardingOptions>(configuration.GetSection(CustomerOnboardingOptions.SectionName));
+
+        services.AddSingleton<IOrderHubPlanCatalog, OrderHubPlanCatalog>();
+        services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
+        services.AddScoped<ICustomerOnboardingService, CustomerOnboardingService>();
 
         var providerMode = ProviderModeResolver.Resolve(configuration);
 

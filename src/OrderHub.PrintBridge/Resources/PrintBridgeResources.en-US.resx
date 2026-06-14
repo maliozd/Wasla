@@ -232,7 +232,7 @@
     <value>Advanced</value>
   </data>
   <data name="Settings.AgentToken" xml:space="preserve">
-    <value>Access token</value>
+    <value>Device token</value>
   </data>
   <data name="Settings.BusyPollSeconds" xml:space="preserve">
     <value>Busy poll interval (sec)</value>
@@ -281,6 +281,15 @@
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
     <value>Server URL</value>
+  </data>
+  <data name="Settings.ServerUrlHelp" xml:space="preserve">
+    <value>Copy this from the OrderHub Web Print Bridge setup page.</value>
+  </data>
+  <data name="Settings.AgentTokenHelp" xml:space="preserve">
+    <value>Paste the device token generated from the OrderHub Web panel.</value>
+  </data>
+  <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
+    <value>Test mode is enabled. Receipts will not be printed; jobs will only be logged.</value>
   </data>
   <data name="Status.Connected" xml:space="preserve">
     <value>Connected</value>

@@ -232,7 +232,7 @@
     <value>متقدم</value>
   </data>
   <data name="Settings.AgentToken" xml:space="preserve">
-    <value>رمز الوصول</value>
+    <value>رمز الجهاز</value>
   </data>
   <data name="Settings.BusyPollSeconds" xml:space="preserve">
     <value>فترة الاستعلام المشغول (ث)</value>
@@ -281,6 +281,15 @@
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
     <value>عنوان الخادم</value>
+  </data>
+  <data name="Settings.ServerUrlHelp" xml:space="preserve">
+    <value>انسخ هذا من صفحة إعداد Print Bridge في لوحة OrderHub Web.</value>
+  </data>
+  <data name="Settings.AgentTokenHelp" xml:space="preserve">
+    <value>الصق رمز الجهاز الذي تم إنشاؤه من لوحة OrderHub Web.</value>
+  </data>
+  <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
+    <value>وضع الاختبار مفعّل. لن تُطبع الفواتير؛ سيتم تسجيل المهام فقط.</value>
   </data>
   <data name="Status.Connected" xml:space="preserve">
     <value>متصل</value>

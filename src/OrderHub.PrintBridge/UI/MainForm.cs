@@ -79,10 +79,13 @@ public sealed partial class MainForm : Form
     private Label _lblLanguage = null!;
     private Label _lblServerUrl = null!;
     private Label _lblAgentToken = null!;
+    private Label _lblServerUrlHelp = null!;
+    private Label _lblAgentTokenHelp = null!;
     private Label _lblPrinterName = null!;
     private Label _lblDeviceName = null!;
     private GroupBox _advancedGroup = null!;
     private Label _lblDryRunMode = null!;
+    private Label _lblDryRunWarning = null!;
     private Label _lblIdlePoll = null!;
     private Label _lblBusyPoll = null!;
     private Label _lblErrorPoll = null!;
@@ -201,7 +204,9 @@ public sealed partial class MainForm : Form
             : _localizer["Button.HideToken"];
 
         _lblServerUrl.Text = _localizer["Settings.ServerUrl"];
+        _lblServerUrlHelp.Text = _localizer["Settings.ServerUrlHelp"];
         _lblAgentToken.Text = _localizer["Settings.AgentToken"];
+        _lblAgentTokenHelp.Text = _localizer["Settings.AgentTokenHelp"];
         _lblPrinterName.Text = _localizer["Settings.PrinterName"];
         _lblDeviceName.Text = _localizer["Settings.DeviceName"];
         _lblDeviceNameManaged.Text = _localizer["Settings.DeviceNameManagedFromWeb"];
@@ -209,6 +214,9 @@ public sealed partial class MainForm : Form
         _advancedGroup.Text = $"  {_localizer["Settings.Advanced"]}  ";
         _lblDryRunMode.Text = _localizer["Settings.DryRunMode"];
         _chkDryRun.Text = _localizer["Settings.DryRunDescription"];
+        if (_lblDryRunWarning != null)
+            _lblDryRunWarning.Text = _localizer["Settings.DryRunEnabledWarning"];
+        UpdateDryRunWarning();
         _lblIdlePoll.Text = _localizer["Settings.IdlePollSeconds"];
         _lblBusyPoll.Text = _localizer["Settings.BusyPollSeconds"];
         _lblErrorPoll.Text = _localizer["Settings.ErrorPollSeconds"];
@@ -594,11 +602,10 @@ public sealed partial class MainForm : Form
         settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
         settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        (_txtBaseUrl, _lblServerUrl) = AddSettingsTextRow(settingsLayout, 0);
-        AddTokenRow(settingsLayout, 1);
-        AddPrinterRow(settingsLayout, 2);
-        AddDeviceNameRow(settingsLayout, 3);
-        AddLanguageRow(settingsLayout, 4);
+        AddTokenRow(settingsLayout, 0);
+        AddPrinterRow(settingsLayout, 1);
+        AddDeviceNameRow(settingsLayout, 2);
+        AddLanguageRow(settingsLayout, 3);
 
         _advancedGroup = new GroupBox
         {
@@ -618,26 +625,49 @@ public sealed partial class MainForm : Form
         advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
         advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
+        AddServerUrlRow(advancedLayout, 0);
+
         _lblDryRunMode = new Label
         {
             AutoSize = true,
             Anchor = AnchorStyles.Left,
             ForeColor = PrintBridgeUiTheme.TextMuted
         };
-        advancedLayout.Controls.Add(_lblDryRunMode, 0, 0);
+        advancedLayout.Controls.Add(_lblDryRunMode, 0, 1);
+
+        var dryRunPanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            AutoSize = true,
+            Margin = new Padding(0)
+        };
+        dryRunPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        dryRunPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         _chkDryRun = new CheckBox
         {
             AutoSize = true,
             Anchor = AnchorStyles.Left
         };
-        advancedLayout.Controls.Add(_chkDryRun, 1, 0);
+        _chkDryRun.CheckedChanged += (_, _) => UpdateDryRunWarning();
+        _lblDryRunWarning = new Label
+        {
+            AutoSize = true,
+            ForeColor = PrintBridgeUiTheme.Warning,
+            MaximumSize = new Size(560, 0),
+            Margin = new Padding(0, 4, 0, 0),
+            Visible = false
+        };
+        dryRunPanel.Controls.Add(_chkDryRun, 0, 0);
+        dryRunPanel.Controls.Add(_lblDryRunWarning, 0, 1);
+        advancedLayout.Controls.Add(dryRunPanel, 1, 1);
 
-        (_numIdlePoll, _lblIdlePoll) = AddSettingsNumericRow(advancedLayout, 1, 1, 300, 5);
-        (_numBusyPoll, _lblBusyPoll) = AddSettingsNumericRow(advancedLayout, 2, 1, 60, 1);
-        (_numErrorPoll, _lblErrorPoll) = AddSettingsNumericRow(advancedLayout, 3, 1, 300, 15);
+        (_numIdlePoll, _lblIdlePoll) = AddSettingsNumericRow(advancedLayout, 2, 1, 300, 5);
+        (_numBusyPoll, _lblBusyPoll) = AddSettingsNumericRow(advancedLayout, 3, 1, 60, 1);
+        (_numErrorPoll, _lblErrorPoll) = AddSettingsNumericRow(advancedLayout, 4, 1, 300, 15);
         _advancedGroup.Controls.Add(advancedLayout);
 
-        settingsLayout.Controls.Add(_advancedGroup, 0, 5);
+        settingsLayout.Controls.Add(_advancedGroup, 0, 4);
         settingsLayout.SetColumnSpan(_advancedGroup, 2);
 
         var savePanel = new FlowLayoutPanel
@@ -650,7 +680,7 @@ public sealed partial class MainForm : Form
         _btnSaveSettings.Click += async (_, _) => await SaveSettingsAsync().ConfigureAwait(true);
         savePanel.Controls.Add(_btnSaveSettings);
         InitializeSettingsSaveUi(savePanel);
-        settingsLayout.Controls.Add(savePanel, 0, 6);
+        settingsLayout.Controls.Add(savePanel, 0, 5);
         settingsLayout.SetColumnSpan(savePanel, 2);
 
         scroll.Controls.Add(settingsLayout);
@@ -737,6 +767,40 @@ public sealed partial class MainForm : Form
         table.Controls.Add(_cmbLanguage, 1, row);
     }
 
+    private void AddServerUrlRow(TableLayoutPanel table, int row)
+    {
+        _lblServerUrl = new Label
+        {
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        };
+        table.Controls.Add(_lblServerUrl, 0, row);
+
+        var fieldPanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            AutoSize = true,
+            Margin = new Padding(0)
+        };
+        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _txtBaseUrl = new TextBox { Dock = DockStyle.Fill, Anchor = AnchorStyles.Left | AnchorStyles.Right };
+        _lblServerUrlHelp = new Label
+        {
+            AutoSize = true,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            MaximumSize = new Size(560, 0),
+            Margin = new Padding(0, 4, 0, 0)
+        };
+
+        fieldPanel.Controls.Add(_txtBaseUrl, 0, 0);
+        fieldPanel.Controls.Add(_lblServerUrlHelp, 0, 1);
+        table.Controls.Add(fieldPanel, 1, row);
+    }
+
     private void AddTokenRow(TableLayoutPanel table, int row)
     {
         _lblAgentToken = new Label
@@ -777,7 +841,26 @@ public sealed partial class MainForm : Form
         };
         tokenPanel.Controls.Add(_txtAgentToken, 0, 0);
         tokenPanel.Controls.Add(_btnToggleToken, 1, 0);
-        table.Controls.Add(tokenPanel, 1, row);
+
+        var fieldPanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            AutoSize = true,
+            Margin = new Padding(0)
+        };
+        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _lblAgentTokenHelp = new Label
+        {
+            AutoSize = true,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            MaximumSize = new Size(560, 0),
+            Margin = new Padding(0, 4, 0, 0)
+        };
+        fieldPanel.Controls.Add(tokenPanel, 0, 0);
+        fieldPanel.Controls.Add(_lblAgentTokenHelp, 0, 1);
+        table.Controls.Add(fieldPanel, 1, row);
     }
 
     private void AddPrinterRow(TableLayoutPanel table, int row)
@@ -948,6 +1031,7 @@ public sealed partial class MainForm : Form
             "Settings.MachineNameHint",
             string.IsNullOrWhiteSpace(bridge.MachineName) ? Environment.MachineName : bridge.MachineName);
         _chkDryRun.Checked = bridge.DryRun;
+        UpdateDryRunWarning();
         _numIdlePoll.Value = Math.Clamp(bridge.IdlePollIntervalSeconds, (int)_numIdlePoll.Minimum, (int)_numIdlePoll.Maximum);
         _numBusyPoll.Value = Math.Clamp(bridge.BusyPollIntervalSeconds, (int)_numBusyPoll.Minimum, (int)_numBusyPoll.Maximum);
         _numErrorPoll.Value = Math.Clamp(bridge.ErrorPollIntervalSeconds, (int)_numErrorPoll.Minimum, (int)_numErrorPoll.Maximum);
@@ -1311,6 +1395,14 @@ public sealed partial class MainForm : Form
 
     public void PersistWindowLayout() =>
         PrintBridgeWindowLayout.Persist(this, _settingsStore, _settingsHolder);
+
+    private void UpdateDryRunWarning()
+    {
+        if (_lblDryRunWarning == null || _chkDryRun == null)
+            return;
+
+        _lblDryRunWarning.Visible = _chkDryRun.Checked;
+    }
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {

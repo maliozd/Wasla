@@ -44,7 +44,11 @@ public sealed class PrintBridgeController : BaseController
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(CancellationToken ct)
+    public IActionResult Index() =>
+        RedirectToActionPermanent(nameof(Devices));
+
+    [HttpGet("devices")]
+    public async Task<IActionResult> Devices(CancellationToken ct)
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
@@ -58,22 +62,20 @@ public sealed class PrintBridgeController : BaseController
         return View(BuildPageViewModel(deviceRows, quota, printJobs));
     }
 
-    [HttpGet("download")]
+    [HttpGet("setup")]
     public async Task<IActionResult> Setup(CancellationToken ct)
     {
         var customer = _currentCustomer.CurrentCustomer;
         if (customer is null) return NotFound();
 
         var quota = await _devices.GetDeviceQuotaAsync(customer.Id, ct).ConfigureAwait(false);
-        var apiBaseUrl = ResolveApiBaseUrl();
 
-        return View("Setup", new PrintBridgeSetupViewModel
+        return View(new PrintBridgeSetupViewModel
         {
             PackageDownloadUrl = Url.Action(nameof(DownloadPackage), "PrintBridge", new { area = AreaNames.Tenant })
                 ?? "/print-bridge/download/package",
-            DevicesUrl = Url.Action(nameof(Index), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge",
-            ApiBaseUrl = apiBaseUrl,
-            ExampleConfigJson = BuildExampleConfigJson(apiBaseUrl),
+            DevicesUrl = Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices",
+            ServerUrl = ResolveCustomerWebBaseUrl(),
             AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
             ActiveDeviceCount = quota.ActiveDeviceCount,
             CanCreateActiveDevice = quota.CanCreateActiveDevice,
@@ -81,7 +83,11 @@ public sealed class PrintBridgeController : BaseController
         });
     }
 
-    [HttpGet("devices")]
+    [HttpGet("download")]
+    public IActionResult DownloadRedirect() =>
+        RedirectToActionPermanent(nameof(Setup));
+
+    [HttpGet("devices/list")]
     public async Task<IActionResult> ListDevices(CancellationToken ct)
     {
         var customer = _currentCustomer.CurrentCustomer;
@@ -299,7 +305,8 @@ public sealed class PrintBridgeController : BaseController
 
         return new PrintBridgePageViewModel
         {
-            SetupUrl = Url.Action(nameof(Setup), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/download",
+            SetupUrl = Url.Action(nameof(Setup), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/setup",
+            DevicesUrl = Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices",
             PackageDownloadUrl = Url.Action(nameof(DownloadPackage), "PrintBridge", new { area = AreaNames.Tenant })
                 ?? "/print-bridge/download/package",
             ReceiptPrinterSettingsUrl = Url.Action(nameof(ReceiptPrinterSettingsController.Index), "ReceiptPrinterSettings", new { area = AreaNames.Tenant })
@@ -312,6 +319,7 @@ public sealed class PrintBridgeController : BaseController
             PrintJobsTodayCount = printJobsTodayCount,
             LastConnectedDeviceName = lastConnected?.Name,
             LastConnectedAtUtc = lastConnected?.LastSeenAtUtc,
+            ServerUrl = ResolveCustomerWebBaseUrl(),
             PrintJobs = printJobs.Select(MapPrintJob).ToList()
         };
     }
@@ -324,6 +332,26 @@ public sealed class PrintBridgeController : BaseController
 
         return "https://your-orderhub-api.example.com";
     }
+
+    private string? ResolveCustomerWebBaseUrl()
+    {
+        var configured = _configuration["OrderHub:CustomerWebBaseUrl"];
+        if (string.IsNullOrWhiteSpace(configured))
+            configured = _configuration["OrderHub:PublicWebBaseUrl"];
+
+        if (!string.IsNullOrWhiteSpace(configured))
+            return EnsureTrailingSlash(configured.Trim());
+
+        var request = HttpContext.Request;
+        if (!request.Host.HasValue)
+            return null;
+
+        var baseUrl = $"{request.Scheme}://{request.Host.Value}{request.PathBase}".TrimEnd('/');
+        return EnsureTrailingSlash(baseUrl);
+    }
+
+    private static string EnsureTrailingSlash(string url) =>
+        url.EndsWith('/') ? url : url + "/";
 
     private static string BuildExampleConfigJson(string apiBaseUrl)
     {

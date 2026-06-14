@@ -358,6 +358,7 @@ healthchecksdb
 
 # OrderHub local build verification output (alternate dotnet build -o path)
 .build-verify/
+.build-out/
 
 # OrderHub local HTTPS certificates (mkcert / setup-local-https.ps1)
 .certs/

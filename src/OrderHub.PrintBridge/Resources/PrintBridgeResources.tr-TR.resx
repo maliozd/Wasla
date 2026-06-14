@@ -232,7 +232,7 @@
     <value>Gelişmiş</value>
   </data>
   <data name="Settings.AgentToken" xml:space="preserve">
-    <value>Erişim anahtarı</value>
+    <value>Cihaz tokenı</value>
   </data>
   <data name="Settings.BusyPollSeconds" xml:space="preserve">
     <value>Yoğunken bekleme (sn)</value>
@@ -281,6 +281,15 @@
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
     <value>Sunucu adresi</value>
+  </data>
+  <data name="Settings.ServerUrlHelp" xml:space="preserve">
+    <value>Bu adresi OrderHub Web panelindeki Print Bridge kurulum sayfasından kopyalayın.</value>
+  </data>
+  <data name="Settings.AgentTokenHelp" xml:space="preserve">
+    <value>OrderHub Web panelinden oluşturulan cihaz tokenını yapıştırın.</value>
+  </data>
+  <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
+    <value>Test modu açık. Fişler yazdırılmaz; işler yalnızca loglanır.</value>
   </data>
   <data name="Status.Connected" xml:space="preserve">
     <value>Bağlı</value>

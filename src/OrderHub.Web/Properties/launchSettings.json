@@ -5,8 +5,28 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "launchUrl": "https://pilavcirahim.orderhub.local:7200/auth/login",
-      "applicationUrl": "http://0.0.0.0:5200;https://0.0.0.0:7200",
+      "launchUrl": "",
+      "applicationUrl": "https://0.0.0.0:7200;http://0.0.0.0:5200",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "OrderHub.Web - Pilavci Rahim": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "https://pilavcirahim.orderhub.local:7200/",
+      "applicationUrl": "https://0.0.0.0:7200;http://0.0.0.0:5200",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "OrderHub.Web - Sushim": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "https://sushim.orderhub.local:7200/",
+      "applicationUrl": "https://0.0.0.0:7200;http://0.0.0.0:5200",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
