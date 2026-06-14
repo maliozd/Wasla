@@ -2,7 +2,7 @@ namespace OrderHub.Application.Abstractions.Orders;
 
 /// <summary>
 /// Receipt creation timing options for tenant settings UI and mapping.
-/// Persisted via <see cref="CustomerOrderSettingsResult.AutoPrintReceiptOnAutoApprove"/> until a dedicated column exists.
+/// Persisted via <see cref="TenantOrderSettingsResult.AutoPrintReceiptOnAutoApprove"/> until a dedicated column exists.
 /// </summary>
 public static class ReceiptCreationTimingCodes
 {

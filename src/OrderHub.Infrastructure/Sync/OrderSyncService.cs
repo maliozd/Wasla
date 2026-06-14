@@ -198,15 +198,15 @@ public sealed class OrderSyncService : IOrderSyncService
         { Connections = summaries };
     }
 
-    private static readonly Guid CustomerOperationalSettingsSingletonId =
+    private static readonly Guid TenantOperationalSettingsSingletonId =
         Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     private static async Task<bool> IsOrderSyncEnabledAsync(TenantDbContext db, CancellationToken ct)
     {
         // When no settings row exists (e.g. older tenant DB), preserve existing behavior: sync enabled.
-        var row = await db.CustomerOperationalSettings
+        var row = await db.TenantOperationalSettings
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == CustomerOperationalSettingsSingletonId, ct)
+            .FirstOrDefaultAsync(x => x.Id == TenantOperationalSettingsSingletonId, ct)
             .ConfigureAwait(false);
 
         return row?.OrderSyncEnabled ?? true;

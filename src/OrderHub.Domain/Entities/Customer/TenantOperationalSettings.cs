@@ -6,7 +6,7 @@ namespace OrderHub.Domain.Entities.Customer;
 /// Per-tenant operational settings stored in the CustomerDb (singleton row).
 /// When the row does not exist, services return safe defaults (sync enabled; auto-approve off).
 /// </summary>
-public sealed class CustomerOperationalSettings : BaseEntity
+public sealed class TenantOperationalSettings : BaseEntity
 {
     public bool OrderSyncEnabled { get; set; } = true;
 

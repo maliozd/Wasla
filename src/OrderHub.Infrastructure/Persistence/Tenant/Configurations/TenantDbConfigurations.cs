@@ -60,11 +60,11 @@ public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<Us
     }
 }
 
-public class CustomerOperationalSettingsConfiguration : IEntityTypeConfiguration<CustomerOperationalSettings>
+public class TenantOperationalSettingsConfiguration : IEntityTypeConfiguration<TenantOperationalSettings>
 {
-    public void Configure(EntityTypeBuilder<CustomerOperationalSettings> builder)
+    public void Configure(EntityTypeBuilder<TenantOperationalSettings> builder)
     {
-        builder.ToTable("CustomerOperationalSettings");
+        builder.ToTable("TenantOperationalSettings");
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.OrderSyncEnabled)
@@ -89,7 +89,7 @@ public class CustomerOperationalSettingsConfiguration : IEntityTypeConfiguration
         // Single-row table pattern (enforced by always updating a known row id in the service).
         builder.HasIndex(x => x.Id)
             .IsUnique()
-            .HasDatabaseName("IX_CustomerOperationalSettings_Id");
+            .HasDatabaseName("IX_TenantOperationalSettings_Id");
     }
 }
 

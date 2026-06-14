@@ -3,9 +3,9 @@ using OrderHub.Application.Abstractions.Orders;
 
 namespace OrderHub.Application.Orders;
 
-public sealed class UpdateCustomerOrderSettingsCommandValidator : AbstractValidator<UpdateCustomerOrderSettingsCommand>
+public sealed class UpdateTenantOrderSettingsCommandValidator : AbstractValidator<UpdateTenantOrderSettingsCommand>
 {
-    public UpdateCustomerOrderSettingsCommandValidator()
+    public UpdateTenantOrderSettingsCommandValidator()
     {
         RuleFor(x => x.ReceiptPrintCopyCount)
             .InclusiveBetween(1, 3)

@@ -8,7 +8,7 @@ namespace OrderHub.Infrastructure.Services;
 
 public sealed class OrderAutoApproveService : IOrderAutoApproveService
 {
-    private static readonly Guid CustomerOperationalSettingsSingletonId =
+    private static readonly Guid TenantOperationalSettingsSingletonId =
         Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     private readonly ITenantDbContextFactory _dbFactory;
@@ -39,9 +39,9 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
 
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var settings = await db.CustomerOperationalSettings
+        var settings = await db.TenantOperationalSettings
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == CustomerOperationalSettingsSingletonId, ct)
+            .FirstOrDefaultAsync(x => x.Id == TenantOperationalSettingsSingletonId, ct)
             .ConfigureAwait(false);
 
         var autoApproveEnabled = settings?.AutoApproveNewOrders ?? false;

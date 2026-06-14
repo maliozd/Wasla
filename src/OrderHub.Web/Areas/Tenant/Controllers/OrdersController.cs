@@ -24,9 +24,9 @@ public sealed class OrdersController : BaseController
     private readonly IOrderReadService _orders;
     private readonly IOrderActionService _actions;
     private readonly IOrderSyncSettingsService _orderSyncSettings;
-    private readonly ICustomerOrderSettingsService _orderSettings;
+    private readonly ITenantOrderSettingsService _orderSettings;
     private readonly IOrderReceiptCreationService _receiptCreation;
-    private readonly IValidator<UpdateCustomerOrderSettingsCommand> _orderSettingsValidator;
+    private readonly IValidator<UpdateTenantOrderSettingsCommand> _orderSettingsValidator;
     private readonly ILogger<OrdersController> _logger;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
 
@@ -35,9 +35,9 @@ public sealed class OrdersController : BaseController
         IOrderReadService orders,
         IOrderActionService actions,
         IOrderSyncSettingsService orderSyncSettings,
-        ICustomerOrderSettingsService orderSettings,
+        ITenantOrderSettingsService orderSettings,
         IOrderReceiptCreationService receiptCreation,
-        IValidator<UpdateCustomerOrderSettingsCommand> orderSettingsValidator,
+        IValidator<UpdateTenantOrderSettingsCommand> orderSettingsValidator,
         ILogger<OrdersController> logger,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
     {
@@ -155,7 +155,7 @@ public sealed class OrdersController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var command = new UpdateCustomerOrderSettingsCommand(
+        var command = new UpdateTenantOrderSettingsCommand(
             autoApproveNewOrders,
             autoPrintReceiptOnAutoApprove,
             receiptPrintCopyCount);

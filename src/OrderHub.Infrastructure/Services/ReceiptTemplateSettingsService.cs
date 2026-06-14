@@ -41,7 +41,7 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var row = await db.CustomerOperationalSettings
+        var row = await db.TenantOperationalSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
             .ConfigureAwait(false);
@@ -61,13 +61,13 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
 
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var row = await db.CustomerOperationalSettings
+        var row = await db.TenantOperationalSettings
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
             .ConfigureAwait(false);
 
         if (row is null)
         {
-            row = new CustomerOperationalSettings
+            row = new TenantOperationalSettings
             {
                 Id = SingletonId,
                 OrderSyncEnabled = true,
@@ -75,7 +75,7 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
                 UpdatedAt = DateTime.UtcNow,
                 ReceiptTemplateSettingsJson = Serialize(settings)
             };
-            db.CustomerOperationalSettings.Add(row);
+            db.TenantOperationalSettings.Add(row);
         }
         else
         {
