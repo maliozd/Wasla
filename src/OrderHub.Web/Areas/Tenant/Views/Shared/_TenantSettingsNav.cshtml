@@ -1,72 +1,73 @@
-@{
-    var path = Context.Request.Path.Value ?? "/";
-    var isOrderSettings = path.Equals("/settings/orders", StringComparison.OrdinalIgnoreCase)
-        || path.StartsWith("/settings/orders/", StringComparison.OrdinalIgnoreCase)
-        || path.Equals("/settings/order", StringComparison.OrdinalIgnoreCase)
-        || path.StartsWith("/settings/order/", StringComparison.OrdinalIgnoreCase)
-        || path.Equals("/settings/order-automation", StringComparison.OrdinalIgnoreCase);
-    var isReceiptPrinterSettings = path.Equals("/settings/receipt-printer", StringComparison.OrdinalIgnoreCase)
-        || path.StartsWith("/settings/receipt-printer/", StringComparison.OrdinalIgnoreCase);
-    var isAccountSettings = path.Equals("/settings/account", StringComparison.OrdinalIgnoreCase)
-        || path.StartsWith("/settings/account/", StringComparison.OrdinalIgnoreCase);
-    var settingsActive = isOrderSettings || isReceiptPrinterSettings || isAccountSettings;
-}
-
-<div class="oh-sidebar-settings">
-    <div class="dropup position-static w-100">
-        <button type="button"
-                class="nav-link dropdown-toggle oh-sidebar-settings-toggle w-100 border-0 bg-transparent text-start d-flex align-items-center @(settingsActive ? "active" : "")"
-                id="tenantSettingsMenuToggle"
-                data-bs-toggle="dropdown"
-                data-bs-auto-close="true"
-                aria-expanded="@(settingsActive ? "true" : "false")"
-                aria-haspopup="true"
-                aria-controls="tenantSettingsMenu">
-            <i class="bi bi-gear me-2"></i><span class="nav-text">@L["Navigation.Settings"]</span>
-        </button>
-        <ul class="dropdown-menu oh-sidebar-settings-menu w-100 mb-1"
-            id="tenantSettingsMenu"
-            role="menu"
-            aria-labelledby="tenantSettingsMenuToggle">
-            <li role="none">
-                <a class="dropdown-item @(isOrderSettings ? "active" : "")"
-                   role="menuitem"
-                   asp-area="Tenant"
-                   asp-controller="OrderSettings"
-                   asp-action="Index">
-                    @L["Navigation.OrderSettings"]
-                </a>
-            </li>
-            <li role="none">
-                <a class="dropdown-item @(isReceiptPrinterSettings ? "active" : "")"
-                   role="menuitem"
-                   asp-area="Tenant"
-                   asp-controller="ReceiptPrinterSettings"
-                   asp-action="Index">
-                    @L["Navigation.ReceiptPrinterSettings"]
-                </a>
-            </li>
-            <li role="none">
-                <a class="dropdown-item @(isAccountSettings ? "active" : "")"
-                   role="menuitem"
-                   asp-area="Tenant"
-                   asp-controller="AccountSettings"
-                   asp-action="Index">
-                    @L["Navigation.AccountSettings"]
-                </a>
-            </li>
-            @if (User?.Identity?.IsAuthenticated == true)
-            {
-                <li role="none"><hr class="dropdown-divider" /></li>
-                <li role="none">
-                    <form method="post" asp-area="Tenant" asp-controller="Auth" asp-action="Logout">
-                        @Html.AntiForgeryToken()
-                        <button class="dropdown-item text-danger" type="submit" role="menuitem">
-                            <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>@L["Account.Logout"]
-                        </button>
-                    </form>
-                </li>
-            }
-        </ul>
-    </div>
-</div>
+@{
+    var path = Context.Request.Path.Value ?? "/";
+    var isOrderSettings = path.Equals("/settings/orders", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/settings/orders/", StringComparison.OrdinalIgnoreCase)
+        || path.Equals("/settings/order", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/settings/order/", StringComparison.OrdinalIgnoreCase)
+        || path.Equals("/settings/order-automation", StringComparison.OrdinalIgnoreCase);
+    var isReceiptPrinterSettings = path.Equals("/settings/receipt-printer", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/settings/receipt-printer/", StringComparison.OrdinalIgnoreCase);
+    var isAccountSettings = path.Equals("/settings/account", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/settings/account/", StringComparison.OrdinalIgnoreCase);
+    var settingsActive = isOrderSettings || isReceiptPrinterSettings || isAccountSettings;
+}
+
+<div class="oh-sidebar-settings">
+    <div class="dropup position-static w-100">
+        <button type="button"
+                class="oh-sidebar-action-btn dropdown-toggle oh-sidebar-settings-toggle w-100 @(settingsActive ? "active" : "")"
+                id="tenantSettingsMenuToggle"
+                data-bs-toggle="dropdown"
+                data-bs-auto-close="true"
+                aria-expanded="@(settingsActive ? "true" : "false")"
+                aria-haspopup="true"
+                aria-controls="tenantSettingsMenu">
+            <i class="bi bi-gear oh-sidebar-action-icon" aria-hidden="true"></i>
+            <span class="oh-sidebar-action-label nav-text">@L["Navigation.Settings"]</span>
+        </button>
+        <ul class="dropdown-menu oh-sidebar-dropdown-menu oh-sidebar-settings-menu w-100 mb-1"
+            id="tenantSettingsMenu"
+            role="menu"
+            aria-labelledby="tenantSettingsMenuToggle">
+            <li role="none">
+                <a class="dropdown-item @(isOrderSettings ? "active" : "")"
+                   role="menuitem"
+                   asp-area="Tenant"
+                   asp-controller="OrderSettings"
+                   asp-action="Index">
+                    @L["Navigation.OrderSettings"]
+                </a>
+            </li>
+            <li role="none">
+                <a class="dropdown-item @(isReceiptPrinterSettings ? "active" : "")"
+                   role="menuitem"
+                   asp-area="Tenant"
+                   asp-controller="ReceiptPrinterSettings"
+                   asp-action="Index">
+                    @L["Navigation.ReceiptPrinterSettings"]
+                </a>
+            </li>
+            <li role="none">
+                <a class="dropdown-item @(isAccountSettings ? "active" : "")"
+                   role="menuitem"
+                   asp-area="Tenant"
+                   asp-controller="AccountSettings"
+                   asp-action="Index">
+                    @L["Navigation.AccountSettings"]
+                </a>
+            </li>
+            @if (User?.Identity?.IsAuthenticated == true)
+            {
+                <li role="none"><hr class="dropdown-divider" /></li>
+                <li role="none">
+                    <form method="post" asp-area="Tenant" asp-controller="Auth" asp-action="Logout">
+                        @Html.AntiForgeryToken()
+                        <button class="dropdown-item text-danger" type="submit" role="menuitem">
+                            <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>@L["Account.Logout"]
+                        </button>
+                    </form>
+                </li>
+            }
+        </ul>
+    </div>
+</div>

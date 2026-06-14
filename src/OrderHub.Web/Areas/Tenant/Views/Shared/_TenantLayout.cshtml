@@ -91,29 +91,17 @@
             <nav class="sidebar-menu oh-sidebar-shell">
 
                 <div class="oh-sidebar-brand-area">
-
-                    <div class="d-flex align-items-center justify-content-between gap-2">
-
-                        <a class="oh-sidebar-brand text-decoration-none mb-0 min-w-0" asp-area="Tenant" asp-controller="Dashboard" asp-action="Index">
-
+                    <div class="oh-sidebar-brand-row">
+                        <a class="oh-sidebar-brand text-decoration-none min-w-0" asp-area="Tenant" asp-controller="Dashboard" asp-action="Index">
                             <span class="brand-text">OrderHub</span>
-
                         </a>
-
-                        <button type="button" id="tenantSidebarToggle" class="btn btn-sm btn-outline-secondary oh-sidebar-collapse-btn flex-shrink-0"
-
+                        <button type="button" id="tenantSidebarToggle" class="oh-sidebar-collapse-btn flex-shrink-0"
                                 data-title-collapse="@L["Layout.CollapseSidebar"]" data-title-expand="@L["Layout.ExpandSidebar"]"
-
                                 data-label-toggle="@L["Layout.ToggleSidebar"]" title="@L["Layout.CollapseSidebar"]" aria-expanded="true" aria-controls="app-sidebar-tenant">
-
                             <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
-
                         </button>
-
                     </div>
-
-                    <div class="customer-text text-muted small text-truncate mt-1" title="@customerName">@customerName</div>
-
+                    <div class="oh-sidebar-tenant-name text-truncate" title="@customerName">@customerName</div>
                 </div>
 
 
@@ -184,12 +172,9 @@
 
 
 
-                <div class="oh-sidebar-footer">
-
+                <div class="oh-sidebar-bottom">
                     @await Html.PartialAsync("_TenantSidebarFooter")
-
                     @await Html.PartialAsync("_TenantSettingsNav")
-
                 </div>
 
             </nav>

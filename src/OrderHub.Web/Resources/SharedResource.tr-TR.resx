@@ -1636,7 +1636,7 @@
     <value>Fiş Oluşturma</value>
   </data>
   <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
-    <value>Fiş yazdırma işinin hangi aşamada oluşturulacağını seçin.</value>
+    <value>Fiş yazdırma işinin hangi sipariş aşamasında oluşturulacağını seçin.</value>
   </data>
   <data name="Settings.ReceiptCreation.TimingLabel" xml:space="preserve">
     <value>Fiş Oluşturma Zamanı</value>
@@ -1650,11 +1650,14 @@
   <data name="Settings.ReceiptCreation.OnPreparing" xml:space="preserve">
     <value>Hazırlanmaya başladığında</value>
   </data>
+  <data name="Settings.ReceiptCreation.OnPreparingDescription" xml:space="preserve">
+    <value>Sipariş hazırlanmaya başladığında fiş oluşturulur.</value>
+  </data>
   <data name="Settings.ReceiptCreation.Manual" xml:space="preserve">
     <value>Manuel oluştur</value>
   </data>
   <data name="Settings.ReceiptCreation.ManualDescription" xml:space="preserve">
-    <value>Fişler otomatik oluşturulmaz; gerektiğinde manuel yazdırılır.</value>
+    <value>Fiş otomatik oluşturulmaz. Kullanıcı gerektiğinde manuel oluşturur.</value>
   </data>
   <data name="Settings.ReceiptCreation.ComingSoon" xml:space="preserve">
     <value>Yakında</value>

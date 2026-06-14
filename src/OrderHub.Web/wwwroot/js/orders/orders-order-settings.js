@@ -5,12 +5,14 @@
   const O = global.OrderHubOrders;
   if (!O) return;
 
-  const TIMING_ON_ACCEPTED = "onAccepted";
-  const TIMING_MANUAL = "manual";
+  const TIMING_ON_ACCEPTED = "OnAccepted";
+  const TIMING_MANUAL = "Manual";
+  const SELECTABLE_TIMINGS = [TIMING_ON_ACCEPTED, TIMING_MANUAL];
 
   let cachedSettings = {
     autoApproveNewOrders: false,
     autoPrintReceiptOnAutoApprove: false,
+    receiptCreationTiming: TIMING_ON_ACCEPTED,
     receiptPrintCopyCount: 1
   };
 
@@ -21,51 +23,61 @@
     return el ? el.value : null;
   }
 
+  function normalizeTiming(value) {
+    const code = String(value || "").trim();
+    if (code === TIMING_ON_ACCEPTED || code === "onAccepted") return TIMING_ON_ACCEPTED;
+    if (code === TIMING_MANUAL || code === "manual") return TIMING_MANUAL;
+    return TIMING_ON_ACCEPTED;
+  }
+
   function timingToAutoPrint(timing) {
-    return timing === TIMING_ON_ACCEPTED;
+    return normalizeTiming(timing) === TIMING_ON_ACCEPTED;
   }
 
-  function autoPrintToTiming(enabled) {
-    return enabled ? TIMING_ON_ACCEPTED : TIMING_MANUAL;
+  function resolveTimingFromSettings(settings) {
+    if (settings && settings.receiptCreationTiming) {
+      return normalizeTiming(settings.receiptCreationTiming);
+    }
+    return settings && settings.autoPrintReceiptOnAutoApprove ? TIMING_ON_ACCEPTED : TIMING_MANUAL;
   }
 
-  function syncReceiptCreationHelp() {
-    const timingSelect = document.getElementById("receiptCreationTimingSelect");
-    const timingHelp = document.getElementById("receiptCreationTimingHelp");
-    if (!timingSelect || !timingHelp) return;
+  function getSelectedTimingRadio() {
+    const checked = document.querySelector("input[name=\"receiptCreationTiming\"]:checked");
+    return checked ? checked : null;
+  }
 
-    const timing = timingSelect.value;
-    if (timing === TIMING_ON_ACCEPTED) {
-      timingHelp.textContent = O.getMessage("receiptCreationOnAcceptedHelp");
-      return;
-    }
-    if (timing === TIMING_MANUAL) {
-      timingHelp.textContent = O.getMessage("receiptCreationManualHelp");
-      return;
-    }
-    timingHelp.textContent = "";
+  function setTimingRadio(timing) {
+    const normalized = normalizeTiming(timing);
+    const safeTiming = SELECTABLE_TIMINGS.indexOf(normalized) >= 0 ? normalized : TIMING_ON_ACCEPTED;
+    document.querySelectorAll("input[name=\"receiptCreationTiming\"]").forEach(function (el) {
+      if (!el.disabled) {
+        el.checked = el.value === safeTiming;
+      }
+    });
   }
 
   function setUi(settings) {
     const autoApproveToggle = document.getElementById("autoApproveToggle");
     const autoApproveBadge = document.getElementById("autoApproveStatusBadge");
-    const timingSelect = document.getElementById("receiptCreationTimingSelect");
     const copyCountSelect = document.getElementById("receiptPrintCopyCountSelect");
 
     const autoApproveEnabled = !!settings.autoApproveNewOrders;
-    const autoPrintEnabled = !!settings.autoPrintReceiptOnAutoApprove;
+    const timing = resolveTimingFromSettings(settings);
+    const autoPrintEnabled = timing === TIMING_ON_ACCEPTED;
     const copyCount = settings.receiptPrintCopyCount || 1;
 
     cachedSettings = {
       autoApproveNewOrders: autoApproveEnabled,
       autoPrintReceiptOnAutoApprove: autoPrintEnabled,
+      receiptCreationTiming: timing,
       receiptPrintCopyCount: copyCount
     };
 
     if (autoApproveToggle) autoApproveToggle.checked = autoApproveEnabled;
-    if (timingSelect) timingSelect.value = autoPrintToTiming(autoPrintEnabled);
+    if (document.getElementById("receiptCreationTimingGroup")) {
+      setTimingRadio(timing);
+    }
     if (copyCountSelect) copyCountSelect.value = String(copyCount);
-    syncReceiptCreationHelp();
 
     if (autoApproveBadge) {
       autoApproveBadge.textContent = autoApproveEnabled
@@ -78,17 +90,21 @@
 
   function readUi() {
     const autoApproveToggle = document.getElementById("autoApproveToggle");
-    const timingSelect = document.getElementById("receiptCreationTimingSelect");
     const copyCountSelect = document.getElementById("receiptPrintCopyCountSelect");
+    const timingRadio = getSelectedTimingRadio();
 
     const next = {
       autoApproveNewOrders: cachedSettings.autoApproveNewOrders,
       autoPrintReceiptOnAutoApprove: cachedSettings.autoPrintReceiptOnAutoApprove,
+      receiptCreationTiming: cachedSettings.receiptCreationTiming,
       receiptPrintCopyCount: cachedSettings.receiptPrintCopyCount
     };
 
     if (autoApproveToggle) next.autoApproveNewOrders = !!autoApproveToggle.checked;
-    if (timingSelect) next.autoPrintReceiptOnAutoApprove = timingToAutoPrint(timingSelect.value);
+    if (timingRadio && !timingRadio.disabled) {
+      next.receiptCreationTiming = normalizeTiming(timingRadio.value);
+      next.autoPrintReceiptOnAutoApprove = timingToAutoPrint(next.receiptCreationTiming);
+    }
     if (copyCountSelect) next.receiptPrintCopyCount = parseInt(copyCountSelect.value, 10) || 1;
 
     return next;
@@ -109,9 +125,12 @@
 
   function setControlsDisabled(disabled) {
     const autoApproveToggle = document.getElementById("autoApproveToggle");
-    const timingSelect = document.getElementById("receiptCreationTimingSelect");
     const copyCountSelect = document.getElementById("receiptPrintCopyCountSelect");
-    [autoApproveToggle, timingSelect, copyCountSelect].forEach(function (el) {
+    document.querySelectorAll("input[name=\"receiptCreationTiming\"]").forEach(function (el) {
+      if (el.value === "OnPreparing") return;
+      el.disabled = !!disabled;
+    });
+    [autoApproveToggle, copyCountSelect].forEach(function (el) {
       if (el) el.disabled = !!disabled;
     });
   }
@@ -145,11 +164,10 @@
 
   function bind() {
     const autoApproveToggle = document.getElementById("autoApproveToggle");
-    const timingSelect = document.getElementById("receiptCreationTimingSelect");
     const copyCountSelect = document.getElementById("receiptPrintCopyCountSelect");
 
     function onChange() {
-      const previous = readUi();
+      const previous = Object.assign({}, cachedSettings);
       const next = readUi();
       setUi(next);
       setControlsDisabled(true);
@@ -164,12 +182,10 @@
     }
 
     if (autoApproveToggle) autoApproveToggle.addEventListener("change", onChange);
-    if (timingSelect) {
-      timingSelect.addEventListener("change", function () {
-        syncReceiptCreationHelp();
-        onChange();
-      });
-    }
+    document.querySelectorAll("input[name=\"receiptCreationTiming\"]").forEach(function (el) {
+      if (el.disabled) return;
+      el.addEventListener("change", onChange);
+    });
     if (copyCountSelect) copyCountSelect.addEventListener("change", onChange);
   }
 

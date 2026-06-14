@@ -1636,7 +1636,7 @@
     <value>Receipt Creation</value>
   </data>
   <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
-    <value>Choose when receipt print jobs should be created.</value>
+    <value>Choose at which order stage receipt print jobs should be created.</value>
   </data>
   <data name="Settings.ReceiptCreation.TimingLabel" xml:space="preserve">
     <value>Receipt Creation Timing</value>
@@ -1648,13 +1648,16 @@
     <value>A receipt is created when the order is accepted, whether automatically or manually.</value>
   </data>
   <data name="Settings.ReceiptCreation.OnPreparing" xml:space="preserve">
-    <value>When preparing starts</value>
+    <value>When preparation starts</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnPreparingDescription" xml:space="preserve">
+    <value>A receipt is created when the order moves to preparing.</value>
   </data>
   <data name="Settings.ReceiptCreation.Manual" xml:space="preserve">
-    <value>Create manually</value>
+    <value>Manual only</value>
   </data>
   <data name="Settings.ReceiptCreation.ManualDescription" xml:space="preserve">
-    <value>Receipts are not created automatically; print manually when needed.</value>
+    <value>Receipts are not created automatically. Create or reprint manually when needed.</value>
   </data>
   <data name="Settings.ReceiptCreation.ComingSoon" xml:space="preserve">
     <value>Coming soon</value>

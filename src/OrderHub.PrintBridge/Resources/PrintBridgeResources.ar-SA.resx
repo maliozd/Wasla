@@ -18,6 +18,9 @@
   <data name="Button.CopyLogs" xml:space="preserve">
     <value>نسخ السجلات</value>
   </data>
+  <data name="Button.JumpToLatest" xml:space="preserve">
+    <value>الانتقال إلى الأحدث</value>
+  </data>
   <data name="Button.HideToken" xml:space="preserve">
     <value>إخفاء</value>
   </data>

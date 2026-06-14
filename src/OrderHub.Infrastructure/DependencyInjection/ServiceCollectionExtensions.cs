@@ -88,6 +88,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICustomerOrderSettingsService, CustomerOrderSettingsService>();
         services.AddScoped<IReceiptTemplateSettingsService, ReceiptTemplateSettingsService>();
         services.AddScoped<IOrderAutoApproveService, OrderAutoApproveService>();
+        services.AddScoped<IOrderReceiptCreationService, OrderReceiptCreationService>();
         services.AddScoped<IReceiptPrintJobService, ReceiptPrintJobService>();
         services.AddScoped<IPlatformConnectionService, PlatformConnectionService>();
         services.AddScoped<IBranchService, BranchService>();

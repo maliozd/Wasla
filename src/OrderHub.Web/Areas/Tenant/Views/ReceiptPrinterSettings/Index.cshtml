@@ -31,21 +31,44 @@
 
     <div class="card oh-card oh-settings-card mb-3">
         <div class="card-body p-0">
-            <section class="oh-settings-section">
-                <div class="oh-settings-section-row">
-                    <div class="oh-settings-section-text">
+            <section class="oh-settings-section oh-receipt-timing-section">
+                <div class="receipt-timing-section">
+                    <div class="receipt-timing-section__intro">
                         <h2 class="h6 mb-1">@L["Settings.ReceiptCreation.Title"]</h2>
                         <p class="text-muted small mb-0">@L["Settings.ReceiptCreation.Description"]</p>
                     </div>
-                    <div class="oh-settings-section-controls oh-settings-section-controls--stacked">
-                        <label class="small text-muted mb-0 text-nowrap" for="receiptCreationTimingSelect">@L["Settings.ReceiptCreation.TimingLabel"]</label>
-                        <select id="receiptCreationTimingSelect" class="form-select form-select-sm oh-receipt-timing-select"
-                                aria-label="@L["Settings.ReceiptCreation.TimingLabel"]">
-                            <option value="onAccepted">@L["Settings.ReceiptCreation.OnAccepted"]</option>
-                            <option value="onPreparing" disabled>@L["Settings.ReceiptCreation.OnPreparing"] — @L["Settings.ReceiptCreation.ComingSoon"]</option>
-                            <option value="manual">@L["Settings.ReceiptCreation.Manual"]</option>
-                        </select>
-                        <p class="form-text mb-0 oh-receipt-creation-help" id="receiptCreationTimingHelp"></p>
+                    <div class="receipt-timing-section__field">
+                        <div class="receipt-timing-section__label small text-muted">@L["Settings.ReceiptCreation.TimingLabel"]</div>
+                        <div class="receipt-timing-options" id="receiptCreationTimingGroup" role="radiogroup"
+                             aria-label="@L["Settings.ReceiptCreation.TimingLabel"]">
+                            <label class="receipt-timing-option" for="receiptTimingOnAccepted">
+                                <input class="form-check-input receipt-timing-option__radio" type="radio" name="receiptCreationTiming"
+                                       id="receiptTimingOnAccepted" value="OnAccepted" checked />
+                                <div class="receipt-timing-option__content">
+                                    <span class="receipt-timing-option__title">@L["Settings.ReceiptCreation.OnAccepted"]</span>
+                                    <p class="receipt-timing-option__desc mb-0">@L["Settings.ReceiptCreation.OnAcceptedDescription"]</p>
+                                </div>
+                            </label>
+                            <div class="receipt-timing-option receipt-timing-option--disabled">
+                                <input class="form-check-input receipt-timing-option__radio" type="radio" name="receiptCreationTiming"
+                                       id="receiptTimingOnPreparing" value="OnPreparing" disabled tabindex="-1" aria-disabled="true" />
+                                <div class="receipt-timing-option__content">
+                                    <span class="receipt-timing-option__title">
+                                        @L["Settings.ReceiptCreation.OnPreparing"]
+                                        <span class="badge text-bg-secondary receipt-timing-option__soon">@L["Settings.ReceiptCreation.ComingSoon"]</span>
+                                    </span>
+                                    <p class="receipt-timing-option__desc mb-0">@L["Settings.ReceiptCreation.OnPreparingDescription"]</p>
+                                </div>
+                            </div>
+                            <label class="receipt-timing-option" for="receiptTimingManual">
+                                <input class="form-check-input receipt-timing-option__radio" type="radio" name="receiptCreationTiming"
+                                       id="receiptTimingManual" value="Manual" />
+                                <div class="receipt-timing-option__content">
+                                    <span class="receipt-timing-option__title">@L["Settings.ReceiptCreation.Manual"]</span>
+                                    <p class="receipt-timing-option__desc mb-0">@L["Settings.ReceiptCreation.ManualDescription"]</p>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -201,9 +224,7 @@
                 ["orderSettingsSaved"] = L["Settings.SavedSuccessfully"].Value,
                 ["orderSettingsUpdateFailed"] = L["Settings.SaveFailed"].Value,
                 ["settingsSaving"] = L["Settings.Saving"].Value,
-                ["receiptPrintCopyCountOutOfRange"] = L["Orders.ReceiptPrintCopyCountOutOfRange"].Value,
-                ["receiptCreationOnAcceptedHelp"] = L["Settings.ReceiptCreation.OnAcceptedDescription"].Value,
-                ["receiptCreationManualHelp"] = L["Settings.ReceiptCreation.ManualDescription"].Value
+                ["receiptPrintCopyCountOutOfRange"] = L["Orders.ReceiptPrintCopyCountOutOfRange"].Value
             }))
         };
         window.orderHubReceiptTemplateOptions = {

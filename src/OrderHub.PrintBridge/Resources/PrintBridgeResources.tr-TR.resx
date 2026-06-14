@@ -18,6 +18,9 @@
   <data name="Button.CopyLogs" xml:space="preserve">
     <value>Logları kopyala</value>
   </data>
+  <data name="Button.JumpToLatest" xml:space="preserve">
+    <value>Son loglara git</value>
+  </data>
   <data name="Button.HideToken" xml:space="preserve">
     <value>Gizle</value>
   </data>

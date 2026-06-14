@@ -25,6 +25,7 @@ public sealed class OrdersController : BaseController
     private readonly IOrderActionService _actions;
     private readonly IOrderSyncSettingsService _orderSyncSettings;
     private readonly ICustomerOrderSettingsService _orderSettings;
+    private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly IValidator<UpdateCustomerOrderSettingsCommand> _orderSettingsValidator;
     private readonly ILogger<OrdersController> _logger;
     private readonly IStringLocalizer<OrderHub.Web.SharedResource> _localizer;
@@ -35,6 +36,7 @@ public sealed class OrdersController : BaseController
         IOrderActionService actions,
         IOrderSyncSettingsService orderSyncSettings,
         ICustomerOrderSettingsService orderSettings,
+        IOrderReceiptCreationService receiptCreation,
         IValidator<UpdateCustomerOrderSettingsCommand> orderSettingsValidator,
         ILogger<OrdersController> logger,
         IStringLocalizer<OrderHub.Web.SharedResource> localizer)
@@ -44,6 +46,7 @@ public sealed class OrdersController : BaseController
         _actions = actions;
         _orderSyncSettings = orderSyncSettings;
         _orderSettings = orderSettings;
+        _receiptCreation = receiptCreation;
         _orderSettingsValidator = orderSettingsValidator;
         _logger = logger;
         _localizer = localizer;
@@ -136,6 +139,7 @@ public sealed class OrdersController : BaseController
         {
             autoApproveNewOrders = r.AutoApproveNewOrders,
             autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
+            receiptCreationTiming = ReceiptCreationTimingCodes.FromAutoPrintReceiptSetting(r.AutoPrintReceiptOnAutoApprove),
             receiptPrintCopyCount = r.ReceiptPrintCopyCount
         });
     }
@@ -172,6 +176,7 @@ public sealed class OrdersController : BaseController
             {
                 autoApproveNewOrders = r.AutoApproveNewOrders,
                 autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
+                receiptCreationTiming = ReceiptCreationTimingCodes.FromAutoPrintReceiptSetting(r.AutoPrintReceiptOnAutoApprove),
                 receiptPrintCopyCount = r.ReceiptPrintCopyCount
             });
         }
@@ -375,6 +380,9 @@ public sealed class OrdersController : BaseController
 
         var result = await _actions.TryApproveAsync(customer.Id, id, ct);
         if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: true) });
+
+        await _receiptCreation.TryCreateOnOrderAcceptedAsync(customer.Id, id, ct).ConfigureAwait(false);
+
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: true) });
     }
 

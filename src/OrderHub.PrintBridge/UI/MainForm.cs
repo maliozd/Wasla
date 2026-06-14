@@ -49,7 +49,11 @@ public sealed partial class MainForm : Form
     private DataGridView _recentJobsGrid = null!;
     private Label _recentJobsEmptyLabel = null!;
     private IReadOnlyList<LocalPrintJobRecord> _jobsForGrid = Array.Empty<LocalPrintJobRecord>();
-    private TextBox _txtLogs = null!;
+    private LogTextBox _txtLogs = null!;
+    private Panel _logsHost = null!;
+    private Button _btnJumpToLatest = null!;
+    private string _displayedLogText = string.Empty;
+    private bool _hasUnreadLogsBelow;
     private Button _btnTestConnection = null!;
     private Button _btnTestPrinter = null!;
     private Button _btnStartStop = null!;
@@ -189,6 +193,7 @@ public sealed partial class MainForm : Form
         _btnOpenLogsFolderTab.Text = _localizer["Button.OpenLogsFolder"];
         _btnClearLogs.Text = _localizer["Button.ClearLogs"];
         _btnCopyLogs.Text = _localizer["Button.CopyLogs"];
+        _btnJumpToLatest.Text = _localizer["Button.JumpToLatest"];
         _btnSaveSettings.Text = _localizer["Button.SaveSettings"];
         _btnRefreshPrinters.Text = _localizer["Button.Refresh"];
         _btnToggleToken.Text = _txtAgentToken.UseSystemPasswordChar
@@ -479,6 +484,8 @@ public sealed partial class MainForm : Form
         _btnClearLogs.Click += (_, _) =>
         {
             _uiLogBuffer.Clear();
+            _displayedLogText = string.Empty;
+            _hasUnreadLogsBelow = false;
             RefreshLogs();
         };
         toolbar.Controls.Add(_btnClearLogs);
@@ -506,21 +513,71 @@ public sealed partial class MainForm : Form
         _btnOpenLogsFolderTab.Click += (_, _) => OpenLogsFolder();
         toolbar.Controls.Add(_btnOpenLogsFolderTab);
 
-        _txtLogs = new TextBox
+        _logsHost = new Panel
+        {
+            Dock = DockStyle.Fill
+        };
+
+        _txtLogs = new LogTextBox
         {
             Dock = DockStyle.Fill,
-            Multiline = true,
-            ReadOnly = true,
-            ScrollBars = ScrollBars.Both,
-            WordWrap = false,
             Font = new Font("Consolas", 9F),
             BackColor = Color.FromArgb(248, 249, 250),
             BorderStyle = BorderStyle.FixedSingle
         };
+        _txtLogs.UserScrolled += (_, _) => OnLogViewerScrolled();
+
+        _btnJumpToLatest = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnJumpToLatest.Visible = false;
+        _btnJumpToLatest.AutoSize = true;
+        _btnJumpToLatest.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+        _btnJumpToLatest.Click += (_, _) => JumpToLatestLogs();
+        _logsHost.Controls.Add(_txtLogs);
+        _logsHost.Controls.Add(_btnJumpToLatest);
+        _logsHost.Resize += (_, _) => PositionJumpToLatestButton();
 
         root.Controls.Add(toolbar, 0, 0);
-        root.Controls.Add(_txtLogs, 0, 1);
+        root.Controls.Add(_logsHost, 0, 1);
         _logsTab.Controls.Add(root);
+    }
+
+    private void OnLogViewerScrolled()
+    {
+        if (TextBoxScrollHelper.IsNearBottom(_txtLogs))
+        {
+            _hasUnreadLogsBelow = false;
+            UpdateJumpToLatestButton();
+        }
+    }
+
+    private void JumpToLatestLogs()
+    {
+        TextBoxScrollHelper.ScrollToBottom(_txtLogs);
+        _hasUnreadLogsBelow = false;
+        UpdateJumpToLatestButton();
+    }
+
+    private void UpdateJumpToLatestButton()
+    {
+        if (_btnJumpToLatest.IsDisposed)
+            return;
+
+        var show = _hasUnreadLogsBelow && !TextBoxScrollHelper.IsNearBottom(_txtLogs);
+        _btnJumpToLatest.Visible = show;
+        if (show)
+            PositionJumpToLatestButton();
+    }
+
+    private void PositionJumpToLatestButton()
+    {
+        if (_btnJumpToLatest.IsDisposed || _logsHost.IsDisposed)
+            return;
+
+        const int margin = 10;
+        _btnJumpToLatest.Location = new Point(
+            Math.Max(margin, _logsHost.ClientSize.Width - _btnJumpToLatest.Width - margin),
+            Math.Max(margin, _logsHost.ClientSize.Height - _btnJumpToLatest.Height - margin));
+        _btnJumpToLatest.BringToFront();
     }
 
     private void BuildSettingsTab()
@@ -1076,22 +1133,43 @@ public sealed partial class MainForm : Form
         if (_txtLogs is null || _txtLogs.IsDisposed)
             return;
 
-        var previousSelectionStart = _txtLogs.SelectionStart;
-        var previousSelectionLength = _txtLogs.SelectionLength;
-        var wasAtEnd = _txtLogs.SelectionStart >= Math.Max(0, _txtLogs.TextLength - 1);
-
-        _txtLogs.Text = _uiLogBuffer.GetText();
-
-        if (wasAtEnd)
+        var newText = _uiLogBuffer.GetText();
+        if (string.Equals(newText, _displayedLogText, StringComparison.Ordinal))
         {
-            _txtLogs.SelectionStart = _txtLogs.TextLength;
-            _txtLogs.ScrollToCaret();
+            UpdateJumpToLatestButton();
+            return;
+        }
+
+        var wasNearBottom = TextBoxScrollHelper.IsNearBottom(_txtLogs);
+        var firstVisibleLine = TextBoxScrollHelper.GetFirstVisibleLine(_txtLogs);
+        var hadNewContent = newText.Length > _displayedLogText.Length;
+
+        if (!string.IsNullOrEmpty(_displayedLogText)
+            && newText.StartsWith(_displayedLogText, StringComparison.Ordinal)
+            && newText.Length > _displayedLogText.Length)
+        {
+            _txtLogs.AppendText(newText[_displayedLogText.Length..]);
         }
         else
         {
-            _txtLogs.SelectionStart = Math.Min(previousSelectionStart, _txtLogs.TextLength);
-            _txtLogs.SelectionLength = Math.Min(previousSelectionLength, _txtLogs.TextLength - _txtLogs.SelectionStart);
+            _txtLogs.Text = newText;
+            if (!wasNearBottom)
+                TextBoxScrollHelper.RestoreFirstVisibleLine(_txtLogs, firstVisibleLine);
         }
+
+        _displayedLogText = newText;
+
+        if (wasNearBottom)
+        {
+            TextBoxScrollHelper.ScrollToBottom(_txtLogs);
+            _hasUnreadLogsBelow = false;
+        }
+        else if (hadNewContent)
+        {
+            _hasUnreadLogsBelow = true;
+        }
+
+        UpdateJumpToLatestButton();
     }
 
     private void UpdateHeaderBadge(PrintBridgeRuntimeStatus status)

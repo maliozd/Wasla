@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OrderHub.Application.Abstractions.Orders;
 using OrderHub.Domain.Enums;
-using OrderHub.Infrastructure.Persistence.Central;
 using OrderHub.Infrastructure.Persistence.Customer;
 
 namespace OrderHub.Infrastructure.Services;
@@ -13,22 +12,19 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
         Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     private readonly ICustomerDbContextFactory _dbFactory;
-    private readonly CentralDbContext _centralDb;
     private readonly IOrderActionService _orderActions;
-    private readonly IReceiptPrintJobService _receiptPrintJobs;
+    private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly ILogger<OrderAutoApproveService> _logger;
 
     public OrderAutoApproveService(
         ICustomerDbContextFactory dbFactory,
-        CentralDbContext centralDb,
         IOrderActionService orderActions,
-        IReceiptPrintJobService receiptPrintJobs,
+        IOrderReceiptCreationService receiptCreation,
         ILogger<OrderAutoApproveService> logger)
     {
         _dbFactory = dbFactory;
-        _centralDb = centralDb;
         _orderActions = orderActions;
-        _receiptPrintJobs = receiptPrintJobs;
+        _receiptCreation = receiptCreation;
         _logger = logger;
     }
 
@@ -49,8 +45,6 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
             .ConfigureAwait(false);
 
         var autoApproveEnabled = settings?.AutoApproveNewOrders ?? false;
-        var autoPrintEnabled = settings?.AutoPrintReceiptOnAutoApprove ?? false;
-        var copyCount = settings?.ReceiptPrintCopyCount ?? 1;
 
         if (!autoApproveEnabled)
         {
@@ -82,39 +76,7 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
             customerId,
             orderId);
 
-        if (!autoPrintEnabled)
-        {
-            _logger.LogDebug(
-                "AutoPrintReceiptOnAutoApprove disabled, skipping PrintJob. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
-                orderId);
-            return;
-        }
-
-        try
-        {
-            var tenantDisplayName = await _centralDb.Customers
-                .AsNoTracking()
-                .Where(c => c.Id == customerId)
-                .Select(c => c.Name)
-                .FirstOrDefaultAsync(ct)
-                .ConfigureAwait(false);
-
-            await _receiptPrintJobs.TryCreateReceiptJobAsync(
-                customerId,
-                orderId,
-                copyCount,
-                tenantDisplayName,
-                ct).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(
-                ex,
-                "Receipt PrintJob creation failed but sync continued. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
-                orderId);
-        }
+        await _receiptCreation.TryCreateOnOrderAcceptedAsync(customerId, orderId, ct).ConfigureAwait(false);
     }
 
     private static bool IsEligibleForAutoApprove(OrderStatus status) =>

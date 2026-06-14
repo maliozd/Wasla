@@ -219,18 +219,10 @@ body.oh-tenant.oh-app .orderhub-toast__close:hover {
 }
 
 [data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(15, 23, 42, 0.78),
-      rgba(15, 23, 42, 0.46)
-    ) !important;
-
-  color: #f8fafc;
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow:
-    0 22px 65px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  background: var(--color-surface-elevated, #1c2028) !important;
+  color: var(--color-text, #f3f4f6);
+  border-color: var(--color-border-strong, rgba(255, 255, 255, 0.14));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
 }
 
 [data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast::after {

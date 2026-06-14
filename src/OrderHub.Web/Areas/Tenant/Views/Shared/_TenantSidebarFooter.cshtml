@@ -13,17 +13,18 @@
 }
 
 <div class="oh-sidebar-footer-controls">
-    <div class="oh-sidebar-footer-row oh-sidebar-footer-row--compact">
-        <div class="dropup position-static flex-grow-1 min-w-0">
+    <div class="oh-sidebar-action-row oh-sidebar-action-row--split">
+        <div class="dropup position-static oh-sidebar-action-grow min-w-0">
             <button type="button"
-                    class="nav-link dropdown-toggle oh-sidebar-footer-toggle w-100 border-0 bg-transparent text-start d-flex align-items-center"
+                    class="oh-sidebar-action-btn dropdown-toggle oh-sidebar-lang-toggle w-100"
                     data-bs-toggle="dropdown"
                     data-bs-auto-close="true"
                     aria-label="@L["Layout.Language"]"
                     aria-expanded="false">
-                <i class="bi bi-translate me-2" aria-hidden="true"></i><span class="footer-label nav-text">@currentLangLabel</span>
+                <i class="bi bi-translate oh-sidebar-action-icon" aria-hidden="true"></i>
+                <span class="oh-sidebar-action-label nav-text">@currentLangLabel</span>
             </button>
-            <ul class="dropdown-menu oh-sidebar-settings-menu w-100 mb-1">
+            <ul class="dropdown-menu oh-sidebar-dropdown-menu oh-sidebar-lang-menu w-100 mb-1">
                 <li>
                     <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="tr-TR" asp-route-returnUrl="@returnUrl">Türkçe</a>
                 </li>
@@ -35,7 +36,7 @@
                 </li>
             </ul>
         </div>
-        <button type="button" class="oh-sidebar-footer-action oh-theme-toggle flex-shrink-0"
+        <button type="button" class="oh-sidebar-icon-btn oh-theme-toggle flex-shrink-0"
                 aria-pressed="false" aria-label="@L["Layout.Theme"]"
                 data-go-dark="@L["Layout.DarkMode"]" data-go-light="@L["Layout.LightMode"]">
             <i class="bi bi-moon-stars oh-theme-moon" aria-hidden="true"></i>
@@ -45,7 +46,8 @@
     @if (User?.Identity?.IsAuthenticated == true)
     {
         <div class="oh-sidebar-user" aria-label="@L["Layout.UserMenu"]">
-            <i class="bi bi-person-circle me-2" aria-hidden="true"></i><span class="oh-sidebar-user-label text-truncate">@userName</span>
+            <i class="bi bi-person-circle oh-sidebar-action-icon" aria-hidden="true"></i>
+            <span class="oh-sidebar-user-label text-truncate">@userName</span>
         </div>
     }
 </div>

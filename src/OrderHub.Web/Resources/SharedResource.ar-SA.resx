@@ -1636,7 +1636,7 @@
     <value>إنشاء الإيصال</value>
   </data>
   <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
-    <value>اختر متى يجب إنشاء مهام طباعة الإيصال.</value>
+    <value>اختر في أي مرحلة من مراحل الطلب يجب إنشاء مهام طباعة الإيصال.</value>
   </data>
   <data name="Settings.ReceiptCreation.TimingLabel" xml:space="preserve">
     <value>توقيت إنشاء الإيصال</value>
@@ -1650,11 +1650,14 @@
   <data name="Settings.ReceiptCreation.OnPreparing" xml:space="preserve">
     <value>عند بدء التحضير</value>
   </data>
+  <data name="Settings.ReceiptCreation.OnPreparingDescription" xml:space="preserve">
+    <value>يُنشأ الإيصال عندما يبدأ تحضير الطلب.</value>
+  </data>
   <data name="Settings.ReceiptCreation.Manual" xml:space="preserve">
     <value>إنشاء يدوي</value>
   </data>
   <data name="Settings.ReceiptCreation.ManualDescription" xml:space="preserve">
-    <value>لا تُنشأ الإيصالات تلقائياً؛ اطبع يدوياً عند الحاجة.</value>
+    <value>لا تُنشأ الإيصالات تلقائياً. يُنشئها المستخدم يدوياً عند الحاجة.</value>
   </data>
   <data name="Settings.ReceiptCreation.ComingSoon" xml:space="preserve">
     <value>قريباً</value>

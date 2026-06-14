@@ -18,6 +18,9 @@
   <data name="Button.CopyLogs" xml:space="preserve">
     <value>Copy logs</value>
   </data>
+  <data name="Button.JumpToLatest" xml:space="preserve">
+    <value>Jump to latest</value>
+  </data>
   <data name="Button.HideToken" xml:space="preserve">
     <value>Hide</value>
   </data>
