@@ -14,6 +14,7 @@ public sealed class CustomerResolutionMiddleware
     {
         "/admin",
         "/signup",
+        "/checkout",
         "/customer-access-required",
         "/culture",
         "/setlanguage",

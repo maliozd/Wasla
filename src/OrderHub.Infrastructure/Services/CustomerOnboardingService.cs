@@ -48,8 +48,20 @@ public sealed class CustomerOnboardingService : ICustomerOnboardingService
             return false;
 
         var domain = BuildPrimaryDomain(normalized);
-        return !await _central.Customers.AsNoTracking()
-            .AnyAsync(c => c.Slug == normalized || c.PrimaryDomain == domain, ct);
+        if (await _central.Customers.AsNoTracking()
+                .AnyAsync(c => c.Slug == normalized || c.PrimaryDomain == domain, ct))
+        {
+            return false;
+        }
+
+        var now = DateTime.UtcNow;
+        return !await _central.PendingRegistrations.AsNoTracking()
+            .AnyAsync(p =>
+                (p.Status == Domain.Enums.PendingRegistrationStatus.Draft
+                 || p.Status == Domain.Enums.PendingRegistrationStatus.AwaitingPayment
+                 || p.Status == Domain.Enums.PendingRegistrationStatus.PaymentSucceeded)
+                && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now)
+                && (p.Slug == normalized || p.PrimaryDomain == domain), ct);
     }
 
     public async Task<CustomerSignupResult> RegisterAsync(CustomerSignupRequest request, CancellationToken ct)

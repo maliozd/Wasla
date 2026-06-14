@@ -12,4 +12,7 @@ public sealed class CustomerOnboardingOptions
     public string SqlAuth { get; set; } = "trusted";
 
     public int TrialDays { get; set; } = 14;
+
+    /// <summary>How long a pending registration remains valid before expiry.</summary>
+    public int PendingRegistrationExpiryDays { get; set; } = 7;
 }

@@ -15,7 +15,6 @@ using OrderHub.Application.Abstractions.Printing;
 using OrderHub.Application.Abstractions.Security;
 using OrderHub.Application.Abstractions.Onboarding;
 using OrderHub.Application.Abstractions.Plans;
-using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Tenant;
 using OrderHub.Infrastructure.Options;
 using OrderHub.Infrastructure.Plans;
@@ -52,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IOrderHubPlanCatalog, OrderHubPlanCatalog>();
         services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
         services.AddScoped<ICustomerOnboardingService, CustomerOnboardingService>();
+        services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
 
         var providerMode = ProviderModeResolver.Resolve(configuration);
 

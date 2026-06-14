@@ -1,0 +1,25 @@
+@model OrderHub.Web.Models.Checkout.CheckoutResultViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = L["Checkout.CancelledTitle"];
+}
+<div class="oh-signup-page py-4 py-md-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm oh-signup-card">
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <div class="mb-3 text-secondary">
+                            <i class="bi bi-slash-circle" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                        </div>
+                        <h1 class="h4 fw-bold mb-2">@L["Checkout.CancelledTitle"]</h1>
+                        <p class="text-secondary mb-4">@L["Checkout.CancelledMessage"]</p>
+                        <a class="btn btn-primary rounded-pill" href="/signup">@L["Checkout.RegisterAgain"]</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

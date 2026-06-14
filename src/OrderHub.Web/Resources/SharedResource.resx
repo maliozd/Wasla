@@ -205,7 +205,7 @@
     <value>Yıllık</value>
   </data>
   <data name="Signup.BillingNote" xml:space="preserve">
-    <value>Ödeme entegrasyonu henüz aktif değil. Seçiminiz kayıt için saklanır.</value>
+    <value>Ödeme entegrasyonu henüz aktif değil. Bir sonraki ekranda ödeme akışı simüle edilecek.</value>
   </data>
   <data name="Signup.BusinessName" xml:space="preserve">
     <value>İşletme / restoran adı</value>
@@ -267,23 +267,32 @@
   <data name="Signup.EnterpriseContactOnly" xml:space="preserve">
     <value>Enterprise planı için lütfen bizimle iletişime geçin.</value>
   </data>
-  <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
-    <value>Adım 1 — Print Bridge paketini indirin</value>
+  <data name="Signup.StepAddress" xml:space="preserve">
+    <value>Adres bilgileri</value>
   </data>
-  <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
-    <value>Print Bridge şu an taşınabilir bir Windows paketi (.zip) olarak sunulur. Paketi indirin, fiş yazıcısına bağlı Windows bilgisayarda zip dosyasını açın ve OrderHub.PrintBridge.exe dosyasını çalıştırın.</value>
+  <data name="Signup.BusinessPhone" xml:space="preserve">
+    <value>İşletme telefonu</value>
   </data>
-  <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
-    <value>Taşınabilir Windows Paketi</value>
+  <data name="Signup.District" xml:space="preserve">
+    <value>İlçe</value>
   </data>
-  <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
-    <value>Print Bridge paketi henüz hazırlanmadı.</value>
+  <data name="Signup.Neighborhood" xml:space="preserve">
+    <value>Mahalle</value>
   </data>
-  <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
-    <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
+  <data name="Signup.AddressLine1" xml:space="preserve">
+    <value>Açık adres</value>
   </data>
-  <data name="PrintBridge.DownloadButton" xml:space="preserve">
-    <value>Print Bridge Paketini İndir</value>
+  <data name="Signup.AddressLine2" xml:space="preserve">
+    <value>Adres devamı</value>
+  </data>
+  <data name="Signup.PostalCode" xml:space="preserve">
+    <value>Posta kodu</value>
+  </data>
+  <data name="Signup.OwnerPhone" xml:space="preserve">
+    <value>Telefon</value>
+  </data>
+  <data name="Signup.ContinueToPayment" xml:space="preserve">
+    <value>Kaydı tamamla ve ödemeye geç</value>
   </data>
   <data name="Signup.PendingTitle" xml:space="preserve">
     <value>Hesabınız neredeyse hazır</value>
@@ -326,5 +335,47 @@
   </data>
   <data name="Signup.PendingTestNote" xml:space="preserve">
     <value>Test ortamında ödeme adımı simüle edilecektir.</value>
+  </data>
+  <data name="Checkout.ReviewTitle" xml:space="preserve">
+    <value>Ödeme özeti</value>
+  </data>
+  <data name="Checkout.SimulationNotice" xml:space="preserve">
+    <value>Gerçek ödeme entegrasyonu henüz aktif değil. Bu ekranda ödeme sonucu simüle edilir.</value>
+  </data>
+  <data name="Checkout.SimulateSuccess" xml:space="preserve">
+    <value>Ödemeyi başarılı simüle et</value>
+  </data>
+  <data name="Checkout.SimulateFailed" xml:space="preserve">
+    <value>Ödemeyi başarısız simüle et</value>
+  </data>
+  <data name="Checkout.SuccessTitle" xml:space="preserve">
+    <value>Ödeme başarılı olarak simüle edildi</value>
+  </data>
+  <data name="Checkout.SuccessNextPhase" xml:space="preserve">
+    <value>Bir sonraki fazda hesabınız hazırlanacak.</value>
+  </data>
+  <data name="Checkout.FailedTitle" xml:space="preserve">
+    <value>Ödeme başarısız olarak simüle edildi</value>
+  </data>
+  <data name="Checkout.CancelledTitle" xml:space="preserve">
+    <value>Kayıt iptal edildi</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
+    <value>Adım 1 — Print Bridge paketini indirin</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
+    <value>Print Bridge şu an taşınabilir bir Windows paketi (.zip) olarak sunulur. Paketi indirin, fiş yazıcısına bağlı Windows bilgisayarda zip dosyasını açın ve OrderHub.PrintBridge.exe dosyasını çalıştırın.</value>
+  </data>
+  <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
+    <value>Taşınabilir Windows Paketi</value>
+  </data>
+  <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
+    <value>Print Bridge paketi henüz hazırlanmadı.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
+    <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
+  </data>
+  <data name="PrintBridge.DownloadButton" xml:space="preserve">
+    <value>Print Bridge Paketini İndir</value>
   </data>
 </root>

@@ -14,7 +14,7 @@
 <div class="oh-signup-page py-4 py-md-5">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-xl-8">
+            <div class="col-xl-9">
                 <div class="text-center mb-4">
                     <h1 class="h3 fw-bold mb-2">@L["Signup.Title"]</h1>
                     <p class="text-secondary mb-0">@L["Signup.Subtitle"]</p>
@@ -53,6 +53,7 @@
                                             <option value="Yearly">@L["Signup.BillingYearly"]</option>
                                         </select>
                                         <div class="form-text">@L["Signup.BillingNote"]</div>
+                                        <span asp-validation-for="BillingPeriod" class="text-danger small"></span>
                                     </div>
                                 </div>
                             </section>
@@ -72,24 +73,18 @@
                                 <div class="row g-3">
                                     <div class="col-12">
                                         <label asp-for="BusinessName" class="form-label"></label>
-                                        <input asp-for="BusinessName" class="form-control" autocomplete="organization" />
+                                        <input asp-for="BusinessName" class="form-control" id="signupBusinessName" autocomplete="organization" />
                                         <span asp-validation-for="BusinessName" class="text-danger small"></span>
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="BusinessType" class="form-label"></label>
                                         <input asp-for="BusinessType" class="form-control" placeholder="@L["Signup.BusinessTypePlaceholder"]" />
+                                        <span asp-validation-for="BusinessType" class="text-danger small"></span>
                                     </div>
                                     <div class="col-md-6">
-                                        <label asp-for="Phone" class="form-label"></label>
-                                        <input asp-for="Phone" class="form-control" autocomplete="tel" />
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label asp-for="City" class="form-label"></label>
-                                        <input asp-for="City" class="form-control" autocomplete="address-level2" />
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label asp-for="Country" class="form-label"></label>
-                                        <input asp-for="Country" class="form-control" autocomplete="country-name" />
+                                        <label asp-for="BusinessPhone" class="form-label"></label>
+                                        <input asp-for="BusinessPhone" class="form-control" autocomplete="tel" />
+                                        <span asp-validation-for="BusinessPhone" class="text-danger small"></span>
                                     </div>
                                     <div class="col-12">
                                         <label asp-for="Slug" class="form-label"></label>
@@ -97,7 +92,10 @@
                                             <input asp-for="Slug" class="form-control" id="signupSlug" pattern="[a-z0-9][a-z0-9_-]*" />
                                             <span class="input-group-text text-muted">.@Model.MarketingBaseDomain</span>
                                         </div>
-                                        <div class="form-text">@L["Signup.SlugHelp"] <span id="signupDomainPreview" class="fw-semibold">@domainPreview</span></div>
+                                        <div class="form-text">
+                                            @L["Signup.SlugHelp"]
+                                            <span id="signupDomainPreview" class="fw-semibold">@domainPreview</span>
+                                        </div>
                                         <span asp-validation-for="Slug" class="text-danger small"></span>
                                     </div>
                                 </div>
@@ -106,6 +104,47 @@
                             <section class="oh-signup-section mb-4">
                                 <div class="oh-signup-step-label mb-3">
                                     <span class="oh-signup-step-num">3</span>
+                                    <span class="fw-semibold">@L["Signup.StepAddress"]</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label asp-for="Country" class="form-label"></label>
+                                        <input asp-for="Country" class="form-control" autocomplete="country-name" />
+                                        <span asp-validation-for="Country" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="City" class="form-label"></label>
+                                        <input asp-for="City" class="form-control" autocomplete="address-level2" />
+                                        <span asp-validation-for="City" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="District" class="form-label"></label>
+                                        <input asp-for="District" class="form-control" autocomplete="address-level3" />
+                                        <span asp-validation-for="District" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="Neighborhood" class="form-label"></label>
+                                        <input asp-for="Neighborhood" class="form-control" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="PostalCode" class="form-label"></label>
+                                        <input asp-for="PostalCode" class="form-control" autocomplete="postal-code" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="AddressLine1" class="form-label"></label>
+                                        <input asp-for="AddressLine1" class="form-control" autocomplete="street-address" />
+                                        <span asp-validation-for="AddressLine1" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="AddressLine2" class="form-label"></label>
+                                        <input asp-for="AddressLine2" class="form-control" />
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="oh-signup-section">
+                                <div class="oh-signup-step-label mb-3">
+                                    <span class="oh-signup-step-num">4</span>
                                     <span class="fw-semibold">@L["Signup.StepOwner"]</span>
                                 </div>
                                 <div class="row g-3">
@@ -114,10 +153,14 @@
                                         <input asp-for="OwnerFullName" class="form-control" autocomplete="name" />
                                         <span asp-validation-for="OwnerFullName" class="text-danger small"></span>
                                     </div>
-                                    <div class="col-12">
+                                    <div class="col-md-6">
                                         <label asp-for="OwnerEmail" class="form-label"></label>
                                         <input asp-for="OwnerEmail" class="form-control" autocomplete="email" />
                                         <span asp-validation-for="OwnerEmail" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="OwnerPhone" class="form-label"></label>
+                                        <input asp-for="OwnerPhone" class="form-control" autocomplete="tel" />
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="Password" class="form-label"></label>
@@ -130,19 +173,13 @@
                                         <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                                     </div>
                                 </div>
-                            </section>
-
-                            <section class="oh-signup-section">
-                                <div class="oh-signup-step-label mb-3">
-                                    <span class="oh-signup-step-num">4</span>
-                                    <span class="fw-semibold">@L["Signup.StepCreate"]</span>
-                                </div>
-                                <p class="text-secondary small mb-3">@L["Signup.SetupLaterNote"]</p>
+                                <p class="text-secondary small mt-3 mb-3">@L["Signup.SetupLaterNote"]</p>
                                 <button type="submit" id="signupSubmitButton" class="btn btn-primary btn-lg rounded-pill px-4">
-                                    <i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>@L["Signup.CreateAccount"]
+                                    <i class="bi bi-arrow-right-circle me-2" aria-hidden="true"></i>@L["Signup.ContinueToPayment"]
                                 </button>
                             </section>
                             </div>
+                            <input type="hidden" id="signupBaseDomain" value="@Model.MarketingBaseDomain" />
                         </form>
                     </div>
                 </div>
@@ -158,41 +195,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (function () {
-            var slugInput = document.getElementById("signupSlug");
-            var preview = document.getElementById("signupDomainPreview");
-            var planSelect = document.getElementById("signupPlanCode");
-            var enterpriseNotice = document.getElementById("signupEnterpriseNotice");
-            var selfServiceSections = document.getElementById("signupSelfServiceSections");
-            var billingCol = document.getElementById("signupBillingCol");
-            var baseDomain = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MarketingBaseDomain));
-
-            function updatePlanUi() {
-                if (!planSelect) return;
-                var option = planSelect.options[planSelect.selectedIndex];
-                var isContactSales = option && option.getAttribute("data-contact-sales") === "true";
-                if (enterpriseNotice) {
-                    enterpriseNotice.classList.toggle("d-none", !isContactSales);
-                }
-                if (selfServiceSections) {
-                    selfServiceSections.classList.toggle("d-none", isContactSales);
-                }
-                if (billingCol) {
-                    billingCol.classList.toggle("d-none", isContactSales);
-                }
-            }
-
-            if (planSelect) {
-                planSelect.addEventListener("change", updatePlanUi);
-                updatePlanUi();
-            }
-
-            if (!slugInput || !preview) return;
-            slugInput.addEventListener("input", function () {
-                var slug = (slugInput.value || "your-name").trim().toLowerCase() || "your-name";
-                preview.textContent = slug + "." + baseDomain;
-            });
-        })();
-    </script>
+    <script src="~/js/signup/signup-form.js" asp-append-version="true"></script>
 }

@@ -1,0 +1,10 @@
+namespace OrderHub.Application.Abstractions.Onboarding;
+
+public sealed record PendingRegistrationResult(
+    bool Success,
+    Guid? RegistrationId,
+    string? PrimaryDomain,
+    string? Slug,
+    string? DatabaseName,
+    PendingRegistrationError Error = PendingRegistrationError.None,
+    string? ErrorMessage = null);

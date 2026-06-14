@@ -1,0 +1,104 @@
+@model OrderHub.Web.Models.Checkout.CheckoutReviewViewModel
+@using Microsoft.Extensions.Localization
+@using OrderHub.Domain.Enums
+@inject IStringLocalizer<OrderHub.Web.SharedResource> L
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = L["Checkout.ReviewTitle"];
+    var billingLabel = Model.IsYearlyBilling ? L["Signup.BillingYearly"] : L["Signup.BillingMonthly"];
+}
+<div class="oh-signup-page py-4 py-md-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xl-9">
+                <div class="text-center mb-4">
+                    <h1 class="h3 fw-bold mb-2">@L["Checkout.ReviewTitle"]</h1>
+                    <p class="text-secondary mb-0">@L["Checkout.ReviewSubtitle"]</p>
+                </div>
+
+                <div class="card border-0 shadow-sm oh-signup-card mb-3">
+                    <div class="card-body p-4 p-md-5">
+                        @if (!string.IsNullOrWhiteSpace(Model.StatusNoticeKey))
+                        {
+                            <div class="alert alert-info small" role="status">@L[Model.StatusNoticeKey]</div>
+                        }
+
+                        <div class="alert alert-secondary small" role="note">@L["Checkout.SimulationNotice"]</div>
+
+                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionRegistration"]</h2>
+                        <dl class="row small mb-4">
+                            <dt class="col-sm-4">@L["Signup.Plan"]</dt>
+                            <dd class="col-sm-8">@Model.PlanDisplayName</dd>
+                            <dt class="col-sm-4">@L["Signup.BillingPeriod"]</dt>
+                            <dd class="col-sm-8">@billingLabel</dd>
+                            <dt class="col-sm-4">@L["Signup.BusinessName"]</dt>
+                            <dd class="col-sm-8">@Model.BusinessName</dd>
+                            <dt class="col-sm-4">@L["Signup.SlugHelp"]</dt>
+                            <dd class="col-sm-8"><code>@Model.PrimaryDomain</code></dd>
+                            <dt class="col-sm-4">@L["Signup.BusinessPhone"]</dt>
+                            <dd class="col-sm-8">@Model.BusinessPhone</dd>
+                            <dt class="col-sm-4">@L["Signup.OwnerFullName"]</dt>
+                            <dd class="col-sm-8">@Model.OwnerFullName</dd>
+                            <dt class="col-sm-4">@L["Signup.OwnerEmail"]</dt>
+                            <dd class="col-sm-8">@Model.OwnerEmail</dd>
+                            @if (!string.IsNullOrWhiteSpace(Model.OwnerPhone))
+                            {
+                                <dt class="col-sm-4">@L["Signup.OwnerPhone"]</dt>
+                                <dd class="col-sm-8">@Model.OwnerPhone</dd>
+                            }
+                            <dt class="col-sm-4">@L["Checkout.AddressSummary"]</dt>
+                            <dd class="col-sm-8">@Model.AddressSummary</dd>
+                        </dl>
+
+                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionPricing"]</h2>
+                        <div class="bg-body-tertiary rounded p-3 mb-4">
+                            <dl class="row small mb-0">
+                                <dt class="col-sm-6">@L["Checkout.PlanLabel"]</dt>
+                                <dd class="col-sm-6 text-sm-end">@Model.PlanDisplayName</dd>
+                                <dt class="col-sm-6">@L["Signup.BillingPeriod"]</dt>
+                                <dd class="col-sm-6 text-sm-end">@billingLabel</dd>
+                                @if (Model.IsYearlyBilling)
+                                {
+                                    <dt class="col-sm-6">@L["Checkout.MonthlyReferencePrice"]</dt>
+                                    <dd class="col-sm-6 text-sm-end">@Model.MonthlyPriceTry.ToString("N0") TRY</dd>
+                                }
+                                <dt class="col-sm-6 fw-semibold">@L["Checkout.TotalAmount"]</dt>
+                                <dd class="col-sm-6 text-sm-end fw-semibold">@Model.TotalPriceTry.ToString("N0") TRY</dd>
+                            </dl>
+                        </div>
+
+                        @if (Model.CanSimulatePayment)
+                        {
+                            <div class="d-flex flex-column flex-sm-row flex-wrap gap-2">
+                                <form asp-action="SimulateSuccess" asp-route-id="@Model.RegistrationId" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-primary rounded-pill">
+                                        <i class="bi bi-check-circle me-1" aria-hidden="true"></i>@L["Checkout.SimulateSuccess"]
+                                    </button>
+                                </form>
+                                <form asp-action="SimulateFailed" asp-route-id="@Model.RegistrationId" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger rounded-pill">
+                                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>@L["Checkout.SimulateFailed"]
+                                    </button>
+                                </form>
+                            </div>
+                        }
+
+                        @if (Model.CanCancel)
+                        {
+                            <form asp-action="Cancel" asp-route-id="@Model.RegistrationId" method="post" class="mt-3">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-link btn-sm text-muted px-0">@L["Checkout.CancelRegistration"]</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                <p class="text-center mb-0">
+                    <a class="btn btn-outline-secondary btn-sm rounded-pill" href="/">@L["Signup.PendingBackHome"]</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

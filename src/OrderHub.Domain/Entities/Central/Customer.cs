@@ -1,4 +1,5 @@
 using OrderHub.Domain.Common;
+using OrderHub.Domain.Enums;
 
 namespace OrderHub.Domain.Entities.Central;
 
@@ -53,4 +54,11 @@ public class Customer : BaseEntity
     public string? LastMigrationResult { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>Future billing payment state for tenant subscription (not order payment).</summary>
+    public TenantBillingPaymentStatus BillingPaymentStatus { get; set; } = TenantBillingPaymentStatus.Pending;
+
+    public ProvisioningStatus ProvisioningStatus { get; set; } = ProvisioningStatus.NotStarted;
+
+    public SubscriptionStatus SubscriptionStatus { get; set; } = SubscriptionStatus.None;
 }

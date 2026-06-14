@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using CentralCustomer = OrderHub.Domain.Entities.Central.Customer;
 using CentralAdminUser = OrderHub.Domain.Entities.Central.CentralAdminUser;
 using CustomerMembership = OrderHub.Domain.Entities.Central.CustomerMembership;
+using PendingRegistration = OrderHub.Domain.Entities.Central.PendingRegistration;
 using PrintBridgeDevice = OrderHub.Domain.Entities.Central.PrintBridgeDevice;
 using OrderHub.Infrastructure.Persistence.Central.Configurations;
 
@@ -18,6 +19,7 @@ public class CentralDbContext : DbContext
     public DbSet<CustomerMembership> CustomerMemberships => Set<CustomerMembership>();
     public DbSet<CentralAdminUser> CentralAdminUsers => Set<CentralAdminUser>();
     public DbSet<PrintBridgeDevice> PrintBridgeDevices => Set<PrintBridgeDevice>();
+    public DbSet<PendingRegistration> PendingRegistrations => Set<PendingRegistration>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,5 +27,6 @@ public class CentralDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CustomerMembershipConfiguration());
         modelBuilder.ApplyConfiguration(new CentralAdminUserConfiguration());
         modelBuilder.ApplyConfiguration(new PrintBridgeDeviceConfiguration());
+        modelBuilder.ApplyConfiguration(new PendingRegistrationConfiguration());
     }
 }

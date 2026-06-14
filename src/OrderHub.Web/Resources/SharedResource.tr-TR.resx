@@ -2782,27 +2782,30 @@
   <data name="Signup.BillingPeriod" xml:space="preserve"><value>Faturalandırma dönemi</value></data>
   <data name="Signup.BillingMonthly" xml:space="preserve"><value>Aylık</value></data>
   <data name="Signup.BillingYearly" xml:space="preserve"><value>Yıllık</value></data>
-  <data name="Signup.BillingNote" xml:space="preserve"><value>Ödeme entegrasyonu henüz aktif değil. Seçiminiz kayıt için saklanır.</value></data>
+  <data name="Signup.BillingNote" xml:space="preserve"><value>Ödeme entegrasyonu henüz aktif değil. Bir sonraki ekranda ödeme akışı simüle edilecek.</value></data>
   <data name="Signup.BusinessName" xml:space="preserve"><value>İşletme / restoran adı</value></data>
   <data name="Signup.BusinessType" xml:space="preserve"><value>İşletme türü</value></data>
   <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>Örn. Restoran, kafe</value></data>
+  <data name="Signup.BusinessPhone" xml:space="preserve"><value>İşletme telefonu</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>Telefon</value></data>
-  <data name="Signup.City" xml:space="preserve"><value>Şehir</value></data>
+  <data name="Signup.City" xml:space="preserve"><value>Şehir / İl</value></data>
   <data name="Signup.Country" xml:space="preserve"><value>Ülke</value></data>
-  <data name="Signup.Slug" xml:space="preserve"><value>Alt alan adı (slug)</value></data>
+  <data name="Signup.District" xml:space="preserve"><value>İlçe</value></data>
+  <data name="Signup.Neighborhood" xml:space="preserve"><value>Mahalle</value></data>
+  <data name="Signup.AddressLine1" xml:space="preserve"><value>Açık adres</value></data>
+  <data name="Signup.AddressLine2" xml:space="preserve"><value>Adres devamı</value></data>
+  <data name="Signup.PostalCode" xml:space="preserve"><value>Posta kodu</value></data>
+  <data name="Signup.StepAddress" xml:space="preserve"><value>Adres bilgileri</value></data>
+  <data name="Signup.Slug" xml:space="preserve"><value>Alt alan adı</value></data>
   <data name="Signup.SlugHelp" xml:space="preserve"><value>Giriş adresiniz:</value></data>
   <data name="Signup.OwnerFullName" xml:space="preserve"><value>Ad soyad</value></data>
   <data name="Signup.OwnerEmail" xml:space="preserve"><value>E-posta</value></data>
+  <data name="Signup.OwnerPhone" xml:space="preserve"><value>Telefon</value></data>
   <data name="Signup.Password" xml:space="preserve"><value>Şifre</value></data>
   <data name="Signup.ConfirmPassword" xml:space="preserve"><value>Şifre tekrar</value></data>
-  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>Platform bağlantıları ve diğer ayarları kayıttan sonra tamamlayabilirsiniz.</value></data>
+  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>Platform bağlantıları ve diğer ayarları ödeme sonrası tamamlayabilirsiniz.</value></data>
+  <data name="Signup.ContinueToPayment" xml:space="preserve"><value>Kaydı tamamla ve ödemeye geç</value></data>
   <data name="Signup.CreateAccount" xml:space="preserve"><value>Hesabı oluştur</value></data>
-  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>Zaten hesabınız var mı?</value></data>
-  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>Bu alt alan adı zaten kullanılıyor.</value></data>
-  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>Hesap oluşturulamadı. Lütfen tekrar deneyin veya destek ile iletişime geçin.</value></data>
-  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>Enterprise için teklif alın</value></data>
-  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>Enterprise planı özel limitler ve anlaşma ile sunulur. Kayıt formu yerine bizimle iletişime geçerek teklif isteyebilirsiniz.</value></data>
-  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Enterprise planı için lütfen bizimle iletişime geçin.</value></data>
   <data name="Signup.PendingTitle" xml:space="preserve"><value>Hesabınız neredeyse hazır</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>Bilgilerinizi aldık. Devam etmek için ödeme adımını tamamlayın.</value></data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>Ödeme tamamlandığında restoran paneliniz otomatik olarak hazırlanacaktır.</value></data>
@@ -2817,6 +2820,38 @@
   <data name="Signup.PendingNextStep2" xml:space="preserve"><value>Yönetici hesabınız aktif edilir</value></data>
   <data name="Signup.PendingNextStep3" xml:space="preserve"><value>Platform bağlantılarını kurmaya başlayabilirsiniz</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>Test ortamında ödeme adımı simüle edilecektir.</value></data>
+  <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Ödeme özeti</value></data>
+  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Kayıt bilgilerinizi kontrol edin ve ödeme sonucunu simüle edin.</value></data>
+  <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Gerçek ödeme entegrasyonu henüz aktif değil. Bu ekranda ödeme sonucu simüle edilir.</value></data>
+  <data name="Checkout.SectionRegistration" xml:space="preserve"><value>Kayıt özeti</value></data>
+  <data name="Checkout.SectionPricing" xml:space="preserve"><value>Ücret özeti</value></data>
+  <data name="Checkout.AddressSummary" xml:space="preserve"><value>Adres</value></data>
+  <data name="Checkout.PlanLabel" xml:space="preserve"><value>Plan</value></data>
+  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve"><value>Aylık referans fiyat</value></data>
+  <data name="Checkout.TotalAmount" xml:space="preserve"><value>Toplam tutar</value></data>
+  <data name="Checkout.SimulateSuccess" xml:space="preserve"><value>Ödemeyi başarılı simüle et</value></data>
+  <data name="Checkout.SimulateFailed" xml:space="preserve"><value>Ödemeyi başarısız simüle et</value></data>
+  <data name="Checkout.CancelRegistration" xml:space="preserve"><value>Kaydı iptal et</value></data>
+  <data name="Checkout.SuccessTitle" xml:space="preserve"><value>Ödeme başarılı olarak simüle edildi</value></data>
+  <data name="Checkout.SuccessMessage" xml:space="preserve"><value>Ödeme başarılı olarak simüle edildi.</value></data>
+  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>Bir sonraki fazda hesabınız hazırlanacak.</value></data>
+  <data name="Checkout.FailedTitle" xml:space="preserve"><value>Ödeme başarısız olarak simüle edildi</value></data>
+  <data name="Checkout.FailedMessage" xml:space="preserve"><value>Ödeme başarısız olarak simüle edildi.</value></data>
+  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>Hesap çalışma alanı oluşturulmadı.</value></data>
+  <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Kayıt iptal edildi</value></data>
+  <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Kayıt iptal edildi. İsterseniz yeniden kayıt oluşturabilirsiniz.</value></data>
+  <data name="Checkout.TryAgain" xml:space="preserve"><value>Ödeme adımına dön</value></data>
+  <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Yeniden kayıt ol</value></data>
+  <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>Bu kayıt için ödeme zaten başarılı olarak simüle edildi.</value></data>
+  <data name="Checkout.StatusCancelled" xml:space="preserve"><value>Bu kayıt iptal edilmiş.</value></data>
+  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>Bu kayıt için hesap hazırlama tamamlanmış.</value></data>
+  <data name="Checkout.StatusExpired" xml:space="preserve"><value>Bu kayıt süresi dolmuş. Lütfen yeniden kayıt oluşturun.</value></data>
+  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>Zaten hesabınız var mı?</value></data>
+  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>Bu alt alan adı zaten kullanılıyor.</value></data>
+  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>Hesap oluşturulamadı. Lütfen tekrar deneyin veya destek ile iletişime geçin.</value></data>
+  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>Enterprise için teklif alın</value></data>
+  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>Enterprise planı özel limitler ve anlaşma ile sunulur. Kayıt formu yerine bizimle iletişime geçerek teklif isteyebilirsiniz.</value></data>
+  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Enterprise planı için lütfen bizimle iletişime geçin.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>İşletme adı gereklidir.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Alt alan adı gereklidir.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Alt alan adı yalnızca küçük harf, rakam, tire ve alt çizgi içerebilir.</value></data>

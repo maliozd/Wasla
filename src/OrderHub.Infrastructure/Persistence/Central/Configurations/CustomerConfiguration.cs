@@ -19,6 +19,9 @@ public class CustomerConfiguration : IEntityTypeConfiguration<CentralCustomer>
         builder.Property(c => c.EncryptedConnectionString).IsRequired().HasMaxLength(2000);
         builder.Property(c => c.SchemaVersion).IsRequired().HasMaxLength(20);
         builder.Property(c => c.LastMigrationResult).HasMaxLength(1000);
+        builder.Property(c => c.BillingPaymentStatus).HasConversion<int>();
+        builder.Property(c => c.ProvisioningStatus).HasConversion<int>();
+        builder.Property(c => c.SubscriptionStatus).HasConversion<int>();
 
         // Primary lookup path for every single web request - must be indexed and unique.
         builder.HasIndex(c => c.PrimaryDomain).IsUnique().HasDatabaseName("IX_Customers_PrimaryDomain");

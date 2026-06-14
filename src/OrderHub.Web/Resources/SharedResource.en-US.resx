@@ -2785,27 +2785,30 @@
   <data name="Signup.BillingPeriod" xml:space="preserve"><value>Billing period</value></data>
   <data name="Signup.BillingMonthly" xml:space="preserve"><value>Monthly</value></data>
   <data name="Signup.BillingYearly" xml:space="preserve"><value>Yearly</value></data>
-  <data name="Signup.BillingNote" xml:space="preserve"><value>Payment integration is not active yet. Your selection is stored for registration.</value></data>
+  <data name="Signup.BillingNote" xml:space="preserve"><value>Payment integration is not active yet. The payment flow will be simulated on the next screen.</value></data>
   <data name="Signup.BusinessName" xml:space="preserve"><value>Business / restaurant name</value></data>
   <data name="Signup.BusinessType" xml:space="preserve"><value>Business type</value></data>
   <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>e.g. Restaurant, café</value></data>
+  <data name="Signup.BusinessPhone" xml:space="preserve"><value>Business phone</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>Phone</value></data>
-  <data name="Signup.City" xml:space="preserve"><value>City</value></data>
+  <data name="Signup.City" xml:space="preserve"><value>City / Province</value></data>
   <data name="Signup.Country" xml:space="preserve"><value>Country</value></data>
-  <data name="Signup.Slug" xml:space="preserve"><value>Subdomain (slug)</value></data>
+  <data name="Signup.District" xml:space="preserve"><value>District</value></data>
+  <data name="Signup.Neighborhood" xml:space="preserve"><value>Neighborhood</value></data>
+  <data name="Signup.AddressLine1" xml:space="preserve"><value>Street address</value></data>
+  <data name="Signup.AddressLine2" xml:space="preserve"><value>Address line 2</value></data>
+  <data name="Signup.PostalCode" xml:space="preserve"><value>Postal code</value></data>
+  <data name="Signup.StepAddress" xml:space="preserve"><value>Address details</value></data>
+  <data name="Signup.Slug" xml:space="preserve"><value>Subdomain</value></data>
   <data name="Signup.SlugHelp" xml:space="preserve"><value>Your sign-in address:</value></data>
   <data name="Signup.OwnerFullName" xml:space="preserve"><value>Full name</value></data>
   <data name="Signup.OwnerEmail" xml:space="preserve"><value>Email</value></data>
+  <data name="Signup.OwnerPhone" xml:space="preserve"><value>Phone</value></data>
   <data name="Signup.Password" xml:space="preserve"><value>Password</value></data>
   <data name="Signup.ConfirmPassword" xml:space="preserve"><value>Confirm password</value></data>
-  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>You can complete platform connections and other settings after registration.</value></data>
+  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>You can complete platform connections and other settings after payment.</value></data>
+  <data name="Signup.ContinueToPayment" xml:space="preserve"><value>Complete registration and continue to payment</value></data>
   <data name="Signup.CreateAccount" xml:space="preserve"><value>Create account</value></data>
-  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>Already have an account?</value></data>
-  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>This subdomain is already taken.</value></data>
-  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>Could not create the account. Please try again or contact support.</value></data>
-  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>Request an Enterprise offer</value></data>
-  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>The Enterprise plan is offered with custom limits and agreement. Contact us to request an offer instead of using the self-service signup form.</value></data>
-  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Please contact us for the Enterprise plan.</value></data>
   <data name="Signup.PendingTitle" xml:space="preserve"><value>Your account is almost ready</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>We received your details. Complete the payment step to continue.</value></data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>After payment is complete, your restaurant panel will be prepared automatically.</value></data>
@@ -2820,6 +2823,38 @@
   <data name="Signup.PendingNextStep2" xml:space="preserve"><value>Your admin account is activated</value></data>
   <data name="Signup.PendingNextStep3" xml:space="preserve"><value>You can start connecting your platforms</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>In the test environment, the payment step will be simulated.</value></data>
+  <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Payment summary</value></data>
+  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Review your registration details and simulate the payment result.</value></data>
+  <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Real payment integration is not active yet. Payment outcome is simulated on this screen.</value></data>
+  <data name="Checkout.SectionRegistration" xml:space="preserve"><value>Registration summary</value></data>
+  <data name="Checkout.SectionPricing" xml:space="preserve"><value>Pricing summary</value></data>
+  <data name="Checkout.AddressSummary" xml:space="preserve"><value>Address</value></data>
+  <data name="Checkout.PlanLabel" xml:space="preserve"><value>Plan</value></data>
+  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve"><value>Monthly reference price</value></data>
+  <data name="Checkout.TotalAmount" xml:space="preserve"><value>Total amount</value></data>
+  <data name="Checkout.SimulateSuccess" xml:space="preserve"><value>Simulate successful payment</value></data>
+  <data name="Checkout.SimulateFailed" xml:space="preserve"><value>Simulate failed payment</value></data>
+  <data name="Checkout.CancelRegistration" xml:space="preserve"><value>Cancel registration</value></data>
+  <data name="Checkout.SuccessTitle" xml:space="preserve"><value>Payment simulated as successful</value></data>
+  <data name="Checkout.SuccessMessage" xml:space="preserve"><value>Payment was simulated as successful.</value></data>
+  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>Your account will be prepared in the next phase.</value></data>
+  <data name="Checkout.FailedTitle" xml:space="preserve"><value>Payment simulated as failed</value></data>
+  <data name="Checkout.FailedMessage" xml:space="preserve"><value>Payment was simulated as failed.</value></data>
+  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>No account workspace was created.</value></data>
+  <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Registration cancelled</value></data>
+  <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Registration was cancelled. You can register again if you wish.</value></data>
+  <data name="Checkout.TryAgain" xml:space="preserve"><value>Return to payment step</value></data>
+  <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Register again</value></data>
+  <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>Payment has already been simulated as successful for this registration.</value></data>
+  <data name="Checkout.StatusCancelled" xml:space="preserve"><value>This registration has been cancelled.</value></data>
+  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>Account provisioning is already complete for this registration.</value></data>
+  <data name="Checkout.StatusExpired" xml:space="preserve"><value>This registration has expired. Please register again.</value></data>
+  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>Already have an account?</value></data>
+  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>This subdomain is already taken.</value></data>
+  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>Could not create the account. Please try again or contact support.</value></data>
+  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>Request an Enterprise offer</value></data>
+  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>The Enterprise plan is offered with custom limits and agreement. Contact us to request an offer instead of using the self-service signup form.</value></data>
+  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>Please contact us for the Enterprise plan.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>Business name is required.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Subdomain is required.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>Subdomain may only contain lowercase letters, numbers, hyphens, and underscores.</value></data>

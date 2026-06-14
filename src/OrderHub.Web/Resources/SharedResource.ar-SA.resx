@@ -2785,27 +2785,30 @@
   <data name="Signup.BillingPeriod" xml:space="preserve"><value>فترة الفوترة</value></data>
   <data name="Signup.BillingMonthly" xml:space="preserve"><value>شهري</value></data>
   <data name="Signup.BillingYearly" xml:space="preserve"><value>سنوي</value></data>
-  <data name="Signup.BillingNote" xml:space="preserve"><value>تكامل الدفع غير مفعّل بعد. يتم حفظ اختيارك للتسجيل.</value></data>
+  <data name="Signup.BillingNote" xml:space="preserve"><value>تكامل الدفع غير مفعّل بعد. سيتم محاكاة تدفق الدفع في الشاشة التالية.</value></data>
   <data name="Signup.BusinessName" xml:space="preserve"><value>اسم العمل / المطعم</value></data>
   <data name="Signup.BusinessType" xml:space="preserve"><value>نوع العمل</value></data>
   <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>مثال: مطعم، مقهى</value></data>
+  <data name="Signup.BusinessPhone" xml:space="preserve"><value>هاتف العمل</value></data>
   <data name="Signup.Phone" xml:space="preserve"><value>الهاتف</value></data>
-  <data name="Signup.City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Signup.City" xml:space="preserve"><value>المدينة / المحافظة</value></data>
   <data name="Signup.Country" xml:space="preserve"><value>الدولة</value></data>
-  <data name="Signup.Slug" xml:space="preserve"><value>النطاق الفرعي (slug)</value></data>
+  <data name="Signup.District" xml:space="preserve"><value>المنطقة</value></data>
+  <data name="Signup.Neighborhood" xml:space="preserve"><value>الحي</value></data>
+  <data name="Signup.AddressLine1" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Signup.AddressLine2" xml:space="preserve"><value>تفاصيل إضافية للعنوان</value></data>
+  <data name="Signup.PostalCode" xml:space="preserve"><value>الرمز البريدي</value></data>
+  <data name="Signup.StepAddress" xml:space="preserve"><value>تفاصيل العنوان</value></data>
+  <data name="Signup.Slug" xml:space="preserve"><value>النطاق الفرعي</value></data>
   <data name="Signup.SlugHelp" xml:space="preserve"><value>عنوان تسجيل الدخول:</value></data>
   <data name="Signup.OwnerFullName" xml:space="preserve"><value>الاسم الكامل</value></data>
   <data name="Signup.OwnerEmail" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Signup.OwnerPhone" xml:space="preserve"><value>الهاتف</value></data>
   <data name="Signup.Password" xml:space="preserve"><value>كلمة المرور</value></data>
   <data name="Signup.ConfirmPassword" xml:space="preserve"><value>تأكيد كلمة المرور</value></data>
-  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>يمكنك إكمال ربط المنصات والإعدادات الأخرى بعد التسجيل.</value></data>
+  <data name="Signup.SetupLaterNote" xml:space="preserve"><value>يمكنك إكمال ربط المنصات والإعدادات الأخرى بعد الدفع.</value></data>
+  <data name="Signup.ContinueToPayment" xml:space="preserve"><value>إكمال التسجيل والمتابعة إلى الدفع</value></data>
   <data name="Signup.CreateAccount" xml:space="preserve"><value>إنشاء الحساب</value></data>
-  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>لديك حساب بالفعل؟</value></data>
-  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>هذا النطاق الفرعي مستخدم بالفعل.</value></data>
-  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>تعذر إنشاء الحساب. حاول مرة أخرى أو تواصل مع الدعم.</value></data>
-  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>اطلب عرضًا لخطة Enterprise</value></data>
-  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>تُقدَّم خطة Enterprise بحدود واتفاق مخصص. تواصل معنا لطلب عرض بدلًا من نموذج التسجيل الذاتي.</value></data>
-  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>يرجى التواصل معنا لخطة Enterprise.</value></data>
   <data name="Signup.PendingTitle" xml:space="preserve"><value>حسابك جاهز تقريباً</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>استلمنا بياناتك. أكمل خطوة الدفع للمتابعة.</value></data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>بعد إتمام الدفع، سيتم تجهيز لوحة مطعمك تلقائياً.</value></data>
@@ -2820,6 +2823,38 @@
   <data name="Signup.PendingNextStep2" xml:space="preserve"><value>يتم تفعيل حساب المدير</value></data>
   <data name="Signup.PendingNextStep3" xml:space="preserve"><value>يمكنك البدء بربط المنصات</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>في بيئة الاختبار، سيتم محاكاة خطوة الدفع.</value></data>
+  <data name="Checkout.ReviewTitle" xml:space="preserve"><value>ملخص الدفع</value></data>
+  <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>راجع بيانات التسجيل ومحاكاة نتيجة الدفع.</value></data>
+  <data name="Checkout.SimulationNotice" xml:space="preserve"><value>تكامل الدفع الحقيقي غير مفعّل بعد. تتم محاكاة نتيجة الدفع في هذه الشاشة.</value></data>
+  <data name="Checkout.SectionRegistration" xml:space="preserve"><value>ملخص التسجيل</value></data>
+  <data name="Checkout.SectionPricing" xml:space="preserve"><value>ملخص السعر</value></data>
+  <data name="Checkout.AddressSummary" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Checkout.PlanLabel" xml:space="preserve"><value>الخطة</value></data>
+  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve"><value>السعر الشهري المرجعي</value></data>
+  <data name="Checkout.TotalAmount" xml:space="preserve"><value>المبلغ الإجمالي</value></data>
+  <data name="Checkout.SimulateSuccess" xml:space="preserve"><value>محاكاة دفع ناجح</value></data>
+  <data name="Checkout.SimulateFailed" xml:space="preserve"><value>محاكاة دفع فاشل</value></data>
+  <data name="Checkout.CancelRegistration" xml:space="preserve"><value>إلغاء التسجيل</value></data>
+  <data name="Checkout.SuccessTitle" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح</value></data>
+  <data name="Checkout.SuccessMessage" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح.</value></data>
+  <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>سيتم تجهيز حسابك في المرحلة التالية.</value></data>
+  <data name="Checkout.FailedTitle" xml:space="preserve"><value>تمت محاكاة فشل الدفع</value></data>
+  <data name="Checkout.FailedMessage" xml:space="preserve"><value>تمت محاكاة فشل الدفع.</value></data>
+  <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>لم يتم إنشاء مساحة عمل للحساب.</value></data>
+  <data name="Checkout.CancelledTitle" xml:space="preserve"><value>تم إلغاء التسجيل</value></data>
+  <data name="Checkout.CancelledMessage" xml:space="preserve"><value>تم إلغاء التسجيل. يمكنك التسجيل مرة أخرى إذا رغبت.</value></data>
+  <data name="Checkout.TryAgain" xml:space="preserve"><value>العودة إلى خطوة الدفع</value></data>
+  <data name="Checkout.RegisterAgain" xml:space="preserve"><value>التسجيل مرة أخرى</value></data>
+  <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح مسبقاً لهذا التسجيل.</value></data>
+  <data name="Checkout.StatusCancelled" xml:space="preserve"><value>تم إلغاء هذا التسجيل.</value></data>
+  <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>اكتمل تجهيز الحساب لهذا التسجيل.</value></data>
+  <data name="Checkout.StatusExpired" xml:space="preserve"><value>انتهت صلاحية هذا التسجيل. يرجى التسجيل مرة أخرى.</value></data>
+  <data name="Signup.AlreadyHaveAccount" xml:space="preserve"><value>لديك حساب بالفعل؟</value></data>
+  <data name="Signup.SlugUnavailable" xml:space="preserve"><value>هذا النطاق الفرعي مستخدم بالفعل.</value></data>
+  <data name="Signup.ProvisioningFailed" xml:space="preserve"><value>تعذر إنشاء الحساب. حاول مرة أخرى أو تواصل مع الدعم.</value></data>
+  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve"><value>اطلب عرضًا لخطة Enterprise</value></data>
+  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve"><value>تُقدَّم خطة Enterprise بحدود واتفاق مخصص. تواصل معنا لطلب عرض بدلًا من نموذج التسجيل الذاتي.</value></data>
+  <data name="Signup.EnterpriseContactOnly" xml:space="preserve"><value>يرجى التواصل معنا لخطة Enterprise.</value></data>
   <data name="Validation.BusinessNameRequired" xml:space="preserve"><value>اسم العمل مطلوب.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>النطاق الفرعي مطلوب.</value></data>
   <data name="Validation.SlugInvalid" xml:space="preserve"><value>يجب أن يحتوي النطاق الفرعي على أحرف صغيرة وأرقام وشرطات وشرطات سفلية فقط.</value></data>

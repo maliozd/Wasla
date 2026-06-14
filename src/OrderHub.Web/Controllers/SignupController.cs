@@ -4,10 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
-using OrderHub.Application.Abstractions.Auth;
 using OrderHub.Application.Abstractions.Onboarding;
 using OrderHub.Application.Abstractions.Plans;
-using OrderHub.Domain.Enums;
 using OrderHub.Infrastructure.Options;
 using OrderHub.Web.Models.Signup;
 
@@ -17,24 +15,21 @@ namespace OrderHub.Web.Controllers;
 [Route("signup")]
 public sealed class SignupController : Controller
 {
-    private readonly ICustomerOnboardingService _onboarding;
+    private readonly IPendingRegistrationService _pendingRegistrations;
     private readonly IOrderHubPlanCatalog _planCatalog;
-    private readonly ISignupCompletionTokenService _completionTokens;
-    private readonly IValidator<CustomerSignupRequest> _signupValidator;
+    private readonly IValidator<PendingRegistrationRequest> _signupValidator;
     private readonly CustomerOnboardingOptions _options;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public SignupController(
-        ICustomerOnboardingService onboarding,
+        IPendingRegistrationService pendingRegistrations,
         IOrderHubPlanCatalog planCatalog,
-        ISignupCompletionTokenService completionTokens,
-        IValidator<CustomerSignupRequest> signupValidator,
+        IValidator<PendingRegistrationRequest> signupValidator,
         IOptions<CustomerOnboardingOptions> options,
         IStringLocalizer<SharedResource> localizer)
     {
-        _onboarding = onboarding;
+        _pendingRegistrations = pendingRegistrations;
         _planCatalog = planCatalog;
-        _completionTokens = completionTokens;
         _signupValidator = signupValidator;
         _options = options.Value;
         _localizer = localizer;
@@ -64,24 +59,30 @@ public sealed class SignupController : Controller
             return View(model);
         }
 
-        if (!await _onboarding.IsSlugAvailableAsync(model.Slug, ct))
+        if (!await _pendingRegistrations.IsSlugAvailableAsync(model.Slug, ct))
         {
             ModelState.AddModelError(nameof(model.Slug), _localizer["Signup.SlugUnavailable"].Value);
             return View(model);
         }
 
-        var request = new CustomerSignupRequest(
+        var request = new PendingRegistrationRequest(
+            model.PlanCode,
+            model.BillingPeriod,
             model.BusinessName,
             model.BusinessType,
-            model.Phone,
-            model.City,
-            model.Country,
+            model.BusinessPhone,
             model.Slug,
+            model.Country,
+            model.City,
+            model.District,
+            model.Neighborhood,
+            model.AddressLine1,
+            model.AddressLine2,
+            model.PostalCode,
             model.OwnerFullName,
             model.OwnerEmail,
-            model.Password,
-            model.PlanCode,
-            model.BillingPeriod);
+            model.OwnerPhone,
+            model.Password);
 
         var validation = await _signupValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
@@ -96,23 +97,35 @@ public sealed class SignupController : Controller
             return View(model);
         }
 
-        var result = await _onboarding.RegisterAsync(request, ct);
+        var result = await _pendingRegistrations.SubmitAsync(request, ct);
         if (!result.Success)
         {
             ApplySignupError(result);
             return View(model);
         }
 
-        var token = _completionTokens.CreateToken(new SignupCompletionPayload(
-            result.CustomerId!.Value,
-            result.UserId!.Value,
-            model.OwnerEmail.Trim(),
-            model.OwnerFullName.Trim(),
-            UserRole.Owner));
+        return RedirectToAction(nameof(Pending), new { id = result.RegistrationId });
+    }
 
-        var scheme = Request.IsHttps ? "https" : "http";
-        var welcomeUrl = $"{scheme}://{result.PrimaryDomain}/auth/welcome?token={Uri.EscapeDataString(token)}";
-        return Redirect(welcomeUrl);
+    [HttpGet("pending/{id:guid}")]
+    public async Task<IActionResult> Pending(Guid id, CancellationToken ct)
+    {
+        var summary = await _pendingRegistrations.GetSummaryAsync(id, ct);
+        if (summary is null)
+            return NotFound();
+
+        var plan = _planCatalog.FindByCode(summary.PlanCode);
+        var planDisplay = plan is not null ? _localizer[plan.DisplayNameKey].Value : summary.PlanCode;
+
+        return View(new SignupPendingViewModel
+        {
+            RegistrationId = summary.Id,
+            BusinessName = summary.BusinessName,
+            PrimaryDomain = summary.PrimaryDomain,
+            PlanCode = summary.PlanCode,
+            PlanDisplayName = planDisplay,
+            BillingPeriod = summary.BillingPeriod
+        });
     }
 
     private SignupViewModel CreateViewModel(string? plan)
@@ -125,7 +138,8 @@ public sealed class SignupController : Controller
             PlanCode = selected,
             IsContactSalesPlan = found?.IsContactSales ?? false,
             MarketingBaseDomain = _options.MarketingBaseDomain,
-            PlanOptions = BuildPlanOptions(selected)
+            PlanOptions = BuildPlanOptions(selected),
+            Country = "Türkiye"
         };
     }
 
@@ -141,35 +155,53 @@ public sealed class SignupController : Controller
             .ToList();
     }
 
-    private void ApplySignupError(CustomerSignupResult result)
+    private void ApplySignupError(PendingRegistrationResult result)
     {
         var message = result.Error switch
         {
-            CustomerSignupError.DuplicateSlug => _localizer["Signup.SlugUnavailable"].Value,
-            CustomerSignupError.DuplicateDomain => _localizer["Signup.SlugUnavailable"].Value,
-            CustomerSignupError.InvalidSlug => _localizer["Validation.SlugInvalid"].Value,
-            CustomerSignupError.InvalidPlan => _localizer["Validation.PlanInvalid"].Value,
-            CustomerSignupError.DatabaseProvisioningFailed => _localizer["Signup.ProvisioningFailed"].Value,
+            PendingRegistrationError.DuplicateSlug => _localizer["Signup.SlugUnavailable"].Value,
+            PendingRegistrationError.DuplicateDomain => _localizer["Signup.SlugUnavailable"].Value,
+            PendingRegistrationError.InvalidSlug => _localizer["Validation.SlugInvalid"].Value,
+            PendingRegistrationError.InvalidPlan => _localizer["Validation.PlanInvalid"].Value,
+            PendingRegistrationError.DuplicateDatabaseName => _localizer["Signup.ProvisioningFailed"].Value,
             _ => _localizer["Signup.ProvisioningFailed"].Value
         };
 
-        if (result.Error is CustomerSignupError.DuplicateSlug or CustomerSignupError.DuplicateDomain or CustomerSignupError.InvalidSlug)
+        if (result.Error is PendingRegistrationError.DuplicateSlug
+            or PendingRegistrationError.DuplicateDomain
+            or PendingRegistrationError.InvalidSlug)
+        {
             ModelState.AddModelError(nameof(SignupViewModel.Slug), message);
-        else if (result.Error == CustomerSignupError.InvalidPlan)
+        }
+        else if (result.Error == PendingRegistrationError.InvalidPlan)
+        {
             ModelState.AddModelError(nameof(SignupViewModel.PlanCode), message);
+        }
         else
+        {
             ModelState.AddModelError(string.Empty, message);
+        }
     }
 
     private static string MapValidationField(string propertyName) => propertyName switch
     {
-        nameof(CustomerSignupRequest.BusinessName) => nameof(SignupViewModel.BusinessName),
-        nameof(CustomerSignupRequest.Slug) => nameof(SignupViewModel.Slug),
-        nameof(CustomerSignupRequest.OwnerFullName) => nameof(SignupViewModel.OwnerFullName),
-        nameof(CustomerSignupRequest.OwnerEmail) => nameof(SignupViewModel.OwnerEmail),
-        nameof(CustomerSignupRequest.Password) => nameof(SignupViewModel.Password),
-        nameof(CustomerSignupRequest.PlanCode) => nameof(SignupViewModel.PlanCode),
-        nameof(CustomerSignupRequest.BillingPeriod) => nameof(SignupViewModel.BillingPeriod),
+        nameof(PendingRegistrationRequest.BusinessName) => nameof(SignupViewModel.BusinessName),
+        nameof(PendingRegistrationRequest.BusinessType) => nameof(SignupViewModel.BusinessType),
+        nameof(PendingRegistrationRequest.BusinessPhone) => nameof(SignupViewModel.BusinessPhone),
+        nameof(PendingRegistrationRequest.Slug) => nameof(SignupViewModel.Slug),
+        nameof(PendingRegistrationRequest.Country) => nameof(SignupViewModel.Country),
+        nameof(PendingRegistrationRequest.City) => nameof(SignupViewModel.City),
+        nameof(PendingRegistrationRequest.District) => nameof(SignupViewModel.District),
+        nameof(PendingRegistrationRequest.Neighborhood) => nameof(SignupViewModel.Neighborhood),
+        nameof(PendingRegistrationRequest.AddressLine1) => nameof(SignupViewModel.AddressLine1),
+        nameof(PendingRegistrationRequest.AddressLine2) => nameof(SignupViewModel.AddressLine2),
+        nameof(PendingRegistrationRequest.PostalCode) => nameof(SignupViewModel.PostalCode),
+        nameof(PendingRegistrationRequest.OwnerFullName) => nameof(SignupViewModel.OwnerFullName),
+        nameof(PendingRegistrationRequest.OwnerEmail) => nameof(SignupViewModel.OwnerEmail),
+        nameof(PendingRegistrationRequest.OwnerPhone) => nameof(SignupViewModel.OwnerPhone),
+        nameof(PendingRegistrationRequest.Password) => nameof(SignupViewModel.Password),
+        nameof(PendingRegistrationRequest.PlanCode) => nameof(SignupViewModel.PlanCode),
+        nameof(PendingRegistrationRequest.BillingPeriod) => nameof(SignupViewModel.BillingPeriod),
         _ => string.Empty
     };
 
