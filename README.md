@@ -14,12 +14,16 @@ cannot.
 ## ✅ What's Already Done
 
 ### Solution & Projects
-- `OrderHub.sln` — 5-project solution wired up
-- `src/OrderHub.Domain/` — no dependencies
-- `src/OrderHub.Application/` — references Domain
-- `src/OrderHub.Infrastructure/` — EF Core 8, Polly 8, BCrypt
-- `src/OrderHub.Api/` — Cookie auth, Swagger, Serilog
-- `src/OrderHub.Worker/` — BackgroundService host
+- `Wasla.sln` — 9-project solution
+- `src/Wasla.Domain/` — no dependencies
+- `src/Wasla.Application/` — references Domain
+- `src/Wasla.Infrastructure/` — EF Core 8, Polly 8, BCrypt
+- `src/Wasla.Api/` — Cookie auth, Swagger, Serilog
+- `src/Wasla.Worker/` — BackgroundService host
+- `src/Wasla.Web/` — ASP.NET Core MVC/Razor
+- `src/Wasla.Cli/` — CLI onboarding/maintenance
+- `src/Wasla.Contracts/` — API DTOs
+- `src/Wasla.PrintBridge/` — Windows tray print agent
 
 ### Domain Layer (complete)
 - `Common/BaseEntity.cs`
@@ -53,7 +57,7 @@ Numbered to match sections in your original prompt.
 - Applying DB schema updates: use the CLI commands `migrate-central`, `migrate-customer`, `migrate-all-customers`, and `migration-status` (see the “Database migrations” section in those docs).
 
 ### 1. Application Abstractions (interfaces only)
-Put these under `src/OrderHub.Application/Abstractions/`:
+Put these under `src/Wasla.Application/Abstractions/`:
 - `Security/ISecretManager.cs` — `EncryptAsync`, `DecryptAsync(ct, keyVersion)`
 - `Tenant/ICurrentCustomerService.cs` — exposes the customer resolved per-request
 - `Persistence/ICustomerDbContextFactory.cs` — `CreateAsync(Guid customerId, CancellationToken)`
@@ -173,7 +177,7 @@ Under `Api/Controllers/`:
 - `DashboardController` — `GET /api/dashboard/summary` (today's order count, revenue, pending count, platform breakdown, recent 10 orders)
 
 ### 12. Program.cs Wiring
-For both `OrderHub.Api` and `OrderHub.Worker`:
+For both `Wasla.Api` and `Wasla.Worker`:
 - Serilog bootstrap (Console + File sinks)
 - `AddDbContext<CentralDbContext>` with config connection string
 - Register `ISecretManager`, `ICustomerDbContextFactory`, `ICurrentCustomerService`, `IAuthService`, `IOrderSyncService`, all three `IFoodPlatformClient`s, `IOrderStatusMapper`
@@ -183,16 +187,16 @@ For both `OrderHub.Api` and `OrderHub.Worker`:
 Generate two separate migration sets:
 ```bash
 dotnet ef migrations add InitialCreate \
-  --project src/OrderHub.Infrastructure \
-  --startup-project src/OrderHub.Api \
+  --project src/Wasla.Infrastructure \
+  --startup-project src/Wasla.Cli \
   --context CentralDbContext \
   --output-dir Persistence/Central/Migrations
 
 dotnet ef migrations add InitialCreate \
-  --project src/OrderHub.Infrastructure \
-  --startup-project src/OrderHub.Api \
-  --context CustomerDbContext \
-  --output-dir Persistence/Customer/Migrations
+  --project src/Wasla.Infrastructure \
+  --startup-project src/Wasla.Cli \
+  --context TenantDbContext \
+  --output-dir Persistence/Tenant/Migrations
 ```
 
 ---
@@ -209,15 +213,15 @@ dotnet build
 
 # 3. Apply migrations
 dotnet ef database update --context CentralDbContext \
-    --project src/OrderHub.Infrastructure --startup-project src/OrderHub.Api
+    --project src/Wasla.Infrastructure --startup-project src/Wasla.Cli
 
-# 4. Manually create customer DBs, then apply CustomerDbContext migration to each
+# 4. Manually create tenant DBs, then apply TenantDbContext migration to each
 
 # 5. Run the API
-dotnet run --project src/OrderHub.Api
+dotnet run --project src/Wasla.Api
 
 # 6. In another terminal, run the worker
-dotnet run --project src/OrderHub.Worker
+dotnet run --project src/Wasla.Worker
 ```
 
 ---

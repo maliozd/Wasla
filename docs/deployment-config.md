@@ -49,7 +49,7 @@ Used when public signup is enabled (Web). Maps to `OrderHub:CustomerOnboarding` 
 **Central admin provisioning (current implementation):**
 
 ```powershell
-dotnet run --project src/OrderHub.Cli -- add-central-admin --email __REPLACE_WITH_ADMIN_EMAIL__ --password __REPLACE_WITH_ADMIN_PASSWORD__ --display-name "OrderHub Admin"
+dotnet run --project src/Wasla.Cli -- add-central-admin --email __REPLACE_WITH_ADMIN_EMAIL__ --password __REPLACE_WITH_ADMIN_PASSWORD__ --display-name "Wasla Admin"
 ```
 
 Requires `ConnectionStrings__CentralDb` and `ENCRYPTION_MASTER_KEY` where applicable.
@@ -99,7 +99,7 @@ No dedicated `Platform:GetirYemek` section in appsettings. In **Real** mode, Get
 
 ### Print Bridge
 
-Print Bridge is a **desktop client** (`OrderHub.PrintBridge`). It does not use the server env matrix above at deploy time.
+Print Bridge is a **desktop client** (`Wasla.PrintBridge`). It does not use the server env matrix above at deploy time.
 
 | Item | Where configured | Notes |
 |------|------------------|-------|
@@ -181,7 +181,7 @@ These values are **acceptable for local development** but **must not leak** into
 | `https://stageapi.tgoapis.com` | Base Trendyol GO URL (Worker/Api) | Stage API used if Production overlay not loaded |
 | `../../.certs/wasla-local.pfx` | Web `appsettings.Development.json` | Dev HTTPS cert path; not for production |
 | PFX password in Development config | Web `appsettings.Development.json` | Dev-only; never deploy Development config as Production |
-| `C:\OrderHub-keys` | Api `appsettings.json` | Windows-specific path; set explicitly per environment |
+| `C:\Wasla-keys` | Api `appsettings.json` | Windows-specific path; set explicitly per environment |
 | `*.wasla.local` launch URLs | Web `launchSettings.json` | IDE-only; not used on server |
 | `trusted` SQL auth for onboarding | Default `SqlAuth` | May be wrong on Linux/cloud SQL; use explicit SQL auth if needed |
 
@@ -191,16 +191,16 @@ These values are **acceptable for local development** but **must not leak** into
 
 ## 4. Data Protection
 
-ASP.NET Core Data Protection encrypts cookies and other protected payloads. Both **Web** and **Api** register Data Protection with application name `OrderHub`.
+ASP.NET Core Data Protection encrypts cookies and other protected payloads. Both **Web** and **Api** register Data Protection with application name `Wasla`.
 
 ### Requirements
 
 - **Use a persistent key path in production** so keys survive app restarts and deployments.
 - **Web:** reads `DataProtection:KeyPath` from configuration. If missing or unusable, keys may be ephemeral (users can be logged out after restart).
-- **Api:** uses `DataProtection:KeyPath` from config; if empty, code falls back to `C:\OrderHub-keys` (Windows-oriented default).
+- **Api:** uses `DataProtection:KeyPath` from config; if empty, code falls back to `C:\Wasla-keys` (Windows-oriented default).
 - **Path must not be committed to Git.** Store keys on server disk or a shared volume accessible to all instances.
 - **Service account** running Web/Api must have **read/write** permission on the key directory.
-- Use the **same key ring** across Web and Api if they must share protected payloads (same `SetApplicationName("OrderHub")` is already used).
+- Use the **same key ring** across Web and Api if they must share protected payloads (same `SetApplicationName("Wasla")` is already used).
 
 Example (placeholder):
 

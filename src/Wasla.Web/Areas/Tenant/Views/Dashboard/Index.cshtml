@@ -1,0 +1,191 @@
+﻿@model Wasla.Web.Models.Dashboard.DashboardViewModel
+@using System.Globalization
+@using Wasla.Web.Ui
+@using Wasla.Web.Models.Ui
+@{
+    ViewData["Title"] = L["Dashboard.Title"];
+    var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
+    var todayLabel = turkeyToday.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture);
+    var averageOrderValue = Model.TodayOrderCount > 0
+        ? Model.TodayRevenue / Model.TodayOrderCount
+        : 0m;
+}
+
+<div class="oh-dashboard">
+    <header class="oh-customer-page-header oh-dash-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+        <div class="oh-customer-page-header__main">
+            <h1 class="oh-customer-page-header__title oh-dash-header__title h4 mb-1">@L["Dashboard.Title"]</h1>
+            <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["Dashboard.TodayOverview"]</p>
+        </div>
+        <div class="oh-dash-header__scope text-md-end">
+            <span class="badge rounded-pill text-bg-light border oh-dash-today-badge">
+                @L.GetString("Dashboard.TodayDateLabel", L["Common.Today"], todayLabel)
+            </span>
+        </div>
+    </header>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4">
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--orders">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-receipt"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.TodayOrders"]</div>
+                    <div class="oh-dash-kpi__value">@Model.TodayOrderCount</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.OrdersReceivedToday"]</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--revenue">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-cash-stack"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.TodayRevenue"]</div>
+                    <div class="oh-dash-kpi__value">@Model.TodayRevenue.ToString("C", CultureInfo.CurrentCulture)</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.TotalOrderAmountToday"]</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--active">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-lightning-charge"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.ActiveOrders"]</div>
+                    <div class="oh-dash-kpi__value">@Model.ActiveOrderCount</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.CurrentlyActiveOrders"]</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--cancelled">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-x-circle"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.CancelledOrders"]</div>
+                    <div class="oh-dash-kpi__value">@Model.CancelledOrderCount</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.CancelledToday"]</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="oh-dash-kpi oh-dash-kpi--average">
+                <div class="oh-dash-kpi__icon" aria-hidden="true"><i class="bi bi-calculator"></i></div>
+                <div class="oh-dash-kpi__body">
+                    <div class="oh-dash-kpi__label">@L["Dashboard.AverageOrderValue"]</div>
+                    <div class="oh-dash-kpi__value">@averageOrderValue.ToString("C", CultureInfo.CurrentCulture)</div>
+                    <div class="oh-dash-kpi__hint">@L["Dashboard.AverageValuePerOrder"]</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card oh-card oh-dash-section">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                        <div>
+                            <h2 class="oh-dash-section__title h6 mb-1">@L["Dashboard.RecentOrders"]</h2>
+                            <p class="text-muted small mb-0">@L["Dashboard.LatestOrdersReceivedToday"]</p>
+                        </div>
+                        <a href="/orders" class="btn btn-sm btn-outline-primary">@L["Dashboard.ViewAll"]</a>
+                    </div>
+
+                    @if (Model.RecentOrders.Count == 0)
+                    {
+                        <div class="oh-customer-empty-state oh-dash-empty text-center py-5">
+                            <div class="oh-dash-empty__icon text-muted mb-2" aria-hidden="true">
+                                <i class="bi bi-inbox"></i>
+                            </div>
+                            <p class="oh-dash-empty__title mb-1">@L["Dashboard.NoOrdersYetToday"]</p>
+                            <p class="oh-dash-empty__hint text-muted small mb-0">@L["Dashboard.NewOrdersWillAppearHere"]</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0 oh-dash-table">
+                                <thead>
+                                <tr>
+                                    <th>@L["Dashboard.Platform"]</th>
+                                    <th>@L["Dashboard.Code"]</th>
+                                    <th>@L["Dashboard.Customer"]</th>
+                                    <th class="text-end">@L["Dashboard.Total"]</th>
+                                    <th>@L["Dashboard.Status"]</th>
+                                    <th class="text-end">@L["Dashboard.Received"]</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var o in Model.RecentOrders)
+                                {
+                                    <tr>
+                                        <td>
+                                            @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)o.Platform, DisplayName: (string?)null))
+                                        </td>
+                                        <td>
+                                            <a href="/orders/details/@o.Id" class="oh-dash-order-code">@o.ExternalOrderCode</a>
+                                        </td>
+                                        <td class="oh-dash-customer">@OrderUiHelper.DisplayOrDash(o.CustomerName)</td>
+                                        <td class="text-end fw-medium">@o.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</td>
+                                        <td>
+                                            @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(o.Status))
+                                        </td>
+                                        <td class="text-end text-muted small oh-dash-received">@OrderUiHelper.FormatReceivedAtUtc(o.ReceivedAtUtc, tz, turkeyToday)</td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card oh-card oh-dash-section">
+                <div class="card-body">
+                    <h2 class="oh-dash-section__title h6 mb-1">@L["Dashboard.PlatformSummary"]</h2>
+                    <p class="text-muted small mb-3">@L["Dashboard.OrdersByPlatformToday"]</p>
+
+                    @if (Model.PlatformSummary.Count == 0)
+                    {
+                        <div class="oh-customer-empty-state oh-dash-empty text-center py-4">
+                            <p class="oh-dash-empty__title text-muted mb-0">@L["Dashboard.NoPlatformSummary"]</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="oh-dash-platform-list">
+                            @foreach (var p in Model.PlatformSummary)
+                            {
+                                var share = Model.TodayRevenue > 0
+                                    ? Math.Round(p.Revenue / Model.TodayRevenue * 100m, 1)
+                                    : 0m;
+                                <div class="oh-dash-platform-item">
+                                    <div class="oh-dash-platform-item__header">
+                                        @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)p.Platform, DisplayName: (string?)null))
+                                        <div class="oh-dash-platform-item__stats">
+                                            <span class="oh-dash-platform-item__count">
+                                                @p.Count <span class="text-muted">@L["Dashboard.Orders"]</span>
+                                            </span>
+                                            <span class="oh-dash-platform-item__revenue">@p.Revenue.ToString("C", CultureInfo.CurrentCulture)</span>
+                                        </div>
+                                    </div>
+                                    @if (share > 0)
+                                    {
+                                        <div class="oh-dash-platform-item__share">
+                                            <div class="oh-dash-platform-item__bar" role="presentation">
+                                                <span class="oh-dash-platform-item__bar-fill" style="width: @(share.ToString(CultureInfo.InvariantCulture))%"></span>
+                                            </div>
+                                            <span class="oh-dash-platform-item__pct small text-muted">
+                                                @L.GetString("Dashboard.ShareOfTotal", share.ToString("0.#", CultureInfo.CurrentCulture))
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

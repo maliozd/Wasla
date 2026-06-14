@@ -1,0 +1,137 @@
+﻿@model Wasla.Web.Models.Orders.OrderListViewModel
+@using System.Collections.Generic
+@using System.Text.Json
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    Layout = "_OrdersDisplayLayout";
+    ViewData["Title"] = L["Orders.LiveDisplay.Title"];
+    var today = Model.TurkeyLocalToday;
+    var customerName = ViewData["CustomerName"] as string;
+}
+
+<div id="ordersLiveDisplayRoot" class="oh-orders-live-display-root">
+    <header class="oh-live-display-header oh-fs-header">
+        <div class="oh-live-display-header__left oh-fs-header__left">
+            @if (!string.IsNullOrWhiteSpace(customerName))
+            {
+                <div class="oh-live-display-header__brand text-muted small mb-1">@customerName</div>
+            }
+            <h1 class="oh-live-display-header__title oh-fs-header__title mb-0">@L["Orders.LiveDisplay.Title"]</h1>
+            <p class="oh-live-display-header__meta oh-fs-header__meta mb-0">
+                <span>@L["Orders.Today"] — @today.ToString("d", System.Globalization.CultureInfo.CurrentCulture)</span>
+                <span class="oh-fs-header__sep" aria-hidden="true">·</span>
+                <span>@L["Orders.LiveDisplay.LastUpdated"]: <span id="ordersLiveDisplayLastUpdated">-</span></span>
+            </p>
+        </div>
+        <div class="oh-live-display-header__actions oh-fs-header__actions d-flex flex-wrap align-items-center gap-2">
+            <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
+                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
+                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
+                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
+            </div>
+            <p class="oh-live-display-fullscreen-hint text-muted small mb-0">
+                @L["Orders.LiveDisplay.FullscreenHintPrefix"]
+                <kbd class="oh-live-display-kbd">F11</kbd>
+                @L["Orders.LiveDisplay.FullscreenHintSuffix"]
+            </p>
+            <button type="button" id="ordersLiveDisplayClose" class="btn btn-outline-primary btn-sm oh-live-display-close-btn">
+                @L["Orders.LiveDisplay.CloseDisplay"]
+            </button>
+        </div>
+    </header>
+
+    <div class="oh-live-display-summary oh-fs-summary row g-3">
+        <div class="col-12 col-md-4">
+            <div class="oh-fs-stat">
+                <div class="oh-fs-stat__label">@L["Orders.TodaysOrders"]</div>
+                <div class="oh-fs-stat__value" id="ordersLiveDisplayTodayCount">@Model.TotalCount</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="oh-fs-stat">
+                <div class="oh-fs-stat__label">@L["Orders.ActiveOrders"]</div>
+                <div class="oh-fs-stat__value" id="ordersLiveDisplayActiveCount">0</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="oh-fs-stat">
+                <div class="oh-fs-stat__label">@L["Orders.CancelledOrders"]</div>
+                <div class="oh-fs-stat__value" id="ordersLiveDisplayCancelledCount">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ordersLiveDisplayCardsHost" class="orders-card-grid oh-live-display-cards oh-orders-cards-host d-none" role="list" hidden></div>
+
+    <div id="ordersLiveDisplayTableSlot" class="oh-live-display-table oh-fs-table-panel">
+        <div class="card oh-card oh-orders-table-card">
+            <div class="card-body p-0 p-md-3">
+                <div id="ordersTableHost" class="oh-orders-table-host">
+                    @await Html.PartialAsync("_OrdersTable", Model)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="ordersLiveDisplayCsrfForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        window.orderHubOrdersOptions = {
+            pageMode: "liveDisplay",
+            tableUrl: "/orders/table",
+            pollingIntervalMs: 10000,
+            todayYmd: "@today.ToString("yyyy-MM-dd")",
+            liveDisplayPageSize: 100,
+            defaultFoodImage: "/images/demo-food/chicken-rice-01.svg",
+            messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["genericError"] = L["Orders.GenericError"].Value,
+                ["alertClose"] = L["Common.Close"].Value,
+                ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
+                ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
+                ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
+                ["tableHostMissing"] = L["Orders.TableHostMissing"].Value,
+                ["tableRefreshException"] = L["Orders.TableRefreshException"].Value,
+                ["ordersApproveConfirmTitle"] = L["Orders.ApproveConfirmTitle"].Value,
+                ["ordersApproveConfirmMessage"] = L["Orders.ApproveConfirmMessage"].Value,
+                ["ordersRejectConfirmTitle"] = L["Orders.RejectConfirmTitle"].Value,
+                ["ordersRejectConfirmMessage"] = L["Orders.RejectConfirmMessage"].Value,
+                ["ordersApproveSuccess"] = L["Orders.ApproveSuccess"].Value,
+                ["ordersApproveFailed"] = L["Orders.ApproveFailed"].Value,
+                ["ordersRejectSuccess"] = L["Orders.RejectSuccess"].Value,
+                ["ordersRejectFailed"] = L["Orders.RejectFailed"].Value,
+                ["ordersInvalidStatusForAction"] = L["Orders.InvalidStatusForAction"].Value,
+                ["ordersActionFailed"] = L["Orders.ActionFailed"].Value,
+                ["ordersOrderActionFailed"] = L["Orders.OrderActionFailed"].Value,
+                ["ordersStartPreparingConfirmTitle"] = L["Orders.StartPreparingConfirmTitle"].Value,
+                ["ordersStartPreparingConfirmMessage"] = L["Orders.StartPreparingConfirmMessage"].Value,
+                ["ordersMarkReadyConfirmTitle"] = L["Orders.MarkReadyConfirmTitle"].Value,
+                ["ordersMarkReadyConfirmMessage"] = L["Orders.MarkReadyConfirmMessage"].Value,
+                ["ordersHandToCourierConfirmTitle"] = L["Orders.HandToCourierConfirmTitle"].Value,
+                ["ordersHandToCourierConfirmMessage"] = L["Orders.HandToCourierConfirmMessage"].Value,
+                ["ordersMarkDeliveredConfirmTitle"] = L["Orders.MarkDeliveredConfirmTitle"].Value,
+                ["ordersMarkDeliveredConfirmMessage"] = L["Orders.MarkDeliveredConfirmMessage"].Value,
+                ["ordersStartPreparingSuccess"] = L["Orders.StartPreparingSuccess"].Value,
+                ["ordersMarkReadySuccess"] = L["Orders.MarkReadySuccess"].Value,
+                ["ordersHandToCourierSuccess"] = L["Orders.HandToCourierSuccess"].Value,
+                ["ordersMarkDeliveredSuccess"] = L["Orders.MarkDeliveredSuccess"].Value,
+                ["noLiveOrders"] = L["Orders.NoLiveOrders"].Value,
+                ["noLiveOrdersDescription"] = L["Orders.NoLiveOrdersDescription"].Value,
+                ["itemsMore"] = L["Orders.ItemsMore"].Value,
+                ["ordersFullscreenCustomer"] = L["Orders.Customer"].Value,
+                ["ordersFullscreenTotal"] = L["Orders.TotalAmount"].Value,
+                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value
+            }))
+        };
+    </script>
+    <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-view-mode.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>
+}

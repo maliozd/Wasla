@@ -1,15 +1,15 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Builds a portable Windows zip package for OrderHub Print Bridge.
+    Builds a portable Windows zip package for Wasla Print Bridge.
 
 .DESCRIPTION
-    Publishes OrderHub.PrintBridge (Release, win-x64, framework-dependent) and zips the output.
+    Publishes Wasla.PrintBridge (Release, win-x64, framework-dependent) and zips the output.
     Artifacts are written under artifacts/ (gitignored). Optionally copies the zip to the Web
     download folder for local tenant setup page testing.
 
 .PARAMETER CopyToWebDownload
-    Copy OrderHub.PrintBridge-win-x64.zip to src/OrderHub.Web/wwwroot/downloads/orderhub-print-bridge/
+    Copy Wasla.PrintBridge-win-x64.zip to src/Wasla.Web/wwwroot/downloads/orderhub-print-bridge/
 
 .PARAMETER SelfContained
     Publish self-contained (larger zip; no .NET 8 runtime required on target PC).
@@ -30,29 +30,29 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
-$projectPath = Join-Path $repoRoot 'src\OrderHub.PrintBridge\OrderHub.PrintBridge.csproj'
+$projectPath = Join-Path $repoRoot 'src\Wasla.PrintBridge\Wasla.PrintBridge.csproj'
 $publishDir = Join-Path $repoRoot 'artifacts\print-bridge\win-x64'
-$zipPath = Join-Path $repoRoot 'artifacts\print-bridge\OrderHub.PrintBridge-win-x64.zip'
-$webDownloadDir = Join-Path $repoRoot 'src\OrderHub.Web\wwwroot\downloads\orderhub-print-bridge'
+$zipPath = Join-Path $repoRoot 'artifacts\print-bridge\Wasla.PrintBridge-win-x64.zip'
+$webDownloadDir = Join-Path $repoRoot 'src\Wasla.Web\wwwroot\downloads\wasla-print-bridge'
 
 $readmeText = @'
-OrderHub Print Bridge — Portable Windows Package
-================================================
+Wasla Print Bridge — Portable Windows Package
+=============================================
 
 This is a portable package (not a Windows installer). Extract the zip on the
-Windows computer connected to your receipt printer, then run OrderHub.PrintBridge.exe.
+Windows computer connected to your receipt printer, then run Wasla.PrintBridge.exe.
 
 Quick start:
-1. Extract all files to a folder (for example C:\OrderHub\PrintBridge).
-2. Run OrderHub.PrintBridge.exe.
+1. Extract all files to a folder (for example C:\Wasla\PrintBridge).
+2. Run Wasla.PrintBridge.exe.
 3. Open the Settings tab in the app.
-4. Paste the device token from OrderHub Web (Print Bridge > Devices).
+4. Paste the device token from Wasla Web (Print Bridge > Devices).
 5. Select your Windows receipt printer.
 6. Turn off Test mode for real printing.
 7. Click Save settings and verify the connection.
 
 Configuration:
-- Settings are saved under C:\ProgramData\OrderHub\PrintBridge\appsettings.json
+- Settings are saved under C:\ProgramData\Wasla\PrintBridge\appsettings.json
 - Do not share appsettings.json if it contains a device token.
 - BaseUrl and device token are entered in the app Settings UI, not in this package.
 
@@ -61,10 +61,10 @@ Requirements:
 - .NET 8 Desktop Runtime (unless you received a self-contained build)
 - USB or network receipt printer installed in Windows
 
-Support: configure devices and tokens in OrderHub Web > Print Bridge.
+Support: configure devices and tokens in Wasla Web > Print Bridge.
 '@
 
-Write-Host "Publishing OrderHub.PrintBridge..."
+Write-Host "Publishing Wasla.PrintBridge..."
 if (Test-Path $publishDir) {
     Remove-Item -LiteralPath $publishDir -Recurse -Force
 }
@@ -116,7 +116,7 @@ Write-Host "Package created ($zipSizeMb MB): $zipPath"
 
 if ($CopyToWebDownload) {
     New-Item -ItemType Directory -Path $webDownloadDir -Force | Out-Null
-    $webZip = Join-Path $webDownloadDir 'OrderHub.PrintBridge-win-x64.zip'
+    $webZip = Join-Path $webDownloadDir 'Wasla.PrintBridge-win-x64.zip'
     Copy-Item -LiteralPath $zipPath -Destination $webZip -Force
     Write-Host "Copied to Web download folder: $webZip"
     Write-Host "Tenant setup page download will serve this file when present."

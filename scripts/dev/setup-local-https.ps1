@@ -173,11 +173,11 @@ Write-Host @"
      127.0.0.1 sushim.wasla.local
      127.0.0.1 wasla.local
 
-2. Ensure src/OrderHub.Web/appsettings.Development.json contains Kestrel certificate config
+2. Ensure src/Wasla.Web/appsettings.Development.json contains Kestrel certificate config
    pointing to ../../.certs/wasla-local.pfx (relative to the Web project directory).
 
 3. Run Web (restart if it was already running so Kestrel reloads the new PFX):
-     dotnet run --project src\OrderHub.Web\OrderHub.Web.csproj
+     dotnet run --project src\Wasla.Web\Wasla.Web.csproj
 
 4. Test in browser:
      https://wasla.local:7200

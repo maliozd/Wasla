@@ -1,0 +1,53 @@
+﻿@model Wasla.Web.Models.Orders.OrderListViewModel
+@using System.Globalization
+@using Wasla.Web.Models.Ui
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle mb-0 oh-orders-table">
+        <thead>
+        <tr>
+            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "platform", L["Orders.History.Platform"].Value))</th>
+            <th>@L["Orders.History.Code"]</th>
+            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "customerName", L["Orders.History.Customer"].Value))</th>
+            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "status", L["Orders.History.Status"].Value))</th>
+            <th class="text-end">@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "totalAmount", L["Orders.History.Total"].Value))</th>
+            <th class="text-end">@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "receivedAt", L["Orders.History.Received"].Value))</th>
+            <th class="text-end">@L["Orders.History.Actions"]</th>
+        </tr>
+        </thead>
+        <tbody>
+        @if (Model.Orders.Count == 0)
+        {
+            <tr>
+                <td colspan="7" class="text-center text-muted py-5 oh-customer-empty-state">
+                    <div class="mb-1 fw-medium">@L["Orders.History.NoOrdersFound"]</div>
+                    <div class="small">@L["Orders.History.NoOrdersFoundDescription"]</div>
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var o in Model.Orders)
+            {
+                <tr>
+                    <td>
+                        @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)o.Platform, DisplayName: (string?)null))
+                    </td>
+                    <td>
+                        <a href="/orders/details/@o.Id?from=history">@o.ExternalOrderCode</a>
+                    </td>
+                    <td>@o.CustomerName</td>
+                    <td>
+                        @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(o.Status))
+                    </td>
+                    <td class="text-end">@o.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</td>
+                    <td class="text-end">@o.ReceivedAtLocal.ToString("g", CultureInfo.CurrentCulture)</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" href="/orders/details/@o.Id?from=history">@L["Orders.History.ViewDetails"]</a>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>

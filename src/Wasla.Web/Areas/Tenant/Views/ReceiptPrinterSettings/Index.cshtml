@@ -1,0 +1,268 @@
+﻿@using Wasla.Application.Printing
+@using System.Globalization
+@model Wasla.Web.Models.Settings.ReceiptPrinterSettingsPageViewModel
+@using System.Collections.Generic
+@using System.Text.Json
+@using Wasla.Application.Abstractions.Printing
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@using Wasla.Web.Models.Ui
+@{
+    ViewData["Title"] = L["Settings.ReceiptPrinterSettings.Title"];
+    var status = Model.PrintBridgeStatus;
+}
+
+<div class="oh-order-settings-page oh-receipt-printer-settings-page">
+    @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
+    {
+        Title = L["Settings.ReceiptPrinterSettings.Title"].Value,
+        Subtitle = L["Settings.ReceiptPrinterSettings.Subtitle"].Value
+    })
+
+    <div id="ordersMessageHost"></div>
+    <div id="receiptTemplateMessageHost" class="mb-2"></div>
+
+    <form id="orderSettingsForm" method="post" action="/orders/order-settings" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+    <form id="receiptTemplateSettingsForm" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <div class="card oh-card oh-settings-card mb-3">
+        <div class="card-body p-0">
+            <section class="oh-settings-section oh-receipt-timing-section">
+                <div class="receipt-timing-section">
+                    <div class="receipt-timing-section__intro">
+                        <h2 class="h6 mb-1">@L["Settings.ReceiptCreation.Title"]</h2>
+                        <p class="text-muted small mb-0">@L["Settings.ReceiptCreation.Description"]</p>
+                    </div>
+                    <div class="receipt-timing-section__field">
+                        <div class="receipt-timing-section__label small text-muted">@L["Settings.ReceiptCreation.TimingLabel"]</div>
+                        <div class="receipt-timing-options" id="receiptCreationTimingGroup" role="radiogroup"
+                             aria-label="@L["Settings.ReceiptCreation.TimingLabel"]">
+                            <label class="receipt-timing-option" for="receiptTimingOnAccepted">
+                                <input class="form-check-input receipt-timing-option__radio" type="radio" name="receiptCreationTiming"
+                                       id="receiptTimingOnAccepted" value="OnAccepted" checked />
+                                <div class="receipt-timing-option__content">
+                                    <span class="receipt-timing-option__title">@L["Settings.ReceiptCreation.OnAccepted"]</span>
+                                    <p class="receipt-timing-option__desc mb-0">@L["Settings.ReceiptCreation.OnAcceptedDescription"]</p>
+                                </div>
+                            </label>
+                            <div class="receipt-timing-option receipt-timing-option--disabled">
+                                <input class="form-check-input receipt-timing-option__radio" type="radio" name="receiptCreationTiming"
+                                       id="receiptTimingOnPreparing" value="OnPreparing" disabled tabindex="-1" aria-disabled="true" />
+                                <div class="receipt-timing-option__content">
+                                    <span class="receipt-timing-option__title">
+                                        @L["Settings.ReceiptCreation.OnPreparing"]
+                                        <span class="badge text-bg-secondary receipt-timing-option__soon">@L["Settings.ReceiptCreation.ComingSoon"]</span>
+                                    </span>
+                                    <p class="receipt-timing-option__desc mb-0">@L["Settings.ReceiptCreation.OnPreparingDescription"]</p>
+                                </div>
+                            </div>
+                            <label class="receipt-timing-option" for="receiptTimingManual">
+                                <input class="form-check-input receipt-timing-option__radio" type="radio" name="receiptCreationTiming"
+                                       id="receiptTimingManual" value="Manual" />
+                                <div class="receipt-timing-option__content">
+                                    <span class="receipt-timing-option__title">@L["Settings.ReceiptCreation.Manual"]</span>
+                                    <p class="receipt-timing-option__desc mb-0">@L["Settings.ReceiptCreation.ManualDescription"]</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="oh-settings-section">
+                <div class="oh-settings-section-row">
+                    <div class="oh-settings-section-text">
+                        <h2 class="h6 mb-1">@L["Settings.PrintCopies.Title"]</h2>
+                        <p class="text-muted small mb-0">@L["Settings.PrintCopies.Description"]</p>
+                    </div>
+                    <div class="oh-settings-section-controls">
+                        <label class="small text-muted mb-0 text-nowrap" for="receiptPrintCopyCountSelect">@L["Settings.PrintCopies.ReceiptCopyCount"]</label>
+                        <select id="receiptPrintCopyCountSelect" class="form-select form-select-sm oh-settings-copy-select"
+                                aria-label="@L["Settings.PrintCopies.ReceiptCopyCount"]"
+                                title="@L["Orders.ReceiptPrintCopyCountHelp"]">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                                <option value="3">3</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="oh-settings-section">
+                <div class="oh-settings-section-row">
+                    <div class="oh-settings-section-text">
+                        <h2 class="h6 mb-1">@L["Settings.ReceiptLanguage.Title"]</h2>
+                        <p class="text-muted small mb-0">@L["Settings.ReceiptLanguage.Description"]</p>
+                    </div>
+                    <div class="oh-settings-section-controls oh-settings-section-controls--stacked">
+                        <label class="small text-muted mb-0 text-nowrap" for="receiptLanguageSelect">@L["Settings.ReceiptLanguage.SelectLabel"]</label>
+                        <select id="receiptLanguageSelect" class="form-select form-select-sm oh-receipt-language-select"
+                                aria-label="@L["Settings.ReceiptLanguage.SelectLabel"]">
+                            <option value="tr">@L["Settings.ReceiptLanguage.Turkish"]</option>
+                            <option value="en">@L["Settings.ReceiptLanguage.English"]</option>
+                            <option value="ar">@L["Settings.ReceiptLanguage.Arabic"]</option>
+                            <option value="ru">@L["Settings.ReceiptLanguage.Russian"]</option>
+                        </select>
+                        <p class="form-text mb-0 oh-receipt-language-note d-none" id="receiptArabicPrinterNote">@L["Settings.ReceiptLanguage.ArabicPrinterNote"]</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="row g-3 oh-receipt-editor-layout">
+        <div class="col-lg-8">
+            <div class="card oh-card oh-settings-card oh-receipt-editor-card h-100">
+                <div class="card-body p-0 d-flex flex-column">
+                    <section class="oh-settings-section oh-receipt-editor-section">
+                        <div class="oh-settings-section-row oh-settings-section-row--stacked">
+                            <div class="oh-settings-section-text">
+                                <h2 class="h6 mb-1">@L["Settings.ReceiptContent.Title"]</h2>
+                                <p class="text-muted small mb-0">@L["Settings.ReceiptContent.Description"]</p>
+                            </div>
+                        </div>
+                        @await Html.PartialAsync("_ReceiptContentEditor")
+                    </section>
+
+                    <div class="oh-settings-section oh-settings-section--actions border-top mt-auto">
+                        <div class="d-flex justify-content-end px-3 py-3">
+                            <button type="button" class="btn btn-primary btn-sm" id="saveReceiptTemplateBtn">
+                                <i class="bi bi-check2 me-1"></i>@L["Settings.Save"]
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card oh-card oh-receipt-preview-card h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="oh-receipt-preview-card-head mb-3">
+                        <h2 class="h6 mb-1">@L["Settings.ReceiptPreview.Title"]</h2>
+                        <p class="text-muted small mb-0">@L["Settings.ReceiptPreview.Description"]</p>
+                    </div>
+                    <div class="oh-receipt-preview flex-grow-1" id="receiptPreviewPanel" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card oh-card oh-settings-card mt-3">
+        <div class="card-body p-0">
+            @if (status is { HasDevices: true })
+            {
+                <section class="oh-settings-section">
+                    <div class="oh-settings-section-row oh-settings-section-row--stacked">
+                        <div class="oh-settings-section-text">
+                            <h2 class="h6 mb-1">@L["Settings.PrinterStatus.Title"]</h2>
+                            <p class="text-muted small mb-0">@L["Settings.PrinterStatus.Description"]</p>
+                        </div>
+                    </div>
+                    <dl class="oh-settings-status-list small mb-0">
+                        <div class="oh-settings-status-item">
+                            <dt class="text-muted">@L["PrintBridge.DeviceName"]</dt>
+                            <dd class="mb-0">@status.DeviceName</dd>
+                        </div>
+                        <div class="oh-settings-status-item">
+                            <dt class="text-muted">@L["PrintBridge.ConnectionStatus"]</dt>
+                            <dd class="mb-0">@L[status.ConnectionStatusLabelKey]</dd>
+                        </div>
+                        <div class="oh-settings-status-item">
+                            <dt class="text-muted">@L["PrintBridge.LastSeen"]</dt>
+                            <dd class="mb-0">
+                                @if (status.LastSeenAtUtc.HasValue)
+                                {
+                                    @status.LastSeenAtUtc.Value.ToLocalTime().ToString("g")
+                                }
+                                else
+                                {
+                                    @L["PrintBridge.LastSeenNever"]
+                                }
+                            </dd>
+                        </div>
+                    </dl>
+                    <div class="oh-settings-subrow oh-settings-subrow--actions">
+                        <a class="btn btn-outline-primary btn-sm" asp-area="Tenant" asp-controller="PrintBridge" asp-action="Devices">
+                            <i class="bi bi-printer me-1"></i>@L["Settings.PrinterStatus.ManagePrintBridge"]
+                        </a>
+                    </div>
+                </section>
+            }
+
+            <section class="oh-settings-section @(status is { HasDevices: true } ? "border-top" : "")">
+                <div class="oh-settings-section-row oh-settings-section-row--stacked">
+                    <div class="oh-settings-section-text">
+                        <h2 class="h6 mb-1">@L["Settings.TestReceipt.Title"]</h2>
+                        <p class="text-muted small mb-0">@L["Settings.TestReceipt.Description"]</p>
+                    </div>
+                </div>
+                <div class="oh-settings-subrow oh-settings-subrow--actions">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="testReceiptBtn" disabled>
+                        <i class="bi bi-printer me-1"></i>@L["Settings.TestReceipt.PrintTestReceipt"]
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.orderHubOrdersOptions = {
+            orderSettingsUrl: "/orders/order-settings",
+            messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["genericError"] = L["Orders.GenericError"].Value,
+                ["alertClose"] = L["Common.Close"].Value,
+                ["ordersActive"] = L["Settings.Active"].Value,
+                ["ordersPassive"] = L["Settings.Passive"].Value,
+                ["orderSettingsSaved"] = L["Settings.SavedSuccessfully"].Value,
+                ["orderSettingsUpdateFailed"] = L["Settings.SaveFailed"].Value,
+                ["settingsSaving"] = L["Settings.Saving"].Value,
+                ["receiptPrintCopyCountOutOfRange"] = L["Orders.ReceiptPrintCopyCountOutOfRange"].Value
+            }))
+        };
+        window.orderHubReceiptTemplateOptions = {
+            templateSettingsUrl: "/settings/receipt-printer/template-settings",
+            customerDisplayName: @Html.Raw(JsonSerializer.Serialize(Model.CustomerDisplayName)),
+            headerMaxLength: @ReceiptTemplateLimits.HeaderMaxLength,
+            footerMaxLength: @ReceiptTemplateLimits.FooterMaxLength,
+            defaultReceiptLanguage: @Html.Raw(JsonSerializer.Serialize(ReceiptLanguageCodes.Normalize(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName))),
+            receiptLabels: @Html.Raw(JsonSerializer.Serialize(ReceiptLabelLocalizer.GetAllLabels())),
+            defaultFooters: @Html.Raw(JsonSerializer.Serialize(ReceiptLabelLocalizer.GetDefaultFooters())),
+            sample: {
+                platform: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SamplePlatform"].Value)),
+                orderCode: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleOrder"].Value)),
+                customerName: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleCustomer"].Value)),
+                customerPhone: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SamplePhone"].Value)),
+                address: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleAddress"].Value)),
+                itemName: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleItem"].Value)),
+                itemNote: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleNote"].Value)),
+                itemOption: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SampleOption"].Value)),
+                paymentMethod: @Html.Raw(JsonSerializer.Serialize(L["Settings.ReceiptPreview.SamplePayment"].Value)),
+                subtotal: "120.00",
+                deliveryFee: "15.00",
+                total: "135.00",
+                receivedAt: @Html.Raw(JsonSerializer.Serialize(DateTime.Now.ToString("g")))
+            },
+            messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["saved"] = L["Settings.SavedSuccessfully"].Value,
+                ["saveFailed"] = L["Settings.SaveFailed"].Value,
+                ["saving"] = L["Settings.Saving"].Value,
+                ["headerTooLong"] = L["Settings.ReceiptMessages.HeaderTooLong"].Value,
+                ["footerTooLong"] = L["Settings.ReceiptMessages.FooterTooLong"].Value,
+                ["previewLabel"] = L["Settings.ReceiptPreview.PreviewLabel"].Value,
+                ["enabledCount"] = L["Settings.ReceiptContent.EnabledCount"].Value
+            }))
+        };
+    </script>
+    <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-order-settings.js" asp-append-version="true"></script>
+    <script src="~/js/settings/receipt-printer-settings-page.js" asp-append-version="true"></script>
+}

@@ -1,6 +1,0 @@
-@model OrderHub.Web.Models.Ui.OrderStatusBadgeModel
-@using OrderHub.Web.Ui
-@{
-    var label = Model.Label ?? L[$"OrderStatus.{Model.Status}"].Value;
-}
-<span class="@OrderUiHelper.StatusBadgeClass(Model.Status)">@label</span>

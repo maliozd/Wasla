@@ -360,8 +360,8 @@ healthchecksdb
 .build-verify/
 .build-out/
 
-# OrderHub Print Bridge portable package (generated; copy to wwwroot for local download testing)
-src/OrderHub.Web/wwwroot/downloads/orderhub-print-bridge/*.zip
+# Wasla Print Bridge portable package (generated; copy to wwwroot for local download testing)
+src/Wasla.Web/wwwroot/downloads/wasla-print-bridge/*.zip
 
 # Packaging scripts (not build output; [Rr]elease/ above would otherwise ignore this folder)
 !scripts/release/
@@ -374,9 +374,9 @@ src/OrderHub.Web/wwwroot/downloads/orderhub-print-bridge/*.zip
 appsettings.Local.json
 **/appsettings.Local.json
 
-# OrderHub shared data-protection keys
-OrderHub-keys/
-**/OrderHub-keys/
+# Wasla shared data-protection keys
+Wasla-keys/
+**/Wasla-keys/
 
 # Local secrets / env files
 enc-key.txt

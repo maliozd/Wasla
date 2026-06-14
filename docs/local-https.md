@@ -99,9 +99,9 @@ Old `.certs/orderhub-local.*` files may remain on disk from earlier setups; they
 
 ---
 
-## 3. Configure OrderHub.Web (Development)
+## 3. Configure Wasla.Web (Development)
 
-`src/OrderHub.Web/appsettings.Development.json` includes Kestrel certificate settings:
+`src/Wasla.Web/appsettings.Development.json` includes Kestrel certificate settings:
 
 ```json
 "Kestrel": {
@@ -114,10 +114,10 @@ Old `.certs/orderhub-local.*` files may remain on disk from earlier setups; they
 }
 ```
 
-The path is relative to the **Web project content root** (`src/OrderHub.Web/`), which resolves to the repo-root `.certs/` folder when you run:
+The path is relative to the **Web project content root** (`src/Wasla.Web/`), which resolves to the repo-root `.certs/` folder when you run:
 
 ```powershell
-dotnet run --project src\OrderHub.Web\OrderHub.Web.csproj
+dotnet run --project src\Wasla.Web\Wasla.Web.csproj
 ```
 
 If you publish or run from a different output directory, copy the PFX or adjust the path locally (do not commit machine-specific absolute paths).
@@ -161,7 +161,7 @@ On that client PC you must also trust the mkcert root CA (run `mkcert -install` 
 ## 5. Run and test Web
 
 ```powershell
-dotnet run --project src\OrderHub.Web\OrderHub.Web.csproj
+dotnet run --project src\Wasla.Web\Wasla.Web.csproj
 ```
 
 Restart Web if it was already running so Kestrel reloads `.certs/wasla-local.pfx`.

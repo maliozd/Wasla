@@ -1,0 +1,45 @@
+﻿@model Wasla.Web.Models.Branches.CreateBranchViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Branches.Create"];
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">@L["Branches.Create"]</h1>
+    <a class="btn btn-sm btn-outline-primary" href="/branches">@L["Common.Back"]</a>
+</div>
+
+<div class="card oh-card">
+    <div class="card-body">
+        <form method="post" action="/branches/create">
+            @Html.AntiForgeryToken()
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label" asp-for="Name"></label>
+                    <input class="form-control" asp-for="Name" />
+                    <span class="text-danger" asp-validation-for="Name"></span>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" asp-for="Address"></label>
+                    <textarea class="form-control" asp-for="Address" rows="3"></textarea>
+                    <span class="text-danger" asp-validation-for="Address"></span>
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" asp-for="IsActive" />
+                        <label class="form-check-label" asp-for="IsActive"></label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" type="submit">@L["Common.Save"]</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
+
