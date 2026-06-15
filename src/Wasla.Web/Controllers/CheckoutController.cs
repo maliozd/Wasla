@@ -6,6 +6,7 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Domain.Enums;
 using Wasla.Web.Models.Checkout;
+using Wasla.Web.Routing;
 
 namespace Wasla.Web.Controllers;
 
@@ -16,15 +17,18 @@ public sealed class CheckoutController : Controller
     private readonly IPendingRegistrationService _pendingRegistrations;
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly IWebHostEnvironment _environment;
 
     public CheckoutController(
         IPendingRegistrationService pendingRegistrations,
         IWaslaPlanCatalog planCatalog,
-        IStringLocalizer<SharedResource> localizer)
+        IStringLocalizer<SharedResource> localizer,
+        IWebHostEnvironment environment)
     {
         _pendingRegistrations = pendingRegistrations;
         _planCatalog = planCatalog;
         _localizer = localizer;
+        _environment = environment;
     }
 
     [HttpGet("review/{id:guid}")]
@@ -75,7 +79,11 @@ public sealed class CheckoutController : Controller
         {
             RegistrationId = details.Id,
             BusinessName = details.BusinessName,
-            PrimaryDomain = details.PrimaryDomain
+            PrimaryDomain = details.PrimaryDomain,
+            Status = details.Status,
+            PanelLoginUrl = details.Status == PendingRegistrationStatus.Provisioned
+                ? TenantWelcomeUrlBuilder.BuildLoginUrl(Request, _environment, details.PrimaryDomain)
+                : null
         });
     }
 

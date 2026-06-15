@@ -2949,7 +2949,7 @@
   <data name="Signup.CreateAccount" xml:space="preserve"><value>Create account</value></data>
   <data name="Signup.PendingTitle" xml:space="preserve"><value>Your account is almost ready</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>We received your details. Complete the payment step to continue.</value></data>
-  <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>After payment is complete, your restaurant panel will be prepared automatically.</value></data>
+  <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>After payment is complete, your restaurant panel will be prepared.</value></data>
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>Back to homepage</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Continue to payment</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Your restaurant</value></data>
@@ -2961,6 +2961,11 @@
   <data name="Signup.PendingNextStep2" xml:space="preserve"><value>Your admin account is activated</value></data>
   <data name="Signup.PendingNextStep3" xml:space="preserve"><value>You can start connecting your platforms</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>In the test environment, the payment step will be simulated.</value></data>
+  <data name="Signup.PanelReadyTitle" xml:space="preserve"><value>Your panel is ready</value></data>
+  <data name="Signup.PanelReadyBody" xml:space="preserve"><value>Your restaurant panel has been created. You can now sign in from your dedicated Wasla address.</value></data>
+  <data name="Signup.GoToPanel" xml:space="preserve"><value>Go to panel</value></data>
+  <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve"><value>Payment received</value></data>
+  <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve"><value>Your payment was received. Your restaurant panel is being prepared.</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Payment summary</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Review your selected package and restaurant details. In this test environment, the payment outcome will be simulated.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Real payment integration is not active yet. Payment outcome is simulated on this screen.</value></data>
@@ -2981,6 +2986,11 @@
   <data name="Checkout.SuccessTitle" xml:space="preserve"><value>Payment simulated as successful</value></data>
   <data name="Checkout.SuccessMessage" xml:space="preserve"><value>Payment was simulated as successful.</value></data>
   <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>Your restaurant panel will be prepared in the next step.</value></data>
+  <data name="Checkout.PanelReadyTitle" xml:space="preserve"><value>Your panel is ready</value></data>
+  <data name="Checkout.PanelReadyMessage" xml:space="preserve"><value>Your payment is complete and your restaurant panel has been created.</value></data>
+  <data name="Checkout.GoToPanel" xml:space="preserve"><value>Go to restaurant panel</value></data>
+  <data name="Checkout.PaymentReceivedPreparingTitle" xml:space="preserve"><value>Payment received</value></data>
+  <data name="Checkout.PaymentReceivedPreparingMessage" xml:space="preserve"><value>Your payment was received. Your restaurant panel is being prepared.</value></data>
   <data name="Checkout.FailedTitle" xml:space="preserve"><value>Payment simulated as failed</value></data>
   <data name="Checkout.FailedMessage" xml:space="preserve"><value>Payment was simulated as failed.</value></data>
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>Your restaurant panel was not created. You can try the payment step again if you wish.</value></data>

@@ -2,6 +2,24 @@
 
 public static class TenantWelcomeUrlBuilder
 {
+    public static string BuildLoginUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string primaryDomain)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(primaryDomain);
+
+        var builder = new UriBuilder
+        {
+            Scheme = request.Scheme,
+            Host = primaryDomain.Trim(),
+            Path = "/auth/login",
+            Port = ResolvePort(request, environment)
+        };
+
+        return builder.Uri.AbsoluteUri;
+    }
+
     public static string BuildWelcomeUrl(
         HttpRequest request,
         IWebHostEnvironment environment,

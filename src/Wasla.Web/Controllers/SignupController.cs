@@ -11,6 +11,7 @@ using Wasla.Application.Abstractions.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Web.Models.Signup;
+using Wasla.Web.Routing;
 
 namespace Wasla.Web.Controllers;
 
@@ -24,6 +25,7 @@ public sealed class SignupController : Controller
     private readonly IValidator<PendingRegistrationRequest> _signupValidator;
     private readonly CustomerOnboardingOptions _options;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly IWebHostEnvironment _environment;
 
     public SignupController(
         IPendingRegistrationService pendingRegistrations,
@@ -31,7 +33,8 @@ public sealed class SignupController : Controller
         IWaslaPlanCatalog planCatalog,
         IValidator<PendingRegistrationRequest> signupValidator,
         IOptions<CustomerOnboardingOptions> options,
-        IStringLocalizer<SharedResource> localizer)
+        IStringLocalizer<SharedResource> localizer,
+        IWebHostEnvironment environment)
     {
         _pendingRegistrations = pendingRegistrations;
         _referenceData = referenceData;
@@ -39,6 +42,7 @@ public sealed class SignupController : Controller
         _signupValidator = signupValidator;
         _options = options.Value;
         _localizer = localizer;
+        _environment = environment;
     }
 
     [HttpGet("")]
@@ -185,7 +189,11 @@ public sealed class SignupController : Controller
             PrimaryDomain = summary.PrimaryDomain,
             PlanCode = summary.PlanCode,
             PlanDisplayName = planDisplay,
-            BillingPeriod = summary.BillingPeriod
+            BillingPeriod = summary.BillingPeriod,
+            Status = summary.Status,
+            PanelLoginUrl = summary.Status == PendingRegistrationStatus.Provisioned
+                ? TenantWelcomeUrlBuilder.BuildLoginUrl(Request, _environment, summary.PrimaryDomain)
+                : null
         });
     }
 

@@ -355,7 +355,7 @@
     <value>Bilgilerinizi aldık. Devam etmek için ödeme adımını tamamlayın.</value>
   </data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve">
-    <value>Ödeme tamamlandığında restoran paneliniz otomatik olarak hazırlanacaktır.</value>
+    <value>Ödeme tamamlandıktan sonra restoran paneliniz hazırlanır.</value>
   </data>
   <data name="Signup.PendingBackHome" xml:space="preserve">
     <value>Ana sayfaya dön</value>
@@ -389,6 +389,21 @@
   </data>
   <data name="Signup.PendingTestNote" xml:space="preserve">
     <value>Test ortamında ödeme adımı simüle edilecektir.</value>
+  </data>
+  <data name="Signup.PanelReadyTitle" xml:space="preserve">
+    <value>Paneliniz hazır</value>
+  </data>
+  <data name="Signup.PanelReadyBody" xml:space="preserve">
+    <value>Restoran paneliniz başarıyla oluşturuldu. Artık size özel Wasla adresinizden giriş yapabilirsiniz.</value>
+  </data>
+  <data name="Signup.GoToPanel" xml:space="preserve">
+    <value>Panele git</value>
+  </data>
+  <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve">
+    <value>Ödemeniz alındı</value>
+  </data>
+  <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve">
+    <value>Ödemeniz alındı. Restoran paneliniz hazırlanıyor.</value>
   </data>
   <data name="Common.ShowPassword" xml:space="preserve">
     <value>Şifreyi göster</value>
@@ -503,6 +518,21 @@
   </data>
   <data name="Checkout.SuccessNextPhase" xml:space="preserve">
     <value>Bir sonraki adımda restoran paneliniz hazırlanacak.</value>
+  </data>
+  <data name="Checkout.PanelReadyTitle" xml:space="preserve">
+    <value>Paneliniz hazır</value>
+  </data>
+  <data name="Checkout.PanelReadyMessage" xml:space="preserve">
+    <value>Ödemeniz tamamlandı ve restoran paneliniz oluşturuldu.</value>
+  </data>
+  <data name="Checkout.GoToPanel" xml:space="preserve">
+    <value>Restoran paneline git</value>
+  </data>
+  <data name="Checkout.PaymentReceivedPreparingTitle" xml:space="preserve">
+    <value>Ödemeniz alındı</value>
+  </data>
+  <data name="Checkout.PaymentReceivedPreparingMessage" xml:space="preserve">
+    <value>Ödemeniz alındı. Restoran paneliniz hazırlanıyor.</value>
   </data>
   <data name="Checkout.FailedTitle" xml:space="preserve">
     <value>Ödeme başarısız olarak simüle edildi</value>

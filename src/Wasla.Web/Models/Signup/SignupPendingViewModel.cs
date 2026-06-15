@@ -1,4 +1,6 @@
-﻿namespace Wasla.Web.Models.Signup;
+﻿using Wasla.Domain.Enums;
+
+namespace Wasla.Web.Models.Signup;
 
 public sealed class SignupPendingViewModel
 {
@@ -13,4 +15,8 @@ public sealed class SignupPendingViewModel
     public string PlanDisplayName { get; set; } = string.Empty;
 
     public string BillingPeriod { get; set; } = string.Empty;
+
+    public PendingRegistrationStatus Status { get; set; }
+
+    public string? PanelLoginUrl { get; set; }
 }
