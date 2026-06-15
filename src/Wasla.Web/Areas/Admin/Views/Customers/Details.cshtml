@@ -13,24 +13,12 @@
     </ol>
 </nav>
 
-<h1 class="h4 mb-3">@L["Admin.CustomerDetails"]</h1>
-
-@if (!Model.IsActive)
-{
-    <div class="alert alert-warning" role="alert">@L["Admin.InactiveWarning"]</div>
-}
-
-<dl class="row small">
-    <dt class="col-sm-3">@L["Admin.Name"]</dt>
-    <dd class="col-sm-9">@Model.Name</dd>
-    <dt class="col-sm-3">@L["Admin.Slug"]</dt>
-    <dd class="col-sm-9"><code>@Model.Slug</code></dd>
-    <dt class="col-sm-3">@L["Admin.PrimaryDomain"]</dt>
-    <dd class="col-sm-9">@Model.PrimaryDomain</dd>
-    <dt class="col-sm-3">@L["Admin.DatabaseName"]</dt>
-    <dd class="col-sm-9">@Model.DatabaseName</dd>
-    <dt class="col-sm-3">@L["Common.Status"]</dt>
-    <dd class="col-sm-9">
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">@Model.Name</h1>
+        <p class="text-muted small mb-0">@L["Admin.CustomerDetails"]</p>
+    </div>
+    <div>
         @if (Model.IsActive)
         {
             <span class="badge text-bg-success">@L["Admin.StatusActive"]</span>
@@ -39,18 +27,66 @@
         {
             <span class="badge text-bg-secondary">@L["Admin.StatusInactive"]</span>
         }
-    </dd>
-    <dt class="col-sm-3">@L["Admin.SchemaVersion"]</dt>
-    <dd class="col-sm-9">@Model.SchemaVersion</dd>
-    <dt class="col-sm-3">@L["Admin.LastMigrationAt"]</dt>
-    <dd class="col-sm-9">@(Model.LastMigrationAt?.ToString("u") ?? "—")</dd>
-    <dt class="col-sm-3">@L["Admin.LastMigrationResult"]</dt>
-    <dd class="col-sm-9">@(Model.LastMigrationResult ?? "—")</dd>
-    <dt class="col-sm-3">@L["Admin.CreatedAt"]</dt>
-    <dd class="col-sm-9">@Model.CreatedAt.ToString("u")</dd>
-    <dt class="col-sm-3">@L["Admin.UpdatedAt"]</dt>
-    <dd class="col-sm-9">@Model.UpdatedAt.ToString("u")</dd>
-</dl>
+    </div>
+</div>
+
+@if (!Model.IsActive)
+{
+    <div class="alert alert-warning" role="alert">@L["Admin.InactiveWarning"]</div>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">@L["Admin.GeneralInfo"]</div>
+    <div class="card-body">
+        <dl class="row small mb-0">
+            <dt class="col-sm-3 text-muted">@L["Admin.Name"]</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.Slug"]</dt>
+            <dd class="col-sm-9"><code>@Model.Slug</code></dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.PrimaryDomain"]</dt>
+            <dd class="col-sm-9">@Model.PrimaryDomain</dd>
+            <dt class="col-sm-3 text-muted">@L["Common.Status"]</dt>
+            <dd class="col-sm-9">
+                @if (Model.IsActive)
+                {
+                    <span class="badge text-bg-success">@L["Admin.StatusActive"]</span>
+                }
+                else
+                {
+                    <span class="badge text-bg-secondary">@L["Admin.StatusInactive"]</span>
+                }
+            </dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.CreatedAt"]</dt>
+            <dd class="col-sm-9">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.UpdatedAt"]</dt>
+            <dd class="col-sm-9">@Model.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="accordion mb-4" id="adminTechnicalInfo">
+    <div class="accordion-item border-0 shadow-sm">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-white fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#adminTechnicalInfoBody" aria-expanded="false" aria-controls="adminTechnicalInfoBody">
+                @L["Admin.TechnicalInfo"]
+            </button>
+        </h2>
+        <div id="adminTechnicalInfoBody" class="accordion-collapse collapse" data-bs-parent="#adminTechnicalInfo">
+            <div class="accordion-body">
+                <dl class="row small mb-0">
+                    <dt class="col-sm-3 text-muted">@L["Admin.DatabaseName"]</dt>
+                    <dd class="col-sm-9"><code>@Model.DatabaseName</code></dd>
+                    <dt class="col-sm-3 text-muted">@L["Admin.SchemaVersion"]</dt>
+                    <dd class="col-sm-9">@Model.SchemaVersion</dd>
+                    <dt class="col-sm-3 text-muted">@L["Admin.LastMigrationAt"]</dt>
+                    <dd class="col-sm-9">@(Model.LastMigrationAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+                    <dt class="col-sm-3 text-muted">@L["Admin.LastMigrationResult"]</dt>
+                    <dd class="col-sm-9">@(Model.LastMigrationResult ?? "—")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="d-flex flex-wrap gap-2">
     <a class="btn btn-outline-secondary" href="/admin/customers">@L["Admin.BackToDashboard"]</a>
@@ -69,4 +105,3 @@
         </form>
     }
 </div>
-

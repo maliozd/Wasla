@@ -5,42 +5,71 @@
     ViewData["Title"] = L["Admin.Customers"].Value;
 }
 
-<h1 class="h4 mb-3">@L["Admin.Customers"]</h1>
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div>
+        <h1 class="h4 mb-1">@L["Admin.Customers"]</h1>
+        <p class="text-muted small mb-0">@L["Admin.BrandSubtitle"]</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="text-muted small">@L["Admin.TotalCustomers"]</div>
+                <div class="fs-4 fw-bold mb-0">@Model.TotalCustomers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="text-muted small">@L["Admin.ActiveCustomers"]</div>
+                <div class="fs-4 fw-bold text-success mb-0">@Model.ActiveCustomers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="text-muted small">@L["Admin.InactiveCustomers"]</div>
+                <div class="fs-4 fw-bold text-secondary mb-0">@Model.InactiveCustomers</div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-                <thead>
-                <tr>
-                    <th>@L["Admin.Name"]</th>
-                    <th>@L["Admin.Slug"]</th>
-                    <th>@L["Admin.PrimaryDomain"]</th>
-                    <th>@L["Admin.DatabaseName"]</th>
-                    <th>@L["Common.Status"]</th>
-                    <th>@L["Admin.SchemaVersion"]</th>
-                    <th>@L["Admin.LastMigrationAt"]</th>
-                    <th>@L["Admin.LastMigrationResult"]</th>
-                    <th>@L["Admin.CreatedAt"]</th>
-                    <th class="text-end">@L["Admin.Actions"]</th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (Model.Customers.Count == 0)
-                {
+        @if (Model.Customers.Count == 0)
+        {
+            <div class="text-center text-muted py-5 px-3">
+                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                <div class="fw-semibold">@L["Admin.NoCustomers"]</div>
+                <div class="small">@L["Admin.NoCustomersHint"]</div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
                     <tr>
-                        <td colspan="10" class="text-center text-muted py-4">@L["Admin.NoCustomers"]</td>
+                        <th>@L["Admin.Name"]</th>
+                        <th>@L["Admin.Slug"]</th>
+                        <th>@L["Admin.PrimaryDomain"]</th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["Admin.CreatedAt"]</th>
+                        <th class="text-end">@L["Admin.Actions"]</th>
                     </tr>
-                }
-                else
-                {
+                    </thead>
+                    <tbody>
                     @foreach (var c in Model.Customers)
                     {
                         <tr>
-                            <td>@c.Name</td>
+                            <td class="fw-medium">@c.Name</td>
                             <td><code class="small">@c.Slug</code></td>
-                            <td class="small">@c.PrimaryDomain</td>
-                            <td class="small">@c.DatabaseName</td>
+                            <td class="small text-muted">@c.PrimaryDomain</td>
                             <td>
                                 @if (c.IsActive)
                                 {
@@ -51,10 +80,7 @@
                                     <span class="badge text-bg-secondary">@L["Admin.StatusInactive"]</span>
                                 }
                             </td>
-                            <td class="small">@c.SchemaVersion</td>
-                            <td class="small">@(c.LastMigrationAt?.ToString("u"))</td>
-                            <td class="small">@(c.LastMigrationResult ?? "—")</td>
-                            <td class="small">@c.CreatedAt.ToString("u")</td>
+                            <td class="small text-muted">@c.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                             <td class="text-end text-nowrap">
                                 <a class="btn btn-sm btn-outline-primary" href="/admin/customers/@c.Id">@L["Admin.Details"]</a>
                                 @if (c.IsActive)
@@ -74,10 +100,9 @@
                             </td>
                         </tr>
                     }
-                }
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>
-

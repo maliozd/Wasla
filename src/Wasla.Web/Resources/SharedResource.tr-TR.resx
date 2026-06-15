@@ -253,10 +253,10 @@
     <value>Tema</value>
   </data>
   <data name="Layout.CentralAdmin" xml:space="preserve">
-    <value>Wasla — Merkez yönetim</value>
+    <value>Wasla Yönetim Paneli</value>
   </data>
   <data name="Layout.Customers" xml:space="preserve">
-    <value>Müşteriler</value>
+    <value>Restoranlar</value>
   </data>
   <data name="Layout.PublicSite" xml:space="preserve">
     <value>Genel site</value>
@@ -1339,28 +1339,43 @@
     <value>Son başarılı eşitleme (UTC)</value>
   </data>
   <data name="Admin.LoginTitle" xml:space="preserve">
-    <value>Merkez yönetici girişi</value>
+    <value>Wasla Yönetim Paneli</value>
   </data>
   <data name="Admin.LoginSubtitle" xml:space="preserve">
-    <value>CentralDb müşteri kaydını yönetin</value>
+    <value>Merkezi yönetim hesabınızla giriş yapın</value>
+  </data>
+  <data name="Admin.BrandSubtitle" xml:space="preserve">
+    <value>Merkezi Yönetim</value>
   </data>
   <data name="Admin.DashboardTitle" xml:space="preserve">
-    <value>Merkez yönetim</value>
+    <value>Merkezi Yönetim</value>
   </data>
   <data name="Admin.Customers" xml:space="preserve">
-    <value>Müşteriler</value>
+    <value>Restoranlar</value>
   </data>
   <data name="Admin.TotalCustomers" xml:space="preserve">
-    <value>Toplam müşteri</value>
+    <value>Toplam restoran</value>
   </data>
   <data name="Admin.ActiveCustomers" xml:space="preserve">
-    <value>Aktif</value>
+    <value>Aktif restoran</value>
   </data>
   <data name="Admin.InactiveCustomers" xml:space="preserve">
-    <value>Pasif</value>
+    <value>Pasif restoran</value>
+  </data>
+  <data name="Admin.RecentRestaurants" xml:space="preserve">
+    <value>Son restoranlar</value>
+  </data>
+  <data name="Admin.ViewAllRestaurants" xml:space="preserve">
+    <value>Tüm restoranları gör</value>
+  </data>
+  <data name="Admin.GeneralInfo" xml:space="preserve">
+    <value>Genel bilgiler</value>
+  </data>
+  <data name="Admin.TechnicalInfo" xml:space="preserve">
+    <value>Sistem bilgileri</value>
   </data>
   <data name="Admin.CustomerDetails" xml:space="preserve">
-    <value>Müşteri ayrıntıları</value>
+    <value>Restoran ayrıntıları</value>
   </data>
   <data name="Admin.Name" xml:space="preserve">
     <value>Ad</value>
@@ -1372,19 +1387,19 @@
     <value>Birincil alan adı</value>
   </data>
   <data name="Admin.DatabaseName" xml:space="preserve">
-    <value>Veritabanı adı</value>
+    <value>Sistem kimliği</value>
   </data>
   <data name="Admin.SchemaVersion" xml:space="preserve">
-    <value>Şema sürümü</value>
+    <value>Yapı sürümü</value>
   </data>
   <data name="Admin.LastMigrationAt" xml:space="preserve">
-    <value>Son geçiş (UTC)</value>
+    <value>Son yapılandırma</value>
   </data>
   <data name="Admin.LastMigrationResult" xml:space="preserve">
-    <value>Son geçiş sonucu</value>
+    <value>Yapılandırma durumu</value>
   </data>
   <data name="Admin.CreatedAt" xml:space="preserve">
-    <value>Oluşturulma (UTC)</value>
+    <value>Kayıt tarihi</value>
   </data>
   <data name="Admin.Actions" xml:space="preserve">
     <value>İşlemler</value>
@@ -1399,7 +1414,7 @@
     <value>Devre dışı bırak</value>
   </data>
   <data name="Admin.Logout" xml:space="preserve">
-    <value>Çıkış</value>
+    <value>Çıkış yap</value>
   </data>
   <data name="Admin.InvalidCredentials" xml:space="preserve">
     <value>E-posta veya şifre hatalı.</value>
@@ -1408,19 +1423,22 @@
     <value>Yönetici hesabınız pasif.</value>
   </data>
   <data name="Admin.BackToDashboard" xml:space="preserve">
-    <value>Panele dön</value>
+    <value>Restoran listesine dön</value>
   </data>
   <data name="Admin.PublicSite" xml:space="preserve">
     <value>Genel site</value>
   </data>
   <data name="Admin.CentralAdmin" xml:space="preserve">
-    <value>Wasla — Merkez yönetim</value>
+    <value>Wasla Yönetim Paneli</value>
   </data>
   <data name="Admin.CustomerNotFound" xml:space="preserve">
-    <value>Müşteri bulunamadı.</value>
+    <value>Restoran bulunamadı.</value>
   </data>
   <data name="Admin.NoCustomers" xml:space="preserve">
-    <value>CentralDb’de henüz kayıtlı müşteri yok.</value>
+    <value>Henüz veri yok</value>
+  </data>
+  <data name="Admin.NoCustomersHint" xml:space="preserve">
+    <value>Kayıtlı restoran bulunmuyor.</value>
   </data>
   <data name="Admin.StatusActive" xml:space="preserve">
     <value>Aktif</value>
@@ -1429,10 +1447,10 @@
     <value>Pasif</value>
   </data>
   <data name="Admin.InactiveWarning" xml:space="preserve">
-    <value>Bu müşteri pasif. Etkinleştirilene kadar alan adı eşleşmeyecektir.</value>
+    <value>Bu restoran pasif. Etkinleştirilene kadar paneline erişilemez.</value>
   </data>
   <data name="Admin.UpdatedAt" xml:space="preserve">
-    <value>Güncelleme (UTC)</value>
+    <value>Son güncelleme</value>
   </data>
   <data name="Orders.Actions" xml:space="preserve">
     <value>İşlemler</value>
