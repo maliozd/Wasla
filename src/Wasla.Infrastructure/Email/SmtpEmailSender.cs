@@ -12,6 +12,7 @@ namespace Wasla.Infrastructure.Email;
 /// Sends real email via SMTP using MailKit. SMTP credentials are read from configuration only.
 /// </summary>
 internal sealed class SmtpEmailSender : IEmailSender
+public sealed class SmtpEmailSender : IEmailSender
 {
     private readonly EmailOptions _options;
     private readonly ILogger<SmtpEmailSender> _logger;
@@ -24,30 +25,22 @@ internal sealed class SmtpEmailSender : IEmailSender
 
     public async Task SendAsync(EmailMessage message, CancellationToken ct)
     {
-        var mime = new MimeMessage();
-        mime.From.Add(new MailboxAddress(_options.FromName, _options.FromEmail));
-        mime.To.Add(new MailboxAddress(message.ToName, message.ToEmail));
-        mime.Subject = message.Subject;
+        ArgumentNullException.ThrowIfNull(message);
+        ValidateOptions();
 
-        var bodyBuilder = new BodyBuilder
-        {
-            HtmlBody = message.HtmlBody,
-            TextBody = message.TextBody
-        };
-        mime.Body = bodyBuilder.ToMessageBody();
+        var mime = BuildMimeMessage(message);
 
         using var client = new SmtpClient();
-
-        var socketOptions = _options.EnableSsl
-            ? SecureSocketOptions.StartTlsWhenAvailable
+        var secureSocketOptions = _options.EnableSsl
+            ? SecureSocketOptions.StartTls
             : SecureSocketOptions.None;
 
-        await client.ConnectAsync(_options.SmtpHost, _options.SmtpPort, socketOptions, ct)
+        await client.ConnectAsync(_options.SmtpHost.Trim(), _options.SmtpPort, secureSocketOptions, ct)
             .ConfigureAwait(false);
 
         if (!string.IsNullOrWhiteSpace(_options.SmtpUsername))
         {
-            await client.AuthenticateAsync(_options.SmtpUsername, _options.SmtpPassword, ct)
+            await client.AuthenticateAsync(_options.SmtpUsername.Trim(), _options.SmtpPassword, ct)
                 .ConfigureAwait(false);
         }
 
@@ -55,8 +48,42 @@ internal sealed class SmtpEmailSender : IEmailSender
         await client.DisconnectAsync(true, ct).ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Email sent via SMTP. To={ToEmail} | Subject={Subject}",
+            "Email sent via SMTP to {Recipient} with subject {Subject}",
             message.ToEmail,
             message.Subject);
+    }
+
+    private MimeMessage BuildMimeMessage(EmailMessage message)
+    {
+        var mime = new MimeMessage();
+        mime.From.Add(new MailboxAddress(_options.FromName.Trim(), _options.FromEmail.Trim()));
+
+        if (string.IsNullOrWhiteSpace(message.ToName))
+            mime.To.Add(MailboxAddress.Parse(message.ToEmail.Trim()));
+        else
+            mime.To.Add(new MailboxAddress(message.ToName.Trim(), message.ToEmail.Trim()));
+
+        mime.Subject = message.Subject;
+
+        var bodyBuilder = new BodyBuilder
+        {
+            TextBody = message.TextBody,
+            HtmlBody = message.HtmlBody
+        };
+        mime.Body = bodyBuilder.ToMessageBody();
+
+        return mime;
+    }
+
+    private void ValidateOptions()
+    {
+        if (string.IsNullOrWhiteSpace(_options.FromEmail))
+            throw new InvalidOperationException("Email:FromEmail is required when Email:Provider is Smtp.");
+
+        if (string.IsNullOrWhiteSpace(_options.SmtpHost))
+            throw new InvalidOperationException("Email:SmtpHost is required when Email:Provider is Smtp.");
+
+        if (_options.SmtpPort <= 0)
+            throw new InvalidOperationException("Email:SmtpPort must be greater than zero when Email:Provider is Smtp.");
     }
 }

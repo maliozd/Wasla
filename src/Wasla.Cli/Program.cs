@@ -73,6 +73,7 @@ builder.Services.AddDbContext<CentralDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CentralDb")));
 
 builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
+builder.Services.AddWaslaEmail(builder.Configuration);
 
 builder.Services.AddWaslaEmail(builder.Configuration);
 

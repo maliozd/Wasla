@@ -16,6 +16,7 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.ReferenceData;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Email;
 
 namespace Wasla.Cli;
 
@@ -475,6 +476,8 @@ internal static class CliCommands
             registration.TenantId = tenantId;
             registration.ProvisionedAtUtc = now;
             await central.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            await TrySendPanelReadyEmailAsync(scope, registration, ct).ConfigureAwait(false);
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("✓ Signup request provisioned successfully");
@@ -1635,6 +1638,35 @@ internal static class CliCommands
         {
             WriteError("seed-customer-admin failed: " + ex.Message);
             return 1;
+        }
+    }
+
+    private static async Task TrySendPanelReadyEmailAsync(
+        IServiceScope scope,
+        PendingRegistration registration,
+        CancellationToken ct)
+    {
+        try
+        {
+            var factory = scope.ServiceProvider.GetRequiredService<ProvisioningEmailFactory>();
+            var sender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+            var message = factory.BuildPanelReadyEmail(registration);
+            await sender.SendAsync(message, ct).ConfigureAwait(false);
+
+            Console.WriteLine("PanelReady notification email prepared.");
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("Wasla.Cli.ProvisionSignupRequest");
+            logger?.LogWarning(
+                ex,
+                "PanelReady email failed for registration {RegistrationId}",
+                registration.Id);
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Provisioning completed, but notification email failed.");
+            Console.WriteLine(ex.Message);
+            Console.ResetColor();
         }
     }
 
