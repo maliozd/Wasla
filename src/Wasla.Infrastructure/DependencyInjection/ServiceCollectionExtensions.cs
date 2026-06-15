@@ -50,6 +50,8 @@ public static class ServiceCollectionExtensions
         services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
         services.Configure<CustomerOnboardingOptions>(configuration.GetSection(CustomerOnboardingOptions.SectionName));
 
+        services.AddWaslaEmail(configuration);
+
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
