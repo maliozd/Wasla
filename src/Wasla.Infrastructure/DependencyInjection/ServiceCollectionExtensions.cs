@@ -18,6 +18,8 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Abstractions.Email;
+using Wasla.Infrastructure.Email;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Plans;
 using Wasla.Infrastructure.Persistence.Central;
@@ -109,6 +111,26 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPrintBridgeJobService, PrintBridgeJobService>();
         services.AddScoped<IPrintBridgeDeviceManagementService, PrintBridgeDeviceManagementService>();
         services.AddScoped<IPrintJobHistoryService, PrintJobHistoryService>();
+
+        services.AddWaslaEmail(configuration);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers email services (IEmailSender). Callable independently from the CLI host.
+    /// Provider is read from configuration key "Email:Provider" — "Log" (default) or "Smtp".
+    /// </summary>
+    public static IServiceCollection AddWaslaEmail(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+
+        var provider = configuration[$"{EmailOptions.SectionName}:Provider"] ?? "Log";
+
+        if (string.Equals(provider, "Smtp", StringComparison.OrdinalIgnoreCase))
+            services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        else
+            services.AddSingleton<IEmailSender, LogEmailSender>();
 
         return services;
     }
