@@ -1,0 +1,36 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Wasla.Application.Abstractions.Email;
+using Wasla.Infrastructure.Email;
+using Wasla.Infrastructure.Options;
+
+namespace Wasla.Infrastructure.DependencyInjection;
+
+public static class EmailServiceCollectionExtensions
+{
+    public static IServiceCollection AddWaslaEmail(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+
+        services.AddSingleton<EmailTemplateRenderer>();
+        services.AddSingleton<ProvisioningEmailFactory>();
+
+        var provider = configuration.GetSection(EmailOptions.SectionName).GetValue<string>("Provider") ?? "Log";
+
+        if (string.Equals(provider, "Smtp", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        }
+        else if (string.Equals(provider, "Log", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IEmailSender, LogEmailSender>();
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Unknown Email:Provider '{provider}'. Supported values are 'Log' and 'Smtp'.");
+        }
+
+        return services;
+    }
+}

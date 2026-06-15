@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Cli;
+using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Security;
 
@@ -72,6 +73,7 @@ builder.Services.AddDbContext<CentralDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CentralDb")));
 
 builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
+builder.Services.AddWaslaEmail(builder.Configuration);
 
 var host = builder.Build();
 
