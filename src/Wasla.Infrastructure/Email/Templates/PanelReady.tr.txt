@@ -1,0 +1,10 @@
+Merhaba {{OwnerFullName}},
+
+Restoran paneliniz başarıyla oluşturuldu.
+
+Panel adresiniz:
+{{LoginUrl}}
+
+Bu adres üzerinden Wasla restoran panelinize giriş yapabilirsiniz.
+
+{{FromName}}

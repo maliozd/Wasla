@@ -1,0 +1,10 @@
+Hello {{OwnerFullName}},
+
+Your restaurant panel has been created successfully.
+
+Your panel address:
+{{LoginUrl}}
+
+You can use this address to sign in to your Wasla restaurant panel.
+
+{{FromName}}
