@@ -1,0 +1,8 @@
+مرحباً {{OwnerFullName}}،
+
+ستنتهي فترة تجربتك في Wasla لـ {{BusinessName}} في {{TrialEndsAt}}.
+
+لضمان استمرار الخدمة دون انقطاع، يرجى مراجعة اشتراكك:
+{{AdminDashboardUrl}}
+
+{{FromName}}

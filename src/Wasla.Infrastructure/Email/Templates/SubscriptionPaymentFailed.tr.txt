@@ -1,0 +1,8 @@
+Merhaba {{OwnerFullName}},
+
+{{BusinessName}} için Wasla abonelik ödemeniz alınamadı.
+
+Hizmetin kesintiye uğramaması için ödeme bilgilerinizi kontrol edin:
+{{AdminDashboardUrl}}
+
+{{FromName}}

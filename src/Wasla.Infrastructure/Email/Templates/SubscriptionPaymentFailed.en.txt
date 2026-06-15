@@ -1,0 +1,8 @@
+Hello {{OwnerFullName}},
+
+Your Wasla subscription payment for {{BusinessName}} could not be processed.
+
+To avoid service interruption, please review your payment details:
+{{AdminDashboardUrl}}
+
+{{FromName}}

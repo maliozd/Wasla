@@ -1,0 +1,8 @@
+Hello {{OwnerFullName}},
+
+Your Wasla payment for {{BusinessName}} was cancelled.
+
+You can continue your payment using the link below:
+{{CheckoutUrl}}
+
+{{FromName}}

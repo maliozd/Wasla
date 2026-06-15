@@ -1,0 +1,8 @@
+مرحباً {{OwnerFullName}}،
+
+تعذّر معالجة دفعة اشتراك Wasla لـ {{BusinessName}}.
+
+لتجنّب انقطاع الخدمة، يرجى مراجعة بيانات الدفع:
+{{AdminDashboardUrl}}
+
+{{FromName}}

@@ -1,0 +1,8 @@
+Hello {{OwnerFullName}},
+
+Your Wasla trial for {{BusinessName}} will end on {{TrialEndsAt}}.
+
+To keep your service running without interruption, please review your subscription:
+{{AdminDashboardUrl}}
+
+{{FromName}}

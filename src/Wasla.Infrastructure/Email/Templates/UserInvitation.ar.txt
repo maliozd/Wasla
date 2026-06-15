@@ -1,0 +1,8 @@
+مرحباً {{OwnerFullName}}،
+
+تمت دعوتك إلى لوحة Wasla الخاصة بـ {{BusinessName}}.
+
+استخدم الرابط أدناه لقبول الدعوة وإنشاء حسابك:
+{{InvitationUrl}}
+
+{{FromName}}

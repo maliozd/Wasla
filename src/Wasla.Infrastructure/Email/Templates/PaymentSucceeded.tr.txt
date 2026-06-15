@@ -1,0 +1,10 @@
+Merhaba {{OwnerFullName}},
+
+{{BusinessName}} için Wasla ödemeniz başarıyla alındı.
+
+Restoran paneliniz hazırlanıyor. Panel adresiniz hazır olduğunda size ayrı bir e-posta ile bildireceğiz.
+
+İşlem durumunu aşağıdaki bağlantıdan takip edebilirsiniz:
+{{SignupPendingUrl}}
+
+{{FromName}}

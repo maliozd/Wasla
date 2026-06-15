@@ -1,0 +1,8 @@
+Merhaba {{OwnerFullName}},
+
+{{BusinessName}} için Wasla ödeme işleminiz tamamlanamadı.
+
+Ödemenizi tekrar denemek için aşağıdaki bağlantıyı kullanabilirsiniz:
+{{RetryPaymentUrl}}
+
+{{FromName}}

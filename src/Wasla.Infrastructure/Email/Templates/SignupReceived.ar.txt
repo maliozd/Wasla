@@ -1,0 +1,8 @@
+مرحباً {{OwnerFullName}}،
+
+تم استلام طلب التسجيل في Wasla لـ {{BusinessName}}.
+
+يمكنك متابعة حالة طلبك عبر الرابط أدناه:
+{{SignupPendingUrl}}
+
+{{FromName}}

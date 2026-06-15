@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Wasla ödemeniz alındı</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #222222; max-width: 600px; margin: 0 auto; padding: 24px;">
+  <h2 style="color: #0d6efd;">Wasla</h2>
+
+  <p>Merhaba {{OwnerFullName}},</p>
+
+  <p><strong>{{BusinessName}}</strong> için Wasla ödemeniz başarıyla alındı.</p>
+
+  <p>Restoran paneliniz hazırlanıyor. Panel adresiniz hazır olduğunda size ayrı bir e-posta ile bildireceğiz.</p>
+
+  <p>İşlem durumunu aşağıdaki bağlantıdan takip edebilirsiniz:</p>
+
+  <p style="margin: 16px 0;">
+    <a href="{{SignupPendingUrl}}" style="background-color: #0d6efd; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+      Başvuru Durumunu Gör
+    </a>
+  </p>
+
+  <p style="color: #555555;">{{SignupPendingUrl}}</p>
+
+  <hr style="border: none; border-top: 1px solid #eeeeee; margin: 24px 0;" />
+
+  <p style="color: #888888; font-size: 13px;">{{FromName}}</p>
+</body>
+</html>

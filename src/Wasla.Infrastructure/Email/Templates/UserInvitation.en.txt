@@ -1,0 +1,8 @@
+Hello {{OwnerFullName}},
+
+You have been invited to the {{BusinessName}} Wasla panel.
+
+Use the link below to accept the invitation and create your account:
+{{InvitationUrl}}
+
+{{FromName}}

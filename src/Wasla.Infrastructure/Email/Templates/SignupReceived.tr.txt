@@ -1,0 +1,8 @@
+Merhaba {{OwnerFullName}},
+
+{{BusinessName}} için Wasla kayıt talebiniz alındı.
+
+Başvurunuzun durumunu aşağıdaki bağlantıdan takip edebilirsiniz:
+{{SignupPendingUrl}}
+
+{{FromName}}

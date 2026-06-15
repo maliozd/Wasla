@@ -1,0 +1,10 @@
+Restoran kurulumu başarısız oldu.
+
+Kayıt ID: {{RegistrationId}}
+İşletme: {{BusinessName}}
+Domain: {{PrimaryDomain}}
+
+Hata nedeni:
+{{FailureReason}}
+
+{{FromName}}

@@ -1,0 +1,8 @@
+مرحباً {{OwnerFullName}}،
+
+تم إلغاء عملية الدفع في Wasla لـ {{BusinessName}}.
+
+يمكنك متابعة الدفع من حيث توقفت عبر الرابط أدناه:
+{{CheckoutUrl}}
+
+{{FromName}}

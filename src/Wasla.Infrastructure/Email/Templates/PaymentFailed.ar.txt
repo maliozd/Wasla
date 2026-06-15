@@ -1,0 +1,8 @@
+مرحباً {{OwnerFullName}}،
+
+تعذّر إتمام عملية الدفع في Wasla لـ {{BusinessName}}.
+
+يمكنك إعادة محاولة الدفع عبر الرابط أدناه:
+{{RetryPaymentUrl}}
+
+{{FromName}}

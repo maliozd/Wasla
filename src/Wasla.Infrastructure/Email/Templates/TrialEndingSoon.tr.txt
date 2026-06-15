@@ -1,0 +1,8 @@
+Merhaba {{OwnerFullName}},
+
+{{BusinessName}} için Wasla deneme süreniz {{TrialEndsAt}} tarihinde sona erecek.
+
+Hizmetin kesintisiz devam etmesi için aboneliğinizi kontrol edin:
+{{AdminDashboardUrl}}
+
+{{FromName}}

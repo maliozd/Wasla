@@ -1,0 +1,10 @@
+Restaurant provisioning failed.
+
+Registration ID: {{RegistrationId}}
+Business: {{BusinessName}}
+Domain: {{PrimaryDomain}}
+
+Failure reason:
+{{FailureReason}}
+
+{{FromName}}

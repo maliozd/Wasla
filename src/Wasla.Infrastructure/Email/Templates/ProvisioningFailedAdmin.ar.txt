@@ -1,0 +1,10 @@
+فشل إعداد المطعم.
+
+معرّف التسجيل: {{RegistrationId}}
+النشاط التجاري: {{BusinessName}}
+النطاق: {{PrimaryDomain}}
+
+سبب الفشل:
+{{FailureReason}}
+
+{{FromName}}

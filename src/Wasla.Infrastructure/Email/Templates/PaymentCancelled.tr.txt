@@ -1,0 +1,8 @@
+Merhaba {{OwnerFullName}},
+
+{{BusinessName}} için Wasla ödeme işleminiz iptal edildi.
+
+Ödemenize kaldığınız yerden devam etmek için aşağıdaki bağlantıyı kullanabilirsiniz:
+{{CheckoutUrl}}
+
+{{FromName}}

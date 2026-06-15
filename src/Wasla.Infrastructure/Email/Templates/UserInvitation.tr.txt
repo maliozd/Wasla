@@ -1,0 +1,8 @@
+Merhaba {{OwnerFullName}},
+
+{{BusinessName}} Wasla paneline davet edildiniz.
+
+Daveti kabul etmek ve hesabınızı oluşturmak için aşağıdaki bağlantıyı kullanın:
+{{InvitationUrl}}
+
+{{FromName}}

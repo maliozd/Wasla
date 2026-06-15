@@ -1,0 +1,8 @@
+Hello {{OwnerFullName}},
+
+Your Wasla registration request for {{BusinessName}} has been received.
+
+You can follow the status of your application using the link below:
+{{SignupPendingUrl}}
+
+{{FromName}}

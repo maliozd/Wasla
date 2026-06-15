@@ -1,0 +1,10 @@
+Hello {{OwnerFullName}},
+
+Your Wasla payment for {{BusinessName}} has been received successfully.
+
+Your restaurant panel is being prepared. We will send you a separate email with your panel address when it is ready.
+
+You can follow the status of your request using the link below:
+{{SignupPendingUrl}}
+
+{{FromName}}
