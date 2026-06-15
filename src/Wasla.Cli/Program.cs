@@ -75,6 +75,36 @@ builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
 
 var host = builder.Build();
 
+// --- provision-signup-request ---
+var provisionSignupRequest = new Command(
+    "provision-signup-request",
+    "Provision a paid PendingRegistration into a live tenant (DB + central registry + owner user).");
+
+var optRegistrationId = new Option<Guid>("--registration-id", "PendingRegistration id (GUID)") { IsRequired = true };
+var optPsrDryRun = new Option<bool>("--dry-run", "Validate only; do not create database, tenant, or user");
+var optPsrForce = new Option<bool>("--force", "Retry when tenant database exists or registration is Provisioned without a tenant row");
+var optPsrSqlServer = new Option<string?>("--sql-server", "SQL Server instance; default from config CustomerDb:ServerInstance or '.'");
+var optPsrSqlAuth = new Option<string>("--sql-auth", () => "trusted", "Trusted Windows auth, or 'sql:username:password'");
+
+provisionSignupRequest.AddOption(optRegistrationId);
+provisionSignupRequest.AddOption(optPsrDryRun);
+provisionSignupRequest.AddOption(optPsrForce);
+provisionSignupRequest.AddOption(optPsrSqlServer);
+provisionSignupRequest.AddOption(optPsrSqlAuth);
+
+provisionSignupRequest.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.ProvisionSignupRequestAsync(
+        host,
+        p.GetValueForOption(optRegistrationId),
+        p.GetValueForOption(optPsrDryRun),
+        p.GetValueForOption(optPsrForce),
+        p.GetValueForOption(optPsrSqlServer),
+        p.GetValueForOption(optPsrSqlAuth) ?? "trusted",
+        context.GetCancellationToken());
+});
+
 // --- add-customer ---
 var addCustomer = new Command("add-customer", "Onboard a new customer (DB + central registry + first admin).");
 
@@ -410,6 +440,7 @@ listPrintJobs.SetHandler(async (InvocationContext context) =>
 var root = new RootCommand("orderhub — operational CLI for customer onboarding, migrations, and secrets.")
 {
     addCustomer,
+    provisionSignupRequest,
     addCentralAdmin,
     resetCentralAdminPassword,
     listCentralAdmins,

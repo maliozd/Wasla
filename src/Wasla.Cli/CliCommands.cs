@@ -232,6 +232,294 @@ internal static class CliCommands
         return true;
     }
 
+    public static async Task<int> ProvisionSignupRequestAsync(
+        IHost host,
+        Guid registrationId,
+        bool dryRun,
+        bool force,
+        string? sqlServer,
+        string sqlAuth,
+        CancellationToken ct)
+    {
+        var dbCreated = false;
+        Tenant? insertedCentral = null;
+        string? dbName = null;
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
+            var registration = await central.PendingRegistrations
+                .FirstOrDefaultAsync(r => r.Id == registrationId, ct)
+                .ConfigureAwait(false);
+
+            if (registration is null)
+            {
+                WriteError($"Pending registration not found: {registrationId}");
+                return 2;
+            }
+
+            if (registration.Status == PendingRegistrationStatus.Provisioned)
+            {
+                if (registration.TenantId is { } existingTenantId)
+                {
+                    var existingTenant = await central.Tenants
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(t => t.Id == existingTenantId, ct)
+                        .ConfigureAwait(false);
+                    if (existingTenant is not null)
+                    {
+                        Console.WriteLine("Already provisioned.");
+                        Console.WriteLine($"TenantId: {existingTenant.Id}");
+                        Console.WriteLine($"Domain:   {existingTenant.PrimaryDomain}");
+                        return 0;
+                    }
+                }
+
+                if (!force)
+                {
+                    WriteError(
+                        "Registration is marked Provisioned but the tenant record is missing. Use --force to retry provisioning.");
+                    return 2;
+                }
+            }
+            else if (registration.Status == PendingRegistrationStatus.PaymentSucceeded
+                     && registration.TenantId is { } linkedTenantId)
+            {
+                var linkedTenant = await central.Tenants
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == linkedTenantId, ct)
+                    .ConfigureAwait(false);
+                if (linkedTenant is not null)
+                {
+                    registration.Status = PendingRegistrationStatus.Provisioned;
+                    registration.ProvisionedAtUtc ??= DateTime.UtcNow;
+                    await central.SaveChangesAsync(ct).ConfigureAwait(false);
+                    Console.WriteLine("Already provisioned.");
+                    Console.WriteLine($"TenantId: {linkedTenant.Id}");
+                    Console.WriteLine($"Domain:   {linkedTenant.PrimaryDomain}");
+                    return 0;
+                }
+            }
+            else if (registration.Status != PendingRegistrationStatus.PaymentSucceeded)
+            {
+                WriteError("Registration must be PaymentSucceeded before provisioning.");
+                return 2;
+            }
+
+            var fieldError = ValidateProvisioningRequiredFields(registration);
+            if (fieldError is not null)
+            {
+                WriteError(fieldError);
+                return 2;
+            }
+
+            dbName = registration.DatabaseName.Trim();
+
+            var uniquenessError = await ValidateProvisioningUniquenessAsync(
+                central,
+                registration,
+                ct).ConfigureAwait(false);
+            if (uniquenessError is not null)
+            {
+                WriteError(uniquenessError);
+                return 2;
+            }
+
+            var server = string.IsNullOrWhiteSpace(sqlServer)
+                ? configuration["CustomerDb:ServerInstance"]?.Trim()
+                  ?? configuration.GetSection("OrderHub:CustomerOnboarding")["ServerInstance"]?.Trim()
+                  ?? "."
+                : sqlServer.Trim();
+
+            if (dryRun)
+            {
+                Console.WriteLine("(dry-run) Would provision signup request:");
+                Console.WriteLine($"  RegistrationId: {registration.Id}");
+                Console.WriteLine($"  BusinessName:   {registration.BusinessName}");
+                Console.WriteLine($"  Slug:           {registration.Slug}");
+                Console.WriteLine($"  PrimaryDomain:  {registration.PrimaryDomain}");
+                Console.WriteLine($"  DatabaseName:   {dbName}");
+                Console.WriteLine($"  OwnerEmail:     {registration.OwnerEmail}");
+                Console.WriteLine($"  PlanCode:       {registration.PlanCode}");
+                Console.WriteLine($"  BillingPeriod:  {registration.BillingPeriod}");
+                Console.WriteLine($"  SQL Server:     {server}");
+                Console.WriteLine($"  SQL Auth:       {(sqlAuth.StartsWith("sql:", StringComparison.OrdinalIgnoreCase) ? "sql:***" : sqlAuth)}");
+                return 0;
+            }
+
+            var dbAlreadyExists = await DatabaseExistsAsync(server, sqlAuth, dbName, ct).ConfigureAwait(false);
+            if (dbAlreadyExists && registration.TenantId is null && !force)
+            {
+                WriteError(
+                    $"Tenant database '{dbName}' already exists but no tenant is linked to this registration. Use --force to retry provisioning.");
+                return 2;
+            }
+
+            WriteLineStep($"Target database name: {dbName}");
+
+            await EnsureDatabaseExistsAsync(server, sqlAuth, dbName, ct).ConfigureAwait(false);
+            dbCreated = !dbAlreadyExists;
+
+            var customerConnString = BuildCustomerConnectionString(server, sqlAuth, dbName);
+            var options = new DbContextOptionsBuilder<TenantDbContext>()
+                .UseSqlServer(customerConnString)
+                .Options;
+
+            var migrationNow = DateTime.UtcNow;
+            string migrationResult;
+            try
+            {
+                await using var db = new TenantDbContext(options);
+                WriteLineStep("Applying CustomerDb migrations…");
+                await db.Database.MigrateAsync(ct).ConfigureAwait(false);
+                migrationResult = "Success";
+            }
+            catch (Exception ex)
+            {
+                migrationResult = "Failed: " + SanitizeMigrationError(ex);
+                throw;
+            }
+
+            WriteLineStep("Encrypting connection string…");
+            var (encrypted, keyVersion) = await secret.EncryptAsync(customerConnString, ct).ConfigureAwait(false);
+
+            var tenantId = registration.TenantId ?? Guid.NewGuid();
+            var now = DateTime.UtcNow;
+            var trialDays = configuration.GetSection("OrderHub:CustomerOnboarding").GetValue("TrialDays", 14);
+
+            var tenant = new Tenant
+            {
+                Id = tenantId,
+                Name = registration.BusinessName.Trim(),
+                Slug = registration.Slug.Trim(),
+                PrimaryDomain = registration.PrimaryDomain.Trim(),
+                DatabaseName = dbName,
+                EncryptedConnectionString = encrypted,
+                EncryptionKeyVersion = keyVersion,
+                SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion,
+                LastMigrationAt = migrationNow,
+                LastMigrationResult = migrationResult,
+                IsActive = true,
+                BillingPaymentStatus = TenantBillingPaymentStatus.Paid,
+                ProvisioningStatus = ProvisioningStatus.Completed,
+                SubscriptionStatus = SubscriptionStatus.Trialing,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            central.Tenants.Add(tenant);
+            await central.SaveChangesAsync(ct).ConfigureAwait(false);
+            insertedCentral = tenant;
+
+            var membershipExists = await central.TenantMemberships
+                .AnyAsync(m => m.TenantId == tenantId, ct)
+                .ConfigureAwait(false);
+            if (!membershipExists)
+            {
+                central.TenantMemberships.Add(new TenantMembership
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    PlanCode = registration.PlanCode.Trim(),
+                    BillingPeriod = registration.BillingPeriod.Trim(),
+                    Status = MembershipStatus.Trial,
+                    StartedAt = now,
+                    TrialEndsAt = now.AddDays(trialDays),
+                    OwnerEmail = registration.OwnerEmail.Trim(),
+                    BusinessPhone = registration.BusinessPhone.Trim(),
+                    City = registration.City.Trim(),
+                    Country = registration.Country.Trim(),
+                    BusinessType = registration.BusinessType,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+                await central.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
+
+            await using (var userDb = new TenantDbContext(options))
+            {
+                var ownerEmail = registration.OwnerEmail.Trim();
+                var ownerExists = await userDb.AppUsers
+                    .AnyAsync(u => u.Email == ownerEmail, ct)
+                    .ConfigureAwait(false);
+                if (!ownerExists)
+                {
+                    WriteLineStep("Creating owner admin user…");
+                    userDb.AppUsers.Add(new AppUser
+                    {
+                        Email = ownerEmail,
+                        PasswordHash = registration.PasswordHash,
+                        FullName = registration.OwnerFullName.Trim(),
+                        Role = UserRole.Owner,
+                        IsActive = true,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    });
+                    await userDb.SaveChangesAsync(ct).ConfigureAwait(false);
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"Owner user already exists in tenant database: {ownerEmail}");
+                    Console.ResetColor();
+                }
+            }
+
+            registration.Status = PendingRegistrationStatus.Provisioned;
+            registration.TenantId = tenantId;
+            registration.ProvisionedAtUtc = now;
+            await central.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("✓ Signup request provisioned successfully");
+            Console.ResetColor();
+            Console.WriteLine($"""
+                RegistrationId: {registration.Id}
+                TenantId:       {tenantId}
+                Name:           {tenant.Name}
+                Domain:         {tenant.PrimaryDomain}
+                Database:       {dbName}
+                Admin:          {registration.OwnerEmail}
+                Next steps:
+                - Ensure DNS points {tenant.PrimaryDomain} to your server
+                - Log in at https://{tenant.PrimaryDomain}/auth/login
+                """);
+
+            return 0;
+        }
+        catch (Exception ex) when (ex is SqlException or InvalidOperationException or DbUpdateException)
+        {
+            WriteError(ex.Message);
+            if (dbCreated || insertedCentral is not null)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                if (insertedCentral is not null)
+                {
+                    Console.WriteLine(
+                        $"Warning: partial failure. Pending registration was not marked Provisioned. Tenant row Id={insertedCentral.Id} may exist in CentralDb.");
+                }
+                if (dbName is not null)
+                {
+                    Console.WriteLine(
+                        insertedCentral is not null
+                            ? $"If you need to retry clean, drop database [{dbName}] and delete CentralDb tenant row Id={insertedCentral.Id}."
+                            : $"Warning: database [{dbName}] was created or modified. Drop it and remove any partial CentralDb tenant row before retrying.");
+                }
+                Console.ResetColor();
+            }
+            return 3;
+        }
+        catch (Exception ex)
+        {
+            WriteError(ex.Message);
+            return 1;
+        }
+    }
+
     public static async Task<int> AddCustomerAsync(
         IHost host,
         string name,
@@ -1423,6 +1711,93 @@ internal static class CliCommands
         }
 
         throw new InvalidOperationException("Invalid --sql-auth. Use 'trusted' or 'sql:username:password'.");
+    }
+
+    private static string? ValidateProvisioningRequiredFields(PendingRegistration registration)
+    {
+        if (string.IsNullOrWhiteSpace(registration.BusinessName))
+            return "BusinessName is required.";
+        if (string.IsNullOrWhiteSpace(registration.Slug))
+            return "Slug is required.";
+        if (!SlugRegex.IsMatch(registration.Slug.Trim()))
+            return "Slug must match ^[a-zA-Z0-9_-]+$.";
+        if (string.IsNullOrWhiteSpace(registration.PrimaryDomain))
+            return "PrimaryDomain is required.";
+        if (string.IsNullOrWhiteSpace(registration.DatabaseName))
+            return "DatabaseName is required.";
+        if (!SqlDbNameRegex.IsMatch(registration.DatabaseName.Trim()))
+            return $"DatabaseName '{registration.DatabaseName}' is invalid.";
+        if (string.IsNullOrWhiteSpace(registration.OwnerEmail))
+            return "OwnerEmail is required.";
+        if (string.IsNullOrWhiteSpace(registration.OwnerFullName))
+            return "OwnerFullName is required.";
+        if (string.IsNullOrWhiteSpace(registration.PasswordHash))
+            return "PasswordHash is required.";
+        if (string.IsNullOrWhiteSpace(registration.PlanCode))
+            return "PlanCode is required.";
+        if (string.IsNullOrWhiteSpace(registration.BillingPeriod))
+            return "BillingPeriod is required.";
+        return null;
+    }
+
+    private static async Task<string?> ValidateProvisioningUniquenessAsync(
+        CentralDbContext central,
+        PendingRegistration registration,
+        CancellationToken ct)
+    {
+        var slug = registration.Slug.Trim();
+        var domain = registration.PrimaryDomain.Trim();
+        var databaseName = registration.DatabaseName.Trim();
+
+        var tenantBySlug = await central.Tenants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Slug == slug, ct)
+            .ConfigureAwait(false);
+        if (tenantBySlug is not null && tenantBySlug.Id != registration.TenantId)
+            return $"A tenant with slug '{slug}' already exists (TenantId={tenantBySlug.Id}). Investigate manually.";
+
+        var tenantByDomain = await central.Tenants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.PrimaryDomain == domain, ct)
+            .ConfigureAwait(false);
+        if (tenantByDomain is not null && tenantByDomain.Id != registration.TenantId)
+            return $"A tenant with primary domain '{domain}' already exists (TenantId={tenantByDomain.Id}). Investigate manually.";
+
+        var tenantByDb = await central.Tenants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.DatabaseName == databaseName, ct)
+            .ConfigureAwait(false);
+        if (tenantByDb is not null && tenantByDb.Id != registration.TenantId)
+            return $"A tenant with database name '{databaseName}' already exists (TenantId={tenantByDb.Id}). Investigate manually.";
+
+        var now = DateTime.UtcNow;
+        var pendingConflict = await central.PendingRegistrations
+            .AsNoTracking()
+            .AnyAsync(
+                p => p.Id != registration.Id
+                     && (p.Status == PendingRegistrationStatus.Draft
+                         || p.Status == PendingRegistrationStatus.AwaitingPayment
+                         || p.Status == PendingRegistrationStatus.PaymentSucceeded)
+                     && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now)
+                     && (p.Slug == slug || p.PrimaryDomain == domain || p.DatabaseName == databaseName),
+                ct)
+            .ConfigureAwait(false);
+        if (pendingConflict)
+            return "Another active pending registration reserves the same slug, domain, or database name.";
+
+        return null;
+    }
+
+    private static async Task<bool> DatabaseExistsAsync(string server, string sqlAuth, string dbName, CancellationToken ct)
+    {
+        var masterCs = BuildMasterConnectionString(server, sqlAuth);
+        await using var conn = new SqlConnection(masterCs);
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+
+        const string checkSql = "SELECT COUNT(*) FROM sys.databases WHERE name = @name;";
+        await using var check = new SqlCommand(checkSql, conn);
+        check.Parameters.AddWithValue("@name", dbName);
+        return Convert.ToInt32(await check.ExecuteScalarAsync(ct).ConfigureAwait(false)!) > 0;
     }
 
     private static async Task EnsureDatabaseExistsAsync(string server, string sqlAuth, string dbName, CancellationToken ct)

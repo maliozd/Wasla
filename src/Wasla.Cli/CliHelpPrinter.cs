@@ -5,6 +5,7 @@ internal static class CliHelpPrinter
     private static readonly string[] CustomerCommands =
     [
         "add-customer",
+        "provision-signup-request",
         "list-customers",
         "delete-customer",
         "reset-customer-db",
@@ -56,6 +57,7 @@ internal static class CliHelpPrinter
 
         Console.WriteLine("Customer commands:");
         Console.WriteLine("  add-customer              Create a customer, customer database, migrations and first admin user.");
+        Console.WriteLine("  provision-signup-request  Provision a paid PendingRegistration into a live tenant.");
         Console.WriteLine("  list-customers            List customers from CentralDb.");
         Console.WriteLine("  delete-customer           Delete customer record and drop customer database. Requires --confirm.");
         Console.WriteLine("  reset-customer-db         Drop/recreate a single customer database. Requires --confirm.");
@@ -122,6 +124,19 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Example:");
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-customer --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\"");
+                return;
+
+            case "provision-signup-request":
+                Console.WriteLine("provision-signup-request");
+                Console.WriteLine();
+                Console.WriteLine("Provisions a PaymentSucceeded PendingRegistration into a live tenant.");
+                Console.WriteLine("Uses the stored PasswordHash for the first owner user (no plaintext password).");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  provision-signup-request --registration-id <guid> [--dry-run] [--force] [--sql-server <instance>] [--sql-auth trusted|sql:user:pass]");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- provision-signup-request --registration-id 00000000-0000-0000-0000-000000000001");
                 return;
 
             case "delete-customer":
