@@ -253,10 +253,10 @@
     <value>السمة</value>
   </data>
   <data name="Layout.CentralAdmin" xml:space="preserve">
-    <value>Wasla — الإدارة المركزية</value>
+    <value>Wasla Yönetim Paneli</value>
   </data>
   <data name="Layout.Customers" xml:space="preserve">
-    <value>العملاء</value>
+    <value>المطاعم</value>
   </data>
   <data name="Layout.PublicSite" xml:space="preserve">
     <value>الموقع العام</value>
@@ -1339,28 +1339,43 @@
     <value>آخر مزامنة ناجحة (UTC)</value>
   </data>
   <data name="Admin.LoginTitle" xml:space="preserve">
-    <value>تسجيل دخول المسؤول المركزي</value>
+    <value>Wasla Yönetim Paneli</value>
   </data>
   <data name="Admin.LoginSubtitle" xml:space="preserve">
-    <value>إدارة سجل العملاء في CentralDb</value>
+    <value>سجّل الدخول بحساب الإدارة المركزية</value>
+  </data>
+  <data name="Admin.BrandSubtitle" xml:space="preserve">
+    <value>الإدارة المركزية</value>
   </data>
   <data name="Admin.DashboardTitle" xml:space="preserve">
     <value>الإدارة المركزية</value>
   </data>
   <data name="Admin.Customers" xml:space="preserve">
-    <value>العملاء</value>
+    <value>المطاعم</value>
   </data>
   <data name="Admin.TotalCustomers" xml:space="preserve">
-    <value>إجمالي العملاء</value>
+    <value>إجمالي المطاعم</value>
   </data>
   <data name="Admin.ActiveCustomers" xml:space="preserve">
-    <value>النشطون</value>
+    <value>المطاعم النشطة</value>
   </data>
   <data name="Admin.InactiveCustomers" xml:space="preserve">
-    <value>غير النشطين</value>
+    <value>المطاعم غير النشطة</value>
+  </data>
+  <data name="Admin.RecentRestaurants" xml:space="preserve">
+    <value>أحدث المطاعم</value>
+  </data>
+  <data name="Admin.ViewAllRestaurants" xml:space="preserve">
+    <value>عرض كل المطاعم</value>
+  </data>
+  <data name="Admin.GeneralInfo" xml:space="preserve">
+    <value>معلومات عامة</value>
+  </data>
+  <data name="Admin.TechnicalInfo" xml:space="preserve">
+    <value>معلومات النظام</value>
   </data>
   <data name="Admin.CustomerDetails" xml:space="preserve">
-    <value>تفاصيل العميل</value>
+    <value>تفاصيل المطعم</value>
   </data>
   <data name="Admin.Name" xml:space="preserve">
     <value>الاسم</value>
@@ -1372,19 +1387,19 @@
     <value>النطاق الأساسي</value>
   </data>
   <data name="Admin.DatabaseName" xml:space="preserve">
-    <value>اسم قاعدة البيانات</value>
+    <value>معرّف النظام</value>
   </data>
   <data name="Admin.SchemaVersion" xml:space="preserve">
-    <value>إصدار المخطط</value>
+    <value>إصدار البنية</value>
   </data>
   <data name="Admin.LastMigrationAt" xml:space="preserve">
-    <value>آخر ترحيل (UTC)</value>
+    <value>آخر إعداد</value>
   </data>
   <data name="Admin.LastMigrationResult" xml:space="preserve">
-    <value>نتيجة آخر ترحيل</value>
+    <value>حالة الإعداد</value>
   </data>
   <data name="Admin.CreatedAt" xml:space="preserve">
-    <value>تاريخ الإنشاء (UTC)</value>
+    <value>تاريخ التسجيل</value>
   </data>
   <data name="Admin.Actions" xml:space="preserve">
     <value>إجراءات</value>
@@ -1408,19 +1423,22 @@
     <value>حساب المسؤول غير نشط.</value>
   </data>
   <data name="Admin.BackToDashboard" xml:space="preserve">
-    <value>العودة للوحة</value>
+    <value>العودة إلى قائمة المطاعم</value>
   </data>
   <data name="Admin.PublicSite" xml:space="preserve">
     <value>الموقع العام</value>
   </data>
   <data name="Admin.CentralAdmin" xml:space="preserve">
-    <value>Wasla — الإدارة المركزية</value>
+    <value>Wasla Yönetim Paneli</value>
   </data>
   <data name="Admin.CustomerNotFound" xml:space="preserve">
-    <value>العميل غير موجود.</value>
+    <value>المطعم غير موجود.</value>
   </data>
   <data name="Admin.NoCustomers" xml:space="preserve">
-    <value>لا يوجد عملاء مسجّلون في CentralDb بعد.</value>
+    <value>لا توجد بيانات بعد</value>
+  </data>
+  <data name="Admin.NoCustomersHint" xml:space="preserve">
+    <value>لا توجد مطاعم مسجّلة.</value>
   </data>
   <data name="Admin.StatusActive" xml:space="preserve">
     <value>نشط</value>
@@ -1429,10 +1447,10 @@
     <value>غير نشط</value>
   </data>
   <data name="Admin.InactiveWarning" xml:space="preserve">
-    <value>هذا العميل غير نشط ولن يُحل نطاقه حتى يُعاد تفعيله.</value>
+    <value>هذا المطعم غير نشط. لن يكون لوحة التحكم متاحة حتى يُعاد تفعيله.</value>
   </data>
   <data name="Admin.UpdatedAt" xml:space="preserve">
-    <value>آخر تحديث (UTC)</value>
+    <value>آخر تحديث</value>
   </data>
   <data name="Orders.Actions" xml:space="preserve">
     <value>إجراءات</value>

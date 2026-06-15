@@ -253,10 +253,10 @@
     <value>Theme</value>
   </data>
   <data name="Layout.CentralAdmin" xml:space="preserve">
-    <value>Wasla — Central admin</value>
+    <value>Wasla Admin Panel</value>
   </data>
   <data name="Layout.Customers" xml:space="preserve">
-    <value>Customers</value>
+    <value>Restaurants</value>
   </data>
   <data name="Layout.PublicSite" xml:space="preserve">
     <value>Public site</value>
@@ -1339,28 +1339,43 @@
     <value>Last successful sync (UTC)</value>
   </data>
   <data name="Admin.LoginTitle" xml:space="preserve">
-    <value>Central admin sign in</value>
+    <value>Wasla Admin Panel</value>
   </data>
   <data name="Admin.LoginSubtitle" xml:space="preserve">
-    <value>Manage the customer registry in CentralDb</value>
+    <value>Sign in with your central admin account</value>
+  </data>
+  <data name="Admin.BrandSubtitle" xml:space="preserve">
+    <value>Central Management</value>
   </data>
   <data name="Admin.DashboardTitle" xml:space="preserve">
-    <value>Central admin</value>
+    <value>Central Management</value>
   </data>
   <data name="Admin.Customers" xml:space="preserve">
-    <value>Customers</value>
+    <value>Restaurants</value>
   </data>
   <data name="Admin.TotalCustomers" xml:space="preserve">
-    <value>Total customers</value>
+    <value>Total restaurants</value>
   </data>
   <data name="Admin.ActiveCustomers" xml:space="preserve">
-    <value>Active</value>
+    <value>Active restaurants</value>
   </data>
   <data name="Admin.InactiveCustomers" xml:space="preserve">
-    <value>Inactive</value>
+    <value>Inactive restaurants</value>
+  </data>
+  <data name="Admin.RecentRestaurants" xml:space="preserve">
+    <value>Recent restaurants</value>
+  </data>
+  <data name="Admin.ViewAllRestaurants" xml:space="preserve">
+    <value>View all restaurants</value>
+  </data>
+  <data name="Admin.GeneralInfo" xml:space="preserve">
+    <value>General information</value>
+  </data>
+  <data name="Admin.TechnicalInfo" xml:space="preserve">
+    <value>System information</value>
   </data>
   <data name="Admin.CustomerDetails" xml:space="preserve">
-    <value>Customer details</value>
+    <value>Restaurant details</value>
   </data>
   <data name="Admin.Name" xml:space="preserve">
     <value>Name</value>
@@ -1372,19 +1387,19 @@
     <value>Primary domain</value>
   </data>
   <data name="Admin.DatabaseName" xml:space="preserve">
-    <value>Database name</value>
+    <value>System identifier</value>
   </data>
   <data name="Admin.SchemaVersion" xml:space="preserve">
-    <value>Schema version</value>
+    <value>Structure version</value>
   </data>
   <data name="Admin.LastMigrationAt" xml:space="preserve">
-    <value>Last migration (UTC)</value>
+    <value>Last configuration</value>
   </data>
   <data name="Admin.LastMigrationResult" xml:space="preserve">
-    <value>Last migration result</value>
+    <value>Configuration status</value>
   </data>
   <data name="Admin.CreatedAt" xml:space="preserve">
-    <value>Created at (UTC)</value>
+    <value>Registered on</value>
   </data>
   <data name="Admin.Actions" xml:space="preserve">
     <value>Actions</value>
@@ -1408,19 +1423,22 @@
     <value>Your admin account is inactive.</value>
   </data>
   <data name="Admin.BackToDashboard" xml:space="preserve">
-    <value>Back to dashboard</value>
+    <value>Back to restaurant list</value>
   </data>
   <data name="Admin.PublicSite" xml:space="preserve">
     <value>Public site</value>
   </data>
   <data name="Admin.CentralAdmin" xml:space="preserve">
-    <value>Wasla — Central admin</value>
+    <value>Wasla Admin Panel</value>
   </data>
   <data name="Admin.CustomerNotFound" xml:space="preserve">
-    <value>Customer not found.</value>
+    <value>Restaurant not found.</value>
   </data>
   <data name="Admin.NoCustomers" xml:space="preserve">
-    <value>No customers registered in CentralDb yet.</value>
+    <value>No data yet</value>
+  </data>
+  <data name="Admin.NoCustomersHint" xml:space="preserve">
+    <value>No restaurants have been registered yet.</value>
   </data>
   <data name="Admin.StatusActive" xml:space="preserve">
     <value>Active</value>
@@ -1429,10 +1447,10 @@
     <value>Inactive</value>
   </data>
   <data name="Admin.InactiveWarning" xml:space="preserve">
-    <value>This customer is inactive. The tenant will not be resolved for its domain until reactivated.</value>
+    <value>This restaurant is inactive. Its panel will not be accessible until reactivated.</value>
   </data>
   <data name="Admin.UpdatedAt" xml:space="preserve">
-    <value>Updated at (UTC)</value>
+    <value>Last updated</value>
   </data>
   <data name="Orders.Actions" xml:space="preserve">
     <value>Actions</value>

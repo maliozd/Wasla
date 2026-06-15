@@ -47,8 +47,14 @@
     <div class="app-wrapper">
         <nav id="ohAppHeader" class="app-header navbar navbar-expand border-bottom">
             <div class="container-fluid d-flex flex-wrap align-items-center gap-2">
-                <a class="navbar-brand text-decoration-none oh-sidebar-brand mb-0" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
-                    @L["Layout.CentralAdmin"]
+                <a class="navbar-brand text-decoration-none oh-sidebar-brand mb-0 d-flex align-items-center gap-2" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                    <span class="oh-logo-mark rounded-2 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;background:linear-gradient(135deg,#ff6b35,#ff8a5b);">
+                        <i class="bi bi-basket2-fill text-white small"></i>
+                    </span>
+                    <span>
+                        <span class="d-block fw-bold lh-sm">Wasla</span>
+                        <span class="d-block small text-muted fw-normal lh-sm">@L["Admin.BrandSubtitle"]</span>
+                    </span>
                 </a>
                 <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
                     <div class="dropdown">
