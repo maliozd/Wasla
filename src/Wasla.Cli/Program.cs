@@ -75,8 +75,6 @@ builder.Services.AddDbContext<CentralDbContext>(options =>
 builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
 builder.Services.AddWaslaEmail(builder.Configuration);
 
-builder.Services.AddWaslaEmail(builder.Configuration);
-
 var host = builder.Build();
 
 // --- provision-signup-request ---

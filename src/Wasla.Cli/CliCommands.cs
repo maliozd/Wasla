@@ -493,27 +493,6 @@ internal static class CliCommands
                 - Log in at https://{tenant.PrimaryDomain}/auth/login
                 """);
 
-            // Send panel-ready notification email. Failure must not undo provisioning.
-            try
-            {
-                var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
-                var emailMessage = ProvisioningEmailTemplate.BuildPanelReadyEmail(
-                    registration.OwnerEmail.Trim(),
-                    registration.OwnerFullName.Trim(),
-                    tenant.PrimaryDomain.Trim());
-                await emailSender.SendAsync(emailMessage, ct).ConfigureAwait(false);
-                WriteLineStep("Bildirim e-postası gönderildi.");
-            }
-            catch (Exception emailEx)
-            {
-                var logger = scope.ServiceProvider.GetService<ILogger<CliCommands>>();
-                logger?.LogWarning(emailEx, "Provisioning succeeded but notification email failed.");
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Provisioning completed, but notification email failed.");
-                Console.WriteLine(emailEx.Message);
-                Console.ResetColor();
-            }
-
             return 0;
         }
         catch (Exception ex) when (ex is SqlException or InvalidOperationException or DbUpdateException)
