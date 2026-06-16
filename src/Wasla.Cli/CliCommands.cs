@@ -16,7 +16,6 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.ReferenceData;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Infrastructure.Email;
 
 namespace Wasla.Cli;
 
@@ -493,27 +492,6 @@ internal static class CliCommands
                 - Ensure DNS points {tenant.PrimaryDomain} to your server
                 - Log in at https://{tenant.PrimaryDomain}/auth/login
                 """);
-
-            // Send panel-ready notification email. Failure must not undo provisioning.
-            try
-            {
-                var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
-                var emailMessage = ProvisioningEmailTemplate.BuildPanelReadyEmail(
-                    registration.OwnerEmail.Trim(),
-                    registration.OwnerFullName.Trim(),
-                    tenant.PrimaryDomain.Trim());
-                await emailSender.SendAsync(emailMessage, ct).ConfigureAwait(false);
-                WriteLineStep("Bildirim e-postası gönderildi.");
-            }
-            catch (Exception emailEx)
-            {
-                var logger = scope.ServiceProvider.GetService<ILogger<CliCommands>>();
-                logger?.LogWarning(emailEx, "Provisioning succeeded but notification email failed.");
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Provisioning completed, but notification email failed.");
-                Console.WriteLine(emailEx.Message);
-                Console.ResetColor();
-            }
 
             return 0;
         }
