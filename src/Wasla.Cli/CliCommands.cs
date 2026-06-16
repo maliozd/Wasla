@@ -16,7 +16,6 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.ReferenceData;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Infrastructure.Email;
 
 namespace Wasla.Cli;
 

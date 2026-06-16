@@ -11,7 +11,6 @@ namespace Wasla.Infrastructure.Email;
 /// <summary>
 /// Sends real email via SMTP using MailKit. SMTP credentials are read from configuration only.
 /// </summary>
-internal sealed class SmtpEmailSender : IEmailSender
 public sealed class SmtpEmailSender : IEmailSender
 {
     private readonly EmailOptions _options;
