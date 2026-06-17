@@ -280,7 +280,7 @@
     <value>Settings are saved to: {0}</value>
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
-    <value>Server URL</value>
+    <value>Wasla Web Panel URL</value>
   </data>
   <data name="Settings.ServerUrlHelp" xml:space="preserve">
     <value>Copy this from the Wasla Web Print Bridge setup page.</value>
@@ -531,8 +531,8 @@
   <data name="Settings.Validation.Verified" xml:space="preserve">
     <value>Connection verified</value>
   </data>
-  <data name="Validation.BaseUrlRequired" xml:space="preserve">
-    <value>Server URL is required.</value>
+  <data name="Validation.ServerUrlRequired" xml:space="preserve">
+    <value>Wasla Web Panel URL is required.</value>
   </data>
   <data name="Validation.InvalidServerUrl" xml:space="preserve">
     <value>Invalid server URL. Enter a valid address starting with http:// or https://.</value>

@@ -280,7 +280,7 @@
     <value>يتم حفظ الإعدادات في: {0}</value>
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
-    <value>عنوان الخادم</value>
+    <value>رابط لوحة Wasla Web</value>
   </data>
   <data name="Settings.ServerUrlHelp" xml:space="preserve">
     <value>انسخ هذا من صفحة إعداد Print Bridge في لوحة Wasla Web.</value>
@@ -531,8 +531,8 @@
   <data name="Settings.Validation.Verified" xml:space="preserve">
     <value>تم التحقق من الاتصال</value>
   </data>
-  <data name="Validation.BaseUrlRequired" xml:space="preserve">
-    <value>عنوان الخادم مطلوب.</value>
+  <data name="Validation.ServerUrlRequired" xml:space="preserve">
+    <value>رابط لوحة Wasla Web مطلوب.</value>
   </data>
   <data name="Validation.InvalidServerUrl" xml:space="preserve">
     <value>عنوان خادم غير صالح. أدخل عنوانًا صالحًا يبدأ بـ http:// أو https://.</value>

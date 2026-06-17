@@ -73,7 +73,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                 LastSuccessfulContactUtc = _lastSuccessfulContactUtc,
                 LastPollUtc = _lastPollUtc,
                 LastError = _lastError,
-                BaseUrl = hub.BaseUrl,
+                ServerUrl = hub.ServerUrl,
                 PrinterName = bridge.PrinterName,
                 DisplayName = bridge.DisplayName?.Trim() ?? string.Empty,
                 ServerDeviceNameResolved = bridge.ServerDeviceNameResolved,

@@ -6,13 +6,13 @@ public static class PrintBridgeSettingsValidator
 {
     public static bool TryValidate(WaslaOptions orderHub, PrintBridgeOptions bridge, out string? errorKey)
     {
-        if (string.IsNullOrWhiteSpace(orderHub.BaseUrl))
+        if (string.IsNullOrWhiteSpace(orderHub.ServerUrl))
         {
-            errorKey = "Validation.BaseUrlRequired";
+            errorKey = "Validation.ServerUrlRequired";
             return false;
         }
 
-        if (!Uri.TryCreate(orderHub.BaseUrl.Trim(), UriKind.Absolute, out var uri)
+        if (!Uri.TryCreate(orderHub.ServerUrl.Trim(), UriKind.Absolute, out var uri)
             || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
             errorKey = "Validation.InvalidServerUrl";

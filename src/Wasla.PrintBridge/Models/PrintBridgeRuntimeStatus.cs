@@ -7,7 +7,7 @@ public sealed class PrintBridgeRuntimeStatus
     public DateTime? LastSuccessfulContactUtc { get; init; }
     public DateTime? LastPollUtc { get; init; }
     public string? LastError { get; init; }
-    public string BaseUrl { get; init; } = string.Empty;
+    public string ServerUrl { get; init; } = string.Empty;
     public string PrinterName { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
     public bool ServerDeviceNameResolved { get; init; }
