@@ -62,7 +62,7 @@ public sealed partial class MainForm : Form
     private Button _btnCopyLogs = null!;
     private Button _btnOpenLogsFolderTab = null!;
 
-    private TextBox _txtBaseUrl = null!;
+    private TextBox _txtServerUrl = null!;
     private TextBox _txtAgentToken = null!;
     private Button _btnToggleToken = null!;
     private ComboBox _cmbPrinterName = null!;
@@ -602,10 +602,11 @@ public sealed partial class MainForm : Form
         settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
         settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        AddTokenRow(settingsLayout, 0);
-        AddPrinterRow(settingsLayout, 1);
-        AddDeviceNameRow(settingsLayout, 2);
-        AddLanguageRow(settingsLayout, 3);
+        AddServerUrlRow(settingsLayout, 0);
+        AddTokenRow(settingsLayout, 1);
+        AddPrinterRow(settingsLayout, 2);
+        AddDeviceNameRow(settingsLayout, 3);
+        AddLanguageRow(settingsLayout, 4);
 
         _advancedGroup = new GroupBox
         {
@@ -625,15 +626,13 @@ public sealed partial class MainForm : Form
         advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
         advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        AddServerUrlRow(advancedLayout, 0);
-
         _lblDryRunMode = new Label
         {
             AutoSize = true,
             Anchor = AnchorStyles.Left,
             ForeColor = PrintBridgeUiTheme.TextMuted
         };
-        advancedLayout.Controls.Add(_lblDryRunMode, 0, 1);
+        advancedLayout.Controls.Add(_lblDryRunMode, 0, 0);
 
         var dryRunPanel = new TableLayoutPanel
         {
@@ -660,14 +659,14 @@ public sealed partial class MainForm : Form
         };
         dryRunPanel.Controls.Add(_chkDryRun, 0, 0);
         dryRunPanel.Controls.Add(_lblDryRunWarning, 0, 1);
-        advancedLayout.Controls.Add(dryRunPanel, 1, 1);
+        advancedLayout.Controls.Add(dryRunPanel, 1, 0);
 
-        (_numIdlePoll, _lblIdlePoll) = AddSettingsNumericRow(advancedLayout, 2, 1, 300, 5);
-        (_numBusyPoll, _lblBusyPoll) = AddSettingsNumericRow(advancedLayout, 3, 1, 60, 1);
-        (_numErrorPoll, _lblErrorPoll) = AddSettingsNumericRow(advancedLayout, 4, 1, 300, 15);
+        (_numIdlePoll, _lblIdlePoll) = AddSettingsNumericRow(advancedLayout, 1, 1, 300, 5);
+        (_numBusyPoll, _lblBusyPoll) = AddSettingsNumericRow(advancedLayout, 2, 1, 60, 1);
+        (_numErrorPoll, _lblErrorPoll) = AddSettingsNumericRow(advancedLayout, 3, 1, 300, 15);
         _advancedGroup.Controls.Add(advancedLayout);
 
-        settingsLayout.Controls.Add(_advancedGroup, 0, 4);
+        settingsLayout.Controls.Add(_advancedGroup, 0, 5);
         settingsLayout.SetColumnSpan(_advancedGroup, 2);
 
         var savePanel = new FlowLayoutPanel
@@ -680,7 +679,7 @@ public sealed partial class MainForm : Form
         _btnSaveSettings.Click += async (_, _) => await SaveSettingsAsync().ConfigureAwait(true);
         savePanel.Controls.Add(_btnSaveSettings);
         InitializeSettingsSaveUi(savePanel);
-        settingsLayout.Controls.Add(savePanel, 0, 5);
+        settingsLayout.Controls.Add(savePanel, 0, 6);
         settingsLayout.SetColumnSpan(savePanel, 2);
 
         scroll.Controls.Add(settingsLayout);
@@ -787,7 +786,7 @@ public sealed partial class MainForm : Form
         fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        _txtBaseUrl = new TextBox { Dock = DockStyle.Fill, Anchor = AnchorStyles.Left | AnchorStyles.Right };
+        _txtServerUrl = new TextBox { Dock = DockStyle.Fill, Anchor = AnchorStyles.Left | AnchorStyles.Right };
         _lblServerUrlHelp = new Label
         {
             AutoSize = true,
@@ -796,7 +795,7 @@ public sealed partial class MainForm : Form
             Margin = new Padding(0, 4, 0, 0)
         };
 
-        fieldPanel.Controls.Add(_txtBaseUrl, 0, 0);
+        fieldPanel.Controls.Add(_txtServerUrl, 0, 0);
         fieldPanel.Controls.Add(_lblServerUrlHelp, 0, 1);
         table.Controls.Add(fieldPanel, 1, row);
     }
@@ -1021,7 +1020,7 @@ public sealed partial class MainForm : Form
     private void LoadSettingsIntoForm()
     {
         var (hub, bridge, ui) = _settingsHolder.Snapshot();
-        _txtBaseUrl.Text = hub.BaseUrl;
+        _txtServerUrl.Text = hub.ServerUrl;
         _txtAgentToken.Text = hub.AgentToken;
         RefreshPrinterList(bridge.PrinterName);
         _txtDisplayName.Text = bridge.ServerDeviceNameResolved

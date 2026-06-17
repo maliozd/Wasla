@@ -280,7 +280,7 @@
     <value>Ayarlar şuraya kaydedilir: {0}</value>
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
-    <value>Sunucu adresi</value>
+    <value>Wasla Web Panel Linki</value>
   </data>
   <data name="Settings.ServerUrlHelp" xml:space="preserve">
     <value>Bu adresi Wasla Web panelindeki Print Bridge kurulum sayfasından kopyalayın.</value>
@@ -531,8 +531,8 @@
   <data name="Settings.Validation.Verified" xml:space="preserve">
     <value>Bağlantı doğrulandı</value>
   </data>
-  <data name="Validation.BaseUrlRequired" xml:space="preserve">
-    <value>Sunucu adresi gereklidir.</value>
+  <data name="Validation.ServerUrlRequired" xml:space="preserve">
+    <value>Wasla Web Panel linki gereklidir.</value>
   </data>
   <data name="Validation.InvalidServerUrl" xml:space="preserve">
     <value>Geçersiz sunucu adresi. http:// veya https:// ile başlayan geçerli bir adres girin.</value>

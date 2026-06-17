@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Options;
 
@@ -37,6 +38,7 @@ public sealed class PrintBridgeSettingsStore
             return;
 
         var initial = TryLoadExeLocalConfig() ?? CreateDefaultDocument();
+        NormalizeOrderHub(initial.OrderHub);
         NormalizeDeviceIdentity(initial);
         WriteDocument(PrintBridgePaths.ProgramDataConfigPath, initial);
     }
@@ -66,6 +68,8 @@ public sealed class PrintBridgeSettingsStore
         {
             var json = File.ReadAllText(path);
             var document = JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions) ?? CreateDefaultDocument();
+            MigrateLegacyOrderHubSettings(json, document);
+            NormalizeOrderHub(document.OrderHub);
             NormalizeDeviceIdentity(document);
             return document;
         }
@@ -101,6 +105,47 @@ public sealed class PrintBridgeSettingsStore
         catch
         {
         }
+    }
+
+    private static void MigrateLegacyOrderHubSettings(string json, AppSettingsDocument document)
+    {
+        try
+        {
+            var root = JsonNode.Parse(json);
+            var orderHub = root?["OrderHub"]?.AsObject();
+            if (orderHub is null)
+                return;
+
+            var hasServerUrl = orderHub.TryGetPropertyValue("ServerUrl", out var serverUrlNode)
+                && serverUrlNode is JsonValue serverUrlValue
+                && !string.IsNullOrWhiteSpace(serverUrlValue.GetValue<string>());
+
+            if (hasServerUrl)
+                return;
+
+            if (!orderHub.TryGetPropertyValue("BaseUrl", out var baseUrlNode)
+                || baseUrlNode is not JsonValue baseUrlValue)
+            {
+                return;
+            }
+
+            var legacyBaseUrl = baseUrlValue.GetValue<string>()?.Trim();
+            if (!string.IsNullOrWhiteSpace(legacyBaseUrl))
+                document.OrderHub.ServerUrl = legacyBaseUrl;
+        }
+        catch (JsonException)
+        {
+        }
+    }
+
+    private static void NormalizeOrderHub(WaslaOptions orderHub)
+    {
+        if (string.IsNullOrWhiteSpace(orderHub.ServerUrl))
+            orderHub.ServerUrl = WaslaOptions.DefaultServerUrl;
+        else
+            orderHub.ServerUrl = orderHub.ServerUrl.Trim();
+
+        orderHub.AgentToken = orderHub.AgentToken?.Trim() ?? string.Empty;
     }
 
     private static void NormalizeDeviceIdentity(AppSettingsDocument document)

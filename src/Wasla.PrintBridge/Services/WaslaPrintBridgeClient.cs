@@ -106,7 +106,7 @@ public sealed class WaslaPrintBridgeClient
         CancellationToken ct)
     {
         var (hub, _, _) = _holder.Snapshot();
-        var baseUrl = hub.BaseUrl.TrimEnd('/');
+        var baseUrl = hub.ServerUrl.TrimEnd('/');
 
         HttpResponseMessage response;
         try
@@ -161,7 +161,7 @@ public sealed class WaslaPrintBridgeClient
     private string BuildAbsoluteUrl(string relativeUrl)
     {
         var (hub, _, _) = _holder.Snapshot();
-        return $"{hub.BaseUrl.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
+        return $"{hub.ServerUrl.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
     }
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string url)

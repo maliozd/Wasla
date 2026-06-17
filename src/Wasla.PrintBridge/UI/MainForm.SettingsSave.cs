@@ -42,7 +42,7 @@ public sealed partial class MainForm
 
     private void WireConnectionSettingsChangeHandlers()
     {
-        _txtBaseUrl.TextChanged += (_, _) => ResetSaveValidationStatus();
+        _txtServerUrl.TextChanged += (_, _) => ResetSaveValidationStatus();
         _txtAgentToken.TextChanged += (_, _) => ResetSaveValidationStatus();
     }
 
@@ -62,7 +62,7 @@ public sealed partial class MainForm
         var previous = _settingsHolder.Snapshot();
         var orderHub = new WaslaOptions
         {
-            BaseUrl = _txtBaseUrl.Text.Trim(),
+            ServerUrl = _txtServerUrl.Text.Trim(),
             AgentToken = _txtAgentToken.Text.Trim()
         };
 
@@ -80,19 +80,10 @@ public sealed partial class MainForm
         if (_cmbLanguage.SelectedItem is LanguageOption languageOption)
             ui.Language = languageOption.CultureName;
 
-        var connectionChanged = ConnectionSettingsChanged(previous.OrderHub, orderHub);
-        _settingsLogger.LogInformation(
-            "Settings save started. ConnectionChanged={ConnectionChanged}",
-            connectionChanged);
+        _settingsLogger.LogInformation("Settings save started.");
 
-        if (connectionChanged)
-        {
-            await SaveSettingsWithConnectionValidationAsync(previous, orderHub, bridge, ui, previousLanguage)
-                .ConfigureAwait(true);
-            return;
-        }
-
-        PersistSettings(orderHub, bridge, ui, previousLanguage, connectionVerified: false);
+        await SaveSettingsWithConnectionValidationAsync(previous, orderHub, bridge, ui, previousLanguage)
+            .ConfigureAwait(true);
     }
 
     private async Task SaveSettingsWithConnectionValidationAsync(
@@ -211,16 +202,9 @@ public sealed partial class MainForm
         };
     }
 
-    private static bool ConnectionSettingsChanged(WaslaOptions previous, WaslaOptions next) =>
-        !string.Equals(NormalizeBaseUrl(previous.BaseUrl), NormalizeBaseUrl(next.BaseUrl), StringComparison.OrdinalIgnoreCase)
-        || !string.Equals(previous.AgentToken.Trim(), next.AgentToken.Trim(), StringComparison.Ordinal);
-
-    private static string NormalizeBaseUrl(string baseUrl) =>
-        baseUrl.Trim().TrimEnd('/');
-
     private void SetConnectionFieldsEnabled(bool enabled)
     {
-        _txtBaseUrl.Enabled = enabled;
+        _txtServerUrl.Enabled = enabled;
         _txtAgentToken.Enabled = enabled;
         _btnToggleToken.Enabled = enabled;
     }
