@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Email;
 using Wasla.Infrastructure.Email;
 using Wasla.Infrastructure.Options;
-
 namespace Wasla.Infrastructure.DependencyInjection;
 
 public static class EmailServiceCollectionExtensions
