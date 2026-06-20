@@ -46,6 +46,7 @@
         showPasswordText = L["Common.ShowPassword"].Value,
         hidePasswordText = L["Common.HidePassword"].Value,
         passwordMismatchText = L["Validation.PasswordMismatch"].Value,
+        emailInvalidText = L["Validation.EmailInvalid"].Value,
         mobileHint = L["Signup.MobilePhoneHint"].Value,
         defaultCountryCode = "+90",
         plans = planSummaries,
@@ -255,7 +256,7 @@
                                     </div>
                                     <div class="col-12">
                                         <label asp-for="BusinessEmail" class="form-label"></label>
-                                        <input asp-for="BusinessEmail" class="form-control" placeholder="@L["Signup.BusinessEmailPlaceholder"]" autocomplete="email" inputmode="email" />
+                                        <input asp-for="BusinessEmail" class="form-control" id="signupBusinessEmail" placeholder="@L["Signup.BusinessEmailPlaceholder"]" autocomplete="email" inputmode="email" />
                                         <div class="form-text">@L["Signup.BusinessEmailHelp"]</div>
                                         <span asp-validation-for="BusinessEmail" class="text-danger small"></span>
                                     </div>
