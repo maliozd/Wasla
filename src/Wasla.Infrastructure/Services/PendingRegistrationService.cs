@@ -408,6 +408,33 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
                 && p.DatabaseName == databaseName, ct);
     }
 
+    public async Task<PendingRegistrationSummary?> GetActiveByPrimaryDomainAsync(string primaryDomain, CancellationToken ct)
+    {
+        var normalizedHost = RegistrationNameNormalizer.NormalizeHostForComparison(primaryDomain);
+        if (string.IsNullOrWhiteSpace(normalizedHost))
+            return null;
+
+        var now = DateTime.UtcNow;
+
+        var row = await _central.PendingRegistrations.AsNoTracking()
+            .Where(p => p.PrimaryDomain.ToLower() == normalizedHost
+                     && p.Status != PendingRegistrationStatus.PaymentFailed
+                     && p.Status != PendingRegistrationStatus.Cancelled
+                     && p.Status != PendingRegistrationStatus.Expired
+                     && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now))
+            .OrderByDescending(p => p.CreatedAtUtc)
+            .Select(p => new PendingRegistrationSummary(
+                p.Id,
+                p.BusinessName,
+                p.PrimaryDomain,
+                p.PlanCode,
+                p.BillingPeriod,
+                p.Status))
+            .FirstOrDefaultAsync(ct);
+
+        return row;
+    }
+
     private async Task<string?> ResolveUniqueDatabaseNameAsync(string baseDatabaseName, CancellationToken ct)
     {
         if (!await IsDatabaseNameTakenAsync(baseDatabaseName, ct))

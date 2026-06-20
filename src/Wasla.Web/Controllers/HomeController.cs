@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Infrastructure.Options;
 
 namespace Wasla.Web.Controllers;
@@ -9,10 +10,14 @@ namespace Wasla.Web.Controllers;
 public sealed class HomeController : Controller
 {
     private readonly CustomerOnboardingOptions _onboardingOptions;
+    private readonly IPendingRegistrationService _pendingRegistrations;
 
-    public HomeController(IOptions<CustomerOnboardingOptions> onboardingOptions)
+    public HomeController(
+        IOptions<CustomerOnboardingOptions> onboardingOptions,
+        IPendingRegistrationService pendingRegistrations)
     {
         _onboardingOptions = onboardingOptions.Value;
+        _pendingRegistrations = pendingRegistrations;
     }
 
     public IActionResult Index()
@@ -42,8 +47,15 @@ public sealed class HomeController : Controller
 
     [AllowAnonymous]
     [HttpGet("/tenant-not-found")]
-    public IActionResult TenantNotFound([FromQuery] string? host = null)
+    public async Task<IActionResult> TenantNotFound([FromQuery] string? host = null, CancellationToken ct = default)
     {
+        if (!string.IsNullOrWhiteSpace(host))
+        {
+            var pending = await _pendingRegistrations.GetActiveByPrimaryDomainAsync(host, ct);
+            if (pending is not null)
+                return Redirect($"/signup/pending/{pending.Id}");
+        }
+
         ViewData["RequestedHost"] = host;
         ViewData["SignupUrl"] = BuildSignupUrl();
         Response.StatusCode = StatusCodes.Status404NotFound;

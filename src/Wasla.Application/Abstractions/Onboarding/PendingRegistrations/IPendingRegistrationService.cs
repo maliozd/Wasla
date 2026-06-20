@@ -17,4 +17,12 @@ public interface IPendingRegistrationService
     Task<CheckoutSimulationResult> SimulatePaymentFailedAsync(Guid registrationId, CancellationToken ct);
 
     Task<CheckoutSimulationResult> CancelRegistrationAsync(Guid registrationId, CancellationToken ct);
+
+    /// <summary>
+    /// Returns the most recent non-terminal PendingRegistration whose PrimaryDomain host matches
+    /// the supplied host value, or null if none exists. The input is normalized to lowercase host
+    /// only (scheme and port are stripped). Used by tenant-not-found to detect registrations that
+    /// are awaiting payment, payment-received, or already provisioned.
+    /// </summary>
+    Task<PendingRegistrationSummary?> GetActiveByPrimaryDomainAsync(string primaryDomain, CancellationToken ct);
 }
