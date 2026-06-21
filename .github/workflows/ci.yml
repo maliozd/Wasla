@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - dev
+      - master
+  pull_request:
+    branches:
+      - dev
+      - master
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    env:
+      DOTNET_NOLOGO: true
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore solution
+        run: dotnet restore Wasla.sln
+
+      - name: Restore unit tests
+        run: dotnet restore tests/Wasla.UnitTests/Wasla.UnitTests.csproj
+
+      - name: Build solution
+        run: dotnet build Wasla.sln --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: >
+          dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj
+          --configuration Release
+          --no-restore
+          --verbosity normal
+          --logger "trx;LogFileName=test-results.trx"

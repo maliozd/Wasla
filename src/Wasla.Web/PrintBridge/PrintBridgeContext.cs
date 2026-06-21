@@ -1,6 +1,6 @@
 ﻿using Wasla.Application.Abstractions.Printing;
 
-namespace Wasla.Web.Printing;
+namespace Wasla.Web.PrintBridge;
 
 public static class PrintBridgeContext
 {

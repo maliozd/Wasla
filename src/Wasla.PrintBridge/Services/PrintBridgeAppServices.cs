@@ -52,7 +52,7 @@ public static class PrintBridgeAppServices
         services.AddSingleton<ReceiptFormatter>();
 
         if (!OperatingSystem.IsWindows())
-            throw new PlatformNotSupportedException("OrderHub Print Bridge requires Windows.");
+            throw new PlatformNotSupportedException("Wasla Print Bridge requires Windows.");
 
         services.AddSingleton<IReceiptPrinter, WindowsReceiptPrinter>();
 

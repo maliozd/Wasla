@@ -172,6 +172,17 @@ public sealed class PrintBridgeRuntime : IDisposable
         return health;
     }
 
+    public void RecordConnectionFailure(Exception ex)
+    {
+        if (ex is PrintBridgeConnectionException connectionEx && connectionEx.IsTokenAuthFailure)
+            _deviceMetadataSync.MarkUnresolved();
+
+        lock (_sync)
+            _lastError = GetUserErrorMessage(ex);
+
+        RaiseStatusChanged();
+    }
+
     public async Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> TestConnectionAsync(CancellationToken ct)
     {
         try
@@ -231,7 +242,7 @@ public sealed class PrintBridgeRuntime : IDisposable
 
     private async Task RunLoopAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("OrderHub Print Bridge background loop started.");
+        _logger.LogInformation("Wasla Print Bridge background loop started.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -304,7 +315,7 @@ public sealed class PrintBridgeRuntime : IDisposable
             }
         }
 
-        _logger.LogInformation("OrderHub Print Bridge background loop stopped.");
+        _logger.LogInformation("Wasla Print Bridge background loop stopped.");
     }
 
     private void RegisterJobReceived(WaslaPrintBridgeClient.PendingPrintJobDto job)

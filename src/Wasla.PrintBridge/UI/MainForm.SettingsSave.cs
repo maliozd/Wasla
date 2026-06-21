@@ -59,7 +59,11 @@ public sealed partial class MainForm
         if (_isSavingSettings)
             return;
 
-        var previous = _settingsHolder.Snapshot();
+        var snapshot = _settingsHolder.Snapshot();
+        var previous = (
+            OrderHub: CloneWaslaOptions(snapshot.OrderHub),
+            Bridge: ClonePrintBridgeOptions(snapshot.Bridge),
+            Ui: CloneUiOptions(snapshot.Ui));
         var orderHub = new WaslaOptions
         {
             ServerUrl = _txtServerUrl.Text.Trim(),
@@ -67,6 +71,15 @@ public sealed partial class MainForm
         };
 
         var bridge = BuildBridgeOptionsFromForm(previous.Bridge);
+        var tokenChanged = !string.Equals(
+            previous.OrderHub.AgentToken?.Trim(),
+            orderHub.AgentToken,
+            StringComparison.Ordinal);
+        if (tokenChanged)
+        {
+            bridge.DisplayName = string.Empty;
+            bridge.ServerDeviceNameResolved = false;
+        }
 
         if (!PrintBridgeSettingsValidator.TryValidate(orderHub, bridge, out var errorKey))
         {
@@ -74,8 +87,8 @@ public sealed partial class MainForm
             return;
         }
 
-        var previousLanguage = _settingsHolder.Ui.Language;
-        var ui = _settingsHolder.Ui;
+        var previousLanguage = previous.Ui.Language;
+        var ui = CloneUiOptions(previous.Ui);
         PrintBridgeWindowLayout.CaptureInto(ui, this);
         if (_cmbLanguage.SelectedItem is LanguageOption languageOption)
             ui.Language = languageOption.CultureName;
@@ -98,34 +111,58 @@ public sealed partial class MainForm
         SetConnectionFieldsEnabled(false);
         _btnSaveSettings.Enabled = false;
 
-        _settingsLogger.LogInformation("Token/server validation started.");
+        var wasRunning = _runtime.IsRunning;
+        _settingsLogger.LogInformation("Settings save and reconnect started. WasPolling={WasPolling}", wasRunning);
 
         try
         {
+            if (wasRunning)
+                await _runtime.StopAsync().ConfigureAwait(true);
+
             _settingsHolder.Replace(orderHub, bridge, ui);
+            if (!TryPersistSettings(orderHub, bridge, ui, previousLanguage, out var languageChanged))
+            {
+                _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
+                if (wasRunning)
+                    TryStartPolling();
+                return;
+            }
 
+            var connectionVerified = false;
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            await _runtime.ValidateConnectionAsync(cts.Token).ConfigureAwait(true);
+            try
+            {
+                await _runtime.ValidateConnectionAsync(cts.Token).ConfigureAwait(true);
+                connectionVerified = true;
+                _settingsLogger.LogInformation("Token/server validation succeeded.");
+                SetSaveValidationUi(SaveValidationUiState.Verified);
+            }
+            catch (Exception ex)
+            {
+                _settingsLogger.LogWarning(ex, "Settings saved, but token/server validation failed.");
+                _runtime.RecordConnectionFailure(ex);
+                SetSaveValidationUi(SaveValidationUiState.Failed);
+            }
 
-            var syncedBridge = _settingsHolder.Snapshot().Bridge;
-            var bridgeToSave = BuildBridgeOptionsFromForm(syncedBridge);
-            bridgeToSave.DisplayName = syncedBridge.DisplayName;
-            bridgeToSave.ServerDeviceNameResolved = syncedBridge.ServerDeviceNameResolved;
+            if (wasRunning)
+                TryStartPolling();
 
-            _settingsLogger.LogInformation("Token/server validation succeeded.");
-            SetSaveValidationUi(SaveValidationUiState.Verified);
-            PersistSettings(orderHub, bridgeToSave, ui, previousLanguage, connectionVerified: true);
+            ShowSettingsSavedMessage(connectionVerified, languageChanged);
+            SyncDeviceNameFieldFromHolder();
+            RefreshDashboard();
         }
         catch (Exception ex)
         {
             _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
-            _settingsLogger.LogWarning(ex, "Token/server validation failed.");
+            _settingsLogger.LogWarning(ex, "Settings save/reconnect failed.");
             SetSaveValidationUi(SaveValidationUiState.Failed);
             MessageBox.Show(
-                GetSaveValidationErrorMessage(ex),
+                _localizer.GetString("Message.SettingsSaveFailed", ex.Message),
                 PrintBridgePaths.ProductDisplayName,
                 MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
+                MessageBoxIcon.Error);
+            if (wasRunning)
+                TryStartPolling();
             RefreshDashboard();
             SyncDeviceNameFieldFromHolder();
         }
@@ -137,18 +174,18 @@ public sealed partial class MainForm
         }
     }
 
-    private void PersistSettings(
+    private bool TryPersistSettings(
         WaslaOptions orderHub,
         PrintBridgeOptions bridge,
         UiOptions ui,
         string? previousLanguage,
-        bool connectionVerified)
+        out bool languageChanged)
     {
         var previousNormalized = string.IsNullOrWhiteSpace(previousLanguage)
             ? _cultureService.CurrentCulture.Name
             : SupportedCultures.NormalizeOrDefault(previousLanguage);
         var newNormalized = SupportedCultures.NormalizeOrDefault(ui.Language);
-        var languageChanged = !string.Equals(previousNormalized, newNormalized, StringComparison.OrdinalIgnoreCase);
+        languageChanged = !string.Equals(previousNormalized, newNormalized, StringComparison.OrdinalIgnoreCase);
 
         try
         {
@@ -160,19 +197,7 @@ public sealed partial class MainForm
             });
             _settingsHolder.Replace(orderHub, bridge, ui);
             _settingsLogger.LogInformation("Settings saved.");
-
-            var message = connectionVerified
-                ? _localizer["Message.SettingsSavedConnectionVerified"]
-                : languageChanged
-                    ? _localizer["Message.LanguageRestartRequired"]
-                    : _localizer["Message.SettingsSaved"];
-
-            MessageBox.Show(message, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            SyncDeviceNameFieldFromHolder();
-            RefreshDashboard();
-
-            if (!connectionVerified)
-                SetSaveValidationUi(SaveValidationUiState.Idle);
+            return true;
         }
         catch (Exception ex)
         {
@@ -182,6 +207,33 @@ public sealed partial class MainForm
                 PrintBridgePaths.ProductDisplayName,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
+            return false;
+        }
+    }
+
+    private void ShowSettingsSavedMessage(bool connectionVerified, bool languageChanged)
+    {
+        var message = connectionVerified
+            ? _localizer["Message.SettingsSavedConnectionVerified"]
+            : $"{_localizer["Message.SettingsSaved"]}{Environment.NewLine}{_localizer["Message.ConnectionCouldNotBeVerified"]}";
+
+        if (languageChanged)
+            message = $"{message}{Environment.NewLine}{_localizer["Message.LanguageRestartRequired"]}";
+
+        MessageBox.Show(message, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void TryStartPolling()
+    {
+        try
+        {
+            if (!_runtime.IsRunning)
+                _runtime.Start();
+        }
+        catch (Exception ex)
+        {
+            _runtime.RecordConnectionFailure(ex);
+            _settingsLogger.LogWarning(ex, "Polling could not be restarted after settings save.");
         }
     }
 
@@ -201,6 +253,42 @@ public sealed partial class MainForm
             MaxJobsPerPoll = metadataSource.MaxJobsPerPoll
         };
     }
+
+    private static WaslaOptions CloneWaslaOptions(WaslaOptions source) =>
+        new()
+        {
+            ServerUrl = source.ServerUrl,
+            AgentToken = source.AgentToken
+        };
+
+    private static PrintBridgeOptions ClonePrintBridgeOptions(PrintBridgeOptions source) =>
+        new()
+        {
+            PrinterMode = source.PrinterMode,
+            PrinterName = source.PrinterName,
+            IdlePollIntervalSeconds = source.IdlePollIntervalSeconds,
+            BusyPollIntervalSeconds = source.BusyPollIntervalSeconds,
+            ErrorPollIntervalSeconds = source.ErrorPollIntervalSeconds,
+            MaxJobsPerPoll = source.MaxJobsPerPoll,
+            DryRun = source.DryRun,
+            DisplayName = source.DisplayName,
+            ServerDeviceNameResolved = source.ServerDeviceNameResolved,
+            MachineName = source.MachineName,
+            BridgeName = source.BridgeName
+        };
+
+    private static UiOptions CloneUiOptions(UiOptions source) =>
+        new()
+        {
+            Language = source.Language,
+            StartWithWindows = source.StartWithWindows,
+            MinimizeToTray = source.MinimizeToTray,
+            WindowWidth = source.WindowWidth,
+            WindowHeight = source.WindowHeight,
+            WindowLeft = source.WindowLeft,
+            WindowTop = source.WindowTop,
+            WindowState = source.WindowState
+        };
 
     private void SetConnectionFieldsEnabled(bool enabled)
     {
@@ -248,22 +336,4 @@ public sealed partial class MainForm
         }
     }
 
-    private string GetSaveValidationErrorMessage(Exception ex)
-    {
-        if (ex is PrintBridgeConnectionException connectionEx)
-        {
-            if (connectionEx.IsTokenAuthFailure)
-                return _localizer["Message.TokenInvalidUnauthorized"];
-
-            return connectionEx.UserMessageKey switch
-            {
-                "Connection.SslError" => _localizer["Message.SslCertificateError"],
-                "Connection.ServerUnreachable" or "Connection.ServerUnavailable" => _localizer["Message.ServerUnreachable"],
-                "Connection.EndpointNotFound" => _localizer["Message.ConnectionCouldNotBeVerified"],
-                _ => _localizer["Message.ConnectionCouldNotBeVerified"]
-            };
-        }
-
-        return _localizer["Message.ConnectionCouldNotBeVerified"];
-    }
 }

@@ -5,7 +5,7 @@ public sealed class PrintBridgeConnectionException : Exception
     public PrintBridgeConnectionException(
         string userMessageKey,
         string endpointPath,
-        string baseUrl,
+        string serverUrl,
         object[]? formatArgs = null,
         int? statusCode = null,
         Exception? innerException = null)
@@ -14,7 +14,7 @@ public sealed class PrintBridgeConnectionException : Exception
         UserMessageKey = userMessageKey;
         FormatArgs = formatArgs ?? [];
         EndpointPath = endpointPath;
-        BaseUrl = baseUrl;
+        ServerUrl = serverUrl;
         StatusCode = statusCode;
     }
 
@@ -24,7 +24,7 @@ public sealed class PrintBridgeConnectionException : Exception
 
     public string EndpointPath { get; }
 
-    public string BaseUrl { get; }
+    public string ServerUrl { get; }
 
     public int? StatusCode { get; }
 
@@ -32,7 +32,7 @@ public sealed class PrintBridgeConnectionException : Exception
 
     public static PrintBridgeConnectionException FromResponse(
         string endpointPath,
-        string baseUrl,
+        string serverUrl,
         int statusCode,
         string? responseBody)
     {
@@ -44,15 +44,15 @@ public sealed class PrintBridgeConnectionException : Exception
             _ => ("Connection.RequestFailed", new object[] { statusCode })
         };
 
-        var ex = new PrintBridgeConnectionException(key, endpointPath, baseUrl, args, statusCode);
+        var ex = new PrintBridgeConnectionException(key, endpointPath, serverUrl, args, statusCode);
         if (!string.IsNullOrWhiteSpace(responseBody))
             ex.Data["ResponseBody"] = responseBody;
         return ex;
     }
 
-    public static PrintBridgeConnectionException SslError(string endpointPath, string baseUrl, Exception inner) =>
-        new("Connection.SslError", endpointPath, baseUrl, innerException: inner);
+    public static PrintBridgeConnectionException SslError(string endpointPath, string serverUrl, Exception inner) =>
+        new("Connection.SslError", endpointPath, serverUrl, innerException: inner);
 
-    public static PrintBridgeConnectionException ServerUnavailable(string endpointPath, string baseUrl, Exception inner) =>
-        new("Connection.ServerUnreachable", endpointPath, baseUrl, innerException: inner);
+    public static PrintBridgeConnectionException ServerUnavailable(string endpointPath, string serverUrl, Exception inner) =>
+        new("Connection.ServerUnreachable", endpointPath, serverUrl, innerException: inner);
 }

@@ -10,7 +10,9 @@
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
     var currentLangLabel = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase)
         ? "English"
-        : (isRtl ? "العربية" : "Türkçe");
+        : (culture.StartsWith("ru", StringComparison.OrdinalIgnoreCase)
+            ? "Русский"
+            : (isRtl ? "العربية" : "Türkçe"));
 
     string AdminDash() => p == "/admin" ? "active" : "";
     string AdminCustomers() => requestPath.StartsWith("/admin/customers", StringComparison.OrdinalIgnoreCase) ? "active" : "";
@@ -70,6 +72,9 @@
                             </li>
                             <li>
                                 <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ar-SA" asp-route-returnUrl="@returnUrl">العربية</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ru-RU" asp-route-returnUrl="@returnUrl">Русский</a>
                             </li>
                         </ul>
                     </div>

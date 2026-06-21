@@ -1,5 +1,6 @@
 ﻿using System.Drawing.Drawing2D;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
@@ -90,6 +91,8 @@ public sealed partial class MainForm : Form
     private Label _lblBusyPoll = null!;
     private Label _lblErrorPoll = null!;
     private Label _settingsHint = null!;
+    private bool _suppressLanguageSelectionChanged;
+    private bool _isSavingLanguage;
 
     public MainForm(ServiceProvider services, PrintBridgeRuntime runtime)
     {
@@ -763,6 +766,7 @@ public sealed partial class MainForm : Form
             DropDownStyle = ComboBoxStyle.DropDownList,
             Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
+        _cmbLanguage.SelectedIndexChanged += async (_, _) => await SaveSelectedLanguageAsync().ConfigureAwait(true);
         table.Controls.Add(_cmbLanguage, 1, row);
     }
 
@@ -979,6 +983,7 @@ public sealed partial class MainForm : Form
         _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Turkish, "Türkçe"));
         _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.English, "English"));
         _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Arabic, "العربية"));
+        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Russian, "Русский"));
     }
 
     private void SelectSavedLanguage()
@@ -988,17 +993,94 @@ public sealed partial class MainForm : Form
             ? _cultureService.CurrentCulture.Name
             : SupportedCultures.NormalizeOrDefault(savedLanguage);
 
-        for (var i = 0; i < _cmbLanguage.Items.Count; i++)
+        _suppressLanguageSelectionChanged = true;
+        try
         {
-            if (_cmbLanguage.Items[i] is LanguageOption option &&
-                string.Equals(option.CultureName, selectedCulture, StringComparison.OrdinalIgnoreCase))
+            for (var i = 0; i < _cmbLanguage.Items.Count; i++)
             {
-                _cmbLanguage.SelectedIndex = i;
-                return;
+                if (_cmbLanguage.Items[i] is LanguageOption option &&
+                    string.Equals(option.CultureName, selectedCulture, StringComparison.OrdinalIgnoreCase))
+                {
+                    _cmbLanguage.SelectedIndex = i;
+                    return;
+                }
+            }
+
+            _cmbLanguage.SelectedIndex = 0;
+        }
+        finally
+        {
+            _suppressLanguageSelectionChanged = false;
+        }
+    }
+
+    private async Task SaveSelectedLanguageAsync()
+    {
+        if (_suppressLanguageSelectionChanged || _isSavingLanguage)
+            return;
+
+        if (_cmbLanguage.SelectedItem is not LanguageOption languageOption)
+            return;
+
+        var selectedCulture = SupportedCultures.NormalizeOrDefault(languageOption.CultureName);
+        var previousCulture = _cultureService.CurrentCulture.Name;
+        if (string.Equals(previousCulture, selectedCulture, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        _isSavingLanguage = true;
+        _cmbLanguage.Enabled = false;
+        try
+        {
+            await Task.Run(() => _settingsStore.SaveLanguage(selectedCulture)).ConfigureAwait(true);
+
+            var ui = CloneUiOptions(_settingsHolder.Ui);
+            ui.Language = selectedCulture;
+            _settingsHolder.ReplaceUi(ui);
+            _cultureService.Initialize(selectedCulture);
+            ApplyStartupLocalization();
+            RefreshDashboard();
+            RefreshRecentJobsFromRuntime();
+            if (_tabs.SelectedTab == _historyTab)
+                RefreshPrintHistory();
+        }
+        catch (Exception ex)
+        {
+            _cultureService.Initialize(previousCulture);
+            ResetLanguageSelection(previousCulture);
+            MessageBox.Show(
+                _localizer.GetString("Message.SettingsSaveFailed", "Language"),
+                PrintBridgePaths.ProductDisplayName,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+            _settingsLogger?.LogWarning(ex, "Language setting could not be saved.");
+        }
+        finally
+        {
+            _cmbLanguage.Enabled = true;
+            _isSavingLanguage = false;
+        }
+    }
+
+    private void ResetLanguageSelection(string cultureName)
+    {
+        _suppressLanguageSelectionChanged = true;
+        try
+        {
+            var normalized = SupportedCultures.NormalizeOrDefault(cultureName);
+            for (var i = 0; i < _cmbLanguage.Items.Count; i++)
+            {
+                if (_cmbLanguage.Items[i] is LanguageOption option &&
+                    string.Equals(option.CultureName, normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    _cmbLanguage.SelectedIndex = i;
+                    return;
+                }
             }
         }
-
-        _cmbLanguage.SelectedIndex = 0;
+        finally
+        {
+            _suppressLanguageSelectionChanged = false;
+        }
     }
 
     private sealed record LanguageOption(string CultureName, string DisplayName)

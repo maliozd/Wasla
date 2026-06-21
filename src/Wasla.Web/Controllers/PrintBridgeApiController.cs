@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Contracts.Printing;
-using Wasla.Web.Printing;
+using Wasla.Web.PrintBridge;
 
 namespace Wasla.Web.Controllers;
 

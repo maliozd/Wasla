@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Button.ClearLogs" xml:space="preserve">
+    <value>Clear logs</value>
+  </data>
+  <data name="Button.CopyLogs" xml:space="preserve">
+    <value>Copy logs</value>
+  </data>
+  <data name="Button.JumpToLatest" xml:space="preserve">
+    <value>Jump to latest</value>
+  </data>
+  <data name="Button.HideToken" xml:space="preserve">
+    <value>Скрывать</value>
+  </data>
+  <data name="Button.OpenLogsFolder" xml:space="preserve">
+    <value>Открыть папку журналов</value>
+  </data>
+  <data name="Button.Refresh" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="Button.SaveSettings" xml:space="preserve">
+    <value>Сохранить настройки</value>
+  </data>
+  <data name="Button.ShowToken" xml:space="preserve">
+    <value>Показывать</value>
+  </data>
+  <data name="Button.StartListening" xml:space="preserve">
+    <value>Начинать</value>
+  </data>
+  <data name="Button.StopListening" xml:space="preserve">
+    <value>Останавливаться</value>
+  </data>
+  <data name="Button.TestConnection" xml:space="preserve">
+    <value>Тестовое соединение</value>
+  </data>
+  <data name="Button.TestPrinter" xml:space="preserve">
+    <value>Распечатать тестовую квитанцию</value>
+  </data>
+  <data name="Common.AppTitle" xml:space="preserve">
+    <value>Wasla Print Bridge</value>
+  </data>
+  <data name="Common.Dash" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="Common.NotConfigured" xml:space="preserve">
+    <value>(не настроено)</value>
+  </data>
+  <data name="Common.Subtitle" xml:space="preserve">
+    <value>Мост для печати чеков</value>
+  </data>
+  <data name="Connection.AuthenticationFailed" xml:space="preserve">
+    <value>Аутентификация не удалась</value>
+  </data>
+  <data name="Connection.EndpointNotFound" xml:space="preserve">
+    <value>Конечная точка Print Bridge не найдена. Проверьте сервер URL и его версию.</value>
+  </data>
+  <data name="Connection.Reconnected" xml:space="preserve">
+    <value>Восстановлено</value>
+  </data>
+  <data name="Connection.RequestFailed" xml:space="preserve">
+    <value>Запрос моста печати не выполнен (HTTP {0}).</value>
+  </data>
+  <data name="Connection.ServerUnavailable" xml:space="preserve">
+    <value>Сервер Wasla недоступен. Повторите попытку позже.</value>
+  </data>
+  <data name="Connection.ServerUnreachable" xml:space="preserve">
+    <value>Не удалось связаться с Wasla. Проверьте сервер URL и убедитесь, что сервер работает.</value>
+  </data>
+  <data name="Connection.SslError" xml:space="preserve">
+    <value>SSL-соединение не удалось. Убедитесь, что Windows доверяет локальному сертификату HTTPS.</value>
+  </data>
+  <data name="Connection.TokenInvalid" xml:space="preserve">
+    <value>Токен Print Bridge недействителен или неавторизован. Проверьте токен в настройках.</value>
+  </data>
+  <data name="Dashboard.DeviceStatus" xml:space="preserve">
+    <value>Статус устройства</value>
+  </data>
+  <data name="Dashboard.FailedToday" xml:space="preserve">
+    <value>Не удалось сегодня</value>
+  </data>
+  <data name="Dashboard.JobsToday" xml:space="preserve">
+    <value>Вакансии сегодня</value>
+  </data>
+  <data name="Dashboard.LastPoll" xml:space="preserve">
+    <value>Последний опрос</value>
+  </data>
+  <data name="Error.DryRunEnabled" xml:space="preserve">
+    <value>Отключите тестовый режим, чтобы отправить тестовую распечатку.</value>
+  </data>
+  <data name="Error.PrinterRequired" xml:space="preserve">
+    <value>Требуется имя принтера.</value>
+  </data>
+  <data name="Error.TestPrintFailed" xml:space="preserve">
+    <value>Тестовая печать не удалась.</value>
+  </data>
+  <data name="JobStatus.Failed" xml:space="preserve">
+    <value>Неуспешный</value>
+  </data>
+  <data name="JobStatus.Pending" xml:space="preserve">
+    <value>В ожидании</value>
+  </data>
+  <data name="JobStatus.Printed" xml:space="preserve">
+    <value>Печатный</value>
+  </data>
+  <data name="JobStatus.Printing" xml:space="preserve">
+    <value>Печать</value>
+  </data>
+  <data name="JobStatus.Skipped" xml:space="preserve">
+    <value>Пропущено</value>
+  </data>
+  <data name="JobStatusBadge.Failed" xml:space="preserve">
+    <value>⚠ Не удалось</value>
+  </data>
+  <data name="JobStatusBadge.Pending" xml:space="preserve">
+    <value>○ Ожидается</value>
+  </data>
+  <data name="JobStatusBadge.Printed" xml:space="preserve">
+    <value>✓ Печатный</value>
+  </data>
+  <data name="JobStatusBadge.Printing" xml:space="preserve">
+    <value>⏳ Печать</value>
+  </data>
+  <data name="JobStatusBadge.Skipped" xml:space="preserve">
+    <value>– Пропущено</value>
+  </data>
+  <data name="Language.Arabic" xml:space="preserve">
+    <value>عربية</value>
+  </data>
+  <data name="Language.English" xml:space="preserve">
+    <value>Английский</value>
+  </data>
+  <data name="Language.Turkish" xml:space="preserve">
+    <value>Тюркче</value>
+  </data>
+  <data name="Message.AlreadyRunning" xml:space="preserve">
+    <value>Wasla Print Bridge уже запущен. {0}{0}Откройте существующее приложение с помощью значка на панели задач.</value>
+  </data>
+  <data name="Message.ConnectionSuccess" xml:space="preserve">
+    <value>Соединение успешное.</value>
+  </data>
+  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve">
+    <value>Подключение успешно. {0}Клиент: {1}{0}Устройство: {2}</value>
+  </data>
+  <data name="Message.DeviceNameLoadedFromServer" xml:space="preserve">
+    <value>Имя устройства загружено с сервера.</value>
+  </data>
+  <data name="Message.LogsCopyFailed" xml:space="preserve">
+    <value>Не удалось скопировать журналы: {0}.</value>
+  </data>
+  <data name="Message.LogsFolderMissing" xml:space="preserve">
+    <value>Папка журналов еще не создана.</value>
+  </data>
+  <data name="Message.RequiresWindows" xml:space="preserve">
+    <value>Wasla Print Bridge требует Windows.</value>
+  </data>
+  <data name="Message.ConnectionCouldNotBeVerified" xml:space="preserve">
+    <value>Соединение не удалось проверить. Пожалуйста, проверьте сервер URL и токен доступа.</value>
+  </data>
+  <data name="Message.ServerUnreachable" xml:space="preserve">
+    <value>Сервер недоступен. Проверьте сервер URL и убедитесь, что сервер работает.</value>
+  </data>
+  <data name="Message.SettingsSaved" xml:space="preserve">
+    <value>Настройки сохранены.</value>
+  </data>
+  <data name="Message.SettingsSavedConnectionVerified" xml:space="preserve">
+    <value>Настройки сохранены. Соединение проверено.</value>
+  </data>
+  <data name="Message.SslCertificateError" xml:space="preserve">
+    <value>Ошибка сертификата SSL. Убедитесь, что сертификат HTTPS является доверенным для Windows.</value>
+  </data>
+  <data name="Message.TokenInvalidUnauthorized" xml:space="preserve">
+    <value>Токен недействителен или не авторизован для этого устройства.</value>
+  </data>
+  <data name="Message.ValidatingConnection" xml:space="preserve">
+    <value>Проверка соединения...</value>
+  </data>
+  <data name="Message.LanguageRestartRequired" xml:space="preserve">
+    <value>Изменения языка вступят в силу после перезапуска Print Bridge.</value>
+  </data>
+  <data name="Message.SettingsSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить настройки: {0}.</value>
+  </data>
+  <data name="Message.TestPrintSent" xml:space="preserve">
+    <value>Пробная печать отправлена ​​на принтер.</value>
+  </data>
+  <data name="Printing.Completed" xml:space="preserve">
+    <value>Печать завершена</value>
+  </data>
+  <data name="Printing.Failed" xml:space="preserve">
+    <value>Печать не удалась</value>
+  </data>
+  <data name="Printing.Started" xml:space="preserve">
+    <value>Печать началась</value>
+  </data>
+  <data name="RecentJobs.Column.Order" xml:space="preserve">
+    <value>Заказ</value>
+  </data>
+  <data name="RecentJobs.Column.Printer" xml:space="preserve">
+    <value>Принтер</value>
+  </data>
+  <data name="RecentJobs.Column.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="RecentJobs.Column.Time" xml:space="preserve">
+    <value>Время</value>
+  </data>
+  <data name="RecentJobs.Column.Type" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="RecentJobs.Tooltip.JobId" xml:space="preserve">
+    <value>Идентификатор вакансии: {0}</value>
+  </data>
+  <data name="RecentJobs.Empty" xml:space="preserve">
+    <value>В этом сеансе еще не было обработано ни одного задания печати.</value>
+  </data>
+  <data name="RecentJobs.Title" xml:space="preserve">
+    <value>Недавние вакансии (эта сессия)</value>
+  </data>
+  <data name="Settings.Advanced" xml:space="preserve">
+    <value>Передовой</value>
+  </data>
+  <data name="Settings.AgentToken" xml:space="preserve">
+    <value>Токен устройства</value>
+  </data>
+  <data name="Settings.BusyPollSeconds" xml:space="preserve">
+    <value>Интервал опроса занятости (сек)</value>
+  </data>
+  <data name="Footer.Device" xml:space="preserve">
+    <value>Устройство: {0}</value>
+  </data>
+  <data name="Footer.NotConnected" xml:space="preserve">
+    <value>Не подключено</value>
+  </data>
+  <data name="Footer.Version" xml:space="preserve">
+    <value>Версия: {0}</value>
+  </data>
+  <data name="Settings.ComputerName" xml:space="preserve">
+    <value>Имя компьютера</value>
+  </data>
+  <data name="Settings.DeviceName" xml:space="preserve">
+    <value>Имя устройства</value>
+  </data>
+  <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
+    <value>Управление с веб-панели Wasla</value>
+  </data>
+  <data name="Settings.MachineNameHint" xml:space="preserve">
+    <value>Машина: {0}</value>
+  </data>
+  <data name="Settings.DryRunDescription" xml:space="preserve">
+    <value>Не отправлять на принтер, только журнал</value>
+  </data>
+  <data name="Settings.DryRunMode" xml:space="preserve">
+    <value>Тестовый режим</value>
+  </data>
+  <data name="Settings.ErrorPollSeconds" xml:space="preserve">
+    <value>Интервал опроса ошибок (сек)</value>
+  </data>
+  <data name="Settings.IdlePollSeconds" xml:space="preserve">
+    <value>Интервал опроса в режиме ожидания (сек)</value>
+  </data>
+  <data name="Settings.Language" xml:space="preserve">
+    <value>Язык</value>
+  </data>
+  <data name="Settings.PrinterName" xml:space="preserve">
+    <value>Имя принтера</value>
+  </data>
+  <data name="Settings.SavedPathHint" xml:space="preserve">
+    <value>Настройки сохраняются в: {0}.</value>
+  </data>
+  <data name="Settings.ServerUrl" xml:space="preserve">
+    <value>Wasla Веб-панель URL</value>
+  </data>
+  <data name="Settings.ServerUrlHelp" xml:space="preserve">
+    <value>Скопируйте это со страницы настройки Wasla Web Print Bridge.</value>
+  </data>
+  <data name="Settings.AgentTokenHelp" xml:space="preserve">
+    <value>Вставьте токен устройства, сгенерированный на веб-панели Wasla.</value>
+  </data>
+  <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
+    <value>Тестовый режим включен. Чеки не будут распечатаны; задания будут только регистрироваться.</value>
+  </data>
+  <data name="Status.Connected" xml:space="preserve">
+    <value>Подключено</value>
+  </data>
+  <data name="Status.ConnectionLost" xml:space="preserve">
+    <value>Соединение потеряно</value>
+  </data>
+  <data name="Status.Disconnected" xml:space="preserve">
+    <value>Отключено</value>
+  </data>
+  <data name="Status.Error" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="Status.Offline" xml:space="preserve">
+    <value>Оффлайн</value>
+  </data>
+  <data name="Status.Online" xml:space="preserve">
+    <value>Онлайн</value>
+  </data>
+  <data name="Status.Polling" xml:space="preserve">
+    <value>Бег</value>
+  </data>
+  <data name="Status.Printing" xml:space="preserve">
+    <value>Печать</value>
+  </data>
+  <data name="Status.Ready" xml:space="preserve">
+    <value>Готовый</value>
+  </data>
+  <data name="Status.Running" xml:space="preserve">
+    <value>Бег</value>
+  </data>
+  <data name="Status.RunningDryRun" xml:space="preserve">
+    <value>Бег (тест)</value>
+  </data>
+  <data name="Status.Stopped" xml:space="preserve">
+    <value>Остановлено</value>
+  </data>
+  <data name="ConnectionStatus.Connected" xml:space="preserve">
+    <value>Подключено</value>
+  </data>
+  <data name="ConnectionStatus.Disconnected" xml:space="preserve">
+    <value>Отключено</value>
+  </data>
+  <data name="ConnectionStatus.Error" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="ConnectionStatus.Stopped" xml:space="preserve">
+    <value>Остановлено</value>
+  </data>
+  <data name="Dashboard.DeviceName" xml:space="preserve">
+    <value>Имя устройства</value>
+  </data>
+  <data name="Dashboard.LastContact" xml:space="preserve">
+    <value>Последний контакт</value>
+  </data>
+  <data name="Dashboard.LastPrint" xml:space="preserve">
+    <value>Последняя печать</value>
+  </data>
+  <data name="Dashboard.LastSuccessfulPoll" xml:space="preserve">
+    <value>Последний успешный опрос</value>
+  </data>
+  <data name="Dashboard.PrinterStatus" xml:space="preserve">
+    <value>Статус принтера</value>
+  </data>
+  <data name="Dashboard.ServerStatus" xml:space="preserve">
+    <value>Подключение к серверу</value>
+  </data>
+  <data name="Dashboard.Version" xml:space="preserve">
+    <value>Версия</value>
+  </data>
+  <data name="Platform.GetirYemek" xml:space="preserve">
+    <value>GetirYemek</value>
+  </data>
+  <data name="Platform.TrendyolYemek" xml:space="preserve">
+    <value>Трендьол Йемек</value>
+  </data>
+  <data name="Platform.Yemeksepeti" xml:space="preserve">
+    <value>Yemeksepeti</value>
+  </data>
+  <data name="PrintHistory.Column.Order" xml:space="preserve">
+    <value>Номер заказа</value>
+  </data>
+  <data name="PrintHistory.Column.Platform" xml:space="preserve">
+    <value>Платформа</value>
+  </data>
+  <data name="PrintHistory.Column.Printer" xml:space="preserve">
+    <value>Принтер</value>
+  </data>
+  <data name="PrintHistory.Column.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="PrintHistory.Column.Time" xml:space="preserve">
+    <value>Дата/Time</value>
+  </data>
+  <data name="PrintHistory.Empty" xml:space="preserve">
+    <value>Записи истории печати не найдены.</value>
+  </data>
+  <data name="PrintHistory.EmptyFiltered" xml:space="preserve">
+    <value>Нет записей, соответствующих выбранному фильтру или поиску.</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Error" xml:space="preserve">
+    <value>Ошибка: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.JobId" xml:space="preserve">
+    <value>Идентификатор вакансии: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Order" xml:space="preserve">
+    <value>Заказ: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Platform" xml:space="preserve">
+    <value>Платформа: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Printer" xml:space="preserve">
+    <value>Принтер: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Status" xml:space="preserve">
+    <value>Статус: {0}</value>
+  </data>
+  <data name="PrintHistory.Tooltip.Time" xml:space="preserve">
+    <value>Время: {0}</value>
+  </data>
+  <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
+    <value>Последние 30 дней</value>
+  </data>
+  <data name="PrintHistory.Filter.Last7Days" xml:space="preserve">
+    <value>Последние 7 дней</value>
+  </data>
+  <data name="PrintHistory.Filter.Today" xml:space="preserve">
+    <value>Сегодня</value>
+  </data>
+  <data name="PrintHistory.Search" xml:space="preserve">
+    <value>Поиск заказов</value>
+  </data>
+  <data name="PrintHistory.SearchPlaceholder" xml:space="preserve">
+    <value>Номер заказа...</value>
+  </data>
+  <data name="PrintHistory.Title" xml:space="preserve">
+    <value>Распечатать историю</value>
+  </data>
+  <data name="PrinterStatus.DryRun" xml:space="preserve">
+    <value>Тестовый режим</value>
+  </data>
+  <data name="PrinterStatus.NotConfigured" xml:space="preserve">
+    <value>Не настроено</value>
+  </data>
+  <data name="PrinterStatus.NotFound" xml:space="preserve">
+    <value>Не найдено</value>
+  </data>
+  <data name="PrinterStatus.Ready" xml:space="preserve">
+    <value>Готовый</value>
+  </data>
+  <data name="Reprint.AlreadyPending" xml:space="preserve">
+    <value>Для этого заказа уже существует активное задание печати.</value>
+  </data>
+  <data name="Reprint.Button" xml:space="preserve">
+    <value>Перепечатка</value>
+  </data>
+  <data name="Reprint.Confirm" xml:space="preserve">
+    <value>Перепечатать квитанцию ​​для {0}?</value>
+  </data>
+  <data name="Reprint.Created" xml:space="preserve">
+    <value>Задание повторной печати создано. Print Bridge заберет его в ближайшее время.</value>
+  </data>
+  <data name="Reprint.Failed" xml:space="preserve">
+    <value>Перепечатка не удалась.</value>
+  </data>
+  <data name="Reprint.JobNotFound" xml:space="preserve">
+    <value>Задание печати не найдено.</value>
+  </data>
+  <data name="Reprint.NotAllowed" xml:space="preserve">
+    <value>Перепечатать можно только успешно напечатанные задания.</value>
+  </data>
+  <data name="Reprint.OrderNotFound" xml:space="preserve">
+    <value>Заказ не найден.</value>
+  </data>
+  <data name="Reprint.SelectPrintedJob" xml:space="preserve">
+    <value>Выберите успешно напечатанное задание для повторной печати.</value>
+  </data>
+  <data name="Tab.Logs" xml:space="preserve">
+    <value>Журналы</value>
+  </data>
+  <data name="Tab.PrintHistory" xml:space="preserve">
+    <value>Распечатать историю</value>
+  </data>
+  <data name="Tab.Settings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="Tab.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Tray.ConnectionStatus" xml:space="preserve">
+    <value>● {0}</value>
+  </data>
+  <data name="Tray.Exit" xml:space="preserve">
+    <value>Выход</value>
+  </data>
+  <data name="Tray.PrintHistory" xml:space="preserve">
+    <value>Распечатать историю</value>
+  </data>
+  <data name="Tray.PrinterTest" xml:space="preserve">
+    <value>Тест принтера</value>
+  </data>
+  <data name="Tray.Logs" xml:space="preserve">
+    <value>Журналы</value>
+  </data>
+  <data name="Tray.Open" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="Tray.RecentJobs" xml:space="preserve">
+    <value>Недавние вакансии</value>
+  </data>
+  <data name="Tray.Settings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="Tray.Start" xml:space="preserve">
+    <value>Начинать</value>
+  </data>
+  <data name="Tray.Stop" xml:space="preserve">
+    <value>Останавливаться</value>
+  </data>
+  <data name="Tray.Tooltip.Connected" xml:space="preserve">
+    <value>{0} (подключен)</value>
+  </data>
+  <data name="Tray.Tooltip.ConnectionLost" xml:space="preserve">
+    <value>{0} (соединение потеряно)</value>
+  </data>
+  <data name="Tray.Tooltip.Polling" xml:space="preserve">
+    <value>{0} (работает)</value>
+  </data>
+  <data name="Tray.Tooltip.Printing" xml:space="preserve">
+    <value>{0} (печать)</value>
+  </data>
+  <data name="Validation.AgentTokenRequired" xml:space="preserve">
+    <value>Требуется токен доступа.</value>
+  </data>
+  <data name="Settings.Validation.Failed" xml:space="preserve">
+    <value>Соединение не удалось проверить</value>
+  </data>
+  <data name="Settings.Validation.Verified" xml:space="preserve">
+    <value>Соединение проверено</value>
+  </data>
+  <data name="Validation.ServerUrlRequired" xml:space="preserve">
+    <value>Wasla Требуется веб-панель URL.</value>
+  </data>
+  <data name="Validation.InvalidServerUrl" xml:space="preserve">
+    <value>Неверный сервер URL. Введите действительный адрес, начинающийся с http:// или https://..</value>
+  </data>
+  <data name="Validation.PrinterRequired" xml:space="preserve">
+    <value>Имя принтера требуется, если тестовый режим отключен.</value>
+  </data>
+  <data name="JobType.Receipt" xml:space="preserve">
+    <value>Квитанция</value>
+  </data>
+</root>

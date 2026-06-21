@@ -1,0 +1,3579 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Сохранять</value>
+  </data>
+  <data name="Common.Saved" xml:space="preserve">
+    <value>Сохранено</value>
+  </data>
+  <data name="Common.SaveFailed" xml:space="preserve">
+    <value>Сохранить не удалось</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Закрывать</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Редактировать</value>
+  </data>
+  <data name="Common.Create" xml:space="preserve">
+    <value>Создавать</value>
+  </data>
+  <data name="Common.Filter" xml:space="preserve">
+    <value>Фильтр</value>
+  </data>
+  <data name="Common.Clear" xml:space="preserve">
+    <value>Прозрачный</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>Поиск</value>
+  </data>
+  <data name="Common.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Common.Actions" xml:space="preserve">
+    <value>Действия</value>
+  </data>
+  <data name="Common.Yes" xml:space="preserve">
+    <value>Да</value>
+  </data>
+  <data name="Common.No" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="Common.Active" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="Common.Passive" xml:space="preserve">
+    <value>Неактивный</value>
+  </data>
+  <data name="Common.Language" xml:space="preserve">
+    <value>Язык</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="Common.Today" xml:space="preserve">
+    <value>Сегодня</value>
+  </data>
+  <data name="Common.Total" xml:space="preserve">
+    <value>Общий</value>
+  </data>
+  <data name="Common.Loading" xml:space="preserve">
+    <value>Загрузка…</value>
+  </data>
+  <data name="Common.ShowPassword" xml:space="preserve">
+    <value>Показать пароль</value>
+  </data>
+  <data name="Common.HidePassword" xml:space="preserve">
+    <value>Скрыть пароль</value>
+  </data>
+  <data name="Common.AllPlatforms" xml:space="preserve">
+    <value>Все платформы</value>
+  </data>
+  <data name="Common.AllStatuses" xml:space="preserve">
+    <value>Все статусы</value>
+  </data>
+  <data name="Layout.Dashboard" xml:space="preserve">
+    <value>Панель управления</value>
+  </data>
+  <data name="Layout.Orders" xml:space="preserve">
+    <value>Заказы</value>
+  </data>
+  <data name="Layout.OrderHistory" xml:space="preserve">
+    <value>История заказов</value>
+  </data>
+  <data name="Layout.PlatformConnections" xml:space="preserve">
+    <value>Соединения платформы</value>
+  </data>
+  <data name="Layout.Branches" xml:space="preserve">
+    <value>Филиалы</value>
+  </data>
+  <data name="Layout.Logout" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="Layout.Settings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="Navigation.Settings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="Navigation.OrderSettings" xml:space="preserve">
+    <value>Настройки заказа</value>
+  </data>
+  <data name="Navigation.ReceiptPrinterSettings" xml:space="preserve">
+    <value>Настройки квитанции и принтера</value>
+  </data>
+  <data name="Navigation.AccountSettings" xml:space="preserve">
+    <value>Настройки учетной записи</value>
+  </data>
+  <data name="Layout.Layout" xml:space="preserve">
+    <value>Макет</value>
+  </data>
+  <data name="Layout.Guest" xml:space="preserve">
+    <value>Гость</value>
+  </data>
+  <data name="Layout.User" xml:space="preserve">
+    <value>Пользователь</value>
+  </data>
+  <data name="Layout.UserMenu" xml:space="preserve">
+    <value>Меню пользователя</value>
+  </data>
+  <data name="Layout.Language" xml:space="preserve">
+    <value>Язык</value>
+  </data>
+  <data name="Layout.DarkMode" xml:space="preserve">
+    <value>Темный режим</value>
+  </data>
+  <data name="Layout.LightMode" xml:space="preserve">
+    <value>Светлый режим</value>
+  </data>
+  <data name="Layout.Theme" xml:space="preserve">
+    <value>Тема</value>
+  </data>
+  <data name="Layout.CentralAdmin" xml:space="preserve">
+    <value>Wasla Панель администратора</value>
+  </data>
+  <data name="Layout.Customers" xml:space="preserve">
+    <value>Рестораны</value>
+  </data>
+  <data name="Layout.PublicSite" xml:space="preserve">
+    <value>Публичный сайт</value>
+  </data>
+  <data name="Layout.CollapseSidebar" xml:space="preserve">
+    <value>Свернуть меню</value>
+  </data>
+  <data name="Layout.ExpandSidebar" xml:space="preserve">
+    <value>Развернуть меню</value>
+  </data>
+  <data name="Layout.ToggleSidebar" xml:space="preserve">
+    <value>Переключить меню</value>
+  </data>
+  <data name="Landing.Title" xml:space="preserve">
+    <value>Wasla</value>
+  </data>
+  <data name="Landing.Subtitle" xml:space="preserve">
+    <value>Мультиплатформенное управление заказами</value>
+  </data>
+  <data name="Landing.CustomerLogin" xml:space="preserve">
+    <value>Вход для клиентов</value>
+  </data>
+  <data name="Landing.AdminLogin" xml:space="preserve">
+    <value>Вход администратора</value>
+  </data>
+  <data name="Landing.SinglePanel" xml:space="preserve">
+    <value>Одна панель</value>
+  </data>
+  <data name="Landing.SinglePanelDescription" xml:space="preserve">
+    <value>Все заказы платформы в одном месте</value>
+  </data>
+  <data name="Landing.EasyManagement" xml:space="preserve">
+    <value>Простое управление</value>
+  </data>
+  <data name="Landing.EasyManagementDescription" xml:space="preserve">
+    <value>Легко управляйте ветками и соединениями</value>
+  </data>
+  <data name="Landing.LiveTracking" xml:space="preserve">
+    <value>Живое отслеживание</value>
+  </data>
+  <data name="Landing.LiveTrackingDescription" xml:space="preserve">
+    <value>Отслеживайте поток заказов и изменения статуса</value>
+  </data>
+  <data name="Landing.HeroBadge" xml:space="preserve">
+    <value>SaaS • Ресторан • Операционная деятельность</value>
+  </data>
+  <data name="Landing.HeroTitle" xml:space="preserve">
+    <value>Управляйте заказами в ресторане с одного экрана.</value>
+  </data>
+  <data name="Landing.HeroDescription" xml:space="preserve">
+    <value>Просматривайте, отслеживайте и управляйте заказами от Yemeksepeti, Getir и Trendyol на одной панели.</value>
+  </data>
+  <data name="Landing.HeroSubtitle" xml:space="preserve">
+    <value>Отслеживайте заказы Yemeksepeti, GetirYemek и TrendyolYemek с одной панели. Мгновенно просматривайте новые заказы, получайте звуковые уведомления и упрощайте работу ресторана.</value>
+  </data>
+  <data name="Landing.TenantNote" xml:space="preserve">
+    <value>Вход для клиентов осуществляется через закрепленный за вами домен ресторана.</value>
+  </data>
+  <data name="Landing.FooterTagline" xml:space="preserve">
+    <value>Современное управление заказами для оперативных групп</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>Войти</value>
+  </data>
+  <data name="Auth.Email" xml:space="preserve">
+    <value>Электронная почта</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="Auth.ShowPassword" xml:space="preserve">
+    <value>Показать пароль</value>
+  </data>
+  <data name="Auth.HidePassword" xml:space="preserve">
+    <value>Скрыть пароль</value>
+  </data>
+  <data name="Auth.LoginButton" xml:space="preserve">
+    <value>Войти</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>Пожалуйста, проверьте свои данные.</value>
+  </data>
+  <data name="Auth.TenantContextMissing" xml:space="preserve">
+    <value>Контекст ресторана отсутствует. Откройте ссылку для входа в предоставленный вам домен клиента.</value>
+  </data>
+  <data name="Auth.Logout" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="Dashboard.Title" xml:space="preserve">
+    <value>Панель управления</value>
+  </data>
+  <data name="Dashboard.TodayOrders" xml:space="preserve">
+    <value>Сегодняшние заказы</value>
+  </data>
+  <data name="Dashboard.TodayRevenue" xml:space="preserve">
+    <value>Сегодняшний доход</value>
+  </data>
+  <data name="Dashboard.ActiveConnections" xml:space="preserve">
+    <value>Активные соединения</value>
+  </data>
+  <data name="Dashboard.RecentOrders" xml:space="preserve">
+    <value>Недавние заказы</value>
+  </data>
+  <data name="Dashboard.NoRecentOrders" xml:space="preserve">
+    <value>Недавних заказов нет.</value>
+  </data>
+  <data name="Dashboard.ActiveOrders" xml:space="preserve">
+    <value>Активные заказы</value>
+  </data>
+  <data name="Dashboard.CancelledOrders" xml:space="preserve">
+    <value>Отмененные заказы</value>
+  </data>
+  <data name="Dashboard.ViewAll" xml:space="preserve">
+    <value>Посмотреть все</value>
+  </data>
+  <data name="Dashboard.PlatformSummary" xml:space="preserve">
+    <value>Сводная информация о платформе</value>
+  </data>
+  <data name="Dashboard.Count" xml:space="preserve">
+    <value>Считать</value>
+  </data>
+  <data name="Dashboard.Revenue" xml:space="preserve">
+    <value>Доход</value>
+  </data>
+  <data name="Dashboard.NoPlatformSummary" xml:space="preserve">
+    <value>Сводной информации о платформе пока нет.</value>
+  </data>
+  <data name="Dashboard.TodayOverview" xml:space="preserve">
+    <value>Сегодняшний обзор</value>
+  </data>
+  <data name="Dashboard.TodayDateLabel" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="Dashboard.OrdersReceivedToday" xml:space="preserve">
+    <value>Заказы получены сегодня</value>
+  </data>
+  <data name="Dashboard.TotalOrderAmountToday" xml:space="preserve">
+    <value>Общая сумма заказа сегодня</value>
+  </data>
+  <data name="Dashboard.CurrentlyActiveOrders" xml:space="preserve">
+    <value>На данный момент активные заказы</value>
+  </data>
+  <data name="Dashboard.CancelledToday" xml:space="preserve">
+    <value>Отменено сегодня</value>
+  </data>
+  <data name="Dashboard.AverageOrderValue" xml:space="preserve">
+    <value>Средняя стоимость заказа</value>
+  </data>
+  <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
+    <value>Средняя стоимость заказа</value>
+  </data>
+  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
+    <value>Последние заказы, полученные сегодня</value>
+  </data>
+  <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
+    <value>Заказы по платформам сегодня</value>
+  </data>
+  <data name="Dashboard.Platform" xml:space="preserve">
+    <value>Платформа</value>
+  </data>
+  <data name="Dashboard.Code" xml:space="preserve">
+    <value>Код</value>
+  </data>
+  <data name="Dashboard.Customer" xml:space="preserve">
+    <value>Клиент</value>
+  </data>
+  <data name="Dashboard.Total" xml:space="preserve">
+    <value>Общий</value>
+  </data>
+  <data name="Dashboard.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Dashboard.Received" xml:space="preserve">
+    <value>Полученный</value>
+  </data>
+  <data name="Dashboard.Orders" xml:space="preserve">
+    <value>Заказы</value>
+  </data>
+  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
+    <value>Сегодня заказов еще нет.</value>
+  </data>
+  <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
+    <value>Новые заказы будут появляться здесь автоматически.</value>
+  </data>
+  <data name="Dashboard.ShareOfTotal" xml:space="preserve">
+    <value>{0}% от общего количества</value>
+  </data>
+  <data name="Orders.Title" xml:space="preserve">
+    <value>Заказы</value>
+  </data>
+  <data name="Orders.Platform" xml:space="preserve">
+    <value>Платформа</value>
+  </data>
+  <data name="Orders.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Orders.StartDate" xml:space="preserve">
+    <value>Дата начала</value>
+  </data>
+  <data name="Orders.EndDate" xml:space="preserve">
+    <value>Дата окончания</value>
+  </data>
+  <data name="Orders.Filter" xml:space="preserve">
+    <value>Фильтр</value>
+  </data>
+  <data name="Orders.ShowFilters" xml:space="preserve">
+    <value>Показать фильтры</value>
+  </data>
+  <data name="Orders.HideFilters" xml:space="preserve">
+    <value>Скрыть фильтры</value>
+  </data>
+  <data name="Orders.Clear" xml:space="preserve">
+    <value>Прозрачный</value>
+  </data>
+  <data name="Orders.History.Title" xml:space="preserve">
+    <value>История заказов</value>
+  </data>
+  <data name="Orders.History.Subtitle" xml:space="preserve">
+    <value>Найдите и просмотрите предыдущие заказы.</value>
+  </data>
+  <data name="Orders.History.StartDate" xml:space="preserve">
+    <value>Дата начала</value>
+  </data>
+  <data name="Orders.History.EndDate" xml:space="preserve">
+    <value>Дата окончания</value>
+  </data>
+  <data name="Orders.History.Platform" xml:space="preserve">
+    <value>Платформа</value>
+  </data>
+  <data name="Orders.History.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Orders.History.Search" xml:space="preserve">
+    <value>Поиск</value>
+  </data>
+  <data name="Orders.History.SearchPlaceholder" xml:space="preserve">
+    <value>Код заказа, имя клиента или телефон</value>
+  </data>
+  <data name="Orders.History.Filter" xml:space="preserve">
+    <value>Фильтр</value>
+  </data>
+  <data name="Orders.History.Clear" xml:space="preserve">
+    <value>Прозрачный</value>
+  </data>
+  <data name="Orders.History.TotalResults" xml:space="preserve">
+    <value>Всего результатов</value>
+  </data>
+  <data name="Orders.History.NoOrdersFound" xml:space="preserve">
+    <value>Заказов не найдено.</value>
+  </data>
+  <data name="Orders.History.NoOrdersFoundDescription" xml:space="preserve">
+    <value>Попробуйте изменить диапазон дат или фильтры.</value>
+  </data>
+  <data name="Orders.History.ViewDetails" xml:space="preserve">
+    <value>Посмотреть детали</value>
+  </data>
+  <data name="Orders.History.PageSize" xml:space="preserve">
+    <value>Размер страницы</value>
+  </data>
+  <data name="Orders.History.Previous" xml:space="preserve">
+    <value>Предыдущий</value>
+  </data>
+  <data name="Orders.History.Next" xml:space="preserve">
+    <value>Следующий</value>
+  </data>
+  <data name="Orders.History.Received" xml:space="preserve">
+    <value>Полученный</value>
+  </data>
+  <data name="Orders.History.Code" xml:space="preserve">
+    <value>Код</value>
+  </data>
+  <data name="Orders.History.Customer" xml:space="preserve">
+    <value>Клиент</value>
+  </data>
+  <data name="Orders.History.Total" xml:space="preserve">
+    <value>Общий</value>
+  </data>
+  <data name="Orders.History.Actions" xml:space="preserve">
+    <value>Действия</value>
+  </data>
+  <data name="Orders.History.ViewOrderHistory" xml:space="preserve">
+    <value>История заказов</value>
+  </data>
+  <data name="Orders.History.BackToOrders" xml:space="preserve">
+    <value>Вернуться к заказам</value>
+  </data>
+  <data name="Orders.History.PageIndicator" xml:space="preserve">
+    <value>Страница {0} из {1}</value>
+  </data>
+  <data name="Orders.History.PaginationLabel" xml:space="preserve">
+    <value>Пагинация истории заказов</value>
+  </data>
+  <data name="Orders.Today" xml:space="preserve">
+    <value>Сегодня</value>
+  </data>
+  <data name="Orders.DefaultTodayInfo" xml:space="preserve">
+    <value>По умолчанию отображаются сегодняшние заказы.</value>
+  </data>
+  <data name="Orders.NoOrdersFound" xml:space="preserve">
+    <value>Заказов пока не найдено.</value>
+  </data>
+  <data name="Orders.NoFilteredOrdersFound" xml:space="preserve">
+    <value>Нет заказов, соответствующих фильтрам.</value>
+  </data>
+  <data name="Orders.OrderCode" xml:space="preserve">
+    <value>Код</value>
+  </data>
+  <data name="Orders.Customer" xml:space="preserve">
+    <value>Клиент</value>
+  </data>
+  <data name="Orders.TotalAmount" xml:space="preserve">
+    <value>Общий</value>
+  </data>
+  <data name="Orders.ReceivedAt" xml:space="preserve">
+    <value>Полученный</value>
+  </data>
+  <data name="Orders.Details" xml:space="preserve">
+    <value>Подробности</value>
+  </data>
+  <data name="Orders.LastUpdated" xml:space="preserve">
+    <value>Последнее обновление</value>
+  </data>
+  <data name="Orders.TotalCount" xml:space="preserve">
+    <value>Общий</value>
+  </data>
+  <data name="Orders.TotalOrders" xml:space="preserve">
+    <value>Всего заказов</value>
+  </data>
+  <data name="Orders.Fullscreen" xml:space="preserve">
+    <value>Полноэкранный</value>
+  </data>
+  <data name="Orders.OpenLiveDisplay" xml:space="preserve">
+    <value>Открыть прямой эфир</value>
+  </data>
+  <data name="Orders.LiveDisplay.Title" xml:space="preserve">
+    <value>Живой дисплей</value>
+  </data>
+  <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
+    <value>Закрыть дисплей</value>
+  </data>
+  <data name="Orders.LiveDisplay.FullscreenHintPrefix" xml:space="preserve">
+    <value>Нажимать</value>
+  </data>
+  <data name="Orders.LiveDisplay.FullscreenHintSuffix" xml:space="preserve">
+    <value>для полноэкранного режима</value>
+  </data>
+  <data name="Orders.LiveDisplay.BackToOrders" xml:space="preserve">
+    <value>Вернуться к заказам</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
+    <value>Последнее обновление</value>
+  </data>
+  <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
+    <value>Всплывающее окно было заблокировано. Открытие живого дисплея на этой вкладке.</value>
+  </data>
+  <data name="Orders.ItemsMore" xml:space="preserve">
+    <value>+{0} предметы</value>
+  </data>
+  <data name="Orders.ViewMode.Label" xml:space="preserve">
+    <value>Заказать просмотр дисплея</value>
+  </data>
+  <data name="Orders.ViewMode.Table" xml:space="preserve">
+    <value>Стол</value>
+  </data>
+  <data name="Orders.ViewMode.Compact" xml:space="preserve">
+    <value>Компактный</value>
+  </data>
+  <data name="Orders.ViewMode.Kitchen" xml:space="preserve">
+    <value>Кухня</value>
+  </data>
+  <data name="Orders.KitchenMode" xml:space="preserve">
+    <value>Режим кухни</value>
+  </data>
+  <data name="Orders.ExitFullscreen" xml:space="preserve">
+    <value>Выход из полноэкранного режима</value>
+  </data>
+  <data name="Orders.NormalView" xml:space="preserve">
+    <value>Обычный вид</value>
+  </data>
+  <data name="Orders.TodaysOrders" xml:space="preserve">
+    <value>Сегодняшние заказы</value>
+  </data>
+  <data name="Orders.ActiveOrders" xml:space="preserve">
+    <value>Активные заказы</value>
+  </data>
+  <data name="Orders.CancelledOrders" xml:space="preserve">
+    <value>Отмененные заказы</value>
+  </data>
+  <data name="Orders.NoLiveOrders" xml:space="preserve">
+    <value>Никаких живых заказов.</value>
+  </data>
+  <data name="Orders.NoLiveOrdersDescription" xml:space="preserve">
+    <value>Новые заказы будут появляться здесь автоматически.</value>
+  </data>
+  <data name="Orders.FullscreenEnterFailed" xml:space="preserve">
+    <value>Не удалось войти в полноэкранный режим.</value>
+  </data>
+  <data name="Orders.DetailsTitle" xml:space="preserve">
+    <value>Детали заказа</value>
+  </data>
+  <data name="Orders.Details.Title" xml:space="preserve">
+    <value>Детали заказа</value>
+  </data>
+  <data name="Orders.Details.Customer" xml:space="preserve">
+    <value>Клиент</value>
+  </data>
+  <data name="Orders.Details.Phone" xml:space="preserve">
+    <value>Телефон</value>
+  </data>
+  <data name="Orders.Details.Address" xml:space="preserve">
+    <value>Адрес</value>
+  </data>
+  <data name="Orders.Details.Delivery" xml:space="preserve">
+    <value>Доставка</value>
+  </data>
+  <data name="Orders.Details.Summary" xml:space="preserve">
+    <value>Краткое содержание</value>
+  </data>
+  <data name="Orders.Details.Items" xml:space="preserve">
+    <value>Предметы</value>
+  </data>
+  <data name="Orders.Details.Product" xml:space="preserve">
+    <value>Продукт</value>
+  </data>
+  <data name="Orders.Details.Quantity" xml:space="preserve">
+    <value>Кол-во</value>
+  </data>
+  <data name="Orders.Details.Unit" xml:space="preserve">
+    <value>Единица</value>
+  </data>
+  <data name="Orders.Details.Total" xml:space="preserve">
+    <value>Общий</value>
+  </data>
+  <data name="Orders.Details.Platform" xml:space="preserve">
+    <value>Платформа</value>
+  </data>
+  <data name="Orders.Details.Code" xml:space="preserve">
+    <value>Код заказа</value>
+  </data>
+  <data name="Orders.Details.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Orders.Details.Received" xml:space="preserve">
+    <value>Полученный</value>
+  </data>
+  <data name="Orders.Details.PaymentMethod" xml:space="preserve">
+    <value>Способ оплаты</value>
+  </data>
+  <data name="Orders.Details.OrderMetadata" xml:space="preserve">
+    <value>Информация о заказе</value>
+  </data>
+  <data name="Orders.Details.NoItemsFound" xml:space="preserve">
+    <value>Для этого заказа товаров не найдено.</value>
+  </data>
+  <data name="Orders.Details.BackToOrders" xml:space="preserve">
+    <value>Вернуться к заказам</value>
+  </data>
+  <data name="Orders.Details.BackToOrderHistory" xml:space="preserve">
+    <value>Вернуться к истории заказов</value>
+  </data>
+  <data name="Orders.Details.AcceptedAt" xml:space="preserve">
+    <value>Принял</value>
+  </data>
+  <data name="Orders.Details.DeliveryFee" xml:space="preserve">
+    <value>Стоимость доставки</value>
+  </data>
+  <data name="Orders.Details.ServiceFee" xml:space="preserve">
+    <value>Плата за обслуживание</value>
+  </data>
+  <data name="PaymentMethod.Cash" xml:space="preserve">
+    <value>Наличные</value>
+  </data>
+  <data name="PaymentMethod.CreditCard" xml:space="preserve">
+    <value>Кредитная карта</value>
+  </data>
+  <data name="PaymentMethod.OnlinePayment" xml:space="preserve">
+    <value>Онлайн оплата</value>
+  </data>
+  <data name="PaymentMethod.Unknown" xml:space="preserve">
+    <value>Неизвестный</value>
+  </data>
+  <data name="Orders.Summary" xml:space="preserve">
+    <value>Краткое содержание</value>
+  </data>
+  <data name="Orders.Phone" xml:space="preserve">
+    <value>Телефон</value>
+  </data>
+  <data name="Orders.Address" xml:space="preserve">
+    <value>Адрес</value>
+  </data>
+  <data name="Orders.Products" xml:space="preserve">
+    <value>Предметы</value>
+  </data>
+  <data name="Orders.Product" xml:space="preserve">
+    <value>Продукт</value>
+  </data>
+  <data name="Orders.Quantity" xml:space="preserve">
+    <value>Кол-во</value>
+  </data>
+  <data name="Orders.Unit" xml:space="preserve">
+    <value>Единица</value>
+  </data>
+  <data name="Orders.LineTotal" xml:space="preserve">
+    <value>Общий</value>
+  </data>
+  <data name="Orders.SoundPlayingTitle" xml:space="preserve">
+    <value>Звук нового приказа воспроизводится</value>
+  </data>
+  <data name="Orders.AudioNotAllowed" xml:space="preserve">
+    <value>Браузер заблокировал воспроизведение звука. Пожалуйста, включите звук в настройках уведомлений, используя «Тестовый звук».</value>
+  </data>
+  <data name="Orders.AudioPlayFailed" xml:space="preserve">
+    <value>Не удалось воспроизвести звук нового порядка.</value>
+  </data>
+  <data name="Orders.AudioFileError" xml:space="preserve">
+    <value>Звуковой файл не может быть найден или воспроизведен.</value>
+  </data>
+  <data name="Orders.TableRefreshFailed" xml:space="preserve">
+    <value>Не удалось обновить список заказов. Пожалуйста, проверьте ваш сеанс или соединение.</value>
+  </data>
+  <data name="Orders.NotificationSettingsLoadFailed" xml:space="preserve">
+    <value>Не удалось загрузить настройки уведомлений.</value>
+  </data>
+  <data name="Orders.TableReturnedFullPage" xml:space="preserve">
+    <value>Список заказов вернул полную страницу вместо частичной. Проверьте свою сессию или маршрут.</value>
+  </data>
+  <data name="Orders.NotificationSettingsUnexpectedFormat" xml:space="preserve">
+    <value>Настройки уведомлений вернули неожиданный формат. Проверьте консоль.</value>
+  </data>
+  <data name="Orders.NotificationSettingsLoadException" xml:space="preserve">
+    <value>Произошла ошибка при загрузке настроек уведомлений. Проверьте консоль.</value>
+  </data>
+  <data name="Orders.TableMissingDataOrderId" xml:space="preserve">
+    <value>Таблица заказов была обновлена, но идентификаторы строк не найдены (идентификатор заказа данных).</value>
+  </data>
+  <data name="Orders.TableHostMissing" xml:space="preserve">
+    <value>Не удалось обновить таблицу заказов: на странице отсутствует цель таблицы.</value>
+  </data>
+  <data name="Orders.TableRefreshException" xml:space="preserve">
+    <value>Произошла ошибка при обновлении списка заказов. Проверьте консоль.</value>
+  </data>
+  <data name="Orders.NotificationSettingsModalOpenFailed" xml:space="preserve">
+    <value>Не удалось открыть настройки уведомлений. Проверьте консоль.</value>
+  </data>
+  <data name="Orders.NotificationSettingsSaveFailed" xml:space="preserve">
+    <value>При сохранении произошла ошибка.</value>
+  </data>
+  <data name="Orders.NotificationSettingsSaveException" xml:space="preserve">
+    <value>Произошла ошибка при сохранении настроек уведомлений. Проверьте консоль.</value>
+  </data>
+  <data name="Orders.PageInitFailed" xml:space="preserve">
+    <value>Произошла ошибка при запуске страницы заказов. Проверьте консоль.</value>
+  </data>
+  <data name="Orders.GenericError" xml:space="preserve">
+    <value>Произошла непредвиденная ошибка. Пожалуйста, попробуйте еще раз.</value>
+  </data>
+  <data name="Orders.DebugBadgeEnabled" xml:space="preserve">
+    <value>Включена отладка заказов (localStorage Wasla.ordersDebug)</value>
+  </data>
+  <data name="Orders.NewOrdersAvailable" xml:space="preserve">
+    <value>Доступны новые заказы.</value>
+  </data>
+  <data name="Orders.RefreshToSeeNewOrders" xml:space="preserve">
+    <value>Обновите список или вернитесь к сортировке по умолчанию, чтобы увидеть новые заказы.</value>
+  </data>
+  <data name="Orders.LiveTrackingLimited" xml:space="preserve">
+    <value>Отслеживание новых заказов в реальном времени работает при сортировке по умолчанию. Чтобы мгновенно увидеть новые заказы, вернитесь к «Время получения» ↓ и странице 1.</value>
+  </data>
+  <data name="Orders.DefaultLiveView" xml:space="preserve">
+    <value>Просмотр в реальном времени по умолчанию</value>
+  </data>
+  <data name="PlatformConnections.Title" xml:space="preserve">
+    <value>Соединения платформы</value>
+  </data>
+  <data name="PlatformConnections.Create" xml:space="preserve">
+    <value>Новое соединение</value>
+  </data>
+  <data name="PlatformConnections.Platform" xml:space="preserve">
+    <value>Платформа</value>
+  </data>
+  <data name="PlatformConnections.StoreId" xml:space="preserve">
+    <value>Идентификатор магазина</value>
+  </data>
+  <data name="PlatformConnections.ApiKey" xml:space="preserve">
+    <value>API Ключ</value>
+  </data>
+  <data name="PlatformConnections.ApiSecret" xml:space="preserve">
+    <value>API Секрет</value>
+  </data>
+  <data name="PlatformConnections.IsActive" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="PlatformConnections.NoConnectionsFound" xml:space="preserve">
+    <value>Подключения к платформе пока не добавлены.</value>
+  </data>
+  <data name="PlatformConnections.DuplicateError" xml:space="preserve">
+    <value>Эта платформа и идентификатор магазина уже определены.</value>
+  </data>
+  <data name="PlatformConnections.Back" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="PlatformConnections.Deactivate" xml:space="preserve">
+    <value>Деактивировать</value>
+  </data>
+  <data name="PlatformConnections.Activate" xml:space="preserve">
+    <value>Активировать</value>
+  </data>
+  <data name="PlatformConnections.NoteRole" xml:space="preserve">
+    <value>Примечание. Предполагается, что роль Owner/Manager будет управлять соединениями платформы.</value>
+  </data>
+  <data name="Branches.Title" xml:space="preserve">
+    <value>Филиалы</value>
+  </data>
+  <data name="Branches.Create" xml:space="preserve">
+    <value>Новый филиал</value>
+  </data>
+  <data name="Branches.Name" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="Branches.Address" xml:space="preserve">
+    <value>Адрес</value>
+  </data>
+  <data name="Branches.NoBranchesFound" xml:space="preserve">
+    <value>Филиалов пока не добавлено.</value>
+  </data>
+  <data name="Notification.Settings" xml:space="preserve">
+    <value>Настройки уведомлений</value>
+  </data>
+  <data name="Notification.Enabled" xml:space="preserve">
+    <value>Включено</value>
+  </data>
+  <data name="Notification.Disabled" xml:space="preserve">
+    <value>Неполноценный</value>
+  </data>
+  <data name="Notification.WaitingForBrowserAudio" xml:space="preserve">
+    <value>Ожидание разрешения на воспроизведение звука в браузере</value>
+  </data>
+  <data name="Notification.Sound" xml:space="preserve">
+    <value>Звук</value>
+  </data>
+  <data name="Notification.SelectedSound" xml:space="preserve">
+    <value>Выбранный звук</value>
+  </data>
+  <data name="Notification.RepeatCount" xml:space="preserve">
+    <value>Повторить счет</value>
+  </data>
+  <data name="Notification.Volume" xml:space="preserve">
+    <value>Объем</value>
+  </data>
+  <data name="Notification.BrowserNotification" xml:space="preserve">
+    <value>Уведомление браузера</value>
+  </data>
+  <data name="Notification.Play" xml:space="preserve">
+    <value>Играть</value>
+  </data>
+  <data name="Notification.SaveSuccess" xml:space="preserve">
+    <value>Настройки сохранены.</value>
+  </data>
+  <data name="Notification.SettingsSaved" xml:space="preserve">
+    <value>Настройки сохранены.</value>
+  </data>
+  <data name="Notification.SettingsSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить настройки. Попробуйте еще раз.</value>
+  </data>
+  <data name="Notification.SoundEnabled" xml:space="preserve">
+    <value>Звук включен</value>
+  </data>
+  <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
+    <value>Звук не мог воспроизводиться. Проверьте звуковой файл или разрешения браузера.</value>
+  </data>
+  <data name="Notification.NewOrderArrived" xml:space="preserve">
+    <value>Пришёл новый заказ</value>
+  </data>
+  <data name="Notification.CheckOrdersPage" xml:space="preserve">
+    <value>Пожалуйста, проверьте страницу заказов.</value>
+  </data>
+  <data name="Notification.SoundUnlockHint" xml:space="preserve">
+    <value>Чтобы услышать звуки в новом порядке, сначала просмотрите звук в настройках уведомлений.</value>
+  </data>
+  <data name="Notification.Loading" xml:space="preserve">
+    <value>Загрузка…</value>
+  </data>
+  <data name="Notification.PersistentHelp" xml:space="preserve">
+    <value>Постоянная настройка: сохраняется в вашей учетной записи пользователя.</value>
+  </data>
+  <data name="Notification.Notifications" xml:space="preserve">
+    <value>Уведомления</value>
+  </data>
+  <data name="Notification.NotificationsHelp" xml:space="preserve">
+    <value>Настройки звука сохранены. Разблокировка звука в браузере зависит от устройства.</value>
+  </data>
+  <data name="Notification.TestSelectedSound" xml:space="preserve">
+    <value>Проверить выбранный звук</value>
+  </data>
+  <data name="Notification.ShowBrowserNotification" xml:space="preserve">
+    <value>Показать уведомление браузера</value>
+  </data>
+  <data name="Notification.Highlight" xml:space="preserve">
+    <value>Новый заказ</value>
+  </data>
+  <data name="Notification.HighlightColor" xml:space="preserve">
+    <value>Цвет выделения</value>
+  </data>
+  <data name="Notification.HighlightBehavior" xml:space="preserve">
+    <value>Выделить стиль</value>
+  </data>
+  <data name="Notification.HighlightDuration" xml:space="preserve">
+    <value>Продолжительность выделения</value>
+  </data>
+  <data name="Notification.HighlightColorOrange" xml:space="preserve">
+    <value>Апельсин</value>
+  </data>
+  <data name="Notification.HighlightColorBlue" xml:space="preserve">
+    <value>Синий</value>
+  </data>
+  <data name="Notification.HighlightColorGreen" xml:space="preserve">
+    <value>Зеленый</value>
+  </data>
+  <data name="Notification.HighlightColorYellow" xml:space="preserve">
+    <value>Желтый</value>
+  </data>
+  <data name="Notification.HighlightColorRed" xml:space="preserve">
+    <value>Красный</value>
+  </data>
+  <data name="Notification.HighlightBehaviorFade" xml:space="preserve">
+    <value>Мягкое затухание</value>
+  </data>
+  <data name="Notification.HighlightBehaviorPulse" xml:space="preserve">
+    <value>Нежный пульс</value>
+  </data>
+  <data name="Notification.HighlightBehaviorBlink" xml:space="preserve">
+    <value>Мигать</value>
+  </data>
+  <data name="Notification.HighlightBehaviorBorderGlow" xml:space="preserve">
+    <value>Пограничное свечение</value>
+  </data>
+  <data name="Notification.HighlightBehaviorNone" xml:space="preserve">
+    <value>Нет анимации</value>
+  </data>
+  <data name="Notification.HighlightDuration10" xml:space="preserve">
+    <value>10 секунд</value>
+  </data>
+  <data name="Notification.HighlightDuration20" xml:space="preserve">
+    <value>20 секунд</value>
+  </data>
+  <data name="Notification.HighlightDuration30" xml:space="preserve">
+    <value>30 секунд</value>
+  </data>
+  <data name="Notification.HighlightDuration60" xml:space="preserve">
+    <value>60 секунд</value>
+  </data>
+  <data name="Notification.HighlightPreview" xml:space="preserve">
+    <value>Предварительный просмотр</value>
+  </data>
+  <data name="Notification.HighlightPreviewHelp" xml:space="preserve">
+    <value>Выбранный вами цвет выделения и анимация будут выглядеть следующим образом в новой строке заказа.</value>
+  </data>
+  <data name="Notification.PreviewCustomer" xml:space="preserve">
+    <value>Демо-клиент</value>
+  </data>
+  <data name="Notification.CustomColor" xml:space="preserve">
+    <value>Пользовательский цвет</value>
+  </data>
+  <data name="Notification.HighlightColorCustom" xml:space="preserve">
+    <value>Обычай</value>
+  </data>
+  <data name="OrderStatus.New" xml:space="preserve">
+    <value>Новый</value>
+  </data>
+  <data name="OrderStatus.Accepted" xml:space="preserve">
+    <value>Принял</value>
+  </data>
+  <data name="OrderStatus.Preparing" xml:space="preserve">
+    <value>Подготовка</value>
+  </data>
+  <data name="OrderStatus.ReadyForPickup" xml:space="preserve">
+    <value>Готовый</value>
+  </data>
+  <data name="OrderStatus.OnTheWay" xml:space="preserve">
+    <value>В пути</value>
+  </data>
+  <data name="OrderStatus.Delivered" xml:space="preserve">
+    <value>Доставленный</value>
+  </data>
+  <data name="OrderStatus.Cancelled" xml:space="preserve">
+    <value>Отменено</value>
+  </data>
+  <data name="OrderStatus.Failed" xml:space="preserve">
+    <value>Неуспешный</value>
+  </data>
+  <data name="Validation.EmailRequired" xml:space="preserve">
+    <value>Требуется электронная почта.</value>
+  </data>
+  <data name="Validation.EmailInvalid" xml:space="preserve">
+    <value>Пожалуйста, введите действительный адрес электронной почты.</value>
+  </data>
+  <data name="Validation.PasswordRequired" xml:space="preserve">
+    <value>Требуется пароль.</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>Это поле обязательно к заполнению.</value>
+  </data>
+  <data name="Validation.PlatformRequired" xml:space="preserve">
+    <value>Пожалуйста, выберите платформу.</value>
+  </data>
+  <data name="Validation.StoreIdRequired" xml:space="preserve">
+    <value>Требуется идентификатор магазина.</value>
+  </data>
+  <data name="Validation.ApiKeyRequired" xml:space="preserve">
+    <value>Требуется ключ API.</value>
+  </data>
+  <data name="Validation.ApiSecretRequired" xml:space="preserve">
+    <value>Требуется секретный ключ API.</value>
+  </data>
+  <data name="PlatformConnections.CreateFailed" xml:space="preserve">
+    <value>Не удалось создать соединение с платформой.</value>
+  </data>
+  <data name="PlatformConnections.ApiLeaveEmptyHelp" xml:space="preserve">
+    <value>Оставьте пустым, чтобы сохранить существующее значение.</value>
+  </data>
+  <data name="Account.Settings" xml:space="preserve">
+    <value>Настройки учетной записи</value>
+  </data>
+  <data name="Account.Logout" xml:space="preserve">
+    <value>Выход из системы</value>
+  </data>
+  <data name="Validation.BranchNameRequired" xml:space="preserve">
+    <value>Укажите название филиала.</value>
+  </data>
+  <data name="Validation.AddressRequired" xml:space="preserve">
+    <value>Требуется адрес.</value>
+  </data>
+  <data name="Landing.Order" xml:space="preserve">
+    <value>Заказ</value>
+  </data>
+  <data name="Landing.Endorsement" xml:space="preserve">
+    <value>Поддержка</value>
+  </data>
+  <data name="Landing.Preparing" xml:space="preserve">
+    <value>Подготовка</value>
+  </data>
+  <data name="Landing.OnTheRoad" xml:space="preserve">
+    <value>На дороге</value>
+  </data>
+  <data name="Landing.OrdersToday" xml:space="preserve">
+    <value>Заказы сегодня</value>
+  </data>
+  <data name="Landing.Live" xml:space="preserve">
+    <value>Жить</value>
+  </data>
+  <data name="Landing.PlatformsTitle" xml:space="preserve">
+    <value>Платформа заказов в одной панели</value>
+  </data>
+  <data name="Landing.PlatformsDescription" xml:space="preserve">
+    <value>Заказы с разных продуктовых площадок собраны в одной панели.</value>
+  </data>
+  <data name="Landing.HowItWorksTitle" xml:space="preserve">
+    <value>Как это работает</value>
+  </data>
+  <data name="Landing.HowItWorksDescription" xml:space="preserve">
+    <value>От настройки до ежедневной эксплуатации за четыре простых шага.</value>
+  </data>
+  <data name="Landing.Step1Title" xml:space="preserve">
+    <value>Определить соединения платформы</value>
+  </data>
+  <data name="Landing.Step1Description" xml:space="preserve">
+    <value>Объедините аккаунты торговой площадки вашего ресторана в одном месте.</value>
+  </data>
+  <data name="Landing.Step2Title" xml:space="preserve">
+    <value>Отслеживайте заказы с одного экрана</value>
+  </data>
+  <data name="Landing.Step2Description" xml:space="preserve">
+    <value>Просматривайте новые и выполняемые заказы, не переключаясь между системами.</value>
+  </data>
+  <data name="Landing.Step3Title" xml:space="preserve">
+    <value>Получайте звуковые и визуальные уведомления</value>
+  </data>
+  <data name="Landing.Step3Description" xml:space="preserve">
+    <value>Будьте оповещены в момент поступления нового заказа, даже в часы пик.</value>
+  </data>
+  <data name="Landing.Step4Title" xml:space="preserve">
+    <value>Управляйте работой ресторана с ясностью</value>
+  </data>
+  <data name="Landing.Step4Description" xml:space="preserve">
+    <value>Филиалы, сотрудники и платформы поддерживают единый последовательный рабочий процесс.</value>
+  </data>
+  <data name="Landing.FeaturesTitle" xml:space="preserve">
+    <value>Функции</value>
+  </data>
+  <data name="Landing.FeaturesDescription" xml:space="preserve">
+    <value>Все, что вам нужно для управления маркетплейсами, филиалами и командами в одной системе.</value>
+  </data>
+  <data name="Landing.FeatureSinglePanel" xml:space="preserve">
+    <value>Однопанельное управление заказами</value>
+  </data>
+  <data name="Landing.FeatureSinglePanelDescription" xml:space="preserve">
+    <value>Все каналы в одном списке с актуальным статусом и подробностями.</value>
+  </data>
+  <data name="Landing.FeatureLiveTracking" xml:space="preserve">
+    <value>Отслеживание заказов в реальном времени</value>
+  </data>
+  <data name="Landing.FeatureLiveTrackingDescription" xml:space="preserve">
+    <value>Посмотрите, на каком этапе проходит каждый заказ: от принятия до передачи.</value>
+  </data>
+  <data name="Landing.FeatureNotifications" xml:space="preserve">
+    <value>Уведомления о новых заказах</value>
+  </data>
+  <data name="Landing.FeatureNotificationsDescription" xml:space="preserve">
+    <value>Не пропускайте заказы во время суеты благодаря четким оповещениям.</value>
+  </data>
+  <data name="Landing.FeatureBranchManagement" xml:space="preserve">
+    <value>Управление филиалом</value>
+  </data>
+  <data name="Landing.FeatureBranchManagementDescription" xml:space="preserve">
+    <value>Организуйте несколько локаций и команд из одного места.</value>
+  </data>
+  <data name="Landing.FeaturePlatformConnections" xml:space="preserve">
+    <value>Соединения платформы</value>
+  </data>
+  <data name="Landing.FeaturePlatformConnectionsDescription" xml:space="preserve">
+    <value>Подключите основные рынки доставки и развивайтесь без лишнего хаоса.</value>
+  </data>
+  <data name="Landing.FeatureMultilingual" xml:space="preserve">
+    <value>Многоязычный интерфейс</value>
+  </data>
+  <data name="Landing.FeatureMultilingualDescription" xml:space="preserve">
+    <value>Работайте на языке, который подходит вашей команде, включая поддержку справа налево.</value>
+  </data>
+  <data name="Landing.FeatureAdminPanel" xml:space="preserve">
+    <value>Админ-панель</value>
+  </data>
+  <data name="Landing.FeatureAdminPanelDescription" xml:space="preserve">
+    <value>Системное администрирование, безопасность и настройка в выделенной зоне.</value>
+  </data>
+  <data name="Landing.FeatureSeparateDatabases" xml:space="preserve">
+    <value>Отдельная база данных для каждого клиента.</value>
+  </data>
+  <data name="Landing.FeatureSeparateDatabasesDescription" xml:space="preserve">
+    <value>Данные каждого ресторана остаются изолированными для обеспечения конфиденциальности и производительности.</value>
+  </data>
+  <data name="Landing.BenefitsTitle" xml:space="preserve">
+    <value>Упростите работу ресторана</value>
+  </data>
+  <data name="Landing.BenefitsDescription" xml:space="preserve">
+    <value>Практическая польза для кухонных и обслуживающих бригад.</value>
+  </data>
+  <data name="Landing.BenefitLessSwitching" xml:space="preserve">
+    <value>Меньше переключения между экранами платформы</value>
+  </data>
+  <data name="Landing.BenefitLessSwitchingDescription" xml:space="preserve">
+    <value>Вам не придется весь день переключаться между панелями разных платформ.</value>
+  </data>
+  <data name="Landing.BenefitFewerMissedOrders" xml:space="preserve">
+    <value>Снижение риска пропущенных заказов</value>
+  </data>
+  <data name="Landing.BenefitFewerMissedOrdersDescription" xml:space="preserve">
+    <value>Консолидированная видимость и оповещения не позволяют ничему ускользнуть.</value>
+  </data>
+  <data name="Landing.BenefitBranchTracking" xml:space="preserve">
+    <value>Отслеживайте заказы по филиалам и платформам</value>
+  </data>
+  <data name="Landing.BenefitBranchTrackingDescription" xml:space="preserve">
+    <value>Следуйте заказам по платформам и филиалам более организованно.</value>
+  </data>
+  <data name="Landing.BenefitSimpleInterface" xml:space="preserve">
+    <value>Просто для ресторанных команд</value>
+  </data>
+  <data name="Landing.BenefitSimpleInterfaceDescription" xml:space="preserve">
+    <value>Интерфейс, разработанный для скорости во время обслуживания, а не для медленной офисной работы.</value>
+  </data>
+  <data name="Landing.VisualTitle" xml:space="preserve">
+    <value>От кухни до передачи</value>
+  </data>
+  <data name="Landing.VisualDescription" xml:space="preserve">
+    <value>Визуальные подсказки, соответствующие тому, как заказы перемещаются в реальном потоке обслуживания.</value>
+  </data>
+  <data name="Landing.CtaTitle" xml:space="preserve">
+    <value>Войдите в свою панель клиента</value>
+  </data>
+  <data name="Landing.CtaDescription" xml:space="preserve">
+    <value>Вход клиентов работает только через домен, закрепленный за вашим рестораном.</value>
+  </data>
+  <data name="Landing.MockupTitle" xml:space="preserve">
+    <value>Экран текущих заказов</value>
+  </data>
+  <data name="Landing.MockupSubtitle" xml:space="preserve">
+    <value>Просматривайте новые заказы в одной таблице, следите за статусами и получайте звуковые уведомления.</value>
+  </data>
+  <data name="Landing.TrustTitle" xml:space="preserve">
+    <value>Данные каждого ресторана обрабатываются отдельно.</value>
+  </data>
+  <data name="Landing.TrustDescription" xml:space="preserve">
+    <value>Ваши операции остаются в выделенном пространстве — безопасно и под вашим контролем.</value>
+  </data>
+  <data name="Landing.FinalCtaTitle" xml:space="preserve">
+    <value>Войдите в панель своего ресторана.</value>
+  </data>
+  <data name="Landing.FinalCtaDescription" xml:space="preserve">
+    <value>Вход для клиентов осуществляется через закрепленный за вами домен ресторана.</value>
+  </data>
+  <data name="Landing.NewOrder" xml:space="preserve">
+    <value>Новый</value>
+  </data>
+  <data name="Landing.Delivered" xml:space="preserve">
+    <value>Доставленный</value>
+  </data>
+  <data name="Landing.SoundNotification" xml:space="preserve">
+    <value>Звуковое уведомление</value>
+  </data>
+  <data name="Landing.BenefitMissedOrders" xml:space="preserve">
+    <value>Уменьшите количество пропущенных заказов</value>
+  </data>
+  <data name="Landing.BenefitMissedOrdersDescription" xml:space="preserve">
+    <value>Немедленно просматривайте новые заказы и действуйте быстро благодаря четким звуковым оповещениям.</value>
+  </data>
+  <data name="Landing.BenefitSimpleOperation" xml:space="preserve">
+    <value>Экран простых операций</value>
+  </data>
+  <data name="Landing.BenefitSimpleOperationDescription" xml:space="preserve">
+    <value>Четкое представление заказов, которое ваша команда ресторана может использовать во время загруженного обслуживания.</value>
+  </data>
+  <data name="Landing.StepConnectionsTitle" xml:space="preserve">
+    <value>Определить соединения платформы</value>
+  </data>
+  <data name="Landing.StepConnectionsDescription" xml:space="preserve">
+    <value>Добавьте платформы доставки, которые использует ваш ресторан.</value>
+  </data>
+  <data name="Landing.StepTrackTitle" xml:space="preserve">
+    <value>Отслеживайте заказы с одного экрана</value>
+  </data>
+  <data name="Landing.StepTrackDescription" xml:space="preserve">
+    <value>Просматривайте входящие заказы в виде единого, легко читаемого списка.</value>
+  </data>
+  <data name="Landing.StepNotifyTitle" xml:space="preserve">
+    <value>Получайте уведомления о новых заказах</value>
+  </data>
+  <data name="Landing.StepNotifyDescription" xml:space="preserve">
+    <value>Слушайте и смотрите, когда поступает новый заказ, особенно во время спешки.</value>
+  </data>
+  <data name="Landing.StepManageTitle" xml:space="preserve">
+    <value>Запускайте сервис с большей ясностью</value>
+  </data>
+  <data name="Landing.StepManageDescription" xml:space="preserve">
+    <value>Сохраняйте контроль над платформами, филиалами и статусами заказов.</value>
+  </data>
+  <data name="Landing.CustomerOnlyTitle" xml:space="preserve">
+    <value>Панель клиента доступна только в домене вашего ресторана.</value>
+  </data>
+  <data name="Landing.CustomerOnlyDescription" xml:space="preserve">
+    <value>На общедоступном сайте не осуществляется вход для клиентов. Используйте адрес, который вам дали.</value>
+  </data>
+  <data name="Landing.CustomerOnlyHelp" xml:space="preserve">
+    <value>Откройте частную ссылку для входа в систему для вашего бизнеса — обычно это субдомен в домене вашего оператора.</value>
+  </data>
+  <data name="Landing.CustomerOnlyExample" xml:space="preserve">
+    <value>Пример: имя компании.wasla.local/auth/login.</value>
+  </data>
+  <data name="Landing.BackToHome" xml:space="preserve">
+    <value>Вернуться домой</value>
+  </data>
+  <data name="Landing.HeroImageAlt" xml:space="preserve">
+    <value>Повара, работающие на яркой кухне ресторана</value>
+  </data>
+  <data name="Landing.VisualImageAlt1" xml:space="preserve">
+    <value>Команда готовит еду на кухне ресторана</value>
+  </data>
+  <data name="Landing.VisualImageAlt2" xml:space="preserve">
+    <value>Еда в тарелках готова к упаковке для доставки</value>
+  </data>
+  <data name="Landing.VisualImageAlt3" xml:space="preserve">
+    <value>Передача пакетного заказа на стойке обслуживания</value>
+  </data>
+  <data name="PlatformConnections.ErrorCount" xml:space="preserve">
+    <value>Последовательные ошибки</value>
+  </data>
+  <data name="PlatformConnections.CircuitOpenUntil" xml:space="preserve">
+    <value>Цепь открыта до (UTC)</value>
+  </data>
+  <data name="PlatformConnections.LastSuccessfulSync" xml:space="preserve">
+    <value>Последняя успешная синхронизация (UTC)</value>
+  </data>
+  <data name="Admin.LoginTitle" xml:space="preserve">
+    <value>Wasla Панель администратора</value>
+  </data>
+  <data name="Admin.LoginSubtitle" xml:space="preserve">
+    <value>Войдите в свою учетную запись центрального администратора.</value>
+  </data>
+  <data name="Admin.BrandSubtitle" xml:space="preserve">
+    <value>Центральное управление</value>
+  </data>
+  <data name="Admin.DashboardTitle" xml:space="preserve">
+    <value>Центральное управление</value>
+  </data>
+  <data name="Admin.Customers" xml:space="preserve">
+    <value>Рестораны</value>
+  </data>
+  <data name="Admin.TotalCustomers" xml:space="preserve">
+    <value>Всего ресторанов</value>
+  </data>
+  <data name="Admin.ActiveCustomers" xml:space="preserve">
+    <value>Активные рестораны</value>
+  </data>
+  <data name="Admin.InactiveCustomers" xml:space="preserve">
+    <value>Неактивные рестораны</value>
+  </data>
+  <data name="Admin.RecentRestaurants" xml:space="preserve">
+    <value>Недавние рестораны</value>
+  </data>
+  <data name="Admin.ViewAllRestaurants" xml:space="preserve">
+    <value>Посмотреть все рестораны</value>
+  </data>
+  <data name="Admin.GeneralInfo" xml:space="preserve">
+    <value>Общая информация</value>
+  </data>
+  <data name="Admin.TechnicalInfo" xml:space="preserve">
+    <value>Информация о системе</value>
+  </data>
+  <data name="Admin.CustomerDetails" xml:space="preserve">
+    <value>Подробности о ресторане</value>
+  </data>
+  <data name="Admin.Name" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="Admin.Slug" xml:space="preserve">
+    <value>Слизень</value>
+  </data>
+  <data name="Admin.PrimaryDomain" xml:space="preserve">
+    <value>Основной домен</value>
+  </data>
+  <data name="Admin.DatabaseName" xml:space="preserve">
+    <value>Системный идентификатор</value>
+  </data>
+  <data name="Admin.SchemaVersion" xml:space="preserve">
+    <value>Версия структуры</value>
+  </data>
+  <data name="Admin.LastMigrationAt" xml:space="preserve">
+    <value>Последняя конфигурация</value>
+  </data>
+  <data name="Admin.LastMigrationResult" xml:space="preserve">
+    <value>Статус конфигурации</value>
+  </data>
+  <data name="Admin.CreatedAt" xml:space="preserve">
+    <value>Зарегистрировано на</value>
+  </data>
+  <data name="Admin.Actions" xml:space="preserve">
+    <value>Действия</value>
+  </data>
+  <data name="Admin.Details" xml:space="preserve">
+    <value>Подробности</value>
+  </data>
+  <data name="Admin.Activate" xml:space="preserve">
+    <value>Активировать</value>
+  </data>
+  <data name="Admin.Deactivate" xml:space="preserve">
+    <value>Деактивировать</value>
+  </data>
+  <data name="Admin.Logout" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="Admin.InvalidCredentials" xml:space="preserve">
+    <value>Неверный адрес электронной почты или пароль.</value>
+  </data>
+  <data name="Admin.AccountInactive" xml:space="preserve">
+    <value>Ваша учетная запись администратора неактивна.</value>
+  </data>
+  <data name="Admin.BackToDashboard" xml:space="preserve">
+    <value>Вернуться к списку ресторанов</value>
+  </data>
+  <data name="Admin.PublicSite" xml:space="preserve">
+    <value>Публичный сайт</value>
+  </data>
+  <data name="Admin.CentralAdmin" xml:space="preserve">
+    <value>Wasla Панель администратора</value>
+  </data>
+  <data name="Admin.CustomerNotFound" xml:space="preserve">
+    <value>Ресторан не найден.</value>
+  </data>
+  <data name="Admin.NoCustomers" xml:space="preserve">
+    <value>Данных пока нет</value>
+  </data>
+  <data name="Admin.NoCustomersHint" xml:space="preserve">
+    <value>Ни один ресторан пока не зарегистрирован.</value>
+  </data>
+  <data name="Admin.StatusActive" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="Admin.StatusInactive" xml:space="preserve">
+    <value>Неактивный</value>
+  </data>
+  <data name="Admin.InactiveWarning" xml:space="preserve">
+    <value>Этот ресторан неактивен. Его панель не будет доступна до повторной активации.</value>
+  </data>
+  <data name="Admin.UpdatedAt" xml:space="preserve">
+    <value>Последнее обновление</value>
+  </data>
+  <data name="Orders.Actions" xml:space="preserve">
+    <value>Действия</value>
+  </data>
+  <data name="Orders.Approve" xml:space="preserve">
+    <value>Утвердить</value>
+  </data>
+  <data name="Orders.Reject" xml:space="preserve">
+    <value>Отклонять</value>
+  </data>
+  <data name="Orders.ApproveConfirmTitle" xml:space="preserve">
+    <value>Одобрить этот заказ?</value>
+  </data>
+  <data name="Orders.ApproveConfirmMessage" xml:space="preserve">
+    <value>Это отметит заказ как принятый.</value>
+  </data>
+  <data name="Orders.RejectConfirmTitle" xml:space="preserve">
+    <value>Отклонить этот заказ?</value>
+  </data>
+  <data name="Orders.RejectConfirmMessage" xml:space="preserve">
+    <value>Это отметит заказ как отмененный.</value>
+  </data>
+  <data name="Orders.ApproveSuccess" xml:space="preserve">
+    <value>Заказ одобрен.</value>
+  </data>
+  <data name="Orders.RejectSuccess" xml:space="preserve">
+    <value>Заказ отклонен.</value>
+  </data>
+  <data name="Orders.ApproveFailed" xml:space="preserve">
+    <value>Заказ не может быть одобрен.</value>
+  </data>
+  <data name="Orders.RejectFailed" xml:space="preserve">
+    <value>Заказ не может быть отклонен.</value>
+  </data>
+  <data name="Orders.InvalidStatusForAction" xml:space="preserve">
+    <value>Этот приказ больше недействителен.</value>
+  </data>
+  <data name="Orders.ActionFailed" xml:space="preserve">
+    <value>Действие не удалось. Этот приказ больше не может быть исполнен.</value>
+  </data>
+  <data name="Orders.OrderActionFailed" xml:space="preserve">
+    <value>Нам не удалось выполнить этот шаг с платформой. Попробуйте еще раз или проверьте соединение.</value>
+  </data>
+  <data name="Orders.StartPreparing" xml:space="preserve">
+    <value>Начать подготовку</value>
+  </data>
+  <data name="Orders.MarkReady" xml:space="preserve">
+    <value>Отметить готовность</value>
+  </data>
+  <data name="Orders.HandToCourier" xml:space="preserve">
+    <value>В руки курьеру</value>
+  </data>
+  <data name="Orders.MarkDelivered" xml:space="preserve">
+    <value>Отметить, что доставлено</value>
+  </data>
+  <data name="Orders.StartPreparingConfirmTitle" xml:space="preserve">
+    <value>Начать подготовку этого заказа?</value>
+  </data>
+  <data name="Orders.StartPreparingConfirmMessage" xml:space="preserve">
+    <value>Это означает, что заказ готовится на вашей кухне.</value>
+  </data>
+  <data name="Orders.MarkReadyConfirmTitle" xml:space="preserve">
+    <value>Отметить этот заказ как готовый?</value>
+  </data>
+  <data name="Orders.MarkReadyConfirmMessage" xml:space="preserve">
+    <value>Это означает, что заказ готов к выдаче или упаковке.</value>
+  </data>
+  <data name="Orders.HandToCourierConfirmTitle" xml:space="preserve">
+    <value>Передать этот заказ курьеру?</value>
+  </data>
+  <data name="Orders.HandToCourierConfirmMessage" xml:space="preserve">
+    <value>Это маркирует заказ как находящийся на пути к покупателю.</value>
+  </data>
+  <data name="Orders.MarkDeliveredConfirmTitle" xml:space="preserve">
+    <value>Отметить этот заказ как доставленный?</value>
+  </data>
+  <data name="Orders.MarkDeliveredConfirmMessage" xml:space="preserve">
+    <value>Это пометит заказ как выполненный.</value>
+  </data>
+  <data name="Orders.StartPreparingSuccess" xml:space="preserve">
+    <value>Сейчас готовится заказ.</value>
+  </data>
+  <data name="Orders.MarkReadySuccess" xml:space="preserve">
+    <value>Заказ отмечен как готовый.</value>
+  </data>
+  <data name="Orders.HandToCourierSuccess" xml:space="preserve">
+    <value>Заказ передан курьеру.</value>
+  </data>
+  <data name="Orders.MarkDeliveredSuccess" xml:space="preserve">
+    <value>Заказ отмечен как доставленный.</value>
+  </data>
+  <data name="Orders.InvalidStartDate" xml:space="preserve">
+    <value>Неверная дата начала.</value>
+  </data>
+  <data name="Orders.InvalidEndDate" xml:space="preserve">
+    <value>Неверная дата окончания.</value>
+  </data>
+  <data name="Orders.AutoApprove" xml:space="preserve">
+    <value>Автоматическое одобрение</value>
+  </data>
+  <data name="Orders.AutoApproveHelp" xml:space="preserve">
+    <value>Автоматически утверждает новые синхронизированные заказы.</value>
+  </data>
+  <data name="Orders.AutoApproveSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить настройку автоматического одобрения.</value>
+  </data>
+  <data name="Orders.AutoPrintReceipt" xml:space="preserve">
+    <value>Создать квитанцию ​​после автоматического утверждения</value>
+  </data>
+  <data name="Orders.AutoPrintReceiptHelp" xml:space="preserve">
+    <value>Создает ожидающее задание на печать чеков для автоматически утвержденных заказов.</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCount" xml:space="preserve">
+    <value>Количество копий квитанции</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCountHelp" xml:space="preserve">
+    <value>Количество копий чека для заданий автоматической печати (максимум 3).</value>
+  </data>
+  <data name="Orders.ReceiptPrintCopyCountOutOfRange" xml:space="preserve">
+    <value>Количество копий квитанции должно быть от 1 до 3.</value>
+  </data>
+  <data name="Orders.OrderSettingsSaved" xml:space="preserve">
+    <value>Настройки заказа сохранены.</value>
+  </data>
+  <data name="Orders.OrderSettingsUpdateFailed" xml:space="preserve">
+    <value>Не удалось сохранить настройки заказа.</value>
+  </data>
+  <data name="Orders.OrderSync" xml:space="preserve">
+    <value>Синхронизация заказов</value>
+  </data>
+  <data name="Orders.OrderSyncActive" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="Orders.OrderSyncPassive" xml:space="preserve">
+    <value>Пассивный</value>
+  </data>
+  <data name="Orders.Active" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="Orders.Passive" xml:space="preserve">
+    <value>Пассивный</value>
+  </data>
+  <data name="Orders.OrderSyncEnabledMessage" xml:space="preserve">
+    <value>Синхронизация заказов включена.</value>
+  </data>
+  <data name="Orders.OrderSyncDisabledMessage" xml:space="preserve">
+    <value>Синхронизация заказов отключена.</value>
+  </data>
+  <data name="Orders.OrderSyncUpdateFailed" xml:space="preserve">
+    <value>Не удалось обновить настройки синхронизации заказов.</value>
+  </data>
+  <data name="Orders.OrderSyncToggleAriaLabel" xml:space="preserve">
+    <value>Переключить синхронизацию заказов</value>
+  </data>
+  <data name="Orders.AutomationStatus.SyncActive" xml:space="preserve">
+    <value>Синхронизация активна</value>
+  </data>
+  <data name="Orders.AutomationStatus.SyncDisabled" xml:space="preserve">
+    <value>Синхронизация отключена</value>
+  </data>
+  <data name="Orders.AutomationStatus.AutoApproveActive" xml:space="preserve">
+    <value>Автоматическое одобрение активно</value>
+  </data>
+  <data name="Orders.AutomationStatus.AutoApproveDisabled" xml:space="preserve">
+    <value>Автоматическое одобрение отключено</value>
+  </data>
+  <data name="Orders.AutomationStatus.ReceiptPrintingActive" xml:space="preserve">
+    <value>Печать чеков активна</value>
+  </data>
+  <data name="Orders.AutomationStatus.ReceiptPrintingDisabled" xml:space="preserve">
+    <value>Печать чеков отключена</value>
+  </data>
+  <data name="Orders.ManageSettings" xml:space="preserve">
+    <value>Управление настройками</value>
+  </data>
+  <data name="Settings.OrderSettings.Title" xml:space="preserve">
+    <value>Настройки заказа</value>
+  </data>
+  <data name="Settings.OrderSettings.Subtitle" xml:space="preserve">
+    <value>Управляйте синхронизацией заказов, автоматическим утверждением и уведомлениями.</value>
+  </data>
+  <data name="Settings.OrderSynchronization.Title" xml:space="preserve">
+    <value>Синхронизация заказов</value>
+  </data>
+  <data name="Settings.OrderSynchronization.Description" xml:space="preserve">
+    <value>Контролируйте, должен ли Wasla получать и синхронизировать заказы с подключенных платформ.</value>
+  </data>
+  <data name="Settings.OrderSynchronization.EnableOrderSync" xml:space="preserve">
+    <value>Включить синхронизацию заказов</value>
+  </data>
+  <data name="Settings.AutoApproval.Title" xml:space="preserve">
+    <value>Автоматическое одобрение</value>
+  </data>
+  <data name="Settings.AutoApproval.Description" xml:space="preserve">
+    <value>Автоматически утверждайте входящие заказы, когда это возможно.</value>
+  </data>
+  <data name="Settings.AutoApproval.EnableAutoApprove" xml:space="preserve">
+    <value>Включить автоматическое одобрение</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.Title" xml:space="preserve">
+    <value>Печать чеков</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.Description" xml:space="preserve">
+    <value>Настройте, когда и как создаются задания на печать чеков.</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.CreateReceiptAfterAutoApprove" xml:space="preserve">
+    <value>Создать квитанцию ​​после автоматического утверждения</value>
+  </data>
+  <data name="Settings.ReceiptPrinting.ReceiptCopyCount" xml:space="preserve">
+    <value>Количество копий квитанции</value>
+  </data>
+  <data name="Settings.ReceiptPrinterSettings.Title" xml:space="preserve">
+    <value>Настройки квитанции и принтера</value>
+  </data>
+  <data name="Settings.ReceiptPrinterSettings.Subtitle" xml:space="preserve">
+    <value>Управляйте созданием квитанций, печатью копий и настройками принтера.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Title" xml:space="preserve">
+    <value>Создание квитанции</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Description" xml:space="preserve">
+    <value>Выберите, на каком этапе заказа следует создавать задания на печать чеков.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.TimingLabel" xml:space="preserve">
+    <value>Время создания квитанции</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnAccepted" xml:space="preserve">
+    <value>Когда заказ принят</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnAcceptedDescription" xml:space="preserve">
+    <value>Квитанция создается при принятии заказа автоматически или вручную.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnPreparing" xml:space="preserve">
+    <value>Когда начинается подготовка</value>
+  </data>
+  <data name="Settings.ReceiptCreation.OnPreparingDescription" xml:space="preserve">
+    <value>Квитанция создается при переходе заказа на подготовку.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.Manual" xml:space="preserve">
+    <value>Только вручную</value>
+  </data>
+  <data name="Settings.ReceiptCreation.ManualDescription" xml:space="preserve">
+    <value>Квитанции не создаются автоматически. При необходимости создайте или распечатайте вручную.</value>
+  </data>
+  <data name="Settings.ReceiptCreation.ComingSoon" xml:space="preserve">
+    <value>Вскоре</value>
+  </data>
+  <data name="Settings.ReceiptCreation.CreateReceiptAfterAutoApprove" xml:space="preserve">
+    <value>Создать квитанцию ​​после автоматического утверждения</value>
+  </data>
+  <data name="Settings.PrintCopies.Title" xml:space="preserve">
+    <value>Распечатать копии</value>
+  </data>
+  <data name="Settings.PrintCopies.Description" xml:space="preserve">
+    <value>Выберите, сколько копий квитанции должно быть создано.</value>
+  </data>
+  <data name="Settings.PrintCopies.ReceiptCopyCount" xml:space="preserve">
+    <value>Количество копий квитанции</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Title" xml:space="preserve">
+    <value>Язык получения</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Description" xml:space="preserve">
+    <value>Выберите язык, используемый в печатных квитанциях.</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.SelectLabel" xml:space="preserve">
+    <value>Язык получения</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Turkish" xml:space="preserve">
+    <value>турецкий</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.English" xml:space="preserve">
+    <value>Английский</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Arabic" xml:space="preserve">
+    <value>арабский</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Russian" xml:space="preserve">
+    <value>Русский</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.ArabicPrinterNote" xml:space="preserve">
+    <value>Печать чеков на арабском языке зависит от поддержки принтера и кодовой страницы.</value>
+  </data>
+  <data name="Settings.ReceiptLanguage.Invalid" xml:space="preserve">
+    <value>Неверный язык квитанции.</value>
+  </data>
+  <data name="Settings.PrinterStatus.Title" xml:space="preserve">
+    <value>Состояние принтера / моста печати</value>
+  </data>
+  <data name="Settings.PrinterStatus.Description" xml:space="preserve">
+    <value>Просмотр текущего состояния Print Bridge или подключения принтера.</value>
+  </data>
+  <data name="Settings.PrinterStatus.ManagePrintBridge" xml:space="preserve">
+    <value>Управление принтерным мостом</value>
+  </data>
+  <data name="Settings.Save" xml:space="preserve">
+    <value>Сохранять</value>
+  </data>
+  <data name="Settings.ReceiptContent.Title" xml:space="preserve">
+    <value>Содержание квитанции</value>
+  </data>
+  <data name="Settings.ReceiptContent.Description" xml:space="preserve">
+    <value>Выберите, какая информация будет отображаться в распечатанных квитанциях.</value>
+  </data>
+  <data name="Settings.ReceiptContent.RequiredFields" xml:space="preserve">
+    <value>Обязательные поля</value>
+  </data>
+  <data name="Settings.ReceiptContent.RequiredFieldsDescription" xml:space="preserve">
+    <value>Всегда указывается в чеках.</value>
+  </data>
+  <data name="Settings.ReceiptContent.AlwaysIncluded" xml:space="preserve">
+    <value>Эти поля всегда печатаются на чеках.</value>
+  </data>
+  <data name="Settings.ReceiptContent.EnabledCount" xml:space="preserve">
+    <value>{0}/{1} включено</value>
+  </data>
+  <data name="Settings.ReceiptContent.OrderInformation" xml:space="preserve">
+    <value>Информация о заказе</value>
+  </data>
+  <data name="Settings.ReceiptContent.OrderInformationDescription" xml:space="preserve">
+    <value>Поля ресторана, платформы и времени заказа.</value>
+  </data>
+  <data name="Settings.ReceiptContent.CustomerDelivery" xml:space="preserve">
+    <value>Клиент и доставка</value>
+  </data>
+  <data name="Settings.ReceiptContent.CustomerDeliveryDescription" xml:space="preserve">
+    <value>Поля имени клиента, телефона и адреса.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ProductDetails" xml:space="preserve">
+    <value>Подробности о продукте</value>
+  </data>
+  <data name="Settings.ReceiptContent.ProductDetailsDescription" xml:space="preserve">
+    <value>Управляйте примечаниями и опциями продукта.</value>
+  </data>
+  <data name="Settings.ReceiptContent.AmountDetails" xml:space="preserve">
+    <value>Детали суммы</value>
+  </data>
+  <data name="Settings.ReceiptContent.AmountDetailsDescription" xml:space="preserve">
+    <value>Выберите поля разбивки суммы.</value>
+  </data>
+  <data name="Settings.ReceiptContent.MessagesExtras" xml:space="preserve">
+    <value>Сообщения и дополнительные возможности</value>
+  </data>
+  <data name="Settings.ReceiptContent.MessagesExtrasDescription" xml:space="preserve">
+    <value>Управляйте заголовком, нижним колонтитулом и дополнительными элементами квитанции.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ComingSoonHint" xml:space="preserve">
+    <value>Это поле будет поддерживаться позже.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowRestaurantNameHint" xml:space="preserve">
+    <value>Показывает название ресторана вверху чека.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPlatformNameHint" xml:space="preserve">
+    <value>Показывает, с какой платформы поступил заказ.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowReceivedTimeHint" xml:space="preserve">
+    <value>Показывает, когда был получен заказ.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPaymentMethodHint" xml:space="preserve">
+    <value>Показывает способ оплаты в квитанции.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerNameHint" xml:space="preserve">
+    <value>Показывает имя клиента в чеке.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerPhoneHint" xml:space="preserve">
+    <value>Показывает телефон клиента на чеке.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryAddressHint" xml:space="preserve">
+    <value>На квитанции указан адрес доставки.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductNotesHint" xml:space="preserve">
+    <value>Показывает заметки клиентов о продуктах.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductOptionsHint" xml:space="preserve">
+    <value>Показывает соусы, добавки и модификаторы.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowSubtotalHint" xml:space="preserve">
+    <value>Показывает строку промежуточного итога в чеке.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryFeeHint" xml:space="preserve">
+    <value>Показывает строку платы за доставку в квитанции.</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowFooterMessageHint" xml:space="preserve">
+    <value>Показывает внизу благодарственное или информационное сообщение.</value>
+  </data>
+  <data name="Settings.ReceiptContent.Required" xml:space="preserve">
+    <value>Необходимый</value>
+  </data>
+  <data name="Settings.ReceiptContent.ComingSoon" xml:space="preserve">
+    <value>Вскоре</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowOrderCode" xml:space="preserve">
+    <value>Код заказа</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductName" xml:space="preserve">
+    <value>Название продукта</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowQuantity" xml:space="preserve">
+    <value>Количество</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowItemTotal" xml:space="preserve">
+    <value>Всего позиций</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowGrandTotal" xml:space="preserve">
+    <value>общий итог</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowRestaurantName" xml:space="preserve">
+    <value>Название ресторана</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPlatformName" xml:space="preserve">
+    <value>Название платформы</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowReceivedTime" xml:space="preserve">
+    <value>Время получения заказа</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerName" xml:space="preserve">
+    <value>Имя клиента</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowCustomerPhone" xml:space="preserve">
+    <value>Телефон клиента</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryAddress" xml:space="preserve">
+    <value>Адрес доставки</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductNotes" xml:space="preserve">
+    <value>Примечания к продукту</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowProductOptions" xml:space="preserve">
+    <value>Опции продукта/дополнения</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowSubtotal" xml:space="preserve">
+    <value>Итого</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDiscount" xml:space="preserve">
+    <value>Скидка</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowDeliveryFee" xml:space="preserve">
+    <value>Стоимость доставки</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowPaymentMethod" xml:space="preserve">
+    <value>Способ оплаты</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowFooterMessage" xml:space="preserve">
+    <value>Сообщение в нижнем колонтитуле</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowQrCode" xml:space="preserve">
+    <value>QR-код</value>
+  </data>
+  <data name="Settings.ReceiptContent.ShowTaxVat" xml:space="preserve">
+    <value>Информация о налогах/НДС</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Title" xml:space="preserve">
+    <value>Получение сообщений</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Description" xml:space="preserve">
+    <value>Настройте текст заголовка и нижнего колонтитула квитанции.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Header" xml:space="preserve">
+    <value>Заголовок квитанции</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderHint" xml:space="preserve">
+    <value>Необязательный пользовательский заголовок. Если поле пусто, используется настройка названия ресторана.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.Footer" xml:space="preserve">
+    <value>Сообщение в нижнем колонтитуле</value>
+  </data>
+  <data name="Settings.ReceiptMessages.DefaultFooter" xml:space="preserve">
+    <value>Спасибо за ваш заказ.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderMax" xml:space="preserve">
+    <value>Максимальное количество символов {0}.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.FooterMax" xml:space="preserve">
+    <value>Максимальное количество символов {0}.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.HeaderTooLong" xml:space="preserve">
+    <value>Заголовок квитанции слишком длинный.</value>
+  </data>
+  <data name="Settings.ReceiptMessages.FooterTooLong" xml:space="preserve">
+    <value>Сообщение в нижнем колонтитуле слишком длинное.</value>
+  </data>
+  <data name="Settings.ReceiptPreview.Title" xml:space="preserve">
+    <value>Предварительный просмотр квитанции</value>
+  </data>
+  <data name="Settings.ReceiptPreview.Description" xml:space="preserve">
+    <value>Примерно показано, как ваш выбор будет отображаться в квитанции.</value>
+  </data>
+  <data name="Settings.ReceiptPreview.PreviewLabel" xml:space="preserve">
+    <value>Предварительный просмотр</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePlatform" xml:space="preserve">
+    <value>Трендьол Йемек</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleOrder" xml:space="preserve">
+    <value>TY-45821</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleCustomer" xml:space="preserve">
+    <value>Джейн Доу</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePhone" xml:space="preserve">
+    <value>+1 555 0100</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleAddress" xml:space="preserve">
+    <value>Мэйн-стрит, 12</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleItem" xml:space="preserve">
+    <value>Курица с рисом</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleNote" xml:space="preserve">
+    <value>Мягкая пряность</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SampleOption" xml:space="preserve">
+    <value>Дополнительный соус</value>
+  </data>
+  <data name="Settings.ReceiptPreview.SamplePayment" xml:space="preserve">
+    <value>Онлайн</value>
+  </data>
+  <data name="Settings.TestReceipt.Title" xml:space="preserve">
+    <value>Тестовая квитанция</value>
+  </data>
+  <data name="Settings.TestReceipt.Description" xml:space="preserve">
+    <value>Печать пробной квитанции будет доступна после добавления поддержки тестирования принтера.</value>
+  </data>
+  <data name="Settings.TestReceipt.PrintTestReceipt" xml:space="preserve">
+    <value>Распечатать тестовую квитанцию</value>
+  </data>
+  <data name="Settings.Notifications.Title" xml:space="preserve">
+    <value>Уведомления</value>
+  </data>
+  <data name="Settings.Notifications.Description" xml:space="preserve">
+    <value>Настройте способ оповещения веб-панели клиента о новых заказах.</value>
+  </data>
+  <data name="Settings.Notifications.ManageNotificationSettings" xml:space="preserve">
+    <value>Управление настройками уведомлений</value>
+  </data>
+  <data name="Settings.SavedSuccessfully" xml:space="preserve">
+    <value>Настройки успешно сохранены.</value>
+  </data>
+  <data name="Settings.SaveFailed" xml:space="preserve">
+    <value>Настройки не удалось сохранить. Пожалуйста, попробуйте еще раз.</value>
+  </data>
+  <data name="Settings.Saving" xml:space="preserve">
+    <value>Сохранение...</value>
+  </data>
+  <data name="Settings.Active" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="Settings.Passive" xml:space="preserve">
+    <value>Пассивный</value>
+  </data>
+  <data name="Settings.AccountSettings.Title" xml:space="preserve">
+    <value>Настройки учетной записи</value>
+  </data>
+  <data name="Settings.AccountSettings.Subtitle" xml:space="preserve">
+    <value>Управление настройками учетной записи и профиля.</value>
+  </data>
+  <data name="Settings.AccountSettings.ComingSoon" xml:space="preserve">
+    <value>Настройки аккаунта будут доступны здесь позже.</value>
+  </data>
+  <data name="Orders.StatusNewBadge" xml:space="preserve">
+    <value>Новый</value>
+  </data>
+  <data name="Orders.PlatformYemeksepeti" xml:space="preserve">
+    <value>Yemeksepeti</value>
+  </data>
+  <data name="Orders.PlatformGetirYemek" xml:space="preserve">
+    <value>GetirYemek</value>
+  </data>
+  <data name="Orders.PlatformTrendyolYemek" xml:space="preserve">
+    <value>TrendyolYemek</value>
+  </data>
+  <data name="Orders.PlatformTrendyolGo" xml:space="preserve">
+    <value>Trendyol GO</value>
+  </data>
+  <data name="PlatformConnections.TrendyolStoreIdHelp" xml:space="preserve">
+    <value>Для Trendyol GO в качестве идентификатора поставщика используется Store Id.</value>
+  </data>
+  <data name="PlatformConnections.Actions" xml:space="preserve">
+    <value>Действия</value>
+  </data>
+  <data name="PlatformConnections.Edit" xml:space="preserve">
+    <value>Редактировать</value>
+  </data>
+  <data name="PlatformConnections.Update" xml:space="preserve">
+    <value>Обновлять</value>
+  </data>
+  <data name="PlatformConnections.Updated" xml:space="preserve">
+    <value>Соединение с платформой обновлено.</value>
+  </data>
+  <data name="PlatformConnections.UpdateFailed" xml:space="preserve">
+    <value>Не удалось обновить соединение с платформой.</value>
+  </data>
+  <data name="PlatformConnections.Active" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="PlatformConnections.Inactive" xml:space="preserve">
+    <value>Неактивный</value>
+  </data>
+  <data name="PlatformConnections.Activated" xml:space="preserve">
+    <value>Соединение с платформой активировано.</value>
+  </data>
+  <data name="PlatformConnections.Deactivated" xml:space="preserve">
+    <value>Соединение с платформой деактивировано.</value>
+  </data>
+  <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
+    <value>Статус подключения платформы не удалось изменить.</value>
+  </data>
+  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
+    <value>Соединение с той же платформой и идентификатором магазина уже существует.</value>
+  </data>
+  <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
+    <value>Для управления подключениями к платформе необходима роль владельца или менеджера.</value>
+  </data>
+  <data name="PlatformConnections.ApiSecretLeaveEmptyHelp" xml:space="preserve">
+    <value>Оставьте пустым, чтобы сохранить существующую тайну.</value>
+  </data>
+  <data name="PlatformConnections.SupplierId" xml:space="preserve">
+    <value>Идентификатор поставщика</value>
+  </data>
+  <data name="PlatformConnections.ExecutorEmail" xml:space="preserve">
+    <value>Электронная почта исполнителя</value>
+  </data>
+  <data name="PlatformConnections.SyncIntervalSeconds" xml:space="preserve">
+    <value>Интервал синхронизации (сек)</value>
+  </data>
+  <data name="Validation.StoreIdMaxLength" xml:space="preserve">
+    <value>Максимальная длина StoreId — 100.</value>
+  </data>
+  <data name="Validation.ApiKeyMaxLength" xml:space="preserve">
+    <value>Максимальная длина ApiKey — 500.</value>
+  </data>
+  <data name="Validation.ApiSecretMaxLength" xml:space="preserve">
+    <value>Максимальная длина ApiSecret — 500.</value>
+  </data>
+  <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
+    <value>Максимальная длина идентификатора поставщика — 100.</value>
+  </data>
+  <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
+    <value>Максимальная длина электронного письма исполнителя — 200.</value>
+  </data>
+  <data name="Validation.ExecutorEmailInvalid" xml:space="preserve">
+    <value>Введите действительный адрес электронной почты.</value>
+  </data>
+  <data name="PlatformConnections.SupplierIdHelp" xml:space="preserve">
+    <value>Идентификатор поставщика для конечных точек пакета Trendyol GO. Идентификатор магазина используется, если он оставлен пустым.</value>
+  </data>
+  <data name="PlatformConnections.ExecutorEmailHelp" xml:space="preserve">
+    <value>Требуется для реальных запросов Trendyol GO API в качестве заголовка x-executor-user.</value>
+  </data>
+  <data name="PrintBridge.Title" xml:space="preserve">
+    <value>Wasla Print Bridge</value>
+  </data>
+  <data name="PrintBridge.Intro" xml:space="preserve">
+    <value>Wasla Print Bridge — это локальное приложение для Windows на компьютере в ресторане. Он опрашивает Wasla API на предмет заданий на печать чеков и отправляет их на термопринтер USB.</value>
+  </data>
+  <data name="PrintBridge.RequirementsTitle" xml:space="preserve">
+    <value>Требования к установке</value>
+  </data>
+  <data name="PrintBridge.RequirementWindows" xml:space="preserve">
+    <value>операционная система Windows</value>
+  </data>
+  <data name="PrintBridge.RequirementUsbPrinter" xml:space="preserve">
+    <value>USB-термопринтер чеков, установленный в Windows (например, Zilang 80 мм)</value>
+  </data>
+  <data name="PrintBridge.RequirementLocalApp" xml:space="preserve">
+    <value>Приложение Wasla Print Bridge Tray, работающее на ПК в ресторане</value>
+  </data>
+  <data name="PrintBridge.SetupTitle" xml:space="preserve">
+    <value>Шаги настройки</value>
+  </data>
+  <data name="PrintBridge.SetupStepDownload" xml:space="preserve">
+    <value>Загрузите портативный пакет Windows Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.SetupStepToken" xml:space="preserve">
+    <value>Создайте токен Print Bridge на этой странице и надежно сохраните его (отображается только один раз).</value>
+  </data>
+  <data name="PrintBridge.SetupStepConfig" xml:space="preserve">
+    <value>Добавьте токен и имя принтера в конфигурацию Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.SetupStepRun" xml:space="preserve">
+    <value>Печать опросов Bridge для ожидающих заданий квитанции автоматически во время работы на панели задач.</value>
+  </data>
+  <data name="PrintBridge.Download" xml:space="preserve">
+    <value>Скачать пакет</value>
+  </data>
+  <data name="PrintBridge.GenerateToken" xml:space="preserve">
+    <value>Создать токен</value>
+  </data>
+  <data name="PrintBridge.DeviceName" xml:space="preserve">
+    <value>Имя устройства</value>
+  </data>
+  <data name="PrintBridge.DeviceNamePlaceholder" xml:space="preserve">
+    <value>например Кухонный ПК</value>
+  </data>
+  <data name="PrintBridge.TokenGeneratedOnce" xml:space="preserve">
+    <value>Печать токена моста создана. Вы можете увидеть это значение только один раз — скопируйте его сейчас:</value>
+  </data>
+  <data name="PrintBridge.TokenGenerateFailed" xml:space="preserve">
+    <value>Не удалось создать токен Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.ApiHint" xml:space="preserve">
+    <value>Print Bridge вызывает конечные точки Wasla API с заголовком X-PrintBridge-Token. Идентификатор клиента не отправляется в запросах.</value>
+  </data>
+  <data name="PrintBridge.Description" xml:space="preserve">
+    <value>Управляйте локальным приложением Print Bridge на компьютере в ресторане для автоматической печати чеков через USB.</value>
+  </data>
+  <data name="PrintBridge.OverviewTitle" xml:space="preserve">
+    <value>Обзор состояния</value>
+  </data>
+  <data name="PrintBridge.OverviewHelp" xml:space="preserve">
+    <value>Print Bridge получает задания на печать квитанций для утвержденных заказов и отправляет их на термопринтер USB.</value>
+  </data>
+  <data name="PrintBridge.DeviceConnected" xml:space="preserve">
+    <value>Подключено</value>
+  </data>
+  <data name="PrintBridge.DeviceNotConnected" xml:space="preserve">
+    <value>Не подключено</value>
+  </data>
+  <data name="PrintBridge.DeviceInactive" xml:space="preserve">
+    <value>Неактивное устройство</value>
+  </data>
+  <data name="PrintBridge.LastSeen" xml:space="preserve">
+    <value>Последний раз видели</value>
+  </data>
+  <data name="PrintBridge.MachineName" xml:space="preserve">
+    <value>Имя машины</value>
+  </data>
+  <data name="PrintBridge.PrinterName" xml:space="preserve">
+    <value>Имя принтера</value>
+  </data>
+  <data name="PrintBridge.AppVersion" xml:space="preserve">
+    <value>Версия приложения</value>
+  </data>
+  <data name="PrintBridge.DevicesTitle" xml:space="preserve">
+    <value>Устройства и токен</value>
+  </data>
+  <data name="PrintBridge.DevicesHelp" xml:space="preserve">
+    <value>Создайте по одному устройству на каждый компьютер ресторана. Токен отображается только при создании или регенерации.</value>
+  </data>
+  <data name="PrintBridge.CreateDevice" xml:space="preserve">
+    <value>Создать устройство</value>
+  </data>
+  <data name="PrintBridge.RegenerateToken" xml:space="preserve">
+    <value>Восстановить токен</value>
+  </data>
+  <data name="PrintBridge.CopyToken" xml:space="preserve">
+    <value>Копировать токен</value>
+  </data>
+  <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
+    <value>Этот токен отображается только один раз. Скопируйте и сохраните его в конфигурации Print Bridge. Если вы потеряете его, восстановите токен.</value>
+  </data>
+  <data name="PrintBridge.TokenCreated" xml:space="preserve">
+    <value>Распечатать токен моста создан</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
+    <value>Токен моста для печати восстановлен.</value>
+  </data>
+  <data name="PrintBridge.TokenCopied" xml:space="preserve">
+    <value>Скопировано</value>
+  </data>
+  <data name="PrintBridge.TokenCopyFailed" xml:space="preserve">
+    <value>Не удалось скопировать токен</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerateWarning" xml:space="preserve">
+    <value>Старый токен перестанет работать. Обновите конфигурацию Print Bridge с помощью нового токена.</value>
+  </data>
+  <data name="PrintBridge.OldTokenInvalidAfterRegenerate" xml:space="preserve">
+    <value>Старый токен больше не действителен. Сохраните новый токен в конфигурации Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.TokenNotAvailableRegenerate" xml:space="preserve">
+    <value>Токен не виден. Восстановите токен, чтобы увидеть новый.</value>
+  </data>
+  <data name="PrintBridge.ConfirmRegenerateToken" xml:space="preserve">
+    <value>Восстановить токен для {0}?</value>
+  </data>
+  <data name="PrintBridge.Token" xml:space="preserve">
+    <value>Токен</value>
+  </data>
+  <data name="PrintBridge.DismissTokenBox" xml:space="preserve">
+    <value>Закрыть ящик для жетонов</value>
+  </data>
+  <data name="PrintBridge.TokenMasked" xml:space="preserve">
+    <value>Токен больше не виден. Восстановите токен, чтобы увидеть новый.</value>
+  </data>
+  <data name="PrintBridge.NoDevices" xml:space="preserve">
+    <value>Устройств Print Bridge пока нет. Создайте устройство, чтобы начать.</value>
+  </data>
+  <data name="PrintBridge.ReceiptSettingsTitle" xml:space="preserve">
+    <value>Настройки печати чеков</value>
+  </data>
+  <data name="PrintBridge.ReceiptSettingsHelp" xml:space="preserve">
+    <value>Автоматическое утверждение новых заказов и создание квитанций после автоматического утверждения.</value>
+  </data>
+  <data name="PrintBridge.DownloadSetupTitle" xml:space="preserve">
+    <value>Скачать пакет</value>
+  </data>
+  <data name="PrintBridge.DownloadPlaceholderNotice" xml:space="preserve">
+    <value>Print Bridge распространяется в виде портативного пакета Windows (.zip). Загрузка будет доступна здесь, когда пакет будет готов.</value>
+  </data>
+  <data name="PrintBridge.SetupSteps" xml:space="preserve">
+    <value>Шаги настройки</value>
+  </data>
+  <data name="PrintBridge.SetupStepInstall" xml:space="preserve">
+    <value>Установите или запустите его на ПК с ОС Windows, подключенном к чековому USB-принтеру.</value>
+  </data>
+  <data name="PrintBridge.SetupStepPrinter" xml:space="preserve">
+    <value>Убедитесь, что принтер установлен в Windows.</value>
+  </data>
+  <data name="PrintBridge.SetupStepTest" xml:space="preserve">
+    <value>Пробная печать при новом заказе.</value>
+  </data>
+  <data name="PrintBridge.ExampleConfigTitle" xml:space="preserve">
+    <value>Пример конфигурации</value>
+  </data>
+  <data name="PrintBridge.CopyExampleConfig" xml:space="preserve">
+    <value>Скопировать пример конфигурации</value>
+  </data>
+  <data name="PrintBridge.FindPrinterTitle" xml:space="preserve">
+    <value>Найти имя принтера Windows</value>
+  </data>
+  <data name="PrintBridge.CopyPowerShellCommand" xml:space="preserve">
+    <value>Скопируйте команду PowerShell</value>
+  </data>
+  <data name="PrintBridge.Copied" xml:space="preserve">
+    <value>Скопировано</value>
+  </data>
+  <data name="PrintBridge.CopyFailed" xml:space="preserve">
+    <value>Не удалось скопировать</value>
+  </data>
+  <data name="PrintBridge.RegenerateConfirm" xml:space="preserve">
+    <value>Восстановить токен для {0}? Старый токен перестанет работать.</value>
+  </data>
+  <data name="PrintBridge.TokenRegenerateFailed" xml:space="preserve">
+    <value>Не удалось восстановить токен.</value>
+  </data>
+  <data name="PrintBridge.DeviceUpdateFailed" xml:space="preserve">
+    <value>Не удалось обновить устройство.</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
+    <value>Ваш текущий план включает активные устройства Print Bridge {0}. Дополнительные подключения будут доступны позже в качестве платного дополнения.</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
+    <value>Количество активных устройств превышает текущий предел. Пожалуйста, отключите дополнительные устройства.</value>
+  </data>
+  <data name="PrintBridge.AllowedDeviceCount" xml:space="preserve">
+    <value>Ваш текущий план позволяет использовать активное устройство Print Bridge {0}.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesYet" xml:space="preserve">
+    <value>Устройств Print Bridge пока нет.</value>
+  </data>
+  <data name="PrintBridge.CreateFirstDevice" xml:space="preserve">
+    <value>Чтобы начать, создайте устройство справа.</value>
+  </data>
+  <data name="PrintBridge.DeactivateExtraDevices" xml:space="preserve">
+    <value>Деактивируйте дополнительные устройства, чтобы вернуть счетчик в пределы.</value>
+  </data>
+  <data name="PrintBridge.StatusOverview" xml:space="preserve">
+    <value>Обзор состояния</value>
+  </data>
+  <data name="PrintBridge.Connected" xml:space="preserve">
+    <value>Подключено</value>
+  </data>
+  <data name="PrintBridge.NotConnected" xml:space="preserve">
+    <value>Не подключено</value>
+  </data>
+  <data name="PrintBridge.TokenCreatedCopyNow" xml:space="preserve">
+    <value>Токен создан. Это значение отображается только один раз — скопируйте его сейчас.</value>
+  </data>
+  <data name="PrintBridge.DeviceCreatedSuccessfully" xml:space="preserve">
+    <value>Устройство Print Bridge создано.</value>
+  </data>
+  <data name="PrintBridge.ActiveDeviceCount" xml:space="preserve">
+    <value>Активные устройства: {0}</value>
+  </data>
+  <data name="PrintBridge.ConnectedDeviceCount" xml:space="preserve">
+    <value>Подключенные устройства: {0}</value>
+  </data>
+  <data name="PrintBridge.AllowedDeviceCountLabel" xml:space="preserve">
+    <value>Разрешено: {0}</value>
+  </data>
+  <data name="PrintBridge.Inactive" xml:space="preserve">
+    <value>Неактивный</value>
+  </data>
+  <data name="PrintBridge.StatusConnected" xml:space="preserve">
+    <value>Подключено</value>
+  </data>
+  <data name="PrintBridge.StatusRecentlySeen" xml:space="preserve">
+    <value>Недавно просмотренный</value>
+  </data>
+  <data name="PrintBridge.StatusDisconnected" xml:space="preserve">
+    <value>Отключено</value>
+  </data>
+  <data name="PrintBridge.StatusNeverConnected" xml:space="preserve">
+    <value>Никогда не подключался</value>
+  </data>
+  <data name="PrintBridge.StatusInactive" xml:space="preserve">
+    <value>Неактивный</value>
+  </data>
+  <data name="PrintBridge.LastSeenNever" xml:space="preserve">
+    <value>Никогда</value>
+  </data>
+  <data name="PrintBridge.ConnectionStatus" xml:space="preserve">
+    <value>Связь</value>
+  </data>
+  <data name="PrintBridge.DeviceActive" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="PrintBridge.OverviewLastSeen" xml:space="preserve">
+    <value>Последний раз был здесь: {0}</value>
+  </data>
+  <data name="PrintBridge.OverallConnectionStatus" xml:space="preserve">
+    <value>Общий статус подключения</value>
+  </data>
+  <data name="PrintBridge.OverviewDevicesTitle" xml:space="preserve">
+    <value>Устройства</value>
+  </data>
+  <data name="PrintBridge.NavDevices" xml:space="preserve">
+    <value>Устройства</value>
+  </data>
+  <data name="PrintBridge.NavSetup" xml:space="preserve">
+    <value>Настраивать</value>
+  </data>
+  <data name="PrintBridge.DevicesPageTitle" xml:space="preserve">
+    <value>Устройства моста печати</value>
+  </data>
+  <data name="PrintBridge.DevicesPageSubtitle" xml:space="preserve">
+    <value>Управляйте локальными устройствами Windows Print Bridge, используемыми для автоматической печати чеков.</value>
+  </data>
+  <data name="PrintBridge.SetupPageTitle" xml:space="preserve">
+    <value>Настройка моста печати</value>
+  </data>
+  <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
+    <value>Установите приложение Print Bridge на свой компьютер под управлением Windows, чтобы Wasla мог автоматически печатать квитанции о заказах.</value>
+  </data>
+  <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
+    <value>Пакет печати моста</value>
+  </data>
+  <data name="PrintBridge.DownloadCardText" xml:space="preserve">
+    <value>Загрузите портативный пакет установки для ПК с ОС Windows, подключенного к чековому принтеру.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
+    <value>Он будет доступен здесь после сборки пакета.</value>
+  </data>
+  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
+    <value>Детали подключения</value>
+  </data>
+  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
+    <value>Адрес сервера</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
+    <value>Токен устройства</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenMasked" xml:space="preserve">
+    <value>•••••••••••••••••••</value>
+  </data>
+  <data name="PrintBridge.DeviceTokenMaskedHelp" xml:space="preserve">
+    <value>Для устройства {0} создан токен. В целях безопасности токен отображается только один раз при создании. Если вы его потеряли, создайте новый токен на странице устройств.</value>
+  </data>
+  <data name="PrintBridge.NoDeviceWarning" xml:space="preserve">
+    <value>Ни одно устройство Print Bridge еще не создано.</value>
+  </data>
+  <data name="PrintBridge.CreateDeviceAction" xml:space="preserve">
+    <value>Создать устройство</value>
+  </data>
+  <data name="PrintBridge.ManageDevicesAction" xml:space="preserve">
+    <value>Управление устройствами</value>
+  </data>
+  <data name="PrintBridge.SetupStepsTitle" xml:space="preserve">
+    <value>Шаги настройки</value>
+  </data>
+  <data name="PrintBridge.SetupStep1" xml:space="preserve">
+    <value>Загрузите пакет Print Bridge</value>
+  </data>
+  <data name="PrintBridge.SetupStep2" xml:space="preserve">
+    <value>Извлеките ZIP-файл</value>
+  </data>
+  <data name="PrintBridge.SetupStep3" xml:space="preserve">
+    <value>Запустите приложение Wasla Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.SetupStep4" xml:space="preserve">
+    <value>Введите адрес подключения ниже в приложении</value>
+  </data>
+  <data name="PrintBridge.SetupStep5" xml:space="preserve">
+    <value>Вставьте токен вашего устройства в приложение</value>
+  </data>
+  <data name="PrintBridge.SetupStep6" xml:space="preserve">
+    <value>Проверьте соединение</value>
+  </data>
+  <data name="PrintBridge.SetupStep7" xml:space="preserve">
+    <value>Выберите свой принтер и сохраните</value>
+  </data>
+  <data name="PrintBridge.Requirement1" xml:space="preserve">
+    <value>Windows 10 или Windows 11</value>
+  </data>
+  <data name="PrintBridge.Requirement2" xml:space="preserve">
+    <value>Термопринтер установлен в Windows</value>
+  </data>
+  <data name="PrintBridge.Requirement3" xml:space="preserve">
+    <value>подключение к Интернету</value>
+  </data>
+  <data name="PrintBridge.Requirement4" xml:space="preserve">
+    <value>Токен устройства Wasla</value>
+  </data>
+  <data name="PrintBridge.Requirement5" xml:space="preserve">
+    <value>Компьютер, на котором установлено приложение, должен оставаться включенным.</value>
+  </data>
+  <data name="PrintBridge.FaqConnectionFailed" xml:space="preserve">
+    <value>Что делать, если соединение не удалось?</value>
+  </data>
+  <data name="PrintBridge.FaqConnectionFailedAnswer" xml:space="preserve">
+    <value>Проверьте адрес сервера и токен. Используйте кнопку «Проверить соединение».</value>
+  </data>
+  <data name="PrintBridge.FaqPrinterMissing" xml:space="preserve">
+    <value>Что делать, если принтера нет в списке?</value>
+  </data>
+  <data name="PrintBridge.FaqPrinterMissingAnswer" xml:space="preserve">
+    <value>Убедитесь, что принтер установлен в Windows. Обновите список принтеров в Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.FaqNoReceipt" xml:space="preserve">
+    <value>Что делать, если чеки не печатаются?</value>
+  </data>
+  <data name="PrintBridge.FaqNoReceiptAnswer" xml:space="preserve">
+    <value>Используйте кнопку «Проверить соединение». Проверьте выбор принтера и убедитесь, что тестовый режим выключен.</value>
+  </data>
+  <data name="PrintBridge.FaqTokenChanged" xml:space="preserve">
+    <value>Что если токен изменится?</value>
+  </data>
+  <data name="PrintBridge.FaqTokenChangedAnswer" xml:space="preserve">
+    <value>Если токен изменился, сохраните настройки Print Bridge и подключитесь повторно.</value>
+  </data>
+  <data name="PrintBridge.Copy" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="PrintBridge.CreateDeviceToken" xml:space="preserve">
+    <value>Создать токен устройства</value>
+  </data>
+  <data name="PrintBridge.ConnectedDevicesTitle" xml:space="preserve">
+    <value>Подключенные устройства</value>
+  </data>
+  <data name="PrintBridge.DevicesSetupHint" xml:space="preserve">
+    <value>Настраиваете новый компьютер?</value>
+  </data>
+  <data name="PrintBridge.GotoSetupLink" xml:space="preserve">
+    <value>Перейдите в «Настройка».</value>
+  </data>
+  <data name="PrintBridge.WhatIsPrintBridgeTitle" xml:space="preserve">
+    <value>Что такое Принтбридж?</value>
+  </data>
+  <data name="PrintBridge.WhatIsPrintBridgeText" xml:space="preserve">
+    <value>Print Bridge — это локальное приложение Windows, которое запускается на компьютере, подключенном к принтеру чеков. Он получает задания на печать от Wasla и отправляет их на локальный принтер Windows.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartTitle" xml:space="preserve">
+    <value>Прежде чем начать</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem1" xml:space="preserve">
+    <value>Принтер чеков должен быть установлен в Windows.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem2" xml:space="preserve">
+    <value>Print Bridge должен работать на компьютере Windows, подключенном к принтеру.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem3" xml:space="preserve">
+    <value>Токен устройства необходимо создать на веб-панели Wasla.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem4" xml:space="preserve">
+    <value>Токен необходимо вставить в настройки приложения Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.BeforeYouStartItem5" xml:space="preserve">
+    <value>Для реальной печати тестовый режим должен быть отключен.</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Title" xml:space="preserve">
+    <value>Шаг 1 — Загрузите пакет Print Bridge</value>
+  </data>
+  <data name="PrintBridge.GuideStep1Text" xml:space="preserve">
+    <value>Print Bridge в настоящее время предоставляется в виде переносимого пакета Windows (.zip). Загрузите пакет, распакуйте его на компьютере Windows, подключенном к принтеру чеков, и запустите Wasla.PrintBridge.exe. Откройте «Настройки», вставьте токен устройства, выберите свой принтер, отключите тестовый режим для реальной печати и сохраните настройки для подключения.</value>
+  </data>
+  <data name="PrintBridge.PackageTypeLabel" xml:space="preserve">
+    <value>Портативный пакет Windows</value>
+  </data>
+  <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
+    <value>Установочный пакет еще не готов.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
+    <value>Портативный пакет будет доступен здесь после завершения развертывания упаковки.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Title" xml:space="preserve">
+    <value>Шаг 2. Создайте токен устройства.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Text" xml:space="preserve">
+    <value>Перейдите в Wasla Print Bridge &gt; Устройства. Введите имя устройства, например «Кухонный ПК», «Кассирский ПК» или «Vivo», создайте токен и скопируйте сгенерированный токен.</value>
+  </data>
+  <data name="PrintBridge.GuideStep2Action" xml:space="preserve">
+    <value>Перейти к устройствам</value>
+  </data>
+  <data name="PrintBridge.GuideStep3Title" xml:space="preserve">
+    <value>Шаг 3. Откройте вкладку «Настройки» в приложении Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.GuideStep3Text" xml:space="preserve">
+    <value>Откройте приложение Windows Print Bridge и перейдите на вкладку «Настройки» вверху.</value>
+  </data>
+  <data name="PrintBridge.GuideSettingsTabPlaceholder" xml:space="preserve">
+    <value>Вкладка «Настройки»</value>
+  </data>
+  <data name="PrintBridge.GuideStep4Title" xml:space="preserve">
+    <value>Шаг 4 — Вставьте токен</value>
+  </data>
+  <data name="PrintBridge.GuideStep4Text" xml:space="preserve">
+    <value>Вставьте скопированный токен устройства в поле Токен устройства. Токен поступает с веб-панели Wasla.</value>
+  </data>
+  <data name="PrintBridge.GuideStep5Title" xml:space="preserve">
+    <value>Шаг 5 — Выберите принтер</value>
+  </data>
+  <data name="PrintBridge.GuideStep5Text" xml:space="preserve">
+    <value>Выберите установленный принтер чеков Windows в раскрывающемся списке Имя принтера. Если принтер не отображается, нажмите «Обновить». Пример: ПОС-58</value>
+  </data>
+  <data name="PrintBridge.GuideStep6Title" xml:space="preserve">
+    <value>Шаг 6 — Проверьте тестовый режим</value>
+  </data>
+  <data name="PrintBridge.GuideStep6Text" xml:space="preserve">
+    <value>Для реальной печати чеков отключите тестовый режим. Если включен параметр «Не отправлять на принтер, только журнал», Print Bridge будет записывать только журналы и не отправлять выходные данные на принтер.</value>
+  </data>
+  <data name="PrintBridge.GuideStep7Title" xml:space="preserve">
+    <value>Шаг 7. Сохраните настройки и проверьте соединение.</value>
+  </data>
+  <data name="PrintBridge.GuideStep7Text" xml:space="preserve">
+    <value>Нажмите Сохранить настройки. Приложение должно проверить токен и подключиться к серверу. В случае успеха должно появиться имя устройства, а само устройство должно появиться в сети на странице «Устройства».</value>
+  </data>
+  <data name="PrintBridge.ServerUrlInfoTitle" xml:space="preserve">
+    <value>Сервер URL (информационный)</value>
+  </data>
+  <data name="PrintBridge.ServerUrlInfoText" xml:space="preserve">
+    <value>Этот адрес предоставлен Wasla. Обычно вам не следует его менять. Приложение Print Bridge отображает сервер URL в разделе «Дополнительные настройки».</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide1" xml:space="preserve">
+    <value>Убедитесь, что приложение Print Bridge запущено.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide2" xml:space="preserve">
+    <value>Убедитесь, что принтер установлен в Windows.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide3" xml:space="preserve">
+    <value>Убедитесь, что был скопирован правильный токен устройства.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide4" xml:space="preserve">
+    <value>Если токен был продлен, старый токен больше не работает.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide5" xml:space="preserve">
+    <value>Если принтер не отображается, нажмите «Обновить».</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide6" xml:space="preserve">
+    <value>Если включен тестовый режим, чеки не будут распечатаны.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingGuide7" xml:space="preserve">
+    <value>Используйте настройки сохранения в приложении Print Bridge, чтобы проверить соединение.</value>
+  </data>
+  <data name="PrintBridge.DownloadTitle" xml:space="preserve">
+    <value>Настройка Wasla Print Bridge</value>
+  </data>
+  <data name="PrintBridge.DownloadDescription" xml:space="preserve">
+    <value>Wasla Print Bridge — это приложение Windows на вашем компьютере в ресторане для автоматической печати чеков через USB.</value>
+  </data>
+  <data name="PrintBridge.DownloadRunsOnWindowsPc" xml:space="preserve">
+    <value>Он работает в системном трее в фоновом режиме. Откройте окно по значку в трее. Браузер не обязательно должен оставаться открытым.</value>
+  </data>
+  <data name="PrintBridge.DownloadBadgeUsb" xml:space="preserve">
+    <value>USB-печать чеков</value>
+  </data>
+  <data name="PrintBridge.DownloadButton" xml:space="preserve">
+    <value>Скачать Принтбридж</value>
+  </data>
+  <data name="PrintBridge.SetupStepInstallOnWindowsPc" xml:space="preserve">
+    <value>Установите или запустите его на ПК с ОС Windows, подключенном к чековому USB-принтеру.</value>
+  </data>
+  <data name="PrintBridge.SetupStepConfigure" xml:space="preserve">
+    <value>Откройте Print Bridge на панели задач и установите BaseUrl, AgentToken и PrinterName в настройках.</value>
+  </data>
+  <data name="PrintBridge.SetupStepStartBridge" xml:space="preserve">
+    <value>Установите и запустите Wasla Print Bridge. Он появляется на панели задач Windows; открыть окно по значку в трее.</value>
+  </data>
+  <data name="PrintBridge.SetupStepTestOrder" xml:space="preserve">
+    <value>Пробная печать при новом заказе.</value>
+  </data>
+  <data name="PrintBridge.PrinterNameHelper" xml:space="preserve">
+    <value>Найти имя принтера Windows</value>
+  </data>
+  <data name="PrintBridge.PrinterNameHelperDescription" xml:space="preserve">
+    <value>Запустите эту команду PowerShell, чтобы найти имя вашего принтера.</value>
+  </data>
+  <data name="PrintBridge.ExampleConfig" xml:space="preserve">
+    <value>Пример конфигурации</value>
+  </data>
+  <data name="PrintBridge.ExampleConfigHelp" xml:space="preserve">
+    <value>Замените AgentToken токеном, который вы создаете на странице «Устройства».</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesTitle" xml:space="preserve">
+    <value>Включенный лимит устройств</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesDescription" xml:space="preserve">
+    <value>В ваш план включено количество активных устройств Print Bridge, указанное ниже.</value>
+  </data>
+  <data name="PrintBridge.IncludedDeviceCount" xml:space="preserve">
+    <value>В комплекте: активные устройства {0}</value>
+  </data>
+  <data name="PrintBridge.ExtraDevicesPaidLater" xml:space="preserve">
+    <value>Для дополнительных подключений принтера или устройства позже может потребоваться платное дополнение.</value>
+  </data>
+  <data name="PrintBridge.IncludedDevicesNearLimit" xml:space="preserve">
+    <value>{0} из используемых активных устройств {1}. Вы приближаетесь к пределу.</value>
+  </data>
+  <data name="PrintBridge.ReceiptAutomationSettings" xml:space="preserve">
+    <value>Настройки автоматизации получения</value>
+  </data>
+  <data name="PrintBridge.ReceiptAutomationSettingsHelp" xml:space="preserve">
+    <value>Настройте автоматическое утверждение и печать чека после утверждения.</value>
+  </data>
+  <data name="PrintBridge.AutoApproveHelp" xml:space="preserve">
+    <value>Автоматически утверждает вновь полученные заказы.</value>
+  </data>
+  <data name="PrintBridge.AutoPrintAfterApproveHelp" xml:space="preserve">
+    <value>Создает задание на печать чека после автоматического утверждения.</value>
+  </data>
+  <data name="PrintBridge.ReceiptCopyCountHelp" xml:space="preserve">
+    <value>Количество копий квитанции, создаваемых для каждого задания на печать (1–3).</value>
+  </data>
+  <data name="PrintBridge.PrintJobsTitle" xml:space="preserve">
+    <value>Последние задания на печать чеков</value>
+  </data>
+  <data name="PrintBridge.PrintJobsDescription" xml:space="preserve">
+    <value>Недавние попытки распечатать чек для этого ресторана. Используйте повторную печать, чтобы поставить в очередь новое задание на печать.</value>
+  </data>
+  <data name="PrintBridge.NoPrintJobs" xml:space="preserve">
+    <value>Заданий на печать чеков пока нет.</value>
+  </data>
+  <data name="PrintBridge.RefreshPrintJobs" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="PrintBridge.Reprint" xml:space="preserve">
+    <value>Перепечатка</value>
+  </data>
+  <data name="PrintBridge.ReprintCreated" xml:space="preserve">
+    <value>Задание повторной печати создано. Print Bridge заберет его в ближайшее время.</value>
+  </data>
+  <data name="PrintBridge.ReprintFailed" xml:space="preserve">
+    <value>Не удалось создать задание на повторную печать.</value>
+  </data>
+  <data name="PrintBridge.ReprintAlreadyPending" xml:space="preserve">
+    <value>Задание печати для этого заказа уже находится на рассмотрении.</value>
+  </data>
+  <data name="PrintBridge.ReprintOrderNotFound" xml:space="preserve">
+    <value>Заказ для этого задания печати больше не существует.</value>
+  </data>
+  <data name="PrintBridge.ReprintJobNotFound" xml:space="preserve">
+    <value>Задание печати не найдено.</value>
+  </data>
+  <data name="PrintBridge.ReprintNotAllowed" xml:space="preserve">
+    <value>Повторная печать доступна только для напечатанных или неудачных заданий без активного ожидающего задания на печать.</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusPending" xml:space="preserve">
+    <value>В ожидании</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusPrinting" xml:space="preserve">
+    <value>Печать</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusPrinted" xml:space="preserve">
+    <value>Печатный</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusFailed" xml:space="preserve">
+    <value>Неуспешный</value>
+  </data>
+  <data name="PrintBridge.PrintJobStatusCancelled" xml:space="preserve">
+    <value>Отменено</value>
+  </data>
+  <data name="PrintBridge.PrintedAt" xml:space="preserve">
+    <value>Напечатано на</value>
+  </data>
+  <data name="PrintBridge.LastAttemptAt" xml:space="preserve">
+    <value>Последняя попытка</value>
+  </data>
+  <data name="PrintBridge.AttemptCount" xml:space="preserve">
+    <value>Попытки</value>
+  </data>
+  <data name="PrintBridge.ErrorMessage" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="PrintBridge.ExternalOrderId" xml:space="preserve">
+    <value>Заказ</value>
+  </data>
+  <data name="PrintBridge.PrintDevice" xml:space="preserve">
+    <value>Печать моста</value>
+  </data>
+  <data name="PrintBridge.ConfirmReprint" xml:space="preserve">
+    <value>Перепечатать квитанцию ​​для {0}?</value>
+  </data>
+  <data name="PrintBridge.CreatedAt" xml:space="preserve">
+    <value>Созданный</value>
+  </data>
+  <data name="PrintBridge.Subtitle" xml:space="preserve">
+    <value>Управляйте локальными устройствами-мостами принтеров, используемыми для автоматической печати чеков.</value>
+  </data>
+  <data name="PrintBridge.ActiveDevices" xml:space="preserve">
+    <value>Активные устройства</value>
+  </data>
+  <data name="PrintBridge.IncludedDevices" xml:space="preserve">
+    <value>Включенные устройства</value>
+  </data>
+  <data name="PrintBridge.LastConnectedDevice" xml:space="preserve">
+    <value>Последнее подключенное устройство</value>
+  </data>
+  <data name="PrintBridge.LastConnectedNone" xml:space="preserve">
+    <value>Пока нет</value>
+  </data>
+  <data name="PrintBridge.PrintJobsToday" xml:space="preserve">
+    <value>Задания на печать сегодня</value>
+  </data>
+  <data name="PrintBridge.DeviceLimitNote" xml:space="preserve">
+    <value>В комплект входит до {0} активных устройств Print Bridge. Для дополнительных устройств позже может потребоваться платное дополнение.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesTitle" xml:space="preserve">
+    <value>Устройств Print Bridge пока нет.</value>
+  </data>
+  <data name="PrintBridge.NoDevicesDescription" xml:space="preserve">
+    <value>Создайте устройство и установите Print Bridge на компьютер, подключенный к принтеру чеков.</value>
+  </data>
+  <data name="PrintBridge.AddDevice" xml:space="preserve">
+    <value>Добавить устройство</value>
+  </data>
+  <data name="PrintBridge.SetupInformationTitle" xml:space="preserve">
+    <value>Распечатать информацию о настройке моста</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction1" xml:space="preserve">
+    <value>Откройте приложение Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction2" xml:space="preserve">
+    <value>Вставьте сервер URL ниже в поле Сервер URL.</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction3" xml:space="preserve">
+    <value>Вставьте сгенерированный токен устройства в поле «Токен доступа».</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction4" xml:space="preserve">
+    <value>Выберите свой принтер и нажмите «Сохранить настройки».</value>
+  </data>
+  <data name="PrintBridge.SetupInstruction5" xml:space="preserve">
+    <value>Если подключение пройдет успешно, имя устройства появится автоматически.</value>
+  </data>
+  <data name="PrintBridge.ServerUrl" xml:space="preserve">
+    <value>Сервер URL</value>
+  </data>
+  <data name="PrintBridge.DeviceToken" xml:space="preserve">
+    <value>Токен устройства</value>
+  </data>
+  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
+    <value>Копирующий сервер URL</value>
+  </data>
+  <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
+    <value>Сервер URL не удалось определить. Откройте эту страницу из своего клиентского домена или обратитесь к своему администратору.</value>
+  </data>
+  <data name="PrintBridge.TokenPendingHint" xml:space="preserve">
+    <value>Добавьте устройство выше или заново создайте существующий токен устройства, чтобы просмотреть токен устройства здесь.</value>
+  </data>
+  <data name="PrintBridge.SetupDescription" xml:space="preserve">
+    <value>Print Bridge — это локальное приложение для Windows, которое подключает установленный термопринтер к Wasla.</value>
+  </data>
+  <data name="PrintBridge.SetupInstructions" xml:space="preserve">
+    <value>Инструкции по настройке</value>
+  </data>
+  <data name="PrintBridge.Troubleshooting" xml:space="preserve">
+    <value>Поиск неисправностей</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
+    <value>Убедитесь, что Print Bridge запущен на компьютере Windows, подключенном к принтеру.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint2" xml:space="preserve">
+    <value>Убедитесь, что сервер URL и токен устройства правильно сохранены в приложении Print Bridge.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint3" xml:space="preserve">
+    <value>Если устройство находится в автономном режиме, перезапустите Print Bridge и используйте тестовое соединение.</value>
+  </data>
+  <data name="PrintBridge.TroubleshootingHint4" xml:space="preserve">
+    <value>Убедитесь, что принтер установлен в Windows.</value>
+  </data>
+  <data name="PrintBridge.ReceiptPrinterSettings" xml:space="preserve">
+    <value>Настройки квитанции и принтера</value>
+  </data>
+  <data name="PrintBridge.Online" xml:space="preserve">
+    <value>Онлайн</value>
+  </data>
+  <data name="PrintBridge.Offline" xml:space="preserve">
+    <value>Оффлайн</value>
+  </data>
+  <data name="PrintBridge.Unknown" xml:space="preserve">
+    <value>Неизвестный</value>
+  </data>
+  <data name="PrintBridge.VersionUnknown" xml:space="preserve">
+    <value>Неизвестный</value>
+  </data>
+  <data name="PrintBridge.LocalAlias" xml:space="preserve">
+    <value>Локальный псевдоним</value>
+  </data>
+  <data name="PrintBridge.Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Pricing.NavTitle" xml:space="preserve">
+    <value>Цены</value>
+  </data>
+  <data name="Pricing.Title" xml:space="preserve">
+    <value>Выберите план, который подходит вашему бизнесу</value>
+  </data>
+  <data name="Pricing.Subtitle" xml:space="preserve">
+    <value>Подключите свой ресторан к платформам онлайн-заказов из одного места. Интеграция платежей скоро появится.</value>
+  </data>
+  <data name="Pricing.ViewPlans" xml:space="preserve">
+    <value>Посмотреть планы</value>
+  </data>
+  <data name="Pricing.Recommended" xml:space="preserve">
+    <value>Рекомендуется</value>
+  </data>
+  <data name="Pricing.PerMonth" xml:space="preserve">
+    <value>месяц</value>
+  </data>
+  <data name="Pricing.Monthly" xml:space="preserve">
+    <value>Ежемесячно</value>
+  </data>
+  <data name="Pricing.ContactSales" xml:space="preserve">
+    <value>Индивидуальные цены</value>
+  </data>
+  <data name="Pricing.ContactUs" xml:space="preserve">
+    <value>Связаться с нами</value>
+  </data>
+  <data name="Pricing.ChoosePlan" xml:space="preserve">
+    <value>Выбрать план</value>
+  </data>
+  <data name="Pricing.Cta.StartStarter" xml:space="preserve">
+    <value>Начни со стартера</value>
+  </data>
+  <data name="Pricing.Cta.StartPro" xml:space="preserve">
+    <value>Начни с Про</value>
+  </data>
+  <data name="Pricing.Cta.StartProPlus" xml:space="preserve">
+    <value>Начните с Про+</value>
+  </data>
+  <data name="Pricing.Cta.RequestOffer" xml:space="preserve">
+    <value>Запросить предложение</value>
+  </data>
+  <data name="Pricing.BillingNote" xml:space="preserve">
+    <value>Цены являются ориентировочными. Реальный биллинг еще не активен.</value>
+  </data>
+  <data name="Pricing.Plan.Starter.Name" xml:space="preserve">
+    <value>Стартер</value>
+  </data>
+  <data name="Pricing.Plan.Starter.Description" xml:space="preserve">
+    <value>Для небольших ресторанов и первой установки</value>
+  </data>
+  <data name="Pricing.Plan.Starter.Price" xml:space="preserve">
+    <value>300 TL / месяц</value>
+  </data>
+  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve">
+    <value>1 активное устройство Print Bridge</value>
+  </data>
+  <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve">
+    <value>Базовая панель заказов</value>
+  </data>
+  <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve">
+    <value>Поддерживаемые подключения к платформе</value>
+  </data>
+  <data name="Pricing.Plan.Starter.Feature3" xml:space="preserve">
+    <value>Основные настройки чека</value>
+  </data>
+  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve">
+    <value>1 активное устройство Print Bridge</value>
+  </data>
+  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve">
+    <value>История заказов</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Name" xml:space="preserve">
+    <value>Про</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Description" xml:space="preserve">
+    <value>Для активных ресторанов</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Price" xml:space="preserve">
+    <value>600 TL / месяц</value>
+  </data>
+  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve">
+    <value>3 активных устройства Print Bridge</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve">
+    <value>Все в Стартере</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve">
+    <value>Автоматическая синхронизация заказов</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Feature3" xml:space="preserve">
+    <value>Автоматическое одобрение поддержки, если она доступна</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Feature4" xml:space="preserve">
+    <value>Живая экспозиция кухни</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve">
+    <value>3 активных устройства Print Bridge</value>
+  </data>
+  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve">
+    <value>История заказов и отчеты</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve">
+    <value>Про+</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve">
+    <value>Для оживленных ресторанов или крупных предприятий</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve">
+    <value>1200 TL / месяц</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve">
+    <value>10 активных устройств Print Bridge</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve">
+    <value>Все в Про</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve">
+    <value>10 активных устройств Print Bridge</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve">
+    <value>Более гибкое использование устройства</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve">
+    <value>Лучше подходит для нескольких станций</value>
+  </data>
+  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve">
+    <value>Приоритетная поддержка настройки</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve">
+    <value>Предприятие</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve">
+    <value>Для сетей и предприятий с индивидуальными требованиями</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve">
+    <value>От 2500 TL/мес.</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve">
+    <value>Неограниченное количество/индивидуальные устройства Print Bridge</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve">
+    <value>Все в Про+</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve">
+    <value>Неограниченное количество/индивидуальные устройства Print Bridge</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve">
+    <value>Поддержка нескольких филиалов</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve">
+    <value>Пользовательские интеграции</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve">
+    <value>Индивидуальная настройка и поддержка</value>
+  </data>
+  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve">
+    <value>Таможенное соглашение и лимиты</value>
+  </data>
+  <data name="Signup.StartNow" xml:space="preserve">
+    <value>Начать сейчас</value>
+  </data>
+  <data name="Signup.Title" xml:space="preserve">
+    <value>Создайте свою учетную запись Wasla</value>
+  </data>
+  <data name="Signup.Subtitle" xml:space="preserve">
+    <value>Подключите свой ресторан к платформам онлайн-заказов и управляйте всем в одном месте.</value>
+  </data>
+  <data name="Signup.StepPlan" xml:space="preserve">
+    <value>Выбрать план</value>
+  </data>
+  <data name="Signup.SelectedPlanTitle" xml:space="preserve">
+    <value>Ваш выбор</value>
+  </data>
+  <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve">
+    <value>Пакет {0}</value>
+  </data>
+  <data name="Signup.SelectedPlanIncludes" xml:space="preserve">
+    <value>С этим пакетом:</value>
+  </data>
+  <data name="Signup.YearlyAdvantageNote" xml:space="preserve">
+    <value>2 месяца бесплатно при ежегодной оплате.</value>
+  </data>
+  <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve">
+    <value>Индивидуальное предложение</value>
+  </data>
+  <data name="Signup.StepBusiness" xml:space="preserve">
+    <value>Детали бизнеса</value>
+  </data>
+  <data name="Signup.StepOwner" xml:space="preserve">
+    <value>Аккаунт владельца</value>
+  </data>
+  <data name="Signup.StepCreate" xml:space="preserve">
+    <value>Зарегистрироваться</value>
+  </data>
+  <data name="Signup.Plan" xml:space="preserve">
+    <value>План</value>
+  </data>
+  <data name="Signup.BillingPeriod" xml:space="preserve">
+    <value>Расчетный период</value>
+  </data>
+  <data name="Signup.BillingMonthly" xml:space="preserve">
+    <value>Ежемесячно</value>
+  </data>
+  <data name="Signup.BillingYearly" xml:space="preserve">
+    <value>Ежегодно</value>
+  </data>
+  <data name="Signup.BillingNote" xml:space="preserve">
+    <value>Интеграция платежей еще не активна. Поток платежей будет смоделирован на следующем экране.</value>
+  </data>
+  <data name="Signup.BusinessName" xml:space="preserve">
+    <value>Название компании/ресторана</value>
+  </data>
+  <data name="Signup.BusinessType" xml:space="preserve">
+    <value>Тип бизнеса</value>
+  </data>
+  <data name="Signup.BusinessTypePlaceholder" xml:space="preserve">
+    <value>например Ресторан, кафе</value>
+  </data>
+  <data name="Signup.CityLabel" xml:space="preserve">
+    <value>Город/Провинция</value>
+  </data>
+  <data name="Signup.DistrictLabel" xml:space="preserve">
+    <value>Округ</value>
+  </data>
+  <data name="Signup.SelectCity" xml:space="preserve">
+    <value>Выберите город</value>
+  </data>
+  <data name="Signup.SelectDistrict" xml:space="preserve">
+    <value>Выберите район</value>
+  </data>
+  <data name="Signup.StepContact" xml:space="preserve">
+    <value>Контактная информация</value>
+  </data>
+  <data name="Signup.BusinessPhoneType" xml:space="preserve">
+    <value>Тип телефона</value>
+  </data>
+  <data name="Signup.PhoneTypeMobile" xml:space="preserve">
+    <value>мобильный</value>
+  </data>
+  <data name="Signup.PhoneTypeLandline" xml:space="preserve">
+    <value>Стационарный телефон</value>
+  </data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve">
+    <value>Пример: +90 531 324 12 45</value>
+  </data>
+  <data name="Signup.BusinessPhone" xml:space="preserve">
+    <value>Рабочий телефон</value>
+  </data>
+  <data name="Signup.BusinessEmail" xml:space="preserve">
+    <value>Деловая электронная почта</value>
+  </data>
+  <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve">
+    <value>info@yourrestaurant.com</value>
+  </data>
+  <data name="Signup.BusinessEmailHelp" xml:space="preserve">
+    <value>Если доступно, вы можете добавить общий контактный адрес электронной почты вашего ресторана.</value>
+  </data>
+  <data name="Signup.Phone" xml:space="preserve">
+    <value>Телефон</value>
+  </data>
+  <data name="Signup.City" xml:space="preserve">
+    <value>Город/Провинция</value>
+  </data>
+  <data name="Signup.Country" xml:space="preserve">
+    <value>Страна</value>
+  </data>
+  <data name="Signup.District" xml:space="preserve">
+    <value>Округ</value>
+  </data>
+  <data name="Signup.Neighborhood" xml:space="preserve">
+    <value>Район</value>
+  </data>
+  <data name="Signup.AddressLine1" xml:space="preserve">
+    <value>адрес улицы</value>
+  </data>
+  <data name="Signup.AddressLine2" xml:space="preserve">
+    <value>Адресная строка 2</value>
+  </data>
+  <data name="Signup.StreetAddress" xml:space="preserve">
+    <value>Улица/Авеню</value>
+  </data>
+  <data name="Signup.BuildingNumber" xml:space="preserve">
+    <value>№ здания</value>
+  </data>
+  <data name="Signup.Floor" xml:space="preserve">
+    <value>Пол</value>
+  </data>
+  <data name="Signup.DoorNumber" xml:space="preserve">
+    <value>Номер квартиры/двери</value>
+  </data>
+  <data name="Signup.AddressNote" xml:space="preserve">
+    <value>Адресная заметка</value>
+  </data>
+  <data name="Signup.LocationUrl" xml:space="preserve">
+    <value>Ссылка на местоположение карты</value>
+  </data>
+  <data name="Signup.LocationUrlPlaceholder" xml:space="preserve">
+    <value>https://maps.app.goo.gl/...</value>
+  </data>
+  <data name="Signup.LocationUrlHelp" xml:space="preserve">
+    <value>Если доступно, вы можете добавить ссылку на местоположение вашего ресторана на Картах Google.</value>
+  </data>
+  <data name="Signup.NeighborhoodManualHint" xml:space="preserve">
+    <value>Если его нет в списке, вы можете ввести название района вручную.</value>
+  </data>
+  <data name="Signup.StreetManualHint" xml:space="preserve">
+    <value>Если ее нет в списке, вы можете ввести название улицы вручную.</value>
+  </data>
+  <data name="Signup.PostalCode" xml:space="preserve">
+    <value>Почтовый индекс</value>
+  </data>
+  <data name="Signup.StepAddress" xml:space="preserve">
+    <value>Детали адреса</value>
+  </data>
+  <data name="Signup.Slug" xml:space="preserve">
+    <value>Субдомен</value>
+  </data>
+  <data name="Signup.SlugHelp" xml:space="preserve">
+    <value>Ваш адрес для входа:</value>
+  </data>
+  <data name="Signup.OwnerFullName" xml:space="preserve">
+    <value>Полное имя</value>
+  </data>
+  <data name="Signup.OwnerEmail" xml:space="preserve">
+    <value>Электронная почта</value>
+  </data>
+  <data name="Signup.OwnerPhone" xml:space="preserve">
+    <value>Телефон</value>
+  </data>
+  <data name="Signup.Password" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="Signup.ConfirmPassword" xml:space="preserve">
+    <value>Подтвердите пароль</value>
+  </data>
+  <data name="Signup.SetupLaterNote" xml:space="preserve">
+    <value>Подключение платформы и другие настройки вы можете выполнить после оплаты.</value>
+  </data>
+  <data name="Signup.ContinueToPayment" xml:space="preserve">
+    <value>Завершите регистрацию и продолжите оплату</value>
+  </data>
+  <data name="Signup.CreateAccount" xml:space="preserve">
+    <value>Зарегистрироваться</value>
+  </data>
+  <data name="Signup.PendingTitle" xml:space="preserve">
+    <value>Ваш аккаунт почти готов</value>
+  </data>
+  <data name="Signup.PendingSubtitle" xml:space="preserve">
+    <value>Мы получили ваши данные. Завершите шаг оплаты, чтобы продолжить.</value>
+  </data>
+  <data name="Signup.PendingCheckoutNote" xml:space="preserve">
+    <value>После оплаты панно вашего ресторана будет готово.</value>
+  </data>
+  <data name="Signup.PendingBackHome" xml:space="preserve">
+    <value>Вернуться на главную страницу</value>
+  </data>
+  <data name="Signup.ContinueToCheckout" xml:space="preserve">
+    <value>Перейти к оплате</value>
+  </data>
+  <data name="Signup.PendingLabelRestaurant" xml:space="preserve">
+    <value>Ваш ресторан</value>
+  </data>
+  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve">
+    <value>Ваш адрес Wasla</value>
+  </data>
+  <data name="Signup.OpenTenantAddressTitle" xml:space="preserve">
+    <value>Открыть {0}</value>
+  </data>
+  <data name="Signup.PendingLabelPackage" xml:space="preserve">
+    <value>Ваш пакет</value>
+  </data>
+  <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve">
+    <value>Период оплаты</value>
+  </data>
+  <data name="Signup.PendingNextStepsTitle" xml:space="preserve">
+    <value>После завершения оплаты:</value>
+  </data>
+  <data name="Signup.PendingNextStep1" xml:space="preserve">
+    <value>Панель вашего ресторана создана.</value>
+  </data>
+  <data name="Signup.PendingNextStep2" xml:space="preserve">
+    <value>Ваша учетная запись администратора активирована</value>
+  </data>
+  <data name="Signup.PendingNextStep3" xml:space="preserve">
+    <value>Вы можете начать подключать свои платформы</value>
+  </data>
+  <data name="Signup.PendingTestNote" xml:space="preserve">
+    <value>В тестовой среде будет смоделирован этап оплаты.</value>
+  </data>
+  <data name="Signup.PanelReadyTitle" xml:space="preserve">
+    <value>Ваша панель готова</value>
+  </data>
+  <data name="Signup.PanelReadyBody" xml:space="preserve">
+    <value>Панель вашего ресторана создана. Теперь вы можете войти в систему со своего выделенного адреса Wasla.</value>
+  </data>
+  <data name="Signup.GoToPanel" xml:space="preserve">
+    <value>Перейти на панель</value>
+  </data>
+  <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve">
+    <value>Платеж получен</value>
+  </data>
+  <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve">
+    <value>Ваш платеж был получен. Готовится ваша ресторанная панель.</value>
+  </data>
+  <data name="Signup.PaymentReceivedPreparingSubtitle" xml:space="preserve">
+    <value>Готовится ваша ресторанная панель.</value>
+  </data>
+  <data name="Signup.PaymentReceivedPreparingBody" xml:space="preserve">
+    <value>После завершения настройки вы сможете войти в систему со своего адреса Wasla.</value>
+  </data>
+  <data name="Signup.PendingRegistrationDetails" xml:space="preserve">
+    <value>Детали регистрации</value>
+  </data>
+  <data name="Signup.PendingLabelPaymentStatus" xml:space="preserve">
+    <value>Статус платежа</value>
+  </data>
+  <data name="Signup.PendingLabelProvisioningStatus" xml:space="preserve">
+    <value>Статус настройки</value>
+  </data>
+  <data name="Signup.PendingLabelBusinessPhone" xml:space="preserve">
+    <value>Рабочий телефон</value>
+  </data>
+  <data name="Signup.PendingLabelBusinessEmail" xml:space="preserve">
+    <value>Деловая электронная почта</value>
+  </data>
+  <data name="Signup.PendingLabelOwnerName" xml:space="preserve">
+    <value>Владелец аккаунта</value>
+  </data>
+  <data name="Signup.PendingLabelOwnerEmail" xml:space="preserve">
+    <value>Адрес электронной почты владельца</value>
+  </data>
+  <data name="Signup.PendingLabelOwnerPhone" xml:space="preserve">
+    <value>Телефон владельца</value>
+  </data>
+  <data name="Signup.PendingLabelCreatedAt" xml:space="preserve">
+    <value>Дата регистрации</value>
+  </data>
+  <data name="Signup.PaymentStatusPending" xml:space="preserve">
+    <value>Ожидается платеж</value>
+  </data>
+  <data name="Signup.PaymentStatusPaid" xml:space="preserve">
+    <value>Платеж получен</value>
+  </data>
+  <data name="Signup.PaymentStatusFailed" xml:space="preserve">
+    <value>Платеж не выполнен</value>
+  </data>
+  <data name="Signup.PaymentStatusCancelled" xml:space="preserve">
+    <value>Отменено</value>
+  </data>
+  <data name="Signup.PaymentStatusExpired" xml:space="preserve">
+    <value>Истекший</value>
+  </data>
+  <data name="Signup.ProvisioningStatusPending" xml:space="preserve">
+    <value>Ожидается установка</value>
+  </data>
+  <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve">
+    <value>Выполняется установка</value>
+  </data>
+  <data name="Signup.ProvisioningStatusComplete" xml:space="preserve">
+    <value>Настройка завершена</value>
+  </data>
+  <data name="Checkout.ReviewTitle" xml:space="preserve">
+    <value>Сводка платежей</value>
+  </data>
+  <data name="Checkout.ReviewSubtitle" xml:space="preserve">
+    <value>Просмотрите выбранный пакет и информацию о ресторане. В этой тестовой среде будет смоделирован результат платежа.</value>
+  </data>
+  <data name="Checkout.SimulationNotice" xml:space="preserve">
+    <value>Интеграция реальных платежей еще не активна. На этом экране моделируется результат платежа.</value>
+  </data>
+  <data name="Checkout.SectionPackageInfo" xml:space="preserve">
+    <value>Детали пакета</value>
+  </data>
+  <data name="Checkout.SectionRestaurantInfo" xml:space="preserve">
+    <value>Подробности о ресторане</value>
+  </data>
+  <data name="Checkout.SectionAccountOwner" xml:space="preserve">
+    <value>Владелец аккаунта</value>
+  </data>
+  <data name="Checkout.SectionRegistration" xml:space="preserve">
+    <value>Сводка регистрации</value>
+  </data>
+  <data name="Checkout.SectionPricing" xml:space="preserve">
+    <value>Сводка цен</value>
+  </data>
+  <data name="Checkout.AddressSummary" xml:space="preserve">
+    <value>Адрес</value>
+  </data>
+  <data name="Checkout.PlanLabel" xml:space="preserve">
+    <value>План</value>
+  </data>
+  <data name="Checkout.OwnerFullNameLabel" xml:space="preserve">
+    <value>Уполномоченное лицо</value>
+  </data>
+  <data name="Checkout.UnknownPlanLabel" xml:space="preserve">
+    <value>Стандартный пакет</value>
+  </data>
+  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve">
+    <value>Ежемесячная справочная цена</value>
+  </data>
+  <data name="Checkout.TotalAmount" xml:space="preserve">
+    <value>Общая сумма</value>
+  </data>
+  <data name="Checkout.SimulateSuccess" xml:space="preserve">
+    <value>Имитировать успешный платеж</value>
+  </data>
+  <data name="Checkout.SimulateFailed" xml:space="preserve">
+    <value>Имитировать неудачный платеж</value>
+  </data>
+  <data name="Checkout.CancelRegistration" xml:space="preserve">
+    <value>Отменить регистрацию</value>
+  </data>
+  <data name="Checkout.SuccessTitle" xml:space="preserve">
+    <value>Платеж симулируется как успешный</value>
+  </data>
+  <data name="Checkout.SuccessMessage" xml:space="preserve">
+    <value>Платеж был смоделирован как успешный.</value>
+  </data>
+  <data name="Checkout.SuccessNextPhase" xml:space="preserve">
+    <value>Панель вашего ресторана будет подготовлена ​​на следующем этапе.</value>
+  </data>
+  <data name="Checkout.PanelReadyTitle" xml:space="preserve">
+    <value>Ваша панель готова</value>
+  </data>
+  <data name="Checkout.PanelReadyMessage" xml:space="preserve">
+    <value>Ваш платеж завершен, и панель вашего ресторана создана.</value>
+  </data>
+  <data name="Checkout.GoToPanel" xml:space="preserve">
+    <value>Перейти на панель ресторана</value>
+  </data>
+  <data name="Checkout.PaymentReceivedPreparingTitle" xml:space="preserve">
+    <value>Платеж получен</value>
+  </data>
+  <data name="Checkout.PaymentReceivedPreparingMessage" xml:space="preserve">
+    <value>Ваш платеж был получен. Готовится ваша ресторанная панель.</value>
+  </data>
+  <data name="Checkout.FailedTitle" xml:space="preserve">
+    <value>Платеж смоделирован как неудавшийся</value>
+  </data>
+  <data name="Checkout.FailedMessage" xml:space="preserve">
+    <value>Платеж был смоделирован как неудавшийся.</value>
+  </data>
+  <data name="Checkout.FailedNoWorkspace" xml:space="preserve">
+    <value>Панель ресторана не создана. При желании вы можете попробовать выполнить платеж еще раз.</value>
+  </data>
+  <data name="Checkout.CancelledTitle" xml:space="preserve">
+    <value>Регистрация отменена</value>
+  </data>
+  <data name="Checkout.CancelledMessage" xml:space="preserve">
+    <value>Регистрация отменена. При желании вы можете зарегистрироваться еще раз.</value>
+  </data>
+  <data name="Checkout.TryAgain" xml:space="preserve">
+    <value>Вернуться к этапу оплаты</value>
+  </data>
+  <data name="Checkout.RegisterAgain" xml:space="preserve">
+    <value>Зарегистрируйтесь снова</value>
+  </data>
+  <data name="Checkout.StatusAlreadyPaid" xml:space="preserve">
+    <value>Платеж уже смоделирован как успешный для этой регистрации.</value>
+  </data>
+  <data name="Checkout.StatusCancelled" xml:space="preserve">
+    <value>Данная регистрация отменена.</value>
+  </data>
+  <data name="Checkout.StatusProvisioned" xml:space="preserve">
+    <value>Панно ресторана для этой регистрации уже подготовлено.</value>
+  </data>
+  <data name="Checkout.StatusExpired" xml:space="preserve">
+    <value>Срок действия этой регистрации истек. Пожалуйста, зарегистрируйтесь еще раз.</value>
+  </data>
+  <data name="Signup.AlreadyHaveAccount" xml:space="preserve">
+    <value>У вас уже есть аккаунт?</value>
+  </data>
+  <data name="Signup.SlugUnavailable" xml:space="preserve">
+    <value>Этот поддомен уже занят.</value>
+  </data>
+  <data name="Signup.ProvisioningFailed" xml:space="preserve">
+    <value>Не удалось создать учетную запись. Пожалуйста, попробуйте еще раз или обратитесь в службу поддержки.</value>
+  </data>
+  <data name="Signup.EnterpriseNoticeTitle" xml:space="preserve">
+    <value>Запросить корпоративное предложение</value>
+  </data>
+  <data name="Signup.EnterpriseNoticeBody" xml:space="preserve">
+    <value>План Enterprise предлагается с индивидуальными лимитами и соглашением. Свяжитесь с нами, чтобы запросить предложение вместо использования формы самообслуживания.</value>
+  </data>
+  <data name="Signup.EnterpriseContactOnly" xml:space="preserve">
+    <value>Пожалуйста, свяжитесь с нами для получения плана Enterprise.</value>
+  </data>
+  <data name="Validation.BusinessNameRequired" xml:space="preserve">
+    <value>Укажите название компании.</value>
+  </data>
+  <data name="Validation.BusinessTypeRequired" xml:space="preserve">
+    <value>Выберите хотя бы один тип бизнеса.</value>
+  </data>
+  <data name="Validation.BusinessTypeInvalid" xml:space="preserve">
+    <value>Выбранный тип деятельности недействителен.</value>
+  </data>
+  <data name="Validation.CityRequired" xml:space="preserve">
+    <value>Пожалуйста, выберите город.</value>
+  </data>
+  <data name="Validation.DistrictRequired" xml:space="preserve">
+    <value>Пожалуйста, выберите район.</value>
+  </data>
+  <data name="Validation.CityDistrictInvalid" xml:space="preserve">
+    <value>Выбранный район не принадлежит выбранному городу.</value>
+  </data>
+  <data name="Validation.StreetAddressRequired" xml:space="preserve">
+    <value>Требуется информация об улице.</value>
+  </data>
+  <data name="Validation.NeighborhoodInvalid" xml:space="preserve">
+    <value>Выбранный район недействителен.</value>
+  </data>
+  <data name="Validation.StreetInvalid" xml:space="preserve">
+    <value>Выбранная улица недействительна.</value>
+  </data>
+  <data name="Validation.LocationUrlInvalid" xml:space="preserve">
+    <value>Введите действительную ссылку на карту.</value>
+  </data>
+  <data name="Validation.BusinessPhoneTypeInvalid" xml:space="preserve">
+    <value>Неверный тип телефона.</value>
+  </data>
+  <data name="Validation.SlugRequired" xml:space="preserve">
+    <value>Требуется субдомен.</value>
+  </data>
+  <data name="Validation.SlugInvalid" xml:space="preserve">
+    <value>Субдомен может содержать только строчные буквы, цифры, дефисы и подчеркивания.</value>
+  </data>
+  <data name="Validation.FullNameRequired" xml:space="preserve">
+    <value>Требуется полное имя.</value>
+  </data>
+  <data name="Validation.ConfirmPasswordRequired" xml:space="preserve">
+    <value>Требуется подтверждение пароля.</value>
+  </data>
+  <data name="Validation.PasswordMismatch" xml:space="preserve">
+    <value>Пароли не совпадают.</value>
+  </data>
+  <data name="Validation.PasswordMinLength" xml:space="preserve">
+    <value>Пароль должен быть не менее 8 символов.</value>
+  </data>
+  <data name="Validation.PlanInvalid" xml:space="preserve">
+    <value>Неверный выбор плана.</value>
+  </data>
+  <data name="Validation.BillingPeriodInvalid" xml:space="preserve">
+    <value>Неверный расчетный период.</value>
+  </data>
+  <data name="Auth.WelcomeInvalid" xml:space="preserve">
+    <value>Ссылка для входа недействительна или срок ее действия истек. Пожалуйста, войдите в систему.</value>
+  </data>
+  <data name="Onboarding.Title" xml:space="preserve">
+    <value>Добро пожаловать в Wasla</value>
+  </data>
+  <data name="Onboarding.Subtitle" xml:space="preserve">
+    <value>Чтобы начать, выполните следующие действия. Вы можете вернуться в любое время.</value>
+  </data>
+  <data name="Onboarding.StepPlatformsTitle" xml:space="preserve">
+    <value>Соединения платформы</value>
+  </data>
+  <data name="Onboarding.StepPlatformsDescription" xml:space="preserve">
+    <value>Добавьте поддерживаемые подключения к платформе.</value>
+  </data>
+  <data name="Onboarding.StepReceiptTitle" xml:space="preserve">
+    <value>Настройки получения</value>
+  </data>
+  <data name="Onboarding.StepReceiptDescription" xml:space="preserve">
+    <value>Настройте язык квитанции, копии и содержимое.</value>
+  </data>
+  <data name="Onboarding.StepPrintBridgeTitle" xml:space="preserve">
+    <value>Печать моста</value>
+  </data>
+  <data name="Onboarding.StepPrintBridgeDescription" xml:space="preserve">
+    <value>Настройте подключение к локальному принтеру.</value>
+  </data>
+  <data name="Onboarding.StepSettingsTitle" xml:space="preserve">
+    <value>Настройки бизнеса</value>
+  </data>
+  <data name="Onboarding.StepSettingsDescription" xml:space="preserve">
+    <value>Проверьте учетную запись и рабочие настройки.</value>
+  </data>
+  <data name="Onboarding.Open" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="Onboarding.GoToDashboard" xml:space="preserve">
+    <value>Перейти на панель управления</value>
+  </data>
+  <data name="Onboarding.GoToOrders" xml:space="preserve">
+    <value>Перейти к заказам</value>
+  </data>
+  <data name="TenantNotFound.PageTitle" xml:space="preserve">
+    <value>Этот адрес Wasla не активен.</value>
+  </data>
+  <data name="TenantNotFound.Title" xml:space="preserve">
+    <value>Этот адрес Wasla еще не активен.</value>
+  </data>
+  <data name="TenantNotFound.Description" xml:space="preserve">
+    <value>По этому адресу не найдено ни одной активной панели ресторана. Если вы не завершили регистрацию, вы можете вернуться на страницу регистрации.</value>
+  </data>
+  <data name="TenantNotFound.InfoLine1" xml:space="preserve">
+    <value>Этот адрес Wasla еще не активен.</value>
+  </data>
+  <data name="TenantNotFound.InfoLine2" xml:space="preserve">
+    <value>Для этого домена не найдено ни одной активной панели ресторана.</value>
+  </data>
+  <data name="TenantNotFound.InfoLine3" xml:space="preserve">
+    <value>Панель вашего ресторана откроется после завершения оплаты и настройки аккаунта.</value>
+  </data>
+  <data name="TenantNotFound.HostLabel" xml:space="preserve">
+    <value>Адрес проверен: {0}</value>
+  </data>
+  <data name="TenantNotFound.BackToSignup" xml:space="preserve">
+    <value>Вернуться к регистрации</value>
+  </data>
+  <data name="TenantAddressRequired.PageTitle" xml:space="preserve">
+    <value>Требуется адрес панели ресторана</value>
+  </data>
+  <data name="TenantAddressRequired.Title" xml:space="preserve">
+    <value>Требуется адрес панели ресторана</value>
+  </data>
+  <data name="TenantAddressRequired.Description" xml:space="preserve">
+    <value>Чтобы войти в свою панель, используйте специальный адрес Wasla вашего ресторана.</value>
+  </data>
+  <data name="TenantAddressRequired.Example" xml:space="preserve">
+    <value>Пример: bahce-tadi.wasla.local</value>
+  </data>
+  <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
+    <value>Вернуться к регистрации</value>
+  </data>
+</root>

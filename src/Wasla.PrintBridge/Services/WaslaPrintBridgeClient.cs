@@ -106,7 +106,7 @@ public sealed class WaslaPrintBridgeClient
         CancellationToken ct)
     {
         var (hub, _, _) = _holder.Snapshot();
-        var baseUrl = hub.ServerUrl.TrimEnd('/');
+        var serverUrl = hub.ServerUrl.TrimEnd('/');
 
         HttpResponseMessage response;
         try
@@ -117,27 +117,27 @@ public sealed class WaslaPrintBridgeClient
         {
             _logger.LogWarning(
                 ex,
-                "Print Bridge SSL error. BaseUrl={BaseUrl}, Path={Path}",
-                baseUrl,
+                "Print Bridge SSL error. ServerUrl={ServerUrl}, Path={Path}",
+                serverUrl,
                 relativePath);
-            throw PrintBridgeConnectionException.SslError(relativePath, baseUrl, ex);
+            throw PrintBridgeConnectionException.SslError(relativePath, serverUrl, ex);
         }
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(
                 ex,
-                "Print Bridge server unavailable. BaseUrl={BaseUrl}, Path={Path}",
-                baseUrl,
+                "Print Bridge server unavailable. ServerUrl={ServerUrl}, Path={Path}",
+                serverUrl,
                 relativePath);
-            throw PrintBridgeConnectionException.ServerUnavailable(relativePath, baseUrl, ex);
+            throw PrintBridgeConnectionException.ServerUnavailable(relativePath, serverUrl, ex);
         }
         catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
         {
             _logger.LogWarning(
-                "Print Bridge request timed out. BaseUrl={BaseUrl}, Path={Path}",
-                baseUrl,
+                "Print Bridge request timed out. ServerUrl={ServerUrl}, Path={Path}",
+                serverUrl,
                 relativePath);
-            throw PrintBridgeConnectionException.ServerUnavailable(relativePath, baseUrl, ex);
+            throw PrintBridgeConnectionException.ServerUnavailable(relativePath, serverUrl, ex);
         }
 
         if (response.IsSuccessStatusCode)
@@ -145,15 +145,15 @@ public sealed class WaslaPrintBridgeClient
 
         var body = await SafeReadBodyAsync(response, ct).ConfigureAwait(false);
         _logger.LogWarning(
-            "Print Bridge API failed. BaseUrl={BaseUrl}, Path={Path}, StatusCode={StatusCode}, Body={Body}",
-            baseUrl,
+            "Print Bridge API failed. ServerUrl={ServerUrl}, Path={Path}, StatusCode={StatusCode}, Body={Body}",
+            serverUrl,
             relativePath,
             (int)response.StatusCode,
             body);
 
         throw PrintBridgeConnectionException.FromResponse(
             relativePath,
-            baseUrl,
+            serverUrl,
             (int)response.StatusCode,
             body);
     }

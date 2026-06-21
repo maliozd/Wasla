@@ -1,0 +1,6 @@
+﻿dotnet run --project src/Wasla.Cli -- add-central-admin 
+--email "admin@wasla.com"
+ --password "<STRONG_PASSWORD>"
+ --display-name "Wasla Admin"
+
+
