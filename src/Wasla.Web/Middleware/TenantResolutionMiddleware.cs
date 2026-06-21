@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.Options;
 
@@ -45,6 +46,7 @@ public sealed class TenantResolutionMiddleware
         HttpContext context,
         IMemoryCache cache,
         ITenantResolver resolver,
+        IPendingRegistrationService pendingRegistrations,
         IOptions<CustomerOnboardingOptions> onboardingOptions,
         ILogger<TenantResolutionMiddleware> logger)
     {
@@ -101,6 +103,20 @@ public sealed class TenantResolutionMiddleware
         if (tenant is null)
         {
             logger.LogInformation("No tenant for host {Host}", host);
+
+            var pending = await pendingRegistrations.GetActiveByPrimaryDomainAsync(
+                host,
+                context.RequestAborted);
+            if (pending is not null)
+            {
+                logger.LogInformation(
+                    "Pending registration found for host {Host}. RegistrationId={RegistrationId}, Status={Status}",
+                    host,
+                    pending.Id,
+                    pending.Status);
+                context.Response.Redirect($"/signup/pending/{pending.Id}");
+                return;
+            }
 
             // Subdomain request but no matching tenant: block access with a friendly page.
             var encodedHost = Uri.EscapeDataString(host);

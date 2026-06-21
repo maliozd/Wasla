@@ -3092,4 +3092,28 @@
   <data name="TenantAddressRequired.Description" xml:space="preserve"><value>To sign in to your panel, use your restaurant's dedicated Wasla address.</value></data>
   <data name="TenantAddressRequired.Example" xml:space="preserve"><value>Example: bahce-tadi.wasla.local</value></data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve"><value>Back to signup</value></data>
+  <data name="PrintBridge.Auto.SectionTitle" xml:space="preserve"><value>Wasla Print Bridge Setup</value></data>
+  <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>Recommended</value></data>
+  <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>Connect Print Bridge to this restaurant automatically.</value></data>
+  <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>Open and connect Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>Opening Wasla Print Bridge…</value></data>
+  <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>Waiting for Wasla Print Bridge…</value></data>
+  <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge connected successfully.</value></data>
+  <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>Settings saved, but the connection could not be verified yet.</value></data>
+  <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>Setup could not be completed. Please try again or use manual setup.</value></data>
+  <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>This setup link expired. Generate a new one.</value></data>
+  <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Could not start setup. Please try again.</value></data>
+  <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Try opening again</value></data>
+  <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Download Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Use manual setup</value></data>
+  <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Didn't open? Make sure Wasla Print Bridge is installed and has been run once.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Wasla Print Bridge must be downloaded and run once before your browser can open it automatically.</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Manual setup</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>localhost only works when Wasla and Print Bridge run on the same computer. On another computer, use an IP address or domain reachable from that computer.</value></data>
+  <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>The server address is unavailable right now.</value></data>
+  <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>No Print Bridge device is available. Create one first.</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>The current token for {0} will be replaced with a new token. Continue?</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Confirmation is required before replacing the current active device token.</value></data>
+  <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Automatic setup creates a new token for {0}; the old token will stop working.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>The token action could not be completed.</value></data>
 </root>

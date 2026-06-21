@@ -94,6 +94,74 @@ public sealed class WaslaPrintBridgeClient
         return await ReadActionResultAsync(response, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Exchange a one-time automatic-setup code against an explicit server URL (from the protocol URI),
+    /// before any settings are saved. No device token is sent. Returns null on any failure.
+    /// The code is never logged.
+    /// </summary>
+    public async Task<SetupExchangeResult?> ExchangeSetupAsync(string serverUrl, string code, CancellationToken ct)
+    {
+        var url = $"{serverUrl.TrimEnd('/')}/api/print-bridge/setup/exchange";
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.TryAddWithoutValidation("X-PrintBridge-Version", _appVersion);
+        request.Content = JsonContent.Create(new { code });
+
+        try
+        {
+            using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Print Bridge setup exchange rejected. ServerUrl={ServerUrl}, StatusCode={StatusCode}",
+                    serverUrl,
+                    (int)response.StatusCode);
+                return null;
+            }
+
+            var payload = await response.Content.ReadFromJsonAsync<SetupExchangeResponse>(JsonOptions, ct)
+                .ConfigureAwait(false);
+            if (payload is null || string.IsNullOrWhiteSpace(payload.DeviceToken))
+                return null;
+
+            return new SetupExchangeResult(
+                payload.SessionId,
+                string.IsNullOrWhiteSpace(payload.ServerUrl) ? serverUrl : payload.ServerUrl,
+                payload.DeviceToken,
+                payload.DeviceName ?? string.Empty,
+                payload.CompletionCredential ?? string.Empty);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "Print Bridge setup exchange failed to reach server. ServerUrl={ServerUrl}", serverUrl);
+            return null;
+        }
+    }
+
+    /// <summary>Best-effort report of automatic-setup completion. Never throws.</summary>
+    public async Task CompleteSetupAsync(
+        string serverUrl,
+        Guid sessionId,
+        string completionCredential,
+        bool connectionVerified,
+        CancellationToken ct)
+    {
+        if (sessionId == Guid.Empty || string.IsNullOrWhiteSpace(completionCredential))
+            return;
+
+        var url = $"{serverUrl.TrimEnd('/')}/api/print-bridge/setup/complete";
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Content = JsonContent.Create(new { sessionId, completionCredential, connectionVerified });
+
+        try
+        {
+            using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "Print Bridge setup completion report failed. ServerUrl={ServerUrl}", serverUrl);
+        }
+    }
+
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePath, CancellationToken ct)
     {
         using var request = CreateRequest(method, BuildAbsoluteUrl(relativePath));
@@ -250,4 +318,18 @@ public sealed class WaslaPrintBridgeClient
     public sealed record ReprintJobResult(bool Success, string MessageKey, Guid? NewPrintJobId);
 
     private sealed record ReprintPrintJobResponse(bool Success, string MessageKey, Guid? NewPrintJobId);
+
+    public sealed record SetupExchangeResult(
+        Guid SessionId,
+        string ServerUrl,
+        string DeviceToken,
+        string DeviceName,
+        string CompletionCredential);
+
+    private sealed record SetupExchangeResponse(
+        Guid SessionId,
+        string ServerUrl,
+        string DeviceToken,
+        string? DeviceName,
+        string? CompletionCredential);
 }

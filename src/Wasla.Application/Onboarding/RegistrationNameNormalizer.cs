@@ -99,6 +99,27 @@ public static class RegistrationNameNormalizer
         return trimmed.ToLowerInvariant();
     }
 
+    public static string? ExtractSlugFromHost(string? host, string marketingBaseDomain)
+    {
+        var normalizedHost = NormalizeHostForComparison(host);
+        if (string.IsNullOrWhiteSpace(normalizedHost))
+            return null;
+
+        var normalizedDomain = NormalizeHostForComparison(marketingBaseDomain?.Trim().TrimStart('.'));
+        if (string.IsNullOrWhiteSpace(normalizedDomain))
+            return null;
+
+        var suffix = "." + normalizedDomain;
+        if (!normalizedHost.EndsWith(suffix, StringComparison.Ordinal))
+            return null;
+
+        var slug = normalizedHost[..^suffix.Length];
+        if (string.Equals(slug, "www", StringComparison.Ordinal))
+            return null;
+
+        return IsValidSlugFormat(slug) ? slug : null;
+    }
+
     public static string ResolveUniqueDatabaseName(string baseDatabaseName, Func<string, bool> exists)
     {
         if (string.IsNullOrWhiteSpace(baseDatabaseName))

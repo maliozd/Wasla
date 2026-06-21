@@ -29,6 +29,14 @@ public sealed class PrintBridgeAuthMiddleware
             return;
         }
 
+        // Automatic setup endpoints authenticate via the one-time setup code / completion
+        // credential, not a device token. The app has no token yet during setup.
+        if (path.StartsWith("/api/print-bridge/setup", StringComparison.OrdinalIgnoreCase))
+        {
+            await _next(context);
+            return;
+        }
+
         if (!context.Request.Headers.TryGetValue(TokenHeader, out var tokenValues) ||
             string.IsNullOrWhiteSpace(tokenValues.FirstOrDefault()))
         {

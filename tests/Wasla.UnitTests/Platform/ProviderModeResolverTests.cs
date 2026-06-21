@@ -49,7 +49,7 @@ public sealed class ProviderModeResolverTests
 
         public IEnumerable<IConfigurationSection> GetChildren() => [];
 
-        public IChangeToken GetReloadToken() => NullChangeToken.Singleton;
+        public IChangeToken GetReloadToken() => TestChangeToken.Singleton;
 
         public IConfigurationSection GetSection(string key) => new DictionaryConfigurationSection(key, this[key]);
     }
@@ -70,8 +70,29 @@ public sealed class ProviderModeResolverTests
 
         public IEnumerable<IConfigurationSection> GetChildren() => [];
 
-        public IChangeToken GetReloadToken() => NullChangeToken.Singleton;
+        public IChangeToken GetReloadToken() => TestChangeToken.Singleton;
 
         public IConfigurationSection GetSection(string key) => new DictionaryConfigurationSection(key, null);
+    }
+
+    private sealed class TestChangeToken : IChangeToken
+    {
+        public static readonly TestChangeToken Singleton = new();
+
+        public bool ActiveChangeCallbacks => false;
+
+        public bool HasChanged => false;
+
+        public IDisposable RegisterChangeCallback(Action<object?> callback, object? state) =>
+            TestDisposable.Instance;
+    }
+
+    private sealed class TestDisposable : IDisposable
+    {
+        public static readonly TestDisposable Instance = new();
+
+        public void Dispose()
+        {
+        }
     }
 }

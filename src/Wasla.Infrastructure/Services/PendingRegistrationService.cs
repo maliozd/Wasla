@@ -422,10 +422,14 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         if (string.IsNullOrWhiteSpace(normalizedHost))
             return null;
 
+        var normalizedSlug = RegistrationNameNormalizer.ExtractSlugFromHost(
+            normalizedHost,
+            _options.MarketingBaseDomain);
         var now = DateTime.UtcNow;
 
         var row = await _central.PendingRegistrations.AsNoTracking()
-            .Where(p => p.PrimaryDomain.ToLower() == normalizedHost
+            .Where(p => (p.PrimaryDomain.ToLower() == normalizedHost
+                         || (normalizedSlug != null && p.Slug == normalizedSlug))
                      && p.Status != PendingRegistrationStatus.PaymentFailed
                      && p.Status != PendingRegistrationStatus.Cancelled
                      && p.Status != PendingRegistrationStatus.Expired

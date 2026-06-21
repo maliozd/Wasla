@@ -20,8 +20,12 @@ namespace Wasla.Web.Areas.Tenant.Controllers;
 [Route("print-bridge")]
 public sealed class PrintBridgeController : BaseController
 {
+    /// <summary>Custom protocol scheme the desktop app registers for browser-to-application setup.</summary>
+    public const string ProtocolScheme = "wasla-printbridge";
+
     private readonly ICurrentTenantService _currentTenant;
     private readonly IPrintBridgeDeviceManagementService _devices;
+    private readonly IPrintBridgeSetupSessionService _setupSessions;
     private readonly IPrintJobHistoryService _printJobHistory;
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
@@ -30,6 +34,7 @@ public sealed class PrintBridgeController : BaseController
     public PrintBridgeController(
         ICurrentTenantService currentTenant,
         IPrintBridgeDeviceManagementService devices,
+        IPrintBridgeSetupSessionService setupSessions,
         IPrintJobHistoryService printJobHistory,
         IWebHostEnvironment environment,
         IConfiguration configuration,
@@ -37,6 +42,7 @@ public sealed class PrintBridgeController : BaseController
     {
         _currentTenant = currentTenant;
         _devices = devices;
+        _setupSessions = setupSessions;
         _printJobHistory = printJobHistory;
         _environment = environment;
         _configuration = configuration;
@@ -83,8 +89,79 @@ public sealed class PrintBridgeController : BaseController
             PackageAvailable = packageAvailable,
             PackageFileName = packageFileName,
             HasActiveDevice = activeDevice is not null,
+            ActiveDeviceId = activeDevice?.Id,
             ActiveDeviceName = activeDevice?.Name,
             IsDevelopment = _environment.IsDevelopment()
+        });
+    }
+
+    [ValidateAntiForgeryToken]
+    [HttpPost("setup/session")]
+    public async Task<IActionResult> CreateSetupSession(
+        [FromForm] Guid? deviceId,
+        [FromForm] bool confirmReplaceActiveToken,
+        CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var serverUrl = ResolveCustomerWebBaseUrl();
+        if (string.IsNullOrWhiteSpace(serverUrl))
+            return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.ServerUrlUnavailable"].Value });
+
+        try
+        {
+            var created = await _setupSessions
+                .CreateSessionAsync(tenant.Id, deviceId, serverUrl, tenant.Name, confirmReplaceActiveToken, ct)
+                .ConfigureAwait(false);
+
+            var protocolUrl =
+                $"{ProtocolScheme}://setup?server={Uri.EscapeDataString(serverUrl)}&code={Uri.EscapeDataString(created.Code)}";
+
+            var statusUrl = Url.Action(nameof(SetupSessionStatus), "PrintBridge",
+                new { area = AreaNames.Tenant, sessionId = created.SessionId })
+                ?? $"/print-bridge/setup/session/{created.SessionId}/status";
+
+            return Ok(new
+            {
+                success = true,
+                sessionId = created.SessionId,
+                protocolUrl,
+                statusUrl,
+                deviceName = created.DeviceName,
+                expiresAtUtc = created.ExpiresAtUtc
+            });
+        }
+        catch (PrintBridgeSetupTokenReplacementConfirmationRequiredException)
+        {
+            return Conflict(new
+            {
+                success = false,
+                requiresConfirmation = true,
+                message = _localizer["PrintBridge.Auto.ReplaceTokenConfirmationRequired"].Value
+            });
+        }
+        catch (InvalidOperationException)
+        {
+            return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.DeviceUnavailable"].Value });
+        }
+    }
+
+    [HttpGet("setup/session/{sessionId:guid}/status")]
+    public async Task<IActionResult> SetupSessionStatus(Guid sessionId, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var status = await _setupSessions.GetStatusAsync(tenant.Id, sessionId, ct).ConfigureAwait(false);
+        if (status is null) return NotFound(new { success = false });
+
+        return Ok(new
+        {
+            success = true,
+            status = status.Status.ToString(),
+            connectionVerified = status.ConnectionVerified,
+            expiresAtUtc = status.ExpiresAtUtc
         });
     }
 

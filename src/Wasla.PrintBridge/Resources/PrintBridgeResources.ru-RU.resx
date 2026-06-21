@@ -543,4 +543,9 @@
   <data name="JobType.Receipt" xml:space="preserve">
     <value>Квитанция</value>
   </data>
+  <data name="Auto.InvalidLink" xml:space="preserve"><value>Ссылка настройки недействительна или повреждена.</value></data>
+  <data name="Auto.Connected" xml:space="preserve"><value>Print Bridge успешно подключён.</value></data>
+  <data name="Auto.SavedUnverified" xml:space="preserve"><value>Настройки сохранены, но соединение не удалось проверить.</value></data>
+  <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>Ссылка настройки недействительна или её срок истёк.</value></data>
+  <data name="Auto.Failed" xml:space="preserve"><value>Не удалось завершить автоматическую настройку.</value></data>
 </root>

@@ -3576,4 +3576,28 @@
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
     <value>Вернуться к регистрации</value>
   </data>
+  <data name="PrintBridge.Auto.SectionTitle" xml:space="preserve"><value>Настройка Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>Рекомендуется</value></data>
+  <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>Подключите Print Bridge к этому ресторану автоматически.</value></data>
+  <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>Открыть и подключить Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>Открытие Wasla Print Bridge…</value></data>
+  <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>Ожидание Wasla Print Bridge…</value></data>
+  <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge успешно подключён.</value></data>
+  <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>Настройки сохранены, но соединение пока не удалось проверить.</value></data>
+  <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>Не удалось завершить настройку. Повторите попытку или используйте ручную настройку.</value></data>
+  <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>Срок действия ссылки настройки истёк. Создайте новую.</value></data>
+  <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Не удалось начать настройку. Повторите попытку.</value></data>
+  <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Попробовать открыть снова</value></data>
+  <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Скачать Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Ручная настройка</value></data>
+  <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Не открылось? Убедитесь, что Wasla Print Bridge установлен и был запущен хотя бы один раз.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Wasla Print Bridge нужно скачать и запустить один раз, прежде чем браузер сможет открывать его автоматически.</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Ручная настройка</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>localhost работает только если Wasla и Print Bridge запущены на одном компьютере. На другом компьютере используйте IP-адрес или домен, доступный с него.</value></data>
+  <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>Адрес сервера сейчас недоступен.</value></data>
+  <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>Нет доступного устройства Print Bridge. Сначала создайте его.</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>Текущий токен устройства {0} будет заменен новым. Продолжить?</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Перед заменой токена текущего активного устройства требуется подтверждение.</value></data>
+  <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Автоматическая настройка создаст новый токен для устройства {0}; старый токен перестанет работать.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Не удалось выполнить действие с токеном.</value></data>
 </root>

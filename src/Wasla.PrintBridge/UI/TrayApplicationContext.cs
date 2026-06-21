@@ -8,6 +8,8 @@ using Wasla.PrintBridge.Models;
 
 using Wasla.PrintBridge.Services;
 
+using Wasla.PrintBridge.Setup;
+
 
 
 namespace Wasla.PrintBridge.UI;
@@ -29,6 +31,10 @@ public sealed class TrayApplicationContext : ApplicationContext
     private readonly NotifyIcon _trayIcon;
 
     private readonly MainForm _mainForm;
+
+    private readonly PrintBridgeAutoSetupCoordinator _autoSetup;
+
+    private int _autoSetupRunning;
 
     private readonly ContextMenuStrip _trayMenu;
 
@@ -57,6 +63,8 @@ public sealed class TrayApplicationContext : ApplicationContext
         _localizer = services.GetRequiredService<PrintBridgeLocalizer>();
 
         _cultureService = services.GetRequiredService<PrintBridgeCultureService>();
+
+        _autoSetup = services.GetRequiredService<Wasla.PrintBridge.Setup.PrintBridgeAutoSetupCoordinator>();
 
 
 
@@ -363,6 +371,75 @@ public sealed class TrayApplicationContext : ApplicationContext
     }
 
 
+
+    /// <summary>
+    /// Entry point for an incoming <c>wasla-printbridge://setup</c> URI (from this instance's startup
+    /// args or forwarded from a second instance). Marshals to the UI thread and runs automatic setup.
+    /// </summary>
+    public void HandleSetupUri(string uri)
+    {
+        void Dispatch() => _ = RunAutoSetupAsync(uri);
+
+        if (_mainForm.IsHandleCreated && _mainForm.InvokeRequired)
+            _mainForm.BeginInvoke((Action)Dispatch);
+        else
+            Dispatch();
+    }
+
+    private async Task RunAutoSetupAsync(string uri)
+    {
+        if (Interlocked.Exchange(ref _autoSetupRunning, 1) == 1)
+            return;
+
+        try
+        {
+            ShowMainWindow();
+
+            if (!Wasla.PrintBridge.Setup.PrintBridgeProtocolUri.TryParseSetup(uri, out var request, out _))
+            {
+                MessageBox.Show(
+                    _localizer["Auto.InvalidLink"],
+                    PrintBridgePaths.ProductDisplayName,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            var outcome = await _autoSetup.ApplyAsync(request!, cts.Token).ConfigureAwait(true);
+
+            var (messageKey, icon) = outcome switch
+            {
+                Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected =>
+                    ("Auto.Connected", MessageBoxIcon.Information),
+                Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.SavedButUnverified =>
+                    ("Auto.SavedUnverified", MessageBoxIcon.Warning),
+                Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.InvalidOrExpired =>
+                    ("Auto.InvalidOrExpired", MessageBoxIcon.Warning),
+                _ => ("Auto.Failed", MessageBoxIcon.Warning)
+            };
+
+            UpdateTrayMenu();
+
+            MessageBox.Show(
+                _localizer[messageKey],
+                PrintBridgePaths.ProductDisplayName,
+                MessageBoxButtons.OK,
+                icon);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                GetUserErrorMessage(ex),
+                PrintBridgePaths.ProductDisplayName,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _autoSetupRunning, 0);
+        }
+    }
 
     private void ExitApplication()
 

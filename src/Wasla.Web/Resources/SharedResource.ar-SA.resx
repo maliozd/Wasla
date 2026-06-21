@@ -3092,4 +3092,28 @@
   <data name="TenantAddressRequired.Description" xml:space="preserve"><value>لتسجيل الدخول إلى لوحتك، استخدم عنوان Wasla المخصص لمطعمك.</value></data>
   <data name="TenantAddressRequired.Example" xml:space="preserve"><value>مثال: bahce-tadi.wasla.local</value></data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve"><value>العودة إلى التسجيل</value></data>
+  <data name="PrintBridge.Auto.SectionTitle" xml:space="preserve"><value>إعداد Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>موصى به</value></data>
+  <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>اربط Print Bridge بهذا المطعم تلقائيًا.</value></data>
+  <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>افتح واتصل بـ Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>جارٍ فتح Wasla Print Bridge…</value></data>
+  <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>في انتظار Wasla Print Bridge…</value></data>
+  <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>تم الاتصال بـ Print Bridge بنجاح.</value></data>
+  <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>تم حفظ الإعدادات، لكن تعذّر التحقق من الاتصال بعد.</value></data>
+  <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد. حاول مجددًا أو استخدم الإعداد اليدوي.</value></data>
+  <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>انتهت صلاحية رابط الإعداد. أنشئ رابطًا جديدًا.</value></data>
+  <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>تعذّر بدء الإعداد. حاول مرة أخرى.</value></data>
+  <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>حاول الفتح مرة أخرى</value></data>
+  <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>تنزيل Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>استخدم الإعداد اليدوي</value></data>
+  <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>لم يُفتح؟ تأكد من تثبيت Wasla Print Bridge وتشغيله مرة واحدة على الأقل.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>يجب تنزيل Wasla Print Bridge وتشغيله مرة واحدة قبل أن يتمكن المتصفح من فتحه تلقائيًا.</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>الإعداد اليدوي</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>يعمل localhost فقط عندما يكون Wasla و Print Bridge على نفس الجهاز. على جهاز آخر، استخدم عنوان IP أو نطاقًا يمكن الوصول إليه من ذلك الجهاز.</value></data>
+  <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>عنوان الخادم غير متاح حاليًا.</value></data>
+  <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>لا يوجد جهاز Print Bridge متاح. أنشئ واحدًا أولًا.</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>سيتم استبدال الرمز الحالي للجهاز {0} برمز جديد. هل تريد المتابعة؟</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>يلزم التأكيد قبل استبدال رمز الجهاز النشط الحالي.</value></data>
+  <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>ينشئ الإعداد التلقائي رمزًا جديدًا للجهاز {0}؛ سيتوقف الرمز القديم عن العمل.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>تعذّر إكمال إجراء الرمز.</value></data>
 </root>

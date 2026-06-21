@@ -10,6 +10,7 @@ public sealed class PrintBridgeSetupViewModel
     public bool PackageAvailable { get; set; }
     public string PackageFileName { get; set; } = DefaultPackageFileName;
     public bool HasActiveDevice { get; set; }
+    public Guid? ActiveDeviceId { get; set; }
     public string? ActiveDeviceName { get; set; }
     public bool IsDevelopment { get; set; }
 }

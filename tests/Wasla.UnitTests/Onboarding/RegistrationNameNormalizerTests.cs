@@ -35,4 +35,26 @@ public sealed class RegistrationNameNormalizerTests
 
         Assert.Equal("sushim.wasla.local", result);
     }
+
+    [Fact]
+    public void ExtractSlugFromHost_ReturnsSlugForTenantHost()
+    {
+        var result = RegistrationNameNormalizer.ExtractSlugFromHost(
+            "https://HASAN-USTANIN-YERI.wasla.local:7200/signup/pending/123",
+            "wasla.local");
+
+        Assert.Equal("hasan-ustanin-yeri", result);
+    }
+
+    [Theory]
+    [InlineData("wasla.local")]
+    [InlineData("www.wasla.local")]
+    [InlineData("not-wasla.example.com")]
+    [InlineData("nested.sushim.wasla.local")]
+    public void ExtractSlugFromHost_ReturnsNullForNonTenantOrInvalidHosts(string host)
+    {
+        var result = RegistrationNameNormalizer.ExtractSlugFromHost(host, "wasla.local");
+
+        Assert.Null(result);
+    }
 }

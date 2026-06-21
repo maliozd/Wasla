@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+﻿using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
@@ -112,6 +114,22 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
+// Rate limit automatic Print Bridge setup code exchange attempts (per client IP).
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(RateLimitPolicies.PrintBridgeSetupExchange, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+});
+
 builder.Services
     .AddControllersWithViews()
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
@@ -146,6 +164,8 @@ var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOpt
 app.UseRequestLocalization(locOptions.Value);
 
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseMiddleware<PrintBridgeAuthMiddleware>();

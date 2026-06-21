@@ -799,4 +799,28 @@
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
     <value>Kayıt sayfasına dön</value>
   </data>
+  <data name="PrintBridge.Auto.SectionTitle" xml:space="preserve"><value>Wasla Print Bridge Kurulumu</value></data>
+  <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>Önerilen</value></data>
+  <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>Print Bridge'i bu restorana otomatik bağlayın.</value></data>
+  <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>Wasla Print Bridge'i aç ve bağlan</value></data>
+  <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>Wasla Print Bridge açılıyor…</value></data>
+  <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>Wasla Print Bridge bekleniyor…</value></data>
+  <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge başarıyla bağlandı.</value></data>
+  <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>Ayarlar kaydedildi ancak bağlantı henüz doğrulanamadı.</value></data>
+  <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>Kurulum tamamlanamadı. Tekrar deneyin veya manuel kurulumu kullanın.</value></data>
+  <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>Bu kurulum bağlantısının süresi doldu. Yeni bir bağlantı oluşturun.</value></data>
+  <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Kurulum başlatılamadı. Lütfen tekrar deneyin.</value></data>
+  <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Yeniden açmayı dene</value></data>
+  <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Wasla Print Bridge'i indir</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Manuel kurulumu kullan</value></data>
+  <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Açılmadı mı? Wasla Print Bridge'in kurulu olduğundan ve en az bir kez çalıştırıldığından emin olun.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Tarayıcının otomatik açabilmesi için Wasla Print Bridge önce indirilip bir kez çalıştırılmalıdır.</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Manuel kurulum</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>localhost yalnızca Wasla ve Print Bridge aynı bilgisayarda çalışıyorsa çalışır. Farklı bir bilgisayarda, o bilgisayardan erişilebilen bir IP adresi veya alan adı kullanın.</value></data>
+  <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>Sunucu adresi şu anda kullanılamıyor.</value></data>
+  <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>Kullanılabilir Print Bridge cihazı yok. Önce bir cihaz oluşturun.</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>{0} cihazının mevcut token'ı yenisiyle değiştirilecek. Devam edilsin mi?</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Mevcut aktif cihaz token'ını değiştirmek için onay gerekir.</value></data>
+  <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Otomatik kurulum {0} cihazı için yeni token oluşturur; eski token artık çalışmaz.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Token işlemi tamamlanamadı.</value></data>
 </root>

@@ -4,6 +4,7 @@ using CentralAdminUser = Wasla.Domain.Entities.Central.CentralAdminUser;
 using TenantMembership = Wasla.Domain.Entities.Central.TenantMembership;
 using PendingRegistration = Wasla.Domain.Entities.Central.PendingRegistration;
 using PrintBridgeDevice = Wasla.Domain.Entities.Central.PrintBridgeDevice;
+using PrintBridgeSetupSession = Wasla.Domain.Entities.Central.PrintBridgeSetupSession;
 using BusinessType = Wasla.Domain.Entities.Central.BusinessType;
 using Country = Wasla.Domain.Entities.Central.Country;
 using City = Wasla.Domain.Entities.Central.City;
@@ -26,6 +27,7 @@ public class CentralDbContext : DbContext
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<CentralAdminUser> CentralAdminUsers => Set<CentralAdminUser>();
     public DbSet<PrintBridgeDevice> PrintBridgeDevices => Set<PrintBridgeDevice>();
+    public DbSet<PrintBridgeSetupSession> PrintBridgeSetupSessions => Set<PrintBridgeSetupSession>();
     public DbSet<PendingRegistration> PendingRegistrations => Set<PendingRegistration>();
     public DbSet<BusinessType> BusinessTypes => Set<BusinessType>();
     public DbSet<Country> Countries => Set<Country>();
@@ -41,6 +43,7 @@ public class CentralDbContext : DbContext
         modelBuilder.ApplyConfiguration(new TenantMembershipConfiguration());
         modelBuilder.ApplyConfiguration(new CentralAdminUserConfiguration());
         modelBuilder.ApplyConfiguration(new PrintBridgeDeviceConfiguration());
+        modelBuilder.ApplyConfiguration(new PrintBridgeSetupSessionConfiguration());
         modelBuilder.ApplyConfiguration(new PendingRegistrationConfiguration());
         modelBuilder.ApplyConfiguration(new BusinessTypeConfiguration());
         modelBuilder.ApplyConfiguration(new CountryConfiguration());

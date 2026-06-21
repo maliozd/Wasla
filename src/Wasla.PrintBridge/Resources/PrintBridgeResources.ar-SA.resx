@@ -543,4 +543,9 @@
   <data name="JobType.Receipt" xml:space="preserve">
     <value>إيصال</value>
   </data>
+  <data name="Auto.InvalidLink" xml:space="preserve"><value>رابط الإعداد غير صالح أو تالف.</value></data>
+  <data name="Auto.Connected" xml:space="preserve"><value>تم الاتصال بـ Print Bridge بنجاح.</value></data>
+  <data name="Auto.SavedUnverified" xml:space="preserve"><value>تم حفظ الإعدادات، لكن تعذّر التحقق من الاتصال.</value></data>
+  <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>رابط الإعداد غير صالح أو منتهي الصلاحية.</value></data>
+  <data name="Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد التلقائي.</value></data>
 </root>
