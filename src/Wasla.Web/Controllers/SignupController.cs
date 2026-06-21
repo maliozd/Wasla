@@ -186,6 +186,7 @@ public sealed class SignupController : Controller
             planDisplay,
             Request,
             _environment,
+            _options.MarketingBaseDomain,
             showCheckoutAction: summary.Status is PendingRegistrationStatus.AwaitingPayment
                 or PendingRegistrationStatus.Draft));
     }

@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.Checkout;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Options;
 using Wasla.Web.Models.Checkout;
 using Wasla.Web.Models.Signup;
 
@@ -18,17 +20,20 @@ public sealed class CheckoutController : Controller
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
+    private readonly CustomerOnboardingOptions _onboardingOptions;
 
     public CheckoutController(
         IPendingRegistrationService pendingRegistrations,
         IWaslaPlanCatalog planCatalog,
         IStringLocalizer<SharedResource> localizer,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IOptions<CustomerOnboardingOptions> onboardingOptions)
     {
         _pendingRegistrations = pendingRegistrations;
         _planCatalog = planCatalog;
         _localizer = localizer;
         _environment = environment;
+        _onboardingOptions = onboardingOptions.Value;
     }
 
     [HttpGet("review/{id:guid}")]
@@ -84,7 +89,8 @@ public sealed class CheckoutController : Controller
             summary,
             planDisplay,
             Request,
-            _environment));
+            _environment,
+            _onboardingOptions.MarketingBaseDomain));
     }
 
     [HttpGet("failed/{id:guid}")]

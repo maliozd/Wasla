@@ -10,6 +10,8 @@ public sealed class SignupPendingViewModel
 
     public string? TenantAddressUrl { get; set; }
 
+    public string CentralHomepageUrl { get; set; } = string.Empty;
+
     public string BusinessName { get; set; } = string.Empty;
 
     public string PlanCode { get; set; } = string.Empty;

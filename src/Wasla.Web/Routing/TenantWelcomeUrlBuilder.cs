@@ -58,6 +58,32 @@ public static class TenantWelcomeUrlBuilder
         return builder.Uri.AbsoluteUri;
     }
 
+    public static string BuildCentralHomepageUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string marketingBaseDomain)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(marketingBaseDomain);
+
+        var builder = new UriBuilder
+        {
+            Scheme = request.Scheme,
+            Host = ResolveCentralHost(request, marketingBaseDomain),
+            Path = "/",
+            Port = ResolvePort(request, environment)
+        };
+
+        return builder.Uri.AbsoluteUri;
+    }
+
+    private static string ResolveCentralHost(HttpRequest request, string marketingBaseDomain)
+    {
+        if (string.Equals(request.Host.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+            return "localhost";
+
+        return marketingBaseDomain.Trim().TrimStart('.');
+    }
+
     private static int ResolvePort(HttpRequest request, IWebHostEnvironment environment)
     {
         var port = request.Host.Port;

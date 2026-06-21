@@ -11,6 +11,7 @@ public static class SignupPendingViewModelMapper
         string planDisplayName,
         HttpRequest request,
         IWebHostEnvironment environment,
+        string marketingBaseDomain,
         bool showCheckoutAction = false)
     {
         var hasPrimaryDomain = !string.IsNullOrWhiteSpace(summary.PrimaryDomain);
@@ -20,6 +21,10 @@ public static class SignupPendingViewModelMapper
             RegistrationId = summary.Id,
             BusinessName = summary.BusinessName,
             PrimaryDomain = summary.PrimaryDomain,
+            CentralHomepageUrl = TenantWelcomeUrlBuilder.BuildCentralHomepageUrl(
+                request,
+                environment,
+                marketingBaseDomain),
             TenantAddressUrl = hasPrimaryDomain
                 ? TenantWelcomeUrlBuilder.BuildTenantAddressUrl(
                     request,
