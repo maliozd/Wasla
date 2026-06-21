@@ -1,5 +1,5 @@
 ---
-description: Provider mode, Worker, and order synchronization rules
+description: Provider mode, Wasla.Worker, and order synchronization rules
 alwaysApply: true
 ---
 
@@ -46,6 +46,8 @@ Provider-specific options:
 - If tenant sync is disabled, Worker skips that tenant and logs it.
 - Existing orders must remain visible when sync is disabled.
 - Other tenants must not be affected by one tenant's sync setting.
+- One tenant's provider failure must not stop synchronization for other tenants.
+- Web must not start/stop OS processes, Windows services, Docker containers, or systemd services.
 
 ## Mock order rules
 
@@ -71,7 +73,7 @@ Provider-specific options:
 - Do not clear the console repeatedly.
 - Do not hide warnings/errors.
 - Move verbose details to Debug when appropriate:
-  - CustomerId
+  - TenantId
   - ConnectionId
   - LastSuccessfulSyncAt
   - LastSyncAttemptAt
@@ -83,3 +85,11 @@ Provider-specific options:
   - circuit breaker events
   - invalid ProviderMode
   - Real HTTP errors in Real mode
+- Provider credentials must not be logged.
+- Tenant connection strings and decrypted secrets must not be logged.
+- Do not broaden provider work into unrelated platform redesign unless explicitly requested.
+
+## Terminology
+
+- Use tenant terminology for the SaaS restaurant account.
+- Keep order end-customer field names unchanged where they refer to the restaurant's buyer, for example `CustomerName`, `CustomerPhone`, and `CustomerAddress`.
