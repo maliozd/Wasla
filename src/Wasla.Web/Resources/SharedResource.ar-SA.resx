@@ -2931,7 +2931,7 @@
   <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>نوع الهاتف</value></data>
   <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>جوال</value></data>
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>هاتف أرضي</value></data>
-  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>مثال: +90 5__ ___ __ __</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>مثال: +90 531 324 12 45</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>هاتف العمل</value></data>
   <data name="Signup.BusinessEmail" xml:space="preserve"><value>بريد العمل الإلكتروني</value></data>
   <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@yourrestaurant.com</value></data>
@@ -2972,6 +2972,7 @@
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>متابعة الدفع</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>مطعمك</value></data>
   <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>عنوان Wasla الخاص بك</value></data>
+  <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>فتح {0}</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>باقتك</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>فترة الدفع</value></data>
   <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>بعد إتمام الدفع:</value></data>
@@ -2984,6 +2985,25 @@
   <data name="Signup.GoToPanel" xml:space="preserve"><value>الذهاب إلى اللوحة</value></data>
   <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve"><value>تم استلام الدفع</value></data>
   <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve"><value>تم استلام دفعتك. لوحة مطعمك قيد التجهيز.</value></data>
+  <data name="Signup.PaymentReceivedPreparingSubtitle" xml:space="preserve"><value>لوحة مطعمك قيد التجهيز.</value></data>
+  <data name="Signup.PaymentReceivedPreparingBody" xml:space="preserve"><value>عند اكتمال الإعداد، ستتمكن من تسجيل الدخول من عنوان Wasla الخاص بك.</value></data>
+  <data name="Signup.PendingRegistrationDetails" xml:space="preserve"><value>تفاصيل التسجيل</value></data>
+  <data name="Signup.PendingLabelPaymentStatus" xml:space="preserve"><value>حالة الدفع</value></data>
+  <data name="Signup.PendingLabelProvisioningStatus" xml:space="preserve"><value>حالة الإعداد</value></data>
+  <data name="Signup.PendingLabelBusinessPhone" xml:space="preserve"><value>هاتف النشاط</value></data>
+  <data name="Signup.PendingLabelBusinessEmail" xml:space="preserve"><value>بريد النشاط</value></data>
+  <data name="Signup.PendingLabelOwnerName" xml:space="preserve"><value>صاحب الحساب</value></data>
+  <data name="Signup.PendingLabelOwnerEmail" xml:space="preserve"><value>بريد صاحب الحساب</value></data>
+  <data name="Signup.PendingLabelOwnerPhone" xml:space="preserve"><value>هاتف صاحب الحساب</value></data>
+  <data name="Signup.PendingLabelCreatedAt" xml:space="preserve"><value>تاريخ التسجيل</value></data>
+  <data name="Signup.PaymentStatusPending" xml:space="preserve"><value>بانتظار الدفع</value></data>
+  <data name="Signup.PaymentStatusPaid" xml:space="preserve"><value>تم استلام الدفع</value></data>
+  <data name="Signup.PaymentStatusFailed" xml:space="preserve"><value>فشل الدفع</value></data>
+  <data name="Signup.PaymentStatusCancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Signup.PaymentStatusExpired" xml:space="preserve"><value>منتهي الصلاحية</value></data>
+  <data name="Signup.ProvisioningStatusPending" xml:space="preserve"><value>بانتظار الإعداد</value></data>
+  <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve"><value>الإعداد قيد التنفيذ</value></data>
+  <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>اكتمل الإعداد</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>ملخص الدفع</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>راجع الباقة المختارة وبيانات المطعم. في بيئة الاختبار هذه، سيتم محاكاة نتيجة الدفع.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>تكامل الدفع الحقيقي غير مفعّل بعد. تتم محاكاة نتيجة الدفع في هذه الشاشة.</value></data>

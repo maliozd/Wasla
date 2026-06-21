@@ -11,7 +11,6 @@ using Wasla.Application.Abstractions.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Web.Models.Signup;
-using Wasla.Web.Routing;
 
 namespace Wasla.Web.Controllers;
 
@@ -182,19 +181,13 @@ public sealed class SignupController : Controller
         var plan = _planCatalog.FindByCode(summary.PlanCode);
         var planDisplay = plan is not null ? _localizer[plan.DisplayNameKey].Value : summary.PlanCode;
 
-        return View(new SignupPendingViewModel
-        {
-            RegistrationId = summary.Id,
-            BusinessName = summary.BusinessName,
-            PrimaryDomain = summary.PrimaryDomain,
-            PlanCode = summary.PlanCode,
-            PlanDisplayName = planDisplay,
-            BillingPeriod = summary.BillingPeriod,
-            Status = summary.Status,
-            PanelLoginUrl = summary.Status == PendingRegistrationStatus.Provisioned
-                ? TenantWelcomeUrlBuilder.BuildLoginUrl(Request, _environment, summary.PrimaryDomain)
-                : null
-        });
+        return View(SignupPendingViewModelMapper.FromSummary(
+            summary,
+            planDisplay,
+            Request,
+            _environment,
+            showCheckoutAction: summary.Status is PendingRegistrationStatus.AwaitingPayment
+                or PendingRegistrationStatus.Draft));
     }
 
     private async Task<SignupViewModel> CreateViewModelAsync(string? plan, CancellationToken ct)

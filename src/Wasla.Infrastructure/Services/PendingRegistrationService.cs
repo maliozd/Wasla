@@ -199,7 +199,15 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
                 p.PrimaryDomain,
                 p.PlanCode,
                 p.BillingPeriod,
-                p.Status))
+                p.Status,
+                p.BusinessPhone,
+                p.BusinessEmail,
+                p.OwnerFullName,
+                p.OwnerEmail,
+                p.OwnerPhone,
+                p.CreatedAtUtc,
+                p.PaymentSucceededAtUtc,
+                p.ProvisionedAtUtc))
             .FirstOrDefaultAsync(ct);
 
         return row;
@@ -429,7 +437,15 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
                 p.PrimaryDomain,
                 p.PlanCode,
                 p.BillingPeriod,
-                p.Status))
+                p.Status,
+                p.BusinessPhone,
+                p.BusinessEmail,
+                p.OwnerFullName,
+                p.OwnerEmail,
+                p.OwnerPhone,
+                p.CreatedAtUtc,
+                p.PaymentSucceededAtUtc,
+                p.ProvisionedAtUtc))
             .FirstOrDefaultAsync(ct);
 
         return row;

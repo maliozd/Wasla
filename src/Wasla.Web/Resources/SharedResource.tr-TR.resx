@@ -2925,7 +2925,7 @@
   <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>Telefon türü</value></data>
   <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>Cep telefonu</value></data>
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Sabit hat</value></data>
-  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Örnek format: +90 5__ ___ __ __</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Örnek: +90 531 324 12 45</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>İşletme telefonu</value></data>
   <data name="Signup.BusinessEmail" xml:space="preserve"><value>İşletme e-postası</value></data>
   <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@restoraniniz.com</value></data>
@@ -2966,6 +2966,7 @@
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Ödemeye devam et</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Restoranınız</value></data>
   <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Wasla adresiniz</value></data>
+  <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>{0} adresini aç</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Paketiniz</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Ödeme dönemi</value></data>
   <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>Ödeme tamamlandıktan sonra:</value></data>
@@ -2978,6 +2979,25 @@
   <data name="Signup.GoToPanel" xml:space="preserve"><value>Panele git</value></data>
   <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve"><value>Ödemeniz alındı</value></data>
   <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve"><value>Ödemeniz alındı. Restoran paneliniz hazırlanıyor.</value></data>
+  <data name="Signup.PaymentReceivedPreparingSubtitle" xml:space="preserve"><value>Restoran paneliniz hazırlanıyor.</value></data>
+  <data name="Signup.PaymentReceivedPreparingBody" xml:space="preserve"><value>Kurulum tamamlandığında Wasla adresinizden giriş yapabileceksiniz.</value></data>
+  <data name="Signup.PendingRegistrationDetails" xml:space="preserve"><value>Kayıt bilgileri</value></data>
+  <data name="Signup.PendingLabelPaymentStatus" xml:space="preserve"><value>Ödeme durumu</value></data>
+  <data name="Signup.PendingLabelProvisioningStatus" xml:space="preserve"><value>Kurulum durumu</value></data>
+  <data name="Signup.PendingLabelBusinessPhone" xml:space="preserve"><value>İşletme telefonu</value></data>
+  <data name="Signup.PendingLabelBusinessEmail" xml:space="preserve"><value>İşletme e-postası</value></data>
+  <data name="Signup.PendingLabelOwnerName" xml:space="preserve"><value>Hesap sahibi</value></data>
+  <data name="Signup.PendingLabelOwnerEmail" xml:space="preserve"><value>Hesap sahibi e-postası</value></data>
+  <data name="Signup.PendingLabelOwnerPhone" xml:space="preserve"><value>Hesap sahibi telefonu</value></data>
+  <data name="Signup.PendingLabelCreatedAt" xml:space="preserve"><value>Kayıt tarihi</value></data>
+  <data name="Signup.PaymentStatusPending" xml:space="preserve"><value>Ödeme bekleniyor</value></data>
+  <data name="Signup.PaymentStatusPaid" xml:space="preserve"><value>Ödeme alındı</value></data>
+  <data name="Signup.PaymentStatusFailed" xml:space="preserve"><value>Ödeme başarısız</value></data>
+  <data name="Signup.PaymentStatusCancelled" xml:space="preserve"><value>İptal edildi</value></data>
+  <data name="Signup.PaymentStatusExpired" xml:space="preserve"><value>Süresi doldu</value></data>
+  <data name="Signup.ProvisioningStatusPending" xml:space="preserve"><value>Kurulum bekleniyor</value></data>
+  <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve"><value>Kurulum devam ediyor</value></data>
+  <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>Kurulum tamamlandı</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Ödeme özeti</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu test ortamında ödeme sonucu simüle edilecektir.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Gerçek ödeme entegrasyonu henüz aktif değil. Bu ekranda ödeme sonucu simüle edilir.</value></data>

@@ -8,6 +8,8 @@ public sealed class SignupPendingViewModel
 
     public string PrimaryDomain { get; set; } = string.Empty;
 
+    public string? TenantAddressUrl { get; set; }
+
     public string BusinessName { get; set; } = string.Empty;
 
     public string PlanCode { get; set; } = string.Empty;
@@ -18,5 +20,23 @@ public sealed class SignupPendingViewModel
 
     public PendingRegistrationStatus Status { get; set; }
 
+    public string BusinessPhone { get; set; } = string.Empty;
+
+    public string? BusinessEmail { get; set; }
+
+    public string OwnerFullName { get; set; } = string.Empty;
+
+    public string OwnerEmail { get; set; } = string.Empty;
+
+    public string? OwnerPhone { get; set; }
+
+    public DateTime CreatedAtUtc { get; set; }
+
+    public DateTime? PaymentSucceededAtUtc { get; set; }
+
+    public DateTime? ProvisionedAtUtc { get; set; }
+
     public string? PanelLoginUrl { get; set; }
+
+    public bool ShowCheckoutAction { get; set; }
 }

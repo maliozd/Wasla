@@ -546,11 +546,19 @@
     }
 
     if (phoneTypeSelect) {
-        phoneTypeSelect.addEventListener("change", updatePhoneUi);
+        phoneTypeSelect.addEventListener("change", function () {
+            updatePhoneUi();
+            if (window.WaslaSignupPhone) {
+                window.WaslaSignupPhone.refreshExistingValues();
+            }
+        });
     }
 
     initPasswordToggles();
     initOptionalBusinessEmailValidation();
+    if (window.WaslaSignupPhone) {
+        window.WaslaSignupPhone.init();
+    }
     localizeCompareValidation();
     updateDomainPreview();
     updatePhoneUi();

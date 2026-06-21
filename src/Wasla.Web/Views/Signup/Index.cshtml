@@ -281,7 +281,11 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="OwnerPhone" class="form-label"></label>
-                                        <input asp-for="OwnerPhone" class="form-control" autocomplete="tel" inputmode="tel" />
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="signupOwnerPhonePrefix">+90</span>
+                                            <input asp-for="OwnerPhone" class="form-control" id="signupOwnerPhone" autocomplete="tel" inputmode="tel" aria-describedby="signupOwnerPhoneHint" />
+                                        </div>
+                                        <div id="signupOwnerPhoneHint" class="form-text">@L["Signup.MobilePhoneHint"]</div>
                                     </div>
                                     <div class="col-md-6">
                                         <label asp-for="Password" class="form-label"></label>
@@ -327,5 +331,6 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script type="application/json" id="signupFormConfig">@Html.Raw(JsonSerializer.Serialize(signupConfig))</script>
+    <script src="~/js/signup/signup-phone-format.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-form.js" asp-append-version="true"></script>
 }

@@ -1,0 +1,92 @@
+@model Wasla.Web.Models.Signup.SignupPendingViewModel
+@using Microsoft.Extensions.Localization
+@using Wasla.Domain.Enums
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    var isProvisioned = Model.Status == PendingRegistrationStatus.Provisioned;
+    var isPaymentReceived = Model.Status == PendingRegistrationStatus.PaymentSucceeded;
+}
+
+@if (isProvisioned)
+{
+    <div class="mb-3 text-success">
+        <i class="bi bi-check-circle-fill" style="font-size: 2.5rem;" aria-hidden="true"></i>
+    </div>
+    <h1 class="h4 fw-bold mb-2">@L["Signup.PanelReadyTitle"]</h1>
+    <p class="text-secondary mb-4">@L["Signup.PanelReadyBody"]</p>
+
+    @if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
+    {
+        <p class="mb-4 fs-6">
+            <partial name="_RegistrationStatusTenantAddressLink" model="Model" />
+        </p>
+    }
+
+    <partial name="_RegistrationStatusDetails" model="Model" />
+
+    <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+        @if (!string.IsNullOrWhiteSpace(Model.PanelLoginUrl))
+        {
+            <a class="btn btn-primary rounded-pill d-inline-flex align-items-center justify-content-center gap-2 px-4"
+               href="@Model.PanelLoginUrl">
+                <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+                <span>@L["Signup.GoToPanel"]</span>
+            </a>
+        }
+        <a class="btn btn-outline-secondary rounded-pill px-4" href="/">@L["Signup.PendingBackHome"]</a>
+    </div>
+}
+else if (isPaymentReceived)
+{
+    <div class="mb-3 text-primary">
+        <i class="bi bi-hourglass-split" style="font-size: 2.5rem;" aria-hidden="true"></i>
+    </div>
+    <h1 class="h4 fw-bold mb-2">@L["Signup.PaymentReceivedPreparingTitle"]</h1>
+    <p class="fw-semibold text-secondary mb-2">@L["Signup.PaymentReceivedPreparingSubtitle"]</p>
+    <p class="text-secondary mb-4">@L["Signup.PaymentReceivedPreparingBody"]</p>
+
+    <partial name="_RegistrationStatusDetails" model="Model" />
+
+    <a class="btn btn-outline-secondary rounded-pill px-4" href="/">@L["Signup.PendingBackHome"]</a>
+}
+else
+{
+    <div class="mb-3">
+        <i class="bi bi-hourglass-split text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
+    </div>
+    <h1 class="h4 fw-bold mb-2">@L["Signup.PendingTitle"]</h1>
+    <p class="text-secondary mb-4">@L["Signup.PendingSubtitle"]</p>
+
+    <partial name="_RegistrationStatusDetails" model="Model" />
+
+    <p class="small text-muted mb-3">@L["Signup.PendingCheckoutNote"]</p>
+
+    <div class="text-start mx-auto mb-4 oh-signup-pending-next-steps" style="max-width: 28rem;">
+        <p class="small text-muted mb-2">@L["Signup.PendingNextStepsTitle"]</p>
+        <ul class="small text-muted mb-0 ps-3">
+            <li>@L["Signup.PendingNextStep1"]</li>
+            <li>@L["Signup.PendingNextStep2"]</li>
+            <li>@L["Signup.PendingNextStep3"]</li>
+        </ul>
+    </div>
+
+    <p class="small text-muted mb-4 opacity-75">@L["Signup.PendingTestNote"]</p>
+
+    @if (Model.ShowCheckoutAction)
+    {
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+            <a class="btn btn-primary rounded-pill d-inline-flex align-items-center justify-content-center gap-2 px-4"
+               asp-controller="Checkout"
+               asp-action="Review"
+               asp-route-id="@Model.RegistrationId">
+                <i class="bi bi-credit-card" aria-hidden="true"></i>
+                <span>@L["Signup.ContinueToCheckout"]</span>
+            </a>
+            <a class="btn btn-outline-secondary rounded-pill px-4" href="/">@L["Signup.PendingBackHome"]</a>
+        </div>
+    }
+    else
+    {
+        <a class="btn btn-outline-secondary rounded-pill px-4" href="/">@L["Signup.PendingBackHome"]</a>
+    }
+}

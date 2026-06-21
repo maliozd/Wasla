@@ -6,7 +6,7 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Domain.Enums;
 using Wasla.Web.Models.Checkout;
-using Wasla.Web.Routing;
+using Wasla.Web.Models.Signup;
 
 namespace Wasla.Web.Controllers;
 
@@ -68,23 +68,23 @@ public sealed class CheckoutController : Controller
     [HttpGet("success/{id:guid}")]
     public async Task<IActionResult> Success(Guid id, CancellationToken ct)
     {
-        var details = await _pendingRegistrations.GetCheckoutDetailsAsync(id, ct);
-        if (details is null)
+        var summary = await _pendingRegistrations.GetSummaryAsync(id, ct);
+        if (summary is null)
             return NotFound();
 
-        if (details.Status is not (PendingRegistrationStatus.PaymentSucceeded or PendingRegistrationStatus.Provisioned))
+        if (summary.Status is not (PendingRegistrationStatus.PaymentSucceeded or PendingRegistrationStatus.Provisioned))
             return RedirectToAction(nameof(Review), new { id });
 
-        return View(new CheckoutResultViewModel
-        {
-            RegistrationId = details.Id,
-            BusinessName = details.BusinessName,
-            PrimaryDomain = details.PrimaryDomain,
-            Status = details.Status,
-            PanelLoginUrl = details.Status == PendingRegistrationStatus.Provisioned
-                ? TenantWelcomeUrlBuilder.BuildLoginUrl(Request, _environment, details.PrimaryDomain)
-                : null
-        });
+        var plan = _planCatalog.FindByCode(summary.PlanCode);
+        var planDisplay = plan is not null
+            ? _localizer[plan.DisplayNameKey].Value
+            : summary.PlanCode;
+
+        return View(SignupPendingViewModelMapper.FromSummary(
+            summary,
+            planDisplay,
+            Request,
+            _environment));
     }
 
     [HttpGet("failed/{id:guid}")]

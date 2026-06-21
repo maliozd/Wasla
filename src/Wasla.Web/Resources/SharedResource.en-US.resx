@@ -2931,7 +2931,7 @@
   <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>Phone type</value></data>
   <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>Mobile</value></data>
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Landline</value></data>
-  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Example format: +90 5__ ___ __ __</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Example: +90 531 324 12 45</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>Business phone</value></data>
   <data name="Signup.BusinessEmail" xml:space="preserve"><value>Business email</value></data>
   <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@yourrestaurant.com</value></data>
@@ -2972,6 +2972,7 @@
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Continue to payment</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Your restaurant</value></data>
   <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Your Wasla address</value></data>
+  <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>Open {0}</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Your package</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Payment period</value></data>
   <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>After payment is complete:</value></data>
@@ -2984,6 +2985,25 @@
   <data name="Signup.GoToPanel" xml:space="preserve"><value>Go to panel</value></data>
   <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve"><value>Payment received</value></data>
   <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve"><value>Your payment was received. Your restaurant panel is being prepared.</value></data>
+  <data name="Signup.PaymentReceivedPreparingSubtitle" xml:space="preserve"><value>Your restaurant panel is being prepared.</value></data>
+  <data name="Signup.PaymentReceivedPreparingBody" xml:space="preserve"><value>Once setup is complete, you will be able to sign in from your Wasla address.</value></data>
+  <data name="Signup.PendingRegistrationDetails" xml:space="preserve"><value>Registration details</value></data>
+  <data name="Signup.PendingLabelPaymentStatus" xml:space="preserve"><value>Payment status</value></data>
+  <data name="Signup.PendingLabelProvisioningStatus" xml:space="preserve"><value>Setup status</value></data>
+  <data name="Signup.PendingLabelBusinessPhone" xml:space="preserve"><value>Business phone</value></data>
+  <data name="Signup.PendingLabelBusinessEmail" xml:space="preserve"><value>Business email</value></data>
+  <data name="Signup.PendingLabelOwnerName" xml:space="preserve"><value>Account owner</value></data>
+  <data name="Signup.PendingLabelOwnerEmail" xml:space="preserve"><value>Owner email</value></data>
+  <data name="Signup.PendingLabelOwnerPhone" xml:space="preserve"><value>Owner phone</value></data>
+  <data name="Signup.PendingLabelCreatedAt" xml:space="preserve"><value>Registration date</value></data>
+  <data name="Signup.PaymentStatusPending" xml:space="preserve"><value>Payment pending</value></data>
+  <data name="Signup.PaymentStatusPaid" xml:space="preserve"><value>Payment received</value></data>
+  <data name="Signup.PaymentStatusFailed" xml:space="preserve"><value>Payment failed</value></data>
+  <data name="Signup.PaymentStatusCancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Signup.PaymentStatusExpired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Signup.ProvisioningStatusPending" xml:space="preserve"><value>Setup pending</value></data>
+  <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve"><value>Setup in progress</value></data>
+  <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>Setup complete</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Payment summary</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Review your selected package and restaurant details. In this test environment, the payment outcome will be simulated.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Real payment integration is not active yet. Payment outcome is simulated on this screen.</value></data>
