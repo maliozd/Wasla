@@ -15,8 +15,10 @@
         isConnected = d.IsConnected,
         lastSeenAtUtc = d.LastSeenAtUtc,
         machineName = d.MachineName,
+        localAlias = d.LocalAlias,
         printerName = d.PrinterName,
-        appVersion = d.AppVersion
+        appVersion = d.AppVersion,
+        detailsUrl = Url.Action("DeviceDetails", "PrintBridge", new { area = "Tenant", id = d.Id })
     });
 
     var initialConnectedCount = Model.Devices.Count(d => d.IsConnected);
@@ -40,15 +42,12 @@
 
     var pbMessages = new
     {
-        tokenCreated = L["PrintBridge.TokenCreated"].Value,
         tokenRegenerated = L["PrintBridge.TokenRegenerated"].Value,
         tokenShownOnce = L["PrintBridge.TokenShownOnce"].Value,
         oldTokenInvalidAfterRegenerate = L["PrintBridge.OldTokenInvalidAfterRegenerate"].Value,
         tokenNotAvailableRegenerate = L["PrintBridge.TokenNotAvailableRegenerate"].Value,
         confirmRegenerateToken = L["PrintBridge.ConfirmRegenerateToken"].Value,
         tokenRegenerateWarning = L["PrintBridge.TokenRegenerateWarning"].Value,
-        deviceCreatedSuccessfully = L["PrintBridge.DeviceCreatedSuccessfully"].Value,
-        tokenGenerateFailed = L["PrintBridge.TokenGenerateFailed"].Value,
         tokenRegenerateFailed = L["PrintBridge.TokenRegenerateFailed"].Value,
         copyToken = L["PrintBridge.CopyToken"].Value,
         tokenCopied = L["PrintBridge.TokenCopied"].Value,
@@ -63,8 +62,7 @@
         deactivateExtraDevices = L["PrintBridge.DeactivateExtraDevices"].Value,
         noDevicesTitle = L["PrintBridge.NoDevicesTitle"].Value,
         noDevicesDescription = L["PrintBridge.NoDevicesDescription"].Value,
-        addDevice = L["PrintBridge.CreateDeviceToken"].Value,
-        createDevice = L["PrintBridge.CreateDeviceToken"].Value,
+        setupNewDevice = L["PrintBridge.SetupNewDeviceAction"].Value,
         goToSetup = L["PrintBridge.GotoSetupLink"].Value,
         statusOnline = L["PrintBridge.Online"].Value,
         statusOffline = L["PrintBridge.Offline"].Value,
@@ -80,6 +78,7 @@
         status = L["PrintBridge.Status"].Value,
         appVersion = L["PrintBridge.AppVersion"].Value,
         machineName = L["PrintBridge.MachineName"].Value,
+        details = L["PrintBridge.DetailsAction"].Value,
         printerName = L["PrintBridge.PrinterName"].Value,
         deviceActive = L["PrintBridge.DeviceActive"].Value,
         actions = L["Common.Actions"].Value,
@@ -186,17 +185,10 @@
             </div>
         </div>
 
-        <div class="row g-2 align-items-end mb-3" id="printBridgeCreateForm">
-            <div class="col-md-8">
-                <label class="form-label small" for="printBridgeDeviceName">@L["PrintBridge.DeviceName"]</label>
-                <input class="form-control form-control-sm" id="printBridgeDeviceName" type="text" maxlength="200"
-                       placeholder="@L["PrintBridge.DeviceNamePlaceholder"]" />
-            </div>
-            <div class="col-md-4">
-                <button type="button" class="btn btn-primary btn-sm w-100" id="printBridgeCreateDeviceBtn">
-                    <i class="bi bi-key me-1"></i>@L["PrintBridge.CreateDeviceToken"]
-                </button>
-            </div>
+        <div class="mb-3">
+            <a class="btn btn-primary btn-sm" href="@Model.SetupUrl">
+                <i class="bi bi-plus-circle me-1"></i>@L["PrintBridge.SetupNewDeviceAction"]
+            </a>
         </div>
 
         <div id="printBridgeTokenBox" class="d-none border rounded-3 p-3 mb-3 bg-body-tertiary" role="region" aria-live="polite">
@@ -227,7 +219,7 @@
     </div>
 </div>
 
-<div class="card oh-card">
+<div class="card oh-card" id="recent-print-activity">
     <div class="card-body">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
             <div>
@@ -250,7 +242,6 @@
         window.OrderHubPrintBridge = {
             messages: @Html.Raw(pbMessagesJson),
             devicesUrl: "/print-bridge/devices/list",
-            createDeviceUrl: "/print-bridge/devices/create",
             regenerateTokenUrlTemplate: "/print-bridge/devices/{id}/regenerate-token",
             setActiveUrlTemplate: "/print-bridge/devices/{id}/set-active",
             printJobsUrl: "/print-bridge/print-jobs",

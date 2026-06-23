@@ -21,13 +21,21 @@ public enum PrintBridgeSetupSessionStatus
     Expired
 }
 
-/// <summary>Result of creating a setup session. The raw code is returned once and never stored.</summary>
+/// <summary>
+/// Result of creating a setup session. The raw code is returned once and never stored.
+/// <para>
+/// For <see cref="PrintBridgeSetupMode.NewDevice"/> sessions, <see cref="DeviceId"/> and
+/// <see cref="DeviceName"/> are <c>null</c> because the device is not created until the
+/// one-time-code exchange.  For <see cref="PrintBridgeSetupMode.ReconnectExistingDevice"/>
+/// sessions both fields are populated from the selected device.
+/// </para>
+/// </summary>
 public sealed record PrintBridgeSetupSessionCreated(
     Guid SessionId,
     string Code,
     DateTime ExpiresAtUtc,
-    Guid DeviceId,
-    string DeviceName);
+    Guid? DeviceId,
+    string? DeviceName);
 
 /// <summary>
 /// Result of exchanging a one-time setup code. Carries the configuration the desktop app needs.
@@ -39,6 +47,23 @@ public sealed record PrintBridgeSetupExchangeResult(
     string DeviceToken,
     string DeviceName,
     string CompletionCredential);
+
+public enum PrintBridgeSetupMode
+{
+    NewDevice = 0,
+    ReconnectExistingDevice = 1
+}
+
+public static class PrintBridgeSetupModeValues
+{
+    public const string NewDevice = "NewDevice";
+    public const string ReconnectExisting = "ReconnectExisting";
+}
+
+public sealed record PrintBridgeSetupClientInfo(
+    string? MachineName,
+    string? AppVersion,
+    string? PrinterName);
 
 /// <summary>Polled status for the Web setup page.</summary>
 public sealed record PrintBridgeSetupStatusDto(
@@ -55,6 +80,22 @@ public sealed class PrintBridgeSetupTokenReplacementConfirmationRequiredExceptio
     }
 }
 
+public sealed class PrintBridgeSetupDeviceSelectionRequiredException : InvalidOperationException
+{
+    public PrintBridgeSetupDeviceSelectionRequiredException()
+        : base("Reconnect setup requires an explicit Print Bridge device selection.")
+    {
+    }
+}
+
+public sealed class PrintBridgeSetupDeviceNotFoundException : InvalidOperationException
+{
+    public PrintBridgeSetupDeviceNotFoundException()
+        : base("Selected Print Bridge device was not found for the tenant.")
+    {
+    }
+}
+
 /// <summary>
 /// Coordinates the short-lived, single-use automatic setup session used by the
 /// browser-to-application (<c>wasla-printbridge://</c>) Print Bridge connect flow.
@@ -62,12 +103,13 @@ public sealed class PrintBridgeSetupTokenReplacementConfirmationRequiredExceptio
 public interface IPrintBridgeSetupSessionService
 {
     /// <summary>
-    /// Create a short-lived setup session bound to the tenant and a Print Bridge device.
-    /// When <paramref name="deviceId"/> is null, the tenant's active device is used, or a
-    /// new device is created via the existing device flow when none exists.
+    /// Create a short-lived setup session. New-device sessions are not bound to a
+    /// Print Bridge device until the desktop app successfully exchanges the one-time code.
+    /// Reconnect sessions require an explicit existing <paramref name="deviceId"/>.
     /// </summary>
     Task<PrintBridgeSetupSessionCreated> CreateSessionAsync(
         Guid tenantId,
+        PrintBridgeSetupMode setupMode,
         Guid? deviceId,
         string serverUrl,
         string? defaultDeviceName,
@@ -78,7 +120,10 @@ public interface IPrintBridgeSetupSessionService
     /// Atomically exchange a one-time code (single-use). Regenerates the bound device's token and
     /// returns the configuration for the app. Returns null for invalid/expired/used codes.
     /// </summary>
-    Task<PrintBridgeSetupExchangeResult?> ExchangeAsync(string rawCode, CancellationToken ct);
+    Task<PrintBridgeSetupExchangeResult?> ExchangeAsync(
+        string rawCode,
+        PrintBridgeSetupClientInfo clientInfo,
+        CancellationToken ct);
 
     /// <summary>
     /// Record completion of a session, authenticated by the completion credential issued at exchange.

@@ -158,6 +158,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
 app.UseStaticFiles();
 
 var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();

@@ -49,7 +49,16 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label" asp-for="Password"></label>
-                            <input class="form-control" asp-for="Password" autocomplete="current-password" />
+                            <div class="input-group">
+                                <input class="form-control" asp-for="Password" type="password" autocomplete="current-password" id="admin-login-password" />
+                                <button class="btn btn-outline-secondary" type="button" id="admin-toggle-password"
+                                        title="@L["Auth.ShowPassword"]"
+                                        aria-label="@L["Auth.ShowPassword"]"
+                                        data-show-label="@L["Auth.ShowPassword"]"
+                                        data-hide-label="@L["Auth.HidePassword"]">
+                                    <i class="bi bi-eye" id="admin-toggle-password-icon" aria-hidden="true"></i>
+                                </button>
+                            </div>
                             <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">@L["Auth.LoginButton"]</button>
@@ -68,5 +77,22 @@
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
 @await Html.PartialAsync("_ValidationScriptsPartial")
+<script>
+(function () {
+    var btn = document.getElementById('admin-toggle-password');
+    var input = document.getElementById('admin-login-password');
+    var icon = document.getElementById('admin-toggle-password-icon');
+    if (!btn || !input || !icon) return;
+    btn.addEventListener('click', function () {
+        var isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.classList.toggle('bi-eye', !isPassword);
+        icon.classList.toggle('bi-eye-slash', isPassword);
+        var label = isPassword ? btn.dataset.hideLabel : btn.dataset.showLabel;
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+    });
+}());
+</script>
 </body>
 </html>

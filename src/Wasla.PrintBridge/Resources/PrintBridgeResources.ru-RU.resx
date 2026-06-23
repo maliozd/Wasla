@@ -33,6 +33,11 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>Сохранить настройки</value>
   </data>
+  <data name="Button.SaveConnection" xml:space="preserve"><value>Сохранить подключение</value></data>
+  <data name="Button.SavePrinter" xml:space="preserve"><value>Сохранить принтер</value></data>
+  <data name="Button.SaveDeviceName" xml:space="preserve"><value>Сохранить имя устройства</value></data>
+  <data name="Button.ApplyLanguage" xml:space="preserve"><value>Применить язык</value></data>
+  <data name="Button.SaveAdvanced" xml:space="preserve"><value>Сохранить расширенные настройки</value></data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>Показывать</value>
   </data>
@@ -102,6 +107,7 @@
   <data name="Error.PrinterRequired" xml:space="preserve">
     <value>Требуется имя принтера.</value>
   </data>
+  <data name="Error.PrinterUnavailable" xml:space="preserve"><value>Выбранный принтер недоступен.</value></data>
   <data name="Error.TestPrintFailed" xml:space="preserve">
     <value>Тестовая печать не удалась.</value>
   </data>
@@ -255,6 +261,7 @@
   <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
     <value>Управление с веб-панели Wasla</value>
   </data>
+  <data name="Settings.DeviceNameLocalHelp" xml:space="preserve"><value>Сохраняется локально на этом компьютере. Не переименовывает устройство в Wasla Web.</value></data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Машина: {0}</value>
   </data>
@@ -288,6 +295,17 @@
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>Вставьте токен устройства, сгенерированный на веб-панели Wasla.</value>
   </data>
+  <data name="Settings.Section.Connection" xml:space="preserve"><value>Подключение Wasla</value></data>
+  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>Сохраняет и проверяет только URL Wasla Web и токен устройства.</value></data>
+  <data name="Settings.Section.Printer" xml:space="preserve"><value>Настройка принтера</value></data>
+  <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>Выберите локальный принтер Windows для чеков. Данные сервера не требуются.</value></data>
+  <data name="Settings.Section.Device" xml:space="preserve"><value>Идентификация устройства</value></data>
+  <data name="Settings.Section.DeviceHelp" xml:space="preserve"><value>Управляйте локальной отображаемой информацией этой установки Print Bridge.</value></data>
+  <data name="Settings.Section.Language" xml:space="preserve"><value>Язык</value></data>
+  <data name="Settings.Section.LanguageHelp" xml:space="preserve"><value>Измените язык приложения без проверки подключения или принтера.</value></data>
+  <data name="Settings.SectionSaved" xml:space="preserve"><value>Сохранено.</value></data>
+  <data name="Settings.Saving" xml:space="preserve"><value>Сохранение...</value></data>
+  <data name="Settings.LanguageApplied" xml:space="preserve"><value>Язык применён.</value></data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Тестовый режим включен. Чеки не будут распечатаны; задания будут только регистрироваться.</value>
   </data>
@@ -329,6 +347,9 @@
   </data>
   <data name="ConnectionStatus.Connected" xml:space="preserve">
     <value>Подключено</value>
+  </data>
+  <data name="ConnectionStatus.NotConfigured" xml:space="preserve">
+    <value>Не настроено</value>
   </data>
   <data name="ConnectionStatus.Disconnected" xml:space="preserve">
     <value>Отключено</value>
@@ -525,6 +546,11 @@
   <data name="Validation.AgentTokenRequired" xml:space="preserve">
     <value>Требуется токен доступа.</value>
   </data>
+  <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>Требуется код настройки.</value></data>
+  <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>Подключить с кодом настройки</value></data>
+  <data name="Settings.SetupCode" xml:space="preserve"><value>Код настройки</value></data>
+  <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>Введите одноразовый код настройки, созданный в Wasla Web. Это не постоянный токен устройства.</value></data>
+  <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>Код настройки недействителен, уже использован или просрочен.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Соединение не удалось проверить</value>
   </data>
@@ -537,14 +563,16 @@
   <data name="Validation.InvalidServerUrl" xml:space="preserve">
     <value>Неверный сервер URL. Введите действительный адрес, начинающийся с http:// или https://..</value>
   </data>
+  <data name="Validation.InvalidPollingIntervals" xml:space="preserve"><value>Интервалы опроса вне допустимого диапазона.</value></data>
   <data name="Validation.PrinterRequired" xml:space="preserve">
-    <value>Имя принтера требуется, если тестовый режим отключен.</value>
+    <value>Выберите принтер перед запуском печати чеков.</value>
   </data>
   <data name="JobType.Receipt" xml:space="preserve">
     <value>Квитанция</value>
   </data>
   <data name="Auto.InvalidLink" xml:space="preserve"><value>Ссылка настройки недействительна или повреждена.</value></data>
   <data name="Auto.Connected" xml:space="preserve"><value>Print Bridge успешно подключён.</value></data>
+  <data name="Auto.ConnectedPrinterMissing" xml:space="preserve"><value>Подключение Wasla выполнено. Выберите принтер перед запуском печати чеков.</value></data>
   <data name="Auto.SavedUnverified" xml:space="preserve"><value>Настройки сохранены, но соединение не удалось проверить.</value></data>
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>Ссылка настройки недействительна или её срок истёк.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Не удалось завершить автоматическую настройку.</value></data>

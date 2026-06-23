@@ -60,6 +60,7 @@ public static class PrintBridgeAppServices
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+        services.AddSingleton<PrintBridgeSetupHttpClientFactory>();
 
         services.AddSingleton(sp =>
         {
@@ -68,6 +69,7 @@ public static class PrintBridgeAppServices
             return new WaslaPrintBridgeClient(
                 http,
                 sp.GetRequiredService<PrintBridgeSettingsHolder>(),
+                sp.GetRequiredService<PrintBridgeSetupHttpClientFactory>(),
                 logger,
                 appVersion.HeaderValue);
         });

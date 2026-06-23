@@ -12,5 +12,15 @@ public sealed class PrintBridgeSetupViewModel
     public bool HasActiveDevice { get; set; }
     public Guid? ActiveDeviceId { get; set; }
     public string? ActiveDeviceName { get; set; }
+    public List<PrintBridgeSetupDeviceOptionViewModel> Devices { get; set; } = [];
     public bool IsDevelopment { get; set; }
+}
+
+public sealed class PrintBridgeSetupDeviceOptionViewModel
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public string ConnectionStatusLabelKey { get; set; } = string.Empty;
+    public DateTime? LastSeenAtUtc { get; set; }
 }

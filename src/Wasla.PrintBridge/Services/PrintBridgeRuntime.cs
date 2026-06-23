@@ -60,6 +60,12 @@ public sealed class PrintBridgeRuntime : IDisposable
         lock (_sync)
         {
             var (hub, bridge, _) = _holder.Snapshot();
+            var connectionOptions = new WaslaOptions
+            {
+                ServerUrl = hub.ServerUrl,
+                AgentToken = hub.AgentToken
+            };
+            var isConnectionConfigured = PrintBridgeSettingsValidator.TryValidateConnectionSettings(connectionOptions, out _);
             var recentJobs = _recentJobs.Select(CloneRecord).ToList();
             var isConnected = _lastSuccessfulContactUtc.HasValue
                 && DateTime.UtcNow - _lastSuccessfulContactUtc.Value <= TimeSpan.FromSeconds(60);
@@ -75,6 +81,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                 LastError = _lastError,
                 ServerUrl = hub.ServerUrl,
                 PrinterName = bridge.PrinterName,
+                LocalDeviceName = bridge.BridgeName?.Trim() ?? string.Empty,
                 DisplayName = bridge.DisplayName?.Trim() ?? string.Empty,
                 ServerDeviceNameResolved = bridge.ServerDeviceNameResolved,
                 MachineName = string.IsNullOrWhiteSpace(bridge.MachineName)
@@ -87,6 +94,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                 FailedTodayCount = GetFailedTodayCount(today, recentJobs),
                 LastPrintTimeUtc = _historyStore.GetLastPrintTimeUtc(),
                 ServerConnectionStatus = PrintBridgeRuntimeStatus.ResolveServerConnectionStatus(
+                    isConnectionConfigured,
                     _isRunning,
                     isConnected,
                     _lastError),
@@ -104,7 +112,10 @@ public sealed class PrintBridgeRuntime : IDisposable
                 return;
 
             var (hub, bridge, _) = _holder.Snapshot();
-            if (!PrintBridgeSettingsValidator.TryValidate(hub, bridge, out var errorKey))
+            if (!PrintBridgeSettingsValidator.TryValidatePrintingReadiness(hub, bridge, out var errorKey))
+                throw new LocalizedApplicationException(errorKey!);
+
+            if (!PrintBridgeSettingsValidator.TryValidatePrinterAvailability(bridge, out errorKey))
                 throw new LocalizedApplicationException(errorKey!);
 
             _cts = new CancellationTokenSource();
@@ -228,8 +239,8 @@ public sealed class PrintBridgeRuntime : IDisposable
         if (bridge.DryRun)
             throw new LocalizedApplicationException("Error.DryRunEnabled");
 
-        if (string.IsNullOrWhiteSpace(bridge.PrinterName))
-            throw new LocalizedApplicationException("Error.PrinterRequired");
+        if (!PrintBridgeSettingsValidator.TryValidatePrinterAvailability(bridge, out var errorKey))
+            throw new LocalizedApplicationException(errorKey!);
 
         var receipt = $"Wasla Print Bridge{Environment.NewLine}Test print{Environment.NewLine}{DateTime.Now:G}";
         await _printer.PrintAsync(bridge.PrinterName, receipt, 1, ct).ConfigureAwait(false);

@@ -2,6 +2,7 @@
 
 public enum BridgeServerConnectionStatus
 {
+    NotConfigured,
     Stopped,
     Connected,
     Disconnected,

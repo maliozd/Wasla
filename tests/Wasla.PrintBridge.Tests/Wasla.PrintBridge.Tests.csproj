@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -28,6 +28,19 @@
        (no WinForms/Windows dependency, so no project reference to the WinExe is needed). -->
   <ItemGroup>
     <Compile Include="..\..\src\Wasla.PrintBridge\Setup\PrintBridgeProtocolUri.cs" Link="Setup\PrintBridgeProtocolUri.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeSetupHttpClientFactory.cs" Link="Services\PrintBridgeSetupHttpClientFactory.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeSettingsValidator.cs" Link="Services\PrintBridgeSettingsValidator.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Options\WaslaOptions.cs" Link="Options\WaslaOptions.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Options\PrintBridgeOptions.cs" Link="Options\PrintBridgeOptions.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Options\UiOptions.cs" Link="Options\UiOptions.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Models\PrintBridgeRuntimeStatus.cs" Link="Models\PrintBridgeRuntimeStatus.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Models\BridgeServerConnectionStatus.cs" Link="Models\BridgeServerConnectionStatus.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Models\PrinterHealthStatus.cs" Link="Models\PrinterHealthStatus.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Models\TrayIconState.cs" Link="Models\TrayIconState.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Models\LocalPrintJobRecord.cs" Link="Models\LocalPrintJobRecord.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Models\LocalPrintJobStatus.cs" Link="Models\LocalPrintJobStatus.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Printing\IReceiptPrinter.cs" Link="Printing\IReceiptPrinter.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Printing\WindowsReceiptPrinter.cs" Link="Printing\WindowsReceiptPrinter.cs" />
   </ItemGroup>
 
 </Project>

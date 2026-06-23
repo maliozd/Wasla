@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
@@ -14,20 +15,24 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
 
     private readonly CentralDbContext _centralDb;
     private readonly IPrintBridgeDeviceManagementService _devices;
+    private readonly IPrintBridgeSetupTenantLock _tenantLock;
     private readonly ILogger<PrintBridgeSetupSessionService> _logger;
 
     public PrintBridgeSetupSessionService(
         CentralDbContext centralDb,
         IPrintBridgeDeviceManagementService devices,
+        IPrintBridgeSetupTenantLock tenantLock,
         ILogger<PrintBridgeSetupSessionService> logger)
     {
         _centralDb = centralDb;
         _devices = devices;
+        _tenantLock = tenantLock;
         _logger = logger;
     }
 
     public async Task<PrintBridgeSetupSessionCreated> CreateSessionAsync(
         Guid tenantId,
+        PrintBridgeSetupMode setupMode,
         Guid? deviceId,
         string serverUrl,
         string? defaultDeviceName,
@@ -37,13 +42,18 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         if (string.IsNullOrWhiteSpace(serverUrl))
             throw new ArgumentException("Server URL is required.", nameof(serverUrl));
 
-        var (resolvedDeviceId, deviceName) = await ResolveDeviceAsync(
-                tenantId,
-                deviceId,
-                defaultDeviceName,
-                confirmReplaceActiveToken,
-                ct)
-            .ConfigureAwait(false);
+        // For ReconnectExistingDevice: validate and bind device at session creation.
+        // For NewDevice: PrintBridgeDeviceId remains null until exchange.
+        Guid? resolvedDeviceId = null;
+        string? resolvedDeviceName = null;
+
+        if (setupMode == PrintBridgeSetupMode.ReconnectExistingDevice)
+        {
+            var (id, name) = await ResolveSelectedDeviceAsync(tenantId, deviceId, confirmReplaceActiveToken, ct)
+                .ConfigureAwait(false);
+            resolvedDeviceId = id;
+            resolvedDeviceName = name;
+        }
 
         var rawCode = PrintBridgeSetupCode.Generate();
         var now = DateTime.UtcNow;
@@ -52,6 +62,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         {
             TenantId = tenantId,
             PrintBridgeDeviceId = resolvedDeviceId,
+            SetupMode = ToPersistedSetupMode(setupMode),
             CodeHash = PrintBridgeSetupCode.Hash(rawCode),
             ServerUrl = serverUrl.Trim(),
             ExpiresAtUtc = now.Add(DefaultLifetime),
@@ -62,17 +73,20 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         _centralDb.PrintBridgeSetupSessions.Add(session);
         await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
 
-        // Never log the raw code.
         _logger.LogInformation(
-            "Print Bridge setup session created. SessionId={SessionId}, TenantId={TenantId}, DeviceId={DeviceId}",
+            "Print Bridge setup session created. SessionId={SessionId}, TenantId={TenantId}, Mode={Mode}, DeviceId={DeviceId}",
             session.Id,
             tenantId,
+            setupMode,
             resolvedDeviceId);
 
-        return new PrintBridgeSetupSessionCreated(session.Id, rawCode, session.ExpiresAtUtc, resolvedDeviceId, deviceName);
+        return new PrintBridgeSetupSessionCreated(session.Id, rawCode, session.ExpiresAtUtc, resolvedDeviceId, resolvedDeviceName);
     }
 
-    public async Task<PrintBridgeSetupExchangeResult?> ExchangeAsync(string rawCode, CancellationToken ct)
+    public async Task<PrintBridgeSetupExchangeResult?> ExchangeAsync(
+        string rawCode,
+        PrintBridgeSetupClientInfo clientInfo,
+        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(rawCode))
             return null;
@@ -102,6 +116,20 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             session.CompletedAtUtc != null || session.FailedAtUtc != null)
             return null;
 
+        if (!TryParsePersistedSetupMode(session.SetupMode, out var persistedMode))
+        {
+            await MarkFailedAsync(session.Id, "invalid_setup_mode", ct).ConfigureAwait(false);
+
+            _logger.LogWarning(
+                "Print Bridge setup exchange rejected because persisted setup mode is invalid. " +
+                "SessionId={SessionId}, TenantId={TenantId}, SetupMode={SetupMode}",
+                session.Id,
+                session.TenantId,
+                session.SetupMode);
+
+            return null;
+        }
+
         var completionCredential = PrintBridgeSetupCode.Generate();
         var completionHash = PrintBridgeSetupCode.Hash(completionCredential);
 
@@ -121,29 +149,55 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         if (marked != 1)
             return null;
 
-        // Token is stored only as a hash, so regenerate to obtain a usable raw token for this device.
-        GeneratePrintBridgeTokenResult tokenResult;
-        try
+        string rawToken;
+        string deviceName;
+
+        if (persistedMode == PrintBridgeSetupMode.NewDevice)
         {
-            tokenResult = await _devices.RegenerateTokenAsync(session.TenantId, session.PrintBridgeDeviceId, ct)
+            var deviceResult = await CreateAndBindNewDeviceAsync(session, clientInfo, ct)
                 .ConfigureAwait(false);
+
+            if (deviceResult is null)
+                return null; // quota exceeded or creation failed; session already marked failed
+
+            (rawToken, deviceName) = deviceResult.Value;
         }
-        catch (InvalidOperationException)
+        else
         {
-            await MarkFailedAsync(session.Id, "device_unavailable", ct).ConfigureAwait(false);
-            return null;
+            // ReconnectExistingDevice: device was bound at session creation.
+            if (!session.PrintBridgeDeviceId.HasValue)
+            {
+                await MarkFailedAsync(session.Id, "no_device_bound", ct).ConfigureAwait(false);
+                return null;
+            }
+
+            GeneratePrintBridgeTokenResult tokenResult;
+            try
+            {
+                tokenResult = await _devices
+                    .RegenerateTokenAsync(session.TenantId, session.PrintBridgeDeviceId.Value, ct)
+                    .ConfigureAwait(false);
+            }
+            catch (InvalidOperationException)
+            {
+                await MarkFailedAsync(session.Id, "device_unavailable", ct).ConfigureAwait(false);
+                return null;
+            }
+
+            rawToken = tokenResult.RawToken;
+            deviceName = tokenResult.DeviceName;
         }
 
         _logger.LogInformation(
-            "Print Bridge setup code exchanged. SessionId={SessionId}, DeviceId={DeviceId}",
+            "Print Bridge setup code exchanged. SessionId={SessionId}, Mode={Mode}",
             session.Id,
-            session.PrintBridgeDeviceId);
+            session.SetupMode);
 
         return new PrintBridgeSetupExchangeResult(
             session.Id,
             session.ServerUrl,
-            tokenResult.RawToken,
-            tokenResult.DeviceName,
+            rawToken,
+            deviceName,
             completionCredential);
     }
 
@@ -212,37 +266,173 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             session.ConnectionVerified);
     }
 
-    private async Task<(Guid DeviceId, string DeviceName)> ResolveDeviceAsync(
+    /// <summary>
+    /// Validates that the selected device belongs to the tenant and that the caller has confirmed
+    /// token replacement before binding it to a ReconnectExistingDevice session.
+    /// </summary>
+    private async Task<(Guid DeviceId, string DeviceName)> ResolveSelectedDeviceAsync(
         Guid tenantId,
         Guid? deviceId,
-        string? defaultDeviceName,
         bool confirmReplaceActiveToken,
         CancellationToken ct)
     {
-        var devices = await _devices.ListDevicesAsync(tenantId, ct).ConfigureAwait(false);
+        if (!deviceId.HasValue)
+            throw new PrintBridgeSetupDeviceSelectionRequiredException();
 
-        if (deviceId.HasValue)
-        {
-            var match = devices.FirstOrDefault(d => d.Id == deviceId.Value && d.IsActive);
-            if (match is null)
-                throw new InvalidOperationException("Print Bridge device not found or inactive.");
-            if (!confirmReplaceActiveToken)
-                throw new PrintBridgeSetupTokenReplacementConfirmationRequiredException();
-            return (match.Id, match.Name);
-        }
-
-        var active = devices.FirstOrDefault(d => d.IsActive);
-        if (active is not null)
-        {
-            if (!confirmReplaceActiveToken)
-                throw new PrintBridgeSetupTokenReplacementConfirmationRequiredException();
-            return (active.Id, active.Name);
-        }
-
-        var created = await _devices
-            .CreateDeviceAsync(tenantId, string.IsNullOrWhiteSpace(defaultDeviceName) ? "Print Bridge" : defaultDeviceName!, ct)
+        var device = await _centralDb.PrintBridgeDevices
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == deviceId.Value && d.TenantId == tenantId, ct)
             .ConfigureAwait(false);
-        return (created.DeviceId, created.DeviceName);
+
+        if (device is null)
+            throw new PrintBridgeSetupDeviceNotFoundException();
+
+        if (!confirmReplaceActiveToken)
+            throw new PrintBridgeSetupTokenReplacementConfirmationRequiredException();
+
+        return (device.Id, device.Name);
+    }
+
+    /// <summary>
+    /// Atomically checks quota, creates a new PrintBridgeDevice, generates its token, and
+    /// binds the session to it. Returns null and marks the session as failed if quota is exceeded
+    /// or creation fails; in that case no device record is persisted.
+    /// </summary>
+    private async Task<(string RawToken, string DeviceName)?> CreateAndBindNewDeviceAsync(
+        PrintBridgeSetupSession session,
+        PrintBridgeSetupClientInfo clientInfo,
+        CancellationToken ct)
+    {
+        string? failedReason = null;
+
+        await using (var tx = await _centralDb.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct)
+            .ConfigureAwait(false))
+        {
+            try
+            {
+                var appLockResult = await _tenantLock.AcquireNewDeviceExchangeLockAsync(session.TenantId, ct)
+                    .ConfigureAwait(false);
+                if (appLockResult < 0)
+                {
+                    failedReason = "tenant_lock_unavailable";
+                    await tx.RollbackAsync(ct).ConfigureAwait(false);
+                    _logger.LogWarning(
+                        "Print Bridge new-device exchange could not acquire tenant-scoped database lock. " +
+                        "SessionId={SessionId}, TenantId={TenantId}, LockResult={LockResult}",
+                        session.Id,
+                        session.TenantId,
+                        appLockResult);
+                }
+                else
+                {
+                    // Quota check inside the transaction so concurrent exchanges cannot both succeed when at limit.
+                    var activeCount = await _centralDb.PrintBridgeDevices
+                        .CountAsync(d => d.TenantId == session.TenantId && d.IsActive, ct)
+                        .ConfigureAwait(false);
+
+                    if (activeCount >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)
+                    {
+                        failedReason = "quota_exceeded";
+                        await tx.RollbackAsync(ct).ConfigureAwait(false);
+
+                        _logger.LogWarning(
+                            "Print Bridge new-device exchange rejected: active device quota exceeded. " +
+                            "SessionId={SessionId}, TenantId={TenantId}, ActiveCount={ActiveCount}",
+                            session.Id, session.TenantId, activeCount);
+                    }
+                    else
+                    {
+                        var deviceName = NormalizeDeviceName(clientInfo.MachineName);
+                        var rawToken = PrintBridgeTokenHasher.GenerateRawToken();
+                        var tokenHash = PrintBridgeTokenHasher.HashToken(rawToken);
+                        var now = DateTime.UtcNow;
+
+                        var device = new PrintBridgeDevice
+                        {
+                            TenantId = session.TenantId,
+                            Name = deviceName,
+                            MachineName = string.IsNullOrWhiteSpace(clientInfo.MachineName)
+                                ? null : Truncate(clientInfo.MachineName.Trim(), 200),
+                            AppVersion = string.IsNullOrWhiteSpace(clientInfo.AppVersion)
+                                ? null : Truncate(clientInfo.AppVersion.Trim(), 100),
+                            PrinterName = string.IsNullOrWhiteSpace(clientInfo.PrinterName)
+                                ? null : Truncate(clientInfo.PrinterName.Trim(), 200),
+                            TokenHash = tokenHash,
+                            IsActive = true,
+                            CreatedAt = now,
+                            UpdatedAt = now
+                        };
+
+                        _centralDb.PrintBridgeDevices.Add(device);
+                        await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
+
+                        // Bind the session to the newly created device.
+                        await _centralDb.PrintBridgeSetupSessions
+                            .Where(s => s.Id == session.Id)
+                            .ExecuteUpdateAsync(set => set
+                                .SetProperty(s => s.PrintBridgeDeviceId, device.Id)
+                                .SetProperty(s => s.UpdatedAt, now), ct)
+                            .ConfigureAwait(false);
+
+                        await tx.CommitAsync(ct).ConfigureAwait(false);
+
+                        _logger.LogInformation(
+                            "New Print Bridge device created and bound via setup exchange. " +
+                            "DeviceId={DeviceId}, SessionId={SessionId}, TenantId={TenantId}, DeviceName={DeviceName}",
+                            device.Id, session.Id, session.TenantId, deviceName);
+
+                        return (rawToken, deviceName);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failedReason = "device_creation_failed";
+                await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+                _logger.LogError(
+                    ex,
+                    "Print Bridge new-device exchange failed while creating and binding a device. " +
+                    "SessionId={SessionId}, TenantId={TenantId}",
+                    session.Id,
+                    session.TenantId);
+            }
+        }
+
+        if (failedReason is not null)
+            await MarkFailedAsync(session.Id, failedReason, ct).ConfigureAwait(false);
+
+        return null;
+    }
+
+    private static string ToPersistedSetupMode(PrintBridgeSetupMode setupMode) =>
+        setupMode switch
+        {
+            PrintBridgeSetupMode.NewDevice => PrintBridgeSetupModeValues.NewDevice,
+            PrintBridgeSetupMode.ReconnectExistingDevice => PrintBridgeSetupModeValues.ReconnectExisting,
+            _ => throw new InvalidOperationException("Unsupported Print Bridge setup mode.")
+        };
+
+    private static bool TryParsePersistedSetupMode(string? value, out PrintBridgeSetupMode setupMode)
+    {
+        if (string.Equals(value, PrintBridgeSetupModeValues.NewDevice, StringComparison.Ordinal))
+        {
+            setupMode = PrintBridgeSetupMode.NewDevice;
+            return true;
+        }
+
+        if (string.Equals(value, PrintBridgeSetupModeValues.ReconnectExisting, StringComparison.Ordinal))
+        {
+            setupMode = PrintBridgeSetupMode.ReconnectExistingDevice;
+            return true;
+        }
+
+        setupMode = default;
+        return false;
     }
 
     private async Task MarkFailedAsync(Guid sessionId, string reason, CancellationToken ct)
@@ -263,4 +453,15 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         : session.ExpiresAtUtc <= nowUtc ? PrintBridgeSetupSessionStatus.Expired
         : session.ExchangedAtUtc != null ? PrintBridgeSetupSessionStatus.Exchanged
         : PrintBridgeSetupSessionStatus.Pending;
+
+    private static string NormalizeDeviceName(string? deviceName)
+    {
+        var name = (deviceName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            name = "Print Bridge";
+        return Truncate(name, 200);
+    }
+
+    private static string Truncate(string value, int maxLength) =>
+        value.Length <= maxLength ? value : value[..maxLength];
 }

@@ -49,6 +49,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
             d.IsActive,
             d.LastSeenAt,
             d.MachineName,
+            LocalAlias: null,
             d.PrinterName,
             d.AppVersion,
             PrintBridgeConnectionStatusCalculator.Calculate(d.IsActive, d.LastSeenAt, now)))
@@ -63,6 +64,48 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
             .ConfigureAwait(false);
 
         return BuildQuota(activeCount);
+    }
+
+    public async Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(
+        Guid customerId,
+        Guid deviceId,
+        CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+
+        var device = await _centralDb.PrintBridgeDevices
+            .AsNoTracking()
+            .Where(d => d.Id == deviceId && d.TenantId == customerId)
+            .Select(d => new
+            {
+                d.Id,
+                d.Name,
+                d.IsActive,
+                d.CreatedAt,
+                d.LastSeenAt,
+                d.MachineName,
+                d.PrinterName,
+                d.AppVersion,
+                HasToken = d.TokenHash != string.Empty
+            })
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+
+        if (device is null)
+            return null;
+
+        return new PrintBridgeDeviceDetailsDto(
+            device.Id,
+            device.Name,
+            device.IsActive,
+            device.CreatedAt,
+            device.LastSeenAt,
+            device.MachineName,
+            LocalAlias: null,
+            device.PrinterName,
+            device.AppVersion,
+            PrintBridgeConnectionStatusCalculator.Calculate(device.IsActive, device.LastSeenAt, now),
+            device.HasToken);
     }
 
     public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(
@@ -133,23 +176,34 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         return true;
     }
 
-    public async Task<bool> UpdateDeviceNameAsync(
+    public async Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(
         Guid customerId,
         Guid deviceId,
         string deviceName,
         CancellationToken ct)
     {
-        var name = NormalizeName(deviceName);
+        var name = (deviceName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return new RenamePrintBridgeDeviceResult(false, "PrintBridge.RenameNameRequired");
+
+        if (name.Length > PrintBridgeDeviceNameRules.MaxWebDisplayNameLength)
+            return new RenamePrintBridgeDeviceResult(false, "PrintBridge.RenameNameTooLong");
+
         var device = await _centralDb.PrintBridgeDevices
             .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId, ct)
             .ConfigureAwait(false);
 
-        if (device is null) return false;
+        if (device is null)
+            return new RenamePrintBridgeDeviceResult(false, "PrintBridge.DeviceNotFound");
 
-        device.Name = name;
-        device.UpdatedAt = DateTime.UtcNow;
-        await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
-        return true;
+        if (!string.Equals(device.Name, name, StringComparison.Ordinal))
+        {
+            device.Name = name;
+            device.UpdatedAt = DateTime.UtcNow;
+            await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+
+        return new RenamePrintBridgeDeviceResult(true);
     }
 
     private async Task<GeneratePrintBridgeTokenResult> CreateDeviceInternalAsync(

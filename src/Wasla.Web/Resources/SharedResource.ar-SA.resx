@@ -3116,4 +3116,46 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>يلزم التأكيد قبل استبدال رمز الجهاز النشط الحالي.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>ينشئ الإعداد التلقائي رمزًا جديدًا للجهاز {0}؛ سيتوقف الرمز القديم عن العمل.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>تعذّر إكمال إجراء الرمز.</value></data>
+  <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>وضع الإعداد</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>إعداد جهاز جديد</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>موصى به. ينشئ جهاز Print Bridge جديدًا دون تغيير رموز الأجهزة الحالية.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>إعادة توصيل جهاز موجود</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>ينشئ رمزًا جديدًا للجهاز الذي تحدده فقط.</value></data>
+  <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>الجهاز المراد إعادة توصيله</value></data>
+  <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>اختر جهازًا</value></data>
+  <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>إعادة التوصيل تنشئ رمزًا جديدًا للجهاز المحدد وتلغي الرمز السابق لذلك الجهاز.</value></data>
+  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>اختر جهازًا للمتابعة.</value></data>
+  <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>اختيار الجهاز مطلوب لإعادة توصيل جهاز موجود.</value></data>
+  <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>لم يتم العثور على الجهاز المحدد لهذا المطعم.</value></data>
+  <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>اختر وضع إعداد صالحًا.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>يستخدم رمز الإعداد وضع الإعداد المحدد أعلاه. لا يتم إنشاء رمز الجهاز الحقيقي إلا عندما يستبدل تطبيق سطح المكتب هذا الرمز.</value></data>
+  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>رمز إعداد لمرة واحدة</value></data>
+  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>استخدم هذا الرمز قصير الصلاحية مع عنوان الخادم في تطبيق Print Bridge على سطح المكتب. إنه ليس رمز API عاديًا.</value></data>
+  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>إنشاء رمز إعداد جديد</value></data>
+  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>إنشاء رمز إعداد لإعادة التوصيل</value></data>
+  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>تم إنشاء رمز إعداد لمرة واحدة.</value></data>
+  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>ينتهي في: {0}</value></data>
+  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>نسخ رمز الإعداد</value></data>
+  <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>إعداد جهاز جديد</value></data>
+  <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>تفاصيل الجهاز</value></data>
+  <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>اسم الويب وحالة الاتصال والمعلومات التقنية لجهاز Print Bridge هذا.</value></data>
+  <data name="PrintBridge.BackToDevices" xml:space="preserve"><value>العودة إلى الأجهزة</value></data>
+  <data name="PrintBridge.DetailsAction" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="PrintBridge.WebDisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
+  <data name="PrintBridge.WebDisplayNameHelp" xml:space="preserve"><value>يظهر هذا الاسم في Wasla Web فقط؛ ولا يغير اسم الجهاز المحلي على سطح المكتب.</value></data>
+  <data name="PrintBridge.DeviceTechnicalInfo" xml:space="preserve"><value>المعلومات التقنية</value></data>
+  <data name="PrintBridge.DeviceState" xml:space="preserve"><value>حالة الجهاز</value></data>
+  <data name="PrintBridge.Enabled" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="PrintBridge.Disabled" xml:space="preserve"><value>معطّل</value></data>
+  <data name="PrintBridge.TokenStatus" xml:space="preserve"><value>حالة الرمز</value></data>
+  <data name="PrintBridge.TokenConfigured" xml:space="preserve"><value>الرمز محفوظ</value></data>
+  <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>لا يوجد رمز</value></data>
+  <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>الإعداد / إعادة التوصيل</value></data>
+  <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>نشاط الطباعة الأخير</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>لا يتم عرض رمز الجهاز الخام أو تجزئة الرمز في هذه الصفحة.</value></data>
+  <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>تم حفظ اسم الجهاز.</value></data>
+  <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>تعذر حفظ اسم الجهاز.</value></data>
+  <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>اسم الجهاز مطلوب.</value></data>
+  <data name="PrintBridge.RenameNameTooLong" xml:space="preserve"><value>يمكن أن يكون اسم الجهاز 100 حرف كحد أقصى.</value></data>
+  <data name="PrintBridge.DeviceNotFound" xml:space="preserve"><value>لم يتم العثور على الجهاز.</value></data>
 </root>

@@ -92,6 +92,7 @@ public sealed class PrintBridgeLocalizer
 
     public string GetServerConnectionStatus(BridgeServerConnectionStatus status) => status switch
     {
+        BridgeServerConnectionStatus.NotConfigured => GetString("ConnectionStatus.NotConfigured"),
         BridgeServerConnectionStatus.Connected => GetString("ConnectionStatus.Connected"),
         BridgeServerConnectionStatus.Disconnected => GetString("ConnectionStatus.Disconnected"),
         BridgeServerConnectionStatus.Error => GetString("ConnectionStatus.Error"),
@@ -159,10 +160,9 @@ public sealed class PrintBridgeLocalizer
 
     public string GetFooterDeviceName(PrintBridgeRuntimeStatus status)
     {
-        if (status.ServerDeviceNameResolved && !string.IsNullOrWhiteSpace(status.DisplayName))
-            return status.DisplayName;
-
-        return GetString("Footer.NotConnected");
+        return PrintBridgeRuntimeStatus.ResolveLocalDeviceLabel(
+            status.LocalDeviceName,
+            status.MachineName);
     }
 
     public string GetHeaderBadge(PrintBridgeRuntimeStatus status)

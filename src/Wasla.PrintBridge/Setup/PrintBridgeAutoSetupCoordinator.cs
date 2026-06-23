@@ -8,6 +8,9 @@ public enum PrintBridgeAutoSetupOutcome
     /// <summary>Settings saved and the connection was verified.</summary>
     Connected,
 
+    /// <summary>Connection verified, but a printer must still be selected before printing can start.</summary>
+    ConnectedPrinterMissing,
+
     /// <summary>Settings saved, but the connection could not be verified.</summary>
     SavedButUnverified,
 
@@ -66,7 +69,7 @@ public sealed class PrintBridgeAutoSetupCoordinator
         if (string.IsNullOrWhiteSpace(document.PrintBridge.MachineName))
             document.PrintBridge.MachineName = Environment.MachineName;
 
-        if (!PrintBridgeSettingsValidator.TryNormalize(document.OrderHub, document.PrintBridge, out var errorKey))
+        if (!PrintBridgeSettingsValidator.TryValidateConnectionSettings(document.OrderHub, out var errorKey))
         {
             // Do not log the token; only the validation key.
             _logger.LogWarning("Automatic setup produced invalid settings. ErrorKey={ErrorKey}", errorKey);
@@ -97,8 +100,11 @@ public sealed class PrintBridgeAutoSetupCoordinator
             config.SessionId,
             connected);
 
-        return connected
+        if (!connected)
+            return PrintBridgeAutoSetupOutcome.SavedButUnverified;
+
+        return PrintBridgeSettingsValidator.TryValidatePrinterAvailability(document.PrintBridge, out _)
             ? PrintBridgeAutoSetupOutcome.Connected
-            : PrintBridgeAutoSetupOutcome.SavedButUnverified;
+            : PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing;
     }
 }

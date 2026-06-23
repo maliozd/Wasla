@@ -26,6 +26,12 @@
             confirmRegenerateToken = L["PrintBridge.RegenerateConfirm", Model.ActiveDeviceName ?? ""].Value,
             manualTokenFailed = L["PrintBridge.Auto.ManualTokenFailed"].Value,
             autoReplaceTokenConfirm = L["PrintBridge.Auto.ReplaceTokenConfirm", Model.ActiveDeviceName ?? ""].Value,
+            selectDevice = L["PrintBridge.Auto.SelectDevice"].Value,
+            reconnectTokenWarning = L["PrintBridge.Auto.ReconnectTokenWarning"].Value,
+            generateNewDeviceSetupCode = L["PrintBridge.Auto.GenerateNewDeviceSetupCode"].Value,
+            generateReconnectSetupCode = L["PrintBridge.Auto.GenerateReconnectSetupCode"].Value,
+            oneTimeSetupCodeCreated = L["PrintBridge.Auto.OneTimeSetupCodeCreated"].Value,
+            setupCodeExpires = L["PrintBridge.Auto.SetupCodeExpires"].Value,
             starting = L["PrintBridge.Auto.Starting"].Value,
             waiting = L["PrintBridge.Auto.Waiting"].Value,
             connected = L["PrintBridge.Auto.Connected"].Value,
@@ -35,8 +41,14 @@
             sessionError = L["PrintBridge.Auto.SessionError"].Value
         },
         hasActiveDevice = Model.HasActiveDevice,
-        activeDeviceId = Model.ActiveDeviceId,
-        createDeviceUrl = "/print-bridge/devices/create",
+        devices = Model.Devices.Select(d => new
+        {
+            id = d.Id,
+            name = d.Name,
+            isActive = d.IsActive,
+            status = L[d.ConnectionStatusLabelKey].Value,
+            lastSeenAtUtc = d.LastSeenAtUtc
+        }),
         regenerateTokenUrlTemplate = "/print-bridge/devices/{id}/regenerate-token"
     };
 }
@@ -58,12 +70,55 @@
                 <span class="badge text-bg-primary">@L["PrintBridge.Auto.RecommendedBadge"]</span>
             </div>
             <p class="text-muted small mb-3">@L["PrintBridge.Auto.Intro"]</p>
-            @if (Model.HasActiveDevice)
-            {
-                <div class="alert alert-warning small py-2 mb-3" role="alert">
-                    @L["PrintBridge.Auto.TokenRotationNotice", Model.ActiveDeviceName ?? ""]
+
+            <fieldset class="mb-3" id="pbSetupModeGroup">
+                <legend class="form-label small fw-semibold mb-2">@L["PrintBridge.Auto.SetupModeTitle"]</legend>
+                <div class="vstack gap-2">
+                    <label class="border rounded p-3 bg-body d-flex gap-2" for="pbSetupModeNew">
+                        <input class="form-check-input mt-1"
+                               type="radio"
+                               name="pbSetupMode"
+                               id="pbSetupModeNew"
+                               value="new"
+                               checked />
+                        <span>
+                            <span class="fw-semibold d-block">@L["PrintBridge.Auto.NewDeviceModeTitle"]</span>
+                            <span class="small text-muted">@L["PrintBridge.Auto.NewDeviceModeHelp"]</span>
+                        </span>
+                    </label>
+                    <label class="border rounded p-3 bg-body d-flex gap-2" for="pbSetupModeReconnect">
+                        <input class="form-check-input mt-1"
+                               type="radio"
+                               name="pbSetupMode"
+                               id="pbSetupModeReconnect"
+                               value="reconnect" />
+                        <span>
+                            <span class="fw-semibold d-block">@L["PrintBridge.Auto.ReconnectModeTitle"]</span>
+                            <span class="small text-muted">@L["PrintBridge.Auto.ReconnectModeHelp"]</span>
+                        </span>
+                    </label>
                 </div>
-            }
+            </fieldset>
+
+            <div class="mb-3 d-none" id="pbReconnectDeviceSection">
+                <label class="form-label small fw-semibold" for="pbReconnectDeviceSelect">@L["PrintBridge.Auto.ReconnectDeviceLabel"]</label>
+                <select class="form-select form-select-sm" id="pbReconnectDeviceSelect">
+                    <option value="">@L["PrintBridge.Auto.ReconnectDevicePlaceholder"]</option>
+                    @foreach (var device in Model.Devices)
+                    {
+                        var state = L[device.ConnectionStatusLabelKey].Value;
+                        var lastSeen = device.LastSeenAtUtc.HasValue
+                            ? $"{L["PrintBridge.LastSeen"].Value}: {device.LastSeenAtUtc.Value:yyyy-MM-dd HH:mm} UTC"
+                            : L["PrintBridge.LastSeenNever"].Value;
+                        <option value="@device.Id">
+                            @device.Name — @(device.IsActive ? L["Orders.Active"].Value : L["Orders.Passive"].Value) — @state — @lastSeen
+                        </option>
+                    }
+                </select>
+                <div class="alert alert-warning small py-2 mt-2 mb-0" role="alert">
+                    @L["PrintBridge.Auto.ReconnectTokenWarning"]
+                </div>
+            </div>
 
             <button type="button" class="btn btn-primary" id="pbAutoOpenBtn" data-server-url="@(Model.ServerUrl ?? "")">
                 <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.OpenButton"]
@@ -161,57 +216,37 @@
                         <p class="small text-muted mb-3">@L["PrintBridge.ServerUrlUnavailable"]</p>
                     }
 
-                    <label class="form-label small fw-semibold mb-1" for="pbSetupDeviceToken">@L["PrintBridge.DeviceTokenLabel"]</label>
-                    @if (Model.HasActiveDevice)
-                    {
-                        <div class="input-group input-group-sm mb-2">
-                            <input type="text"
-                                   class="form-control font-monospace oh-print-bridge-setup-value"
-                                   id="pbSetupDeviceToken"
-                                   value="@L["PrintBridge.DeviceTokenMasked"].Value"
-                                   readonly
-                                   aria-describedby="pbSetupDeviceTokenHelp" />
-                        </div>
-                        <p id="pbSetupDeviceTokenHelp" class="small text-muted mb-2">
-                            @L["PrintBridge.DeviceTokenMaskedHelp", Model.ActiveDeviceName ?? ""]
-                        </p>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button type="button"
-                                    class="btn btn-outline-primary btn-sm"
-                                    id="pbManualRegenerateTokenBtn"
-                                    data-device-id="@Model.ActiveDeviceId">
-                                <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>@L["PrintBridge.RegenerateToken"]
-                            </button>
-                            <a class="btn btn-outline-secondary btn-sm" href="@Model.DevicesUrl">
-                                <i class="bi bi-hdd-network me-1" aria-hidden="true"></i>@L["PrintBridge.ManageDevicesAction"]
-                            </a>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning small py-2 mb-2" role="alert">
-                            @L["PrintBridge.NoDeviceWarning"]
-                        </div>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="pbManualCreateDeviceBtn">
-                            <i class="bi bi-hdd-network me-1" aria-hidden="true"></i>@L["PrintBridge.CreateDeviceAction"]
-                        </button>
-                    }
-
-                    <div id="pbManualTokenBox" class="alert alert-info mt-3 d-none" role="status" aria-live="polite">
-                        <div class="fw-semibold small mb-1" id="pbManualTokenTitle"></div>
-                        <p class="small mb-2" id="pbManualTokenNotice"></p>
-                        <div id="pbManualTokenWarning" class="alert alert-danger small py-2 mb-2 d-none" role="alert"></div>
-                        <div class="d-flex flex-wrap align-items-stretch gap-2">
-                            <pre id="pbManualTokenValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break oh-print-bridge-token-value"></pre>
-                            <button type="button" class="btn btn-sm btn-primary align-self-start" id="pbManualCopyTokenBtn">
-                                <i class="bi bi-clipboard me-1" aria-hidden="true"></i>@L["PrintBridge.CopyToken"]
-                            </button>
-                        </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-outline-secondary btn-sm" href="@Model.DevicesUrl">
+                            <i class="bi bi-hdd-network me-1" aria-hidden="true"></i>@L["PrintBridge.ManageDevicesAction"]
+                        </a>
                     </div>
                 </div>
             </section>
         </div>
     </div>
+
+    <section class="card oh-card mb-3" id="pbManualSetupCodeCard">
+        <div class="card-body">
+            <h2 class="h6 mb-2">@L["PrintBridge.Auto.OneTimeSetupCode"]</h2>
+            <p class="small text-muted mb-3">@L["PrintBridge.Auto.SetupCodeHelp"]</p>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="pbManualSetupCodeActionBtn">
+                <i class="bi bi-shield-lock me-1" aria-hidden="true"></i><span id="pbManualSetupCodeActionText">@L["PrintBridge.Auto.GenerateNewDeviceSetupCode"]</span>
+            </button>
+
+            <div id="pbManualSetupCodeBox" class="alert alert-info mt-3 d-none" role="status" aria-live="polite">
+                <div class="fw-semibold small mb-1" id="pbManualSetupCodeTitle"></div>
+                <p class="small mb-2" id="pbManualSetupCodeNotice"></p>
+                <div id="pbManualSetupCodeWarning" class="alert alert-danger small py-2 mb-2 d-none" role="alert"></div>
+                <div class="d-flex flex-wrap align-items-stretch gap-2">
+                    <pre id="pbManualSetupCodeValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break oh-print-bridge-token-value"></pre>
+                    <button type="button" class="btn btn-sm btn-primary align-self-start" id="pbManualCopySetupCodeBtn">
+                        <i class="bi bi-clipboard me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.CopySetupCode"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <section class="card oh-card mb-3">
         <div class="card-body">

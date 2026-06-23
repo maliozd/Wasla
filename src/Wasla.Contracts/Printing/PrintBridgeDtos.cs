@@ -30,7 +30,10 @@ public sealed record ReprintPrintJobResponse(
 // --- Automatic setup (browser-to-application wasla-printbridge:// flow) ---
 
 /// <summary>Desktop app exchanges the one-time setup code (single use) for its configuration.</summary>
-public sealed record PrintBridgeSetupExchangeRequest(string Code);
+public sealed record PrintBridgeSetupExchangeRequest(
+    string Code,
+    string? MachineName = null,
+    string? PrinterName = null);
 
 /// <summary>
 /// Configuration returned to the desktop app on a successful exchange.

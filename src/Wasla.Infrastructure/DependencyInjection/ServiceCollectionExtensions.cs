@@ -110,6 +110,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPrintBridgeAuthService, PrintBridgeAuthService>();
         services.AddScoped<IPrintBridgeJobService, PrintBridgeJobService>();
         services.AddScoped<IPrintBridgeDeviceManagementService, PrintBridgeDeviceManagementService>();
+        services.AddScoped<IPrintBridgeSetupTenantLock, SqlServerPrintBridgeSetupTenantLock>();
         services.AddScoped<IPrintBridgeSetupSessionService, PrintBridgeSetupSessionService>();
         services.AddScoped<IPrintJobHistoryService, PrintJobHistoryService>();
 

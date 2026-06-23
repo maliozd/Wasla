@@ -33,6 +33,11 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>Ayarları kaydet</value>
   </data>
+  <data name="Button.SaveConnection" xml:space="preserve"><value>Bağlantıyı kaydet</value></data>
+  <data name="Button.SavePrinter" xml:space="preserve"><value>Yazıcıyı kaydet</value></data>
+  <data name="Button.SaveDeviceName" xml:space="preserve"><value>Cihaz adını kaydet</value></data>
+  <data name="Button.ApplyLanguage" xml:space="preserve"><value>Dili uygula</value></data>
+  <data name="Button.SaveAdvanced" xml:space="preserve"><value>Gelişmiş ayarları kaydet</value></data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>Göster</value>
   </data>
@@ -102,6 +107,7 @@
   <data name="Error.PrinterRequired" xml:space="preserve">
     <value>Yazıcı adı gereklidir.</value>
   </data>
+  <data name="Error.PrinterUnavailable" xml:space="preserve"><value>Seçili yazıcı kullanılamıyor.</value></data>
   <data name="Error.TestPrintFailed" xml:space="preserve">
     <value>Test baskısı başarısız oldu.</value>
   </data>
@@ -255,6 +261,7 @@
   <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
     <value>Wasla Web panelinden yönetilir</value>
   </data>
+  <data name="Settings.DeviceNameLocalHelp" xml:space="preserve"><value>Bu bilgisayarda yerel olarak saklanır. Wasla Web içindeki cihaz adını değiştirmez.</value></data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Makine: {0}</value>
   </data>
@@ -288,6 +295,17 @@
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>Wasla Web panelinden oluşturulan cihaz tokenını yapıştırın.</value>
   </data>
+  <data name="Settings.Section.Connection" xml:space="preserve"><value>Wasla bağlantısı</value></data>
+  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>Yalnızca Wasla Web adresini ve cihaz tokenını kaydedip doğrular.</value></data>
+  <data name="Settings.Section.Printer" xml:space="preserve"><value>Yazıcı yapılandırması</value></data>
+  <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>Fişler için kullanılacak yerel Windows yazıcısını seçin. Sunucu bilgileri gerekmez.</value></data>
+  <data name="Settings.Section.Device" xml:space="preserve"><value>Cihaz kimliği</value></data>
+  <data name="Settings.Section.DeviceHelp" xml:space="preserve"><value>Bu Print Bridge kurulumu için yerel görünen bilgileri yönetin.</value></data>
+  <data name="Settings.Section.Language" xml:space="preserve"><value>Dil</value></data>
+  <data name="Settings.Section.LanguageHelp" xml:space="preserve"><value>Bağlantı veya yazıcı ayarlarını doğrulamadan uygulama dilini değiştirin.</value></data>
+  <data name="Settings.SectionSaved" xml:space="preserve"><value>Kaydedildi.</value></data>
+  <data name="Settings.Saving" xml:space="preserve"><value>Kaydediliyor...</value></data>
+  <data name="Settings.LanguageApplied" xml:space="preserve"><value>Dil uygulandı.</value></data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Test modu açık. Fişler yazdırılmaz; işler yalnızca loglanır.</value>
   </data>
@@ -329,6 +347,9 @@
   </data>
   <data name="ConnectionStatus.Connected" xml:space="preserve">
     <value>Bağlı</value>
+  </data>
+  <data name="ConnectionStatus.NotConfigured" xml:space="preserve">
+    <value>Yapılandırılmadı</value>
   </data>
   <data name="ConnectionStatus.Disconnected" xml:space="preserve">
     <value>Bağlantı yok</value>
@@ -525,6 +546,11 @@
   <data name="Validation.AgentTokenRequired" xml:space="preserve">
     <value>Erişim anahtarı gereklidir.</value>
   </data>
+  <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>Kurulum kodu gereklidir.</value></data>
+  <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>Kurulum koduyla bağlan</value></data>
+  <data name="Settings.SetupCode" xml:space="preserve"><value>Kurulum kodu</value></data>
+  <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>Wasla Web'de oluşturulan tek kullanımlık kurulum kodunu girin. Bu alan kalıcı cihaz token'ı değildir.</value></data>
+  <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>Kurulum kodu geçersiz, kullanılmış veya süresi dolmuş.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Bağlantı doğrulanamadı</value>
   </data>
@@ -537,14 +563,16 @@
   <data name="Validation.InvalidServerUrl" xml:space="preserve">
     <value>Geçersiz sunucu adresi. http:// veya https:// ile başlayan geçerli bir adres girin.</value>
   </data>
+  <data name="Validation.InvalidPollingIntervals" xml:space="preserve"><value>Yoklama aralıkları izin verilen aralığın dışında.</value></data>
   <data name="Validation.PrinterRequired" xml:space="preserve">
-    <value>Test modu kapalıyken yazıcı adı gereklidir.</value>
+    <value>Fiş yazdırmayı başlatmadan önce bir yazıcı seçin.</value>
   </data>
   <data name="JobType.Receipt" xml:space="preserve">
     <value>Fiş</value>
   </data>
   <data name="Auto.InvalidLink" xml:space="preserve"><value>Kurulum bağlantısı geçersiz veya hatalı.</value></data>
   <data name="Auto.Connected" xml:space="preserve"><value>Print Bridge başarıyla bağlandı.</value></data>
+  <data name="Auto.ConnectedPrinterMissing" xml:space="preserve"><value>Wasla bağlantısı tamamlandı. Fiş yazdırmayı başlatmadan önce bir yazıcı seçin.</value></data>
   <data name="Auto.SavedUnverified" xml:space="preserve"><value>Ayarlar kaydedildi ancak bağlantı doğrulanamadı.</value></data>
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>Kurulum bağlantısı geçersiz veya süresi dolmuş.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Otomatik kurulum tamamlanamadı.</value></data>

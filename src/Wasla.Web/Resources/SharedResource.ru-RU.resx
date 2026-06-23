@@ -3600,4 +3600,46 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Перед заменой токена текущего активного устройства требуется подтверждение.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Автоматическая настройка создаст новый токен для устройства {0}; старый токен перестанет работать.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Не удалось выполнить действие с токеном.</value></data>
+  <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Режим настройки</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Настроить новое устройство</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Рекомендуется. Создает новое устройство Print Bridge, не изменяя токены существующих устройств.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>Повторно подключить существующее устройство</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Создает новый токен только для выбранного устройства.</value></data>
+  <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>Устройство для повторного подключения</value></data>
+  <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Выберите устройство</value></data>
+  <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Повторное подключение создает новый токен для выбранного устройства и делает предыдущий токен этого устройства недействительным.</value></data>
+  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Выберите устройство, чтобы продолжить.</value></data>
+  <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Для повторного подключения существующего устройства необходимо выбрать устройство.</value></data>
+  <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>Выбранное устройство не найдено для этого ресторана.</value></data>
+  <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>Выберите допустимый режим настройки.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>Код настройки использует выбранный выше режим. Настоящий токен устройства создается только после обмена кода настольным приложением.</value></data>
+  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>Одноразовый код настройки</value></data>
+  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>Используйте этот краткосрочный код вместе с адресом сервера в настольном приложении Print Bridge. Это не обычный API-токен.</value></data>
+  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>Создать новый код настройки</value></data>
+  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>Создать код повторного подключения</value></data>
+  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>Одноразовый код настройки создан.</value></data>
+  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>Истекает: {0}</value></data>
+  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>Скопировать код настройки</value></data>
+  <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>Настроить новое устройство</value></data>
+  <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>Сведения об устройстве</value></data>
+  <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>Веб-имя, состояние подключения и техническая информация этого устройства Print Bridge.</value></data>
+  <data name="PrintBridge.BackToDevices" xml:space="preserve"><value>Назад к устройствам</value></data>
+  <data name="PrintBridge.DetailsAction" xml:space="preserve"><value>Сведения</value></data>
+  <data name="PrintBridge.WebDisplayName" xml:space="preserve"><value>Отображаемое имя</value></data>
+  <data name="PrintBridge.WebDisplayNameHelp" xml:space="preserve"><value>Это имя отображается только в Wasla Web; оно не меняет локальное имя устройства на компьютере.</value></data>
+  <data name="PrintBridge.DeviceTechnicalInfo" xml:space="preserve"><value>Техническая информация</value></data>
+  <data name="PrintBridge.DeviceState" xml:space="preserve"><value>Состояние устройства</value></data>
+  <data name="PrintBridge.Enabled" xml:space="preserve"><value>Включено</value></data>
+  <data name="PrintBridge.Disabled" xml:space="preserve"><value>Отключено</value></data>
+  <data name="PrintBridge.TokenStatus" xml:space="preserve"><value>Состояние токена</value></data>
+  <data name="PrintBridge.TokenConfigured" xml:space="preserve"><value>Токен настроен</value></data>
+  <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Токен отсутствует</value></data>
+  <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Настройка / повторное подключение</value></data>
+  <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Последняя активность печати</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Исходный токен устройства и хэш токена на этой странице не отображаются.</value></data>
+  <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>Имя устройства сохранено.</value></data>
+  <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>Не удалось сохранить имя устройства.</value></data>
+  <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Введите имя устройства.</value></data>
+  <data name="PrintBridge.RenameNameTooLong" xml:space="preserve"><value>Имя устройства может содержать не более 100 символов.</value></data>
+  <data name="PrintBridge.DeviceNotFound" xml:space="preserve"><value>Устройство не найдено.</value></data>
 </root>

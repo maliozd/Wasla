@@ -33,6 +33,21 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>Save settings</value>
   </data>
+  <data name="Button.SaveConnection" xml:space="preserve">
+    <value>Save connection</value>
+  </data>
+  <data name="Button.SavePrinter" xml:space="preserve">
+    <value>Save printer</value>
+  </data>
+  <data name="Button.SaveDeviceName" xml:space="preserve">
+    <value>Save device name</value>
+  </data>
+  <data name="Button.ApplyLanguage" xml:space="preserve">
+    <value>Apply language</value>
+  </data>
+  <data name="Button.SaveAdvanced" xml:space="preserve">
+    <value>Save advanced settings</value>
+  </data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>Show</value>
   </data>
@@ -101,6 +116,9 @@
   </data>
   <data name="Error.PrinterRequired" xml:space="preserve">
     <value>Printer name is required.</value>
+  </data>
+  <data name="Error.PrinterUnavailable" xml:space="preserve">
+    <value>Selected printer is unavailable.</value>
   </data>
   <data name="Error.TestPrintFailed" xml:space="preserve">
     <value>Test print failed.</value>
@@ -255,6 +273,9 @@
   <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
     <value>Managed from Wasla Web panel</value>
   </data>
+  <data name="Settings.DeviceNameLocalHelp" xml:space="preserve">
+    <value>Stored locally on this computer. It does not rename the device in Wasla Web.</value>
+  </data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Machine: {0}</value>
   </data>
@@ -287,6 +308,39 @@
   </data>
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>Paste the device token generated from the Wasla Web panel.</value>
+  </data>
+  <data name="Settings.Section.Connection" xml:space="preserve">
+    <value>Wasla connection</value>
+  </data>
+  <data name="Settings.Section.ConnectionHelp" xml:space="preserve">
+    <value>Save and verify only the Wasla Web URL and device token.</value>
+  </data>
+  <data name="Settings.Section.Printer" xml:space="preserve">
+    <value>Printer configuration</value>
+  </data>
+  <data name="Settings.Section.PrinterHelp" xml:space="preserve">
+    <value>Select the local Windows printer used for receipts. This does not require server credentials.</value>
+  </data>
+  <data name="Settings.Section.Device" xml:space="preserve">
+    <value>Device identity</value>
+  </data>
+  <data name="Settings.Section.DeviceHelp" xml:space="preserve">
+    <value>Manage local display information for this Print Bridge installation.</value>
+  </data>
+  <data name="Settings.Section.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings.Section.LanguageHelp" xml:space="preserve">
+    <value>Change the application language without validating connection or printer settings.</value>
+  </data>
+  <data name="Settings.SectionSaved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="Settings.Saving" xml:space="preserve">
+    <value>Saving...</value>
+  </data>
+  <data name="Settings.LanguageApplied" xml:space="preserve">
+    <value>Language applied.</value>
   </data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Test mode is enabled. Receipts will not be printed; jobs will only be logged.</value>
@@ -329,6 +383,9 @@
   </data>
   <data name="ConnectionStatus.Connected" xml:space="preserve">
     <value>Connected</value>
+  </data>
+  <data name="ConnectionStatus.NotConfigured" xml:space="preserve">
+    <value>Not configured</value>
   </data>
   <data name="ConnectionStatus.Disconnected" xml:space="preserve">
     <value>Disconnected</value>
@@ -525,6 +582,11 @@
   <data name="Validation.AgentTokenRequired" xml:space="preserve">
     <value>Access token is required.</value>
   </data>
+  <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>Setup code is required.</value></data>
+  <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>Connect with setup code</value></data>
+  <data name="Settings.SetupCode" xml:space="preserve"><value>Setup code</value></data>
+  <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>Enter the one-time setup code generated in Wasla Web. This is not the permanent device token.</value></data>
+  <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>The setup code is invalid, already used, or expired.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Connection could not be verified</value>
   </data>
@@ -537,14 +599,18 @@
   <data name="Validation.InvalidServerUrl" xml:space="preserve">
     <value>Invalid server URL. Enter a valid address starting with http:// or https://.</value>
   </data>
+  <data name="Validation.InvalidPollingIntervals" xml:space="preserve">
+    <value>Polling intervals are outside the allowed range.</value>
+  </data>
   <data name="Validation.PrinterRequired" xml:space="preserve">
-    <value>Printer name is required when test mode is disabled.</value>
+    <value>Select a printer before starting receipt printing.</value>
   </data>
   <data name="JobType.Receipt" xml:space="preserve">
     <value>Receipt</value>
   </data>
   <data name="Auto.InvalidLink" xml:space="preserve"><value>The setup link is invalid or malformed.</value></data>
   <data name="Auto.Connected" xml:space="preserve"><value>Print Bridge connected successfully.</value></data>
+  <data name="Auto.ConnectedPrinterMissing" xml:space="preserve"><value>Wasla connection completed. Select a printer before starting receipt printing.</value></data>
   <data name="Auto.SavedUnverified" xml:space="preserve"><value>Settings saved, but the connection could not be verified.</value></data>
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>The setup link is invalid or has expired.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Automatic setup could not be completed.</value></data>

@@ -68,6 +68,42 @@ public sealed class PrintBridgeController : BaseController
         return View(BuildPageViewModel(deviceRows, quota, printJobs));
     }
 
+    [HttpGet("devices/{id:guid}")]
+    public async Task<IActionResult> DeviceDetails(Guid id, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var device = await _devices.GetDeviceDetailsAsync(tenant.Id, id, ct).ConfigureAwait(false);
+        if (device is null) return NotFound();
+
+        return View("DeviceDetails", MapDeviceDetails(device));
+    }
+
+    [ValidateAntiForgeryToken]
+    [HttpPost("devices/{id:guid}/rename")]
+    public async Task<IActionResult> RenameDevice(Guid id, [FromForm] string? name, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var result = await _devices
+            .UpdateDeviceNameAsync(tenant.Id, id, name ?? string.Empty, ct)
+            .ConfigureAwait(false);
+
+        if (!result.Success)
+        {
+            if (string.Equals(result.ErrorKey, "PrintBridge.DeviceNotFound", StringComparison.Ordinal))
+                return NotFound();
+
+            TempData["PrintBridgeDeviceError"] = _localizer[result.ErrorKey ?? "PrintBridge.DeviceRenameFailed"].Value;
+            return RedirectToAction(nameof(DeviceDetails), new { id });
+        }
+
+        TempData["PrintBridgeDeviceMessage"] = _localizer["PrintBridge.DeviceRenameSucceeded"].Value;
+        return RedirectToAction(nameof(DeviceDetails), new { id });
+    }
+
     [HttpGet("setup")]
     public async Task<IActionResult> Setup(CancellationToken ct)
     {
@@ -91,6 +127,14 @@ public sealed class PrintBridgeController : BaseController
             HasActiveDevice = activeDevice is not null,
             ActiveDeviceId = activeDevice?.Id,
             ActiveDeviceName = activeDevice?.Name,
+            Devices = deviceRows.Select(d => new PrintBridgeSetupDeviceOptionViewModel
+            {
+                Id = d.Id,
+                Name = d.Name,
+                IsActive = d.IsActive,
+                ConnectionStatusLabelKey = d.ConnectionStatusLabelKey,
+                LastSeenAtUtc = d.LastSeenAtUtc
+            }).ToList(),
             IsDevelopment = _environment.IsDevelopment()
         });
     }
@@ -98,6 +142,7 @@ public sealed class PrintBridgeController : BaseController
     [ValidateAntiForgeryToken]
     [HttpPost("setup/session")]
     public async Task<IActionResult> CreateSetupSession(
+        [FromForm] string? setupMode,
         [FromForm] Guid? deviceId,
         [FromForm] bool confirmReplaceActiveToken,
         CancellationToken ct)
@@ -109,10 +154,22 @@ public sealed class PrintBridgeController : BaseController
         if (string.IsNullOrWhiteSpace(serverUrl))
             return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.ServerUrlUnavailable"].Value });
 
+        if (!TryParseSetupMode(setupMode, out var parsedMode))
+        {
+            return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.SetupModeRequired"].Value });
+        }
+
         try
         {
             var created = await _setupSessions
-                .CreateSessionAsync(tenant.Id, deviceId, serverUrl, tenant.Name, confirmReplaceActiveToken, ct)
+                .CreateSessionAsync(
+                    tenant.Id,
+                    parsedMode,
+                    deviceId,
+                    serverUrl,
+                    tenant.Name,
+                    confirmReplaceActiveToken,
+                    ct)
                 .ConfigureAwait(false);
 
             var protocolUrl =
@@ -126,6 +183,7 @@ public sealed class PrintBridgeController : BaseController
             {
                 success = true,
                 sessionId = created.SessionId,
+                code = created.Code,
                 protocolUrl,
                 statusUrl,
                 deviceName = created.DeviceName,
@@ -139,6 +197,22 @@ public sealed class PrintBridgeController : BaseController
                 success = false,
                 requiresConfirmation = true,
                 message = _localizer["PrintBridge.Auto.ReplaceTokenConfirmationRequired"].Value
+            });
+        }
+        catch (PrintBridgeSetupDeviceSelectionRequiredException)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = _localizer["PrintBridge.Auto.DeviceSelectionRequired"].Value
+            });
+        }
+        catch (PrintBridgeSetupDeviceNotFoundException)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = _localizer["PrintBridge.Auto.SelectedDeviceInvalid"].Value
             });
         }
         catch (InvalidOperationException)
@@ -183,49 +257,6 @@ public sealed class PrintBridgeController : BaseController
             devices = deviceRows.Select(MapDeviceJson),
             quota = MapQuotaJson(quota, deviceRows)
         });
-    }
-
-    [ValidateAntiForgeryToken]
-    [HttpPost("devices/create")]
-    public async Task<IActionResult> CreateDevice([FromForm] string? deviceName, CancellationToken ct)
-    {
-        var tenant = _currentTenant.CurrentTenant;
-        if (tenant is null) return NotFound();
-
-        try
-        {
-            var result = await _devices.CreateDeviceAsync(tenant.Id, deviceName ?? string.Empty, ct)
-                .ConfigureAwait(false);
-
-            var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
-            var quota = await _devices.GetDeviceQuotaAsync(tenant.Id, ct).ConfigureAwait(false);
-
-            return Ok(new
-            {
-                success = true,
-                deviceId = result.DeviceId,
-                deviceName = result.DeviceName,
-                token = result.RawToken,
-                tokenMode = "create",
-                message = _localizer["PrintBridge.DeviceCreatedSuccessfully"].Value,
-                tokenTitle = _localizer["PrintBridge.TokenCreated"].Value,
-                tokenNotice = _localizer["PrintBridge.TokenShownOnce"].Value,
-                devices = deviceRows.Select(MapDeviceJson),
-                quota = MapQuotaJson(quota, deviceRows)
-            });
-        }
-        catch (PrintBridgeDeviceLimitReachedException)
-        {
-            return BadRequest(new
-            {
-                success = false,
-                message = _localizer["PrintBridge.DeviceLimitReached", PrintBridgeDeviceLimits.AllowedActiveDeviceCount].Value
-            });
-        }
-        catch (InvalidOperationException)
-        {
-            return BadRequest(new { success = false, message = _localizer["PrintBridge.TokenGenerateFailed"].Value });
-        }
     }
 
     [ValidateAntiForgeryToken]
@@ -415,6 +446,24 @@ public sealed class PrintBridgeController : BaseController
     private static string EnsureTrailingSlash(string url) =>
         url.EndsWith('/') ? url : url + "/";
 
+    private static bool TryParseSetupMode(string? value, out PrintBridgeSetupMode mode)
+    {
+        if (string.Equals(value, "new", StringComparison.OrdinalIgnoreCase))
+        {
+            mode = PrintBridgeSetupMode.NewDevice;
+            return true;
+        }
+
+        if (string.Equals(value, "reconnect", StringComparison.OrdinalIgnoreCase))
+        {
+            mode = PrintBridgeSetupMode.ReconnectExistingDevice;
+            return true;
+        }
+
+        mode = default;
+        return false;
+    }
+
     private static string BuildExampleConfigJson(string apiBaseUrl)
     {
         var config = new
@@ -450,8 +499,30 @@ public sealed class PrintBridgeController : BaseController
             ConnectionStatusLabelKey = d.ConnectionStatusLabelKey,
             LastSeenAtUtc = d.LastSeenAtUtc,
             MachineName = d.MachineName,
+            LocalAlias = d.LocalAlias,
             PrinterName = d.PrinterName,
             AppVersion = d.AppVersion
+        };
+
+    private PrintBridgeDeviceDetailsViewModel MapDeviceDetails(PrintBridgeDeviceDetailsDto d) =>
+        new()
+        {
+            Id = d.Id,
+            Name = d.Name,
+            IsActive = d.IsActive,
+            ConnectionStatus = d.ConnectionStatus,
+            ConnectionStatusLabelKey = d.ConnectionStatusLabelKey,
+            CreatedAtUtc = d.CreatedAtUtc,
+            LastSeenAtUtc = d.LastSeenAtUtc,
+            MachineName = d.MachineName,
+            LocalAlias = d.LocalAlias,
+            PrinterName = d.PrinterName,
+            AppVersion = d.AppVersion,
+            HasToken = d.HasToken,
+            DevicesUrl = Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices",
+            SetupUrl = Url.Action(nameof(Setup), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/setup",
+            PrintJobsUrl = (Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices")
+                + "#recent-print-activity"
         };
 
     private static object MapDeviceJson(PrintBridgeDeviceSummaryDto d) =>
@@ -465,8 +536,10 @@ public sealed class PrintBridgeController : BaseController
             isConnected = d.IsConnected,
             lastSeenAtUtc = d.LastSeenAtUtc,
             machineName = d.MachineName,
+            localAlias = d.LocalAlias,
             printerName = d.PrinterName,
-            appVersion = d.AppVersion
+            appVersion = d.AppVersion,
+            detailsUrl = $"/print-bridge/devices/{d.Id}"
         };
 
     private async Task<PrintJobHistoryListViewModel> BuildPrintJobHistoryViewModelAsync(

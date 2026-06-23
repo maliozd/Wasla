@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
@@ -16,17 +17,20 @@ public sealed class WaslaPrintBridgeClient
 
     private readonly HttpClient _http;
     private readonly PrintBridgeSettingsHolder _holder;
+    private readonly PrintBridgeSetupHttpClientFactory _setupHttpClientFactory;
     private readonly ILogger<WaslaPrintBridgeClient> _logger;
     private readonly string _appVersion;
 
     public WaslaPrintBridgeClient(
         HttpClient http,
         PrintBridgeSettingsHolder holder,
+        PrintBridgeSetupHttpClientFactory setupHttpClientFactory,
         ILogger<WaslaPrintBridgeClient> logger,
         string appVersion)
     {
         _http = http;
         _holder = holder;
+        _setupHttpClientFactory = setupHttpClientFactory;
         _logger = logger;
         _appVersion = appVersion;
     }
@@ -101,20 +105,38 @@ public sealed class WaslaPrintBridgeClient
     /// </summary>
     public async Task<SetupExchangeResult?> ExchangeSetupAsync(string serverUrl, string code, CancellationToken ct)
     {
-        var url = $"{serverUrl.TrimEnd('/')}/api/print-bridge/setup/exchange";
+        if (!Uri.TryCreate(serverUrl, UriKind.Absolute, out var serverUri))
+        {
+            _logger.LogWarning(
+                "Print Bridge setup exchange rejected before request because server URL is invalid. FailureKind={FailureKind}",
+                "invalid_server_url");
+            return null;
+        }
+
+        var url = $"{serverUri.ToString().TrimEnd('/')}/api/print-bridge/setup/exchange";
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Version", _appVersion);
-        request.Content = JsonContent.Create(new { code });
+        request.Content = JsonContent.Create(new
+        {
+            code,
+            machineName = Environment.MachineName,
+            printerName = _holder.Snapshot().Bridge.PrinterName
+        });
 
         try
         {
-            using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+            using var setupHttp = _setupHttpClientFactory.Create(serverUri);
+            using var response = await setupHttp.SendAsync(request, ct).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
+                var body = await SafeReadBodyAsync(response, ct).ConfigureAwait(false);
+                var rejectionKind = ClassifySetupExchangeRejection((int)response.StatusCode, body);
                 _logger.LogWarning(
-                    "Print Bridge setup exchange rejected. ServerUrl={ServerUrl}, StatusCode={StatusCode}",
+                    "Print Bridge setup exchange rejected by server. ServerUrl={ServerUrl}, StatusCode={StatusCode}, FailureKind={FailureKind}, Body={Body}",
                     serverUrl,
-                    (int)response.StatusCode);
+                    (int)response.StatusCode,
+                    rejectionKind,
+                    body);
                 return null;
             }
 
@@ -130,9 +152,40 @@ public sealed class WaslaPrintBridgeClient
                 payload.DeviceName ?? string.Empty,
                 payload.CompletionCredential ?? string.Empty);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        catch (HttpRequestException ex) when (IsSslFailure(ex))
         {
-            _logger.LogWarning(ex, "Print Bridge setup exchange failed to reach server. ServerUrl={ServerUrl}", serverUrl);
+            _logger.LogWarning(
+                ex,
+                "Print Bridge setup exchange failed due to TLS/certificate validation. ServerUrl={ServerUrl}, FailureKind={FailureKind}",
+                serverUrl,
+                "tls_certificate");
+            return null;
+        }
+        catch (HttpRequestException ex) when (IsConnectionRefused(ex))
+        {
+            _logger.LogWarning(
+                ex,
+                "Print Bridge setup exchange failed because the server refused the connection. ServerUrl={ServerUrl}, FailureKind={FailureKind}",
+                serverUrl,
+                "connection_refused");
+            return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Print Bridge setup exchange failed due to network/server reachability. ServerUrl={ServerUrl}, FailureKind={FailureKind}",
+                serverUrl,
+                "network_unavailable");
+            return null;
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            _logger.LogWarning(
+                ex,
+                "Print Bridge setup exchange timed out. ServerUrl={ServerUrl}, FailureKind={FailureKind}",
+                serverUrl,
+                "timeout");
             return null;
         }
     }
@@ -275,6 +328,36 @@ public sealed class WaslaPrintBridgeClient
         var message = ex.Message;
         return message.Contains("SSL", StringComparison.OrdinalIgnoreCase) ||
                message.Contains("certificate", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsConnectionRefused(HttpRequestException ex)
+    {
+        for (var current = ex.InnerException; current is not null; current = current.InnerException)
+        {
+            if (current is SocketException { SocketErrorCode: SocketError.ConnectionRefused })
+                return true;
+        }
+
+        return ex.Message.Contains("connection refused", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ClassifySetupExchangeRejection(int statusCode, string body)
+    {
+        const int badRequest = 400;
+        const int conflict = 409;
+        const int tooManyRequests = 429;
+
+        if (statusCode == tooManyRequests)
+            return "rate_limited";
+
+        if (statusCode == badRequest &&
+            body.Contains("invalid_or_expired_setup_code", StringComparison.OrdinalIgnoreCase))
+            return "invalid_or_expired_or_setup_rejected";
+
+        if (statusCode == conflict)
+            return "setup_conflict";
+
+        return "server_rejection";
     }
 
     private static async Task<PrintJobActionResult> ReadActionResultAsync(HttpResponseMessage response, CancellationToken ct)

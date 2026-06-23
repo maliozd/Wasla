@@ -9,6 +9,7 @@ public sealed class PrintBridgeRuntimeStatus
     public string? LastError { get; init; }
     public string ServerUrl { get; init; } = string.Empty;
     public string PrinterName { get; init; } = string.Empty;
+    public string LocalDeviceName { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
     public bool ServerDeviceNameResolved { get; init; }
     public string MachineName { get; init; } = string.Empty;
@@ -23,10 +24,14 @@ public sealed class PrintBridgeRuntimeStatus
     public TrayIconState TrayIconState { get; init; }
 
     public static BridgeServerConnectionStatus ResolveServerConnectionStatus(
+        bool isConfigured,
         bool isRunning,
         bool isConnected,
         string? lastError)
     {
+        if (!isConfigured)
+            return BridgeServerConnectionStatus.NotConfigured;
+
         if (!isRunning)
             return BridgeServerConnectionStatus.Stopped;
 
@@ -56,5 +61,16 @@ public sealed class PrintBridgeRuntimeStatus
             return TrayIconState.Connected;
 
         return TrayIconState.ConnectionLost;
+    }
+
+    public static string ResolveLocalDeviceLabel(string? localDeviceName, string? machineName)
+    {
+        if (!string.IsNullOrWhiteSpace(localDeviceName))
+            return localDeviceName.Trim();
+
+        if (!string.IsNullOrWhiteSpace(machineName))
+            return machineName.Trim();
+
+        return Environment.MachineName;
     }
 }

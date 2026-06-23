@@ -3116,4 +3116,46 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Confirmation is required before replacing the current active device token.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Automatic setup creates a new token for {0}; the old token will stop working.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>The token action could not be completed.</value></data>
+  <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Setup mode</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Set up a new device</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Recommended. Creates a new Print Bridge device without touching existing device tokens.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>Reconnect an existing device</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Creates a new token only for the device you select.</value></data>
+  <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>Device to reconnect</value></data>
+  <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Select a device</value></data>
+  <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Reconnect creates a new token for the selected device and invalidates that device's previous token.</value></data>
+  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Select a device to continue.</value></data>
+  <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Selecting a device is required to reconnect an existing device.</value></data>
+  <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>The selected device was not found for this restaurant.</value></data>
+  <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>Select a valid setup mode.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>The setup code uses the setup mode selected above. The real device token is created only when the desktop app exchanges the code.</value></data>
+  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>One-time setup code</value></data>
+  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>Use this short-lived code with the Server URL in the desktop Print Bridge app. It is not a normal API token.</value></data>
+  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>Generate a new setup code</value></data>
+  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>Generate reconnect setup code</value></data>
+  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>One-time setup code created.</value></data>
+  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>Expires: {0}</value></data>
+  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>Copy setup code</value></data>
+  <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>Set up a new device</value></data>
+  <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>Device details</value></data>
+  <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>Web name, connection status, and technical information for this Print Bridge device.</value></data>
+  <data name="PrintBridge.BackToDevices" xml:space="preserve"><value>Back to devices</value></data>
+  <data name="PrintBridge.DetailsAction" xml:space="preserve"><value>Details</value></data>
+  <data name="PrintBridge.WebDisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="PrintBridge.WebDisplayNameHelp" xml:space="preserve"><value>This name is shown only in Wasla Web; it does not change the local desktop device name.</value></data>
+  <data name="PrintBridge.DeviceTechnicalInfo" xml:space="preserve"><value>Technical information</value></data>
+  <data name="PrintBridge.DeviceState" xml:space="preserve"><value>Device state</value></data>
+  <data name="PrintBridge.Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="PrintBridge.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="PrintBridge.TokenStatus" xml:space="preserve"><value>Token status</value></data>
+  <data name="PrintBridge.TokenConfigured" xml:space="preserve"><value>Token configured</value></data>
+  <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Token missing</value></data>
+  <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Setup / reconnect</value></data>
+  <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Recent print activity</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>The raw device token and token hash are not shown on this page.</value></data>
+  <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>Device name saved.</value></data>
+  <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>Could not save device name.</value></data>
+  <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Device name is required.</value></data>
+  <data name="PrintBridge.RenameNameTooLong" xml:space="preserve"><value>Device name can be at most 100 characters.</value></data>
+  <data name="PrintBridge.DeviceNotFound" xml:space="preserve"><value>Device not found.</value></data>
 </root>

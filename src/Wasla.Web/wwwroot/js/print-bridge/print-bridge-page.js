@@ -265,25 +265,11 @@
           '<div class="fw-semibold mb-1">' + escapeHtml(messages.noDevicesTitle || "") + '</div>' +
           '<p class="text-muted small mb-3">' + escapeHtml(messages.noDevicesDescription || "") + '</p>' +
           '<div class="d-flex flex-wrap justify-content-center gap-2">' +
-            '<button type="button" class="btn btn-primary btn-sm" id="printBridgeEmptyAddDeviceBtn">' +
-              '<i class="bi bi-key me-1"></i>' + escapeHtml(messages.addDevice || messages.createDevice || "Create token") +
-            '</button>' +
-            '<a class="btn btn-outline-secondary btn-sm" href="' + escapeHtml(cfg.setupUrl || "/print-bridge/setup") + '">' +
-              '<i class="bi bi-book me-1"></i>' + escapeHtml(messages.goToSetup || "Setup") +
+            '<a class="btn btn-primary btn-sm" href="' + escapeHtml(cfg.setupUrl || "/print-bridge/setup") + '">' +
+              '<i class="bi bi-plus-circle me-1"></i>' + escapeHtml(messages.setupNewDevice || messages.goToSetup || "Set up a new device") +
             '</a>' +
           '</div>' +
         '</div>';
-
-      var emptyAddBtn = document.getElementById("printBridgeEmptyAddDeviceBtn");
-      if (emptyAddBtn) {
-        emptyAddBtn.addEventListener("click", function () {
-          var nameInput = document.getElementById("printBridgeDeviceName");
-          if (nameInput) {
-            nameInput.focus();
-            nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        });
-      }
       return;
     }
 
@@ -292,15 +278,20 @@
       var activeBadgeCls = device.isActive ? "text-bg-success" : "text-bg-secondary";
       var activeText = device.isActive ? (messages.ordersActive || "Active") : (messages.ordersPassive || "Passive");
       var printerHint = displayValue(device.printerName);
+      var machineHint = displayValue(device.machineName);
+      var detailsUrl = device.detailsUrl || ("/print-bridge/devices/" + encodeURIComponent(device.id));
       return (
         '<tr data-device-id="' + escapeHtml(device.id) + '">' +
           '<td>' +
             '<div class="fw-semibold">' + escapeHtml(device.name) + '</div>' +
+            (machineHint !== (messages.emptyValue || "—")
+              ? '<div class="text-muted small">' + escapeHtml(messages.machineName || "Computer") + ': ' + escapeHtml(machineHint) + '</div>'
+              : '') +
             (printerHint !== (messages.emptyValue || "—")
               ? '<div class="text-muted small">' + escapeHtml(messages.printerName || "Printer") + ': ' + escapeHtml(printerHint) + '</div>'
               : '') +
           '</td>' +
-          '<td class="text-muted small">' + escapeHtml(displayValue(device.machineName)) + '</td>' +
+          '<td class="text-muted small">' + escapeHtml(displayValue(device.localAlias)) + '</td>' +
           '<td>' +
             '<div class="d-flex flex-wrap align-items-center gap-1">' +
               '<span class="badge ' + connection.cls + '">' + escapeHtml(connection.text) + '</span>' +
@@ -317,6 +308,9 @@
                   'aria-label="' + escapeHtml(messages.deviceActive || "Active") + '" ' +
                   (device.isActive ? "checked" : "") + ' />' +
               '</div>' +
+              '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(detailsUrl) + '">' +
+                '<i class="bi bi-info-circle me-1"></i>' + escapeHtml(messages.details || "Details") +
+              '</a>' +
               '<button type="button" class="btn btn-sm btn-outline-secondary pb-regenerate-token-btn" ' +
                 'data-device-id="' + escapeHtml(device.id) + '" data-device-name="' + escapeHtml(device.name) + '">' +
                 '<i class="bi bi-arrow-repeat me-1"></i>' + escapeHtml(messages.regenerateToken || "Regenerate") +
@@ -332,7 +326,7 @@
         '<table class="table table-sm align-middle mb-0 oh-print-bridge-devices-table">' +
           '<thead><tr>' +
             '<th>' + escapeHtml(messages.deviceName || "Device") + '</th>' +
-            '<th>' + escapeHtml(messages.localAlias || messages.machineName || "Computer") + '</th>' +
+            '<th>' + escapeHtml(messages.localAlias || "Local alias") + '</th>' +
             '<th>' + escapeHtml(messages.status || "Status") + '</th>' +
             '<th>' + escapeHtml(messages.lastSeen || "Last seen") + '</th>' +
             '<th>' + escapeHtml(messages.appVersion || "Version") + '</th>' +
@@ -352,13 +346,8 @@
     var canCreate = !!quota.canCreateActiveDevice;
     var exceeds = !!quota.activeCountExceedsLimit;
 
-    var createBtn = document.getElementById("printBridgeCreateDeviceBtn");
-    var nameInput = document.getElementById("printBridgeDeviceName");
     var exceededAlert = document.getElementById("printBridgeLimitExceededAlert");
     var reachedAlert = document.getElementById("printBridgeLimitReachedAlert");
-
-    if (createBtn) createBtn.disabled = !canCreate;
-    if (nameInput) nameInput.disabled = !canCreate;
 
     if (exceededAlert) {
       exceededAlert.classList.toggle("d-none", !exceeds);
@@ -397,40 +386,6 @@
       return refreshDevices();
     }
     return Promise.resolve(data);
-  }
-
-  function bindCreateDevice() {
-    var btn = document.getElementById("printBridgeCreateDeviceBtn");
-    var nameInput = document.getElementById("printBridgeDeviceName");
-    if (!btn) return;
-
-    btn.addEventListener("click", function () {
-      if (btn.disabled) return;
-
-      btn.disabled = true;
-      var fields = {};
-      if (nameInput && nameInput.value) fields.deviceName = nameInput.value;
-
-      postForm(cfg.createDeviceUrl, fields)
-        .then(function (data) {
-          showToken(data.token, {
-            mode: data.tokenMode || "create",
-            title: data.tokenTitle,
-            notice: data.tokenNotice
-          });
-          if (nameInput) nameInput.value = "";
-          showMessage(data.message || messages.deviceCreatedSuccessfully, "success");
-          return applyMutationResponse(data);
-        })
-        .catch(function (e) {
-          var text = (e && e.message) || messages.tokenGenerateFailed || "Failed";
-          showMessage(text, "danger");
-          return refreshDevices();
-        })
-        .finally(function () {
-          if (lastQuota) updateQuotaUi(lastQuota);
-        });
-    });
   }
 
   function bindRegenerateButtons() {
@@ -648,7 +603,6 @@
     if (cfg.initialState) {
       renderAll(cfg.initialState);
     }
-    bindCreateDevice();
     bindTokenActions();
     bindPrintJobReprintDelegation();
     bindRefreshPrintJobs();

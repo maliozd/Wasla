@@ -28,6 +28,8 @@ public sealed partial class MainForm : Form
     private TabPage _logsTab = null!;
     private TabPage _historyTab = null!;
     private TabPage _settingsTab = null!;
+    private Panel _settingsScrollPanel = null!;
+    private TableLayoutPanel _settingsLayout = null!;
 
     private Label _titleLabel = null!;
     private Label _subtitleLabel = null!;
@@ -65,6 +67,7 @@ public sealed partial class MainForm : Form
 
     private TextBox _txtServerUrl = null!;
     private TextBox _txtAgentToken = null!;
+    private TextBox _txtSetupCode = null!;
     private Button _btnToggleToken = null!;
     private ComboBox _cmbPrinterName = null!;
     private Button _btnRefreshPrinters = null!;
@@ -75,13 +78,35 @@ public sealed partial class MainForm : Form
     private NumericUpDown _numIdlePoll = null!;
     private NumericUpDown _numBusyPoll = null!;
     private NumericUpDown _numErrorPoll = null!;
-    private Button _btnSaveSettings = null!;
+    private Button _btnSaveConnection = null!;
+    private Button _btnTestSettingsConnection = null!;
+    private Button _btnConnectSetupCode = null!;
+    private Button _btnSavePrinter = null!;
+    private Button _btnTestSettingsPrinter = null!;
+    private Button _btnSaveDeviceName = null!;
+    private Button _btnApplyLanguage = null!;
+    private Button _btnSaveAdvanced = null!;
     private ComboBox _cmbLanguage = null!;
     private Label _lblLanguage = null!;
+    private Label _lblConnectionSectionText = null!;
+    private Label _lblPrinterSectionText = null!;
+    private Label _lblDeviceSectionText = null!;
+    private Label _lblLanguageSectionText = null!;
+    private GroupBox _connectionGroup = null!;
+    private GroupBox _printerGroup = null!;
+    private GroupBox _deviceGroup = null!;
+    private GroupBox _languageGroup = null!;
+    private Label _lblConnectionStatus = null!;
+    private Label _lblPrinterStatus = null!;
+    private Label _lblDeviceStatus = null!;
+    private Label _lblLanguageStatus = null!;
+    private Label _lblAdvancedStatus = null!;
     private Label _lblServerUrl = null!;
     private Label _lblAgentToken = null!;
+    private Label _lblSetupCode = null!;
     private Label _lblServerUrlHelp = null!;
     private Label _lblAgentTokenHelp = null!;
+    private Label _lblSetupCodeHelp = null!;
     private Label _lblPrinterName = null!;
     private Label _lblDeviceName = null!;
     private GroupBox _advancedGroup = null!;
@@ -200,7 +225,14 @@ public sealed partial class MainForm : Form
         _btnClearLogs.Text = _localizer["Button.ClearLogs"];
         _btnCopyLogs.Text = _localizer["Button.CopyLogs"];
         _btnJumpToLatest.Text = _localizer["Button.JumpToLatest"];
-        _btnSaveSettings.Text = _localizer["Button.SaveSettings"];
+        _btnSaveConnection.Text = _localizer["Button.SaveConnection"];
+        _btnTestSettingsConnection.Text = _localizer["Button.TestConnection"];
+        _btnConnectSetupCode.Text = _localizer["Button.ConnectWithSetupCode"];
+        _btnSavePrinter.Text = _localizer["Button.SavePrinter"];
+        _btnTestSettingsPrinter.Text = _localizer["Button.TestPrinter"];
+        _btnSaveDeviceName.Text = _localizer["Button.SaveDeviceName"];
+        _btnApplyLanguage.Text = _localizer["Button.ApplyLanguage"];
+        _btnSaveAdvanced.Text = _localizer["Button.SaveAdvanced"];
         _btnRefreshPrinters.Text = _localizer["Button.Refresh"];
         _btnToggleToken.Text = _txtAgentToken.UseSystemPasswordChar
             ? _localizer["Button.ShowToken"]
@@ -210,11 +242,21 @@ public sealed partial class MainForm : Form
         _lblServerUrlHelp.Text = _localizer["Settings.ServerUrlHelp"];
         _lblAgentToken.Text = _localizer["Settings.AgentToken"];
         _lblAgentTokenHelp.Text = _localizer["Settings.AgentTokenHelp"];
+        _lblSetupCode.Text = _localizer["Settings.SetupCode"];
+        _lblSetupCodeHelp.Text = _localizer["Settings.SetupCodeHelp"];
         _lblPrinterName.Text = _localizer["Settings.PrinterName"];
         _lblDeviceName.Text = _localizer["Settings.DeviceName"];
-        _lblDeviceNameManaged.Text = _localizer["Settings.DeviceNameManagedFromWeb"];
+        _lblDeviceNameManaged.Text = _localizer["Settings.DeviceNameLocalHelp"];
         _lblLanguage.Text = _localizer["Settings.Language"];
         _advancedGroup.Text = $"  {_localizer["Settings.Advanced"]}  ";
+        _connectionGroup.Text = $"  {_localizer["Settings.Section.Connection"]}  ";
+        _printerGroup.Text = $"  {_localizer["Settings.Section.Printer"]}  ";
+        _deviceGroup.Text = $"  {_localizer["Settings.Section.Device"]}  ";
+        _languageGroup.Text = $"  {_localizer["Settings.Section.Language"]}  ";
+        _lblConnectionSectionText.Text = _localizer["Settings.Section.ConnectionHelp"];
+        _lblPrinterSectionText.Text = _localizer["Settings.Section.PrinterHelp"];
+        _lblDeviceSectionText.Text = _localizer["Settings.Section.DeviceHelp"];
+        _lblLanguageSectionText.Text = _localizer["Settings.Section.LanguageHelp"];
         _lblDryRunMode.Text = _localizer["Settings.DryRunMode"];
         _chkDryRun.Text = _localizer["Settings.DryRunDescription"];
         if (_lblDryRunWarning != null)
@@ -234,6 +276,7 @@ public sealed partial class MainForm : Form
         _footerDeviceLabel.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
         _footerVersionLabel.TextAlign = isRtl ? ContentAlignment.MiddleLeft : ContentAlignment.MiddleRight;
         PrintBridgeRtl.Apply(this, isRtl);
+        UpdateSettingsScrollLayout();
     }
 
     public void SelectStatusTab() => _tabs.SelectedTab = _statusTab;
@@ -593,38 +636,99 @@ public sealed partial class MainForm : Form
 
     private void BuildSettingsTab()
     {
-        var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        var settingsLayout = new TableLayoutPanel
+        _settingsScrollPanel = new Panel
         {
-            Dock = DockStyle.Top,
-            ColumnCount = 2,
-            AutoSize = true,
-            Padding = new Padding(4),
-            Width = 900
+            Dock = DockStyle.Fill,
+            AutoScroll = true
         };
-        settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
-        settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _settingsLayout = new TableLayoutPanel
+        {
+            Location = new Point(0, 0),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left,
+            AutoSize = false,
+            Padding = new Padding(4),
+            ColumnCount = 1,
+            RowCount = 0,
+            MinimumSize = new Size(760, 0)
+        };
+        _settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _settingsScrollPanel.Resize += (_, _) => UpdateSettingsScrollLayout();
+        _settingsLayout.SizeChanged += (_, _) => UpdateSettingsScrollLayout();
+        _settingsLayout.Layout += (_, _) => UpdateSettingsScrollLayout();
 
-        AddServerUrlRow(settingsLayout, 0);
-        AddTokenRow(settingsLayout, 1);
-        AddPrinterRow(settingsLayout, 2);
-        AddDeviceNameRow(settingsLayout, 3);
-        AddLanguageRow(settingsLayout, 4);
+        var connectionLayout = CreateSettingsSection(
+            "Settings.Section.Connection",
+            out _lblConnectionSectionText,
+            out _lblConnectionStatus);
+        AddServerUrlRow(connectionLayout, 1);
+        AddTokenRow(connectionLayout, 2);
+        AddSetupCodeRow(connectionLayout, 3);
+        _btnSaveConnection = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnSaveConnection.Click += async (_, _) => await SaveConnectionSettingsAsync().ConfigureAwait(true);
+        _btnTestSettingsConnection = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnTestSettingsConnection.Click += async (_, _) => await TestConnectionFromSettingsAsync().ConfigureAwait(true);
+        _btnConnectSetupCode = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnConnectSetupCode.Click += async (_, _) => await ConnectWithSetupCodeAsync().ConfigureAwait(true);
+        AddSectionActions(connectionLayout, 4, _btnSaveConnection, _btnTestSettingsConnection, _btnConnectSetupCode);
+        connectionLayout.Controls.Add(_lblConnectionStatus, 1, 5);
+        _connectionGroup = WrapSettingsSection(connectionLayout, "Settings.Section.Connection");
+        AddSettingsSection(_settingsLayout, _connectionGroup);
+
+        var printerLayout = CreateSettingsSection(
+            "Settings.Section.Printer",
+            out _lblPrinterSectionText,
+            out _lblPrinterStatus);
+        AddPrinterRow(printerLayout, 1);
+        _btnSavePrinter = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnSavePrinter.Click += async (_, _) => await SavePrinterSettingsAsync().ConfigureAwait(true);
+        _btnTestSettingsPrinter = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnTestSettingsPrinter.Click += async (_, _) => await TestPrinterFromSettingsAsync().ConfigureAwait(true);
+        AddSectionActions(printerLayout, 2, _btnSavePrinter, _btnTestSettingsPrinter);
+        printerLayout.Controls.Add(_lblPrinterStatus, 1, 3);
+        _printerGroup = WrapSettingsSection(printerLayout, "Settings.Section.Printer");
+        AddSettingsSection(_settingsLayout, _printerGroup);
+
+        var deviceLayout = CreateSettingsSection(
+            "Settings.Section.Device",
+            out _lblDeviceSectionText,
+            out _lblDeviceStatus);
+        AddDeviceNameRow(deviceLayout, 1);
+        _btnSaveDeviceName = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnSaveDeviceName.Click += async (_, _) => await SaveDeviceIdentitySettingsAsync().ConfigureAwait(true);
+        AddSectionActions(deviceLayout, 2, _btnSaveDeviceName);
+        deviceLayout.Controls.Add(_lblDeviceStatus, 1, 3);
+        _deviceGroup = WrapSettingsSection(deviceLayout, "Settings.Section.Device");
+        AddSettingsSection(_settingsLayout, _deviceGroup);
+
+        var languageLayout = CreateSettingsSection(
+            "Settings.Section.Language",
+            out _lblLanguageSectionText,
+            out _lblLanguageStatus);
+        AddLanguageRow(languageLayout, 1);
+        _btnApplyLanguage = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnApplyLanguage.Click += async (_, _) => await SaveSelectedLanguageAsync().ConfigureAwait(true);
+        AddSectionActions(languageLayout, 2, _btnApplyLanguage);
+        languageLayout.Controls.Add(_lblLanguageStatus, 1, 3);
+        _languageGroup = WrapSettingsSection(languageLayout, "Settings.Section.Language");
+        AddSettingsSection(_settingsLayout, _languageGroup);
 
         _advancedGroup = new GroupBox
         {
             Dock = DockStyle.Top,
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Font = PrintBridgeUiTheme.SectionFont,
             ForeColor = PrintBridgeUiTheme.TextTitle,
             Padding = new Padding(12, 18, 12, 12),
-            Margin = new Padding(0, 8, 0, 8)
+            Margin = new Padding(0, 0, 0, 10),
+            MinimumSize = new Size(720, 0)
         };
         var advancedLayout = new TableLayoutPanel
         {
-            Dock = DockStyle.Top,
+            Dock = DockStyle.Fill,
             ColumnCount = 2,
-            AutoSize = true
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
         };
         advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
         advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -667,25 +771,15 @@ public sealed partial class MainForm : Form
         (_numIdlePoll, _lblIdlePoll) = AddSettingsNumericRow(advancedLayout, 1, 1, 300, 5);
         (_numBusyPoll, _lblBusyPoll) = AddSettingsNumericRow(advancedLayout, 2, 1, 60, 1);
         (_numErrorPoll, _lblErrorPoll) = AddSettingsNumericRow(advancedLayout, 3, 1, 300, 15);
+        _btnSaveAdvanced = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnSaveAdvanced.Click += async (_, _) => await SaveAdvancedSettingsAsync().ConfigureAwait(true);
+        _lblAdvancedStatus = CreateSectionStatusLabel();
+        AddSectionActions(advancedLayout, 4, _btnSaveAdvanced);
+        advancedLayout.Controls.Add(_lblAdvancedStatus, 1, 5);
         _advancedGroup.Controls.Add(advancedLayout);
-
-        settingsLayout.Controls.Add(_advancedGroup, 0, 5);
-        settingsLayout.SetColumnSpan(_advancedGroup, 2);
-
-        var savePanel = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            FlowDirection = FlowDirection.LeftToRight,
-            Margin = new Padding(0, 12, 0, 0)
-        };
-        _btnSaveSettings = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
-        _btnSaveSettings.Click += async (_, _) => await SaveSettingsAsync().ConfigureAwait(true);
-        savePanel.Controls.Add(_btnSaveSettings);
-        InitializeSettingsSaveUi(savePanel);
-        settingsLayout.Controls.Add(savePanel, 0, 6);
-        settingsLayout.SetColumnSpan(savePanel, 2);
-
-        scroll.Controls.Add(settingsLayout);
+        AddSettingsSection(_settingsLayout, _advancedGroup);
+        InitializeSettingsSaveUi();
+        UpdateSettingsScrollLayout();
 
         _settingsHint = new Label
         {
@@ -696,11 +790,116 @@ public sealed partial class MainForm : Form
         };
 
         var settingsHost = new Panel { Dock = DockStyle.Fill };
-        settingsHost.Controls.Add(scroll);
+        _settingsScrollPanel.Controls.Add(_settingsLayout);
+        settingsHost.Controls.Add(_settingsScrollPanel);
         settingsHost.Controls.Add(_settingsHint);
         _settingsTab.Controls.Add(settingsHost);
 
         WireConnectionSettingsChangeHandlers();
+    }
+
+    private void UpdateSettingsScrollLayout()
+    {
+        if (_settingsScrollPanel is null || _settingsLayout is null)
+            return;
+
+        var availableWidth = Math.Max(
+            _settingsLayout.MinimumSize.Width,
+            _settingsScrollPanel.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 12);
+
+        foreach (Control section in _settingsLayout.Controls)
+        {
+            var sectionWidth = Math.Max(section.MinimumSize.Width, availableWidth - _settingsLayout.Padding.Horizontal);
+            if (section.Width != sectionWidth)
+                section.Width = sectionWidth;
+        }
+
+        var preferredHeight = _settingsLayout.GetPreferredSize(new Size(availableWidth, 0)).Height + 12;
+        if (_settingsLayout.Width != availableWidth || _settingsLayout.Height != preferredHeight)
+            _settingsLayout.Size = new Size(availableWidth, preferredHeight);
+
+        _settingsScrollPanel.AutoScrollMinSize = _settingsLayout.Size;
+    }
+
+    private static void AddSettingsSection(TableLayoutPanel root, Control section)
+    {
+        var row = root.RowCount++;
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        section.Dock = DockStyle.Top;
+        section.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+        root.Controls.Add(section, 0, row);
+    }
+
+    private GroupBox WrapSettingsSection(TableLayoutPanel layout, string titleKey)
+    {
+        var group = new GroupBox
+        {
+            Text = $"  {_localizer[titleKey]}  ",
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Font = PrintBridgeUiTheme.SectionFont,
+            ForeColor = PrintBridgeUiTheme.TextTitle,
+            Padding = new Padding(12, 18, 12, 12),
+            Margin = new Padding(0, 0, 0, 10),
+            MinimumSize = new Size(720, 0)
+        };
+        group.Controls.Add(layout);
+        return group;
+    }
+
+    private TableLayoutPanel CreateSettingsSection(
+        string titleKey,
+        out Label descriptionLabel,
+        out Label statusLabel)
+    {
+        var table = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
+        };
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        descriptionLabel = new Label
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            MaximumSize = new Size(620, 0),
+            Margin = new Padding(0, 0, 0, 10)
+        };
+        table.Controls.Add(descriptionLabel, 0, 0);
+        table.SetColumnSpan(descriptionLabel, 2);
+
+        statusLabel = CreateSectionStatusLabel();
+
+        return table;
+    }
+
+    private static Label CreateSectionStatusLabel() =>
+        new()
+        {
+            AutoSize = true,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            Visible = false,
+            Margin = new Padding(8, 8, 0, 0)
+        };
+
+    private static void AddSectionActions(TableLayoutPanel table, int row, params Button[] buttons)
+    {
+        var panel = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = new Padding(0, 10, 0, 0)
+        };
+        foreach (var button in buttons)
+            panel.Controls.Add(button);
+
+        table.Controls.Add(panel, 1, row);
     }
 
     private void AddDeviceNameRow(TableLayoutPanel table, int row)
@@ -724,9 +923,7 @@ public sealed partial class MainForm : Form
         {
             Dock = DockStyle.Fill,
             MaxLength = 200,
-            ReadOnly = true,
-            BackColor = SystemColors.Control,
-            TabStop = false
+            ReadOnly = false
         };
         _lblDeviceNameManaged = new Label
         {
@@ -766,7 +963,7 @@ public sealed partial class MainForm : Form
             DropDownStyle = ComboBoxStyle.DropDownList,
             Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
-        _cmbLanguage.SelectedIndexChanged += async (_, _) => await SaveSelectedLanguageAsync().ConfigureAwait(true);
+        _cmbLanguage.SelectedIndexChanged += (_, _) => SetSectionStatus(_lblLanguageStatus, null);
         table.Controls.Add(_cmbLanguage, 1, row);
     }
 
@@ -866,6 +1063,40 @@ public sealed partial class MainForm : Form
         table.Controls.Add(fieldPanel, 1, row);
     }
 
+    private void AddSetupCodeRow(TableLayoutPanel table, int row)
+    {
+        _lblSetupCode = new Label
+        {
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = PrintBridgeUiTheme.TextMuted
+        };
+        table.Controls.Add(_lblSetupCode, 0, row);
+
+        var fieldPanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            AutoSize = true,
+            Margin = new Padding(0)
+        };
+        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _txtSetupCode = new TextBox { Dock = DockStyle.Fill, Anchor = AnchorStyles.Left | AnchorStyles.Right };
+        _lblSetupCodeHelp = new Label
+        {
+            AutoSize = true,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            MaximumSize = new Size(560, 0),
+            Margin = new Padding(0, 4, 0, 0)
+        };
+
+        fieldPanel.Controls.Add(_txtSetupCode, 0, 0);
+        fieldPanel.Controls.Add(_lblSetupCodeHelp, 0, 1);
+        table.Controls.Add(fieldPanel, 1, row);
+    }
+
     private void AddPrinterRow(TableLayoutPanel table, int row)
     {
         _lblPrinterName = new Label
@@ -936,6 +1167,34 @@ public sealed partial class MainForm : Form
     }
 
     public void SelectSettingsTab() => _tabs.SelectedTab = _settingsTab;
+
+    public void RefreshAfterAutomaticSetup()
+    {
+        QueueUiAction(() =>
+        {
+            try
+            {
+                LoadSettingsIntoForm();
+                RefreshDashboard();
+                RefreshRecentJobsFromRuntime();
+                UpdateSettingsScrollLayout();
+            }
+            catch (Exception ex)
+            {
+                _settingsLogger?.LogWarning(ex, "Automatic setup settings refresh could not update the open window.");
+            }
+        });
+    }
+
+    public void FocusPrinterSettingsSection()
+    {
+        SelectSettingsTab();
+        _printerGroup.Focus();
+        SetSectionStatus(
+            _lblPrinterStatus,
+            _localizer["Auto.ConnectedPrinterMissing"],
+            isError: true);
+    }
 
     private static (TextBox TextBox, Label Label) AddSettingsTextRow(TableLayoutPanel table, int row)
     {
@@ -1029,6 +1288,8 @@ public sealed partial class MainForm : Form
 
         _isSavingLanguage = true;
         _cmbLanguage.Enabled = false;
+        _btnApplyLanguage.Enabled = false;
+        SetSectionStatus(_lblLanguageStatus, _localizer["Settings.Saving"]);
         try
         {
             await Task.Run(() => _settingsStore.SaveLanguage(selectedCulture)).ConfigureAwait(true);
@@ -1042,21 +1303,19 @@ public sealed partial class MainForm : Form
             RefreshRecentJobsFromRuntime();
             if (_tabs.SelectedTab == _historyTab)
                 RefreshPrintHistory();
+            SetSectionStatus(_lblLanguageStatus, _localizer["Settings.LanguageApplied"], isSuccess: true);
         }
         catch (Exception ex)
         {
             _cultureService.Initialize(previousCulture);
             ResetLanguageSelection(previousCulture);
-            MessageBox.Show(
-                _localizer.GetString("Message.SettingsSaveFailed", "Language"),
-                PrintBridgePaths.ProductDisplayName,
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+            SetSectionStatus(_lblLanguageStatus, _localizer.GetString("Message.SettingsSaveFailed", "Language"), isError: true);
             _settingsLogger?.LogWarning(ex, "Language setting could not be saved.");
         }
         finally
         {
             _cmbLanguage.Enabled = true;
+            _btnApplyLanguage.Enabled = true;
             _isSavingLanguage = false;
         }
     }
@@ -1094,9 +1353,7 @@ public sealed partial class MainForm : Form
             return;
 
         var bridge = _settingsHolder.Snapshot().Bridge;
-        _txtDisplayName.Text = bridge.ServerDeviceNameResolved
-            ? bridge.DisplayName ?? string.Empty
-            : string.Empty;
+        _txtDisplayName.Text = bridge.BridgeName ?? string.Empty;
     }
 
     private void LoadSettingsIntoForm()
@@ -1105,9 +1362,7 @@ public sealed partial class MainForm : Form
         _txtServerUrl.Text = hub.ServerUrl;
         _txtAgentToken.Text = hub.AgentToken;
         RefreshPrinterList(bridge.PrinterName);
-        _txtDisplayName.Text = bridge.ServerDeviceNameResolved
-            ? bridge.DisplayName ?? string.Empty
-            : string.Empty;
+        _txtDisplayName.Text = bridge.BridgeName ?? string.Empty;
         _lblMachineNameHint.Text = _localizer.GetString(
             "Settings.MachineNameHint",
             string.IsNullOrWhiteSpace(bridge.MachineName) ? Environment.MachineName : bridge.MachineName);

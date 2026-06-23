@@ -412,6 +412,8 @@ public sealed class TrayApplicationContext : ApplicationContext
             {
                 Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected =>
                     ("Auto.Connected", MessageBoxIcon.Information),
+                Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing =>
+                    ("Auto.ConnectedPrinterMissing", MessageBoxIcon.Information),
                 Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.SavedButUnverified =>
                     ("Auto.SavedUnverified", MessageBoxIcon.Warning),
                 Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.InvalidOrExpired =>
@@ -420,6 +422,10 @@ public sealed class TrayApplicationContext : ApplicationContext
             };
 
             UpdateTrayMenu();
+            _mainForm.RefreshAfterAutomaticSetup();
+
+            if (outcome == Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing)
+                _mainForm.FocusPrinterSettingsSection();
 
             MessageBox.Show(
                 _localizer[messageKey],

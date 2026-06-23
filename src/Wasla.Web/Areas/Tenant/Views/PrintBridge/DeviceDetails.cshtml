@@ -1,0 +1,137 @@
+@model Wasla.Web.Models.PrintBridge.PrintBridgeDeviceDetailsViewModel
+@using Microsoft.Extensions.Localization
+@using Wasla.Application.Abstractions.Printing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["PrintBridge.DeviceDetailsTitle"];
+
+    string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value.Trim();
+    string FormatDate(DateTime? value) => value.HasValue ? value.Value.ToLocalTime().ToString("g") : L["PrintBridge.LastSeenNever"].Value;
+    var connectionBadgeClass = Model.ConnectionStatus switch
+    {
+        PrintBridgeConnectionStatus.Connected => "text-bg-success",
+        PrintBridgeConnectionStatus.Inactive => "text-bg-secondary",
+        _ => "text-bg-warning"
+    };
+    var activeBadgeClass = Model.IsActive ? "text-bg-success" : "text-bg-secondary";
+}
+
+<div class="oh-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+    <div class="oh-customer-page-header__main">
+        <div class="mb-2">
+            <a class="small text-decoration-none" href="@Model.DevicesUrl">
+                <i class="bi bi-arrow-left me-1"></i>@L["PrintBridge.BackToDevices"]
+            </a>
+        </div>
+        <h1 class="oh-customer-page-header__title h4 mb-1">@L["PrintBridge.DeviceDetailsTitle"]</h1>
+        <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["PrintBridge.DeviceDetailsSubtitle"]</p>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <a class="btn btn-outline-secondary btn-sm" href="@Model.SetupUrl">
+            <i class="bi bi-arrow-repeat me-1"></i>@L["PrintBridge.SetupReconnectAction"]
+        </a>
+        <a class="btn btn-outline-secondary btn-sm" href="@Model.PrintJobsUrl">
+            <i class="bi bi-receipt me-1"></i>@L["PrintBridge.RecentPrintActivity"]
+        </a>
+    </div>
+</div>
+
+@if (TempData["PrintBridgeDeviceMessage"] is string successMessage)
+{
+    <div class="alert alert-success small py-2" role="alert">@successMessage</div>
+}
+@if (TempData["PrintBridgeDeviceError"] is string errorMessage)
+{
+    <div class="alert alert-danger small py-2" role="alert">@errorMessage</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                    <div>
+                        <div class="text-muted small">@L["PrintBridge.WebDisplayName"]</div>
+                        <div class="h4 mb-1">@Model.Name</div>
+                        <div class="text-muted small">@L["PrintBridge.MachineName"]: @Display(Model.MachineName)</div>
+                    </div>
+                    <div class="d-flex flex-column align-items-end gap-1">
+                        <span class="badge @connectionBadgeClass">@L[Model.ConnectionStatusLabelKey]</span>
+                        <span class="badge @activeBadgeClass">@(Model.IsActive ? L["PrintBridge.Enabled"] : L["PrintBridge.Disabled"])</span>
+                    </div>
+                </div>
+
+                <form asp-action="RenameDevice" asp-route-id="@Model.Id" method="post" class="border rounded-3 p-3 bg-body-tertiary">
+                    @Html.AntiForgeryToken()
+                    <label class="form-label small fw-semibold" for="deviceName">@L["PrintBridge.WebDisplayName"]</label>
+                    <input class="form-control form-control-sm" id="deviceName" name="name"
+                           value="@Model.Name" maxlength="@PrintBridgeDeviceNameRules.MaxWebDisplayNameLength" required />
+                    <div class="form-text">@L["PrintBridge.WebDisplayNameHelp"]</div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-save me-1"></i>@L["Common.Save"]
+                        </button>
+                        <a class="btn btn-outline-secondary btn-sm" href="@Model.DevicesUrl">@L["Common.Cancel"]</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card oh-card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-3">@L["PrintBridge.DeviceTechnicalInfo"]</h2>
+                <dl class="row small mb-0">
+                    <dt class="col-sm-5">@L["PrintBridge.WebDisplayName"]</dt>
+                    <dd class="col-sm-7">@Model.Name</dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.MachineName"]</dt>
+                    <dd class="col-sm-7">@Display(Model.MachineName)</dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.LocalAlias"]</dt>
+                    <dd class="col-sm-7">@Display(Model.LocalAlias)</dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.ConnectionStatus"]</dt>
+                    <dd class="col-sm-7"><span class="badge @connectionBadgeClass">@L[Model.ConnectionStatusLabelKey]</span></dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.DeviceState"]</dt>
+                    <dd class="col-sm-7"><span class="badge @activeBadgeClass">@(Model.IsActive ? L["PrintBridge.Enabled"] : L["PrintBridge.Disabled"])</span></dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.LastSeen"]</dt>
+                    <dd class="col-sm-7">@FormatDate(Model.LastSeenAtUtc)</dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.AppVersion"]</dt>
+                    <dd class="col-sm-7">@Display(Model.AppVersion)</dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.PrinterName"]</dt>
+                    <dd class="col-sm-7">@Display(Model.PrinterName)</dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.CreatedAt"]</dt>
+                    <dd class="col-sm-7">@Model.CreatedAtUtc.ToLocalTime().ToString("g")</dd>
+
+                    <dt class="col-sm-5">@L["PrintBridge.TokenStatus"]</dt>
+                    <dd class="col-sm-7">@(Model.HasToken ? L["PrintBridge.TokenConfigured"] : L["PrintBridge.TokenMissing"])</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card oh-card mt-3">
+    <div class="card-body">
+        <h2 class="h6 mb-2">@L["Common.Actions"]</h2>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-secondary btn-sm" href="@Model.SetupUrl">
+                <i class="bi bi-arrow-repeat me-1"></i>@L["PrintBridge.SetupReconnectAction"]
+            </a>
+            <a class="btn btn-outline-warning btn-sm" href="@Model.DevicesUrl">
+                <i class="bi bi-key me-1"></i>@L["PrintBridge.RegenerateToken"]
+            </a>
+            <a class="btn btn-outline-secondary btn-sm" href="@Model.PrintJobsUrl">
+                <i class="bi bi-receipt me-1"></i>@L["PrintBridge.RecentPrintActivity"]
+            </a>
+        </div>
+        <p class="text-muted small mb-0 mt-2">@L["PrintBridge.DeviceTokenSafeNote"]</p>
+    </div>
+</div>

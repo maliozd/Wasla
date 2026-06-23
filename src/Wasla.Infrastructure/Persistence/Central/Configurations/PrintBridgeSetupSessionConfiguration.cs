@@ -13,6 +13,7 @@ public sealed class PrintBridgeSetupSessionConfiguration : IEntityTypeConfigurat
 
         builder.Property(x => x.CodeHash).IsRequired().HasMaxLength(88);
         builder.Property(x => x.CompletionCredentialHash).HasMaxLength(88);
+        builder.Property(x => x.SetupMode).IsRequired().HasMaxLength(32);
         builder.Property(x => x.ServerUrl).IsRequired().HasMaxLength(500);
         builder.Property(x => x.ExpiresAtUtc).IsRequired();
         builder.Property(x => x.ConnectionVerified).IsRequired();
@@ -33,11 +34,13 @@ public sealed class PrintBridgeSetupSessionConfiguration : IEntityTypeConfigurat
             .HasForeignKey(x => x.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // PrintBridgeDeviceId is nullable: NewDevice sessions bind the device atomically at exchange time.
         // Tenant is the single cascade path. Device FK uses NoAction to avoid
         // SQL Server "multiple cascade paths" (Tenant -> Device -> Session and Tenant -> Session).
         builder.HasOne(x => x.Device)
             .WithMany()
             .HasForeignKey(x => x.PrintBridgeDeviceId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.NoAction);
     }
 }

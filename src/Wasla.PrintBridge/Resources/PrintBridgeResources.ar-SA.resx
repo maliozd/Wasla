@@ -33,6 +33,11 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>حفظ الإعدادات</value>
   </data>
+  <data name="Button.SaveConnection" xml:space="preserve"><value>حفظ الاتصال</value></data>
+  <data name="Button.SavePrinter" xml:space="preserve"><value>حفظ الطابعة</value></data>
+  <data name="Button.SaveDeviceName" xml:space="preserve"><value>حفظ اسم الجهاز</value></data>
+  <data name="Button.ApplyLanguage" xml:space="preserve"><value>تطبيق اللغة</value></data>
+  <data name="Button.SaveAdvanced" xml:space="preserve"><value>حفظ الإعدادات المتقدمة</value></data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>إظهار</value>
   </data>
@@ -102,6 +107,7 @@
   <data name="Error.PrinterRequired" xml:space="preserve">
     <value>اسم الطابعة مطلوب.</value>
   </data>
+  <data name="Error.PrinterUnavailable" xml:space="preserve"><value>الطابعة المحددة غير متاحة.</value></data>
   <data name="Error.TestPrintFailed" xml:space="preserve">
     <value>فشلت الطباعة التجريبية.</value>
   </data>
@@ -255,6 +261,7 @@
   <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
     <value>يُدار من لوحة Wasla Web</value>
   </data>
+  <data name="Settings.DeviceNameLocalHelp" xml:space="preserve"><value>يُحفظ محليًا على هذا الكمبيوتر. لا يغير اسم الجهاز في Wasla Web.</value></data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>الجهاز الفعلي: {0}</value>
   </data>
@@ -288,6 +295,17 @@
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>الصق رمز الجهاز الذي تم إنشاؤه من لوحة Wasla Web.</value>
   </data>
+  <data name="Settings.Section.Connection" xml:space="preserve"><value>اتصال Wasla</value></data>
+  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>يحفظ ويتحقق فقط من عنوان Wasla Web ورمز الجهاز.</value></data>
+  <data name="Settings.Section.Printer" xml:space="preserve"><value>إعداد الطابعة</value></data>
+  <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>اختر طابعة Windows المحلية المستخدمة للإيصالات. لا يتطلب ذلك بيانات اعتماد الخادم.</value></data>
+  <data name="Settings.Section.Device" xml:space="preserve"><value>هوية الجهاز</value></data>
+  <data name="Settings.Section.DeviceHelp" xml:space="preserve"><value>إدارة معلومات العرض المحلية لتثبيت Print Bridge هذا.</value></data>
+  <data name="Settings.Section.Language" xml:space="preserve"><value>اللغة</value></data>
+  <data name="Settings.Section.LanguageHelp" xml:space="preserve"><value>غيّر لغة التطبيق دون التحقق من الاتصال أو إعدادات الطابعة.</value></data>
+  <data name="Settings.SectionSaved" xml:space="preserve"><value>تم الحفظ.</value></data>
+  <data name="Settings.Saving" xml:space="preserve"><value>جارٍ الحفظ...</value></data>
+  <data name="Settings.LanguageApplied" xml:space="preserve"><value>تم تطبيق اللغة.</value></data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>وضع الاختبار مفعّل. لن تُطبع الفواتير؛ سيتم تسجيل المهام فقط.</value>
   </data>
@@ -329,6 +347,9 @@
   </data>
   <data name="ConnectionStatus.Connected" xml:space="preserve">
     <value>متصل</value>
+  </data>
+  <data name="ConnectionStatus.NotConfigured" xml:space="preserve">
+    <value>غير مهيأ</value>
   </data>
   <data name="ConnectionStatus.Disconnected" xml:space="preserve">
     <value>غير متصل</value>
@@ -525,6 +546,11 @@
   <data name="Validation.AgentTokenRequired" xml:space="preserve">
     <value>رمز الوصول مطلوب.</value>
   </data>
+  <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>رمز الإعداد مطلوب.</value></data>
+  <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>الاتصال برمز الإعداد</value></data>
+  <data name="Settings.SetupCode" xml:space="preserve"><value>رمز الإعداد</value></data>
+  <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>أدخل رمز الإعداد لمرة واحدة الذي تم إنشاؤه في Wasla Web. هذا ليس رمز الجهاز الدائم.</value></data>
+  <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>رمز الإعداد غير صالح أو مستخدم أو منتهي الصلاحية.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>تعذر التحقق من الاتصال</value>
   </data>
@@ -537,14 +563,16 @@
   <data name="Validation.InvalidServerUrl" xml:space="preserve">
     <value>عنوان خادم غير صالح. أدخل عنوانًا صالحًا يبدأ بـ http:// أو https://.</value>
   </data>
+  <data name="Validation.InvalidPollingIntervals" xml:space="preserve"><value>فواصل الاستطلاع خارج النطاق المسموح.</value></data>
   <data name="Validation.PrinterRequired" xml:space="preserve">
-    <value>اسم الطابعة مطلوب عند تعطيل وضع الاختبار.</value>
+    <value>اختر طابعة قبل بدء طباعة الإيصالات.</value>
   </data>
   <data name="JobType.Receipt" xml:space="preserve">
     <value>إيصال</value>
   </data>
   <data name="Auto.InvalidLink" xml:space="preserve"><value>رابط الإعداد غير صالح أو تالف.</value></data>
   <data name="Auto.Connected" xml:space="preserve"><value>تم الاتصال بـ Print Bridge بنجاح.</value></data>
+  <data name="Auto.ConnectedPrinterMissing" xml:space="preserve"><value>اكتمل اتصال Wasla. اختر طابعة قبل بدء طباعة الإيصالات.</value></data>
   <data name="Auto.SavedUnverified" xml:space="preserve"><value>تم حفظ الإعدادات، لكن تعذّر التحقق من الاتصال.</value></data>
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>رابط الإعداد غير صالح أو منتهي الصلاحية.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد التلقائي.</value></data>

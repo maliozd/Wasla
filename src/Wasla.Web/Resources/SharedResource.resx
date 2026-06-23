@@ -823,4 +823,47 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Mevcut aktif cihaz token'ını değiştirmek için onay gerekir.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Otomatik kurulum {0} cihazı için yeni token oluşturur; eski token artık çalışmaz.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Token işlemi tamamlanamadı.</value></data>
+  <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Kurulum türü</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Yeni cihaz kur</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Önerilen. Mevcut cihaz token'larına dokunmadan yeni bir Print Bridge cihazı oluşturur.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>Mevcut cihazı yeniden bağla</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Yalnızca seçtiğiniz cihaz için yeni token oluşturur.</value></data>
+  <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>Yeniden bağlanacak cihaz</value></data>
+  <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Cihaz seçin</value></data>
+  <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Yeniden bağlama seçilen cihaz için yeni token oluşturur ve o cihazın eski token'ını geçersiz kılar.</value></data>
+  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Devam etmek için bir cihaz seçin.</value></data>
+  <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Mevcut cihazı yeniden bağlamak için cihaz seçimi zorunludur.</value></data>
+  <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>Seçilen cihaz bu restorana ait değil veya bulunamadı.</value></data>
+  <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>Geçerli bir kurulum türü seçin.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>Kurulum kodu yukarıda seçilen kurulum türünü kullanır. Gerçek cihaz token'ı yalnızca masaüstü uygulama kodu değiştirdiğinde oluşturulur.</value></data>
+  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>Tek kullanımlık kurulum kodu</value></data>
+  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>Bu kısa süreli kodu masaüstü Print Bridge uygulamasında Server URL ile birlikte kullanın. Normal API token'ı değildir.</value></data>
+  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>Yeni kurulum kodu oluştur</value></data>
+  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>Yeniden bağlama kodu oluştur</value></data>
+  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>Tek kullanımlık kurulum kodu oluşturuldu.</value></data>
+  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>Süre sonu: {0}</value></data>
+  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>Kurulum kodunu kopyala</value></data>
+  <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>Yeni cihaz kur</value></data>
+  <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>Cihaz detayları</value></data>
+  <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>Print Bridge cihazının Web adı, bağlantı durumu ve teknik bilgileri.</value></data>
+  <data name="PrintBridge.BackToDevices" xml:space="preserve"><value>Cihazlara dön</value></data>
+  <data name="PrintBridge.DetailsAction" xml:space="preserve"><value>Detaylar</value></data>
+  <data name="PrintBridge.WebDisplayName" xml:space="preserve"><value>Görünen ad</value></data>
+  <data name="PrintBridge.WebDisplayNameHelp" xml:space="preserve"><value>Bu ad yalnızca Wasla Web içinde görünür; masaüstü cihazın yerel adını değiştirmez.</value></data>
+  <data name="PrintBridge.DeviceTechnicalInfo" xml:space="preserve"><value>Teknik bilgiler</value></data>
+  <data name="PrintBridge.DeviceState" xml:space="preserve"><value>Cihaz durumu</value></data>
+  <data name="PrintBridge.Enabled" xml:space="preserve"><value>Etkin</value></data>
+  <data name="PrintBridge.Disabled" xml:space="preserve"><value>Devre dışı</value></data>
+  <data name="PrintBridge.CreatedAt" xml:space="preserve"><value>Oluşturulma tarihi</value></data>
+  <data name="PrintBridge.TokenStatus" xml:space="preserve"><value>Token durumu</value></data>
+  <data name="PrintBridge.TokenConfigured" xml:space="preserve"><value>Token kayıtlı</value></data>
+  <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Token yok</value></data>
+  <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Kurulum / yeniden bağlama</value></data>
+  <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Son yazdırma hareketleri</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Ham cihaz token'ı ve token hash'i bu sayfada gösterilmez.</value></data>
+  <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>Cihaz adı kaydedildi.</value></data>
+  <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>Cihaz adı kaydedilemedi.</value></data>
+  <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Cihaz adı boş olamaz.</value></data>
+  <data name="PrintBridge.RenameNameTooLong" xml:space="preserve"><value>Cihaz adı en fazla 100 karakter olabilir.</value></data>
+  <data name="PrintBridge.DeviceNotFound" xml:space="preserve"><value>Cihaz bulunamadı.</value></data>
 </root>

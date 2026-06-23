@@ -62,8 +62,29 @@ public sealed class PrintBridgeDeviceRowViewModel
     public string ConnectionStatusLabelKey { get; set; } = string.Empty;
     public DateTime? LastSeenAtUtc { get; set; }
     public string? MachineName { get; set; }
+    public string? LocalAlias { get; set; }
     public string? PrinterName { get; set; }
     public string? AppVersion { get; set; }
 
     public bool IsConnected => ConnectionStatus == PrintBridgeConnectionStatus.Connected;
+}
+
+public sealed class PrintBridgeDeviceDetailsViewModel
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public PrintBridgeConnectionStatus ConnectionStatus { get; set; }
+    public string ConnectionStatusLabelKey { get; set; } = string.Empty;
+    public bool IsConnected => ConnectionStatus == PrintBridgeConnectionStatus.Connected;
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? LastSeenAtUtc { get; set; }
+    public string? MachineName { get; set; }
+    public string? LocalAlias { get; set; }
+    public string? PrinterName { get; set; }
+    public string? AppVersion { get; set; }
+    public bool HasToken { get; set; }
+    public string DevicesUrl { get; set; } = "/print-bridge/devices";
+    public string SetupUrl { get; set; } = "/print-bridge/setup";
+    public string PrintJobsUrl { get; set; } = "/print-bridge/devices#recent-print-activity";
 }

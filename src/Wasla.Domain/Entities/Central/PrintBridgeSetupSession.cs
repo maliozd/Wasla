@@ -15,8 +15,15 @@ public sealed class PrintBridgeSetupSession : BaseEntity
     public Guid TenantId { get; set; }
     public Tenant? Tenant { get; set; }
 
-    public Guid PrintBridgeDeviceId { get; set; }
+    /// <summary>
+    /// Null for NewDevice sessions until the one-time-code exchange atomically creates and binds the device.
+    /// Non-null for ReconnectExistingDevice sessions (bound at session creation).
+    /// </summary>
+    public Guid? PrintBridgeDeviceId { get; set; }
     public PrintBridgeDevice? Device { get; set; }
+
+    /// <summary>Stored setup mode. Drives exchange behavior: device creation vs. token rotation.</summary>
+    public string SetupMode { get; set; } = string.Empty;
 
     /// <summary>SHA-256 Base64 hash of the one-time setup code. Never store or log the raw code.</summary>
     public string CodeHash { get; set; } = string.Empty;

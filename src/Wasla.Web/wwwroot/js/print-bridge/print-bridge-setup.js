@@ -14,7 +14,7 @@
 
     var cfg = readConfig();
     var messages = cfg.messages || {};
-    var currentManualToken = null;
+    var currentManualSetupCode = null;
 
     function escapeHtml(value) {
         return String(value == null ? "" : value)
@@ -107,11 +107,11 @@
             });
         }
 
-        var copyTokenBtn = document.getElementById("pbManualCopyTokenBtn");
-        if (copyTokenBtn) {
-            copyTokenBtn.addEventListener("click", function () {
-                copyText(currentManualToken, copyTokenBtn, messages.tokenCopied).catch(function () {
-                    showMessage(messages.tokenCopyFailed || "Could not copy token", "danger");
+        var copySetupCodeBtn = document.getElementById("pbManualCopySetupCodeBtn");
+        if (copySetupCodeBtn) {
+            copySetupCodeBtn.addEventListener("click", function () {
+                copyText(currentManualSetupCode, copySetupCodeBtn, messages.copied).catch(function () {
+                    showMessage(messages.copyFailed || "Could not copy setup code", "danger");
                 });
             });
         }
@@ -181,12 +181,30 @@
         }, 2000);
     }
 
+    function getSelectedSetupMode() {
+        var checked = document.querySelector('input[name="pbSetupMode"]:checked');
+        return checked ? checked.value : "new";
+    }
+
+    function getSelectedReconnectDeviceId() {
+        var select = document.getElementById("pbReconnectDeviceSelect");
+        return select ? select.value : "";
+    }
+
+    function validateReconnectSelection() {
+        if (getSelectedSetupMode() !== "reconnect") return true;
+        if (getSelectedReconnectDeviceId()) return true;
+        showMessage(messages.selectDevice || "Select a device.", "danger");
+        return false;
+    }
+
     function shouldConfirmAutomaticTokenReplacement() {
-        if (!cfg.hasActiveDevice) return true;
-        return window.confirm(messages.autoReplaceTokenConfirm || "This will replace the current active device token. Continue?");
+        if (getSelectedSetupMode() !== "reconnect") return true;
+        return window.confirm(messages.reconnectTokenWarning || messages.autoReplaceTokenConfirm || "This will replace the selected device token. Continue?");
     }
 
     function startAutomaticSetup() {
+        if (!validateReconnectSelection()) return;
         if (!shouldConfirmAutomaticTokenReplacement()) return;
 
         clearTimers();
@@ -195,7 +213,10 @@
 
         var form = new FormData();
         form.append("__RequestVerificationToken", antiForgeryToken());
-        if (cfg.hasActiveDevice) {
+        var mode = getSelectedSetupMode();
+        form.append("setupMode", mode);
+        if (mode === "reconnect") {
+            form.append("deviceId", getSelectedReconnectDeviceId());
             form.append("confirmReplaceActiveToken", "true");
         }
 
@@ -236,85 +257,94 @@
         if (retryBtn) retryBtn.addEventListener("click", startAutomaticSetup);
     }
 
-    function showManualToken(token, mode, options) {
-        options = options || {};
-        currentManualToken = token || null;
-        var box = document.getElementById("pbManualTokenBox");
-        var title = document.getElementById("pbManualTokenTitle");
-        var notice = document.getElementById("pbManualTokenNotice");
-        var warning = document.getElementById("pbManualTokenWarning");
-        var value = document.getElementById("pbManualTokenValue");
-        if (!box || !value || !currentManualToken) return;
+    function updateSetupModeUi() {
+        var reconnect = getSelectedSetupMode() === "reconnect";
+        var section = document.getElementById("pbReconnectDeviceSection");
+        if (section) section.classList.toggle("d-none", !reconnect);
+        var manualSetupCodeText = document.getElementById("pbManualSetupCodeActionText");
+        if (manualSetupCodeText) {
+            manualSetupCodeText.textContent = reconnect
+                ? (messages.generateReconnectSetupCode || "Generate reconnect setup code")
+                : (messages.generateNewDeviceSetupCode || "Generate new device setup code");
+        }
+    }
 
-        if (title) title.textContent = options.title || (mode === "regenerate" ? messages.tokenRegenerated : messages.tokenCreated) || "";
-        if (notice) notice.textContent = options.notice || messages.tokenShownOnce || "";
+    function bindSetupMode() {
+        var radios = document.querySelectorAll('input[name="pbSetupMode"]');
+        radios.forEach(function (radio) {
+            radio.addEventListener("change", updateSetupModeUi);
+        });
+        updateSetupModeUi();
+    }
+
+    function showManualSetupCode(code, mode, options) {
+        options = options || {};
+        currentManualSetupCode = code || null;
+        var box = document.getElementById("pbManualSetupCodeBox");
+        var title = document.getElementById("pbManualSetupCodeTitle");
+        var notice = document.getElementById("pbManualSetupCodeNotice");
+        var warning = document.getElementById("pbManualSetupCodeWarning");
+        var value = document.getElementById("pbManualSetupCodeValue");
+        if (!box || !value || !currentManualSetupCode) return;
+
+        if (title) title.textContent = options.title || messages.oneTimeSetupCodeCreated || "";
+        if (notice) notice.textContent = options.notice || "";
         if (warning) {
             var warningText = options.warning || "";
             warning.textContent = warningText;
             warning.classList.toggle("d-none", !warningText);
         }
-        value.textContent = currentManualToken;
+        value.textContent = currentManualSetupCode;
         box.classList.remove("d-none");
         box.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
-    function bindManualTokenButtons() {
-        var createBtn = document.getElementById("pbManualCreateDeviceBtn");
-        if (createBtn) {
-            createBtn.addEventListener("click", function () {
-                createBtn.disabled = true;
-                postForm(cfg.createDeviceUrl, {})
-                    .then(function (data) {
-                        if (!data || !data.success || !data.token) throw new Error(messages.manualTokenFailed);
-                        showManualToken(data.token, "create", {
-                            title: data.tokenTitle,
-                            notice: data.tokenNotice
-                        });
-                        showMessage(data.message || messages.tokenCreated, "success");
-                    })
-                    .catch(function (err) {
-                        showMessage(err.message || messages.manualTokenFailed, "danger");
-                    })
-                    .finally(function () {
-                        createBtn.disabled = false;
-                    });
-            });
-        }
+    function bindManualSetupCodeButtons() {
+        var actionBtn = document.getElementById("pbManualSetupCodeActionBtn");
+        if (!actionBtn) return;
 
-        var regenerateBtn = document.getElementById("pbManualRegenerateTokenBtn");
-        if (regenerateBtn) {
-            regenerateBtn.addEventListener("click", function () {
-                var deviceId = regenerateBtn.getAttribute("data-device-id") || cfg.activeDeviceId;
-                if (!deviceId) return;
-                if (!window.confirm(String(messages.confirmRegenerateToken || "").replace("{0}", "") || "Regenerate token?")) {
+        actionBtn.addEventListener("click", function () {
+            var mode = getSelectedSetupMode();
+            if (mode === "reconnect" && !validateReconnectSelection()) return;
+            if (mode === "reconnect") {
+                if (!window.confirm(messages.reconnectTokenWarning || messages.confirmRegenerateToken || "Regenerate token?")) {
                     return;
                 }
+            }
 
-                regenerateBtn.disabled = true;
-                var url = String(cfg.regenerateTokenUrlTemplate || "").replace("{id}", encodeURIComponent(deviceId));
-                postForm(url, {})
+            actionBtn.disabled = true;
+            var fields = { setupMode: mode };
+            if (mode === "reconnect") {
+                fields.deviceId = getSelectedReconnectDeviceId();
+                fields.confirmReplaceActiveToken = "true";
+            }
+
+            postForm(cfg.sessionCreateUrl, fields)
                     .then(function (data) {
-                        if (!data || !data.success || !data.token) throw new Error(messages.manualTokenFailed);
-                        showManualToken(data.token, "regenerate", {
-                            title: data.tokenTitle,
-                            notice: data.tokenNotice,
-                            warning: data.tokenWarning || messages.oldTokenInvalidAfterRegenerate
+                        if (!data || !data.success || !data.code) throw new Error(messages.manualTokenFailed);
+                        var expires = data.expiresAtUtc
+                            ? (messages.setupCodeExpires || "Expires: {0}").replace("{0}", new Date(data.expiresAtUtc).toLocaleString())
+                            : "";
+                        showManualSetupCode(data.code, mode, {
+                            title: messages.oneTimeSetupCodeCreated,
+                            notice: expires,
+                            warning: mode === "reconnect" ? messages.reconnectTokenWarning : ""
                         });
-                        showMessage(data.message || messages.tokenRegenerated, "success");
+                        showMessage(messages.oneTimeSetupCodeCreated || "Setup code created.", "success");
                     })
                     .catch(function (err) {
                         showMessage(err.message || messages.manualTokenFailed, "danger");
                     })
                     .finally(function () {
-                        regenerateBtn.disabled = false;
+                        actionBtn.disabled = false;
                     });
-            });
-        }
+        });
     }
 
     document.addEventListener("DOMContentLoaded", function () {
         bindCopyButtons();
+        bindSetupMode();
         bindAutomaticSetup();
-        bindManualTokenButtons();
+        bindManualSetupCodeButtons();
     });
 })();

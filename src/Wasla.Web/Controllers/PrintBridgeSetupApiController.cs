@@ -43,7 +43,14 @@ public sealed class PrintBridgeSetupApiController : ControllerBase
         if (body is null || string.IsNullOrWhiteSpace(body.Code))
             return Invalid();
 
-        var result = await _setup.ExchangeAsync(body.Code, ct).ConfigureAwait(false);
+        var clientInfo = new PrintBridgeSetupClientInfo(
+            body.MachineName,
+            Request.Headers.TryGetValue("X-PrintBridge-Version", out var versionValues)
+                ? versionValues.FirstOrDefault()
+                : null,
+            body.PrinterName);
+
+        var result = await _setup.ExchangeAsync(body.Code, clientInfo, ct).ConfigureAwait(false);
         if (result is null)
             return Invalid();
 
