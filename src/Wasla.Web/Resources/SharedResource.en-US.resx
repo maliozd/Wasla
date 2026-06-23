@@ -3158,4 +3158,49 @@
   <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Device name is required.</value></data>
   <data name="PrintBridge.RenameNameTooLong" xml:space="preserve"><value>Device name can be at most 100 characters.</value></data>
   <data name="PrintBridge.DeviceNotFound" xml:space="preserve"><value>Device not found.</value></data>
+  <data name="Admin.PendingRegistrations" xml:space="preserve"><value>Pending registrations</value></data>
+  <data name="Admin.PendingReg.Plan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Admin.PendingReg.PaymentStatus" xml:space="preserve"><value>Payment status</value></data>
+  <data name="Admin.PendingReg.Owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="Admin.PendingReg.OwnerEmail" xml:space="preserve"><value>Owner email</value></data>
+  <data name="Admin.PendingReg.OwnerPhone" xml:space="preserve"><value>Owner phone</value></data>
+  <data name="Admin.PendingReg.BusinessPhone" xml:space="preserve"><value>Business phone</value></data>
+  <data name="Admin.PendingReg.BusinessEmail" xml:space="preserve"><value>Business email</value></data>
+  <data name="Admin.PendingReg.Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Admin.PendingReg.OwnerInfo" xml:space="preserve"><value>Owner information</value></data>
+  <data name="Admin.PendingReg.StatusInfo" xml:space="preserve"><value>Status and timestamps</value></data>
+  <data name="Admin.PendingReg.DetailsTitle" xml:space="preserve"><value>Pending registration details</value></data>
+  <data name="Admin.PendingReg.Status.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Admin.PendingReg.Status.AwaitingPayment" xml:space="preserve"><value>Awaiting payment</value></data>
+  <data name="Admin.PendingReg.Status.PaymentSucceeded" xml:space="preserve"><value>Payment received</value></data>
+  <data name="Admin.PendingReg.Status.PaymentFailed" xml:space="preserve"><value>Payment failed</value></data>
+  <data name="Admin.PendingReg.Status.Provisioned" xml:space="preserve"><value>Provisioned</value></data>
+  <data name="Admin.PendingReg.Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.PendingReg.Status.Expired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Admin.PendingReg.FilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="Admin.PendingReg.FilterPendingPayment" xml:space="preserve"><value>Pending payment</value></data>
+  <data name="Admin.PendingReg.FilterPaymentReceived" xml:space="preserve"><value>Payment received, setup pending</value></data>
+  <data name="Admin.PendingReg.FilterProvisioned" xml:space="preserve"><value>Provisioned</value></data>
+  <data name="Admin.PendingReg.NotFound" xml:space="preserve"><value>Pending registration not found.</value></data>
+  <data name="Admin.PendingReg.NotEligible" xml:space="preserve"><value>This registration is not eligible for provisioning.</value></data>
+  <data name="Admin.PendingReg.AlreadyProvisioned" xml:space="preserve"><value>This registration is already provisioned.</value></data>
+  <data name="Admin.PendingReg.ProvisionSuccess" xml:space="preserve"><value>Provisioning completed successfully.</value></data>
+  <data name="Admin.PendingReg.ProvisionError" xml:space="preserve"><value>Provisioning failed.</value></data>
+  <data name="Admin.PendingReg.Provision" xml:space="preserve"><value>Provision</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmTitle" xml:space="preserve"><value>Start provisioning</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmMessage" xml:space="preserve"><value>Provision {0} ({1})?</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmNote" xml:space="preserve"><value>This action cannot be undone. Please confirm before continuing.</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirm" xml:space="preserve"><value>Yes, provision</value></data>
+  <data name="Admin.PendingReg.ExpiresAt" xml:space="preserve"><value>Expires at</value></data>
+  <data name="Admin.PendingReg.PaymentSucceededAt" xml:space="preserve"><value>Payment date</value></data>
+  <data name="Admin.PendingReg.PaymentFailedAt" xml:space="preserve"><value>Payment failed at</value></data>
+  <data name="Admin.PendingReg.ProvisionedAt" xml:space="preserve"><value>Provisioned at</value></data>
+  <data name="Admin.PendingReg.TenantId" xml:space="preserve"><value>Tenant ID</value></data>
+  <data name="Admin.PendingReg.TenantDomain" xml:space="preserve"><value>Panel address</value></data>
+  <data name="Admin.PendingReg.TenantLogin" xml:space="preserve"><value>Panel login</value></data>
+  <data name="Admin.RegPendingPayment" xml:space="preserve"><value>Pending payment</value></data>
+  <data name="Admin.RegPaymentReceivedSetupPending" xml:space="preserve"><value>Payment received, setup pending</value></data>
+  <data name="Admin.RegProvisioned" xml:space="preserve"><value>Provisioned</value></data>
+  <data name="Admin.ViewAll" xml:space="preserve"><value>View all</value></data>
+  <data name="Admin.Dashboard.RegistrationsNeedingAttention" xml:space="preserve"><value>Registrations needing attention</value></data>
 </root>

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Admin;
+using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 
 namespace Wasla.Infrastructure.Services;
@@ -30,12 +31,41 @@ public sealed class CentralAdminTenantService : ICentralAdminTenantService
 
         var list = rows.Select(MapListItem).ToList();
 
+        // Recent tenants: ordered by creation date descending
+        var recent = rows
+            .OrderByDescending(c => c.CreatedAt)
+            .Take(10)
+            .Select(MapListItem)
+            .ToList();
+
+        // Pending registration summary counts
+        var regGroups = await _db.PendingRegistrations
+            .AsNoTracking()
+            .GroupBy(r => r.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        var regPendingPayment = regGroups
+            .Where(g => g.Status == PendingRegistrationStatus.AwaitingPayment)
+            .Sum(g => g.Count);
+        var regPaymentReceivedSetupPending = regGroups
+            .Where(g => g.Status == PendingRegistrationStatus.PaymentSucceeded)
+            .Sum(g => g.Count);
+        var regProvisioned = regGroups
+            .Where(g => g.Status == PendingRegistrationStatus.Provisioned)
+            .Sum(g => g.Count);
+
         return new CentralAdminDashboardResult
         {
             TotalCustomers = total,
             ActiveCustomers = active,
             InactiveCustomers = inactive,
-            Customers = list
+            Customers = list,
+            RecentCustomers = recent,
+            RegPendingPayment = regPendingPayment,
+            RegPaymentReceivedSetupPending = regPaymentReceivedSetupPending,
+            RegProvisioned = regProvisioned
         };
     }
 

@@ -7,6 +7,13 @@ public sealed class CentralAdminDashboardResult
     public int InactiveCustomers { get; init; }
     public IReadOnlyList<CentralAdminTenantListItemDto> Customers { get; init; } =
         Array.Empty<CentralAdminTenantListItemDto>();
+
+    // Pending registration summary counts for dashboard cards
+    public int RegPendingPayment { get; init; }
+    public int RegPaymentReceivedSetupPending { get; init; }
+    public int RegProvisioned { get; init; }
+    public IReadOnlyList<CentralAdminTenantListItemDto> RecentCustomers { get; init; } =
+        Array.Empty<CentralAdminTenantListItemDto>();
 }
 
 public sealed class CentralAdminTenantListItemDto

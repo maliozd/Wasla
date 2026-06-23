@@ -13,34 +13,47 @@ namespace Wasla.Web.Areas.Admin.Controllers;
 public sealed class DashboardController : Controller
 {
     private readonly ICentralAdminTenantService _customers;
+    private readonly ICentralAdminPendingRegistrationService _pendingRegs;
 
-    public DashboardController(ICentralAdminTenantService customers)
+    public DashboardController(
+        ICentralAdminTenantService customers,
+        ICentralAdminPendingRegistrationService pendingRegs)
     {
         _customers = customers;
+        _pendingRegs = pendingRegs;
     }
 
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         var data = await _customers.GetDashboardAsync(ct).ConfigureAwait(false);
+        var attention = await _pendingRegs.GetAttentionListAsync(ct).ConfigureAwait(false);
+
+        static CentralAdminTenantListItemViewModel MapTenant(CentralAdminTenantListItemDto c) => new()
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Slug = c.Slug,
+            PrimaryDomain = c.PrimaryDomain,
+            DatabaseName = c.DatabaseName,
+            IsActive = c.IsActive,
+            SchemaVersion = c.SchemaVersion,
+            LastMigrationAt = c.LastMigrationAt,
+            LastMigrationResult = c.LastMigrationResult,
+            CreatedAt = c.CreatedAt
+        };
+
         var vm = new CentralAdminDashboardViewModel
         {
             TotalCustomers = data.TotalCustomers,
             ActiveCustomers = data.ActiveCustomers,
             InactiveCustomers = data.InactiveCustomers,
-            Customers = data.Customers.Select(c => new CentralAdminTenantListItemViewModel
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Slug = c.Slug,
-                PrimaryDomain = c.PrimaryDomain,
-                DatabaseName = c.DatabaseName,
-                IsActive = c.IsActive,
-                SchemaVersion = c.SchemaVersion,
-                LastMigrationAt = c.LastMigrationAt,
-                LastMigrationResult = c.LastMigrationResult,
-                CreatedAt = c.CreatedAt
-            }).ToList()
+            Customers = data.Customers.Select(MapTenant).ToList(),
+            RecentCustomers = data.RecentCustomers.Select(MapTenant).ToList(),
+            RegPendingPayment = data.RegPendingPayment,
+            RegPaymentReceivedSetupPending = data.RegPaymentReceivedSetupPending,
+            RegProvisioned = data.RegProvisioned,
+            AttentionRegistrations = attention
         };
 
         return View(vm);

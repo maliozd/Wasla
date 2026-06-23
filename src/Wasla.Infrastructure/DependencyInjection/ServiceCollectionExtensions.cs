@@ -95,6 +95,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthValidationService, AuthValidationService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
+        services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
+        services.AddScoped<ITenantDatabaseProvisioningOperations, SqlServerTenantDatabaseProvisioningOperations>();
+        services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderActionService, OrderActionService>();

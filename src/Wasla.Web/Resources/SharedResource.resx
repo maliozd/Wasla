@@ -866,4 +866,49 @@
   <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Cihaz adı boş olamaz.</value></data>
   <data name="PrintBridge.RenameNameTooLong" xml:space="preserve"><value>Cihaz adı en fazla 100 karakter olabilir.</value></data>
   <data name="PrintBridge.DeviceNotFound" xml:space="preserve"><value>Cihaz bulunamadı.</value></data>
+  <data name="Admin.PendingRegistrations" xml:space="preserve"><value>Bekleyen kayıtlar</value></data>
+  <data name="Admin.PendingReg.Plan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Admin.PendingReg.PaymentStatus" xml:space="preserve"><value>Ödeme durumu</value></data>
+  <data name="Admin.PendingReg.Owner" xml:space="preserve"><value>Yetkili</value></data>
+  <data name="Admin.PendingReg.OwnerEmail" xml:space="preserve"><value>Yetkili e-postası</value></data>
+  <data name="Admin.PendingReg.OwnerPhone" xml:space="preserve"><value>Yetkili telefon</value></data>
+  <data name="Admin.PendingReg.BusinessPhone" xml:space="preserve"><value>İşletme telefonu</value></data>
+  <data name="Admin.PendingReg.BusinessEmail" xml:space="preserve"><value>İşletme e-postası</value></data>
+  <data name="Admin.PendingReg.Address" xml:space="preserve"><value>Adres</value></data>
+  <data name="Admin.PendingReg.OwnerInfo" xml:space="preserve"><value>Yetkili bilgileri</value></data>
+  <data name="Admin.PendingReg.StatusInfo" xml:space="preserve"><value>Durum ve tarihler</value></data>
+  <data name="Admin.PendingReg.DetailsTitle" xml:space="preserve"><value>Bekleyen kayıt ayrıntıları</value></data>
+  <data name="Admin.PendingReg.Status.Draft" xml:space="preserve"><value>Taslak</value></data>
+  <data name="Admin.PendingReg.Status.AwaitingPayment" xml:space="preserve"><value>Ödeme bekleniyor</value></data>
+  <data name="Admin.PendingReg.Status.PaymentSucceeded" xml:space="preserve"><value>Ödeme alındı</value></data>
+  <data name="Admin.PendingReg.Status.PaymentFailed" xml:space="preserve"><value>Ödeme başarısız</value></data>
+  <data name="Admin.PendingReg.Status.Provisioned" xml:space="preserve"><value>Kurulmuş</value></data>
+  <data name="Admin.PendingReg.Status.Cancelled" xml:space="preserve"><value>İptal edildi</value></data>
+  <data name="Admin.PendingReg.Status.Expired" xml:space="preserve"><value>Süresi doldu</value></data>
+  <data name="Admin.PendingReg.FilterAll" xml:space="preserve"><value>Tümü</value></data>
+  <data name="Admin.PendingReg.FilterPendingPayment" xml:space="preserve"><value>Ödeme bekleyen</value></data>
+  <data name="Admin.PendingReg.FilterPaymentReceived" xml:space="preserve"><value>Ödeme alındı, kurulum bekliyor</value></data>
+  <data name="Admin.PendingReg.FilterProvisioned" xml:space="preserve"><value>Kurulmuş</value></data>
+  <data name="Admin.PendingReg.NotFound" xml:space="preserve"><value>Bekleyen kayıt bulunamadı.</value></data>
+  <data name="Admin.PendingReg.NotEligible" xml:space="preserve"><value>Bu kayıt kurulum için uygun değil.</value></data>
+  <data name="Admin.PendingReg.AlreadyProvisioned" xml:space="preserve"><value>Bu kayıt zaten kurulmuş.</value></data>
+  <data name="Admin.PendingReg.ProvisionSuccess" xml:space="preserve"><value>Kurulum başarıyla tamamlandı.</value></data>
+  <data name="Admin.PendingReg.ProvisionError" xml:space="preserve"><value>Kurulum başarısız.</value></data>
+  <data name="Admin.PendingReg.Provision" xml:space="preserve"><value>Kur</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmTitle" xml:space="preserve"><value>Kurulumu başlat</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmMessage" xml:space="preserve"><value>{0} ({1}) için kurulum başlatılsın mı?</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmNote" xml:space="preserve"><value>Bu işlem geri alınamaz. Devam etmek için emin olun.</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirm" xml:space="preserve"><value>Evet, kur</value></data>
+  <data name="Admin.PendingReg.ExpiresAt" xml:space="preserve"><value>Son geçerlilik tarihi</value></data>
+  <data name="Admin.PendingReg.PaymentSucceededAt" xml:space="preserve"><value>Ödeme tarihi</value></data>
+  <data name="Admin.PendingReg.PaymentFailedAt" xml:space="preserve"><value>Ödeme hata tarihi</value></data>
+  <data name="Admin.PendingReg.ProvisionedAt" xml:space="preserve"><value>Kurulum tarihi</value></data>
+  <data name="Admin.PendingReg.TenantId" xml:space="preserve"><value>Tenant kimliği</value></data>
+  <data name="Admin.PendingReg.TenantDomain" xml:space="preserve"><value>Panel adresi</value></data>
+  <data name="Admin.PendingReg.TenantLogin" xml:space="preserve"><value>Panel girişi</value></data>
+  <data name="Admin.RegPendingPayment" xml:space="preserve"><value>Ödeme bekleyen</value></data>
+  <data name="Admin.RegPaymentReceivedSetupPending" xml:space="preserve"><value>Ödeme alındı, kurulum bekliyor</value></data>
+  <data name="Admin.RegProvisioned" xml:space="preserve"><value>Kurulmuş kayıt</value></data>
+  <data name="Admin.ViewAll" xml:space="preserve"><value>Tümünü gör</value></data>
+  <data name="Admin.Dashboard.RegistrationsNeedingAttention" xml:space="preserve"><value>Dikkat gereken kayıtlar</value></data>
 </root>

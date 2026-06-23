@@ -3158,4 +3158,49 @@
   <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>اسم الجهاز مطلوب.</value></data>
   <data name="PrintBridge.RenameNameTooLong" xml:space="preserve"><value>يمكن أن يكون اسم الجهاز 100 حرف كحد أقصى.</value></data>
   <data name="PrintBridge.DeviceNotFound" xml:space="preserve"><value>لم يتم العثور على الجهاز.</value></data>
+  <data name="Admin.PendingRegistrations" xml:space="preserve"><value>التسجيلات المعلقة</value></data>
+  <data name="Admin.PendingReg.Plan" xml:space="preserve"><value>الخطة</value></data>
+  <data name="Admin.PendingReg.PaymentStatus" xml:space="preserve"><value>حالة الدفع</value></data>
+  <data name="Admin.PendingReg.Owner" xml:space="preserve"><value>المالك</value></data>
+  <data name="Admin.PendingReg.OwnerEmail" xml:space="preserve"><value>البريد الإلكتروني للمالك</value></data>
+  <data name="Admin.PendingReg.OwnerPhone" xml:space="preserve"><value>هاتف المالك</value></data>
+  <data name="Admin.PendingReg.BusinessPhone" xml:space="preserve"><value>هاتف النشاط التجاري</value></data>
+  <data name="Admin.PendingReg.BusinessEmail" xml:space="preserve"><value>بريد النشاط التجاري</value></data>
+  <data name="Admin.PendingReg.Address" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Admin.PendingReg.OwnerInfo" xml:space="preserve"><value>معلومات المالك</value></data>
+  <data name="Admin.PendingReg.StatusInfo" xml:space="preserve"><value>الحالة والتواريخ</value></data>
+  <data name="Admin.PendingReg.DetailsTitle" xml:space="preserve"><value>تفاصيل التسجيل المعلق</value></data>
+  <data name="Admin.PendingReg.Status.Draft" xml:space="preserve"><value>مسودة</value></data>
+  <data name="Admin.PendingReg.Status.AwaitingPayment" xml:space="preserve"><value>في انتظار الدفع</value></data>
+  <data name="Admin.PendingReg.Status.PaymentSucceeded" xml:space="preserve"><value>تم الدفع</value></data>
+  <data name="Admin.PendingReg.Status.PaymentFailed" xml:space="preserve"><value>فشل الدفع</value></data>
+  <data name="Admin.PendingReg.Status.Provisioned" xml:space="preserve"><value>تم التوفير</value></data>
+  <data name="Admin.PendingReg.Status.Cancelled" xml:space="preserve"><value>ملغي</value></data>
+  <data name="Admin.PendingReg.Status.Expired" xml:space="preserve"><value>منتهي الصلاحية</value></data>
+  <data name="Admin.PendingReg.FilterAll" xml:space="preserve"><value>الكل</value></data>
+  <data name="Admin.PendingReg.FilterPendingPayment" xml:space="preserve"><value>في انتظار الدفع</value></data>
+  <data name="Admin.PendingReg.FilterPaymentReceived" xml:space="preserve"><value>تم الدفع، في انتظار الإعداد</value></data>
+  <data name="Admin.PendingReg.FilterProvisioned" xml:space="preserve"><value>تم التوفير</value></data>
+  <data name="Admin.PendingReg.NotFound" xml:space="preserve"><value>لم يتم العثور على التسجيل المعلق.</value></data>
+  <data name="Admin.PendingReg.NotEligible" xml:space="preserve"><value>هذا التسجيل غير مؤهل للتوفير.</value></data>
+  <data name="Admin.PendingReg.AlreadyProvisioned" xml:space="preserve"><value>تم توفير هذا التسجيل مسبقاً.</value></data>
+  <data name="Admin.PendingReg.ProvisionSuccess" xml:space="preserve"><value>تم التوفير بنجاح.</value></data>
+  <data name="Admin.PendingReg.ProvisionError" xml:space="preserve"><value>فشل التوفير.</value></data>
+  <data name="Admin.PendingReg.Provision" xml:space="preserve"><value>توفير</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmTitle" xml:space="preserve"><value>بدء التوفير</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmMessage" xml:space="preserve"><value>هل تريد توفير {0} ({1})؟</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmNote" xml:space="preserve"><value>لا يمكن التراجع عن هذا الإجراء. يرجى التأكيد قبل المتابعة.</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirm" xml:space="preserve"><value>نعم، وفِّر</value></data>
+  <data name="Admin.PendingReg.ExpiresAt" xml:space="preserve"><value>تنتهي صلاحيته في</value></data>
+  <data name="Admin.PendingReg.PaymentSucceededAt" xml:space="preserve"><value>تاريخ الدفع</value></data>
+  <data name="Admin.PendingReg.PaymentFailedAt" xml:space="preserve"><value>تاريخ فشل الدفع</value></data>
+  <data name="Admin.PendingReg.ProvisionedAt" xml:space="preserve"><value>تاريخ التوفير</value></data>
+  <data name="Admin.PendingReg.TenantId" xml:space="preserve"><value>معرف المستأجر</value></data>
+  <data name="Admin.PendingReg.TenantDomain" xml:space="preserve"><value>عنوان اللوحة</value></data>
+  <data name="Admin.PendingReg.TenantLogin" xml:space="preserve"><value>تسجيل دخول اللوحة</value></data>
+  <data name="Admin.RegPendingPayment" xml:space="preserve"><value>في انتظار الدفع</value></data>
+  <data name="Admin.RegPaymentReceivedSetupPending" xml:space="preserve"><value>تم الدفع، في انتظار الإعداد</value></data>
+  <data name="Admin.RegProvisioned" xml:space="preserve"><value>تم التوفير</value></data>
+  <data name="Admin.ViewAll" xml:space="preserve"><value>عرض الكل</value></data>
+  <data name="Admin.Dashboard.RegistrationsNeedingAttention" xml:space="preserve"><value>التسجيلات التي تحتاج إلى اهتمام</value></data>
 </root>

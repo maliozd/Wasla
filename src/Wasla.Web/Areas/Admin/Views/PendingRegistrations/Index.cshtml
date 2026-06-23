@@ -1,0 +1,98 @@
+@model Wasla.Web.Areas.Admin.Models.AdminPendingRegistrationListViewModel
+@using Microsoft.Extensions.Localization
+@using Wasla.Application.Abstractions.Admin
+@using Wasla.Domain.Enums
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Admin.PendingRegistrations"].Value;
+
+    string FilterCss(PendingRegistrationAdminFilter f) =>
+        Model.ActiveFilter == f ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
+
+    string StatusBadge(PendingRegistrationStatus s) => s switch
+    {
+        PendingRegistrationStatus.AwaitingPayment => "text-bg-warning",
+        PendingRegistrationStatus.PaymentSucceeded => "text-bg-info",
+        PendingRegistrationStatus.PaymentFailed => "text-bg-danger",
+        PendingRegistrationStatus.Provisioned => "text-bg-success",
+        PendingRegistrationStatus.Cancelled => "text-bg-secondary",
+        PendingRegistrationStatus.Expired => "text-bg-secondary",
+        _ => "text-bg-secondary"
+    };
+
+    string StatusLabel(PendingRegistrationStatus s) => s switch
+    {
+        PendingRegistrationStatus.Draft => L["Admin.PendingReg.Status.Draft"].Value,
+        PendingRegistrationStatus.AwaitingPayment => L["Admin.PendingReg.Status.AwaitingPayment"].Value,
+        PendingRegistrationStatus.PaymentSucceeded => L["Admin.PendingReg.Status.PaymentSucceeded"].Value,
+        PendingRegistrationStatus.PaymentFailed => L["Admin.PendingReg.Status.PaymentFailed"].Value,
+        PendingRegistrationStatus.Provisioned => L["Admin.PendingReg.Status.Provisioned"].Value,
+        PendingRegistrationStatus.Cancelled => L["Admin.PendingReg.Status.Cancelled"].Value,
+        PendingRegistrationStatus.Expired => L["Admin.PendingReg.Status.Expired"].Value,
+        _ => s.ToString()
+    };
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div>
+        <h1 class="h4 mb-1">@L["Admin.PendingRegistrations"]</h1>
+        <p class="text-muted small mb-0">@L["Admin.BrandSubtitle"]</p>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="/admin/pending-registrations" class="@FilterCss(PendingRegistrationAdminFilter.All)">@L["Admin.PendingReg.FilterAll"]</a>
+    <a href="/admin/pending-registrations?filter=PendingPayment" class="@FilterCss(PendingRegistrationAdminFilter.PendingPayment)">@L["Admin.PendingReg.FilterPendingPayment"]</a>
+    <a href="/admin/pending-registrations?filter=PaymentReceivedSetupPending" class="@FilterCss(PendingRegistrationAdminFilter.PaymentReceivedSetupPending)">@L["Admin.PendingReg.FilterPaymentReceived"]</a>
+    <a href="/admin/pending-registrations?filter=Provisioned" class="@FilterCss(PendingRegistrationAdminFilter.Provisioned)">@L["Admin.PendingReg.FilterProvisioned"]</a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        @if (!Model.Items.Any())
+        {
+            <div class="text-center text-muted py-5 px-3">
+                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                <div class="fw-semibold">@L["Admin.NoCustomers"]</div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>@L["Admin.Name"]</th>
+                        <th>@L["Admin.Slug"]</th>
+                        <th>@L["Admin.PendingReg.Owner"]</th>
+                        <th>@L["Admin.PendingReg.Plan"]</th>
+                        <th>@L["Admin.PendingReg.PaymentStatus"]</th>
+                        <th>@L["Admin.CreatedAt"]</th>
+                        <th class="text-end">@L["Admin.Actions"]</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var r in Model.Items)
+                    {
+                        <tr>
+                            <td class="fw-medium">@r.BusinessName</td>
+                            <td><code class="small">@r.Slug</code></td>
+                            <td class="small">@r.OwnerFullName</td>
+                            <td class="small">@r.PlanCode / @r.BillingPeriod</td>
+                            <td><span class="badge @StatusBadge(r.Status)">@StatusLabel(r.Status)</span></td>
+                            <td class="small text-muted">@r.CreatedAtUtc.ToString("yyyy-MM-dd")</td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" href="/admin/pending-registrations/@r.Id">@L["Admin.Details"]</a>
+                                @if (r.IsEligibleForProvisioning)
+                                {
+                                    <a class="btn btn-sm btn-warning" href="/admin/pending-registrations/@r.Id">@L["Admin.PendingReg.Provision"]</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

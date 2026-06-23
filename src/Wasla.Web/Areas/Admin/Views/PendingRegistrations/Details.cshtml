@@ -1,0 +1,230 @@
+@model Wasla.Web.Areas.Admin.Models.AdminPendingRegistrationDetailViewModel
+@using Microsoft.Extensions.Localization
+@using Wasla.Domain.Enums
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Admin.PendingReg.DetailsTitle"].Value;
+
+    var successMsg = TempData["ProvisionSuccess"] as string;
+    var errorMsg = TempData["ProvisionError"] as string;
+
+    string StatusBadge(PendingRegistrationStatus s) => s switch
+    {
+        PendingRegistrationStatus.AwaitingPayment => "text-bg-warning",
+        PendingRegistrationStatus.PaymentSucceeded => "text-bg-info",
+        PendingRegistrationStatus.PaymentFailed => "text-bg-danger",
+        PendingRegistrationStatus.Provisioned => "text-bg-success",
+        PendingRegistrationStatus.Cancelled => "text-bg-secondary",
+        PendingRegistrationStatus.Expired => "text-bg-secondary",
+        _ => "text-bg-secondary"
+    };
+
+    string StatusLabel(PendingRegistrationStatus s) => s switch
+    {
+        PendingRegistrationStatus.Draft => L["Admin.PendingReg.Status.Draft"].Value,
+        PendingRegistrationStatus.AwaitingPayment => L["Admin.PendingReg.Status.AwaitingPayment"].Value,
+        PendingRegistrationStatus.PaymentSucceeded => L["Admin.PendingReg.Status.PaymentSucceeded"].Value,
+        PendingRegistrationStatus.PaymentFailed => L["Admin.PendingReg.Status.PaymentFailed"].Value,
+        PendingRegistrationStatus.Provisioned => L["Admin.PendingReg.Status.Provisioned"].Value,
+        PendingRegistrationStatus.Cancelled => L["Admin.PendingReg.Status.Cancelled"].Value,
+        PendingRegistrationStatus.Expired => L["Admin.PendingReg.Status.Expired"].Value,
+        _ => s.ToString()
+    };
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a href="/admin">@L["Admin.DashboardTitle"]</a></li>
+        <li class="breadcrumb-item"><a href="/admin/pending-registrations">@L["Admin.PendingRegistrations"]</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@Model.BusinessName</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">@Model.BusinessName</h1>
+        <p class="text-muted small mb-0">@L["Admin.PendingReg.DetailsTitle"]</p>
+    </div>
+    <span class="badge @StatusBadge(Model.Status) fs-6">@StatusLabel(Model.Status)</span>
+</div>
+
+@if (successMsg is not null)
+{
+    <div class="alert alert-success" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@successMsg
+        @if (Model.TenantDomain is not null)
+        {
+            <span>
+                — <a href="https://@Model.TenantDomain/auth/login" target="_blank" rel="noopener noreferrer" class="alert-link">
+                    @L["Admin.PendingReg.TenantLogin"] (@Model.TenantDomain)
+                </a>
+            </span>
+        }
+    </div>
+}
+@if (errorMsg is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMsg
+    </div>
+}
+
+@* Already provisioned — show tenant link *@
+@if (Model.Status == PendingRegistrationStatus.Provisioned && Model.TenantDomain is not null)
+{
+    <div class="alert alert-success border-0" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i>
+        @L["Admin.PendingReg.Status.Provisioned"] —
+        <a href="https://@Model.TenantDomain/auth/login" target="_blank" rel="noopener noreferrer" class="alert-link">
+            @Model.TenantDomain
+        </a>
+    </div>
+}
+
+@* Business info *@
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">@L["Admin.GeneralInfo"]</div>
+    <div class="card-body">
+        <dl class="row small mb-0">
+            <dt class="col-sm-3 text-muted">@L["Admin.Name"]</dt>
+            <dd class="col-sm-9">@Model.BusinessName</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.Slug"]</dt>
+            <dd class="col-sm-9"><code>@Model.Slug</code></dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.PrimaryDomain"]</dt>
+            <dd class="col-sm-9">@Model.PrimaryDomain</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.Plan"]</dt>
+            <dd class="col-sm-9">@Model.PlanCode / @Model.BillingPeriod</dd>
+            @if (!string.IsNullOrWhiteSpace(Model.BusinessPhone))
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.BusinessPhone"]</dt>
+                <dd class="col-sm-9">@Model.BusinessPhone</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.BusinessEmail))
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.BusinessEmail"]</dt>
+                <dd class="col-sm-9">@Model.BusinessEmail</dd>
+            }
+            <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.Address"]</dt>
+            <dd class="col-sm-9">@Model.City, @Model.District@(!string.IsNullOrWhiteSpace(Model.Neighborhood) ? $", {Model.Neighborhood}" : ""), @Model.Country</dd>
+        </dl>
+    </div>
+</div>
+
+@* Owner info *@
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">@L["Admin.PendingReg.OwnerInfo"]</div>
+    <div class="card-body">
+        <dl class="row small mb-0">
+            <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.Owner"]</dt>
+            <dd class="col-sm-9">@Model.OwnerFullName</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.OwnerEmail"]</dt>
+            <dd class="col-sm-9">@Model.OwnerEmail</dd>
+            @if (!string.IsNullOrWhiteSpace(Model.OwnerPhone))
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.OwnerPhone"]</dt>
+                <dd class="col-sm-9">@Model.OwnerPhone</dd>
+            }
+        </dl>
+    </div>
+</div>
+
+@* Status and timestamps *@
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">@L["Admin.PendingReg.StatusInfo"]</div>
+    <div class="card-body">
+        <dl class="row small mb-0">
+            <dt class="col-sm-3 text-muted">@L["Common.Status"]</dt>
+            <dd class="col-sm-9"><span class="badge @StatusBadge(Model.Status)">@StatusLabel(Model.Status)</span></dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.CreatedAt"]</dt>
+            <dd class="col-sm-9">@Model.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            @if (Model.ExpiresAtUtc.HasValue)
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.ExpiresAt"]</dt>
+                <dd class="col-sm-9">@Model.ExpiresAtUtc.Value.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            }
+            @if (Model.PaymentSucceededAtUtc.HasValue)
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.PaymentSucceededAt"]</dt>
+                <dd class="col-sm-9">@Model.PaymentSucceededAtUtc.Value.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            }
+            @if (Model.PaymentFailedAtUtc.HasValue)
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.PaymentFailedAt"]</dt>
+                <dd class="col-sm-9">@Model.PaymentFailedAtUtc.Value.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            }
+            @if (Model.ProvisionedAtUtc.HasValue)
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.ProvisionedAt"]</dt>
+                <dd class="col-sm-9">@Model.ProvisionedAtUtc.Value.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+            }
+            @if (Model.TenantId.HasValue)
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.TenantId"]</dt>
+                <dd class="col-sm-9">
+                    @if (Model.TenantDomain is not null)
+                    {
+                        <a href="/admin/customers/@Model.TenantId" class="text-decoration-none">@Model.TenantId</a>
+                    }
+                    else
+                    {
+                        @Model.TenantId
+                    }
+                </dd>
+            }
+            @if (Model.TenantDomain is not null)
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.TenantDomain"]</dt>
+                <dd class="col-sm-9">
+                    <a href="https://@Model.TenantDomain/auth/login" target="_blank" rel="noopener noreferrer">
+                        @Model.TenantDomain <i class="bi bi-box-arrow-up-right small"></i>
+                    </a>
+                </dd>
+            }
+        </dl>
+    </div>
+</div>
+
+@* Actions *@
+<div class="d-flex flex-wrap gap-2 align-items-center">
+    <a class="btn btn-outline-secondary" href="/admin/pending-registrations">@L["Admin.BackToDashboard"]</a>
+
+    @if (Model.IsEligibleForProvisioning)
+    {
+        <button type="button"
+                class="btn btn-warning"
+                data-bs-toggle="modal"
+                data-bs-target="#confirmProvisionModal">
+            <i class="bi bi-cloud-upload me-1"></i>@L["Admin.PendingReg.Provision"]
+        </button>
+    }
+</div>
+
+@* Provision confirmation modal *@
+@if (Model.IsEligibleForProvisioning)
+{
+    <div class="modal fade" id="confirmProvisionModal" tabindex="-1" aria-labelledby="confirmProvisionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmProvisionModalLabel">@L["Admin.PendingReg.ProvisionConfirmTitle"]</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@string.Format(L["Admin.PendingReg.ProvisionConfirmMessage"].Value, Model.BusinessName, Model.Slug)</p>
+                    <p class="text-muted small mb-0">@L["Admin.PendingReg.ProvisionConfirmNote"]</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@L["Common.Cancel"]</button>
+                    <form method="post" action="/admin/pending-registrations/@Model.Id/provision" id="provisionForm">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning"
+                                id="provisionSubmitBtn"
+                                onclick="this.disabled=true;this.form.submit();">
+                            <i class="bi bi-cloud-upload me-1"></i>@L["Admin.PendingReg.ProvisionConfirm"]
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
