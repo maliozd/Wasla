@@ -23,6 +23,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly IEnumerable<IFoodPlatformClient> _platformClients;
     private readonly IOrderStatusMapper _statusMapper;
     private readonly IOrderAutoApproveService _autoApprove;
+    private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly ILogger<OrderSyncService> _logger;
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
@@ -59,12 +60,14 @@ public sealed class OrderSyncService : IOrderSyncService
         IEnumerable<IFoodPlatformClient> platformClients,
         IOrderStatusMapper statusMapper,
         IOrderAutoApproveService autoApprove,
+        IOrderReceiptCreationService receiptCreation,
         ILogger<OrderSyncService> logger)
     {
         _customerDbFactory = customerDbFactory;
         _platformClients = platformClients;
         _statusMapper = statusMapper;
         _autoApprove = autoApprove;
+        _receiptCreation = receiptCreation;
         _logger = logger;
     }
 
@@ -459,6 +462,13 @@ public sealed class OrderSyncService : IOrderSyncService
                     order.Id);
             }
 
+            await TryCreateReceiptIfProviderAcceptedAsync(
+                customerId,
+                order.Id,
+                oldStatus: null,
+                newStatus: order.InternalStatus,
+                ct).ConfigureAwait(false);
+
             return new OrderUpsertResult(true, false, false, false, order.ExternalOrderId);
         }
 
@@ -538,6 +548,13 @@ public sealed class OrderSyncService : IOrderSyncService
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         await tx.CommitAsync(ct).ConfigureAwait(false);
 
+        await TryCreateReceiptIfProviderAcceptedAsync(
+            customerId,
+            existing.Id,
+            oldStatus,
+            mergedStatus,
+            ct).ConfigureAwait(false);
+
         _logger.LogDebug(
             "Updated order {ExternalOrderId}. Status {OldStatus} -> {MergedStatus} (external mapped {ExternalMappedStatus}), Total {OldTotal} -> {NewTotal}, PlatformStatus {OldPlatformStatus} -> {NewPlatformStatus}",
             existing.ExternalOrderId,
@@ -550,6 +567,39 @@ public sealed class OrderSyncService : IOrderSyncService
             existing.PlatformStatus);
 
         return new OrderUpsertResult(false, true, false, false, existing.ExternalOrderId);
+    }
+
+    private async Task TryCreateReceiptIfProviderAcceptedAsync(
+        Guid customerId,
+        Guid orderId,
+        OrderStatus? oldStatus,
+        OrderStatus newStatus,
+        CancellationToken ct)
+    {
+        if (!ShouldCreateReceiptForAcceptedProviderStatus(oldStatus, newStatus))
+            return;
+
+        try
+        {
+            await _receiptCreation.TryCreateOnOrderAcceptedAsync(customerId, orderId, ct)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Receipt creation after provider-accepted order failed but sync continued. CustomerId={CustomerId}, OrderId={OrderId}",
+                customerId,
+                orderId);
+        }
+    }
+
+    private static bool ShouldCreateReceiptForAcceptedProviderStatus(OrderStatus? oldStatus, OrderStatus newStatus)
+    {
+        if (newStatus != OrderStatus.Accepted)
+            return false;
+
+        return oldStatus is null or not OrderStatus.Accepted;
     }
 
     private static Order MapToOrderEntity(ExternalOrderDto external, string idempotencyKey, DateTime receivedAtUtc, OrderStatus internalStatus, DateTime nowUtc)

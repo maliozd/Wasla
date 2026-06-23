@@ -37,7 +37,7 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
 
         var device = await _centralDb.PrintBridgeDevices
             .Include(d => d.Tenant)
-            .FirstOrDefaultAsync(d => d.TokenHash == tokenHash && d.IsActive, ct)
+            .FirstOrDefaultAsync(d => d.TokenHash == tokenHash && d.IsActive && d.RemovedAtUtc == null, ct)
             .ConfigureAwait(false);
 
         if (device is null)

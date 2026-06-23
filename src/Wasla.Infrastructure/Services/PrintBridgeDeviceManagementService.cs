@@ -10,14 +10,17 @@ namespace Wasla.Infrastructure.Services;
 public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManagementService
 {
     private readonly CentralDbContext _centralDb;
+    private readonly IPrintBridgeActivePrintJobChecker _activePrintJobChecker;
     private readonly ILogger<PrintBridgeDeviceManagementService> _logger;
 
     public PrintBridgeDeviceManagementService(
         CentralDbContext centralDb,
-        ILogger<PrintBridgeDeviceManagementService> logger)
+        ILogger<PrintBridgeDeviceManagementService> logger,
+        IPrintBridgeActivePrintJobChecker activePrintJobChecker)
     {
         _centralDb = centralDb;
         _logger = logger;
+        _activePrintJobChecker = activePrintJobChecker;
     }
 
     public async Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(
@@ -28,7 +31,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
 
         var rows = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .Where(d => d.TenantId == customerId)
+            .Where(d => d.TenantId == customerId && d.RemovedAtUtc == null)
             .OrderByDescending(d => d.LastSeenAt ?? d.CreatedAt)
             .Select(d => new
             {
@@ -60,7 +63,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
     {
         var activeCount = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .CountAsync(d => d.TenantId == customerId && d.IsActive, ct)
+            .CountAsync(d => d.TenantId == customerId && d.IsActive && d.RemovedAtUtc == null, ct)
             .ConfigureAwait(false);
 
         return BuildQuota(activeCount);
@@ -75,7 +78,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
 
         var device = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .Where(d => d.Id == deviceId && d.TenantId == customerId)
+            .Where(d => d.Id == deviceId && d.TenantId == customerId && d.RemovedAtUtc == null)
             .Select(d => new
             {
                 d.Id,
@@ -120,7 +123,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         CancellationToken ct)
     {
         var device = await _centralDb.PrintBridgeDevices
-            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId, ct)
+            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId && d.RemovedAtUtc == null, ct)
             .ConfigureAwait(false);
 
         if (device is null)
@@ -147,7 +150,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         CancellationToken ct)
     {
         var device = await _centralDb.PrintBridgeDevices
-            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId, ct)
+            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId && d.RemovedAtUtc == null, ct)
             .ConfigureAwait(false);
 
         if (device is null) return false;
@@ -156,7 +159,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         {
             var activeOthers = await _centralDb.PrintBridgeDevices
                 .AsNoTracking()
-                .CountAsync(d => d.TenantId == customerId && d.IsActive && d.Id != deviceId, ct)
+                .CountAsync(d => d.TenantId == customerId && d.IsActive && d.RemovedAtUtc == null && d.Id != deviceId, ct)
                 .ConfigureAwait(false);
 
             if (activeOthers >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)
@@ -176,6 +179,46 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         return true;
     }
 
+    public async Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(
+        Guid customerId,
+        Guid deviceId,
+        CancellationToken ct)
+    {
+        var device = await _centralDb.PrintBridgeDevices
+            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId, ct)
+            .ConfigureAwait(false);
+
+        if (device is null)
+            return new RemovePrintBridgeDeviceResult(
+                RemovePrintBridgeDeviceOutcome.NotFound,
+                "PrintBridge.DeviceNotFound");
+
+        if (device.RemovedAtUtc is not null)
+            return new RemovePrintBridgeDeviceResult(
+                RemovePrintBridgeDeviceOutcome.AlreadyRemoved,
+                "PrintBridge.DeviceAlreadyRemoved");
+
+        if (await _activePrintJobChecker.HasActivePrintingJobAsync(customerId, ct).ConfigureAwait(false))
+        {
+            return new RemovePrintBridgeDeviceResult(RemovePrintBridgeDeviceOutcome.ActivePrintJobInProgress, "PrintBridge.DeviceRemoveBlockedByActivePrintJob");
+        }
+
+        var now = DateTime.UtcNow;
+        device.RemovedAtUtc = now;
+        device.IsActive = false;
+        device.TokenHash = PrintBridgeTokenHasher.HashToken(PrintBridgeTokenHasher.GenerateRawToken());
+        device.UpdatedAt = now;
+
+        await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        _logger.LogInformation(
+            "Print Bridge device removed. DeviceId={DeviceId}, CustomerId={CustomerId}",
+            deviceId,
+            customerId);
+
+        return new RemovePrintBridgeDeviceResult(RemovePrintBridgeDeviceOutcome.Removed, "PrintBridge.DeviceRemoveSucceeded");
+    }
+
     public async Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(
         Guid customerId,
         Guid deviceId,
@@ -190,7 +233,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
             return new RenamePrintBridgeDeviceResult(false, "PrintBridge.RenameNameTooLong");
 
         var device = await _centralDb.PrintBridgeDevices
-            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId, ct)
+            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId && d.RemovedAtUtc == null, ct)
             .ConfigureAwait(false);
 
         if (device is null)
@@ -223,7 +266,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
 
         var activeCount = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .CountAsync(d => d.TenantId == customerId && d.IsActive, ct)
+            .CountAsync(d => d.TenantId == customerId && d.IsActive && d.RemovedAtUtc == null, ct)
             .ConfigureAwait(false);
 
         if (activeCount >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)

@@ -14,6 +14,9 @@
         _ => "text-bg-warning"
     };
     var activeBadgeClass = Model.IsActive ? "text-bg-success" : "text-bg-secondary";
+    var setActiveLabel = Model.IsActive ? L["PrintBridge.DisableDevice"] : L["PrintBridge.EnableDevice"];
+    var setActiveIcon = Model.IsActive ? "bi-pause-circle" : "bi-play-circle";
+    var removeConfirmMessage = L["PrintBridge.DeviceRemoveConfirmMessage", Model.Name].Value;
 }
 
 <div class="oh-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
@@ -26,14 +29,6 @@
         <h1 class="oh-customer-page-header__title h4 mb-1">@L["PrintBridge.DeviceDetailsTitle"]</h1>
         <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["PrintBridge.DeviceDetailsSubtitle"]</p>
     </div>
-    <div class="d-flex flex-wrap align-items-center gap-2">
-        <a class="btn btn-outline-secondary btn-sm" href="@Model.SetupUrl">
-            <i class="bi bi-arrow-repeat me-1"></i>@L["PrintBridge.SetupReconnectAction"]
-        </a>
-        <a class="btn btn-outline-secondary btn-sm" href="@Model.PrintJobsUrl">
-            <i class="bi bi-receipt me-1"></i>@L["PrintBridge.RecentPrintActivity"]
-        </a>
-    </div>
 </div>
 
 @if (TempData["PrintBridgeDeviceMessage"] is string successMessage)
@@ -45,10 +40,17 @@
     <div class="alert alert-danger small py-2" role="alert">@errorMessage</div>
 }
 
+<form id="printBridgeDeviceAntiForgery" method="post" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div id="printBridgeDeviceMessageHost"></div>
+
 <div class="row g-3">
     <div class="col-lg-5">
         <div class="card oh-card h-100">
             <div class="card-body">
+                <h2 class="h6 mb-3">@L["PrintBridge.DeviceIdentity"]</h2>
                 <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
                     <div>
                         <div class="text-muted small">@L["PrintBridge.WebDisplayName"]</div>
@@ -83,14 +85,8 @@
             <div class="card-body">
                 <h2 class="h6 mb-3">@L["PrintBridge.DeviceTechnicalInfo"]</h2>
                 <dl class="row small mb-0">
-                    <dt class="col-sm-5">@L["PrintBridge.WebDisplayName"]</dt>
-                    <dd class="col-sm-7">@Model.Name</dd>
-
                     <dt class="col-sm-5">@L["PrintBridge.MachineName"]</dt>
                     <dd class="col-sm-7">@Display(Model.MachineName)</dd>
-
-                    <dt class="col-sm-5">@L["PrintBridge.LocalAlias"]</dt>
-                    <dd class="col-sm-7">@Display(Model.LocalAlias)</dd>
 
                     <dt class="col-sm-5">@L["PrintBridge.ConnectionStatus"]</dt>
                     <dd class="col-sm-7"><span class="badge @connectionBadgeClass">@L[Model.ConnectionStatusLabelKey]</span></dd>
@@ -120,18 +116,218 @@
 
 <div class="card oh-card mt-3">
     <div class="card-body">
-        <h2 class="h6 mb-2">@L["Common.Actions"]</h2>
-        <div class="d-flex flex-wrap gap-2">
+        <h2 class="h6 mb-2">@L["PrintBridge.DeviceActions"]</h2>
+        <p class="text-muted small mb-3">@L["PrintBridge.DeviceTokenSafeNote"]</p>
+
+        <div id="printBridgeDetailTokenBox" class="d-none border rounded-3 p-3 mb-3 bg-body-tertiary" role="region" aria-live="polite">
+            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                <div class="flex-grow-1">
+                    <div class="form-label small fw-semibold mb-1">@L["PrintBridge.DeviceToken"]</div>
+                    <div id="printBridgeDetailTokenTitle" class="small fw-semibold text-warning-emphasis"></div>
+                    <div id="printBridgeDetailTokenNotice" class="text-muted small mt-1 mb-0"></div>
+                </div>
+                <button type="button" class="btn-close btn-close-sm mt-1" id="printBridgeDetailDismissTokenBtn"
+                        aria-label="@L["PrintBridge.DismissTokenBox"]"></button>
+            </div>
+            <div id="printBridgeDetailTokenWarning" class="alert alert-danger small py-2 mb-2 d-none" role="alert"></div>
+            <div class="d-flex flex-wrap align-items-stretch gap-2">
+                <pre id="printBridgeDetailTokenValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break oh-print-bridge-token-value"></pre>
+                <button type="button" class="btn btn-sm btn-primary align-self-start" id="printBridgeDetailCopyTokenBtn">
+                    <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyToken"]
+                </button>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
             <a class="btn btn-outline-secondary btn-sm" href="@Model.SetupUrl">
                 <i class="bi bi-arrow-repeat me-1"></i>@L["PrintBridge.SetupReconnectAction"]
             </a>
-            <a class="btn btn-outline-warning btn-sm" href="@Model.DevicesUrl">
+            <button type="button" class="btn btn-outline-warning btn-sm" id="printBridgeDetailRegenerateTokenBtn">
                 <i class="bi bi-key me-1"></i>@L["PrintBridge.RegenerateToken"]
-            </a>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="printBridgeDetailSetActiveBtn">
+                <i class="bi @setActiveIcon me-1"></i>@setActiveLabel
+            </button>
             <a class="btn btn-outline-secondary btn-sm" href="@Model.PrintJobsUrl">
                 <i class="bi bi-receipt me-1"></i>@L["PrintBridge.RecentPrintActivity"]
             </a>
         </div>
-        <p class="text-muted small mb-0 mt-2">@L["PrintBridge.DeviceTokenSafeNote"]</p>
     </div>
 </div>
+
+<div class="card border-danger mt-3">
+    <div class="card-body">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+            <div>
+                <h2 class="h6 text-danger mb-2">@L["PrintBridge.DeviceRemoveDangerTitle"]</h2>
+                <p class="small mb-2">@L["PrintBridge.DeviceRemoveConfirmMessage", Model.Name]</p>
+                <p class="text-muted small mb-0">@L["PrintBridge.DeviceDisableRemoveExplanation"]</p>
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#printBridgeRemoveDeviceModal">
+                <i class="bi bi-trash3 me-1"></i>@L["PrintBridge.RemoveDevice"]
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="printBridgeRemoveDeviceModal" tabindex="-1" aria-labelledby="printBridgeRemoveDeviceModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h6" id="printBridgeRemoveDeviceModalTitle">@L["PrintBridge.DeviceRemoveDangerTitle"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Cancel"]"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">@L["PrintBridge.DeviceRemoveConfirmMessage", Model.Name]</p>
+                <p class="text-muted small mb-0">@L["PrintBridge.DeviceDisableRemoveExplanation"]</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">@L["PrintBridge.DeviceRemoveCancel"]</button>
+                <form asp-action="RemoveDevice" asp-route-id="@Model.Id" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-sm">@L["PrintBridge.DeviceRemoveConfirm"]</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            "use strict";
+
+            var currentToken = null;
+            var endpoints = {
+                regenerate: "@Url.Action("RegenerateToken", "PrintBridge", new { area = "Tenant", deviceId = Model.Id })",
+                setActive: "@Url.Action("SetDeviceActive", "PrintBridge", new { area = "Tenant", deviceId = Model.Id })"
+            };
+            var messages = {
+                confirmRegenerateToken: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.ConfirmRegenerateToken", Model.Name].Value),
+                tokenRegenerateWarning: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenRegenerateWarning"].Value),
+                tokenRegenerateFailed: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenRegenerateFailed"].Value),
+                tokenMasked: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenMasked"].Value),
+                tokenCopied: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenCopied"].Value),
+                tokenCopyFailed: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenCopyFailed"].Value),
+                copied: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.Copied"].Value),
+                deviceUpdateFailed: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.DeviceUpdateFailed"].Value)
+            };
+
+            function getToken() {
+                var form = document.getElementById("printBridgeDeviceAntiForgery");
+                var el = form ? form.querySelector("input[name='__RequestVerificationToken']") : null;
+                return el ? el.value : "";
+            }
+
+            function showMessage(text, type) {
+                var host = document.getElementById("printBridgeDeviceMessageHost");
+                if (!host) return;
+                var cls = type === "danger" ? "alert-danger" : "alert-success";
+                host.innerHTML = '<div class="alert ' + cls + ' small py-2" role="alert">' + escapeHtml(text || "") + '</div>';
+            }
+
+            function escapeHtml(value) {
+                return String(value == null ? "" : value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+
+            function post(url, fields) {
+                var body = new URLSearchParams();
+                var token = getToken();
+                body.set("__RequestVerificationToken", token);
+                Object.keys(fields || {}).forEach(function (key) { body.set(key, fields[key]); });
+                return fetch(url, {
+                    method: "POST",
+                    headers: { "RequestVerificationToken": token, "X-Requested-With": "fetch" },
+                    body: body
+                }).then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().catch(function () { return {}; }).then(function (err) {
+                            throw new Error((err && err.message) || messages.deviceUpdateFailed);
+                        });
+                    }
+                    return resp.json();
+                });
+            }
+
+            function hideToken() {
+                currentToken = null;
+                var box = document.getElementById("printBridgeDetailTokenBox");
+                if (box) box.classList.add("d-none");
+            }
+
+            function showToken(data) {
+                currentToken = data && data.token;
+                var box = document.getElementById("printBridgeDetailTokenBox");
+                var value = document.getElementById("printBridgeDetailTokenValue");
+                var title = document.getElementById("printBridgeDetailTokenTitle");
+                var notice = document.getElementById("printBridgeDetailTokenNotice");
+                var warning = document.getElementById("printBridgeDetailTokenWarning");
+                if (!box || !value || !currentToken) return;
+                value.textContent = currentToken;
+                if (title) title.textContent = data.tokenTitle || "";
+                if (notice) notice.textContent = data.tokenNotice || "";
+                if (warning) {
+                    warning.textContent = data.tokenWarning || "";
+                    warning.classList.toggle("d-none", !data.tokenWarning);
+                }
+                box.classList.remove("d-none");
+                box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+
+            function copyCurrentToken(btn) {
+                if (!currentToken) {
+                    showMessage(messages.tokenMasked, "danger");
+                    return;
+                }
+                navigator.clipboard.writeText(currentToken).then(function () {
+                    var original = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check2 me-1"></i>' + escapeHtml(messages.copied);
+                    setTimeout(function () { btn.innerHTML = original; }, 1800);
+                }).catch(function () {
+                    showMessage(messages.tokenCopyFailed, "danger");
+                });
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                hideToken();
+
+                var regenerateBtn = document.getElementById("printBridgeDetailRegenerateTokenBtn");
+                if (regenerateBtn) {
+                    regenerateBtn.addEventListener("click", function () {
+                        var confirmText = messages.confirmRegenerateToken + "\n\n" + messages.tokenRegenerateWarning;
+                        if (!window.confirm(confirmText)) return;
+                        regenerateBtn.disabled = true;
+                        post(endpoints.regenerate, {})
+                            .then(function (data) {
+                                showToken(data);
+                                if (data.message) showMessage(data.message, "success");
+                            })
+                            .catch(function () { showMessage(messages.tokenRegenerateFailed, "danger"); })
+                            .finally(function () { regenerateBtn.disabled = false; });
+                    });
+                }
+
+                var setActiveBtn = document.getElementById("printBridgeDetailSetActiveBtn");
+                if (setActiveBtn) {
+                    setActiveBtn.addEventListener("click", function () {
+                        setActiveBtn.disabled = true;
+                        post(endpoints.setActive, { isActive: "@(!Model.IsActive ? "true" : "false")" })
+                            .then(function () { window.location.reload(); })
+                            .catch(function (e) { showMessage(e.message || messages.deviceUpdateFailed, "danger"); })
+                            .finally(function () { setActiveBtn.disabled = false; });
+                    });
+                }
+
+                var copyBtn = document.getElementById("printBridgeDetailCopyTokenBtn");
+                if (copyBtn) copyBtn.addEventListener("click", function () { copyCurrentToken(copyBtn); });
+
+                var dismissBtn = document.getElementById("printBridgeDetailDismissTokenBtn");
+                if (dismissBtn) dismissBtn.addEventListener("click", hideToken);
+            });
+        })();
+    </script>
+}

@@ -3153,6 +3153,20 @@
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Setup / reconnect</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Recent print activity</value></data>
   <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>The raw device token and token hash are not shown on this page.</value></data>
+  <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Identity</value></data>
+  <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Device actions</value></data>
+  <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Enable device</value></data>
+  <data name="PrintBridge.DisableDevice" xml:space="preserve"><value>Disable device</value></data>
+  <data name="PrintBridge.RemoveDevice" xml:space="preserve"><value>Remove device</value></data>
+  <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>Remove this device?</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>The token for “{0}” will be revoked and its Print Bridge connection will stop. Print history will not be deleted.</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>Remove device</value></data>
+  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>Disable is temporary and reversible. Remove retires the device, revokes its token, hides it from setup/management flows, and preserves history.</value></data>
+  <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>Device removed. Print history is preserved.</value></data>
+  <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>This device has already been removed.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailed" xml:space="preserve"><value>Could not remove device.</value></data>
+  <data name="PrintBridge.DeviceRemoveBlockedByActivePrintJob" xml:space="preserve"><value>Device removal is temporarily unavailable while a print job is active.</value></data>
   <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>Device name saved.</value></data>
   <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>Could not save device name.</value></data>
   <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Device name is required.</value></data>

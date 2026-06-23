@@ -34,7 +34,10 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
 
         _tenantId = SeedTenant();
 
-        _devices = new PrintBridgeDeviceManagementService(_db, NullLogger<PrintBridgeDeviceManagementService>.Instance);
+        _devices = new PrintBridgeDeviceManagementService(
+            _db,
+            NullLogger<PrintBridgeDeviceManagementService>.Instance,
+            NoActivePrintJobChecker.Instance);
         _deviceId = _devices.CreateDeviceAsync(_tenantId, "Kitchen PC", CancellationToken.None)
             .GetAwaiter().GetResult().DeviceId;
 
@@ -140,6 +143,26 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateSession_ReconnectRemovedDevice_IsRejected()
+    {
+        var device = await _db.PrintBridgeDevices
+            .SingleAsync(d => d.Id == _deviceId, TestContext.Current.CancellationToken);
+        device.RemovedAtUtc = DateTime.UtcNow;
+        device.IsActive = false;
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAsync<PrintBridgeSetupDeviceNotFoundException>(() =>
+            _service.CreateSessionAsync(
+                _tenantId,
+                PrintBridgeSetupMode.ReconnectExistingDevice,
+                _deviceId,
+                ServerUrl,
+                null,
+                confirmReplaceActiveToken: true,
+                CancellationToken.None));
+    }
+
+    [Fact]
     public async Task CreateSession_NewDevice_NoDeviceCreatedAndExistingTokenUnchanged()
     {
         var deviceCountBefore = await _db.PrintBridgeDevices
@@ -186,6 +209,59 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
 
         var result = await auth.AuthenticateAsync(
             created.Code,
+            new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1"),
+            CancellationToken.None);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ActiveNonRemovedToken_Authenticates()
+    {
+        var created = await _devices.CreateDeviceAsync(_tenantId, "Auth PC", CancellationToken.None);
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+
+        var result = await auth.AuthenticateAsync(
+            created.RawToken,
+            new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1"),
+            CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal(created.DeviceId, result!.DeviceId);
+    }
+
+    [Fact]
+    public async Task RemovedDeviceToken_DoesNotAuthenticate()
+    {
+        var created = await _devices.CreateDeviceAsync(_tenantId, "Removed Auth PC", CancellationToken.None);
+        var device = await _db.PrintBridgeDevices
+            .SingleAsync(d => d.Id == created.DeviceId, TestContext.Current.CancellationToken);
+        device.RemovedAtUtc = DateTime.UtcNow;
+        device.IsActive = false;
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+
+        var result = await auth.AuthenticateAsync(
+            created.RawToken,
+            new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1"),
+            CancellationToken.None);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task RemovedDeviceToken_DoesNotAuthenticateEvenIfAccidentallyActive()
+    {
+        var created = await _devices.CreateDeviceAsync(_tenantId, "Removed Active PC", CancellationToken.None);
+        var device = await _db.PrintBridgeDevices
+            .SingleAsync(d => d.Id == created.DeviceId, TestContext.Current.CancellationToken);
+        device.RemovedAtUtc = DateTime.UtcNow;
+        device.IsActive = true;
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+
+        var result = await auth.AuthenticateAsync(
+            created.RawToken,
             new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1"),
             CancellationToken.None);
 
@@ -606,7 +682,10 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
     }
 
     private static PrintBridgeDeviceManagementService CreateDeviceService(CentralDbContext db) =>
-        new(db, NullLogger<PrintBridgeDeviceManagementService>.Instance);
+        new(
+            db,
+            NullLogger<PrintBridgeDeviceManagementService>.Instance,
+            NoActivePrintJobChecker.Instance);
 
     private static PrintBridgeSetupSessionService CreateSetupService(
         CentralDbContext db,
@@ -628,6 +707,18 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
 
         public Task<int> AcquireNewDeviceExchangeLockAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult(0);
+    }
+
+    private sealed class NoActivePrintJobChecker : IPrintBridgeActivePrintJobChecker
+    {
+        public static NoActivePrintJobChecker Instance { get; } = new();
+
+        private NoActivePrintJobChecker()
+        {
+        }
+
+        public Task<bool> HasActivePrintingJobAsync(Guid customerId, CancellationToken ct) =>
+            Task.FromResult(false);
     }
 
     private sealed class FixedTenantLockResult : IPrintBridgeSetupTenantLock

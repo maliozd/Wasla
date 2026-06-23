@@ -112,6 +112,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserNotificationSettingsService, UserNotificationSettingsService>();
         services.AddScoped<IPrintBridgeAuthService, PrintBridgeAuthService>();
         services.AddScoped<IPrintBridgeJobService, PrintBridgeJobService>();
+        services.AddScoped<IPrintBridgeActivePrintJobChecker, PrintBridgeActivePrintJobChecker>();
         services.AddScoped<IPrintBridgeDeviceManagementService, PrintBridgeDeviceManagementService>();
         services.AddScoped<IPrintBridgeSetupTenantLock, SqlServerPrintBridgeSetupTenantLock>();
         services.AddScoped<IPrintBridgeSetupSessionService, PrintBridgeSetupSessionService>();

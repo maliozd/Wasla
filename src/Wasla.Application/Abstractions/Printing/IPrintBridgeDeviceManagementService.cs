@@ -46,6 +46,24 @@ public sealed record RenamePrintBridgeDeviceResult(
     bool Success,
     string? ErrorKey = null);
 
+public enum RemovePrintBridgeDeviceOutcome
+{
+    Removed,
+    AlreadyRemoved,
+    NotFound,
+    ActivePrintJobInProgress,
+    Failed
+}
+
+public sealed record RemovePrintBridgeDeviceResult(
+    RemovePrintBridgeDeviceOutcome Outcome,
+    string MessageKey)
+{
+    public bool Success =>
+        Outcome is RemovePrintBridgeDeviceOutcome.Removed
+            or RemovePrintBridgeDeviceOutcome.AlreadyRemoved;
+}
+
 public static class PrintBridgeDeviceNameRules
 {
     public const int MaxWebDisplayNameLength = 100;
@@ -78,9 +96,19 @@ public interface IPrintBridgeDeviceManagementService
         bool isActive,
         CancellationToken ct);
 
+    Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(
+        Guid customerId,
+        Guid deviceId,
+        CancellationToken ct);
+
     Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(
         Guid customerId,
         Guid deviceId,
         string deviceName,
         CancellationToken ct);
+}
+
+public interface IPrintBridgeActivePrintJobChecker
+{
+    Task<bool> HasActivePrintingJobAsync(Guid customerId, CancellationToken ct);
 }

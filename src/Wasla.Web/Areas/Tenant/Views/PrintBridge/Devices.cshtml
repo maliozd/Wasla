@@ -15,7 +15,6 @@
         isConnected = d.IsConnected,
         lastSeenAtUtc = d.LastSeenAtUtc,
         machineName = d.MachineName,
-        localAlias = d.LocalAlias,
         printerName = d.PrinterName,
         appVersion = d.AppVersion,
         detailsUrl = Url.Action("DeviceDetails", "PrintBridge", new { area = "Tenant", id = d.Id })
@@ -42,21 +41,9 @@
 
     var pbMessages = new
     {
-        tokenRegenerated = L["PrintBridge.TokenRegenerated"].Value,
-        tokenShownOnce = L["PrintBridge.TokenShownOnce"].Value,
-        oldTokenInvalidAfterRegenerate = L["PrintBridge.OldTokenInvalidAfterRegenerate"].Value,
-        tokenNotAvailableRegenerate = L["PrintBridge.TokenNotAvailableRegenerate"].Value,
-        confirmRegenerateToken = L["PrintBridge.ConfirmRegenerateToken"].Value,
-        tokenRegenerateWarning = L["PrintBridge.TokenRegenerateWarning"].Value,
-        tokenRegenerateFailed = L["PrintBridge.TokenRegenerateFailed"].Value,
-        copyToken = L["PrintBridge.CopyToken"].Value,
-        tokenCopied = L["PrintBridge.TokenCopied"].Value,
-        tokenCopyFailed = L["PrintBridge.TokenCopyFailed"].Value,
-        dismissTokenBox = L["PrintBridge.DismissTokenBox"].Value,
         ordersActive = L["Orders.Active"].Value,
         ordersPassive = L["Orders.Passive"].Value,
         deviceUpdateFailed = L["PrintBridge.DeviceUpdateFailed"].Value,
-        tokenMasked = L["PrintBridge.TokenMasked"].Value,
         deviceLimitReached = L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount].Value,
         deviceLimitExceededWarning = L["PrintBridge.DeviceLimitExceededWarning"].Value,
         deactivateExtraDevices = L["PrintBridge.DeactivateExtraDevices"].Value,
@@ -74,7 +61,6 @@
         lastSeenNever = L["PrintBridge.LastSeenNever"].Value,
         versionUnknown = L["PrintBridge.VersionUnknown"].Value,
         deviceName = L["PrintBridge.DeviceName"].Value,
-        localAlias = L["PrintBridge.LocalAlias"].Value,
         status = L["PrintBridge.Status"].Value,
         appVersion = L["PrintBridge.AppVersion"].Value,
         machineName = L["PrintBridge.MachineName"].Value,
@@ -82,7 +68,6 @@
         printerName = L["PrintBridge.PrinterName"].Value,
         deviceActive = L["PrintBridge.DeviceActive"].Value,
         actions = L["Common.Actions"].Value,
-        regenerateToken = L["PrintBridge.RegenerateToken"].Value,
         emptyValue = "—",
         lastConnectedNone = L["PrintBridge.LastConnectedNone"].Value,
         printJobsTitle = L["PrintBridge.PrintJobsTitle"].Value,
@@ -102,7 +87,6 @@
         printJobStatusPrinted = L["PrintBridge.PrintJobStatusPrinted"].Value,
         printJobStatusFailed = L["PrintBridge.PrintJobStatusFailed"].Value,
         printJobStatusCancelled = L["PrintBridge.PrintJobStatusCancelled"].Value,
-        deviceToken = L["PrintBridge.DeviceToken"].Value,
         copied = L["PrintBridge.Copied"].Value,
         copyFailed = L["PrintBridge.CopyFailed"].Value
     };
@@ -130,6 +114,14 @@
 </div>
 
 <div id="printBridgeMessageHost"></div>
+@if (TempData["PrintBridgeDeviceMessage"] is string successMessage)
+{
+    <div class="alert alert-success small py-2" role="alert">@successMessage</div>
+}
+@if (TempData["PrintBridgeDeviceError"] is string errorMessage)
+{
+    <div class="alert alert-danger small py-2" role="alert">@errorMessage</div>
+}
 
 <form id="printBridgeAntiForgery" method="post" class="d-none">
     @Html.AntiForgeryToken()
@@ -191,25 +183,6 @@
             </a>
         </div>
 
-        <div id="printBridgeTokenBox" class="d-none border rounded-3 p-3 mb-3 bg-body-tertiary" role="region" aria-live="polite">
-            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                <div class="flex-grow-1">
-                    <div class="form-label small fw-semibold mb-1">@L["PrintBridge.DeviceToken"]</div>
-                    <div id="printBridgeTokenTitle" class="small fw-semibold text-warning-emphasis"></div>
-                    <div id="printBridgeTokenNotice" class="text-muted small mt-1 mb-0"></div>
-                </div>
-                <button type="button" class="btn-close btn-close-sm mt-1" id="printBridgeDismissTokenBtn"
-                        aria-label="@L["PrintBridge.DismissTokenBox"]"></button>
-            </div>
-            <div id="printBridgeTokenWarning" class="alert alert-danger small py-2 mb-2 d-none" role="alert"></div>
-            <div class="d-flex flex-wrap align-items-stretch gap-2">
-                <pre id="printBridgeTokenValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break oh-print-bridge-token-value"></pre>
-                <button type="button" class="btn btn-sm btn-primary align-self-start" id="printBridgeCopyTokenBtn">
-                    <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyToken"]
-                </button>
-            </div>
-        </div>
-
         <div id="printBridgeDevicesPanel"></div>
 
         <p class="small text-muted mb-0 mt-3">
@@ -242,7 +215,6 @@
         window.OrderHubPrintBridge = {
             messages: @Html.Raw(pbMessagesJson),
             devicesUrl: "/print-bridge/devices/list",
-            regenerateTokenUrlTemplate: "/print-bridge/devices/{id}/regenerate-token",
             setActiveUrlTemplate: "/print-bridge/devices/{id}/set-active",
             printJobsUrl: "/print-bridge/print-jobs",
             reprintUrlTemplate: "/print-bridge/print-jobs/{id}/reprint",

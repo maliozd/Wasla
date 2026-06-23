@@ -861,6 +861,20 @@
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Kurulum / yeniden bağlama</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Son yazdırma hareketleri</value></data>
   <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Ham cihaz token'ı ve token hash'i bu sayfada gösterilmez.</value></data>
+  <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Kimlik</value></data>
+  <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Cihaz işlemleri</value></data>
+  <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Cihazı etkinleştir</value></data>
+  <data name="PrintBridge.DisableDevice" xml:space="preserve"><value>Cihazı devre dışı bırak</value></data>
+  <data name="PrintBridge.RemoveDevice" xml:space="preserve"><value>Cihazı kaldır</value></data>
+  <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>Cihaz kaldırılsın mı?</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>“{0}” cihazının token’ı geçersiz olacak ve Print Bridge bağlantısı duracaktır. Yazdırma geçmişi silinmeyecektir.</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>Cihazı kaldır</value></data>
+  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>Devre dışı bırakma geçici ve geri alınabilir. Kaldırma cihazı emekliye ayırır, token'ını iptal eder, kurulum/yönetim akışlarından gizler ve geçmişi korur.</value></data>
+  <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>Cihaz kaldırıldı. Yazdırma geçmişi korunur.</value></data>
+  <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>Cihaz zaten kaldırılmış.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailed" xml:space="preserve"><value>Cihaz kaldırılamadı.</value></data>
+  <data name="PrintBridge.DeviceRemoveBlockedByActivePrintJob" xml:space="preserve"><value>Devam eden bir yazdırma işi varken cihaz kaldırma geçici olarak kullanılamaz.</value></data>
   <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>Cihaz adı kaydedildi.</value></data>
   <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>Cihaz adı kaydedilemedi.</value></data>
   <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Cihaz adı boş olamaz.</value></data>

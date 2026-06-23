@@ -3153,6 +3153,20 @@
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>الإعداد / إعادة التوصيل</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>نشاط الطباعة الأخير</value></data>
   <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>لا يتم عرض رمز الجهاز الخام أو تجزئة الرمز في هذه الصفحة.</value></data>
+  <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>الهوية</value></data>
+  <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>إجراءات الجهاز</value></data>
+  <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>تفعيل الجهاز</value></data>
+  <data name="PrintBridge.DisableDevice" xml:space="preserve"><value>تعطيل الجهاز</value></data>
+  <data name="PrintBridge.RemoveDevice" xml:space="preserve"><value>إزالة الجهاز</value></data>
+  <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>هل تريد إزالة هذا الجهاز؟</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>سيتم إبطال رمز الجهاز “{0}” وسيتوقف اتصال Print Bridge. لن يتم حذف سجل الطباعة.</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>إزالة الجهاز</value></data>
+  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>التعطيل مؤقت ويمكن التراجع عنه. الإزالة تُحيل الجهاز للتقاعد، وتبطل رمزه، وتخفيه من مسارات الإعداد والإدارة، مع الحفاظ على السجل.</value></data>
+  <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>تمت إزالة الجهاز. تم الحفاظ على سجل الطباعة.</value></data>
+  <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>تمت إزالة هذا الجهاز مسبقًا.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailed" xml:space="preserve"><value>تعذرت إزالة الجهاز.</value></data>
+  <data name="PrintBridge.DeviceRemoveBlockedByActivePrintJob" xml:space="preserve"><value>إزالة الجهاز غير متاحة مؤقتًا أثناء وجود مهمة طباعة نشطة.</value></data>
   <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>تم حفظ اسم الجهاز.</value></data>
   <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>تعذر حفظ اسم الجهاز.</value></data>
   <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>اسم الجهاز مطلوب.</value></data>

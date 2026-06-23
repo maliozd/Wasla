@@ -104,6 +104,27 @@ public sealed class PrintBridgeController : BaseController
         return RedirectToAction(nameof(DeviceDetails), new { id });
     }
 
+    [ValidateAntiForgeryToken]
+    [HttpPost("devices/{id:guid}/remove")]
+    public async Task<IActionResult> RemoveDevice(Guid id, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var result = await _devices.RemoveDeviceAsync(tenant.Id, id, ct).ConfigureAwait(false);
+        if (result.Outcome == RemovePrintBridgeDeviceOutcome.NotFound)
+            return NotFound();
+
+        if (!result.Success)
+        {
+            TempData["PrintBridgeDeviceError"] = _localizer[result.MessageKey].Value;
+            return RedirectToAction(nameof(DeviceDetails), new { id });
+        }
+
+        TempData["PrintBridgeDeviceMessage"] = _localizer[result.MessageKey].Value;
+        return RedirectToAction(nameof(Devices));
+    }
+
     [HttpGet("setup")]
     public async Task<IActionResult> Setup(CancellationToken ct)
     {

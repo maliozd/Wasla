@@ -281,7 +281,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
 
         var device = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.Id == deviceId.Value && d.TenantId == tenantId, ct)
+            .FirstOrDefaultAsync(d => d.Id == deviceId.Value && d.TenantId == tenantId && d.RemovedAtUtc == null, ct)
             .ConfigureAwait(false);
 
         if (device is null)
@@ -327,7 +327,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                 {
                     // Quota check inside the transaction so concurrent exchanges cannot both succeed when at limit.
                     var activeCount = await _centralDb.PrintBridgeDevices
-                        .CountAsync(d => d.TenantId == session.TenantId && d.IsActive, ct)
+                        .CountAsync(d => d.TenantId == session.TenantId && d.IsActive && d.RemovedAtUtc == null, ct)
                         .ConfigureAwait(false);
 
                     if (activeCount >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)
@@ -409,13 +409,12 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         return null;
     }
 
-    private static string ToPersistedSetupMode(PrintBridgeSetupMode setupMode) =>
-        setupMode switch
-        {
+    private static string ToPersistedSetupMode(PrintBridgeSetupMode setupMode) => setupMode switch
+    {
             PrintBridgeSetupMode.NewDevice => PrintBridgeSetupModeValues.NewDevice,
             PrintBridgeSetupMode.ReconnectExistingDevice => PrintBridgeSetupModeValues.ReconnectExisting,
             _ => throw new InvalidOperationException("Unsupported Print Bridge setup mode.")
-        };
+    };
 
     private static bool TryParsePersistedSetupMode(string? value, out PrintBridgeSetupMode setupMode)
     {

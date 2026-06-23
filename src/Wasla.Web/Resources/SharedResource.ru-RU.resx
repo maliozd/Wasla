@@ -3637,6 +3637,20 @@
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Настройка / повторное подключение</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Последняя активность печати</value></data>
   <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Исходный токен устройства и хэш токена на этой странице не отображаются.</value></data>
+  <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Идентификация</value></data>
+  <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Действия устройства</value></data>
+  <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Включить устройство</value></data>
+  <data name="PrintBridge.DisableDevice" xml:space="preserve"><value>Отключить устройство</value></data>
+  <data name="PrintBridge.RemoveDevice" xml:space="preserve"><value>Удалить устройство</value></data>
+  <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>Удалить это устройство?</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>Токен устройства “{0}” будет отозван, и подключение Print Bridge остановится. История печати не будет удалена.</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>Удалить устройство</value></data>
+  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>Отключение временное и обратимое. Удаление переводит устройство в архив, отзывает токен, скрывает его из настройки и управления, сохраняя историю.</value></data>
+  <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>Устройство удалено. История печати сохранена.</value></data>
+  <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>Это устройство уже удалено.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailed" xml:space="preserve"><value>Не удалось удалить устройство.</value></data>
+  <data name="PrintBridge.DeviceRemoveBlockedByActivePrintJob" xml:space="preserve"><value>Удаление устройства временно недоступно, пока активна задача печати.</value></data>
   <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>Имя устройства сохранено.</value></data>
   <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>Не удалось сохранить имя устройства.</value></data>
   <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Введите имя устройства.</value></data>

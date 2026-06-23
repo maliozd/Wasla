@@ -6,15 +6,10 @@
   if (!cfg) return;
 
   var messages = cfg.messages || {};
-  var currentToken = null;
   var lastQuota = null;
   var reprintInFlight = {};
   var printJobsRefreshInFlight = false;
   var printJobsPollTimer = null;
-
-  function formatMsg(template, value) {
-    return String(template || "").replace("{0}", String(value == null ? "" : value));
-  }
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -40,104 +35,6 @@
       '<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Close"></button></div>';
   }
 
-  function copyText(text, button, options) {
-    options = options || {};
-    if (!text) return Promise.reject(new Error("empty"));
-
-    var successMessage = options.successMessage || messages.copied || "Copied";
-
-    function onSuccess() {
-      if (!button) return;
-      var original = button.innerHTML;
-      var originalClass = button.className;
-      button.innerHTML = '<i class="bi bi-check2 me-1"></i>' + escapeHtml(successMessage);
-      button.classList.add("btn-success");
-      button.classList.remove("btn-outline-secondary", "btn-outline-dark", "btn-primary");
-      setTimeout(function () {
-        button.innerHTML = original;
-        button.className = originalClass;
-      }, 1800);
-    }
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text).then(onSuccess);
-    }
-
-    var ta = document.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "");
-    ta.style.position = "absolute";
-    ta.style.left = "-9999px";
-    document.body.appendChild(ta);
-    ta.select();
-    try {
-      document.execCommand("copy");
-      onSuccess();
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    } finally {
-      document.body.removeChild(ta);
-    }
-  }
-
-  function hideToken() {
-    currentToken = null;
-    var box = document.getElementById("printBridgeTokenBox");
-    var value = document.getElementById("printBridgeTokenValue");
-    var title = document.getElementById("printBridgeTokenTitle");
-    var notice = document.getElementById("printBridgeTokenNotice");
-    var warning = document.getElementById("printBridgeTokenWarning");
-    if (!box || !value) return;
-
-    box.classList.add("d-none");
-    value.textContent = "";
-    if (title) title.textContent = "";
-    if (notice) notice.textContent = "";
-    if (warning) {
-      warning.textContent = "";
-      warning.classList.add("d-none");
-    }
-  }
-
-  function showToken(token, options) {
-    options = options || {};
-    currentToken = token || null;
-    var box = document.getElementById("printBridgeTokenBox");
-    var value = document.getElementById("printBridgeTokenValue");
-    var title = document.getElementById("printBridgeTokenTitle");
-    var notice = document.getElementById("printBridgeTokenNotice");
-    var warning = document.getElementById("printBridgeTokenWarning");
-    if (!box || !value) return;
-
-    if (!currentToken) {
-      hideToken();
-      return;
-    }
-
-    var mode = options.mode || "create";
-    var titleText = options.title
-      || (mode === "regenerate" ? messages.tokenRegenerated : messages.tokenCreated)
-      || "";
-    var noticeText = options.notice || messages.tokenShownOnce || "";
-    var warningText = options.warning || "";
-
-    if (title) title.textContent = titleText;
-    if (notice) notice.textContent = noticeText;
-    if (warning) {
-      if (warningText) {
-        warning.textContent = warningText;
-        warning.classList.remove("d-none");
-      } else {
-        warning.textContent = "";
-        warning.classList.add("d-none");
-      }
-    }
-
-    value.textContent = currentToken;
-    box.classList.remove("d-none");
-    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
 
   function postForm(url, fields) {
     var token = getAntiForgeryToken();
@@ -291,7 +188,6 @@
               ? '<div class="text-muted small">' + escapeHtml(messages.printerName || "Printer") + ': ' + escapeHtml(printerHint) + '</div>'
               : '') +
           '</td>' +
-          '<td class="text-muted small">' + escapeHtml(displayValue(device.localAlias)) + '</td>' +
           '<td>' +
             '<div class="d-flex flex-wrap align-items-center gap-1">' +
               '<span class="badge ' + connection.cls + '">' + escapeHtml(connection.text) + '</span>' +
@@ -301,7 +197,7 @@
           '<td class="text-muted small text-nowrap">' + escapeHtml(formatLastSeen(device.lastSeenAtUtc)) + '</td>' +
           '<td class="text-muted small">' + escapeHtml(formatVersion(device.appVersion)) + '</td>' +
           '<td>' +
-            '<div class="d-flex flex-wrap align-items-center gap-2">' +
+            '<div class="d-flex align-items-center justify-content-end gap-2 text-nowrap">' +
               '<div class="form-check form-switch m-0">' +
                 '<input class="form-check-input pb-device-active-toggle" type="checkbox" role="switch" ' +
                   'data-device-id="' + escapeHtml(device.id) + '" ' +
@@ -311,10 +207,6 @@
               '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(detailsUrl) + '">' +
                 '<i class="bi bi-info-circle me-1"></i>' + escapeHtml(messages.details || "Details") +
               '</a>' +
-              '<button type="button" class="btn btn-sm btn-outline-secondary pb-regenerate-token-btn" ' +
-                'data-device-id="' + escapeHtml(device.id) + '" data-device-name="' + escapeHtml(device.name) + '">' +
-                '<i class="bi bi-arrow-repeat me-1"></i>' + escapeHtml(messages.regenerateToken || "Regenerate") +
-              '</button>' +
             '</div>' +
           '</td>' +
         '</tr>'
@@ -326,7 +218,6 @@
         '<table class="table table-sm align-middle mb-0 oh-print-bridge-devices-table">' +
           '<thead><tr>' +
             '<th>' + escapeHtml(messages.deviceName || "Device") + '</th>' +
-            '<th>' + escapeHtml(messages.localAlias || "Local alias") + '</th>' +
             '<th>' + escapeHtml(messages.status || "Status") + '</th>' +
             '<th>' + escapeHtml(messages.lastSeen || "Last seen") + '</th>' +
             '<th>' + escapeHtml(messages.appVersion || "Version") + '</th>' +
@@ -336,7 +227,6 @@
         '</table>' +
       '</div>';
 
-    bindRegenerateButtons();
     bindActiveToggles();
   }
 
@@ -386,46 +276,6 @@
       return refreshDevices();
     }
     return Promise.resolve(data);
-  }
-
-  function bindRegenerateButtons() {
-    document.querySelectorAll(".pb-regenerate-token-btn").forEach(function (btn) {
-      if (btn.getAttribute("data-bound") === "1") return;
-      btn.setAttribute("data-bound", "1");
-
-      btn.addEventListener("click", function () {
-        var deviceId = btn.getAttribute("data-device-id");
-        var deviceName = btn.getAttribute("data-device-name") || "";
-        if (!deviceId) return;
-
-        var confirmText = formatMsg(messages.confirmRegenerateToken || "Regenerate token for {0}?", deviceName);
-        if (messages.tokenRegenerateWarning) {
-          confirmText += "\n\n" + messages.tokenRegenerateWarning;
-        }
-        if (!window.confirm(confirmText)) return;
-
-        btn.disabled = true;
-        var url = (cfg.regenerateTokenUrlTemplate || "").replace("{id}", deviceId);
-
-        postForm(url, {})
-          .then(function (data) {
-            showToken(data.token, {
-              mode: data.tokenMode || "regenerate",
-              title: data.tokenTitle,
-              notice: data.tokenNotice,
-              warning: data.tokenWarning
-            });
-            if (data.message) showMessage(data.message, "success");
-            return applyMutationResponse(data);
-          })
-          .catch(function () {
-            showMessage(messages.tokenRegenerateFailed || "Failed", "danger");
-          })
-          .finally(function () {
-            btn.disabled = false;
-          });
-      });
-    });
   }
 
   function bindActiveToggles() {
@@ -554,56 +404,10 @@
     });
   }
 
-  function bindServerUrlCopy() {
-    var btn = document.getElementById("printBridgeCopyServerUrlBtn");
-    var valueEl = document.getElementById("printBridgeServerUrlValue");
-    if (!btn || !valueEl) return;
-
-    btn.addEventListener("click", function () {
-      var text = (valueEl.textContent || "").trim();
-      if (!text) {
-        text = (cfg.serverUrl || "").trim();
-      }
-      if (!text) {
-        showMessage(messages.copyFailed || "Copy failed", "danger");
-        return;
-      }
-      copyText(text, btn, { successMessage: messages.copied || messages.tokenCopied })
-        .catch(function () {
-          showMessage(messages.copyFailed || messages.tokenCopyFailed, "danger");
-        });
-    });
-  }
-
-  function bindTokenActions() {
-    var copyTokenBtn = document.getElementById("printBridgeCopyTokenBtn");
-    if (copyTokenBtn) {
-      copyTokenBtn.addEventListener("click", function () {
-        if (!currentToken) {
-          showMessage(messages.tokenMasked || messages.tokenNotAvailableRegenerate, "danger");
-          return;
-        }
-        copyText(currentToken, copyTokenBtn, { successMessage: messages.tokenCopied })
-          .catch(function () {
-            showMessage(messages.tokenCopyFailed, "danger");
-          });
-      });
-    }
-
-    var dismissTokenBtn = document.getElementById("printBridgeDismissTokenBtn");
-    if (dismissTokenBtn) {
-      dismissTokenBtn.addEventListener("click", function () {
-        hideToken();
-      });
-    }
-  }
-
   document.addEventListener("DOMContentLoaded", function () {
-    hideToken();
     if (cfg.initialState) {
       renderAll(cfg.initialState);
     }
-    bindTokenActions();
     bindPrintJobReprintDelegation();
     bindRefreshPrintJobs();
     startPrintJobsPolling();
