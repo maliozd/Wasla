@@ -808,6 +808,7 @@
   <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge başarıyla bağlandı.</value></data>
   <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>Ayarlar kaydedildi ancak bağlantı henüz doğrulanamadı.</value></data>
   <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>Kurulum tamamlanamadı. Tekrar deneyin veya manuel kurulumu kullanın.</value></data>
+  <data name="PrintBridge.Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Bu bilgisayardaki Print Bridge zaten aktif bir cihaz olarak kayıtlı. Yeni cihaz kurmak yerine "Mevcut cihazı yeniden bağla" seçeneğini kullanın veya önce eski cihaz kaydını kaldırın.</value></data>
   <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>Bu kurulum bağlantısının süresi doldu. Yeni bir bağlantı oluşturun.</value></data>
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Kurulum başlatılamadı. Lütfen tekrar deneyin.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Yeniden açmayı dene</value></data>

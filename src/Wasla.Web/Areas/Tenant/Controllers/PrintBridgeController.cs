@@ -256,9 +256,18 @@ public sealed class PrintBridgeController : BaseController
             success = true,
             status = status.Status.ToString(),
             connectionVerified = status.ConnectionVerified,
-            expiresAtUtc = status.ExpiresAtUtc
+            expiresAtUtc = status.ExpiresAtUtc,
+            message = MapSetupFailureMessage(status.FailureReason)
         });
     }
+
+    private string? MapSetupFailureMessage(string? failureReason) =>
+        string.Equals(
+            failureReason,
+            PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered,
+            StringComparison.Ordinal)
+            ? _localizer["PrintBridge.Auto.InstallationAlreadyRegistered"].Value
+            : null;
 
     [HttpGet("download")]
     public IActionResult DownloadRedirect() =>

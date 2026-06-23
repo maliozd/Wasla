@@ -613,5 +613,6 @@
   <data name="Auto.ConnectedPrinterMissing" xml:space="preserve"><value>Wasla connection completed. Select a printer before starting receipt printing.</value></data>
   <data name="Auto.SavedUnverified" xml:space="preserve"><value>Settings saved, but the connection could not be verified.</value></data>
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>The setup link is invalid or has expired.</value></data>
+  <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge on this computer is already registered as an active device. Use "Reconnect existing device" in Wasla Web instead of setting up a new device, or remove the old device record first.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Automatic setup could not be completed.</value></data>
 </root>

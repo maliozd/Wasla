@@ -73,7 +73,21 @@ public sealed record PrintBridgeSetupStatusDto(
     Guid SessionId,
     PrintBridgeSetupSessionStatus Status,
     DateTime ExpiresAtUtc,
-    bool ConnectionVerified);
+    bool ConnectionVerified,
+    string? FailureReason = null);
+
+public static class PrintBridgeSetupFailureReasons
+{
+    public const string InstallationAlreadyRegistered = "installation_already_registered";
+}
+
+public sealed class PrintBridgeSetupInstallationAlreadyRegisteredException : InvalidOperationException
+{
+    public PrintBridgeSetupInstallationAlreadyRegisteredException()
+        : base("This Print Bridge installation is already registered as an active device for the tenant.")
+    {
+    }
+}
 
 public sealed class PrintBridgeSetupTokenReplacementConfirmationRequiredException : InvalidOperationException
 {

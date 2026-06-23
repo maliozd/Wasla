@@ -3101,6 +3101,7 @@
   <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge connected successfully.</value></data>
   <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>Settings saved, but the connection could not be verified yet.</value></data>
   <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>Setup could not be completed. Please try again or use manual setup.</value></data>
+  <data name="PrintBridge.Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge on this computer is already registered as an active device. Use "Reconnect existing device" instead of setting up a new device, or remove the old device record first.</value></data>
   <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>This setup link expired. Generate a new one.</value></data>
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Could not start setup. Please try again.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Try opening again</value></data>

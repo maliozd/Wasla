@@ -280,7 +280,8 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             session.Id,
             ResolveStatus(session, DateTime.UtcNow),
             session.ExpiresAtUtc,
-            session.ConnectionVerified);
+            session.ConnectionVerified,
+            session.FailureReason);
     }
 
     /// <summary>
@@ -352,7 +353,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
 
                     if (existingForInstallation)
                     {
-                        failedReason = "installation_already_registered";
+                        failedReason = PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered;
                         await tx.RollbackAsync(ct).ConfigureAwait(false);
 
                         _logger.LogWarning(
@@ -444,7 +445,17 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         }
 
         if (failedReason is not null)
+        {
             await MarkFailedAsync(session.Id, failedReason, ct).ConfigureAwait(false);
+
+            if (string.Equals(
+                    failedReason,
+                    PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered,
+                    StringComparison.Ordinal))
+            {
+                throw new PrintBridgeSetupInstallationAlreadyRegisteredException();
+            }
+        }
 
         return null;
     }

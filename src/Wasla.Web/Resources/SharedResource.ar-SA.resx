@@ -3101,6 +3101,7 @@
   <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>تم الاتصال بـ Print Bridge بنجاح.</value></data>
   <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>تم حفظ الإعدادات، لكن تعذّر التحقق من الاتصال بعد.</value></data>
   <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد. حاول مجددًا أو استخدم الإعداد اليدوي.</value></data>
+  <data name="PrintBridge.Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge على هذا الكمبيوتر مسجل بالفعل كجهاز نشط. استخدم خيار "إعادة توصيل جهاز موجود" بدل إعداد جهاز جديد، أو أزل سجل الجهاز القديم أولًا.</value></data>
   <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>انتهت صلاحية رابط الإعداد. أنشئ رابطًا جديدًا.</value></data>
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>تعذّر بدء الإعداد. حاول مرة أخرى.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>حاول الفتح مرة أخرى</value></data>

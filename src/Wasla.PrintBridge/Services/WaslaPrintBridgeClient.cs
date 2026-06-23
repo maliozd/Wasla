@@ -149,6 +149,10 @@ public sealed class WaslaPrintBridgeClient
                     (int)response.StatusCode,
                     rejectionKind,
                     body);
+
+                if (string.Equals(rejectionKind, "installation_already_registered", StringComparison.Ordinal))
+                    throw new LocalizedApplicationException("Auto.InstallationAlreadyRegistered");
+
                 return null;
             }
 
@@ -376,7 +380,12 @@ public sealed class WaslaPrintBridgeClient
             return "invalid_or_expired_or_setup_rejected";
 
         if (statusCode == conflict)
+        {
+            if (body.Contains("installation_already_registered", StringComparison.OrdinalIgnoreCase))
+                return "installation_already_registered";
+
             return "setup_conflict";
+        }
 
         return "server_rejection";
     }

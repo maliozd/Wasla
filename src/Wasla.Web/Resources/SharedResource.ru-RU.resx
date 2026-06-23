@@ -3585,6 +3585,7 @@
   <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge успешно подключён.</value></data>
   <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>Настройки сохранены, но соединение пока не удалось проверить.</value></data>
   <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>Не удалось завершить настройку. Повторите попытку или используйте ручную настройку.</value></data>
+  <data name="PrintBridge.Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge на этом компьютере уже зарегистрирован как активное устройство. Используйте вариант "Повторно подключить существующее устройство" вместо настройки нового устройства или сначала удалите старую запись устройства.</value></data>
   <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>Срок действия ссылки настройки истёк. Создайте новую.</value></data>
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Не удалось начать настройку. Повторите попытку.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Попробовать открыть снова</value></data>

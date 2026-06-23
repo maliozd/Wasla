@@ -168,7 +168,7 @@
                                 data.connectionVerified ? "success" : "info");
                             break;
                         case "Failed":
-                            finish(messages.failed, "danger");
+                            finish(data.message || messages.failed, "danger");
                             showFallback();
                             break;
                         case "Expired":

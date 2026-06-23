@@ -52,7 +52,16 @@ public sealed class PrintBridgeSetupApiController : ControllerBase
             body.InstallationId,
             body.DeviceName);
 
-        var result = await _setup.ExchangeAsync(body.Code, clientInfo, ct).ConfigureAwait(false);
+        PrintBridgeSetupExchangeResult? result;
+        try
+        {
+            result = await _setup.ExchangeAsync(body.Code, clientInfo, ct).ConfigureAwait(false);
+        }
+        catch (PrintBridgeSetupInstallationAlreadyRegisteredException)
+        {
+            return Conflict(new { error = PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered });
+        }
+
         if (result is null)
             return Invalid();
 

@@ -600,16 +600,19 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
             null, ServerUrl, null,
             confirmReplaceActiveToken: false, CancellationToken.None);
 
-        var secondExchange = await _service.ExchangeAsync(
-            second.Code,
-            new PrintBridgeSetupClientInfo("Kitchen POS Duplicate", "1.0.0", "Printer", installationId),
-            CancellationToken.None);
+        await Assert.ThrowsAsync<PrintBridgeSetupInstallationAlreadyRegisteredException>(() =>
+            _service.ExchangeAsync(
+                second.Code,
+                new PrintBridgeSetupClientInfo("Kitchen POS Duplicate", "1.0.0", "Printer", installationId),
+                CancellationToken.None));
 
         var deviceCountAfter = await _db.PrintBridgeDevices
             .CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken);
+        var status = await _service.GetStatusAsync(_tenantId, second.SessionId, CancellationToken.None);
 
-        Assert.Null(secondExchange);
         Assert.Equal(deviceCountBefore, deviceCountAfter);
+        Assert.Equal(PrintBridgeSetupSessionStatus.Failed, status!.Status);
+        Assert.Equal(PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered, status.FailureReason);
     }
 
     [Fact]

@@ -575,5 +575,6 @@
   <data name="Auto.ConnectedPrinterMissing" xml:space="preserve"><value>اكتمل اتصال Wasla. اختر طابعة قبل بدء طباعة الإيصالات.</value></data>
   <data name="Auto.SavedUnverified" xml:space="preserve"><value>تم حفظ الإعدادات، لكن تعذّر التحقق من الاتصال.</value></data>
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>رابط الإعداد غير صالح أو منتهي الصلاحية.</value></data>
+  <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge على هذا الكمبيوتر مسجل بالفعل كجهاز نشط. استخدم خيار "إعادة توصيل جهاز موجود" في Wasla Web بدل إعداد جهاز جديد، أو أزل سجل الجهاز القديم أولًا.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد التلقائي.</value></data>
 </root>
