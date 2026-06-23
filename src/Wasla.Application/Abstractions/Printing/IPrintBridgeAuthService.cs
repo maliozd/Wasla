@@ -4,7 +4,8 @@ public sealed record PrintBridgeClientInfo(
     string? BridgeName,
     string? AppVersion,
     string? PrinterName,
-    string? IpAddress);
+    string? IpAddress,
+    Guid? InstallationId = null);
 
 public interface IPrintBridgeAuthService
 {

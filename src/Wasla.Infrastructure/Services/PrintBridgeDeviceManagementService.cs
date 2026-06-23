@@ -198,7 +198,9 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
                 RemovePrintBridgeDeviceOutcome.AlreadyRemoved,
                 "PrintBridge.DeviceAlreadyRemoved");
 
-        if (await _activePrintJobChecker.HasActivePrintingJobAsync(customerId, ct).ConfigureAwait(false))
+        if (await _activePrintJobChecker
+                .HasActivePrintingJobAsync(customerId, device.InstallationId, device.Name, ct)
+                .ConfigureAwait(false))
         {
             return new RemovePrintBridgeDeviceResult(RemovePrintBridgeDeviceOutcome.ActivePrintJobInProgress, "PrintBridge.DeviceRemoveBlockedByActivePrintJob");
         }

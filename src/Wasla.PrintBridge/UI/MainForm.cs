@@ -1353,7 +1353,7 @@ public sealed partial class MainForm : Form
             return;
 
         var bridge = _settingsHolder.Snapshot().Bridge;
-        _txtDisplayName.Text = bridge.BridgeName ?? string.Empty;
+        _txtDisplayName.Text = bridge.DisplayName ?? string.Empty;
     }
 
     private void LoadSettingsIntoForm()
@@ -1362,7 +1362,7 @@ public sealed partial class MainForm : Form
         _txtServerUrl.Text = hub.ServerUrl;
         _txtAgentToken.Text = hub.AgentToken;
         RefreshPrinterList(bridge.PrinterName);
-        _txtDisplayName.Text = bridge.BridgeName ?? string.Empty;
+        _txtDisplayName.Text = bridge.DisplayName ?? string.Empty;
         _lblMachineNameHint.Text = _localizer.GetString(
             "Settings.MachineNameHint",
             string.IsNullOrWhiteSpace(bridge.MachineName) ? Environment.MachineName : bridge.MachineName);

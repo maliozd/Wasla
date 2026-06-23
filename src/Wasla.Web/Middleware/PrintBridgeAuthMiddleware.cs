@@ -9,6 +9,7 @@ public sealed class PrintBridgeAuthMiddleware
     public const string NameHeader = "X-PrintBridge-Name";
     public const string VersionHeader = "X-PrintBridge-Version";
     public const string PrinterHeader = "X-PrintBridge-Printer";
+    public const string InstallationIdHeader = "X-PrintBridge-Installation-Id";
 
     private readonly RequestDelegate _next;
 
@@ -45,11 +46,17 @@ public sealed class PrintBridgeAuthMiddleware
             return;
         }
 
+        var installationId = context.Request.Headers.TryGetValue(InstallationIdHeader, out var installationIdValues) &&
+            Guid.TryParse(installationIdValues.FirstOrDefault(), out var parsedInstallationId)
+                ? parsedInstallationId
+                : (Guid?)null;
+
         var clientInfo = new PrintBridgeClientInfo(
             context.Request.Headers.TryGetValue(NameHeader, out var nameValues) ? nameValues.FirstOrDefault() : null,
             context.Request.Headers.TryGetValue(VersionHeader, out var versionValues) ? versionValues.FirstOrDefault() : null,
             context.Request.Headers.TryGetValue(PrinterHeader, out var printerValues) ? printerValues.FirstOrDefault() : null,
-            context.Connection.RemoteIpAddress?.ToString());
+            context.Connection.RemoteIpAddress?.ToString(),
+            installationId);
 
         var auth = await authService.AuthenticateAsync(tokenValues.FirstOrDefault() ?? string.Empty, clientInfo, context.RequestAborted)
             .ConfigureAwait(false);

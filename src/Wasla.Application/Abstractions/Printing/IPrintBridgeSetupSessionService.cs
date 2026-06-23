@@ -46,6 +46,7 @@ public sealed record PrintBridgeSetupExchangeResult(
     string ServerUrl,
     string DeviceToken,
     string DeviceName,
+    Guid InstallationId,
     string CompletionCredential);
 
 public enum PrintBridgeSetupMode
@@ -63,7 +64,9 @@ public static class PrintBridgeSetupModeValues
 public sealed record PrintBridgeSetupClientInfo(
     string? MachineName,
     string? AppVersion,
-    string? PrinterName);
+    string? PrinterName,
+    Guid? InstallationId = null,
+    string? DeviceName = null);
 
 /// <summary>Polled status for the Web setup page.</summary>
 public sealed record PrintBridgeSetupStatusDto(

@@ -48,7 +48,9 @@ public sealed class PrintBridgeSetupApiController : ControllerBase
             Request.Headers.TryGetValue("X-PrintBridge-Version", out var versionValues)
                 ? versionValues.FirstOrDefault()
                 : null,
-            body.PrinterName);
+            body.PrinterName,
+            body.InstallationId,
+            body.DeviceName);
 
         var result = await _setup.ExchangeAsync(body.Code, clientInfo, ct).ConfigureAwait(false);
         if (result is null)
@@ -59,6 +61,7 @@ public sealed class PrintBridgeSetupApiController : ControllerBase
             result.ServerUrl,
             result.DeviceToken,
             result.DeviceName,
+            result.InstallationId,
             result.CompletionCredential));
     }
 

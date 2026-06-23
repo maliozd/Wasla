@@ -81,7 +81,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                 LastError = _lastError,
                 ServerUrl = hub.ServerUrl,
                 PrinterName = bridge.PrinterName,
-                LocalDeviceName = bridge.BridgeName?.Trim() ?? string.Empty,
+                LocalDeviceName = bridge.DisplayName?.Trim() ?? string.Empty,
                 DisplayName = bridge.DisplayName?.Trim() ?? string.Empty,
                 ServerDeviceNameResolved = bridge.ServerDeviceNameResolved,
                 MachineName = string.IsNullOrWhiteSpace(bridge.MachineName)

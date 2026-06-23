@@ -216,6 +216,8 @@ public sealed partial class MainForm
                 bridge.DisplayName = config.DeviceName.Trim();
                 bridge.ServerDeviceNameResolved = true;
             }
+            if (config.InstallationId != Guid.Empty)
+                bridge.InstallationId = config.InstallationId.ToString("D");
             if (string.IsNullOrWhiteSpace(bridge.MachineName))
                 bridge.MachineName = Environment.MachineName;
 
@@ -345,31 +347,46 @@ public sealed partial class MainForm
         }
     }
 
-    private Task SaveDeviceIdentitySettingsAsync()
+    private async Task SaveDeviceIdentitySettingsAsync()
     {
         if (_isSavingDeviceName)
-            return Task.CompletedTask;
+            return;
 
         var previous = CaptureSnapshot();
         var bridge = ClonePrintBridgeOptions(previous.Bridge);
-        bridge.BridgeName = _txtDisplayName.Text.Trim();
+        bridge.DisplayName = _txtDisplayName.Text.Trim();
+        bridge.BridgeName = string.Empty;
         bridge.MachineName = Environment.MachineName;
 
         if (!PrintBridgeSettingsValidator.TryValidateDeviceIdentitySettings(bridge, out var errorKey))
         {
             SetSectionStatus(_lblDeviceStatus, _localizer[errorKey!], isError: true);
-            return Task.CompletedTask;
+            return;
         }
 
         _isSavingDeviceName = true;
         _btnSaveDeviceName.Enabled = false;
         try
         {
+            if (!string.IsNullOrWhiteSpace(previous.OrderHub.AgentToken))
+            {
+                var client = _services.GetRequiredService<WaslaPrintBridgeClient>();
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var result = await client.UpdateDeviceNameAsync(bridge.DisplayName, cts.Token).ConfigureAwait(true);
+                if (!result.Success)
+                {
+                    SetSectionStatus(_lblDeviceStatus, _localizer["Message.ConnectionCouldNotBeVerified"], isError: true);
+                    return;
+                }
+
+                bridge.ServerDeviceNameResolved = true;
+            }
+
             var ui = CloneUiOptions(previous.Ui);
             CaptureWindowLayout(ui);
             if (TryPersistSettings(previous.OrderHub, bridge, ui))
             {
-                _txtDisplayName.Text = bridge.BridgeName;
+                _txtDisplayName.Text = bridge.DisplayName;
                 SetSectionStatus(_lblDeviceStatus, _localizer["Settings.SectionSaved"], isSuccess: true);
                 RefreshDashboard();
             }
@@ -379,8 +396,6 @@ public sealed partial class MainForm
             _isSavingDeviceName = false;
             _btnSaveDeviceName.Enabled = true;
         }
-
-        return Task.CompletedTask;
     }
 
     private Task SaveAdvancedSettingsAsync()
@@ -493,6 +508,7 @@ public sealed partial class MainForm
             ErrorPollIntervalSeconds = source.ErrorPollIntervalSeconds,
             MaxJobsPerPoll = source.MaxJobsPerPoll,
             DryRun = source.DryRun,
+            InstallationId = source.InstallationId,
             DisplayName = source.DisplayName,
             ServerDeviceNameResolved = source.ServerDeviceNameResolved,
             MachineName = source.MachineName,

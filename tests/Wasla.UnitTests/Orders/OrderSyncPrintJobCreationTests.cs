@@ -127,6 +127,35 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         Assert.Contains("provider-poll-1", job.PayloadJson, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task MarkPrintingStoresReadableNameAndStableInstallationOwner()
+    {
+        await SeedTenantAsync(_tenantId, autoPrintOnAccepted: true);
+        var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, AcceptedOrder("provider-claim-1"));
+        var sync = CreateSyncService(client);
+        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await using var beforeDb = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
+        var pendingJobId = await beforeDb.PrintJobs
+            .Select(j => j.Id)
+            .SingleAsync(TestContext.Current.CancellationToken);
+        var installationId = Guid.NewGuid();
+        var polling = new PrintBridgeJobService(_dbFactory, NullLogger<PrintBridgeJobService>.Instance);
+
+        var result = await polling.TryMarkPrintingAsync(
+            _tenantId,
+            pendingJobId,
+            "Kitchen POS",
+            installationId,
+            TestContext.Current.CancellationToken);
+
+        await using var afterDb = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
+        var job = await afterDb.PrintJobs.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(PrintJobClaimResult.Claimed, result.Result);
+        Assert.Equal(PrintJobStatus.Printing, job.Status);
+        Assert.Equal("Kitchen POS", job.LockedBy);
+        Assert.Equal(installationId, job.LockedByInstallationId);
+    }
+
     private OrderSyncService CreateSyncService(FakeFoodPlatformClient client)
     {
         var receiptJobs = new ReceiptPrintJobService(

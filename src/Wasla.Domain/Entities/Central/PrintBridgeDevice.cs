@@ -18,6 +18,8 @@ public sealed class PrintBridgeDevice : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
+    public Guid? InstallationId { get; set; }
+
     public string? MachineName { get; set; }
     public string? PrinterName { get; set; }
     public string? AppVersion { get; set; }

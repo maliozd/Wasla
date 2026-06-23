@@ -20,7 +20,8 @@ public sealed record PrintBridgeHealthResponse(
     string CustomerName,
     string DeviceName,
     DateTime ServerTimeUtc,
-    string? MachineName = null);
+    string? MachineName = null,
+    Guid? InstallationId = null);
 
 public sealed record ReprintPrintJobResponse(
     bool Success,
@@ -33,7 +34,9 @@ public sealed record ReprintPrintJobResponse(
 public sealed record PrintBridgeSetupExchangeRequest(
     string Code,
     string? MachineName = null,
-    string? PrinterName = null);
+    string? PrinterName = null,
+    Guid? InstallationId = null,
+    string? DeviceName = null);
 
 /// <summary>
 /// Configuration returned to the desktop app on a successful exchange.
@@ -44,6 +47,7 @@ public sealed record PrintBridgeSetupExchangeResponse(
     string ServerUrl,
     string DeviceToken,
     string DeviceName,
+    Guid InstallationId,
     string CompletionCredential);
 
 /// <summary>Desktop app reports the outcome of automatic setup, authenticated by the completion credential.</summary>
@@ -53,4 +57,6 @@ public sealed record PrintBridgeSetupCompleteRequest(
     bool ConnectionVerified);
 
 public sealed record PrintBridgeSetupCompleteResponse(bool Success);
+
+public sealed record UpdatePrintBridgeDeviceNameRequest(string? DeviceName);
 

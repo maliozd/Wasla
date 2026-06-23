@@ -66,6 +66,9 @@ public sealed class PrintBridgeAutoSetupCoordinator
             document.PrintBridge.ServerDeviceNameResolved = true;
         }
 
+        if (config.InstallationId != Guid.Empty)
+            document.PrintBridge.InstallationId = config.InstallationId.ToString("D");
+
         if (string.IsNullOrWhiteSpace(document.PrintBridge.MachineName))
             document.PrintBridge.MachineName = Environment.MachineName;
 

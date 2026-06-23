@@ -56,6 +56,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         Guid customerId,
         Guid jobId,
         string lockedBy,
+        Guid? lockedByInstallationId,
         CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
@@ -74,6 +75,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
                     .SetProperty(j => j.Status, PrintJobStatus.Printing)
                     .SetProperty(j => j.LockedAt, now)
                     .SetProperty(j => j.LockedBy, safeLockedBy)
+                    .SetProperty(j => j.LockedByInstallationId, lockedByInstallationId)
                     .SetProperty(j => j.LastAttemptAt, now)
                     .SetProperty(j => j.AttemptCount, j => j.AttemptCount + 1)
                     .SetProperty(j => j.UpdatedAt, now),

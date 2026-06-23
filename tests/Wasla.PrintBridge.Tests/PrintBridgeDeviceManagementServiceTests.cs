@@ -257,10 +257,10 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task RemoveDevice_BlockedByAnyPrintingJob_AndDoesNotModifyJob()
+    public async Task RemoveDevice_BlockedByLegacySameNamePrintingJob_AndDoesNotModifyJob()
     {
         var deviceId = await SeedDeviceAsync("Ana Mutfak");
-        _activePrintJobChecker.SetActivePrintingJob(_tenantId, status: PrintJobStatus.Printing, lockedBy: "Different mutable name");
+        _activePrintJobChecker.SetActivePrintingJob(_tenantId, status: PrintJobStatus.Printing, lockedBy: "Ana Mutfak");
 
         var result = await _service.RemoveDeviceAsync(_tenantId, deviceId, CancellationToken.None);
 
@@ -272,7 +272,23 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
 
         var job = _activePrintJobChecker.GetJob(_tenantId);
         Assert.Equal(PrintJobStatus.Printing, job.Status);
-        Assert.Equal("Different mutable name", job.LockedBy);
+        Assert.Equal("Ana Mutfak", job.LockedBy);
+    }
+
+    [Fact]
+    public async Task RemoveDevice_AllowedWhenDifferentDeviceHasPrintingJob()
+    {
+        var deviceId = await SeedDeviceAsync("Ana Mutfak", installationId: Guid.NewGuid());
+        _activePrintJobChecker.SetActivePrintingJob(
+            _tenantId,
+            status: PrintJobStatus.Printing,
+            lockedBy: "Different mutable name",
+            installationId: Guid.NewGuid());
+
+        var result = await _service.RemoveDeviceAsync(_tenantId, deviceId, CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(RemovePrintBridgeDeviceOutcome.Removed, result.Outcome);
     }
 
     [Fact]
@@ -293,10 +309,11 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
         _connection.Dispose();
     }
 
-    private async Task<Guid> SeedDeviceAsync(string name, Guid? tenantId = null)
+    private async Task<Guid> SeedDeviceAsync(string name, Guid? tenantId = null, Guid? installationId = null)
     {
         var result = await _service.CreateDeviceAsync(tenantId ?? _tenantId, name, CancellationToken.None);
         var device = await LoadDeviceAsync(result.DeviceId);
+        device.InstallationId = installationId;
         device.MachineName = "DESKTOP-CTFGHRE";
         device.PrinterName = "POS-58";
         device.AppVersion = "1.0.0";
@@ -336,16 +353,28 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
     {
         private readonly Dictionary<Guid, TestPrintJob> _jobsByTenant = new();
 
-        public Task<bool> HasActivePrintingJobAsync(Guid customerId, CancellationToken ct)
+        public Task<bool> HasActivePrintingJobAsync(
+            Guid customerId,
+            Guid? installationId,
+            string? legacyLockedBy,
+            CancellationToken ct)
         {
             return Task.FromResult(
                 _jobsByTenant.TryGetValue(customerId, out var job)
-                && job.Status == PrintJobStatus.Printing);
+                && job.Status == PrintJobStatus.Printing
+                && ((installationId.HasValue && job.InstallationId == installationId)
+                    || (job.InstallationId is null
+                        && !string.IsNullOrWhiteSpace(legacyLockedBy)
+                        && job.LockedBy == legacyLockedBy)));
         }
 
-        public void SetActivePrintingJob(Guid customerId, PrintJobStatus status, string? lockedBy)
+        public void SetActivePrintingJob(
+            Guid customerId,
+            PrintJobStatus status,
+            string? lockedBy,
+            Guid? installationId = null)
         {
-            _jobsByTenant[customerId] = new TestPrintJob(status, lockedBy);
+            _jobsByTenant[customerId] = new TestPrintJob(status, lockedBy, installationId);
         }
 
         public TestPrintJob GetJob(Guid customerId)
@@ -354,5 +383,5 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
         }
     }
 
-    private sealed record TestPrintJob(PrintJobStatus Status, string? LockedBy);
+    private sealed record TestPrintJob(PrintJobStatus Status, string? LockedBy, Guid? InstallationId);
 }

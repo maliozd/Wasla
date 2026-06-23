@@ -14,15 +14,25 @@ public sealed class PrintBridgeActivePrintJobChecker : IPrintBridgeActivePrintJo
         _tenantDbFactory = tenantDbFactory;
     }
 
-    public async Task<bool> HasActivePrintingJobAsync(Guid customerId, CancellationToken ct)
+    public async Task<bool> HasActivePrintingJobAsync(
+        Guid customerId,
+        Guid? installationId,
+        string? legacyLockedBy,
+        CancellationToken ct)
     {
         await using var db = await _tenantDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        // Temporary conservative rule until stable Print Bridge device identity is available:
-        // any in-progress print job blocks removal for the tenant.
+        var normalizedLegacyName = string.IsNullOrWhiteSpace(legacyLockedBy)
+            ? null
+            : legacyLockedBy.Trim();
+
         return await db.PrintJobs
             .AsNoTracking()
-            .AnyAsync(j => j.Status == PrintJobStatus.Printing, ct)
+            .AnyAsync(j => j.Status == PrintJobStatus.Printing
+                && ((installationId.HasValue && j.LockedByInstallationId == installationId.Value)
+                    || (j.LockedByInstallationId == null
+                        && normalizedLegacyName != null
+                        && j.LockedBy == normalizedLegacyName)), ct)
             .ConfigureAwait(false);
     }
 }

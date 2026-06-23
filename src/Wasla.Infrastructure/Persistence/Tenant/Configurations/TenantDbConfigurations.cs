@@ -107,10 +107,14 @@ public class PrintJobConfiguration : IEntityTypeConfiguration<PrintJob>
         builder.Property(x => x.PayloadJson).IsRequired();
         builder.Property(x => x.AttemptCount).IsRequired();
         builder.Property(x => x.ErrorMessage).HasMaxLength(1000);
+        builder.Property(x => x.LockedByInstallationId);
         builder.Property(x => x.LockedBy).HasMaxLength(200);
 
         builder.HasIndex(x => new { x.OrderId, x.Type })
             .HasDatabaseName("IX_PrintJobs_OrderId_Type");
+
+        builder.HasIndex(x => new { x.Status, x.LockedByInstallationId })
+            .HasDatabaseName("IX_PrintJobs_Status_LockedByInstallationId");
 
         builder.HasOne(x => x.Order)
             .WithMany()

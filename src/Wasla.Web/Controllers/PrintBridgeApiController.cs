@@ -13,11 +13,16 @@ public sealed class PrintBridgeApiController : ControllerBase
 {
     private readonly IPrintBridgeJobService _jobs;
     private readonly IPrintJobHistoryService _history;
+    private readonly IPrintBridgeDeviceManagementService _devices;
 
-    public PrintBridgeApiController(IPrintBridgeJobService jobs, IPrintJobHistoryService history)
+    public PrintBridgeApiController(
+        IPrintBridgeJobService jobs,
+        IPrintJobHistoryService history,
+        IPrintBridgeDeviceManagementService devices)
     {
         _jobs = jobs;
         _history = history;
+        _devices = devices;
     }
 
     [HttpGet("health")]
@@ -32,7 +37,8 @@ public sealed class PrintBridgeApiController : ControllerBase
             auth.CustomerName,
             auth.DeviceName,
             DateTime.UtcNow,
-            auth.MachineName));
+            auth.MachineName,
+            auth.InstallationId));
     }
 
     [HttpGet("jobs/pending")]
@@ -63,10 +69,26 @@ public sealed class PrintBridgeApiController : ControllerBase
         if (auth is null)
             return Unauthorized();
 
-        var result = await _jobs.TryMarkPrintingAsync(auth.CustomerId, jobId, auth.DeviceName, ct)
+        var result = await _jobs.TryMarkPrintingAsync(auth.CustomerId, jobId, auth.DeviceName, auth.InstallationId, ct)
             .ConfigureAwait(false);
 
         return Ok(MapClaimResult(result));
+    }
+
+    [HttpPut("device/name")]
+    public async Task<ActionResult<PrintJobActionResponse>> UpdateDeviceName(
+        [FromBody] UpdatePrintBridgeDeviceNameRequest? body,
+        CancellationToken ct = default)
+    {
+        var auth = PrintBridgeContext.Get(HttpContext);
+        if (auth is null)
+            return Unauthorized();
+
+        var result = await _devices
+            .UpdateDeviceNameAsync(auth.CustomerId, auth.DeviceId, body?.DeviceName ?? string.Empty, ct)
+            .ConfigureAwait(false);
+
+        return Ok(new PrintJobActionResponse(result.Success, false, result.Success ? "updated" : result.ErrorKey ?? "failed"));
     }
 
     [HttpPost("jobs/{jobId:guid}/mark-printed")]

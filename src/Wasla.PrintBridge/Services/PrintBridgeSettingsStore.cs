@@ -157,6 +157,14 @@ public sealed class PrintBridgeSettingsStore
         var machineName = Environment.MachineName;
         document.PrintBridge.MachineName = machineName;
 
+        if (!Guid.TryParse(document.PrintBridge.InstallationId, out var installationId) ||
+            installationId == Guid.Empty)
+        {
+            installationId = Guid.NewGuid();
+        }
+
+        document.PrintBridge.InstallationId = installationId.ToString("D");
+
         if (string.IsNullOrWhiteSpace(document.PrintBridge.DisplayName)
             && !string.IsNullOrWhiteSpace(document.PrintBridge.BridgeName))
         {
@@ -164,6 +172,8 @@ public sealed class PrintBridgeSettingsStore
             if (!string.Equals(legacy, machineName, StringComparison.OrdinalIgnoreCase))
                 document.PrintBridge.DisplayName = legacy;
         }
+
+        document.PrintBridge.BridgeName = string.Empty;
     }
 
     private static AppSettingsDocument CreateDefaultDocument() =>

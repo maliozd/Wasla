@@ -220,14 +220,53 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
     {
         var created = await _devices.CreateDeviceAsync(_tenantId, "Auth PC", CancellationToken.None);
         var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+        var installationId = Guid.NewGuid();
 
         var result = await auth.AuthenticateAsync(
             created.RawToken,
-            new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1"),
+            new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1", installationId),
             CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.Equal(created.DeviceId, result!.DeviceId);
+        Assert.Equal(installationId, result.InstallationId);
+    }
+
+    [Fact]
+    public async Task Authentication_BindsLegacyNullInstallationIdOnce()
+    {
+        var created = await _devices.CreateDeviceAsync(_tenantId, "Legacy PC", CancellationToken.None);
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+        var installationId = Guid.NewGuid();
+
+        var result = await auth.AuthenticateAsync(
+            created.RawToken,
+            new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1", installationId),
+            CancellationToken.None);
+
+        var device = await _db.PrintBridgeDevices
+            .AsNoTracking()
+            .SingleAsync(d => d.Id == created.DeviceId, TestContext.Current.CancellationToken);
+        Assert.NotNull(result);
+        Assert.Equal(installationId, device.InstallationId);
+    }
+
+    [Fact]
+    public async Task Authentication_MismatchedInstallationId_IsRejected()
+    {
+        var created = await _devices.CreateDeviceAsync(_tenantId, "Bound PC", CancellationToken.None);
+        var device = await _db.PrintBridgeDevices
+            .SingleAsync(d => d.Id == created.DeviceId, TestContext.Current.CancellationToken);
+        device.InstallationId = Guid.NewGuid();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+
+        var result = await auth.AuthenticateAsync(
+            created.RawToken,
+            new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1", Guid.NewGuid()),
+            CancellationToken.None);
+
+        Assert.Null(result);
     }
 
     [Fact]
@@ -333,7 +372,7 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
 
         var exchange = await _service.ExchangeAsync(
             created.Code,
-            new PrintBridgeSetupClientInfo("VIVO-PC", "1.2.3", "Thermal-80"),
+            new PrintBridgeSetupClientInfo("VIVO-PC", "1.2.3", "Thermal-80", Guid.NewGuid()),
             CancellationToken.None);
 
         Assert.NotNull(exchange);
@@ -354,6 +393,8 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
         Assert.Equal("VIVO-PC", device.MachineName);
         Assert.Equal("1.2.3", device.AppVersion);
         Assert.Equal("Thermal-80", device.PrinterName);
+        Assert.NotNull(device.InstallationId);
+        Assert.Equal(device.InstallationId, exchange.InstallationId);
 
         // Existing device token must not be touched.
         Assert.Equal(existingHashBefore, await GetTokenHashAsync(_deviceId));
@@ -531,9 +572,44 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
             var setupService = CreateSetupService(db, deviceService);
             return await setupService.ExchangeAsync(
                 code,
-                new PrintBridgeSetupClientInfo("Concurrent POS", null, null),
+                new PrintBridgeSetupClientInfo("Concurrent POS", null, null, Guid.NewGuid()),
                 TestContext.Current.CancellationToken);
         }
+    }
+
+    [Fact]
+    public async Task Exchange_NewDeviceMode_DuplicateInstallationId_IsRejectedWithoutCreatingDevice()
+    {
+        var installationId = Guid.NewGuid();
+        var first = await _service.CreateSessionAsync(
+            _tenantId, PrintBridgeSetupMode.NewDevice,
+            null, ServerUrl, null,
+            confirmReplaceActiveToken: false, CancellationToken.None);
+
+        var firstExchange = await _service.ExchangeAsync(
+            first.Code,
+            new PrintBridgeSetupClientInfo("Kitchen POS", "1.0.0", "Printer", installationId),
+            CancellationToken.None);
+        Assert.NotNull(firstExchange);
+
+        var deviceCountBefore = await _db.PrintBridgeDevices
+            .CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken);
+
+        var second = await _service.CreateSessionAsync(
+            _tenantId, PrintBridgeSetupMode.NewDevice,
+            null, ServerUrl, null,
+            confirmReplaceActiveToken: false, CancellationToken.None);
+
+        var secondExchange = await _service.ExchangeAsync(
+            second.Code,
+            new PrintBridgeSetupClientInfo("Kitchen POS Duplicate", "1.0.0", "Printer", installationId),
+            CancellationToken.None);
+
+        var deviceCountAfter = await _db.PrintBridgeDevices
+            .CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken);
+
+        Assert.Null(secondExchange);
+        Assert.Equal(deviceCountBefore, deviceCountAfter);
     }
 
     [Fact]
@@ -653,7 +729,7 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
             .SingleAsync(TestContext.Current.CancellationToken);
 
     private static PrintBridgeSetupClientInfo EmptyClientInfo() =>
-        new(null, null, null);
+        new(null, null, null, Guid.NewGuid());
 
     private Guid SeedTenant(string slug = "sushim", string primaryDomain = "sushim.wasla.local")
         => SeedTenant(_db, slug, primaryDomain);
@@ -717,7 +793,11 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
         {
         }
 
-        public Task<bool> HasActivePrintingJobAsync(Guid customerId, CancellationToken ct) =>
+        public Task<bool> HasActivePrintingJobAsync(
+            Guid customerId,
+            Guid? installationId,
+            string? legacyLockedBy,
+            CancellationToken ct) =>
             Task.FromResult(false);
     }
 

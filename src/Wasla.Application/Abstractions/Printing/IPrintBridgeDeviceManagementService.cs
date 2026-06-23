@@ -110,5 +110,9 @@ public interface IPrintBridgeDeviceManagementService
 
 public interface IPrintBridgeActivePrintJobChecker
 {
-    Task<bool> HasActivePrintingJobAsync(Guid customerId, CancellationToken ct);
+    Task<bool> HasActivePrintingJobAsync(
+        Guid customerId,
+        Guid? installationId,
+        string? legacyLockedBy,
+        CancellationToken ct);
 }

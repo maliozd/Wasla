@@ -14,6 +14,7 @@ public sealed class PrintBridgeDeviceConfiguration : IEntityTypeConfiguration<Pr
         builder.Property(x => x.Name).IsRequired().HasMaxLength(200);
         builder.Property(x => x.TokenHash).IsRequired().HasMaxLength(88);
         builder.Property(x => x.IsActive).IsRequired();
+        builder.Property(x => x.InstallationId);
         builder.Property(x => x.MachineName).HasMaxLength(200);
         builder.Property(x => x.PrinterName).HasMaxLength(200);
         builder.Property(x => x.AppVersion).HasMaxLength(50);
@@ -29,6 +30,11 @@ public sealed class PrintBridgeDeviceConfiguration : IEntityTypeConfiguration<Pr
 
         builder.HasIndex(x => new { x.TenantId, x.RemovedAtUtc })
             .HasDatabaseName("IX_PrintBridgeDevices_TenantId_RemovedAtUtc");
+
+        builder.HasIndex(x => new { x.TenantId, x.InstallationId })
+            .IsUnique()
+            .HasFilter("[InstallationId] IS NOT NULL AND [RemovedAtUtc] IS NULL")
+            .HasDatabaseName("IX_PrintBridgeDevices_TenantId_InstallationId_Active");
 
         builder.HasOne(x => x.Tenant)
             .WithMany()

@@ -57,6 +57,49 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
 
         var now = DateTime.UtcNow;
 
+        if (clientInfo.InstallationId.HasValue)
+        {
+            var installationId = clientInfo.InstallationId.Value;
+            if (installationId == Guid.Empty)
+            {
+                _logger.LogWarning(
+                    "Print Bridge authentication failed: installation identity is empty. DeviceId={DeviceId}, TenantId={TenantId}",
+                    device.Id,
+                    device.TenantId);
+                return null;
+            }
+
+            if (device.InstallationId.HasValue && device.InstallationId.Value != installationId)
+            {
+                _logger.LogWarning(
+                    "Print Bridge authentication failed: installation identity mismatch. DeviceId={DeviceId}, TenantId={TenantId}",
+                    device.Id,
+                    device.TenantId);
+                return null;
+            }
+
+            if (!device.InstallationId.HasValue)
+            {
+                var activeDuplicate = await _centralDb.PrintBridgeDevices
+                    .AsNoTracking()
+                    .AnyAsync(d => d.TenantId == device.TenantId
+                        && d.Id != device.Id
+                        && d.InstallationId == installationId
+                        && d.RemovedAtUtc == null, ct)
+                    .ConfigureAwait(false);
+
+                if (activeDuplicate)
+                {
+                    _logger.LogWarning(
+                        "Print Bridge authentication failed: installation identity is already bound to another active device. TenantId={TenantId}",
+                        device.TenantId);
+                    return null;
+                }
+
+                device.InstallationId = installationId;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(clientInfo.BridgeName))
         {
             var machineName = clientInfo.BridgeName.Trim();
@@ -90,6 +133,7 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
             device.TenantId,
             device.Tenant.Name,
             device.Name,
+            device.InstallationId,
             string.IsNullOrWhiteSpace(device.MachineName) ? null : device.MachineName);
     }
 }

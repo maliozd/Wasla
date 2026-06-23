@@ -130,6 +130,12 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             return null;
         }
 
+        if (!clientInfo.InstallationId.HasValue || clientInfo.InstallationId.Value == Guid.Empty)
+        {
+            await MarkFailedAsync(session.Id, "missing_installation_id", ct).ConfigureAwait(false);
+            return null;
+        }
+
         var completionCredential = PrintBridgeSetupCode.Generate();
         var completionHash = PrintBridgeSetupCode.Hash(completionCredential);
 
@@ -174,6 +180,16 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             GeneratePrintBridgeTokenResult tokenResult;
             try
             {
+                if (!await BindInstallationIdentityAsync(
+                        session.TenantId,
+                        session.PrintBridgeDeviceId.Value,
+                        clientInfo.InstallationId.Value,
+                        ct).ConfigureAwait(false))
+                {
+                    await MarkFailedAsync(session.Id, "installation_identity_conflict", ct).ConfigureAwait(false);
+                    return null;
+                }
+
                 tokenResult = await _devices
                     .RegenerateTokenAsync(session.TenantId, session.PrintBridgeDeviceId.Value, ct)
                     .ConfigureAwait(false);
@@ -198,6 +214,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             session.ServerUrl,
             rawToken,
             deviceName,
+            clientInfo.InstallationId.Value,
             completionCredential);
     }
 
@@ -325,6 +342,27 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                 }
                 else
                 {
+                    var installationId = clientInfo.InstallationId!.Value;
+                    var existingForInstallation = await _centralDb.PrintBridgeDevices
+                        .AsNoTracking()
+                        .AnyAsync(d => d.TenantId == session.TenantId
+                            && d.InstallationId == installationId
+                            && d.RemovedAtUtc == null, ct)
+                        .ConfigureAwait(false);
+
+                    if (existingForInstallation)
+                    {
+                        failedReason = "installation_already_registered";
+                        await tx.RollbackAsync(ct).ConfigureAwait(false);
+
+                        _logger.LogWarning(
+                            "Print Bridge new-device exchange rejected: installation identity is already registered. " +
+                            "SessionId={SessionId}, TenantId={TenantId}",
+                            session.Id,
+                            session.TenantId);
+                    }
+                    else
+                    {
                     // Quota check inside the transaction so concurrent exchanges cannot both succeed when at limit.
                     var activeCount = await _centralDb.PrintBridgeDevices
                         .CountAsync(d => d.TenantId == session.TenantId && d.IsActive && d.RemovedAtUtc == null, ct)
@@ -342,7 +380,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                     }
                     else
                     {
-                        var deviceName = NormalizeDeviceName(clientInfo.MachineName);
+                        var deviceName = NormalizeDeviceName(clientInfo.DeviceName, clientInfo.MachineName);
                         var rawToken = PrintBridgeTokenHasher.GenerateRawToken();
                         var tokenHash = PrintBridgeTokenHasher.HashToken(rawToken);
                         var now = DateTime.UtcNow;
@@ -351,6 +389,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                         {
                             TenantId = session.TenantId,
                             Name = deviceName,
+                            InstallationId = installationId,
                             MachineName = string.IsNullOrWhiteSpace(clientInfo.MachineName)
                                 ? null : Truncate(clientInfo.MachineName.Trim(), 200),
                             AppVersion = string.IsNullOrWhiteSpace(clientInfo.AppVersion)
@@ -383,6 +422,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
 
                         return (rawToken, deviceName);
                     }
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -407,6 +447,64 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             await MarkFailedAsync(session.Id, failedReason, ct).ConfigureAwait(false);
 
         return null;
+    }
+
+    private async Task<bool> BindInstallationIdentityAsync(
+        Guid tenantId,
+        Guid deviceId,
+        Guid installationId,
+        CancellationToken ct)
+    {
+        await using var tx = await _centralDb.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct)
+            .ConfigureAwait(false);
+
+        var appLockResult = await _tenantLock.AcquireNewDeviceExchangeLockAsync(tenantId, ct)
+            .ConfigureAwait(false);
+        if (appLockResult < 0)
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+            return false;
+        }
+
+        var device = await _centralDb.PrintBridgeDevices
+            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == tenantId && d.RemovedAtUtc == null, ct)
+            .ConfigureAwait(false);
+
+        if (device is null)
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+            return false;
+        }
+
+        if (device.InstallationId.HasValue)
+        {
+            var ok = device.InstallationId.Value == installationId;
+            if (ok)
+                await tx.CommitAsync(ct).ConfigureAwait(false);
+            else
+                await tx.RollbackAsync(ct).ConfigureAwait(false);
+            return ok;
+        }
+
+        var duplicate = await _centralDb.PrintBridgeDevices
+            .AsNoTracking()
+            .AnyAsync(d => d.TenantId == tenantId
+                && d.Id != deviceId
+                && d.InstallationId == installationId
+                && d.RemovedAtUtc == null, ct)
+            .ConfigureAwait(false);
+
+        if (duplicate)
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+            return false;
+        }
+
+        device.InstallationId = installationId;
+        device.UpdatedAt = DateTime.UtcNow;
+        await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
+        await tx.CommitAsync(ct).ConfigureAwait(false);
+        return true;
     }
 
     private static string ToPersistedSetupMode(PrintBridgeSetupMode setupMode) => setupMode switch
@@ -453,9 +551,11 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         : session.ExchangedAtUtc != null ? PrintBridgeSetupSessionStatus.Exchanged
         : PrintBridgeSetupSessionStatus.Pending;
 
-    private static string NormalizeDeviceName(string? deviceName)
+    private static string NormalizeDeviceName(string? deviceName, string? machineName)
     {
         var name = (deviceName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            name = (machineName ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(name))
             name = "Print Bridge";
         return Truncate(name, 200);

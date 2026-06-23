@@ -98,6 +98,15 @@ public sealed class WaslaPrintBridgeClient
         return await ReadActionResultAsync(response, ct).ConfigureAwait(false);
     }
 
+    public async Task<PrintJobActionResult> UpdateDeviceNameAsync(string deviceName, CancellationToken ct)
+    {
+        const string path = "api/print-bridge/device/name";
+        using var request = CreateRequest(HttpMethod.Put, BuildAbsoluteUrl(path));
+        request.Content = JsonContent.Create(new { deviceName });
+        using var response = await SendPreparedAsync(path, request, ct).ConfigureAwait(false);
+        return await ReadActionResultAsync(response, ct).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Exchange a one-time automatic-setup code against an explicit server URL (from the protocol URI),
     /// before any settings are saved. No device token is sent. Returns null on any failure.
@@ -116,11 +125,14 @@ public sealed class WaslaPrintBridgeClient
         var url = $"{serverUri.ToString().TrimEnd('/')}/api/print-bridge/setup/exchange";
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Version", _appVersion);
+        var (_, bridge, _) = _holder.Snapshot();
         request.Content = JsonContent.Create(new
         {
             code,
             machineName = Environment.MachineName,
-            printerName = _holder.Snapshot().Bridge.PrinterName
+            printerName = bridge.PrinterName,
+            installationId = ParseInstallationId(bridge.InstallationId),
+            deviceName = bridge.DisplayName
         });
 
         try
@@ -150,6 +162,7 @@ public sealed class WaslaPrintBridgeClient
                 string.IsNullOrWhiteSpace(payload.ServerUrl) ? serverUrl : payload.ServerUrl,
                 payload.DeviceToken,
                 payload.DeviceName ?? string.Empty,
+                payload.InstallationId,
                 payload.CompletionCredential ?? string.Empty);
         }
         catch (HttpRequestException ex) when (IsSslFailure(ex))
@@ -295,6 +308,9 @@ public sealed class WaslaPrintBridgeClient
             : bridge.MachineName;
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Name", machineName);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Version", _appVersion);
+        var installationId = ParseInstallationId(bridge.InstallationId);
+        if (installationId != Guid.Empty)
+            request.Headers.TryAddWithoutValidation("X-PrintBridge-Installation-Id", installationId.ToString("D"));
         if (!string.IsNullOrWhiteSpace(bridge.PrinterName))
             request.Headers.TryAddWithoutValidation("X-PrintBridge-Printer", bridge.PrinterName);
         return request;
@@ -340,6 +356,11 @@ public sealed class WaslaPrintBridgeClient
 
         return ex.Message.Contains("connection refused", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static Guid ParseInstallationId(string? value) =>
+        Guid.TryParse(value, out var installationId) && installationId != Guid.Empty
+            ? installationId
+            : Guid.Empty;
 
     private static string ClassifySetupExchangeRejection(int statusCode, string body)
     {
@@ -407,6 +428,7 @@ public sealed class WaslaPrintBridgeClient
         string ServerUrl,
         string DeviceToken,
         string DeviceName,
+        Guid InstallationId,
         string CompletionCredential);
 
     private sealed record SetupExchangeResponse(
@@ -414,5 +436,6 @@ public sealed class WaslaPrintBridgeClient
         string ServerUrl,
         string DeviceToken,
         string? DeviceName,
+        Guid InstallationId,
         string? CompletionCredential);
 }
