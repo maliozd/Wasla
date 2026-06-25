@@ -8,10 +8,6 @@
     <UserSecretsId>c8cc92c8-4c99-488d-848c-b14914a9c722</UserSecretsId>
   </PropertyGroup>
 
-	<PropertyGroup>
-		<UserSecretsId>wasla-shared-development-secrets</UserSecretsId>
-	</PropertyGroup>
-	
   <ItemGroup>
     <ProjectReference Include="..\Wasla.Contracts\Wasla.Contracts.csproj" />
     <ProjectReference Include="..\Wasla.Application\Wasla.Application.csproj" />
