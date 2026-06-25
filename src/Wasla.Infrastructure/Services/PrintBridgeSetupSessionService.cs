@@ -13,6 +13,10 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
     /// <summary>Default lifetime of an automatic setup session (~5 minutes).</summary>
     public static readonly TimeSpan DefaultLifetime = TimeSpan.FromMinutes(5);
 
+    private const string FailureReasonTenantLockUnavailable = "tenant_lock_unavailable";
+    private const string FailureReasonQuotaExceeded = "quota_exceeded";
+    private const string FailureReasonDeviceCreationFailed = "device_creation_failed";
+
     private readonly CentralDbContext _centralDb;
     private readonly IPrintBridgeDeviceManagementService _devices;
     private readonly IPrintBridgeSetupTenantLock _tenantLock;
@@ -332,7 +336,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                     .ConfigureAwait(false);
                 if (appLockResult < 0)
                 {
-                    failedReason = "tenant_lock_unavailable";
+                    failedReason = FailureReasonTenantLockUnavailable;
                     await tx.RollbackAsync(ct).ConfigureAwait(false);
                     _logger.LogWarning(
                         "Print Bridge new-device exchange could not acquire tenant-scoped database lock. " +
@@ -344,14 +348,8 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                 else
                 {
                     var installationId = clientInfo.InstallationId!.Value;
-                    var existingForInstallation = await _centralDb.PrintBridgeDevices
-                        .AsNoTracking()
-                        .AnyAsync(d => d.TenantId == session.TenantId
-                            && d.InstallationId == installationId
-                            && d.RemovedAtUtc == null, ct)
-                        .ConfigureAwait(false);
 
-                    if (existingForInstallation)
+                    if (await ActiveInstallationExistsAsync(session.TenantId, installationId, ct).ConfigureAwait(false))
                     {
                         failedReason = PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered;
                         await tx.RollbackAsync(ct).ConfigureAwait(false);
@@ -364,65 +362,30 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                     }
                     else
                     {
-                    // Quota check inside the transaction so concurrent exchanges cannot both succeed when at limit.
-                    var activeCount = await _centralDb.PrintBridgeDevices
-                        .CountAsync(d => d.TenantId == session.TenantId && d.IsActive && d.RemovedAtUtc == null, ct)
-                        .ConfigureAwait(false);
-
-                    if (activeCount >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)
-                    {
-                        failedReason = "quota_exceeded";
-                        await tx.RollbackAsync(ct).ConfigureAwait(false);
-
-                        _logger.LogWarning(
-                            "Print Bridge new-device exchange rejected: active device quota exceeded. " +
-                            "SessionId={SessionId}, TenantId={TenantId}, ActiveCount={ActiveCount}",
-                            session.Id, session.TenantId, activeCount);
-                    }
-                    else
-                    {
-                        var deviceName = NormalizeDeviceName(clientInfo.DeviceName, clientInfo.MachineName);
-                        var rawToken = PrintBridgeTokenHasher.GenerateRawToken();
-                        var tokenHash = PrintBridgeTokenHasher.HashToken(rawToken);
-                        var now = DateTime.UtcNow;
-
-                        var device = new PrintBridgeDevice
+                        var activeCount = await CountActiveDevicesAsync(session.TenantId, ct).ConfigureAwait(false);
+                        if (activeCount >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)
                         {
-                            TenantId = session.TenantId,
-                            Name = deviceName,
-                            InstallationId = installationId,
-                            MachineName = string.IsNullOrWhiteSpace(clientInfo.MachineName)
-                                ? null : Truncate(clientInfo.MachineName.Trim(), 200),
-                            AppVersion = string.IsNullOrWhiteSpace(clientInfo.AppVersion)
-                                ? null : Truncate(clientInfo.AppVersion.Trim(), 100),
-                            PrinterName = string.IsNullOrWhiteSpace(clientInfo.PrinterName)
-                                ? null : Truncate(clientInfo.PrinterName.Trim(), 200),
-                            TokenHash = tokenHash,
-                            IsActive = true,
-                            CreatedAt = now,
-                            UpdatedAt = now
-                        };
+                            failedReason = FailureReasonQuotaExceeded;
+                            await tx.RollbackAsync(ct).ConfigureAwait(false);
 
-                        _centralDb.PrintBridgeDevices.Add(device);
-                        await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
+                            _logger.LogWarning(
+                                "Print Bridge new-device exchange rejected: active device quota exceeded. " +
+                                "SessionId={SessionId}, TenantId={TenantId}, ActiveCount={ActiveCount}",
+                                session.Id, session.TenantId, activeCount);
+                        }
+                        else
+                        {
+                            var created = await CreateDeviceAndBindSessionAsync(session, clientInfo, installationId, ct)
+                                .ConfigureAwait(false);
+                            await tx.CommitAsync(ct).ConfigureAwait(false);
 
-                        // Bind the session to the newly created device.
-                        await _centralDb.PrintBridgeSetupSessions
-                            .Where(s => s.Id == session.Id)
-                            .ExecuteUpdateAsync(set => set
-                                .SetProperty(s => s.PrintBridgeDeviceId, device.Id)
-                                .SetProperty(s => s.UpdatedAt, now), ct)
-                            .ConfigureAwait(false);
+                            _logger.LogInformation(
+                                "New Print Bridge device created and bound via setup exchange. " +
+                                "DeviceId={DeviceId}, SessionId={SessionId}, TenantId={TenantId}, DeviceName={DeviceName}",
+                                created.DeviceId, session.Id, session.TenantId, created.DeviceName);
 
-                        await tx.CommitAsync(ct).ConfigureAwait(false);
-
-                        _logger.LogInformation(
-                            "New Print Bridge device created and bound via setup exchange. " +
-                            "DeviceId={DeviceId}, SessionId={SessionId}, TenantId={TenantId}, DeviceName={DeviceName}",
-                            device.Id, session.Id, session.TenantId, deviceName);
-
-                        return (rawToken, deviceName);
-                    }
+                            return (created.RawToken, created.DeviceName);
+                        }
                     }
                 }
             }
@@ -433,7 +396,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             }
             catch (Exception ex)
             {
-                failedReason = "device_creation_failed";
+                failedReason = FailureReasonDeviceCreationFailed;
                 await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
                 _logger.LogError(
                     ex,
@@ -458,6 +421,67 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         }
 
         return null;
+    }
+
+    private async Task<(Guid DeviceId, string RawToken, string DeviceName)> CreateDeviceAndBindSessionAsync(
+        PrintBridgeSetupSession session,
+        PrintBridgeSetupClientInfo clientInfo,
+        Guid installationId,
+        CancellationToken ct)
+    {
+        var deviceName = NormalizeDeviceName(clientInfo.DeviceName, clientInfo.MachineName);
+        var rawToken = PrintBridgeTokenHasher.GenerateRawToken();
+        var tokenHash = PrintBridgeTokenHasher.HashToken(rawToken);
+        var now = DateTime.UtcNow;
+
+        var device = new PrintBridgeDevice
+        {
+            TenantId = session.TenantId,
+            Name = deviceName,
+            InstallationId = installationId,
+            MachineName = string.IsNullOrWhiteSpace(clientInfo.MachineName)
+                ? null : Truncate(clientInfo.MachineName.Trim(), 200),
+            AppVersion = string.IsNullOrWhiteSpace(clientInfo.AppVersion)
+                ? null : Truncate(clientInfo.AppVersion.Trim(), 100),
+            PrinterName = string.IsNullOrWhiteSpace(clientInfo.PrinterName)
+                ? null : Truncate(clientInfo.PrinterName.Trim(), 200),
+            TokenHash = tokenHash,
+            IsActive = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        _centralDb.PrintBridgeDevices.Add(device);
+        await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        // Bind the session to the newly created device.
+        await _centralDb.PrintBridgeSetupSessions
+            .Where(s => s.Id == session.Id)
+            .ExecuteUpdateAsync(set => set
+                .SetProperty(s => s.PrintBridgeDeviceId, device.Id)
+                .SetProperty(s => s.UpdatedAt, now), ct)
+            .ConfigureAwait(false);
+
+        return (device.Id, rawToken, deviceName);
+    }
+
+    private async Task<bool> ActiveInstallationExistsAsync(
+        Guid tenantId,
+        Guid installationId,
+        CancellationToken ct) =>
+        await _centralDb.PrintBridgeDevices
+            .AsNoTracking()
+            .AnyAsync(d => d.TenantId == tenantId
+                && d.InstallationId == installationId
+                && d.RemovedAtUtc == null, ct)
+            .ConfigureAwait(false);
+
+    private async Task<int> CountActiveDevicesAsync(Guid tenantId, CancellationToken ct)
+    {
+        // Quota check stays inside the serializable transaction so concurrent exchanges cannot both succeed at limit.
+        return await _centralDb.PrintBridgeDevices
+            .CountAsync(d => d.TenantId == tenantId && d.IsActive && d.RemovedAtUtc == null, ct)
+            .ConfigureAwait(false);
     }
 
     private async Task<bool> BindInstallationIdentityAsync(

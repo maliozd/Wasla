@@ -31,7 +31,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
 
         var rows = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .Where(d => d.TenantId == customerId && d.RemovedAtUtc == null)
+            .WhereManageable(customerId)
             .OrderByDescending(d => d.LastSeenAt ?? d.CreatedAt)
             .Select(d => new
             {
@@ -63,7 +63,8 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
     {
         var activeCount = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .CountAsync(d => d.TenantId == customerId && d.IsActive && d.RemovedAtUtc == null, ct)
+            .WhereManageable(customerId)
+            .CountAsync(d => d.IsActive, ct)
             .ConfigureAwait(false);
 
         return BuildQuota(activeCount);
@@ -78,7 +79,8 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
 
         var device = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .Where(d => d.Id == deviceId && d.TenantId == customerId && d.RemovedAtUtc == null)
+            .WhereManageable(customerId)
+            .Where(d => d.Id == deviceId)
             .Select(d => new
             {
                 d.Id,
@@ -123,7 +125,8 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         CancellationToken ct)
     {
         var device = await _centralDb.PrintBridgeDevices
-            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId && d.RemovedAtUtc == null, ct)
+            .WhereManageable(customerId)
+            .FirstOrDefaultAsync(d => d.Id == deviceId, ct)
             .ConfigureAwait(false);
 
         if (device is null)
@@ -150,7 +153,8 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         CancellationToken ct)
     {
         var device = await _centralDb.PrintBridgeDevices
-            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId && d.RemovedAtUtc == null, ct)
+            .WhereManageable(customerId)
+            .FirstOrDefaultAsync(d => d.Id == deviceId, ct)
             .ConfigureAwait(false);
 
         if (device is null) return false;
@@ -159,7 +163,8 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         {
             var activeOthers = await _centralDb.PrintBridgeDevices
                 .AsNoTracking()
-                .CountAsync(d => d.TenantId == customerId && d.IsActive && d.RemovedAtUtc == null && d.Id != deviceId, ct)
+                .WhereManageable(customerId)
+                .CountAsync(d => d.IsActive && d.Id != deviceId, ct)
                 .ConfigureAwait(false);
 
             if (activeOthers >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)
@@ -235,7 +240,8 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
             return new RenamePrintBridgeDeviceResult(false, "PrintBridge.RenameNameTooLong");
 
         var device = await _centralDb.PrintBridgeDevices
-            .FirstOrDefaultAsync(d => d.Id == deviceId && d.TenantId == customerId && d.RemovedAtUtc == null, ct)
+            .WhereManageable(customerId)
+            .FirstOrDefaultAsync(d => d.Id == deviceId, ct)
             .ConfigureAwait(false);
 
         if (device is null)
@@ -268,7 +274,8 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
 
         var activeCount = await _centralDb.PrintBridgeDevices
             .AsNoTracking()
-            .CountAsync(d => d.TenantId == customerId && d.IsActive && d.RemovedAtUtc == null, ct)
+            .WhereManageable(customerId)
+            .CountAsync(d => d.IsActive, ct)
             .ConfigureAwait(false);
 
         if (activeCount >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)
@@ -316,4 +323,12 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
             name = name[..200];
         return name;
     }
+}
+
+internal static class PrintBridgeDeviceQueryExtensions
+{
+    public static IQueryable<PrintBridgeDevice> WhereManageable(
+        this IQueryable<PrintBridgeDevice> query,
+        Guid tenantId) =>
+        query.Where(d => d.TenantId == tenantId && d.RemovedAtUtc == null);
 }

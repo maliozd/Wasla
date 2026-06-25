@@ -42,19 +42,6 @@ public sealed class OrderSyncService : IOrderSyncService
             .AddTimeout(TimeSpan.FromSeconds(15))
             .Build();
 
-    //.AddCircuitBreaker(new CircuitBreakerStrategyOptions<IReadOnlyCollection<ExternalOrderDto>>
-    //{
-    //    FailureRatio = 0.5,
-    //    SamplingDuration = TimeSpan.FromSeconds(30),
-    //    MinimumThroughput = 5,
-    //    BreakDuration = TimeSpan.FromSeconds(30),
-    //    ShouldHandle = new PredicateBuilder<IReadOnlyCollection<ExternalOrderDto>>()
-    //        .Handle<HttpRequestException>()
-    //        .Handle<TimeoutException>()
-    //        .Handle<TimeoutRejectedException>()
-    //})
-
-
     public OrderSyncService(
         ITenantDbContextFactory customerDbFactory,
         IEnumerable<IFoodPlatformClient> platformClients,

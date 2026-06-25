@@ -9,6 +9,8 @@ namespace Wasla.Infrastructure.Services;
 public sealed class PrintBridgeJobService : IPrintBridgeJobService
 {
     private const int MaxPendingLimit = 10;
+    private const string JobNotFoundKey = "PrintBridge.JobNotFound";
+    private const string JobNotPrintingKey = "PrintBridge.JobNotPrinting";
 
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<PrintBridgeJobService> _logger;
@@ -61,9 +63,8 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var exists = await db.PrintJobs.AsNoTracking().AnyAsync(j => j.Id == jobId, ct).ConfigureAwait(false);
-        if (!exists)
-            return new PrintJobClaimResponse(PrintJobClaimResult.NotFound, "PrintBridge.JobNotFound");
+        if (!await JobExistsAsync(db, jobId, ct).ConfigureAwait(false))
+            return JobNotFound();
 
         var now = DateTime.UtcNow;
         var safeLockedBy = SanitizeLockedBy(lockedBy);
@@ -106,9 +107,8 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var exists = await db.PrintJobs.AsNoTracking().AnyAsync(j => j.Id == jobId, ct).ConfigureAwait(false);
-        if (!exists)
-            return new PrintJobClaimResponse(PrintJobClaimResult.NotFound, "PrintBridge.JobNotFound");
+        if (!await JobExistsAsync(db, jobId, ct).ConfigureAwait(false))
+            return JobNotFound();
 
         var now = DateTime.UtcNow;
         var rows = await db.PrintJobs
@@ -131,7 +131,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
             return new PrintJobClaimResponse(PrintJobClaimResult.Claimed, "PrintBridge.JobPrinted");
         }
 
-        return new PrintJobClaimResponse(PrintJobClaimResult.Skipped, "PrintBridge.JobNotPrinting");
+        return JobNotPrinting();
     }
 
     public async Task<PrintJobClaimResponse> TryMarkFailedAsync(
@@ -142,9 +142,8 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
-        var exists = await db.PrintJobs.AsNoTracking().AnyAsync(j => j.Id == jobId, ct).ConfigureAwait(false);
-        if (!exists)
-            return new PrintJobClaimResponse(PrintJobClaimResult.NotFound, "PrintBridge.JobNotFound");
+        if (!await JobExistsAsync(db, jobId, ct).ConfigureAwait(false))
+            return JobNotFound();
 
         var now = DateTime.UtcNow;
         var safeError = SanitizeErrorMessage(errorMessage);
@@ -169,8 +168,20 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
             return new PrintJobClaimResponse(PrintJobClaimResult.Claimed, "PrintBridge.JobFailed");
         }
 
-        return new PrintJobClaimResponse(PrintJobClaimResult.Skipped, "PrintBridge.JobNotPrinting");
+        return JobNotPrinting();
     }
+
+    private static async Task<bool> JobExistsAsync(TenantDbContext db, Guid jobId, CancellationToken ct) =>
+        await db.PrintJobs
+            .AsNoTracking()
+            .AnyAsync(j => j.Id == jobId, ct)
+            .ConfigureAwait(false);
+
+    private static PrintJobClaimResponse JobNotFound() =>
+        new(PrintJobClaimResult.NotFound, JobNotFoundKey);
+
+    private static PrintJobClaimResponse JobNotPrinting() =>
+        new(PrintJobClaimResult.Skipped, JobNotPrintingKey);
 
     private static string SanitizeLockedBy(string lockedBy)
     {
