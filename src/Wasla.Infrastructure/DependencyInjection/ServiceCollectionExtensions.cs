@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISecretManager, AesSecretManager>();
         services.AddSingleton<ITenantDbContextFactory, TenantDbContextFactory>();
         services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
+        services.AddSingleton(TimeProvider.System);
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
         services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
@@ -93,6 +94,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantResolver, TenantResolver>();
 
         services.AddScoped<IAuthValidationService, AuthValidationService>();
+        services.AddScoped<IPasswordPolicy, DefaultPasswordPolicy>();
+        services.AddScoped<ITenantPasswordResetService, TenantPasswordResetService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();

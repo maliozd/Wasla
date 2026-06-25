@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Wasla.Infrastructure.Persistence.Tenant;
 
@@ -11,9 +12,11 @@ using Wasla.Infrastructure.Persistence.Tenant;
 namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
 {
     [DbContext(typeof(TenantDbContext))]
-    partial class TenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260623220646_AddTenantPasswordResetTokens")]
+    partial class AddTenantPasswordResetTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -471,9 +474,6 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<Guid?>("LockedByInstallationId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
@@ -501,9 +501,6 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
 
                     b.HasIndex("OrderId", "Type")
                         .HasDatabaseName("IX_PrintJobs_OrderId_Type");
-
-                    b.HasIndex("Status", "LockedByInstallationId")
-                        .HasDatabaseName("IX_PrintJobs_Status_LockedByInstallationId");
 
                     b.ToTable("PrintJobs", (string)null);
                 });

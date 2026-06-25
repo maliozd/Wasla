@@ -3218,4 +3218,21 @@
   <data name="Admin.RegProvisioned" xml:space="preserve"><value>تم التوفير</value></data>
   <data name="Admin.ViewAll" xml:space="preserve"><value>عرض الكل</value></data>
   <data name="Admin.Dashboard.RegistrationsNeedingAttention" xml:space="preserve"><value>التسجيلات التي تحتاج إلى اهتمام</value></data>
+  <data name="Auth.ForgotPassword.Link" xml:space="preserve"><value>هل نسيت كلمة المرور؟</value></data>
+  <data name="Auth.ForgotPassword.Title" xml:space="preserve"><value>نسيت كلمة المرور</value></data>
+  <data name="Auth.ForgotPassword.HelpText" xml:space="preserve"><value>أدخل البريد الإلكتروني المرتبط بحسابك.</value></data>
+  <data name="Auth.ForgotPassword.SendResetLink" xml:space="preserve"><value>إرسال رابط إعادة التعيين</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationTitle" xml:space="preserve"><value>تحقق من بريدك الإلكتروني</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. تحقق من صندوق الوارد ومجلد الرسائل غير المرغوب فيها.</value></data>
+  <data name="Auth.ForgotPassword.UserNotFound" xml:space="preserve"><value>لم يتم العثور على مستخدم لهذا المطعم بهذا البريد الإلكتروني.</value></data>
+  <data name="Auth.ForgotPassword.UserInactive" xml:space="preserve"><value>حساب هذا المستخدم غير نشط. تواصل مع مدير المطعم.</value></data>
+  <data name="Auth.ForgotPassword.EmailDeliveryFailed" xml:space="preserve"><value>تعذر إرسال بريد إعادة تعيين كلمة المرور الآن. يرجى المحاولة لاحقاً.</value></data>
+  <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>تم إجراء محاولات كثيرة لإعادة تعيين كلمة المرور. يرجى المحاولة لاحقاً.</value></data>
+  <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>إعادة تعيين كلمة المرور</value></data>
+  <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
+  <data name="Auth.ResetPassword.ConfirmNewPassword" xml:space="preserve"><value>تأكيد كلمة المرور الجديدة</value></data>
+  <data name="Auth.ResetPassword.UpdatePassword" xml:space="preserve"><value>تحديث كلمة المرور</value></data>
+  <data name="Auth.ResetPassword.Updated" xml:space="preserve"><value>تم تحديث كلمة المرور.</value></data>
+  <data name="Auth.ResetPassword.InvalidOrExpired" xml:space="preserve"><value>رابط إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية.</value></data>
+  <data name="Auth.ReturnToLogin" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
 </root>

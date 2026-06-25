@@ -91,11 +91,16 @@ public interface IPendingRegistrationProvisioningService
     /// Override the SQL auth from config ("trusted" or "sql:user:pass").
     /// Pass null to use configured default. Used by Wasla.Cli when --sql-auth is supplied.
     /// </param>
+    /// <param name="panelLoginUrl">
+    /// Optional already-built tenant login URL for panel-ready email. Web can pass a request-aware URL;
+    /// CLI may pass null and let Infrastructure fall back to the registration primary domain.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     Task<ProvisioningResult> ProvisionAsync(
         Guid registrationId,
         bool force = false,
         string? sqlServerOverride = null,
         string? sqlAuthOverride = null,
+        string? panelLoginUrl = null,
         CancellationToken ct = default);
 }

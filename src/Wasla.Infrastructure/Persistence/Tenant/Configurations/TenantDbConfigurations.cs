@@ -31,6 +31,37 @@ public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
     }
 }
 
+public class PasswordResetTokenConfiguration : IEntityTypeConfiguration<PasswordResetToken>
+{
+    public void Configure(EntityTypeBuilder<PasswordResetToken> builder)
+    {
+        builder.ToTable("PasswordResetTokens");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.UserId).IsRequired();
+        builder.Property(x => x.TokenHash).IsRequired().HasMaxLength(88);
+        builder.Property(x => x.ExpiresAtUtc).IsRequired();
+        builder.Property(x => x.UsedAtUtc);
+        builder.Property(x => x.CreatedAtUtc).IsRequired();
+
+        builder.HasOne(x => x.User)
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        builder.HasIndex(x => x.TokenHash)
+            .IsUnique()
+            .HasDatabaseName("IX_PasswordResetTokens_TokenHash");
+
+        builder.HasIndex(x => x.UserId)
+            .HasDatabaseName("IX_PasswordResetTokens_UserId");
+
+        builder.HasIndex(x => x.ExpiresAtUtc)
+            .HasDatabaseName("IX_PasswordResetTokens_ExpiresAtUtc");
+    }
+}
+
 public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<UserNotificationSettings>
 {
     public void Configure(EntityTypeBuilder<UserNotificationSettings> builder)

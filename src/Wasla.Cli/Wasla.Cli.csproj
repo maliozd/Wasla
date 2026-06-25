@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Wasla.Cli</RootNamespace>
+    <UserSecretsId>c8cc92c8-4c99-488d-848c-b14914a9c722</UserSecretsId>
   </PropertyGroup>
 	<PropertyGroup>
 		<UserSecretsId>wasla-shared-development-secrets</UserSecretsId>

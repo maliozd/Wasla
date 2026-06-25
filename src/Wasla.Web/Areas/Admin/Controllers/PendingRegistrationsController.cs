@@ -17,17 +17,20 @@ public sealed class PendingRegistrationsController : Controller
     private readonly ICentralAdminPendingRegistrationService _service;
     private readonly IPendingRegistrationProvisioningService _provisioning;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<PendingRegistrationsController> _logger;
 
     public PendingRegistrationsController(
         ICentralAdminPendingRegistrationService service,
         IPendingRegistrationProvisioningService provisioning,
         IStringLocalizer<SharedResource> localizer,
+        IWebHostEnvironment environment,
         ILogger<PendingRegistrationsController> logger)
     {
         _service = service;
         _provisioning = provisioning;
         _localizer = localizer;
+        _environment = environment;
         _logger = logger;
     }
 
@@ -73,7 +76,9 @@ public sealed class PendingRegistrationsController : Controller
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        var result = await _provisioning.ProvisionAsync(id, ct: ct).ConfigureAwait(false);
+        var panelLoginUrl = TenantWelcomeUrlBuilder.BuildLoginUrl(Request, _environment, dto.PrimaryDomain);
+        var result = await _provisioning.ProvisionAsync(id, panelLoginUrl: panelLoginUrl, ct: ct)
+            .ConfigureAwait(false);
         _logger.LogInformation(
             "Central Admin provisioning completed for registration {RegistrationId} with outcome {Outcome}",
             id,

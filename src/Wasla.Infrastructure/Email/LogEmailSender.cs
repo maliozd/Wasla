@@ -19,16 +19,26 @@ public sealed class LogEmailSender : IEmailSender
         _ = ct;
         ArgumentNullException.ThrowIfNull(message);
 
-        var preview = BuildBodyPreview(message.TextBody);
         var recipient = string.IsNullOrWhiteSpace(message.ToName)
             ? message.ToEmail
             : $"{message.ToName} <{message.ToEmail}>";
 
-        _logger.LogInformation(
-            "Email (Log provider): To={Recipient} Subject={Subject} Preview={Preview}",
-            recipient,
-            message.Subject,
-            preview);
+        if (message.IsSensitive)
+        {
+            _logger.LogInformation(
+                "Email (Log provider): RecipientDomain={RecipientDomain} Subject={Subject} BodyPreviewSuppressed=true",
+                GetDomain(message.ToEmail),
+                message.Subject);
+        }
+        else
+        {
+            var preview = BuildBodyPreview(message.TextBody);
+            _logger.LogInformation(
+                "Email (Log provider): To={Recipient} Subject={Subject} Preview={Preview}",
+                recipient,
+                message.Subject,
+                preview);
+        }
 
         return Task.CompletedTask;
     }
@@ -43,5 +53,14 @@ public sealed class LogEmailSender : IEmailSender
             return normalized;
 
         return normalized[..BodyPreviewLength] + "…";
+    }
+
+    private static string GetDomain(string email)
+    {
+        var at = email.LastIndexOf('@');
+        if (at < 0 || at == email.Length - 1)
+            return "unknown";
+
+        return email[(at + 1)..].Trim();
     }
 }

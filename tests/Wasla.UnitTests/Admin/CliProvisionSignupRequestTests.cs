@@ -166,18 +166,21 @@ public sealed class CliProvisionSignupRequestTests : IDisposable
         public bool? LastForce { get; private set; }
         public string? LastSqlServerOverride { get; private set; }
         public string? LastSqlAuthOverride { get; private set; }
+        public string? LastPanelLoginUrl { get; private set; }
 
         public Task<ProvisioningResult> ProvisionAsync(
             Guid registrationId,
             bool force = false,
             string? sqlServerOverride = null,
             string? sqlAuthOverride = null,
+            string? panelLoginUrl = null,
             CancellationToken ct = default)
         {
             CallCount++;
             LastForce = force;
             LastSqlServerOverride = sqlServerOverride;
             LastSqlAuthOverride = sqlAuthOverride;
+            LastPanelLoginUrl = panelLoginUrl;
             return Task.FromResult(Result);
         }
     }

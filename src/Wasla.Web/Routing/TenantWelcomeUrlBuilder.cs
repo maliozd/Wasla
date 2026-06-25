@@ -58,6 +58,27 @@ public static class TenantWelcomeUrlBuilder
         return builder.Uri.AbsoluteUri;
     }
 
+    public static string BuildPasswordResetUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string primaryDomain,
+        string rawToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(primaryDomain);
+        ArgumentException.ThrowIfNullOrWhiteSpace(rawToken);
+
+        var builder = new UriBuilder
+        {
+            Scheme = request.Scheme,
+            Host = primaryDomain.Trim(),
+            Path = "/auth/reset-password",
+            Port = ResolvePort(request, environment)
+        };
+        builder.Query = $"token={Uri.EscapeDataString(rawToken)}";
+
+        return builder.Uri.AbsoluteUri;
+    }
+
     public static string BuildCentralHomepageUrl(
         HttpRequest request,
         IWebHostEnvironment environment,

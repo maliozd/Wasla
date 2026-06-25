@@ -56,6 +56,7 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         bool force = false,
         string? sqlServerOverride = null,
         string? sqlAuthOverride = null,
+        string? panelLoginUrl = null,
         CancellationToken ct = default)
     {
         var registration = await _central.PendingRegistrations
@@ -186,7 +187,7 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
             registration.ProvisionedAtUtc = now;
             await _central.SaveChangesAsync(ct).ConfigureAwait(false);
 
-            await TrySendPanelReadyEmailAsync(registration, ct).ConfigureAwait(false);
+            await TrySendPanelReadyEmailAsync(registration, panelLoginUrl, ct).ConfigureAwait(false);
 
             _logger.LogInformation(
                 "Registration {RegistrationId} provisioned. TenantId={TenantId} Domain={Domain}",
@@ -282,7 +283,10 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         return null;
     }
 
-    private async Task TrySendPanelReadyEmailAsync(Domain.Entities.Central.PendingRegistration registration, CancellationToken ct)
+    private async Task TrySendPanelReadyEmailAsync(
+        Domain.Entities.Central.PendingRegistration registration,
+        string? panelLoginUrl,
+        CancellationToken ct)
     {
         try
         {
@@ -290,14 +294,16 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
             var sender = _serviceProvider.GetService(typeof(IEmailSender)) as IEmailSender;
             if (factory is null || sender is null) return;
 
-            var message = factory.BuildPanelReadyEmail(registration);
+            var message = factory.BuildPanelReadyEmail(registration, panelLoginUrl);
             await sender.SendAsync(message, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex,
-                "PanelReady email failed for registration {RegistrationId} (provisioning itself succeeded)",
-                registration.Id);
+            _logger.LogWarning(
+                "PanelReady email failed for registration {RegistrationId} (provisioning itself succeeded). FailureCategory={FailureCategory} ExceptionType={ExceptionType}",
+                registration.Id,
+                SmtpFailureClassifier.Classify(ex),
+                ex.GetType().Name);
         }
     }
 

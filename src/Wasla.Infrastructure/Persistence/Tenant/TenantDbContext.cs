@@ -15,6 +15,7 @@ public class TenantDbContext : DbContext
 
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<AppUser> AppUsers => Set<AppUser>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<UserNotificationSettings> UserNotificationSettings => Set<UserNotificationSettings>();
     public DbSet<TenantOperationalSettings> TenantOperationalSettings => Set<TenantOperationalSettings>();
     public DbSet<PlatformConnection> PlatformConnections => Set<PlatformConnection>();
@@ -29,6 +30,7 @@ public class TenantDbContext : DbContext
     {
         modelBuilder.ApplyConfiguration(new BranchConfiguration());
         modelBuilder.ApplyConfiguration(new AppUserConfiguration());
+        modelBuilder.ApplyConfiguration(new PasswordResetTokenConfiguration());
         modelBuilder.ApplyConfiguration(new UserNotificationSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new TenantOperationalSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new PlatformConnectionConfiguration());

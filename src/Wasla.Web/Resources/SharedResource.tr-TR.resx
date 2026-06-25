@@ -3212,4 +3212,21 @@
   <data name="Admin.RegProvisioned" xml:space="preserve"><value>Kurulmuş kayıt</value></data>
   <data name="Admin.ViewAll" xml:space="preserve"><value>Tümünü gör</value></data>
   <data name="Admin.Dashboard.RegistrationsNeedingAttention" xml:space="preserve"><value>Dikkat gereken kayıtlar</value></data>
+  <data name="Auth.ForgotPassword.Link" xml:space="preserve"><value>Şifremi unuttum</value></data>
+  <data name="Auth.ForgotPassword.Title" xml:space="preserve"><value>Şifremi unuttum</value></data>
+  <data name="Auth.ForgotPassword.HelpText" xml:space="preserve"><value>Hesabınızla ilişkili e-posta adresini girin.</value></data>
+  <data name="Auth.ForgotPassword.SendResetLink" xml:space="preserve"><value>Sıfırlama bağlantısı gönder</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationTitle" xml:space="preserve"><value>E-postanızı kontrol edin</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.</value></data>
+  <data name="Auth.ForgotPassword.UserNotFound" xml:space="preserve"><value>Bu e-posta adresiyle bu restorana ait bir kullanıcı bulunamadı.</value></data>
+  <data name="Auth.ForgotPassword.UserInactive" xml:space="preserve"><value>Bu kullanıcı hesabı aktif değil. Restoran yöneticinizle iletişime geçin.</value></data>
+  <data name="Auth.ForgotPassword.EmailDeliveryFailed" xml:space="preserve"><value>Şifre sıfırlama e-postası şu anda gönderilemedi. Lütfen biraz sonra tekrar deneyin.</value></data>
+  <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>Çok fazla şifre sıfırlama denemesi yapıldı. Lütfen biraz sonra tekrar deneyin.</value></data>
+  <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>Şifreyi sıfırla</value></data>
+  <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>Yeni şifre</value></data>
+  <data name="Auth.ResetPassword.ConfirmNewPassword" xml:space="preserve"><value>Yeni şifre tekrarı</value></data>
+  <data name="Auth.ResetPassword.UpdatePassword" xml:space="preserve"><value>Şifreyi güncelle</value></data>
+  <data name="Auth.ResetPassword.Updated" xml:space="preserve"><value>Şifreniz güncellendi.</value></data>
+  <data name="Auth.ResetPassword.InvalidOrExpired" xml:space="preserve"><value>Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.</value></data>
+  <data name="Auth.ReturnToLogin" xml:space="preserve"><value>Girişe dön</value></data>
 </root>

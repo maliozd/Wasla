@@ -1,7 +1,9 @@
 ﻿using System.Security.Claims;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
@@ -15,20 +17,28 @@ namespace Wasla.Web.Areas.Tenant.Controllers;
 [Route("auth")]
 public sealed class AuthController : Controller
 {
+    private static readonly Regex Base64UrlTokenRegex = new(@"^[A-Za-z0-9_-]{43}$", RegexOptions.Compiled);
+
     private readonly ICurrentTenantService _currentTenant;
     private readonly IAuthValidationService _authValidation;
     private readonly ISignupCompletionTokenService _signupCompletionTokens;
+    private readonly ITenantPasswordResetService _passwordReset;
+    private readonly IWebHostEnvironment _environment;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public AuthController(
         ICurrentTenantService currentTenant,
         IAuthValidationService authValidation,
         ISignupCompletionTokenService signupCompletionTokens,
+        ITenantPasswordResetService passwordReset,
+        IWebHostEnvironment environment,
         IStringLocalizer<SharedResource> localizer)
     {
         _currentTenant = currentTenant;
         _authValidation = authValidation;
         _signupCompletionTokens = signupCompletionTokens;
+        _passwordReset = passwordReset;
+        _environment = environment;
         _localizer = localizer;
     }
 
@@ -89,6 +99,115 @@ public sealed class AuthController : Controller
         return Redirect("/onboarding");
     }
 
+    [AllowAnonymous]
+    [HttpGet("forgot-password")]
+    public IActionResult ForgotPassword()
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null)
+            return Redirect("/tenant-address-required");
+
+        return View(new ForgotPasswordViewModel());
+    }
+
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    [EnableRateLimiting(RateLimitPolicies.ForgotPassword)]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null)
+            return Redirect("/tenant-address-required");
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var result = await _passwordReset.RequestResetAsync(
+            tenant.Id,
+            model.Email,
+            rawToken => TenantWelcomeUrlBuilder.BuildPasswordResetUrl(Request, _environment, tenant.PrimaryDomain, rawToken),
+            System.Globalization.CultureInfo.CurrentUICulture.Name,
+            ct).ConfigureAwait(false);
+
+        return result.Status switch
+        {
+            TenantPasswordResetRequestStatus.EmailSent => View(new ForgotPasswordViewModel
+            {
+                EmailSent = true
+            }),
+            TenantPasswordResetRequestStatus.UserInactive => ForgotPasswordError(
+                model,
+                "Auth.ForgotPassword.UserInactive"),
+            TenantPasswordResetRequestStatus.EmailDeliveryFailed => ForgotPasswordError(
+                model,
+                "Auth.ForgotPassword.EmailDeliveryFailed"),
+            _ => ForgotPasswordError(
+                model,
+                "Auth.ForgotPassword.UserNotFound")
+        };
+    }
+
+    private ViewResult ForgotPasswordError(ForgotPasswordViewModel model, string resourceKey)
+    {
+        ModelState.AddModelError(string.Empty, _localizer[resourceKey].Value);
+        return View(model);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("reset-password")]
+    public IActionResult ResetPassword([FromQuery] string? token)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null)
+            return Redirect("/tenant-address-required");
+
+        if (IsClearlyMalformedResetToken(token))
+        {
+            return View(new ResetPasswordViewModel
+            {
+                IsInvalidToken = true
+            });
+        }
+
+        return View(new ResetPasswordViewModel { Token = token!.Trim() });
+    }
+
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null)
+            return Redirect("/tenant-address-required");
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var result = await _passwordReset
+            .ResetPasswordAsync(tenant.Id, model.Token, model.NewPassword, ct)
+            .ConfigureAwait(false);
+
+        if (result.IsSuccess)
+        {
+            TempData["AuthSuccess"] = _localizer["Auth.ResetPassword.Updated"].Value;
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (result.Outcome == TenantPasswordResetOutcome.InvalidPassword)
+        {
+            foreach (var error in result.ValidationErrors)
+                ModelState.AddModelError(nameof(model.NewPassword), _localizer[error].Value);
+
+            return View(model);
+        }
+
+        model.IsInvalidToken = true;
+        ModelState.AddModelError(string.Empty, _localizer["Auth.ResetPassword.InvalidOrExpired"].Value);
+        return View(model);
+    }
+
     private async Task SignInSessionAsync(AuthSessionResult session, CancellationToken ct)
     {
         await SignInSessionAsync(new SignupCompletionPayload(
@@ -121,6 +240,11 @@ public sealed class AuthController : Controller
             AuthSchemes.Tenant,
             principal,
             new AuthenticationProperties { IsPersistent = true, IssuedUtc = DateTimeOffset.UtcNow });
+    }
+
+    private static bool IsClearlyMalformedResetToken(string? token)
+    {
+        return string.IsNullOrWhiteSpace(token) || !Base64UrlTokenRegex.IsMatch(token.Trim());
     }
 
     [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]

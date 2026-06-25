@@ -47,8 +47,8 @@ public sealed class SmtpEmailSender : IEmailSender
         await client.DisconnectAsync(true, ct).ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Email sent via SMTP to {Recipient} with subject {Subject}",
-            message.ToEmail,
+            "Email sent via SMTP. RecipientDomain={RecipientDomain} Subject={Subject}",
+            GetDomain(message.ToEmail),
             message.Subject);
     }
 
@@ -79,10 +79,28 @@ public sealed class SmtpEmailSender : IEmailSender
         if (string.IsNullOrWhiteSpace(_options.FromEmail))
             throw new InvalidOperationException("Email:FromEmail is required when Email:Provider is Smtp.");
 
+        if (string.IsNullOrWhiteSpace(_options.FromName))
+            throw new InvalidOperationException("Email:FromName is required when Email:Provider is Smtp.");
+
         if (string.IsNullOrWhiteSpace(_options.SmtpHost))
             throw new InvalidOperationException("Email:SmtpHost is required when Email:Provider is Smtp.");
 
         if (_options.SmtpPort <= 0)
             throw new InvalidOperationException("Email:SmtpPort must be greater than zero when Email:Provider is Smtp.");
+
+        if (string.IsNullOrWhiteSpace(_options.SmtpUsername))
+            throw new InvalidOperationException("Email:SmtpUsername is required when Email:Provider is Smtp.");
+
+        if (string.IsNullOrWhiteSpace(_options.SmtpPassword))
+            throw new InvalidOperationException("Email:SmtpPassword is required when Email:Provider is Smtp.");
+    }
+
+    private static string GetDomain(string email)
+    {
+        var at = email.LastIndexOf('@');
+        if (at < 0 || at == email.Length - 1)
+            return "unknown";
+
+        return email[(at + 1)..].Trim();
     }
 }

@@ -128,6 +128,21 @@ builder.Services.AddRateLimiter(options =>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
             }));
+
+    options.AddPolicy(RateLimitPolicies.ForgotPassword, httpContext =>
+    {
+        var host = httpContext.Request.Host.Host?.Trim().ToLowerInvariant() ?? "unknown-host";
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: $"{host}:{ip}",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(10),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
 });
 
 builder.Services
