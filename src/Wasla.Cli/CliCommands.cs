@@ -995,9 +995,9 @@ internal static class CliCommands
         }
 
         if (!Enum.TryParse<UserRole>(role, true, out var userRole) ||
-            userRole is not (UserRole.Owner or UserRole.Manager or UserRole.Staff))
+            userRole is not (UserRole.Owner or UserRole.Manager or UserRole.Kitchen or UserRole.Cashier or UserRole.Viewer))
         {
-            WriteError("Role must be one of: Owner, Manager, Staff.");
+            WriteError("Role must be one of: Owner, Manager, Kitchen, Cashier, Viewer.");
             return 2;
         }
 

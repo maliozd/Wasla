@@ -14,7 +14,7 @@ using ValidationException = FluentValidation.ValidationException;
 namespace Wasla.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.CanManageTenantSettings)]
 [Route("settings/receipt-printer")]
 public sealed class ReceiptPrinterSettingsController : BaseController
 {

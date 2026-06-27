@@ -18,10 +18,10 @@ public class AppUser : BaseEntity
 
     public string FullName { get; set; } = string.Empty;
 
-    public UserRole Role { get; set; } = UserRole.Staff;
+    public UserRole Role { get; set; } = UserRole.Viewer;
 
     /// <summary>
-    /// Optional: restrict a Staff/Manager to a specific branch.
+    /// Optional: restrict an operational user to a specific branch.
     /// Null means access to all branches.
     /// </summary>
     public Guid? BranchId { get; set; }

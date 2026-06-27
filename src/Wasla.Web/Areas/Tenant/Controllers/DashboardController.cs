@@ -10,7 +10,7 @@ using Wasla.Web.Security;
 namespace Wasla.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.CanViewReports)]
 [Route("dashboard")]
 public sealed class DashboardController : BaseController
 {

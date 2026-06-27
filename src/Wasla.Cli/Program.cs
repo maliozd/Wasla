@@ -296,7 +296,7 @@ var createUser = new Command("create-user", "Add a user to an existing customer'
 var optCustSlug = new Option<string>("--customer-slug", "Customer slug in CentralDb") { IsRequired = true };
 var optEmail = new Option<string>("--email", "User email") { IsRequired = true };
 var optPassword = new Option<string>("--password", "Plaintext password (visible in history)") { IsRequired = true };
-var optRole = new Option<string>("--role", "Owner, Manager, or Staff") { IsRequired = true };
+var optRole = new Option<string>("--role", "Owner, Manager, Kitchen, Cashier, or Viewer") { IsRequired = true };
 var optFullName = new Option<string?>("--name", "User full name");
 
 createUser.AddOption(optCustSlug);

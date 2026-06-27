@@ -13,7 +13,7 @@ using Wasla.Domain.Enums;
 namespace Wasla.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = "ManagePlatformConnections")]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.CanManageTenantSettings)]
 [Route("platform-connections")]
 public sealed class PlatformConnectionsController : BaseController
 {

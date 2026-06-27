@@ -54,6 +54,7 @@ public sealed class PrintBridgeController : BaseController
         RedirectToActionPermanent(nameof(Devices));
 
     [HttpGet("devices")]
+    [Authorize(Policy = TenantPolicies.CanManagePrintBridgeDevices)]
     public async Task<IActionResult> Devices(CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -69,6 +70,7 @@ public sealed class PrintBridgeController : BaseController
     }
 
     [HttpGet("devices/{id:guid}")]
+    [Authorize(Policy = TenantPolicies.CanManagePrintBridgeDevices)]
     public async Task<IActionResult> DeviceDetails(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -82,6 +84,7 @@ public sealed class PrintBridgeController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("devices/{id:guid}/rename")]
+    [Authorize(Policy = TenantPolicies.CanManagePrintBridgeDevices)]
     public async Task<IActionResult> RenameDevice(Guid id, [FromForm] string? name, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -106,6 +109,7 @@ public sealed class PrintBridgeController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("devices/{id:guid}/remove")]
+    [Authorize(Policy = TenantPolicies.CanManageDeviceSecurity)]
     public async Task<IActionResult> RemoveDevice(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -126,6 +130,7 @@ public sealed class PrintBridgeController : BaseController
     }
 
     [HttpGet("setup")]
+    [Authorize(Policy = TenantPolicies.CanManageDeviceSecurity)]
     public async Task<IActionResult> Setup(CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -162,6 +167,7 @@ public sealed class PrintBridgeController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("setup/session")]
+    [Authorize(Policy = TenantPolicies.CanManageDeviceSecurity)]
     public async Task<IActionResult> CreateSetupSession(
         [FromForm] string? setupMode,
         [FromForm] Guid? deviceId,
@@ -243,6 +249,7 @@ public sealed class PrintBridgeController : BaseController
     }
 
     [HttpGet("setup/session/{sessionId:guid}/status")]
+    [Authorize(Policy = TenantPolicies.CanManageDeviceSecurity)]
     public async Task<IActionResult> SetupSessionStatus(Guid sessionId, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -274,6 +281,7 @@ public sealed class PrintBridgeController : BaseController
         RedirectToActionPermanent(nameof(Setup));
 
     [HttpGet("devices/list")]
+    [Authorize(Policy = TenantPolicies.CanManagePrintBridgeDevices)]
     public async Task<IActionResult> ListDevices(CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -291,6 +299,7 @@ public sealed class PrintBridgeController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("devices/{deviceId:guid}/regenerate-token")]
+    [Authorize(Policy = TenantPolicies.CanManageDeviceSecurity)]
     public async Task<IActionResult> RegenerateToken(Guid deviceId, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -325,6 +334,7 @@ public sealed class PrintBridgeController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("devices/{deviceId:guid}/set-active")]
+    [Authorize(Policy = TenantPolicies.CanManagePrintBridgeDevices)]
     public async Task<IActionResult> SetDeviceActive(Guid deviceId, [FromForm] bool isActive, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -358,6 +368,7 @@ public sealed class PrintBridgeController : BaseController
     }
 
     [HttpGet("print-jobs")]
+    [Authorize(Policy = TenantPolicies.CanManualPrint)]
     public async Task<IActionResult> ListPrintJobs(CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -369,6 +380,7 @@ public sealed class PrintBridgeController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("print-jobs/{jobId:guid}/reprint")]
+    [Authorize(Policy = TenantPolicies.CanManualPrint)]
     public async Task<IActionResult> ReprintJob(Guid jobId, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -396,6 +408,7 @@ public sealed class PrintBridgeController : BaseController
     }
 
     [HttpGet("download/package")]
+    [Authorize(Policy = TenantPolicies.CanManageDeviceSecurity)]
     public IActionResult DownloadPackage()
     {
         var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);

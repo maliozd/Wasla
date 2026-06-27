@@ -53,7 +53,7 @@ public sealed class AuthController : ControllerBase
         var role =
             User.FindFirst(ClaimTypes.Role)?.Value ??
             User.FindFirst("Role")?.Value ??
-            "Staff";
+            "Viewer";
 
         _ = Guid.TryParse(userIdClaim, out var userId);
         _ = Enum.TryParse<UserRoleDto>(role, ignoreCase: true, out var roleDto);

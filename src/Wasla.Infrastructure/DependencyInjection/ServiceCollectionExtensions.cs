@@ -96,6 +96,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthValidationService, AuthValidationService>();
         services.AddScoped<IPasswordPolicy, DefaultPasswordPolicy>();
         services.AddScoped<ITenantPasswordResetService, TenantPasswordResetService>();
+        services.AddScoped<ITenantUserRoleService, TenantUserRoleService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();

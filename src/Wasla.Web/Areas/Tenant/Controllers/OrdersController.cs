@@ -16,7 +16,7 @@ using Microsoft.Extensions.Localization;
 namespace Wasla.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.CanViewOrders)]
 [Route("orders")]
 public sealed class OrdersController : BaseController
 {
@@ -108,6 +108,7 @@ public sealed class OrdersController : BaseController
     }
 
     [HttpGet("sync-settings")]
+    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> GetOrderSyncSettings(CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -119,6 +120,7 @@ public sealed class OrdersController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("sync-settings")]
+    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> UpdateOrderSyncSettings([FromForm] bool enabled, CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -129,6 +131,7 @@ public sealed class OrdersController : BaseController
     }
 
     [HttpGet("order-settings")]
+    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> GetOrderSettings(CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -146,6 +149,7 @@ public sealed class OrdersController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("order-settings")]
+    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> UpdateOrderSettings(
         [FromForm] bool autoApproveNewOrders,
         [FromForm] bool autoPrintReceiptOnAutoApprove,
@@ -211,6 +215,7 @@ public sealed class OrdersController : BaseController
     }
 
     [HttpGet("live-display")]
+    [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
     public async Task<IActionResult> LiveDisplay(CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -373,6 +378,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/approve")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> Approve(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -388,6 +394,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/reject")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> Reject(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -400,6 +407,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/start-preparing")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> StartPreparing(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -412,6 +420,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/mark-ready")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> MarkReady(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -424,6 +433,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/hand-to-courier")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> HandToCourier(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -436,6 +446,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/mark-delivered")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> MarkDelivered(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;

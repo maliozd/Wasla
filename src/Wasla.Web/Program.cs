@@ -1,9 +1,11 @@
 ﻿using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
+using Wasla.Domain.Enums;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Security;
@@ -105,12 +107,25 @@ builder.Services.AddAuthentication(options =>
         options.SlidingExpiration = true;
     });
 
+builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
+
 builder.Services.AddAuthorization(options =>
 {
+    AddTenantRolePolicy(options, TenantPolicies.TenantOwner, UserRole.Owner);
+    AddTenantRolePolicy(options, TenantPolicies.TenantManagerOrOwner, UserRole.Owner, UserRole.Manager);
+    AddTenantRolePolicy(options, TenantPolicies.CanManageTenantUsers, UserRole.Owner);
+    AddTenantRolePolicy(options, TenantPolicies.CanManageTenantSettings, UserRole.Owner);
+    AddTenantRolePolicy(options, TenantPolicies.CanManagePrintBridgeDevices, UserRole.Owner);
+    AddTenantRolePolicy(options, TenantPolicies.CanManageDeviceSecurity, UserRole.Owner);
+    AddTenantRolePolicy(options, TenantPolicies.CanViewOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
+    AddTenantRolePolicy(options, TenantPolicies.CanManageOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier);
+    AddTenantRolePolicy(options, TenantPolicies.CanManualPrint, UserRole.Owner, UserRole.Manager, UserRole.Cashier);
+    AddTenantRolePolicy(options, TenantPolicies.CanViewLiveScreen, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
+    AddTenantRolePolicy(options, TenantPolicies.CanViewReports, UserRole.Owner, UserRole.Manager, UserRole.Viewer);
     options.AddPolicy("ManagePlatformConnections", policy =>
     {
         policy.RequireAuthenticatedUser();
-        policy.RequireRole("Owner", "Manager");
+        policy.Requirements.Add(new TenantRoleRequirement(UserRole.Owner));
     });
 });
 
@@ -198,3 +213,12 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+static void AddTenantRolePolicy(AuthorizationOptions options, string name, params UserRole[] roles)
+{
+    options.AddPolicy(name, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new TenantRoleRequirement(roles));
+    });
+}
