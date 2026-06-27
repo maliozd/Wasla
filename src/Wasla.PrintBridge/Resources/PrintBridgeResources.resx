@@ -89,6 +89,15 @@
   <data name="Connection.TokenInvalid" xml:space="preserve">
     <value>Print Bridge erişim anahtarı geçersiz veya yetkisiz. Ayarlardaki anahtarı kontrol edin.</value>
   </data>
+  <data name="RuntimeIssue.ReconnectRequired" xml:space="preserve">
+    <value>Bu Print Bridge cihazı artık yetkili değil. Yazdırmaya devam etmek için Wasla Web üzerinden yeniden bağlayın.</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
+    <value>Bu Print Bridge cihazı Wasla Web'de devre dışı bırakılmış. Oradan etkinleştirin, sonra yoklamayı yeniden başlatın.</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation" xml:space="preserve">
+    <value>Bu bilgisayardaki Print Bridge kimliği başka bir cihaza bağlı. Wasla Web'de mevcut cihaz için yeniden bağlama seçeneğini kullanın.</value>
+  </data>
   <data name="Dashboard.DeviceStatus" xml:space="preserve">
     <value>Cihaz Durumu</value>
   </data>

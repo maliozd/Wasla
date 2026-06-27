@@ -6,6 +6,7 @@ public sealed class PrintBridgeRuntimeStatus
     public bool IsConnected { get; init; }
     public DateTime? LastSuccessfulContactUtc { get; init; }
     public DateTime? LastPollUtc { get; init; }
+    public PrintBridgeRuntimeIssue? LastIssue { get; init; }
     public string? LastError { get; init; }
     public string ServerUrl { get; init; } = string.Empty;
     public string PrinterName { get; init; } = string.Empty;
@@ -27,21 +28,34 @@ public sealed class PrintBridgeRuntimeStatus
         bool isConfigured,
         bool isRunning,
         bool isConnected,
-        string? lastError)
+        PrintBridgeRuntimeIssue? lastIssue)
     {
         if (!isConfigured)
             return BridgeServerConnectionStatus.NotConfigured;
 
+        if (lastIssue is not null)
+            return BridgeServerConnectionStatus.Error;
+
         if (!isRunning)
             return BridgeServerConnectionStatus.Stopped;
-
-        if (!string.IsNullOrWhiteSpace(lastError))
-            return BridgeServerConnectionStatus.Error;
 
         return isConnected
             ? BridgeServerConnectionStatus.Connected
             : BridgeServerConnectionStatus.Disconnected;
     }
+
+    public static BridgeServerConnectionStatus ResolveServerConnectionStatus(
+        bool isConfigured,
+        bool isRunning,
+        bool isConnected,
+        string? lastError) =>
+        ResolveServerConnectionStatus(
+            isConfigured,
+            isRunning,
+            isConnected,
+            string.IsNullOrWhiteSpace(lastError)
+                ? null
+                : PrintBridgeRuntimeIssue.FromResource(lastError));
 
     public static TrayIconState ResolveTrayIconState(
         bool isRunning,

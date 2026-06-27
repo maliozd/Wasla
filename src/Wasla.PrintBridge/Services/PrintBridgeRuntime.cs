@@ -14,6 +14,7 @@ public sealed class PrintBridgeRuntime : IDisposable
     private readonly ReceiptFormatter _formatter;
     private readonly IReceiptPrinter _printer;
     private readonly PrintBridgeSettingsHolder _holder;
+    private readonly PrintBridgeSettingsStore _store;
     private readonly PrintBridgeDeviceMetadataSync _deviceMetadataSync;
     private readonly LocalPrintJobHistoryStore _historyStore;
     private readonly AppVersionInfo _appVersion;
@@ -26,13 +27,14 @@ public sealed class PrintBridgeRuntime : IDisposable
     private bool _isRunning;
     private DateTime? _lastSuccessfulContactUtc;
     private DateTime? _lastPollUtc;
-    private string? _lastError;
+    private PrintBridgeRuntimeIssue? _lastIssue;
 
     public PrintBridgeRuntime(
         WaslaPrintBridgeClient client,
         ReceiptFormatter formatter,
         IReceiptPrinter printer,
         PrintBridgeSettingsHolder holder,
+        PrintBridgeSettingsStore store,
         PrintBridgeDeviceMetadataSync deviceMetadataSync,
         LocalPrintJobHistoryStore historyStore,
         AppVersionInfo appVersion,
@@ -42,6 +44,7 @@ public sealed class PrintBridgeRuntime : IDisposable
         _formatter = formatter;
         _printer = printer;
         _holder = holder;
+        _store = store;
         _deviceMetadataSync = deviceMetadataSync;
         _historyStore = historyStore;
         _appVersion = appVersion;
@@ -78,7 +81,8 @@ public sealed class PrintBridgeRuntime : IDisposable
                 IsConnected = isConnected,
                 LastSuccessfulContactUtc = _lastSuccessfulContactUtc,
                 LastPollUtc = _lastPollUtc,
-                LastError = _lastError,
+                LastIssue = _lastIssue,
+                LastError = _lastIssue?.EffectiveResourceKey,
                 ServerUrl = hub.ServerUrl,
                 PrinterName = bridge.PrinterName,
                 LocalDeviceName = bridge.DisplayName?.Trim() ?? string.Empty,
@@ -97,7 +101,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                     isConnectionConfigured,
                     _isRunning,
                     isConnected,
-                    _lastError),
+                    _lastIssue),
                 PrinterHealthStatus = WindowsPrinterHealth.Resolve(bridge),
                 TrayIconState = trayIconState
             };
@@ -176,21 +180,19 @@ public sealed class PrintBridgeRuntime : IDisposable
         lock (_sync)
         {
             _lastSuccessfulContactUtc = DateTime.UtcNow;
-            _lastError = null;
+            _lastIssue = null;
         }
 
         RaiseStatusChanged();
         return health;
     }
 
-    public void RecordConnectionFailure(Exception ex)
+    public void RecordConnectionFailure(Exception ex, bool applyCredentialFailureFallback = true)
     {
-        if (ex is PrintBridgeConnectionException connectionEx && connectionEx.IsTokenAuthFailure)
-            _deviceMetadataSync.MarkUnresolved();
+        var issue = ApplyFailure(ex, applyCredentialFailureFallback);
 
-        lock (_sync)
-            _lastError = GetUserErrorMessage(ex);
-
+        if (issue.ShouldStopPolling)
+            SuspendPollingAfterTerminalIssue();
         RaiseStatusChanged();
     }
 
@@ -202,9 +204,9 @@ public sealed class PrintBridgeRuntime : IDisposable
         }
         catch (PrintBridgeConnectionException ex) when (ex.IsTokenAuthFailure)
         {
-            _deviceMetadataSync.MarkUnresolved();
-            lock (_sync)
-                _lastError = GetUserErrorMessage(ex);
+            var issue = ApplyFailure(ex, applyCredentialFailureFallback: true);
+            if (issue.ShouldStopPolling)
+                SuspendPollingAfterTerminalIssue();
             RaiseStatusChanged();
             throw;
         }
@@ -275,7 +277,7 @@ public sealed class PrintBridgeRuntime : IDisposable
                 lock (_sync)
                 {
                     _lastSuccessfulContactUtc = DateTime.UtcNow;
-                    _lastError = null;
+                    _lastIssue = null;
                 }
 
                 var jobs = await _client.GetPendingJobsAsync(stoppingToken).ConfigureAwait(false);
@@ -298,13 +300,14 @@ public sealed class PrintBridgeRuntime : IDisposable
             catch (Exception ex)
             {
                 hadError = true;
-                if (ex is PrintBridgeConnectionException connectionEx && connectionEx.IsTokenAuthFailure)
-                    _deviceMetadataSync.MarkUnresolved();
-
-                lock (_sync)
-                    _lastError = GetUserErrorMessage(ex);
+                var issue = ApplyFailure(ex, applyCredentialFailureFallback: true);
 
                 _logger.LogWarning(ex, "Print Bridge polling/processing failed.");
+                if (issue.ShouldStopPolling)
+                {
+                    SuspendPollingAfterTerminalIssue();
+                    break;
+                }
             }
 
             RaiseStatusChanged();
@@ -557,10 +560,79 @@ public sealed class PrintBridgeRuntime : IDisposable
 
     private void RaiseStatusChanged() => StatusChanged?.Invoke(this, EventArgs.Empty);
 
-    private static string GetUserErrorMessage(Exception ex) =>
-        ex is PrintBridgeConnectionException connectionEx
-            ? connectionEx.UserMessageKey
-            : ex is LocalizedApplicationException localized
-                ? localized.ResourceKey
-                : ex.Message;
+    private PrintBridgeRuntimeIssue ApplyFailure(Exception ex, bool applyCredentialFailureFallback)
+    {
+        var issue = ToRuntimeIssue(ex);
+
+        if (issue.Code is PrintBridgeRuntimeIssueCode.ReconnectRequired
+            or PrintBridgeRuntimeIssueCode.DisabledByAdmin
+            or PrintBridgeRuntimeIssueCode.DuplicateInstallation)
+        {
+            _deviceMetadataSync.MarkUnresolved();
+        }
+
+        if (applyCredentialFailureFallback && issue.ShouldClearToken)
+            ClearTokenForReconnectRequired();
+
+        lock (_sync)
+            _lastIssue = issue;
+
+        return issue;
+    }
+
+    private void ClearTokenForReconnectRequired()
+    {
+        try
+        {
+            var (hub, bridge, ui) = _holder.Snapshot();
+            if (!PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(hub, bridge))
+                return;
+
+            _holder.Replace(hub, bridge, ui);
+            _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
+            {
+                OrderHub = hub,
+                PrintBridge = bridge,
+                Ui = ui
+            });
+            _logger.LogInformation("Print Bridge local token cleared after reconnect-required authentication failure.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Failed to persist Print Bridge token clearing after authentication failure.");
+        }
+    }
+
+    private void SuspendPollingAfterTerminalIssue()
+    {
+        CancellationTokenSource? cts;
+        lock (_sync)
+        {
+            _isRunning = false;
+            cts = _cts;
+            _cts = null;
+            _loopTask = null;
+        }
+
+        try
+        {
+            cts?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
+    private static PrintBridgeRuntimeIssue ToRuntimeIssue(Exception ex) =>
+        ex switch
+        {
+            PrintBridgeConnectionException connectionEx => new(
+                connectionEx.IssueCode,
+                connectionEx.UserMessageKey,
+                connectionEx.FormatArgs),
+            LocalizedApplicationException localized => PrintBridgeRuntimeIssue.FromResource(
+                localized.ResourceKey,
+                localized.Args),
+            _ => PrintBridgeRuntimeIssue.FromRaw(ex.Message)
+        };
 }

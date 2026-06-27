@@ -282,18 +282,21 @@ public sealed class WaslaPrintBridgeClient
             return response;
 
         var body = await SafeReadBodyAsync(response, ct).ConfigureAwait(false);
+        var serverErrorCode = TryGetPrintBridgeErrorCode(response, body);
         _logger.LogWarning(
-            "Print Bridge API failed. ServerUrl={ServerUrl}, Path={Path}, StatusCode={StatusCode}, Body={Body}",
+            "Print Bridge API failed. ServerUrl={ServerUrl}, Path={Path}, StatusCode={StatusCode}, ErrorCode={ErrorCode}, Body={Body}",
             serverUrl,
             relativePath,
             (int)response.StatusCode,
+            serverErrorCode,
             body);
 
         throw PrintBridgeConnectionException.FromResponse(
             relativePath,
             serverUrl,
             (int)response.StatusCode,
-            body);
+            body,
+            serverErrorCode);
     }
 
     private string BuildAbsoluteUrl(string relativeUrl)
@@ -333,6 +336,35 @@ public sealed class WaslaPrintBridgeClient
         {
             return string.Empty;
         }
+    }
+
+    private static string? TryGetPrintBridgeErrorCode(HttpResponseMessage response, string? body)
+    {
+        if (response.Headers.TryGetValues("X-PrintBridge-Error-Code", out var values))
+        {
+            var headerValue = values.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(headerValue))
+                return headerValue.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(body))
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("error", out var error)
+                && error.ValueKind == JsonValueKind.String)
+            {
+                return error.GetString();
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return null;
     }
 
     private static bool IsSslFailure(HttpRequestException ex)

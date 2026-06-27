@@ -157,7 +157,6 @@ public sealed partial class MainForm
         catch (Exception ex)
         {
             _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
-            _runtime.RecordConnectionFailure(ex);
             SetSectionStatus(_lblConnectionStatus, GetUserErrorMessage(ex), isError: true);
         }
         finally

@@ -89,6 +89,15 @@
   <data name="Connection.TokenInvalid" xml:space="preserve">
     <value>رمز Print Bridge غير صالح أو غير مصرح. تحقق من الرمز في الإعدادات.</value>
   </data>
+  <data name="RuntimeIssue.ReconnectRequired" xml:space="preserve">
+    <value>لم يعد جهاز Print Bridge هذا مصرحًا له. أعد توصيله من Wasla Web لمتابعة الطباعة.</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
+    <value>تم تعطيل جهاز Print Bridge هذا في Wasla Web. فعّله هناك، ثم ابدأ polling مرة أخرى.</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation" xml:space="preserve">
+    <value>هوية Print Bridge على هذا الكمبيوتر مرتبطة بجهاز آخر. استخدم إعادة توصيل الجهاز الموجود في Wasla Web.</value>
+  </data>
   <data name="Dashboard.DeviceStatus" xml:space="preserve">
     <value>حالة الجهاز</value>
   </data>

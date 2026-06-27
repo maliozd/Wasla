@@ -89,6 +89,15 @@
   <data name="Connection.TokenInvalid" xml:space="preserve">
     <value>Токен Print Bridge недействителен или неавторизован. Проверьте токен в настройках.</value>
   </data>
+  <data name="RuntimeIssue.ReconnectRequired" xml:space="preserve">
+    <value>Это устройство Print Bridge больше не авторизовано. Повторно подключите его в Wasla Web, чтобы продолжить печать.</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
+    <value>Это устройство Print Bridge отключено в Wasla Web. Включите его там, затем снова запустите опрос.</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation" xml:space="preserve">
+    <value>Идентификатор Print Bridge на этом компьютере уже связан с другим устройством. Используйте повторное подключение существующего устройства в Wasla Web.</value>
+  </data>
   <data name="Dashboard.DeviceStatus" xml:space="preserve">
     <value>Статус устройства</value>
   </data>

@@ -100,6 +100,25 @@ public sealed class PrintBridgeLocalizer
         _ => GetString("ConnectionStatus.Stopped")
     };
 
+    public string GetServerConnectionStatus(PrintBridgeRuntimeStatus status) =>
+        status.LastIssue is not null
+            ? GetRuntimeIssue(status.LastIssue)
+            : GetServerConnectionStatus(status.ServerConnectionStatus);
+
+    public string GetRuntimeIssue(PrintBridgeRuntimeIssue issue)
+    {
+        if (issue.Code == PrintBridgeRuntimeIssueCode.Unexpected)
+            return string.IsNullOrWhiteSpace(issue.RawMessage)
+                ? GetString("ConnectionStatus.Error")
+                : issue.RawMessage;
+
+        var key = issue.EffectiveResourceKey;
+        if (string.IsNullOrWhiteSpace(key))
+            return GetString("ConnectionStatus.Error");
+
+        return GetString(key, issue.Args ?? []);
+    }
+
     public string GetPrinterHealthStatus(PrinterHealthStatus status) => status switch
     {
         PrinterHealthStatus.Ready => GetString("PrinterStatus.Ready"),

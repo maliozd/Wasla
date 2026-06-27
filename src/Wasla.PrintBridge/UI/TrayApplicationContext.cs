@@ -356,7 +356,10 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         if (ex is PrintBridgeConnectionException connectionEx)
 
-            return _localizer.GetString(connectionEx.UserMessageKey, connectionEx.FormatArgs);
+            return _localizer.GetRuntimeIssue(new(
+                connectionEx.IssueCode,
+                connectionEx.UserMessageKey,
+                connectionEx.FormatArgs));
 
 
 

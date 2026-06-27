@@ -1300,6 +1300,7 @@ public sealed partial class MainForm : Form
             _cultureService.Initialize(selectedCulture);
             ApplyStartupLocalization();
             RefreshDashboard();
+            RefreshRuntimeIssueLabel();
             RefreshRecentJobsFromRuntime();
             if (_tabs.SelectedTab == _historyTab)
                 RefreshPrintHistory();
@@ -1503,7 +1504,7 @@ public sealed partial class MainForm : Form
             ? PrintBridgeUiTheme.Danger
             : PrintBridgeUiTheme.TextTitle;
 
-        _serverStatusValue.Text = _localizer.GetServerConnectionStatus(status.ServerConnectionStatus);
+        _serverStatusValue.Text = _localizer.GetServerConnectionStatus(status);
         _serverStatusValue.ForeColor = status.ServerConnectionStatus switch
         {
             BridgeServerConnectionStatus.Connected => PrintBridgeUiTheme.Success,
@@ -1528,6 +1529,25 @@ public sealed partial class MainForm : Form
 
         UpdateHeaderBadge(status);
         UpdateStartStopButton(status);
+        RefreshRuntimeIssueLabel(status);
+    }
+
+    private void RefreshRuntimeIssueLabel(PrintBridgeRuntimeStatus? status = null)
+    {
+        if (_lblConnectionStatus is null)
+            return;
+
+        status ??= _runtime.GetStatus();
+        if (status.LastIssue is null)
+            return;
+
+        SetSectionStatus(
+            _lblConnectionStatus,
+            _localizer.GetRuntimeIssue(status.LastIssue),
+            isError: true);
+
+        if (status.LastIssue.ShouldClearToken && _txtSetupCode is not null)
+            _txtSetupCode.Text = string.Empty;
     }
 
     private void RefreshRecentJobsFromRuntime()
@@ -1715,7 +1735,10 @@ public sealed partial class MainForm : Form
     private string GetUserErrorMessage(Exception ex)
     {
         if (ex is PrintBridgeConnectionException connectionEx)
-            return _localizer.GetString(connectionEx.UserMessageKey, connectionEx.FormatArgs);
+            return _localizer.GetRuntimeIssue(new(
+                connectionEx.IssueCode,
+                connectionEx.UserMessageKey,
+                connectionEx.FormatArgs));
 
         if (ex is LocalizedApplicationException localized)
         {
