@@ -111,17 +111,17 @@ builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler
 
 builder.Services.AddAuthorization(options =>
 {
-    AddTenantRolePolicy(options, TenantPolicies.TenantOwner, UserRole.Owner);
-    AddTenantRolePolicy(options, TenantPolicies.TenantManagerOrOwner, UserRole.Owner, UserRole.Manager);
-    AddTenantRolePolicy(options, TenantPolicies.CanManageTenantUsers, UserRole.Owner);
-    AddTenantRolePolicy(options, TenantPolicies.CanManageTenantSettings, UserRole.Owner);
-    AddTenantRolePolicy(options, TenantPolicies.CanManagePrintBridgeDevices, UserRole.Owner);
-    AddTenantRolePolicy(options, TenantPolicies.CanManageDeviceSecurity, UserRole.Owner);
-    AddTenantRolePolicy(options, TenantPolicies.CanViewOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
-    AddTenantRolePolicy(options, TenantPolicies.CanManageOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier);
-    AddTenantRolePolicy(options, TenantPolicies.CanManualPrint, UserRole.Owner, UserRole.Manager, UserRole.Cashier);
-    AddTenantRolePolicy(options, TenantPolicies.CanViewLiveScreen, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
-    AddTenantRolePolicy(options, TenantPolicies.CanViewReports, UserRole.Owner, UserRole.Manager, UserRole.Viewer);
+    options.AddTenantRolePolicy(TenantPolicies.TenantOwner, UserRole.Owner);
+    options.AddTenantRolePolicy(TenantPolicies.TenantManagerOrOwner, UserRole.Owner, UserRole.Manager);
+    options.AddTenantRolePolicy(TenantPolicies.CanManageTenantUsers, UserRole.Owner);
+    options.AddTenantRolePolicy(TenantPolicies.CanManageTenantSettings, UserRole.Owner);
+    options.AddTenantRolePolicy(TenantPolicies.CanManagePrintBridgeDevices, UserRole.Owner);
+    options.AddTenantRolePolicy(TenantPolicies.CanManageDeviceSecurity, UserRole.Owner);
+    options.AddTenantRolePolicy(TenantPolicies.CanViewOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
+    options.AddTenantRolePolicy(TenantPolicies.CanManageOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier);
+    options.AddTenantRolePolicy(TenantPolicies.CanManualPrint, UserRole.Owner, UserRole.Manager, UserRole.Cashier);
+    options.AddTenantRolePolicy(TenantPolicies.CanViewLiveScreen, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
+    options.AddTenantRolePolicy(TenantPolicies.CanViewReports, UserRole.Owner, UserRole.Manager, UserRole.Viewer);
     options.AddPolicy("ManagePlatformConnections", policy =>
     {
         policy.RequireAuthenticatedUser();
@@ -213,12 +213,3 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-
-static void AddTenantRolePolicy(AuthorizationOptions options, string name, params UserRole[] roles)
-{
-    options.AddPolicy(name, policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.Requirements.Add(new TenantRoleRequirement(roles));
-    });
-}

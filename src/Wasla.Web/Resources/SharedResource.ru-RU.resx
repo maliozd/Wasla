@@ -3719,4 +3719,51 @@
   <data name="Auth.ResetPassword.Updated" xml:space="preserve"><value>Ваш пароль обновлен.</value></data>
   <data name="Auth.ResetPassword.InvalidOrExpired" xml:space="preserve"><value>Ссылка для сброса пароля недействительна или истекла.</value></data>
   <data name="Auth.ReturnToLogin" xml:space="preserve"><value>Вернуться ко входу</value></data>
+  <data name="Navigation.UserSettings" xml:space="preserve"><value>Пользователи</value></data>
+  <data name="TenantUsers.Title" xml:space="preserve"><value>Пользователи</value></data>
+  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Управляйте ролями пользователей ресторана и статусом доступа.</value></data>
+  <data name="TenantUsers.AddUser" xml:space="preserve"><value>Добавить пользователя</value></data>
+  <data name="TenantUsers.CreationDeferred" xml:space="preserve"><value>Создание новых пользователей отключено до добавления безопасного приглашения/настройки пароля.</value></data>
+  <data name="TenantUsers.Details" xml:space="preserve"><value>Подробнее</value></data>
+  <data name="TenantUsers.DetailsTitle" xml:space="preserve"><value>Сведения о пользователе</value></data>
+  <data name="TenantUsers.Edit" xml:space="preserve"><value>Редактировать</value></data>
+  <data name="TenantUsers.EditTitle" xml:space="preserve"><value>Редактировать пользователя</value></data>
+  <data name="TenantUsers.CreateTitle" xml:space="preserve"><value>Создать пользователя</value></data>
+  <data name="TenantUsers.CreateSubtitle" xml:space="preserve"><value>Создайте нового пользователя для этого ресторана.</value></data>
+  <data name="TenantUsers.CreateUser" xml:space="preserve"><value>Создать пользователя</value></data>
+  <data name="TenantUsers.BackToUsers" xml:space="preserve"><value>Назад к пользователям</value></data>
+  <data name="TenantUsers.Name" xml:space="preserve"><value>Имя</value></data>
+  <data name="TenantUsers.NameRequired" xml:space="preserve"><value>Имя обязательно.</value></data>
+  <data name="TenantUsers.Email" xml:space="preserve"><value>Эл. почта</value></data>
+  <data name="TenantUsers.EmailReadOnly" xml:space="preserve"><value>Адрес электронной почты нельзя изменить на этом экране.</value></data>
+  <data name="TenantUsers.EmailAlreadyExists" xml:space="preserve"><value>Этот адрес электронной почты уже используется.</value></data>
+  <data name="TenantUsers.Role" xml:space="preserve"><value>Роль</value></data>
+  <data name="TenantUsers.Status" xml:space="preserve"><value>Статус</value></data>
+  <data name="TenantUsers.Active" xml:space="preserve"><value>Активен</value></data>
+  <data name="TenantUsers.Inactive" xml:space="preserve"><value>Неактивен</value></data>
+  <data name="TenantUsers.CreatedAt" xml:space="preserve"><value>Создан</value></data>
+  <data name="TenantUsers.LastLogin" xml:space="preserve"><value>Последний вход</value></data>
+  <data name="TenantUsers.LastLoginUnavailable" xml:space="preserve"><value>Недоступно</value></data>
+  <data name="TenantUsers.Actions" xml:space="preserve"><value>Действия</value></data>
+  <data name="TenantUsers.ChangeRole" xml:space="preserve"><value>Изменить роль</value></data>
+  <data name="TenantUsers.Activate" xml:space="preserve"><value>Активировать</value></data>
+  <data name="TenantUsers.Deactivate" xml:space="preserve"><value>Деактивировать</value></data>
+  <data name="TenantUsers.PasswordSection" xml:space="preserve"><value>Пароль</value></data>
+  <data name="TenantUsers.Password" xml:space="preserve"><value>Пароль</value></data>
+  <data name="TenantUsers.ConfirmPassword" xml:space="preserve"><value>Подтвердите пароль</value></data>
+  <data name="TenantUsers.LeavePasswordBlank" xml:space="preserve"><value>Оставьте пустым, чтобы сохранить текущий пароль.</value></data>
+  <data name="TenantUsers.Role.Owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="TenantUsers.Role.Manager" xml:space="preserve"><value>Manager</value></data>
+  <data name="TenantUsers.Role.Kitchen" xml:space="preserve"><value>Kitchen</value></data>
+  <data name="TenantUsers.Role.Cashier" xml:space="preserve"><value>Cashier</value></data>
+  <data name="TenantUsers.Role.Viewer" xml:space="preserve"><value>Viewer</value></data>
+  <data name="TenantUsers.RoleChanged" xml:space="preserve"><value>Роль обновлена.</value></data>
+  <data name="TenantUsers.UserActivated" xml:space="preserve"><value>Пользователь активирован.</value></data>
+  <data name="TenantUsers.UserDeactivated" xml:space="preserve"><value>Пользователь деактивирован.</value></data>
+  <data name="TenantUsers.UserCreated" xml:space="preserve"><value>Пользователь создан.</value></data>
+  <data name="TenantUsers.UserUpdated" xml:space="preserve"><value>Пользователь обновлен.</value></data>
+  <data name="TenantUsers.InvalidRole" xml:space="preserve"><value>Выбрана недопустимая роль.</value></data>
+  <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>Пользователь не найден.</value></data>
+  <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>Последнего Owner нельзя деактивировать или понизить.</value></data>
+  <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>Не удалось обновить пользователя.</value></data>
 </root>

@@ -9,7 +9,9 @@
         || path.StartsWith("/settings/receipt-printer/", StringComparison.OrdinalIgnoreCase);
     var isAccountSettings = path.Equals("/settings/account", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/settings/account/", StringComparison.OrdinalIgnoreCase);
-    var settingsActive = isOrderSettings || isReceiptPrinterSettings || isAccountSettings;
+    var isUserSettings = path.Equals("/settings/users", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/settings/users/", StringComparison.OrdinalIgnoreCase);
+    var settingsActive = isOrderSettings || isReceiptPrinterSettings || isAccountSettings || isUserSettings;
 }
 
 <div class="oh-sidebar-settings">
@@ -54,6 +56,15 @@
                    asp-controller="AccountSettings"
                    asp-action="Index">
                     @L["Navigation.AccountSettings"]
+                </a>
+            </li>
+            <li role="none">
+                <a class="dropdown-item @(isUserSettings ? "active" : "")"
+                   role="menuitem"
+                   asp-area="Tenant"
+                   asp-controller="TenantUsers"
+                   asp-action="Index">
+                    @L["Navigation.UserSettings"]
                 </a>
             </li>
             @if (User?.Identity?.IsAuthenticated == true)

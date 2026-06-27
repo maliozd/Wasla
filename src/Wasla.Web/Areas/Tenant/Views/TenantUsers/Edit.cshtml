@@ -1,0 +1,82 @@
+@model Wasla.Web.Models.TenantUsers.TenantUserEditViewModel
+@{
+    ViewData["Title"] = L["TenantUsers.EditTitle"];
+}
+
+<div class="oh-tenant-user-edit-page">
+    @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
+    {
+        Title = L["TenantUsers.EditTitle"].Value,
+        Subtitle = Model.Email
+    })
+
+    <div class="card oh-card">
+        <div class="card-body">
+            <form method="post"
+                  asp-area="Tenant"
+                  asp-controller="TenantUsers"
+                  asp-action="Edit"
+                  asp-route-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                <div class="mb-3">
+                    <label class="form-label" asp-for="FullName">@L["TenantUsers.Name"]</label>
+                    <input class="form-control" asp-for="FullName" autocomplete="name" />
+                    <span class="text-danger small" asp-validation-for="FullName"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">@L["TenantUsers.Email"]</label>
+                    <input class="form-control" value="@Model.Email" readonly />
+                    <input type="hidden" asp-for="Email" />
+                    <div class="form-text">@L["TenantUsers.EmailReadOnly"]</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" asp-for="Role">@L["TenantUsers.Role"]</label>
+                    <select class="form-select" asp-for="Role">
+                        @foreach (var role in Model.RoleOptions)
+                        {
+                            <option value="@role">@L[$"TenantUsers.Role.{role}"]</option>
+                        }
+                    </select>
+                    <span class="text-danger small" asp-validation-for="Role"></span>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" asp-for="IsActive" />
+                    <label class="form-check-label" asp-for="IsActive">@L["TenantUsers.Active"]</label>
+                </div>
+
+                <div class="border-top pt-3 mt-3">
+                    <h2 class="h6">@L["TenantUsers.PasswordSection"]</h2>
+                    <p class="text-muted small">@L["TenantUsers.LeavePasswordBlank"]</p>
+                    <div class="mb-3">
+                        <label class="form-label" asp-for="NewPassword">@L["TenantUsers.Password"]</label>
+                        <input class="form-control" asp-for="NewPassword" placeholder="******" autocomplete="new-password" />
+                        <span class="text-danger small" asp-validation-for="NewPassword"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" asp-for="ConfirmPassword">@L["TenantUsers.ConfirmPassword"]</label>
+                        <input class="form-control" asp-for="ConfirmPassword" placeholder="******" autocomplete="new-password" />
+                        <span class="text-danger small" asp-validation-for="ConfirmPassword"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" type="submit">@L["Common.Save"]</button>
+                    <a class="btn btn-outline-secondary"
+                       asp-area="Tenant"
+                       asp-controller="TenantUsers"
+                       asp-action="Details"
+                       asp-route-id="@Model.Id">
+                        @L["Common.Cancel"]
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
