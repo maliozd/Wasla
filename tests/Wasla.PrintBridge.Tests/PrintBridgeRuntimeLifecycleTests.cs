@@ -1,4 +1,7 @@
 using System.Xml.Linq;
+using System.Globalization;
+using System.Reflection;
+using System.Resources;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -118,6 +121,19 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.NotEqual(tr, en);
     }
 
+    [Fact]
+    public void RuntimeIssueRenderer_UsesCurrentLanguageForSameStableIssue()
+    {
+        var issue = new PrintBridgeRuntimeIssue(PrintBridgeRuntimeIssueCode.DuplicateInstallation);
+
+        var turkish = RenderRuntimeIssue(issue, "tr-TR");
+        var english = RenderRuntimeIssue(issue, "en-US");
+
+        Assert.Contains("Wasla Web", turkish, StringComparison.Ordinal);
+        Assert.Contains("Wasla Web", english, StringComparison.Ordinal);
+        Assert.NotEqual(turkish, english);
+    }
+
     private Guid SeedTenant()
     {
         var now = DateTime.UtcNow;
@@ -167,6 +183,24 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
             .FirstOrDefault(e => string.Equals((string?)e.Attribute("name"), key, StringComparison.Ordinal))
             ?.Element("value")
             ?.Value ?? string.Empty;
+    }
+
+    private static string RenderRuntimeIssue(PrintBridgeRuntimeIssue issue, string cultureName)
+    {
+        var root = FindRepositoryRoot();
+        var assemblyPath = Path.Combine(
+            root,
+            "src",
+            "Wasla.PrintBridge",
+            "bin",
+            "Debug",
+            "net8.0-windows",
+            "Wasla.PrintBridge.dll");
+        var resources = new ResourceManager(
+            "Wasla.PrintBridge.Resources.PrintBridgeResources",
+            Assembly.LoadFrom(assemblyPath));
+        var culture = CultureInfo.GetCultureInfo(cultureName);
+        return resources.GetString(issue.EffectiveResourceKey, culture) ?? issue.EffectiveResourceKey;
     }
 
     private sealed class NoActivePrintJobChecker : IPrintBridgeActivePrintJobChecker
