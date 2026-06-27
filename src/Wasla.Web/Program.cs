@@ -90,7 +90,7 @@ builder.Services.AddAuthentication(options =>
         options.Cookie.SecurePolicy = authCookieSecurePolicy;
         options.LoginPath = "/auth/login";
         options.LogoutPath = "/auth/logout";
-        options.AccessDeniedPath = "/auth/login";
+        options.AccessDeniedPath = "/auth/access-denied";
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.SlidingExpiration = true;
     })
@@ -108,6 +108,7 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
+builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
 
 builder.Services.AddAuthorization(options =>
 {

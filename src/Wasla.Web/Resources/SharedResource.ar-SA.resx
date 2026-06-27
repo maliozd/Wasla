@@ -3235,6 +3235,9 @@
   <data name="Auth.ResetPassword.Updated" xml:space="preserve"><value>تم تحديث كلمة المرور.</value></data>
   <data name="Auth.ResetPassword.InvalidOrExpired" xml:space="preserve"><value>رابط إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية.</value></data>
   <data name="Auth.ReturnToLogin" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
+  <data name="Auth.AccessDenied.Title" xml:space="preserve"><value>تم رفض الوصول</value></data>
+  <data name="Auth.AccessDenied.Description" xml:space="preserve"><value>أنت مسجل الدخول، لكن ليس لديك إذن لهذه الصفحة أو العملية.</value></data>
+  <data name="Auth.AccessDenied.BackToOrders" xml:space="preserve"><value>العودة إلى الطلبات</value></data>
   <data name="Navigation.UserSettings" xml:space="preserve"><value>المستخدمون</value></data>
   <data name="TenantUsers.Title" xml:space="preserve"><value>المستخدمون</value></data>
   <data name="TenantUsers.Subtitle" xml:space="preserve"><value>إدارة أدوار مستخدمي المطعم وحالة الوصول.</value></data>

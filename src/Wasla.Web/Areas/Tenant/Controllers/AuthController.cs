@@ -49,6 +49,13 @@ public sealed class AuthController : Controller
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
 
+    [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
+    [HttpGet("access-denied")]
+    public IActionResult AccessDenied()
+    {
+        return View();
+    }
+
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     [HttpPost("login")]

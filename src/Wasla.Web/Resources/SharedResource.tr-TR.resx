@@ -3229,6 +3229,9 @@
   <data name="Auth.ResetPassword.Updated" xml:space="preserve"><value>Şifreniz güncellendi.</value></data>
   <data name="Auth.ResetPassword.InvalidOrExpired" xml:space="preserve"><value>Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.</value></data>
   <data name="Auth.ReturnToLogin" xml:space="preserve"><value>Girişe dön</value></data>
+  <data name="Auth.AccessDenied.Title" xml:space="preserve"><value>Erişim reddedildi</value></data>
+  <data name="Auth.AccessDenied.Description" xml:space="preserve"><value>Giriş yaptınız, ancak bu sayfa veya işlem için yetkiniz yok.</value></data>
+  <data name="Auth.AccessDenied.BackToOrders" xml:space="preserve"><value>Siparişlere dön</value></data>
   <data name="Navigation.UserSettings" xml:space="preserve"><value>Kullanıcılar</value></data>
   <data name="TenantUsers.Title" xml:space="preserve"><value>Kullanıcılar</value></data>
   <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Restoran kullanıcılarının rollerini ve erişim durumunu yönetin.</value></data>

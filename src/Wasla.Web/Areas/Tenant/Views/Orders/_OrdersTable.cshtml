@@ -1,10 +1,14 @@
 ﻿@model Wasla.Web.Models.Orders.OrderListViewModel
 @using Wasla.Domain.Enums
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
+@using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IAuthorizationService AuthorizationService
 
 @{
     var f = Model.Filters;
+    var canManageOrders = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManageOrders)).Succeeded;
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
@@ -59,7 +63,7 @@
                     <td class="text-end">@o.TotalAmount.ToString("C")</td>
                     <td class="text-end">@o.ReceivedAtLocal.ToString("g")</td>
                     <td class="text-end">
-                        @if (o.Status == OrderStatus.New)
+                        @if (canManageOrders && o.Status == OrderStatus.New)
                         {
                             <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
                                 <button type="button"
@@ -76,7 +80,7 @@
                                 </button>
                             </div>
                         }
-                        else if (o.Status == OrderStatus.Accepted)
+                        else if (canManageOrders && o.Status == OrderStatus.Accepted)
                         {
                             <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
                                 <button type="button"
@@ -87,7 +91,7 @@
                                 </button>
                             </div>
                         }
-                        else if (o.Status == OrderStatus.Preparing)
+                        else if (canManageOrders && o.Status == OrderStatus.Preparing)
                         {
                             <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
                                 <button type="button"
@@ -98,7 +102,7 @@
                                 </button>
                             </div>
                         }
-                        else if (o.Status == OrderStatus.ReadyForPickup)
+                        else if (canManageOrders && o.Status == OrderStatus.ReadyForPickup)
                         {
                             <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
                                 <button type="button"
@@ -109,7 +113,7 @@
                                 </button>
                             </div>
                         }
-                        else if (o.Status == OrderStatus.OnTheWay)
+                        else if (canManageOrders && o.Status == OrderStatus.OnTheWay)
                         {
                             <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
                                 <button type="button"

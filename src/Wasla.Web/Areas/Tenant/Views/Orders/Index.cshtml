@@ -3,11 +3,14 @@
 @using System.Text.Json
 @using Wasla.Domain.Enums
 @using Microsoft.Extensions.Localization
+@using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject ITenantNavigationAuthorizationService TenantNavigation
 @{
     ViewData["Title"] = L["Orders.Title"];
     var f = Model.Filters;
     var today = Model.TurkeyLocalToday;
+    var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
     var isDefaultLive = f.Page == 1
         && string.Equals(f.SortBy, "receivedAt", StringComparison.OrdinalIgnoreCase)
@@ -36,7 +39,10 @@
             <span id="automationStatusAutoApprove" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
             <span id="automationStatusReceipt" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
         </div>
-        <a class="orders-manage-settings" href="/settings/orders">@L["Orders.ManageSettings"]</a>
+        @if (navPermissions.CanManageOrderSettings)
+        {
+            <a class="orders-manage-settings" href="/settings/orders">@L["Orders.ManageSettings"]</a>
+        }
     </div>
     <div class="orders-toolbar-right">
         <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
@@ -44,10 +50,13 @@
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
         </div>
-        <button type="button" id="ordersOpenLiveDisplay" class="btn btn-sm btn-primary text-nowrap"
-                title="@L["Orders.OpenLiveDisplay"]">
-            <i class="bi bi-display me-1" aria-hidden="true"></i>@L["Orders.OpenLiveDisplay"]
-        </button>
+        @if (navPermissions.CanViewLiveScreen)
+        {
+            <button type="button" id="ordersOpenLiveDisplay" class="btn btn-sm btn-primary text-nowrap"
+                    title="@L["Orders.OpenLiveDisplay"]">
+                <i class="bi bi-display me-1" aria-hidden="true"></i>@L["Orders.OpenLiveDisplay"]
+            </button>
+        }
         <a class="btn btn-sm btn-outline-secondary text-nowrap" href="/orders/history">@L["Orders.History.ViewOrderHistory"]</a>
     </div>
 </div>

@@ -1,5 +1,9 @@
+@using Wasla.Web.Security
+@inject ITenantNavigationAuthorizationService TenantNavigation
+
 @{
     var path = Context.Request.Path.Value ?? "/";
+    var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
     var isOrderSettings = path.Equals("/settings/orders", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/settings/orders/", StringComparison.OrdinalIgnoreCase)
         || path.Equals("/settings/order", StringComparison.OrdinalIgnoreCase)
@@ -11,9 +15,12 @@
         || path.StartsWith("/settings/account/", StringComparison.OrdinalIgnoreCase);
     var isUserSettings = path.Equals("/settings/users", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/settings/users/", StringComparison.OrdinalIgnoreCase);
-    var settingsActive = isOrderSettings || isReceiptPrinterSettings || isAccountSettings || isUserSettings;
+    var hasSettingsLinks = navPermissions.CanViewAnySettingsLink;
+    var settingsActive = hasSettingsLinks && (isOrderSettings || isReceiptPrinterSettings || isAccountSettings || isUserSettings);
 }
 
+@if (hasSettingsLinks)
+{
 <div class="oh-sidebar-settings">
     <div class="dropup position-static w-100">
         <button type="button"
@@ -31,6 +38,8 @@
             id="tenantSettingsMenu"
             role="menu"
             aria-labelledby="tenantSettingsMenuToggle">
+            @if (navPermissions.CanManageOrderSettings)
+            {
             <li role="none">
                 <a class="dropdown-item @(isOrderSettings ? "active" : "")"
                    role="menuitem"
@@ -40,6 +49,9 @@
                     @L["Navigation.OrderSettings"]
                 </a>
             </li>
+            }
+            @if (navPermissions.CanManageTenantSettings)
+            {
             <li role="none">
                 <a class="dropdown-item @(isReceiptPrinterSettings ? "active" : "")"
                    role="menuitem"
@@ -58,6 +70,9 @@
                     @L["Navigation.AccountSettings"]
                 </a>
             </li>
+            }
+            @if (navPermissions.CanManageTenantUsers)
+            {
             <li role="none">
                 <a class="dropdown-item @(isUserSettings ? "active" : "")"
                    role="menuitem"
@@ -67,6 +82,7 @@
                     @L["Navigation.UserSettings"]
                 </a>
             </li>
+            }
             @if (User?.Identity?.IsAuthenticated == true)
             {
                 <li role="none"><hr class="dropdown-divider" /></li>
@@ -82,3 +98,16 @@
         </ul>
     </div>
 </div>
+}
+else if (User?.Identity?.IsAuthenticated == true)
+{
+    <div class="oh-sidebar-settings">
+        <form method="post" asp-area="Tenant" asp-controller="Auth" asp-action="Logout">
+            @Html.AntiForgeryToken()
+            <button class="oh-sidebar-action-btn text-danger w-100" type="submit">
+                <i class="bi bi-box-arrow-right oh-sidebar-action-icon" aria-hidden="true"></i>
+                <span class="oh-sidebar-action-label nav-text">@L["Account.Logout"]</span>
+            </button>
+        </form>
+    </div>
+}

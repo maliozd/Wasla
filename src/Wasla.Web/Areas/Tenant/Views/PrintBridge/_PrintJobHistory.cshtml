@@ -1,10 +1,14 @@
 ﻿@model Wasla.Web.Models.PrintBridge.PrintJobHistoryListViewModel
 @using System.Globalization
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
 @using Wasla.Web.Models.PrintBridge
+@using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IAuthorizationService AuthorizationService
 @{
     var emptyValue = "—";
+    var canManualPrint = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManualPrint)).Succeeded;
 }
 
 @if (Model.Jobs.Count == 0)
@@ -51,7 +55,7 @@ else
                         <td class="text-muted small">@job.AttemptCount</td>
                         <td class="text-muted small">@(string.IsNullOrWhiteSpace(job.LockedBy) ? emptyValue : job.LockedBy)</td>
                         <td class="text-end">
-                            @if (job.CanReprint)
+                            @if (canManualPrint && job.CanReprint)
                             {
                                 <button type="button"
                                         class="btn btn-sm btn-outline-primary pb-reprint-job-btn"

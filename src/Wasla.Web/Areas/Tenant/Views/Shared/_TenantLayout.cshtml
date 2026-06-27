@@ -3,10 +3,13 @@
 @using System.Globalization
 
 @using Microsoft.Extensions.Localization
+@using Wasla.Web.Security
 
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 
 @inject ICurrentTenantService CurrentTenant
+
+@inject ITenantNavigationAuthorizationService TenantNavigation
 
 @{
 
@@ -17,6 +20,9 @@
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
 
     var customerName = CurrentTenant.CurrentTenant?.Name ?? Context.Request.Host.Host;
+
+    var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
+    var brandUrl = navPermissions.CanViewReports ? "/dashboard" : "/orders";
 
 
 
@@ -99,7 +105,7 @@
 
                 <div class="oh-sidebar-brand-area">
                     <div class="oh-sidebar-brand-row">
-                        <a class="oh-sidebar-brand text-decoration-none min-w-0" asp-area="Tenant" asp-controller="Dashboard" asp-action="Index">
+                        <a class="oh-sidebar-brand text-decoration-none min-w-0" href="@brandUrl">
                             <span class="brand-text">Wasla</span>
                         </a>
                         <button type="button" id="tenantSidebarToggle" class="oh-sidebar-collapse-btn flex-shrink-0"
@@ -115,6 +121,8 @@
 
                 <ul class="nav flex-column oh-sidebar-nav-main">
 
+                    @if (navPermissions.CanViewReports)
+                    {
                     <li class="nav-item">
 
                         <a class="nav-link @Active("/dashboard")" asp-area="Tenant" asp-controller="Dashboard" asp-action="Index">
@@ -124,7 +132,10 @@
                         </a>
 
                     </li>
+                    }
 
+                    @if (navPermissions.CanViewOrders)
+                    {
                     <li class="nav-item">
 
                         <a class="nav-link @ActiveOrders()" asp-area="Tenant" asp-controller="Orders" asp-action="Index">
@@ -144,11 +155,14 @@
                         </a>
 
                     </li>
+                    }
 
+                    @if (navPermissions.CanViewAnyPrintBridgeLink)
+                    {
                     <li class="nav-item oh-sidebar-nav-group @(printBridgeSection ? "oh-sidebar-nav-group--open" : "")">
 
                         <a class="nav-link oh-sidebar-nav-group__head @(printBridgeSection ? "active" : "")"
-                           asp-area="Tenant" asp-controller="PrintBridge" asp-action="Devices">
+                           href="@(navPermissions.CanManagePrintBridgeDevices ? "/print-bridge/devices" : "/print-bridge/setup")">
 
                             <i class="bi bi-printer me-2"></i><span class="nav-text">@L["PrintBridge.Title"]</span>
 
@@ -156,6 +170,8 @@
 
                         <ul class="oh-sidebar-nav-sub nav flex-column">
 
+                            @if (navPermissions.CanManagePrintBridgeDevices)
+                            {
                             <li class="nav-item">
 
                                 <a class="nav-link oh-sidebar-nav-sub__link @(printBridgeDevicesActive ? "active" : "")"
@@ -166,7 +182,10 @@
                                 </a>
 
                             </li>
+                            }
 
+                            @if (navPermissions.CanManageDeviceSecurity)
+                            {
                             <li class="nav-item">
 
                                 <a class="nav-link oh-sidebar-nav-sub__link @(printBridgeSetupActive ? "active" : "")"
@@ -177,11 +196,15 @@
                                 </a>
 
                             </li>
+                            }
 
                         </ul>
 
                     </li>
+                    }
 
+                    @if (navPermissions.CanManageTenantSettings)
+                    {
                     <li class="nav-item">
 
                         <a class="nav-link @Active("/platform-connections")" asp-area="Tenant" asp-controller="PlatformConnections" asp-action="Index">
@@ -201,6 +224,7 @@
                         </a>
 
                     </li>
+                    }
 
                 </ul>
 

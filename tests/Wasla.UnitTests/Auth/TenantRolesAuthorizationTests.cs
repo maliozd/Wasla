@@ -98,6 +98,103 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     }
 
     [Fact]
+    public void TenantCookie_UsesAccessDeniedPageInsteadOfLoginForForbid()
+    {
+        var root = GetRepositoryRoot();
+        var programSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Program.cs"));
+
+        Assert.Contains("options.LoginPath = \"/auth/login\";", programSource, StringComparison.Ordinal);
+        Assert.Contains("options.AccessDeniedPath = \"/auth/access-denied\";", programSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("options.AccessDeniedPath = \"/auth/login\";", programSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TenantAccessDeniedRouteAndView_ArePresent()
+    {
+        var root = GetRepositoryRoot();
+        var controllerSource = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Controllers",
+            "AuthController.cs"));
+        var viewSource = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "Auth",
+            "AccessDenied.cshtml"));
+
+        Assert.Contains("[HttpGet(\"access-denied\")]", controllerSource, StringComparison.Ordinal);
+        Assert.Contains("IActionResult AccessDenied()", controllerSource, StringComparison.Ordinal);
+        Assert.Contains("Auth.AccessDenied.Title", viewSource, StringComparison.Ordinal);
+        Assert.Contains("Auth.AccessDenied.Description", viewSource, StringComparison.Ordinal);
+        Assert.Contains("href=\"/orders\"", viewSource, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(UserRole.Manager, TenantPolicies.CanManagePrintBridgeDevices)]
+    [InlineData(UserRole.Cashier, TenantPolicies.CanViewReports)]
+    [InlineData(UserRole.Viewer, TenantPolicies.CanManageOrders)]
+    public async Task UnauthorizedAuthenticatedTenantRole_FailsPolicyInsteadOfSatisfyingAccess(UserRole role, string policyName)
+    {
+        var service = BuildAuthorizationService(_tenantId);
+
+        var result = await service.AuthorizeAsync(
+            Principal(_tenantId, role),
+            null,
+            policyName);
+
+        Assert.False(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task Owner_SatisfiesOwnerOnlyPolicy()
+    {
+        var service = BuildAuthorizationService(_tenantId);
+
+        var result = await service.AuthorizeAsync(
+            Principal(_tenantId, UserRole.Owner),
+            null,
+            TenantPolicies.CanManagePrintBridgeDevices);
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Theory]
+    [InlineData(UserRole.Owner, true, true, true, true, true, true)]
+    [InlineData(UserRole.Manager, true, true, true, false, false, false)]
+    [InlineData(UserRole.Kitchen, false, true, false, false, false, false)]
+    [InlineData(UserRole.Cashier, false, true, false, false, false, false)]
+    [InlineData(UserRole.Viewer, true, true, false, false, false, false)]
+    public async Task TenantNavigationPermissions_FollowCurrentRoleMatrix(
+        UserRole role,
+        bool canViewReports,
+        bool canViewOrders,
+        bool canManageOrderSettings,
+        bool canManageTenantSettings,
+        bool canManagePrintBridgeDevices,
+        bool canManageTenantUsers)
+    {
+        var auth = BuildAuthorizationService(_tenantId);
+        var navigation = new TenantNavigationAuthorizationService(auth);
+
+        var permissions = await navigation.GetPermissionsAsync(Principal(_tenantId, role));
+
+        Assert.Equal(canViewReports, permissions.CanViewReports);
+        Assert.Equal(canViewOrders, permissions.CanViewOrders);
+        Assert.Equal(canManageOrderSettings, permissions.CanManageOrderSettings);
+        Assert.Equal(canManageTenantSettings, permissions.CanManageTenantSettings);
+        Assert.Equal(canManagePrintBridgeDevices, permissions.CanManagePrintBridgeDevices);
+        Assert.Equal(canManageTenantUsers, permissions.CanManageTenantUsers);
+    }
+
+    [Fact]
     public async Task Owner_CanViewTenantUsers()
     {
         var owner = await SeedUserAsync(_tenantId, UserRole.Owner);
@@ -554,6 +651,74 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     }
 
     [Fact]
+    public void TenantSidebar_UsesPolicyAwareNavigationPermissions()
+    {
+        var root = GetRepositoryRoot();
+        var layoutSource = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "Shared",
+            "_TenantLayout.cshtml"));
+        var settingsSource = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "Shared",
+            "_TenantSettingsNav.cshtml"));
+
+        Assert.Contains("TenantNavigation.GetPermissionsAsync(User)", layoutSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanViewReports", layoutSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanManagePrintBridgeDevices", layoutSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanManageDeviceSecurity", layoutSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanManageTenantSettings", layoutSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanManageOrderSettings", settingsSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanManageTenantUsers", settingsSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OrderActionButtons_AreHiddenWithoutManageOrdersPolicy()
+    {
+        var root = GetRepositoryRoot();
+        var tableSource = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "Orders",
+            "_OrdersTable.cshtml"));
+
+        Assert.Contains("TenantPolicies.CanManageOrders", tableSource, StringComparison.Ordinal);
+        Assert.Contains("canManageOrders && o.Status", tableSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ManualPrintButtons_AreHiddenWithoutManualPrintPolicy()
+    {
+        var root = GetRepositoryRoot();
+        var printJobsSource = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "PrintBridge",
+            "_PrintJobHistory.cshtml"));
+
+        Assert.Contains("TenantPolicies.CanManualPrint", printJobsSource, StringComparison.Ordinal);
+        Assert.Contains("canManualPrint && job.CanReprint", printJobsSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void EditPage_NeverShowsCurrentPassword()
     {
         var root = GetRepositoryRoot();
@@ -739,11 +904,17 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         services.AddLogging();
         services.AddAuthorization(options =>
         {
+            AddPolicy(options, TenantPolicies.TenantOwner, UserRole.Owner);
+            AddPolicy(options, TenantPolicies.TenantManagerOrOwner, UserRole.Owner, UserRole.Manager);
             AddPolicy(options, TenantPolicies.CanManageTenantUsers, UserRole.Owner);
+            AddPolicy(options, TenantPolicies.CanManageTenantSettings, UserRole.Owner);
             AddPolicy(options, TenantPolicies.CanManagePrintBridgeDevices, UserRole.Owner);
             AddPolicy(options, TenantPolicies.CanManageDeviceSecurity, UserRole.Owner);
+            AddPolicy(options, TenantPolicies.CanViewOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
             AddPolicy(options, TenantPolicies.CanManageOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier);
             AddPolicy(options, TenantPolicies.CanManualPrint, UserRole.Owner, UserRole.Manager, UserRole.Cashier);
+            AddPolicy(options, TenantPolicies.CanViewLiveScreen, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
+            AddPolicy(options, TenantPolicies.CanViewReports, UserRole.Owner, UserRole.Manager, UserRole.Viewer);
         });
         services.AddSingleton<ICurrentTenantService>(new FixedCurrentTenantService(currentTenantId));
         services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
