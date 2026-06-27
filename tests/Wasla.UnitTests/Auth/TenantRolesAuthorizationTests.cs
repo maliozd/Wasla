@@ -103,6 +103,11 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         var root = GetRepositoryRoot();
         var programSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Program.cs"));
 
+        Assert.Equal(".Wasla.TenantAuth", TenantAuthCookieNames.Active);
+        Assert.Equal("orderhub_auth", TenantAuthCookieNames.LegacyOrderHub);
+        Assert.Contains("options.Cookie.Name = TenantAuthCookieNames.Active;", programSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("options.Cookie.Name = \"orderhub_auth\";", programSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("options.Cookie.Name = TenantAuthCookieNames.LegacyOrderHub;", programSource, StringComparison.Ordinal);
         Assert.Contains("options.LoginPath = \"/auth/login\";", programSource, StringComparison.Ordinal);
         Assert.Contains("options.AccessDeniedPath = \"/auth/access-denied\";", programSource, StringComparison.Ordinal);
         Assert.DoesNotContain("options.AccessDeniedPath = \"/auth/login\";", programSource, StringComparison.Ordinal);

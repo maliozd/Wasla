@@ -84,8 +84,9 @@ builder.Services.AddAuthentication(options =>
     })
     .AddCookie(AuthSchemes.Tenant, options =>
     {
-        options.Cookie.Name = "orderhub_auth";
+        options.Cookie.Name = TenantAuthCookieNames.Active;
         options.Cookie.HttpOnly = true;
+        options.Cookie.Path = "/";
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = authCookieSecurePolicy;
         options.LoginPath = "/auth/login";

@@ -1,10 +1,12 @@
 using System.Globalization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Auth;
@@ -215,18 +217,97 @@ public sealed class AuthControllerPasswordResetTests
             TenantWelcomeUrlBuilder.BuildPasswordResetUrl(production, new TestWebHostEnvironment("Production"), "tenant.wasla.com", "abc"));
     }
 
+    [Fact]
+    public async Task LoginPost_ValidCredentialsSignsInTenantSchemeWithPersistentClaims()
+    {
+        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var userId = Guid.NewGuid();
+        var authValidation = new FakeAuthValidationService
+        {
+            Result = new AuthSessionResult(tenant.Id, userId, "owner@example.test", "Owner User", UserRole.Owner)
+        };
+        var auth = new CapturingAuthenticationService();
+        var controller = CreateController(tenant: tenant, authValidation: authValidation, authenticationService: auth);
+
+        var result = await controller.Login(new LoginViewModel
+        {
+            Email = "owner@example.test",
+            Password = "Password123!"
+        }, TestContext.Current.CancellationToken);
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal("/dashboard", redirect.Url);
+        Assert.Equal(AuthSchemes.Tenant, auth.SignInScheme);
+        Assert.True(auth.SignInProperties?.IsPersistent);
+        Assert.Equal(tenant.Id.ToString(), auth.SignInPrincipal?.FindFirst("TenantId")?.Value);
+        Assert.Equal(userId.ToString(), auth.SignInPrincipal?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        Assert.Equal("owner@example.test", auth.SignInPrincipal?.FindFirst(ClaimTypes.Email)?.Value);
+        Assert.Equal(UserRole.Owner.ToString(), auth.SignInPrincipal?.FindFirst("Role")?.Value);
+        Assert.Equal(UserRole.Owner.ToString(), auth.SignInPrincipal?.FindFirst(ClaimTypes.Role)?.Value);
+    }
+
+    [Fact]
+    public async Task LoginPost_ValidCredentialsExpiresLegacyCookieBeforeFreshSignIn()
+    {
+        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var authValidation = new FakeAuthValidationService
+        {
+            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner User", UserRole.Owner)
+        };
+        var controller = CreateController(tenant: tenant, authValidation: authValidation);
+
+        await controller.Login(new LoginViewModel
+        {
+            Email = "owner@example.test",
+            Password = "Password123!"
+        }, TestContext.Current.CancellationToken);
+
+        var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
+        Assert.Contains($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
+        Assert.Contains($"{TenantAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
+        Assert.Contains("expires=", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Logout_ExpiresActiveAndLegacyTenantCookies()
+    {
+        var auth = new CapturingAuthenticationService();
+        var controller = CreateController(authenticationService: auth);
+
+        var result = await controller.Logout();
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal("/auth/login", redirect.Url);
+        Assert.Contains(AuthSchemes.Tenant, auth.SignOutSchemes);
+
+        var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
+        Assert.Contains($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
+        Assert.Contains($"{TenantAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
+        Assert.Contains("expires=", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static AuthController CreateController(
         ResolvedTenantDto? tenant = null,
         FakeTenantPasswordResetService? service = null,
+        FakeAuthValidationService? authValidation = null,
+        CapturingAuthenticationService? authenticationService = null,
         string environmentName = "Development")
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Scheme = "https";
         httpContext.Request.Host = new HostString("tenant.wasla.local", 443);
+        if (authValidation is not null || authenticationService is not null)
+        {
+            httpContext.RequestServices = new ServiceCollection()
+                .AddSingleton<IAuthenticationService>(authenticationService ?? new CapturingAuthenticationService())
+                .BuildServiceProvider();
+        }
 
         var controller = new AuthController(
             new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.wasla.local")),
-            new FakeAuthValidationService(),
+            authValidation ?? new FakeAuthValidationService(),
             new FakeSignupCompletionTokenService(),
             service ?? new FakeTenantPasswordResetService(),
             new TestWebHostEnvironment(environmentName),
@@ -298,8 +379,47 @@ public sealed class AuthControllerPasswordResetTests
 
     private sealed class FakeAuthValidationService : IAuthValidationService
     {
+        public AuthSessionResult? Result { get; set; }
+
         public Task<AuthSessionResult?> ValidateAsync(Guid customerId, string email, string password, CancellationToken ct) =>
-            Task.FromResult<AuthSessionResult?>(null);
+            Task.FromResult(Result);
+    }
+
+    private sealed class CapturingAuthenticationService : IAuthenticationService
+    {
+        public string? SignInScheme { get; private set; }
+        public ClaimsPrincipal? SignInPrincipal { get; private set; }
+        public AuthenticationProperties? SignInProperties { get; private set; }
+        public List<string> SignOutSchemes { get; } = [];
+
+        public Task<AuthenticateResult> AuthenticateAsync(HttpContext context, string? scheme) =>
+            Task.FromResult(AuthenticateResult.NoResult());
+
+        public Task ChallengeAsync(HttpContext context, string? scheme, AuthenticationProperties? properties) =>
+            Task.CompletedTask;
+
+        public Task ForbidAsync(HttpContext context, string? scheme, AuthenticationProperties? properties) =>
+            Task.CompletedTask;
+
+        public Task SignInAsync(
+            HttpContext context,
+            string? scheme,
+            ClaimsPrincipal principal,
+            AuthenticationProperties? properties)
+        {
+            SignInScheme = scheme;
+            SignInPrincipal = principal;
+            SignInProperties = properties;
+            return Task.CompletedTask;
+        }
+
+        public Task SignOutAsync(HttpContext context, string? scheme, AuthenticationProperties? properties)
+        {
+            if (scheme is not null)
+                SignOutSchemes.Add(scheme);
+
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeSignupCompletionTokenService : ISignupCompletionTokenService

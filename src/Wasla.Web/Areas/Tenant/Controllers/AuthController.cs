@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
@@ -77,6 +78,7 @@ public sealed class AuthController : Controller
             return View(model);
         }
 
+        ExpireTenantAuthCookies();
         await SignInSessionAsync(session, ct);
 
         if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
@@ -260,7 +262,21 @@ public sealed class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(AuthSchemes.Tenant);
+        ExpireTenantAuthCookies();
         return Redirect("/auth/login");
+    }
+
+    private void ExpireTenantAuthCookies()
+    {
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Path = "/",
+            SameSite = SameSiteMode.Lax
+        };
+
+        Response.Cookies.Delete(TenantAuthCookieNames.Active, options);
+        Response.Cookies.Delete(TenantAuthCookieNames.LegacyOrderHub, options);
     }
 }
 
