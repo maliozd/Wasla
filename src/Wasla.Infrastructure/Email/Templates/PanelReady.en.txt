@@ -1,10 +1,13 @@
 Hello {{OwnerFullName}},
 
-Your restaurant panel has been created successfully.
+Your panel is ready.
 
-Your panel address:
+Your restaurant panel is now ready. Use the link below to sign in and start managing your orders.
+
 {{LoginUrl}}
 
-You can use this address to sign in to your Wasla restaurant panel.
+Manage orders from one screen, update panel settings anytime, and start Print Bridge setup in a few steps.
+
+This email was sent automatically by Wasla.
 
 {{FromName}}

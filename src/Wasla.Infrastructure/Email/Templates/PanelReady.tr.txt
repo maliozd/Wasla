@@ -1,10 +1,13 @@
 Merhaba {{OwnerFullName}},
 
-Restoran paneliniz başarıyla oluşturuldu.
+Paneliniz hazır.
 
-Panel adresiniz:
+Restoran paneliniz artık kullanıma hazır. Siparişlerinizi yönetmeye başlamak için aşağıdaki bağlantıyı kullanabilirsiniz.
+
 {{LoginUrl}}
 
-Bu adres üzerinden Wasla restoran panelinize giriş yapabilirsiniz.
+Siparişlerinizi tek ekrandan yönetin, panel ayarlarınızı dilediğiniz zaman güncelleyin ve Print Bridge kurulumuna birkaç adımda başlayın.
+
+Bu e-posta Wasla tarafından otomatik olarak gönderildi.
 
 {{FromName}}
