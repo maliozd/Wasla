@@ -70,9 +70,12 @@ public sealed class PrintBridgeRuntime : IDisposable
             };
             var isConnectionConfigured = PrintBridgeSettingsValidator.TryValidateConnectionSettings(connectionOptions, out _);
             var recentJobs = _recentJobs.Select(CloneRecord).ToList();
-            var isConnected = _lastSuccessfulContactUtc.HasValue
+            var hasRecentSuccessfulContact = _lastSuccessfulContactUtc.HasValue
                 && DateTime.UtcNow - _lastSuccessfulContactUtc.Value <= TimeSpan.FromSeconds(60);
-            var trayIconState = PrintBridgeRuntimeStatus.ResolveTrayIconState(_isRunning, isConnected, recentJobs);
+            var isConnected = PrintBridgeRuntimeStatus.ResolveEffectiveConnection(
+                hasRecentSuccessfulContact,
+                _lastIssue);
+            var trayIconState = PrintBridgeRuntimeStatus.ResolveTrayIconState(_isRunning, isConnected, recentJobs, _lastIssue);
             var today = DateTime.Today;
 
             return new PrintBridgeRuntimeStatus
@@ -585,9 +588,7 @@ public sealed class PrintBridgeRuntime : IDisposable
         try
         {
             var (hub, bridge, ui) = _holder.Snapshot();
-            if (!PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(hub, bridge))
-                return;
-
+            PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(hub, bridge);
             _holder.Replace(hub, bridge, ui);
             _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
             {

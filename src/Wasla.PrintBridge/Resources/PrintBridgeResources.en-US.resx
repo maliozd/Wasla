@@ -102,10 +102,31 @@
   <data name="RuntimeIssue.ReconnectRequired" xml:space="preserve">
     <value>This Print Bridge device is no longer authorized. Reconnect it from Wasla Web to continue printing.</value>
   </data>
+  <data name="RuntimeIssue.ReconnectRequired.Title" xml:space="preserve">
+    <value>Reconnect required</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.Detail" xml:space="preserve">
+    <value>Invalid token. Reconnect from Wasla Web.</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.TokenRevoked.Detail" xml:space="preserve">
+    <value>Device token is invalid. Create a setup code in Wasla Web to reconnect.</value>
+  </data>
   <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
     <value>This Print Bridge device is disabled in Wasla Web. Enable it there, then start polling again.</value>
   </data>
+  <data name="RuntimeIssue.DisabledByAdmin.Title" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin.Detail" xml:space="preserve">
+    <value>This device was disabled in Wasla Web. Enable it from the Web panel to continue.</value>
+  </data>
   <data name="RuntimeIssue.DuplicateInstallation" xml:space="preserve">
+    <value>This computer's Print Bridge identity is already linked to another device. Use reconnect for the existing device in Wasla Web.</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation.Title" xml:space="preserve">
+    <value>Installation conflict</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation.Detail" xml:space="preserve">
     <value>This computer's Print Bridge identity is already linked to another device. Use reconnect for the existing device in Wasla Web.</value>
   </data>
   <data name="Dashboard.DeviceStatus" xml:space="preserve">
@@ -404,6 +425,12 @@
   </data>
   <data name="ConnectionStatus.Stopped" xml:space="preserve">
     <value>Stopped</value>
+  </data>
+  <data name="ConnectionSummary.NotConnected" xml:space="preserve">
+    <value>Not connected</value>
+  </data>
+  <data name="ConnectionSummary.Disabled" xml:space="preserve">
+    <value>Disabled</value>
   </data>
   <data name="Dashboard.DeviceName" xml:space="preserve">
     <value>Device Name</value>

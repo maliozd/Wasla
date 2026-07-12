@@ -92,10 +92,31 @@
   <data name="RuntimeIssue.ReconnectRequired" xml:space="preserve">
     <value>Это устройство Print Bridge больше не авторизовано. Повторно подключите его в Wasla Web, чтобы продолжить печать.</value>
   </data>
+  <data name="RuntimeIssue.ReconnectRequired.Title" xml:space="preserve">
+    <value>Требуется повторное подключение</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.Detail" xml:space="preserve">
+    <value>Недействительный токен. Повторно подключите устройство в Wasla Web.</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.TokenRevoked.Detail" xml:space="preserve">
+    <value>Токен устройства недействителен. Создайте код настройки в Wasla Web для повторного подключения.</value>
+  </data>
   <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
     <value>Это устройство Print Bridge отключено в Wasla Web. Включите его там, затем снова запустите опрос.</value>
   </data>
+  <data name="RuntimeIssue.DisabledByAdmin.Title" xml:space="preserve">
+    <value>Отключено</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin.Detail" xml:space="preserve">
+    <value>Это устройство отключено в Wasla Web. Включите его в веб-панели, чтобы продолжить.</value>
+  </data>
   <data name="RuntimeIssue.DuplicateInstallation" xml:space="preserve">
+    <value>Идентификатор Print Bridge на этом компьютере уже связан с другим устройством. Используйте повторное подключение существующего устройства в Wasla Web.</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation.Title" xml:space="preserve">
+    <value>Конфликт установки</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation.Detail" xml:space="preserve">
     <value>Идентификатор Print Bridge на этом компьютере уже связан с другим устройством. Используйте повторное подключение существующего устройства в Wasla Web.</value>
   </data>
   <data name="Dashboard.DeviceStatus" xml:space="preserve">
@@ -368,6 +389,12 @@
   </data>
   <data name="ConnectionStatus.Stopped" xml:space="preserve">
     <value>Остановлено</value>
+  </data>
+  <data name="ConnectionSummary.NotConnected" xml:space="preserve">
+    <value>Не подключено</value>
+  </data>
+  <data name="ConnectionSummary.Disabled" xml:space="preserve">
+    <value>Отключено</value>
   </data>
   <data name="Dashboard.DeviceName" xml:space="preserve">
     <value>Имя устройства</value>

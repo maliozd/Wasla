@@ -24,6 +24,11 @@ public sealed class PrintBridgeRuntimeStatus
     public PrinterHealthStatus PrinterHealthStatus { get; init; }
     public TrayIconState TrayIconState { get; init; }
 
+    public static bool ResolveEffectiveConnection(
+        bool hasRecentSuccessfulContact,
+        PrintBridgeRuntimeIssue? lastIssue) =>
+        lastIssue is null && hasRecentSuccessfulContact;
+
     public static BridgeServerConnectionStatus ResolveServerConnectionStatus(
         bool isConfigured,
         bool isRunning,
@@ -60,8 +65,12 @@ public sealed class PrintBridgeRuntimeStatus
     public static TrayIconState ResolveTrayIconState(
         bool isRunning,
         bool isConnected,
-        IReadOnlyList<LocalPrintJobRecord> jobs)
+        IReadOnlyList<LocalPrintJobRecord> jobs,
+        PrintBridgeRuntimeIssue? lastIssue = null)
     {
+        if (lastIssue is not null)
+            return TrayIconState.ConnectionLost;
+
         if (jobs.Any(j => j.Status == LocalPrintJobStatus.Printing))
             return TrayIconState.Printing;
 
@@ -75,6 +84,30 @@ public sealed class PrintBridgeRuntimeStatus
             return TrayIconState.Connected;
 
         return TrayIconState.ConnectionLost;
+    }
+
+    public static bool ShouldReportConnectionSuccess(PrintBridgeRuntimeStatus status) =>
+        status.LastIssue is null || !status.LastIssue.IsBlockingLifecycleIssue;
+
+    public static string ResolveHeaderBadgeResourceKey(PrintBridgeRuntimeStatus status)
+    {
+        if (status.LastIssue is { IsBlockingLifecycleIssue: true } issue
+            && !string.IsNullOrWhiteSpace(issue.EffectiveTitleResourceKey))
+            return issue.EffectiveTitleResourceKey;
+
+        if (status.LastIssue is { IsBlockingLifecycleIssue: true })
+            return "Status.Error";
+
+        if (status.IsRunning && status.IsConnected)
+            return status.DryRun ? "Status.RunningDryRun" : "Status.Running";
+
+        if (status.IsRunning)
+            return "Status.Running";
+
+        if (status.IsConnected)
+            return "Status.Connected";
+
+        return "Status.Stopped";
     }
 
     public static string ResolveLocalDeviceLabel(string? localDeviceName, string? machineName)

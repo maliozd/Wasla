@@ -118,6 +118,8 @@ public sealed partial class MainForm : Form
     private Label _settingsHint = null!;
     private bool _suppressLanguageSelectionChanged;
     private bool _isSavingLanguage;
+    private bool _agentTokenUserEdited;
+    private bool _syncingConnectionFields;
 
     public MainForm(ServiceProvider services, PrintBridgeRuntime runtime)
     {
@@ -407,7 +409,13 @@ public sealed partial class MainForm : Form
         metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12F));
         metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 26F));
 
-        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _serverStatusValue, out _serverStatusTitle), 0, 0);
+        var serverStatusCard = PrintBridgeUiTheme.CreateMetricCard(
+            string.Empty,
+            out _serverStatusValue,
+            out _serverStatusTitle,
+            valueAutoEllipsis: false);
+        serverStatusCard.MinimumSize = new Size(160, 108);
+        metricsRow.Controls.Add(serverStatusCard, 0, 0);
         metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _printerStatusValue, out _printerStatusTitle), 1, 0);
 
         var lastContactCard = PrintBridgeUiTheme.CreateMetricCard(
@@ -1137,7 +1145,9 @@ public sealed partial class MainForm : Form
     private void OnRuntimeStatusChanged(object? sender, EventArgs e)
     {
         QueueRefreshDashboard();
+        QueueUiAction(SyncConnectionFieldsFromHolder);
         QueueUiAction(SyncDeviceNameFieldFromHolder);
+        QueueUiAction(() => RefreshSettingsConnectionStatus());
         QueueRefreshRecentJobs();
         QueueUiAction(() =>
         {
@@ -1170,20 +1180,39 @@ public sealed partial class MainForm : Form
 
     public void RefreshAfterAutomaticSetup()
     {
-        QueueUiAction(() =>
+        QueueUiAction(() => _ = CompleteAutomaticSetupRecoveryAsync());
+    }
+
+    private async Task CompleteAutomaticSetupRecoveryAsync()
+    {
+        try
         {
+            LoadSettingsIntoForm();
+
+            var connected = false;
             try
             {
-                LoadSettingsIntoForm();
-                RefreshDashboard();
-                RefreshRecentJobsFromRuntime();
-                UpdateSettingsScrollLayout();
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                await _runtime.ValidateConnectionAsync(cts.Token).ConfigureAwait(true);
+                connected = true;
             }
             catch (Exception ex)
             {
-                _settingsLogger?.LogWarning(ex, "Automatic setup settings refresh could not update the open window.");
+                _settingsLogger?.LogWarning(ex, "Automatic setup connection verification failed.");
+                _runtime.RecordConnectionFailure(ex);
             }
-        });
+
+            if (connected && PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
+                TryStartPolling();
+
+            RefreshDashboard();
+            RefreshRecentJobsFromRuntime();
+            UpdateSettingsScrollLayout();
+        }
+        catch (Exception ex)
+        {
+            _settingsLogger?.LogWarning(ex, "Automatic setup settings refresh could not update the open window.");
+        }
     }
 
     public void FocusPrinterSettingsSection()
@@ -1301,6 +1330,7 @@ public sealed partial class MainForm : Form
             ApplyStartupLocalization();
             RefreshDashboard();
             RefreshRuntimeIssueLabel();
+            RefreshSettingsConnectionStatus();
             RefreshRecentJobsFromRuntime();
             if (_tabs.SelectedTab == _historyTab)
                 RefreshPrintHistory();
@@ -1357,22 +1387,79 @@ public sealed partial class MainForm : Form
         _txtDisplayName.Text = bridge.DisplayName ?? string.Empty;
     }
 
+    private void SyncConnectionFieldsFromHolder()
+    {
+        if (_txtServerUrl is null || _txtAgentToken is null)
+            return;
+
+        var (hub, _, _) = _settingsHolder.Snapshot();
+        _syncingConnectionFields = true;
+        try
+        {
+            _txtServerUrl.Text = hub.ServerUrl ?? string.Empty;
+            if (!ShouldPreserveAgentTokenInput())
+                _txtAgentToken.Text = hub.AgentToken ?? string.Empty;
+        }
+        finally
+        {
+            _syncingConnectionFields = false;
+        }
+    }
+
+    private bool ShouldPreserveAgentTokenInput() =>
+        _txtAgentToken is not null
+        && PrintBridgeConnectionFieldSync.ShouldPreserveAgentTokenInput(
+            _isSavingConnection,
+            _txtAgentToken.Focused,
+            _agentTokenUserEdited);
+
+    private void ResetAgentTokenInputTracking()
+    {
+        _agentTokenUserEdited = false;
+    }
+
+    private void RefreshSettingsConnectionStatus(PrintBridgeRuntimeStatus? status = null)
+    {
+        if (_lblConnectionStatus is null || _isSavingConnection)
+            return;
+
+        status ??= _runtime.GetStatus();
+        if (status.LastIssue is not { IsBlockingLifecycleIssue: true } issue)
+        {
+            SetSectionStatus(_lblConnectionStatus, null);
+            return;
+        }
+
+        SetSectionStatus(_lblConnectionStatus, _localizer.GetRuntimeIssueDetail(issue), isError: true);
+        if (issue.ShouldClearToken && !ShouldPreserveAgentTokenInput())
+            SyncConnectionFieldsFromHolder();
+    }
+
     private void LoadSettingsIntoForm()
     {
+        ResetAgentTokenInputTracking();
         var (hub, bridge, ui) = _settingsHolder.Snapshot();
-        _txtServerUrl.Text = hub.ServerUrl;
-        _txtAgentToken.Text = hub.AgentToken;
-        RefreshPrinterList(bridge.PrinterName);
-        _txtDisplayName.Text = bridge.DisplayName ?? string.Empty;
-        _lblMachineNameHint.Text = _localizer.GetString(
-            "Settings.MachineNameHint",
-            string.IsNullOrWhiteSpace(bridge.MachineName) ? Environment.MachineName : bridge.MachineName);
-        _chkDryRun.Checked = bridge.DryRun;
-        UpdateDryRunWarning();
-        _numIdlePoll.Value = Math.Clamp(bridge.IdlePollIntervalSeconds, (int)_numIdlePoll.Minimum, (int)_numIdlePoll.Maximum);
-        _numBusyPoll.Value = Math.Clamp(bridge.BusyPollIntervalSeconds, (int)_numBusyPoll.Minimum, (int)_numBusyPoll.Maximum);
-        _numErrorPoll.Value = Math.Clamp(bridge.ErrorPollIntervalSeconds, (int)_numErrorPoll.Minimum, (int)_numErrorPoll.Maximum);
-        SelectSavedLanguage();
+        _syncingConnectionFields = true;
+        try
+        {
+            _txtServerUrl.Text = hub.ServerUrl;
+            _txtAgentToken.Text = hub.AgentToken;
+            RefreshPrinterList(bridge.PrinterName);
+            _txtDisplayName.Text = bridge.DisplayName ?? string.Empty;
+            _lblMachineNameHint.Text = _localizer.GetString(
+                "Settings.MachineNameHint",
+                string.IsNullOrWhiteSpace(bridge.MachineName) ? Environment.MachineName : bridge.MachineName);
+            _chkDryRun.Checked = bridge.DryRun;
+            UpdateDryRunWarning();
+            _numIdlePoll.Value = Math.Clamp(bridge.IdlePollIntervalSeconds, (int)_numIdlePoll.Minimum, (int)_numIdlePoll.Maximum);
+            _numBusyPoll.Value = Math.Clamp(bridge.BusyPollIntervalSeconds, (int)_numBusyPoll.Minimum, (int)_numBusyPoll.Maximum);
+            _numErrorPoll.Value = Math.Clamp(bridge.ErrorPollIntervalSeconds, (int)_numErrorPoll.Minimum, (int)_numErrorPoll.Maximum);
+            SelectSavedLanguage();
+        }
+        finally
+        {
+            _syncingConnectionFields = false;
+        }
     }
 
     private void RefreshPrinterList(string? selectedPrinter = null)
@@ -1504,7 +1591,9 @@ public sealed partial class MainForm : Form
             ? PrintBridgeUiTheme.Danger
             : PrintBridgeUiTheme.TextTitle;
 
-        _serverStatusValue.Text = _localizer.GetServerConnectionStatus(status);
+        var serverStatusText = _localizer.GetServerConnectionStatus(status);
+        _serverStatusValue.Text = serverStatusText;
+        LayoutWrappedMetricValue(_serverStatusValue, serverStatusText);
         _serverStatusValue.ForeColor = status.ServerConnectionStatus switch
         {
             BridgeServerConnectionStatus.Connected => PrintBridgeUiTheme.Success,
@@ -1529,25 +1618,12 @@ public sealed partial class MainForm : Form
 
         UpdateHeaderBadge(status);
         UpdateStartStopButton(status);
-        RefreshRuntimeIssueLabel(status);
+        RefreshSettingsConnectionStatus(status);
     }
 
     private void RefreshRuntimeIssueLabel(PrintBridgeRuntimeStatus? status = null)
     {
-        if (_lblConnectionStatus is null)
-            return;
-
-        status ??= _runtime.GetStatus();
-        if (status.LastIssue is null)
-            return;
-
-        SetSectionStatus(
-            _lblConnectionStatus,
-            _localizer.GetRuntimeIssue(status.LastIssue),
-            isError: true);
-
-        if (status.LastIssue.ShouldClearToken && _txtSetupCode is not null)
-            _txtSetupCode.Text = string.Empty;
+        RefreshSettingsConnectionStatus(status);
     }
 
     private void RefreshRecentJobsFromRuntime()
@@ -1612,10 +1688,25 @@ public sealed partial class MainForm : Form
         UpdateJumpToLatestButton();
     }
 
+    private static void LayoutWrappedMetricValue(Label label, string text)
+    {
+        label.AutoEllipsis = false;
+        label.Text = text;
+        var width = label.ClientSize.Width > 0 ? label.ClientSize.Width : 136;
+        var measured = TextRenderer.MeasureText(
+            text,
+            label.Font,
+            new Size(width, int.MaxValue),
+            TextFormatFlags.WordBreak);
+        label.Height = Math.Max(24, measured.Height);
+    }
+
     private void UpdateHeaderBadge(PrintBridgeRuntimeStatus status)
     {
         _headerBadge.Text = _localizer.GetHeaderBadge(status);
-        if (!status.IsRunning && status.IsConnected)
+        if (status.LastIssue is { IsBlockingLifecycleIssue: true })
+            _headerBadge.BackColor = PrintBridgeUiTheme.Danger;
+        else if (!status.IsRunning && status.IsConnected)
             _headerBadge.BackColor = PrintBridgeUiTheme.Success;
         else if (status.IsRunning)
             _headerBadge.BackColor = PrintBridgeUiTheme.Info;
@@ -1735,7 +1826,7 @@ public sealed partial class MainForm : Form
     private string GetUserErrorMessage(Exception ex)
     {
         if (ex is PrintBridgeConnectionException connectionEx)
-            return _localizer.GetRuntimeIssue(new(
+            return _localizer.GetRuntimeIssueDetail(new(
                 connectionEx.IssueCode,
                 connectionEx.UserMessageKey,
                 connectionEx.FormatArgs));

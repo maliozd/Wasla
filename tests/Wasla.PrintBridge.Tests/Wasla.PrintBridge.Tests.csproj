@@ -32,6 +32,8 @@
     <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeSettingsValidator.cs" Link="Services\PrintBridgeSettingsValidator.cs" />
     <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeConnectionException.cs" Link="Services\PrintBridgeConnectionException.cs" />
     <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeRuntimeCredentialFallback.cs" Link="Services\PrintBridgeRuntimeCredentialFallback.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\UI\PrintBridgeConnectionFieldSync.cs" Link="UI\PrintBridgeConnectionFieldSync.cs" />
+    <Compile Include="..\..\src\Wasla.PrintBridge\Localization\SupportedCultures.cs" Link="Localization\SupportedCultures.cs" />
     <Compile Include="..\..\src\Wasla.PrintBridge\Options\WaslaOptions.cs" Link="Options\WaslaOptions.cs" />
     <Compile Include="..\..\src\Wasla.PrintBridge\Options\PrintBridgeOptions.cs" Link="Options\PrintBridgeOptions.cs" />
     <Compile Include="..\..\src\Wasla.PrintBridge\Options\UiOptions.cs" Link="Options\UiOptions.cs" />

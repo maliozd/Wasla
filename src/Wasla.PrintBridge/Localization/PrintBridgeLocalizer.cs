@@ -101,23 +101,49 @@ public sealed class PrintBridgeLocalizer
     };
 
     public string GetServerConnectionStatus(PrintBridgeRuntimeStatus status) =>
-        status.LastIssue is not null
-            ? GetRuntimeIssue(status.LastIssue)
+        status.LastIssue is { IsBlockingLifecycleIssue: true } issue
+            ? GetRuntimeIssueConnectionSummary(issue)
             : GetServerConnectionStatus(status.ServerConnectionStatus);
 
-    public string GetRuntimeIssue(PrintBridgeRuntimeIssue issue)
+    public string GetRuntimeIssueConnectionSummary(PrintBridgeRuntimeIssue issue)
+    {
+        if (issue.Code == PrintBridgeRuntimeIssueCode.Unexpected)
+            return GetString("ConnectionStatus.Error");
+
+        var key = issue.EffectiveConnectionSummaryResourceKey;
+        if (!string.IsNullOrWhiteSpace(key))
+            return GetString(key, issue.Args ?? []);
+
+        return GetServerConnectionStatus(BridgeServerConnectionStatus.Error);
+    }
+
+    public string GetRuntimeIssueTitle(PrintBridgeRuntimeIssue issue)
+    {
+        if (issue.Code == PrintBridgeRuntimeIssueCode.Unexpected)
+            return GetString("ConnectionStatus.Error");
+
+        var key = issue.EffectiveTitleResourceKey;
+        if (!string.IsNullOrWhiteSpace(key))
+            return GetString(key, issue.Args ?? []);
+
+        return GetRuntimeIssueDetail(issue);
+    }
+
+    public string GetRuntimeIssueDetail(PrintBridgeRuntimeIssue issue)
     {
         if (issue.Code == PrintBridgeRuntimeIssueCode.Unexpected)
             return string.IsNullOrWhiteSpace(issue.RawMessage)
                 ? GetString("ConnectionStatus.Error")
                 : issue.RawMessage;
 
-        var key = issue.EffectiveResourceKey;
+        var key = issue.EffectiveDetailResourceKey;
         if (string.IsNullOrWhiteSpace(key))
             return GetString("ConnectionStatus.Error");
 
         return GetString(key, issue.Args ?? []);
     }
+
+    public string GetRuntimeIssue(PrintBridgeRuntimeIssue issue) => GetRuntimeIssueDetail(issue);
 
     public string GetPrinterHealthStatus(PrinterHealthStatus status) => status switch
     {
@@ -173,7 +199,7 @@ public sealed class PrintBridgeLocalizer
 
     public string GetTrayConnectionLabel(PrintBridgeRuntimeStatus status)
     {
-        var state = GetServerConnectionStatus(status.ServerConnectionStatus);
+        var state = GetServerConnectionStatus(status);
         return GetString("Tray.ConnectionStatus", state);
     }
 
@@ -186,18 +212,8 @@ public sealed class PrintBridgeLocalizer
 
     public string GetHeaderBadge(PrintBridgeRuntimeStatus status)
     {
-        if (status.IsRunning && status.IsConnected)
-            return status.DryRun
-                ? GetString("Status.RunningDryRun")
-                : GetString("Status.Running");
-
-        if (status.IsRunning)
-            return GetString("Status.Running");
-
-        if (status.IsConnected)
-            return GetString("Status.Connected");
-
-        return GetString("Status.Stopped");
+        var key = PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status);
+        return GetString(key);
     }
 
     public static string GetStringForCulture(string key, string cultureName, params object[] args)

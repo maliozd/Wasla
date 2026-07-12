@@ -34,10 +34,6 @@ internal static class SupportedCultures
         if (!string.IsNullOrWhiteSpace(userLanguage) && IsSupported(userLanguage))
             return NormalizeOrDefault(userLanguage);
 
-        var windowsLanguage = CultureInfo.InstalledUICulture.Name;
-        if (IsSupported(windowsLanguage))
-            return NormalizeOrDefault(windowsLanguage);
-
         return Default;
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Localization;
+using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Options;
 using Wasla.PrintBridge.Printing;
 using Wasla.PrintBridge.Services;
@@ -24,8 +25,23 @@ public sealed partial class MainForm
 
     private void WireConnectionSettingsChangeHandlers()
     {
-        _txtServerUrl.TextChanged += (_, _) => SetSectionStatus(_lblConnectionStatus, null);
-        _txtAgentToken.TextChanged += (_, _) => SetSectionStatus(_lblConnectionStatus, null);
+        _txtServerUrl.TextChanged += (_, _) =>
+        {
+            if (PrintBridgeConnectionFieldSync.ShouldClearConnectionStatusOnFieldTextChange(
+                    _syncingConnectionFields,
+                    _txtServerUrl.Focused))
+                SetSectionStatus(_lblConnectionStatus, null);
+        };
+        _txtAgentToken.TextChanged += (_, _) =>
+        {
+            if (!PrintBridgeConnectionFieldSync.ShouldTreatAgentTokenTextChangeAsUserEdit(
+                    _syncingConnectionFields,
+                    _txtAgentToken.Focused))
+                return;
+
+            _agentTokenUserEdited = true;
+            SetSectionStatus(_lblConnectionStatus, null);
+        };
         _cmbPrinterName.TextChanged += (_, _) => SetSectionStatus(_lblPrinterStatus, null);
         _txtDisplayName.TextChanged += (_, _) => SetSectionStatus(_lblDeviceStatus, null);
     }
@@ -92,16 +108,21 @@ public sealed partial class MainForm
             {
                 _settingsLogger.LogWarning(ex, "Connection settings saved, but token/server validation failed.");
                 _runtime.RecordConnectionFailure(ex);
-                SetSectionStatus(_lblConnectionStatus, _localizer["Message.ConnectionCouldNotBeVerified"], isError: true);
+                ResetAgentTokenInputTracking();
+                SyncConnectionFieldsFromHolder();
+                SetSectionStatus(_lblConnectionStatus, GetUserErrorMessage(ex), isError: true);
             }
 
             if (wasRunning)
                 TryStartPolling();
 
+            ResetAgentTokenInputTracking();
             SyncDeviceNameFieldFromHolder();
             RefreshDashboard();
-            if (connectionVerified)
+            if (connectionVerified && PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
                 SetSectionStatus(_lblConnectionStatus, _localizer["Message.SettingsSavedConnectionVerified"], isSuccess: true);
+            else
+                RefreshSettingsConnectionStatus();
         }
         catch (Exception ex)
         {
@@ -150,14 +171,58 @@ public sealed partial class MainForm
             _settingsHolder.Replace(orderHub, previous.Bridge, previous.Ui);
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             await _runtime.ValidateConnectionAsync(cts.Token).ConfigureAwait(true);
-            SetSectionStatus(_lblConnectionStatus, _localizer["Message.ConnectionSuccess"], isSuccess: true);
-            _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
+
+            var tokenChanged = !string.Equals(
+                previous.OrderHub.AgentToken?.Trim(),
+                orderHub.AgentToken,
+                StringComparison.Ordinal);
+            if (tokenChanged)
+                _settingsHolder.Replace(orderHub, previous.Bridge, previous.Ui);
+            else
+                _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
+
+            ResetAgentTokenInputTracking();
             RefreshDashboard();
+            if (PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
+            {
+                TryStartPolling();
+                SetSectionStatus(_lblConnectionStatus, _localizer["Message.ConnectionSuccess"], isSuccess: true);
+            }
+            else
+                RefreshSettingsConnectionStatus();
         }
         catch (Exception ex)
         {
-            _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
+            var shouldClearToken = ex is PrintBridgeConnectionException connectionEx
+                && new PrintBridgeRuntimeIssue(
+                    connectionEx.IssueCode,
+                    connectionEx.UserMessageKey,
+                    connectionEx.FormatArgs).ShouldClearToken;
+            if (shouldClearToken)
+            {
+                _runtime.RecordConnectionFailure(ex);
+                var snapshot = _settingsHolder.Snapshot();
+                var testedMatchesPersisted = string.Equals(
+                    previous.OrderHub.AgentToken?.Trim(),
+                    orderHub.AgentToken,
+                    StringComparison.Ordinal);
+                if (testedMatchesPersisted)
+                    TryPersistSettings(snapshot.OrderHub, snapshot.Bridge, snapshot.Ui);
+                else
+                    _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
+
+                ResetAgentTokenInputTracking();
+                SyncConnectionFieldsFromHolder();
+            }
+            else
+            {
+                _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
+                SyncConnectionFieldsFromHolder();
+            }
+
             SetSectionStatus(_lblConnectionStatus, GetUserErrorMessage(ex), isError: true);
+            RefreshDashboard();
+            RefreshSettingsConnectionStatus();
         }
         finally
         {
@@ -253,13 +318,18 @@ public sealed partial class MainForm
             _txtSetupCode.Text = string.Empty;
             LoadSettingsIntoForm();
             RefreshDashboard();
-            SetSectionStatus(
-                _lblConnectionStatus,
-                connected
-                    ? _localizer["Message.SettingsSavedConnectionVerified"]
-                    : _localizer["Message.ConnectionCouldNotBeVerified"],
-                isSuccess: connected,
-                isError: !connected);
+            if (connected && PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
+            {
+                TryStartPolling();
+                SetSectionStatus(
+                    _lblConnectionStatus,
+                    _localizer["Message.SettingsSavedConnectionVerified"],
+                    isSuccess: true);
+            }
+            else
+            {
+                RefreshSettingsConnectionStatus();
+            }
         }
         catch (Exception ex)
         {

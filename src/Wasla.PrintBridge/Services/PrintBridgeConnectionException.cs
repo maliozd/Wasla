@@ -46,9 +46,13 @@ public sealed class PrintBridgeConnectionException : Exception
         var issueCode = MapServerErrorCode(serverErrorCode, statusCode);
         var (key, args) = issueCode switch
         {
-            PrintBridgeRuntimeIssueCode.ReconnectRequired => ("RuntimeIssue.ReconnectRequired", Array.Empty<object>()),
-            PrintBridgeRuntimeIssueCode.DisabledByAdmin => ("RuntimeIssue.DisabledByAdmin", Array.Empty<object>()),
-            PrintBridgeRuntimeIssueCode.DuplicateInstallation => ("RuntimeIssue.DuplicateInstallation", Array.Empty<object>()),
+            PrintBridgeRuntimeIssueCode.ReconnectRequired => (
+                IsTokenRevokedError(serverErrorCode)
+                    ? "RuntimeIssue.ReconnectRequired.TokenRevoked.Detail"
+                    : "RuntimeIssue.ReconnectRequired.Detail",
+                Array.Empty<object>()),
+            PrintBridgeRuntimeIssueCode.DisabledByAdmin => ("RuntimeIssue.DisabledByAdmin.Detail", Array.Empty<object>()),
+            PrintBridgeRuntimeIssueCode.DuplicateInstallation => ("RuntimeIssue.DuplicateInstallation.Detail", Array.Empty<object>()),
             PrintBridgeRuntimeIssueCode.EndpointNotFound => ("Connection.EndpointNotFound", Array.Empty<object>()),
             _ when statusCode >= 500 => ("Connection.ServerUnavailable", Array.Empty<object>()),
             _ => ("Connection.RequestFailed", new object[] { statusCode })
@@ -91,4 +95,9 @@ public sealed class PrintBridgeConnectionException : Exception
             _ => PrintBridgeRuntimeIssueCode.RequestFailed
         };
     }
+
+    private static bool IsTokenRevokedError(string? serverErrorCode) =>
+        string.Equals(serverErrorCode, "device_removed", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(serverErrorCode, "device_auth_invalid", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(serverErrorCode, "print_bridge_token_required", StringComparison.OrdinalIgnoreCase);
 }

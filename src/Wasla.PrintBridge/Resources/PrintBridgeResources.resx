@@ -92,10 +92,31 @@
   <data name="RuntimeIssue.ReconnectRequired" xml:space="preserve">
     <value>Bu Print Bridge cihazı artık yetkili değil. Yazdırmaya devam etmek için Wasla Web üzerinden yeniden bağlayın.</value>
   </data>
+  <data name="RuntimeIssue.ReconnectRequired.Title" xml:space="preserve">
+    <value>Yeniden bağlantı gerekli</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.Detail" xml:space="preserve">
+    <value>Geçersiz token. Wasla Web üzerinden yeniden bağlayın.</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.TokenRevoked.Detail" xml:space="preserve">
+    <value>Cihaz tokeni geçersiz. Yeniden bağlanmak için Wasla Web'de kurulum kodu oluşturun.</value>
+  </data>
   <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
     <value>Bu Print Bridge cihazı Wasla Web'de devre dışı bırakılmış. Oradan etkinleştirin, sonra yoklamayı yeniden başlatın.</value>
   </data>
+  <data name="RuntimeIssue.DisabledByAdmin.Title" xml:space="preserve">
+    <value>Devre dışı</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin.Detail" xml:space="preserve">
+    <value>Bu cihaz Wasla Web'de devre dışı bırakıldı. Devam etmek için cihazı Web panelden tekrar etkinleştirin.</value>
+  </data>
   <data name="RuntimeIssue.DuplicateInstallation" xml:space="preserve">
+    <value>Bu bilgisayardaki Print Bridge kimliği başka bir cihaza bağlı. Wasla Web'de mevcut cihaz için yeniden bağlama seçeneğini kullanın.</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation.Title" xml:space="preserve">
+    <value>Kurulum çakışması</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation.Detail" xml:space="preserve">
     <value>Bu bilgisayardaki Print Bridge kimliği başka bir cihaza bağlı. Wasla Web'de mevcut cihaz için yeniden bağlama seçeneğini kullanın.</value>
   </data>
   <data name="Dashboard.DeviceStatus" xml:space="preserve">
@@ -368,6 +389,12 @@
   </data>
   <data name="ConnectionStatus.Stopped" xml:space="preserve">
     <value>Durduruldu</value>
+  </data>
+  <data name="ConnectionSummary.NotConnected" xml:space="preserve">
+    <value>Bağlı değil</value>
+  </data>
+  <data name="ConnectionSummary.Disabled" xml:space="preserve">
+    <value>Devre dışı</value>
   </data>
   <data name="Dashboard.DeviceName" xml:space="preserve">
     <value>Cihaz Adı</value>
