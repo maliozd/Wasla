@@ -2383,22 +2383,43 @@
     <value>Настройка моста печати</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>Установите приложение Print Bridge на свой компьютер под управлением Windows, чтобы Wasla мог автоматически печатать квитанции о заказах.</value>
+    <value>Подключите этот компьютер к Wasla для автоматической печати чеков.</value>
   </data>
   <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
     <value>Пакет печати моста</value>
+  </data>
+  <data name="PrintBridge.PackageCardTitle" xml:space="preserve">
+    <value>Пакет Wasla Print Bridge</value>
+  </data>
+  <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
+    <value>Портативный пакет установки для Windows скоро появится здесь.</value>
+  </data>
+  <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
+    <value>WaslaPrintBridge-portable.zip</value>
+  </data>
+  <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
+    <value>Статус:</value>
+  </data>
+  <data name="PrintBridge.PackageNotReadyStatus" xml:space="preserve">
+    <value>Ещё не готов</value>
+  </data>
+  <data name="PrintBridge.PackageReadyStatus" xml:space="preserve">
+    <value>Готов к загрузке</value>
+  </data>
+  <data name="PrintBridge.PackageDownloadUnavailable" xml:space="preserve">
+    <value>Скоро</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
     <value>Загрузите портативный пакет установки для ПК с ОС Windows, подключенного к чековому принтеру.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
-    <value>Он будет доступен здесь после сборки пакета.</value>
+    <value>В среде разработки можно запустить приложение Print Bridge напрямую.</value>
   </data>
   <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
     <value>Детали подключения</value>
   </data>
   <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>Адрес сервера</value>
+    <value>Адрес веб-панели</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>Токен устройства</value>
@@ -2422,22 +2443,22 @@
     <value>Шаги настройки</value>
   </data>
   <data name="PrintBridge.SetupStep1" xml:space="preserve">
-    <value>Загрузите пакет Print Bridge</value>
+    <value>Откройте приложение Print Bridge.</value>
   </data>
   <data name="PrintBridge.SetupStep2" xml:space="preserve">
-    <value>Извлеките ZIP-файл</value>
+    <value>Скопируйте URL веб-панели Wasla.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Запустите приложение Wasla Print Bridge.</value>
+    <value>Создайте код настройки.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Введите адрес подключения ниже в приложении</value>
+    <value>Введите URL и код настройки в приложении.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Вставьте токен вашего устройства в приложение</value>
+    <value>Завершите подключение.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
-    <value>Проверьте соединение</value>
+    <value>Выберите принтер и сохраните.</value>
   </data>
   <data name="PrintBridge.SetupStep7" xml:space="preserve">
     <value>Выберите свой принтер и сохраните</value>
@@ -2452,7 +2473,7 @@
     <value>подключение к Интернету</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>Токен устройства Wasla</value>
+    <value>Временный код настройки (вводится в настольном приложении)</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>Компьютер, на котором установлено приложение, должен оставаться включенным.</value>
@@ -2815,7 +2836,7 @@
     <value>Инструкции по настройке</value>
   </data>
   <data name="PrintBridge.Troubleshooting" xml:space="preserve">
-    <value>Поиск неисправностей</value>
+    <value>Не удаётся подключиться?</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
     <value>Убедитесь, что Print Bridge запущен на компьютере Windows, подключенном к принтеру.</value>
@@ -3580,6 +3601,7 @@
   <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>Рекомендуется</value></data>
   <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>Подключите Print Bridge к этому ресторану автоматически.</value></data>
   <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>Открыть и подключить Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.ReconnectOpenButton" xml:space="preserve"><value>Повторно подключить Wasla Print Bridge</value></data>
   <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>Открытие Wasla Print Bridge…</value></data>
   <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>Ожидание Wasla Print Bridge…</value></data>
   <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge успешно подключён.</value></data>
@@ -3592,9 +3614,10 @@
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Скачать Wasla Print Bridge</value></data>
   <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Ручная настройка</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Не открылось? Убедитесь, что Wasla Print Bridge установлен и был запущен хотя бы один раз.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Wasla Print Bridge нужно скачать и запустить один раз, прежде чем браузер сможет открывать его автоматически.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Не открылось автоматически? Используйте шаги ручной настройки.</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Открыть ручную настройку</value></data>
   <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Ручная настройка</value></data>
-  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>localhost работает только если Wasla и Print Bridge запущены на одном компьютере. На другом компьютере используйте IP-адрес или домен, доступный с него.</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>Если Print Bridge работает на том же компьютере, можно использовать localhost. На другом компьютере используйте IP-адрес или домен.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>Адрес сервера сейчас недоступен.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>Нет доступного устройства Print Bridge. Сначала создайте его.</value></data>
   <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>Текущий токен устройства {0} будет заменен новым. Продолжить?</value></data>
@@ -3603,12 +3626,16 @@
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Не удалось выполнить действие с токеном.</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Режим настройки</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Настроить новое устройство</value></data>
-  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Рекомендуется. Создает новое устройство Print Bridge, не изменяя токены существующих устройств.</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Подключает этот компьютер как новое устройство Print Bridge.</value></data>
   <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>Повторно подключить существующее устройство</value></data>
-  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Создает новый токен только для выбранного устройства.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Повторно подключает ранее настроенное устройство.</value></data>
   <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>Устройство для повторного подключения</value></data>
   <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Выберите устройство</value></data>
+  <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>Компьютер:</value></data>
+  <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>Создаёт новое подключение для выбранного устройства. Старое подключение больше не будет работать.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Создать новое подключение для выбранного устройства? Старое подключение больше не будет работать.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Повторное подключение создает новый токен для выбранного устройства и делает предыдущий токен этого устройства недействительным.</value></data>
+  <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Выберите устройство для повторного подключения, чтобы продолжить.</value></data>
   <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Выберите устройство, чтобы продолжить.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Для повторного подключения существующего устройства необходимо выбрать устройство.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>Выбранное устройство не найдено для этого ресторана.</value></data>

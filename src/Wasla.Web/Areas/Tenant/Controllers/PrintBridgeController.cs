@@ -157,6 +157,7 @@ public sealed class PrintBridgeController : BaseController
             {
                 Id = d.Id,
                 Name = d.Name,
+                MachineName = d.MachineName,
                 IsActive = d.IsActive,
                 ConnectionStatusLabelKey = d.ConnectionStatusLabelKey,
                 LastSeenAtUtc = d.LastSeenAtUtc

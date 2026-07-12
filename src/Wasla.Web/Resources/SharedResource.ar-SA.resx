@@ -2383,22 +2383,43 @@
     <value>إعداد Print Bridge</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>ثبّت تطبيق Print Bridge على جهاز Windows ليتمكن Wasla من طباعة فواتير الطلبات تلقائيًا.</value>
+    <value>اربط هذا الجهاز بـ Wasla لطباعة الفواتير تلقائيًا.</value>
   </data>
   <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
     <value>حزمة Print Bridge</value>
+  </data>
+  <data name="PrintBridge.PackageCardTitle" xml:space="preserve">
+    <value>حزمة Wasla Print Bridge</value>
+  </data>
+  <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
+    <value>ستتوفر حزمة التثبيت المحمولة لنظام Windows هنا قريبًا.</value>
+  </data>
+  <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
+    <value>WaslaPrintBridge-portable.zip</value>
+  </data>
+  <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
+    <value>الحالة:</value>
+  </data>
+  <data name="PrintBridge.PackageNotReadyStatus" xml:space="preserve">
+    <value>غير جاهزة بعد</value>
+  </data>
+  <data name="PrintBridge.PackageReadyStatus" xml:space="preserve">
+    <value>جاهزة للتنزيل</value>
+  </data>
+  <data name="PrintBridge.PackageDownloadUnavailable" xml:space="preserve">
+    <value>قريبًا</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
     <value>حمّل حزمة التثبيت المحمولة لجهاز Windows المتصل بطابعة الفواتير.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
-    <value>ستكون متاحة هنا بعد إنشاء الحزمة.</value>
+    <value>في بيئات التطوير، يمكنك تشغيل تطبيق Print Bridge مباشرة.</value>
   </data>
   <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
     <value>معلومات الاتصال</value>
   </data>
   <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>عنوان الخادم</value>
+    <value>عنوان لوحة الويب</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>رمز الجهاز</value>
@@ -2422,22 +2443,22 @@
     <value>خطوات الإعداد</value>
   </data>
   <data name="PrintBridge.SetupStep1" xml:space="preserve">
-    <value>حمّل حزمة Print Bridge</value>
+    <value>افتح تطبيق Print Bridge.</value>
   </data>
   <data name="PrintBridge.SetupStep2" xml:space="preserve">
-    <value>استخرج ملف ZIP</value>
+    <value>انسخ عنوان Wasla Web Panel.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>شغّل تطبيق Wasla Print Bridge</value>
+    <value>أنشئ رمز الإعداد.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>أدخل عنوان الاتصال أدناه في التطبيق</value>
+    <value>أدخل العنوان ورمز الإعداد في التطبيق.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>الصق رمز الجهاز في التطبيق</value>
+    <value>أكمل الاتصال.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
-    <value>اختبر الاتصال</value>
+    <value>اختر الطابعة واحفظ الإعدادات.</value>
   </data>
   <data name="PrintBridge.SetupStep7" xml:space="preserve">
     <value>اختر الطابعة واحفظ الإعدادات</value>
@@ -2452,7 +2473,7 @@
     <value>اتصال بالإنترنت</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>رمز جهاز Wasla</value>
+    <value>رمز إعداد مؤقت (يُدخل في تطبيق سطح المكتب)</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>يجب أن يبقى الجهاز الذي يشغّل التطبيق قيد التشغيل</value>
@@ -2815,7 +2836,7 @@
     <value>تعليمات الإعداد</value>
   </data>
   <data name="PrintBridge.Troubleshooting" xml:space="preserve">
-    <value>استكشاف الأخطاء</value>
+    <value>لا يمكنك الاتصال؟</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
     <value>تأكد من تشغيل Print Bridge على جهاز Windows المتصل بالطابعة.</value>
@@ -3096,6 +3117,7 @@
   <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>موصى به</value></data>
   <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>اربط Print Bridge بهذا المطعم تلقائيًا.</value></data>
   <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>افتح واتصل بـ Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.ReconnectOpenButton" xml:space="preserve"><value>أعد توصيل Wasla Print Bridge</value></data>
   <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>جارٍ فتح Wasla Print Bridge…</value></data>
   <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>في انتظار Wasla Print Bridge…</value></data>
   <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>تم الاتصال بـ Print Bridge بنجاح.</value></data>
@@ -3108,9 +3130,10 @@
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>تنزيل Wasla Print Bridge</value></data>
   <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>استخدم الإعداد اليدوي</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>لم يُفتح؟ تأكد من تثبيت Wasla Print Bridge وتشغيله مرة واحدة على الأقل.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>يجب تنزيل Wasla Print Bridge وتشغيله مرة واحدة قبل أن يتمكن المتصفح من فتحه تلقائيًا.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>ألم يُفتح تلقائيًا؟ استخدم خطوات الإعداد اليدوي.</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>فتح الإعداد اليدوي</value></data>
   <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>الإعداد اليدوي</value></data>
-  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>يعمل localhost فقط عندما يكون Wasla و Print Bridge على نفس الجهاز. على جهاز آخر، استخدم عنوان IP أو نطاقًا يمكن الوصول إليه من ذلك الجهاز.</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>إذا كان Print Bridge يعمل على نفس الجهاز، يمكن استخدام localhost. على جهاز مختلف، استخدم عنوان IP أو نطاقًا.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>عنوان الخادم غير متاح حاليًا.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>لا يوجد جهاز Print Bridge متاح. أنشئ واحدًا أولًا.</value></data>
   <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>سيتم استبدال الرمز الحالي للجهاز {0} برمز جديد. هل تريد المتابعة؟</value></data>
@@ -3119,12 +3142,16 @@
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>تعذّر إكمال إجراء الرمز.</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>وضع الإعداد</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>إعداد جهاز جديد</value></data>
-  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>موصى به. ينشئ جهاز Print Bridge جديدًا دون تغيير رموز الأجهزة الحالية.</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>يربط هذا الجهاز كجهاز Print Bridge جديد.</value></data>
   <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>إعادة توصيل جهاز موجود</value></data>
-  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>ينشئ رمزًا جديدًا للجهاز الذي تحدده فقط.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>يعيد توصيل جهاز سبق إعداده.</value></data>
   <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>الجهاز المراد إعادة توصيله</value></data>
   <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>اختر جهازًا</value></data>
+  <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>الجهاز:</value></data>
+  <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>ينشئ هذا اتصالًا جديدًا للجهاز المحدد. لن يعمل الاتصال القديم بعد الآن.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>هل تريد إنشاء اتصال جديد للجهاز المحدد؟ لن يعمل الاتصال القديم بعد الآن.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>إعادة التوصيل تنشئ رمزًا جديدًا للجهاز المحدد وتلغي الرمز السابق لذلك الجهاز.</value></data>
+  <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>اختر الجهاز لإعادة التوصيل قبل المتابعة.</value></data>
   <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>اختر جهازًا للمتابعة.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>اختيار الجهاز مطلوب لإعادة توصيل جهاز موجود.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>لم يتم العثور على الجهاز المحدد لهذا المطعم.</value></data>

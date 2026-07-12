@@ -142,6 +142,7 @@
     function showFallback() {
         var fb = document.getElementById("pbAutoFallback");
         if (fb) fb.classList.remove("d-none");
+        expandManualSetupSection(false);
     }
 
     function clearTimers() {
@@ -194,13 +195,15 @@
     function validateReconnectSelection() {
         if (getSelectedSetupMode() !== "reconnect") return true;
         if (getSelectedReconnectDeviceId()) return true;
-        showMessage(messages.selectDevice || "Select a device.", "danger");
+        updatePrimaryCtaState();
+        var guidance = document.getElementById("pbReconnectDeviceGuidance");
+        if (guidance) guidance.scrollIntoView({ behavior: "smooth", block: "nearest" });
         return false;
     }
 
     function shouldConfirmAutomaticTokenReplacement() {
         if (getSelectedSetupMode() !== "reconnect") return true;
-        return window.confirm(messages.reconnectTokenWarning || messages.autoReplaceTokenConfirm || "This will replace the selected device token. Continue?");
+        return window.confirm(messages.reconnectConfirm || messages.reconnectTokenWarning || messages.autoReplaceTokenConfirm || "Continue with reconnect?");
     }
 
     function startAutomaticSetup() {
@@ -257,6 +260,115 @@
         if (retryBtn) retryBtn.addEventListener("click", startAutomaticSetup);
     }
 
+    function getDeviceById(deviceId) {
+        var devices = cfg.devices || [];
+        for (var i = 0; i < devices.length; i++) {
+            if (String(devices[i].id) === String(deviceId)) return devices[i];
+        }
+        return null;
+    }
+
+    function normalizeReconnectText(value) {
+        return (value || "").trim();
+    }
+
+    function getReconnectDisplayName(device) {
+        var name = normalizeReconnectText(device.name);
+        if (name) return name;
+        return normalizeReconnectText(device.machineName);
+    }
+
+    function shouldShowReconnectMachineName(device) {
+        var name = normalizeReconnectText(device.name);
+        var machine = normalizeReconnectText(device.machineName);
+        if (!machine || !name) return false;
+        return name.localeCompare(machine, undefined, { sensitivity: "accent" }) !== 0;
+    }
+
+    function formatReconnectLastSeen(iso) {
+        if (!iso) return messages.lastSeenNever || "—";
+        try {
+            var d = new Date(iso);
+            if (isNaN(d.getTime())) return messages.lastSeenNever || "—";
+            var now = new Date();
+            var sameDay = d.getFullYear() === now.getFullYear()
+                && d.getMonth() === now.getMonth()
+                && d.getDate() === now.getDate();
+            var time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            if (sameDay) {
+                return (messages.lastSeen || "Last seen") + ": " + (messages.today || "Today") + " " + time;
+            }
+            return (messages.lastSeen || "Last seen") + ": " + d.toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+        } catch (_) {
+            return messages.lastSeenNever || "—";
+        }
+    }
+
+    function updateReconnectDeviceDetails() {
+        var details = document.getElementById("pbReconnectDeviceDetails");
+        var titleEl = document.getElementById("pbReconnectDeviceTitle");
+        var machineEl = document.getElementById("pbReconnectDeviceMachine");
+        var badgesHost = document.getElementById("pbReconnectDeviceBadges");
+        var lastSeenEl = document.getElementById("pbReconnectDeviceLastSeen");
+        if (!details || !titleEl || !machineEl || !badgesHost || !lastSeenEl) return;
+
+        var device = getDeviceById(getSelectedReconnectDeviceId());
+        if (!device) {
+            details.classList.add("d-none");
+            titleEl.textContent = "";
+            machineEl.textContent = "";
+            machineEl.classList.add("d-none");
+            badgesHost.innerHTML = "";
+            lastSeenEl.textContent = "";
+            return;
+        }
+
+        titleEl.textContent = getReconnectDisplayName(device);
+
+        if (shouldShowReconnectMachineName(device)) {
+            machineEl.textContent = (messages.reconnectMachineLabel || "Machine:") + " "
+                + normalizeReconnectText(device.machineName);
+            machineEl.classList.remove("d-none");
+        } else {
+            machineEl.textContent = "";
+            machineEl.classList.add("d-none");
+        }
+
+        var activeBadge = device.isActive
+            ? '<span class="badge rounded-pill text-bg-success">' + escapeHtml(messages.deviceActive || "Active") + '</span>'
+            : '<span class="badge rounded-pill text-bg-secondary">' + escapeHtml(messages.devicePassive || "Passive") + '</span>';
+        var statusBadge = '<span class="badge rounded-pill text-bg-light text-body border">' + escapeHtml(device.status || "") + '</span>';
+
+        badgesHost.innerHTML = activeBadge + statusBadge;
+        lastSeenEl.textContent = formatReconnectLastSeen(device.lastSeenAtUtc);
+        details.classList.remove("d-none");
+    }
+
+    function updatePrimaryCtaLabel() {
+        var label = document.getElementById("pbAutoOpenBtnText");
+        if (!label) return;
+        var reconnect = getSelectedSetupMode() === "reconnect";
+        label.textContent = reconnect
+            ? (messages.reconnectOpenButton || messages.openButton || "Open")
+            : (messages.openButton || "Open");
+    }
+
+    function updatePrimaryCtaState() {
+        var openBtn = document.getElementById("pbAutoOpenBtn");
+        var guidance = document.getElementById("pbReconnectDeviceGuidance");
+        if (!openBtn) return;
+
+        var reconnect = getSelectedSetupMode() === "reconnect";
+        var hasDevice = !!getSelectedReconnectDeviceId();
+        var disabled = reconnect && !hasDevice;
+
+        openBtn.disabled = disabled;
+        openBtn.setAttribute("aria-disabled", disabled ? "true" : "false");
+        if (guidance) guidance.classList.toggle("d-none", !reconnect || hasDevice);
+        updatePrimaryCtaLabel();
+        updateReconnectDeviceDetails();
+    }
+
     function updateSetupModeUi() {
         var reconnect = getSelectedSetupMode() === "reconnect";
         var section = document.getElementById("pbReconnectDeviceSection");
@@ -267,6 +379,7 @@
                 ? (messages.generateReconnectSetupCode || "Generate reconnect setup code")
                 : (messages.generateNewDeviceSetupCode || "Generate new device setup code");
         }
+        updatePrimaryCtaState();
     }
 
     function bindSetupMode() {
@@ -274,11 +387,40 @@
         radios.forEach(function (radio) {
             radio.addEventListener("change", updateSetupModeUi);
         });
+        var reconnectSelect = document.getElementById("pbReconnectDeviceSelect");
+        if (reconnectSelect) {
+            reconnectSelect.addEventListener("change", updatePrimaryCtaState);
+        }
         updateSetupModeUi();
+    }
+
+    function expandManualSetupSection(scrollIntoView) {
+        var collapse = document.getElementById("pbManualSetupCollapse");
+        if (collapse && window.bootstrap && window.bootstrap.Collapse) {
+            bootstrap.Collapse.getOrCreateInstance(collapse).show();
+        }
+        if (scrollIntoView) {
+            var anchor = document.getElementById("pbManualSetup");
+            if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }
+
+    function bindManualSectionLinks() {
+        document.querySelectorAll('a[href="#pbManualSetup"]').forEach(function (link) {
+            link.addEventListener("click", function (e) {
+                e.preventDefault();
+                expandManualSetupSection(true);
+            });
+        });
+
+        if (window.location.hash === "#pbManualSetup") {
+            expandManualSetupSection(true);
+        }
     }
 
     function showManualSetupCode(code, mode, options) {
         options = options || {};
+        expandManualSetupSection(true);
         currentManualSetupCode = code || null;
         var box = document.getElementById("pbManualSetupCodeBox");
         var title = document.getElementById("pbManualSetupCodeTitle");
@@ -307,7 +449,7 @@
             var mode = getSelectedSetupMode();
             if (mode === "reconnect" && !validateReconnectSelection()) return;
             if (mode === "reconnect") {
-                if (!window.confirm(messages.reconnectTokenWarning || messages.confirmRegenerateToken || "Regenerate token?")) {
+                if (!window.confirm(messages.reconnectConfirm || messages.reconnectTokenWarning || messages.confirmRegenerateToken || "Continue with reconnect?")) {
                     return;
                 }
             }
@@ -328,7 +470,7 @@
                         showManualSetupCode(data.code, mode, {
                             title: messages.oneTimeSetupCodeCreated,
                             notice: expires,
-                            warning: mode === "reconnect" ? messages.reconnectTokenWarning : ""
+                            warning: ""
                         });
                         showMessage(messages.oneTimeSetupCodeCreated || "Setup code created.", "success");
                     })
@@ -346,5 +488,6 @@
         bindSetupMode();
         bindAutomaticSetup();
         bindManualSetupCodeButtons();
+        bindManualSectionLinks();
     });
 })();

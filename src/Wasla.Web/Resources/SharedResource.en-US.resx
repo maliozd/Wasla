@@ -2383,22 +2383,43 @@
     <value>Print Bridge setup</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>Install the Print Bridge app on your Windows computer so Wasla can print order receipts automatically.</value>
+    <value>Connect this computer to Wasla so receipts print automatically.</value>
   </data>
   <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
     <value>Print Bridge package</value>
+  </data>
+  <data name="PrintBridge.PackageCardTitle" xml:space="preserve">
+    <value>Wasla Print Bridge package</value>
+  </data>
+  <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
+    <value>The portable Windows setup package will be available here soon.</value>
+  </data>
+  <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
+    <value>WaslaPrintBridge-portable.zip</value>
+  </data>
+  <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <data name="PrintBridge.PackageNotReadyStatus" xml:space="preserve">
+    <value>Not ready yet</value>
+  </data>
+  <data name="PrintBridge.PackageReadyStatus" xml:space="preserve">
+    <value>Ready to download</value>
+  </data>
+  <data name="PrintBridge.PackageDownloadUnavailable" xml:space="preserve">
+    <value>Coming soon</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
     <value>Download the portable setup package for the Windows PC connected to your receipt printer.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
-    <value>It will be available here after the package is built.</value>
+    <value>In development environments, you can run the Print Bridge app directly.</value>
   </data>
   <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
     <value>Connection details</value>
   </data>
   <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>Server address</value>
+    <value>Web panel address</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>Device token</value>
@@ -2422,22 +2443,22 @@
     <value>Setup steps</value>
   </data>
   <data name="PrintBridge.SetupStep1" xml:space="preserve">
-    <value>Download the Print Bridge package</value>
+    <value>Open the Print Bridge app.</value>
   </data>
   <data name="PrintBridge.SetupStep2" xml:space="preserve">
-    <value>Extract the ZIP file</value>
+    <value>Copy the Wasla Web Panel URL.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Run the Wasla Print Bridge app</value>
+    <value>Generate a setup code.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Enter the connection address below in the app</value>
+    <value>Enter the URL and setup code in the app.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Paste your device token into the app</value>
+    <value>Complete the connection.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
-    <value>Test the connection</value>
+    <value>Select your printer and save.</value>
   </data>
   <data name="PrintBridge.SetupStep7" xml:space="preserve">
     <value>Select your printer and save</value>
@@ -2452,7 +2473,7 @@
     <value>Internet connection</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>Wasla device token</value>
+    <value>Temporary setup code (entered in the desktop app)</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>The computer running the app must stay on</value>
@@ -2530,7 +2551,7 @@
     <value>Windows Portable Package</value>
   </data>
   <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
-    <value>The setup package is not ready yet.</value>
+    <value>The installation package is not ready yet.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>The portable package will be available here after deployment packaging is complete.</value>
@@ -2815,7 +2836,7 @@
     <value>Setup Instructions</value>
   </data>
   <data name="PrintBridge.Troubleshooting" xml:space="preserve">
-    <value>Troubleshooting</value>
+    <value>Can't connect?</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
     <value>Make sure Print Bridge is running on the Windows computer connected to the printer.</value>
@@ -3096,6 +3117,7 @@
   <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>Recommended</value></data>
   <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>Connect Print Bridge to this restaurant automatically.</value></data>
   <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>Open and connect Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.ReconnectOpenButton" xml:space="preserve"><value>Reconnect Wasla Print Bridge</value></data>
   <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>Opening Wasla Print Bridge…</value></data>
   <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>Waiting for Wasla Print Bridge…</value></data>
   <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge connected successfully.</value></data>
@@ -3108,9 +3130,10 @@
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Download Wasla Print Bridge</value></data>
   <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Use manual setup</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Didn't open? Make sure Wasla Print Bridge is installed and has been run once.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Wasla Print Bridge must be downloaded and run once before your browser can open it automatically.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Didn't open automatically? Use the manual setup steps.</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Open manual setup</value></data>
   <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Manual setup</value></data>
-  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>localhost only works when Wasla and Print Bridge run on the same computer. On another computer, use an IP address or domain reachable from that computer.</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>If Print Bridge runs on the same computer, localhost can be used. On a different computer, use an IP address or domain.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>The server address is unavailable right now.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>No Print Bridge device is available. Create one first.</value></data>
   <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>The current token for {0} will be replaced with a new token. Continue?</value></data>
@@ -3119,12 +3142,16 @@
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>The token action could not be completed.</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Setup mode</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Set up a new device</value></data>
-  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Recommended. Creates a new Print Bridge device without touching existing device tokens.</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Connects this computer as a new Print Bridge device.</value></data>
   <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>Reconnect an existing device</value></data>
-  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Creates a new token only for the device you select.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Reconnects a device you set up before.</value></data>
   <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>Device to reconnect</value></data>
   <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Select a device</value></data>
+  <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>Machine:</value></data>
+  <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>This creates a new connection for the selected device. The old connection will no longer work.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Create a new connection for the selected device? The old connection will no longer work.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Reconnect creates a new token for the selected device and invalidates that device's previous token.</value></data>
+  <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Select the device to reconnect before continuing.</value></data>
   <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Select a device to continue.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Selecting a device is required to reconnect an existing device.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>The selected device was not found for this restaurant.</value></data>

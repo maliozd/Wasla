@@ -20,6 +20,7 @@ public sealed class PrintBridgeSetupDeviceOptionViewModel
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? MachineName { get; set; }
     public bool IsActive { get; set; }
     public string ConnectionStatusLabelKey { get; set; } = string.Empty;
     public DateTime? LastSeenAtUtc { get; set; }

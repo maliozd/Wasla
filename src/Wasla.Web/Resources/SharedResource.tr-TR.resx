@@ -2380,10 +2380,31 @@
     <value>Print Bridge kurulumu</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>Wasla'nın sipariş fişlerini otomatik yazdırabilmesi için Windows bilgisayarınıza Print Bridge uygulamasını kurun.</value>
+    <value>Bu bilgisayarı Wasla'ya bağlayarak fişlerin otomatik yazdırılmasını sağlayın.</value>
   </data>
   <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
     <value>Print Bridge paketi</value>
+  </data>
+  <data name="PrintBridge.PackageCardTitle" xml:space="preserve">
+    <value>Wasla Print Bridge paketi</value>
+  </data>
+  <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
+    <value>Windows için taşınabilir kurulum paketi yakında burada olacak.</value>
+  </data>
+  <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
+    <value>WaslaPrintBridge-portable.zip</value>
+  </data>
+  <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
+    <value>Durum:</value>
+  </data>
+  <data name="PrintBridge.PackageNotReadyStatus" xml:space="preserve">
+    <value>Henüz hazır değil</value>
+  </data>
+  <data name="PrintBridge.PackageReadyStatus" xml:space="preserve">
+    <value>İndirmeye hazır</value>
+  </data>
+  <data name="PrintBridge.PackageDownloadUnavailable" xml:space="preserve">
+    <value>Yakında</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
     <value>Fiş yazıcısına bağlı Windows bilgisayarınız için taşınabilir kurulum paketini indirin.</value>
@@ -2392,7 +2413,7 @@
     <value>Bağlantı bilgileri</value>
   </data>
   <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>Sunucu adresi</value>
+    <value>Web panel adresi</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>Cihaz token'ı</value>
@@ -2416,22 +2437,22 @@
     <value>Kurulum adımları</value>
   </data>
   <data name="PrintBridge.SetupStep1" xml:space="preserve">
-    <value>Print Bridge paketini indirin</value>
+    <value>Print Bridge uygulamasını açın.</value>
   </data>
   <data name="PrintBridge.SetupStep2" xml:space="preserve">
-    <value>ZIP dosyasını çıkarın</value>
+    <value>Wasla Web Panel URL'sini kopyalayın.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Wasla Print Bridge uygulamasını çalıştırın</value>
+    <value>Kurulum kodunu oluşturun.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Aşağıdaki bağlantı adresini uygulamaya girin</value>
+    <value>Uygulamada URL ve kurulum kodunu girin.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Cihaz token'ınızı uygulamaya yapıştırın</value>
+    <value>Bağlantıyı tamamlayın.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
-    <value>Bağlantıyı test edin</value>
+    <value>Yazıcınızı seçip kaydedin.</value>
   </data>
   <data name="PrintBridge.SetupStep7" xml:space="preserve">
     <value>Yazıcınızı seçip kaydedin</value>
@@ -2446,7 +2467,7 @@
     <value>İnternet bağlantısı</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>Wasla cihaz token'ı</value>
+    <value>Geçici kurulum kodu (masaüstü uygulamasına girilir)</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>Uygulamanın çalıştığı bilgisayar açık kalmalı</value>
@@ -2524,10 +2545,13 @@
     <value>Windows Portable Paket</value>
   </data>
   <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
-    <value>Kurulum paketi henüz hazırlanmadı.</value>
+    <value>Kurulum paketi henüz hazır değil.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
+  </data>
+  <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
+    <value>Geliştirme ortamında Print Bridge uygulamasını doğrudan çalıştırabilirsiniz.</value>
   </data>
   <data name="PrintBridge.GuideStep2Title" xml:space="preserve">
     <value>Adım 2 — Cihaz tokenı oluşturun</value>
@@ -2809,7 +2833,7 @@
     <value>Kurulum Talimatları</value>
   </data>
   <data name="PrintBridge.Troubleshooting" xml:space="preserve">
-    <value>Sorun giderme</value>
+    <value>Bağlanamıyor musunuz?</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
     <value>Print Bridge'in yazıcıya bağlı Windows bilgisayarında çalıştığından emin olun.</value>
@@ -3090,6 +3114,7 @@
   <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>Önerilen</value></data>
   <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>Print Bridge'i bu restorana otomatik bağlayın.</value></data>
   <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>Wasla Print Bridge'i aç ve bağlan</value></data>
+  <data name="PrintBridge.Auto.ReconnectOpenButton" xml:space="preserve"><value>Wasla Print Bridge'i yeniden bağla</value></data>
   <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>Wasla Print Bridge açılıyor…</value></data>
   <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>Wasla Print Bridge bekleniyor…</value></data>
   <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge başarıyla bağlandı.</value></data>
@@ -3102,9 +3127,10 @@
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Wasla Print Bridge'i indir</value></data>
   <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Manuel kurulumu kullan</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Açılmadı mı? Wasla Print Bridge'in kurulu olduğundan ve en az bir kez çalıştırıldığından emin olun.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Tarayıcının otomatik açabilmesi için Wasla Print Bridge önce indirilip bir kez çalıştırılmalıdır.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Otomatik açılmadı mı? Manuel kurulum adımlarını kullanın.</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Manuel kurulumu aç</value></data>
   <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Manuel kurulum</value></data>
-  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>localhost yalnızca Wasla ve Print Bridge aynı bilgisayarda çalışıyorsa çalışır. Farklı bir bilgisayarda, o bilgisayardan erişilebilen bir IP adresi veya alan adı kullanın.</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>Print Bridge aynı bilgisayarda çalışıyorsa localhost kullanılabilir. Farklı bilgisayarda IP adresi veya domain kullanın.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>Sunucu adresi şu anda kullanılamıyor.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>Kullanılabilir Print Bridge cihazı yok. Önce bir cihaz oluşturun.</value></data>
   <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>{0} cihazının mevcut token'ı yenisiyle değiştirilecek. Devam edilsin mi?</value></data>
@@ -3113,12 +3139,16 @@
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Token işlemi tamamlanamadı.</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Kurulum türü</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Yeni cihaz kur</value></data>
-  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Önerilen. Mevcut cihaz token'larına dokunmadan yeni bir Print Bridge cihazı oluşturur.</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Bu bilgisayarı yeni bir Print Bridge cihazı olarak bağlar.</value></data>
   <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>Mevcut cihazı yeniden bağla</value></data>
-  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Yalnızca seçtiğiniz cihaz için yeni token oluşturur.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Daha önce tanımlı bir cihazı yeniden bağlar.</value></data>
   <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>Yeniden bağlanacak cihaz</value></data>
   <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Cihaz seçin</value></data>
+  <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>Makine:</value></data>
+  <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>Bu işlem seçili cihaz için yeni bağlantı oluşturur. Eski bağlantı artık kullanılamaz.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Seçilen cihaz için yeni bağlantı oluşturulsun mu? Eski bağlantı artık çalışmaz.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Yeniden bağlama seçilen cihaz için yeni token oluşturur ve o cihazın eski token'ını geçersiz kılar.</value></data>
+  <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Devam etmek için yeniden bağlanacak cihazı seçin.</value></data>
   <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Devam etmek için bir cihaz seçin.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Mevcut cihazı yeniden bağlamak için cihaz seçimi zorunludur.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>Seçilen cihaz bu restorana ait değil veya bulunamadı.</value></data>

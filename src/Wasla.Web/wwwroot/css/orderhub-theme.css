@@ -2971,6 +2971,173 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
 }
 
 /* Print Bridge setup guide */
+.oh-print-bridge-setup-page .oh-print-bridge-setup-layout {
+  max-width: 50rem;
+  margin-inline: auto;
+}
+
+.oh-print-bridge-setup-main-card .card-body {
+  padding: 2rem 2.25rem;
+}
+
+.oh-print-bridge-setup-header .h4 {
+  font-weight: 600;
+}
+
+.oh-print-bridge-setup-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--orderhub-primary);
+  background: color-mix(in srgb, var(--orderhub-primary) 10%, var(--color-surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--orderhub-primary) 22%, transparent);
+}
+
+.oh-print-bridge-setup-mode-option {
+  border: 2px solid color-mix(in srgb, var(--color-border, #dee2e6) 90%, transparent);
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.oh-print-bridge-setup-mode-option:hover {
+  border-color: color-mix(in srgb, var(--orderhub-primary) 25%, var(--color-border, #dee2e6));
+}
+
+.oh-print-bridge-setup-mode-option:has(input:checked) {
+  border-color: var(--orderhub-primary);
+  background: color-mix(in srgb, var(--orderhub-primary) 7%, var(--color-surface, #fff));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--orderhub-primary) 18%, transparent);
+}
+
+.oh-print-bridge-setup-mode-option:has(input:checked) .form-check-input {
+  border-color: var(--orderhub-primary);
+  background-color: var(--orderhub-primary);
+}
+
+.oh-print-bridge-reconnect-device-details .badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.oh-print-bridge-reconnect-device-details__sep {
+  color: color-mix(in srgb, var(--color-text, inherit) 45%, transparent);
+}
+
+.oh-print-bridge-setup-reconnect-panel {
+  padding: 1rem 1.125rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 85%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 98%, var(--orderhub-primary) 2%);
+}
+
+.oh-print-bridge-setup-cta-block {
+  padding-top: 0.25rem;
+}
+
+.oh-print-bridge-setup-helper {
+  line-height: 1.5;
+  max-width: 38rem;
+}
+
+.oh-print-bridge-setup-manual-link {
+  margin-inline-start: 0.35rem;
+  white-space: nowrap;
+}
+
+.oh-print-bridge-setup-below-fold {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 70%, transparent);
+}
+
+.oh-print-bridge-setup-below-fold .oh-print-bridge-setup-accordion-btn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--color-text, inherit) 72%, transparent);
+}
+
+.oh-print-bridge-setup-below-fold .oh-print-bridge-setup-accordion-btn:not(.collapsed) {
+  color: var(--orderhub-primary);
+}
+
+.oh-print-bridge-package-card {
+  padding: 1rem 1.125rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 85%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 99%, var(--orderhub-primary) 1%);
+}
+
+.oh-print-bridge-package-placeholder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px dashed color-mix(in srgb, var(--color-border, #dee2e6) 90%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 97%, var(--color-border, #dee2e6) 3%);
+}
+
+.oh-print-bridge-package-placeholder-row--ready {
+  border-style: solid;
+  background: var(--color-surface, #fff);
+}
+
+.oh-print-bridge-package-placeholder-row__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  color: var(--orderhub-primary);
+  background: color-mix(in srgb, var(--orderhub-primary) 10%, var(--color-surface, #fff));
+  flex-shrink: 0;
+}
+
+.oh-print-bridge-package-placeholder-row__icon .bi {
+  font-size: 1.125rem;
+}
+
+.oh-print-bridge-package-status-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text, inherit) 68%, transparent);
+  background: color-mix(in srgb, var(--color-border, #dee2e6) 35%, var(--color-surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 80%, transparent);
+}
+
+.oh-print-bridge-setup-accordion .accordion-item {
+  background: transparent;
+}
+
+.oh-print-bridge-setup-accordion-btn {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text, inherit);
+  background: transparent;
+  box-shadow: none;
+  padding-inline: 0;
+}
+
+.oh-print-bridge-setup-accordion-btn:not(.collapsed) {
+  color: var(--orderhub-primary);
+  background: transparent;
+  box-shadow: none;
+}
+
+.oh-print-bridge-setup-accordion .accordion-body {
+  padding-inline: 0;
+}
+
+.oh-print-bridge-setup-code-result {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 80%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 98%, var(--orderhub-primary) 2%);
+}
+
 .oh-print-bridge-setup-page .oh-print-bridge-guide-step {
   position: relative;
 }
