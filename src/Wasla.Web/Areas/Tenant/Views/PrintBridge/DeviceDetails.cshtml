@@ -1,4 +1,5 @@
 @model Wasla.Web.Models.PrintBridge.PrintBridgeDeviceDetailsViewModel
+@using System.Text.Json
 @using Microsoft.Extensions.Localization
 @using Wasla.Application.Abstractions.Printing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
@@ -16,7 +17,26 @@
     var activeBadgeClass = Model.IsActive ? "text-bg-success" : "text-bg-secondary";
     var setActiveLabel = Model.IsActive ? L["PrintBridge.DisableDevice"] : L["PrintBridge.EnableDevice"];
     var setActiveIcon = Model.IsActive ? "bi-pause-circle" : "bi-play-circle";
-    var removeConfirmMessage = L["PrintBridge.DeviceRemoveConfirmMessage", Model.Name].Value;
+    var deviceDetailsConfigJson = JsonSerializer.Serialize(new
+    {
+        endpoints = new
+        {
+            regenerate = $"/print-bridge/devices/{Model.Id}/regenerate-token",
+            setActive = $"/print-bridge/devices/{Model.Id}/set-active",
+            nextIsActive = !Model.IsActive
+        },
+        messages = new
+        {
+            confirmRegenerateToken = L["PrintBridge.ConfirmRegenerateToken", Model.Name].Value,
+            tokenRegenerateWarning = L["PrintBridge.TokenRegenerateWarning"].Value,
+            tokenRegenerateFailed = L["PrintBridge.TokenRegenerateFailed"].Value,
+            tokenMasked = L["PrintBridge.TokenMasked"].Value,
+            tokenCopied = L["PrintBridge.TokenCopied"].Value,
+            tokenCopyFailed = L["PrintBridge.TokenCopyFailed"].Value,
+            copied = L["PrintBridge.Copied"].Value,
+            deviceUpdateFailed = L["PrintBridge.DeviceUpdateFailed"].Value
+        }
+    });
 }
 
 <div class="oh-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
@@ -197,21 +217,10 @@
         (function () {
             "use strict";
 
+            var config = @Html.Raw(deviceDetailsConfigJson);
             var currentToken = null;
-            var endpoints = {
-                regenerate: "@Url.Action("RegenerateToken", "PrintBridge", new { area = "Tenant", deviceId = Model.Id })",
-                setActive: "@Url.Action("SetDeviceActive", "PrintBridge", new { area = "Tenant", deviceId = Model.Id })"
-            };
-            var messages = {
-                confirmRegenerateToken: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.ConfirmRegenerateToken", Model.Name].Value),
-                tokenRegenerateWarning: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenRegenerateWarning"].Value),
-                tokenRegenerateFailed: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenRegenerateFailed"].Value),
-                tokenMasked: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenMasked"].Value),
-                tokenCopied: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenCopied"].Value),
-                tokenCopyFailed: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.TokenCopyFailed"].Value),
-                copied: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.Copied"].Value),
-                deviceUpdateFailed: @System.Text.Json.JsonSerializer.Serialize(L["PrintBridge.DeviceUpdateFailed"].Value)
-            };
+            var endpoints = config.endpoints;
+            var messages = config.messages;
 
             function getToken() {
                 var form = document.getElementById("printBridgeDeviceAntiForgery");
@@ -315,7 +324,7 @@
                 if (setActiveBtn) {
                     setActiveBtn.addEventListener("click", function () {
                         setActiveBtn.disabled = true;
-                        post(endpoints.setActive, { isActive: "@(!Model.IsActive ? "true" : "false")" })
+                        post(endpoints.setActive, { isActive: endpoints.nextIsActive ? "true" : "false" })
                             .then(function () { window.location.reload(); })
                             .catch(function (e) { showMessage(e.message || messages.deviceUpdateFailed, "danger"); })
                             .finally(function () { setActiveBtn.disabled = false; });
