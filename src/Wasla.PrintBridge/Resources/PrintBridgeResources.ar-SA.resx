@@ -99,7 +99,7 @@
     <value>رمز غير صالح. أعد التوصيل من Wasla Web.</value>
   </data>
   <data name="RuntimeIssue.ReconnectRequired.TokenRevoked.Detail" xml:space="preserve">
-    <value>رمز الجهاز غير صالح. أنشئ رمز إعداد في Wasla Web لإعادة التوصيل.</value>
+    <value>رمز الجهاز غير صالح. أعد توصيل هذا الجهاز من صفحة إعداد Print Bridge في لوحة Wasla Web.</value>
   </data>
   <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
     <value>تم تعطيل جهاز Print Bridge هذا في Wasla Web. فعّله هناك، ثم ابدأ polling مرة أخرى.</value>
@@ -325,8 +325,11 @@
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>الصق رمز الجهاز الذي تم إنشاؤه من لوحة Wasla Web.</value>
   </data>
+  <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
+    <value>هذا الحقل مخصص لرمز الجهاز. لا تلصق رمز الإعداد أو رابط wasla-printbridge هنا. استخدم صفحة إعداد Print Bridge في لوحة Wasla Web للاتصال.</value>
+  </data>
   <data name="Settings.Section.Connection" xml:space="preserve"><value>اتصال Wasla</value></data>
-  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>يحفظ ويتحقق فقط من عنوان Wasla Web ورمز الجهاز.</value></data>
+  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>إعدادات عنوان لوحة الويب واتصال الجهاز.</value></data>
   <data name="Settings.Section.Printer" xml:space="preserve"><value>إعداد الطابعة</value></data>
   <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>اختر طابعة Windows المحلية المستخدمة للإيصالات. لا يتطلب ذلك بيانات اعتماد الخادم.</value></data>
   <data name="Settings.Section.Device" xml:space="preserve"><value>هوية الجهاز</value></data>
@@ -584,9 +587,19 @@
   </data>
   <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>رمز الإعداد مطلوب.</value></data>
   <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>الاتصال برمز الإعداد</value></data>
+  <data name="Button.ResetConnection" xml:space="preserve"><value>إعادة تعيين الاتصال</value></data>
+  <data name="Button.ResetConnectionConfirm" xml:space="preserve"><value>إعادة التعيين</value></data>
+  <data name="Button.ResetConnectionCancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>إعادة تعيين الاتصال؟</value></data>
+  <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>يمسح هذا رمز الاتصال على هذا الجهاز. يتم الاحتفاظ بعنوان الخادم وهوية الجهاز واللغة وسجل الطباعة المحلي. ستحتاج إلى إعادة توصيل Print Bridge للمتابعة.</value></data>
+  <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>استخدم هذا عندما لم يعد الاتصال أو الرمز صالحًا.</value></data>
+  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>استكشاف مشاكل الاتصال</value></data>
+  <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>أعد توصيل Print Bridge من لوحة الويب للمتابعة.</value></data>
+  <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>تمت إعادة تعيين الاتصال. أعد توصيل هذا الجهاز من صفحة إعداد Print Bridge في لوحة Wasla Web.</value></data>
   <data name="Settings.SetupCode" xml:space="preserve"><value>رمز الإعداد</value></data>
   <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>أدخل رمز الإعداد لمرة واحدة الذي تم إنشاؤه في Wasla Web. هذا ليس رمز الجهاز الدائم.</value></data>
   <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>رمز الإعداد غير صالح أو مستخدم أو منتهي الصلاحية.</value></data>
+  <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>تمت إعادة تعيين الاتصال. أعد توصيل هذا الجهاز من صفحة إعداد Print Bridge في لوحة Wasla Web.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>تعذر التحقق من الاتصال</value>
   </data>

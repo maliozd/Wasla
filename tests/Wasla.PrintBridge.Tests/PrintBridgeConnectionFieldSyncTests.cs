@@ -144,7 +144,7 @@ public sealed class PrintBridgeConnectionFieldSyncTests
     }
 
     [Fact]
-    public void TokenRevokedDetail_UsesSetupCodeGuidance()
+    public void TokenRevokedDetail_PointsToWebSetupPage()
     {
         var root = PrintBridgeRuntimeLifecycleTestsHelpers.FindRepositoryRoot();
         var detail = PrintBridgeRuntimeLifecycleTestsHelpers.ReadResourceValue(
@@ -152,8 +152,9 @@ public sealed class PrintBridgeConnectionFieldSyncTests
             "PrintBridgeResources.tr-TR.resx",
             "RuntimeIssue.ReconnectRequired.TokenRevoked.Detail");
 
-        Assert.Contains("kurulum kodu", detail, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("yenilenmiş", detail, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Wasla Web", detail, StringComparison.Ordinal);
+        Assert.Contains("kurulum sayfas", detail, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("buraya gir", detail, StringComparison.OrdinalIgnoreCase);
     }
 }
 

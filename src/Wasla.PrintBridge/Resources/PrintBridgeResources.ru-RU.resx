@@ -99,7 +99,7 @@
     <value>Недействительный токен. Повторно подключите устройство в Wasla Web.</value>
   </data>
   <data name="RuntimeIssue.ReconnectRequired.TokenRevoked.Detail" xml:space="preserve">
-    <value>Токен устройства недействителен. Создайте код настройки в Wasla Web для повторного подключения.</value>
+    <value>Токен устройства недействителен. Повторно подключите это устройство на странице настройки Print Bridge в веб-панели Wasla.</value>
   </data>
   <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
     <value>Это устройство Print Bridge отключено в Wasla Web. Включите его там, затем снова запустите опрос.</value>
@@ -325,8 +325,11 @@
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>Вставьте токен устройства, сгенерированный на веб-панели Wasla.</value>
   </data>
+  <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
+    <value>Это поле предназначено для токена устройства. Не вставляйте сюда код настройки или ссылку wasla-printbridge. Для подключения используйте страницу настройки Print Bridge в веб-панели Wasla.</value>
+  </data>
   <data name="Settings.Section.Connection" xml:space="preserve"><value>Подключение Wasla</value></data>
-  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>Сохраняет и проверяет только URL Wasla Web и токен устройства.</value></data>
+  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>URL веб-панели и настройки подключения устройства.</value></data>
   <data name="Settings.Section.Printer" xml:space="preserve"><value>Настройка принтера</value></data>
   <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>Выберите локальный принтер Windows для чеков. Данные сервера не требуются.</value></data>
   <data name="Settings.Section.Device" xml:space="preserve"><value>Идентификация устройства</value></data>
@@ -584,9 +587,19 @@
   </data>
   <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>Требуется код настройки.</value></data>
   <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>Подключить с кодом настройки</value></data>
+  <data name="Button.ResetConnection" xml:space="preserve"><value>Сбросить подключение</value></data>
+  <data name="Button.ResetConnectionConfirm" xml:space="preserve"><value>Сбросить</value></data>
+  <data name="Button.ResetConnectionCancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>Сбросить подключение?</value></data>
+  <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>Это очищает токен подключения на этом компьютере. Адрес сервера, идентификатор устройства, язык и локальная история сохраняются. Чтобы продолжить, нужно снова подключить Print Bridge.</value></data>
+  <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>Используйте, когда подключение или токен больше не действительны.</value></data>
+  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>Устранение проблем с подключением</value></data>
+  <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>Чтобы продолжить, снова подключите Print Bridge через веб-панель.</value></data>
+  <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>Подключение сброшено. Повторно подключите это устройство на странице настройки Print Bridge в веб-панели Wasla.</value></data>
   <data name="Settings.SetupCode" xml:space="preserve"><value>Код настройки</value></data>
   <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>Введите одноразовый код настройки, созданный в Wasla Web. Это не постоянный токен устройства.</value></data>
   <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>Код настройки недействителен, уже использован или просрочен.</value></data>
+  <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>Подключение сброшено. Повторно подключите это устройство на странице настройки Print Bridge в веб-панели Wasla.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Соединение не удалось проверить</value>
   </data>

@@ -99,7 +99,7 @@
     <value>Geçersiz token. Wasla Web üzerinden yeniden bağlayın.</value>
   </data>
   <data name="RuntimeIssue.ReconnectRequired.TokenRevoked.Detail" xml:space="preserve">
-    <value>Cihaz tokeni geçersiz. Yeniden bağlanmak için Wasla Web'de kurulum kodu oluşturun.</value>
+    <value>Cihaz tokeni geçersiz. Wasla Web panelindeki Print Bridge kurulum sayfasından yeniden bağlayın.</value>
   </data>
   <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
     <value>Bu Print Bridge cihazı Wasla Web'de devre dışı bırakılmış. Oradan etkinleştirin, sonra yoklamayı yeniden başlatın.</value>
@@ -325,8 +325,11 @@
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>Wasla Web panelinden oluşturulan cihaz tokenını yapıştırın.</value>
   </data>
+  <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
+    <value>Bu alan cihaz token'ı içindir. Kurulum kodunu veya wasla-printbridge bağlantısını buraya yapıştırmayın. Bağlanmak için Wasla Web panelindeki Print Bridge kurulum sayfasını kullanın.</value>
+  </data>
   <data name="Settings.Section.Connection" xml:space="preserve"><value>Wasla bağlantısı</value></data>
-  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>Yalnızca Wasla Web adresini ve cihaz tokenını kaydedip doğrular.</value></data>
+  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>Web panel adresi ve cihaz bağlantısı ayarları.</value></data>
   <data name="Settings.Section.Printer" xml:space="preserve"><value>Yazıcı yapılandırması</value></data>
   <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>Fişler için kullanılacak yerel Windows yazıcısını seçin. Sunucu bilgileri gerekmez.</value></data>
   <data name="Settings.Section.Device" xml:space="preserve"><value>Cihaz kimliği</value></data>
@@ -584,9 +587,19 @@
   </data>
   <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>Kurulum kodu gereklidir.</value></data>
   <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>Kurulum koduyla bağlan</value></data>
+  <data name="Button.ResetConnection" xml:space="preserve"><value>Bağlantıyı sıfırla</value></data>
+  <data name="Button.ResetConnectionConfirm" xml:space="preserve"><value>Sıfırla</value></data>
+  <data name="Button.ResetConnectionCancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>Bağlantıyı sıfırla?</value></data>
+  <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>Bu işlem bu bilgisayardaki bağlantı anahtarını temizler. Sunucu adresi, cihaz kimliği, dil ve geçmiş kayıtlar korunur. Devam etmek için Print Bridge'i tekrar bağlamanız gerekir.</value></data>
+  <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>Yanlış bağlantı veya geçersiz token durumunda tekrar bağlanmak için kullanın.</value></data>
+  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>Bağlantı sorunları</value></data>
+  <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>Devam etmek için Web panelden Print Bridge'i tekrar bağlayın.</value></data>
+  <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>Bağlantı sıfırlandı. Wasla Web panelindeki Print Bridge kurulum sayfasından bu cihazı yeniden bağlayın.</value></data>
   <data name="Settings.SetupCode" xml:space="preserve"><value>Kurulum kodu</value></data>
   <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>Wasla Web'de oluşturulan tek kullanımlık kurulum kodunu girin. Bu alan kalıcı cihaz token'ı değildir.</value></data>
   <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>Kurulum kodu geçersiz, kullanılmış veya süresi dolmuş.</value></data>
+  <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>Bağlantı sıfırlandı. Wasla Web panelindeki Print Bridge kurulum sayfasından bu cihazı yeniden bağlayın.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Bağlantı doğrulanamadı</value>
   </data>

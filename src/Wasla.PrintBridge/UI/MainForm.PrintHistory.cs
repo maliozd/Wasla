@@ -41,7 +41,8 @@ public sealed partial class MainForm
         {
             DropDownStyle = ComboBoxStyle.DropDownList,
             Width = 160,
-            Margin = new Padding(0, 0, 8, 0)
+            Height = PrintBridgeUiTheme.ToolbarControlHeight,
+            Margin = new Padding(0, 0, 6, 0)
         };
         _historyFilterCombo.Items.Add(_localizer["PrintHistory.Filter.Today"]);
         _historyFilterCombo.Items.Add(_localizer["PrintHistory.Filter.Last7Days"]);
@@ -53,15 +54,18 @@ public sealed partial class MainForm
         _lblHistorySearch = new Label
         {
             AutoSize = true,
-            Margin = new Padding(8, 6, 4, 0),
-            ForeColor = PrintBridgeUiTheme.TextMuted
+            Margin = new Padding(6, 5, 4, 0),
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            Font = PrintBridgeUiTheme.BodyFont
         };
         toolbar.Controls.Add(_lblHistorySearch);
 
         _historySearchBox = new TextBox
         {
-            Width = 220,
-            Margin = new Padding(0, 0, 8, 0)
+            Width = 200,
+            Height = PrintBridgeUiTheme.ToolbarControlHeight,
+            Margin = new Padding(0, 0, 6, 0),
+            Font = PrintBridgeUiTheme.BodyFont
         };
         _historySearchDebounceTimer = new System.Windows.Forms.Timer { Interval = HistorySearchDebounceMs };
         _historySearchDebounceTimer.Tick += (_, _) =>
@@ -76,7 +80,7 @@ public sealed partial class MainForm
         };
         toolbar.Controls.Add(_historySearchBox);
 
-        _btnReprint = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnReprint = PrintBridgeUiTheme.CreateToolbarPrimaryButton(string.Empty);
         _btnReprint.Enabled = false;
         _btnReprint.Click += async (_, _) => await RunSafeAsync(ReprintSelectedHistoryJobAsync);
         toolbar.Controls.Add(_btnReprint);
@@ -119,7 +123,7 @@ public sealed partial class MainForm
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
             ForeColor = PrintBridgeUiTheme.TextMuted,
-            Font = new Font("Segoe UI", 10F)
+            Font = PrintBridgeUiTheme.SectionFont
         };
 
         gridPanel.Controls.Add(_historyGrid);
@@ -132,6 +136,8 @@ public sealed partial class MainForm
     private void ApplyPrintHistoryLocalization()
     {
         _btnReprint.Text = _localizer["Reprint.Button"];
+        PrintBridgeUiTheme.ApplyToolbarPrimaryButtonWidth(_btnReprint);
+        PrintBridgeUiTheme.ApplyToolbarPrimaryButtonAppearance(_btnReprint);
         _lblHistorySearch.Text = _localizer["PrintHistory.Search"];
         _historySearchBox.PlaceholderText = _localizer["PrintHistory.SearchPlaceholder"];
         _historyGrid.Columns["Time"]!.HeaderText = _localizer["PrintHistory.Column.Time"];
@@ -231,6 +237,7 @@ public sealed partial class MainForm
         }
 
         _btnReprint.Enabled = canReprint;
+        PrintBridgeUiTheme.ApplyToolbarPrimaryButtonAppearance(_btnReprint);
     }
 
     private async Task ReprintSelectedHistoryJobAsync()

@@ -109,7 +109,7 @@
     <value>Invalid token. Reconnect from Wasla Web.</value>
   </data>
   <data name="RuntimeIssue.ReconnectRequired.TokenRevoked.Detail" xml:space="preserve">
-    <value>Device token is invalid. Create a setup code in Wasla Web to reconnect.</value>
+    <value>Device token is invalid. Reconnect from the Print Bridge setup page in the Wasla Web panel.</value>
   </data>
   <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
     <value>This Print Bridge device is disabled in Wasla Web. Enable it there, then start polling again.</value>
@@ -339,11 +339,14 @@
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>Paste the device token generated from the Wasla Web panel.</value>
   </data>
+  <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
+    <value>This field is for the device token. Do not paste a setup code or wasla-printbridge link here. Use the Print Bridge setup page in the Wasla Web panel to connect.</value>
+  </data>
   <data name="Settings.Section.Connection" xml:space="preserve">
     <value>Wasla connection</value>
   </data>
   <data name="Settings.Section.ConnectionHelp" xml:space="preserve">
-    <value>Save and verify only the Wasla Web URL and device token.</value>
+    <value>Web panel URL and device connection settings.</value>
   </data>
   <data name="Settings.Section.Printer" xml:space="preserve">
     <value>Printer configuration</value>
@@ -620,9 +623,19 @@
   </data>
   <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>Setup code is required.</value></data>
   <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>Connect with setup code</value></data>
+  <data name="Button.ResetConnection" xml:space="preserve"><value>Reset connection</value></data>
+  <data name="Button.ResetConnectionConfirm" xml:space="preserve"><value>Reset</value></data>
+  <data name="Button.ResetConnectionCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>Reset connection?</value></data>
+  <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>This clears the connection token on this computer. Server URL, device identity, language, and local history are kept. You will need to reconnect Print Bridge to continue.</value></data>
+  <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>Use this when the connection or token is no longer valid.</value></data>
+  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>Connection troubleshooting</value></data>
+  <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>Reconnect Print Bridge from the Web panel to continue.</value></data>
+  <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>Connection was reset. Reconnect this device from the Print Bridge setup page in the Wasla Web panel.</value></data>
   <data name="Settings.SetupCode" xml:space="preserve"><value>Setup code</value></data>
   <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>Enter the one-time setup code generated in Wasla Web. This is not the permanent device token.</value></data>
   <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>The setup code is invalid, already used, or expired.</value></data>
+  <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>Connection was reset. Reconnect this device from the Print Bridge setup page in the Wasla Web panel.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Connection could not be verified</value>
   </data>

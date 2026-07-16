@@ -14,7 +14,6 @@ public sealed partial class MainForm
     private ILogger _settingsLogger = null!;
     private bool _isSavingConnection;
     private bool _isSavingPrinter;
-    private bool _isSavingDeviceName;
     private bool _isSavingAdvanced;
 
     private void InitializeSettingsSaveUi()
@@ -37,13 +36,16 @@ public sealed partial class MainForm
             if (!PrintBridgeConnectionFieldSync.ShouldTreatAgentTokenTextChangeAsUserEdit(
                     _syncingConnectionFields,
                     _txtAgentToken.Focused))
+            {
+                RefreshAgentTokenPasteGuard();
                 return;
+            }
 
             _agentTokenUserEdited = true;
             SetSectionStatus(_lblConnectionStatus, null);
+            RefreshAgentTokenPasteGuard();
         };
         _cmbPrinterName.TextChanged += (_, _) => SetSectionStatus(_lblPrinterStatus, null);
-        _txtDisplayName.TextChanged += (_, _) => SetSectionStatus(_lblDeviceStatus, null);
     }
 
     private async Task SaveConnectionSettingsAsync()
@@ -117,7 +119,6 @@ public sealed partial class MainForm
                 TryStartPolling();
 
             ResetAgentTokenInputTracking();
-            SyncDeviceNameFieldFromHolder();
             RefreshDashboard();
             if (connectionVerified && PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
                 SetSectionStatus(_lblConnectionStatus, _localizer["Message.SettingsSavedConnectionVerified"], isSuccess: true);
@@ -132,7 +133,6 @@ public sealed partial class MainForm
             if (wasRunning)
                 TryStartPolling();
             RefreshDashboard();
-            SyncDeviceNameFieldFromHolder();
         }
         finally
         {
@@ -233,121 +233,6 @@ public sealed partial class MainForm
         }
     }
 
-    private async Task ConnectWithSetupCodeAsync()
-    {
-        if (_isSavingConnection)
-            return;
-
-        var serverUrl = _txtServerUrl.Text.Trim();
-        var setupCode = _txtSetupCode.Text.Trim();
-        if (string.IsNullOrWhiteSpace(serverUrl))
-        {
-            SetSectionStatus(_lblConnectionStatus, _localizer["Validation.ServerUrlRequired"], isError: true);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(setupCode))
-        {
-            SetSectionStatus(_lblConnectionStatus, _localizer["Validation.SetupCodeRequired"], isError: true);
-            return;
-        }
-
-        _isSavingConnection = true;
-        SetConnectionFieldsEnabled(false);
-        _btnSaveConnection.Enabled = false;
-        _btnTestSettingsConnection.Enabled = false;
-        _btnConnectSetupCode.Enabled = false;
-        SetSectionStatus(_lblConnectionStatus, _localizer["Message.ValidatingConnection"]);
-
-        var previous = CaptureSnapshot();
-        try
-        {
-            var client = _services.GetRequiredService<WaslaPrintBridgeClient>();
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-            var config = await client.ExchangeSetupAsync(serverUrl, setupCode, cts.Token).ConfigureAwait(true);
-            if (config is null)
-            {
-                SetSectionStatus(_lblConnectionStatus, _localizer["Message.SetupCodeInvalidOrExpired"], isError: true);
-                return;
-            }
-
-            var hub = CloneWaslaOptions(previous.OrderHub);
-            hub.ServerUrl = config.ServerUrl.Trim();
-            hub.AgentToken = config.DeviceToken.Trim();
-            var bridge = ClonePrintBridgeOptions(previous.Bridge);
-            if (!string.IsNullOrWhiteSpace(config.DeviceName))
-            {
-                bridge.DisplayName = config.DeviceName.Trim();
-                bridge.ServerDeviceNameResolved = true;
-            }
-            if (config.InstallationId != Guid.Empty)
-                bridge.InstallationId = config.InstallationId.ToString("D");
-            if (string.IsNullOrWhiteSpace(bridge.MachineName))
-                bridge.MachineName = Environment.MachineName;
-
-            if (!PrintBridgeSettingsValidator.TryValidateConnectionSettings(hub, out var errorKey))
-            {
-                SetSectionStatus(_lblConnectionStatus, _localizer[errorKey!], isError: true);
-                return;
-            }
-
-            var ui = CloneUiOptions(previous.Ui);
-            CaptureWindowLayout(ui);
-            _settingsHolder.Replace(hub, bridge, ui);
-            if (!TryPersistSettings(hub, bridge, ui))
-            {
-                _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
-                return;
-            }
-
-            var connected = false;
-            try
-            {
-                await _runtime.ValidateConnectionAsync(cts.Token).ConfigureAwait(true);
-                connected = true;
-            }
-            catch (Exception ex)
-            {
-                _runtime.RecordConnectionFailure(ex);
-                _settingsLogger.LogWarning(ex, "Setup code exchanged, but server connection could not be verified.");
-            }
-
-            await client.CompleteSetupAsync(config.ServerUrl, config.SessionId, config.CompletionCredential, connected, cts.Token)
-                .ConfigureAwait(true);
-
-            _txtSetupCode.Text = string.Empty;
-            LoadSettingsIntoForm();
-            RefreshDashboard();
-            if (connected && PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
-            {
-                TryStartPolling();
-                SetSectionStatus(
-                    _lblConnectionStatus,
-                    _localizer["Message.SettingsSavedConnectionVerified"],
-                    isSuccess: true);
-            }
-            else
-            {
-                RefreshSettingsConnectionStatus();
-            }
-        }
-        catch (Exception ex)
-        {
-            _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
-            _settingsLogger.LogWarning(ex, "Setup code connection failed.");
-            SetSectionStatus(_lblConnectionStatus, GetUserErrorMessage(ex), isError: true);
-            RefreshDashboard();
-        }
-        finally
-        {
-            _isSavingConnection = false;
-            SetConnectionFieldsEnabled(true);
-            _btnSaveConnection.Enabled = true;
-            _btnTestSettingsConnection.Enabled = true;
-            _btnConnectSetupCode.Enabled = true;
-        }
-    }
-
     private Task SavePrinterSettingsAsync()
     {
         if (_isSavingPrinter)
@@ -413,57 +298,6 @@ public sealed partial class MainForm
         finally
         {
             _btnTestSettingsPrinter.Enabled = true;
-        }
-    }
-
-    private async Task SaveDeviceIdentitySettingsAsync()
-    {
-        if (_isSavingDeviceName)
-            return;
-
-        var previous = CaptureSnapshot();
-        var bridge = ClonePrintBridgeOptions(previous.Bridge);
-        bridge.DisplayName = _txtDisplayName.Text.Trim();
-        bridge.BridgeName = string.Empty;
-        bridge.MachineName = Environment.MachineName;
-
-        if (!PrintBridgeSettingsValidator.TryValidateDeviceIdentitySettings(bridge, out var errorKey))
-        {
-            SetSectionStatus(_lblDeviceStatus, _localizer[errorKey!], isError: true);
-            return;
-        }
-
-        _isSavingDeviceName = true;
-        _btnSaveDeviceName.Enabled = false;
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(previous.OrderHub.AgentToken))
-            {
-                var client = _services.GetRequiredService<WaslaPrintBridgeClient>();
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                var result = await client.UpdateDeviceNameAsync(bridge.DisplayName, cts.Token).ConfigureAwait(true);
-                if (!result.Success)
-                {
-                    SetSectionStatus(_lblDeviceStatus, _localizer["Message.ConnectionCouldNotBeVerified"], isError: true);
-                    return;
-                }
-
-                bridge.ServerDeviceNameResolved = true;
-            }
-
-            var ui = CloneUiOptions(previous.Ui);
-            CaptureWindowLayout(ui);
-            if (TryPersistSettings(previous.OrderHub, bridge, ui))
-            {
-                _txtDisplayName.Text = bridge.DisplayName;
-                SetSectionStatus(_lblDeviceStatus, _localizer["Settings.SectionSaved"], isSuccess: true);
-                RefreshDashboard();
-            }
-        }
-        finally
-        {
-            _isSavingDeviceName = false;
-            _btnSaveDeviceName.Enabled = true;
         }
     }
 
@@ -548,6 +382,51 @@ public sealed partial class MainForm
         }
     }
 
+    private async Task ResetConnectionAsync()
+    {
+        if (_isSavingConnection)
+            return;
+
+        if (!PrintBridgeConfirmDialog.Confirm(
+                this,
+                _localizer["Message.ResetConnectionConfirmTitle"],
+                _localizer["Message.ResetConnectionConfirm"],
+                _localizer["Button.ResetConnectionConfirm"],
+                _localizer["Button.ResetConnectionCancel"]))
+            return;
+
+        _isSavingConnection = true;
+        SetConnectionFieldsEnabled(false);
+        _btnSaveConnection.Enabled = false;
+        _btnTestSettingsConnection.Enabled = false;
+        _btnResetConnection.Enabled = false;
+        SetSectionStatus(_lblConnectionStatus, null);
+        _settingsLogger.LogInformation("Connection reset requested by user.");
+
+        try
+        {
+            await _runtime.ResetConnectionForReconnectAsync().ConfigureAwait(true);
+            ResetAgentTokenInputTracking();
+            SyncConnectionFieldsFromHolder();
+            RefreshDashboard();
+            RefreshSettingsConnectionStatus();
+            SelectSettingsTab();
+        }
+        catch (Exception ex)
+        {
+            _settingsLogger.LogWarning(ex, "Connection reset failed.");
+            SetSectionStatus(_lblConnectionStatus, GetUserErrorMessage(ex), isError: true);
+        }
+        finally
+        {
+            _isSavingConnection = false;
+            SetConnectionFieldsEnabled(true);
+            _btnSaveConnection.Enabled = true;
+            _btnTestSettingsConnection.Enabled = true;
+            _btnResetConnection.Enabled = true;
+        }
+    }
+
     private (WaslaOptions OrderHub, PrintBridgeOptions Bridge, UiOptions Ui) CaptureSnapshot()
     {
         var snapshot = _settingsHolder.Snapshot();
@@ -601,7 +480,6 @@ public sealed partial class MainForm
     {
         _txtServerUrl.Enabled = enabled;
         _txtAgentToken.Enabled = enabled;
-        _txtSetupCode.Enabled = enabled;
         _btnToggleToken.Enabled = enabled;
     }
 

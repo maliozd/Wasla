@@ -17,14 +17,23 @@ internal static class PrintBridgeUiTheme
     public static readonly Color PrimaryButton = Color.FromArgb(13, 110, 253);
     public static readonly Color PrimaryButtonHover = Color.FromArgb(11, 94, 215);
 
-    public static Font TitleFont => new("Segoe UI Semibold", 14F, FontStyle.Bold);
-    public static Font SubtitleFont => new("Segoe UI", 9.5F, FontStyle.Regular);
-    public static Font BadgeFont => new("Segoe UI Semibold", 9F, FontStyle.Bold);
+    public static Font TitleFont => new("Segoe UI Semibold", 12F, FontStyle.Bold);
+    public static Font SubtitleFont => new("Segoe UI", 9F, FontStyle.Regular);
+    public static Font BadgeFont => new("Segoe UI Semibold", 8.5F, FontStyle.Bold);
     public static Font SectionFont => new("Segoe UI Semibold", 10F, FontStyle.Bold);
-    public static Font MetricValueFont => new("Segoe UI Semibold", 15F, FontStyle.Bold);
-    public static Font MetricTimestampFont => new("Segoe UI Semibold", 10.25F, FontStyle.Bold);
-    public static int GridRowHeight => 46;
-    public static int GridHeaderHeight => 44;
+    public static Font BodyFont => new("Segoe UI", 9F, FontStyle.Regular);
+    public static Font HelperFont => new("Segoe UI", 8.25F, FontStyle.Regular);
+    public static Font FooterFont => new("Segoe UI", 8.25F, FontStyle.Regular);
+    public static Font MetricLabelFont => new("Segoe UI", 8.5F, FontStyle.Regular);
+    public static Font MetricValueFont => new("Segoe UI Semibold", 13.5F, FontStyle.Bold);
+    public static Font MetricStatusFont => new("Segoe UI Semibold", 10.5F, FontStyle.Bold);
+    public static Font MetricTimestampFont => new("Segoe UI Semibold", 10F, FontStyle.Bold);
+    public static Size MetricCardSize => new(152, 84);
+    public static int MetricCardSpacing => 8;
+    public static int ActionButtonHeight => 30;
+    public static int ToolbarControlHeight => 30;
+    public static int GridRowHeight => 38;
+    public static int GridHeaderHeight => 36;
 
     public static Panel CreateCard(string title, out TableLayoutPanel contentTable, int rows)
     {
@@ -32,7 +41,7 @@ internal static class PrintBridgeUiTheme
         {
             Dock = DockStyle.Fill,
             BackColor = CardBackground,
-            Padding = new Padding(14, 12, 14, 12),
+            Padding = new Padding(12, 10, 12, 10),
             Margin = new Padding(0, 0, 8, 8)
         };
         card.Paint += (_, e) =>
@@ -113,12 +122,13 @@ internal static class PrintBridgeUiTheme
         {
             Text = text,
             AutoSize = true,
-            Height = 34,
-            MinimumSize = new Size(120, 34),
-            Padding = new Padding(12, 4, 12, 4),
+            Height = ActionButtonHeight,
+            MinimumSize = new Size(80, ActionButtonHeight),
+            Padding = new Padding(8, 2, 8, 2),
             FlatStyle = FlatStyle.Flat,
-            Margin = new Padding(0, 0, 10, 0),
-            Cursor = Cursors.Hand
+            Margin = new Padding(0, 0, 8, 0),
+            Cursor = Cursors.Hand,
+            Font = BodyFont
         };
         button.FlatAppearance.BorderSize = primary ? 0 : 1;
         button.FlatAppearance.BorderColor = CardBorder;
@@ -138,6 +148,105 @@ internal static class PrintBridgeUiTheme
         return button;
     }
 
+    public static Button CreateToolbarPrimaryButton(string text)
+    {
+        var button = new Button
+        {
+            Text = text,
+            AutoSize = false,
+            Height = ToolbarControlHeight,
+            MinimumSize = new Size(0, ToolbarControlHeight),
+            MaximumSize = new Size(0, ToolbarControlHeight),
+            Padding = new Padding(8, 0, 8, 0),
+            Margin = new Padding(0, 0, 0, 0),
+            FlatStyle = FlatStyle.Flat,
+            UseVisualStyleBackColor = false,
+            UseCompatibleTextRendering = true,
+            Cursor = Cursors.Hand,
+            Font = BodyFont
+        };
+        button.FlatAppearance.BorderSize = 0;
+        button.FlatAppearance.MouseOverBackColor = PrimaryButtonHover;
+        button.EnabledChanged += (_, _) => ApplyToolbarPrimaryButtonAppearance(button);
+        ApplyToolbarPrimaryButtonAppearance(button);
+        ApplyToolbarPrimaryButtonWidth(button);
+        return button;
+    }
+
+    public static void ApplyToolbarPrimaryButtonWidth(Button button) =>
+        ApplyLocalizedButtonWidth(button, height: ToolbarControlHeight, horizontalPadding: 2);
+
+    public static void ApplyRecoveryOutlineButtonWidth(Button button) =>
+        ApplyLocalizedButtonWidth(button, height: ActionButtonHeight, horizontalPadding: 6);
+
+    public static void ApplyLocalizedButtonWidth(Button button, int height, int horizontalPadding = 4)
+    {
+        button.AutoSize = false;
+        button.Height = height;
+        button.MinimumSize = new Size(0, height);
+        button.MaximumSize = new Size(0, height);
+
+        var preferredWidth = button.GetPreferredSize(Size.Empty).Width;
+        if (preferredWidth <= height && !string.IsNullOrEmpty(button.Text))
+        {
+            preferredWidth = TextRenderer.MeasureText(
+                button.Text,
+                button.Font,
+                Size.Empty,
+                TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width
+                + button.Padding.Horizontal
+                + 8;
+        }
+
+        var width = Math.Max(preferredWidth + horizontalPadding, height);
+        button.Width = width;
+        button.MinimumSize = new Size(width, height);
+    }
+
+    public static void ApplyToolbarPrimaryButtonAppearance(Button button)
+    {
+        if (button.Enabled)
+        {
+            button.BackColor = PrimaryButton;
+            button.ForeColor = Color.White;
+            button.FlatAppearance.BorderColor = PrimaryButton;
+            button.FlatAppearance.MouseOverBackColor = PrimaryButtonHover;
+            return;
+        }
+
+        button.BackColor = Color.FromArgb(186, 201, 220);
+        button.ForeColor = Color.White;
+        button.FlatAppearance.BorderColor = Color.FromArgb(186, 201, 220);
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(186, 201, 220);
+    }
+
+    public static Button CreateDangerOutlineButton(string text) =>
+        CreateRecoveryOutlineButton(text);
+
+    public static Button CreateRecoveryOutlineButton(string text)
+    {
+        var button = new Button
+        {
+            Text = text,
+            AutoSize = true,
+            MinimumSize = new Size(160, ActionButtonHeight),
+            Height = ActionButtonHeight,
+            Padding = new Padding(10, 3, 10, 3),
+            FlatStyle = FlatStyle.Flat,
+            UseVisualStyleBackColor = false,
+            Margin = new Padding(0, 8, 0, 0),
+            Anchor = AnchorStyles.Left,
+            Cursor = Cursors.Hand,
+            BackColor = CardBackground,
+            ForeColor = Color.FromArgb(146, 64, 74),
+            Font = BodyFont
+        };
+        button.FlatAppearance.BorderSize = 1;
+        button.FlatAppearance.BorderColor = Color.FromArgb(228, 181, 186);
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 248, 249);
+        return button;
+    }
+
     public static Panel CreateMetricCard(
         string title,
         out Label valueLabel,
@@ -147,11 +256,12 @@ internal static class PrintBridgeUiTheme
     {
         var card = new Panel
         {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.None,
             BackColor = CardBackground,
-            Padding = new Padding(12, 10, 12, 10),
-            Margin = new Padding(0, 0, 8, 8),
-            MinimumSize = new Size(160, 88)
+            Padding = new Padding(8, 6, 8, 6),
+            Margin = new Padding(0, 0, MetricCardSpacing, MetricCardSpacing),
+            MinimumSize = MetricCardSize,
+            Size = MetricCardSize
         };
         card.Paint += (_, e) =>
         {
@@ -173,13 +283,13 @@ internal static class PrintBridgeUiTheme
         titleLabel = new Label
         {
             Text = title,
-            Font = new Font("Segoe UI", 8.75F, FontStyle.Regular),
+            Font = MetricLabelFont,
             ForeColor = TextMuted,
             AutoSize = false,
-            Height = 32,
+            Height = 26,
             Dock = DockStyle.Top,
             AutoEllipsis = true,
-            Margin = new Padding(0, 0, 0, 4)
+            Margin = new Padding(0, 0, 0, 1)
         };
 
         valueLabel = new Label
@@ -188,6 +298,7 @@ internal static class PrintBridgeUiTheme
             Font = valueFont ?? MetricValueFont,
             ForeColor = TextTitle,
             AutoSize = false,
+            Height = 32,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
             AutoEllipsis = valueAutoEllipsis,
@@ -200,6 +311,21 @@ internal static class PrintBridgeUiTheme
         return card;
     }
 
+    public static void StyleSettingsTextBox(TextBox textBox)
+    {
+        textBox.BorderStyle = BorderStyle.FixedSingle;
+        textBox.Font = BodyFont;
+        textBox.Margin = new Padding(0);
+        textBox.Multiline = false;
+        textBox.AutoSize = false;
+    }
+
+    public static void StyleSettingsComboBox(ComboBox comboBox)
+    {
+        comboBox.Font = BodyFont;
+        comboBox.Margin = new Padding(0);
+    }
+
     public static void StyleGrid(DataGridView grid)
     {
         grid.BackgroundColor = CardBackground;
@@ -209,16 +335,16 @@ internal static class PrintBridgeUiTheme
         grid.EnableHeadersVisualStyles = false;
         grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(248, 249, 250);
         grid.ColumnHeadersDefaultCellStyle.ForeColor = TextTitle;
-        grid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
-        grid.ColumnHeadersDefaultCellStyle.Padding = new Padding(6);
+        grid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 8.75F, FontStyle.Bold);
+        grid.ColumnHeadersDefaultCellStyle.Padding = new Padding(4);
         grid.ColumnHeadersHeight = GridHeaderHeight;
-        grid.DefaultCellStyle.Font = new Font("Segoe UI", 9.5F);
-        grid.DefaultCellStyle.Padding = new Padding(8, 6, 8, 6);
+        grid.DefaultCellStyle.Font = BodyFont;
+        grid.DefaultCellStyle.Padding = new Padding(6, 4, 6, 4);
         grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(207, 226, 255);
         grid.DefaultCellStyle.SelectionForeColor = TextTitle;
         grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 249, 250);
         grid.RowTemplate.Height = GridRowHeight;
-        grid.RowTemplate.MinimumHeight = 44;
+        grid.RowTemplate.MinimumHeight = 34;
     }
 
     public static (Color BackColor, Color ForeColor) GetStatusBadgeColors(LocalPrintJobStatus status) =>

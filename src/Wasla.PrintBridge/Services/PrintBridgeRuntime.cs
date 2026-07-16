@@ -199,6 +199,24 @@ public sealed class PrintBridgeRuntime : IDisposable
         RaiseStatusChanged();
     }
 
+    public async Task ResetConnectionForReconnectAsync()
+    {
+        if (_isRunning)
+            await StopAsync().ConfigureAwait(false);
+
+        ClearTokenForReconnectRequired();
+        _deviceMetadataSync.MarkUnresolved();
+
+        lock (_sync)
+        {
+            _lastSuccessfulContactUtc = null;
+            _lastIssue = PrintBridgeConnectionReset.CreateReconnectRequiredIssue();
+        }
+
+        _logger.LogInformation("Print Bridge connection reset by user. Local token cleared; reconnect required.");
+        RaiseStatusChanged();
+    }
+
     public async Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> TestConnectionAsync(CancellationToken ct)
     {
         try
