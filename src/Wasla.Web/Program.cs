@@ -37,6 +37,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     // 1) Cookie
     // 2) Accept-Language
     // 3) Default fallback
+
     options.RequestCultureProviders = new List<IRequestCultureProvider>
     {
         new CookieRequestCultureProvider(),
@@ -77,36 +78,35 @@ builder.Services.AddAntiforgery(options =>
 });
 
 builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = AuthSchemes.Tenant;
-        options.DefaultAuthenticateScheme = AuthSchemes.Tenant;
-        options.DefaultChallengeScheme = AuthSchemes.Tenant;
-    })
-    .AddCookie(AuthSchemes.Tenant, options =>
-    {
-        options.Cookie.Name = TenantAuthCookieNames.Active;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.Path = "/";
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = authCookieSecurePolicy;
-        options.LoginPath = "/auth/login";
-        options.LogoutPath = "/auth/logout";
-        options.AccessDeniedPath = "/auth/access-denied";
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
-    })
-    .AddCookie(AuthSchemes.CentralAdmin, options =>
-    {
-        options.Cookie.Name = "orderhub_central_admin";
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = authCookieSecurePolicy;
-        options.LoginPath = "/admin/login";
-        options.LogoutPath = "/admin/logout";
-        options.AccessDeniedPath = "/admin/login";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.SlidingExpiration = true;
-    });
+{
+    options.DefaultScheme = AuthSchemes.Tenant;
+    options.DefaultAuthenticateScheme = AuthSchemes.Tenant;
+    options.DefaultChallengeScheme = AuthSchemes.Tenant;
+}).AddCookie(AuthSchemes.Tenant, options =>
+{
+    options.Cookie.Name = TenantAuthCookieNames.Active;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.Path = "/";
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = authCookieSecurePolicy;
+    options.LoginPath = "/auth/login";
+    options.LogoutPath = "/auth/logout";
+    options.AccessDeniedPath = "/auth/access-denied";
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.SlidingExpiration = true;
+})
+.AddCookie(AuthSchemes.CentralAdmin, options =>
+{
+    options.Cookie.Name = "orderhub_central_admin";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = authCookieSecurePolicy;
+    options.LoginPath = "/admin/login";
+    options.LogoutPath = "/admin/logout";
+    options.AccessDeniedPath = "/admin/login";
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+});
 
 builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
 builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
