@@ -1117,7 +1117,7 @@
     <value>كيف يعمل؟</value>
   </data>
   <data name="Landing.HowItWorksDescription" xml:space="preserve">
-    <value>أربع خطوات واضحة من الإعداد إلى التشغيل اليومي.</value>
+    <value>خمس خطوات من الطلبات عبر الإنترنت إلى المطبخ وطباعة الإيصالات تلقائياً.</value>
   </data>
   <data name="Landing.Step1Title" xml:space="preserve">
     <value>تحديد اتصالات المنصات</value>
@@ -1252,10 +1252,13 @@
     <value>تبقى عملياتك في مساحة مخصصة—آمنة وتحت سيطرتك.</value>
   </data>
   <data name="Landing.FinalCtaTitle" xml:space="preserve">
-    <value>سجّل الدخول إلى لوحة مطعمك</value>
+    <value>اربط الطلبات عبر الإنترنت بعمليات مطبخك</value>
   </data>
   <data name="Landing.FinalCtaDescription" xml:space="preserve">
-    <value>يُفتح دخول العميل عبر نطاق المطعم المُخصص لك.</value>
+    <value>تربط Wasla منصات الطلب عبر الإنترنت بعمليات مطعمك. تجمع الطلبات في شاشة واحدة، وتبسّط سير المطبخ، وتطبع الإيصالات تلقائياً.</value>
+  </data>
+  <data name="Landing.FinalCtaButton" xml:space="preserve">
+    <value>ابدأ مجاناً</value>
   </data>
   <data name="Landing.NewOrder" xml:space="preserve">
     <value>جديد</value>
@@ -1279,16 +1282,16 @@
     <value>واجهة طلبات واضحة يسهل على فريق المطعم استخدامها أثناء الذروة.</value>
   </data>
   <data name="Landing.StepConnectionsTitle" xml:space="preserve">
-    <value>اضبط ارتباطات المنصات</value>
+    <value>تتصل المنصات بـ Wasla</value>
   </data>
   <data name="Landing.StepConnectionsDescription" xml:space="preserve">
-    <value>أضف منصات التوصيل التي يستخدمها مطعمك.</value>
+    <value>تُدمَج منصات طلب الطعام التي تستخدمها مع Wasla.</value>
   </data>
   <data name="Landing.StepTrackTitle" xml:space="preserve">
-    <value>تتبع الطلبات من شاشة واحدة</value>
+    <value>تظهر الطلبات في شاشة واحدة</value>
   </data>
   <data name="Landing.StepTrackDescription" xml:space="preserve">
-    <value>اعرض الطلبات الواردة في قائمة واحدة سهلة القراءة.</value>
+    <value>تُعرَض الطلبات الواردة فوراً في شاشة إدارة واحدة.</value>
   </data>
   <data name="Landing.StepNotifyTitle" xml:space="preserve">
     <value>احصل على إشعار عند طلب جديد</value>
@@ -1328,6 +1331,114 @@
   </data>
   <data name="Landing.VisualImageAlt3" xml:space="preserve">
     <value>تسليم طلب معبأ عند مكتب الخدمة</value>
+  </data>
+  <data name="Landing.MetaDescription" xml:space="preserve">
+    <value>Wasla نظام سحابي لإدارة الطلبات عبر الإنترنت وإدارة طلبات المطاعم. يجمع الطلبات من منصات طلب الطعام في شاشة واحدة، مع شاشة مطبخ وطباعة إيصالات تلقائية.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaTitle" xml:space="preserve">
+    <value>ما هي Wasla؟</value>
+  </data>
+  <data name="Landing.WhatIsWaslaLead" xml:space="preserve">
+    <value>نظام سحابي لإدارة طلبات المطاعم يتيح لك إدارة الطلبات القادمة من منصات طلب طعام مختلفة عبر شاشة واحدة.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaProblem" xml:space="preserve">
+    <value>المطاعم التي تعمل مع عدة منصات طلب غالباً ما تضطر إلى متابعة أجهزة لوحية وأجهزة وسير عمل منفصلة في الوقت نفسه.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaSolution" xml:space="preserve">
+    <value>تجمع Wasla هذه التدفقات معاً وتجعل إدارة العمليات اليومية أسهل.</value>
+  </data>
+  <data name="Landing.StepReviewTitle" xml:space="preserve">
+    <value>يراجع الفريق الطلب ويديره</value>
+  </data>
+  <data name="Landing.StepReviewDescription" xml:space="preserve">
+    <value>يراجع موظفو المطعم الطلب ويؤكدونه ويديرونه ضمن سير العمل اليومي.</value>
+  </data>
+  <data name="Landing.StepKitchenTitle" xml:space="preserve">
+    <value>يتابع المطبخ التحضير</value>
+  </data>
+  <data name="Landing.StepKitchenDescription" xml:space="preserve">
+    <value>يتابع فريق المطبخ عملية التحضير عبر شاشة مطبخ واضحة.</value>
+  </data>
+  <data name="Landing.StepPrintTitle" xml:space="preserve">
+    <value>تُطبع الإيصالات تلقائياً</value>
+  </data>
+  <data name="Landing.StepPrintDescription" xml:space="preserve">
+    <value>يرسل Wasla Print Bridge الإيصال تلقائياً إلى الطابعة المُعدّة.</value>
+  </data>
+  <data name="Landing.ProblemsTitle" xml:space="preserve">
+    <value>ما المشكلة التي تحلها Wasla؟</value>
+  </data>
+  <data name="Landing.ProblemsDescription" xml:space="preserve">
+    <value>نظام تتبع طلبات مطعم يركز على التحديات العملية في التشغيل اليومي.</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrders" xml:space="preserve">
+    <value>طلبات مجمّعة في مكان واحد</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrdersDescription" xml:space="preserve">
+    <value>تجتمع الطلبات من منصات مختلفة في قائمة واحدة.</value>
+  </data>
+  <data name="Landing.ProblemFewerDevices" xml:space="preserve">
+    <value>مراقبة أقل للأجهزة</value>
+  </data>
+  <data name="Landing.ProblemFewerDevicesDescription" xml:space="preserve">
+    <value>تقل الحاجة لمتابعة عدة أجهزة لوحية في الوقت نفسه.</value>
+  </data>
+  <data name="Landing.ProblemMissedOrders" xml:space="preserve">
+    <value>انخفاض خطر فوات الطلبات</value>
+  </data>
+  <data name="Landing.ProblemMissedOrdersDescription" xml:space="preserve">
+    <value>مع ظهور كل القنوات في شاشة واحدة، يقل احتمال تفويت الطلبات.</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordination" xml:space="preserve">
+    <value>تنسيق أوضح للمطبخ</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordinationDescription" xml:space="preserve">
+    <value>يتقدم إدارة المطبخ والطلبات بشكل أوضح ضمن نفس التدفق.</value>
+  </data>
+  <data name="Landing.ProblemAutoPrint" xml:space="preserve">
+    <value>طباعة إيصالات تلقائية</value>
+  </data>
+  <data name="Landing.ProblemAutoPrintDescription" xml:space="preserve">
+    <value>تُرسل الإيصالات إلى الطابعة تلقائياً عبر Wasla Print Bridge.</value>
+  </data>
+  <data name="Landing.ProblemBusyHours" xml:space="preserve">
+    <value>تشغيل أكثر تنظيماً في أوقات الذروة</value>
+  </data>
+  <data name="Landing.ProblemBusyHoursDescription" xml:space="preserve">
+    <value>خلال ضغط الطلبات، يصبح السير أكثر تحكماً وتنظيماً.</value>
+  </data>
+  <data name="Landing.ProblemLessSwitching" xml:space="preserve">
+    <value>تنقل أقل بين الأجهزة</value>
+  </data>
+  <data name="Landing.ProblemLessSwitchingDescription" xml:space="preserve">
+    <value>يقضي الموظفون وقتاً أقل في التنقل بين الشاشات المختلفة.</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcess" xml:space="preserve">
+    <value>متابعة أسهل لسير الطلبات</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcessDescription" xml:space="preserve">
+    <value>يصبح تتبع تدفق الطلبات من شاشة واحدة أسهل.</value>
+  </data>
+  <data name="Landing.WhoIsItForTitle" xml:space="preserve">
+    <value>لمن هي مناسبة؟</value>
+  </data>
+  <data name="Landing.WhoIsItForDescription" xml:space="preserve">
+    <value>Wasla مناسبة لـ:</value>
+  </data>
+  <data name="Landing.AudienceDelivery" xml:space="preserve">
+    <value>مطاعم تقدم التوصيل أو الاستلام</value>
+  </data>
+  <data name="Landing.AudienceMultiPlatform" xml:space="preserve">
+    <value>أعمال تستخدم عدة منصات طلب عبر الإنترنت</value>
+  </data>
+  <data name="Landing.AudienceChains" xml:space="preserve">
+    <value>سلاسل مطاعم تريد إدارة مركزية للطلبات</value>
+  </data>
+  <data name="Landing.AudienceKitchenWorkflow" xml:space="preserve">
+    <value>أعمال تريد تحسين سير عمل المطبخ</value>
+  </data>
+  <data name="Landing.AudienceAutoPrint" xml:space="preserve">
+    <value>مطاعم تحتاج طباعة إيصالات تلقائية</value>
   </data>
   <data name="PlatformConnections.ErrorCount" xml:space="preserve">
     <value>أخطاء متتالية</value>

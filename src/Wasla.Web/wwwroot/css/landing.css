@@ -161,6 +161,44 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.oh-intro-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.oh-intro-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--oh-landing-shadow-sm);
+}
+
+.oh-flow-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+  .oh-flow-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 992px) {
+  .oh-flow-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.oh-audience-item {
+  border-color: var(--oh-landing-border) !important;
+  background: #fff !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.oh-audience-item:hover {
+  border-color: rgba(255, 107, 53, 0.35) !important;
+  box-shadow: var(--oh-landing-shadow-sm);
+}
+
 .oh-step-card:hover,
 .oh-benefit-card:hover {
   transform: translateY(-3px);

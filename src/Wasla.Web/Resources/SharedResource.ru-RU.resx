@@ -1117,7 +1117,7 @@
     <value>Как это работает</value>
   </data>
   <data name="Landing.HowItWorksDescription" xml:space="preserve">
-    <value>От настройки до ежедневной эксплуатации за четыре простых шага.</value>
+    <value>Пять шагов от онлайн-заказов до кухни и автоматической печати чеков.</value>
   </data>
   <data name="Landing.Step1Title" xml:space="preserve">
     <value>Определить соединения платформы</value>
@@ -1252,10 +1252,13 @@
     <value>Ваши операции остаются в выделенном пространстве — безопасно и под вашим контролем.</value>
   </data>
   <data name="Landing.FinalCtaTitle" xml:space="preserve">
-    <value>Войдите в панель своего ресторана.</value>
+    <value>Соедините онлайн-заказы с работой кухни</value>
   </data>
   <data name="Landing.FinalCtaDescription" xml:space="preserve">
-    <value>Вход для клиентов осуществляется через закрепленный за вами домен ресторана.</value>
+    <value>Wasla связывает платформы онлайн-заказов с операциями ресторана. Собирает заказы на одном экране, упрощает кухонный процесс и автоматически печатает чеки.</value>
+  </data>
+  <data name="Landing.FinalCtaButton" xml:space="preserve">
+    <value>Начать бесплатно</value>
   </data>
   <data name="Landing.NewOrder" xml:space="preserve">
     <value>Новый</value>
@@ -1279,16 +1282,16 @@
     <value>Четкое представление заказов, которое ваша команда ресторана может использовать во время загруженного обслуживания.</value>
   </data>
   <data name="Landing.StepConnectionsTitle" xml:space="preserve">
-    <value>Определить соединения платформы</value>
+    <value>Платформы подключаются к Wasla</value>
   </data>
   <data name="Landing.StepConnectionsDescription" xml:space="preserve">
-    <value>Добавьте платформы доставки, которые использует ваш ресторан.</value>
+    <value>Используемые вами платформы заказа еды интегрируются с Wasla.</value>
   </data>
   <data name="Landing.StepTrackTitle" xml:space="preserve">
-    <value>Отслеживайте заказы с одного экрана</value>
+    <value>Заказы отображаются на одном экране</value>
   </data>
   <data name="Landing.StepTrackDescription" xml:space="preserve">
-    <value>Просматривайте входящие заказы в виде единого, легко читаемого списка.</value>
+    <value>Входящие заказы мгновенно появляются на едином экране управления.</value>
   </data>
   <data name="Landing.StepNotifyTitle" xml:space="preserve">
     <value>Получайте уведомления о новых заказах</value>
@@ -1328,6 +1331,114 @@
   </data>
   <data name="Landing.VisualImageAlt3" xml:space="preserve">
     <value>Передача пакетного заказа на стойке обслуживания</value>
+  </data>
+  <data name="Landing.MetaDescription" xml:space="preserve">
+    <value>Wasla — облачная система онлайн-управления заказами для ресторанов. Собирает заказы с платформ доставки еды на одном экране, с кухонным дисплеем и автоматической печатью чеков.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaTitle" xml:space="preserve">
+    <value>Что такое Wasla?</value>
+  </data>
+  <data name="Landing.WhatIsWaslaLead" xml:space="preserve">
+    <value>Облачная система управления заказами ресторана, которая позволяет управлять заказами с разных платформ доставки еды на одном экране.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaProblem" xml:space="preserve">
+    <value>Рестораны, работающие с несколькими платформами заказов, обычно вынуждены одновременно следить за разными планшетами, устройствами и отдельными процессами.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaSolution" xml:space="preserve">
+    <value>Wasla объединяет эти потоки заказов и упрощает ежедневное управление операциями.</value>
+  </data>
+  <data name="Landing.StepReviewTitle" xml:space="preserve">
+    <value>Персонал проверяет и управляет заказом</value>
+  </data>
+  <data name="Landing.StepReviewDescription" xml:space="preserve">
+    <value>Сотрудники ресторана проверяют, подтверждают и управляют каждым заказом в ежедневном потоке.</value>
+  </data>
+  <data name="Landing.StepKitchenTitle" xml:space="preserve">
+    <value>Кухня следует за приготовлением</value>
+  </data>
+  <data name="Landing.StepKitchenDescription" xml:space="preserve">
+    <value>Кухонная команда отслеживает процесс приготовления на понятном кухонном экране заказов.</value>
+  </data>
+  <data name="Landing.StepPrintTitle" xml:space="preserve">
+    <value>Чек печатается автоматически</value>
+  </data>
+  <data name="Landing.StepPrintDescription" xml:space="preserve">
+    <value>Wasla Print Bridge автоматически отправляет чек на настроенный принтер.</value>
+  </data>
+  <data name="Landing.ProblemsTitle" xml:space="preserve">
+    <value>Какую проблему решает Wasla?</value>
+  </data>
+  <data name="Landing.ProblemsDescription" xml:space="preserve">
+    <value>Система отслеживания заказов ресторана, ориентированная на практические задачи ежедневной работы.</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrders" xml:space="preserve">
+    <value>Заказы собраны в одном месте</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrdersDescription" xml:space="preserve">
+    <value>Заказы с разных платформ объединяются в одном списке.</value>
+  </data>
+  <data name="Landing.ProblemFewerDevices" xml:space="preserve">
+    <value>Меньше контроля устройств</value>
+  </data>
+  <data name="Landing.ProblemFewerDevicesDescription" xml:space="preserve">
+    <value>Снижается необходимость одновременно следить за несколькими планшетами и устройствами.</value>
+  </data>
+  <data name="Landing.ProblemMissedOrders" xml:space="preserve">
+    <value>Меньше риск пропустить заказ</value>
+  </data>
+  <data name="Landing.ProblemMissedOrdersDescription" xml:space="preserve">
+    <value>Когда все каналы видны на одном экране, заказы реже остаются незамеченными.</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordination" xml:space="preserve">
+    <value>Более согласованная работа кухни</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordinationDescription" xml:space="preserve">
+    <value>Управление кухней и заказами становится понятнее в одном потоке.</value>
+  </data>
+  <data name="Landing.ProblemAutoPrint" xml:space="preserve">
+    <value>Автоматическая печать чеков</value>
+  </data>
+  <data name="Landing.ProblemAutoPrintDescription" xml:space="preserve">
+    <value>Чеки автоматически отправляются на принтер через Wasla Print Bridge.</value>
+  </data>
+  <data name="Landing.ProblemBusyHours" xml:space="preserve">
+    <value>Более организованная работа в часы пик</value>
+  </data>
+  <data name="Landing.ProblemBusyHoursDescription" xml:space="preserve">
+    <value>В период высокой нагрузки процесс остаётся более контролируемым и организованным.</value>
+  </data>
+  <data name="Landing.ProblemLessSwitching" xml:space="preserve">
+    <value>Меньше переключений между устройствами</value>
+  </data>
+  <data name="Landing.ProblemLessSwitchingDescription" xml:space="preserve">
+    <value>Персонал тратит меньше времени на переход между разными экранами.</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcess" xml:space="preserve">
+    <value>Проще отслеживать процесс заказов</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcessDescription" xml:space="preserve">
+    <value>Следить за потоком заказов с одного экрана становится проще.</value>
+  </data>
+  <data name="Landing.WhoIsItForTitle" xml:space="preserve">
+    <value>Для кого подходит?</value>
+  </data>
+  <data name="Landing.WhoIsItForDescription" xml:space="preserve">
+    <value>Wasla подходит для:</value>
+  </data>
+  <data name="Landing.AudienceDelivery" xml:space="preserve">
+    <value>Ресторанов с доставкой или самовывозом</value>
+  </data>
+  <data name="Landing.AudienceMultiPlatform" xml:space="preserve">
+    <value>Бизнесов, использующих несколько онлайн-платформ заказов</value>
+  </data>
+  <data name="Landing.AudienceChains" xml:space="preserve">
+    <value>Сетей ресторанов с централизованным управлением заказами</value>
+  </data>
+  <data name="Landing.AudienceKitchenWorkflow" xml:space="preserve">
+    <value>Бизнесов, которые хотят улучшить кухонный процесс</value>
+  </data>
+  <data name="Landing.AudienceAutoPrint" xml:space="preserve">
+    <value>Ресторанов, которым нужна автоматическая печать чеков</value>
   </data>
   <data name="PlatformConnections.ErrorCount" xml:space="preserve">
     <value>Последовательные ошибки</value>

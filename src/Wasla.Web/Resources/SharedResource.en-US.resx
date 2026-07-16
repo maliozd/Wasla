@@ -1117,7 +1117,7 @@
     <value>How it works</value>
   </data>
   <data name="Landing.HowItWorksDescription" xml:space="preserve">
-    <value>From setup to daily operations in four clear steps.</value>
+    <value>Five steps from online orders to the kitchen and automatic receipt printing.</value>
   </data>
   <data name="Landing.Step1Title" xml:space="preserve">
     <value>Define platform connections</value>
@@ -1252,10 +1252,13 @@
     <value>Your operations stay in a dedicated space—secure and under your control.</value>
   </data>
   <data name="Landing.FinalCtaTitle" xml:space="preserve">
-    <value>Sign in to your restaurant panel</value>
+    <value>Connect online orders with your kitchen operations</value>
   </data>
   <data name="Landing.FinalCtaDescription" xml:space="preserve">
-    <value>Customer login works through the restaurant domain assigned to you.</value>
+    <value>Wasla links online ordering platforms with your restaurant operations. It brings orders onto one screen, simplifies the kitchen flow, and prints receipts automatically.</value>
+  </data>
+  <data name="Landing.FinalCtaButton" xml:space="preserve">
+    <value>Start for Free</value>
   </data>
   <data name="Landing.NewOrder" xml:space="preserve">
     <value>New</value>
@@ -1279,16 +1282,16 @@
     <value>A clear order view your restaurant team can use during a busy service.</value>
   </data>
   <data name="Landing.StepConnectionsTitle" xml:space="preserve">
-    <value>Define platform connections</value>
+    <value>Platforms connect to Wasla</value>
   </data>
   <data name="Landing.StepConnectionsDescription" xml:space="preserve">
-    <value>Add the delivery platforms your restaurant uses.</value>
+    <value>The food-ordering platforms you use are integrated with Wasla.</value>
   </data>
   <data name="Landing.StepTrackTitle" xml:space="preserve">
-    <value>Track orders from one screen</value>
+    <value>Orders appear on one screen</value>
   </data>
   <data name="Landing.StepTrackDescription" xml:space="preserve">
-    <value>View incoming orders in a single, easy-to-read list.</value>
+    <value>Incoming orders are listed instantly on a single management screen.</value>
   </data>
   <data name="Landing.StepNotifyTitle" xml:space="preserve">
     <value>Get notified on new orders</value>
@@ -1328,6 +1331,114 @@
   </data>
   <data name="Landing.VisualImageAlt3" xml:space="preserve">
     <value>Packaged order handoff at a service counter</value>
+  </data>
+  <data name="Landing.MetaDescription" xml:space="preserve">
+    <value>Wasla is a cloud-based online order management system for restaurant order management. It brings orders from food-ordering platforms onto one screen, with a kitchen order display and automatic receipt printing.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaTitle" xml:space="preserve">
+    <value>What is Wasla?</value>
+  </data>
+  <data name="Landing.WhatIsWaslaLead" xml:space="preserve">
+    <value>A cloud-based restaurant order management system that lets you manage orders from different food-ordering platforms on a single screen.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaProblem" xml:space="preserve">
+    <value>Restaurants working with several ordering platforms usually have to follow multiple tablets, devices, and separate workflows at the same time.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaSolution" xml:space="preserve">
+    <value>Wasla brings these order flows together and makes day-to-day operations easier to manage.</value>
+  </data>
+  <data name="Landing.StepReviewTitle" xml:space="preserve">
+    <value>Staff review and manage orders</value>
+  </data>
+  <data name="Landing.StepReviewDescription" xml:space="preserve">
+    <value>Restaurant staff review, confirm, and manage each order in the daily flow.</value>
+  </data>
+  <data name="Landing.StepKitchenTitle" xml:space="preserve">
+    <value>Kitchen follows preparation</value>
+  </data>
+  <data name="Landing.StepKitchenDescription" xml:space="preserve">
+    <value>The kitchen team tracks preparation on a clear kitchen order display.</value>
+  </data>
+  <data name="Landing.StepPrintTitle" xml:space="preserve">
+    <value>Receipts print automatically</value>
+  </data>
+  <data name="Landing.StepPrintDescription" xml:space="preserve">
+    <value>Wasla Print Bridge sends the receipt to your configured printer automatically.</value>
+  </data>
+  <data name="Landing.ProblemsTitle" xml:space="preserve">
+    <value>What problem does Wasla solve?</value>
+  </data>
+  <data name="Landing.ProblemsDescription" xml:space="preserve">
+    <value>A restaurant order tracking system focused on practical challenges in daily operations.</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrders" xml:space="preserve">
+    <value>Orders collected in one place</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrdersDescription" xml:space="preserve">
+    <value>Orders from different platforms come together in a single list.</value>
+  </data>
+  <data name="Landing.ProblemFewerDevices" xml:space="preserve">
+    <value>Less device monitoring</value>
+  </data>
+  <data name="Landing.ProblemFewerDevicesDescription" xml:space="preserve">
+    <value>You need to watch fewer tablets and devices at the same time.</value>
+  </data>
+  <data name="Landing.ProblemMissedOrders" xml:space="preserve">
+    <value>Lower risk of missed orders</value>
+  </data>
+  <data name="Landing.ProblemMissedOrdersDescription" xml:space="preserve">
+    <value>With every channel on one screen, orders are less likely to be overlooked.</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordination" xml:space="preserve">
+    <value>Easier kitchen coordination</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordinationDescription" xml:space="preserve">
+    <value>Kitchen and order management move forward more clearly in the same flow.</value>
+  </data>
+  <data name="Landing.ProblemAutoPrint" xml:space="preserve">
+    <value>Automatic receipt printing</value>
+  </data>
+  <data name="Landing.ProblemAutoPrintDescription" xml:space="preserve">
+    <value>Receipts are sent to the printer automatically through Wasla Print Bridge.</value>
+  </data>
+  <data name="Landing.ProblemBusyHours" xml:space="preserve">
+    <value>More organized busy hours</value>
+  </data>
+  <data name="Landing.ProblemBusyHoursDescription" xml:space="preserve">
+    <value>During peak demand, the process stays more controlled and organized.</value>
+  </data>
+  <data name="Landing.ProblemLessSwitching" xml:space="preserve">
+    <value>Less switching between devices</value>
+  </data>
+  <data name="Landing.ProblemLessSwitchingDescription" xml:space="preserve">
+    <value>Staff spend less time moving between different screens.</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcess" xml:space="preserve">
+    <value>Easier order process monitoring</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcessDescription" xml:space="preserve">
+    <value>Following the order flow from one screen becomes simpler.</value>
+  </data>
+  <data name="Landing.WhoIsItForTitle" xml:space="preserve">
+    <value>Who is it for?</value>
+  </data>
+  <data name="Landing.WhoIsItForDescription" xml:space="preserve">
+    <value>Wasla is a good fit for:</value>
+  </data>
+  <data name="Landing.AudienceDelivery" xml:space="preserve">
+    <value>Restaurants offering delivery or takeaway</value>
+  </data>
+  <data name="Landing.AudienceMultiPlatform" xml:space="preserve">
+    <value>Businesses using multiple online ordering platforms</value>
+  </data>
+  <data name="Landing.AudienceChains" xml:space="preserve">
+    <value>Restaurant chains that want centralized order management</value>
+  </data>
+  <data name="Landing.AudienceKitchenWorkflow" xml:space="preserve">
+    <value>Businesses that want to improve kitchen workflow</value>
+  </data>
+  <data name="Landing.AudienceAutoPrint" xml:space="preserve">
+    <value>Restaurants that need automatic receipt printing</value>
   </data>
   <data name="PlatformConnections.ErrorCount" xml:space="preserve">
     <value>Consecutive errors</value>

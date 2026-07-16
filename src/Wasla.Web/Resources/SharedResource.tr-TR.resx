@@ -1117,7 +1117,7 @@
     <value>Nasıl çalışır?</value>
   </data>
   <data name="Landing.HowItWorksDescription" xml:space="preserve">
-    <value>Kurulumdan günlük operasyona dört adımda.</value>
+    <value>Beş adımda online siparişlerden mutfağa ve otomatik fiş yazdırmaya.</value>
   </data>
   <data name="Landing.Step1Title" xml:space="preserve">
     <value>Platform bağlantılarını tanımlayın</value>
@@ -1252,10 +1252,13 @@
     <value>Her restoranın verisi kendi alanında güvenli ve düzenli şekilde yönetilir.</value>
   </data>
   <data name="Landing.FinalCtaTitle" xml:space="preserve">
-    <value>Restoran panelinize giriş yapın</value>
+    <value>Online siparişlerle mutfak operasyonunuzu birleştirin</value>
   </data>
   <data name="Landing.FinalCtaDescription" xml:space="preserve">
-    <value>Müşteri girişi, restoranınıza tanımlanan özel alan adı üzerinden çalışır.</value>
+    <value>Wasla, online sipariş platformları ile restoran operasyonunuz arasında bağlantı kurar. Siparişleri tek ekranda toplar, mutfak sürecini sadeleştirir ve fişleri otomatik yazdırır.</value>
+  </data>
+  <data name="Landing.FinalCtaButton" xml:space="preserve">
+    <value>Ücretsiz Başlayın</value>
   </data>
   <data name="Landing.NewOrder" xml:space="preserve">
     <value>Yeni</value>
@@ -1279,16 +1282,16 @@
     <value>Restoran ekibinizin kolay kullanabileceği net bir sipariş ekranı sağlayın.</value>
   </data>
   <data name="Landing.StepConnectionsTitle" xml:space="preserve">
-    <value>Platform bağlantılarını tanımlayın</value>
+    <value>Platformlar Wasla'ya bağlanır</value>
   </data>
   <data name="Landing.StepConnectionsDescription" xml:space="preserve">
-    <value>Restoranınızın kullandığı sipariş platformlarını sisteme ekleyin.</value>
+    <value>Kullandığınız yemek sipariş platformları Wasla ile entegre edilir.</value>
   </data>
   <data name="Landing.StepTrackTitle" xml:space="preserve">
-    <value>Siparişleri tek ekrandan takip edin</value>
+    <value>Siparişler tek ekranda görünür</value>
   </data>
   <data name="Landing.StepTrackDescription" xml:space="preserve">
-    <value>Gelen siparişleri tek tabloda, sade ve anlaşılır şekilde görün.</value>
+    <value>Gelen siparişler anında tek yönetim ekranında listelenir.</value>
   </data>
   <data name="Landing.StepNotifyTitle" xml:space="preserve">
     <value>Yeni siparişte bildirim alın</value>
@@ -1328,6 +1331,114 @@
   </data>
   <data name="Landing.VisualImageAlt3" xml:space="preserve">
     <value>Servis tezgahında paketli sipariş teslimi</value>
+  </data>
+  <data name="Landing.MetaDescription" xml:space="preserve">
+    <value>Wasla, restoran sipariş yönetimi için bulut tabanlı online sipariş yönetim sistemidir. Yemek sipariş platformlarından gelen siparişleri tek ekranda toplar, mutfak sipariş ekranı ve otomatik fiş yazdırma ile operasyonu sadeleştirir.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaTitle" xml:space="preserve">
+    <value>Wasla nedir?</value>
+  </data>
+  <data name="Landing.WhatIsWaslaLead" xml:space="preserve">
+    <value>Farklı yemek sipariş platformlarından gelen siparişleri tek ekranda yönetmenizi sağlayan bulut tabanlı bir restoran sipariş yönetim sistemidir.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaProblem" xml:space="preserve">
+    <value>Birden fazla sipariş platformuyla çalışan restoranlar genellikle farklı tabletler, cihazlar ve ayrı iş akışlarını aynı anda takip etmek zorunda kalır.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaSolution" xml:space="preserve">
+    <value>Wasla bu sipariş akışlarını bir araya getirir ve günlük operasyonunuzu daha kolay yönetmenizi sağlar.</value>
+  </data>
+  <data name="Landing.StepReviewTitle" xml:space="preserve">
+    <value>Ekip siparişi yönetir</value>
+  </data>
+  <data name="Landing.StepReviewDescription" xml:space="preserve">
+    <value>Restoran personeli siparişi inceler, onaylar ve günlük akışta yönetir.</value>
+  </data>
+  <data name="Landing.StepKitchenTitle" xml:space="preserve">
+    <value>Mutfak hazırlığı takip eder</value>
+  </data>
+  <data name="Landing.StepKitchenDescription" xml:space="preserve">
+    <value>Mutfak ekibi hazırlık sürecini net bir mutfak sipariş ekranı üzerinden izler.</value>
+  </data>
+  <data name="Landing.StepPrintTitle" xml:space="preserve">
+    <value>Fiş otomatik yazdırılır</value>
+  </data>
+  <data name="Landing.StepPrintDescription" xml:space="preserve">
+    <value>Wasla Print Bridge, yapılandırılmış yazıcıya fişi otomatik gönderir.</value>
+  </data>
+  <data name="Landing.ProblemsTitle" xml:space="preserve">
+    <value>Wasla hangi sorunu çözer?</value>
+  </data>
+  <data name="Landing.ProblemsDescription" xml:space="preserve">
+    <value>Günlük operasyonda karşılaşılan pratik zorluklara odaklanan bir restoran sipariş takip sistemi.</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrders" xml:space="preserve">
+    <value>Tek yerde toplanan siparişler</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrdersDescription" xml:space="preserve">
+    <value>Farklı platformlardan gelen siparişler tek listede bir araya gelir.</value>
+  </data>
+  <data name="Landing.ProblemFewerDevices" xml:space="preserve">
+    <value>Daha az cihaz takibi</value>
+  </data>
+  <data name="Landing.ProblemFewerDevicesDescription" xml:space="preserve">
+    <value>Birden fazla tablet ve cihazı aynı anda izleme ihtiyacı azalır.</value>
+  </data>
+  <data name="Landing.ProblemMissedOrders" xml:space="preserve">
+    <value>Kaçırılan sipariş riski azalır</value>
+  </data>
+  <data name="Landing.ProblemMissedOrdersDescription" xml:space="preserve">
+    <value>Tüm kanallar tek ekranda göründüğü için siparişleri gözden kaçırma riski düşer.</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordination" xml:space="preserve">
+    <value>Daha koordineli mutfak yönetimi</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordinationDescription" xml:space="preserve">
+    <value>Mutfak ve sipariş yönetimi aynı akışta daha net ilerler.</value>
+  </data>
+  <data name="Landing.ProblemAutoPrint" xml:space="preserve">
+    <value>Otomatik fiş yazdırma</value>
+  </data>
+  <data name="Landing.ProblemAutoPrintDescription" xml:space="preserve">
+    <value>Fişler Wasla Print Bridge ile otomatik olarak yazıcıya iletilir.</value>
+  </data>
+  <data name="Landing.ProblemBusyHours" xml:space="preserve">
+    <value>Yoğun saatlerde daha düzenli operasyon</value>
+  </data>
+  <data name="Landing.ProblemBusyHoursDescription" xml:space="preserve">
+    <value>Sipariş yoğunluğunda süreç daha kontrollü ve organize ilerler.</value>
+  </data>
+  <data name="Landing.ProblemLessSwitching" xml:space="preserve">
+    <value>Cihazlar arası daha az geçiş</value>
+  </data>
+  <data name="Landing.ProblemLessSwitchingDescription" xml:space="preserve">
+    <value>Personel farklı ekranlar arasında daha az zaman harcar.</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcess" xml:space="preserve">
+    <value>Kolay izlenen sipariş süreci</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcessDescription" xml:space="preserve">
+    <value>Sipariş akışını tek ekrandan takip etmek daha kolay hale gelir.</value>
+  </data>
+  <data name="Landing.WhoIsItForTitle" xml:space="preserve">
+    <value>Kimler için?</value>
+  </data>
+  <data name="Landing.WhoIsItForDescription" xml:space="preserve">
+    <value>Wasla aşağıdaki işletmeler için uygundur:</value>
+  </data>
+  <data name="Landing.AudienceDelivery" xml:space="preserve">
+    <value>Paket servis veya gel-al sunan restoranlar</value>
+  </data>
+  <data name="Landing.AudienceMultiPlatform" xml:space="preserve">
+    <value>Birden fazla online sipariş platformu kullanan işletmeler</value>
+  </data>
+  <data name="Landing.AudienceChains" xml:space="preserve">
+    <value>Merkezi sipariş yönetimi isteyen restoran zincirleri</value>
+  </data>
+  <data name="Landing.AudienceKitchenWorkflow" xml:space="preserve">
+    <value>Mutfak iş akışını iyileştirmek isteyen işletmeler</value>
+  </data>
+  <data name="Landing.AudienceAutoPrint" xml:space="preserve">
+    <value>Otomatik fiş yazdırma ihtiyacı olan restoranlar</value>
   </data>
   <data name="PlatformConnections.ErrorCount" xml:space="preserve">
     <value>Ardışık hata</value>

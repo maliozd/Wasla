@@ -15,6 +15,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="@L["Landing.MetaDescription"]" />
     <title>@L["Landing.Title"] — @L["Landing.Subtitle"]</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -99,6 +100,31 @@
         </div>
     </section>
 
+    <section class="py-5 bg-white" id="about">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold mb-3">@L["Landing.WhatIsWaslaTitle"]</h2>
+                    <p class="lead text-secondary mb-0">@L["Landing.WhatIsWaslaLead"]</p>
+                </div>
+            </div>
+            <div class="row g-3 g-lg-4 justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="oh-intro-card h-100 rounded-4 border bg-light p-4">
+                        <div class="oh-benefit-icon mb-3"><i class="bi bi-tablet" aria-hidden="true"></i></div>
+                        <p class="text-secondary mb-0">@L["Landing.WhatIsWaslaProblem"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-5">
+                    <div class="oh-intro-card h-100 rounded-4 border-0 bg-white p-4 shadow-sm">
+                        <div class="oh-benefit-icon mb-3"><i class="bi bi-grid-1x2" aria-hidden="true"></i></div>
+                        <p class="text-secondary mb-0">@L["Landing.WhatIsWaslaSolution"]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="py-5 oh-section-muted" id="mockup">
         <div class="container">
             <div class="row justify-content-center text-center mb-4">
@@ -175,81 +201,150 @@
         </div>
     </section>
 
-    <section class="py-5 oh-section-muted" id="benefits">
+    <section class="py-5 oh-section-muted" id="how">
         <div class="container">
             <div class="row justify-content-center text-center mb-4">
                 <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.BenefitsTitle"]</h2>
-                    <p class="text-secondary mb-0">@L["Landing.BenefitsDescription"]</p>
+                    <h2 class="h3 fw-bold mb-2">@L["Landing.HowItWorksTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.HowItWorksDescription"]</p>
+                </div>
+            </div>
+            <div class="oh-flow-grid">
+                <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="oh-step-num mb-2" aria-hidden="true">1</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepConnectionsTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepConnectionsDescription"]</p>
+                </div>
+                <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="oh-step-num mb-2" aria-hidden="true">2</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepTrackTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepTrackDescription"]</p>
+                </div>
+                <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="oh-step-num mb-2" aria-hidden="true">3</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepReviewTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepReviewDescription"]</p>
+                </div>
+                <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="oh-step-num mb-2" aria-hidden="true">4</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepKitchenTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepKitchenDescription"]</p>
+                </div>
+                <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="oh-step-num mb-2" aria-hidden="true">5</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepPrintTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepPrintDescription"]</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 bg-white" id="benefits">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold mb-2">@L["Landing.ProblemsTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.ProblemsDescription"]</p>
                 </div>
             </div>
             <div class="row g-3">
-                <div class="col-md-6 col-lg-3">
-                    <div class="oh-benefit-card h-100 border-0 bg-white rounded-4 p-4 shadow-sm">
-                        <div class="oh-benefit-icon mb-2"><i class="bi bi-check2-circle"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.BenefitMissedOrders"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.BenefitMissedOrdersDescription"]</p>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="oh-benefit-icon mb-2"><i class="bi bi-collection" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemUnifiedOrders"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemUnifiedOrdersDescription"]</p>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="oh-benefit-card h-100 border-0 bg-white rounded-4 p-4 shadow-sm">
-                        <div class="oh-benefit-icon mb-2"><i class="bi bi-layout-sidebar"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.BenefitLessSwitching"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.BenefitLessSwitchingDescription"]</p>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="oh-benefit-icon mb-2"><i class="bi bi-phone" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemFewerDevices"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemFewerDevicesDescription"]</p>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="oh-benefit-card h-100 border-0 bg-white rounded-4 p-4 shadow-sm">
-                        <div class="oh-benefit-icon mb-2"><i class="bi bi-diagram-3"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.BenefitBranchTracking"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.BenefitBranchTrackingDescription"]</p>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="oh-benefit-icon mb-2"><i class="bi bi-check2-circle" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemMissedOrders"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemMissedOrdersDescription"]</p>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="oh-benefit-card h-100 border-0 bg-white rounded-4 p-4 shadow-sm">
-                        <div class="oh-benefit-icon mb-2"><i class="bi bi-people"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.BenefitSimpleOperation"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.BenefitSimpleOperationDescription"]</p>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="oh-benefit-icon mb-2"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemKitchenCoordination"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemKitchenCoordinationDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="oh-benefit-icon mb-2"><i class="bi bi-printer" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemAutoPrint"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemAutoPrintDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="oh-benefit-icon mb-2"><i class="bi bi-clock-history" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemBusyHours"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemBusyHoursDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="oh-benefit-icon mb-2"><i class="bi bi-layout-sidebar" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemLessSwitching"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemLessSwitchingDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="oh-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="oh-benefit-icon mb-2"><i class="bi bi-eye" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemMonitorProcess"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemMonitorProcessDescription"]</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="py-5 bg-white" id="how">
+    <section class="py-5 oh-section-muted" id="audience">
         <div class="container">
             <div class="row justify-content-center text-center mb-4">
                 <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.HowItWorksTitle"]</h2>
+                    <h2 class="h3 fw-bold mb-2">@L["Landing.WhoIsItForTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.WhoIsItForDescription"]</p>
                 </div>
             </div>
-            <div class="row g-3">
-                <div class="col-sm-6 col-lg-3">
-                    <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="oh-step-num mb-2">1</div>
-                        <h3 class="h6 fw-bold">@L["Landing.StepConnectionsTitle"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.StepConnectionsDescription"]</p>
+            <div class="row g-2 g-md-3 justify-content-center">
+                <div class="col-sm-6 col-lg-4">
+                    <div class="oh-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-bag-check text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceDelivery"]</span>
                     </div>
                 </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="oh-step-num mb-2">2</div>
-                        <h3 class="h6 fw-bold">@L["Landing.StepTrackTitle"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.StepTrackDescription"]</p>
+                <div class="col-sm-6 col-lg-4">
+                    <div class="oh-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-layers text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceMultiPlatform"]</span>
                     </div>
                 </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="oh-step-num mb-2">3</div>
-                        <h3 class="h6 fw-bold">@L["Landing.StepNotifyTitle"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.StepNotifyDescription"]</p>
+                <div class="col-sm-6 col-lg-4">
+                    <div class="oh-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-building text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceChains"]</span>
                     </div>
                 </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="oh-step-num mb-2">4</div>
-                        <h3 class="h6 fw-bold">@L["Landing.StepManageTitle"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.StepManageDescription"]</p>
+                <div class="col-sm-6 col-lg-4">
+                    <div class="oh-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-fire text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceKitchenWorkflow"]</span>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <div class="oh-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-printer text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceAutoPrint"]</span>
                     </div>
                 </div>
             </div>
@@ -329,10 +424,10 @@
                     <p class="mb-4 opacity-90">@L["Landing.FinalCtaDescription"]</p>
                     <div class="d-flex flex-wrap justify-content-center gap-2">
                         <a class="btn btn-light btn-lg rounded-pill px-4" href="/signup">
-                            <i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>@L["Signup.StartNow"]
+                            <i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>@L["Landing.FinalCtaButton"]
                         </a>
-                        <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="/auth/login">
-                            <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>@L["Landing.CustomerLogin"]
+                        <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="#pricing">
+                            @L["Pricing.ViewPlans"]
                         </a>
                     </div>
                 </div>
