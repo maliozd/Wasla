@@ -97,8 +97,9 @@ builder.Services.AddAuthentication(options =>
 })
 .AddCookie(AuthSchemes.CentralAdmin, options =>
 {
-    options.Cookie.Name = "orderhub_central_admin";
+    options.Cookie.Name = CentralAdminAuthCookieNames.Active;
     options.Cookie.HttpOnly = true;
+    options.Cookie.Path = "/";
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = authCookieSecurePolicy;
     options.LoginPath = "/admin/login";

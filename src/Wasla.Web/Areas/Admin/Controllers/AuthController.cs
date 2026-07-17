@@ -75,7 +75,23 @@ public sealed class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(AuthSchemes.CentralAdmin).ConfigureAwait(false);
+        ExpireCentralAdminAuthCookies();
         return Redirect("/admin/login");
+    }
+
+    private void ExpireCentralAdminAuthCookies()
+    {
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Path = "/",
+            SameSite = SameSiteMode.Lax
+        };
+
+        Response.Cookies.Delete(CentralAdminAuthCookieNames.Active, options);
+        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyOrderHub, options);
+        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyOrderHubScheme, options);
+        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyAspNetCoreOrderHubScheme, options);
     }
 }
 

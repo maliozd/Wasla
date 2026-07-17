@@ -3,5 +3,5 @@
 public static class AuthSchemes
 {
     public const string Tenant = "WaslaTenant";
-    public const string CentralAdmin = "OrderHubCentralAdmin";
+    public const string CentralAdmin = "WaslaCentralAdmin";
 }
