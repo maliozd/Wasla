@@ -934,7 +934,7 @@
     <value>يرجى التحقق من صفحة الطلبات.</value>
   </data>
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
-    <value>لسماع صوت الطلب الجديد، قم أولاً بمعاينة صوت من إعدادات الإشعارات.</value>
+    <value>انقر مرة واحدة لتفعيل أصوات الإشعارات.</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>جاري التحميل…</value>

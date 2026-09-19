@@ -294,15 +294,22 @@
       on(testSelectedBtn, "click", async function () {
         const st = getModalState();
         await O.audio.maybeRequestBrowserNotificationPermission(st);
-        if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
+        if (O.audio && typeof O.audio.stopCurrentSound === "function") {
+          O.audio.stopCurrentSound();
+        } else if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
           O.audio.stopCurrentPreviewSound();
         }
         const opt = soundSel && soundSel.options[soundSel.selectedIndex];
         const url = opt && opt.getAttribute("data-sound-url");
-        await O.audio.playSoundNow(st, url || null);
-        try {
-          localStorage.setItem("Wasla.soundUnlocked", "true");
-        } catch (e) { /* ignore */ }
+        const soundName = (st && st.newOrderSoundName) || (soundSel && soundSel.value) || "bell1";
+        if (typeof O.audio.playSoundPreview === "function") {
+          await O.audio.playSoundPreview(soundName, url || null);
+        } else {
+          await O.audio.playSoundNow(st, url || null);
+        }
+        if (O.audio && typeof O.audio.markSoundUnlocked === "function") {
+          O.audio.markSoundUnlocked();
+        }
         updateNotificationStatusUi(getModalState());
       });
     }
@@ -346,7 +353,9 @@
     const modalEl = document.getElementById("notificationSettingsModal");
     if (modalEl) {
       on(modalEl, "hidden.bs.modal", function () {
-        if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
+        if (O.audio && typeof O.audio.stopCurrentSound === "function") {
+          O.audio.stopCurrentSound();
+        } else if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
           O.audio.stopCurrentPreviewSound();
         }
         if (notificationSettingsBindingsAbort) {

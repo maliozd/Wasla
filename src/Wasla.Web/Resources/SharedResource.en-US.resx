@@ -934,7 +934,7 @@
     <value>Please check the Orders page.</value>
   </data>
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
-    <value>To hear new-order sounds, first preview a sound from Notification Settings.</value>
+    <value>Click once to enable notification sounds.</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Loading…</value>

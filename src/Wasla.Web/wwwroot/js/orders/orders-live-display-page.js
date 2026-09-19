@@ -1,4 +1,4 @@
-// Live display page: polling and close/back.
+// Live display page: polling, notification sound, and close/back.
 (function (global) {
   "use strict";
 
@@ -20,14 +20,27 @@
     if (btn) btn.addEventListener("click", closeLiveDisplay);
   }
 
-  function initLiveDisplayPage() {
+  async function initLiveDisplayPage() {
     initCloseButton();
     O.table.captureKnownOrderIdsFromContainer();
+    if (O.audio && typeof O.audio.initAudioUnlock === "function") {
+      O.audio.initAudioUnlock();
+    }
+    if (O.notificationSettings && typeof O.notificationSettings.load === "function") {
+      try {
+        await O.notificationSettings.load();
+      } catch (error) {
+        O.debugWarn("live display notification settings load failed", error);
+      }
+    }
     O.table.initPolling();
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     if (O.opts.pageMode !== "liveDisplay") return;
-    initLiveDisplayPage();
+    initLiveDisplayPage().catch(function (error) {
+      O.debugWarn("initLiveDisplayPage failed", error);
+      O.table.initPolling();
+    });
   });
 })(window);

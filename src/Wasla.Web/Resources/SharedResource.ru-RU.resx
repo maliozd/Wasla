@@ -934,7 +934,7 @@
     <value>Пожалуйста, проверьте страницу заказов.</value>
   </data>
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
-    <value>Чтобы услышать звуки в новом порядке, сначала просмотрите звук в настройках уведомлений.</value>
+    <value>Нажмите один раз, чтобы включить звуки уведомлений.</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Загрузка…</value>

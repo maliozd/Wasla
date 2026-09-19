@@ -84,6 +84,8 @@
         window.orderHubOrdersOptions = {
             pageMode: "liveDisplay",
             tableUrl: "/orders/table",
+            notificationSettingsUrl: "/notification-settings",
+            notificationSettingsJsonUrl: "/notification-settings/current",
             pollingIntervalMs: 10000,
             todayYmd: "@today.ToString("yyyy-MM-dd")",
             liveDisplayPageSize: 100,
@@ -92,11 +94,21 @@
             {
                 ["genericError"] = L["Orders.GenericError"].Value,
                 ["alertClose"] = L["Common.Close"].Value,
+                ["newOrderArrived"] = L["Notification.NewOrderArrived"].Value,
+                ["checkOrdersPage"] = L["Notification.CheckOrdersPage"].Value,
+                ["soundCouldNotPlay"] = L["Notification.SoundCouldNotPlay"].Value,
+                ["soundUnlockHint"] = L["Notification.SoundUnlockHint"].Value,
+                ["audioNotAllowed"] = L["Orders.AudioNotAllowed"].Value,
+                ["audioPlayFailed"] = L["Orders.AudioPlayFailed"].Value,
+                ["audioFileError"] = L["Orders.AudioFileError"].Value,
                 ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
                 ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
                 ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
                 ["tableHostMissing"] = L["Orders.TableHostMissing"].Value,
                 ["tableRefreshException"] = L["Orders.TableRefreshException"].Value,
+                ["notificationSettingsLoadFailed"] = L["Orders.NotificationSettingsLoadFailed"].Value,
+                ["notificationSettingsUnexpectedFormat"] = L["Orders.NotificationSettingsUnexpectedFormat"].Value,
+                ["notificationSettingsLoadException"] = L["Orders.NotificationSettingsLoadException"].Value,
                 ["ordersApproveConfirmTitle"] = L["Orders.ApproveConfirmTitle"].Value,
                 ["ordersApproveConfirmMessage"] = L["Orders.ApproveConfirmMessage"].Value,
                 ["ordersRejectConfirmTitle"] = L["Orders.RejectConfirmTitle"].Value,
@@ -130,6 +142,8 @@
         };
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-view-mode.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>

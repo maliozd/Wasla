@@ -52,6 +52,9 @@
   async function initOrdersPage() {
     initFilters();
     O.table.captureKnownOrderIdsFromContainer();
+    if (O.audio && typeof O.audio.initAudioUnlock === "function") {
+      O.audio.initAudioUnlock();
+    }
     await O.notificationSettings.load();
     O.table.initPolling();
     initDebugBadge();

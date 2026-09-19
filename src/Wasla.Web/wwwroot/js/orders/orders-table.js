@@ -338,35 +338,28 @@
       captureKnownOrderIdsFromContainer();
       applyNewOrderVisualState();
 
-      if (!isLiveDisplayPage() && live && newIds.length > 0 && O.state.notificationSettings && O.audio) {        const st = O.state.notificationSettings;
+      if (live && newIds.length > 0 && O.state.notificationSettings && O.audio) {
+        const st = O.state.notificationSettings;
         if (st.newOrderSoundEnabled) {
-          if (!O.audio.isSoundUnlocked()) {
-            if (!T.hintShownForUnlock) {
-              T.hintShownForUnlock = true;
-              O.showMessage(O.getMessage("soundUnlockHint"), "info");
+          showSpeakerIndicators(newIds);
+          try {
+            await O.audio.playSoundNow({
+              newOrderSoundEnabled: true,
+              newOrderSoundName: st.newOrderSoundName,
+              newOrderSoundRepeatCount: st.newOrderSoundRepeatCount,
+              newOrderSoundVolumePercent: st.newOrderSoundVolumePercent != null
+                ? st.newOrderSoundVolumePercent
+                : Math.round((st.newOrderSoundVolume || 1) * 100),
+              showBrowserNotification: st.showBrowserNotification
+            });
+            audioPlayedOk = O.audio.isSoundUnlocked() ? "ok" : "locked";
+          } catch (e) {
+            audioPlayedOk = "error";
+            if (O.isDebugEnabled()) {
+              O.debugWarn("playSoundNow", e);
             }
-            audioPlayedOk = "locked";
-          } else {
-            showSpeakerIndicators(newIds);
-            try {
-              await O.audio.playSoundNow({
-                newOrderSoundEnabled: true,
-                newOrderSoundName: st.newOrderSoundName,
-                newOrderSoundRepeatCount: st.newOrderSoundRepeatCount,
-                newOrderSoundVolumePercent: st.newOrderSoundVolumePercent != null
-                  ? st.newOrderSoundVolumePercent
-                  : Math.round((st.newOrderSoundVolume || 1) * 100),
-                showBrowserNotification: st.showBrowserNotification
-              });
-              audioPlayedOk = "ok";
-            } catch (e) {
-              audioPlayedOk = "error";
-              if (O.isDebugEnabled()) {
-                O.debugWarn("playSoundNow", e);
-              }
-            } finally {
-              hideSpeakerIndicators(newIds);
-            }
+          } finally {
+            hideSpeakerIndicators(newIds);
           }
         } else {
           audioPlayedOk = "soundDisabled";
