@@ -936,6 +936,18 @@
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
     <value>Click once to enable notification sounds.</value>
   </data>
+  <data name="Notification.EnableSoundButton" xml:space="preserve">
+    <value>Enable notification sound</value>
+  </data>
+  <data name="Notification.SoundMayBeOffTitle" xml:space="preserve">
+    <value>Notification sound may be off</value>
+  </data>
+  <data name="Notification.SoundMayBeOffDescription" xml:space="preserve">
+    <value>Enable notification sound to hear alerts for new orders.</value>
+  </data>
+  <data name="Notification.SoundActive" xml:space="preserve">
+    <value>Notification sound is active</value>
+  </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Loading…</value>
   </data>

@@ -41,6 +41,30 @@
         </div>
     </header>
 
+    <div id="ordersLiveDisplaySoundBanner"
+         class="oh-live-display-sound-banner alert alert-warning border-0 shadow-sm d-none"
+         role="status"
+         hidden>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="oh-live-display-sound-banner__copy">
+                <div class="fw-semibold">@L["Notification.SoundMayBeOffTitle"]</div>
+                <div class="small mb-0">@L["Notification.SoundMayBeOffDescription"]</div>
+            </div>
+            <button type="button"
+                    id="ordersLiveDisplayEnableNotificationSound"
+                    class="btn btn-sm btn-primary text-nowrap oh-orders-sound-enable-btn">
+                <i class="bi bi-volume-up me-1" aria-hidden="true"></i>
+                <span data-sound-enable-label>@L["Notification.EnableSoundButton"]</span>
+            </button>
+        </div>
+    </div>
+    <div id="ordersLiveDisplaySoundActive"
+         class="oh-live-display-sound-active alert alert-success border-0 py-2 px-3 d-none"
+         role="status"
+         hidden>
+        <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>@L["Notification.SoundActive"]
+    </div>
+
     <div class="oh-live-display-summary oh-fs-summary row g-3">
         <div class="col-12 col-md-4">
             <div class="oh-fs-stat">
@@ -98,6 +122,10 @@
                 ["checkOrdersPage"] = L["Notification.CheckOrdersPage"].Value,
                 ["soundCouldNotPlay"] = L["Notification.SoundCouldNotPlay"].Value,
                 ["soundUnlockHint"] = L["Notification.SoundUnlockHint"].Value,
+                ["enableNotificationSound"] = L["Notification.EnableSoundButton"].Value,
+                ["soundActive"] = L["Notification.SoundActive"].Value,
+                ["soundMayBeOffTitle"] = L["Notification.SoundMayBeOffTitle"].Value,
+                ["soundMayBeOffDescription"] = L["Notification.SoundMayBeOffDescription"].Value,
                 ["audioNotAllowed"] = L["Orders.AudioNotAllowed"].Value,
                 ["audioPlayFailed"] = L["Orders.AudioPlayFailed"].Value,
                 ["audioFileError"] = L["Orders.AudioFileError"].Value,

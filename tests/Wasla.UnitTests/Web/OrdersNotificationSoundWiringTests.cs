@@ -10,6 +10,8 @@ public sealed class OrdersNotificationSoundWiringTests
         Assert.Contains("orders-audio.js", source, StringComparison.Ordinal);
         Assert.Contains("orders-notification-settings.js", source, StringComparison.Ordinal);
         Assert.Contains("soundUnlockHint", source, StringComparison.Ordinal);
+        Assert.Contains("ordersEnableNotificationSound", source, StringComparison.Ordinal);
+        Assert.Contains("Notification.EnableSoundButton", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -22,6 +24,11 @@ public sealed class OrdersNotificationSoundWiringTests
         Assert.Contains("notificationSettingsJsonUrl", source, StringComparison.Ordinal);
         Assert.Contains("soundUnlockHint", source, StringComparison.Ordinal);
         Assert.Contains("orders-live-display-page.js", source, StringComparison.Ordinal);
+        Assert.Contains("ordersLiveDisplaySoundBanner", source, StringComparison.Ordinal);
+        Assert.Contains("ordersLiveDisplayEnableNotificationSound", source, StringComparison.Ordinal);
+        Assert.Contains("Notification.SoundMayBeOffTitle", source, StringComparison.Ordinal);
+        Assert.Contains("Notification.EnableSoundButton", source, StringComparison.Ordinal);
+        Assert.Contains("Notification.SoundActive", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -47,6 +54,10 @@ public sealed class OrdersNotificationSoundWiringTests
         Assert.Contains("playResult.then", source, StringComparison.Ordinal);
         Assert.Contains(".catch(function (error)", source, StringComparison.Ordinal);
         Assert.Contains("pointerdown", source, StringComparison.Ordinal);
+        Assert.Contains("enableNotificationSoundFromControl", source, StringComparison.Ordinal);
+        Assert.Contains("syncSoundEnableUi", source, StringComparison.Ordinal);
+        Assert.Contains("ordersEnableNotificationSound", source, StringComparison.Ordinal);
+        Assert.Contains("ordersLiveDisplayEnableNotificationSound", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -92,6 +103,23 @@ public sealed class OrdersNotificationSoundWiringTests
             Path.Combine(resourcesDir, "SharedResource.ru-RU.resx"),
             "Notification.SoundUnlockHint",
             "Нажмите один раз, чтобы включить звуки уведомлений.");
+
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.tr-TR.resx"),
+            "Notification.EnableSoundButton",
+            "Bildirim sesini etkinleştir");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.en-US.resx"),
+            "Notification.EnableSoundButton",
+            "Enable notification sound");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.tr-TR.resx"),
+            "Notification.SoundMayBeOffTitle",
+            "Bildirim sesi kapalı olabilir");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.tr-TR.resx"),
+            "Notification.SoundActive",
+            "Bildirim sesi aktif");
     }
 
     private static void AssertResourceContains(string path, string key, string expectedValue)

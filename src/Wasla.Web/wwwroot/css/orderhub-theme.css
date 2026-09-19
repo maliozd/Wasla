@@ -1659,6 +1659,31 @@ body.oh-tenant.oh-app .btn-outline-primary {
   line-height: 1.2;
 }
 
+.oh-orders-sound-enable-btn {
+  font-weight: 600;
+}
+
+.oh-orders-sound-active-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #15803d;
+  background: color-mix(in srgb, #22c55e 14%, var(--oh-surface, #fff));
+  border: 1px solid color-mix(in srgb, #22c55e 28%, var(--oh-border, #e5e7eb));
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  min-height: 2rem;
+}
+
+.oh-live-display-sound-banner {
+  margin: 0 0 1rem;
+}
+
+.oh-live-display-sound-active {
+  margin: 0 0 1rem;
+}
+
 .orders-toolbar-right .oh-orders-view-mode .btn {
   border-color: color-mix(in srgb, var(--oh-border) 65%, transparent);
 }

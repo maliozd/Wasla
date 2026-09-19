@@ -936,6 +936,18 @@
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
     <value>Нажмите один раз, чтобы включить звуки уведомлений.</value>
   </data>
+  <data name="Notification.EnableSoundButton" xml:space="preserve">
+    <value>Включить звук уведомлений</value>
+  </data>
+  <data name="Notification.SoundMayBeOffTitle" xml:space="preserve">
+    <value>Звук уведомлений может быть выключен</value>
+  </data>
+  <data name="Notification.SoundMayBeOffDescription" xml:space="preserve">
+    <value>Включите звук уведомлений, чтобы слышать оповещения о новых заказах.</value>
+  </data>
+  <data name="Notification.SoundActive" xml:space="preserve">
+    <value>Звук уведомлений активен</value>
+  </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Загрузка…</value>
   </data>

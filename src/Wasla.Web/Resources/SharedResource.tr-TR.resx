@@ -936,6 +936,18 @@
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
     <value>Bildirim sesi için ekrana bir kez tıklayın.</value>
   </data>
+  <data name="Notification.EnableSoundButton" xml:space="preserve">
+    <value>Bildirim sesini etkinleştir</value>
+  </data>
+  <data name="Notification.SoundMayBeOffTitle" xml:space="preserve">
+    <value>Bildirim sesi kapalı olabilir</value>
+  </data>
+  <data name="Notification.SoundMayBeOffDescription" xml:space="preserve">
+    <value>Yeni sipariş seslerini duymak için bildirim sesini etkinleştirin.</value>
+  </data>
+  <data name="Notification.SoundActive" xml:space="preserve">
+    <value>Bildirim sesi aktif</value>
+  </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Yükleniyor…</value>
   </data>

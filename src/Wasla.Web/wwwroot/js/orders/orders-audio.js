@@ -83,12 +83,49 @@
     return volPct;
   }
 
+  function setElementVisible(el, visible) {
+    if (!el) {
+      return;
+    }
+    if (visible) {
+      el.classList.remove("d-none");
+      el.hidden = false;
+      el.removeAttribute("hidden");
+    } else {
+      el.classList.add("d-none");
+      el.hidden = true;
+      el.setAttribute("hidden", "hidden");
+    }
+  }
+
+  function syncSoundEnableUi() {
+    const unlocked = isSoundUnlocked();
+    const ordersEnableBtn = document.getElementById("ordersEnableNotificationSound");
+    const ordersActive = document.getElementById("ordersNotificationSoundActive");
+    const liveBanner = document.getElementById("ordersLiveDisplaySoundBanner");
+    const liveActive = document.getElementById("ordersLiveDisplaySoundActive");
+
+    setElementVisible(ordersEnableBtn, !unlocked);
+    setElementVisible(ordersActive, unlocked);
+    setElementVisible(liveBanner, !unlocked);
+    setElementVisible(liveActive, unlocked);
+
+    if (unlocked && liveActive && !liveActive.dataset.fadeScheduled) {
+      liveActive.dataset.fadeScheduled = "1";
+      global.setTimeout(function () {
+        setElementVisible(liveActive, false);
+      }, 4000);
+    }
+  }
+
   function showUnlockPromptOnce() {
     if (unlockPromptShown) {
+      syncSoundEnableUi();
       return;
     }
     unlockPromptShown = true;
-    const message = O.getMessage("soundUnlockHint");
+    syncSoundEnableUi();
+    const message = O.getMessage("enableNotificationSound") || O.getMessage("soundUnlockHint");
     if (global.OrderHubToast && typeof global.OrderHubToast.info === "function") {
       global.OrderHubToast.info(message, { key: "sound-unlock-hint", durationMs: 8000 });
       return;
@@ -103,11 +140,66 @@
       await audio.play();
       stopAudioElement(audio);
       markSoundUnlocked();
+      syncSoundEnableUi();
       return true;
     } catch (error) {
       O.debugWarn("silent audio unlock failed", error);
       return false;
     }
+  }
+
+  async function enableNotificationSoundFromControl() {
+    const st = O.state.notificationSettings || {};
+    const soundName = st.newOrderSoundName || "bell1";
+    const url = getSoundUrlFromSettings(soundName);
+    const pct = st.newOrderSoundVolumePercent != null
+      ? st.newOrderSoundVolumePercent
+      : Math.round((st.newOrderSoundVolume || 1) * 100);
+    const vol = Math.max(0.15, Math.min(1, (pct || 100) / 100.0));
+
+    stopCurrentSound();
+    try {
+      const audio = new Audio(url);
+      audio.volume = vol;
+      currentPreviewAudio = audio;
+      await audio.play();
+      markSoundUnlocked();
+      unlockPromptShown = true;
+      syncSoundEnableUi();
+      if (O.notificationSettings && typeof O.notificationSettings.updateNotificationStatusUi === "function") {
+        try {
+          O.notificationSettings.updateNotificationStatusUi(st);
+        } catch (error) {
+          /* ignore */
+        }
+      }
+      return true;
+    } catch (error) {
+      handlePlayRejection(error);
+      syncSoundEnableUi();
+      return false;
+    }
+  }
+
+  function wireSoundEnableControls() {
+    const buttons = [
+      document.getElementById("ordersEnableNotificationSound"),
+      document.getElementById("ordersLiveDisplayEnableNotificationSound")
+    ];
+
+    buttons.forEach(function (btn) {
+      if (!btn || btn.dataset.soundEnableWired === "1") {
+        return;
+      }
+      btn.dataset.soundEnableWired = "1";
+      btn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        enableNotificationSoundFromControl().catch(function (error) {
+          O.debugWarn("enableNotificationSoundFromControl failed", error);
+        });
+      });
+    });
   }
 
   function bindUnlockGestures() {
@@ -116,10 +208,14 @@
     }
     unlockGesturesBound = true;
 
-    const onUserGesture = function () {
+    const onUserGesture = function (event) {
+      if (event && event.target && event.target.closest && event.target.closest(".oh-orders-sound-enable-btn")) {
+        return;
+      }
       trySilentUnlock().then(function (ok) {
         if (ok) {
           unlockPromptShown = true;
+          syncSoundEnableUi();
           if (O.notificationSettings && typeof O.notificationSettings.updateNotificationStatusUi === "function") {
             try {
               O.notificationSettings.updateNotificationStatusUi(
@@ -196,6 +292,7 @@
           if (playResult && typeof playResult.then === "function") {
             playResult.then(function () {
               markSoundUnlocked();
+              syncSoundEnableUi();
             }).catch(function (error) {
               handlePlayRejection(error);
               done();
@@ -232,6 +329,7 @@
       }, { once: true });
       await audio.play();
       markSoundUnlocked();
+      syncSoundEnableUi();
       O.debugLog("Sound preview played; unlocked sound");
     } catch (error) {
       O.debugWarn("playSoundPreview failed", error);
@@ -266,10 +364,9 @@
   }
 
   function initAudioUnlock() {
+    wireSoundEnableControls();
+    syncSoundEnableUi();
     bindUnlockGestures();
-    if (!isSoundUnlocked()) {
-      /* Prompt is deferred until a blocked play attempt, to avoid noise on every load. */
-    }
   }
 
   O.audio = {
@@ -284,6 +381,8 @@
     showBrowserNotificationIfAllowed: showBrowserNotificationIfAllowed,
     initAudioUnlock: initAudioUnlock,
     bindUnlockGestures: bindUnlockGestures,
-    showUnlockPromptOnce: showUnlockPromptOnce
+    showUnlockPromptOnce: showUnlockPromptOnce,
+    syncSoundEnableUi: syncSoundEnableUi,
+    enableNotificationSoundFromControl: enableNotificationSoundFromControl
   };
 })(window);

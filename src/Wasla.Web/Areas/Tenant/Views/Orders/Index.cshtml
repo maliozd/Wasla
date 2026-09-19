@@ -45,6 +45,20 @@
         }
     </div>
     <div class="orders-toolbar-right">
+        <button type="button"
+                id="ordersEnableNotificationSound"
+                class="btn btn-sm btn-outline-primary text-nowrap oh-orders-sound-enable-btn"
+                hidden
+                aria-live="polite">
+            <i class="bi bi-volume-up me-1" aria-hidden="true"></i>
+            <span data-sound-enable-label>@L["Notification.EnableSoundButton"]</span>
+        </button>
+        <span id="ordersNotificationSoundActive"
+              class="oh-orders-sound-active-pill text-nowrap d-none"
+              hidden
+              aria-live="polite">
+            <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>@L["Notification.SoundActive"]
+        </span>
         <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
@@ -188,6 +202,8 @@
                 ["commonSaveFailed"] = L["Common.SaveFailed"].Value,
                 ["soundEnabled"] = L["Notification.SoundEnabled"].Value,
                 ["soundUnlockHint"] = L["Notification.SoundUnlockHint"].Value,
+                ["enableNotificationSound"] = L["Notification.EnableSoundButton"].Value,
+                ["soundActive"] = L["Notification.SoundActive"].Value,
                 ["notificationsOff"] = L["Notification.Disabled"].Value,
                 ["notificationsOffHelp"] = L["Notification.NotificationsHelp"].Value,
                 ["waitingForAudio"] = L["Notification.WaitingForBrowserAudio"].Value,
