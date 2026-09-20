@@ -2279,7 +2279,61 @@ body.oh-orders-live-display .oh-live-screen-grid {
 }
 
 .oh-live-screen-card.order-row-new {
-  box-shadow: 0 0 0 2px var(--new-order-highlight-border, #ffc107);
+  /* Subtle operational emphasis — no row-table animations on Live cards. */
+  animation: none !important;
+  box-shadow: 0 0 0 2px var(--new-order-highlight-border, rgba(255, 193, 7, 0.55));
+  background-color: var(--new-order-highlight-bg, rgba(255, 243, 205, 0.42));
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.oh-live-screen-card.order-row-new.color-yellow {
+  background-color: rgba(255, 243, 205, 0.45);
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.55);
+}
+
+.oh-live-screen-card.order-row-new.color-orange {
+  background-color: rgba(255, 228, 209, 0.45);
+  box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.5);
+}
+
+.oh-live-screen-card.order-row-new.color-blue {
+  background-color: rgba(219, 234, 254, 0.45);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.oh-live-screen-card.order-row-new.color-green {
+  background-color: rgba(209, 250, 229, 0.45);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
+}
+
+.oh-live-screen-card.order-row-new.color-red {
+  background-color: rgba(254, 226, 226, 0.45);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-yellow {
+  background-color: rgba(245, 158, 11, 0.16);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4);
+}
+
+[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-orange {
+  background-color: rgba(242, 107, 58, 0.16);
+  box-shadow: 0 0 0 2px rgba(242, 107, 58, 0.4);
+}
+
+[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-blue {
+  background-color: rgba(59, 130, 246, 0.16);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-green {
+  background-color: rgba(34, 197, 94, 0.16);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+}
+
+[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-red {
+  background-color: rgba(239, 68, 68, 0.16);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
 }
 
 body.oh-orders-live-display .oh-live-display-table {

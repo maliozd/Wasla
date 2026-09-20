@@ -194,6 +194,28 @@
     });
   }
 
+  function scheduleNewOrderHighlightCleanup() {
+    if (!isLiveDisplayPage()) return;
+    if (T._highlightCleanupTimer) {
+      clearTimeout(T._highlightCleanupTimer);
+      T._highlightCleanupTimer = null;
+    }
+
+    var nextExpiry = null;
+    for (const entry of Array.from(T.recentlyNewOrderIds.entries())) {
+      const exp = entry[1];
+      if (nextExpiry === null || exp < nextExpiry) nextExpiry = exp;
+    }
+    if (nextExpiry === null) return;
+
+    var delay = Math.max(0, nextExpiry - Date.now()) + 30;
+    T._highlightCleanupTimer = setTimeout(function () {
+      T._highlightCleanupTimer = null;
+      applyNewOrderVisualState();
+      scheduleNewOrderHighlightCleanup();
+    }, delay);
+  }
+
   function applyNewOrderVisualState() {
     const container = getRefreshContainer();
     if (!container) return;
@@ -209,16 +231,23 @@
     for (const entry of Array.from(T.recentlyNewOrderIds.entries())) {
       const id = entry[0];
       const exp = entry[1];
+      // Prefer the card/row host, not nested action buttons that also carry data-order-id.
+      const row = container.querySelector("[data-order-id=\"" + id + "\"].oh-live-screen-card, [data-order-id=\"" + id + "\"]");
       if (exp <= now) {
-        const row = container.querySelector("[data-order-id=\"" + id + "\"]");
         if (row) {
-          row.classList.remove("order-row-new", "order-row-new-flash");
+          row.classList.remove(
+            "order-row-new",
+            "order-row-new-flash",
+            "color-orange", "color-blue", "color-green", "color-yellow", "color-red", "color-custom",
+            "behavior-fade", "behavior-pulse", "behavior-blink", "behavior-border-glow", "behavior-none"
+          );
+          row.style.removeProperty("--new-order-highlight-bg");
+          row.style.removeProperty("--new-order-highlight-border");
           setNewBadgeVisible(row, false);
         }
         T.recentlyNewOrderIds.delete(id);
         continue;
       }
-      const row = container.querySelector("[data-order-id=\"" + id + "\"]");
       if (!row) continue;
       applyHighlightClassesToRow(row);
       setNewBadgeVisible(row, true);
@@ -360,12 +389,17 @@
         O.viewMode.syncFromTable();
       }
 
-      if (live && newIds.length > 0) {
+      // Phase 2B2: Live Screen owns operational new-order highlight (all new IDs in the batch).
+      // Orders management polling must not apply operational new-order highlight.
+      if (isLiveDisplayPage() && newIds.length > 0) {
         markOrdersAsRecentlyNew(newIds);
       }
 
       captureKnownOrderIdsFromContainer();
-      applyNewOrderVisualState();
+      if (isLiveDisplayPage()) {
+        applyNewOrderVisualState();
+        scheduleNewOrderHighlightCleanup();
+      }
 
       // Phase 2B1: Live Screen owns automatic new-order sound (one sequence per poll with new IDs).
       // Orders management polling must not auto-trigger sound.
@@ -429,6 +463,7 @@
   T.detectNewOrderIds = detectNewOrderIds;
   T.markOrdersAsRecentlyNew = markOrdersAsRecentlyNew;
   T.applyNewOrderVisualState = applyNewOrderVisualState;
+  T.scheduleNewOrderHighlightCleanup = scheduleNewOrderHighlightCleanup;
   T.showSpeakerIndicators = showSpeakerIndicators;
   T.hideSpeakerIndicators = hideSpeakerIndicators;
   T.refreshOrdersTable = refreshOrdersTable;

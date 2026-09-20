@@ -45,7 +45,7 @@
     document.body.classList.add("oh-orders-view-kitchen");
     initCloseButton();
     seedLiveScreenSummary();
-    // Baseline current IDs before polling — initial load must not notify.
+    // Baseline current IDs before polling — initial load must not notify or highlight.
     O.table.captureKnownOrderIdsFromContainer();
     O.table.applyNewOrderVisualState();
     if (O.notificationSettings && typeof O.notificationSettings.load === "function") {
