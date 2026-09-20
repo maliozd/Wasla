@@ -201,6 +201,9 @@
   <data name="Layout.Orders" xml:space="preserve">
     <value>الطلبات</value>
   </data>
+  <data name="Layout.LiveScreen" xml:space="preserve">
+    <value>الشاشة المباشرة</value>
+  </data>
   <data name="Layout.OrderHistory" xml:space="preserve">
     <value>سجل الطلبات</value>
   </data>
@@ -450,6 +453,9 @@
   <data name="Orders.Title" xml:space="preserve">
     <value>الطلبات</value>
   </data>
+  <data name="Orders.Subtitle" xml:space="preserve">
+    <value>اعرض الطلبات وقم بإدارتها.</value>
+  </data>
   <data name="Orders.Platform" xml:space="preserve">
     <value>المنصة</value>
   </data>
@@ -592,10 +598,13 @@
     <value>ملء الشاشة</value>
   </data>
   <data name="Orders.OpenLiveDisplay" xml:space="preserve">
-    <value>فتح العرض المباشر</value>
+    <value>فتح الشاشة المباشرة</value>
   </data>
   <data name="Orders.LiveDisplay.Title" xml:space="preserve">
-    <value>العرض المباشر</value>
+    <value>الشاشة المباشرة</value>
+  </data>
+  <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
+    <value>تابع الطلبات النشطة أثناء التشغيل.</value>
   </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>إغلاق العرض</value>

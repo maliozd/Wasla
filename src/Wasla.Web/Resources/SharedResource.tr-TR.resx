@@ -201,6 +201,9 @@
   <data name="Layout.Orders" xml:space="preserve">
     <value>Siparişler</value>
   </data>
+  <data name="Layout.LiveScreen" xml:space="preserve">
+    <value>Canlı Ekran</value>
+  </data>
   <data name="Layout.OrderHistory" xml:space="preserve">
     <value>Sipariş Geçmişi</value>
   </data>
@@ -450,6 +453,9 @@
   <data name="Orders.Title" xml:space="preserve">
     <value>Siparişler</value>
   </data>
+  <data name="Orders.Subtitle" xml:space="preserve">
+    <value>Siparişleri görüntüleyin ve yönetin.</value>
+  </data>
   <data name="Orders.Platform" xml:space="preserve">
     <value>Platform</value>
   </data>
@@ -595,7 +601,10 @@
     <value>Canlı Ekranı Aç</value>
   </data>
   <data name="Orders.LiveDisplay.Title" xml:space="preserve">
-    <value>Canlı Sipariş Ekranı</value>
+    <value>Canlı Ekran</value>
+  </data>
+  <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
+    <value>Aktif siparişleri operasyon sırasında takip edin.</value>
   </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Ekranı Kapat</value>

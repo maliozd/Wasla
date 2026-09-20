@@ -18,6 +18,7 @@
                 <div class="oh-live-display-header__brand text-muted small mb-1">@customerName</div>
             }
             <h1 class="oh-live-display-header__title oh-fs-header__title mb-0">@L["Orders.LiveDisplay.Title"]</h1>
+            <p class="oh-live-display-header__subtitle text-muted small mb-0">@L["Orders.LiveDisplay.Subtitle"]</p>
             <p class="oh-live-display-header__meta oh-fs-header__meta mb-0">
                 <span>@L["Orders.Today"] — @today.ToString("d", System.Globalization.CultureInfo.CurrentCulture)</span>
                 <span class="oh-fs-header__sep" aria-hidden="true">·</span>
@@ -26,9 +27,9 @@
         </div>
         <div class="oh-live-display-header__actions oh-fs-header__actions d-flex flex-wrap align-items-center gap-2">
             <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
-                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
-                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
                 <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
+                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
+                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
             </div>
             <p class="oh-live-display-fullscreen-hint text-muted small mb-0">
                 @L["Orders.LiveDisplay.FullscreenHintPrefix"]
@@ -84,6 +85,8 @@
         window.orderHubOrdersOptions = {
             pageMode: "liveDisplay",
             tableUrl: "/orders/table",
+            viewModeStorageKey: "Wasla.liveScreen.viewMode",
+            defaultViewMode: "kitchen",
             pollingIntervalMs: 10000,
             todayYmd: "@today.ToString("yyyy-MM-dd")",
             liveDisplayPageSize: 100,

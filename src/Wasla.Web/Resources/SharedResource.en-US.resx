@@ -201,6 +201,9 @@
   <data name="Layout.Orders" xml:space="preserve">
     <value>Orders</value>
   </data>
+  <data name="Layout.LiveScreen" xml:space="preserve">
+    <value>Live Screen</value>
+  </data>
   <data name="Layout.OrderHistory" xml:space="preserve">
     <value>Order History</value>
   </data>
@@ -450,6 +453,9 @@
   <data name="Orders.Title" xml:space="preserve">
     <value>Orders</value>
   </data>
+  <data name="Orders.Subtitle" xml:space="preserve">
+    <value>View and manage your orders.</value>
+  </data>
   <data name="Orders.Platform" xml:space="preserve">
     <value>Platform</value>
   </data>
@@ -592,10 +598,13 @@
     <value>Fullscreen</value>
   </data>
   <data name="Orders.OpenLiveDisplay" xml:space="preserve">
-    <value>Open Live Display</value>
+    <value>Open Live Screen</value>
   </data>
   <data name="Orders.LiveDisplay.Title" xml:space="preserve">
-    <value>Live Display</value>
+    <value>Live Screen</value>
+  </data>
+  <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
+    <value>Track active orders during service.</value>
   </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Close Display</value>

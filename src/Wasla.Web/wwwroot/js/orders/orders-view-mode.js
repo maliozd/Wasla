@@ -5,7 +5,7 @@
   const O = global.OrderHubOrders;
   if (!O) return;
 
-  const STORAGE_KEY = "Wasla.orders.viewMode";
+  const DEFAULT_STORAGE_KEY = "Wasla.orders.viewMode";
   const FILTERS_OPEN_KEY = "Wasla.orders.filtersOpen";
   const MODES = ["table", "compact", "kitchen"];
 
@@ -39,8 +39,27 @@
     return O.opts.pageMode === "liveDisplay";
   }
 
+  /** Orders and Live Screen keep separate preferences so one page cannot override the other's default. */
+  function storageKey() {
+    return O.opts.viewModeStorageKey || DEFAULT_STORAGE_KEY;
+  }
+
+  function defaultMode() {
+    return MODES.indexOf(O.opts.defaultViewMode) >= 0 ? O.opts.defaultViewMode : "table";
+  }
+
+  /** Modes the current page actually offers; a stored mode without a selector would be unreachable. */
+  function availableModes() {
+    const modes = [];
+    document.querySelectorAll("[data-orders-view-mode]").forEach(function (btn) {
+      const mode = btn.getAttribute("data-orders-view-mode");
+      if (mode && MODES.indexOf(mode) >= 0 && modes.indexOf(mode) < 0) modes.push(mode);
+    });
+    return modes.length ? modes : MODES.slice();
+  }
+
   function normalizeMode(mode) {
-    return MODES.indexOf(mode) >= 0 ? mode : "table";
+    return MODES.indexOf(mode) >= 0 ? mode : defaultMode();
   }
 
   function getMode() {
@@ -49,10 +68,10 @@
 
   function readStoredMode() {
     try {
-      const v = localStorage.getItem(STORAGE_KEY);
-      if (v && MODES.indexOf(v) >= 0) return v;
+      const v = localStorage.getItem(storageKey());
+      if (v && availableModes().indexOf(v) >= 0) return v;
     } catch (e) { /* ignore */ }
-    return "table";
+    return defaultMode();
   }
 
   function readFiltersOpenState() {
@@ -65,7 +84,7 @@
 
   function persistMode(mode) {
     try {
-      localStorage.setItem(STORAGE_KEY, mode);
+      localStorage.setItem(storageKey(), mode);
     } catch (e) { /* ignore */ }
   }
 

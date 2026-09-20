@@ -157,6 +157,19 @@
                     </li>
                     }
 
+                    @if (navPermissions.CanViewLiveScreen)
+                    {
+                    <li class="nav-item">
+
+                        <a class="nav-link @Active("/orders/live-display")" asp-area="Tenant" asp-controller="Orders" asp-action="LiveDisplay">
+
+                            <i class="bi bi-display me-2"></i><span class="nav-text">@L["Layout.LiveScreen"]</span>
+
+                        </a>
+
+                    </li>
+                    }
+
                     @if (navPermissions.CanViewAnyPrintBridgeLink)
                     {
                     <li class="nav-item oh-sidebar-nav-group @(printBridgeSection ? "oh-sidebar-nav-group--open" : "")">

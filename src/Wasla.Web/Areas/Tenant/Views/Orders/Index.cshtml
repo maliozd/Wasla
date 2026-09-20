@@ -22,6 +22,7 @@
 <div class="orders-page-header">
     <div class="orders-page-header__main">
         <h1 class="orders-page-header__title">@L["Orders.Title"]</h1>
+        <p class="orders-page-header__subtitle">@L["Orders.Subtitle"]</p>
         <p class="orders-page-header__subtitle">
             @L["Orders.Today"] — @today.ToString("d") · @L["Orders.LastUpdated"]: <span id="ordersLastUpdated">-</span>
         </p>
@@ -48,7 +49,6 @@
         <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
-            <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
         </div>
         @if (navPermissions.CanViewLiveScreen)
         {
@@ -171,6 +171,8 @@
             notificationSettingsJsonUrl: "/notification-settings/current",
             orderSyncSettingsUrl: "/orders/sync-settings",
             orderSettingsUrl: "/orders/order-settings",
+            viewModeStorageKey: "Wasla.orders.viewMode",
+            defaultViewMode: "table",
             pollingIntervalMs: 10000,
             todayYmd: "@today.ToString("yyyy-MM-dd")",
             defaultFoodImage: "/images/demo-food/chicken-rice-01.svg",
