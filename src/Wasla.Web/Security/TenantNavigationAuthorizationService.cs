@@ -18,12 +18,18 @@ public sealed record TenantNavigationPermissions(
     bool CanManageTenantSettings,
     bool CanManagePrintBridgeDevices,
     bool CanManageDeviceSecurity,
-    bool CanManageOrderSettings)
+    bool CanManageOrderSettings,
+    bool CanManageOrderNotifications)
 {
+    /// <summary>
+    /// Order Settings page access (notifications and/or automation sections).
+    /// </summary>
+    public bool CanViewOrderSettingsPage => CanManageOrderSettings || CanManageOrderNotifications;
+
     public bool CanViewAnyPrintBridgeLink => CanManagePrintBridgeDevices || CanManageDeviceSecurity;
 
     public bool CanViewAnySettingsLink =>
-        CanManageOrderSettings ||
+        CanViewOrderSettingsPage ||
         CanManageTenantSettings ||
         CanManageTenantUsers;
 }
@@ -48,7 +54,8 @@ public sealed class TenantNavigationAuthorizationService : ITenantNavigationAuth
         var canManageTenantSettings = await IsAuthorizedAsync(user, TenantPolicies.CanManageTenantSettings).ConfigureAwait(false);
         var canManagePrintBridgeDevices = await IsAuthorizedAsync(user, TenantPolicies.CanManagePrintBridgeDevices).ConfigureAwait(false);
         var canManageDeviceSecurity = await IsAuthorizedAsync(user, TenantPolicies.CanManageDeviceSecurity).ConfigureAwait(false);
-        var canManageOrderSettings = await IsAuthorizedAsync(user, TenantPolicies.TenantManagerOrOwner).ConfigureAwait(false);
+        var canManageOrderSettings = await IsAuthorizedAsync(user, TenantPolicies.CanManageOrderAutomation).ConfigureAwait(false);
+        var canManageOrderNotifications = await IsAuthorizedAsync(user, TenantPolicies.CanManageOrderNotifications).ConfigureAwait(false);
 
         return new TenantNavigationPermissions(
             canViewReports,
@@ -60,7 +67,8 @@ public sealed class TenantNavigationAuthorizationService : ITenantNavigationAuth
             canManageTenantSettings,
             canManagePrintBridgeDevices,
             canManageDeviceSecurity,
-            canManageOrderSettings);
+            canManageOrderSettings,
+            canManageOrderNotifications);
     }
 
     private async Task<bool> IsAuthorizedAsync(ClaimsPrincipal user, string policy) =>

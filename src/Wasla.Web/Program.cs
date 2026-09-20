@@ -125,6 +125,8 @@ builder.Services.AddAuthorization(options =>
     options.AddTenantRolePolicy(TenantPolicies.CanManualPrint, UserRole.Owner, UserRole.Manager, UserRole.Cashier);
     options.AddTenantRolePolicy(TenantPolicies.CanViewLiveScreen, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
     options.AddTenantRolePolicy(TenantPolicies.CanViewReports, UserRole.Owner, UserRole.Manager, UserRole.Viewer);
+    options.AddTenantRolePolicy(TenantPolicies.CanManageOrderAutomation, UserRole.Owner, UserRole.Manager);
+    options.AddTenantRolePolicy(TenantPolicies.CanManageOrderNotifications, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier);
     options.AddPolicy("ManagePlatformConnections", policy =>
     {
         policy.RequireAuthenticatedUser();

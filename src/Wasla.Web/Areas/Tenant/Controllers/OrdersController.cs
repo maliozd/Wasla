@@ -108,7 +108,7 @@ public sealed class OrdersController : BaseController
     }
 
     [HttpGet("sync-settings")]
-    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
+    [Authorize(Policy = TenantPolicies.CanManageOrderAutomation)]
     public async Task<IActionResult> GetOrderSyncSettings(CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -120,7 +120,7 @@ public sealed class OrdersController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("sync-settings")]
-    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
+    [Authorize(Policy = TenantPolicies.CanManageOrderAutomation)]
     public async Task<IActionResult> UpdateOrderSyncSettings([FromForm] bool enabled, CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -131,7 +131,7 @@ public sealed class OrdersController : BaseController
     }
 
     [HttpGet("order-settings")]
-    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
+    [Authorize(Policy = TenantPolicies.CanManageOrderAutomation)]
     public async Task<IActionResult> GetOrderSettings(CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -149,7 +149,7 @@ public sealed class OrdersController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("order-settings")]
-    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
+    [Authorize(Policy = TenantPolicies.CanManageOrderAutomation)]
     public async Task<IActionResult> UpdateOrderSettings(
         [FromForm] bool autoApproveNewOrders,
         [FromForm] bool autoPrintReceiptOnAutoApprove,

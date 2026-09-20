@@ -41,10 +41,15 @@
                 <span id="automationStatusAutoApprove" class="oh-orders-status-chip oh-orders-status-chip--muted" hidden>@L["Common.Loading"]</span>
                 <span id="automationStatusReceipt" class="oh-orders-status-chip oh-orders-status-chip--muted" hidden>@L["Common.Loading"]</span>
             </div>
-            <a class="orders-manage-settings" href="/settings/orders">@L["Orders.ManageSettings"]</a>
+        }
+        @if (navPermissions.CanViewOrderSettingsPage)
+        {
+            <a class="orders-manage-settings" href="/settings/orders#notifications">@L["Orders.ManageSettings"]</a>
         }
     </div>
     <div class="orders-toolbar-right">
+        @if (navPermissions.CanManageOrderNotifications)
+        {
         <div class="dropdown oh-orders-sound-control" id="ordersSoundControl">
             <button type="button"
                     class="btn btn-sm btn-outline-secondary text-nowrap dropdown-toggle"
@@ -88,6 +93,7 @@
              aria-live="polite">
             <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>@L["Notification.SoundActive"]
         </div>
+        }
         <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>

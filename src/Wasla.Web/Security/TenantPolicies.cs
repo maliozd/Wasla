@@ -13,4 +13,6 @@ public static class TenantPolicies
     public const string CanManualPrint = nameof(CanManualPrint);
     public const string CanViewLiveScreen = nameof(CanViewLiveScreen);
     public const string CanViewReports = nameof(CanViewReports);
+    public const string CanManageOrderAutomation = nameof(CanManageOrderAutomation);
+    public const string CanManageOrderNotifications = nameof(CanManageOrderNotifications);
 }

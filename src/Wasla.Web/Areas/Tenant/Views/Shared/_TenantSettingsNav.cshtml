@@ -38,7 +38,7 @@
             id="tenantSettingsMenu"
             role="menu"
             aria-labelledby="tenantSettingsMenuToggle">
-            @if (navPermissions.CanManageOrderSettings)
+            @if (navPermissions.CanViewOrderSettingsPage)
             {
             <li role="none">
                 <a class="dropdown-item @(isOrderSettings ? "active" : "")"

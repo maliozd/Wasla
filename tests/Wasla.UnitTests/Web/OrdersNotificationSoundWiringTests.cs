@@ -20,6 +20,8 @@ public sealed class OrdersNotificationSoundWiringTests
         Assert.Contains("Notification.SelectSound", source, StringComparison.Ordinal);
         Assert.Contains("Notification.TestSound", source, StringComparison.Ordinal);
         Assert.Contains("CanManageOrderSettings", source, StringComparison.Ordinal);
+        Assert.Contains("CanViewOrderSettingsPage", source, StringComparison.Ordinal);
+        Assert.Contains("/settings/orders#notifications", source, StringComparison.Ordinal);
         Assert.DoesNotContain(">…</span>", source, StringComparison.Ordinal);
         Assert.DoesNotContain(">...</span>", source, StringComparison.Ordinal);
     }
@@ -30,6 +32,7 @@ public sealed class OrdersNotificationSoundWiringTests
         var source = ReadWebFile("Areas", "Tenant", "Views", "Orders", "Index.cshtml");
 
         Assert.Contains("navPermissions.CanManageOrderSettings", source, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanViewOrderSettingsPage", source, StringComparison.Ordinal);
         Assert.Contains("ordersAutomationStatusGroup", source, StringComparison.Ordinal);
         Assert.Contains("automationStatusSync", source, StringComparison.Ordinal);
     }

@@ -32,6 +32,16 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     [InlineData(UserRole.Cashier, TenantPolicies.CanManualPrint, true)]
     [InlineData(UserRole.Cashier, TenantPolicies.CanManageDeviceSecurity, false)]
     [InlineData(UserRole.Manager, TenantPolicies.CanManageOrders, true)]
+    [InlineData(UserRole.Owner, TenantPolicies.CanManageOrderAutomation, true)]
+    [InlineData(UserRole.Manager, TenantPolicies.CanManageOrderAutomation, true)]
+    [InlineData(UserRole.Cashier, TenantPolicies.CanManageOrderAutomation, false)]
+    [InlineData(UserRole.Kitchen, TenantPolicies.CanManageOrderAutomation, false)]
+    [InlineData(UserRole.Viewer, TenantPolicies.CanManageOrderAutomation, false)]
+    [InlineData(UserRole.Owner, TenantPolicies.CanManageOrderNotifications, true)]
+    [InlineData(UserRole.Manager, TenantPolicies.CanManageOrderNotifications, true)]
+    [InlineData(UserRole.Kitchen, TenantPolicies.CanManageOrderNotifications, true)]
+    [InlineData(UserRole.Cashier, TenantPolicies.CanManageOrderNotifications, true)]
+    [InlineData(UserRole.Viewer, TenantPolicies.CanManageOrderNotifications, false)]
     public async Task TenantRolePolicies_ApplyExpectedRoleMapping(
         UserRole role,
         string policyName,
@@ -172,16 +182,17 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     }
 
     [Theory]
-    [InlineData(UserRole.Owner, true, true, true, true, true, true)]
-    [InlineData(UserRole.Manager, true, true, true, false, false, false)]
-    [InlineData(UserRole.Kitchen, false, true, false, false, false, false)]
-    [InlineData(UserRole.Cashier, false, true, false, false, false, false)]
-    [InlineData(UserRole.Viewer, true, true, false, false, false, false)]
+    [InlineData(UserRole.Owner, true, true, true, true, true, true, true)]
+    [InlineData(UserRole.Manager, true, true, true, true, false, false, false)]
+    [InlineData(UserRole.Kitchen, false, true, false, true, false, false, false)]
+    [InlineData(UserRole.Cashier, false, true, false, true, false, false, false)]
+    [InlineData(UserRole.Viewer, true, true, false, false, false, false, false)]
     public async Task TenantNavigationPermissions_FollowCurrentRoleMatrix(
         UserRole role,
         bool canViewReports,
         bool canViewOrders,
         bool canManageOrderSettings,
+        bool canManageOrderNotifications,
         bool canManageTenantSettings,
         bool canManagePrintBridgeDevices,
         bool canManageTenantUsers)
@@ -194,6 +205,8 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         Assert.Equal(canViewReports, permissions.CanViewReports);
         Assert.Equal(canViewOrders, permissions.CanViewOrders);
         Assert.Equal(canManageOrderSettings, permissions.CanManageOrderSettings);
+        Assert.Equal(canManageOrderNotifications, permissions.CanManageOrderNotifications);
+        Assert.Equal(canManageOrderSettings || canManageOrderNotifications, permissions.CanViewOrderSettingsPage);
         Assert.Equal(canManageTenantSettings, permissions.CanManageTenantSettings);
         Assert.Equal(canManagePrintBridgeDevices, permissions.CanManagePrintBridgeDevices);
         Assert.Equal(canManageTenantUsers, permissions.CanManageTenantUsers);
@@ -683,7 +696,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         Assert.Contains("navPermissions.CanManagePrintBridgeDevices", layoutSource, StringComparison.Ordinal);
         Assert.Contains("navPermissions.CanManageDeviceSecurity", layoutSource, StringComparison.Ordinal);
         Assert.Contains("navPermissions.CanManageTenantSettings", layoutSource, StringComparison.Ordinal);
-        Assert.Contains("navPermissions.CanManageOrderSettings", settingsSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanViewOrderSettingsPage", settingsSource, StringComparison.Ordinal);
         Assert.Contains("navPermissions.CanManageTenantUsers", settingsSource, StringComparison.Ordinal);
     }
 
@@ -920,6 +933,8 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
             AddPolicy(options, TenantPolicies.CanManualPrint, UserRole.Owner, UserRole.Manager, UserRole.Cashier);
             AddPolicy(options, TenantPolicies.CanViewLiveScreen, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
             AddPolicy(options, TenantPolicies.CanViewReports, UserRole.Owner, UserRole.Manager, UserRole.Viewer);
+            AddPolicy(options, TenantPolicies.CanManageOrderAutomation, UserRole.Owner, UserRole.Manager);
+            AddPolicy(options, TenantPolicies.CanManageOrderNotifications, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier);
         });
         services.AddSingleton<ICurrentTenantService>(new FixedCurrentTenantService(currentTenantId));
         services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
