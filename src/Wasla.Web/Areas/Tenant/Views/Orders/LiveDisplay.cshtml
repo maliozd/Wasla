@@ -25,6 +25,21 @@
             </p>
         </div>
         <div class="oh-live-display-header__actions oh-fs-header__actions d-flex flex-wrap align-items-center gap-2">
+            <div class="d-flex flex-wrap align-items-center gap-2 oh-live-display-sound-control">
+                <label class="visually-hidden" for="ordersLiveDisplaySoundSelect">@L["Notification.SelectSound"]</label>
+                <select id="ordersLiveDisplaySoundSelect" class="form-select form-select-sm" style="min-width: 7.5rem;" title="@L["Notification.SoundControlLabel"]">
+                    <option value="bell1">Bell 1</option>
+                    <option value="bell2">Bell 2</option>
+                    <option value="bell3">Bell 3</option>
+                    <option value="bell4">Bell 4</option>
+                    <option value="bell5">Bell 5</option>
+                    <option value="bell6">Bell 6</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="ordersLiveDisplaySoundTestBtn" title="@L["Notification.TestSound"]">
+                    <i class="bi bi-play-fill" aria-hidden="true"></i>
+                    <span class="visually-hidden">@L["Notification.TestSound"]</span>
+                </button>
+            </div>
             <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
                 <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
                 <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
@@ -64,6 +79,10 @@
          hidden>
         <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>@L["Notification.SoundActive"]
     </div>
+
+    <form id="ordersOperatorSoundForm" class="d-none" method="post" action="/notification-settings">
+        @Html.AntiForgeryToken()
+    </form>
 
     <div class="oh-live-display-summary oh-fs-summary row g-3">
         <div class="col-12 col-md-4">
@@ -171,6 +190,7 @@
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-sound-control.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-view-mode.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>

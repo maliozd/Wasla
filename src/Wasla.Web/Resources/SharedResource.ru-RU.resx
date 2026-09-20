@@ -925,7 +925,7 @@
     <value>Звук включен</value>
   </data>
   <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
-    <value>Звук не мог воспроизводиться. Проверьте звуковой файл или разрешения браузера.</value>
+    <value>Не удалось запустить звук. Проверьте разрешения браузера и звук вкладки.</value>
   </data>
   <data name="Notification.NewOrderArrived" xml:space="preserve">
     <value>Пришёл новый заказ</value>
@@ -947,6 +947,15 @@
   </data>
   <data name="Notification.SoundActive" xml:space="preserve">
     <value>Звук уведомлений активен</value>
+  </data>
+  <data name="Notification.SoundControlLabel" xml:space="preserve">
+    <value>Звук уведомлений</value>
+  </data>
+  <data name="Notification.SelectSound" xml:space="preserve">
+    <value>Выберите звук</value>
+  </data>
+  <data name="Notification.TestSound" xml:space="preserve">
+    <value>Тест</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Загрузка…</value>

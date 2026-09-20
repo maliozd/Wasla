@@ -925,7 +925,7 @@
     <value>Sound enabled</value>
   </data>
   <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
-    <value>Sound could not play. Check the sound file or browser permissions.</value>
+    <value>Sound could not start. Check browser permissions and tab audio.</value>
   </data>
   <data name="Notification.NewOrderArrived" xml:space="preserve">
     <value>New order arrived</value>
@@ -947,6 +947,15 @@
   </data>
   <data name="Notification.SoundActive" xml:space="preserve">
     <value>Notification sound is active</value>
+  </data>
+  <data name="Notification.SoundControlLabel" xml:space="preserve">
+    <value>Notification sound</value>
+  </data>
+  <data name="Notification.SelectSound" xml:space="preserve">
+    <value>Select sound</value>
+  </data>
+  <data name="Notification.TestSound" xml:space="preserve">
+    <value>Test</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Loading…</value>

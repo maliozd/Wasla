@@ -26,12 +26,18 @@
     if (O.audio && typeof O.audio.initAudioUnlock === "function") {
       O.audio.initAudioUnlock();
     }
+    if (O.soundControl && typeof O.soundControl.init === "function") {
+      O.soundControl.init();
+    }
     if (O.notificationSettings && typeof O.notificationSettings.load === "function") {
       try {
         await O.notificationSettings.load();
       } catch (error) {
         O.debugWarn("live display notification settings load failed", error);
       }
+    }
+    if (O.soundControl && typeof O.soundControl.syncSelectsFromState === "function") {
+      O.soundControl.syncSelectsFromState();
     }
     O.table.initPolling();
   }

@@ -1663,6 +1663,11 @@ body.oh-tenant.oh-app .btn-outline-primary {
   font-weight: 600;
 }
 
+.oh-orders-sound-control__menu {
+  min-width: 16rem;
+  max-width: 20rem;
+}
+
 .oh-orders-sound-active-pill {
   display: inline-flex;
   align-items: center;
@@ -1674,6 +1679,10 @@ body.oh-tenant.oh-app .btn-outline-primary {
   border-radius: 999px;
   padding: 0.3rem 0.75rem;
   min-height: 2rem;
+}
+
+.oh-live-display-sound-control .form-select {
+  max-width: 8.5rem;
 }
 
 .oh-live-display-sound-banner {

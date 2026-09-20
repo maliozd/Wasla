@@ -55,7 +55,13 @@
     if (O.audio && typeof O.audio.initAudioUnlock === "function") {
       O.audio.initAudioUnlock();
     }
+    if (O.soundControl && typeof O.soundControl.init === "function") {
+      O.soundControl.init();
+    }
     await O.notificationSettings.load();
+    if (O.soundControl && typeof O.soundControl.syncSelectsFromState === "function") {
+      O.soundControl.syncSelectsFromState();
+    }
     O.table.initPolling();
     initDebugBadge();
   }

@@ -34,31 +34,60 @@
 
 <div class="orders-toolbar">
     <div class="orders-toolbar-left">
-        <div class="oh-orders-status-group" aria-label="@L["Settings.OrderSettings.Title"]">
-            <span id="automationStatusSync" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
-            <span id="automationStatusAutoApprove" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
-            <span id="automationStatusReceipt" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
-        </div>
         @if (navPermissions.CanManageOrderSettings)
         {
+            <div class="oh-orders-status-group" id="ordersAutomationStatusGroup" aria-label="@L["Settings.OrderSettings.Title"]">
+                <span id="automationStatusSync" class="oh-orders-status-chip oh-orders-status-chip--muted" hidden>@L["Common.Loading"]</span>
+                <span id="automationStatusAutoApprove" class="oh-orders-status-chip oh-orders-status-chip--muted" hidden>@L["Common.Loading"]</span>
+                <span id="automationStatusReceipt" class="oh-orders-status-chip oh-orders-status-chip--muted" hidden>@L["Common.Loading"]</span>
+            </div>
             <a class="orders-manage-settings" href="/settings/orders">@L["Orders.ManageSettings"]</a>
         }
     </div>
     <div class="orders-toolbar-right">
-        <button type="button"
-                id="ordersEnableNotificationSound"
-                class="btn btn-sm btn-outline-primary text-nowrap oh-orders-sound-enable-btn"
-                hidden
-                aria-live="polite">
-            <i class="bi bi-volume-up me-1" aria-hidden="true"></i>
-            <span data-sound-enable-label>@L["Notification.EnableSoundButton"]</span>
-        </button>
-        <span id="ordersNotificationSoundActive"
-              class="oh-orders-sound-active-pill text-nowrap d-none"
-              hidden
-              aria-live="polite">
+        <div class="dropdown oh-orders-sound-control" id="ordersSoundControl">
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary text-nowrap dropdown-toggle"
+                    id="ordersSoundControlToggle"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside"
+                    aria-expanded="false"
+                    aria-controls="ordersSoundControlMenu">
+                <i class="bi bi-volume-up me-1" aria-hidden="true"></i>
+                <span>@L["Notification.SoundControlLabel"]</span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end p-3 oh-orders-sound-control__menu" id="ordersSoundControlMenu" aria-labelledby="ordersSoundControlToggle">
+                <div class="mb-2">
+                    <label class="form-label small mb-1" for="ordersSoundSelect">@L["Notification.SelectSound"]</label>
+                    <select id="ordersSoundSelect" class="form-select form-select-sm">
+                        <option value="bell1">Bell 1</option>
+                        <option value="bell2">Bell 2</option>
+                        <option value="bell3">Bell 3</option>
+                        <option value="bell4">Bell 4</option>
+                        <option value="bell5">Bell 5</option>
+                        <option value="bell6">Bell 6</option>
+                    </select>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="ordersSoundTestBtn">
+                        <i class="bi bi-play-fill me-1" aria-hidden="true"></i>@L["Notification.TestSound"]
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm btn-primary oh-orders-sound-enable-btn"
+                            id="ordersEnableNotificationSound"
+                            hidden>
+                        <i class="bi bi-volume-up me-1" aria-hidden="true"></i>
+                        <span data-sound-enable-label>@L["Notification.EnableSoundButton"]</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="ordersNotificationSoundActive"
+             class="oh-orders-sound-active-pill text-nowrap d-none"
+             hidden
+             aria-live="polite">
             <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>@L["Notification.SoundActive"]
-        </span>
+        </div>
         <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
             <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
@@ -177,6 +206,10 @@
 
 </div>
 
+<form id="ordersOperatorSoundForm" class="d-none" method="post" action="/notification-settings">
+    @Html.AntiForgeryToken()
+</form>
+
 @section Scripts {
     <script>
         window.orderHubOrdersOptions = {
@@ -276,6 +309,7 @@
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-sound-control.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-view-mode.js" asp-append-version="true"></script>

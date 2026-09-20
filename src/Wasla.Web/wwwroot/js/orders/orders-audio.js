@@ -62,8 +62,19 @@
     stopCurrentAlertSound();
   }
 
+  function resolveSoundName(name) {
+    if (O.soundControl && typeof O.soundControl.getSelectedSoundName === "function") {
+      return O.soundControl.getSelectedSoundName();
+    }
+    if (name) {
+      return String(name).toLowerCase();
+    }
+    const st = O.state.notificationSettings || {};
+    return String(st.newOrderSoundName || "bell1").toLowerCase();
+  }
+
   function getSoundUrlFromSettings(name) {
-    const n = (name || "bell1").toLowerCase();
+    const n = resolveSoundName(name);
     const list = (O.state.notificationSettings && O.state.notificationSettings.availableSounds) || [];
     const found = list.find(function (x) {
       return (x.name || "").toLowerCase() === n;
@@ -150,7 +161,7 @@
 
   async function enableNotificationSoundFromControl() {
     const st = O.state.notificationSettings || {};
-    const soundName = st.newOrderSoundName || "bell1";
+    const soundName = resolveSoundName(st.newOrderSoundName);
     const url = getSoundUrlFromSettings(soundName);
     const pct = st.newOrderSoundVolumePercent != null
       ? st.newOrderSoundVolumePercent
@@ -251,12 +262,13 @@
     const repeat = Math.max(1, Math.min(3, state.newOrderSoundRepeatCount || 1));
     const pct = state.newOrderSoundVolumePercent;
     const vol = Math.max(0, Math.min(1, (pct || 100) / 100.0));
-    const url = urlOverride || getSoundUrlFromSettings(state.newOrderSoundName);
+    const soundName = resolveSoundName(state && state.newOrderSoundName);
+    const url = urlOverride || getSoundUrlFromSettings(soundName);
 
     O.debugLog("Playing new order sound", {
       enabled: !!state.newOrderSoundEnabled,
       soundUnlocked: isSoundUnlocked(),
-      soundName: state.newOrderSoundName,
+      soundName: soundName,
       url: url,
       repeat: repeat,
       volume: vol

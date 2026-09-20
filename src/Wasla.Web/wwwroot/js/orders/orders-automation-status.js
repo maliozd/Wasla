@@ -7,16 +7,28 @@
 
   function setBadge(el, active, activeLabel, disabledLabel) {
     if (!el) return;
+    el.hidden = false;
+    el.removeAttribute("hidden");
     el.textContent = active ? activeLabel : disabledLabel;
     el.classList.remove("oh-orders-status-chip--active", "oh-orders-status-chip--muted");
     el.classList.add(active ? "oh-orders-status-chip--active" : "oh-orders-status-chip--muted");
   }
 
+  function hideStatusGroup() {
+    const group = document.getElementById("ordersAutomationStatusGroup");
+    if (group) {
+      group.hidden = true;
+      group.setAttribute("hidden", "hidden");
+      group.classList.add("d-none");
+    }
+  }
+
   async function loadStatus() {
+    const group = document.getElementById("ordersAutomationStatusGroup");
     const syncEl = document.getElementById("automationStatusSync");
     const approveEl = document.getElementById("automationStatusAutoApprove");
     const receiptEl = document.getElementById("automationStatusReceipt");
-    if (!syncEl && !approveEl && !receiptEl) return;
+    if (!group || (!syncEl && !approveEl && !receiptEl)) return;
 
     const syncActiveLabel = O.getMessage("automationStatusSyncActive");
     const syncDisabledLabel = O.getMessage("automationStatusSyncDisabled");
@@ -51,6 +63,7 @@
         receiptDisabledLabel
       );
     } catch (e) {
+      hideStatusGroup();
       if (O.isDebugEnabled()) O.debugWarn("Automation status load failed", e);
     }
   }

@@ -251,6 +251,10 @@
       }
 
       O.state.notificationSettings = mergeDefaultNotificationState(json);
+      O.state.notificationSettings.availableSounds = json.availableSounds || json.AvailableSounds || [];
+      if (O.soundControl && typeof O.soundControl.syncSelectsFromState === "function") {
+        O.soundControl.syncSelectsFromState();
+      }
     } catch (error) {
       if (global.OrderHubToast) {
         global.OrderHubToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });

@@ -925,7 +925,7 @@
     <value>الصوت مُفعّل</value>
   </data>
   <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
-    <value>تعذر تشغيل الصوت. تحقق من ملف الصوت أو أذونات المتصفح.</value>
+    <value>تعذر بدء الصوت. تحقق من أذونات المتصفح وصوت علامة التبويب.</value>
   </data>
   <data name="Notification.NewOrderArrived" xml:space="preserve">
     <value>وصل طلب جديد</value>
@@ -947,6 +947,15 @@
   </data>
   <data name="Notification.SoundActive" xml:space="preserve">
     <value>صوت الإشعارات مفعّل</value>
+  </data>
+  <data name="Notification.SoundControlLabel" xml:space="preserve">
+    <value>صوت الإشعارات</value>
+  </data>
+  <data name="Notification.SelectSound" xml:space="preserve">
+    <value>اختر الصوت</value>
+  </data>
+  <data name="Notification.TestSound" xml:space="preserve">
+    <value>اختبار</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>جاري التحميل…</value>

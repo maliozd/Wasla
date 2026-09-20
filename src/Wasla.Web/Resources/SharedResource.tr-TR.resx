@@ -925,7 +925,7 @@
     <value>Ses etkin</value>
   </data>
   <data name="Notification.SoundCouldNotPlay" xml:space="preserve">
-    <value>Ses çalınamadı. Ses dosyasını veya tarayıcı izinlerini kontrol edin.</value>
+    <value>Ses başlatılamadı. Tarayıcı izinlerini ve sekme sesini kontrol edin.</value>
   </data>
   <data name="Notification.NewOrderArrived" xml:space="preserve">
     <value>Yeni sipariş geldi</value>
@@ -947,6 +947,15 @@
   </data>
   <data name="Notification.SoundActive" xml:space="preserve">
     <value>Bildirim sesi aktif</value>
+  </data>
+  <data name="Notification.SoundControlLabel" xml:space="preserve">
+    <value>Bildirim sesi</value>
+  </data>
+  <data name="Notification.SelectSound" xml:space="preserve">
+    <value>Ses seç</value>
+  </data>
+  <data name="Notification.TestSound" xml:space="preserve">
+    <value>Test et</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Yükleniyor…</value>

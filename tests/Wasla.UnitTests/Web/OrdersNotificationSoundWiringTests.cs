@@ -8,10 +8,30 @@ public sealed class OrdersNotificationSoundWiringTests
         var source = ReadWebFile("Areas", "Tenant", "Views", "Orders", "Index.cshtml");
 
         Assert.Contains("orders-audio.js", source, StringComparison.Ordinal);
+        Assert.Contains("orders-sound-control.js", source, StringComparison.Ordinal);
         Assert.Contains("orders-notification-settings.js", source, StringComparison.Ordinal);
         Assert.Contains("soundUnlockHint", source, StringComparison.Ordinal);
         Assert.Contains("ordersEnableNotificationSound", source, StringComparison.Ordinal);
+        Assert.Contains("ordersSoundControl", source, StringComparison.Ordinal);
+        Assert.Contains("ordersSoundSelect", source, StringComparison.Ordinal);
+        Assert.Contains("ordersSoundTestBtn", source, StringComparison.Ordinal);
         Assert.Contains("Notification.EnableSoundButton", source, StringComparison.Ordinal);
+        Assert.Contains("Notification.SoundControlLabel", source, StringComparison.Ordinal);
+        Assert.Contains("Notification.SelectSound", source, StringComparison.Ordinal);
+        Assert.Contains("Notification.TestSound", source, StringComparison.Ordinal);
+        Assert.Contains("CanManageOrderSettings", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(">…</span>", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(">...</span>", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OrdersIndex_HidesAutomationStatusForNonManagers()
+    {
+        var source = ReadWebFile("Areas", "Tenant", "Views", "Orders", "Index.cshtml");
+
+        Assert.Contains("navPermissions.CanManageOrderSettings", source, StringComparison.Ordinal);
+        Assert.Contains("ordersAutomationStatusGroup", source, StringComparison.Ordinal);
+        Assert.Contains("automationStatusSync", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -20,12 +40,15 @@ public sealed class OrdersNotificationSoundWiringTests
         var source = ReadWebFile("Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
 
         Assert.Contains("orders-audio.js", source, StringComparison.Ordinal);
+        Assert.Contains("orders-sound-control.js", source, StringComparison.Ordinal);
         Assert.Contains("orders-notification-settings.js", source, StringComparison.Ordinal);
         Assert.Contains("notificationSettingsJsonUrl", source, StringComparison.Ordinal);
         Assert.Contains("soundUnlockHint", source, StringComparison.Ordinal);
         Assert.Contains("orders-live-display-page.js", source, StringComparison.Ordinal);
         Assert.Contains("ordersLiveDisplaySoundBanner", source, StringComparison.Ordinal);
         Assert.Contains("ordersLiveDisplayEnableNotificationSound", source, StringComparison.Ordinal);
+        Assert.Contains("ordersLiveDisplaySoundSelect", source, StringComparison.Ordinal);
+        Assert.Contains("ordersLiveDisplaySoundTestBtn", source, StringComparison.Ordinal);
         Assert.Contains("Notification.SoundMayBeOffTitle", source, StringComparison.Ordinal);
         Assert.Contains("Notification.EnableSoundButton", source, StringComparison.Ordinal);
         Assert.Contains("Notification.SoundActive", source, StringComparison.Ordinal);
@@ -58,6 +81,34 @@ public sealed class OrdersNotificationSoundWiringTests
         Assert.Contains("syncSoundEnableUi", source, StringComparison.Ordinal);
         Assert.Contains("ordersEnableNotificationSound", source, StringComparison.Ordinal);
         Assert.Contains("ordersLiveDisplayEnableNotificationSound", source, StringComparison.Ordinal);
+        Assert.Contains("/sounds/", source, StringComparison.Ordinal);
+        Assert.Contains(".mp3", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OrdersSoundControl_StopsPreviousAudioAndPersistsSelection()
+    {
+        var source = ReadWebFile("wwwroot", "js", "orders", "orders-sound-control.js");
+
+        Assert.Contains("Wasla.operatorSoundName", source, StringComparison.Ordinal);
+        Assert.Contains("stopCurrentSound", source, StringComparison.Ordinal);
+        Assert.Contains("playSoundPreview", source, StringComparison.Ordinal);
+        Assert.Contains("ordersSoundSelect", source, StringComparison.Ordinal);
+        Assert.Contains("ordersLiveDisplaySoundSelect", source, StringComparison.Ordinal);
+        Assert.Contains("/sounds/", source, StringComparison.Ordinal);
+        Assert.Contains("bell1", source, StringComparison.Ordinal);
+        Assert.Contains("bell6", source, StringComparison.Ordinal);
+        Assert.Contains("notification-settings", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AutomationStatus_HidesGroupOnLoadFailure()
+    {
+        var source = ReadWebFile("wwwroot", "js", "orders", "orders-automation-status.js");
+
+        Assert.Contains("hideStatusGroup", source, StringComparison.Ordinal);
+        Assert.Contains("ordersAutomationStatusGroup", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("textContent = \"…\"", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -68,6 +119,7 @@ public sealed class OrdersNotificationSoundWiringTests
         Assert.Contains("stopCurrentSound", source, StringComparison.Ordinal);
         Assert.Contains("playSoundPreview", source, StringComparison.Ordinal);
         Assert.Contains("testSelectedSoundBtn", source, StringComparison.Ordinal);
+        Assert.Contains("availableSounds", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -77,8 +129,12 @@ public sealed class OrdersNotificationSoundWiringTests
         var soundsDir = Path.Combine(root, "src", "Wasla.Web", "wwwroot", "sounds");
 
         Assert.True(Directory.Exists(soundsDir), "wwwroot/sounds directory is missing.");
-        Assert.True(File.Exists(Path.Combine(soundsDir, "bell1.mp3")), "Default bell1.mp3 is missing.");
-        Assert.True(File.Exists(Path.Combine(soundsDir, "bell2.mp3")), "bell2.mp3 is missing.");
+        for (var i = 1; i <= 6; i++)
+        {
+            Assert.True(
+                File.Exists(Path.Combine(soundsDir, $"bell{i}.mp3")),
+                $"bell{i}.mp3 is missing.");
+        }
     }
 
     [Fact]
@@ -120,6 +176,38 @@ public sealed class OrdersNotificationSoundWiringTests
             Path.Combine(resourcesDir, "SharedResource.tr-TR.resx"),
             "Notification.SoundActive",
             "Bildirim sesi aktif");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.tr-TR.resx"),
+            "Notification.SoundControlLabel",
+            "Bildirim sesi");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.en-US.resx"),
+            "Notification.SoundControlLabel",
+            "Notification sound");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.tr-TR.resx"),
+            "Notification.SelectSound",
+            "Ses seç");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.en-US.resx"),
+            "Notification.SelectSound",
+            "Select sound");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.tr-TR.resx"),
+            "Notification.TestSound",
+            "Test et");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.en-US.resx"),
+            "Notification.TestSound",
+            "Test");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.tr-TR.resx"),
+            "Notification.SoundCouldNotPlay",
+            "Ses başlatılamadı. Tarayıcı izinlerini ve sekme sesini kontrol edin.");
+        AssertResourceContains(
+            Path.Combine(resourcesDir, "SharedResource.en-US.resx"),
+            "Notification.SoundCouldNotPlay",
+            "Sound could not start. Check browser permissions and tab audio.");
     }
 
     private static void AssertResourceContains(string path, string key, string expectedValue)
