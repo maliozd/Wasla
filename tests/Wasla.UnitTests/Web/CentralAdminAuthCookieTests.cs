@@ -43,13 +43,15 @@ public sealed class CentralAdminAuthCookieTests
         var result = await controller.Login(new AdminLoginViewModel
         {
             Email = "admin@example.test",
-            Password = "Password123!"
+            Password = "Password123!",
+            RememberMe = true
         }, TestContext.Current.CancellationToken);
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal("/admin", redirect.Url);
         Assert.Equal(AuthSchemes.CentralAdmin, authentication.SignInScheme);
         Assert.True(authentication.SignInProperties?.IsPersistent);
+        Assert.NotNull(authentication.SignInProperties?.ExpiresUtc);
     }
 
     [Fact]

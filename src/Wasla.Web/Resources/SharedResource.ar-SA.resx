@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -335,6 +335,9 @@
   </data>
   <data name="Auth.LoginButton" xml:space="preserve">
     <value>تسجيل الدخول</value>
+  </data>
+  <data name="Auth.RememberMe" xml:space="preserve">
+    <value>تذكرني</value>
   </data>
   <data name="Auth.InvalidCredentials" xml:space="preserve">
     <value>يرجى التحقق من البيانات.</value>

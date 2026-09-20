@@ -232,13 +232,15 @@ public sealed class AuthControllerPasswordResetTests
         var result = await controller.Login(new LoginViewModel
         {
             Email = "owner@example.test",
-            Password = "Password123!"
+            Password = "Password123!",
+            RememberMe = true
         }, TestContext.Current.CancellationToken);
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal("/dashboard", redirect.Url);
         Assert.Equal(AuthSchemes.Tenant, auth.SignInScheme);
         Assert.True(auth.SignInProperties?.IsPersistent);
+        Assert.NotNull(auth.SignInProperties?.ExpiresUtc);
         Assert.Equal(tenant.Id.ToString(), auth.SignInPrincipal?.FindFirst("TenantId")?.Value);
         Assert.Equal(userId.ToString(), auth.SignInPrincipal?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
         Assert.Equal("owner@example.test", auth.SignInPrincipal?.FindFirst(ClaimTypes.Email)?.Value);

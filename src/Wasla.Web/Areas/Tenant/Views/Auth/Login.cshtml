@@ -71,6 +71,11 @@
                             <span class="text-danger" asp-validation-for="Password"></span>
                         </div>
 
+                        <div class="mb-3 form-check">
+                            <input class="form-check-input" asp-for="RememberMe" />
+                            <label class="form-check-label" asp-for="RememberMe">@L["Auth.RememberMe"]</label>
+                        </div>
+
                         <div class="mb-3 text-end">
                             <a href="/auth/forgot-password" class="small">@L["Auth.ForgotPassword.Link"]</a>
                         </div>

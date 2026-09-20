@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace Wasla.Web.Areas.Admin.Models;
 
@@ -13,6 +14,10 @@ public sealed class AdminLoginViewModel
     [DataType(DataType.Password)]
     [Display(Name = "Auth.Password")]
     public string Password { get; set; } = string.Empty;
+
+    [Display(Name = "Auth.RememberMe")]
+    [ValidateNever]
+    public bool RememberMe { get; set; }
 
     public string? ReturnUrl { get; set; }
 }

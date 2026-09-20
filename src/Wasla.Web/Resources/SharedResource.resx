@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -1025,4 +1025,5 @@
   <data name="Validation.PasswordRequired" xml:space="preserve"><value>Şifre gereklidir.</value></data>
   <data name="Validation.ConfirmPasswordRequired" xml:space="preserve"><value>Şifre tekrarı gereklidir.</value></data>
   <data name="Validation.PasswordMinLength" xml:space="preserve"><value>Şifre en az 8 karakter olmalıdır.</value></data>
+  <data name="Auth.RememberMe" xml:space="preserve"><value>Beni hatırla</value></data>
 </root>

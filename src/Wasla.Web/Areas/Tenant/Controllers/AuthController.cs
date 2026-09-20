@@ -45,8 +45,22 @@ public sealed class AuthController : Controller
 
     [AllowAnonymous]
     [HttpGet("login")]
-    public IActionResult Login([FromQuery] string? returnUrl = null)
+    public async Task<IActionResult> Login([FromQuery] string? returnUrl = null)
     {
+        var tenant = _currentTenant.CurrentTenant;
+        var auth = await HttpContext.AuthenticateAsync(AuthSchemes.Tenant);
+        if (auth.Succeeded
+            && auth.Principal?.Identity?.IsAuthenticated == true
+            && tenant is not null
+            && Guid.TryParse(auth.Principal.FindFirstValue("TenantId"), out var claimTenantId)
+            && claimTenantId == tenant.Id)
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            return Redirect("/dashboard");
+        }
+
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
 
@@ -79,7 +93,7 @@ public sealed class AuthController : Controller
         }
 
         ExpireTenantAuthCookies();
-        await SignInSessionAsync(session, ct);
+        await SignInSessionAsync(session, model.RememberMe, ct);
 
         if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             return Redirect(model.ReturnUrl);
@@ -104,7 +118,7 @@ public sealed class AuthController : Controller
             return Redirect("/auth/login");
         }
 
-        await SignInSessionAsync(payload, ct);
+        await SignInSessionAsync(payload, rememberMe: false, ct);
         return Redirect("/onboarding");
     }
 
@@ -217,17 +231,17 @@ public sealed class AuthController : Controller
         return View(model);
     }
 
-    private async Task SignInSessionAsync(AuthSessionResult session, CancellationToken ct)
+    private async Task SignInSessionAsync(AuthSessionResult session, bool rememberMe, CancellationToken ct)
     {
         await SignInSessionAsync(new SignupCompletionPayload(
             session.CustomerId,
             session.UserId,
             session.Email,
             session.FullName,
-            session.Role), ct);
+            session.Role), rememberMe, ct);
     }
 
-    private async Task SignInSessionAsync(SignupCompletionPayload session, CancellationToken ct)
+    private async Task SignInSessionAsync(SignupCompletionPayload session, bool rememberMe, CancellationToken ct)
     {
         _ = ct;
         var claims = new List<Claim>
@@ -248,7 +262,7 @@ public sealed class AuthController : Controller
         await HttpContext.SignInAsync(
             AuthSchemes.Tenant,
             principal,
-            new AuthenticationProperties { IsPersistent = true, IssuedUtc = DateTimeOffset.UtcNow });
+            AuthCookiePersistence.Create(rememberMe, AuthCookiePersistence.TenantPersistentDuration));
     }
 
     private static bool IsClearlyMalformedResetToken(string? token)
