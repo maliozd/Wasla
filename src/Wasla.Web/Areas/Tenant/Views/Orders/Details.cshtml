@@ -24,7 +24,7 @@
             @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
             <a class="btn btn-sm btn-outline-secondary" href="@Model.BackUrl">
                 <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
-                @(Model.BackFromHistory ? L["Orders.Details.BackToOrderHistory"] : L["Orders.Details.BackToOrders"])
+                @L["Orders.Details.BackToOrders"]
             </a>
         </div>
     </header>

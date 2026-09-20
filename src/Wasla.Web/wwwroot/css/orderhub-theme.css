@@ -2237,6 +2237,63 @@ body.oh-orders-live-display .oh-live-screen-grid {
   width: 100%;
 }
 
+/* Compact list view: same card DOM, denser single-column layout (no second render tree). */
+body.oh-orders-live-display .oh-live-screen-host--list .oh-live-screen-grid {
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.oh-live-screen-host--list .oh-live-screen-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.oh-live-screen-host--list .oh-live-screen-card .orders-card-image {
+  display: none;
+}
+
+.oh-live-screen-host--list .oh-live-screen-card .orders-card-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  width: 100%;
+}
+
+.oh-live-screen-host--list .oh-live-screen-card__code {
+  font-size: 1.05rem;
+}
+
+.oh-live-screen-host--list .oh-live-screen-card__items {
+  display: none;
+}
+
+.oh-live-screen-host--list .oh-live-screen-card .orders-card-meta--kitchen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+  margin: 0;
+}
+
+.oh-live-screen-host--list .oh-live-screen-card .orders-card-actions {
+  margin-inline-start: auto;
+}
+
+.oh-live-screen-host--list .oh-live-screen-card .orders-card-actions .btn-lg {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.9rem;
+}
+
+.oh-live-screen-card__details {
+  white-space: nowrap;
+}
+
+.oh-live-screen-view-switch .btn.active {
+  font-weight: 600;
+}
+
 .oh-live-screen-card__code {
   font-size: 1.35rem;
   font-weight: 700;

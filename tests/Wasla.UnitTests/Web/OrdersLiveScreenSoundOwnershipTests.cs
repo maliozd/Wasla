@@ -13,8 +13,10 @@ public sealed class OrdersLiveScreenSoundOwnershipTests
 
         Assert.DoesNotContain("!isLiveDisplayPage() && live && newIds.length > 0 && O.state.notificationSettings && O.audio", tableJs, StringComparison.Ordinal);
         Assert.Contains("isLiveDisplayPage() && newIds.length > 0 && O.state.notificationSettings && O.audio", tableJs, StringComparison.Ordinal);
-        Assert.Contains("orders-audio.js", ordersPage, StringComparison.Ordinal);
-        Assert.Contains("orders-notification-settings.js", ordersPage, StringComparison.Ordinal);
+
+        // Phase 2B4: Orders no longer loads the operational audio/notification stack at all.
+        Assert.DoesNotContain("orders-audio.js", ordersPage, StringComparison.Ordinal);
+        Assert.DoesNotContain("orders-notification-settings.js", ordersPage, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -131,6 +131,11 @@ else
                             CanManageOrders = canManageOrders,
                             ButtonSizeClass = "btn-lg"
                         })
+                        @* Detail markup is fetched on demand, so cards stay light. *@
+                        <button type="button" class="btn btn-outline-secondary oh-live-screen-card__details"
+                                data-order-detail="@o.Id">
+                            @L["Orders.History.ViewDetails"]
+                        </button>
                     </div>
                 </div>
             </article>

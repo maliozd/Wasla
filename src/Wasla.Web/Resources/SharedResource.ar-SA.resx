@@ -204,9 +204,6 @@
   <data name="Layout.LiveScreen" xml:space="preserve">
     <value>الشاشة المباشرة</value>
   </data>
-  <data name="Layout.OrderHistory" xml:space="preserve">
-    <value>سجل الطلبات</value>
-  </data>
   <data name="Layout.PlatformConnections" xml:space="preserve">
     <value>اتصالات المنصات</value>
   </data>
@@ -609,6 +606,15 @@
   <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
     <value>{0} د</value>
   </data>
+  <data name="Orders.LiveScreen.ViewCards" xml:space="preserve">
+    <value>بطاقات</value>
+  </data>
+  <data name="Orders.LiveScreen.ViewList" xml:space="preserve">
+    <value>قائمة</value>
+  </data>
+  <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
+    <value>تعذر تحميل تفاصيل الطلب.</value>
+  </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>إغلاق العرض</value>
   </data>
@@ -728,9 +734,6 @@
   </data>
   <data name="Orders.Details.BackToOrders" xml:space="preserve">
     <value>العودة إلى الطلبات</value>
-  </data>
-  <data name="Orders.Details.BackToOrderHistory" xml:space="preserve">
-    <value>العودة إلى سجل الطلبات</value>
   </data>
   <data name="Orders.Details.AcceptedAt" xml:space="preserve">
     <value>تمت الموافقة</value>

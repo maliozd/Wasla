@@ -52,36 +52,12 @@ public sealed class OrdersController : BaseController
         _localizer = localizer;
     }
 
+    /// <summary>
+    /// Orders is the management search page: current and historical lookup over the same
+    /// server-side filtered/paged query. Live operational display lives on <see cref="LiveDisplay" />.
+    /// </summary>
     [HttpGet("")]
     public async Task<IActionResult> Index(
-        [FromQuery] FoodPlatform? platform,
-        [FromQuery] OrderStatus? status,
-        [FromQuery] string? startDate,
-        [FromQuery] string? endDate,
-        [FromQuery] string? sortBy = "receivedAt",
-        [FromQuery] string? sortDirection = "desc",
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
-        CancellationToken ct = default)
-    {
-        var tenant = _currentTenant.CurrentTenant;
-        if (tenant is null) return NotFound();
-
-        if (IsLegacyFullscreenRequest())
-            return RedirectToAction(nameof(LiveDisplay));
-
-        var vm = await BuildOrderListViewModelAsync(
-            tenant.Id, platform, status, startDate, endDate, search: null,
-            sortBy, sortDirection, page, pageSize,
-            useHistoryDefaults: false,
-            addDateValidationErrors: true, logDateFilterAs: "Index", ct,
-            includeLineItems: false);
-
-        return View("Index", vm);
-    }
-
-    [HttpGet("history")]
-    public async Task<IActionResult> History(
         [FromQuery] FoodPlatform? platform,
         [FromQuery] OrderStatus? status,
         [FromQuery] string? startDate,
@@ -96,17 +72,51 @@ public sealed class OrdersController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
+        if (IsLegacyFullscreenRequest())
+            return RedirectToAction(nameof(LiveDisplay));
+
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, platform, status, startDate, endDate, search,
             sortBy, sortDirection, page, pageSize,
-            useHistoryDefaults: true,
-            addDateValidationErrors: true, logDateFilterAs: "History", ct,
+            useHistoryDefaults: false,
+            addDateValidationErrors: true, logDateFilterAs: "Index", ct,
             includeLineItems: false);
 
-        vm.ListBasePath = "/orders/history";
-        vm.IsHistoryPage = true;
+        return View("Index", vm);
+    }
 
-        return View("History", vm);
+    /// <summary>Legacy Order History route: Orders now owns historical lookup, so keep old links working.</summary>
+    [HttpGet("history")]
+    public IActionResult History(
+        [FromQuery] FoodPlatform? platform,
+        [FromQuery] OrderStatus? status,
+        [FromQuery] string? startDate,
+        [FromQuery] string? endDate,
+        [FromQuery] string? search,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDirection,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize)
+    {
+        var preserved = new List<KeyValuePair<string, string?>>
+        {
+            new("platform", platform?.ToString()),
+            new("status", status?.ToString()),
+            new("startDate", startDate),
+            new("endDate", endDate),
+            new("search", search),
+            new("sortBy", sortBy),
+            new("sortDirection", sortDirection),
+            new("page", page?.ToString()),
+            new("pageSize", pageSize?.ToString())
+        };
+
+        var query = preserved
+            .Where(p => !string.IsNullOrWhiteSpace(p.Value))
+            .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value!.Trim())}")
+            .ToList();
+
+        return Redirect(query.Count == 0 ? "/orders" : "/orders?" + string.Join("&", query));
     }
 
     [HttpGet("sync-settings")]
@@ -192,12 +202,17 @@ public sealed class OrdersController : BaseController
         }
     }
 
+    /// <summary>
+    /// Table fragment used to re-render Orders after a lifecycle action. It must accept the same
+    /// filter set as <see cref="Index" /> so the refreshed page matches what the user is looking at.
+    /// </summary>
     [HttpGet("table")]
     public async Task<IActionResult> Table(
         [FromQuery] FoodPlatform? platform,
         [FromQuery] OrderStatus? status,
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
+        [FromQuery] string? search,
         [FromQuery] string? sortBy = "receivedAt",
         [FromQuery] string? sortDirection = "desc",
         [FromQuery] int page = 1,
@@ -208,7 +223,7 @@ public sealed class OrdersController : BaseController
         if (tenant is null) return NotFound();
 
         var vm = await BuildOrderListViewModelAsync(
-            tenant.Id, platform, status, startDate, endDate, search: null,
+            tenant.Id, platform, status, startDate, endDate, search,
             sortBy, sortDirection, page, pageSize,
             useHistoryDefaults: false,
             addDateValidationErrors: false, logDateFilterAs: null, ct,
@@ -344,13 +359,34 @@ public sealed class OrdersController : BaseController
     }
 
     [HttpGet("details/{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, [FromQuery] string? from, CancellationToken ct)
+    public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+    {
+        var vm = await BuildOrderDetailViewModelAsync(id, ct);
+        if (vm is null) return NotFound();
+
+        return View("Details", vm);
+    }
+
+    /// <summary>
+    /// Lazy detail markup for the Live Screen modal. Same tenant-scoped read and authorization as
+    /// <see cref="Details" />; only the shell differs, so lifecycle rules are not duplicated.
+    /// </summary>
+    [HttpGet("{id:guid}/detail-panel")]
+    public async Task<IActionResult> DetailPanel(Guid id, CancellationToken ct)
+    {
+        var vm = await BuildOrderDetailViewModelAsync(id, ct);
+        if (vm is null) return NotFound();
+
+        return PartialView("_OrderDetailPanel", vm);
+    }
+
+    private async Task<OrderDetailViewModel?> BuildOrderDetailViewModelAsync(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
-        if (tenant is null) return NotFound();
+        if (tenant is null) return null;
 
         var order = await _orders.GetByIdAsync(tenant.Id, id, ct);
-        if (order is null) return NotFound();
+        if (order is null) return null;
 
         var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
         var receivedLocal = TimeZoneInfo.ConvertTimeFromUtc(
@@ -362,9 +398,7 @@ public sealed class OrdersController : BaseController
                 tz)
             : null;
 
-        var fromHistory = string.Equals(from, "history", StringComparison.OrdinalIgnoreCase);
-
-        var vm = new OrderDetailViewModel
+        return new OrderDetailViewModel
         {
             Id = order.Id,
             Platform = order.Platform,
@@ -383,8 +417,7 @@ public sealed class OrdersController : BaseController
             ReceivedAtLocal = receivedLocal,
             AcceptedAtUtc = order.AcceptedAtUtc,
             AcceptedAtLocal = acceptedLocal,
-            BackUrl = fromHistory ? "/orders/history" : "/orders",
-            BackFromHistory = fromHistory,
+            BackUrl = "/orders",
             Items = order.Items.Select(i => new OrderDetailViewModel.ItemRow
             {
                 ProductName = i.ProductName,
@@ -399,8 +432,6 @@ public sealed class OrdersController : BaseController
                 }).ToList()
             }).ToList()
         };
-
-        return View("Details", vm);
     }
 
     [HttpPost("{id:guid}/approve")]

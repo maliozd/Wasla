@@ -1,0 +1,133 @@
+@model Wasla.Web.Models.Orders.OrderDetailViewModel
+@using System.Globalization
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Orders
+@using Wasla.Web.Models.Ui
+@using Wasla.Web.Security
+@using Wasla.Web.Ui
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IAuthorizationService AuthorizationService
+
+@{
+    var canManageOrders = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManageOrders)).Succeeded;
+    var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
+    var receivedLabel = OrderUiHelper.FormatReceivedAtUtc(Model.ReceivedAtUtc, tz, turkeyToday);
+    var phoneTel = OrderUiHelper.PhoneTelHref(Model.CustomerPhone);
+}
+
+<div class="oh-live-detail" data-order-id="@Model.Id" data-order-status="@Model.Status">
+    <div class="oh-live-detail__head d-flex flex-wrap align-items-center gap-2 mb-3">
+        @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
+        <span class="oh-live-detail__code font-monospace">@Model.ExternalOrderCode</span>
+        @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
+        <span class="text-muted small ms-auto">@L["Orders.Details.Received"] @receivedLabel</span>
+    </div>
+
+    <dl class="oh-live-detail__facts row g-2 mb-3">
+        <div class="col-12 col-md-6">
+            <dt class="text-muted small">@L["Orders.Details.Customer"]</dt>
+            <dd class="mb-0 fw-semibold">@OrderUiHelper.DisplayOrDash(Model.CustomerName)</dd>
+        </div>
+        <div class="col-12 col-md-6">
+            <dt class="text-muted small">@L["Orders.Details.Phone"]</dt>
+            <dd class="mb-0">
+                @if (phoneTel is not null)
+                {
+                    <a href="@phoneTel">@Model.CustomerPhone</a>
+                }
+                else
+                {
+                    @OrderUiHelper.DisplayOrDash(Model.CustomerPhone)
+                }
+            </dd>
+        </div>
+        <div class="col-12">
+            <dt class="text-muted small">@L["Orders.Details.Address"]</dt>
+            <dd class="mb-0">@OrderUiHelper.DisplayOrDash(Model.CustomerAddress)</dd>
+        </div>
+        <div class="col-12 col-md-6">
+            <dt class="text-muted small">@L["Orders.Details.PaymentMethod"]</dt>
+            <dd class="mb-0">@OrderUiHelper.PaymentMethodLabel(Model.PaymentMethod, L)</dd>
+        </div>
+    </dl>
+
+    <h3 class="h6 mb-2">@L["Orders.Details.Items"]</h3>
+    @if (Model.Items.Count == 0)
+    {
+        <p class="text-muted mb-3">@L["Orders.Details.NoItemsFound"]</p>
+    }
+    else
+    {
+        <div class="table-responsive mb-3">
+            <table class="table table-sm align-middle mb-0 oh-live-detail__items">
+                <thead>
+                <tr>
+                    <th>@L["Orders.Details.Product"]</th>
+                    <th class="text-end">@L["Orders.Details.Quantity"]</th>
+                    <th class="text-end">@L["Orders.Details.Total"]</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@i.ProductName</div>
+                            @if (!string.IsNullOrWhiteSpace(i.Notes))
+                            {
+                                <div class="text-muted small mt-1">@i.Notes</div>
+                            }
+                            @if (i.Options.Count > 0)
+                            {
+                                <ul class="list-unstyled mb-0 mt-1">
+                                    @foreach (var o in i.Options)
+                                    {
+                                        <li class="text-muted small">@o.Name @(o.Price > 0 ? $"(+{o.Price.ToString("C", CultureInfo.CurrentCulture)})" : "")</li>
+                                    }
+                                </ul>
+                            }
+                        </td>
+                        <td class="text-end">@i.Quantity</td>
+                        <td class="text-end fw-medium">@i.TotalPrice.ToString("C", CultureInfo.CurrentCulture)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <dl class="oh-live-detail__totals mb-3">
+        @if (Model.DeliveryFee != 0)
+        {
+            <div class="d-flex justify-content-between">
+                <dt class="fw-normal text-muted">@L["Orders.Details.DeliveryFee"]</dt>
+                <dd class="mb-0">@Model.DeliveryFee.ToString("C", CultureInfo.CurrentCulture)</dd>
+            </div>
+        }
+        @if (Model.ServiceFee != 0)
+        {
+            <div class="d-flex justify-content-between">
+                <dt class="fw-normal text-muted">@L["Orders.Details.ServiceFee"]</dt>
+                <dd class="mb-0">@Model.ServiceFee.ToString("C", CultureInfo.CurrentCulture)</dd>
+            </div>
+        }
+        <div class="d-flex justify-content-between fw-semibold">
+            <dt>@L["Orders.Details.Total"]</dt>
+            <dd class="mb-0">@Model.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</dd>
+        </div>
+    </dl>
+
+    <div class="oh-live-detail__actions d-flex flex-wrap gap-2">
+        @await Html.PartialAsync("_OrderLifecycleActions", new OrderLifecycleActionsModel
+        {
+            OrderId = Model.Id,
+            Status = Model.Status,
+            CanManageOrders = canManageOrders,
+            ButtonSizeClass = "btn-sm"
+        })
+        <a class="btn btn-sm btn-outline-secondary ms-auto" href="/orders/details/@Model.Id" target="_blank" rel="noopener noreferrer">
+            @L["Orders.History.ViewDetails"]
+        </a>
+    </div>
+</div>

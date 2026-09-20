@@ -27,7 +27,6 @@ public sealed class OrderDetailViewModel
     public DateTime? AcceptedAtLocal { get; set; }
 
     public string BackUrl { get; set; } = "/orders";
-    public bool BackFromHistory { get; set; }
 
     public List<ItemRow> Items { get; set; } = new();
 

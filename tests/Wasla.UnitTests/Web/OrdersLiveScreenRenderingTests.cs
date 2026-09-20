@@ -30,7 +30,6 @@ public sealed class OrdersLiveScreenRenderingTests
         Assert.Contains("@await Html.PartialAsync(\"_OrdersTable\", Model)", ordersView, StringComparison.Ordinal);
         Assert.Contains("ordersTableHost", ordersView, StringComparison.Ordinal);
         Assert.Contains("oh-orders-table", table, StringComparison.Ordinal);
-        Assert.Contains("defaultViewMode: \"table\"", ordersView, StringComparison.Ordinal);
         Assert.DoesNotContain("_LiveScreenOrders", ordersView, StringComparison.Ordinal);
     }
 
@@ -81,9 +80,9 @@ public sealed class OrdersLiveScreenRenderingTests
             readService.Substring(getListStart, getByIdStart - getListStart),
             StringComparison.Ordinal);
 
-        // Live Screen + LiveDisplay request items; Index/History/Table do not.
+        // Live Screen + LiveDisplay request items; Orders management list/partial do not.
         Assert.Equal(2, CountOccurrences(controller, "includeLineItems: true"));
-        Assert.Equal(3, CountOccurrences(controller, "includeLineItems: false"));
+        Assert.Equal(2, CountOccurrences(controller, "includeLineItems: false"));
 
         var liveScreenIdx = controller.IndexOf("LiveScreenPartial", StringComparison.Ordinal);
         var liveDisplayIdx = controller.IndexOf("[HttpGet(\"live-display\")]", StringComparison.Ordinal);
@@ -109,16 +108,16 @@ public sealed class OrdersLiveScreenRenderingTests
     }
 
     [Fact]
-    public void Phase1_OrdersViewModeDefaultsRemainSeparated()
+    public void Phase2B4_OnlyLiveScreenKeepsAViewPreference()
     {
         var ordersView = Read("Areas", "Tenant", "Views", "Orders", "Index.cshtml");
         var liveView = Read("Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
-        var viewModeJs = ReadWwwroot("js", "orders", "orders-view-mode.js");
+        var liveViewJs = ReadWwwroot("js", "orders", "orders-live-view.js");
 
-        Assert.Contains("viewModeStorageKey: \"Wasla.orders.viewMode\"", ordersView, StringComparison.Ordinal);
+        Assert.DoesNotContain("viewModeStorageKey", ordersView, StringComparison.Ordinal);
+        Assert.DoesNotContain("Wasla.orders.viewMode", ordersView, StringComparison.Ordinal);
         Assert.Contains("viewModeStorageKey: \"Wasla.liveScreen.viewMode\"", liveView, StringComparison.Ordinal);
-        Assert.Contains("defaultViewMode: \"table\"", ordersView, StringComparison.Ordinal);
-        Assert.Contains("O.opts.viewModeStorageKey", viewModeJs, StringComparison.Ordinal);
+        Assert.Contains("O.opts.viewModeStorageKey", liveViewJs, StringComparison.Ordinal);
     }
 
     private static int CountOccurrences(string source, string value)

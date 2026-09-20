@@ -119,6 +119,11 @@
       const msgKey = (result.payload && result.payload.message) ? String(result.payload.message) : null;
       toastSuccess(msgKey, fallbackSuccess, toastKey);
 
+      // Lets an open detail panel re-read the new server status without duplicating lifecycle rules.
+      document.dispatchEvent(new CustomEvent("wasla:order-action-completed", {
+        detail: { orderId: orderId, action: action }
+      }));
+
       try {
         await O.table.refreshOrdersTable();
       } catch (e2) {
@@ -138,7 +143,7 @@
       const t = ev.target;
       const btn = t && t.closest ? t.closest("[data-order-action][data-order-id]") : null;
       if (!btn) return;
-      if (!btn.closest("#ordersTableHost") && !btn.closest("#ordersCardsHost") && !btn.closest("#ordersLiveDisplayCardsHost") && !btn.closest("#ordersLiveScreenHost")) return;
+      if (!btn.closest("#ordersTableHost") && !btn.closest("#ordersCardsHost") && !btn.closest("#ordersLiveDisplayCardsHost") && !btn.closest("#ordersLiveScreenHost") && !btn.closest("#ordersLiveDetailModal")) return;
       ev.preventDefault();
       handleActionClick(btn);
     });

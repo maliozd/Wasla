@@ -385,10 +385,6 @@
       }
       updateLastUpdatedTimestamps();
 
-      if (!isLiveDisplayPage() && O.viewMode && typeof O.viewMode.syncFromTable === "function") {
-        O.viewMode.syncFromTable();
-      }
-
       // Phase 2B2: Live Screen owns operational new-order highlight (all new IDs in the batch).
       // Orders management polling must not apply operational new-order highlight.
       if (isLiveDisplayPage() && newIds.length > 0) {

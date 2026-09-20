@@ -2,12 +2,12 @@
 @using Wasla.Domain.Enums
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Ui
 @using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject IAuthorizationService AuthorizationService
 
 @{
-    var f = Model.Filters;
     var canManageOrders = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManageOrders)).Succeeded;
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
@@ -18,12 +18,12 @@
     <table class="table table-sm align-middle mb-0 oh-orders-table">
         <thead>
         <tr>
-            <th>@SortHeader("platform", L["Orders.Platform"])</th>
+            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "platform", L["Orders.Platform"].Value))</th>
             <th>@L["Orders.OrderCode"]</th>
-            <th>@SortHeader("customerName", L["Orders.Customer"])</th>
-            <th>@SortHeader("status", L["Orders.Status"])</th>
-            <th class="text-end">@SortHeader("totalAmount", L["Orders.TotalAmount"])</th>
-            <th class="text-end">@SortHeader("receivedAt", L["Orders.ReceivedAt"])</th>
+            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "customerName", L["Orders.Customer"].Value))</th>
+            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "status", L["Orders.Status"].Value))</th>
+            <th class="text-end">@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "totalAmount", L["Orders.TotalAmount"].Value))</th>
+            <th class="text-end">@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "receivedAt", L["Orders.ReceivedAt"].Value))</th>
             <th class="text-end">@L["Orders.Actions"]</th>
         </tr>
         </thead>
@@ -78,51 +78,5 @@
     </table>
 </div>
 
-@functions{
-    private static string BuildOrdersUrl(IEnumerable<KeyValuePair<string, string>> pairs)
-    {
-        var list = pairs
-            .Where(p => !string.IsNullOrWhiteSpace(p.Value))
-            .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}")
-            .ToList();
-
-        return list.Count == 0 ? "/orders" : "/orders?" + string.Join("&", list);
-    }
-
-    private Microsoft.AspNetCore.Html.IHtmlContent SortHeader(string sortBy, string title)
-    {
-        var currentBy = Model.Filters.SortBy;
-        var currentDir = Model.Filters.SortDirection;
-
-        var nextDir = "asc";
-        if (string.Equals(currentBy, sortBy, StringComparison.OrdinalIgnoreCase))
-        {
-            nextDir = string.Equals(currentDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
-        }
-        else
-        {
-            nextDir = sortBy == "receivedAt" ? "desc" : "asc";
-        }
-
-        var arrow = string.Empty;
-        if (string.Equals(currentBy, sortBy, StringComparison.OrdinalIgnoreCase))
-        {
-            arrow = string.Equals(currentDir, "asc", StringComparison.OrdinalIgnoreCase) ? " ↑" : " ↓";
-        }
-
-        var pairs = new List<KeyValuePair<string, string>>();
-        if (Model.Filters.Platform.HasValue) pairs.Add(new("platform", Model.Filters.Platform.Value.ToString()));
-        if (Model.Filters.Status.HasValue) pairs.Add(new("status", Model.Filters.Status.Value.ToString()));
-        if (Model.Filters.StartDate.HasValue) pairs.Add(new("startDate", Model.Filters.StartDate.Value.ToString("yyyy-MM-dd")));
-        if (Model.Filters.EndDate.HasValue) pairs.Add(new("endDate", Model.Filters.EndDate.Value.ToString("yyyy-MM-dd")));
-        pairs.Add(new("page", "1"));
-        pairs.Add(new("pageSize", Model.Filters.PageSize.ToString()));
-        pairs.Add(new("sortBy", sortBy));
-        pairs.Add(new("sortDirection", nextDir));
-
-        var href = BuildOrdersUrl(pairs);
-        var html = $"<a href=\"{href}\">{System.Net.WebUtility.HtmlEncode(title)}{arrow}</a>";
-        return new Microsoft.AspNetCore.Html.HtmlString(html);
-    }
-}
-
+@* Inside the refreshed fragment so page indicator and links stay consistent after a lifecycle action. *@
+@await Html.PartialAsync("_OrderListPagination", Model)

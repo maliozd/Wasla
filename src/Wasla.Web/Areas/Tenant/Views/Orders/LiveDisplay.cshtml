@@ -2,12 +2,15 @@
 @using System.Collections.Generic
 @using System.Text.Json
 @using Microsoft.Extensions.Localization
+@using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject ITenantNavigationAuthorizationService TenantNavigation
 @{
     Layout = "_OrdersDisplayLayout";
     ViewData["Title"] = L["Orders.LiveDisplay.Title"];
     var today = Model.TurkeyLocalToday;
     var customerName = ViewData["CustomerName"] as string;
+    var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
 }
 
 <div id="ordersLiveDisplayRoot" class="oh-orders-live-display-root oh-live-screen-page">
@@ -26,6 +29,20 @@
             </p>
         </div>
         <div class="oh-live-display-header__actions oh-fs-header__actions d-flex flex-wrap align-items-center gap-2">
+            @* Operational automation status belongs to the live service view, not the Orders search page. *@
+            <div class="oh-orders-status-group" aria-label="@L["Settings.OrderSettings.Title"]">
+                <span id="automationStatusSync" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
+                <span id="automationStatusAutoApprove" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
+                <span id="automationStatusReceipt" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
+            </div>
+            @if (navPermissions.CanManageOrderSettings)
+            {
+                <a class="orders-manage-settings" href="/settings/orders" target="_blank" rel="noopener noreferrer">@L["Orders.ManageSettings"]</a>
+            }
+            <div class="btn-group btn-group-sm oh-live-screen-view-switch" role="group" aria-label="@L["Orders.ViewMode.Label"]">
+                <button type="button" class="btn btn-outline-secondary" data-live-screen-view="cards" aria-pressed="true">@L["Orders.LiveScreen.ViewCards"]</button>
+                <button type="button" class="btn btn-outline-secondary" data-live-screen-view="list" aria-pressed="false">@L["Orders.LiveScreen.ViewList"]</button>
+            </div>
             <p class="oh-live-display-fullscreen-hint text-muted small mb-0">
                 @L["Orders.LiveDisplay.FullscreenHintPrefix"]
                 <kbd class="oh-live-display-kbd">F11</kbd>
@@ -58,8 +75,23 @@
         </div>
     </div>
 
-    <div id="ordersLiveScreenHost" class="oh-live-screen-host" aria-live="polite">
+    @* One card DOM tree; the view switch only changes its layout class, so nothing is rendered twice. *@
+    <div id="ordersLiveScreenHost" class="oh-live-screen-host oh-live-screen-host--cards" data-live-screen-view="cards" aria-live="polite">
         @await Html.PartialAsync("_LiveScreenOrders", Model)
+    </div>
+</div>
+
+<div class="modal fade" id="ordersLiveDetailModal" tabindex="-1" aria-hidden="true" aria-labelledby="ordersLiveDetailModalTitle">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h6 mb-0" id="ordersLiveDetailModalTitle">@L["Orders.Details.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Close"]"></button>
+            </div>
+            <div class="modal-body" id="ordersLiveDetailModalBody">
+                <p class="text-muted small mb-0">@L["Common.Loading"]</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -75,6 +107,9 @@
             liveScreenUrl: "/orders/live-screen",
             notificationSettingsUrl: "/notification-settings",
             notificationSettingsJsonUrl: "/notification-settings/current",
+            orderSyncSettingsUrl: "/orders/sync-settings",
+            orderSettingsUrl: "/orders/order-settings",
+            orderDetailPanelUrl: "/orders/{id}/detail-panel",
             viewModeStorageKey: "Wasla.liveScreen.viewMode",
             defaultViewMode: "kitchen",
             pollingIntervalMs: 10000,
@@ -94,6 +129,14 @@
                 ["notificationSettingsLoadFailed"] = L["Orders.NotificationSettingsLoadFailed"].Value,
                 ["notificationSettingsUnexpectedFormat"] = L["Orders.NotificationSettingsUnexpectedFormat"].Value,
                 ["notificationSettingsLoadException"] = L["Orders.NotificationSettingsLoadException"].Value,
+                ["automationStatusSyncActive"] = L["Orders.AutomationStatus.SyncActive"].Value,
+                ["automationStatusSyncDisabled"] = L["Orders.AutomationStatus.SyncDisabled"].Value,
+                ["automationStatusAutoApproveActive"] = L["Orders.AutomationStatus.AutoApproveActive"].Value,
+                ["automationStatusAutoApproveDisabled"] = L["Orders.AutomationStatus.AutoApproveDisabled"].Value,
+                ["automationStatusReceiptPrintingActive"] = L["Orders.AutomationStatus.ReceiptPrintingActive"].Value,
+                ["automationStatusReceiptPrintingDisabled"] = L["Orders.AutomationStatus.ReceiptPrintingDisabled"].Value,
+                ["liveScreenDetailLoadFailed"] = L["Orders.LiveScreen.DetailLoadFailed"].Value,
+                ["commonLoading"] = L["Common.Loading"].Value,
                 ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
                 ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
                 ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
@@ -134,7 +177,10 @@
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-live-view.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-live-detail-modal.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>
 }

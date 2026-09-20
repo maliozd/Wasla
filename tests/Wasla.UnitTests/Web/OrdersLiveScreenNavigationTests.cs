@@ -106,32 +106,30 @@ public sealed class OrdersLiveScreenNavigationTests
     }
 
     [Fact]
-    public void OrdersAndLiveScreen_UseSeparateViewModePreferenceKeys()
+    public void LiveScreenKeepsItsOwnViewPreferenceKey()
     {
         var ordersView = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "Index.cshtml");
         var liveView = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
-        var viewModeScript = ReadRepositoryFile("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-view-mode.js");
+        var liveViewScript = ReadRepositoryFile("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-view.js");
 
-        Assert.Contains("viewModeStorageKey: \"Wasla.orders.viewMode\"", ordersView, StringComparison.Ordinal);
         Assert.Contains("viewModeStorageKey: \"Wasla.liveScreen.viewMode\"", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain("Wasla.liveScreen.viewMode", ordersView, StringComparison.Ordinal);
-        Assert.DoesNotContain("Wasla.orders.viewMode", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("Wasla.orders.viewMode", ordersView, StringComparison.Ordinal);
 
-        Assert.Contains("O.opts.viewModeStorageKey", viewModeScript, StringComparison.Ordinal);
-        Assert.DoesNotContain("localStorage.getItem(STORAGE_KEY)", viewModeScript, StringComparison.Ordinal);
-        Assert.DoesNotContain("localStorage.setItem(STORAGE_KEY", viewModeScript, StringComparison.Ordinal);
+        Assert.Contains("O.opts.viewModeStorageKey", liveViewScript, StringComparison.Ordinal);
+        Assert.Contains("localStorage.setItem(storageKey(), view)", liveViewScript, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Orders_DefaultsToTableAndDropsKitchenModeSelector()
+    public void Orders_IsTableOnlyManagementViewWithoutOperationalDisplayModes()
     {
         var ordersView = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "Index.cshtml");
 
-        Assert.Contains("defaultViewMode: \"table\"", ordersView, StringComparison.Ordinal);
-        Assert.Contains("data-orders-view-mode=\"table\"", ordersView, StringComparison.Ordinal);
-        Assert.Contains("data-orders-view-mode=\"compact\"", ordersView, StringComparison.Ordinal);
-        Assert.DoesNotContain("data-orders-view-mode=\"kitchen\"", ordersView, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-orders-view-mode=", ordersView, StringComparison.Ordinal);
+        Assert.DoesNotContain("ordersCardsHost", ordersView, StringComparison.Ordinal);
+        Assert.DoesNotContain("orders-view-mode.js", ordersView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.Subtitle\"]", ordersView, StringComparison.Ordinal);
+        Assert.Contains("ordersTableHost", ordersView, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -150,13 +148,12 @@ public sealed class OrdersLiveScreenNavigationTests
     }
 
     [Fact]
-    public void ViewModeScript_FallsBackToPageDefaultWhenStoredModeIsUnavailable()
+    public void LiveViewScript_FallsBackToCardsWhenStoredViewIsUnknown()
     {
-        var viewModeScript = ReadRepositoryFile("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-view-mode.js");
+        var liveViewScript = ReadRepositoryFile("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-view.js");
 
-        Assert.Contains("O.opts.defaultViewMode", viewModeScript, StringComparison.Ordinal);
-        Assert.Contains("availableModes().indexOf(v) >= 0", viewModeScript, StringComparison.Ordinal);
-        Assert.Contains("return defaultMode();", viewModeScript, StringComparison.Ordinal);
+        Assert.Contains("const DEFAULT_VIEW = \"cards\";", liveViewScript, StringComparison.Ordinal);
+        Assert.Contains("VIEWS.indexOf(view) >= 0 ? view : DEFAULT_VIEW", liveViewScript, StringComparison.Ordinal);
     }
 
     [Fact]

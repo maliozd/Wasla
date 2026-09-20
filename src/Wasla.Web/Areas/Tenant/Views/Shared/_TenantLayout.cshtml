@@ -145,23 +145,15 @@
                         </a>
 
                     </li>
-
-                    <li class="nav-item">
-
-                        <a class="nav-link @Active("/orders/history")" asp-area="Tenant" asp-controller="Orders" asp-action="History">
-
-                            <i class="bi bi-clock-history me-2"></i><span class="nav-text">@L["Layout.OrderHistory"]</span>
-
-                        </a>
-
-                    </li>
                     }
 
                     @if (navPermissions.CanViewLiveScreen)
                     {
                     <li class="nav-item">
 
-                        <a class="nav-link @Active("/orders/live-display")" asp-area="Tenant" asp-controller="Orders" asp-action="LiveDisplay">
+                        @* Live Screen is an operational display: open it in its own tab instead of replacing the panel. *@
+                        <a class="nav-link @Active("/orders/live-display")" asp-area="Tenant" asp-controller="Orders" asp-action="LiveDisplay"
+                           target="_blank" rel="noopener noreferrer">
 
                             <i class="bi bi-display me-2"></i><span class="nav-text">@L["Layout.LiveScreen"]</span>
 
