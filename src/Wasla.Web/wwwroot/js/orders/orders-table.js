@@ -367,7 +367,10 @@
       captureKnownOrderIdsFromContainer();
       applyNewOrderVisualState();
 
-      if (!isLiveDisplayPage() && live && newIds.length > 0 && O.state.notificationSettings && O.audio) {        const st = O.state.notificationSettings;
+      // Phase 2B1: Live Screen owns automatic new-order sound (one sequence per poll with new IDs).
+      // Orders management polling must not auto-trigger sound.
+      if (isLiveDisplayPage() && newIds.length > 0 && O.state.notificationSettings && O.audio) {
+        const st = O.state.notificationSettings;
         if (st.newOrderSoundEnabled) {
           if (!O.audio.isSoundUnlocked()) {
             if (!T.hintShownForUnlock) {
@@ -376,7 +379,6 @@
             }
             audioPlayedOk = "locked";
           } else {
-            showSpeakerIndicators(newIds);
             try {
               await O.audio.playSoundNow({
                 newOrderSoundEnabled: true,
@@ -393,18 +395,20 @@
               if (O.isDebugEnabled()) {
                 O.debugWarn("playSoundNow", e);
               }
-            } finally {
-              hideSpeakerIndicators(newIds);
             }
           }
         } else {
           audioPlayedOk = "soundDisabled";
         }
-        O.audio.showBrowserNotificationIfAllowed();
       }
 
       if (O.isDebugEnabled() && live && newIds.length > 0) {
-        O.debugLog("poll", { newInTable: newIds.length, defaultLive: true, audio: audioPlayedOk });
+        O.debugLog("poll", {
+          newInTable: newIds.length,
+          defaultLive: true,
+          liveDisplay: isLiveDisplayPage(),
+          audio: audioPlayedOk
+        });
       }
     } catch (error) {
       O.showOrdersWarning("orders-table-exception", O.getMessage("tableRefreshException"));

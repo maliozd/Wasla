@@ -73,6 +73,8 @@
             pageMode: "liveDisplay",
             tableUrl: "/orders/table",
             liveScreenUrl: "/orders/live-screen",
+            notificationSettingsUrl: "/notification-settings",
+            notificationSettingsJsonUrl: "/notification-settings/current",
             viewModeStorageKey: "Wasla.liveScreen.viewMode",
             defaultViewMode: "kitchen",
             pollingIntervalMs: 10000,
@@ -83,6 +85,13 @@
             {
                 ["genericError"] = L["Orders.GenericError"].Value,
                 ["alertClose"] = L["Common.Close"].Value,
+                ["soundUnlockHint"] = L["Notification.SoundUnlockHint"].Value,
+                ["audioNotAllowed"] = L["Orders.AudioNotAllowed"].Value,
+                ["audioPlayFailed"] = L["Orders.AudioPlayFailed"].Value,
+                ["audioFileError"] = L["Orders.AudioFileError"].Value,
+                ["notificationSettingsLoadFailed"] = L["Orders.NotificationSettingsLoadFailed"].Value,
+                ["notificationSettingsUnexpectedFormat"] = L["Orders.NotificationSettingsUnexpectedFormat"].Value,
+                ["notificationSettingsLoadException"] = L["Orders.NotificationSettingsLoadException"].Value,
                 ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
                 ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
                 ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
@@ -121,6 +130,8 @@
         };
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>

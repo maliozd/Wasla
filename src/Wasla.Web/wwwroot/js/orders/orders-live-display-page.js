@@ -1,4 +1,4 @@
-// Live display page: polling and close/back for dedicated operational cards.
+// Live display page: polling, close/back, and new-order sound ownership (Phase 2B1).
 (function (global) {
   "use strict";
 
@@ -41,17 +41,23 @@
     });
   }
 
-  function initLiveDisplayPage() {
+  async function initLiveDisplayPage() {
     document.body.classList.add("oh-orders-view-kitchen");
     initCloseButton();
     seedLiveScreenSummary();
+    // Baseline current IDs before polling — initial load must not notify.
     O.table.captureKnownOrderIdsFromContainer();
     O.table.applyNewOrderVisualState();
+    if (O.notificationSettings && typeof O.notificationSettings.load === "function") {
+      await O.notificationSettings.load();
+    }
     O.table.initPolling();
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     if (O.opts.pageMode !== "liveDisplay") return;
-    initLiveDisplayPage();
+    initLiveDisplayPage().catch(function (error) {
+      O.debugWarn("initLiveDisplayPage failed", error);
+    });
   });
 })(window);
