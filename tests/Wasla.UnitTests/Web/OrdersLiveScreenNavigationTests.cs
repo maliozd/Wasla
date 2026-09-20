@@ -135,15 +135,18 @@ public sealed class OrdersLiveScreenNavigationTests
     }
 
     [Fact]
-    public void LiveScreen_DefaultsToKitchenAndKeepsOperationalChrome()
+    public void LiveScreen_UsesDedicatedOperationalCardsWithoutViewModeSelectors()
     {
         var liveView = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
 
-        Assert.Contains("defaultViewMode: \"kitchen\"", liveView, StringComparison.Ordinal);
-        Assert.Contains("data-orders-view-mode=\"kitchen\"", liveView, StringComparison.Ordinal);
+        Assert.Contains("_LiveScreenOrders", liveView, StringComparison.Ordinal);
+        Assert.Contains("ordersLiveScreenHost", liveView, StringComparison.Ordinal);
+        Assert.Contains("liveScreenUrl: \"/orders/live-screen\"", liveView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.LiveDisplay.Subtitle\"]", liveView, StringComparison.Ordinal);
         Assert.Contains("F11", liveView, StringComparison.Ordinal);
         Assert.Contains("ordersLiveDisplayClose", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-orders-view-mode=", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("_OrdersTable", liveView, StringComparison.Ordinal);
     }
 
     [Fact]

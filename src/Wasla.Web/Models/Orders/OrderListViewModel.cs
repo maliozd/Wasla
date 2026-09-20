@@ -46,6 +46,16 @@ public sealed class OrderListViewModel
 
         /// <summary>Display-only: resolved product/card image URL for compact/kitchen views.</summary>
         public string DisplayImageUrl { get; set; } = string.Empty;
+
+        /// <summary>Line items for operational Live Screen cards (Orders table ignores this).</summary>
+        public List<LineItem> LineItems { get; set; } = new();
+    }
+
+    public sealed class LineItem
+    {
+        public string ProductName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public string? Notes { get; set; }
     }
 }
 

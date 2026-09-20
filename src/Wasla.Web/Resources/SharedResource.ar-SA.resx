@@ -606,6 +606,9 @@
   <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
     <value>تابع الطلبات النشطة أثناء التشغيل.</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
+    <value>{0} د</value>
+  </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>إغلاق العرض</value>
   </data>

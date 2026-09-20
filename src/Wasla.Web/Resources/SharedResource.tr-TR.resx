@@ -606,6 +606,9 @@
   <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
     <value>Aktif siparişleri operasyon sırasında takip edin.</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
+    <value>{0} dk</value>
+  </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Ekranı Kapat</value>
   </data>

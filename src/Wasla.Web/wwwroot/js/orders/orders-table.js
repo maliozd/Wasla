@@ -103,8 +103,15 @@
     return newIds;
   }
 
+  function getRefreshContainer() {
+    if (isLiveDisplayPage()) {
+      return document.getElementById("ordersLiveScreenHost");
+    }
+    return document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
+  }
+
   function captureKnownOrderIdsFromContainer() {
-    const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
+    const container = getRefreshContainer();
     if (!container) return;
     T.knownOrderIds = new Set();
     container.querySelectorAll("[data-order-id]").forEach(function (r) {
@@ -188,7 +195,7 @@
   }
 
   function applyNewOrderVisualState() {
-    const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
+    const container = getRefreshContainer();
     if (!container) return;
 
     function setNewBadgeVisible(row, isVisible) {
@@ -240,18 +247,35 @@
     });
   }
 
+  function updateLiveScreenSummaryFromTmp(tmp) {
+    if (!isLiveDisplayPage() || !tmp) return;
+    try {
+      const meta = tmp.querySelector(".orders-live-screen-meta");
+      if (!meta) return;
+      [
+        ["ordersLiveDisplayTodayCount", "data-total-count"],
+        ["ordersLiveDisplayActiveCount", "data-active-count"],
+        ["ordersLiveDisplayCancelledCount", "data-cancelled-count"]
+      ].forEach(function (pair) {
+        const el = document.getElementById(pair[0]);
+        if (!el) return;
+        const v = meta.getAttribute(pair[1]);
+        if (v == null) return;
+        const n = parseInt(String(v), 10);
+        if (isNaN(n)) return;
+        el.textContent = String(n);
+      });
+    } catch (e) {
+      if (O.isDebugEnabled()) {
+        O.debugWarn("updateLiveScreenSummaryFromTmp failed", e);
+      }
+    }
+  }
+
   function buildPollUrl() {
     if (isLiveDisplayPage()) {
-      const u = new URL(global.location.origin + O.opts.tableUrl);
-      const ymd = O.opts.todayYmd || localDateYmd();
-      if (ymd) {
-        u.searchParams.set("startDate", ymd);
-        u.searchParams.set("endDate", ymd);
-      }
-      u.searchParams.set("page", "1");
-      u.searchParams.set("pageSize", String(O.opts.liveDisplayPageSize || 100));
-      u.searchParams.set("sortBy", "receivedAt");
-      u.searchParams.set("sortDirection", "desc");
+      const path = O.opts.liveScreenUrl || "/orders/live-screen";
+      const u = new URL(global.location.origin + path);
       return u;
     }
 
@@ -309,25 +333,30 @@
       }
 
       const hasRows = tmp.querySelectorAll("tr").length > 0;
-      const hasDataOrderIds = tmp.querySelectorAll("[data-order-id]").length > 0;
-      if (hasRows && !hasDataOrderIds) {
+      const hasCards = tmp.querySelectorAll("[data-order-id]").length > 0;
+      const hasDataOrderIds = hasCards;
+      if (hasRows && !hasDataOrderIds && !isLiveDisplayPage()) {
         if (O.isDebugEnabled()) {
           O.debugWarn("rows without data-order-id");
         }
         O.showOrdersWarning("orders-table-missing-data", O.getMessage("tableMissingDataOrderId"));
       }
 
-      const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
+      const container = getRefreshContainer();
       if (!container) {
         O.showOrdersWarning("orders-table-target-missing", O.getMessage("tableHostMissing"));
         return;
       }
 
       container.innerHTML = html;
-      updateTotalCountFromTmp(tmp);
+      if (isLiveDisplayPage()) {
+        updateLiveScreenSummaryFromTmp(tmp);
+      } else {
+        updateTotalCountFromTmp(tmp);
+      }
       updateLastUpdatedTimestamps();
 
-      if (O.viewMode && typeof O.viewMode.syncFromTable === "function") {
+      if (!isLiveDisplayPage() && O.viewMode && typeof O.viewMode.syncFromTable === "function") {
         O.viewMode.syncFromTable();
       }
 

@@ -2220,6 +2220,68 @@ body.oh-orders-live-display .oh-live-display-cards {
   min-height: 0;
 }
 
+body.oh-orders-live-display .oh-live-screen-host {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+body.oh-orders-live-display .oh-live-screen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.oh-live-screen-card__code {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.oh-live-screen-card__items {
+  margin: 0.35rem 0 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--oh-surface-2, var(--bs-secondary-bg)) 80%, transparent);
+}
+
+.oh-live-screen-card__item {
+  display: block;
+  margin: 0.2rem 0;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.oh-live-screen-card__qty {
+  font-weight: 700;
+  margin-inline-end: 0.3rem;
+}
+
+.oh-live-screen-card__product {
+  font-weight: 600;
+}
+
+.oh-live-screen-card__note {
+  margin-top: 0.15rem;
+  margin-inline-start: 1.35rem;
+  font-size: 0.86rem;
+  font-style: italic;
+}
+
+.oh-live-screen-card__elapsed {
+  margin-inline-start: 0.25rem;
+  font-size: 0.9em;
+}
+
+.oh-live-screen-card.order-row-new {
+  box-shadow: 0 0 0 2px var(--new-order-highlight-border, #ffc107);
+}
+
 body.oh-orders-live-display .oh-live-display-table {
   width: 100%;
   max-width: 100%;

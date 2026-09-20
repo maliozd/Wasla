@@ -138,7 +138,7 @@
       const t = ev.target;
       const btn = t && t.closest ? t.closest("[data-order-action][data-order-id]") : null;
       if (!btn) return;
-      if (!btn.closest("#ordersTableHost") && !btn.closest("#ordersCardsHost") && !btn.closest("#ordersLiveDisplayCardsHost")) return;
+      if (!btn.closest("#ordersTableHost") && !btn.closest("#ordersCardsHost") && !btn.closest("#ordersLiveDisplayCardsHost") && !btn.closest("#ordersLiveScreenHost")) return;
       ev.preventDefault();
       handleActionClick(btn);
     });

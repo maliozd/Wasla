@@ -10,7 +10,7 @@
     var customerName = ViewData["CustomerName"] as string;
 }
 
-<div id="ordersLiveDisplayRoot" class="oh-orders-live-display-root">
+<div id="ordersLiveDisplayRoot" class="oh-orders-live-display-root oh-live-screen-page">
     <header class="oh-live-display-header oh-fs-header">
         <div class="oh-live-display-header__left oh-fs-header__left">
             @if (!string.IsNullOrWhiteSpace(customerName))
@@ -26,11 +26,6 @@
             </p>
         </div>
         <div class="oh-live-display-header__actions oh-fs-header__actions d-flex flex-wrap align-items-center gap-2">
-            <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
-                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
-                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
-                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
-            </div>
             <p class="oh-live-display-fullscreen-hint text-muted small mb-0">
                 @L["Orders.LiveDisplay.FullscreenHintPrefix"]
                 <kbd class="oh-live-display-kbd">F11</kbd>
@@ -63,16 +58,8 @@
         </div>
     </div>
 
-    <div id="ordersLiveDisplayCardsHost" class="orders-card-grid oh-live-display-cards oh-orders-cards-host d-none" role="list" hidden></div>
-
-    <div id="ordersLiveDisplayTableSlot" class="oh-live-display-table oh-fs-table-panel">
-        <div class="card oh-card oh-orders-table-card">
-            <div class="card-body p-0 p-md-3">
-                <div id="ordersTableHost" class="oh-orders-table-host">
-                    @await Html.PartialAsync("_OrdersTable", Model)
-                </div>
-            </div>
-        </div>
+    <div id="ordersLiveScreenHost" class="oh-live-screen-host" aria-live="polite">
+        @await Html.PartialAsync("_LiveScreenOrders", Model)
     </div>
 </div>
 
@@ -85,6 +72,7 @@
         window.orderHubOrdersOptions = {
             pageMode: "liveDisplay",
             tableUrl: "/orders/table",
+            liveScreenUrl: "/orders/live-screen",
             viewModeStorageKey: "Wasla.liveScreen.viewMode",
             defaultViewMode: "kitchen",
             pollingIntervalMs: 10000,
@@ -133,7 +121,6 @@
         };
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-view-mode.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>

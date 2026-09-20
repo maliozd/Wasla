@@ -74,7 +74,8 @@ public sealed class OrdersController : BaseController
             tenant.Id, platform, status, startDate, endDate, search: null,
             sortBy, sortDirection, page, pageSize,
             useHistoryDefaults: false,
-            addDateValidationErrors: true, logDateFilterAs: "Index", ct);
+            addDateValidationErrors: true, logDateFilterAs: "Index", ct,
+            includeLineItems: false);
 
         return View("Index", vm);
     }
@@ -99,7 +100,8 @@ public sealed class OrdersController : BaseController
             tenant.Id, platform, status, startDate, endDate, search,
             sortBy, sortDirection, page, pageSize,
             useHistoryDefaults: true,
-            addDateValidationErrors: true, logDateFilterAs: "History", ct);
+            addDateValidationErrors: true, logDateFilterAs: "History", ct,
+            includeLineItems: false);
 
         vm.ListBasePath = "/orders/history";
         vm.IsHistoryPage = true;
@@ -209,9 +211,31 @@ public sealed class OrdersController : BaseController
             tenant.Id, platform, status, startDate, endDate, search: null,
             sortBy, sortDirection, page, pageSize,
             useHistoryDefaults: false,
-            addDateValidationErrors: false, logDateFilterAs: null, ct);
+            addDateValidationErrors: false, logDateFilterAs: null, ct,
+            includeLineItems: false);
 
         return PartialView("_OrdersTable", vm);
+    }
+
+    /// <summary>
+    /// Polling partial for Live Screen operational cards. Same query shape as LiveDisplay; dedicated markup.
+    /// </summary>
+    [HttpGet("live-screen")]
+    [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
+    public async Task<IActionResult> LiveScreenPartial(CancellationToken ct = default)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
+        var vm = await BuildOrderListViewModelAsync(
+            tenant.Id, null, null, today, today, search: null,
+            sortBy: "receivedAt", sortDirection: "desc", page: 1, pageSize: 100,
+            useHistoryDefaults: false,
+            addDateValidationErrors: false, logDateFilterAs: null, ct,
+            includeLineItems: true);
+
+        return PartialView("_LiveScreenOrders", vm);
     }
 
     [HttpGet("live-display")]
@@ -226,15 +250,16 @@ public sealed class OrdersController : BaseController
             tenant.Id, null, null, today, today, search: null,
             sortBy: "receivedAt", sortDirection: "desc", page: 1, pageSize: 100,
             useHistoryDefaults: false,
-            addDateValidationErrors: false, logDateFilterAs: null, ct);
+            addDateValidationErrors: false, logDateFilterAs: null, ct,
+            includeLineItems: true);
 
         ViewData["CustomerName"] = tenant.Name;
         return View("LiveDisplay", vm);
     }
 
     /// <summary>
-    /// Shared list query/projection for the Orders index page and the polling partial.
-    /// Both endpoints must return the same data shape; only validation/logging differ.
+    /// Shared list query/projection for Orders management, Live Screen, and polling partials.
+    /// Live Screen opts into line-item projection; management list/history keep the lighter shape.
     /// </summary>
     private async Task<OrderListViewModel> BuildOrderListViewModelAsync(
         Guid customerId,
@@ -250,7 +275,8 @@ public sealed class OrdersController : BaseController
         bool useHistoryDefaults,
         bool addDateValidationErrors,
         string? logDateFilterAs,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool includeLineItems = false)
     {
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
         DefaultDateRangeIfNoDates(ref startDate, ref endDate, useHistoryDefaults);
@@ -277,7 +303,8 @@ public sealed class OrdersController : BaseController
             safePage,
             safePageSize,
             trimmedSearch,
-            ct);
+            ct,
+            includeLineItems);
 
         if (logDateFilterAs is not null)
         {
@@ -499,7 +526,15 @@ public sealed class OrdersController : BaseController
                     timeZone),
                 ItemCount = o.ItemCount,
                 FirstProductName = o.FirstProductName,
-                DisplayImageUrl = OrderProductImageHelper.ResolveDisplayImageUrl(null, imageSeed)
+                DisplayImageUrl = OrderProductImageHelper.ResolveDisplayImageUrl(null, imageSeed),
+                LineItems = o.LineItems
+                    .Select(i => new OrderListViewModel.LineItem
+                    {
+                        ProductName = i.ProductName,
+                        Quantity = i.Quantity,
+                        Notes = i.Notes
+                    })
+                    .ToList()
             };
         }).ToList();
 

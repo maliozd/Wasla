@@ -63,67 +63,13 @@
                     <td class="text-end">@o.TotalAmount.ToString("C")</td>
                     <td class="text-end">@o.ReceivedAtLocal.ToString("g")</td>
                     <td class="text-end">
-                        @if (canManageOrders && o.Status == OrderStatus.New)
+                        @await Html.PartialAsync("_OrderLifecycleActions", new Wasla.Web.Models.Orders.OrderLifecycleActionsModel
                         {
-                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-                                <button type="button"
-                                        class="btn btn-success btn-sm"
-                                        data-order-action="approve"
-                                        data-order-id="@o.Id">
-                                    @L["Orders.Approve"]
-                                </button>
-                                <button type="button"
-                                        class="btn btn-outline-danger btn-sm"
-                                        data-order-action="reject"
-                                        data-order-id="@o.Id">
-                                    @L["Orders.Reject"]
-                                </button>
-                            </div>
-                        }
-                        else if (canManageOrders && o.Status == OrderStatus.Accepted)
-                        {
-                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-                                <button type="button"
-                                        class="btn btn-primary btn-sm"
-                                        data-order-action="start-preparing"
-                                        data-order-id="@o.Id">
-                                    @L["Orders.StartPreparing"]
-                                </button>
-                            </div>
-                        }
-                        else if (canManageOrders && o.Status == OrderStatus.Preparing)
-                        {
-                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-                                <button type="button"
-                                        class="btn btn-primary btn-sm"
-                                        data-order-action="mark-ready"
-                                        data-order-id="@o.Id">
-                                    @L["Orders.MarkReady"]
-                                </button>
-                            </div>
-                        }
-                        else if (canManageOrders && o.Status == OrderStatus.ReadyForPickup)
-                        {
-                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-                                <button type="button"
-                                        class="btn btn-primary btn-sm"
-                                        data-order-action="hand-to-courier"
-                                        data-order-id="@o.Id">
-                                    @L["Orders.HandToCourier"]
-                                </button>
-                            </div>
-                        }
-                        else if (canManageOrders && o.Status == OrderStatus.OnTheWay)
-                        {
-                            <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-                                <button type="button"
-                                        class="btn btn-primary btn-sm"
-                                        data-order-action="mark-delivered"
-                                        data-order-id="@o.Id">
-                                    @L["Orders.MarkDelivered"]
-                                </button>
-                            </div>
-                        }
+                            OrderId = o.Id,
+                            Status = o.Status,
+                            CanManageOrders = canManageOrders,
+                            ButtonSizeClass = "btn-sm"
+                        })
                     </td>
                 </tr>
             }

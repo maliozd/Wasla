@@ -606,6 +606,9 @@
   <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
     <value>Track active orders during service.</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Close Display</value>
   </data>

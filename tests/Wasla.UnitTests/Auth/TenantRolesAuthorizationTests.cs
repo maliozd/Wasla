@@ -700,9 +700,19 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
             "Views",
             "Orders",
             "_OrdersTable.cshtml"));
+        var actionsSource = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "Orders",
+            "_OrderLifecycleActions.cshtml"));
 
         Assert.Contains("TenantPolicies.CanManageOrders", tableSource, StringComparison.Ordinal);
-        Assert.Contains("canManageOrders && o.Status", tableSource, StringComparison.Ordinal);
+        Assert.Contains("_OrderLifecycleActions", tableSource, StringComparison.Ordinal);
+        Assert.Contains("Model.CanManageOrders && Model.Status", actionsSource, StringComparison.Ordinal);
     }
 
     [Fact]

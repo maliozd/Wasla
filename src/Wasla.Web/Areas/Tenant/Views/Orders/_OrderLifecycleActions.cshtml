@@ -1,0 +1,69 @@
+@model Wasla.Web.Models.Orders.OrderLifecycleActionsModel
+@using Wasla.Domain.Enums
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    var sizeClass = string.IsNullOrWhiteSpace(Model.ButtonSizeClass) ? "btn-sm" : Model.ButtonSizeClass;
+}
+
+@if (Model.CanManageOrders && Model.Status == OrderStatus.New)
+{
+    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+        <button type="button"
+                class="btn btn-success @sizeClass"
+                data-order-action="approve"
+                data-order-id="@Model.OrderId">
+            @L["Orders.Approve"]
+        </button>
+        <button type="button"
+                class="btn btn-outline-danger @sizeClass"
+                data-order-action="reject"
+                data-order-id="@Model.OrderId">
+            @L["Orders.Reject"]
+        </button>
+    </div>
+}
+else if (Model.CanManageOrders && Model.Status == OrderStatus.Accepted)
+{
+    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+        <button type="button"
+                class="btn btn-primary @sizeClass"
+                data-order-action="start-preparing"
+                data-order-id="@Model.OrderId">
+            @L["Orders.StartPreparing"]
+        </button>
+    </div>
+}
+else if (Model.CanManageOrders && Model.Status == OrderStatus.Preparing)
+{
+    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+        <button type="button"
+                class="btn btn-primary @sizeClass"
+                data-order-action="mark-ready"
+                data-order-id="@Model.OrderId">
+            @L["Orders.MarkReady"]
+        </button>
+    </div>
+}
+else if (Model.CanManageOrders && Model.Status == OrderStatus.ReadyForPickup)
+{
+    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+        <button type="button"
+                class="btn btn-primary @sizeClass"
+                data-order-action="hand-to-courier"
+                data-order-id="@Model.OrderId">
+            @L["Orders.HandToCourier"]
+        </button>
+    </div>
+}
+else if (Model.CanManageOrders && Model.Status == OrderStatus.OnTheWay)
+{
+    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+        <button type="button"
+                class="btn btn-primary @sizeClass"
+                data-order-action="mark-delivered"
+                data-order-id="@Model.OrderId">
+            @L["Orders.MarkDelivered"]
+        </button>
+    </div>
+}

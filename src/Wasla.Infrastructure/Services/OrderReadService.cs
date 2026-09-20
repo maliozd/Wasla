@@ -28,7 +28,8 @@ public sealed class OrderReadService : IOrderReadService
         int page,
         int pageSize,
         string? search,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool includeLineItems = false)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
@@ -85,23 +86,51 @@ public sealed class OrderReadService : IOrderReadService
                 startDateUtc, endDateUtc, total);
         }
 
-        var items = await q
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(o => new OrderListResult.Row(
-                o.Id,
-                o.Platform,
-                o.ExternalOrderId,
-                o.ExternalOrderCode,
-                o.CustomerName,
-                o.TotalAmount,
-                o.InternalStatus,
-                o.PlatformStatus,
-                o.CreatedAtPlatform,
-                o.ReceivedAt,
-                o.Items.Count,
-                o.Items.OrderBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault()))
-            .ToListAsync(ct);
+        var pageQuery = q.Skip((page - 1) * pageSize).Take(pageSize);
+
+        // Single SQL projection either way — never 1+N. Line items only when Live Screen asks for them.
+        List<OrderListResult.Row> items;
+        if (includeLineItems)
+        {
+            items = await pageQuery
+                .Select(o => new OrderListResult.Row(
+                    o.Id,
+                    o.Platform,
+                    o.ExternalOrderId,
+                    o.ExternalOrderCode,
+                    o.CustomerName,
+                    o.TotalAmount,
+                    o.InternalStatus,
+                    o.PlatformStatus,
+                    o.CreatedAtPlatform,
+                    o.ReceivedAt,
+                    o.Items.Count,
+                    o.Items.OrderBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
+                    o.Items
+                        .OrderBy(i => i.Id)
+                        .Select(i => new OrderListResult.LineItem(i.ProductName, i.Quantity, i.Notes))
+                        .ToList()))
+                .ToListAsync(ct);
+        }
+        else
+        {
+            items = await pageQuery
+                .Select(o => new OrderListResult.Row(
+                    o.Id,
+                    o.Platform,
+                    o.ExternalOrderId,
+                    o.ExternalOrderCode,
+                    o.CustomerName,
+                    o.TotalAmount,
+                    o.InternalStatus,
+                    o.PlatformStatus,
+                    o.CreatedAtPlatform,
+                    o.ReceivedAt,
+                    o.Items.Count,
+                    o.Items.OrderBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
+                    Array.Empty<OrderListResult.LineItem>()))
+                .ToListAsync(ct);
+        }
 
         return new OrderListResult
         {
