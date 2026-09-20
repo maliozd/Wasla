@@ -12,7 +12,6 @@ public sealed class OrdersLiveScreenSoundOwnershipTests
         var ordersPage = Read("Areas", "Tenant", "Views", "Orders", "Index.cshtml");
 
         Assert.DoesNotContain("!isLiveDisplayPage() && live && newIds.length > 0 && O.state.notificationSettings && O.audio", tableJs, StringComparison.Ordinal);
-        Assert.DoesNotContain("showBrowserNotificationIfAllowed", tableJs, StringComparison.Ordinal);
         Assert.Contains("isLiveDisplayPage() && newIds.length > 0 && O.state.notificationSettings && O.audio", tableJs, StringComparison.Ordinal);
         Assert.Contains("orders-audio.js", ordersPage, StringComparison.Ordinal);
         Assert.Contains("orders-notification-settings.js", ordersPage, StringComparison.Ordinal);
@@ -82,7 +81,6 @@ public sealed class OrdersLiveScreenSoundOwnershipTests
         Assert.Contains("st.newOrderSoundEnabled", tableJs, StringComparison.Ordinal);
         Assert.Contains("st.newOrderSoundName", tableJs, StringComparison.Ordinal);
         Assert.Contains("st.newOrderSoundRepeatCount", tableJs, StringComparison.Ordinal);
-        Assert.DoesNotContain("showBrowserNotificationIfAllowed", tableJs, StringComparison.Ordinal);
         Assert.Contains("notificationSettingsJsonUrl", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain("BroadcastChannel", tableJs, StringComparison.Ordinal);
         Assert.DoesNotContain("SignalR", tableJs, StringComparison.Ordinal);

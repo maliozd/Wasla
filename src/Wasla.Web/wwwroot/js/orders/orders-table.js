@@ -436,6 +436,13 @@
         }
       }
 
+      // Phase 2B3: Live Screen owns automatic browser desktop notifications for new orders.
+      // Orders management polling must not create Notification API alerts.
+      // One call per polling batch (existing utility), not per order.
+      if (isLiveDisplayPage() && newIds.length > 0 && O.audio) {
+        O.audio.showBrowserNotificationIfAllowed();
+      }
+
       if (O.isDebugEnabled() && live && newIds.length > 0) {
         O.debugLog("poll", {
           newInTable: newIds.length,
