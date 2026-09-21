@@ -615,6 +615,36 @@
   <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
     <value>تعذر تحميل تفاصيل الطلب.</value>
   </data>
+  <data name="Orders.Print.Action" xml:space="preserve">
+    <value>طباعة</value>
+  </data>
+  <data name="Orders.Print.InQueue" xml:space="preserve">
+    <value>في قائمة الطباعة</value>
+  </data>
+  <data name="Orders.Print.Hint" xml:space="preserve">
+    <value>إرسال الإيصال إلى Print Bridge</value>
+  </data>
+  <data name="Orders.Print.Queued" xml:space="preserve">
+    <value>تم إرسال الإيصال إلى قائمة الطباعة.</value>
+  </data>
+  <data name="Orders.Print.ReprintQueued" xml:space="preserve">
+    <value>تم إرسال الإيصال إلى قائمة الطباعة مرة أخرى.</value>
+  </data>
+  <data name="Orders.Print.AlreadyQueued" xml:space="preserve">
+    <value>يوجد إيصال لهذا الطلب في قائمة الطباعة أو قيد الطباعة بالفعل.</value>
+  </data>
+  <data name="Orders.Print.ConfirmReprint" xml:space="preserve">
+    <value>هل تريد إرسال هذا الإيصال إلى الطابعة مرة أخرى؟</value>
+  </data>
+  <data name="Orders.Print.OrderNotFound" xml:space="preserve">
+    <value>لم يتم العثور على الطلب.</value>
+  </data>
+  <data name="Orders.Print.Failed" xml:space="preserve">
+    <value>تعذر إضافة الإيصال إلى قائمة الطباعة.</value>
+  </data>
+  <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
+    <value>فتح صفحة الطلب</value>
+  </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>إغلاق العرض</value>
   </data>

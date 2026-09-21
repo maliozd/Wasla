@@ -1,5 +1,7 @@
 ﻿@model Wasla.Web.Models.Orders.OrderDetailViewModel
+@using System.Collections.Generic
 @using System.Globalization
+@using System.Text.Json
 @using Wasla.Web.Ui
 @using Wasla.Web.Models.Ui
 @{
@@ -22,6 +24,13 @@
         </div>
         <div class="oh-order-details__header-actions d-flex flex-wrap align-items-center gap-2 ms-auto">
             @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
+            @await Html.PartialAsync("_OrderPrintAction", new Wasla.Web.Models.Orders.OrderPrintActionModel
+            {
+                OrderId = Model.Id,
+                InProgress = Model.ReceiptPrintInProgress,
+                CanReprint = Model.ReceiptCanReprint,
+                ButtonSizeClass = "btn-sm"
+            })
             <a class="btn btn-sm btn-outline-secondary" href="@Model.BackUrl">
                 <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
                 @L["Orders.Details.BackToOrders"]
@@ -214,3 +223,29 @@
         </div>
     </div>
 </div>
+
+<form id="ordersDetailsCsrfForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        window.orderHubOrdersOptions = {
+            orderPrintUrl: "/orders/{id}/print",
+            messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["genericError"] = L["Orders.GenericError"].Value,
+                ["alertClose"] = L["Common.Close"].Value,
+                ["orderPrintAction"] = L["Orders.Print.Action"].Value,
+                ["orderPrintReprint"] = L["PrintBridge.Reprint"].Value,
+                ["orderPrintInQueue"] = L["Orders.Print.InQueue"].Value,
+                ["orderPrintQueued"] = L["Orders.Print.Queued"].Value,
+                ["orderPrintAlreadyQueued"] = L["Orders.Print.AlreadyQueued"].Value,
+                ["orderPrintConfirmReprint"] = L["Orders.Print.ConfirmReprint"].Value,
+                ["orderPrintFailed"] = L["Orders.Print.Failed"].Value
+            }))
+        };
+    </script>
+    <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
+}

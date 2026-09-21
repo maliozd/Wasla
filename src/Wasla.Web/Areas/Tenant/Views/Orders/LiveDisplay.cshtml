@@ -110,6 +110,7 @@
             orderSyncSettingsUrl: "/orders/sync-settings",
             orderSettingsUrl: "/orders/order-settings",
             orderDetailPanelUrl: "/orders/{id}/detail-panel",
+            orderPrintUrl: "/orders/{id}/print",
             viewModeStorageKey: "Wasla.liveScreen.viewMode",
             defaultViewMode: "kitchen",
             pollingIntervalMs: 10000,
@@ -137,6 +138,13 @@
                 ["automationStatusReceiptPrintingDisabled"] = L["Orders.AutomationStatus.ReceiptPrintingDisabled"].Value,
                 ["liveScreenDetailLoadFailed"] = L["Orders.LiveScreen.DetailLoadFailed"].Value,
                 ["commonLoading"] = L["Common.Loading"].Value,
+                ["orderPrintAction"] = L["Orders.Print.Action"].Value,
+                ["orderPrintReprint"] = L["PrintBridge.Reprint"].Value,
+                ["orderPrintInQueue"] = L["Orders.Print.InQueue"].Value,
+                ["orderPrintQueued"] = L["Orders.Print.Queued"].Value,
+                ["orderPrintAlreadyQueued"] = L["Orders.Print.AlreadyQueued"].Value,
+                ["orderPrintConfirmReprint"] = L["Orders.Print.ConfirmReprint"].Value,
+                ["orderPrintFailed"] = L["Orders.Print.Failed"].Value,
                 ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
                 ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
                 ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
@@ -180,6 +188,7 @@
     <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-view.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-detail-modal.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>

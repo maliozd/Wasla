@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Domain.Entities.Customer;
@@ -11,13 +12,16 @@ namespace Wasla.Infrastructure.Services;
 public sealed class PrintJobHistoryService : IPrintJobHistoryService
 {
     private readonly ITenantDbContextFactory _dbFactory;
+    private readonly IReceiptTemplateSettingsService _templateSettings;
     private readonly ILogger<PrintJobHistoryService> _logger;
 
     public PrintJobHistoryService(
         ITenantDbContextFactory dbFactory,
+        IReceiptTemplateSettingsService templateSettings,
         ILogger<PrintJobHistoryService> logger)
     {
         _dbFactory = dbFactory;
+        _templateSettings = templateSettings;
         _logger = logger;
     }
 
@@ -81,7 +85,19 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
         string? tenantDisplayName,
         CancellationToken ct)
     {
+        // Load settings before acquiring the serializable lock, as in the first-print path.
+        // The settings service opens a separate tenant context.
+        var template = await _templateSettings
+            .GetAsync(customerId, tenantDisplayName, null, ct)
+            .ConfigureAwait(false);
+
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+
+        // Same serializable guard the first-receipt path uses, so concurrent reprint requests
+        // cannot both pass the active-job check and queue two receipts for one order.
+        await using var tx = await db.Database
+            .BeginTransactionAsync(IsolationLevel.Serializable, ct)
+            .ConfigureAwait(false);
 
         var source = await db.PrintJobs
             .AsNoTracking()
@@ -89,13 +105,22 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
             .ConfigureAwait(false);
 
         if (source is null)
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
             return new ReprintReceiptResult(false, "PrintBridge.ReprintJobNotFound", null);
+        }
 
         if (source.Status is PrintJobStatus.Pending or PrintJobStatus.Printing)
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
             return new ReprintReceiptResult(false, "PrintBridge.ReprintNotAllowed", null);
+        }
 
         if (source.Status is not (PrintJobStatus.Printed or PrintJobStatus.Failed))
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
             return new ReprintReceiptResult(false, "PrintBridge.ReprintNotAllowed", null);
+        }
 
         var hasActiveJob = await db.PrintJobs
             .AsNoTracking()
@@ -107,7 +132,10 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
             .ConfigureAwait(false);
 
         if (hasActiveJob)
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
             return new ReprintReceiptResult(false, "PrintBridge.ReprintAlreadyPending", null);
+        }
 
         var order = await db.Orders
             .AsNoTracking()
@@ -117,12 +145,13 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
             .ConfigureAwait(false);
 
         if (order is null)
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
             return new ReprintReceiptResult(false, "PrintBridge.ReprintOrderNotFound", null);
+        }
 
         var copyCount = Math.Clamp(source.CopyCount, 1, 3);
-        var payloadJson = ReceiptPayloadBuilder.Build(order, tenantDisplayName);
-        if (string.IsNullOrWhiteSpace(payloadJson) && !string.IsNullOrWhiteSpace(source.PayloadJson))
-            payloadJson = source.PayloadJson;
+        var payloadJson = ReceiptPayloadBuilder.Build(order, tenantDisplayName, template);
 
         var nowUtc = DateTime.UtcNow;
 
@@ -143,9 +172,12 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
         try
         {
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            await tx.CommitAsync(ct).ConfigureAwait(false);
         }
         catch (DbUpdateException ex)
         {
+            await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+
             _logger.LogWarning(
                 ex,
                 "Receipt reprint job creation failed. CustomerId={CustomerId}, SourceJobId={SourceJobId}, OrderId={OrderId}",

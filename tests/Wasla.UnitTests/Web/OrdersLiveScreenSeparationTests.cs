@@ -354,7 +354,7 @@ public sealed class OrdersLiveScreenSeparationTests
         Assert.Contains("@L[\"Orders.LiveScreen.ViewCards\"]", liveView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.LiveScreen.ViewList\"]", liveView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.History.Search\"]", ordersView, StringComparison.Ordinal);
-        Assert.Contains("@L[\"Orders.History.ViewDetails\"]", panel, StringComparison.Ordinal);
+        Assert.Contains("@L[\"Orders.Details.OpenFullOrder\"]", panel, StringComparison.Ordinal);
 
         Assert.DoesNotContain(">Cards<", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain(">List<", liveView, StringComparison.Ordinal);

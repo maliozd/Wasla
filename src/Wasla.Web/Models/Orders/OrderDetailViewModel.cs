@@ -28,6 +28,12 @@ public sealed class OrderDetailViewModel
 
     public string BackUrl { get; set; } = "/orders";
 
+    /// <summary>A receipt job for this order is Pending or Printing, so manual printing is blocked.</summary>
+    public bool ReceiptPrintInProgress { get; set; }
+
+    /// <summary>A previous receipt job finished as Printed or Failed, so the action becomes a reprint.</summary>
+    public bool ReceiptCanReprint { get; set; }
+
     public List<ItemRow> Items { get; set; } = new();
 
     public sealed class ItemRow

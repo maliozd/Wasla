@@ -410,6 +410,14 @@ public sealed class PrintBridgeRuntime : IDisposable
 
             if (bridge.DryRun)
             {
+                // TEMPORARY: remove after the manual receipt-content verification.
+                var receiptDirectory = Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "test-receipts");
+                Directory.CreateDirectory(receiptDirectory);
+                var receiptPath = Path.Combine(receiptDirectory, $"receipt-{job.Id:N}.txt");
+                await File.WriteAllTextAsync(receiptPath, receipt, System.Text.Encoding.UTF8, ct)
+                    .ConfigureAwait(false);
+                _logger.LogInformation("DryRun receipt saved. Path={ReceiptPath}", receiptPath);
+
                 _logger.LogInformation("DryRun: no physical print was sent. JobId={JobId}", job.Id);
                 UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: "Dry run");
             }

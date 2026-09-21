@@ -118,7 +118,8 @@
         </div>
     </dl>
 
-    <div class="oh-live-detail__actions d-flex flex-wrap gap-2">
+    <div class="oh-live-detail__actions d-flex flex-wrap align-items-center gap-2">
+        @* Lifecycle stays primary; printing is a secondary action next to it. *@
         @await Html.PartialAsync("_OrderLifecycleActions", new OrderLifecycleActionsModel
         {
             OrderId = Model.Id,
@@ -126,8 +127,15 @@
             CanManageOrders = canManageOrders,
             ButtonSizeClass = "btn-sm"
         })
-        <a class="btn btn-sm btn-outline-secondary ms-auto" href="/orders/details/@Model.Id" target="_blank" rel="noopener noreferrer">
-            @L["Orders.History.ViewDetails"]
+        @await Html.PartialAsync("_OrderPrintAction", new OrderPrintActionModel
+        {
+            OrderId = Model.Id,
+            InProgress = Model.ReceiptPrintInProgress,
+            CanReprint = Model.ReceiptCanReprint,
+            ButtonSizeClass = "btn-sm"
+        })
+        <a class="btn btn-sm btn-link ms-auto" href="/orders/details/@Model.Id" target="_blank" rel="noopener noreferrer">
+            @L["Orders.Details.OpenFullOrder"]
         </a>
     </div>
 </div>

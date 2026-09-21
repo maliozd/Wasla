@@ -121,6 +121,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPrintBridgeSetupTenantLock, SqlServerPrintBridgeSetupTenantLock>();
         services.AddScoped<IPrintBridgeSetupSessionService, PrintBridgeSetupSessionService>();
         services.AddScoped<IPrintJobHistoryService, PrintJobHistoryService>();
+        services.AddScoped<IManualOrderPrintService, ManualOrderPrintService>();
 
         return services;
     }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Orders;
+using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Orders;
 using Wasla.Application.Time;
@@ -26,6 +27,7 @@ public sealed class OrdersController : BaseController
     private readonly IOrderSyncSettingsService _orderSyncSettings;
     private readonly ITenantOrderSettingsService _orderSettings;
     private readonly IOrderReceiptCreationService _receiptCreation;
+    private readonly IManualOrderPrintService _manualPrint;
     private readonly IValidator<UpdateTenantOrderSettingsCommand> _orderSettingsValidator;
     private readonly ILogger<OrdersController> _logger;
     private readonly IStringLocalizer<Wasla.Web.SharedResource> _localizer;
@@ -37,6 +39,7 @@ public sealed class OrdersController : BaseController
         IOrderSyncSettingsService orderSyncSettings,
         ITenantOrderSettingsService orderSettings,
         IOrderReceiptCreationService receiptCreation,
+        IManualOrderPrintService manualPrint,
         IValidator<UpdateTenantOrderSettingsCommand> orderSettingsValidator,
         ILogger<OrdersController> logger,
         IStringLocalizer<Wasla.Web.SharedResource> localizer)
@@ -47,6 +50,7 @@ public sealed class OrdersController : BaseController
         _orderSyncSettings = orderSyncSettings;
         _orderSettings = orderSettings;
         _receiptCreation = receiptCreation;
+        _manualPrint = manualPrint;
         _orderSettingsValidator = orderSettingsValidator;
         _logger = logger;
         _localizer = localizer;
@@ -388,6 +392,8 @@ public sealed class OrdersController : BaseController
         var order = await _orders.GetByIdAsync(tenant.Id, id, ct);
         if (order is null) return null;
 
+        var printState = await _manualPrint.GetReceiptPrintStateAsync(tenant.Id, id, ct);
+
         var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
         var receivedLocal = TimeZoneInfo.ConvertTimeFromUtc(
             DateTime.SpecifyKind(order.ReceivedAtUtc, DateTimeKind.Utc),
@@ -418,6 +424,8 @@ public sealed class OrdersController : BaseController
             AcceptedAtUtc = order.AcceptedAtUtc,
             AcceptedAtLocal = acceptedLocal,
             BackUrl = "/orders",
+            ReceiptPrintInProgress = printState.HasActiveJob,
+            ReceiptCanReprint = printState.CanReprint,
             Items = order.Items.Select(i => new OrderDetailViewModel.ItemRow
             {
                 ProductName = i.ProductName,
@@ -431,6 +439,35 @@ public sealed class OrdersController : BaseController
                     Price = o.Price
                 }).ToList()
             }).ToList()
+        };
+    }
+
+    /// <summary>
+    /// Queues a receipt for the order through the existing Print Bridge job pipeline. Physical printing
+    /// is done by the desktop Print Bridge after it claims the job, so a success here means "queued".
+    /// </summary>
+    [HttpPost("{id:guid}/print")]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManualPrint)]
+    public async Task<IActionResult> Print(Guid id, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var result = await _manualPrint.QueueReceiptPrintAsync(tenant.Id, id, tenant.Name, ct);
+
+        var body = new
+        {
+            success = result.Success,
+            message = _localizer[result.MessageKey].Value
+        };
+
+        return result.Outcome switch
+        {
+            ManualOrderPrintOutcome.OrderNotFound => NotFound(body),
+            ManualOrderPrintOutcome.AlreadyQueued => Conflict(body),
+            _ when !result.Success => BadRequest(body),
+            _ => Ok(body)
         };
     }
 

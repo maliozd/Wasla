@@ -615,6 +615,36 @@
   <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
     <value>Order details could not be loaded.</value>
   </data>
+  <data name="Orders.Print.Action" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="Orders.Print.InQueue" xml:space="preserve">
+    <value>In print queue</value>
+  </data>
+  <data name="Orders.Print.Hint" xml:space="preserve">
+    <value>Send the receipt to Print Bridge</value>
+  </data>
+  <data name="Orders.Print.Queued" xml:space="preserve">
+    <value>Receipt sent to the print queue.</value>
+  </data>
+  <data name="Orders.Print.ReprintQueued" xml:space="preserve">
+    <value>Receipt sent to the print queue again.</value>
+  </data>
+  <data name="Orders.Print.AlreadyQueued" xml:space="preserve">
+    <value>A receipt for this order is already queued or printing.</value>
+  </data>
+  <data name="Orders.Print.ConfirmReprint" xml:space="preserve">
+    <value>Send this receipt to the printer again?</value>
+  </data>
+  <data name="Orders.Print.OrderNotFound" xml:space="preserve">
+    <value>Order not found.</value>
+  </data>
+  <data name="Orders.Print.Failed" xml:space="preserve">
+    <value>The receipt could not be queued for printing.</value>
+  </data>
+  <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
+    <value>Open full order</value>
+  </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Close Display</value>
   </data>

@@ -1026,4 +1026,13 @@
   <data name="Validation.ConfirmPasswordRequired" xml:space="preserve"><value>Şifre tekrarı gereklidir.</value></data>
   <data name="Validation.PasswordMinLength" xml:space="preserve"><value>Şifre en az 8 karakter olmalıdır.</value></data>
   <data name="Auth.RememberMe" xml:space="preserve"><value>Beni hatırla</value></data>
+  <data name="Orders.Print.Action" xml:space="preserve"><value>Yazdır</value></data>
+  <data name="Orders.Print.InQueue" xml:space="preserve"><value>Yazdırma kuyruğunda</value></data>
+  <data name="Orders.Print.Hint" xml:space="preserve"><value>Fişi Print Bridge'e gönder</value></data>
+  <data name="Orders.Print.Queued" xml:space="preserve"><value>Fiş yazdırma kuyruğuna gönderildi.</value></data>
+  <data name="Orders.Print.ReprintQueued" xml:space="preserve"><value>Fiş yazdırma kuyruğuna yeniden gönderildi.</value></data>
+  <data name="Orders.Print.AlreadyQueued" xml:space="preserve"><value>Bu sipariş için bir fiş zaten kuyrukta veya yazdırılıyor.</value></data>
+  <data name="Orders.Print.ConfirmReprint" xml:space="preserve"><value>Bu fiş yazıcıya yeniden gönderilsin mi?</value></data>
+  <data name="Orders.Print.OrderNotFound" xml:space="preserve"><value>Sipariş bulunamadı.</value></data>
+  <data name="Orders.Print.Failed" xml:space="preserve"><value>Fiş yazdırma kuyruğuna eklenemedi.</value></data>
 </root>
