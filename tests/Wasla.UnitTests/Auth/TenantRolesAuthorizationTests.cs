@@ -211,6 +211,11 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         var model = Assert.IsType<TenantUsersViewModel>(view.Model);
         var row = Assert.Single(model.Users);
         Assert.Equal(owner.Email, row.Email);
+        Assert.Equal(1, model.TotalCount);
+        Assert.Equal(1, model.ActiveCount);
+        Assert.Equal(5, model.RoleCounts.Count);
+        Assert.Equal(1, model.RoleCounts.Single(x => x.Role == UserRole.Owner).Count);
+        Assert.All(model.RoleCounts.Where(x => x.Role != UserRole.Owner), x => Assert.Equal(0, x.Count));
     }
 
     [Theory]

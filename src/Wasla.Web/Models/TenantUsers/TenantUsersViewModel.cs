@@ -8,6 +8,19 @@ public sealed class TenantUsersViewModel
     public IReadOnlyList<TenantUserRowViewModel> Users { get; init; } = [];
 
     public IReadOnlyList<UserRole> RoleOptions { get; init; } = TenantUserRoleOptions.All;
+
+    public int TotalCount { get; init; }
+
+    public int ActiveCount { get; init; }
+
+    public IReadOnlyList<TenantUserRoleCountViewModel> RoleCounts { get; init; } = [];
+}
+
+public sealed class TenantUserRoleCountViewModel
+{
+    public UserRole Role { get; init; }
+
+    public int Count { get; init; }
 }
 
 public class TenantUserRowViewModel

@@ -47,19 +47,30 @@ public sealed class TenantUsersController : BaseController
             return NotFound();
 
         var users = await _users.ListUsersAsync(tenant.Id, ct).ConfigureAwait(false);
+        var rows = users.Select(u => new TenantUserRowViewModel
+        {
+            Id = u.Id,
+            Email = u.Email,
+            FullName = u.FullName,
+            Role = u.Role,
+            IsActive = u.IsActive,
+            CreatedAt = u.CreatedAt,
+            LastLoginAt = u.LastLoginAt
+        }).ToList();
+
         return View(new TenantUsersViewModel
         {
-            Users = users.Select(u => new TenantUserRowViewModel
-            {
-                Id = u.Id,
-                Email = u.Email,
-                FullName = u.FullName,
-                Role = u.Role,
-                IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt,
-                LastLoginAt = u.LastLoginAt
-            }).ToList(),
-            RoleOptions = TenantUserRoleOptions.All
+            Users = rows,
+            RoleOptions = TenantUserRoleOptions.All,
+            TotalCount = rows.Count,
+            ActiveCount = rows.Count(u => u.IsActive),
+            RoleCounts = TenantUserRoleOptions.All
+                .Select(role => new TenantUserRoleCountViewModel
+                {
+                    Role = role,
+                    Count = rows.Count(u => u.Role == role)
+                })
+                .ToList()
         });
     }
 

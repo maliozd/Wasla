@@ -3449,8 +3449,8 @@
   <data name="Auth.AccessDenied.Description" xml:space="preserve"><value>You are signed in, but you do not have permission for this page or action.</value></data>
   <data name="Auth.AccessDenied.BackToOrders" xml:space="preserve"><value>Back to orders</value></data>
   <data name="Navigation.UserSettings" xml:space="preserve"><value>Users</value></data>
-  <data name="TenantUsers.Title" xml:space="preserve"><value>Users</value></data>
-  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Manage restaurant user roles and access status.</value></data>
+  <data name="TenantUsers.Title" xml:space="preserve"><value>Team &amp; Permissions</value></data>
+  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Manage restaurant team roles and access status.</value></data>
   <data name="TenantUsers.AddUser" xml:space="preserve"><value>Add user</value></data>
   <data name="TenantUsers.CreationDeferred" xml:space="preserve"><value>Creating new users is disabled until a secure invite/password setup flow is added.</value></data>
   <data name="TenantUsers.Details" xml:space="preserve"><value>Details</value></data>
@@ -3495,4 +3495,15 @@
   <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>User not found.</value></data>
   <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>The last Owner cannot be deactivated or demoted.</value></data>
   <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>User could not be updated.</value></data>
+  <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>User summary</value></data>
+  <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Total</value></data>
+  <data name="TenantUsers.SummaryActive" xml:space="preserve"><value>Active</value></data>
+  <data name="TenantUsers.ListHeading" xml:space="preserve"><value>User list</value></data>
+  <data name="TenantUsers.FilterPlaceholder" xml:space="preserve"><value>Name or email</value></data>
+  <data name="TenantUsers.AllRoles" xml:space="preserve"><value>All roles</value></data>
+  <data name="TenantUsers.EmptyTitle" xml:space="preserve"><value>No users yet</value></data>
+  <data name="TenantUsers.EmptyDescription" xml:space="preserve"><value>Start by adding the first restaurant user.</value></data>
+  <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>No matching users</value></data>
+  <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>Try a different search or filter.</value></data>
+  <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>Not recorded</value></data>
 </root>

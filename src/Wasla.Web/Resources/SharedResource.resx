@@ -977,8 +977,8 @@
   <data name="Layout.OpenNavigation" xml:space="preserve"><value>Menüyü aç</value></data>
   <data name="Layout.CloseNavigation" xml:space="preserve"><value>Menüyü kapat</value></data>
   <data name="Layout.TenantNavigation" xml:space="preserve"><value>Restoran menüsü</value></data>
-  <data name="TenantUsers.Title" xml:space="preserve"><value>Kullanıcılar</value></data>
-  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Restoran kullanıcılarının rollerini ve erişim durumunu yönetin.</value></data>
+  <data name="TenantUsers.Title" xml:space="preserve"><value>Ekip ve Yetkiler</value></data>
+  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Restoran ekibinin rollerini ve erişim durumunu yönetin.</value></data>
   <data name="TenantUsers.AddUser" xml:space="preserve"><value>Kullanıcı ekle</value></data>
   <data name="TenantUsers.CreationDeferred" xml:space="preserve"><value>Güvenli davet/şifre belirleme akışı eklenene kadar yeni kullanıcı oluşturma devre dışıdır.</value></data>
   <data name="TenantUsers.Details" xml:space="preserve"><value>Detaylar</value></data>
@@ -1009,11 +1009,11 @@
   <data name="TenantUsers.Password" xml:space="preserve"><value>Şifre</value></data>
   <data name="TenantUsers.ConfirmPassword" xml:space="preserve"><value>Şifre tekrarı</value></data>
   <data name="TenantUsers.LeavePasswordBlank" xml:space="preserve"><value>Mevcut şifreyi korumak için boş bırakın.</value></data>
-  <data name="TenantUsers.Role.Owner" xml:space="preserve"><value>Owner</value></data>
-  <data name="TenantUsers.Role.Manager" xml:space="preserve"><value>Manager</value></data>
-  <data name="TenantUsers.Role.Kitchen" xml:space="preserve"><value>Kitchen</value></data>
-  <data name="TenantUsers.Role.Cashier" xml:space="preserve"><value>Cashier</value></data>
-  <data name="TenantUsers.Role.Viewer" xml:space="preserve"><value>Viewer</value></data>
+  <data name="TenantUsers.Role.Owner" xml:space="preserve"><value>Sahip</value></data>
+  <data name="TenantUsers.Role.Manager" xml:space="preserve"><value>Yönetici</value></data>
+  <data name="TenantUsers.Role.Kitchen" xml:space="preserve"><value>Mutfak</value></data>
+  <data name="TenantUsers.Role.Cashier" xml:space="preserve"><value>Kasiyer</value></data>
+  <data name="TenantUsers.Role.Viewer" xml:space="preserve"><value>Görüntüleyici</value></data>
   <data name="TenantUsers.RoleChanged" xml:space="preserve"><value>Rol güncellendi.</value></data>
   <data name="TenantUsers.UserActivated" xml:space="preserve"><value>Kullanıcı etkinleştirildi.</value></data>
   <data name="TenantUsers.UserDeactivated" xml:space="preserve"><value>Kullanıcı devre dışı bırakıldı.</value></data>
@@ -1038,6 +1038,17 @@
   <data name="Orders.Print.ConfirmReprint" xml:space="preserve"><value>Bu fiş yazıcıya yeniden gönderilsin mi?</value></data>
   <data name="Orders.Print.OrderNotFound" xml:space="preserve"><value>Sipariş bulunamadı.</value></data>
   <data name="Orders.Print.Failed" xml:space="preserve"><value>Fiş yazdırma kuyruğuna eklenemedi.</value></data>
+  <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>Kullanıcı özeti</value></data>
+  <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Toplam</value></data>
+  <data name="TenantUsers.SummaryActive" xml:space="preserve"><value>Aktif</value></data>
+  <data name="TenantUsers.ListHeading" xml:space="preserve"><value>Kullanıcı listesi</value></data>
+  <data name="TenantUsers.FilterPlaceholder" xml:space="preserve"><value>Ad veya e-posta</value></data>
+  <data name="TenantUsers.AllRoles" xml:space="preserve"><value>Tüm roller</value></data>
+  <data name="TenantUsers.EmptyTitle" xml:space="preserve"><value>Henüz kullanıcı yok</value></data>
+  <data name="TenantUsers.EmptyDescription" xml:space="preserve"><value>İlk restoran kullanıcısını ekleyerek başlayın.</value></data>
+  <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>Eşleşen kullanıcı bulunamadı</value></data>
+  <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>Arama veya filtreleri değiştirip yeniden deneyin.</value></data>
+  <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>Kayıt yok</value></data>
   <data name="Notification.EnableSoundButton" xml:space="preserve"><value>Bildirim sesini etkinleştir</value></data>
   <data name="Notification.SoundMayBeOffTitle" xml:space="preserve"><value>Bildirim sesi kapalı olabilir</value></data>
   <data name="Notification.SoundMayBeOffDescription" xml:space="preserve"><value>Yeni sipariş seslerini duymak için bildirim sesini etkinleştirin.</value></data>
