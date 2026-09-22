@@ -1035,4 +1035,9 @@
   <data name="Orders.Print.ConfirmReprint" xml:space="preserve"><value>Bu fiş yazıcıya yeniden gönderilsin mi?</value></data>
   <data name="Orders.Print.OrderNotFound" xml:space="preserve"><value>Sipariş bulunamadı.</value></data>
   <data name="Orders.Print.Failed" xml:space="preserve"><value>Fiş yazdırma kuyruğuna eklenemedi.</value></data>
+  <data name="Notification.EnableSoundButton" xml:space="preserve"><value>Bildirim sesini etkinleştir</value></data>
+  <data name="Notification.SoundMayBeOffTitle" xml:space="preserve"><value>Bildirim sesi kapalı olabilir</value></data>
+  <data name="Notification.SoundMayBeOffDescription" xml:space="preserve"><value>Yeni sipariş seslerini duymak için bildirim sesini etkinleştirin.</value></data>
+  <data name="Notification.SoundActive" xml:space="preserve"><value>Bildirim sesi aktif</value></data>
+  <data name="Notification.StopSoundButton" xml:space="preserve"><value>Sesi durdur</value></data>
 </root>

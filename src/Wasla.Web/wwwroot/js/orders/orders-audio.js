@@ -1,4 +1,4 @@
-﻿// Sound playback, preview, and browser notifications (depends on WaslaOrders).
+﻿// Sound playback, preview, unlock, and browser notifications (depends on WaslaOrders).
 (function (global) {
   "use strict";
 
@@ -7,21 +7,124 @@
     return;
   }
 
+  const SOUND_UNLOCK_KEY = "Wasla.soundUnlocked";
+
   let currentPreviewAudio = null;
+  let currentAlertAudio = null;
+  let sessionUnlocked = false;
+  let unlockPromptShown = false;
+  let unlockGesturesBound = false;
+  let alertPlaybackToken = 0;
+
+  function persistUnlockFlag() {
+    try {
+      localStorage.setItem(SOUND_UNLOCK_KEY, "true");
+    } catch (error) {
+      /* ignore quota / private mode */
+    }
+  }
 
   function isSoundUnlocked() {
-    return localStorage.getItem("Wasla.soundUnlocked") === "true";
+    return sessionUnlocked === true;
+  }
+
+  function markSoundUnlocked() {
+    sessionUnlocked = true;
+    persistUnlockFlag();
+  }
+
+  function stopAudioElement(audio) {
+    if (!audio) {
+      return;
+    }
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch (error) {
+      O.debugWarn("stopAudioElement failed", error);
+    }
   }
 
   function stopCurrentPreviewSound() {
-    try {
-      if (!currentPreviewAudio) return;
-      currentPreviewAudio.pause();
-      currentPreviewAudio.currentTime = 0;
-    } catch (error) {
-      O.debugWarn("stopCurrentPreviewSound failed", error);
-    }
+    stopAudioElement(currentPreviewAudio);
     currentPreviewAudio = null;
+  }
+
+  function stopCurrentAlertSound() {
+    stopAudioElement(currentAlertAudio);
+    currentAlertAudio = null;
+  }
+
+  function setElementVisible(el, visible) {
+    if (!el) {
+      return;
+    }
+    if (visible) {
+      el.classList.remove("d-none");
+      el.hidden = false;
+      el.removeAttribute("hidden");
+    } else {
+      el.classList.add("d-none");
+      el.hidden = true;
+      el.setAttribute("hidden", "hidden");
+    }
+  }
+
+  function setStopSoundVisible(visible) {
+    setElementVisible(document.getElementById("ordersLiveDisplayStopSound"), visible);
+  }
+
+  function stopCurrentSound() {
+    alertPlaybackToken += 1;
+    stopCurrentPreviewSound();
+    stopCurrentAlertSound();
+    setStopSoundVisible(false);
+  }
+
+  function syncSoundEnableUi() {
+    const unlocked = isSoundUnlocked();
+    const liveBanner = document.getElementById("ordersLiveDisplaySoundBanner");
+    const liveActive = document.getElementById("ordersLiveDisplaySoundActive");
+    const liveEnableBtn = document.getElementById("ordersLiveDisplayEnableNotificationSound");
+
+    setElementVisible(liveBanner, !unlocked);
+    setElementVisible(liveEnableBtn, !unlocked);
+    setElementVisible(liveActive, unlocked);
+
+    if (unlocked && liveActive && !liveActive.dataset.fadeScheduled) {
+      liveActive.dataset.fadeScheduled = "1";
+      global.setTimeout(function () {
+        if (isSoundUnlocked()) {
+          setElementVisible(liveActive, false);
+        }
+      }, 4000);
+    }
+  }
+
+  function showUnlockPromptOnce() {
+    syncSoundEnableUi();
+    if (unlockPromptShown) {
+      return;
+    }
+    unlockPromptShown = true;
+    const message = O.getMessage("enableNotificationSound") || O.getMessage("soundUnlockHint");
+    if (global.WaslaToast && typeof global.WaslaToast.info === "function") {
+      global.WaslaToast.info(message, { key: "sound-unlock-hint", durationMs: 8000 });
+      return;
+    }
+    O.showMessage(message, "info");
+  }
+
+  function handlePlayRejection(error) {
+    O.debugWarn("audio.play() rejected", error);
+    if (error && error.name === "NotAllowedError") {
+      showUnlockPromptOnce();
+      bindUnlockGestures();
+      O.showOrdersWarning("audio-not-allowed", O.getMessage("audioNotAllowed"));
+    } else {
+      O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
+    }
+    syncSoundEnableUi();
   }
 
   function getSoundUrlFromSettings(name) {
@@ -45,7 +148,107 @@
     return volPct;
   }
 
+  async function trySilentUnlock(url) {
+    try {
+      const audio = new Audio(url || getSoundUrlFromSettings("bell1"));
+      audio.volume = 0.01;
+      await audio.play();
+      stopAudioElement(audio);
+      markSoundUnlocked();
+      unlockPromptShown = true;
+      syncSoundEnableUi();
+      return true;
+    } catch (error) {
+      O.debugWarn("silent audio unlock failed", error);
+      return false;
+    }
+  }
+
+  async function enableNotificationSoundFromControl() {
+    const st = O.state.notificationSettings || {};
+    const soundName = st.newOrderSoundName || "bell1";
+    const url = getSoundUrlFromSettings(soundName);
+    const pct = st.newOrderSoundVolumePercent != null
+      ? st.newOrderSoundVolumePercent
+      : Math.round((st.newOrderSoundVolume || 1) * 100);
+    const vol = Math.max(0.15, Math.min(1, (pct || 100) / 100.0));
+
+    stopCurrentSound();
+    try {
+      const audio = new Audio(url);
+      audio.volume = vol;
+      currentPreviewAudio = audio;
+      await audio.play();
+      markSoundUnlocked();
+      unlockPromptShown = true;
+      syncSoundEnableUi();
+      if (O.notificationSettings && typeof O.notificationSettings.updateNotificationStatusUi === "function") {
+        try {
+          O.notificationSettings.updateNotificationStatusUi(st);
+        } catch (error) {
+          /* ignore */
+        }
+      }
+      return true;
+    } catch (error) {
+      handlePlayRejection(error);
+      return false;
+    }
+  }
+
+  function wireSoundEnableControls() {
+    const btn = document.getElementById("ordersLiveDisplayEnableNotificationSound");
+    if (btn && btn.dataset.soundEnableWired !== "1") {
+      btn.dataset.soundEnableWired = "1";
+      btn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        enableNotificationSoundFromControl().catch(function (error) {
+          O.debugWarn("enableNotificationSoundFromControl failed", error);
+        });
+      });
+    }
+
+    const stopBtn = document.getElementById("ordersLiveDisplayStopSound");
+    if (stopBtn && stopBtn.dataset.soundStopWired !== "1") {
+      stopBtn.dataset.soundStopWired = "1";
+      stopBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        stopCurrentSound();
+      });
+    }
+  }
+
+  function bindUnlockGestures() {
+    if (unlockGesturesBound || typeof document === "undefined") {
+      return;
+    }
+    unlockGesturesBound = true;
+
+    const onUserGesture = function (event) {
+      if (event && event.target && event.target.closest && event.target.closest(".wasla-orders-sound-enable-btn, #ordersLiveDisplayStopSound")) {
+        return;
+      }
+      trySilentUnlock().then(function (ok) {
+        if (ok && O.notificationSettings && typeof O.notificationSettings.updateNotificationStatusUi === "function") {
+          try {
+            O.notificationSettings.updateNotificationStatusUi(O.state.notificationSettings || {});
+          } catch (error) {
+            /* ignore */
+          }
+        }
+      });
+    };
+
+    ["pointerdown", "keydown", "touchstart"].forEach(function (evt) {
+      document.addEventListener(evt, onUserGesture, { once: true, capture: true, passive: true });
+    });
+  }
+
   async function playSoundNow(state, urlOverride) {
+    stopCurrentSound();
+    const token = alertPlaybackToken;
     const repeat = Math.max(1, Math.min(3, state.newOrderSoundRepeatCount || 1));
     const pct = state.newOrderSoundVolumePercent;
     const vol = Math.max(0, Math.min(1, (pct || 100) / 100.0));
@@ -61,9 +264,14 @@
     });
 
     for (let i = 0; i < repeat; i++) {
+      if (token !== alertPlaybackToken) {
+        return;
+      }
       try {
         const audio = new Audio(url);
         audio.volume = vol;
+        currentAlertAudio = audio;
+        setStopSoundVisible(true);
         audio.addEventListener("error", function () {
           O.debugWarn("Audio load/playback error", {
             url: audio.src,
@@ -74,27 +282,45 @@
         }, { once: true });
 
         await new Promise(function (resolve) {
-          audio.addEventListener("ended", resolve, { once: true });
-          audio.addEventListener("error", resolve, { once: true });
-          audio.play().catch(function (error) {
-            O.debugWarn("audio.play() rejected", error);
-            if (error && error.name === "NotAllowedError") {
-              O.showOrdersWarning("audio-not-allowed", O.getMessage("audioNotAllowed"));
-            } else {
-              O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
+          let settled = false;
+          function done() {
+            if (settled) {
+              return;
             }
+            settled = true;
             resolve();
-          });
+          }
+
+          audio.addEventListener("ended", done, { once: true });
+          audio.addEventListener("error", done, { once: true });
+          const playResult = audio.play();
+          if (playResult && typeof playResult.then === "function") {
+            playResult.then(function () {
+              markSoundUnlocked();
+              syncSoundEnableUi();
+            }).catch(function (error) {
+              handlePlayRejection(error);
+              done();
+            });
+          }
         });
+
+        if (currentAlertAudio === audio) {
+          currentAlertAudio = null;
+        }
       } catch (error) {
         O.debugWarn("playSoundNow failed", error);
         O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
       }
     }
+
+    if (token === alertPlaybackToken) {
+      setStopSoundVisible(false);
+    }
   }
 
   async function playSoundPreview(soundName, soundUrl) {
-    stopCurrentPreviewSound();
+    stopCurrentSound();
     const pct = readVolumePercentFromNotificationModal();
     const vol = Math.max(0, Math.min(1, (pct || 100) / 100.0));
     const url = soundUrl || getSoundUrlFromSettings(soundName);
@@ -111,26 +337,17 @@
         O.showOrdersWarning("audio-error", O.getMessage("audioFileError"));
       }, { once: true });
       await audio.play();
-      localStorage.setItem("Wasla.soundUnlocked", "true");
+      markSoundUnlocked();
+      syncSoundEnableUi();
       O.debugLog("Sound preview played; unlocked sound");
     } catch (error) {
       O.debugWarn("playSoundPreview failed", error);
       stopCurrentPreviewSound();
-      if (global.WaslaToast) {
-        if (error && error.name === "NotAllowedError") {
-          global.WaslaToast.error(O.getMessage("audioNotAllowed"));
-        } else {
-          global.WaslaToast.warning(O.getMessage("soundCouldNotPlay"));
-        }
-      } else {
-        if (O.notificationSettings && typeof O.notificationSettings.showModalWarning === "function") {
-          O.notificationSettings.showModalWarning(O.getMessage("soundCouldNotPlay"));
-        }
-        if (error && error.name === "NotAllowedError") {
-          O.showOrdersWarning("audio-not-allowed", O.getMessage("audioNotAllowed"));
-        } else {
-          O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
-        }
+      handlePlayRejection(error);
+      if ((!error || error.name !== "NotAllowedError") && global.WaslaToast) {
+        global.WaslaToast.warning(O.getMessage("soundCouldNotPlay"));
+      } else if ((!error || error.name !== "NotAllowedError") && O.notificationSettings && typeof O.notificationSettings.showModalWarning === "function") {
+        O.notificationSettings.showModalWarning(O.getMessage("soundCouldNotPlay"));
       }
     }
   }
@@ -157,13 +374,26 @@
     }
   }
 
+  function initAudioUnlock() {
+    wireSoundEnableControls();
+    syncSoundEnableUi();
+    bindUnlockGestures();
+  }
+
   O.audio = {
     isSoundUnlocked: isSoundUnlocked,
+    markSoundUnlocked: markSoundUnlocked,
     stopCurrentPreviewSound: stopCurrentPreviewSound,
+    stopCurrentSound: stopCurrentSound,
     getSoundUrlFromSettings: getSoundUrlFromSettings,
     playSoundNow: playSoundNow,
     playSoundPreview: playSoundPreview,
     maybeRequestBrowserNotificationPermission: maybeRequestBrowserNotificationPermission,
-    showBrowserNotificationIfAllowed: showBrowserNotificationIfAllowed
+    showBrowserNotificationIfAllowed: showBrowserNotificationIfAllowed,
+    initAudioUnlock: initAudioUnlock,
+    bindUnlockGestures: bindUnlockGestures,
+    showUnlockPromptOnce: showUnlockPromptOnce,
+    syncSoundEnableUi: syncSoundEnableUi,
+    enableNotificationSoundFromControl: enableNotificationSoundFromControl
   };
 })(window);

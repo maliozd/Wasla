@@ -984,6 +984,21 @@
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
     <value>لسماع صوت الطلب الجديد، قم أولاً بمعاينة صوت من إعدادات الإشعارات.</value>
   </data>
+  <data name="Notification.EnableSoundButton" xml:space="preserve">
+    <value>تفعيل صوت الإشعارات</value>
+  </data>
+  <data name="Notification.SoundMayBeOffTitle" xml:space="preserve">
+    <value>قد يكون صوت الإشعارات متوقفاً</value>
+  </data>
+  <data name="Notification.SoundMayBeOffDescription" xml:space="preserve">
+    <value>فعّل صوت الإشعارات لسماع تنبيهات الطلبات الجديدة.</value>
+  </data>
+  <data name="Notification.SoundActive" xml:space="preserve">
+    <value>صوت الإشعارات مفعّل</value>
+  </data>
+  <data name="Notification.StopSoundButton" xml:space="preserve">
+    <value>إيقاف الصوت</value>
+  </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>جاري التحميل…</value>
   </data>

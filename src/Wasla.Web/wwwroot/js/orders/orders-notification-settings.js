@@ -300,9 +300,6 @@
         const opt = soundSel && soundSel.options[soundSel.selectedIndex];
         const url = opt && opt.getAttribute("data-sound-url");
         await O.audio.playSoundNow(st, url || null);
-        try {
-          localStorage.setItem("Wasla.soundUnlocked", "true");
-        } catch (e) { /* ignore */ }
         updateNotificationStatusUi(getModalState());
       });
     }

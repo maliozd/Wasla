@@ -45,11 +45,17 @@
     document.body.classList.add("wasla-orders-view-kitchen");
     initCloseButton();
     seedLiveScreenSummary();
+    if (O.audio && typeof O.audio.initAudioUnlock === "function") {
+      O.audio.initAudioUnlock();
+    }
     // Baseline current IDs before polling — initial load must not notify or highlight.
     O.table.captureKnownOrderIdsFromContainer();
     O.table.applyNewOrderVisualState();
     if (O.notificationSettings && typeof O.notificationSettings.load === "function") {
       await O.notificationSettings.load();
+    }
+    if (O.audio && typeof O.audio.syncSoundEnableUi === "function") {
+      O.audio.syncSoundEnableUi();
     }
     O.table.initPolling();
   }
