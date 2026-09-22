@@ -684,7 +684,8 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         Assert.Contains("navPermissions.CanManageDeviceSecurity", layoutSource, StringComparison.Ordinal);
         Assert.Contains("navPermissions.CanManageTenantSettings", layoutSource, StringComparison.Ordinal);
         Assert.Contains("navPermissions.CanManageOrderSettings", settingsSource, StringComparison.Ordinal);
-        Assert.Contains("navPermissions.CanManageTenantUsers", settingsSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanManageTenantUsers", layoutSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("navPermissions.CanManageTenantUsers", settingsSource, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -1,0 +1,27 @@
+@model Wasla.Web.Models.Ui.WaslaPageHeaderModel
+
+<header class="wasla-page-header">
+    <div class="wasla-page-header__main">
+        @if (!string.IsNullOrWhiteSpace(Model.Eyebrow))
+        {
+            <p class="wasla-page-header__eyebrow">@Model.Eyebrow</p>
+        }
+        <h1 class="wasla-page-header__title">@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p class="wasla-page-header__description">@Model.Description</p>
+        }
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Model.ActionUrl) && !string.IsNullOrWhiteSpace(Model.ActionText))
+    {
+        <div class="wasla-page-header__actions">
+            <a class="wasla-btn wasla-btn--primary" href="@Model.ActionUrl">
+                @if (!string.IsNullOrWhiteSpace(Model.ActionIconClass))
+                {
+                    <i class="@Model.ActionIconClass" aria-hidden="true"></i>
+                }
+                <span>@Model.ActionText</span>
+            </a>
+        </div>
+    }
+</header>

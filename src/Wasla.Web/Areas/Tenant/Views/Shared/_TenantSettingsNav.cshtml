@@ -13,10 +13,8 @@
         || path.StartsWith("/settings/receipt-printer/", StringComparison.OrdinalIgnoreCase);
     var isAccountSettings = path.Equals("/settings/account", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/settings/account/", StringComparison.OrdinalIgnoreCase);
-    var isUserSettings = path.Equals("/settings/users", StringComparison.OrdinalIgnoreCase)
-        || path.StartsWith("/settings/users/", StringComparison.OrdinalIgnoreCase);
     var hasSettingsLinks = navPermissions.CanViewAnySettingsLink;
-    var settingsActive = hasSettingsLinks && (isOrderSettings || isReceiptPrinterSettings || isAccountSettings || isUserSettings);
+    var settingsActive = hasSettingsLinks && (isOrderSettings || isReceiptPrinterSettings || isAccountSettings);
 }
 
 @if (hasSettingsLinks)
@@ -24,7 +22,7 @@
 <div class="wasla-sidebar-settings">
     <div class="dropup position-static w-100">
         <button type="button"
-                class="wasla-sidebar-action-btn dropdown-toggle wasla-sidebar-settings-toggle w-100 @(settingsActive ? "active" : "")"
+                class="wasla-sidebar-action-btn dropdown-toggle wasla-sidebar-settings-toggle w-100 @(settingsActive ? "wasla-sidebar-nav-parent--current" : "")"
                 id="tenantSettingsMenuToggle"
                 data-bs-toggle="dropdown"
                 data-bs-auto-close="true"
@@ -68,18 +66,6 @@
                    asp-controller="AccountSettings"
                    asp-action="Index">
                     @L["Navigation.AccountSettings"]
-                </a>
-            </li>
-            }
-            @if (navPermissions.CanManageTenantUsers)
-            {
-            <li role="none">
-                <a class="dropdown-item @(isUserSettings ? "active" : "")"
-                   role="menuitem"
-                   asp-area="Tenant"
-                   asp-controller="TenantUsers"
-                   asp-action="Index">
-                    @L["Navigation.UserSettings"]
                 </a>
             </li>
             }

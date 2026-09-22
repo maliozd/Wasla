@@ -270,6 +270,15 @@
   <data name="Layout.ToggleSidebar" xml:space="preserve">
     <value>Menüyü aç/kapat</value>
   </data>
+  <data name="Layout.OpenNavigation" xml:space="preserve">
+    <value>Menüyü aç</value>
+  </data>
+  <data name="Layout.CloseNavigation" xml:space="preserve">
+    <value>Menüyü kapat</value>
+  </data>
+  <data name="Layout.TenantNavigation" xml:space="preserve">
+    <value>Restoran menüsü</value>
+  </data>
   <data name="Landing.Title" xml:space="preserve">
     <value>Wasla</value>
   </data>
