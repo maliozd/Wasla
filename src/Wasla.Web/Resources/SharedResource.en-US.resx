@@ -922,7 +922,7 @@
     <value>Activate</value>
   </data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve">
-    <value>Note: Owner/Manager role is expected for managing platform connections.</value>
+    <value>Manage the ordering platforms connected to this restaurant.</value>
   </data>
   <data name="Branches.Title" xml:space="preserve">
     <value>Branches</value>

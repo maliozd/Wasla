@@ -40,14 +40,13 @@
     return { resp: resp, payload: payload };
   }
 
-  function updateStatusBadge(container, isActive) {
-    const badge = container.querySelector(".badge");
-    if (!badge) return;
-    badge.classList.toggle("text-bg-success", isActive);
-    badge.classList.toggle("text-bg-secondary", !isActive);
-    badge.textContent = isActive
-      ? (global.platformConnectionsMessages && global.platformConnectionsMessages.activeText) || badge.textContent
-      : (global.platformConnectionsMessages && global.platformConnectionsMessages.inactiveText) || badge.textContent;
+  function updateStatusText(container, isActive) {
+    const text = container.querySelector(".wasla-connections__status-text");
+    if (!text) return;
+    text.textContent = isActive
+      ? (global.platformConnectionsMessages && global.platformConnectionsMessages.activeText) || text.textContent
+      : (global.platformConnectionsMessages && global.platformConnectionsMessages.inactiveText) || text.textContent;
+    text.classList.toggle("is-active", isActive);
   }
 
   function initToggles() {
@@ -68,7 +67,7 @@
 
           const row = toggle.closest("tr");
           const statusCell = row ? row.querySelector("td:nth-child(3)") : null;
-          if (statusCell) updateStatusBadge(statusCell, toggle.checked);
+          if (statusCell) updateStatusText(statusCell, toggle.checked);
           toastSuccess((global.platformConnectionsMessages && global.platformConnectionsMessages.toggled) || "Updated");
         } catch (_) {
           toggle.checked = previous;

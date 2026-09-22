@@ -922,7 +922,7 @@
     <value>Активировать</value>
   </data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve">
-    <value>Примечание. Предполагается, что роль Owner/Manager будет управлять соединениями платформы.</value>
+    <value>Управляйте платформами заказов, подключёнными к этому ресторану.</value>
   </data>
   <data name="Branches.Title" xml:space="preserve">
     <value>Филиалы</value>

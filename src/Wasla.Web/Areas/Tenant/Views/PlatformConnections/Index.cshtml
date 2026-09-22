@@ -15,76 +15,98 @@
     var pcMessagesJson = JsonSerializer.Serialize(pcMessages);
 }
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">@L["PlatformConnections.Title"]</h1>
-    <a class="btn btn-sm btn-primary" href="/platform-connections/create">@L["PlatformConnections.Create"]</a>
-</div>
+<div class="wasla-connections">
+    @await Html.PartialAsync("_WaslaPageHeader", new WaslaPageHeaderModel
+    {
+        Title = L["PlatformConnections.Title"].Value,
+        Description = L["PlatformConnections.NoteRole"].Value,
+        ActionUrl = "/platform-connections/create",
+        ActionText = L["PlatformConnections.Create"].Value,
+        ActionIconClass = "bi bi-plus-lg"
+    })
 
-<div class="card oh-card">
-    <div class="card-body">
+    <section class="wasla-surface" aria-labelledby="platform-connections-heading">
+        <h2 id="platform-connections-heading" class="visually-hidden">@L["PlatformConnections.Title"]</h2>
         <form id="platformConnectionsAntiForgery" class="d-none" method="post">
             @Html.AntiForgeryToken()
         </form>
-        <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-                <thead>
-                <tr>
-                    <th>@L["PlatformConnections.Platform"]</th>
-                    <th>@L["PlatformConnections.StoreId"]</th>
-                    <th>@L["Common.Status"]</th>
-                    <th class="text-end">@L["PlatformConnections.ErrorCount"]</th>
-                    <th class="text-end">@L["PlatformConnections.CircuitOpenUntil"]</th>
-                    <th class="text-end">@L["PlatformConnections.LastSuccessfulSync"]</th>
-                    <th class="text-end">@L["PlatformConnections.Actions"]</th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (Model.Connections.Count == 0)
-                {
+
+        @if (Model.Connections.Count == 0)
+        {
+            <div class="wasla-empty">
+                <p class="wasla-empty__title">@L["PlatformConnections.NoConnectionsFound"]</p>
+            </div>
+        }
+        else
+        {
+            <div class="wasla-table-wrap">
+                <table class="wasla-table">
+                    <thead>
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">@L["PlatformConnections.NoConnectionsFound"]</td>
+                        <th scope="col">@L["PlatformConnections.Platform"]</th>
+                        <th scope="col">@L["PlatformConnections.StoreId"]</th>
+                        <th scope="col">@L["Common.Status"]</th>
+                        <th scope="col">@L["PlatformConnections.LastSuccessfulSync"]</th>
+                        <th scope="col">@L["PlatformConnections.Actions"]</th>
                     </tr>
-                }
-                else
-                {
+                    </thead>
+                    <tbody>
                     @foreach (var c in Model.Connections)
                     {
                         <tr>
-                            <td>@c.Platform</td>
-                            <td>@c.StoreId</td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="badge @(c.IsActive ? "text-bg-success" : "text-bg-secondary")">
-                                        @(c.IsActive ? L["PlatformConnections.Active"] : L["PlatformConnections.Inactive"])
-                                    </span>
-                                    <div class="form-check form-switch m-0">
-                                        <input class="form-check-input pc-active-toggle"
-                                               type="checkbox"
-                                               role="switch"
-                                               data-connection-id="@c.Id"
-                                               @(c.IsActive ? "checked" : null) />
+                            <td data-label="@L["PlatformConnections.Platform"]">
+                                <span class="wasla-table__cell-label" aria-hidden="true">@L["PlatformConnections.Platform"]</span>
+                                <span class="wasla-table__name">@c.Platform</span>
+                            </td>
+                            <td data-label="@L["PlatformConnections.StoreId"]">
+                                <span class="wasla-table__cell-label" aria-hidden="true">@L["PlatformConnections.StoreId"]</span>
+                                <span class="wasla-connections__secondary">@c.StoreId</span>
+                            </td>
+                            <td data-label="@L["Common.Status"]">
+                                <span class="wasla-table__cell-label" aria-hidden="true">@L["Common.Status"]</span>
+                                <div class="wasla-connections__status">
+                                    <div class="wasla-connections__status-main">
+                                        <div class="form-check form-switch wasla-connections__switch">
+                                            <input class="form-check-input pc-active-toggle"
+                                                   type="checkbox"
+                                                   role="switch"
+                                                   data-connection-id="@c.Id"
+                                                   aria-labelledby="pc-status-@c.Id"
+                                                   @(c.IsActive ? "checked" : null) />
+                                        </div>
+                                        <span id="pc-status-@c.Id" class="wasla-connections__status-text@(c.IsActive ? " is-active" : null)">
+                                            @(c.IsActive ? L["PlatformConnections.Active"] : L["PlatformConnections.Inactive"])
+                                        </span>
                                     </div>
+                                    @if (PlatformConnectionListPresentation.ShowConsecutiveErrors(c.ConsecutiveFailures))
+                                    {
+                                        <p class="wasla-connections__warning">@L["PlatformConnections.ErrorCount"]: @c.ConsecutiveFailures</p>
+                                    }
+                                    @if (c.CircuitOpenUntilUtc is DateTime circuitOpenUntil
+                                         && PlatformConnectionListPresentation.ShowCircuitOpen(circuitOpenUntil, DateTime.UtcNow))
+                                    {
+                                        <p class="wasla-connections__warning">@L["PlatformConnections.CircuitOpenUntil"]: @circuitOpenUntil.ToString("u")</p>
+                                    }
                                 </div>
                             </td>
-                            <td class="text-end">@c.ConsecutiveFailures</td>
-                            <td class="text-end">@c.CircuitOpenUntilUtc?.ToString("u")</td>
-                            <td class="text-end">@c.LastSuccessfulSyncUtc?.ToString("u")</td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary"
+                            <td data-label="@L["PlatformConnections.LastSuccessfulSync"]">
+                                <span class="wasla-table__cell-label" aria-hidden="true">@L["PlatformConnections.LastSuccessfulSync"]</span>
+                                <span class="wasla-connections__secondary">@c.LastSuccessfulSyncUtc?.ToString("u")</span>
+                            </td>
+                            <td data-label="@L["PlatformConnections.Actions"]">
+                                <span class="wasla-table__cell-label" aria-hidden="true">@L["PlatformConnections.Actions"]</span>
+                                <a class="wasla-btn wasla-btn--quiet"
                                    href="/platform-connections/@c.Id/edit">
                                     @L["PlatformConnections.Edit"]
                                 </a>
                             </td>
                         </tr>
                     }
-                }
-                </tbody>
-            </table>
-        </div>
-        <div class="text-muted small mt-2">
-            @L["PlatformConnections.NoteRole"]
-        </div>
-    </div>
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 </div>
 
 @section Scripts {

@@ -922,7 +922,7 @@
     <value>تفعيل</value>
   </data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve">
-    <value>ملاحظة: يلزم دور Owner/Manager لإدارة اتصالات المنصات.</value>
+    <value>أدِر منصات الطلب المتصلة بهذا المطعم.</value>
   </data>
   <data name="Branches.Title" xml:space="preserve">
     <value>الفروع</value>

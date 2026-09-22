@@ -922,7 +922,7 @@
     <value>Aktif Et</value>
   </data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve">
-    <value>Not: Platform bağlantı yönetimi için Owner/Manager yetkisi beklenir.</value>
+    <value>Bu restorana bağlı sipariş platformlarını yönetin.</value>
   </data>
   <data name="Branches.Title" xml:space="preserve">
     <value>Şubeler</value>
