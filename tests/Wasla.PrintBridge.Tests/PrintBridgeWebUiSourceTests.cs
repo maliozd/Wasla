@@ -308,6 +308,66 @@ public sealed class PrintBridgeWebUiSourceTests
     }
 
     [Fact]
+    public void DevicesPage_ReprintClickUsesDefinedLocalFormatterAndDelegatedPost()
+    {
+        var root = LocateRepositoryRoot();
+        var devicesView = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "PrintBridge",
+            "Devices.cshtml"));
+        var devicesScript = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "wwwroot",
+            "js",
+            "print-bridge",
+            "print-bridge-page.js"));
+        var jobsPartial = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "PrintBridge",
+            "_PrintJobHistory.cshtml"));
+
+        Assert.Contains("function bindPrintJobReprintDelegation()", devicesScript);
+        Assert.Contains("panel.addEventListener(\"click\"", devicesScript);
+        Assert.Contains(".pb-reprint-job-btn", devicesScript);
+        Assert.Contains("function formatMessage(template, value)", devicesScript);
+        Assert.Contains("formatMessage(messages.confirmReprint", devicesScript);
+        Assert.DoesNotContain("formatMsg(", devicesScript);
+        Assert.DoesNotContain("window.formatMsg", devicesScript);
+        Assert.DoesNotContain("window.formatMessage", devicesScript);
+
+        Assert.Contains("reprintUrlTemplate: \"/print-bridge/print-jobs/{id}/reprint\"", devicesView);
+        Assert.Contains("id=\"printBridgeAntiForgery\"", devicesView);
+        Assert.Contains("function getAntiForgeryToken()", devicesScript);
+        Assert.Contains("function postForm(url, fields)", devicesScript);
+        Assert.Contains("reprintUrlTemplate", devicesScript);
+        Assert.Contains("reprintInFlight[jobId] = true", devicesScript);
+        Assert.Contains("btn.disabled = true", devicesScript);
+        Assert.Contains("delete reprintInFlight[jobId]", devicesScript);
+        Assert.Contains("btn.disabled = false", devicesScript);
+        Assert.Contains("messages.reprintCreated", devicesScript);
+        Assert.Contains("messages.reprintFailed", devicesScript);
+
+        Assert.Contains("class=\"btn btn-sm btn-outline-primary pb-reprint-job-btn\"", jobsPartial);
+        Assert.DoesNotContain("querySelectorAll(\".pb-reprint-job-btn\").forEach", devicesScript);
+        Assert.DoesNotContain("pb-reprint-job-btn\").addEventListener", devicesScript);
+        Assert.Equal(1, CountOccurrences(devicesScript, "function bindPrintJobReprintDelegation()"));
+        Assert.Equal(1, CountOccurrences(devicesScript, "function formatMessage"));
+        Assert.Equal(1, CountOccurrences(devicesScript, "setAttribute(\"data-reprint-bound\""));
+    }
+
+    [Fact]
     public void DeviceDetailsPage_UsesJsonSerializedEndpointsAndAntiForgeryPostActions()
     {
         var root = LocateRepositoryRoot();
@@ -364,5 +424,18 @@ public sealed class PrintBridgeWebUiSourceTests
         }
 
         throw new InvalidOperationException("Could not locate repository root.");
+    }
+
+    private static int CountOccurrences(string source, string value)
+    {
+        var count = 0;
+        var index = source.IndexOf(value, StringComparison.Ordinal);
+        while (index >= 0)
+        {
+            count++;
+            index = source.IndexOf(value, index + value.Length, StringComparison.Ordinal);
+        }
+
+        return count;
     }
 }

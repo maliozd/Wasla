@@ -19,6 +19,10 @@
       .replace(/"/g, "&quot;");
   }
 
+  function formatMessage(template, value) {
+    return String(template || "").replace(/\{0\}/g, value == null ? "" : String(value));
+  }
+
   function getAntiForgeryToken() {
     var form = document.getElementById("printBridgeAntiForgery");
     if (!form) return null;
@@ -367,7 +371,7 @@
       var orderDisplay = btn.getAttribute("data-order-display") || "";
       if (!jobId || reprintInFlight[jobId]) return;
 
-      var confirmText = formatMsg(messages.confirmReprint || "Reprint receipt for {0}?", orderDisplay);
+      var confirmText = formatMessage(messages.confirmReprint || "Reprint receipt for {0}?", orderDisplay);
       if (!window.confirm(confirmText)) return;
 
       reprintInFlight[jobId] = true;
