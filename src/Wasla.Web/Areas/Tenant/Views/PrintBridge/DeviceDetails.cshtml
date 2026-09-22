@@ -39,15 +39,15 @@
     });
 }
 
-<div class="oh-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
-    <div class="oh-customer-page-header__main">
+<div class="wasla-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+    <div class="wasla-customer-page-header__main">
         <div class="mb-2">
             <a class="small text-decoration-none" href="@Model.DevicesUrl">
                 <i class="bi bi-arrow-left me-1"></i>@L["PrintBridge.BackToDevices"]
             </a>
         </div>
-        <h1 class="oh-customer-page-header__title h4 mb-1">@L["PrintBridge.DeviceDetailsTitle"]</h1>
-        <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["PrintBridge.DeviceDetailsSubtitle"]</p>
+        <h1 class="wasla-customer-page-header__title h4 mb-1">@L["PrintBridge.DeviceDetailsTitle"]</h1>
+        <p class="wasla-customer-page-header__subtitle text-muted small mb-0">@L["PrintBridge.DeviceDetailsSubtitle"]</p>
     </div>
 </div>
 
@@ -68,7 +68,7 @@
 
 <div class="row g-3">
     <div class="col-lg-5">
-        <div class="card oh-card h-100">
+        <div class="card wasla-card h-100">
             <div class="card-body">
                 <h2 class="h6 mb-3">@L["PrintBridge.DeviceIdentity"]</h2>
                 <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
@@ -101,7 +101,7 @@
     </div>
 
     <div class="col-lg-7">
-        <div class="card oh-card h-100">
+        <div class="card wasla-card h-100">
             <div class="card-body">
                 <h2 class="h6 mb-3">@L["PrintBridge.DeviceTechnicalInfo"]</h2>
                 <dl class="row small mb-0">
@@ -134,7 +134,7 @@
     </div>
 </div>
 
-<div class="card oh-card mt-3">
+<div class="card wasla-card mt-3">
     <div class="card-body">
         <h2 class="h6 mb-2">@L["PrintBridge.DeviceActions"]</h2>
         <p class="text-muted small mb-3">@L["PrintBridge.DeviceTokenSafeNote"]</p>
@@ -151,7 +151,7 @@
             </div>
             <div id="printBridgeDetailTokenWarning" class="alert alert-danger small py-2 mb-2 d-none" role="alert"></div>
             <div class="d-flex flex-wrap align-items-stretch gap-2">
-                <pre id="printBridgeDetailTokenValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break oh-print-bridge-token-value"></pre>
+                <pre id="printBridgeDetailTokenValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break wasla-print-bridge-token-value"></pre>
                 <button type="button" class="btn btn-sm btn-primary align-self-start" id="printBridgeDetailCopyTokenBtn">
                     <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyToken"]
                 </button>

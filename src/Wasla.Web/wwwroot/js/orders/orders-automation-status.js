@@ -2,14 +2,14 @@
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O) return;
 
   function setBadge(el, active, activeLabel, disabledLabel) {
     if (!el) return;
     el.textContent = active ? activeLabel : disabledLabel;
-    el.classList.remove("oh-orders-status-chip--active", "oh-orders-status-chip--muted");
-    el.classList.add(active ? "oh-orders-status-chip--active" : "oh-orders-status-chip--muted");
+    el.classList.remove("wasla-orders-status-chip--active", "wasla-orders-status-chip--muted");
+    el.classList.add(active ? "wasla-orders-status-chip--active" : "wasla-orders-status-chip--muted");
   }
 
   async function loadStatus() {

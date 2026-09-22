@@ -3,14 +3,14 @@
     ViewData["Title"] = L["TenantUsers.EditTitle"];
 }
 
-<div class="oh-tenant-user-edit-page">
+<div class="wasla-tenant-user-edit-page">
     @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
     {
         Title = L["TenantUsers.EditTitle"].Value,
         Subtitle = Model.Email
     })
 
-    <div class="card oh-card">
+    <div class="card wasla-card">
         <div class="card-body">
             <form method="post"
                   asp-area="Tenant"

@@ -8,7 +8,7 @@
 
   function layoutDebug(...args) {
     if (isLayoutDebug()) {
-      console.debug("[OrderHub layout]", ...args);
+      console.debug("[Wasla layout]", ...args);
     }
   }
 
@@ -52,12 +52,12 @@
   }
 
   function updateTopbarHeightVar() {
-    const el = document.getElementById("ohTopbar") || document.querySelector("header.oh-topbar");
+    const el = document.getElementById("waslaTopbar") || document.querySelector("header.wasla-topbar");
     if (!el) return;
     const h = Math.round(el.getBoundingClientRect().height);
     if (h > 0) {
-      document.documentElement.style.setProperty("--oh-topbar-h", h + "px");
-      layoutDebug("topbar height (CSS var --oh-topbar-h)", h);
+      document.documentElement.style.setProperty("--wasla-topbar-h", h + "px");
+      layoutDebug("topbar height (CSS var --wasla-topbar-h)", h);
     }
   }
 
@@ -77,13 +77,13 @@
       layoutDebug("no #layoutToggle — toggle handler not attached");
     }
 
-    if (!document.querySelector(".oh-sidebar")) {
+    if (!document.querySelector(".wasla-sidebar")) {
       if (isLayoutDebug()) {
-        console.warn("[OrderHub layout] .oh-sidebar is missing; sidebar mode layout will look wrong.");
+        console.warn("[Wasla layout] .wasla-sidebar is missing; sidebar mode layout will look wrong.");
       }
     }
 
-    const hamburger = document.querySelector(".oh-hamburger");
+    const hamburger = document.querySelector(".wasla-hamburger");
     if (hamburger) {
       hamburger.addEventListener("click", () => {
         document.body.classList.toggle("sidebar-open");
@@ -91,10 +91,10 @@
       });
     }
 
-    document.querySelectorAll(".oh-side-link").forEach((a) => {
+    document.querySelectorAll(".wasla-side-link").forEach((a) => {
       a.addEventListener("click", () => {
         document.body.classList.remove("sidebar-open");
-        layoutDebug("oh-side-link click, closed mobile sidebar");
+        layoutDebug("wasla-side-link click, closed mobile sidebar");
       });
     });
   });

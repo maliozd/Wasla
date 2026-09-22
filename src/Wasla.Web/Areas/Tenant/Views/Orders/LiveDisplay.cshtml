@@ -13,70 +13,70 @@
     var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
 }
 
-<div id="ordersLiveDisplayRoot" class="oh-orders-live-display-root oh-live-screen-page">
-    <header class="oh-live-display-header oh-fs-header">
-        <div class="oh-live-display-header__left oh-fs-header__left">
+<div id="ordersLiveDisplayRoot" class="wasla-orders-live-display-root wasla-live-screen-page">
+    <header class="wasla-live-display-header wasla-fs-header">
+        <div class="wasla-live-display-header__left wasla-fs-header__left">
             @if (!string.IsNullOrWhiteSpace(customerName))
             {
-                <div class="oh-live-display-header__brand text-muted small mb-1">@customerName</div>
+                <div class="wasla-live-display-header__brand text-muted small mb-1">@customerName</div>
             }
-            <h1 class="oh-live-display-header__title oh-fs-header__title mb-0">@L["Orders.LiveDisplay.Title"]</h1>
-            <p class="oh-live-display-header__subtitle text-muted small mb-0">@L["Orders.LiveDisplay.Subtitle"]</p>
-            <p class="oh-live-display-header__meta oh-fs-header__meta mb-0">
+            <h1 class="wasla-live-display-header__title wasla-fs-header__title mb-0">@L["Orders.LiveDisplay.Title"]</h1>
+            <p class="wasla-live-display-header__subtitle text-muted small mb-0">@L["Orders.LiveDisplay.Subtitle"]</p>
+            <p class="wasla-live-display-header__meta wasla-fs-header__meta mb-0">
                 <span>@L["Orders.Today"] — @today.ToString("d", System.Globalization.CultureInfo.CurrentCulture)</span>
-                <span class="oh-fs-header__sep" aria-hidden="true">·</span>
+                <span class="wasla-fs-header__sep" aria-hidden="true">·</span>
                 <span>@L["Orders.LiveDisplay.LastUpdated"]: <span id="ordersLiveDisplayLastUpdated">-</span></span>
             </p>
         </div>
-        <div class="oh-live-display-header__actions oh-fs-header__actions d-flex flex-wrap align-items-center gap-2">
+        <div class="wasla-live-display-header__actions wasla-fs-header__actions d-flex flex-wrap align-items-center gap-2">
             @* Operational automation status belongs to the live service view, not the Orders search page. *@
-            <div class="oh-orders-status-group" aria-label="@L["Settings.OrderSettings.Title"]">
-                <span id="automationStatusSync" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
-                <span id="automationStatusAutoApprove" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
-                <span id="automationStatusReceipt" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
+            <div class="wasla-orders-status-group" aria-label="@L["Settings.OrderSettings.Title"]">
+                <span id="automationStatusSync" class="wasla-orders-status-chip wasla-orders-status-chip--muted">…</span>
+                <span id="automationStatusAutoApprove" class="wasla-orders-status-chip wasla-orders-status-chip--muted">…</span>
+                <span id="automationStatusReceipt" class="wasla-orders-status-chip wasla-orders-status-chip--muted">…</span>
             </div>
             @if (navPermissions.CanManageOrderSettings)
             {
                 <a class="orders-manage-settings" href="/settings/orders" target="_blank" rel="noopener noreferrer">@L["Orders.ManageSettings"]</a>
             }
-            <div class="btn-group btn-group-sm oh-live-screen-view-switch" role="group" aria-label="@L["Orders.ViewMode.Label"]">
+            <div class="btn-group btn-group-sm wasla-live-screen-view-switch" role="group" aria-label="@L["Orders.ViewMode.Label"]">
                 <button type="button" class="btn btn-outline-secondary" data-live-screen-view="cards" aria-pressed="true">@L["Orders.LiveScreen.ViewCards"]</button>
                 <button type="button" class="btn btn-outline-secondary" data-live-screen-view="list" aria-pressed="false">@L["Orders.LiveScreen.ViewList"]</button>
             </div>
-            <p class="oh-live-display-fullscreen-hint text-muted small mb-0">
+            <p class="wasla-live-display-fullscreen-hint text-muted small mb-0">
                 @L["Orders.LiveDisplay.FullscreenHintPrefix"]
-                <kbd class="oh-live-display-kbd">F11</kbd>
+                <kbd class="wasla-live-display-kbd">F11</kbd>
                 @L["Orders.LiveDisplay.FullscreenHintSuffix"]
             </p>
-            <button type="button" id="ordersLiveDisplayClose" class="btn btn-outline-primary btn-sm oh-live-display-close-btn">
+            <button type="button" id="ordersLiveDisplayClose" class="btn btn-outline-primary btn-sm wasla-live-display-close-btn">
                 @L["Orders.LiveDisplay.CloseDisplay"]
             </button>
         </div>
     </header>
 
-    <div class="oh-live-display-summary oh-fs-summary row g-3">
+    <div class="wasla-live-display-summary wasla-fs-summary row g-3">
         <div class="col-12 col-md-4">
-            <div class="oh-fs-stat">
-                <div class="oh-fs-stat__label">@L["Orders.TodaysOrders"]</div>
-                <div class="oh-fs-stat__value" id="ordersLiveDisplayTodayCount">@Model.TotalCount</div>
+            <div class="wasla-fs-stat">
+                <div class="wasla-fs-stat__label">@L["Orders.TodaysOrders"]</div>
+                <div class="wasla-fs-stat__value" id="ordersLiveDisplayTodayCount">@Model.TotalCount</div>
             </div>
         </div>
         <div class="col-12 col-md-4">
-            <div class="oh-fs-stat">
-                <div class="oh-fs-stat__label">@L["Orders.ActiveOrders"]</div>
-                <div class="oh-fs-stat__value" id="ordersLiveDisplayActiveCount">0</div>
+            <div class="wasla-fs-stat">
+                <div class="wasla-fs-stat__label">@L["Orders.ActiveOrders"]</div>
+                <div class="wasla-fs-stat__value" id="ordersLiveDisplayActiveCount">0</div>
             </div>
         </div>
         <div class="col-12 col-md-4">
-            <div class="oh-fs-stat">
-                <div class="oh-fs-stat__label">@L["Orders.CancelledOrders"]</div>
-                <div class="oh-fs-stat__value" id="ordersLiveDisplayCancelledCount">0</div>
+            <div class="wasla-fs-stat">
+                <div class="wasla-fs-stat__label">@L["Orders.CancelledOrders"]</div>
+                <div class="wasla-fs-stat__value" id="ordersLiveDisplayCancelledCount">0</div>
             </div>
         </div>
     </div>
 
     @* One card DOM tree; the view switch only changes its layout class, so nothing is rendered twice. *@
-    <div id="ordersLiveScreenHost" class="oh-live-screen-host oh-live-screen-host--cards" data-live-screen-view="cards" aria-live="polite">
+    <div id="ordersLiveScreenHost" class="wasla-live-screen-host wasla-live-screen-host--cards" data-live-screen-view="cards" aria-live="polite">
         @await Html.PartialAsync("_LiveScreenOrders", Model)
     </div>
 </div>
@@ -101,7 +101,7 @@
 
 @section Scripts {
     <script>
-        window.orderHubOrdersOptions = {
+        window.waslaOrdersOptions = {
             pageMode: "liveDisplay",
             tableUrl: "/orders/table",
             liveScreenUrl: "/orders/live-screen",

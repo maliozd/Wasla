@@ -4,7 +4,7 @@
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O) return;
 
   const VIEWS = ["cards", "list"];
@@ -46,8 +46,8 @@
   function applyView() {
     const el = host();
     if (el) {
-      el.classList.toggle("oh-live-screen-host--cards", currentView === "cards");
-      el.classList.toggle("oh-live-screen-host--list", currentView === "list");
+      el.classList.toggle("wasla-live-screen-host--cards", currentView === "cards");
+      el.classList.toggle("wasla-live-screen-host--list", currentView === "list");
       el.setAttribute("data-live-screen-view", currentView);
     }
 

@@ -1,6 +1,6 @@
-/* OrderHub custom toast system — load AFTER orderhub-theme.css */
+/* Wasla custom toast system — load AFTER wasla-theme.css */
 
-.orderhub-toast-container {
+.wasla-toast-container {
   position: fixed;
   top: 1rem;
   right: 1rem;
@@ -12,7 +12,7 @@
 }
 
 /* Higher specificity to avoid being overridden by generic .card styles, etc. */
-body.oh-tenant.oh-app .orderhub-toast {
+body.wasla-tenant.wasla-app .wasla-toast {
   position: relative;
   overflow: hidden;
   width: min(430px, calc(100vw - 2rem));
@@ -44,10 +44,10 @@ body.oh-tenant.oh-app .orderhub-toast {
   pointer-events: auto;
   transform: translateX(24px);
   opacity: 0;
-  animation: orderhubToastIn 0.22s ease-out forwards;
+  animation: waslaToastIn 0.22s ease-out forwards;
 }
 
-body.oh-tenant.oh-app .orderhub-toast::after {
+body.wasla-tenant.wasla-app .wasla-toast::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -61,11 +61,11 @@ body.oh-tenant.oh-app .orderhub-toast::after {
   opacity: 0.85;
 }
 
-body.oh-tenant.oh-app .orderhub-toast.is-leaving {
-  animation: orderhubToastOut 0.18s ease-in forwards;
+body.wasla-tenant.wasla-app .wasla-toast.is-leaving {
+  animation: waslaToastOut 0.18s ease-in forwards;
 }
 
-body.oh-tenant.oh-app .orderhub-toast::before {
+body.wasla-tenant.wasla-app .wasla-toast::before {
   content: "";
   width: 6px;
   align-self: stretch;
@@ -75,13 +75,13 @@ body.oh-tenant.oh-app .orderhub-toast::before {
   z-index: 1;
 }
 
-body.oh-tenant.oh-app .orderhub-toast--success { --toast-accent: #10b981; }
-body.oh-tenant.oh-app .orderhub-toast--error { --toast-accent: #ef4444; }
-body.oh-tenant.oh-app .orderhub-toast--warning { --toast-accent: #f59e0b; }
-body.oh-tenant.oh-app .orderhub-toast--info { --toast-accent: #3b82f6; }
+body.wasla-tenant.wasla-app .wasla-toast--success { --toast-accent: #10b981; }
+body.wasla-tenant.wasla-app .wasla-toast--error { --toast-accent: #ef4444; }
+body.wasla-tenant.wasla-app .wasla-toast--warning { --toast-accent: #f59e0b; }
+body.wasla-tenant.wasla-app .wasla-toast--info { --toast-accent: #3b82f6; }
 
 /* Orders-specific success styling (scoped by toast key) */
-body.oh-tenant.oh-app .orderhub-toast[data-key="order-approve-success"] {
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-approve-success"] {
   --toast-accent: #22c55e; /* fresh green */
 
   /* Slightly larger + more premium glass */
@@ -104,7 +104,7 @@ body.oh-tenant.oh-app .orderhub-toast[data-key="order-approve-success"] {
   color: #14532d;
 }
 
-body.oh-tenant.oh-app .orderhub-toast[data-key="order-reject-success"] {
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-reject-success"] {
   --toast-accent: #fb7185; /* soft rose */
 
   /* Slightly larger + more premium glass */
@@ -128,19 +128,19 @@ body.oh-tenant.oh-app .orderhub-toast[data-key="order-reject-success"] {
 }
 
 /* Remove the generic "shine" layer for these variants to avoid a gradienty look */
-body.oh-tenant.oh-app .orderhub-toast[data-key="order-approve-success"]::after,
-body.oh-tenant.oh-app .orderhub-toast[data-key="order-reject-success"]::after {
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-approve-success"]::after,
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-reject-success"]::after {
   background: none !important;
   opacity: 0 !important;
 }
 
-body.oh-tenant.oh-app .orderhub-toast[data-key="order-approve-success"] .orderhub-toast__message,
-body.oh-tenant.oh-app .orderhub-toast[data-key="order-reject-success"] .orderhub-toast__message {
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-approve-success"] .wasla-toast__message,
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-reject-success"] .wasla-toast__message {
   font-size: 0.99rem;
   line-height: 1.45;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast[data-key="order-approve-success"] {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast[data-key="order-approve-success"] {
   --toast-accent: #34d399;
   background: rgba(6, 78, 59, 0.46) !important;
   border: 1px solid rgba(52, 211, 153, 0.20);
@@ -151,7 +151,7 @@ body.oh-tenant.oh-app .orderhub-toast[data-key="order-reject-success"] .orderhub
   color: #ecfdf5;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast[data-key="order-reject-success"] {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast[data-key="order-reject-success"] {
   --toast-accent: #fb7185;
   background: rgba(136, 19, 55, 0.46) !important;
   border: 1px solid rgba(251, 113, 133, 0.20);
@@ -162,13 +162,13 @@ body.oh-tenant.oh-app .orderhub-toast[data-key="order-reject-success"] .orderhub
   color: #fff1f2;
 }
 
-body.oh-tenant.oh-app .orderhub-toast__message,
-body.oh-tenant.oh-app .orderhub-toast__close {
+body.wasla-tenant.wasla-app .wasla-toast__message,
+body.wasla-tenant.wasla-app .wasla-toast__close {
   position: relative;
   z-index: 1;
 }
 
-body.oh-tenant.oh-app .orderhub-toast__message {
+body.wasla-tenant.wasla-app .wasla-toast__message {
   flex: 1;
   font-size: 14px;
   font-weight: 650;
@@ -176,7 +176,7 @@ body.oh-tenant.oh-app .orderhub-toast__message {
   letter-spacing: -0.01em;
 }
 
-body.oh-tenant.oh-app .orderhub-toast__close {
+body.wasla-tenant.wasla-app .wasla-toast__close {
   width: 32px;
   height: 32px;
   border: 0;
@@ -190,13 +190,13 @@ body.oh-tenant.oh-app .orderhub-toast__close {
   transition: all 0.16s ease;
 }
 
-body.oh-tenant.oh-app .orderhub-toast__close:hover {
+body.wasla-tenant.wasla-app .wasla-toast__close:hover {
   opacity: 1;
   background: rgba(15, 23, 42, 0.12);
   transform: scale(1.04);
 }
 
-@keyframes orderhubToastIn {
+@keyframes waslaToastIn {
   from {
     transform: translateX(24px) translateY(-4px);
     opacity: 0;
@@ -207,7 +207,7 @@ body.oh-tenant.oh-app .orderhub-toast__close:hover {
   }
 }
 
-@keyframes orderhubToastOut {
+@keyframes waslaToastOut {
   from {
     transform: translateX(0);
     opacity: 1;
@@ -218,14 +218,14 @@ body.oh-tenant.oh-app .orderhub-toast__close:hover {
   }
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast {
   background: var(--color-surface-elevated, #1c2028) !important;
   color: var(--color-text, #f3f4f6);
   border-color: var(--color-border-strong, rgba(255, 255, 255, 0.14));
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast::after {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast::after {
   background:
     radial-gradient(
       circle at top left,
@@ -234,12 +234,12 @@ body.oh-tenant.oh-app .orderhub-toast__close:hover {
     );
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast__close {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast__close {
   color: #f8fafc;
   background: rgba(255, 255, 255, 0.08);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orderhub-toast__close:hover {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast__close:hover {
   background: rgba(255, 255, 255, 0.14);
 }
 

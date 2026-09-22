@@ -10,14 +10,14 @@
   }
 
   function toastSuccess(msg) {
-    if (global.OrderHubToast && typeof global.OrderHubToast.success === "function") {
-      global.OrderHubToast.success(msg, { key: "platform-connection-toggle" });
+    if (global.WaslaToast && typeof global.WaslaToast.success === "function") {
+      global.WaslaToast.success(msg, { key: "platform-connection-toggle" });
     }
   }
 
   function toastError(msg) {
-    if (global.OrderHubToast && typeof global.OrderHubToast.error === "function") {
-      global.OrderHubToast.error(msg, { key: "platform-connection-toggle" });
+    if (global.WaslaToast && typeof global.WaslaToast.error === "function") {
+      global.WaslaToast.error(msg, { key: "platform-connection-toggle" });
     }
   }
 

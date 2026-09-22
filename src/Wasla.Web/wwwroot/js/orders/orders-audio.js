@@ -1,8 +1,8 @@
-﻿// Sound playback, preview, and browser notifications (depends on OrderHubOrders).
+﻿// Sound playback, preview, and browser notifications (depends on WaslaOrders).
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O) {
     return;
   }
@@ -116,11 +116,11 @@
     } catch (error) {
       O.debugWarn("playSoundPreview failed", error);
       stopCurrentPreviewSound();
-      if (global.OrderHubToast) {
+      if (global.WaslaToast) {
         if (error && error.name === "NotAllowedError") {
-          global.OrderHubToast.error(O.getMessage("audioNotAllowed"));
+          global.WaslaToast.error(O.getMessage("audioNotAllowed"));
         } else {
-          global.OrderHubToast.warning(O.getMessage("soundCouldNotPlay"));
+          global.WaslaToast.warning(O.getMessage("soundCouldNotPlay"));
         }
       } else {
         if (O.notificationSettings && typeof O.notificationSettings.showModalWarning === "function") {

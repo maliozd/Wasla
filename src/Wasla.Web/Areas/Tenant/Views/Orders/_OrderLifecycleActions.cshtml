@@ -8,7 +8,7 @@
 
 @if (Model.CanManageOrders && Model.Status == OrderStatus.New)
 {
-    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
         <button type="button"
                 class="btn btn-success @sizeClass"
                 data-order-action="approve"
@@ -25,7 +25,7 @@
 }
 else if (Model.CanManageOrders && Model.Status == OrderStatus.Accepted)
 {
-    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
         <button type="button"
                 class="btn btn-primary @sizeClass"
                 data-order-action="start-preparing"
@@ -36,7 +36,7 @@ else if (Model.CanManageOrders && Model.Status == OrderStatus.Accepted)
 }
 else if (Model.CanManageOrders && Model.Status == OrderStatus.Preparing)
 {
-    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
         <button type="button"
                 class="btn btn-primary @sizeClass"
                 data-order-action="mark-ready"
@@ -47,7 +47,7 @@ else if (Model.CanManageOrders && Model.Status == OrderStatus.Preparing)
 }
 else if (Model.CanManageOrders && Model.Status == OrderStatus.ReadyForPickup)
 {
-    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
         <button type="button"
                 class="btn btn-primary @sizeClass"
                 data-order-action="hand-to-courier"
@@ -58,7 +58,7 @@ else if (Model.CanManageOrders && Model.Status == OrderStatus.ReadyForPickup)
 }
 else if (Model.CanManageOrders && Model.Status == OrderStatus.OnTheWay)
 {
-    <div class="oh-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
+    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
         <button type="button"
                 class="btn btn-primary @sizeClass"
                 data-order-action="mark-delivered"

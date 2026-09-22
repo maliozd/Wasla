@@ -79,11 +79,11 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/css/adminlte.min.css" crossorigin="anonymous" />
 
-    <link rel="stylesheet" href="~/css/orderhub-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/wasla-theme.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
-    <link rel="stylesheet" href="~/css/orderhub-toast.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/wasla-toast.css" asp-append-version="true" />
 
     @if (isRtl)
 
@@ -95,31 +95,31 @@
 
 </head>
 
-<body class="layout-fixed sidebar-expand-lg oh-app oh-tenant" data-bs-theme="light">
+<body class="layout-fixed sidebar-expand-lg wasla-app wasla-tenant" data-bs-theme="light">
 
     <div class="app-wrapper">
 
         <aside class="app-sidebar" id="app-sidebar-tenant" role="navigation" aria-label="Tenant">
 
-            <nav class="sidebar-menu oh-sidebar-shell">
+            <nav class="sidebar-menu wasla-sidebar-shell">
 
-                <div class="oh-sidebar-brand-area">
-                    <div class="oh-sidebar-brand-row">
-                        <a class="oh-sidebar-brand text-decoration-none min-w-0" href="@brandUrl">
+                <div class="wasla-sidebar-brand-area">
+                    <div class="wasla-sidebar-brand-row">
+                        <a class="wasla-sidebar-brand text-decoration-none min-w-0" href="@brandUrl">
                             <span class="brand-text">Wasla</span>
                         </a>
-                        <button type="button" id="tenantSidebarToggle" class="oh-sidebar-collapse-btn flex-shrink-0"
+                        <button type="button" id="tenantSidebarToggle" class="wasla-sidebar-collapse-btn flex-shrink-0"
                                 data-title-collapse="@L["Layout.CollapseSidebar"]" data-title-expand="@L["Layout.ExpandSidebar"]"
                                 data-label-toggle="@L["Layout.ToggleSidebar"]" title="@L["Layout.CollapseSidebar"]" aria-expanded="true" aria-controls="app-sidebar-tenant">
                             <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
                         </button>
                     </div>
-                    <div class="oh-sidebar-tenant-name text-truncate" title="@customerName">@customerName</div>
+                    <div class="wasla-sidebar-tenant-name text-truncate" title="@customerName">@customerName</div>
                 </div>
 
 
 
-                <ul class="nav flex-column oh-sidebar-nav-main">
+                <ul class="nav flex-column wasla-sidebar-nav-main">
 
                     @if (navPermissions.CanViewReports)
                     {
@@ -164,22 +164,22 @@
 
                     @if (navPermissions.CanViewAnyPrintBridgeLink)
                     {
-                    <li class="nav-item oh-sidebar-nav-group @(printBridgeSection ? "oh-sidebar-nav-group--open" : "")">
+                    <li class="nav-item wasla-sidebar-nav-group @(printBridgeSection ? "wasla-sidebar-nav-group--open" : "")">
 
-                        <a class="nav-link oh-sidebar-nav-group__head @(printBridgeSection ? "active" : "")"
+                        <a class="nav-link wasla-sidebar-nav-group__head @(printBridgeSection ? "active" : "")"
                            href="@(navPermissions.CanManagePrintBridgeDevices ? "/print-bridge/devices" : "/print-bridge/setup")">
 
                             <i class="bi bi-printer me-2"></i><span class="nav-text">@L["PrintBridge.Title"]</span>
 
                         </a>
 
-                        <ul class="oh-sidebar-nav-sub nav flex-column">
+                        <ul class="wasla-sidebar-nav-sub nav flex-column">
 
                             @if (navPermissions.CanManagePrintBridgeDevices)
                             {
                             <li class="nav-item">
 
-                                <a class="nav-link oh-sidebar-nav-sub__link @(printBridgeDevicesActive ? "active" : "")"
+                                <a class="nav-link wasla-sidebar-nav-sub__link @(printBridgeDevicesActive ? "active" : "")"
                                    href="/print-bridge/devices">
 
                                     <span class="nav-text">@L["PrintBridge.NavDevices"]</span>
@@ -193,7 +193,7 @@
                             {
                             <li class="nav-item">
 
-                                <a class="nav-link oh-sidebar-nav-sub__link @(printBridgeSetupActive ? "active" : "")"
+                                <a class="nav-link wasla-sidebar-nav-sub__link @(printBridgeSetupActive ? "active" : "")"
                                    href="/print-bridge/setup">
 
                                     <span class="nav-text">@L["PrintBridge.NavSetup"]</span>
@@ -235,7 +235,7 @@
 
 
 
-                <div class="oh-sidebar-bottom">
+                <div class="wasla-sidebar-bottom">
                     @await Html.PartialAsync("_TenantSidebarFooter")
                     @await Html.PartialAsync("_TenantSettingsNav")
                 </div>
@@ -246,7 +246,7 @@
 
 
 
-        <main class="app-main oh-content" role="main">
+        <main class="app-main wasla-content" role="main">
 
             <div class="app-content">
 
@@ -270,7 +270,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/js/adminlte.min.js" crossorigin="anonymous"></script>
 
-    <script src="~/js/orderhub-toast.js" asp-append-version="true"></script>
+    <script src="~/js/wasla-toast.js" asp-append-version="true"></script>
 
     <partial name="~/Views/Shared/_Notifications.cshtml" />
 

@@ -7,7 +7,7 @@
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O) return;
 
   const inFlight = {};
@@ -27,8 +27,8 @@
   }
 
   function toast(message, type) {
-    if (global.OrderHubToast) {
-      const fn = global.OrderHubToast[type];
+    if (global.WaslaToast) {
+      const fn = global.WaslaToast[type];
       if (typeof fn === "function") {
         fn(message, { key: "order-print" });
         return;

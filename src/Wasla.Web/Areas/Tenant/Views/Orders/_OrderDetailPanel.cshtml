@@ -16,15 +16,15 @@
     var phoneTel = OrderUiHelper.PhoneTelHref(Model.CustomerPhone);
 }
 
-<div class="oh-live-detail" data-order-id="@Model.Id" data-order-status="@Model.Status">
-    <div class="oh-live-detail__head d-flex flex-wrap align-items-center gap-2 mb-3">
+<div class="wasla-live-detail" data-order-id="@Model.Id" data-order-status="@Model.Status">
+    <div class="wasla-live-detail__head d-flex flex-wrap align-items-center gap-2 mb-3">
         @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
-        <span class="oh-live-detail__code font-monospace">@Model.ExternalOrderCode</span>
+        <span class="wasla-live-detail__code font-monospace">@Model.ExternalOrderCode</span>
         @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
         <span class="text-muted small ms-auto">@L["Orders.Details.Received"] @receivedLabel</span>
     </div>
 
-    <dl class="oh-live-detail__facts row g-2 mb-3">
+    <dl class="wasla-live-detail__facts row g-2 mb-3">
         <div class="col-12 col-md-6">
             <dt class="text-muted small">@L["Orders.Details.Customer"]</dt>
             <dd class="mb-0 fw-semibold">@OrderUiHelper.DisplayOrDash(Model.CustomerName)</dd>
@@ -60,7 +60,7 @@
     else
     {
         <div class="table-responsive mb-3">
-            <table class="table table-sm align-middle mb-0 oh-live-detail__items">
+            <table class="table table-sm align-middle mb-0 wasla-live-detail__items">
                 <thead>
                 <tr>
                     <th>@L["Orders.Details.Product"]</th>
@@ -97,7 +97,7 @@
         </div>
     }
 
-    <dl class="oh-live-detail__totals mb-3">
+    <dl class="wasla-live-detail__totals mb-3">
         @if (Model.DeliveryFee != 0)
         {
             <div class="d-flex justify-content-between">
@@ -118,7 +118,7 @@
         </div>
     </dl>
 
-    <div class="oh-live-detail__actions d-flex flex-wrap align-items-center gap-2">
+    <div class="wasla-live-detail__actions d-flex flex-wrap align-items-center gap-2">
         @* Lifecycle stays primary; printing is a secondary action next to it. *@
         @await Html.PartialAsync("_OrderLifecycleActions", new OrderLifecycleActionsModel
         {

@@ -1,8 +1,8 @@
-﻿// Notification settings modal: load, save, status UI (OrderHubOrders + O.audio).
+﻿// Notification settings modal: load, save, status UI (WaslaOrders + O.audio).
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O || !O.audio) {
     return;
   }
@@ -67,7 +67,7 @@
     const hidden = document.getElementById("NewOrderHighlightColor");
     if (hidden) hidden.value = String(value || "");
 
-    const swatches = document.querySelectorAll(".oh-color-swatch[data-highlight-color]");
+    const swatches = document.querySelectorAll(".wasla-color-swatch[data-highlight-color]");
     swatches.forEach(function (b) {
       const c = (b.getAttribute("data-highlight-color") || "").toLowerCase();
       b.classList.toggle("active", c && String(value).toLowerCase() === c);
@@ -225,8 +225,8 @@
 
       if (!resp.ok) {
         const base = O.getMessage("notificationSettingsLoadFailed");
-        if (global.OrderHubToast) {
-          global.OrderHubToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-load" });
+        if (global.WaslaToast) {
+          global.WaslaToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-load" });
         } else {
           O.showOrdersWarning("notification-settings-failed", base + " (HTTP " + resp.status + ")");
         }
@@ -252,8 +252,8 @@
 
       O.state.notificationSettings = mergeDefaultNotificationState(json);
     } catch (error) {
-      if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
+      if (global.WaslaToast) {
+        global.WaslaToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
       } else {
         O.showOrdersWarning("notification-settings-exception", O.getMessage("notificationSettingsLoadException"));
       }
@@ -308,7 +308,7 @@
     }
 
     // Highlight swatches + custom color
-    document.querySelectorAll(".oh-color-swatch[data-highlight-color]").forEach(function (btn) {
+    document.querySelectorAll(".wasla-color-swatch[data-highlight-color]").forEach(function (btn) {
       on(btn, "click", function (e) {
         e.preventDefault();
         const c = btn.getAttribute("data-highlight-color") || "yellow";
@@ -389,14 +389,14 @@
         try { data = await resp.json(); } catch (e1) { data = null; }
         if (data && data.success) {
           await loadNotificationSettings();
-          if (global.OrderHubToast) {
-            global.OrderHubToast.success(O.getMessage("settingsSaved"), { key: "notification-settings-save" });
+          if (global.WaslaToast) {
+            global.WaslaToast.success(O.getMessage("settingsSaved"), { key: "notification-settings-save" });
           }
           setTimeout(function () { hideNotificationSettingsModal(); }, 200);
           return;
         }
-        if (global.OrderHubToast) {
-          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
+        if (global.WaslaToast) {
+          global.WaslaToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
         }
         return;
       }
@@ -407,8 +407,8 @@
           body.innerHTML = html;
           wireNotificationModalContent();
         }
-        if (global.OrderHubToast) {
-          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
+        if (global.WaslaToast) {
+          global.WaslaToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
         }
         O.debugWarn("Notification settings save failed", resp.status);
         return;
@@ -420,8 +420,8 @@
         wireNotificationModalContent();
       }
     } catch (error) {
-      if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsSaveException"), { key: "notification-settings-save-ex" });
+      if (global.WaslaToast) {
+        global.WaslaToast.error(O.getMessage("notificationSettingsSaveException"), { key: "notification-settings-save-ex" });
       } else {
         O.showOrdersWarning("notification-settings-save-exception", O.getMessage("notificationSettingsSaveException"));
       }
@@ -437,8 +437,8 @@
     try {
       resp = await fetch(O.opts.notificationSettingsUrl, { headers: { "X-Requested-With": "fetch" } });
     } catch (error) {
-      if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsModalOpenFailed"), { key: "notification-settings-open" });
+      if (global.WaslaToast) {
+        global.WaslaToast.error(O.getMessage("notificationSettingsModalOpenFailed"), { key: "notification-settings-open" });
       } else {
         O.showOrdersWarning("notification-settings-modal-failed", O.getMessage("notificationSettingsModalOpenFailed"));
       }
@@ -449,8 +449,8 @@
     O.debugLog("Notification settings modal response", { status: resp.status });
     if (!resp.ok) {
       const base = O.getMessage("notificationSettingsModalOpenFailed");
-      if (global.OrderHubToast) {
-        global.OrderHubToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-open" });
+      if (global.WaslaToast) {
+        global.WaslaToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-open" });
       } else {
         O.showOrdersWarning("notification-settings-modal-http", base + " (HTTP " + resp.status + ")");
       }

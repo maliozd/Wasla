@@ -6,7 +6,7 @@
     ViewData["Title"] = L["Checkout.ReviewTitle"];
     var billingLabel = Model.IsYearlyBilling ? L["Signup.BillingYearly"] : L["Signup.BillingMonthly"];
 }
-<div class="oh-signup-page py-4 py-md-5">
+<div class="wasla-signup-page py-4 py-md-5">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-xl-9">
@@ -15,7 +15,7 @@
                     <p class="text-secondary mb-0">@L["Checkout.ReviewSubtitle"]</p>
                 </div>
 
-                <div class="card border-0 shadow-sm oh-signup-card mb-3">
+                <div class="card border-0 shadow-sm wasla-signup-card mb-3">
                     <div class="card-body p-4 p-md-5">
                         @if (!string.IsNullOrWhiteSpace(Model.StatusNoticeKey))
                         {

@@ -15,8 +15,8 @@ public sealed class OrdersLiveScreenRenderingTests
 
         Assert.Contains("@await Html.PartialAsync(\"_LiveScreenOrders\", Model)", liveView, StringComparison.Ordinal);
         Assert.Contains("ordersLiveScreenHost", liveView, StringComparison.Ordinal);
-        Assert.Contains("oh-live-screen-card", partial, StringComparison.Ordinal);
-        Assert.Contains("oh-live-screen-card__items", partial, StringComparison.Ordinal);
+        Assert.Contains("wasla-live-screen-card", partial, StringComparison.Ordinal);
+        Assert.Contains("wasla-live-screen-card__items", partial, StringComparison.Ordinal);
         Assert.Contains("_OrderLifecycleActions", partial, StringComparison.Ordinal);
         Assert.DoesNotContain("_OrdersTable", liveView, StringComparison.Ordinal);
     }
@@ -29,7 +29,7 @@ public sealed class OrdersLiveScreenRenderingTests
 
         Assert.Contains("@await Html.PartialAsync(\"_OrdersTable\", Model)", ordersView, StringComparison.Ordinal);
         Assert.Contains("ordersTableHost", ordersView, StringComparison.Ordinal);
-        Assert.Contains("oh-orders-table", table, StringComparison.Ordinal);
+        Assert.Contains("wasla-orders-table", table, StringComparison.Ordinal);
         Assert.DoesNotContain("_LiveScreenOrders", ordersView, StringComparison.Ordinal);
     }
 

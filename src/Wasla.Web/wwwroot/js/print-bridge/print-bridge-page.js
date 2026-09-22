@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  var cfg = window.OrderHubPrintBridge;
+  var cfg = window.WaslaPrintBridge;
   if (!cfg) return;
 
   var messages = cfg.messages || {};
@@ -157,8 +157,8 @@
     devices = devices || [];
     if (devices.length === 0) {
       panel.innerHTML =
-        '<div class="oh-print-bridge-empty text-center py-5">' +
-          '<div class="oh-print-bridge-empty__icon text-muted mb-2" aria-hidden="true"><i class="bi bi-hdd-network fs-3"></i></div>' +
+        '<div class="wasla-print-bridge-empty text-center py-5">' +
+          '<div class="wasla-print-bridge-empty__icon text-muted mb-2" aria-hidden="true"><i class="bi bi-hdd-network fs-3"></i></div>' +
           '<div class="fw-semibold mb-1">' + escapeHtml(messages.noDevicesTitle || "") + '</div>' +
           '<p class="text-muted small mb-3">' + escapeHtml(messages.noDevicesDescription || "") + '</p>' +
           '<div class="d-flex flex-wrap justify-content-center gap-2">' +
@@ -215,7 +215,7 @@
 
     panel.innerHTML =
       '<div class="table-responsive">' +
-        '<table class="table table-sm align-middle mb-0 oh-print-bridge-devices-table">' +
+        '<table class="table table-sm align-middle mb-0 wasla-print-bridge-devices-table">' +
           '<thead><tr>' +
             '<th>' + escapeHtml(messages.deviceName || "Device") + '</th>' +
             '<th>' + escapeHtml(messages.status || "Status") + '</th>' +

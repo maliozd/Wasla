@@ -12,7 +12,7 @@
     var status = Model.PrintBridgeStatus;
 }
 
-<div class="oh-order-settings-page oh-receipt-printer-settings-page">
+<div class="wasla-order-settings-page wasla-receipt-printer-settings-page">
     @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
     {
         Title = L["Settings.ReceiptPrinterSettings.Title"].Value,
@@ -29,9 +29,9 @@
         @Html.AntiForgeryToken()
     </form>
 
-    <div class="card oh-card oh-settings-card mb-3">
+    <div class="card wasla-card wasla-settings-card mb-3">
         <div class="card-body p-0">
-            <section class="oh-settings-section oh-receipt-timing-section">
+            <section class="wasla-settings-section wasla-receipt-timing-section">
                 <div class="receipt-timing-section">
                     <div class="receipt-timing-section__intro">
                         <h2 class="h6 mb-1">@L["Settings.ReceiptCreation.Title"]</h2>
@@ -73,15 +73,15 @@
                 </div>
             </section>
 
-            <section class="oh-settings-section">
-                <div class="oh-settings-section-row">
-                    <div class="oh-settings-section-text">
+            <section class="wasla-settings-section">
+                <div class="wasla-settings-section-row">
+                    <div class="wasla-settings-section-text">
                         <h2 class="h6 mb-1">@L["Settings.PrintCopies.Title"]</h2>
                         <p class="text-muted small mb-0">@L["Settings.PrintCopies.Description"]</p>
                     </div>
-                    <div class="oh-settings-section-controls">
+                    <div class="wasla-settings-section-controls">
                         <label class="small text-muted mb-0 text-nowrap" for="receiptPrintCopyCountSelect">@L["Settings.PrintCopies.ReceiptCopyCount"]</label>
-                        <select id="receiptPrintCopyCountSelect" class="form-select form-select-sm oh-settings-copy-select"
+                        <select id="receiptPrintCopyCountSelect" class="form-select form-select-sm wasla-settings-copy-select"
                                 aria-label="@L["Settings.PrintCopies.ReceiptCopyCount"]"
                                 title="@L["Orders.ReceiptPrintCopyCountHelp"]">
                             <option value="1">1</option>
@@ -92,35 +92,35 @@
                 </div>
             </section>
 
-            <section class="oh-settings-section">
-                <div class="oh-settings-section-row">
-                    <div class="oh-settings-section-text">
+            <section class="wasla-settings-section">
+                <div class="wasla-settings-section-row">
+                    <div class="wasla-settings-section-text">
                         <h2 class="h6 mb-1">@L["Settings.ReceiptLanguage.Title"]</h2>
                         <p class="text-muted small mb-0">@L["Settings.ReceiptLanguage.Description"]</p>
                     </div>
-                    <div class="oh-settings-section-controls oh-settings-section-controls--stacked">
+                    <div class="wasla-settings-section-controls wasla-settings-section-controls--stacked">
                         <label class="small text-muted mb-0 text-nowrap" for="receiptLanguageSelect">@L["Settings.ReceiptLanguage.SelectLabel"]</label>
-                        <select id="receiptLanguageSelect" class="form-select form-select-sm oh-receipt-language-select"
+                        <select id="receiptLanguageSelect" class="form-select form-select-sm wasla-receipt-language-select"
                                 aria-label="@L["Settings.ReceiptLanguage.SelectLabel"]">
                             <option value="tr">@L["Settings.ReceiptLanguage.Turkish"]</option>
                             <option value="en">@L["Settings.ReceiptLanguage.English"]</option>
                             <option value="ar">@L["Settings.ReceiptLanguage.Arabic"]</option>
                             <option value="ru">@L["Settings.ReceiptLanguage.Russian"]</option>
                         </select>
-                        <p class="form-text mb-0 oh-receipt-language-note d-none" id="receiptArabicPrinterNote">@L["Settings.ReceiptLanguage.ArabicPrinterNote"]</p>
+                        <p class="form-text mb-0 wasla-receipt-language-note d-none" id="receiptArabicPrinterNote">@L["Settings.ReceiptLanguage.ArabicPrinterNote"]</p>
                     </div>
                 </div>
             </section>
         </div>
     </div>
 
-    <div class="row g-3 oh-receipt-editor-layout">
+    <div class="row g-3 wasla-receipt-editor-layout">
         <div class="col-lg-8">
-            <div class="card oh-card oh-settings-card oh-receipt-editor-card h-100">
+            <div class="card wasla-card wasla-settings-card wasla-receipt-editor-card h-100">
                 <div class="card-body p-0 d-flex flex-column">
-                    <section class="oh-settings-section oh-receipt-editor-section">
-                        <div class="oh-settings-section-row oh-settings-section-row--stacked">
-                            <div class="oh-settings-section-text">
+                    <section class="wasla-settings-section wasla-receipt-editor-section">
+                        <div class="wasla-settings-section-row wasla-settings-section-row--stacked">
+                            <div class="wasla-settings-section-text">
                                 <h2 class="h6 mb-1">@L["Settings.ReceiptContent.Title"]</h2>
                                 <p class="text-muted small mb-0">@L["Settings.ReceiptContent.Description"]</p>
                             </div>
@@ -128,7 +128,7 @@
                         @await Html.PartialAsync("_ReceiptContentEditor")
                     </section>
 
-                    <div class="oh-settings-section oh-settings-section--actions border-top mt-auto">
+                    <div class="wasla-settings-section wasla-settings-section--actions border-top mt-auto">
                         <div class="d-flex justify-content-end px-3 py-3">
                             <button type="button" class="btn btn-primary btn-sm" id="saveReceiptTemplateBtn">
                                 <i class="bi bi-check2 me-1"></i>@L["Settings.Save"]
@@ -140,39 +140,39 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card oh-card oh-receipt-preview-card h-100">
+            <div class="card wasla-card wasla-receipt-preview-card h-100">
                 <div class="card-body d-flex flex-column">
-                    <div class="oh-receipt-preview-card-head mb-3">
+                    <div class="wasla-receipt-preview-card-head mb-3">
                         <h2 class="h6 mb-1">@L["Settings.ReceiptPreview.Title"]</h2>
                         <p class="text-muted small mb-0">@L["Settings.ReceiptPreview.Description"]</p>
                     </div>
-                    <div class="oh-receipt-preview flex-grow-1" id="receiptPreviewPanel" aria-live="polite"></div>
+                    <div class="wasla-receipt-preview flex-grow-1" id="receiptPreviewPanel" aria-live="polite"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card oh-card oh-settings-card mt-3">
+    <div class="card wasla-card wasla-settings-card mt-3">
         <div class="card-body p-0">
             @if (status is { HasDevices: true })
             {
-                <section class="oh-settings-section">
-                    <div class="oh-settings-section-row oh-settings-section-row--stacked">
-                        <div class="oh-settings-section-text">
+                <section class="wasla-settings-section">
+                    <div class="wasla-settings-section-row wasla-settings-section-row--stacked">
+                        <div class="wasla-settings-section-text">
                             <h2 class="h6 mb-1">@L["Settings.PrinterStatus.Title"]</h2>
                             <p class="text-muted small mb-0">@L["Settings.PrinterStatus.Description"]</p>
                         </div>
                     </div>
-                    <dl class="oh-settings-status-list small mb-0">
-                        <div class="oh-settings-status-item">
+                    <dl class="wasla-settings-status-list small mb-0">
+                        <div class="wasla-settings-status-item">
                             <dt class="text-muted">@L["PrintBridge.DeviceName"]</dt>
                             <dd class="mb-0">@status.DeviceName</dd>
                         </div>
-                        <div class="oh-settings-status-item">
+                        <div class="wasla-settings-status-item">
                             <dt class="text-muted">@L["PrintBridge.ConnectionStatus"]</dt>
                             <dd class="mb-0">@L[status.ConnectionStatusLabelKey]</dd>
                         </div>
-                        <div class="oh-settings-status-item">
+                        <div class="wasla-settings-status-item">
                             <dt class="text-muted">@L["PrintBridge.LastSeen"]</dt>
                             <dd class="mb-0">
                                 @if (status.LastSeenAtUtc.HasValue)
@@ -186,7 +186,7 @@
                             </dd>
                         </div>
                     </dl>
-                    <div class="oh-settings-subrow oh-settings-subrow--actions">
+                    <div class="wasla-settings-subrow wasla-settings-subrow--actions">
                         <a class="btn btn-outline-primary btn-sm" asp-area="Tenant" asp-controller="PrintBridge" asp-action="Devices">
                             <i class="bi bi-printer me-1"></i>@L["Settings.PrinterStatus.ManagePrintBridge"]
                         </a>
@@ -194,14 +194,14 @@
                 </section>
             }
 
-            <section class="oh-settings-section @(status is { HasDevices: true } ? "border-top" : "")">
-                <div class="oh-settings-section-row oh-settings-section-row--stacked">
-                    <div class="oh-settings-section-text">
+            <section class="wasla-settings-section @(status is { HasDevices: true } ? "border-top" : "")">
+                <div class="wasla-settings-section-row wasla-settings-section-row--stacked">
+                    <div class="wasla-settings-section-text">
                         <h2 class="h6 mb-1">@L["Settings.TestReceipt.Title"]</h2>
                         <p class="text-muted small mb-0">@L["Settings.TestReceipt.Description"]</p>
                     </div>
                 </div>
-                <div class="oh-settings-subrow oh-settings-subrow--actions">
+                <div class="wasla-settings-subrow wasla-settings-subrow--actions">
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="testReceiptBtn" disabled>
                         <i class="bi bi-printer me-1"></i>@L["Settings.TestReceipt.PrintTestReceipt"]
                     </button>
@@ -213,7 +213,7 @@
 
 @section Scripts {
     <script>
-        window.orderHubOrdersOptions = {
+        window.waslaOrdersOptions = {
             orderSettingsUrl: "/orders/order-settings",
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
             {
@@ -227,7 +227,7 @@
                 ["receiptPrintCopyCountOutOfRange"] = L["Orders.ReceiptPrintCopyCountOutOfRange"].Value
             }))
         };
-        window.orderHubReceiptTemplateOptions = {
+        window.waslaReceiptTemplateOptions = {
             templateSettingsUrl: "/settings/receipt-printer/template-settings",
             customerDisplayName: @Html.Raw(JsonSerializer.Serialize(Model.CustomerDisplayName)),
             headerMaxLength: @ReceiptTemplateLimits.HeaderMaxLength,

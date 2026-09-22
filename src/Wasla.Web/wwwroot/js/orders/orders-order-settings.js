@@ -2,7 +2,7 @@
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O) return;
 
   const TIMING_ON_ACCEPTED = "OnAccepted";

@@ -2,7 +2,7 @@
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O) return;
 
   if (!O.table) {
@@ -232,7 +232,7 @@
       const id = entry[0];
       const exp = entry[1];
       // Prefer the card/row host, not nested action buttons that also carry data-order-id.
-      const row = container.querySelector("[data-order-id=\"" + id + "\"].oh-live-screen-card, [data-order-id=\"" + id + "\"]");
+      const row = container.querySelector("[data-order-id=\"" + id + "\"].wasla-live-screen-card, [data-order-id=\"" + id + "\"]");
       if (exp <= now) {
         if (row) {
           row.classList.remove(

@@ -14,7 +14,7 @@
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
-<div class="oh-orders-page">
+<div class="wasla-orders-page">
 <div class="orders-page-header">
     <div class="orders-page-header__main">
         <h1 class="orders-page-header__title">@L["Orders.Title"]</h1>
@@ -44,7 +44,7 @@
 
 <div id="ordersMessageHost"></div>
 
-<div id="ordersFiltersPanel" class="card oh-card mb-3 oh-orders-filters">
+<div id="ordersFiltersPanel" class="card wasla-card mb-3 wasla-orders-filters">
     <div class="card-body">
         <form id="ordersFilterForm" method="get" action="/orders" class="row g-3 align-items-end">
             <div class="col-12 col-md-6 col-lg-3">
@@ -135,9 +135,9 @@
 </div>
 
 <div id="ordersNormalTableSlot">
-<div class="card oh-card oh-orders-table-card oh-orders-normal-content">
+<div class="card wasla-card wasla-orders-table-card wasla-orders-normal-content">
     <div class="card-body p-0 p-md-3">
-        <div id="ordersTableHost" class="oh-orders-table-host">
+        <div id="ordersTableHost" class="wasla-orders-table-host">
             @await Html.PartialAsync("_OrdersTable", Model)
         </div>
     </div>
@@ -152,7 +152,7 @@
 
 @section Scripts {
     <script>
-        window.orderHubOrdersOptions = {
+        window.waslaOrdersOptions = {
             tableUrl: "/orders/table",
             todayYmd: "@today.ToString("yyyy-MM-dd")",
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>

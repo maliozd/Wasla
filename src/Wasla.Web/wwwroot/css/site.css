@@ -1,21 +1,21 @@
 :root {
-  /* Fallback when orderhub-theme.css is not loaded (auth pages) */
-  --orderhub-primary: #ff6b35;
-  --orderhub-primary-dark: #e8541c;
-  --orderhub-primary-light: #ff8a5b;
-  --orderhub-surface: #ffffff;
-  --orderhub-bg: #fafafa;
-  --orderhub-text: #2c2c2c;
-  --orderhub-muted: #6c6c6c;
-  --orderhub-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  /* Fallback when wasla-theme.css is not loaded (auth pages) */
+  --wasla-primary: #ff6b35;
+  --wasla-primary-dark: #e8541c;
+  --wasla-primary-light: #ff8a5b;
+  --wasla-surface: #ffffff;
+  --wasla-bg: #fafafa;
+  --wasla-text: #2c2c2c;
+  --wasla-muted: #6c6c6c;
+  --wasla-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 
-  --bs-primary: var(--orderhub-primary);
+  --bs-primary: var(--wasla-primary);
   --bs-primary-rgb: 255, 107, 53;
-  --bs-body-bg: var(--orderhub-bg);
-  --bs-body-color: var(--orderhub-text);
+  --bs-body-bg: var(--wasla-bg);
+  --bs-body-color: var(--wasla-text);
 }
 
-/* Global base: pages that load only site.css (e.g. auth) without orderhub-theme. */
+/* Global base: pages that load only site.css (e.g. auth) without wasla-theme. */
 html {
   min-height: 100%;
   position: relative;
@@ -36,16 +36,16 @@ body {
 }
 
 body {
-  background: var(--orderhub-bg);
-  color: var(--orderhub-text);
+  background: var(--wasla-bg);
+  color: var(--wasla-text);
   overflow-y: auto;
   margin-bottom: 0;
 }
 
-.oh-card {
-  background: var(--orderhub-surface, var(--color-surface, #fff));
-  border: 1px solid color-mix(in srgb, var(--orderhub-border, var(--color-border, #e5e7eb)) 80%, transparent);
-  box-shadow: var(--orderhub-shadow);
+.wasla-card {
+  background: var(--wasla-surface, var(--color-surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--wasla-border, var(--color-border, #e5e7eb)) 80%, transparent);
+  box-shadow: var(--wasla-shadow);
 }
 
 /* Orders: new-order highlight (see orders-table.js for class names) */
@@ -99,8 +99,8 @@ body {
 /* Notification Settings: highlight preview */
 .order-highlight-preview {
   border-radius: 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--orderhub-border, var(--color-border, #e5e7eb)) 55%, transparent);
-  background: color-mix(in srgb, var(--orderhub-surface, var(--color-surface, #fff)) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border, var(--color-border, #e5e7eb)) 55%, transparent);
+  background: color-mix(in srgb, var(--wasla-surface, var(--color-surface, #fff)) 92%, transparent);
   padding: 0.6rem 0.75rem;
 }
 
@@ -139,19 +139,19 @@ body {
 .order-highlight-preview.highlight-behavior-blink { animation: orderRowBlinkBg 0.8s ease-in-out infinite; }
 .order-highlight-preview.highlight-behavior-borderGlow { animation: orderRowBorderGlow 1.2s ease-in-out infinite; box-shadow: inset 0 0 0 1px var(--new-order-highlight-border, rgba(255, 107, 53, 0.35)); }
 
-.oh-color-swatch {
+.wasla-color-swatch {
   width: 22px;
   height: 22px;
   padding: 0;
   border-radius: 999px;
   border: 1px solid rgba(0,0,0,.18);
 }
-.oh-color-swatch[data-highlight-color="yellow"] { background: #fff3cd; }
-.oh-color-swatch[data-highlight-color="orange"] { background: #ffe4d1; }
-.oh-color-swatch[data-highlight-color="blue"] { background: #dbeafe; }
-.oh-color-swatch[data-highlight-color="green"] { background: #d1fae5; }
-.oh-color-swatch[data-highlight-color="red"] { background: #fee2e2; }
-.oh-color-swatch.active { outline: 2px solid rgba(255,107,53,.8); outline-offset: 2px; }
+.wasla-color-swatch[data-highlight-color="yellow"] { background: #fff3cd; }
+.wasla-color-swatch[data-highlight-color="orange"] { background: #ffe4d1; }
+.wasla-color-swatch[data-highlight-color="blue"] { background: #dbeafe; }
+.wasla-color-swatch[data-highlight-color="green"] { background: #d1fae5; }
+.wasla-color-swatch[data-highlight-color="red"] { background: #fee2e2; }
+.wasla-color-swatch.active { outline: 2px solid rgba(255,107,53,.8); outline-offset: 2px; }
 
 .order-sound-indicator {
   margin-left: .35rem;
@@ -169,21 +169,21 @@ body {
 }
 
 .btn-primary{
-  --bs-btn-bg: var(--orderhub-primary);
-  --bs-btn-border-color: var(--orderhub-primary);
-  --bs-btn-hover-bg: var(--orderhub-primary-dark);
-  --bs-btn-hover-border-color: var(--orderhub-primary-dark);
+  --bs-btn-bg: var(--wasla-primary);
+  --bs-btn-border-color: var(--wasla-primary);
+  --bs-btn-hover-bg: var(--wasla-primary-dark);
+  --bs-btn-hover-border-color: var(--wasla-primary-dark);
 }
 
 .btn-outline-primary{
-  --bs-btn-color: var(--orderhub-primary);
+  --bs-btn-color: var(--wasla-primary);
   --bs-btn-border-color: rgba(255,107,53,.55);
-  --bs-btn-hover-bg: var(--orderhub-primary);
-  --bs-btn-hover-border-color: var(--orderhub-primary);
+  --bs-btn-hover-bg: var(--wasla-primary);
+  --bs-btn-hover-border-color: var(--wasla-primary);
 }
 
 /* Login background */
-.oh-auth-bg{
+.wasla-auth-bg{
   min-height: 100vh;
   background: linear-gradient(180deg, rgba(255,107,53,.10), rgba(255,138,91,.06));
 }
@@ -201,11 +201,11 @@ body {
 }
 
 /* Print Bridge: print job history status rows */
-.oh-print-job-row > td {
+.wasla-print-job-row > td {
   transition: background-color 0.3s ease;
 }
 
-.oh-print-job-row--printing > td {
+.wasla-print-job-row--printing > td {
   animation: ohPrintJobPulse 1.4s ease-in-out infinite;
 }
 
@@ -214,7 +214,7 @@ body {
   50% { background-color: rgba(13, 110, 253, 0.08); }
 }
 
-[data-bs-theme="dark"] .oh-print-job-row--printing > td {
+[data-bs-theme="dark"] .wasla-print-job-row--printing > td {
   animation: ohPrintJobPulseDark 1.4s ease-in-out infinite;
 }
 
@@ -223,18 +223,18 @@ body {
   50% { background-color: rgba(59, 130, 246, 0.12); }
 }
 
-.oh-print-job-row--printed > td {
+.wasla-print-job-row--printed > td {
   background-color: rgba(25, 135, 84, 0.06);
 }
 
-[data-bs-theme="dark"] .oh-print-job-row--printed > td {
+[data-bs-theme="dark"] .wasla-print-job-row--printed > td {
   background-color: rgba(34, 197, 94, 0.10);
 }
 
-.oh-print-job-row--failed > td {
+.wasla-print-job-row--failed > td {
   background-color: rgba(220, 53, 69, 0.06);
 }
 
-[data-bs-theme="dark"] .oh-print-job-row--failed > td {
+[data-bs-theme="dark"] .wasla-print-job-row--failed > td {
   background-color: rgba(239, 68, 68, 0.10);
 }

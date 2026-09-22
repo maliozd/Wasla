@@ -1,8 +1,8 @@
-// OrderHub dependency-free toasts (Tenant UI).
+// Wasla dependency-free toasts (Tenant UI).
 (function (global) {
   "use strict";
 
-  if (global.OrderHubToast) return;
+  if (global.WaslaToast) return;
 
   const DEFAULT_DURATION = { success: 1400, info: 1800, warning: 2200, error: 3000 };
   const MAX_VISIBLE = 3;
@@ -12,9 +12,9 @@
   function ensureContainer() {
     if (container) return container;
     const el = document.createElement("div");
-    el.className = "orderhub-toast-container";
+    el.className = "wasla-toast-container";
     el.setAttribute("role", "region");
-    el.setAttribute("aria-label", "OrderHub toasts");
+    el.setAttribute("aria-label", "Wasla toasts");
     document.body.appendChild(el);
     container = el;
     return container;
@@ -30,7 +30,7 @@
 
   function removeExistingWithKey(key) {
     if (!key) return;
-    const el = ensureContainer().querySelector(".orderhub-toast[data-key=\"" + cssEscape(key) + "\"]");
+    const el = ensureContainer().querySelector(".wasla-toast[data-key=\"" + cssEscape(key) + "\"]");
     if (el) removeToast(el);
   }
 
@@ -40,7 +40,7 @@
   }
 
   function trimToMaxVisible() {
-    const list = ensureContainer().querySelectorAll(".orderhub-toast");
+    const list = ensureContainer().querySelectorAll(".wasla-toast");
     if (list.length <= MAX_VISIBLE) return;
     for (let i = 0; i < list.length - MAX_VISIBLE; i++) {
       removeToast(list[i]);
@@ -74,18 +74,18 @@
     const c = ensureContainer();
 
     const toast = document.createElement("div");
-    toast.className = "orderhub-toast orderhub-toast--" + type;
+    toast.className = "wasla-toast wasla-toast--" + type;
     toast.setAttribute("role", "status");
     toast.setAttribute("aria-live", "polite");
     if (opt.key) toast.setAttribute("data-key", opt.key);
 
     const msgEl = document.createElement("div");
-    msgEl.className = "orderhub-toast__message";
+    msgEl.className = "wasla-toast__message";
     msgEl.textContent = msg;
 
     const closeBtn = document.createElement("button");
     closeBtn.type = "button";
-    closeBtn.className = "orderhub-toast__close";
+    closeBtn.className = "wasla-toast__close";
     closeBtn.setAttribute("aria-label", "Close");
     closeBtn.innerHTML = "&times;";
     closeBtn.addEventListener("click", function () {
@@ -106,7 +106,7 @@
     toast.addEventListener("remove", function () { clearTimeout(t); });
   }
 
-  global.OrderHubToast = {
+  global.WaslaToast = {
     success: function (message, options) { show("success", message, options); },
     error: function (message, options) { show("error", message, options); },
     warning: function (message, options) { show("warning", message, options); },

@@ -1,18 +1,18 @@
 /* Public landing (Home/Index) — independent from tenant/admin. */
 
 :root {
-  --oh-landing-primary: #ff6b35;
-  --oh-landing-primary-dark: #e8541c;
-  --oh-landing-surface: #ffffff;
-  --oh-landing-bg: #fafafa;
-  --oh-landing-muted: #5c6370;
-  --oh-landing-border: rgba(0, 0, 0, 0.08);
-  --oh-landing-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
-  --oh-landing-shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.06);
+  --wasla-landing-primary: #ff6b35;
+  --wasla-landing-primary-dark: #e8541c;
+  --wasla-landing-surface: #ffffff;
+  --wasla-landing-bg: #fafafa;
+  --wasla-landing-muted: #5c6370;
+  --wasla-landing-border: rgba(0, 0, 0, 0.08);
+  --wasla-landing-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+  --wasla-landing-shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
-.oh-landing {
-  background: var(--oh-landing-bg);
+.wasla-landing {
+  background: var(--wasla-landing-bg);
   color: #1a1d24;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 0.95rem;
@@ -21,70 +21,70 @@
   max-width: 100vw;
 }
 
-.oh-landing h1,
-.oh-landing h2,
-.oh-landing h3,
-.oh-hero-title {
+.wasla-landing h1,
+.wasla-landing h2,
+.wasla-landing h3,
+.wasla-hero-title {
   font-weight: 600;
   letter-spacing: -0.02em;
   color: #111827;
 }
 
-.oh-hero-sub,
-.oh-landing .lead {
+.wasla-hero-sub,
+.wasla-landing .lead {
   line-height: 1.6;
   font-size: 1.05rem;
 }
 
-.oh-landing-header {
-  background: var(--oh-landing-surface);
+.wasla-landing-header {
+  background: var(--wasla-landing-surface);
   position: sticky;
   top: 0;
   z-index: 1020;
 }
 
-.oh-logo-mark {
+.wasla-logo-mark {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, var(--oh-landing-primary), #ff8a5b);
+  background: linear-gradient(135deg, var(--wasla-landing-primary), #ff8a5b);
   flex-shrink: 0;
 }
 
 /* Hero */
-.oh-hero {
+.wasla-hero {
   background: radial-gradient(1000px 480px at 0% 0%, rgba(255, 107, 53, 0.2), transparent 60%),
     radial-gradient(800px 400px at 100% 20%, rgba(255, 138, 91, 0.18), transparent 55%),
     linear-gradient(180deg, #fff 0%, #fafbfc 100%);
 }
 
-.oh-hero-illu {
-  box-shadow: var(--oh-landing-shadow);
+.wasla-hero-illu {
+  box-shadow: var(--wasla-landing-shadow);
 }
 
-.oh-illu-rows {
+.wasla-illu-rows {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
 }
 
-.oh-illu-row {
+.wasla-illu-row {
   height: 10px;
   border-radius: 6px;
   background: linear-gradient(90deg, #e5e7eb, #f3f4f6, #e5e7eb);
   background-size: 200% 100%;
-  animation: oh-illu-shimmer 3s ease-in-out infinite;
+  animation: wasla-illu-shimmer 3s ease-in-out infinite;
 }
 
-.oh-illu-row--short {
+.wasla-illu-row--short {
   width: 70%;
   margin-inline: auto 0;
 }
 
-[dir="rtl"] .oh-illu-row--short {
+[dir="rtl"] .wasla-illu-row--short {
   margin-inline: 0 auto;
 }
 
-@keyframes oh-illu-shimmer {
+@keyframes wasla-illu-shimmer {
   0%,
   100% {
     background-position: 0% 0%;
@@ -94,7 +94,7 @@
   }
 }
 
-.oh-badge-live {
+.wasla-badge-live {
   background: color-mix(in srgb, #22c55e 12%, #fff) !important;
   color: #15803d !important;
   font-weight: 600;
@@ -102,12 +102,12 @@
 }
 
 /* Mockup + tables */
-.oh-mockup-card,
-.oh-landing-table {
+.wasla-mockup-card,
+.wasla-landing-table {
   font-size: 0.9rem;
 }
 
-.oh-landing-thead th {
+.wasla-landing-thead th {
   font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -117,16 +117,16 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
-.oh-landing-table td {
+.wasla-landing-table td {
   vertical-align: middle;
   padding: 0.75rem 0.85rem;
 }
 
-.oh-landing-table tbody tr:hover {
+.wasla-landing-table tbody tr:hover {
   background: rgba(255, 107, 53, 0.04);
 }
 
-.oh-platform-tile {
+.wasla-platform-tile {
   display: inline-block;
   padding: 0.2rem 0.55rem;
   border-radius: 0.35rem;
@@ -136,11 +136,11 @@
   color: #374151;
 }
 
-.oh-section-muted {
+.wasla-section-muted {
   background: #f1f3f5;
 }
 
-.oh-platform-pill {
+.wasla-platform-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -150,62 +150,62 @@
   font-size: 0.88rem;
   color: #1f2937;
   background: #fff;
-  border: 1px solid var(--oh-landing-border);
+  border: 1px solid var(--wasla-landing-border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   max-width: 100%;
   text-align: center;
 }
 
-.oh-step-card,
-.oh-benefit-card {
+.wasla-step-card,
+.wasla-benefit-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.oh-intro-card {
+.wasla-intro-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.oh-intro-card:hover {
+.wasla-intro-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--oh-landing-shadow-sm);
+  box-shadow: var(--wasla-landing-shadow-sm);
 }
 
-.oh-flow-grid {
+.wasla-flow-grid {
   display: grid;
   gap: 1rem;
   grid-template-columns: 1fr;
 }
 
 @media (min-width: 576px) {
-  .oh-flow-grid {
+  .wasla-flow-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 992px) {
-  .oh-flow-grid {
+  .wasla-flow-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
-.oh-audience-item {
-  border-color: var(--oh-landing-border) !important;
+.wasla-audience-item {
+  border-color: var(--wasla-landing-border) !important;
   background: #fff !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.oh-audience-item:hover {
+.wasla-audience-item:hover {
   border-color: rgba(255, 107, 53, 0.35) !important;
-  box-shadow: var(--oh-landing-shadow-sm);
+  box-shadow: var(--wasla-landing-shadow-sm);
 }
 
-.oh-step-card:hover,
-.oh-benefit-card:hover {
+.wasla-step-card:hover,
+.wasla-benefit-card:hover {
   transform: translateY(-3px);
-  box-shadow: var(--oh-landing-shadow-sm);
+  box-shadow: var(--wasla-landing-shadow-sm);
 }
 
-.oh-step-num {
+.wasla-step-num {
   display: inline-flex;
   width: 2rem;
   height: 2rem;
@@ -214,37 +214,37 @@
   border-radius: 0.5rem;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, var(--oh-landing-primary), #ff8a5b);
+  background: linear-gradient(135deg, var(--wasla-landing-primary), #ff8a5b);
   font-size: 0.95rem;
 }
 
-.oh-benefit-icon {
+.wasla-benefit-icon {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.65rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--oh-landing-primary) 14%, #fff);
-  color: var(--oh-landing-primary-dark);
+  background: color-mix(in srgb, var(--wasla-landing-primary) 14%, #fff);
+  color: var(--wasla-landing-primary-dark);
   font-size: 1.15rem;
 }
 
-.oh-trust-bubble {
+.wasla-trust-bubble {
   max-width: 42rem;
 }
 
-.oh-trust-icon {
+.wasla-trust-icon {
   font-size: 2rem;
-  color: var(--oh-landing-primary);
+  color: var(--wasla-landing-primary);
 }
 
-.oh-cta-section {
-  background: linear-gradient(135deg, var(--oh-landing-primary-dark), var(--oh-landing-primary));
+.wasla-cta-section {
+  background: linear-gradient(135deg, var(--wasla-landing-primary-dark), var(--wasla-landing-primary));
   overflow-x: clip;
 }
 
-.oh-landing-footer {
+.wasla-landing-footer {
   background: #f8fafc;
 }
 
@@ -256,62 +256,62 @@ main {
   overflow-x: clip;
 }
 
-.oh-landing .btn-primary {
-  --bs-btn-bg: var(--oh-landing-primary);
-  --bs-btn-border-color: var(--oh-landing-primary);
-  --bs-btn-hover-bg: var(--oh-landing-primary-dark);
-  --bs-btn-hover-border-color: var(--oh-landing-primary-dark);
+.wasla-landing .btn-primary {
+  --bs-btn-bg: var(--wasla-landing-primary);
+  --bs-btn-border-color: var(--wasla-landing-primary);
+  --bs-btn-hover-bg: var(--wasla-landing-primary-dark);
+  --bs-btn-hover-border-color: var(--wasla-landing-primary-dark);
 }
 
-.oh-landing .btn-outline-primary {
-  --bs-btn-color: var(--oh-landing-primary);
+.wasla-landing .btn-outline-primary {
+  --bs-btn-color: var(--wasla-landing-primary);
   --bs-btn-border-color: rgba(255, 107, 53, 0.45);
-  --bs-btn-hover-bg: var(--oh-landing-primary);
-  --bs-btn-hover-border-color: var(--oh-landing-primary);
+  --bs-btn-hover-bg: var(--wasla-landing-primary);
+  --bs-btn-hover-border-color: var(--wasla-landing-primary);
 }
 
-.oh-landing .btn-light {
+.wasla-landing .btn-light {
   color: #1a1d24;
   font-weight: 500;
 }
 
-.oh-landing .btn-lg {
+.wasla-landing .btn-lg {
   font-weight: 500;
 }
 
-.oh-landing .font-monospace {
+.wasla-landing .font-monospace {
   font-size: 0.88em;
 }
 
 @media (max-width: 576px) {
-  .oh-hero-title {
+  .wasla-hero-title {
     font-size: 1.5rem;
   }
 }
 
 /* Pricing */
-.oh-pricing-card {
+.wasla-pricing-card {
   position: relative;
   display: flex;
   flex-direction: column;
   background: #fff;
-  border: 1px solid var(--oh-landing-border);
+  border: 1px solid var(--wasla-landing-border);
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: var(--oh-landing-shadow-sm);
+  box-shadow: var(--wasla-landing-shadow-sm);
 }
 
-.oh-pricing-card--featured {
+.wasla-pricing-card--featured {
   border-color: rgba(255, 107, 53, 0.45);
-  box-shadow: var(--oh-landing-shadow);
+  box-shadow: var(--wasla-landing-shadow);
   transform: translateY(-2px);
 }
 
-.oh-pricing-device-limit {
+.wasla-pricing-device-limit {
   line-height: 1.4;
 }
 
-.oh-pricing-badge {
+.wasla-pricing-badge {
   position: absolute;
   top: 1rem;
   inset-inline-end: 1rem;
@@ -320,32 +320,32 @@ main {
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   background: rgba(255, 107, 53, 0.12);
-  color: var(--oh-landing-primary-dark);
+  color: var(--wasla-landing-primary-dark);
 }
 
-.oh-pricing-amount {
+.wasla-pricing-amount {
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-.oh-pricing-features li {
+.wasla-pricing-features li {
   margin-bottom: 0.45rem;
   line-height: 1.45;
 }
 
 /* Signup */
-.oh-signup-card {
+.wasla-signup-card {
   border-radius: 1rem;
 }
 
-.oh-signup-step-label {
+.wasla-signup-step-label {
   display: flex;
   align-items: center;
   gap: 0.65rem;
 }
 
-.oh-signup-step-num {
+.wasla-signup-step-num {
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 999px;
@@ -355,26 +355,26 @@ main {
   font-size: 0.85rem;
   font-weight: 700;
   background: rgba(255, 107, 53, 0.12);
-  color: var(--oh-landing-primary-dark);
+  color: var(--wasla-landing-primary-dark);
 }
 
-.oh-signup-business-types {
+.wasla-signup-business-types {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
   gap: 0.35rem 1rem;
 }
 
-.oh-signup-plan-summary {
+.wasla-signup-plan-summary {
   background: var(--bs-body-tertiary, #f8f9fa);
-  border: 1px solid var(--oh-landing-border, #e9ecef);
+  border: 1px solid var(--wasla-landing-border, #e9ecef);
   border-radius: 0.75rem;
   padding: 1rem 1.15rem;
 }
 
-.oh-signup-plan-summary ul li {
+.wasla-signup-plan-summary ul li {
   margin-bottom: 0.25rem;
 }
 
-.oh-signup-phone-hint {
+.wasla-signup-phone-hint {
   font-size: 0.8rem;
 }

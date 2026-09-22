@@ -10,13 +10,13 @@ public static class OrderUiHelper
 {
     public static string StatusBadgeClass(OrderStatus status) => status switch
     {
-        OrderStatus.New => "oh-dash-status oh-dash-status--new",
-        OrderStatus.Accepted => "oh-dash-status oh-dash-status--accepted",
-        OrderStatus.Preparing or OrderStatus.ReadyForPickup or OrderStatus.OnTheWay => "oh-dash-status oh-dash-status--progress",
-        OrderStatus.Delivered => "oh-dash-status oh-dash-status--delivered",
-        OrderStatus.Cancelled => "oh-dash-status oh-dash-status--cancelled",
-        OrderStatus.Failed => "oh-dash-status oh-dash-status--failed",
-        _ => "oh-dash-status"
+        OrderStatus.New => "wasla-dash-status wasla-dash-status--new",
+        OrderStatus.Accepted => "wasla-dash-status wasla-dash-status--accepted",
+        OrderStatus.Preparing or OrderStatus.ReadyForPickup or OrderStatus.OnTheWay => "wasla-dash-status wasla-dash-status--progress",
+        OrderStatus.Delivered => "wasla-dash-status wasla-dash-status--delivered",
+        OrderStatus.Cancelled => "wasla-dash-status wasla-dash-status--cancelled",
+        OrderStatus.Failed => "wasla-dash-status wasla-dash-status--failed",
+        _ => "wasla-dash-status"
     };
 
     public static (TimeZoneInfo TimeZone, DateOnly Today) GetTurkeyDisplayContext() =>

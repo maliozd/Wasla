@@ -2,7 +2,7 @@
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O || !O.table || typeof O.table.refreshOrdersTable !== "function") return;
 
   /** @type {Record<string, { confirmTitle: string, confirmMessage: string, fallbackSuccess: string, toastKey: string }>} */
@@ -59,15 +59,15 @@
 
   function toastSuccess(key, fallbackMessageKey, toastKey) {
     const message = localize(key || fallbackMessageKey);
-    if (global.OrderHubToast && typeof global.OrderHubToast.success === "function") {
-      global.OrderHubToast.success(message, { key: toastKey });
+    if (global.WaslaToast && typeof global.WaslaToast.success === "function") {
+      global.WaslaToast.success(message, { key: toastKey });
     }
   }
 
   function toastError(messageKey, toastKey) {
     const message = localize(messageKey);
-    if (global.OrderHubToast && typeof global.OrderHubToast.error === "function") {
-      global.OrderHubToast.error(message, { key: toastKey });
+    if (global.WaslaToast && typeof global.WaslaToast.error === "function") {
+      global.WaslaToast.error(message, { key: toastKey });
     }
   }
 

@@ -15,7 +15,7 @@
 <div class="orders-table-meta d-none" data-total-count="@Model.TotalCount"></div>
 
 <div class="table-responsive">
-    <table class="table table-sm align-middle mb-0 oh-orders-table">
+    <table class="table table-sm align-middle mb-0 wasla-orders-table">
         <thead>
         <tr>
             <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "platform", L["Orders.Platform"].Value))</th>
@@ -58,7 +58,7 @@
                     <td>@o.CustomerName</td>
                     <td>
                         <span class="me-2">@StatusLabel(o.Status)</span>
-                        <span class="badge text-bg-primary d-none oh-orders-new-badge" data-new-badge>@L["Orders.StatusNewBadge"]</span>
+                        <span class="badge text-bg-primary d-none wasla-orders-new-badge" data-new-badge>@L["Orders.StatusNewBadge"]</span>
                     </td>
                     <td class="text-end">@o.TotalAmount.ToString("C")</td>
                     <td class="text-end">@o.ReceivedAtLocal.ToString("g")</td>

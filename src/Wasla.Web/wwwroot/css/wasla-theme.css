@@ -1,4 +1,4 @@
-/* OrderHub shell + AdminLTE overrides. Load after AdminLTE. */
+/* Wasla shell + AdminLTE overrides. Load after AdminLTE. */
 
 :root {
   /* --- Semantic tokens (light) --- */
@@ -54,39 +54,32 @@
   --color-sidebar-border: var(--color-border);
 
   /* --- Legacy aliases (keep existing selectors working) --- */
-  --orderhub-primary: var(--color-accent);
-  --orderhub-primary-dark: var(--color-accent-hover);
-  --orderhub-primary-light: #ff8a5b;
-  --orderhub-surface: var(--color-surface);
-  --orderhub-bg: var(--color-bg);
-  --orderhub-text: var(--color-text);
-  --orderhub-muted: var(--color-text-muted);
-  --orderhub-sidebar: var(--color-sidebar-bg);
-  --orderhub-sidebar-text: var(--color-sidebar-text);
-  --orderhub-border: var(--color-border);
-  --orderhub-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --wasla-primary: var(--color-accent);
+  --wasla-primary-dark: var(--color-accent-hover);
+  --wasla-primary-light: #ff8a5b;
+  --wasla-surface: var(--color-surface);
+  --wasla-bg: var(--color-bg);
+  --wasla-text: var(--color-text);
+  --wasla-muted: var(--color-text-muted);
+  --wasla-sidebar: var(--color-sidebar-bg);
+  --wasla-sidebar-text: var(--color-sidebar-text);
+  --wasla-border: var(--color-border);
+  --wasla-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 
-  --oh-topbar-h: calc(3.5rem + 1px);
-  --oh-sidebar-width: 252px;
-  --oh-sidebar-collapsed-width: 68px;
-  --oh-radius: 0.5rem;
+  --wasla-topbar-h: calc(3.5rem + 1px);
+  --wasla-sidebar-width: 252px;
+  --wasla-sidebar-collapsed-width: 68px;
+  --wasla-radius: 0.5rem;
 
-  --oh-primary: var(--color-accent);
-  --oh-primary-dark: var(--color-accent-hover);
-  --oh-bg: var(--color-bg);
-  --oh-surface: var(--color-surface);
-  --oh-surface-elevated: var(--color-surface-elevated);
-  --oh-surface-muted: var(--color-surface-muted);
-  --oh-text: var(--color-text);
-  --oh-muted: var(--color-text-muted);
-  --oh-border: var(--color-border);
-  --oh-sidebar-bg: var(--color-sidebar-bg);
-  --oh-topbar-bg: var(--color-surface);
+  --wasla-surface-elevated: var(--color-surface-elevated);
+  --wasla-surface-muted: var(--color-surface-muted);
+  --wasla-sidebar-bg: var(--color-sidebar-bg);
+  --wasla-topbar-bg: var(--color-surface);
 
   --bs-primary: var(--color-accent);
   --bs-primary-rgb: 255, 107, 53;
-  --bs-body-bg: var(--oh-bg);
-  --bs-body-color: var(--oh-text);
+  --bs-body-bg: var(--wasla-bg);
+  --bs-body-color: var(--wasla-text);
   --bs-border-color: var(--color-border);
   --bs-secondary-color: var(--color-text-muted);
   --bs-tertiary-color: var(--color-text-secondary);
@@ -145,41 +138,33 @@
   --color-sidebar-active-text: #ffffff;
   --color-sidebar-border: rgba(255, 255, 255, 0.08);
 
-  --orderhub-primary-light: #ff8a5b;
-  --orderhub-shadow: none;
+  --wasla-primary-light: #ff8a5b;
+  --wasla-shadow: none;
 
-  --orderhub-primary: var(--color-accent);
-  --orderhub-primary-dark: var(--color-accent-hover);
-  --orderhub-surface: var(--color-surface);
-  --orderhub-bg: var(--color-bg);
-  --orderhub-text: var(--color-text);
-  --orderhub-muted: var(--color-text-muted);
-  --orderhub-sidebar: var(--color-sidebar-bg);
-  --orderhub-sidebar-text: var(--color-sidebar-text);
-  --orderhub-border: var(--color-border);
-
-  --oh-primary: var(--color-accent);
-  --oh-primary-dark: var(--color-accent-hover);
-  --oh-bg: var(--color-bg);
-  --oh-surface: var(--color-surface);
-  --oh-surface-elevated: var(--color-surface-elevated);
-  --oh-surface-muted: var(--color-surface-muted);
-  --oh-text: var(--color-text);
-  --oh-muted: var(--color-text-muted);
-  --oh-border: var(--color-border);
-  --oh-sidebar-bg: var(--color-sidebar-bg);
-  --oh-topbar-bg: var(--color-sidebar-bg);
+  --wasla-primary: var(--color-accent);
+  --wasla-primary-dark: var(--color-accent-hover);
+  --wasla-surface: var(--color-surface);
+  --wasla-bg: var(--color-bg);
+  --wasla-text: var(--color-text);
+  --wasla-muted: var(--color-text-muted);
+  --wasla-sidebar: var(--color-sidebar-bg);
+  --wasla-sidebar-text: var(--color-sidebar-text);
+  --wasla-border: var(--color-border);
+  --wasla-surface-elevated: var(--color-surface-elevated);
+  --wasla-surface-muted: var(--color-surface-muted);
+  --wasla-sidebar-bg: var(--color-sidebar-bg);
+  --wasla-topbar-bg: var(--color-sidebar-bg);
 
   --bs-primary-rgb: 242, 107, 58;
-  --bs-body-bg: var(--oh-bg);
-  --bs-body-color: var(--oh-text);
+  --bs-body-bg: var(--wasla-bg);
+  --bs-body-color: var(--wasla-text);
   --bs-border-color: var(--color-border);
   --bs-secondary-color: var(--color-text-muted);
   --bs-tertiary-color: var(--color-text-secondary);
   --bs-tertiary-bg: var(--color-surface-muted);
 }
 
-/* Single page scroll — body.oh-app; do not reserve a permanent scrollbar gutter. */
+/* Single page scroll — body.wasla-app; do not reserve a permanent scrollbar gutter. */
 html {
   min-height: 100%;
   scrollbar-gutter: auto;
@@ -193,47 +178,47 @@ body {
   overflow-x: hidden;
 }
 
-body.oh-app {
+body.wasla-app {
   overflow-y: auto;
   margin-bottom: 0;
-  background: var(--oh-bg);
-  color: var(--oh-text);
+  background: var(--wasla-bg);
+  color: var(--wasla-text);
 }
 
 /* AdminLTE shell: body.layout-fixed + .app-wrapper.
    One vertical scrollbar on body — never nested page scroll in main/content-wrapper. */
-body.oh-app .app-wrapper,
-body.oh-app.layout-fixed .app-wrapper {
+body.wasla-app .app-wrapper,
+body.wasla-app.layout-fixed .app-wrapper {
   min-height: 100vh;
   min-height: 100dvh;
   overflow: visible;
 }
 
-body.oh-app .content-wrapper,
-body.oh-app .app-content,
-body.oh-app .app-main {
+body.wasla-app .content-wrapper,
+body.wasla-app .app-content,
+body.wasla-app .app-main {
   max-height: none !important;
 }
 
 /* AdminLTE layout-fixed sets overflow:auto on .app-main (sidebar-expand-*).
    That creates a nested scroll container and a persistent right-edge scrollbar. */
-body.oh-app[class*="sidebar-expand"].layout-fixed .app-main,
-body.oh-app[class*="sidebar-expand"].layout-fixed .app-main.oh-content {
+body.wasla-app[class*="sidebar-expand"].layout-fixed .app-main,
+body.wasla-app[class*="sidebar-expand"].layout-fixed .app-main.wasla-content {
   overflow: visible !important;
 }
 
 /* AdminLTE uses max-width:100vw on shell nodes; 100vw includes scrollbar width. */
-body.oh-tenant.oh-app .app-wrapper {
+body.wasla-tenant.wasla-app .app-wrapper {
   max-width: 100%;
 }
 
 /* Tenant shell: no top navbar — sidebar is full viewport height. */
-body.oh-tenant.oh-app {
-  --oh-topbar-h: 0px;
+body.wasla-tenant.wasla-app {
+  --wasla-topbar-h: 0px;
 }
 
 /* AdminLTE grid expects a header row; tenant uses sidebar-only shell. */
-body.oh-tenant.oh-app.layout-fixed .app-wrapper {
+body.wasla-tenant.wasla-app.layout-fixed .app-wrapper {
   display: block;
   grid-template-areas: none;
   grid-template-rows: none;
@@ -241,19 +226,19 @@ body.oh-tenant.oh-app.layout-fixed .app-wrapper {
 }
 
 .app-header.navbar {
-  background: var(--oh-topbar-bg) !important;
-  border-color: var(--oh-border) !important;
+  background: var(--wasla-topbar-bg) !important;
+  border-color: var(--wasla-border) !important;
   min-height: 3.5rem;
 }
 
-#ohAppHeader {
+#waslaAppHeader {
   z-index: 1030;
 }
 
 .app-sidebar {
-  background: var(--oh-sidebar-bg) !important;
-  color: var(--orderhub-sidebar-text) !important;
-  border-color: var(--oh-border) !important;
+  background: var(--wasla-sidebar-bg) !important;
+  color: var(--wasla-sidebar-text) !important;
+  border-color: var(--wasla-border) !important;
   overflow: visible;
 }
 
@@ -265,7 +250,7 @@ body.oh-tenant.oh-app.layout-fixed .app-wrapper {
      A second min-height calc here stacks with the header row and causes spurious scroll. */
   min-height: 0;
   overflow: visible;
-  background: var(--oh-bg) !important;
+  background: var(--wasla-bg) !important;
 }
 
 .app-content {
@@ -273,7 +258,7 @@ body.oh-tenant.oh-app.layout-fixed .app-wrapper {
   overflow: visible;
 }
 
-.app-main.oh-content {
+.app-main.wasla-content {
   min-height: 0;
   overflow: visible;
 }
@@ -284,67 +269,67 @@ body.oh-tenant.oh-app.layout-fixed .app-wrapper {
   overflow: visible;
 }
 
-.oh-app .app-main .table-responsive,
-.oh-app .table-responsive {
+.wasla-app .app-main .table-responsive,
+.wasla-app .table-responsive {
   overflow-x: auto;
   overflow-y: visible;
 }
 
 /* Topbar brand + links */
-a.oh-sidebar-brand,
-.oh-sidebar-brand {
-  color: var(--orderhub-primary) !important;
+a.wasla-sidebar-brand,
+.wasla-sidebar-brand {
+  color: var(--wasla-primary) !important;
   font-weight: 700;
   font-size: 1.1rem;
 }
 
-.oh-app .sidebar-menu .nav-link {
-  color: var(--orderhub-sidebar-text) !important;
+.wasla-app .sidebar-menu .nav-link {
+  color: var(--wasla-sidebar-text) !important;
   border-radius: 0.5rem;
   margin-bottom: 0.15rem;
 }
 
-.oh-app .sidebar-menu .nav-link:hover {
-  background: color-mix(in srgb, var(--orderhub-primary) 12%, transparent);
-  color: var(--oh-text) !important;
+.wasla-app .sidebar-menu .nav-link:hover {
+  background: color-mix(in srgb, var(--wasla-primary) 12%, transparent);
+  color: var(--wasla-text) !important;
 }
 
-.oh-app .sidebar-menu .nav-link.active {
-  background: color-mix(in srgb, var(--orderhub-primary) 22%, transparent);
-  color: var(--oh-text) !important;
+.wasla-app .sidebar-menu .nav-link.active {
+  background: color-mix(in srgb, var(--wasla-primary) 22%, transparent);
+  color: var(--wasla-text) !important;
   font-weight: 600;
-  border-left: 3px solid var(--orderhub-primary);
+  border-left: 3px solid var(--wasla-primary);
   padding-left: calc(0.75rem - 3px);
 }
 
 /* Tenant: readable active state (white on primary) + soft hover on inactive */
-body.oh-tenant.oh-app .sidebar-menu .nav-link:hover:not(.active) {
-  background: color-mix(in srgb, var(--orderhub-primary) 12%, var(--oh-sidebar-bg)) !important;
-  color: var(--orderhub-sidebar-text) !important;
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link:hover:not(.active) {
+  background: color-mix(in srgb, var(--wasla-primary) 12%, var(--wasla-sidebar-bg)) !important;
+  color: var(--wasla-sidebar-text) !important;
 }
 
-body.oh-tenant.oh-app .sidebar-menu .nav-link.active,
-body.oh-tenant.oh-app .sidebar-menu .nav-link.active:focus {
-  background: var(--orderhub-primary) !important;
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active,
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active:focus {
+  background: var(--wasla-primary) !important;
   color: #ffffff !important;
   border-left: 3px solid rgba(255, 255, 255, 0.4);
   padding-left: calc(0.625rem - 3px);
 }
 
-body.oh-tenant.oh-app .sidebar-menu .nav-link.active i,
-body.oh-tenant.oh-app .sidebar-menu .nav-link.active .me-2,
-body.oh-tenant.oh-app .sidebar-menu .nav-link.active .nav-text {
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active i,
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active .me-2,
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active .nav-text {
   color: #ffffff !important;
 }
 
-body.oh-tenant.oh-app .sidebar-menu .nav-link.active:hover,
-body.oh-tenant.oh-app .sidebar-menu .nav-link.active:focus:hover {
-  background: var(--orderhub-primary-dark) !important;
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active:hover,
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active:focus:hover {
+  background: var(--wasla-primary-dark) !important;
   color: #ffffff !important;
 }
 
-[dir="rtl"] body.oh-tenant.oh-app .sidebar-menu .nav-link.active,
-[dir="rtl"] body.oh-tenant.oh-app .sidebar-menu .nav-link.active:focus {
+[dir="rtl"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active,
+[dir="rtl"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active:focus {
   border-left: none;
   border-right: 3px solid rgba(255, 255, 255, 0.4);
   padding-left: 0.625rem;
@@ -352,64 +337,64 @@ body.oh-tenant.oh-app .sidebar-menu .nav-link.active:focus:hover {
 }
 
 .card {
-  background: var(--oh-surface);
-  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
-  box-shadow: var(--orderhub-shadow);
-  color: var(--oh-text);
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  box-shadow: var(--wasla-shadow);
+  color: var(--wasla-text);
 }
 
 [data-bs-theme="dark"] .card {
-  --bs-card-bg: var(--oh-surface);
+  --bs-card-bg: var(--wasla-surface);
 }
 
-.oh-app .btn-primary {
-  --bs-btn-bg: var(--orderhub-primary);
-  --bs-btn-border-color: var(--orderhub-primary);
-  --bs-btn-hover-bg: var(--orderhub-primary-dark);
-  --bs-btn-hover-border-color: var(--orderhub-primary-dark);
+.wasla-app .btn-primary {
+  --bs-btn-bg: var(--wasla-primary);
+  --bs-btn-border-color: var(--wasla-primary);
+  --bs-btn-hover-bg: var(--wasla-primary-dark);
+  --bs-btn-hover-border-color: var(--wasla-primary-dark);
 }
 
-.oh-app .btn-outline-primary {
-  --bs-btn-color: var(--orderhub-primary);
-  --bs-btn-border-color: color-mix(in srgb, var(--orderhub-primary) 55%, white);
-  --bs-btn-hover-bg: var(--orderhub-primary);
-  --bs-btn-hover-border-color: var(--orderhub-primary);
+.wasla-app .btn-outline-primary {
+  --bs-btn-color: var(--wasla-primary);
+  --bs-btn-border-color: color-mix(in srgb, var(--wasla-primary) 55%, white);
+  --bs-btn-hover-bg: var(--wasla-primary);
+  --bs-btn-hover-border-color: var(--wasla-primary);
 }
 
-.oh-card {
-  background: var(--oh-surface) !important;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent) !important;
-  box-shadow: var(--orderhub-shadow) !important;
+.wasla-card {
+  background: var(--wasla-surface) !important;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent) !important;
+  box-shadow: var(--wasla-shadow) !important;
 }
 
 /* --- Tenant: typography (shell + pages) --- */
-body.oh-tenant.oh-app {
+body.wasla-tenant.wasla-app {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 14.5px;
   -webkit-font-smoothing: antialiased;
 }
 
-body.oh-tenant.oh-app h1,
-body.oh-tenant.oh-app h2,
-body.oh-tenant.oh-app h3,
-body.oh-tenant.oh-app h4,
-body.oh-tenant.oh-app h5,
-body.oh-tenant.oh-app h6,
-body.oh-tenant.oh-app .h4,
-body.oh-tenant.oh-app .h5 {
+body.wasla-tenant.wasla-app h1,
+body.wasla-tenant.wasla-app h2,
+body.wasla-tenant.wasla-app h3,
+body.wasla-tenant.wasla-app h4,
+body.wasla-tenant.wasla-app h5,
+body.wasla-tenant.wasla-app h6,
+body.wasla-tenant.wasla-app .h4,
+body.wasla-tenant.wasla-app .h5 {
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-body.oh-tenant.oh-app .text-muted,
-body.oh-tenant.oh-app .form-label,
-body.oh-tenant.oh-app small {
-  color: var(--orderhub-muted) !important;
+body.wasla-tenant.wasla-app .text-muted,
+body.wasla-tenant.wasla-app .form-label,
+body.wasla-tenant.wasla-app small {
+  color: var(--wasla-muted) !important;
 }
 
 /* --- Tenant: sidebar + main (AdminLTE + collapse) --- */
-body.oh-tenant.oh-app .app-sidebar {
+body.wasla-tenant.wasla-app .app-sidebar {
   position: fixed;
   top: 0;
   left: 0;
@@ -417,41 +402,41 @@ body.oh-tenant.oh-app .app-sidebar {
   height: 100dvh;
   height: 100vh;
   z-index: 1020;
-  width: var(--oh-sidebar-width);
-  min-width: var(--oh-sidebar-width);
+  width: var(--wasla-sidebar-width);
+  min-width: var(--wasla-sidebar-width);
   transition: width 0.2s ease, min-width 0.2s ease;
   overflow-x: hidden;
   overflow-y: visible;
-  border-right: 1px solid color-mix(in srgb, var(--oh-border) 75%, transparent) !important;
+  border-right: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent) !important;
   border-radius: 0;
   display: flex;
   flex-direction: column;
 }
 
-[dir="rtl"] body.oh-tenant.oh-app .app-sidebar {
+[dir="rtl"] body.wasla-tenant.wasla-app .app-sidebar {
   left: auto;
   right: 0;
   border-right: 0;
-  border-left: 1px solid color-mix(in srgb, var(--oh-border) 75%, transparent) !important;
+  border-left: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent) !important;
 }
 
-body.oh-tenant.oh-app .app-main {
+body.wasla-tenant.wasla-app .app-main {
   transition: margin 0.2s ease, margin-inline 0.2s ease, padding 0.2s ease, padding-inline 0.2s ease;
-  margin-inline-start: var(--oh-sidebar-width) !important;
+  margin-inline-start: var(--wasla-sidebar-width) !important;
   width: auto;
   max-width: 100%;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar {
-  width: var(--oh-sidebar-collapsed-width);
-  min-width: var(--oh-sidebar-collapsed-width);
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar {
+  width: var(--wasla-sidebar-collapsed-width);
+  min-width: var(--wasla-sidebar-collapsed-width);
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .app-main {
-  margin-inline-start: var(--oh-sidebar-collapsed-width) !important;
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-main {
+  margin-inline-start: var(--wasla-sidebar-collapsed-width) !important;
 }
 
-body.oh-tenant.oh-app .sidebar-menu.oh-sidebar-shell {
+body.wasla-tenant.wasla-app .sidebar-menu.wasla-sidebar-shell {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -463,62 +448,62 @@ body.oh-tenant.oh-app .sidebar-menu.oh-sidebar-shell {
 }
 
 /* Brand header */
-body.oh-tenant.oh-app .oh-sidebar-brand-area {
+body.wasla-tenant.wasla-app .wasla-sidebar-brand-area {
   flex-shrink: 0;
   padding: 1.125rem 0.875rem 0.875rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--oh-border) 65%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--wasla-border) 65%, transparent);
 }
 
-body.oh-tenant.oh-app .oh-sidebar-brand-row {
+body.wasla-tenant.wasla-app .wasla-sidebar-brand-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-brand .brand-text {
+body.wasla-tenant.wasla-app .wasla-sidebar-brand .brand-text {
   font-size: 1.3125rem;
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-tenant-name {
+body.wasla-tenant.wasla-app .wasla-sidebar-tenant-name {
   margin-top: 0.3rem;
   font-size: 0.8125rem;
   line-height: 1.35;
-  color: var(--orderhub-muted) !important;
+  color: var(--wasla-muted) !important;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-collapse-btn {
+body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn {
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 70%, transparent);
   border-radius: 0.5rem;
   background: transparent;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   line-height: 1;
   flex-shrink: 0;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-collapse-btn:hover,
-body.oh-tenant.oh-app .oh-sidebar-collapse-btn:focus-visible {
-  background: color-mix(in srgb, var(--orderhub-primary) 10%, transparent);
-  border-color: color-mix(in srgb, var(--orderhub-primary) 35%, var(--oh-border));
-  color: var(--orderhub-sidebar-text);
+body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn:focus-visible {
+  background: color-mix(in srgb, var(--wasla-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--wasla-primary) 35%, var(--wasla-border));
+  color: var(--wasla-sidebar-text);
   outline: none;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-collapse-btn i {
+body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn i {
   font-size: 1rem;
 }
 
 /* Main navigation */
-body.oh-tenant.oh-app .oh-sidebar-nav-main {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -528,11 +513,11 @@ body.oh-tenant.oh-app .oh-sidebar-nav-main {
   scrollbar-width: thin;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-main .nav-item {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main .nav-item {
   margin-bottom: 0.125rem;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-main .nav-link {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main .nav-link {
   display: flex;
   align-items: center;
   gap: 0.625rem;
@@ -545,7 +530,7 @@ body.oh-tenant.oh-app .oh-sidebar-nav-main .nav-link {
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-main .nav-link i {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main .nav-link i {
   font-size: 1.125rem;
   width: 1.125rem;
   flex-shrink: 0;
@@ -553,21 +538,21 @@ body.oh-tenant.oh-app .oh-sidebar-nav-main .nav-link i {
   text-align: center;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-main .nav-link .nav-text {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main .nav-link .nav-text {
   min-width: 0;
 }
 
 /* Bottom panel */
-body.oh-tenant.oh-app .oh-sidebar-bottom {
+body.wasla-tenant.wasla-app .wasla-sidebar-bottom {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
   padding: 0.5rem 0.625rem calc(0.625rem + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid color-mix(in srgb, var(--oh-border) 65%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 65%, transparent);
 }
 
-body.oh-tenant.oh-app .oh-sidebar-footer-controls {
+body.wasla-tenant.wasla-app .wasla-sidebar-footer-controls {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
@@ -575,23 +560,23 @@ body.oh-tenant.oh-app .oh-sidebar-footer-controls {
   border-top: 0;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-action-row {
+body.wasla-tenant.wasla-app .wasla-sidebar-action-row {
   display: flex;
   align-items: stretch;
   gap: 0.25rem;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-action-row--split {
+body.wasla-tenant.wasla-app .wasla-sidebar-action-row--split {
   align-items: center;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-action-grow {
+body.wasla-tenant.wasla-app .wasla-sidebar-action-grow {
   flex: 1 1 auto;
   min-width: 0;
 }
 
 /* Shared sidebar action buttons (language, settings) */
-body.oh-tenant.oh-app .oh-sidebar-action-btn {
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn {
   display: flex;
   align-items: center;
   gap: 0.625rem;
@@ -601,27 +586,27 @@ body.oh-tenant.oh-app .oh-sidebar-action-btn {
   border: 0;
   border-radius: 0.5rem;
   background: transparent;
-  color: var(--orderhub-sidebar-text) !important;
+  color: var(--wasla-sidebar-text) !important;
   font-size: 0.875rem;
   line-height: 1.3;
   text-align: start;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-action-btn::after {
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn::after {
   margin-inline-start: auto;
   flex-shrink: 0;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-action-btn:hover,
-body.oh-tenant.oh-app .oh-sidebar-action-btn:focus-visible,
-body.oh-tenant.oh-app .oh-sidebar-action-btn.show {
-  background: color-mix(in srgb, var(--orderhub-primary) 10%, var(--oh-sidebar-bg)) !important;
-  color: var(--orderhub-sidebar-text) !important;
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn:focus-visible,
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn.show {
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--wasla-sidebar-bg)) !important;
+  color: var(--wasla-sidebar-text) !important;
   outline: none;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-action-icon {
+body.wasla-tenant.wasla-app .wasla-sidebar-action-icon {
   font-size: 1.125rem;
   width: 1.125rem;
   flex-shrink: 0;
@@ -629,14 +614,14 @@ body.oh-tenant.oh-app .oh-sidebar-action-icon {
   color: inherit;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-action-label {
+body.wasla-tenant.wasla-app .wasla-sidebar-action-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-icon-btn {
+body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn {
   flex-shrink: 0;
   width: 2.75rem;
   height: 2.75rem;
@@ -647,29 +632,29 @@ body.oh-tenant.oh-app .oh-sidebar-icon-btn {
   border: 0;
   border-radius: 0.5rem;
   background: transparent;
-  color: var(--orderhub-sidebar-text);
+  color: var(--wasla-sidebar-text);
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-icon-btn:hover,
-body.oh-tenant.oh-app .oh-sidebar-icon-btn:focus-visible {
-  background: color-mix(in srgb, var(--orderhub-primary) 10%, var(--oh-sidebar-bg));
-  color: var(--orderhub-sidebar-text);
+body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn:focus-visible {
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--wasla-sidebar-bg));
+  color: var(--wasla-sidebar-text);
   outline: none;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-icon-btn i {
+body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn i {
   font-size: 1.125rem;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-user {
+body.wasla-tenant.wasla-app .wasla-sidebar-user {
   display: flex;
   align-items: center;
   gap: 0.625rem;
   min-height: 2.5rem;
   padding: 0 0.625rem;
   border-radius: 0.5rem;
-  color: var(--orderhub-muted) !important;
+  color: var(--wasla-muted) !important;
   font-size: 0.8125rem;
   line-height: 1.35;
   margin-bottom: 0;
@@ -677,200 +662,200 @@ body.oh-tenant.oh-app .oh-sidebar-user {
   pointer-events: none;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-user i {
-  color: color-mix(in srgb, var(--orderhub-muted) 85%, var(--orderhub-sidebar-text)) !important;
+body.wasla-tenant.wasla-app .wasla-sidebar-user i {
+  color: color-mix(in srgb, var(--wasla-muted) 85%, var(--wasla-sidebar-text)) !important;
   flex-shrink: 0;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-user-label {
+body.wasla-tenant.wasla-app .wasla-sidebar-user-label {
   min-width: 0;
   font-weight: 500;
 }
 
 /* Collapsed sidebar */
-body.oh-tenant.oh-app.sidebar-collapsed .brand-text,
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-tenant-name,
-body.oh-tenant.oh-app.sidebar-collapsed .customer-text,
-body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-text,
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-action-label,
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-footer .footer-label,
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-user-label {
+body.wasla-tenant.wasla-app.sidebar-collapsed .brand-text,
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-tenant-name,
+body.wasla-tenant.wasla-app.sidebar-collapsed .customer-text,
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-text,
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-label,
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-footer .footer-label,
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-user-label {
   display: none;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-brand-area {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand-area {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-brand-row {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand-row {
   justify-content: center;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-brand .brand-text {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand .brand-text {
   display: none;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-action-btn {
-  justify-content: center;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-action-btn::after {
-  display: none;
-}
-
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-user {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-btn {
   justify-content: center;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-action-row--split {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-btn::after {
+  display: none;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-user {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-row--split {
   justify-content: center;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-action-row--split .oh-sidebar-action-grow {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-row--split .wasla-sidebar-action-grow {
   flex-grow: 0 !important;
   width: auto;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link {
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link {
   justify-content: center;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   border-left: none;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link i,
-body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link .me-2 {
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link i,
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link .me-2 {
   margin: 0 !important;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link.active {
-  background: var(--orderhub-primary) !important;
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link.active {
+  background: var(--wasla-primary) !important;
   color: #fff !important;
   border-left: none;
   box-shadow: none;
   padding-left: 0.5rem;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link.active i,
-body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link.active .me-2 {
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link.active i,
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link.active .me-2 {
   color: #fff !important;
 }
 
-[dir="rtl"] body.oh-tenant.oh-app.sidebar-collapsed .app-sidebar .nav-link.active {
+[dir="rtl"] body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link.active {
   box-shadow: none;
 }
 
 /* Sidebar settings (bottom dropup) */
-.oh-sidebar-settings {
+.wasla-sidebar-settings {
   padding-top: 0;
   margin-top: 0;
   border-top: 0;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-settings-toggle.active {
-  background: var(--orderhub-primary) !important;
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active {
+  background: var(--wasla-primary) !important;
   color: #ffffff !important;
   border-left: 3px solid rgba(255, 255, 255, 0.4);
   padding-left: calc(0.625rem - 3px);
 }
 
-body.oh-tenant.oh-app .oh-sidebar-settings-toggle.active i,
-body.oh-tenant.oh-app .oh-sidebar-settings-toggle.active .nav-text,
-body.oh-tenant.oh-app .oh-sidebar-settings-toggle.active .oh-sidebar-action-label {
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active i,
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active .nav-text,
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active .wasla-sidebar-action-label {
   color: #ffffff !important;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-settings-toggle.active:hover,
-body.oh-tenant.oh-app .oh-sidebar-settings-toggle.active:focus-visible {
-  background: var(--orderhub-primary-dark) !important;
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active:focus-visible {
+  background: var(--wasla-primary-dark) !important;
   color: #ffffff !important;
 }
 
-[dir="rtl"] body.oh-tenant.oh-app .oh-sidebar-settings-toggle.active {
+[dir="rtl"] body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active {
   border-left: none;
   border-right: 3px solid rgba(255, 255, 255, 0.4);
   padding-left: 0.625rem;
   padding-right: calc(0.625rem - 3px);
 }
 
-.oh-sidebar-dropdown-menu,
-.oh-sidebar-settings-menu {
-  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
-  box-shadow: var(--orderhub-shadow);
-  background: var(--oh-surface) !important;
+.wasla-sidebar-dropdown-menu,
+.wasla-sidebar-settings-menu {
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  box-shadow: var(--wasla-shadow);
+  background: var(--wasla-surface) !important;
   border-radius: 0.5rem;
   padding: 0.35rem;
   min-width: 100%;
   z-index: 1050;
 }
 
-.oh-sidebar-settings-menu .dropdown-item,
-.oh-sidebar-lang-menu .dropdown-item {
+.wasla-sidebar-settings-menu .dropdown-item,
+.wasla-sidebar-lang-menu .dropdown-item {
   border-radius: 0.375rem;
   font-size: 0.875rem;
-  color: var(--oh-text);
+  color: var(--wasla-text);
   padding: 0.45rem 0.625rem;
 }
 
-.oh-sidebar-settings-menu .dropdown-item:hover,
-.oh-sidebar-settings-menu .dropdown-item:focus,
-.oh-sidebar-lang-menu .dropdown-item:hover,
-.oh-sidebar-lang-menu .dropdown-item:focus {
-  background: color-mix(in srgb, var(--orderhub-primary) 12%, transparent);
-  color: var(--oh-text);
+.wasla-sidebar-settings-menu .dropdown-item:hover,
+.wasla-sidebar-settings-menu .dropdown-item:focus,
+.wasla-sidebar-lang-menu .dropdown-item:hover,
+.wasla-sidebar-lang-menu .dropdown-item:focus {
+  background: color-mix(in srgb, var(--wasla-primary) 12%, transparent);
+  color: var(--wasla-text);
 }
 
-.oh-sidebar-settings-menu .dropdown-item.active,
-.oh-sidebar-settings-menu .dropdown-item:active,
-.oh-sidebar-lang-menu .dropdown-item.active,
-.oh-sidebar-lang-menu .dropdown-item:active {
-  background: color-mix(in srgb, var(--orderhub-primary) 20%, transparent) !important;
-  color: var(--oh-text) !important;
+.wasla-sidebar-settings-menu .dropdown-item.active,
+.wasla-sidebar-settings-menu .dropdown-item:active,
+.wasla-sidebar-lang-menu .dropdown-item.active,
+.wasla-sidebar-lang-menu .dropdown-item:active {
+  background: color-mix(in srgb, var(--wasla-primary) 20%, transparent) !important;
+  color: var(--wasla-text) !important;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-settings-toggle {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-settings-toggle {
   justify-content: center;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   border-left: none;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-settings-toggle::after {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-settings-toggle::after {
   display: none;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-settings-menu {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-settings-menu {
   min-width: 12.5rem;
 }
 
-body.oh-tenant.oh-app .oh-onboarding-icon {
+body.wasla-tenant.wasla-app .wasla-onboarding-icon {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.65rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--orderhub-primary) 12%, transparent);
-  color: var(--orderhub-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 12%, transparent);
+  color: var(--wasla-primary);
   font-size: 1.1rem;
 }
 
 /* --- Tenant: order settings single card --- */
-.oh-settings-card .oh-settings-section {
+.wasla-settings-card .wasla-settings-section {
   padding: 1rem 1.25rem;
-  border-top: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
 }
 
-.oh-settings-card .oh-settings-section:first-child {
+.wasla-settings-card .wasla-settings-section:first-child {
   border-top: 0;
 }
 
-.oh-settings-section-row {
+.wasla-settings-section-row {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -878,12 +863,12 @@ body.oh-tenant.oh-app .oh-onboarding-icon {
   gap: 0.75rem 1.25rem;
 }
 
-.oh-settings-section-text {
+.wasla-settings-section-text {
   flex: 1 1 14rem;
   min-width: 0;
 }
 
-.oh-settings-section-controls {
+.wasla-settings-section-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -892,11 +877,11 @@ body.oh-tenant.oh-app .oh-onboarding-icon {
   flex: 0 0 auto;
 }
 
-.oh-settings-section-controls--button {
+.wasla-settings-section-controls--button {
   align-self: center;
 }
 
-.oh-settings-subrow {
+.wasla-settings-subrow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -904,22 +889,22 @@ body.oh-tenant.oh-app .oh-onboarding-icon {
   gap: 0.5rem 0.75rem;
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid color-mix(in srgb, var(--oh-border) 55%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
 }
 
-.oh-settings-copy-select {
+.wasla-settings-copy-select {
   width: 4.5rem;
   flex-shrink: 0;
 }
 
-.oh-settings-status-list {
+.wasla-settings-status-list {
   display: grid;
   gap: 0.5rem 1rem;
   margin-top: 0.75rem;
   padding: 0 1.25rem;
 }
 
-.oh-settings-status-item {
+.wasla-settings-status-item {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -927,17 +912,17 @@ body.oh-tenant.oh-app .oh-onboarding-icon {
   gap: 0.35rem 0.75rem;
 }
 
-.oh-settings-status-item dt {
+.wasla-settings-status-item dt {
   margin: 0;
   font-weight: 500;
 }
 
-.oh-settings-status-item dd {
+.wasla-settings-status-item dd {
   margin: 0;
   text-align: end;
 }
 
-.oh-settings-subrow--actions {
+.wasla-settings-subrow--actions {
   justify-content: flex-start;
   padding-left: 1.25rem;
   padding-right: 1.25rem;
@@ -947,22 +932,22 @@ body.oh-tenant.oh-app .oh-onboarding-icon {
   padding-top: 0;
 }
 
-.oh-settings-section--actions {
+.wasla-settings-section--actions {
   margin-top: 0;
 }
 
-.oh-settings-section-controls--stacked {
+.wasla-settings-section-controls--stacked {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.35rem;
 }
 
-.oh-receipt-language-select {
+.wasla-receipt-language-select {
   min-width: 10.5rem;
 }
 
 /* Receipt creation timing — vertical choice group */
-.oh-receipt-timing-section .receipt-timing-section {
+.wasla-receipt-timing-section .receipt-timing-section {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -994,22 +979,22 @@ body.oh-tenant.oh-app .oh-onboarding-icon {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
   border-radius: 0.875rem;
-  background: var(--oh-surface);
+  background: var(--wasla-surface);
   margin: 0;
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disabled)) {
-  border-color: color-mix(in srgb, var(--orderhub-primary) 35%, var(--oh-border));
+  border-color: color-mix(in srgb, var(--wasla-primary) 35%, var(--wasla-border));
 }
 
 .receipt-timing-option:has(.receipt-timing-option__radio:checked) {
-  border-color: color-mix(in srgb, var(--orderhub-primary) 55%, var(--oh-border));
-  background: color-mix(in srgb, var(--orderhub-primary) 8%, var(--oh-surface));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--orderhub-primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--wasla-primary) 55%, var(--wasla-border));
+  background: color-mix(in srgb, var(--wasla-primary) 8%, var(--wasla-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wasla-primary) 12%, transparent);
 }
 
 .receipt-timing-option--disabled {
@@ -1035,13 +1020,13 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.35;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
 .receipt-timing-option__desc {
   margin-top: 0.25rem;
   font-size: 0.8125rem;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   line-height: 1.4;
 }
 
@@ -1051,75 +1036,75 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   vertical-align: middle;
 }
 
-.oh-receipt-creation-help {
+.wasla-receipt-creation-help {
   max-width: 16rem;
   text-align: end;
   line-height: 1.35;
 }
 
-.oh-receipt-language-note {
+.wasla-receipt-language-note {
   max-width: 16rem;
   text-align: end;
   line-height: 1.35;
 }
 
-.oh-receipt-preview-paper--rtl {
+.wasla-receipt-preview-paper--rtl {
   direction: rtl;
   text-align: right;
 }
 
-.oh-receipt-preview-paper--rtl .oh-receipt-preview-line {
+.wasla-receipt-preview-paper--rtl .wasla-receipt-preview-line {
   flex-direction: row-reverse;
 }
 
-.oh-receipt-preview-paper--rtl .oh-receipt-preview-header,
-.oh-receipt-preview-paper--rtl .oh-receipt-preview-footer {
+.wasla-receipt-preview-paper--rtl .wasla-receipt-preview-header,
+.wasla-receipt-preview-paper--rtl .wasla-receipt-preview-footer {
   text-align: center;
 }
 
-.oh-receipt-field-group {
+.wasla-receipt-field-group {
   padding: 0;
 }
 
-.oh-receipt-editor-layout {
+.wasla-receipt-editor-layout {
   align-items: flex-start;
 }
 
-.oh-receipt-editor-layout .oh-receipt-editor-card {
+.wasla-receipt-editor-layout .wasla-receipt-editor-card {
   height: auto !important;
 }
 
-.oh-receipt-editor-card .oh-receipt-editor-section {
+.wasla-receipt-editor-card .wasla-receipt-editor-section {
   border-bottom: 0;
   padding: 1.25rem 1.5rem 0;
 }
 
-.oh-receipt-editor-section .oh-settings-section-row--stacked {
+.wasla-receipt-editor-section .wasla-settings-section-row--stacked {
   margin-bottom: 1.125rem;
 }
 
-.oh-receipt-editor-section .oh-settings-section-text .h6 {
+.wasla-receipt-editor-section .wasla-settings-section-text .h6 {
   margin-bottom: 0.35rem !important;
 }
 
-.oh-receipt-editor-card .oh-settings-section--actions {
+.wasla-receipt-editor-card .wasla-settings-section--actions {
   margin-top: 0;
-  border-top-color: color-mix(in srgb, var(--oh-border) 55%, transparent) !important;
+  border-top-color: color-mix(in srgb, var(--wasla-border) 55%, transparent) !important;
 }
 
-.oh-receipt-editor-card .oh-settings-section--actions > .d-flex {
+.wasla-receipt-editor-card .wasla-settings-section--actions > .d-flex {
   padding: 1rem 1.5rem 1.125rem !important;
 }
 
-.oh-receipt-required-block {
+.wasla-receipt-required-block {
   margin-bottom: 1.25rem;
   padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 48%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 48%, transparent);
   border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--oh-border) 8%, transparent);
+  background: color-mix(in srgb, var(--wasla-border) 8%, transparent);
 }
 
-.oh-receipt-required-block-head {
+.wasla-receipt-required-block-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1127,33 +1112,33 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   margin-bottom: 0.65rem;
 }
 
-.oh-receipt-required-block-title {
+.wasla-receipt-required-block-title {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-receipt-required-block-note {
+.wasla-receipt-required-block-note {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   font-size: 0.74rem;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   line-height: 1.35;
 }
 
-.oh-receipt-required-block-note .bi {
+.wasla-receipt-required-block-note .bi {
   font-size: 0.72rem;
   opacity: 0.85;
 }
 
-.oh-receipt-required-tags {
+.wasla-receipt-required-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
 }
 
-.oh-receipt-required-tag {
+.wasla-receipt-required-tag {
   display: inline-flex;
   align-items: center;
   min-height: 1.5rem;
@@ -1161,41 +1146,41 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   font-size: 0.72rem;
   font-weight: 500;
   line-height: 1.25;
-  color: var(--oh-text);
-  background: color-mix(in srgb, var(--oh-surface-elevated, var(--oh-surface)) 98%, transparent);
-  border: 1px solid color-mix(in srgb, var(--oh-border) 42%, transparent);
+  color: var(--wasla-text);
+  background: color-mix(in srgb, var(--wasla-surface-elevated, var(--wasla-surface)) 98%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 42%, transparent);
   border-radius: 999px;
   white-space: nowrap;
 }
 
-.oh-receipt-content-accordion {
-  --bs-accordion-border-color: color-mix(in srgb, var(--oh-border) 45%, transparent);
+.wasla-receipt-content-accordion {
+  --bs-accordion-border-color: color-mix(in srgb, var(--wasla-border) 45%, transparent);
   --bs-accordion-btn-bg: transparent;
-  --bs-accordion-active-bg: color-mix(in srgb, var(--oh-primary, #0d6efd) 5%, transparent);
-  --bs-accordion-active-color: var(--oh-text);
-  --bs-accordion-btn-color: var(--oh-text);
+  --bs-accordion-active-bg: color-mix(in srgb, var(--wasla-primary, #0d6efd) 5%, transparent);
+  --bs-accordion-active-color: var(--wasla-text);
+  --bs-accordion-btn-color: var(--wasla-text);
   --bs-accordion-btn-focus-box-shadow: none;
   --bs-accordion-body-padding-x: 1rem;
   --bs-accordion-body-padding-y: 0.5rem;
   border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 45%, transparent);
 }
 
-.oh-receipt-content-accordion .accordion-item {
-  border-color: color-mix(in srgb, var(--oh-border) 38%, transparent);
+.wasla-receipt-content-accordion .accordion-item {
+  border-color: color-mix(in srgb, var(--wasla-border) 38%, transparent);
   background: transparent;
 }
 
-.oh-receipt-content-accordion .accordion-item:last-of-type {
+.wasla-receipt-content-accordion .accordion-item:last-of-type {
   border-bottom: 0;
 }
 
-.oh-receipt-content-accordion .accordion-item:has(.accordion-button:not(.collapsed)) {
-  background: color-mix(in srgb, var(--oh-border) 7%, transparent);
+.wasla-receipt-content-accordion .accordion-item:has(.accordion-button:not(.collapsed)) {
+  background: color-mix(in srgb, var(--wasla-border) 7%, transparent);
 }
 
-.oh-receipt-content-accordion .accordion-button {
+.wasla-receipt-content-accordion .accordion-button {
   padding: 0.9rem 1rem;
   min-height: 3.25rem;
   font-size: 0.84rem;
@@ -1203,16 +1188,16 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   transition: background-color 0.15s ease;
 }
 
-.oh-receipt-content-accordion .accordion-button:hover {
-  background: color-mix(in srgb, var(--oh-border) 12%, transparent);
+.wasla-receipt-content-accordion .accordion-button:hover {
+  background: color-mix(in srgb, var(--wasla-border) 12%, transparent);
 }
 
-.oh-receipt-content-accordion .accordion-button:not(.collapsed) {
+.wasla-receipt-content-accordion .accordion-button:not(.collapsed) {
   box-shadow: none;
-  border-bottom: 1px solid color-mix(in srgb, var(--oh-border) 30%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--wasla-border) 30%, transparent);
 }
 
-.oh-receipt-content-accordion .accordion-button::after {
+.wasla-receipt-content-accordion .accordion-button::after {
   width: 0.8rem;
   height: 0.8rem;
   background-size: 0.8rem;
@@ -1221,7 +1206,7 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   opacity: 0.65;
 }
 
-.oh-receipt-accordion-header-inner {
+.wasla-receipt-accordion-header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1232,70 +1217,70 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   padding-inline-end: 0.25rem;
 }
 
-.oh-receipt-accordion-title-wrap {
+.wasla-receipt-accordion-title-wrap {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
 }
 
-.oh-receipt-accordion-title {
+.wasla-receipt-accordion-title {
   font-weight: 600;
   font-size: 0.84rem;
   line-height: 1.3;
 }
 
-.oh-receipt-accordion-desc {
+.wasla-receipt-accordion-desc {
   font-size: 0.74rem;
   font-weight: 400;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   line-height: 1.35;
 }
 
-.oh-receipt-accordion-enabled-badge {
+.wasla-receipt-accordion-enabled-badge {
   flex-shrink: 0;
   align-self: center;
   font-size: 0.7rem;
   font-weight: 600;
   line-height: 1.2;
-  color: var(--orderhub-muted) !important;
-  background: color-mix(in srgb, var(--oh-border) 18%, transparent) !important;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 40%, transparent) !important;
+  color: var(--wasla-muted) !important;
+  background: color-mix(in srgb, var(--wasla-border) 18%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 40%, transparent) !important;
   padding: 0.28rem 0.5rem;
   border-radius: 999px;
 }
 
-.oh-receipt-content-accordion .accordion-body {
+.wasla-receipt-content-accordion .accordion-body {
   padding-top: 0.35rem;
   padding-bottom: 0.65rem;
 }
 
-.oh-receipt-field-list {
+.wasla-receipt-field-list {
   margin-bottom: 0;
 }
 
-.oh-receipt-field-list--coming-soon {
+.wasla-receipt-field-list--coming-soon {
   margin-top: 0.35rem;
   padding-top: 0.35rem;
-  border-top: 1px dashed color-mix(in srgb, var(--oh-border) 32%, transparent);
+  border-top: 1px dashed color-mix(in srgb, var(--wasla-border) 32%, transparent);
 }
 
-.oh-receipt-field-row {
+.wasla-receipt-field-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.85rem;
   min-height: 2.75rem;
   padding: 0.65rem 0.15rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--oh-border) 28%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--wasla-border) 28%, transparent);
   font-size: 0.84rem;
 }
 
-.oh-receipt-field-row:last-child {
+.wasla-receipt-field-row:last-child {
   border-bottom: 0;
 }
 
-.oh-receipt-field-row__text {
+.wasla-receipt-field-row__text {
   display: flex;
   flex-direction: column;
   gap: 0.18rem;
@@ -1303,105 +1288,105 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   flex: 1;
 }
 
-.oh-receipt-field-row__label {
+.wasla-receipt-field-row__label {
   font-weight: 500;
   line-height: 1.3;
 }
 
-.oh-receipt-field-row__hint {
+.wasla-receipt-field-row__hint {
   font-size: 0.73rem;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   line-height: 1.35;
 }
 
-.oh-receipt-field-row .form-check {
+.wasla-receipt-field-row .form-check {
   flex-shrink: 0;
   padding-top: 0.15rem;
 }
 
-.oh-receipt-field-row--coming-soon {
+.wasla-receipt-field-row--coming-soon {
   opacity: 0.9;
 }
 
-.oh-receipt-field-row--coming-soon .oh-receipt-field-row__label {
-  color: var(--orderhub-muted);
+.wasla-receipt-field-row--coming-soon .wasla-receipt-field-row__label {
+  color: var(--wasla-muted);
 }
 
-.oh-receipt-coming-soon-badge {
+.wasla-receipt-coming-soon-badge {
   flex-shrink: 0;
   align-self: center;
   font-size: 0.68rem;
   font-weight: 600;
-  color: var(--orderhub-muted) !important;
-  background: color-mix(in srgb, var(--oh-border) 16%, transparent) !important;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 36%, transparent) !important;
+  color: var(--wasla-muted) !important;
+  background: color-mix(in srgb, var(--wasla-border) 16%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 36%, transparent) !important;
   padding: 0.25rem 0.45rem;
   border-radius: 999px;
 }
 
-.oh-receipt-message-fields {
+.wasla-receipt-message-fields {
   margin: 0.5rem 0.15rem 0.65rem;
   padding: 0.75rem 0.85rem;
   border-radius: 0.45rem;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 36%, transparent);
-  background: color-mix(in srgb, var(--oh-surface-elevated, var(--oh-surface)) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 36%, transparent);
+  background: color-mix(in srgb, var(--wasla-surface-elevated, var(--wasla-surface)) 96%, transparent);
 }
 
-.oh-receipt-message-field--muted {
+.wasla-receipt-message-field--muted {
   opacity: 0.65;
 }
 
-.oh-receipt-message-field--muted textarea:disabled {
-  background: color-mix(in srgb, var(--oh-border) 12%, transparent);
+.wasla-receipt-message-field--muted textarea:disabled {
+  background: color-mix(in srgb, var(--wasla-border) 12%, transparent);
   cursor: not-allowed;
 }
 
-.oh-receipt-editor-layout .oh-receipt-preview-card .card-body {
+.wasla-receipt-editor-layout .wasla-receipt-preview-card .card-body {
   padding: 1.25rem 1.5rem;
 }
 
 @media (max-width: 575.98px) {
-  .oh-receipt-editor-card .oh-receipt-editor-section {
+  .wasla-receipt-editor-card .wasla-receipt-editor-section {
     padding-inline: 1rem;
   }
 
-  .oh-receipt-editor-card .oh-settings-section--actions > .d-flex {
+  .wasla-receipt-editor-card .wasla-settings-section--actions > .d-flex {
     padding-inline: 1rem !important;
   }
 
-  .oh-receipt-accordion-header-inner {
+  .wasla-receipt-accordion-header-inner {
     flex-wrap: wrap;
     align-items: flex-start;
     row-gap: 0.35rem;
   }
 
-  .oh-receipt-accordion-enabled-badge {
+  .wasla-receipt-accordion-enabled-badge {
     margin-inline-start: 0;
   }
 
-  .oh-receipt-field-row {
+  .wasla-receipt-field-row {
     flex-wrap: wrap;
     padding-inline: 0;
   }
 
-  .oh-receipt-field-row .form-check {
+  .wasla-receipt-field-row .form-check {
     margin-inline-start: auto;
   }
 }
 
-.oh-receipt-preview-card {
+.wasla-receipt-preview-card {
   position: sticky;
   top: 1rem;
 }
 
-.oh-receipt-preview {
+.wasla-receipt-preview {
   display: flex;
   justify-content: center;
   align-items: flex-start;
   min-height: 12rem;
 }
 
-.oh-receipt-preview-paper {
+.wasla-receipt-preview-paper {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.76rem;
   line-height: 1.38;
@@ -1409,7 +1394,7 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
   max-width: 16.5rem;
   background: #fff;
   color: #111;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 70%, transparent);
   border-radius: 0.35rem;
   padding: 0.9rem 0.7rem;
   margin: 0 auto;
@@ -1418,89 +1403,89 @@ label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disable
     inset 0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
-.oh-receipt-preview-header,
-.oh-receipt-preview-footer {
+.wasla-receipt-preview-header,
+.wasla-receipt-preview-footer {
   text-align: center;
   font-weight: 600;
 }
 
-.oh-receipt-preview-sep {
+.wasla-receipt-preview-sep {
   border-top: 1px dashed #bbb;
   margin: 0.45rem 0;
 }
 
-.oh-receipt-preview-line {
+.wasla-receipt-preview-line {
   display: flex;
   justify-content: space-between;
   gap: 0.35rem;
 }
 
-.oh-receipt-preview-label {
+.wasla-receipt-preview-label {
   flex-shrink: 0;
 }
 
-.oh-receipt-preview-item {
+.wasla-receipt-preview-item {
   font-weight: 600;
 }
 
 @media (max-width: 575.98px) {
-  .oh-settings-section-controls {
+  .wasla-settings-section-controls {
     width: 100%;
     justify-content: flex-start;
   }
 
-  .oh-settings-subrow {
+  .wasla-settings-subrow {
     align-items: flex-start;
   }
 }
 
 /* --- Tenant: button polish (keep danger) --- */
-body.oh-tenant.oh-app .btn {
+body.wasla-tenant.wasla-app .btn {
   border-radius: 0.65rem;
   font-weight: 500;
   padding: 0.4rem 0.85rem;
 }
 
-body.oh-tenant.oh-app .btn-sm {
+body.wasla-tenant.wasla-app .btn-sm {
   border-radius: 0.5rem;
   font-weight: 500;
   padding: 0.3rem 0.6rem;
 }
 
-body.oh-tenant.oh-app .btn:focus-visible,
-body.oh-tenant.oh-app .btn-oh-primary:focus-visible {
-  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--orderhub-primary) 35%, transparent);
+body.wasla-tenant.wasla-app .btn:focus-visible,
+body.wasla-tenant.wasla-app .btn-wasla-primary:focus-visible {
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--wasla-primary) 35%, transparent);
   outline: none;
 }
 
-body.oh-tenant.oh-app .btn-oh-primary {
-  --bs-btn-bg: var(--orderhub-primary);
-  --bs-btn-border-color: var(--orderhub-primary);
-  --bs-btn-hover-bg: var(--orderhub-primary-dark);
-  --bs-btn-hover-border-color: var(--orderhub-primary-dark);
+body.wasla-tenant.wasla-app .btn-wasla-primary {
+  --bs-btn-bg: var(--wasla-primary);
+  --bs-btn-border-color: var(--wasla-primary);
+  --bs-btn-hover-bg: var(--wasla-primary-dark);
+  --bs-btn-hover-border-color: var(--wasla-primary-dark);
   color: #fff;
 }
 
-body.oh-tenant.oh-app .btn-oh-primary:hover {
+body.wasla-tenant.wasla-app .btn-wasla-primary:hover {
   color: #fff;
 }
 
-body.oh-tenant.oh-app .btn-primary {
+body.wasla-tenant.wasla-app .btn-primary {
   --bs-btn-font-weight: 500;
   --bs-btn-padding-y: 0.45rem;
   --bs-btn-padding-x: 0.9rem;
 }
 
-body.oh-tenant.oh-app .btn-outline-secondary {
-  --bs-btn-color: var(--orderhub-muted);
-  --bs-btn-border-color: color-mix(in srgb, var(--oh-border) 90%, var(--orderhub-muted));
-  --bs-btn-hover-border-color: var(--oh-border);
-  --bs-btn-hover-bg: color-mix(in srgb, var(--orderhub-surface) 50%, var(--orderhub-primary));
-  --bs-btn-hover-color: var(--oh-text);
+body.wasla-tenant.wasla-app .btn-outline-secondary {
+  --bs-btn-color: var(--wasla-muted);
+  --bs-btn-border-color: color-mix(in srgb, var(--wasla-border) 90%, var(--wasla-muted));
+  --bs-btn-hover-border-color: var(--wasla-border);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--wasla-surface) 50%, var(--wasla-primary));
+  --bs-btn-hover-color: var(--wasla-text);
 }
 
-body.oh-tenant.oh-app .btn-outline-primary {
-  --bs-btn-border-color: color-mix(in srgb, var(--orderhub-primary) 40%, var(--orderhub-surface));
+body.wasla-tenant.wasla-app .btn-outline-primary {
+  --bs-btn-border-color: color-mix(in srgb, var(--wasla-primary) 40%, var(--wasla-surface));
 }
 
 /* --- Orders page header + toolbar --- */
@@ -1522,13 +1507,13 @@ body.oh-tenant.oh-app .btn-outline-primary {
   font-size: 1.25rem;
   font-weight: 600;
   line-height: 1.3;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
 .orders-page-header__subtitle {
   margin: 0.35rem 0 0;
   font-size: 0.8125rem;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   line-height: 1.4;
 }
 
@@ -1541,10 +1526,10 @@ body.oh-tenant.oh-app .btn-outline-primary {
   flex-shrink: 0;
   min-width: 6.875rem;
   padding: 0.625rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
   border-radius: 0.875rem;
-  background: var(--oh-surface);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--oh-text) 5%, transparent);
+  background: var(--wasla-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wasla-text) 5%, transparent);
   text-align: center;
 }
 
@@ -1553,7 +1538,7 @@ body.oh-tenant.oh-app .btn-outline-primary {
   font-size: 1.625rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--oh-text);
+  color: var(--wasla-text);
   letter-spacing: -0.02em;
 }
 
@@ -1562,7 +1547,7 @@ body.oh-tenant.oh-app .btn-outline-primary {
   margin-top: 0.25rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -1573,9 +1558,9 @@ body.oh-tenant.oh-app .btn-outline-primary {
   align-items: center;
   gap: 1rem;
   padding: 0.875rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 70%, transparent);
   border-radius: 1rem;
-  background: var(--oh-surface);
+  background: var(--wasla-surface);
   margin-bottom: 1rem;
 }
 
@@ -1593,14 +1578,14 @@ body.oh-tenant.oh-app .btn-outline-primary {
   flex-shrink: 0;
 }
 
-.oh-orders-status-group {
+.wasla-orders-status-group {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
 }
 
-.oh-orders-status-chip {
+.wasla-orders-status-chip {
   display: inline-flex;
   align-items: center;
   min-height: 1.75rem;
@@ -1613,16 +1598,16 @@ body.oh-tenant.oh-app .btn-outline-primary {
   white-space: nowrap;
 }
 
-.oh-orders-status-chip--active {
-  background: color-mix(in srgb, var(--bs-success) 10%, var(--oh-surface));
+.wasla-orders-status-chip--active {
+  background: color-mix(in srgb, var(--bs-success) 10%, var(--wasla-surface));
   border-color: color-mix(in srgb, var(--bs-success) 28%, transparent);
-  color: color-mix(in srgb, var(--bs-success) 80%, var(--oh-text));
+  color: color-mix(in srgb, var(--bs-success) 80%, var(--wasla-text));
 }
 
-.oh-orders-status-chip--muted {
-  background: color-mix(in srgb, var(--oh-border) 20%, var(--oh-surface));
-  border-color: color-mix(in srgb, var(--oh-border) 45%, transparent);
-  color: var(--orderhub-muted);
+.wasla-orders-status-chip--muted {
+  background: color-mix(in srgb, var(--wasla-border) 20%, var(--wasla-surface));
+  border-color: color-mix(in srgb, var(--wasla-border) 45%, transparent);
+  color: var(--wasla-muted);
 }
 
 .orders-manage-settings {
@@ -1631,27 +1616,27 @@ body.oh-tenant.oh-app .btn-outline-primary {
   padding: 0.3rem 0.55rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   text-decoration: none;
   white-space: nowrap;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 50%, transparent);
   border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--oh-border) 10%, var(--oh-surface));
+  background: color-mix(in srgb, var(--wasla-border) 10%, var(--wasla-surface));
   transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .orders-manage-settings:hover {
-  color: var(--orderhub-primary);
-  border-color: color-mix(in srgb, var(--orderhub-primary) 35%, var(--oh-border));
-  background: color-mix(in srgb, var(--orderhub-primary) 6%, var(--oh-surface));
+  color: var(--wasla-primary);
+  border-color: color-mix(in srgb, var(--wasla-primary) 35%, var(--wasla-border));
+  background: color-mix(in srgb, var(--wasla-primary) 6%, var(--wasla-surface));
   text-decoration: none;
 }
 
-.orders-toolbar-right .oh-orders-view-mode {
+.orders-toolbar-right .wasla-orders-view-mode {
   flex-shrink: 0;
 }
 
-.orders-toolbar-right .oh-orders-view-mode .btn,
+.orders-toolbar-right .wasla-orders-view-mode .btn,
 .orders-toolbar-right > .btn {
   font-size: 0.8125rem;
   padding: 0.35rem 0.75rem;
@@ -1659,8 +1644,8 @@ body.oh-tenant.oh-app .btn-outline-primary {
   line-height: 1.2;
 }
 
-.orders-toolbar-right .oh-orders-view-mode .btn {
-  border-color: color-mix(in srgb, var(--oh-border) 65%, transparent);
+.orders-toolbar-right .wasla-orders-view-mode .btn {
+  border-color: color-mix(in srgb, var(--wasla-border) 65%, transparent);
 }
 
 @media (max-width: 767.98px) {
@@ -1695,65 +1680,65 @@ body.oh-tenant.oh-app .btn-outline-primary {
   }
 }
 
-.oh-orders-page .oh-orders-filters .card-body {
+.wasla-orders-page .wasla-orders-filters .card-body {
   padding: 1.1rem 1.25rem;
 }
 
-.oh-orders-page .oh-orders-filters .form-label {
+.wasla-orders-page .wasla-orders-filters .form-label {
   font-size: 0.8125rem;
   font-weight: 500;
   margin-bottom: 0.25rem;
 }
 
-.oh-orders-page .oh-orders-table-card {
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--oh-text) 6%, transparent);
+.wasla-orders-page .wasla-orders-table-card {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wasla-text) 6%, transparent);
 }
 
-.oh-orders-page .oh-orders-table-host .table.oh-orders-table {
+.wasla-orders-page .wasla-orders-table-host .table.wasla-orders-table {
   font-size: 0.9rem;
 }
 
-.oh-orders-page .oh-orders-table-host .table.oh-orders-table thead th {
+.wasla-orders-page .wasla-orders-table-host .table.wasla-orders-table thead th {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   border-bottom-width: 1px;
   padding: 0.6rem 0.75rem;
   white-space: nowrap;
 }
 
-.oh-orders-page .oh-orders-table-host .table.oh-orders-table tbody td {
+.wasla-orders-page .wasla-orders-table-host .table.wasla-orders-table tbody td {
   padding: 0.55rem 0.75rem;
   font-size: 0.9rem;
   vertical-align: middle;
 }
 
-.oh-orders-page .oh-orders-table-host .table.oh-orders-table tbody tr:not(.order-row-new):not(.order-row-new-flash):hover {
-  background-color: color-mix(in srgb, var(--orderhub-primary) 6%, var(--orderhub-surface)) !important;
+.wasla-orders-page .wasla-orders-table-host .table.wasla-orders-table tbody tr:not(.order-row-new):not(.order-row-new-flash):hover {
+  background-color: color-mix(in srgb, var(--wasla-primary) 6%, var(--wasla-surface)) !important;
 }
 
-[data-bs-theme="dark"] .oh-orders-page .oh-orders-table-host .table.oh-orders-table tbody tr:not(.order-row-new):not(.order-row-new-flash):hover {
-  background-color: color-mix(in srgb, var(--orderhub-primary) 12%, var(--orderhub-surface)) !important;
+[data-bs-theme="dark"] .wasla-orders-page .wasla-orders-table-host .table.wasla-orders-table tbody tr:not(.order-row-new):not(.order-row-new-flash):hover {
+  background-color: color-mix(in srgb, var(--wasla-primary) 12%, var(--wasla-surface)) !important;
 }
 
-/* Toast styling moved to orderhub-toast.css (custom system). */
+/* Toast styling moved to wasla-toast.css (custom system). */
 
 /* --- Tenant: subtle card + table base polish (non-orders pages) --- */
-body.oh-tenant.oh-app .oh-card,
-body.oh-tenant.oh-app .card {
-  border-color: color-mix(in srgb, var(--oh-border) 90%, var(--orderhub-text)) !important;
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--orderhub-text) 5%, transparent);
+body.wasla-tenant.wasla-app .wasla-card,
+body.wasla-tenant.wasla-app .card {
+  border-color: color-mix(in srgb, var(--wasla-border) 90%, var(--wasla-text)) !important;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--wasla-text) 5%, transparent);
 }
 
-body.oh-tenant.oh-app .table {
-  --bs-table-color: var(--orderhub-text);
+body.wasla-tenant.wasla-app .table {
+  --bs-table-color: var(--wasla-text);
   font-size: 0.9rem;
 }
 
-body.oh-tenant.oh-app .table thead th {
+body.wasla-tenant.wasla-app .table thead th {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
 }
 
 /* Orders table: platform badge + actions */
@@ -1767,9 +1752,9 @@ body.oh-tenant.oh-app .table thead th {
   font-size: 13px;
   font-weight: 650;
   line-height: 1;
-  border: 1px solid var(--oh-border);
-  background: var(--oh-surface);
-  color: var(--oh-text);
+  border: 1px solid var(--wasla-border);
+  background: var(--wasla-surface);
+  color: var(--wasla-text);
   white-space: nowrap;
 }
 
@@ -1842,8 +1827,8 @@ body.oh-tenant.oh-app .table thead th {
 }
 
 [data-bs-theme="dark"] .platform-badge {
-  border-color: color-mix(in srgb, var(--oh-border) 85%, #fff);
-  background: color-mix(in srgb, var(--oh-surface) 88%, transparent);
+  border-color: color-mix(in srgb, var(--wasla-border) 85%, #fff);
+  background: color-mix(in srgb, var(--wasla-surface) 88%, transparent);
 }
 
 [data-bs-theme="dark"] .platform-badge--yemeksepeti {
@@ -1866,42 +1851,42 @@ body.oh-tenant.oh-app .table thead th {
   border-color: rgba(247, 124, 0, .28);
 }
 
-.oh-orders-actions {
+.wasla-orders-actions {
   display: inline-flex;
   gap: 0.35rem;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
-.oh-orders-actions .btn {
+.wasla-orders-actions .btn {
   padding: 0.25rem 0.55rem;
   font-size: 0.78rem;
   border-radius: 0.55rem;
 }
 
-.oh-orders-new-badge {
+.wasla-orders-new-badge {
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 /* --- Orders: view modes + live display --- */
-.oh-orders-normal-view-escape {
+.wasla-orders-normal-view-escape {
   display: none !important;
 }
 
-.oh-orders-view-mode .btn.active {
-  background: var(--orderhub-primary);
-  border-color: var(--orderhub-primary);
+.wasla-orders-view-mode .btn.active {
+  background: var(--wasla-primary);
+  border-color: var(--wasla-primary);
   color: #fff;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-view-mode .btn:not(.active) {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-view-mode .btn:not(.active) {
   background: var(--color-surface-muted);
   border-color: var(--color-border);
   color: var(--color-text-secondary);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-view-mode .btn:not(.active):hover {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-view-mode .btn:not(.active):hover {
   background: var(--color-surface-elevated);
   border-color: var(--color-border-strong);
   color: var(--color-text);
@@ -1911,18 +1896,18 @@ body.oh-tenant.oh-app .table thead th {
   font-size: 0.8125rem;
   font-weight: 500;
   text-decoration: none;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   align-self: flex-start;
 }
 
 .orders-filter-toggle:hover,
 .orders-filter-toggle:focus-visible {
-  color: var(--orderhub-primary);
+  color: var(--wasla-primary);
   text-decoration: none;
 }
 
 .orders-card-grid,
-.oh-orders-cards-host {
+.wasla-orders-cards-host {
   display: grid;
   gap: 0.75rem;
   width: 100%;
@@ -1930,38 +1915,38 @@ body.oh-tenant.oh-app .table thead th {
   box-sizing: border-box;
 }
 
-body.oh-orders-view-compact .orders-card-grid,
-body.oh-orders-view-compact .oh-orders-cards-host,
-body.oh-orders-live-display.oh-orders-view-compact .oh-live-display-cards {
+body.wasla-orders-view-compact .orders-card-grid,
+body.wasla-orders-view-compact .wasla-orders-cards-host,
+body.wasla-orders-live-display.wasla-orders-view-compact .wasla-live-display-cards {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
 }
 
-body.oh-orders-view-kitchen .orders-card-grid,
-body.oh-orders-view-kitchen .oh-orders-cards-host,
-body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
+body.wasla-orders-view-kitchen .orders-card-grid,
+body.wasla-orders-view-kitchen .wasla-orders-cards-host,
+body.wasla-orders-live-display.wasla-orders-view-kitchen .wasla-live-display-cards {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
 }
 
 @media (min-width: 1400px) {
-  body.oh-orders-view-kitchen .orders-card-grid,
-  body.oh-orders-view-kitchen .oh-orders-cards-host,
-  body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
+  body.wasla-orders-view-kitchen .orders-card-grid,
+  body.wasla-orders-view-kitchen .wasla-orders-cards-host,
+  body.wasla-orders-live-display.wasla-orders-view-kitchen .wasla-live-display-cards {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
   }
 }
 
 .orders-card,
-.oh-orders-card {
-  background: var(--oh-surface);
-  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
+.wasla-orders-card {
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
   border-radius: 0.75rem;
-  box-shadow: var(--orderhub-shadow);
+  box-shadow: var(--wasla-shadow);
   min-width: 0;
   overflow: hidden;
 }
 
 .orders-card--compact,
-.oh-orders-card--compact {
+.wasla-orders-card--compact {
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -1971,7 +1956,7 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card--kitchen,
-.oh-orders-card--kitchen {
+.wasla-orders-card--kitchen {
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1979,22 +1964,22 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card--muted,
-.oh-orders-card--muted {
+.wasla-orders-card--muted {
   opacity: 0.72;
 }
 
 .orders-card-image,
-.oh-orders-card__image-wrap {
+.wasla-orders-card__image-wrap {
   overflow: hidden;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--oh-border) 28%, var(--oh-surface));
+  background: color-mix(in srgb, var(--wasla-border) 28%, var(--wasla-surface));
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .orders-card-image--compact,
-.oh-orders-card__image-wrap--compact {
+.wasla-orders-card__image-wrap--compact {
   width: 80px;
   min-width: 80px;
   height: 80px;
@@ -2002,7 +1987,7 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card-image--kitchen,
-.oh-orders-card__image-wrap--kitchen {
+.wasla-orders-card__image-wrap--kitchen {
   width: 100%;
   height: clamp(140px, 22vw, 168px);
   border-radius: 0.65rem;
@@ -2010,7 +1995,7 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card-image img,
-.oh-orders-card__image {
+.wasla-orders-card__image {
   width: 100%;
   height: 100%;
   display: block;
@@ -2024,7 +2009,7 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card-body,
-.oh-orders-card__content {
+.wasla-orders-card__content {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -2033,12 +2018,12 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card--kitchen .orders-card-body,
-.oh-orders-card--kitchen .oh-orders-card__content {
+.wasla-orders-card--kitchen .wasla-orders-card__content {
   gap: 0.45rem;
 }
 
 .orders-card-top,
-.oh-orders-card__head {
+.wasla-orders-card__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -2063,72 +2048,72 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card-code,
-.oh-orders-card__code {
+.wasla-orders-card__code {
   font-size: 0.98rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.25;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
 .orders-card--kitchen .orders-card-code,
-.oh-orders-card--kitchen .oh-orders-card__code {
+.wasla-orders-card--kitchen .wasla-orders-card__code {
   font-size: 1.35rem;
   line-height: 1.2;
 }
 
 .orders-card-code a,
-.oh-orders-card__code a {
+.wasla-orders-card__code a {
   color: inherit;
   text-decoration: none;
 }
 
 .orders-card-code a:hover,
-.oh-orders-card__code a:hover {
-  color: var(--orderhub-primary);
+.wasla-orders-card__code a:hover {
+  color: var(--wasla-primary);
 }
 
 .orders-card-customer,
-.oh-orders-card__customer {
+.wasla-orders-card__customer {
   font-size: 0.875rem;
   line-height: 1.35;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
 .orders-card--kitchen .orders-card-customer,
-.oh-orders-card--kitchen .oh-orders-card__customer {
+.wasla-orders-card--kitchen .wasla-orders-card__customer {
   font-size: 1rem;
 }
 
 .orders-card-items-more,
-.oh-orders-card__more-items {
+.wasla-orders-card__more-items {
   font-size: 0.8125rem;
   line-height: 1.3;
 }
 
 .orders-card-meta__label,
-.oh-orders-card__label {
+.wasla-orders-card__label {
   font-size: inherit;
   font-weight: 500;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   text-transform: none;
   letter-spacing: 0;
 }
 
 .orders-card-meta--compact,
-.oh-orders-card__meta {
+.wasla-orders-card__meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.5rem;
   font-size: 0.8125rem;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   margin-top: 0.1rem;
 }
 
 .orders-card-meta__amount {
   font-weight: 600;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
 .orders-card-meta__sep {
@@ -2150,13 +2135,13 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card-actions,
-.oh-orders-card__actions {
+.wasla-orders-card__actions {
   margin-top: auto;
   padding-top: 0.45rem;
 }
 
-.orders-card-actions .oh-orders-actions,
-.oh-orders-card__actions .oh-orders-actions {
+.orders-card-actions .wasla-orders-actions,
+.wasla-orders-card__actions .wasla-orders-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
@@ -2164,31 +2149,31 @@ body.oh-orders-live-display.oh-orders-view-kitchen .oh-live-display-cards {
 }
 
 .orders-card--compact .orders-card-actions .btn,
-.oh-orders-card--compact .oh-orders-card__actions .btn {
+.wasla-orders-card--compact .wasla-orders-card__actions .btn {
   padding: 0.3rem 0.65rem;
   font-size: 0.8125rem;
 }
 
 .orders-card--kitchen .orders-card-actions .btn-lg,
-.oh-orders-card--kitchen .oh-orders-card__actions .btn-lg {
+.wasla-orders-card--kitchen .wasla-orders-card__actions .btn-lg {
   min-height: 2.75rem;
   padding: 0.5rem 1rem;
   font-size: 1rem;
 }
 
-.oh-orders-empty__title {
+.wasla-orders-empty__title {
   font-size: 1.1rem;
 }
 
 /* --- Orders: dedicated live display page --- */
-body.oh-orders-live-display {
+body.wasla-orders-live-display {
   margin: 0;
   overflow-x: hidden;
   min-height: 100dvh;
-  background: var(--oh-bg, var(--orderhub-bg));
+  background: var(--wasla-bg, var(--wasla-bg));
 }
 
-body.oh-orders-live-display .oh-orders-live-display-root {
+body.wasla-orders-live-display .wasla-orders-live-display-root {
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
@@ -2200,17 +2185,29 @@ body.oh-orders-live-display .oh-orders-live-display-root {
   overflow-x: hidden;
 }
 
-body.oh-orders-live-display .oh-live-display-header {
+body.wasla-orders-live-display .wasla-live-display-header {
   position: sticky;
   top: 0;
   z-index: 20;
   padding: 0.75rem 0;
-  background: color-mix(in srgb, var(--oh-bg, var(--orderhub-bg)) 92%, transparent);
+  background: color-mix(in srgb, var(--wasla-bg, var(--wasla-bg)) 92%, transparent);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--oh-border);
+  border-bottom: 1px solid var(--wasla-border);
 }
 
-body.oh-orders-live-display .oh-live-display-cards {
+.wasla-orders-sound-enable-btn {
+  font-weight: 600;
+}
+
+.wasla-live-display-sound-banner {
+  margin: 0;
+}
+
+.wasla-live-display-sound-active {
+  margin: 0;
+}
+
+body.wasla-orders-live-display .wasla-live-display-cards {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -2220,7 +2217,7 @@ body.oh-orders-live-display .oh-live-display-cards {
   min-height: 0;
 }
 
-body.oh-orders-live-display .oh-live-screen-host {
+body.wasla-orders-live-display .wasla-live-screen-host {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -2230,7 +2227,7 @@ body.oh-orders-live-display .oh-live-screen-host {
   min-height: 0;
 }
 
-body.oh-orders-live-display .oh-live-screen-grid {
+body.wasla-orders-live-display .wasla-live-screen-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
@@ -2238,23 +2235,23 @@ body.oh-orders-live-display .oh-live-screen-grid {
 }
 
 /* Compact list view: same card DOM, denser single-column layout (no second render tree). */
-body.oh-orders-live-display .oh-live-screen-host--list .oh-live-screen-grid {
+body.wasla-orders-live-display .wasla-live-screen-host--list .wasla-live-screen-grid {
   grid-template-columns: 1fr;
   gap: 0.5rem;
 }
 
-.oh-live-screen-host--list .oh-live-screen-card {
+.wasla-live-screen-host--list .wasla-live-screen-card {
   flex-direction: row;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
 }
 
-.oh-live-screen-host--list .oh-live-screen-card .orders-card-image {
+.wasla-live-screen-host--list .wasla-live-screen-card .orders-card-image {
   display: none;
 }
 
-.oh-live-screen-host--list .oh-live-screen-card .orders-card-body {
+.wasla-live-screen-host--list .wasla-live-screen-card .orders-card-body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2262,80 +2259,80 @@ body.oh-orders-live-display .oh-live-screen-host--list .oh-live-screen-grid {
   width: 100%;
 }
 
-.oh-live-screen-host--list .oh-live-screen-card__code {
+.wasla-live-screen-host--list .wasla-live-screen-card__code {
   font-size: 1.05rem;
 }
 
-.oh-live-screen-host--list .oh-live-screen-card__items {
+.wasla-live-screen-host--list .wasla-live-screen-card__items {
   display: none;
 }
 
-.oh-live-screen-host--list .oh-live-screen-card .orders-card-meta--kitchen {
+.wasla-live-screen-host--list .wasla-live-screen-card .orders-card-meta--kitchen {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 0.9rem;
   margin: 0;
 }
 
-.oh-live-screen-host--list .oh-live-screen-card .orders-card-actions {
+.wasla-live-screen-host--list .wasla-live-screen-card .orders-card-actions {
   margin-inline-start: auto;
 }
 
-.oh-live-screen-host--list .oh-live-screen-card .orders-card-actions .btn-lg {
+.wasla-live-screen-host--list .wasla-live-screen-card .orders-card-actions .btn-lg {
   padding: 0.25rem 0.65rem;
   font-size: 0.9rem;
 }
 
-.oh-live-screen-card__details {
+.wasla-live-screen-card__details {
   white-space: nowrap;
 }
 
-.oh-live-screen-view-switch .btn.active {
+.wasla-live-screen-view-switch .btn.active {
   font-weight: 600;
 }
 
-.oh-live-screen-card__code {
+.wasla-live-screen-card__code {
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
-.oh-live-screen-card__items {
+.wasla-live-screen-card__items {
   margin: 0.35rem 0 0.5rem;
   padding: 0.5rem 0.65rem;
   border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--oh-surface-2, var(--bs-secondary-bg)) 80%, transparent);
+  background: color-mix(in srgb, var(--wasla-surface-2, var(--bs-secondary-bg)) 80%, transparent);
 }
 
-.oh-live-screen-card__item {
+.wasla-live-screen-card__item {
   display: block;
   margin: 0.2rem 0;
   font-size: 0.98rem;
   line-height: 1.35;
 }
 
-.oh-live-screen-card__qty {
+.wasla-live-screen-card__qty {
   font-weight: 700;
   margin-inline-end: 0.3rem;
 }
 
-.oh-live-screen-card__product {
+.wasla-live-screen-card__product {
   font-weight: 600;
 }
 
-.oh-live-screen-card__note {
+.wasla-live-screen-card__note {
   margin-top: 0.15rem;
   margin-inline-start: 1.35rem;
   font-size: 0.86rem;
   font-style: italic;
 }
 
-.oh-live-screen-card__elapsed {
+.wasla-live-screen-card__elapsed {
   margin-inline-start: 0.25rem;
   font-size: 0.9em;
 }
 
-.oh-live-screen-card.order-row-new {
+.wasla-live-screen-card.order-row-new {
   /* Subtle operational emphasis — no row-table animations on Live cards. */
   animation: none !important;
   box-shadow: 0 0 0 2px var(--new-order-highlight-border, rgba(255, 193, 7, 0.55));
@@ -2343,57 +2340,57 @@ body.oh-orders-live-display .oh-live-screen-host--list .oh-live-screen-grid {
   transition: box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.oh-live-screen-card.order-row-new.color-yellow {
+.wasla-live-screen-card.order-row-new.color-yellow {
   background-color: rgba(255, 243, 205, 0.45);
   box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.55);
 }
 
-.oh-live-screen-card.order-row-new.color-orange {
+.wasla-live-screen-card.order-row-new.color-orange {
   background-color: rgba(255, 228, 209, 0.45);
   box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.5);
 }
 
-.oh-live-screen-card.order-row-new.color-blue {
+.wasla-live-screen-card.order-row-new.color-blue {
   background-color: rgba(219, 234, 254, 0.45);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
 }
 
-.oh-live-screen-card.order-row-new.color-green {
+.wasla-live-screen-card.order-row-new.color-green {
   background-color: rgba(209, 250, 229, 0.45);
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
 }
 
-.oh-live-screen-card.order-row-new.color-red {
+.wasla-live-screen-card.order-row-new.color-red {
   background-color: rgba(254, 226, 226, 0.45);
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
 }
 
-[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-yellow {
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-yellow {
   background-color: rgba(245, 158, 11, 0.16);
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4);
 }
 
-[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-orange {
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-orange {
   background-color: rgba(242, 107, 58, 0.16);
   box-shadow: 0 0 0 2px rgba(242, 107, 58, 0.4);
 }
 
-[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-blue {
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-blue {
   background-color: rgba(59, 130, 246, 0.16);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
 }
 
-[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-green {
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-green {
   background-color: rgba(34, 197, 94, 0.16);
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
 }
 
-[data-bs-theme="dark"] .oh-live-screen-card.order-row-new.color-red {
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-red {
   background-color: rgba(239, 68, 68, 0.16);
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
 }
 
-body.oh-orders-live-display .oh-live-display-table {
+body.wasla-orders-live-display .wasla-live-display-table {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -2402,41 +2399,41 @@ body.oh-orders-live-display .oh-live-display-table {
   min-height: 0;
 }
 
-body.oh-orders-live-display:fullscreen .oh-orders-live-display-root {
+body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
   min-height: 100vh;
   padding: 1rem 1.25rem;
 }
 
-.oh-live-display-header__brand {
+.wasla-live-display-header__brand {
   font-weight: 500;
 }
 
-.oh-live-display-fullscreen-hint {
+.wasla-live-display-fullscreen-hint {
   font-size: 0.78rem;
   line-height: 1.35;
   white-space: nowrap;
 }
 
-.oh-live-display-kbd {
+.wasla-live-display-kbd {
   display: inline-block;
   font-size: 0.72rem;
   font-family: inherit;
   padding: 0.08rem 0.35rem;
   border-radius: 0.25rem;
-  border: 1px solid color-mix(in srgb, var(--oh-border) 85%, transparent);
-  background: color-mix(in srgb, var(--oh-surface) 90%, var(--orderhub-muted));
-  color: var(--oh-text);
-  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--oh-border) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 85%, transparent);
+  background: color-mix(in srgb, var(--wasla-surface) 90%, var(--wasla-muted));
+  color: var(--wasla-text);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--wasla-border) 60%, transparent);
 }
 
-.oh-live-display-close-btn {
+.wasla-live-display-close-btn {
   font-size: 0.8125rem;
   padding: 0.2rem 0.55rem;
   line-height: 1.35;
   white-space: nowrap;
 }
 
-.oh-fs-header {
+.wasla-fs-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -2446,160 +2443,160 @@ body.oh-orders-live-display:fullscreen .oh-orders-live-display-root {
   top: 0;
   z-index: 20;
   padding: 0.75rem 0;
-  background: color-mix(in srgb, var(--oh-bg) 92%, transparent);
+  background: color-mix(in srgb, var(--wasla-bg) 92%, transparent);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--oh-border);
+  border-bottom: 1px solid var(--wasla-border);
 }
 
-.oh-fs-header__title {
+.wasla-fs-header__title {
   font-size: 1.65rem;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
-.oh-fs-header__meta {
+.wasla-fs-header__meta {
   font-size: 0.95rem;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
 }
 
-.oh-fs-header__sep {
+.wasla-fs-header__sep {
   margin: 0 0.35rem;
 }
 
-.oh-fs-header__actions {
+.wasla-fs-header__actions {
   margin-inline-start: auto;
 }
 
-.oh-fs-stat {
-  background: var(--oh-surface);
-  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
+.wasla-fs-stat {
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
   border-radius: 0.85rem;
   padding: 1rem 1.15rem;
-  box-shadow: var(--orderhub-shadow);
+  box-shadow: var(--wasla-shadow);
   height: 100%;
 }
 
-.oh-fs-stat__label {
+.wasla-fs-stat__label {
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   margin-bottom: 0.35rem;
 }
 
-.oh-fs-stat__value {
+.wasla-fs-stat__value {
   font-size: 2.25rem;
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.03em;
 }
 
-.oh-fs-table-panel {
+.wasla-fs-table-panel {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
 }
 
-.oh-fs-table-panel .oh-orders-table-card {
+.wasla-fs-table-panel .wasla-orders-table-card {
   margin-bottom: 0;
 }
 
-body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh-orders-table {
+body.wasla-orders-live-display.wasla-orders-view-table .wasla-orders-table-host .table.wasla-orders-table {
   font-size: 0.95rem;
 }
 
-body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh-orders-table thead th {
+body.wasla-orders-live-display.wasla-orders-view-table .wasla-orders-table-host .table.wasla-orders-table thead th {
   font-size: 0.85rem;
 }
 
 @media (max-width: 767.98px) {
-  .oh-fs-stat__value {
+  .wasla-fs-stat__value {
     font-size: 1.85rem;
   }
 
-  .oh-fs-header__actions {
+  .wasla-fs-header__actions {
     width: 100%;
   }
 }
 
 /* --- Tenant: shared customer page patterns --- */
-.oh-customer-page-header__title,
-.oh-dash-header__title,
-.oh-order-details__title {
+.wasla-customer-page-header__title,
+.wasla-dash-header__title,
+.wasla-order-details__title {
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
-.oh-notification-settings-modal {
+.wasla-notification-settings-modal {
   max-width: 520px;
 }
 
 /* --- Tenant: Order History --- */
-.oh-order-history-page .oh-order-history-filters .card-body {
+.wasla-order-history-page .wasla-order-history-filters .card-body {
   padding: 1.1rem 1.25rem;
 }
 
-.oh-order-history-page .oh-order-history-filters .form-label {
+.wasla-order-history-page .wasla-order-history-filters .form-label {
   font-size: 0.8125rem;
   font-weight: 500;
   margin-bottom: 0.25rem;
 }
 
-.oh-order-history-page .oh-order-history-table-card {
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--oh-text) 6%, transparent);
+.wasla-order-history-page .wasla-order-history-table-card {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wasla-text) 6%, transparent);
 }
 
-.oh-order-history-page .oh-order-history-table-card .table.oh-orders-table {
+.wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table {
   font-size: 0.9rem;
 }
 
-.oh-order-history-page .oh-order-history-table-card .table.oh-orders-table thead th {
+.wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table thead th {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   border-bottom-width: 1px;
   padding: 0.6rem 0.75rem;
   white-space: nowrap;
 }
 
-.oh-order-history-page .oh-order-history-table-card .table.oh-orders-table tbody td {
+.wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table tbody td {
   padding: 0.55rem 0.75rem;
   font-size: 0.9rem;
   vertical-align: middle;
 }
 
-.oh-order-history-page .oh-order-history-table-card .table.oh-orders-table tbody tr:hover {
-  background-color: color-mix(in srgb, var(--orderhub-primary) 6%, var(--orderhub-surface)) !important;
+.wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table tbody tr:hover {
+  background-color: color-mix(in srgb, var(--wasla-primary) 6%, var(--wasla-surface)) !important;
 }
 
-[data-bs-theme="dark"] .oh-order-history-page .oh-order-history-table-card .table.oh-orders-table tbody tr:hover {
-  background-color: color-mix(in srgb, var(--orderhub-primary) 12%, var(--orderhub-surface)) !important;
+[data-bs-theme="dark"] .wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table tbody tr:hover {
+  background-color: color-mix(in srgb, var(--wasla-primary) 12%, var(--wasla-surface)) !important;
 }
 
 /* --- Tenant: Dashboard --- */
-.oh-dashboard {
+.wasla-dashboard {
   max-width: 100%;
 }
 
-.oh-dash-today-badge {
+.wasla-dash-today-badge {
   font-weight: 500;
   font-size: 0.8rem;
   padding: 0.45rem 0.75rem;
 }
 
-.oh-dash-kpi {
+.wasla-dash-kpi {
   display: flex;
   align-items: flex-start;
   gap: 0.85rem;
   height: 100%;
   padding: 1rem 1.1rem;
-  background: var(--oh-surface);
-  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
   border-radius: 0.75rem;
-  box-shadow: var(--orderhub-shadow);
+  box-shadow: var(--wasla-shadow);
 }
 
-.oh-dash-kpi__icon {
+.wasla-dash-kpi__icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2608,98 +2605,98 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
   border-radius: 0.55rem;
   font-size: 1.05rem;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--orderhub-primary) 10%, var(--oh-surface));
-  color: var(--orderhub-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--wasla-surface));
+  color: var(--wasla-primary);
 }
 
-.oh-dash-kpi--revenue .oh-dash-kpi__icon {
-  background: color-mix(in srgb, #198754 12%, var(--oh-surface));
+.wasla-dash-kpi--revenue .wasla-dash-kpi__icon {
+  background: color-mix(in srgb, #198754 12%, var(--wasla-surface));
   color: #198754;
 }
 
-.oh-dash-kpi--active .oh-dash-kpi__icon {
-  background: color-mix(in srgb, #0d6efd 12%, var(--oh-surface));
+.wasla-dash-kpi--active .wasla-dash-kpi__icon {
+  background: color-mix(in srgb, #0d6efd 12%, var(--wasla-surface));
   color: #0d6efd;
 }
 
-.oh-dash-kpi--cancelled .oh-dash-kpi__icon {
-  background: color-mix(in srgb, var(--orderhub-muted) 14%, var(--oh-surface));
-  color: var(--orderhub-muted);
+.wasla-dash-kpi--cancelled .wasla-dash-kpi__icon {
+  background: color-mix(in srgb, var(--wasla-muted) 14%, var(--wasla-surface));
+  color: var(--wasla-muted);
 }
 
-.oh-dash-kpi--average .oh-dash-kpi__icon {
-  background: color-mix(in srgb, #6f42c1 10%, var(--oh-surface));
+.wasla-dash-kpi--average .wasla-dash-kpi__icon {
+  background: color-mix(in srgb, #6f42c1 10%, var(--wasla-surface));
   color: #6f42c1;
 }
 
-.oh-dash-kpi__label {
+.wasla-dash-kpi__label {
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   margin-bottom: 0.15rem;
 }
 
-.oh-dash-kpi__value {
+.wasla-dash-kpi__value {
   font-size: 1.55rem;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-dash-kpi__hint {
+.wasla-dash-kpi__hint {
   font-size: 0.72rem;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   margin-top: 0.25rem;
   line-height: 1.35;
 }
 
-.oh-dash-section__title {
+.wasla-dash-section__title {
   font-weight: 600;
 }
 
-.oh-dash-table thead th {
+.wasla-dash-table thead th {
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   border-bottom-width: 1px;
   white-space: nowrap;
 }
 
-.oh-dash-table tbody td {
+.wasla-dash-table tbody td {
   padding-top: 0.65rem;
   padding-bottom: 0.65rem;
   vertical-align: middle;
 }
 
-.oh-dash-table tbody tr + tr td {
-  border-top-color: color-mix(in srgb, var(--oh-border) 65%, transparent);
+.wasla-dash-table tbody tr + tr td {
+  border-top-color: color-mix(in srgb, var(--wasla-border) 65%, transparent);
 }
 
-.oh-dash-order-code {
+.wasla-dash-order-code {
   font-weight: 500;
   text-decoration: none;
 }
 
-.oh-dash-order-code:hover {
+.wasla-dash-order-code:hover {
   text-decoration: underline;
 }
 
-.oh-dash-customer {
+.wasla-dash-customer {
   max-width: 10rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.oh-dash-received {
+.wasla-dash-received {
   white-space: nowrap;
 }
 
 /* Shared order status badge (Dashboard, History, Details, Orders view-mode cards) */
-.oh-dash-status {
+.wasla-dash-status {
   display: inline-block;
   font-size: 0.72rem;
   font-weight: 600;
@@ -2709,64 +2706,64 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
   white-space: nowrap;
 }
 
-.oh-dash-status--new {
-  background: color-mix(in srgb, #ffc107 22%, var(--oh-surface));
+.wasla-dash-status--new {
+  background: color-mix(in srgb, #ffc107 22%, var(--wasla-surface));
   color: #856404;
   border: 1px solid color-mix(in srgb, #ffc107 45%, transparent);
 }
 
-.oh-dash-status--accepted {
-  background: color-mix(in srgb, #198754 16%, var(--oh-surface));
+.wasla-dash-status--accepted {
+  background: color-mix(in srgb, #198754 16%, var(--wasla-surface));
   color: #146c43;
   border: 1px solid color-mix(in srgb, #198754 35%, transparent);
 }
 
-.oh-dash-status--progress {
-  background: color-mix(in srgb, #0d6efd 14%, var(--oh-surface));
+.wasla-dash-status--progress {
+  background: color-mix(in srgb, #0d6efd 14%, var(--wasla-surface));
   color: #084298;
   border: 1px solid color-mix(in srgb, #0d6efd 30%, transparent);
 }
 
-.oh-dash-status--delivered {
-  background: color-mix(in srgb, var(--orderhub-muted) 12%, var(--oh-surface));
-  color: var(--orderhub-muted);
-  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
+.wasla-dash-status--delivered {
+  background: color-mix(in srgb, var(--wasla-muted) 12%, var(--wasla-surface));
+  color: var(--wasla-muted);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
 }
 
-.oh-dash-status--cancelled,
-.oh-dash-status--failed {
-  background: color-mix(in srgb, #dc3545 10%, var(--oh-surface));
+.wasla-dash-status--cancelled,
+.wasla-dash-status--failed {
+  background: color-mix(in srgb, #dc3545 10%, var(--wasla-surface));
   color: #842029;
   border: 1px solid color-mix(in srgb, #dc3545 25%, transparent);
 }
 
-.oh-dash-empty__icon {
+.wasla-dash-empty__icon {
   font-size: 2rem;
   opacity: 0.55;
 }
 
-.oh-dash-empty__title {
+.wasla-dash-empty__title {
   font-weight: 500;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-dash-platform-list {
+.wasla-dash-platform-list {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
-.oh-dash-platform-item {
+.wasla-dash-platform-item {
   padding: 0.75rem 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--oh-border) 65%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--wasla-border) 65%, transparent);
 }
 
-.oh-dash-platform-item:last-child {
+.wasla-dash-platform-item:last-child {
   border-bottom: 0;
   padding-bottom: 0;
 }
 
-.oh-dash-platform-item__header {
+.wasla-dash-platform-item__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2774,7 +2771,7 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
   flex-wrap: wrap;
 }
 
-.oh-dash-platform-item__stats {
+.wasla-dash-platform-item__stats {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -2782,102 +2779,102 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
   margin-inline-start: auto;
 }
 
-.oh-dash-platform-item__count {
+.wasla-dash-platform-item__count {
   font-size: 0.82rem;
   font-weight: 500;
 }
 
-.oh-dash-platform-item__revenue {
+.wasla-dash-platform-item__revenue {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.oh-dash-platform-item__share {
+.wasla-dash-platform-item__share {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.45rem;
 }
 
-.oh-dash-platform-item__bar {
+.wasla-dash-platform-item__bar {
   flex: 1;
   height: 0.35rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--oh-border) 55%, transparent);
+  background: color-mix(in srgb, var(--wasla-border) 55%, transparent);
   overflow: hidden;
 }
 
-.oh-dash-platform-item__bar-fill {
+.wasla-dash-platform-item__bar-fill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--orderhub-primary);
+  background: var(--wasla-primary);
   min-width: 2%;
 }
 
-.oh-dash-platform-item__pct {
+.wasla-dash-platform-item__pct {
   white-space: nowrap;
   min-width: 3.5rem;
   text-align: end;
 }
 
-[data-bs-theme="dark"] .oh-dash-status--new {
+[data-bs-theme="dark"] .wasla-dash-status--new {
   background: var(--color-warning-soft);
   color: var(--color-warning);
   border-color: var(--color-warning-border);
 }
 
-[data-bs-theme="dark"] .oh-dash-status--accepted {
+[data-bs-theme="dark"] .wasla-dash-status--accepted {
   background: var(--color-success-soft);
   color: var(--color-success);
   border-color: var(--color-success-border);
 }
 
-[data-bs-theme="dark"] .oh-dash-status--progress {
+[data-bs-theme="dark"] .wasla-dash-status--progress {
   background: var(--color-info-soft);
   color: var(--color-info);
   border-color: var(--color-info-border);
 }
 
-[data-bs-theme="dark"] .oh-dash-status--delivered {
+[data-bs-theme="dark"] .wasla-dash-status--delivered {
   background: rgba(148, 163, 184, 0.12);
   color: #cbd5e1;
   border-color: rgba(148, 163, 184, 0.22);
 }
 
-[data-bs-theme="dark"] .oh-dash-status--cancelled,
-[data-bs-theme="dark"] .oh-dash-status--failed {
+[data-bs-theme="dark"] .wasla-dash-status--cancelled,
+[data-bs-theme="dark"] .wasla-dash-status--failed {
   background: var(--color-danger-soft);
   color: var(--color-danger);
   border-color: var(--color-danger-border);
 }
 
 /* --- Tenant: Order Details --- */
-.oh-order-details__code {
+.wasla-order-details__code {
   font-size: 0.95rem;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-order-details-stat {
+.wasla-order-details-stat {
   height: 100%;
   padding: 0.75rem 0.9rem;
-  background: var(--oh-surface);
-  border: 1px solid color-mix(in srgb, var(--oh-border) 80%, transparent);
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
   border-radius: 0.65rem;
-  box-shadow: var(--orderhub-shadow);
+  box-shadow: var(--wasla-shadow);
 }
 
-.oh-order-details-stat__label {
+.wasla-order-details-stat__label {
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   margin-bottom: 0.35rem;
 }
 
-.oh-order-details-stat__value {
+.wasla-order-details-stat__value {
   min-height: 1.5rem;
   display: flex;
   align-items: center;
@@ -2885,101 +2882,101 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
   gap: 0.35rem;
 }
 
-.oh-order-details-stat__value--amount {
+.wasla-order-details-stat__value--amount {
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-order-details-stat__value--time {
+.wasla-order-details-stat__value--time {
   font-size: 0.88rem;
   font-weight: 500;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-order-details-card__title {
+.wasla-order-details-card__title {
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.oh-order-details-dl__row {
+.wasla-order-details-dl__row {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.55rem 0;
-  border-top: 1px solid color-mix(in srgb, var(--oh-border) 55%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
 }
 
-.oh-order-details-dl__row:first-child {
+.wasla-order-details-dl__row:first-child {
   border-top: 0;
   padding-top: 0;
 }
 
-.oh-order-details-dl__row:last-child {
+.wasla-order-details-dl__row:last-child {
   padding-bottom: 0;
 }
 
-.oh-order-details-dl dt {
+.wasla-order-details-dl dt {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   margin: 0;
 }
 
-.oh-order-details-dl dd {
+.wasla-order-details-dl dd {
   margin: 0;
   font-size: 0.92rem;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-order-details-address {
+.wasla-order-details-address {
   line-height: 1.45;
   white-space: pre-line;
 }
 
-.oh-order-details-phone {
+.wasla-order-details-phone {
   text-decoration: none;
 }
 
-.oh-order-details-phone:hover {
+.wasla-order-details-phone:hover {
   text-decoration: underline;
 }
 
-.oh-order-details-items thead th {
+.wasla-order-details-items thead th {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   border-bottom-width: 1px;
   white-space: nowrap;
 }
 
-.oh-order-details-items tbody tr + tr td {
-  border-top: 1px solid color-mix(in srgb, var(--oh-border) 55%, transparent);
+.wasla-order-details-items tbody tr + tr td {
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
 }
 
-.oh-order-details-item-name {
-  color: var(--oh-text);
+.wasla-order-details-item-name {
+  color: var(--wasla-text);
 }
 
-.oh-order-details-item-options li + li {
+.wasla-order-details-item-options li + li {
   margin-top: 0.1rem;
 }
 
-.oh-order-details-qty {
+.wasla-order-details-qty {
   display: inline-block;
   min-width: 1.5rem;
   text-align: center;
 }
 
-.oh-order-details-qty--highlight {
+.wasla-order-details-qty--highlight {
   font-weight: 700;
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--orderhub-primary) 12%, var(--oh-surface));
-  border: 1px solid color-mix(in srgb, var(--orderhub-primary) 25%, transparent);
+  background: color-mix(in srgb, var(--wasla-primary) 12%, var(--wasla-surface));
+  border: 1px solid color-mix(in srgb, var(--wasla-primary) 25%, transparent);
 }
 
-.oh-order-details-totals-dl__row {
+.wasla-order-details-totals-dl__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2987,117 +2984,117 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
   padding: 0.45rem 0;
 }
 
-.oh-order-details-totals-dl__row + .oh-order-details-totals-dl__row {
-  border-top: 1px solid color-mix(in srgb, var(--oh-border) 55%, transparent);
+.wasla-order-details-totals-dl__row + .wasla-order-details-totals-dl__row {
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
 }
 
-.oh-order-details-totals-dl dt {
+.wasla-order-details-totals-dl dt {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
 }
 
-.oh-order-details-totals-dl dd {
+.wasla-order-details-totals-dl dd {
   margin: 0;
   font-size: 0.92rem;
   font-weight: 500;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-order-details-totals-dl__row--grand {
+.wasla-order-details-totals-dl__row--grand {
   margin-top: 0.35rem;
   padding-top: 0.75rem;
-  border-top: 2px solid color-mix(in srgb, var(--oh-border) 80%, transparent) !important;
+  border-top: 2px solid color-mix(in srgb, var(--wasla-border) 80%, transparent) !important;
 }
 
-.oh-order-details-totals-dl__row--grand dt {
+.wasla-order-details-totals-dl__row--grand dt {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-order-details-totals-dl__row--grand dd {
+.wasla-order-details-totals-dl__row--grand dd {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
 @media (max-width: 575.98px) {
-  .oh-order-details__header-actions {
+  .wasla-order-details__header-actions {
     width: 100%;
     justify-content: space-between;
   }
 }
 
 /* Print Bridge device management */
-.oh-print-bridge-page .oh-print-bridge-stat {
+.wasla-print-bridge-page .wasla-print-bridge-stat {
   height: 100%;
   padding: 1rem 1.1rem;
-  border-radius: var(--oh-radius, 0.5rem);
-  border: 1px solid color-mix(in srgb, var(--oh-border) 70%, transparent);
-  background: var(--oh-surface);
+  border-radius: var(--wasla-radius, 0.5rem);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 70%, transparent);
+  background: var(--wasla-surface);
 }
 
-.oh-print-bridge-stat__label {
+.wasla-print-bridge-stat__label {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   margin-bottom: 0.35rem;
 }
 
-.oh-print-bridge-stat__value {
+.wasla-print-bridge-stat__value {
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.1;
-  color: var(--oh-text);
+  color: var(--wasla-text);
 }
 
-.oh-print-bridge-stat__value--text {
+.wasla-print-bridge-stat__value--text {
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.35;
   word-break: break-word;
 }
 
-.oh-print-bridge-stat__hint {
+.wasla-print-bridge-stat__hint {
   margin-top: 0.35rem;
 }
 
-.oh-print-bridge-devices-table thead th {
+.wasla-print-bridge-devices-table thead th {
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--orderhub-muted);
+  color: var(--wasla-muted);
   border-bottom-width: 1px;
   white-space: nowrap;
 }
 
-.oh-print-bridge-devices-table tbody td {
+.wasla-print-bridge-devices-table tbody td {
   vertical-align: middle;
 }
 
-.oh-print-bridge-token-value {
+.wasla-print-bridge-token-value {
   min-height: 3rem;
   max-height: 8rem;
   overflow: auto;
 }
 
-.oh-print-bridge-setup-info {
+.wasla-print-bridge-setup-info {
   background: var(--color-surface-muted, rgba(0, 0, 0, 0.02));
 }
 
-.oh-print-bridge-setup-steps li {
+.wasla-print-bridge-setup-steps li {
   margin-bottom: 0.35rem;
 }
 
-.oh-print-bridge-setup-steps li:last-child {
+.wasla-print-bridge-setup-steps li:last-child {
   margin-bottom: 0;
 }
 
-.oh-print-bridge-setup-value {
+.wasla-print-bridge-setup-value {
   min-height: 2.5rem;
   max-height: 6rem;
   overflow: auto;
@@ -3106,143 +3103,143 @@ body.oh-orders-live-display.oh-orders-view-table .oh-orders-table-host .table.oh
 }
 
 /* Print Bridge sidebar sub-navigation */
-body.oh-tenant.oh-app .oh-sidebar-nav-group {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-group {
   margin-bottom: 0.15rem;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-group__head {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-group__head {
   font-weight: 600;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-sub {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub {
   list-style: none;
   margin: 0.15rem 0 0.35rem;
   padding: 0 0 0 0.35rem;
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-sub__link {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link {
   font-size: 0.8125rem;
   padding: 0.35rem 0.75rem 0.35rem 2rem !important;
   border-radius: 0.375rem;
   color: var(--color-sidebar-muted, rgba(255, 255, 255, 0.72));
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-sub__link:hover,
-body.oh-tenant.oh-app .oh-sidebar-nav-sub__link:focus-visible {
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link:focus-visible {
   color: var(--color-sidebar-text, #fff);
-  background: color-mix(in srgb, var(--orderhub-primary) 8%, transparent);
+  background: color-mix(in srgb, var(--wasla-primary) 8%, transparent);
 }
 
-body.oh-tenant.oh-app .oh-sidebar-nav-sub__link.active {
-  color: var(--orderhub-primary);
-  background: color-mix(in srgb, var(--orderhub-primary) 12%, transparent);
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link.active {
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 12%, transparent);
   font-weight: 600;
 }
 
-body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-nav-sub {
   display: none;
 }
 
 /* Print Bridge setup guide */
-.oh-print-bridge-setup-page .oh-print-bridge-setup-layout {
+.wasla-print-bridge-setup-page .wasla-print-bridge-setup-layout {
   max-width: 50rem;
   margin-inline: auto;
 }
 
-.oh-print-bridge-setup-main-card .card-body {
+.wasla-print-bridge-setup-main-card .card-body {
   padding: 2rem 2.25rem;
 }
 
-.oh-print-bridge-setup-header .h4 {
+.wasla-print-bridge-setup-header .h4 {
   font-weight: 600;
 }
 
-.oh-print-bridge-setup-badge {
+.wasla-print-bridge-setup-badge {
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
-  color: var(--orderhub-primary);
-  background: color-mix(in srgb, var(--orderhub-primary) 10%, var(--color-surface, #fff));
-  border: 1px solid color-mix(in srgb, var(--orderhub-primary) 22%, transparent);
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--color-surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--wasla-primary) 22%, transparent);
 }
 
-.oh-print-bridge-setup-mode-option {
+.wasla-print-bridge-setup-mode-option {
   border: 2px solid color-mix(in srgb, var(--color-border, #dee2e6) 90%, transparent);
   background: var(--color-surface, #fff);
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.oh-print-bridge-setup-mode-option:hover {
-  border-color: color-mix(in srgb, var(--orderhub-primary) 25%, var(--color-border, #dee2e6));
+.wasla-print-bridge-setup-mode-option:hover {
+  border-color: color-mix(in srgb, var(--wasla-primary) 25%, var(--color-border, #dee2e6));
 }
 
-.oh-print-bridge-setup-mode-option:has(input:checked) {
-  border-color: var(--orderhub-primary);
-  background: color-mix(in srgb, var(--orderhub-primary) 7%, var(--color-surface, #fff));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--orderhub-primary) 18%, transparent);
+.wasla-print-bridge-setup-mode-option:has(input:checked) {
+  border-color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 7%, var(--color-surface, #fff));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wasla-primary) 18%, transparent);
 }
 
-.oh-print-bridge-setup-mode-option:has(input:checked) .form-check-input {
-  border-color: var(--orderhub-primary);
-  background-color: var(--orderhub-primary);
+.wasla-print-bridge-setup-mode-option:has(input:checked) .form-check-input {
+  border-color: var(--wasla-primary);
+  background-color: var(--wasla-primary);
 }
 
-.oh-print-bridge-reconnect-device-details .badge {
+.wasla-print-bridge-reconnect-device-details .badge {
   font-size: 0.6875rem;
   font-weight: 600;
 }
 
-.oh-print-bridge-reconnect-device-details__sep {
+.wasla-print-bridge-reconnect-device-details__sep {
   color: color-mix(in srgb, var(--color-text, inherit) 45%, transparent);
 }
 
-.oh-print-bridge-setup-reconnect-panel {
+.wasla-print-bridge-setup-reconnect-panel {
   padding: 1rem 1.125rem;
   border-radius: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 85%, transparent);
-  background: color-mix(in srgb, var(--color-surface, #fff) 98%, var(--orderhub-primary) 2%);
+  background: color-mix(in srgb, var(--color-surface, #fff) 98%, var(--wasla-primary) 2%);
 }
 
-.oh-print-bridge-setup-cta-block {
+.wasla-print-bridge-setup-cta-block {
   padding-top: 0.25rem;
 }
 
-.oh-print-bridge-setup-helper {
+.wasla-print-bridge-setup-helper {
   line-height: 1.5;
   max-width: 38rem;
 }
 
-.oh-print-bridge-setup-manual-link {
+.wasla-print-bridge-setup-manual-link {
   margin-inline-start: 0.35rem;
   white-space: nowrap;
 }
 
-.oh-print-bridge-setup-below-fold {
+.wasla-print-bridge-setup-below-fold {
   margin-top: 1.5rem;
   padding-top: 1.25rem;
   border-top: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 70%, transparent);
 }
 
-.oh-print-bridge-setup-below-fold .oh-print-bridge-setup-accordion-btn {
+.wasla-print-bridge-setup-below-fold .wasla-print-bridge-setup-accordion-btn {
   font-size: 0.875rem;
   font-weight: 500;
   color: color-mix(in srgb, var(--color-text, inherit) 72%, transparent);
 }
 
-.oh-print-bridge-setup-below-fold .oh-print-bridge-setup-accordion-btn:not(.collapsed) {
-  color: var(--orderhub-primary);
+.wasla-print-bridge-setup-below-fold .wasla-print-bridge-setup-accordion-btn:not(.collapsed) {
+  color: var(--wasla-primary);
 }
 
-.oh-print-bridge-package-card {
+.wasla-print-bridge-package-card {
   padding: 1rem 1.125rem;
   border-radius: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 85%, transparent);
-  background: color-mix(in srgb, var(--color-surface, #fff) 99%, var(--orderhub-primary) 1%);
+  background: color-mix(in srgb, var(--color-surface, #fff) 99%, var(--wasla-primary) 1%);
 }
 
-.oh-print-bridge-package-placeholder-row {
+.wasla-print-bridge-package-placeholder-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -3252,28 +3249,28 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   background: color-mix(in srgb, var(--color-surface, #fff) 97%, var(--color-border, #dee2e6) 3%);
 }
 
-.oh-print-bridge-package-placeholder-row--ready {
+.wasla-print-bridge-package-placeholder-row--ready {
   border-style: solid;
   background: var(--color-surface, #fff);
 }
 
-.oh-print-bridge-package-placeholder-row__icon {
+.wasla-print-bridge-package-placeholder-row__icon {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.5rem;
-  color: var(--orderhub-primary);
-  background: color-mix(in srgb, var(--orderhub-primary) 10%, var(--color-surface, #fff));
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--color-surface, #fff));
   flex-shrink: 0;
 }
 
-.oh-print-bridge-package-placeholder-row__icon .bi {
+.wasla-print-bridge-package-placeholder-row__icon .bi {
   font-size: 1.125rem;
 }
 
-.oh-print-bridge-package-status-badge {
+.wasla-print-bridge-package-status-badge {
   font-size: 0.6875rem;
   font-weight: 600;
   color: color-mix(in srgb, var(--color-text, inherit) 68%, transparent);
@@ -3281,11 +3278,11 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 80%, transparent);
 }
 
-.oh-print-bridge-setup-accordion .accordion-item {
+.wasla-print-bridge-setup-accordion .accordion-item {
   background: transparent;
 }
 
-.oh-print-bridge-setup-accordion-btn {
+.wasla-print-bridge-setup-accordion-btn {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--color-text, inherit);
@@ -3294,98 +3291,98 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   padding-inline: 0;
 }
 
-.oh-print-bridge-setup-accordion-btn:not(.collapsed) {
-  color: var(--orderhub-primary);
+.wasla-print-bridge-setup-accordion-btn:not(.collapsed) {
+  color: var(--wasla-primary);
   background: transparent;
   box-shadow: none;
 }
 
-.oh-print-bridge-setup-accordion .accordion-body {
+.wasla-print-bridge-setup-accordion .accordion-body {
   padding-inline: 0;
 }
 
-.oh-print-bridge-setup-code-result {
+.wasla-print-bridge-setup-code-result {
   padding: 0.75rem;
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 80%, transparent);
-  background: color-mix(in srgb, var(--color-surface, #fff) 98%, var(--orderhub-primary) 2%);
+  background: color-mix(in srgb, var(--color-surface, #fff) 98%, var(--wasla-primary) 2%);
 }
 
-.oh-print-bridge-setup-page .oh-print-bridge-guide-step {
+.wasla-print-bridge-setup-page .wasla-print-bridge-guide-step {
   position: relative;
 }
 
-.oh-print-bridge-setup-steps {
+.wasla-print-bridge-setup-steps {
   padding-inline-start: 1.25rem;
   margin-bottom: 0;
 }
 
-.oh-print-bridge-setup-steps li {
+.wasla-print-bridge-setup-steps li {
   margin-bottom: 0.45rem;
 }
 
-.oh-print-bridge-setup-steps li:last-child {
+.wasla-print-bridge-setup-steps li:last-child {
   margin-bottom: 0;
 }
 
-.oh-print-bridge-download-card .badge,
-.oh-print-bridge-connection-card .badge {
+.wasla-print-bridge-download-card .badge,
+.wasla-print-bridge-connection-card .badge {
   white-space: nowrap;
 }
 
-.oh-print-bridge-faq .accordion-button {
+.wasla-print-bridge-faq .accordion-button {
   font-weight: 600;
   color: var(--color-text, inherit);
   background: transparent;
   box-shadow: none;
 }
 
-.oh-print-bridge-faq .accordion-button:not(.collapsed) {
-  color: var(--orderhub-primary);
-  background: color-mix(in srgb, var(--orderhub-primary) 8%, transparent);
+.wasla-print-bridge-faq .accordion-button:not(.collapsed) {
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 8%, transparent);
 }
 
-.oh-print-bridge-faq .accordion-item {
+.wasla-print-bridge-faq .accordion-item {
   border-inline: 0;
   border-radius: 0;
 }
 
-.oh-print-bridge-faq .accordion-item:first-of-type {
+.wasla-print-bridge-faq .accordion-item:first-of-type {
   border-top: 0;
 }
 
-.oh-print-bridge-faq .accordion-item:last-of-type {
+.wasla-print-bridge-faq .accordion-item:last-of-type {
   border-bottom: 0;
 }
 
-.oh-print-bridge-guide-step__badge {
+.wasla-print-bridge-guide-step__badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1.65rem;
   height: 1.65rem;
   border-radius: 50%;
-  background: var(--orderhub-primary);
+  background: var(--wasla-primary);
   color: #fff;
   font-size: 0.8125rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
-.oh-print-bridge-guide-checklist {
+.wasla-print-bridge-guide-checklist {
   padding-inline-start: 1.25rem;
   margin-bottom: 0;
 }
 
-.oh-print-bridge-guide-checklist li {
+.wasla-print-bridge-guide-checklist li {
   margin-bottom: 0.35rem;
 }
 
-.oh-print-bridge-guide-checklist li:last-child {
+.wasla-print-bridge-guide-checklist li:last-child {
   margin-bottom: 0;
 }
 
-.oh-print-bridge-guide-placeholder {
+.wasla-print-bridge-guide-placeholder {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -3397,33 +3394,33 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   font-size: 0.875rem;
 }
 
-.oh-print-bridge-guide-placeholder i {
+.wasla-print-bridge-guide-placeholder i {
   font-size: 1.35rem;
   opacity: 0.75;
 }
 
-.oh-print-bridge-server-url-info {
+.wasla-print-bridge-server-url-info {
   border-style: dashed !important;
 }
 
-.oh-print-bridge-troubleshooting li {
+.wasla-print-bridge-troubleshooting li {
   position: relative;
   padding-inline-start: 1.1rem;
   margin-bottom: 0.55rem;
 }
 
-.oh-print-bridge-troubleshooting li:last-child {
+.wasla-print-bridge-troubleshooting li:last-child {
   margin-bottom: 0;
 }
 
-.oh-print-bridge-troubleshooting li::before {
+.wasla-print-bridge-troubleshooting li::before {
   content: "•";
   position: absolute;
   inset-inline-start: 0;
-  color: var(--orderhub-primary);
+  color: var(--wasla-primary);
 }
 
-.oh-print-bridge-empty__icon {
+.wasla-print-bridge-empty__icon {
   opacity: 0.65;
 }
 
@@ -3431,130 +3428,130 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
    Dark theme — customer panel component system (token-driven)
    ============================================================================= */
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app {
   color-scheme: dark;
 }
 
 /* Surfaces & cards */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .card,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-card,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-dash-kpi,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-order-details-stat,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-fs-stat,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-page .oh-print-bridge-stat,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-page-header__metric.orders-total-card,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-toolbar,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-card,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-card {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .card,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-card,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-order-details-stat,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-fs-stat,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-print-bridge-page .wasla-print-bridge-stat,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-page-header__metric.orders-total-card,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-toolbar,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-card,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-card {
   background: var(--color-surface) !important;
   border-color: var(--color-border) !important;
   box-shadow: none !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-card:hover,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-card:hover {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-card:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-card:hover {
   border-color: var(--color-border-strong) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-card-image,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-card__image-wrap {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-card-image,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-card__image-wrap {
   background: var(--color-surface-muted);
 }
 
 /* Sidebar */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .app-sidebar {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .app-sidebar {
   background: var(--color-sidebar-bg) !important;
   color: var(--color-sidebar-text) !important;
   border-color: var(--color-sidebar-border) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-tenant-name,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-user {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-tenant-name,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-user {
   color: var(--color-sidebar-muted) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .sidebar-menu .nav-link {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link {
   color: var(--color-sidebar-text) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .sidebar-menu .nav-link:hover:not(.active),
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-action-btn:hover,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-action-btn.show,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-icon-btn:hover,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-collapse-btn:hover {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link:hover:not(.active),
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-action-btn:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-action-btn.show,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn:hover {
   background: var(--color-sidebar-hover) !important;
   color: var(--color-sidebar-text) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-collapse-btn {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn {
   border-color: var(--color-border);
   color: var(--color-sidebar-muted);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .sidebar-menu .nav-link.active,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-settings-toggle.active {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active {
   background: var(--color-sidebar-active-bg) !important;
   color: var(--color-sidebar-active-text) !important;
 }
 
 /* Forms & inputs */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-control,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-select,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-control-sm,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-select-sm,
-[data-bs-theme="dark"] body.oh-tenant.oh-app textarea.form-control,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .input-group-text {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-select,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control-sm,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-select-sm,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app textarea.form-control,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .input-group-text {
   background-color: var(--color-input-bg);
   border-color: var(--color-input-border);
   color: var(--color-input-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-control::placeholder,
-[data-bs-theme="dark"] body.oh-tenant.oh-app textarea.form-control::placeholder {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control::placeholder,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app textarea.form-control::placeholder {
   color: var(--color-input-placeholder);
   opacity: 1;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-control:focus,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-select:focus,
-[data-bs-theme="dark"] body.oh-tenant.oh-app textarea.form-control:focus {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control:focus,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-select:focus,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app textarea.form-control:focus {
   background-color: var(--color-input-bg);
   border-color: var(--color-input-focus-border);
   color: var(--color-input-text);
   box-shadow: 0 0 0 0.2rem var(--color-input-focus-ring);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-control:disabled,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-select:disabled,
-[data-bs-theme="dark"] body.oh-tenant.oh-app textarea.form-control:disabled {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control:disabled,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-select:disabled,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app textarea.form-control:disabled {
   background-color: var(--color-surface-muted);
   border-color: var(--color-border);
   color: var(--color-text-disabled);
   opacity: 1;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app input[type="date"],
-[data-bs-theme="dark"] body.oh-tenant.oh-app input[type="time"],
-[data-bs-theme="dark"] body.oh-tenant.oh-app input[type="datetime-local"] {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app input[type="date"],
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app input[type="time"],
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app input[type="datetime-local"] {
   color-scheme: dark;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-check-input {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-check-input {
   background-color: var(--color-input-bg);
   border-color: var(--color-input-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-check-input:checked {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-check-input:checked {
   background-color: var(--color-accent);
   border-color: var(--color-accent);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .form-check-input:focus {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-check-input:focus {
   box-shadow: 0 0 0 0.2rem var(--color-input-focus-ring);
 }
 
 /* Tables */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .table {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .table {
   --bs-table-bg: transparent;
   --bs-table-color: var(--color-text);
   --bs-table-border-color: var(--color-table-border);
@@ -3563,24 +3560,24 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   --bs-table-hover-color: var(--color-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .table thead th {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .table thead th {
   background-color: var(--color-table-header-bg);
   color: var(--color-text-muted);
   border-bottom-color: var(--color-border-strong);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .table > :not(caption) > * > * {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .table > :not(caption) > * > * {
   border-bottom-color: var(--color-table-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .table tbody tr:hover > * {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .table tbody tr:hover > * {
   background-color: var(--color-table-row-hover);
   color: var(--color-text);
 }
 
 /* Buttons */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .btn-primary,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .btn-oh-primary {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-primary,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-wasla-primary {
   --bs-btn-bg: var(--color-accent);
   --bs-btn-border-color: var(--color-accent);
   --bs-btn-hover-bg: var(--color-accent-hover);
@@ -3588,7 +3585,7 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   --bs-btn-color: var(--color-accent-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .btn-outline-primary {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-outline-primary {
   --bs-btn-color: var(--color-accent);
   --bs-btn-border-color: var(--color-accent-border);
   --bs-btn-hover-bg: var(--color-accent-soft);
@@ -3597,8 +3594,8 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   --bs-btn-active-bg: var(--color-accent-soft);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .btn-outline-secondary,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .btn-secondary {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-outline-secondary,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-secondary {
   --bs-btn-color: var(--color-text-secondary);
   --bs-btn-border-color: var(--color-border-strong);
   --bs-btn-bg: transparent;
@@ -3610,7 +3607,7 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   --bs-btn-active-color: var(--color-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .btn-outline-danger {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-outline-danger {
   --bs-btn-color: var(--color-danger);
   --bs-btn-border-color: var(--color-danger-border);
   --bs-btn-hover-bg: var(--color-danger-soft);
@@ -3618,223 +3615,223 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
   --bs-btn-hover-color: var(--color-danger);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-manage-settings {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-manage-settings {
   background: var(--color-surface-muted);
   border-color: var(--color-border);
   color: var(--color-text-secondary);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .orders-manage-settings:hover {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-manage-settings:hover {
   background: var(--color-accent-soft);
   border-color: var(--color-accent-border);
   color: var(--color-accent);
 }
 
 /* Badges — Bootstrap utility variants */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .badge.text-bg-success {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-success {
   background: var(--color-success-soft) !important;
   color: var(--color-success) !important;
   border: 1px solid var(--color-success-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .badge.text-bg-warning {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-warning {
   background: var(--color-warning-soft) !important;
   color: var(--color-warning) !important;
   border: 1px solid var(--color-warning-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .badge.text-bg-danger {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-danger {
   background: var(--color-danger-soft) !important;
   color: var(--color-danger) !important;
   border: 1px solid var(--color-danger-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .badge.text-bg-info {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-info {
   background: var(--color-info-soft) !important;
   color: var(--color-info) !important;
   border: 1px solid var(--color-info-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .badge.text-bg-secondary {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-secondary {
   background: rgba(148, 163, 184, 0.12) !important;
   color: #cbd5e1 !important;
   border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .badge.text-bg-primary {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-primary {
   background: var(--color-accent-soft) !important;
   color: var(--color-accent) !important;
   border: 1px solid var(--color-accent-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-status-chip--active {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-status-chip--active {
   background: var(--color-success-soft);
   border-color: var(--color-success-border);
   color: var(--color-success);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-orders-status-chip--muted {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-status-chip--muted {
   background: rgba(148, 163, 184, 0.10);
   border-color: rgba(148, 163, 184, 0.20);
   color: #cbd5e1;
 }
 
 /* Dropdowns & menus */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .dropdown-menu,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-dropdown-menu,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-settings-menu {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-menu,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-dropdown-menu,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-settings-menu {
   background: var(--color-surface-elevated) !important;
   border-color: var(--color-border-strong) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .dropdown-item {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item {
   color: var(--color-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .dropdown-item:hover,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .dropdown-item:focus {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item:focus {
   background: var(--color-accent-soft);
   color: var(--color-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .dropdown-item.active,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .dropdown-item:active {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item.active,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item:active {
   background: var(--color-accent-soft) !important;
   color: var(--color-accent) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .dropdown-divider {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-divider {
   border-top-color: var(--color-border);
 }
 
 /* Modals */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .modal-content {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .modal-content {
   background: var(--color-surface-elevated);
   border-color: var(--color-border-strong);
   color: var(--color-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .modal-header,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .modal-footer {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .modal-header,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .modal-footer {
   border-color: var(--color-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .btn-close {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-close {
   filter: invert(1) grayscale(100%) brightness(200%);
   opacity: 0.65;
 }
 
 /* Alerts */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .alert-info {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-info {
   background: var(--color-info-soft);
   border-color: var(--color-info-border);
   color: var(--color-info);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .alert-warning {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-warning {
   background: var(--color-warning-soft);
   border-color: var(--color-warning-border);
   color: var(--color-warning);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .alert-danger {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-danger {
   background: var(--color-danger-soft);
   border-color: var(--color-danger-border);
   color: var(--color-danger);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .alert-success {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-success {
   background: var(--color-success-soft);
   border-color: var(--color-success-border);
   color: var(--color-success);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .alert-secondary {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-secondary {
   background: rgba(148, 163, 184, 0.10);
   border-color: rgba(148, 163, 184, 0.22);
   color: #cbd5e1;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .bg-warning-subtle {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .bg-warning-subtle {
   background-color: var(--color-warning-soft) !important;
   color: var(--color-warning) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .text-warning-emphasis {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .text-warning-emphasis {
   color: var(--color-warning) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-nav-sub__link {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link {
   color: var(--color-sidebar-muted);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-sidebar-nav-sub__link.active {
-  color: var(--orderhub-primary);
-  background: color-mix(in srgb, var(--orderhub-primary) 16%, transparent);
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link.active {
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 16%, transparent);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-guide-placeholder {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-print-bridge-guide-placeholder {
   background: var(--color-surface-muted);
   border-color: var(--color-border);
   color: var(--color-text-muted);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app #printBridgeTokenBox pre,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-token-value,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-print-bridge-setup-value {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app #printBridgeTokenBox pre,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-print-bridge-token-value,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-print-bridge-setup-value {
   background: var(--color-surface-muted) !important;
   border-color: var(--color-border-strong) !important;
   color: var(--color-text) !important;
 }
 
 /* Accordion (receipt settings) */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-content-accordion {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-content-accordion {
   --bs-accordion-bg: transparent;
   --bs-accordion-btn-bg: transparent;
   --bs-accordion-active-bg: var(--color-surface-muted);
   --bs-accordion-border-color: var(--color-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-content-accordion .accordion-button {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-content-accordion .accordion-button {
   color: var(--color-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-content-accordion .accordion-button:not(.collapsed) {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-content-accordion .accordion-button:not(.collapsed) {
   color: var(--color-text);
   background: var(--color-surface-muted);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-content-accordion .accordion-button::after {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-content-accordion .accordion-button::after {
   filter: invert(1) opacity(0.55);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .receipt-timing-option {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .receipt-timing-option {
   background: var(--color-surface);
   border-color: var(--color-border);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .receipt-timing-option:has(.receipt-timing-option__radio:checked) {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .receipt-timing-option:has(.receipt-timing-option__radio:checked) {
   background: var(--color-accent-soft);
   border-color: var(--color-accent-border);
   box-shadow: 0 0 0 1px var(--color-accent-soft);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-required-tag,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-coming-soon-badge,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-accordion-enabled-badge {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-required-tag,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-coming-soon-badge,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-accordion-enabled-badge {
   background: var(--color-surface-muted) !important;
   border-color: var(--color-border) !important;
   color: var(--color-text-secondary) !important;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-message-fields {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-message-fields {
   background: var(--color-surface-muted);
   border-color: var(--color-border);
 }
 
 /* Receipt preview — keep paper look inside dark card */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-receipt-preview-paper {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-preview-paper {
   background: #f4f4f5;
   color: #111827;
   border-color: rgba(255, 255, 255, 0.12);
@@ -3842,66 +3839,66 @@ body.oh-tenant.oh-app.sidebar-collapsed .oh-sidebar-nav-sub {
 }
 
 /* Dashboard KPI icons */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-dash-kpi__icon {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi__icon {
   background: var(--color-accent-soft);
   color: var(--color-accent);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-dash-kpi--revenue .oh-dash-kpi__icon {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi--revenue .wasla-dash-kpi__icon {
   background: var(--color-success-soft);
   color: var(--color-success);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-dash-kpi--active .oh-dash-kpi__icon {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi--active .wasla-dash-kpi__icon {
   background: var(--color-info-soft);
   color: var(--color-info);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-dash-kpi--cancelled .oh-dash-kpi__icon {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi--cancelled .wasla-dash-kpi__icon {
   background: rgba(148, 163, 184, 0.12);
   color: #cbd5e1;
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .oh-dash-kpi--average .oh-dash-kpi__icon {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi--average .wasla-dash-kpi__icon {
   background: rgba(167, 139, 250, 0.14);
   color: #c4b5fd;
 }
 
 /* Links */
-[data-bs-theme="dark"] body.oh-tenant.oh-app a:not(.btn):not(.nav-link):not(.dropdown-item) {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.nav-link):not(.dropdown-item) {
   color: color-mix(in srgb, var(--color-accent) 88%, #fff);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
   color: var(--color-accent-hover);
 }
 
 /* Live Display */
-[data-bs-theme="dark"] body.oh-orders-live-display {
+[data-bs-theme="dark"] body.wasla-orders-live-display {
   background: var(--color-bg);
 }
 
-[data-bs-theme="dark"] body.oh-orders-live-display .oh-live-display-header,
-[data-bs-theme="dark"] body.oh-orders-live-display .oh-fs-header {
+[data-bs-theme="dark"] body.wasla-orders-live-display .wasla-live-display-header,
+[data-bs-theme="dark"] body.wasla-orders-live-display .wasla-fs-header {
   background: color-mix(in srgb, var(--color-bg) 94%, transparent);
   border-bottom-color: var(--color-border);
 }
 
-[data-bs-theme="dark"] body.oh-orders-live-display .oh-live-display-kbd {
+[data-bs-theme="dark"] body.wasla-orders-live-display .wasla-live-display-kbd {
   background: var(--color-surface-muted);
   border-color: var(--color-border-strong);
   color: var(--color-text-secondary);
 }
 
 /* List group (if used) */
-[data-bs-theme="dark"] body.oh-tenant.oh-app .list-group-item {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .list-group-item {
   background: var(--color-surface);
   border-color: var(--color-border);
   color: var(--color-text);
 }
 
-[data-bs-theme="dark"] body.oh-tenant.oh-app .list-group-item-action:hover,
-[data-bs-theme="dark"] body.oh-tenant.oh-app .list-group-item-action:focus {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .list-group-item-action:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .list-group-item-action:focus {
   background: var(--color-surface-elevated);
   color: var(--color-text);
 }

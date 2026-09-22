@@ -11,9 +11,9 @@
             (function () {
                 var data = @Html.Raw(payloadJson);
                 function fire() {
-                    if (!window.OrderHubToast) return;
-                    if (data.success) window.OrderHubToast.success(data.success);
-                    if (data.error)   window.OrderHubToast.error(data.error);
+                    if (!window.WaslaToast) return;
+                    if (data.success) window.WaslaToast.success(data.success);
+                    if (data.error)   window.WaslaToast.error(data.error);
                 }
                 if (document.readyState === "loading") {
                     document.addEventListener("DOMContentLoaded", fire);

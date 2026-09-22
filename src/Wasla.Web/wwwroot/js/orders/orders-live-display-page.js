@@ -2,7 +2,7 @@
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O || !O.table) return;
 
   function closeLiveDisplay() {
@@ -42,7 +42,7 @@
   }
 
   async function initLiveDisplayPage() {
-    document.body.classList.add("oh-orders-view-kitchen");
+    document.body.classList.add("wasla-orders-view-kitchen");
     initCloseButton();
     seedLiveScreenSummary();
     // Baseline current IDs before polling — initial load must not notify or highlight.

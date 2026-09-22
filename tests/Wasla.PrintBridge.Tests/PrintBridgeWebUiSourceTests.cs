@@ -94,7 +94,7 @@ public sealed class PrintBridgeWebUiSourceTests
         Assert.DoesNotContain("justify-content-between gap-2 mb-2", setupView);
         Assert.Contains("id=\"pbManualSetupCollapse\"", setupView);
         Assert.Contains("accordion-collapse collapse", setupView);
-        Assert.Contains("oh-print-bridge-setup-below-fold", setupView);
+        Assert.Contains("wasla-print-bridge-setup-below-fold", setupView);
         Assert.Contains("id=\"pbOpenManualSetupLink\"", setupView);
         Assert.Contains("PrintBridge.Auto.OpenManualSetup", setupView);
         Assert.Contains("id=\"pbReconnectDeviceGuidance\"", setupView);
@@ -217,7 +217,7 @@ public sealed class PrintBridgeWebUiSourceTests
             "Setup.cshtml"));
 
         Assert.Contains("id=\"pbPackagePlaceholderCard\"", setupView);
-        Assert.Contains("oh-print-bridge-package-placeholder-row", setupView);
+        Assert.Contains("wasla-print-bridge-package-placeholder-row", setupView);
         Assert.Contains("PrintBridge.PackageCardTitle", setupView);
         Assert.Contains("PrintBridge.PackageComingSoon", setupView);
         Assert.Contains("PrintBridge.PackagePlaceholderFileName", setupView);
@@ -226,7 +226,7 @@ public sealed class PrintBridgeWebUiSourceTests
         Assert.Contains("disabled", setupView);
 
         var placeholderStart = setupView.IndexOf("id=\"pbPackagePlaceholderCard\"", StringComparison.Ordinal);
-        var manualSetupEnd = setupView.IndexOf("oh-print-bridge-connection-card", placeholderStart, StringComparison.Ordinal);
+        var manualSetupEnd = setupView.IndexOf("wasla-print-bridge-connection-card", placeholderStart, StringComparison.Ordinal);
         Assert.True(placeholderStart >= 0);
         Assert.True(manualSetupEnd > placeholderStart);
         var placeholderSection = setupView[placeholderStart..manualSetupEnd];

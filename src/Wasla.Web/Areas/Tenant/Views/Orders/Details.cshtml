@@ -11,18 +11,18 @@
     var phoneTel = OrderUiHelper.PhoneTelHref(Model.CustomerPhone);
 }
 
-<div class="oh-order-details">
-    <header class="oh-customer-page-header oh-order-details__header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
-        <div class="oh-order-details__header-main oh-customer-page-header__main min-w-0">
-            <h1 class="oh-customer-page-header__title oh-order-details__title h4 mb-2">@L["Orders.Details.Title"]</h1>
+<div class="wasla-order-details">
+    <header class="wasla-customer-page-header wasla-order-details__header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+        <div class="wasla-order-details__header-main wasla-customer-page-header__main min-w-0">
+            <h1 class="wasla-customer-page-header__title wasla-order-details__title h4 mb-2">@L["Orders.Details.Title"]</h1>
             <div class="d-flex flex-wrap align-items-center gap-2">
                 @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
-                <span class="oh-order-details__code font-monospace">@Model.ExternalOrderCode</span>
+                <span class="wasla-order-details__code font-monospace">@Model.ExternalOrderCode</span>
                 <span class="text-muted" aria-hidden="true">·</span>
                 <span class="text-muted small">@L["Orders.Details.Received"] @receivedLabel</span>
             </div>
         </div>
-        <div class="oh-order-details__header-actions d-flex flex-wrap align-items-center gap-2 ms-auto">
+        <div class="wasla-order-details__header-actions d-flex flex-wrap align-items-center gap-2 ms-auto">
             @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
             @await Html.PartialAsync("_OrderPrintAction", new Wasla.Web.Models.Orders.OrderPrintActionModel
             {
@@ -40,48 +40,48 @@
 
     <div class="row row-cols-2 row-cols-xl-4 g-2 mb-3">
         <div class="col">
-            <div class="oh-order-details-stat">
-                <div class="oh-order-details-stat__label">@L["Orders.Details.Status"]</div>
-                <div class="oh-order-details-stat__value">
+            <div class="wasla-order-details-stat">
+                <div class="wasla-order-details-stat__label">@L["Orders.Details.Status"]</div>
+                <div class="wasla-order-details-stat__value">
                     @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
                 </div>
             </div>
         </div>
         <div class="col">
-            <div class="oh-order-details-stat">
-                <div class="oh-order-details-stat__label">@L["Orders.Details.Total"]</div>
-                <div class="oh-order-details-stat__value oh-order-details-stat__value--amount">@Model.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</div>
+            <div class="wasla-order-details-stat">
+                <div class="wasla-order-details-stat__label">@L["Orders.Details.Total"]</div>
+                <div class="wasla-order-details-stat__value wasla-order-details-stat__value--amount">@Model.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</div>
             </div>
         </div>
         <div class="col">
-            <div class="oh-order-details-stat">
-                <div class="oh-order-details-stat__label">@L["Orders.Details.Platform"]</div>
-                <div class="oh-order-details-stat__value">
+            <div class="wasla-order-details-stat">
+                <div class="wasla-order-details-stat__label">@L["Orders.Details.Platform"]</div>
+                <div class="wasla-order-details-stat__value">
                     @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
                 </div>
             </div>
         </div>
         <div class="col">
-            <div class="oh-order-details-stat">
-                <div class="oh-order-details-stat__label">@L["Orders.Details.Received"]</div>
-                <div class="oh-order-details-stat__value oh-order-details-stat__value--time">@receivedLabel</div>
+            <div class="wasla-order-details-stat">
+                <div class="wasla-order-details-stat__label">@L["Orders.Details.Received"]</div>
+                <div class="wasla-order-details-stat__value wasla-order-details-stat__value--time">@receivedLabel</div>
             </div>
         </div>
     </div>
 
     <div class="row g-3">
         <div class="col-12 col-lg-4 d-flex flex-column gap-3">
-            <div class="card oh-card oh-order-details-card">
+            <div class="card wasla-card wasla-order-details-card">
                 <div class="card-body">
-                    <h2 class="oh-order-details-card__title h6 mb-3">@L["Orders.Details.Customer"]</h2>
-                    <p class="oh-order-details-customer-name fw-semibold mb-3">@OrderUiHelper.DisplayOrDash(Model.CustomerName)</p>
-                    <dl class="oh-order-details-dl mb-0">
-                        <div class="oh-order-details-dl__row">
+                    <h2 class="wasla-order-details-card__title h6 mb-3">@L["Orders.Details.Customer"]</h2>
+                    <p class="wasla-order-details-customer-name fw-semibold mb-3">@OrderUiHelper.DisplayOrDash(Model.CustomerName)</p>
+                    <dl class="wasla-order-details-dl mb-0">
+                        <div class="wasla-order-details-dl__row">
                             <dt>@L["Orders.Details.Phone"]</dt>
                             <dd>
                                 @if (phoneTel is not null)
                                 {
-                                    <a href="@phoneTel" class="oh-order-details-phone">@Model.CustomerPhone</a>
+                                    <a href="@phoneTel" class="wasla-order-details-phone">@Model.CustomerPhone</a>
                                 }
                                 else
                                 {
@@ -93,44 +93,44 @@
                 </div>
             </div>
 
-            <div class="card oh-card oh-order-details-card">
+            <div class="card wasla-card wasla-order-details-card">
                 <div class="card-body">
-                    <h2 class="oh-order-details-card__title h6 mb-3">@L["Orders.Details.Delivery"]</h2>
-                    <dl class="oh-order-details-dl mb-0">
-                        <div class="oh-order-details-dl__row">
+                    <h2 class="wasla-order-details-card__title h6 mb-3">@L["Orders.Details.Delivery"]</h2>
+                    <dl class="wasla-order-details-dl mb-0">
+                        <div class="wasla-order-details-dl__row">
                             <dt>@L["Orders.Details.Address"]</dt>
-                            <dd class="oh-order-details-address">@OrderUiHelper.DisplayOrDash(Model.CustomerAddress)</dd>
+                            <dd class="wasla-order-details-address">@OrderUiHelper.DisplayOrDash(Model.CustomerAddress)</dd>
                         </div>
                     </dl>
                 </div>
             </div>
 
-            <div class="card oh-card oh-order-details-card">
+            <div class="card wasla-card wasla-order-details-card">
                 <div class="card-body">
-                    <h2 class="oh-order-details-card__title h6 mb-3">@L["Orders.Details.OrderMetadata"]</h2>
-                    <dl class="oh-order-details-dl mb-0">
-                        <div class="oh-order-details-dl__row">
+                    <h2 class="wasla-order-details-card__title h6 mb-3">@L["Orders.Details.OrderMetadata"]</h2>
+                    <dl class="wasla-order-details-dl mb-0">
+                        <div class="wasla-order-details-dl__row">
                             <dt>@L["Orders.Details.Platform"]</dt>
                             <dd>
                                 @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
                             </dd>
                         </div>
-                        <div class="oh-order-details-dl__row">
+                        <div class="wasla-order-details-dl__row">
                             <dt>@L["Orders.Details.Code"]</dt>
                             <dd class="font-monospace">@Model.ExternalOrderCode</dd>
                         </div>
-                        <div class="oh-order-details-dl__row">
+                        <div class="wasla-order-details-dl__row">
                             <dt>@L["Orders.Details.Received"]</dt>
                             <dd>@receivedLabel</dd>
                         </div>
                         @if (Model.AcceptedAtLocal.HasValue)
                         {
-                            <div class="oh-order-details-dl__row">
+                            <div class="wasla-order-details-dl__row">
                                 <dt>@L["Orders.Details.AcceptedAt"]</dt>
                                 <dd>@Model.AcceptedAtLocal.Value.ToString("g", CultureInfo.CurrentCulture)</dd>
                             </div>
                         }
-                        <div class="oh-order-details-dl__row">
+                        <div class="wasla-order-details-dl__row">
                             <dt>@L["Orders.Details.PaymentMethod"]</dt>
                             <dd>@OrderUiHelper.PaymentMethodLabel(Model.PaymentMethod, L)</dd>
                         </div>
@@ -140,19 +140,19 @@
         </div>
 
         <div class="col-12 col-lg-8 d-flex flex-column gap-3">
-            <div class="card oh-card oh-order-details-card">
+            <div class="card wasla-card wasla-order-details-card">
                 <div class="card-body">
-                    <h2 class="oh-order-details-card__title h6 mb-3">@L["Orders.Details.Items"]</h2>
+                    <h2 class="wasla-order-details-card__title h6 mb-3">@L["Orders.Details.Items"]</h2>
                     @if (Model.Items.Count == 0)
                     {
-                        <div class="oh-customer-empty-state oh-order-details-empty text-center py-4">
+                        <div class="wasla-customer-empty-state wasla-order-details-empty text-center py-4">
                             <p class="text-muted mb-0">@L["Orders.Details.NoItemsFound"]</p>
                         </div>
                     }
                     else
                     {
                         <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0 oh-order-details-items">
+                            <table class="table table-sm align-middle mb-0 wasla-order-details-items">
                                 <thead>
                                 <tr>
                                     <th>@L["Orders.Details.Product"]</th>
@@ -166,14 +166,14 @@
                                 {
                                     <tr>
                                         <td>
-                                            <div class="oh-order-details-item-name fw-semibold">@i.ProductName</div>
+                                            <div class="wasla-order-details-item-name fw-semibold">@i.ProductName</div>
                                             @if (!string.IsNullOrWhiteSpace(i.Notes))
                                             {
                                                 <div class="text-muted small mt-1">@i.Notes</div>
                                             }
                                             @if (i.Options.Count > 0)
                                             {
-                                                <ul class="oh-order-details-item-options list-unstyled mb-0 mt-1">
+                                                <ul class="wasla-order-details-item-options list-unstyled mb-0 mt-1">
                                                     @foreach (var o in i.Options)
                                                     {
                                                         <li class="text-muted small">@o.Name @(o.Price > 0 ? $"(+{o.Price.ToString("C", CultureInfo.CurrentCulture)})" : "")</li>
@@ -182,7 +182,7 @@
                                             }
                                         </td>
                                         <td class="text-end">
-                                            <span class="@(i.Quantity > 1 ? "oh-order-details-qty oh-order-details-qty--highlight" : "oh-order-details-qty")">@i.Quantity</span>
+                                            <span class="@(i.Quantity > 1 ? "wasla-order-details-qty wasla-order-details-qty--highlight" : "wasla-order-details-qty")">@i.Quantity</span>
                                         </td>
                                         <td class="text-end">@i.UnitPrice.ToString("C", CultureInfo.CurrentCulture)</td>
                                         <td class="text-end fw-medium">@i.TotalPrice.ToString("C", CultureInfo.CurrentCulture)</td>
@@ -195,25 +195,25 @@
                 </div>
             </div>
 
-            <div class="card oh-card oh-order-details-card oh-order-details-totals">
+            <div class="card wasla-card wasla-order-details-card wasla-order-details-totals">
                 <div class="card-body">
-                    <h2 class="oh-order-details-card__title h6 mb-3">@L["Orders.Details.Summary"]</h2>
-                    <dl class="oh-order-details-totals-dl mb-0">
+                    <h2 class="wasla-order-details-card__title h6 mb-3">@L["Orders.Details.Summary"]</h2>
+                    <dl class="wasla-order-details-totals-dl mb-0">
                         @if (Model.DeliveryFee != 0)
                         {
-                            <div class="oh-order-details-totals-dl__row">
+                            <div class="wasla-order-details-totals-dl__row">
                                 <dt>@L["Orders.Details.DeliveryFee"]</dt>
                                 <dd>@Model.DeliveryFee.ToString("C", CultureInfo.CurrentCulture)</dd>
                             </div>
                         }
                         @if (Model.ServiceFee != 0)
                         {
-                            <div class="oh-order-details-totals-dl__row">
+                            <div class="wasla-order-details-totals-dl__row">
                                 <dt>@L["Orders.Details.ServiceFee"]</dt>
                                 <dd>@Model.ServiceFee.ToString("C", CultureInfo.CurrentCulture)</dd>
                             </div>
                         }
-                        <div class="oh-order-details-totals-dl__row oh-order-details-totals-dl__row--grand">
+                        <div class="wasla-order-details-totals-dl__row wasla-order-details-totals-dl__row--grand">
                             <dt>@L["Orders.Details.Total"]</dt>
                             <dd>@Model.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</dd>
                         </div>
@@ -230,7 +230,7 @@
 
 @section Scripts {
     <script>
-        window.orderHubOrdersOptions = {
+        window.waslaOrdersOptions = {
             orderPrintUrl: "/orders/{id}/print",
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
             {

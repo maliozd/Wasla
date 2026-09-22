@@ -244,15 +244,15 @@ public sealed class OrdersLiveScreenSeparationTests
     {
         var liveView = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
         var liveViewJs = Read("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-view.js");
-        var css = Read("src", "Wasla.Web", "wwwroot", "css", "orderhub-theme.css");
+        var css = Read("src", "Wasla.Web", "wwwroot", "css", "wasla-theme.css");
 
         Assert.Contains("data-live-screen-view=\"cards\"", liveView, StringComparison.Ordinal);
         Assert.Contains("data-live-screen-view=\"list\"", liveView, StringComparison.Ordinal);
         Assert.Equal(1, CountOccurrences(liveView, "Html.PartialAsync(\"_LiveScreenOrders\", Model)"));
 
         Assert.Contains("localStorage.setItem(storageKey(), view)", liveViewJs, StringComparison.Ordinal);
-        Assert.Contains("oh-live-screen-host--list", liveViewJs, StringComparison.Ordinal);
-        Assert.Contains(".oh-live-screen-host--list .oh-live-screen-card", css, StringComparison.Ordinal);
+        Assert.Contains("wasla-live-screen-host--list", liveViewJs, StringComparison.Ordinal);
+        Assert.Contains(".wasla-live-screen-host--list .wasla-live-screen-card", css, StringComparison.Ordinal);
 
         // A view switch must not re-fetch orders or reset live state.
         Assert.DoesNotContain("fetch(", liveViewJs, StringComparison.Ordinal);

@@ -74,13 +74,13 @@ public sealed class OrdersLiveScreenHighlightOwnershipTests
     [Fact]
     public void LiveScreen_HasSubtleCardHighlightStylesWithoutAggressiveAnimation()
     {
-        var css = ReadWwwroot("css", "orderhub-theme.css");
+        var css = ReadWwwroot("css", "wasla-theme.css");
         var partial = Read("Areas", "Tenant", "Views", "Orders", "_LiveScreenOrders.cshtml");
 
         Assert.Contains("data-order-id=\"@o.Id\"", partial, StringComparison.Ordinal);
-        Assert.Contains("oh-live-screen-card", partial, StringComparison.Ordinal);
+        Assert.Contains("wasla-live-screen-card", partial, StringComparison.Ordinal);
         Assert.Contains("data-new-badge", partial, StringComparison.Ordinal);
-        Assert.Contains(".oh-live-screen-card.order-row-new", css, StringComparison.Ordinal);
+        Assert.Contains(".wasla-live-screen-card.order-row-new", css, StringComparison.Ordinal);
         Assert.Contains("animation: none !important", css, StringComparison.Ordinal);
     }
 

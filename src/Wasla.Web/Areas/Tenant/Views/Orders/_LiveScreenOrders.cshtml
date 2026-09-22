@@ -39,14 +39,14 @@
 
 @if (Model.Orders.Count == 0)
 {
-    <div class="oh-orders-empty text-center py-5" role="status">
-        <div class="oh-orders-empty__title fw-semibold mb-1">@L["Orders.NoLiveOrders"]</div>
-        <div class="oh-orders-empty__desc text-muted">@L["Orders.NoLiveOrdersDescription"]</div>
+    <div class="wasla-orders-empty text-center py-5" role="status">
+        <div class="wasla-orders-empty__title fw-semibold mb-1">@L["Orders.NoLiveOrders"]</div>
+        <div class="wasla-orders-empty__desc text-muted">@L["Orders.NoLiveOrdersDescription"]</div>
     </div>
 }
 else
 {
-    <div class="orders-card-grid oh-live-screen-grid" role="list">
+    <div class="orders-card-grid wasla-live-screen-grid" role="list">
         @foreach (var o in Model.Orders
             .OrderBy(x => x.Status switch
             {
@@ -64,7 +64,7 @@ else
             var muted = o.Status is OrderStatus.Delivered or OrderStatus.Cancelled or OrderStatus.Failed;
             var receivedDisplay = OrderUiHelper.FormatReceivedAtLocal(o.ReceivedAtLocal, turkeyToday);
             var elapsed = FormatElapsed(o.ReceivedAtUtc);
-            <article class="orders-card orders-card--kitchen oh-orders-card oh-orders-card--kitchen oh-live-screen-card@(muted ? " orders-card--muted" : "")"
+            <article class="orders-card orders-card--kitchen wasla-orders-card wasla-orders-card--kitchen wasla-live-screen-card@(muted ? " orders-card--muted" : "")"
                      role="listitem"
                      data-order-id="@o.Id"
                      data-order-status="@o.Status"
@@ -81,11 +81,11 @@ else
                                 @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)o.Platform, DisplayName: (string?)null))
                             </div>
                             @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(o.Status, StatusLabel(o.Status)))
-                            <span class="badge text-bg-primary d-none oh-orders-new-badge" data-new-badge>@L["Orders.StatusNewBadge"]</span>
+                            <span class="badge text-bg-primary d-none wasla-orders-new-badge" data-new-badge>@L["Orders.StatusNewBadge"]</span>
                         </div>
                     </div>
 
-                    <div class="orders-card-code oh-live-screen-card__code">
+                    <div class="orders-card-code wasla-live-screen-card__code">
                         <a href="/orders/details/@o.Id">@o.ExternalOrderCode</a>
                     </div>
 
@@ -96,15 +96,15 @@ else
 
                     @if (o.LineItems.Count > 0)
                     {
-                        <ul class="oh-live-screen-card__items list-unstyled mb-2">
+                        <ul class="wasla-live-screen-card__items list-unstyled mb-2">
                             @foreach (var item in o.LineItems)
                             {
-                                <li class="oh-live-screen-card__item">
-                                    <span class="oh-live-screen-card__qty">@item.Quantity×</span>
-                                    <span class="oh-live-screen-card__product">@item.ProductName</span>
+                                <li class="wasla-live-screen-card__item">
+                                    <span class="wasla-live-screen-card__qty">@item.Quantity×</span>
+                                    <span class="wasla-live-screen-card__product">@item.ProductName</span>
                                     @if (!string.IsNullOrWhiteSpace(item.Notes))
                                     {
-                                        <div class="oh-live-screen-card__note text-muted">@item.Notes</div>
+                                        <div class="wasla-live-screen-card__note text-muted">@item.Notes</div>
                                     }
                                 </li>
                             }
@@ -119,11 +119,11 @@ else
                         <div class="orders-card-meta__row">
                             <span class="orders-card-meta__label">@L["Orders.ReceivedAt"]:</span>
                             @receivedDisplay
-                            <span class="oh-live-screen-card__elapsed text-muted">· @elapsed</span>
+                            <span class="wasla-live-screen-card__elapsed text-muted">· @elapsed</span>
                         </div>
                     </div>
 
-                    <div class="orders-card-actions oh-orders-card__actions">
+                    <div class="orders-card-actions wasla-orders-card__actions">
                         @await Html.PartialAsync("_OrderLifecycleActions", new OrderLifecycleActionsModel
                         {
                             OrderId = o.Id,
@@ -132,7 +132,7 @@ else
                             ButtonSizeClass = "btn-lg"
                         })
                         @* Detail markup is fetched on demand, so cards stay light. *@
-                        <button type="button" class="btn btn-outline-secondary oh-live-screen-card__details"
+                        <button type="button" class="btn btn-outline-secondary wasla-live-screen-card__details"
                                 data-order-detail="@o.Id">
                             @L["Orders.History.ViewDetails"]
                         </button>
