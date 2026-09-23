@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
+using Wasla.Application.Orders;
+using Wasla.Application.Time;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 
@@ -8,12 +10,27 @@ namespace Wasla.Infrastructure.Services;
 
 public sealed class OrderReadService : IOrderReadService
 {
+    private static readonly TimeSpan RecentDeliveredWindow = TimeSpan.FromMinutes(2);
+    private static readonly OrderStatus[] ActiveStatuses =
+    [
+        OrderStatus.New,
+        OrderStatus.Accepted,
+        OrderStatus.Preparing,
+        OrderStatus.ReadyForPickup,
+        OrderStatus.OnTheWay
+    ];
+
     private readonly ITenantDbContextFactory _dbFactory;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<OrderReadService> _logger;
 
-    public OrderReadService(ITenantDbContextFactory dbFactory, ILogger<OrderReadService> logger)
+    public OrderReadService(
+        ITenantDbContextFactory dbFactory,
+        TimeProvider timeProvider,
+        ILogger<OrderReadService> logger)
     {
         _dbFactory = dbFactory;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -182,5 +199,70 @@ public sealed class OrderReadService : IOrderReadService
             )).ToList()
         };
     }
+
+    public async Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid customerId, CancellationToken ct)
+    {
+        var serverTimeUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        var windowStartUtc = serverTimeUtc - RecentDeliveredWindow;
+
+        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+
+        // One projection. Delivered rows with a null DeliveredAt are omitted: the current
+        // transition writers set that timestamp when they enter Delivered, and this read
+        // does not invent a completion time for rows that are already missing it.
+        var rows = await db.Orders.AsNoTracking()
+            .Where(o =>
+                ActiveStatuses.Contains(o.InternalStatus)
+                || (o.InternalStatus == OrderStatus.Delivered
+                    && o.DeliveredAt != null
+                    && o.DeliveredAt >= windowStartUtc
+                    && o.DeliveredAt <= serverTimeUtc))
+            .OrderBy(o => o.InternalStatus)
+            .ThenByDescending(o => o.ReceivedAt)
+            .ThenBy(o => o.Id)
+            .Select(o => new
+            {
+                o.Id,
+                o.ExternalOrderCode,
+                o.Platform,
+                o.InternalStatus,
+                o.ReceivedAt,
+                o.DeliveredAt,
+                o.CustomerName,
+                o.TotalAmount,
+                Items = o.Items
+                    .OrderBy(i => i.Id)
+                    .Select(i => new LiveScreenLineItemDto(i.ProductName, i.Quantity, i.Notes))
+                    .ToList()
+            })
+            .ToListAsync(ct);
+
+        var orders = rows.Select(o => new LiveScreenOrderDto(
+            o.Id,
+            o.ExternalOrderCode,
+            o.Platform,
+            o.InternalStatus,
+            SpecifyUtc(o.ReceivedAt),
+            o.DeliveredAt is null ? null : SpecifyUtc(o.DeliveredAt.Value),
+            o.CustomerName,
+            o.TotalAmount,
+            o.Items)).ToList();
+
+        var utcServer = SpecifyUtc(serverTimeUtc);
+        var turkeyToday = DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(utcServer, TimeZoneHelper.ResolveTurkeyTimeZone()));
+        OrdersReceivedAtQueryRange.MapLocalDatesToUtcRange(turkeyToday, turkeyToday, out var todayStartUtc, out var todayEndUtc);
+        var todayStart = todayStartUtc ?? throw new InvalidOperationException("Turkey local day did not map to a UTC start.");
+        var todayEnd = todayEndUtc ?? throw new InvalidOperationException("Turkey local day did not map to a UTC end.");
+        var receivedToday = db.Orders.AsNoTracking()
+            .Where(o => o.ReceivedAt >= todayStart && o.ReceivedAt < todayEnd);
+        var todayOrderCount = await receivedToday.CountAsync(ct);
+        var cancelledOrderCount = await receivedToday.CountAsync(o => o.InternalStatus == OrderStatus.Cancelled, ct);
+
+        return new LiveScreenSnapshotResult(utcServer, orders, todayOrderCount, cancelledOrderCount);
+    }
+
+    private static DateTime SpecifyUtc(DateTime value) =>
+        DateTime.SpecifyKind(value, DateTimeKind.Utc);
 }
 

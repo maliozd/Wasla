@@ -32,6 +32,8 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     [InlineData(UserRole.Cashier, TenantPolicies.CanManualPrint, true)]
     [InlineData(UserRole.Cashier, TenantPolicies.CanManageDeviceSecurity, false)]
     [InlineData(UserRole.Manager, TenantPolicies.CanManageOrders, true)]
+    [InlineData(UserRole.Kitchen, TenantPolicies.CanManageOrders, true)]
+    [InlineData(UserRole.Owner, TenantPolicies.CanManageOrders, true)]
     public async Task TenantRolePolicies_ApplyExpectedRoleMapping(
         UserRole role,
         string policyName,

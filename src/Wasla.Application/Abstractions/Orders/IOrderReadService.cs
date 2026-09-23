@@ -25,5 +25,13 @@ public interface IOrderReadService
         bool includeLineItems = false);
 
     Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct);
+
+    /// <summary>
+    /// Read-only operational snapshot for Live Screen.
+    /// Includes every active order and Delivered orders whose DeliveredAt is inside the last two minutes.
+    /// Delivered orders with no DeliveredAt are omitted; a completion time is not invented.
+    /// Today and cancelled counts are Turkey-local-day aggregates and are not loaded into <c>Orders</c>.
+    /// </summary>
+    Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid customerId, CancellationToken ct);
 }
 

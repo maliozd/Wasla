@@ -277,6 +277,21 @@ public sealed class OrdersController : BaseController
     }
 
     /// <summary>
+    /// Read-only Live Screen snapshot. The UI still polls the HTML partial.
+    /// </summary>
+    [HttpGet("live-data")]
+    [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
+    public async Task<IActionResult> LiveData(CancellationToken ct = default)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var snapshot = await _orders.GetLiveScreenSnapshotAsync(tenant.Id, ct);
+        return Ok(snapshot);
+    }
+
+    /// <summary>
     /// Shared list query/projection for Orders management, Live Screen, and polling partials.
     /// Live Screen opts into line-item projection; management list/history keep the lighter shape.
     /// </summary>
