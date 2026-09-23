@@ -9,10 +9,11 @@ public sealed class OrdersLiveScreenSoundOwnershipTests
     public void OrdersPage_DoesNotOwnAutomaticNewOrderSoundTrigger()
     {
         var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
         var ordersPage = Read("Areas", "Tenant", "Views", "Orders", "Index.cshtml");
 
-        Assert.DoesNotContain("!isLiveDisplayPage() && live && newIds.length > 0 && O.state.notificationSettings && O.audio", tableJs, StringComparison.Ordinal);
-        Assert.Contains("isLiveDisplayPage() && newIds.length > 0 && O.state.notificationSettings && O.audio", tableJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("playSoundNow", tableJs, StringComparison.Ordinal);
+        Assert.Contains("settings.newOrderSoundEnabled && O.audio", storeJs, StringComparison.Ordinal);
 
         // Phase 2B4: Orders no longer loads the operational audio/notification stack at all.
         Assert.DoesNotContain("orders-audio.js", ordersPage, StringComparison.Ordinal);
@@ -25,12 +26,11 @@ public sealed class OrdersLiveScreenSoundOwnershipTests
         var liveJs = ReadWwwroot("js", "orders", "orders-live-display-page.js");
         var liveView = Read("Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
 
-        Assert.Contains("O.table.captureKnownOrderIdsFromContainer()", liveJs, StringComparison.Ordinal);
         Assert.Contains("O.notificationSettings.load", liveJs, StringComparison.Ordinal);
-        Assert.Contains("O.table.initPolling()", liveJs, StringComparison.Ordinal);
+        Assert.Contains("O.liveStore.start()", liveJs, StringComparison.Ordinal);
         Assert.True(
-            liveJs.IndexOf("captureKnownOrderIdsFromContainer", StringComparison.Ordinal)
-            < liveJs.IndexOf("initPolling", StringComparison.Ordinal));
+            liveJs.IndexOf("O.notificationSettings.load", StringComparison.Ordinal)
+            < liveJs.IndexOf("O.liveStore.start()", StringComparison.Ordinal));
         Assert.Contains("orders-audio.js", liveView, StringComparison.Ordinal);
         Assert.Contains("orders-notification-settings.js", liveView, StringComparison.Ordinal);
         Assert.Contains("notificationSettingsJsonUrl: \"/notification-settings/current\"", liveView, StringComparison.Ordinal);
@@ -40,52 +40,45 @@ public sealed class OrdersLiveScreenSoundOwnershipTests
     public void LiveScreen_BaselineCaptureHappensBeforePolling_SoInitialIdsDoNotNotify()
     {
         var liveJs = ReadWwwroot("js", "orders", "orders-live-display-page.js");
-        var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        var captureIdx = liveJs.IndexOf("O.table.captureKnownOrderIdsFromContainer()", StringComparison.Ordinal);
-        var pollIdx = liveJs.IndexOf("O.table.initPolling()", StringComparison.Ordinal);
-        Assert.True(captureIdx >= 0 && pollIdx > captureIdx);
-
-        // Sound only after poll detects newIds — not at init.
+        Assert.Contains("The first complete JSON snapshot is the notification baseline.", liveJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("captureKnownOrderIdsFromContainer", liveJs, StringComparison.Ordinal);
         Assert.DoesNotContain("playSoundNow", liveJs, StringComparison.Ordinal);
-        Assert.Contains("detectNewOrderIds(ids)", tableJs, StringComparison.Ordinal);
-        Assert.Contains("isLiveDisplayPage() && newIds.length > 0", tableJs, StringComparison.Ordinal);
+        Assert.Contains("if (!baselineReady)", storeJs, StringComparison.Ordinal);
+        Assert.Contains("isBaseline || !meta.newIds", storeJs, StringComparison.Ordinal);
     }
 
     [Fact]
     public void LiveScreen_NewIdsAfterBaseline_TriggerOnePlaySoundNowCall()
     {
-        var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        Assert.Contains("const newIds = detectNewOrderIds(ids);", tableJs, StringComparison.Ordinal);
-        Assert.Contains("await O.audio.playSoundNow({", tableJs, StringComparison.Ordinal);
-        Assert.Equal(1, CountOccurrences(tableJs, "await O.audio.playSoundNow({"));
+        Assert.Contains("await O.audio.playSoundNow({", storeJs, StringComparison.Ordinal);
+        Assert.Equal(1, CountOccurrences(storeJs, "await O.audio.playSoundNow({"));
 
-        var liveSoundBlockStart = tableJs.IndexOf(
-            "isLiveDisplayPage() && newIds.length > 0 && O.state.notificationSettings && O.audio",
-            StringComparison.Ordinal);
+        var liveSoundBlockStart = storeJs.IndexOf("settings.newOrderSoundEnabled", StringComparison.Ordinal);
         Assert.True(liveSoundBlockStart >= 0);
-        var liveSoundBlock = tableJs.Substring(liveSoundBlockStart, Math.Min(900, tableJs.Length - liveSoundBlockStart));
+        var liveSoundBlock = storeJs.Substring(liveSoundBlockStart, Math.Min(900, storeJs.Length - liveSoundBlockStart));
         Assert.Contains("playSoundNow", liveSoundBlock, StringComparison.Ordinal);
         Assert.Contains("newOrderSoundName", liveSoundBlock, StringComparison.Ordinal);
         Assert.Contains("newOrderSoundRepeatCount", liveSoundBlock, StringComparison.Ordinal);
-        // Multiple new IDs still one sequence — gated by newIds.length > 0, not a per-id loop of playSoundNow.
         Assert.DoesNotContain("for (let i = 0; i < newIds.length", liveSoundBlock, StringComparison.Ordinal);
-        Assert.DoesNotContain("newIds.forEach", liveSoundBlock, StringComparison.Ordinal);
+        Assert.DoesNotContain("meta.newIds.forEach", liveSoundBlock, StringComparison.Ordinal);
     }
 
     [Fact]
     public void LiveScreen_ReusesExistingNotificationSettingsWithoutBrowserNotificationMove()
     {
-        var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
         var liveView = Read("Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
 
-        Assert.Contains("st.newOrderSoundEnabled", tableJs, StringComparison.Ordinal);
-        Assert.Contains("st.newOrderSoundName", tableJs, StringComparison.Ordinal);
-        Assert.Contains("st.newOrderSoundRepeatCount", tableJs, StringComparison.Ordinal);
+        Assert.Contains("settings.newOrderSoundEnabled", storeJs, StringComparison.Ordinal);
+        Assert.Contains("settings.newOrderSoundName", storeJs, StringComparison.Ordinal);
+        Assert.Contains("settings.newOrderSoundRepeatCount", storeJs, StringComparison.Ordinal);
         Assert.Contains("notificationSettingsJsonUrl", liveView, StringComparison.Ordinal);
-        Assert.DoesNotContain("BroadcastChannel", tableJs, StringComparison.Ordinal);
-        Assert.DoesNotContain("SignalR", tableJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("BroadcastChannel", storeJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("SignalR", storeJs, StringComparison.Ordinal);
     }
 
     private static int CountOccurrences(string source, string value)

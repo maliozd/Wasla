@@ -27,9 +27,7 @@
     if (!meta) return;
 
     [
-      ["ordersLiveDisplayTodayCount", "data-total-count"],
-      ["ordersLiveDisplayActiveCount", "data-active-count"],
-      ["ordersLiveDisplayCancelledCount", "data-cancelled-count"]
+      ["ordersLiveDisplayTodayCount", "data-total-count"]
     ].forEach(function (pair) {
       const el = document.getElementById(pair[0]);
       if (!el) return;
@@ -48,16 +46,16 @@
     if (O.audio && typeof O.audio.initAudioUnlock === "function") {
       O.audio.initAudioUnlock();
     }
-    // Baseline current IDs before polling — initial load must not notify or highlight.
-    O.table.captureKnownOrderIdsFromContainer();
-    O.table.applyNewOrderVisualState();
     if (O.notificationSettings && typeof O.notificationSettings.load === "function") {
       await O.notificationSettings.load();
     }
     if (O.audio && typeof O.audio.syncSoundEnableUi === "function") {
       O.audio.syncSoundEnableUi();
     }
-    O.table.initPolling();
+    // The first complete JSON snapshot is the notification baseline.
+    if (O.liveStore && typeof O.liveStore.start === "function") {
+      O.liveStore.start();
+    }
   }
 
   document.addEventListener("DOMContentLoaded", function () {

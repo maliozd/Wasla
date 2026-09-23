@@ -33,7 +33,8 @@
 
   /** Default live: page 1, receivedAt desc, and date range is "today" (incl. empty URL: server uses today). */
   function isDefaultLiveOrdersView() {
-    if (isLiveDisplayPage()) return true;    const p = new URLSearchParams(global.location.search);
+    if (isLiveDisplayPage()) return true;
+    const p = new URLSearchParams(global.location.search);
     const sortBy = (p.get("sortBy") || p.get("sort") || "receivedAt").toLowerCase();
     const sortDirection = (p.get("sortDirection") || p.get("dir") || "desc").toLowerCase();
     const page = (p.get("page") || "1").trim();
@@ -302,20 +303,20 @@
   }
 
   function buildPollUrl() {
-    if (isLiveDisplayPage()) {
-      const path = O.opts.liveScreenUrl || "/orders/live-screen";
-      const u = new URL(global.location.origin + path);
-      return u;
-    }
-
     const u = new URL(global.location.origin + O.opts.tableUrl);
     u.search = global.location.search || "";
     return u;
   }
 
   async function refreshOrdersTable() {
+    if (isLiveDisplayPage()) {
+      if (O.liveStore && typeof O.liveStore.requestRefresh === "function") {
+        return O.liveStore.requestRefresh({ reason: "action" });
+      }
+      return;
+    }
+
     const live = isDefaultLiveOrdersView();
-    var audioPlayedOk = "-";
 
     try {
       const u = buildPollUrl();
@@ -378,73 +379,15 @@
       }
 
       container.innerHTML = html;
-      if (isLiveDisplayPage()) {
-        updateLiveScreenSummaryFromTmp(tmp);
-      } else {
-        updateTotalCountFromTmp(tmp);
-      }
+      updateTotalCountFromTmp(tmp);
       updateLastUpdatedTimestamps();
-
-      // Phase 2B2: Live Screen owns operational new-order highlight (all new IDs in the batch).
-      // Orders management polling must not apply operational new-order highlight.
-      if (isLiveDisplayPage() && newIds.length > 0) {
-        markOrdersAsRecentlyNew(newIds);
-      }
-
       captureKnownOrderIdsFromContainer();
-      if (isLiveDisplayPage()) {
-        applyNewOrderVisualState();
-        scheduleNewOrderHighlightCleanup();
-      }
-
-      // Phase 2B1: Live Screen owns automatic new-order sound (one sequence per poll with new IDs).
-      // Orders management polling must not auto-trigger sound.
-      if (isLiveDisplayPage() && newIds.length > 0 && O.state.notificationSettings && O.audio) {
-        const st = O.state.notificationSettings;
-        if (st.newOrderSoundEnabled) {
-          if (!O.audio.isSoundUnlocked()) {
-            if (!T.hintShownForUnlock) {
-              T.hintShownForUnlock = true;
-              O.showMessage(O.getMessage("soundUnlockHint"), "info");
-            }
-            audioPlayedOk = "locked";
-          } else {
-            try {
-              await O.audio.playSoundNow({
-                newOrderSoundEnabled: true,
-                newOrderSoundName: st.newOrderSoundName,
-                newOrderSoundRepeatCount: st.newOrderSoundRepeatCount,
-                newOrderSoundVolumePercent: st.newOrderSoundVolumePercent != null
-                  ? st.newOrderSoundVolumePercent
-                  : Math.round((st.newOrderSoundVolume || 1) * 100),
-                showBrowserNotification: st.showBrowserNotification
-              });
-              audioPlayedOk = "ok";
-            } catch (e) {
-              audioPlayedOk = "error";
-              if (O.isDebugEnabled()) {
-                O.debugWarn("playSoundNow", e);
-              }
-            }
-          }
-        } else {
-          audioPlayedOk = "soundDisabled";
-        }
-      }
-
-      // Phase 2B3: Live Screen owns automatic browser desktop notifications for new orders.
-      // Orders management polling must not create Notification API alerts.
-      // One call per polling batch (existing utility), not per order.
-      if (isLiveDisplayPage() && newIds.length > 0 && O.audio) {
-        O.audio.showBrowserNotificationIfAllowed();
-      }
 
       if (O.isDebugEnabled() && live && newIds.length > 0) {
         O.debugLog("poll", {
           newInTable: newIds.length,
           defaultLive: true,
-          liveDisplay: isLiveDisplayPage(),
-          audio: audioPlayedOk
+          liveDisplay: false
         });
       }
     } catch (error) {

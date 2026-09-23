@@ -99,11 +99,14 @@ public sealed class OrdersLiveScreenRenderingTests
         var liveJs = ReadWwwroot("js", "orders", "orders-live-display-page.js");
         var actionsJs = ReadWwwroot("js", "orders", "orders-actions.js");
 
-        Assert.Contains("liveScreenUrl: \"/orders/live-screen\"", liveView, StringComparison.Ordinal);
-        Assert.Contains("O.opts.liveScreenUrl", tableJs, StringComparison.Ordinal);
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
+        Assert.Contains("liveDataUrl: \"/orders/live-data\"", liveView, StringComparison.Ordinal);
+        Assert.Contains("O.opts.liveDataUrl", storeJs, StringComparison.Ordinal);
         Assert.Contains("ordersLiveScreenHost", tableJs, StringComparison.Ordinal);
-        Assert.Contains("orders-live-screen-meta", tableJs, StringComparison.Ordinal);
+        Assert.Contains("orders-live-screen-meta", liveJs, StringComparison.Ordinal);
         Assert.Contains("ordersLiveScreenHost", liveJs, StringComparison.Ordinal);
+        Assert.Contains("isLiveDisplayPage()", tableJs, StringComparison.Ordinal);
+        Assert.Contains("O.liveStore.requestRefresh", tableJs, StringComparison.Ordinal);
         Assert.Contains("#ordersLiveScreenHost", actionsJs, StringComparison.Ordinal);
     }
 

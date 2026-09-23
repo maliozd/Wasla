@@ -624,6 +624,15 @@
   <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
     <value>تعذر تحميل تفاصيل الطلب.</value>
   </data>
+  <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve">
+    <value>تعذر تحديث الطلبات المباشرة. يتم عرض آخر تحديث.</value>
+  </data>
+  <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve">
+    <value>انتهت الجلسة. أعد تحميل الصفحة للمتابعة.</value>
+  </data>
+  <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
+    <value>هذا الإجمالي غير موجود في لقطة الشاشة المباشرة.</value>
+  </data>
   <data name="Orders.Print.Action" xml:space="preserve">
     <value>طباعة</value>
   </data>

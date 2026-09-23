@@ -2,6 +2,7 @@
 @using System.Collections.Generic
 @using System.Text.Json
 @using Microsoft.Extensions.Localization
+@using Wasla.Application.Time
 @using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject ITenantNavigationAuthorizationService TenantNavigation
@@ -11,6 +12,11 @@
     var today = Model.TurkeyLocalToday;
     var customerName = ViewData["CustomerName"] as string;
     var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
+    var timeZoneId = TimeZoneHelper.ResolveTurkeyTimeZone().Id;
+    if (timeZoneId == "Turkey Standard Time")
+    {
+        timeZoneId = "Europe/Istanbul";
+    }
 }
 
 <div id="ordersLiveDisplayRoot" class="wasla-orders-live-display-root wasla-live-screen-page">
@@ -26,6 +32,7 @@
                 <span>@L["Orders.Today"] — @today.ToString("d", System.Globalization.CultureInfo.CurrentCulture)</span>
                 <span class="wasla-fs-header__sep" aria-hidden="true">·</span>
                 <span>@L["Orders.LiveDisplay.LastUpdated"]: <span id="ordersLiveDisplayLastUpdated">-</span></span>
+                <span id="ordersLiveDisplayConnection" class="wasla-live-display-connection small ms-2" role="status" hidden></span>
             </p>
         </div>
         <div class="wasla-live-display-header__actions wasla-fs-header__actions d-flex flex-wrap align-items-center gap-2">
@@ -135,7 +142,10 @@
         window.waslaOrdersOptions = {
             pageMode: "liveDisplay",
             tableUrl: "/orders/table",
-            liveScreenUrl: "/orders/live-screen",
+            liveDataUrl: "/orders/live-data",
+            canManageOrders: @(navPermissions.CanManageOrders ? "true" : "false"),
+            displayCulture: "@System.Globalization.CultureInfo.CurrentUICulture.Name",
+            timeZoneId: "@timeZoneId",
             notificationSettingsUrl: "/notification-settings",
             notificationSettingsJsonUrl: "/notification-settings/current",
             orderSyncSettingsUrl: "/orders/sync-settings",
@@ -214,7 +224,31 @@
                 ["itemsMore"] = L["Orders.ItemsMore"].Value,
                 ["ordersFullscreenCustomer"] = L["Orders.Customer"].Value,
                 ["ordersFullscreenTotal"] = L["Orders.TotalAmount"].Value,
-                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value
+                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value,
+                ["elapsedMinutes"] = L["Orders.LiveScreen.ElapsedMinutes"].Value,
+                ["liveScreenStale"] = L["Orders.LiveScreen.ConnectionStale"].Value,
+                ["liveScreenSessionExpired"] = L["Orders.LiveScreen.SessionExpired"].Value,
+                ["liveScreenCountUnavailable"] = L["Orders.LiveScreen.CountUnavailable"].Value,
+                ["ordersApprove"] = L["Orders.Approve"].Value,
+                ["ordersReject"] = L["Orders.Reject"].Value,
+                ["ordersStartPreparing"] = L["Orders.StartPreparing"].Value,
+                ["ordersMarkReady"] = L["Orders.MarkReady"].Value,
+                ["ordersHandToCourier"] = L["Orders.HandToCourier"].Value,
+                ["ordersMarkDelivered"] = L["Orders.MarkDelivered"].Value,
+                ["ordersActions"] = L["Orders.Actions"].Value,
+                ["viewDetails"] = L["Orders.History.ViewDetails"].Value,
+                ["statusNewBadge"] = L["Orders.StatusNewBadge"].Value,
+                ["statusNew"] = L["OrderStatus.New"].Value,
+                ["statusAccepted"] = L["OrderStatus.Accepted"].Value,
+                ["statusPreparing"] = L["OrderStatus.Preparing"].Value,
+                ["statusReadyForPickup"] = L["OrderStatus.ReadyForPickup"].Value,
+                ["statusOnTheWay"] = L["OrderStatus.OnTheWay"].Value,
+                ["statusDelivered"] = L["OrderStatus.Delivered"].Value,
+                ["statusCancelled"] = L["OrderStatus.Cancelled"].Value,
+                ["statusFailed"] = L["OrderStatus.Failed"].Value,
+                ["platformYemeksepeti"] = L["Orders.PlatformYemeksepeti"].Value,
+                ["platformGetirYemek"] = L["Orders.PlatformGetirYemek"].Value,
+                ["platformTrendyolYemek"] = L["Orders.PlatformTrendyolYemek"].Value
             }))
         };
     </script>
@@ -227,5 +261,6 @@
     <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-view.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-detail-modal.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-live-store.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>
 }

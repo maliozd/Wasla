@@ -103,7 +103,11 @@
     const ok = global.confirm(localize(confirmTitleKey) + "\n\n" + localize(confirmMessageKey));
     if (!ok) return;
 
+    const liveStore = O.opts.pageMode === "liveDisplay" ? O.liveStore : null;
     btn.disabled = true;
+    const endMutation = liveStore && typeof liveStore.beginMutation === "function"
+      ? liveStore.beginMutation()
+      : null;
     try {
       const url = "/orders/" + encodeURIComponent(orderId) + "/" + encodeURIComponent(action);
       const result = await postAction(url);
@@ -124,16 +128,19 @@
         detail: { orderId: orderId, action: action }
       }));
 
-      try {
-        await O.table.refreshOrdersTable();
-      } catch (e2) {
-        toastError("tableRefreshFailed", "orders-table-refresh-error");
-        if (O.isDebugEnabled()) O.debugWarn("orders table refresh failed after order action", e2);
+      if (!liveStore) {
+        try {
+          await O.table.refreshOrdersTable();
+        } catch (e2) {
+          toastError("tableRefreshFailed", "orders-table-refresh-error");
+          if (O.isDebugEnabled()) O.debugWarn("orders table refresh failed after order action", e2);
+        }
       }
     } catch (e) {
       toastError(action === "approve" || action === "reject" ? "ordersActionFailed" : "ordersOrderActionFailed", "order-action-error");
       if (O.isDebugEnabled()) O.debugWarn("order action failed", e);
     } finally {
+      if (typeof endMutation === "function") endMutation();
       btn.disabled = false;
     }
   }

@@ -9,21 +9,21 @@ public sealed class OrdersLiveScreenBrowserNotificationOwnershipTests
     public void Orders_DoesNotOwnAutomaticBrowserNotificationTrigger()
     {
         var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        Assert.DoesNotContain("!isLiveDisplayPage() && live && newIds.length > 0", tableJs, StringComparison.Ordinal);
-        Assert.Equal(1, CountOccurrences(tableJs, "showBrowserNotificationIfAllowed()"));
-        Assert.Contains("isLiveDisplayPage() && newIds.length > 0 && O.audio", tableJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("showBrowserNotificationIfAllowed", tableJs, StringComparison.Ordinal);
+        Assert.Equal(1, CountOccurrences(storeJs, "showBrowserNotificationIfAllowed()"));
+        Assert.Contains("meta.isBaseline || !meta.newIds", storeJs, StringComparison.Ordinal);
     }
 
     [Fact]
     public void LiveScreen_OwnsBrowserNotificationTriggerForNewIds()
     {
-        var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
         var liveView = Read("Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
         var audioJs = ReadWwwroot("js", "orders", "orders-audio.js");
 
-        Assert.Contains("Phase 2B3:", tableJs, StringComparison.Ordinal);
-        Assert.Contains("O.audio.showBrowserNotificationIfAllowed()", tableJs, StringComparison.Ordinal);
+        Assert.Contains("O.audio.showBrowserNotificationIfAllowed()", storeJs, StringComparison.Ordinal);
         Assert.Contains("new Notification(O.getMessage(\"newOrderArrived\")", audioJs, StringComparison.Ordinal);
         Assert.Contains("newOrderArrived", liveView, StringComparison.Ordinal);
         Assert.Contains("checkOrdersPage", liveView, StringComparison.Ordinal);
@@ -34,19 +34,12 @@ public sealed class OrdersLiveScreenBrowserNotificationOwnershipTests
     public void LiveScreen_BaselineCannotNotify_OnlyNewIdsAfterPoll()
     {
         var liveJs = ReadWwwroot("js", "orders", "orders-live-display-page.js");
-        var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        Assert.Contains("O.table.captureKnownOrderIdsFromContainer()", liveJs, StringComparison.Ordinal);
+        Assert.Contains("O.liveStore.start()", liveJs, StringComparison.Ordinal);
         Assert.DoesNotContain("showBrowserNotificationIfAllowed", liveJs, StringComparison.Ordinal);
-        Assert.True(
-            liveJs.IndexOf("captureKnownOrderIdsFromContainer", StringComparison.Ordinal)
-            < liveJs.IndexOf("initPolling", StringComparison.Ordinal));
-
-        var notifBlock = tableJs[
-            tableJs.IndexOf("Phase 2B3:", StringComparison.Ordinal)
-            ..];
-        Assert.Contains("newIds.length > 0", notifBlock, StringComparison.Ordinal);
-        Assert.Contains("isLiveDisplayPage()", notifBlock, StringComparison.Ordinal);
+        Assert.Contains("if (!baselineReady)", storeJs, StringComparison.Ordinal);
+        Assert.Contains("isBaseline || !meta.newIds || !meta.newIds.length", storeJs, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -58,31 +51,32 @@ public sealed class OrdersLiveScreenBrowserNotificationOwnershipTests
         Assert.Contains("Notification.permission !== \"granted\"", audioJs, StringComparison.Ordinal);
         Assert.Contains("function showBrowserNotificationIfAllowed()", audioJs, StringComparison.Ordinal);
         // Permission is requested from settings UI, not automatically on Live poll.
-        Assert.DoesNotContain("requestPermission", ReadWwwroot("js", "orders", "orders-table.js"), StringComparison.Ordinal);
+        Assert.DoesNotContain("requestPermission", ReadWwwroot("js", "orders", "orders-live-store.js"), StringComparison.Ordinal);
         Assert.Contains("maybeRequestBrowserNotificationPermission", audioJs, StringComparison.Ordinal);
     }
 
     [Fact]
     public void LiveScreen_OneBrowserNotificationCallPerPollingBatch()
     {
-        var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
         var audioJs = ReadWwwroot("js", "orders", "orders-audio.js");
 
-        Assert.Equal(1, CountOccurrences(tableJs, "showBrowserNotificationIfAllowed()"));
+        Assert.Equal(1, CountOccurrences(storeJs, "showBrowserNotificationIfAllowed()"));
         Assert.Equal(1, CountOccurrences(audioJs, "new Notification("));
-        Assert.DoesNotContain("newIds.forEach", tableJs.Substring(tableJs.IndexOf("Phase 2B3:", StringComparison.Ordinal)), StringComparison.Ordinal);
+        Assert.DoesNotContain("meta.newIds.forEach", storeJs, StringComparison.Ordinal);
     }
 
     [Fact]
     public void Phase2B1And2B2OwnershipMarkersRemainIntact()
     {
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
         var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
 
-        Assert.Contains("Phase 2B1:", tableJs, StringComparison.Ordinal);
-        Assert.Contains("Phase 2B2:", tableJs, StringComparison.Ordinal);
-        Assert.Contains("await O.audio.playSoundNow({", tableJs, StringComparison.Ordinal);
-        Assert.Contains("markOrdersAsRecentlyNew(newIds)", tableJs, StringComparison.Ordinal);
-        Assert.DoesNotContain("BroadcastChannel", tableJs, StringComparison.Ordinal);
+        Assert.Contains("await O.audio.playSoundNow({", storeJs, StringComparison.Ordinal);
+        Assert.Contains("O.table.markOrdersAsRecentlyNew(meta.newIds)", storeJs, StringComparison.Ordinal);
+        Assert.Contains("function markOrdersAsRecentlyNew(orderIds)", tableJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("BroadcastChannel", storeJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("SignalR", storeJs, StringComparison.Ordinal);
         Assert.DoesNotContain("SignalR", tableJs, StringComparison.Ordinal);
     }
 

@@ -624,6 +624,15 @@
   <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
     <value>Sipariş detayları yüklenemedi.</value>
   </data>
+  <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve">
+    <value>Canlı siparişler yenilenemedi. Son güncelleme gösteriliyor.</value>
+  </data>
+  <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve">
+    <value>Oturum süresi doldu. Devam etmek için sayfayı yenileyin.</value>
+  </data>
+  <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
+    <value>Bu toplam canlı görüntüde yok.</value>
+  </data>
   <data name="Orders.Print.Action" xml:space="preserve">
     <value>Yazdır</value>
   </data>

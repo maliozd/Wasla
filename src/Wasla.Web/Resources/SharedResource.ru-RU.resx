@@ -624,6 +624,15 @@
   <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
     <value>Не удалось загрузить детали заказа.</value>
   </data>
+  <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve">
+    <value>Не удалось обновить заказы. Показано последнее обновление.</value>
+  </data>
+  <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve">
+    <value>Сеанс истёк. Обновите страницу, чтобы продолжить.</value>
+  </data>
+  <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
+    <value>Этот итог не входит в оперативный снимок.</value>
+  </data>
   <data name="Orders.Print.Action" xml:space="preserve">
     <value>Печать</value>
   </data>

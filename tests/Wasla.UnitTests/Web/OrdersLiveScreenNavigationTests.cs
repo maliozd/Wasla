@@ -139,7 +139,7 @@ public sealed class OrdersLiveScreenNavigationTests
 
         Assert.Contains("_LiveScreenOrders", liveView, StringComparison.Ordinal);
         Assert.Contains("ordersLiveScreenHost", liveView, StringComparison.Ordinal);
-        Assert.Contains("liveScreenUrl: \"/orders/live-screen\"", liveView, StringComparison.Ordinal);
+        Assert.Contains("liveDataUrl: \"/orders/live-data\"", liveView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.LiveDisplay.Subtitle\"]", liveView, StringComparison.Ordinal);
         Assert.Contains("F11", liveView, StringComparison.Ordinal);
         Assert.Contains("ordersLiveDisplayClose", liveView, StringComparison.Ordinal);

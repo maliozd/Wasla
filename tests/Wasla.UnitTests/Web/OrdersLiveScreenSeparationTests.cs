@@ -312,8 +312,10 @@ public sealed class OrdersLiveScreenSeparationTests
         var ordersView = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "Index.cshtml");
         var liveView = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
 
-        Assert.Contains("isLiveDisplayPage() && newIds.length > 0 && O.audio", tableJs, StringComparison.Ordinal);
-        Assert.Equal(1, CountOccurrences(tableJs, "showBrowserNotificationIfAllowed()"));
+        var storeJs = Read("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-store.js");
+        Assert.Contains("showBrowserNotificationIfAllowed()", storeJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("showBrowserNotificationIfAllowed()", tableJs, StringComparison.Ordinal);
+        Assert.Equal(1, CountOccurrences(storeJs, "showBrowserNotificationIfAllowed()"));
         Assert.DoesNotContain("newOrderArrived", ordersView, StringComparison.Ordinal);
         Assert.Contains("newOrderArrived", liveView, StringComparison.Ordinal);
     }
@@ -330,6 +332,9 @@ public sealed class OrdersLiveScreenSeparationTests
                 "Orders.LiveScreen.ViewCards",
                 "Orders.LiveScreen.ViewList",
                 "Orders.LiveScreen.DetailLoadFailed",
+                "Orders.LiveScreen.ConnectionStale",
+                "Orders.LiveScreen.SessionExpired",
+                "Orders.LiveScreen.CountUnavailable",
                 "Orders.ManageSettings",
                 "Orders.History.Search",
                 "Orders.History.SearchPlaceholder",

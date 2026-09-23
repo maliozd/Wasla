@@ -1055,4 +1055,7 @@
   <data name="Notification.SoundActive" xml:space="preserve"><value>Bildirim sesi aktif</value></data>
   <data name="Notification.StopSoundButton" xml:space="preserve"><value>Sesi durdur</value></data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve"><value>Bu restorana bağlı sipariş platformlarını yönetin.</value></data>
+  <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve"><value>Canlı siparişler yenilenemedi. Son güncelleme gösteriliyor.</value></data>
+  <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve"><value>Oturum süresi doldu. Devam etmek için sayfayı yenileyin.</value></data>
+  <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve"><value>Bu toplam canlı görüntüde yok.</value></data>
 </root>

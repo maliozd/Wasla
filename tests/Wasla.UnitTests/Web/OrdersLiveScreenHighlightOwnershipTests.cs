@@ -9,36 +9,39 @@ public sealed class OrdersLiveScreenHighlightOwnershipTests
     public void Orders_DoesNotOwnOperationalNewOrderHighlightOnPoll()
     {
         var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        Assert.DoesNotContain("if (live && newIds.length > 0)", tableJs, StringComparison.Ordinal);
-        Assert.Contains("if (isLiveDisplayPage() && newIds.length > 0)", tableJs, StringComparison.Ordinal);
-        Assert.Contains("markOrdersAsRecentlyNew(newIds)", tableJs, StringComparison.Ordinal);
-        Assert.Equal(1, CountOccurrences(tableJs, "markOrdersAsRecentlyNew(newIds)"));
+        var refreshStart = tableJs.IndexOf("async function refreshOrdersTable", StringComparison.Ordinal);
+        var refreshEnd = tableJs.IndexOf("function initPolling", refreshStart, StringComparison.Ordinal);
+        var refresh = tableJs.Substring(refreshStart, refreshEnd - refreshStart);
+        Assert.DoesNotContain("markOrdersAsRecentlyNew(", refresh, StringComparison.Ordinal);
+        Assert.DoesNotContain("playSoundNow", refresh, StringComparison.Ordinal);
+        Assert.Contains("O.table.markOrdersAsRecentlyNew(meta.newIds)", storeJs, StringComparison.Ordinal);
+        Assert.Equal(1, CountOccurrences(storeJs, "O.table.markOrdersAsRecentlyNew(meta.newIds)"));
     }
 
     [Fact]
     public void LiveScreen_BaselineDoesNotMarkExistingCardsAsRecentlyNew()
     {
         var liveJs = ReadWwwroot("js", "orders", "orders-live-display-page.js");
-        var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        Assert.Contains("O.table.captureKnownOrderIdsFromContainer()", liveJs, StringComparison.Ordinal);
+        Assert.Contains("O.liveStore.start()", liveJs, StringComparison.Ordinal);
         Assert.DoesNotContain("markOrdersAsRecentlyNew", liveJs, StringComparison.Ordinal);
-        Assert.True(
-            liveJs.IndexOf("captureKnownOrderIdsFromContainer", StringComparison.Ordinal)
-            < liveJs.IndexOf("initPolling", StringComparison.Ordinal));
-        Assert.Contains("isLiveDisplayPage() && newIds.length > 0", tableJs, StringComparison.Ordinal);
+        Assert.Contains("if (!baselineReady)", storeJs, StringComparison.Ordinal);
+        Assert.Contains("isBaseline || !meta.newIds", storeJs, StringComparison.Ordinal);
     }
 
     [Fact]
     public void LiveScreen_NewIdsReceiveHighlightAfterPollRender()
     {
         var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        var markIdx = tableJs.IndexOf("markOrdersAsRecentlyNew(newIds)", StringComparison.Ordinal);
-        var applyAfterMark = tableJs.IndexOf("applyNewOrderVisualState()", markIdx, StringComparison.Ordinal);
-        var innerHtmlIdx = tableJs.IndexOf("container.innerHTML = html", StringComparison.Ordinal);
-        Assert.True(innerHtmlIdx >= 0 && markIdx > innerHtmlIdx && applyAfterMark > markIdx);
+        var renderIdx = storeJs.IndexOf("diff = renderSnapshot(snapshot);", StringComparison.Ordinal);
+        var markIdx = storeJs.IndexOf("O.table.markOrdersAsRecentlyNew(meta.newIds)", StringComparison.Ordinal);
+        var applyAfterMark = storeJs.IndexOf("O.table.applyNewOrderVisualState()", markIdx, StringComparison.Ordinal);
+        Assert.True(renderIdx >= 0 && markIdx > renderIdx && applyAfterMark > markIdx);
 
         Assert.Contains("applyHighlightClassesToRow(row)", tableJs, StringComparison.Ordinal);
         Assert.Contains("order-row-new", tableJs, StringComparison.Ordinal);
@@ -49,26 +52,24 @@ public sealed class OrdersLiveScreenHighlightOwnershipTests
     public void LiveScreen_MultipleNewIdsShareOneMarkBatch()
     {
         var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        Assert.Equal(1, CountOccurrences(tableJs, "markOrdersAsRecentlyNew(newIds)"));
+        Assert.Equal(1, CountOccurrences(storeJs, "O.table.markOrdersAsRecentlyNew(meta.newIds)"));
         Assert.Contains("orderIds.forEach(function (id)", tableJs, StringComparison.Ordinal);
-        Assert.DoesNotContain("for (let i = 0; i < newIds.length", tableJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("meta.newIds.forEach", storeJs, StringComparison.Ordinal);
     }
 
     [Fact]
     public void LiveScreen_UnchangedIdsAreNotReMarkedWithoutNewDetection()
     {
-        var tableJs = ReadWwwroot("js", "orders", "orders-table.js");
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        Assert.Contains("const newIds = detectNewOrderIds(ids);", tableJs, StringComparison.Ordinal);
-        Assert.Contains("if (isLiveDisplayPage() && newIds.length > 0)", tableJs, StringComparison.Ordinal);
-        Assert.Contains("captureKnownOrderIdsFromContainer();", tableJs, StringComparison.Ordinal);
-        // Highlight only when newIds exist; known set update prevents re-detection next poll.
-        var liveHighlightBlock = tableJs[
-            tableJs.IndexOf("// Phase 2B2:", StringComparison.Ordinal)
-            ..tableJs.IndexOf("// Phase 2B1:", StringComparison.Ordinal)];
-        Assert.Contains("markOrdersAsRecentlyNew(newIds)", liveHighlightBlock, StringComparison.Ordinal);
-        Assert.Contains("newIds.length > 0", liveHighlightBlock, StringComparison.Ordinal);
+        Assert.Contains("const newIds = collectNewIds(known, result.snapshot.orders, baselineReady);", storeJs, StringComparison.Ordinal);
+        Assert.Contains("if (meta.isBaseline || !meta.newIds || !meta.newIds.length) return;", storeJs, StringComparison.Ordinal);
+        Assert.Contains("if (accepted && accepted.accepted === false)", storeJs, StringComparison.Ordinal);
+        var acceptIndex = storeJs.IndexOf("options.onAccepted(result.snapshot", StringComparison.Ordinal);
+        var rememberIndex = storeJs.IndexOf("rememberOrderIds(known, result.snapshot.orders)", StringComparison.Ordinal);
+        Assert.True(acceptIndex >= 0 && rememberIndex > acceptIndex);
     }
 
     [Fact]

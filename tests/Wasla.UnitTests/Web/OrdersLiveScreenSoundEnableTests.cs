@@ -106,9 +106,11 @@ public sealed class OrdersLiveScreenSoundEnableTests
         var ordersPage = Read("Areas", "Tenant", "Views", "Orders", "Index.cshtml");
         var audioJs = ReadWwwroot("js", "orders", "orders-audio.js");
 
-        Assert.Contains("isLiveDisplayPage() && newIds.length > 0 && O.state.notificationSettings && O.audio", tableJs, StringComparison.Ordinal);
-        Assert.Contains("isLiveDisplayPage() && newIds.length > 0 && O.audio", tableJs, StringComparison.Ordinal);
-        Assert.Contains("showBrowserNotificationIfAllowed()", tableJs, StringComparison.Ordinal);
+        var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
+        Assert.Contains("settings.newOrderSoundEnabled", storeJs, StringComparison.Ordinal);
+        Assert.Contains("O.audio.showBrowserNotificationIfAllowed()", storeJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("playSoundNow", tableJs, StringComparison.Ordinal);
+        Assert.DoesNotContain("showBrowserNotificationIfAllowed()", tableJs, StringComparison.Ordinal);
         Assert.Contains("orders-audio.js", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain("orders-audio.js", ordersPage, StringComparison.Ordinal);
         Assert.DoesNotContain("SignalR", tableJs, StringComparison.Ordinal);

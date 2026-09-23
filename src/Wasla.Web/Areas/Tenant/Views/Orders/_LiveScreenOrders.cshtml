@@ -114,7 +114,7 @@ else
                     <div class="orders-card-meta orders-card-meta--kitchen">
                         <div class="orders-card-meta__row">
                             <span class="orders-card-meta__label">@L["Orders.TotalAmount"]:</span>
-                            @o.TotalAmount.ToString("C", CultureInfo.CurrentCulture)
+                            @o.TotalAmount.ToString("N2", CultureInfo.CurrentCulture)
                         </div>
                         <div class="orders-card-meta__row">
                             <span class="orders-card-meta__label">@L["Orders.ReceivedAt"]:</span>
