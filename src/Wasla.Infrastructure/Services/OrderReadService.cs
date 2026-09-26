@@ -176,6 +176,7 @@ public sealed class OrderReadService : IOrderReadService
             CustomerName = order.CustomerName,
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = order.CustomerAddress,
+            CustomerNote = string.IsNullOrWhiteSpace(order.CustomerNote) ? null : order.CustomerNote.Trim(),
             TotalAmount = order.TotalAmount,
             DeliveryFee = order.DeliveryFee,
             ServiceFee = order.ServiceFee,
@@ -229,6 +230,8 @@ public sealed class OrderReadService : IOrderReadService
                 o.ReceivedAt,
                 o.DeliveredAt,
                 o.CustomerName,
+                o.CustomerAddress,
+                o.CustomerNote,
                 o.TotalAmount,
                 Items = o.Items
                     .OrderBy(i => i.Id)
@@ -245,6 +248,8 @@ public sealed class OrderReadService : IOrderReadService
             SpecifyUtc(o.ReceivedAt),
             o.DeliveredAt is null ? null : SpecifyUtc(o.DeliveredAt.Value),
             o.CustomerName,
+            o.CustomerAddress ?? string.Empty,
+            string.IsNullOrWhiteSpace(o.CustomerNote) ? null : o.CustomerNote.Trim(),
             o.TotalAmount,
             o.Items)).ToList();
 

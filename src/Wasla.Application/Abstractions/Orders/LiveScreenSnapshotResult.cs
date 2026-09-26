@@ -17,6 +17,8 @@ public sealed record LiveScreenOrderDto(
     DateTime ReceivedAtUtc,
     DateTime? DeliveredAtUtc,
     string CustomerName,
+    string CustomerAddress,
+    string? CustomerNote,
     decimal TotalAmount,
     IReadOnlyList<LiveScreenLineItemDto> Items);
 

@@ -205,7 +205,8 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             PaymentStatus: paymentStatus,
             ExternalStatus: package.PackageStatus ?? string.Empty,
             RawPayloadJson: JsonSerializer.Serialize(package, JsonOptions),
-            Items: items);
+            Items: items,
+            CustomerNote: package.CustomerNote);
     }
 
     private static ExternalOrderItemDto MapLine(string? packageId, TrendyolGoLine line, int idx)

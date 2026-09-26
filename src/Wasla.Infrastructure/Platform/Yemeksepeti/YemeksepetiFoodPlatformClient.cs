@@ -274,7 +274,8 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
             PaymentStatus:     MapPaymentStatus(o.PaymentMethod),
             ExternalStatus:    externalStatus,
             RawPayloadJson:    JsonSerializer.Serialize(o, JsonOptions),
-            Items:             items);
+            Items:             items,
+            CustomerNote:      null);
     }
 
     private static ExternalOrderItemDto MapBasketItem(YemeksepetiBasketItem item)

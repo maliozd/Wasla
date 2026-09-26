@@ -13,6 +13,7 @@ public sealed class OrderDetailViewModel
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
     public string CustomerAddress { get; set; } = string.Empty;
+    public string? CustomerNote { get; set; }
 
     public decimal TotalAmount { get; set; }
     public decimal DeliveryFee { get; set; }

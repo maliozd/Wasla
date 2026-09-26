@@ -483,6 +483,7 @@ public sealed class OrderSyncService : IOrderSyncService
         existing.ExternalOrderCode = external.ExternalOrderCode;
         existing.CustomerPhone = external.CustomerPhone;
         existing.CustomerAddress = external.CustomerAddress;
+        existing.CustomerNote = NormalizeCustomerNote(external.CustomerNote);
         existing.UpdatedAt = nowUtc;
 
         ApplyStatusTransitionTimestamps(
@@ -581,6 +582,16 @@ public sealed class OrderSyncService : IOrderSyncService
         }
     }
 
+    private static string? NormalizeCustomerNote(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var trimmed = value.Trim();
+        const int maxLength = 2000;
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
+
     private static bool ShouldCreateReceiptForAcceptedProviderStatus(OrderStatus? oldStatus, OrderStatus newStatus)
     {
         if (newStatus != OrderStatus.Accepted)
@@ -609,7 +620,8 @@ public sealed class OrderSyncService : IOrderSyncService
             RawPayloadJson = external.RawPayloadJson,
             ExternalOrderCode = external.ExternalOrderCode,
             CustomerPhone = external.CustomerPhone,
-            CustomerAddress = external.CustomerAddress
+            CustomerAddress = external.CustomerAddress,
+            CustomerNote = NormalizeCustomerNote(external.CustomerNote)
         };
 
         // Initial milestone timestamps based on initial status

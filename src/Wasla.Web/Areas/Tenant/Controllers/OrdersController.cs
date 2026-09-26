@@ -267,9 +267,12 @@ public sealed class OrdersController : BaseController
         var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, null, null, today, today, search: null,
-            sortBy: "receivedAt", sortDirection: "desc", page: 1, pageSize: 100,
+            sortBy: "receivedAt",
+            sortDirection: "desc",
+            page: 1, pageSize: 100,
             useHistoryDefaults: false,
-            addDateValidationErrors: false, logDateFilterAs: null, ct,
+            addDateValidationErrors: false,
+            logDateFilterAs: null, ct,
             includeLineItems: true);
 
         ViewData["CustomerName"] = tenant.Name;
@@ -429,6 +432,7 @@ public sealed class OrdersController : BaseController
             CustomerName = order.CustomerName,
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = order.CustomerAddress,
+            CustomerNote = order.CustomerNote,
             TotalAmount = order.TotalAmount,
             DeliveryFee = order.DeliveryFee,
             ServiceFee = order.ServiceFee,

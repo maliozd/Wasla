@@ -177,6 +177,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
             phone: "+905551112233",
             address: "Secret Street 7",
             rawPayload: "{\"secret\":\"platform-payload\"}",
+            customerNote: "Zili çalmayın, arayın.",
             items: [new ItemSeed(Guid.NewGuid(), "Lahmacun", 1, "No onion")]);
 
         var snapshot = await ReadAsync(_tenantId);
@@ -193,12 +194,16 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         Assert.Equal("Lahmacun", order.GetProperty("items")[0].GetProperty("productName").GetString());
         Assert.Equal(1, order.GetProperty("items")[0].GetProperty("quantity").GetInt32());
         Assert.Equal("No onion", order.GetProperty("items")[0].GetProperty("notes").GetString());
+        Assert.Equal("Test Customer", order.GetProperty("customerName").GetString());
+        Assert.Equal("Secret Street 7", order.GetProperty("customerAddress").GetString());
+        Assert.Equal("Zili çalmayın, arayın.", order.GetProperty("customerNote").GetString());
+        Assert.NotEqual(
+            order.GetProperty("customerNote").GetString(),
+            order.GetProperty("items")[0].GetProperty("notes").GetString());
         Assert.False(order.TryGetProperty("customerPhone", out _));
-        Assert.False(order.TryGetProperty("customerAddress", out _));
         Assert.False(order.TryGetProperty("rawPayloadJson", out _));
         Assert.False(order.TryGetProperty("printJob", out _));
         Assert.DoesNotContain("+905551112233", json, StringComparison.Ordinal);
-        Assert.DoesNotContain("Secret Street 7", json, StringComparison.Ordinal);
         Assert.DoesNotContain("platform-payload", json, StringComparison.Ordinal);
     }
 
@@ -291,6 +296,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         string phone = "+905550000000",
         string address = "Test Address",
         string rawPayload = "{}",
+        string? customerNote = null,
         IReadOnlyList<ItemSeed>? items = null)
     {
         var orderId = id ?? Guid.NewGuid();
@@ -307,6 +313,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
             CustomerName = "Test Customer",
             CustomerPhone = phone,
             CustomerAddress = address,
+            CustomerNote = customerNote,
             TotalAmount = 100m,
             PaymentMethod = PaymentMethod.CreditCard,
             PaymentStatus = PaymentStatus.Paid,

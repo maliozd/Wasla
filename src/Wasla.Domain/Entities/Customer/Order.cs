@@ -57,6 +57,12 @@ public class Order : BaseEntity
     /// </summary>
     public string CustomerAddress { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Order-level instruction from the end customer, such as a delivery or preparation request.
+    /// This is not an item note. Item instructions stay on <see cref="OrderItem.Notes"/>.
+    /// </summary>
+    public string? CustomerNote { get; set; }
+
     // --- Money ---
 
     public decimal TotalAmount { get; set; }
