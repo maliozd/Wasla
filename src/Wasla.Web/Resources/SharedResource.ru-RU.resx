@@ -4024,4 +4024,42 @@
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Назад к заказам</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Повторить</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Заказы</value></data>
+  <data name="Signup.BusinessSubtypeHint" xml:space="preserve"><value>Выберите одну или несколько категорий, затем отметьте подтипы.</value></data>
+  <data name="Signup.BusinessCategory.Restaurant" xml:space="preserve"><value>Ресторан</value></data>
+  <data name="Signup.BusinessCategory.FastFood" xml:space="preserve"><value>Фастфуд</value></data>
+  <data name="Signup.BusinessCategory.Cafe" xml:space="preserve"><value>Кафе</value></data>
+  <data name="Signup.BusinessCategory.Bakery" xml:space="preserve"><value>Пекарня и выпечка</value></data>
+  <data name="Signup.BusinessCategory.Dessert" xml:space="preserve"><value>Десерты</value></data>
+  <data name="Signup.BusinessCategory.WorldCuisine" xml:space="preserve"><value>Кухни мира</value></data>
+  <data name="Signup.BusinessCategory.SpecialDiet" xml:space="preserve"><value>Особое питание</value></data>
+  <data name="Signup.BusinessCategory.Other" xml:space="preserve"><value>Другое</value></data>
+  <data name="Signup.BusinessSubtype.Kebab" xml:space="preserve"><value>Кебаб</value></data>
+  <data name="Signup.BusinessSubtype.HomeCooking" xml:space="preserve"><value>Домашняя кухня</value></data>
+  <data name="Signup.BusinessSubtype.Steakhouse" xml:space="preserve"><value>Стейк-хаус</value></data>
+  <data name="Signup.BusinessSubtype.Seafood" xml:space="preserve"><value>Морепродукты</value></data>
+  <data name="Signup.BusinessSubtype.Manti" xml:space="preserve"><value>Манты</value></data>
+  <data name="Signup.BusinessSubtype.Soup" xml:space="preserve"><value>Супы</value></data>
+  <data name="Signup.BusinessSubtype.Burger" xml:space="preserve"><value>Бургер</value></data>
+  <data name="Signup.BusinessSubtype.Pizza" xml:space="preserve"><value>Пицца</value></data>
+  <data name="Signup.BusinessSubtype.Doner" xml:space="preserve"><value>Дёнер</value></data>
+  <data name="Signup.BusinessSubtype.Chicken" xml:space="preserve"><value>Курица</value></data>
+  <data name="Signup.BusinessSubtype.CigKofte" xml:space="preserve"><value>Чий кёфте</value></data>
+  <data name="Signup.BusinessSubtype.SandwichToast" xml:space="preserve"><value>Сэндвич / тост</value></data>
+  <data name="Signup.BusinessSubtype.Cafe" xml:space="preserve"><value>Кафе</value></data>
+  <data name="Signup.BusinessSubtype.Breakfast" xml:space="preserve"><value>Завтрак</value></data>
+  <data name="Signup.BusinessSubtype.Patisserie" xml:space="preserve"><value>Кондитерская</value></data>
+  <data name="Signup.BusinessSubtype.PideLahmacun" xml:space="preserve"><value>Пиде / лахмаджун</value></data>
+  <data name="Signup.BusinessSubtype.BorekGozleme" xml:space="preserve"><value>Бёрек / гёзлеме</value></data>
+  <data name="Signup.BusinessSubtype.DessertShop" xml:space="preserve"><value>Десертная</value></data>
+  <data name="Signup.BusinessSubtype.IceCream" xml:space="preserve"><value>Мороженое</value></data>
+  <data name="Signup.BusinessSubtype.WaffleCrepe" xml:space="preserve"><value>Вафля / креп</value></data>
+  <data name="Signup.BusinessSubtype.Sushi" xml:space="preserve"><value>Суши</value></data>
+  <data name="Signup.BusinessSubtype.Asian" xml:space="preserve"><value>Азиатская кухня</value></data>
+  <data name="Signup.BusinessSubtype.Italian" xml:space="preserve"><value>Паста / итальянская кухня</value></data>
+  <data name="Signup.BusinessSubtype.WorldCuisine" xml:space="preserve"><value>Кухни мира</value></data>
+  <data name="Signup.BusinessSubtype.VeganVegetarian" xml:space="preserve"><value>Веган / вегетарианское</value></data>
+  <data name="Signup.BusinessSubtype.Healthy" xml:space="preserve"><value>Здоровое / фитнес-меню</value></data>
+  <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>Другое</value></data>
+  <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>Выберите хотя бы один подтип.</value></data>
+  <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>Для каждой выбранной категории отметьте хотя бы один подтип.</value></data>
 </root>

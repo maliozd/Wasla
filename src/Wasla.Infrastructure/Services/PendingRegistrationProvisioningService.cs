@@ -175,7 +175,7 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
                     BusinessPhone = registration.BusinessPhone.Trim(),
                     City = registration.City.Trim(),
                     Country = registration.Country.Trim(),
-                    BusinessType = registration.BusinessType,
+                    BusinessType = Truncate(registration.BusinessType, 100),
                     CreatedAt = now,
                     UpdatedAt = now
                 });
@@ -210,6 +210,14 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
                 registrationId, ex.GetType().Name);
             return ProvisioningResult.Failure("An unexpected error occurred during provisioning.");
         }
+    }
+
+    private static string? Truncate(string? value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+            return value;
+
+        return value[..maxLength];
     }
 
     private string ResolveServer(string? sqlServerOverride)

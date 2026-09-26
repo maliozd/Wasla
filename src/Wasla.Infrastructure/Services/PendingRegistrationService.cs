@@ -221,16 +221,17 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         if (row is null)
             return null;
 
-        var businessTypesDisplay = await (
+        var businessTypeRows = await (
             from link in _central.PendingRegistrationBusinessTypes.AsNoTracking()
             join bt in _central.BusinessTypes.AsNoTracking() on link.BusinessTypeId equals bt.Id
             where link.PendingRegistrationId == registrationId
             orderby bt.SortOrder
-            select bt.DisplayName).ToListAsync(ct);
+            select new { bt.Code, bt.DisplayName }).ToListAsync(ct);
 
-        var businessTypesLabel = businessTypesDisplay.Count > 0
-            ? string.Join(", ", businessTypesDisplay)
+        var businessTypesLabel = businessTypeRows.Count > 0
+            ? string.Join(", ", businessTypeRows.Select(x => x.DisplayName))
             : row.BusinessType ?? string.Empty;
+        var businessTypeCodes = businessTypeRows.Select(x => x.Code).ToArray();
 
         var monthly = CheckoutSimulatedPricing.GetMonthlyPriceTry(row.PlanCode);
         var total = CheckoutSimulatedPricing.GetTotalPriceTry(row.PlanCode, row.BillingPeriod);
@@ -260,7 +261,8 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             row.Status,
             monthly,
             total,
-            CheckoutSimulatedPricing.IsYearlyBilling(row.BillingPeriod));
+            CheckoutSimulatedPricing.IsYearlyBilling(row.BillingPeriod),
+            businessTypeCodes);
     }
 
     public async Task<CheckoutSimulationResult> SimulatePaymentSuccessAsync(Guid registrationId, CancellationToken ct)

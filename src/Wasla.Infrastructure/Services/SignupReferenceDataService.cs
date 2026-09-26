@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Signup;
+using Wasla.Application.Signup;
+using Wasla.Domain.Entities.Central;
 using Wasla.Infrastructure.Persistence.Central;
 
 namespace Wasla.Infrastructure.Services;
@@ -13,12 +15,15 @@ public sealed class SignupReferenceDataService : ISignupReferenceDataService
         _central = central;
     }
 
-    public async Task<IReadOnlyList<SignupBusinessTypeOption>> GetActiveBusinessTypesAsync(CancellationToken ct) =>
-        await _central.BusinessTypes.AsNoTracking()
+    public async Task<IReadOnlyList<SignupBusinessTypeOption>> GetActiveBusinessTypesAsync(CancellationToken ct)
+    {
+        await EnsureSubtypeCatalogAsync(ct);
+        return await _central.BusinessTypes.AsNoTracking()
             .Where(x => x.IsActive)
             .OrderBy(x => x.SortOrder)
             .Select(x => new SignupBusinessTypeOption(x.Code, x.DisplayName))
             .ToListAsync(ct);
+    }
 
     public async Task<IReadOnlyList<SignupCityOption>> GetActiveCitiesAsync(string countryCode, CancellationToken ct)
     {
@@ -68,10 +73,16 @@ public sealed class SignupReferenceDataService : ISignupReferenceDataService
         if (codes.Count == 0)
             return Array.Empty<SignupBusinessTypeOption>();
 
+        await EnsureSubtypeCatalogAsync(ct);
+
         var normalized = codes
             .Select(c => c.Trim().ToLowerInvariant())
+            .Where(BusinessSubtypeCatalog.IsSubtypeCode)
             .Distinct()
             .ToList();
+
+        if (normalized.Count == 0)
+            return Array.Empty<SignupBusinessTypeOption>();
 
         var rows = await _central.BusinessTypes.AsNoTracking()
             .Where(x => x.IsActive && normalized.Contains(x.Code))
@@ -80,6 +91,43 @@ public sealed class SignupReferenceDataService : ISignupReferenceDataService
             .ToListAsync(ct);
 
         return rows;
+    }
+
+    private async Task EnsureSubtypeCatalogAsync(CancellationToken ct)
+    {
+        var existing = await _central.BusinessTypes
+            .Select(x => x.Code)
+            .ToListAsync(ct);
+
+        var known = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
+        var missing = BusinessSubtypeCatalog.All
+            .Where(x => !known.Contains(x.Code))
+            .ToList();
+        if (missing.Count == 0)
+            return;
+
+        var assignIds = (_central.Database.ProviderName ?? string.Empty)
+            .Contains("Sqlite", StringComparison.OrdinalIgnoreCase);
+        var nextId = assignIds
+            ? await _central.BusinessTypes.MaxAsync(x => (int?)x.Id, ct) ?? 0
+            : 0;
+
+        foreach (var item in missing)
+        {
+            var row = new BusinessType
+            {
+                Code = item.Code,
+                DisplayName = item.FallbackDisplayName,
+                SortOrder = item.SortOrder,
+                IsActive = true
+            };
+            if (assignIds)
+                row.Id = ++nextId;
+
+            _central.BusinessTypes.Add(row);
+        }
+
+        await _central.SaveChangesAsync(ct);
     }
 
     public async Task<SignupCityDistrictNames?> ResolveCityDistrictAsync(

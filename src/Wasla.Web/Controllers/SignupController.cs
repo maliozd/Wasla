@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
+using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Web.Models.Signup;
@@ -73,9 +74,19 @@ public sealed class SignupController : Controller
             return View(model);
         }
 
-        if (model.SelectedBusinessTypeCodes.Count == 0)
+        var selectedSubtypes = model.SelectedBusinessTypeCodes
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Select(code => code.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        model.SelectedBusinessTypeCodes = selectedSubtypes;
+        if (selectedSubtypes.Count == 0 || selectedSubtypes.Any(code => !BusinessSubtypeCatalog.IsSubtypeCode(code)))
         {
-            ModelState.AddModelError(nameof(model.SelectedBusinessTypeCodes), _localizer["Validation.BusinessTypeRequired"].Value);
+            ModelState.AddModelError(
+                nameof(model.SelectedBusinessTypeCodes),
+                _localizer[selectedSubtypes.Count == 0
+                    ? "Validation.BusinessSubtypeRequired"
+                    : "Validation.BusinessTypeInvalid"].Value);
             return View(model);
         }
 
@@ -216,6 +227,17 @@ public sealed class SignupController : Controller
         model.PlanOptions = BuildPlanOptions(model.PlanCode);
         model.IsContactSalesPlan = _planCatalog.FindByCode(model.PlanCode)?.IsContactSales ?? false;
         model.BusinessTypeOptions = await _referenceData.GetActiveBusinessTypesAsync(ct);
+        model.BusinessCategories = BusinessSubtypeCatalog.Categories
+            .Select(category => new SignupBusinessCategoryGroup(
+                category.ToString(),
+                _localizer[BusinessSubtypeCatalog.ResourceKey(category)].Value,
+                BusinessSubtypeCatalog.SubtypesOf(category)
+                    .Select(subtype => new SignupBusinessSubtypeOption(
+                        subtype.Code,
+                        _localizer[BusinessSubtypeCatalog.ResourceKey(subtype.Subtype)].Value,
+                        model.SelectedBusinessTypeCodes.Contains(subtype.Code, StringComparer.OrdinalIgnoreCase)))
+                    .ToArray()))
+            .ToArray();
 
         var cities = await _referenceData.GetActiveCitiesAsync(model.Country, ct);
         model.Cities = cities;

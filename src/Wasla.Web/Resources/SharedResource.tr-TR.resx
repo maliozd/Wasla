@@ -3537,4 +3537,42 @@
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Siparişlere dön</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Yeniden dene</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Siparişler</value></data>
+  <data name="Signup.BusinessSubtypeHint" xml:space="preserve"><value>Bir veya daha fazla kategori seçin, ardından alt türleri işaretleyin.</value></data>
+  <data name="Signup.BusinessCategory.Restaurant" xml:space="preserve"><value>Restoran</value></data>
+  <data name="Signup.BusinessCategory.FastFood" xml:space="preserve"><value>Fast Food</value></data>
+  <data name="Signup.BusinessCategory.Cafe" xml:space="preserve"><value>Kafe</value></data>
+  <data name="Signup.BusinessCategory.Bakery" xml:space="preserve"><value>Fırın &amp; Hamur İşi</value></data>
+  <data name="Signup.BusinessCategory.Dessert" xml:space="preserve"><value>Tatlı</value></data>
+  <data name="Signup.BusinessCategory.WorldCuisine" xml:space="preserve"><value>Dünya Mutfağı</value></data>
+  <data name="Signup.BusinessCategory.SpecialDiet" xml:space="preserve"><value>Özel Beslenme</value></data>
+  <data name="Signup.BusinessCategory.Other" xml:space="preserve"><value>Diğer</value></data>
+  <data name="Signup.BusinessSubtype.Kebab" xml:space="preserve"><value>Kebap</value></data>
+  <data name="Signup.BusinessSubtype.HomeCooking" xml:space="preserve"><value>Ev Yemekleri</value></data>
+  <data name="Signup.BusinessSubtype.Steakhouse" xml:space="preserve"><value>Et Restoranı</value></data>
+  <data name="Signup.BusinessSubtype.Seafood" xml:space="preserve"><value>Deniz Ürünleri</value></data>
+  <data name="Signup.BusinessSubtype.Manti" xml:space="preserve"><value>Mantı</value></data>
+  <data name="Signup.BusinessSubtype.Soup" xml:space="preserve"><value>Çorbacı</value></data>
+  <data name="Signup.BusinessSubtype.Burger" xml:space="preserve"><value>Burger</value></data>
+  <data name="Signup.BusinessSubtype.Pizza" xml:space="preserve"><value>Pizza</value></data>
+  <data name="Signup.BusinessSubtype.Doner" xml:space="preserve"><value>Döner</value></data>
+  <data name="Signup.BusinessSubtype.Chicken" xml:space="preserve"><value>Tavuk</value></data>
+  <data name="Signup.BusinessSubtype.CigKofte" xml:space="preserve"><value>Çiğ Köfte</value></data>
+  <data name="Signup.BusinessSubtype.SandwichToast" xml:space="preserve"><value>Sandviç / Tost</value></data>
+  <data name="Signup.BusinessSubtype.Cafe" xml:space="preserve"><value>Kafe</value></data>
+  <data name="Signup.BusinessSubtype.Breakfast" xml:space="preserve"><value>Kahvaltı</value></data>
+  <data name="Signup.BusinessSubtype.Patisserie" xml:space="preserve"><value>Pastane</value></data>
+  <data name="Signup.BusinessSubtype.PideLahmacun" xml:space="preserve"><value>Pide / Lahmacun</value></data>
+  <data name="Signup.BusinessSubtype.BorekGozleme" xml:space="preserve"><value>Börek / Gözleme</value></data>
+  <data name="Signup.BusinessSubtype.DessertShop" xml:space="preserve"><value>Tatlıcı</value></data>
+  <data name="Signup.BusinessSubtype.IceCream" xml:space="preserve"><value>Dondurma</value></data>
+  <data name="Signup.BusinessSubtype.WaffleCrepe" xml:space="preserve"><value>Waffle / Krep</value></data>
+  <data name="Signup.BusinessSubtype.Sushi" xml:space="preserve"><value>Sushi</value></data>
+  <data name="Signup.BusinessSubtype.Asian" xml:space="preserve"><value>Uzak Doğu</value></data>
+  <data name="Signup.BusinessSubtype.Italian" xml:space="preserve"><value>Makarna / İtalyan</value></data>
+  <data name="Signup.BusinessSubtype.WorldCuisine" xml:space="preserve"><value>Dünya Mutfağı</value></data>
+  <data name="Signup.BusinessSubtype.VeganVegetarian" xml:space="preserve"><value>Vegan / Vejetaryen</value></data>
+  <data name="Signup.BusinessSubtype.Healthy" xml:space="preserve"><value>Sağlıklı Yemek / Fit Menü</value></data>
+  <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>Diğer</value></data>
+  <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>En az bir işletme alt türü seçin.</value></data>
+  <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>Seçilen her kategori için en az bir alt tür işaretleyin.</value></data>
 </root>

@@ -27,4 +27,5 @@ public sealed record PendingRegistrationCheckoutDetails(
     PendingRegistrationStatus Status,
     decimal MonthlyPriceTry,
     decimal TotalPriceTry,
-    bool IsYearlyBilling);
+    bool IsYearlyBilling,
+    IReadOnlyList<string>? BusinessTypeCodes = null);

@@ -3540,4 +3540,42 @@
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Back to orders</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Try again</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Orders</value></data>
+  <data name="Signup.BusinessSubtypeHint" xml:space="preserve"><value>Select one or more categories, then choose the matching subtypes.</value></data>
+  <data name="Signup.BusinessCategory.Restaurant" xml:space="preserve"><value>Restaurant</value></data>
+  <data name="Signup.BusinessCategory.FastFood" xml:space="preserve"><value>Fast Food</value></data>
+  <data name="Signup.BusinessCategory.Cafe" xml:space="preserve"><value>Café</value></data>
+  <data name="Signup.BusinessCategory.Bakery" xml:space="preserve"><value>Bakery &amp; Pastry</value></data>
+  <data name="Signup.BusinessCategory.Dessert" xml:space="preserve"><value>Desserts</value></data>
+  <data name="Signup.BusinessCategory.WorldCuisine" xml:space="preserve"><value>World Cuisine</value></data>
+  <data name="Signup.BusinessCategory.SpecialDiet" xml:space="preserve"><value>Special Diet</value></data>
+  <data name="Signup.BusinessCategory.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Signup.BusinessSubtype.Kebab" xml:space="preserve"><value>Kebab</value></data>
+  <data name="Signup.BusinessSubtype.HomeCooking" xml:space="preserve"><value>Home Cooking</value></data>
+  <data name="Signup.BusinessSubtype.Steakhouse" xml:space="preserve"><value>Steakhouse</value></data>
+  <data name="Signup.BusinessSubtype.Seafood" xml:space="preserve"><value>Seafood</value></data>
+  <data name="Signup.BusinessSubtype.Manti" xml:space="preserve"><value>Turkish Dumplings</value></data>
+  <data name="Signup.BusinessSubtype.Soup" xml:space="preserve"><value>Soup</value></data>
+  <data name="Signup.BusinessSubtype.Burger" xml:space="preserve"><value>Burger</value></data>
+  <data name="Signup.BusinessSubtype.Pizza" xml:space="preserve"><value>Pizza</value></data>
+  <data name="Signup.BusinessSubtype.Doner" xml:space="preserve"><value>Döner</value></data>
+  <data name="Signup.BusinessSubtype.Chicken" xml:space="preserve"><value>Chicken</value></data>
+  <data name="Signup.BusinessSubtype.CigKofte" xml:space="preserve"><value>Çiğ Köfte</value></data>
+  <data name="Signup.BusinessSubtype.SandwichToast" xml:space="preserve"><value>Sandwich / Toast</value></data>
+  <data name="Signup.BusinessSubtype.Cafe" xml:space="preserve"><value>Café</value></data>
+  <data name="Signup.BusinessSubtype.Breakfast" xml:space="preserve"><value>Breakfast</value></data>
+  <data name="Signup.BusinessSubtype.Patisserie" xml:space="preserve"><value>Patisserie</value></data>
+  <data name="Signup.BusinessSubtype.PideLahmacun" xml:space="preserve"><value>Pide / Lahmacun</value></data>
+  <data name="Signup.BusinessSubtype.BorekGozleme" xml:space="preserve"><value>Börek / Gözleme</value></data>
+  <data name="Signup.BusinessSubtype.DessertShop" xml:space="preserve"><value>Dessert Shop</value></data>
+  <data name="Signup.BusinessSubtype.IceCream" xml:space="preserve"><value>Ice Cream</value></data>
+  <data name="Signup.BusinessSubtype.WaffleCrepe" xml:space="preserve"><value>Waffle / Crêpe</value></data>
+  <data name="Signup.BusinessSubtype.Sushi" xml:space="preserve"><value>Sushi</value></data>
+  <data name="Signup.BusinessSubtype.Asian" xml:space="preserve"><value>Asian Cuisine</value></data>
+  <data name="Signup.BusinessSubtype.Italian" xml:space="preserve"><value>Pasta / Italian</value></data>
+  <data name="Signup.BusinessSubtype.WorldCuisine" xml:space="preserve"><value>World Cuisine</value></data>
+  <data name="Signup.BusinessSubtype.VeganVegetarian" xml:space="preserve"><value>Vegan / Vegetarian</value></data>
+  <data name="Signup.BusinessSubtype.Healthy" xml:space="preserve"><value>Healthy / Fit Meals</value></data>
+  <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>Select at least one business subtype.</value></data>
+  <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>Select at least one subtype for each chosen category.</value></data>
 </root>

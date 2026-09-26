@@ -57,6 +57,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
+        services.AddScoped<ITenantBusinessSubtypeReader, TenantBusinessSubtypeReader>();
 
         var providerMode = ProviderModeResolver.Resolve(configuration);
 

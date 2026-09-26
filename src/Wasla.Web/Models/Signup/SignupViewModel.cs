@@ -112,6 +112,8 @@ public sealed class SignupViewModel
 
     public IReadOnlyList<SignupBusinessTypeOption> BusinessTypeOptions { get; set; } = Array.Empty<SignupBusinessTypeOption>();
 
+    public IReadOnlyList<SignupBusinessCategoryGroup> BusinessCategories { get; set; } = Array.Empty<SignupBusinessCategoryGroup>();
+
     public IReadOnlyList<SignupCityOption> Cities { get; set; } = Array.Empty<SignupCityOption>();
 
     public IReadOnlyList<SelectListItem> CityOptions { get; set; } = Array.Empty<SelectListItem>();

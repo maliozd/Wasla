@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.Checkout;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
+using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Web.Models.Checkout;
@@ -180,7 +181,7 @@ public sealed class CheckoutController : Controller
             PlanDisplayName = planDisplay,
             BillingPeriod = details.BillingPeriod,
             BusinessName = details.BusinessName,
-            BusinessTypesDisplay = details.BusinessTypesDisplay,
+            BusinessTypesDisplay = LocalizeBusinessTypes(details),
             PrimaryDomain = details.PrimaryDomain,
             BusinessPhone = details.BusinessPhone,
             OwnerFullName = details.OwnerFullName,
@@ -195,6 +196,28 @@ public sealed class CheckoutController : Controller
             CanCancel = canCancel,
             StatusNoticeKey = statusNoticeKey
         };
+    }
+
+    private string LocalizeBusinessTypes(PendingRegistrationCheckoutDetails details)
+    {
+        if (details.BusinessTypeCodes is not { Count: > 0 })
+            return details.BusinessTypesDisplay;
+
+        var labels = new List<string>();
+        foreach (var code in details.BusinessTypeCodes)
+        {
+            var key = BusinessSubtypeCatalog.ResourceKeyForCode(code);
+            if (key is null)
+            {
+                labels.Add(code);
+                continue;
+            }
+
+            var localized = _localizer[key].Value;
+            labels.Add(string.IsNullOrWhiteSpace(localized) ? code : localized);
+        }
+
+        return labels.Count == 0 ? details.BusinessTypesDisplay : string.Join(", ", labels);
     }
 
     private static string BuildAddressSummary(PendingRegistrationCheckoutDetails details)
