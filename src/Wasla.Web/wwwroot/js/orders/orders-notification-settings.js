@@ -87,7 +87,7 @@
 
     if (color && String(color).startsWith("#")) {
       preview.classList.add("highlight-color-custom");
-      preview.style.setProperty("--new-order-highlight-bg", hexToRgba(color, 0.18));
+      preview.style.setProperty("--new-order-highlight-bg", hexToRgba(color, 0.45));
       preview.style.setProperty("--new-order-highlight-border", String(color));
     } else {
       preview.classList.add("highlight-color-" + (color || "yellow"));
@@ -151,23 +151,20 @@
     warn.classList.add("d-none");
     warn.textContent = "";
 
+    const audioState = O.audio.getAudioState ? O.audio.getAudioState() : "unknown";
     if (!state.newOrderSoundEnabled) {
       badge.className = "badge text-bg-secondary";
       badge.textContent = O.getMessage("notificationsOff");
       help.textContent = O.getMessage("notificationsOffHelp");
-      return;
-    }
-
-    if (!O.audio.isSoundUnlocked()) {
+    } else if (audioState === "blocked") {
       badge.className = "badge text-bg-warning";
       badge.textContent = O.getMessage("waitingForAudio");
       help.textContent = O.getMessage("waitingForAudioHelp");
-      return;
+    } else {
+      badge.className = "badge text-bg-success";
+      badge.textContent = O.getMessage("notificationsOn");
+      help.textContent = O.getMessage("notificationsOnHelp");
     }
-
-    badge.className = "badge text-bg-success";
-    badge.textContent = O.getMessage("notificationsOn");
-    help.textContent = O.getMessage("notificationsOnHelp");
   }
 
   function showModalWarning(text) {
@@ -251,6 +248,9 @@
       }
 
       O.state.notificationSettings = mergeDefaultNotificationState(json);
+      if (O.audio && typeof O.audio.syncSoundEnableUi === "function") {
+        O.audio.syncSoundEnableUi();
+      }
     } catch (error) {
       if (global.WaslaToast) {
         global.WaslaToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
@@ -289,17 +289,27 @@
       });
     }
 
+    const stopPreviewBtn = document.getElementById("notificationPreviewStopSound");
+    if (stopPreviewBtn) {
+      on(stopPreviewBtn, "click", function () {
+        if (O.audio && typeof O.audio.stopTestPreview === "function") {
+          O.audio.stopTestPreview();
+        }
+      });
+    }
+
     const testSelectedBtn = document.getElementById("testSelectedSoundBtn");
     if (testSelectedBtn) {
       on(testSelectedBtn, "click", async function () {
         const st = getModalState();
-        await O.audio.maybeRequestBrowserNotificationPermission(st);
         if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
           O.audio.stopCurrentPreviewSound();
         }
         const opt = soundSel && soundSel.options[soundSel.selectedIndex];
         const url = opt && opt.getAttribute("data-sound-url");
-        await O.audio.playSoundNow(st, url || null);
+        const playback = O.audio.playSoundNow(st, url || null, "test");
+        await O.audio.maybeRequestBrowserNotificationPermission(st);
+        await playback;
         updateNotificationStatusUi(getModalState());
       });
     }
@@ -343,7 +353,9 @@
     const modalEl = document.getElementById("notificationSettingsModal");
     if (modalEl) {
       on(modalEl, "hidden.bs.modal", function () {
-        if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
+        if (O.audio && typeof O.audio.stopTestPreview === "function") {
+          O.audio.stopTestPreview();
+        } else if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
           O.audio.stopCurrentPreviewSound();
         }
         if (notificationSettingsBindingsAbort) {
@@ -430,6 +442,10 @@
   }
 
   async function openNotificationSettingsModal() {
+    if (!O.state.notificationSettings) {
+      await loadNotificationSettings();
+    }
+
     var resp;
     try {
       resp = await fetch(O.opts.notificationSettingsUrl, { headers: { "X-Requested-With": "fetch" } });

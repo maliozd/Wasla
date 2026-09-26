@@ -8,13 +8,20 @@
   }
 
   const SOUND_UNLOCK_KEY = "Wasla.soundUnlocked";
+  const AUDIO_UNKNOWN = "unknown";
+  const AUDIO_ALLOWED = "allowed";
+  const AUDIO_BLOCKED = "blocked";
 
   let currentPreviewAudio = null;
   let currentAlertAudio = null;
   let sessionUnlocked = false;
+  let audioState = AUDIO_UNKNOWN;
+  let soundPreferenceEnabled = false;
   let unlockPromptShown = false;
   let unlockGesturesBound = false;
+  let unlockHandler = null;
   let alertPlaybackToken = 0;
+  let testPreviewActive = false;
 
   function persistUnlockFlag() {
     try {
@@ -28,9 +35,20 @@
     return sessionUnlocked === true;
   }
 
+  function isPermissionDenial(error) {
+    return !!(error && error.name === "NotAllowedError");
+  }
+
+  function isSoundEnabled() {
+    const settings = O.state && O.state.notificationSettings;
+    return !!(settings && settings.newOrderSoundEnabled);
+  }
+
   function markSoundUnlocked() {
     sessionUnlocked = true;
+    audioState = AUDIO_ALLOWED;
     persistUnlockFlag();
+    detachUnlockGestures();
   }
 
   function stopAudioElement(audio) {
@@ -74,30 +92,77 @@
     setElementVisible(document.getElementById("ordersLiveDisplayStopSound"), visible);
   }
 
+  function setPreviewStopVisible(visible) {
+    const el = document.getElementById("notificationPreviewStopSound");
+    setElementVisible(el, visible);
+    if (el) {
+      el.disabled = !visible;
+    }
+  }
+
   function stopCurrentSound() {
     alertPlaybackToken += 1;
     stopCurrentPreviewSound();
     stopCurrentAlertSound();
     setStopSoundVisible(false);
+    testPreviewActive = false;
+    setPreviewStopVisible(false);
+  }
+
+  function stopTestPreview() {
+    if (!testPreviewActive) {
+      stopCurrentPreviewSound();
+      setPreviewStopVisible(false);
+      return;
+    }
+    stopCurrentSound();
+  }
+
+  function syncSoundPreferenceStatus(enabled, settingsKnown) {
+    const status = document.getElementById("ordersLiveDisplaySoundStatus");
+    if (!status || !settingsKnown || typeof status.getAttribute !== "function") {
+      return;
+    }
+    status.textContent = enabled
+      ? (status.getAttribute("data-label-active") || "")
+      : (status.getAttribute("data-label-disabled") || "");
+    status.classList.toggle("wasla-orders-status-chip--active", enabled);
+    status.classList.toggle("wasla-orders-status-chip--muted", !enabled);
   }
 
   function syncSoundEnableUi() {
-    const unlocked = isSoundUnlocked();
+    const enabled = isSoundEnabled();
+    const settingsKnown = !!(O.state && O.state.notificationSettings);
+    const showBanner = enabled && audioState === AUDIO_BLOCKED;
     const liveBanner = document.getElementById("ordersLiveDisplaySoundBanner");
     const liveActive = document.getElementById("ordersLiveDisplaySoundActive");
     const liveEnableBtn = document.getElementById("ordersLiveDisplayEnableNotificationSound");
 
-    setElementVisible(liveBanner, !unlocked);
-    setElementVisible(liveEnableBtn, !unlocked);
-    setElementVisible(liveActive, unlocked);
+    if (!enabled && soundPreferenceEnabled) {
+      stopCurrentSound();
+    }
 
-    if (unlocked && liveActive && !liveActive.dataset.fadeScheduled) {
+    setElementVisible(liveBanner, showBanner);
+    setElementVisible(liveEnableBtn, showBanner);
+    syncSoundPreferenceStatus(enabled, settingsKnown);
+    soundPreferenceEnabled = enabled;
+
+    const unlocked = isSoundUnlocked();
+    setElementVisible(liveActive, enabled && unlocked);
+
+    if (enabled && unlocked && liveActive && !liveActive.dataset.fadeScheduled) {
       liveActive.dataset.fadeScheduled = "1";
       global.setTimeout(function () {
         if (isSoundUnlocked()) {
           setElementVisible(liveActive, false);
         }
       }, 4000);
+    }
+
+    if (enabled && audioState !== AUDIO_ALLOWED) {
+      ensureUnlockGestures();
+    } else {
+      detachUnlockGestures();
     }
   }
 
@@ -117,14 +182,16 @@
 
   function handlePlayRejection(error) {
     O.debugWarn("audio.play() rejected", error);
-    if (error && error.name === "NotAllowedError") {
+    if (isPermissionDenial(error)) {
+      audioState = AUDIO_BLOCKED;
       showUnlockPromptOnce();
-      bindUnlockGestures();
       O.showOrdersWarning("audio-not-allowed", O.getMessage("audioNotAllowed"));
-    } else {
-      O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
+      syncSoundEnableUi();
+      return true;
     }
+    O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
     syncSoundEnableUi();
+    return false;
   }
 
   function getSoundUrlFromSettings(name) {
@@ -149,19 +216,23 @@
   }
 
   async function trySilentUnlock(url) {
+    if (!isSoundEnabled() || audioState === AUDIO_ALLOWED) {
+      return false;
+    }
+    const audio = new Audio(url || getSoundUrlFromSettings("bell1"));
+    audio.volume = 0.01;
     try {
-      const audio = new Audio(url || getSoundUrlFromSettings("bell1"));
-      audio.volume = 0.01;
       await audio.play();
-      stopAudioElement(audio);
-      markSoundUnlocked();
-      unlockPromptShown = true;
-      syncSoundEnableUi();
-      return true;
     } catch (error) {
+      stopAudioElement(audio);
       O.debugWarn("silent audio unlock failed", error);
       return false;
     }
+    stopAudioElement(audio);
+    markSoundUnlocked();
+    unlockPromptShown = true;
+    syncSoundEnableUi();
+    return true;
   }
 
   async function enableNotificationSoundFromControl() {
@@ -220,16 +291,30 @@
     }
   }
 
-  function bindUnlockGestures() {
-    if (unlockGesturesBound || typeof document === "undefined") {
+  function detachUnlockGestures() {
+    if (unlockHandler && typeof document !== "undefined" && typeof document.removeEventListener === "function") {
+      ["pointerdown", "keydown", "touchstart"].forEach(function (evt) {
+        document.removeEventListener(evt, unlockHandler, true);
+      });
+    }
+    unlockHandler = null;
+    unlockGesturesBound = false;
+  }
+
+  function ensureUnlockGestures() {
+    if (unlockGesturesBound || typeof document === "undefined" || typeof document.addEventListener !== "function") {
+      return;
+    }
+    if (!isSoundEnabled() || audioState === AUDIO_ALLOWED) {
       return;
     }
     unlockGesturesBound = true;
 
-    const onUserGesture = function (event) {
-      if (event && event.target && event.target.closest && event.target.closest(".wasla-orders-sound-enable-btn, #ordersLiveDisplayStopSound")) {
+    unlockHandler = function (event) {
+      if (event && event.target && event.target.closest && event.target.closest(".wasla-orders-sound-enable-btn, #ordersLiveDisplayStopSound, #notificationPreviewStopSound")) {
         return;
       }
+      detachUnlockGestures();
       trySilentUnlock().then(function (ok) {
         if (ok && O.notificationSettings && typeof O.notificationSettings.updateNotificationStatusUi === "function") {
           try {
@@ -242,17 +327,35 @@
     };
 
     ["pointerdown", "keydown", "touchstart"].forEach(function (evt) {
-      document.addEventListener(evt, onUserGesture, { once: true, capture: true, passive: true });
+      document.addEventListener(evt, unlockHandler, { capture: true, passive: true });
     });
   }
 
-  async function playSoundNow(state, urlOverride) {
-    stopCurrentSound();
-    const token = alertPlaybackToken;
+  function bindUnlockGestures() {
+    ensureUnlockGestures();
+  }
+
+  async function playSoundNow(state, urlOverride, playbackDiag) {
+    const testDiag = playbackDiag === "test";
+    if (!testDiag && (!isSoundEnabled() || !state || !state.newOrderSoundEnabled)) {
+      return;
+    }
+    if (!state) {
+      if (testDiag) {
+        O.debugWarn("test playback skipped", { reason: "missing-preview-state" });
+      }
+      return;
+    }
     const repeat = Math.max(1, Math.min(3, state.newOrderSoundRepeatCount || 1));
     const pct = state.newOrderSoundVolumePercent;
     const vol = Math.max(0, Math.min(1, (pct || 100) / 100.0));
     const url = urlOverride || getSoundUrlFromSettings(state.newOrderSoundName);
+    stopCurrentSound();
+    if (testDiag) {
+      testPreviewActive = true;
+    }
+    const token = alertPlaybackToken;
+    let denied = false;
 
     O.debugLog("Playing new order sound", {
       enabled: !!state.newOrderSoundEnabled,
@@ -266,6 +369,9 @@
     for (let i = 0; i < repeat; i++) {
       if (token !== alertPlaybackToken) {
         return;
+      }
+      if (testDiag) {
+        setPreviewStopVisible(true);
       }
       try {
         const audio = new Audio(url);
@@ -293,29 +399,51 @@
 
           audio.addEventListener("ended", done, { once: true });
           audio.addEventListener("error", done, { once: true });
+          audio.addEventListener("pause", function () {
+            if (token !== alertPlaybackToken) {
+              done();
+            }
+          });
           const playResult = audio.play();
           if (playResult && typeof playResult.then === "function") {
             playResult.then(function () {
+              if (token !== alertPlaybackToken) {
+                return;
+              }
               markSoundUnlocked();
               syncSoundEnableUi();
             }).catch(function (error) {
-              handlePlayRejection(error);
+              if (token !== alertPlaybackToken) {
+                done();
+                return;
+              }
+              denied = handlePlayRejection(error);
               done();
             });
           }
         });
+
+        if (denied || token !== alertPlaybackToken) {
+          break;
+        }
 
         if (currentAlertAudio === audio) {
           currentAlertAudio = null;
         }
       } catch (error) {
         O.debugWarn("playSoundNow failed", error);
-        O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
+        if (!isPermissionDenial(error)) {
+          O.showOrdersWarning("audio-play-failed", O.getMessage("audioPlayFailed"));
+        }
       }
     }
 
     if (token === alertPlaybackToken) {
       setStopSoundVisible(false);
+      if (testDiag) {
+        testPreviewActive = false;
+        setPreviewStopVisible(false);
+      }
     }
   }
 
@@ -377,14 +505,15 @@
   function initAudioUnlock() {
     wireSoundEnableControls();
     syncSoundEnableUi();
-    bindUnlockGestures();
   }
 
   O.audio = {
     isSoundUnlocked: isSoundUnlocked,
+    getAudioState: function () { return audioState; },
     markSoundUnlocked: markSoundUnlocked,
     stopCurrentPreviewSound: stopCurrentPreviewSound,
     stopCurrentSound: stopCurrentSound,
+    stopTestPreview: stopTestPreview,
     getSoundUrlFromSettings: getSoundUrlFromSettings,
     playSoundNow: playSoundNow,
     playSoundPreview: playSoundPreview,

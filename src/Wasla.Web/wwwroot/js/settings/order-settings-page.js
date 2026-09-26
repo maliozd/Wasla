@@ -22,5 +22,8 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     bindNotificationSettingsButton();
+    if (typeof O.notificationSettings.load === "function") {
+      O.notificationSettings.load();
+    }
   });
 })(window);
