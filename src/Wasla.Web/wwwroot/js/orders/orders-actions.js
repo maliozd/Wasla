@@ -104,10 +104,10 @@
     if (!ok) return;
 
     const liveStore = O.opts.pageMode === "liveDisplay" ? O.liveStore : null;
-    btn.disabled = true;
     const endMutation = liveStore && typeof liveStore.beginMutation === "function"
-      ? liveStore.beginMutation()
+      ? liveStore.beginMutation(btn)
       : null;
+    btn.disabled = true;
     try {
       const url = "/orders/" + encodeURIComponent(orderId) + "/" + encodeURIComponent(action);
       const result = await postAction(url);

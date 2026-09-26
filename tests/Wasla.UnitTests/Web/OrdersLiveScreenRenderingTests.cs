@@ -8,12 +8,13 @@ namespace Wasla.UnitTests.Web;
 public sealed class OrdersLiveScreenRenderingTests
 {
     [Fact]
-    public void LiveDisplay_RendersDedicatedLiveScreenPartial()
+    public void LiveDisplay_WaitsForSelectedViewSnapshotWithoutDuplicateInitialCards()
     {
         var liveView = Read("Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
         var partial = Read("Areas", "Tenant", "Views", "Orders", "_LiveScreenOrders.cshtml");
 
-        Assert.Contains("@await Html.PartialAsync(\"_LiveScreenOrders\", Model)", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("Html.PartialAsync(\"_LiveScreenOrders\", Model)", liveView, StringComparison.Ordinal);
+        Assert.Contains("data-live-loading", liveView, StringComparison.Ordinal);
         Assert.Contains("ordersLiveScreenHost", liveView, StringComparison.Ordinal);
         Assert.Contains("wasla-live-screen-card", partial, StringComparison.Ordinal);
         Assert.Contains("wasla-live-screen-card__items", partial, StringComparison.Ordinal);

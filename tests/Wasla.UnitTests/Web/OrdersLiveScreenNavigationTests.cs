@@ -84,6 +84,9 @@ public sealed class OrdersLiveScreenNavigationTests
             Assert.True(resources.TryGetValue("Orders.LiveDisplay.Subtitle", out var liveSubtitle), $"Orders.LiveDisplay.Subtitle missing for {culture}.");
             Assert.False(string.IsNullOrWhiteSpace(liveSubtitle), $"Orders.LiveDisplay.Subtitle empty for {culture}.");
 
+            Assert.True(resources.TryGetValue("Orders.LiveDisplay.LiveStatus", out var liveStatus), $"Orders.LiveDisplay.LiveStatus missing for {culture}.");
+            Assert.False(string.IsNullOrWhiteSpace(liveStatus), $"Orders.LiveDisplay.LiveStatus empty for {culture}.");
+
             Assert.True(resources.TryGetValue("Orders.Subtitle", out var ordersSubtitle), $"Orders.Subtitle missing for {culture}.");
             Assert.False(string.IsNullOrWhiteSpace(ordersSubtitle), $"Orders.Subtitle empty for {culture}.");
         }
@@ -137,10 +140,13 @@ public sealed class OrdersLiveScreenNavigationTests
     {
         var liveView = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
 
-        Assert.Contains("_LiveScreenOrders", liveView, StringComparison.Ordinal);
+        Assert.Contains("data-live-loading", liveView, StringComparison.Ordinal);
         Assert.Contains("ordersLiveScreenHost", liveView, StringComparison.Ordinal);
         Assert.Contains("liveDataUrl: \"/orders/live-data\"", liveView, StringComparison.Ordinal);
-        Assert.Contains("@L[\"Orders.LiveDisplay.Subtitle\"]", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("@L[\"Orders.LiveDisplay.Subtitle\"]", liveView, StringComparison.Ordinal);
+        Assert.Contains("@L[\"Orders.LiveDisplay.LiveStatus\"]", liveView, StringComparison.Ordinal);
+        Assert.Contains("<h1 class=\"wasla-live-display-header__title wasla-fs-header__title mb-0\">@customerName</h1>", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("@L[\"Orders.LiveDisplay.Title\"]</h1>", liveView, StringComparison.Ordinal);
         Assert.Contains("F11", liveView, StringComparison.Ordinal);
         Assert.Contains("ordersLiveDisplayClose", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain("data-orders-view-mode=", liveView, StringComparison.Ordinal);
@@ -148,12 +154,14 @@ public sealed class OrdersLiveScreenNavigationTests
     }
 
     [Fact]
-    public void LiveViewScript_FallsBackToCardsWhenStoredViewIsUnknown()
+    public void LiveViewScript_FallsBackToBoardWhenStoredViewIsUnknown()
     {
         var liveViewScript = ReadRepositoryFile("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-view.js");
 
-        Assert.Contains("const DEFAULT_VIEW = \"cards\";", liveViewScript, StringComparison.Ordinal);
-        Assert.Contains("VIEWS.indexOf(view) >= 0 ? view : DEFAULT_VIEW", liveViewScript, StringComparison.Ordinal);
+        Assert.Contains("const DEFAULT_VIEW = \"board\";", liveViewScript, StringComparison.Ordinal);
+        Assert.Contains("const VIEWS = [\"board\", \"list\", \"focus\"];", liveViewScript, StringComparison.Ordinal);
+        Assert.Contains("if (view === \"cards\") return DEFAULT_VIEW;", liveViewScript, StringComparison.Ordinal);
+        Assert.Contains("persist: stored === \"cards\"", liveViewScript, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
     <value>{0} мин</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve">
+    <value>{0} ч {1} мин</value>
+  </data>
   <data name="Orders.LiveScreen.ViewCards" xml:space="preserve">
     <value>Карточки</value>
   </data>
@@ -661,7 +664,7 @@
     <value>Не удалось добавить чек в очередь печати.</value>
   </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
-    <value>Открыть заказ полностью</value>
+    <value>Открыть заказ</value>
   </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Закрыть дисплей</value>
@@ -677,6 +680,12 @@
   </data>
   <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
     <value>Последнее обновление</value>
+  </data>
+  <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
+    <value>В эфире</value>
+  </data>
+  <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
+    <value>Звук уведомлений</value>
   </data>
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>Всплывающее окно было заблокировано. Открытие живого дисплея на этой вкладке.</value>
@@ -3999,4 +4008,20 @@
   <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>Нет подходящих пользователей</value></data>
   <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>Измените поиск или фильтры и попробуйте снова.</value></data>
   <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>Не записано</value></data>
+  <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Доска</value></data>
+  <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Завершённые</value></data>
+  <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>Нет заказов</value></data>
+  <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Заказ</value></data>
+  <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Время</value></data>
+  <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>Итого</value></data>
+  <data name="Orders.LiveScreen.ItemNote" xml:space="preserve"><value>Примечание</value></data>
+  <data name="Orders.LiveScreen.OrderNote" xml:space="preserve"><value>Примечание к заказу</value></data>
+  <data name="Orders.LiveScreen.ViewFocus" xml:space="preserve"><value>Фокус</value></data>
+  <data name="Orders.LiveScreen.SelectOrder" xml:space="preserve"><value>Выберите заказ</value></data>
+  <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Выберите заказ из списка, чтобы увидеть подробности и действия.</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Сейчас нет заказов для отображения</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Заказы появятся здесь, когда поступят.</value></data>
+  <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Назад к заказам</value></data>
+  <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Заказы</value></data>
 </root>

@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
     <value>{0} dk</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve">
+    <value>{0} sa {1} dk</value>
+  </data>
   <data name="Orders.LiveScreen.ViewCards" xml:space="preserve">
     <value>Kartlar</value>
   </data>
@@ -661,7 +664,7 @@
     <value>Fiş yazdırma kuyruğuna eklenemedi.</value>
   </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
-    <value>Sipariş sayfasını aç</value>
+    <value>Siparişi aç</value>
   </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Ekranı Kapat</value>
@@ -677,6 +680,12 @@
   </data>
   <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
     <value>Son güncelleme</value>
+  </data>
+  <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
+    <value>Canlı</value>
+  </data>
+  <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
+    <value>Bildirim sesi</value>
   </data>
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>Açılır pencere engellendi. Canlı ekran bu sekmede açılıyor.</value>
@@ -3512,4 +3521,20 @@
   <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>Eşleşen kullanıcı bulunamadı</value></data>
   <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>Arama veya filtreleri değiştirip yeniden deneyin.</value></data>
   <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>Kayıt yok</value></data>
+  <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Pano</value></data>
+  <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Tamamlanan</value></data>
+  <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>Sipariş yok</value></data>
+  <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Sipariş</value></data>
+  <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Süre</value></data>
+  <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>Toplam</value></data>
+  <data name="Orders.LiveScreen.ItemNote" xml:space="preserve"><value>Not</value></data>
+  <data name="Orders.LiveScreen.OrderNote" xml:space="preserve"><value>Sipariş notu</value></data>
+  <data name="Orders.LiveScreen.ViewFocus" xml:space="preserve"><value>Odak</value></data>
+  <data name="Orders.LiveScreen.SelectOrder" xml:space="preserve"><value>Bir sipariş seçin</value></data>
+  <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Ayrıntıları ve işlemleri görmek için listeden bir sipariş seçin.</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Şu anda gösterilecek sipariş yok</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Siparişler geldiğinde burada görünecek.</value></data>
+  <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Siparişlere dön</value></data>
+  <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Yeniden dene</value></data>
+  <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Siparişler</value></data>
 </root>

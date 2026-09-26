@@ -246,13 +246,16 @@ public sealed class OrdersLiveScreenSeparationTests
         var liveViewJs = Read("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-view.js");
         var css = Read("src", "Wasla.Web", "wwwroot", "css", "wasla-theme.css");
 
-        Assert.Contains("data-live-screen-view=\"cards\"", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-live-screen-view=\"cards\"", liveView, StringComparison.Ordinal);
         Assert.Contains("data-live-screen-view=\"list\"", liveView, StringComparison.Ordinal);
-        Assert.Equal(1, CountOccurrences(liveView, "Html.PartialAsync(\"_LiveScreenOrders\", Model)"));
+        Assert.Contains("data-live-screen-view=\"board\"", liveView, StringComparison.Ordinal);
+        Assert.Equal(0, CountOccurrences(liveView, "Html.PartialAsync(\"_LiveScreenOrders\", Model)"));
 
         Assert.Contains("localStorage.setItem(storageKey(), view)", liveViewJs, StringComparison.Ordinal);
         Assert.Contains("wasla-live-screen-host--list", liveViewJs, StringComparison.Ordinal);
         Assert.Contains(".wasla-live-screen-host--list .wasla-live-screen-card", css, StringComparison.Ordinal);
+        Assert.Contains(".wasla-live-screen-host.wasla-live-screen-host--board", css, StringComparison.Ordinal);
+        Assert.Contains("overflow-x: auto;", css, StringComparison.Ordinal);
 
         // A view switch must not re-fetch orders or reset live state.
         Assert.DoesNotContain("fetch(", liveViewJs, StringComparison.Ordinal);
@@ -281,6 +284,9 @@ public sealed class OrdersLiveScreenSeparationTests
         Assert.Equal(1, CountOccurrences(liveView, "id=\"ordersLiveDetailModal\""));
         Assert.Contains("getOrCreateInstance", modalJs, StringComparison.Ordinal);
         Assert.Contains("document.addEventListener(\"click\"", modalJs, StringComparison.Ordinal);
+        Assert.Contains("openDetail(orderId, trigger)", modalJs, StringComparison.Ordinal);
+        Assert.Contains("restoreDetailFocus()", modalJs, StringComparison.Ordinal);
+        Assert.Contains("anotherModalIsOpen()", modalJs, StringComparison.Ordinal);
 
         // Lifecycle rules stay server-side: the panel renders the shared partial under CanManageOrders.
         Assert.Contains("TenantPolicies.CanManageOrders", panel, StringComparison.Ordinal);
@@ -302,7 +308,8 @@ public sealed class OrdersLiveScreenSeparationTests
         Assert.Equal(0, CountOccurrences(beforeInit, "addEventListener("));
         Assert.Equal(4, CountOccurrences(modalJs, "addEventListener("));
         Assert.DoesNotContain("body.addEventListener", modalJs, StringComparison.Ordinal);
-        Assert.Contains("inFlight.abort()", modalJs, StringComparison.Ordinal);
+        Assert.Contains("client().cancel(\"modal\")", modalJs, StringComparison.Ordinal);
+        Assert.Equal(1, CountOccurrences(modalJs, "async function loadDetail("));
     }
 
     [Fact]
@@ -331,6 +338,18 @@ public sealed class OrdersLiveScreenSeparationTests
             {
                 "Orders.LiveScreen.ViewCards",
                 "Orders.LiveScreen.ViewList",
+                "Orders.LiveScreen.ViewFocus",
+                "Orders.LiveScreen.ColumnOrder",
+                "Orders.LiveScreen.ColumnElapsed",
+                "Orders.LiveScreen.ListTotal",
+                "Orders.LiveScreen.ItemNote",
+                "Orders.LiveScreen.SelectOrder",
+                "Orders.LiveScreen.SelectOrderDescription",
+                "Orders.LiveScreen.NoDisplayableOrders",
+                "Orders.LiveScreen.NoDisplayableOrdersDescription",
+                "Orders.LiveScreen.BackToQueue",
+                "Orders.LiveScreen.DetailRetry",
+                "Orders.LiveScreen.Queue",
                 "Orders.LiveScreen.DetailLoadFailed",
                 "Orders.LiveScreen.ConnectionStale",
                 "Orders.LiveScreen.SessionExpired",
@@ -356,14 +375,69 @@ public sealed class OrdersLiveScreenSeparationTests
         var ordersView = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "Index.cshtml");
         var panel = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "_OrderDetailPanel.cshtml");
 
-        Assert.Contains("@L[\"Orders.LiveScreen.ViewCards\"]", liveView, StringComparison.Ordinal);
+        Assert.Contains("@L[\"Orders.LiveScreen.ViewBoard\"]", liveView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.LiveScreen.ViewList\"]", liveView, StringComparison.Ordinal);
+        Assert.Contains("@L[\"Orders.LiveScreen.ViewFocus\"]", liveView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.History.Search\"]", ordersView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.Details.OpenFullOrder\"]", panel, StringComparison.Ordinal);
 
         Assert.DoesNotContain(">Cards<", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain(">List<", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain(">Search<", ordersView, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LiveDetailModal_ShowsOrderNoteAndLeavesCurrencyToTheSharedFormatter()
+    {
+        var panel = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "_OrderDetailPanel.cshtml");
+        var helper = Read("src", "Wasla.Web", "Ui", "OrderUiHelper.cs");
+        var details = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "Details.cshtml");
+        var viewModel = Read("src", "Wasla.Web", "Models", "Orders", "OrderDetailViewModel.cs");
+        var controller = Read("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "OrdersController.cs");
+        var detail = Read("src", "Wasla.Application", "Abstractions", "Orders", "OrderDetailResult.cs");
+        var readService = Read("src", "Wasla.Infrastructure", "Services", "OrderReadService.cs");
+        var modalJs = Read("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-detail-modal.js");
+        var storeJs = Read("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-store.js");
+        var theme = Read("src", "Wasla.Web", "wwwroot", "css", "wasla-theme.css");
+
+        var noteAt = panel.IndexOf("wasla-live-detail-order-note", StringComparison.Ordinal);
+        var bodyAt = panel.IndexOf("wasla-live-detail__body", StringComparison.Ordinal);
+        var itemNoteAt = panel.IndexOf("wasla-live-detail__note", StringComparison.Ordinal);
+        Assert.True(noteAt > 0 && bodyAt > noteAt && itemNoteAt > bodyAt);
+
+        Assert.Contains("!string.IsNullOrWhiteSpace(Model.CustomerNote)", panel, StringComparison.Ordinal);
+        Assert.Contains("@L[\"Orders.LiveScreen.OrderNote\"]", panel, StringComparison.Ordinal);
+        Assert.Contains("@Model.CustomerNote", panel, StringComparison.Ordinal);
+        Assert.Contains("@i.Notes", panel, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-order-note", panel, StringComparison.Ordinal);
+        Assert.Contains("public string? CustomerNote { get; set; }", viewModel, StringComparison.Ordinal);
+        Assert.Contains("public string? CustomerNote { get; init; }", detail, StringComparison.Ordinal);
+        Assert.Contains("CustomerNote = order.CustomerNote", controller, StringComparison.Ordinal);
+        Assert.Contains(
+            "CustomerNote = string.IsNullOrWhiteSpace(order.CustomerNote) ? null : order.CustomerNote.Trim()",
+            readService,
+            StringComparison.Ordinal);
+
+        Assert.Contains("data-money=\"@InvariantAmount(i.TotalPrice)\"", panel, StringComparison.Ordinal);
+        Assert.Contains("data-money=\"@InvariantAmount(o.Price)\"", panel, StringComparison.Ordinal);
+        Assert.Contains("data-money-wrap=\"surcharge\"", panel, StringComparison.Ordinal);
+        Assert.Contains("data-money=\"@InvariantAmount(Model.DeliveryFee)\"", panel, StringComparison.Ordinal);
+        Assert.Contains("data-money=\"@InvariantAmount(Model.ServiceFee)\"", panel, StringComparison.Ordinal);
+        Assert.Contains("data-money=\"@InvariantAmount(Model.TotalAmount)\"", panel, StringComparison.Ordinal);
+        Assert.Contains("OrderUiHelper.FormatAmount", panel, StringComparison.Ordinal);
+        Assert.DoesNotContain("ToString(\"C\"", panel, StringComparison.Ordinal);
+        Assert.DoesNotContain("₺", panel, StringComparison.Ordinal);
+        Assert.DoesNotContain(" TL", panel, StringComparison.Ordinal);
+        Assert.Contains("amount.ToString(\"N2\", CultureInfo.CurrentCulture)", helper, StringComparison.Ordinal);
+        Assert.Contains("ToString(\"C\"", details, StringComparison.Ordinal);
+
+        Assert.Contains("consumer !== \"modal\" && consumer !== \"focus\"", modalJs, StringComparison.Ordinal);
+        Assert.Contains("O.applyDetailCurrency(container, culture)", modalJs, StringComparison.Ordinal);
+        Assert.Contains("function applyDetailCurrency", storeJs, StringComparison.Ordinal);
+        Assert.Contains("formatAmount(raw, culture)", storeJs, StringComparison.Ordinal);
+        Assert.Contains("String(raw).trim() === \"\"", storeJs, StringComparison.Ordinal);
+        Assert.Contains("overflow-wrap: anywhere", theme.Substring(theme.IndexOf(".wasla-live-detail-order-note__text", StringComparison.Ordinal), 280), StringComparison.Ordinal);
+        Assert.Contains(".wasla-live-focus .wasla-live-detail-order-note { display: none; }", theme, StringComparison.Ordinal);
     }
 
     private static int CountOccurrences(string source, string value)

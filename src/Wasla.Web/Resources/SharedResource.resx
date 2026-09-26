@@ -1055,7 +1055,27 @@
   <data name="Notification.SoundActive" xml:space="preserve"><value>Bildirim sesi aktif</value></data>
   <data name="Notification.StopSoundButton" xml:space="preserve"><value>Sesi durdur</value></data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve"><value>Bu restorana bağlı sipariş platformlarını yönetin.</value></data>
+  <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve"><value>Canlı</value></data>
+  <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve"><value>Bildirim sesi</value></data>
   <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve"><value>Canlı siparişler yenilenemedi. Son güncelleme gösteriliyor.</value></data>
   <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve"><value>Oturum süresi doldu. Devam etmek için sayfayı yenileyin.</value></data>
   <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve"><value>Bu toplam canlı görüntüde yok.</value></data>
+  <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Pano</value></data>
+  <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Tamamlanan</value></data>
+  <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>Sipariş yok</value></data>
+  <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve"><value>{0} sa {1} dk</value></data>
+  <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Sipariş</value></data>
+  <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Süre</value></data>
+  <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>Toplam</value></data>
+  <data name="Orders.LiveScreen.ItemNote" xml:space="preserve"><value>Not</value></data>
+  <data name="Orders.LiveScreen.OrderNote" xml:space="preserve"><value>Sipariş notu</value></data>
+  <data name="Orders.LiveScreen.ViewFocus" xml:space="preserve"><value>Odak</value></data>
+  <data name="Orders.LiveScreen.SelectOrder" xml:space="preserve"><value>Bir sipariş seçin</value></data>
+  <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Ayrıntıları ve işlemleri görmek için listeden bir sipariş seçin.</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Şu anda gösterilecek sipariş yok</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Siparişler geldiğinde burada görünecek.</value></data>
+  <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Siparişlere dön</value></data>
+  <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Yeniden dene</value></data>
+  <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Siparişler</value></data>
+  <data name="Orders.Details.OpenFullOrder" xml:space="preserve"><value>Siparişi aç</value></data>
 </root>

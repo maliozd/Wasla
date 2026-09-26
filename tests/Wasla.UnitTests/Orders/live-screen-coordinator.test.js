@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const store = require("../../../src/Wasla.Web/wwwroot/js/orders/orders-live-store.js");
+const detailModal = require("../../../src/Wasla.Web/wwwroot/js/orders/orders-live-detail-modal.js");
 
 function flush() {
   return new Promise(function (resolve) { setImmediate(resolve); });
@@ -286,14 +287,31 @@ test("unchanged signature comparison stays cheap for thousands of orders", funct
   assert.equal(store.orderContentSignature(orders[0]).indexOf("1440"), -1);
 });
 
-test("culture formats the amount without selecting a currency", function () {
-  const tr = store.formatAmount(120.5, "tr-TR");
-  const en = store.formatAmount(120.5, "en-US");
-  const ar = store.formatAmount(120.5, "ar-SA");
-  assert.equal(tr.indexOf("₺"), -1);
-  assert.equal(en.indexOf("$"), -1);
-  assert.equal(ar.toUpperCase().indexOf("SAR"), -1);
-  assert.notEqual(tr, en);
+test("live screen money shows the lira symbol while the locale only changes number formatting", function () {
+  const samples = [100, 1230.10, 98765.43];
+  function assertLira(value) {
+    assert.equal(value.indexOf("₺") >= 0, true);
+    assert.equal(value.indexOf("TRY"), -1);
+    assert.equal((value.match(/₺/g) || []).length, 1);
+  }
+  const tr = samples.map(function (amount) { return store.formatAmount(amount, "tr-TR"); });
+  const en = samples.map(function (amount) { return store.formatAmount(amount, "en-US"); });
+  const ar = samples.map(function (amount) { return store.formatAmount(amount, "ar-SA"); });
+  const ru = samples.map(function (amount) { return store.formatAmount(amount, "ru-RU"); });
+  assert.deepEqual(tr, ["₺100,00", "₺1.230,10", "₺98.765,43"]);
+  assert.equal(en[1].indexOf("1,230.10") >= 0, true);
+  assert.equal(en[0].indexOf("100.00") >= 0, true);
+  [tr, en, ar, ru].forEach(function (values) {
+    values.forEach(function (value) {
+      assertLira(value);
+      assert.equal(value.indexOf("$"), -1);
+      assert.equal(value.toUpperCase().indexOf("SAR"), -1);
+      assert.equal(value.indexOf("₽"), -1);
+      assert.equal(value.indexOf("RUB"), -1);
+    });
+  });
+  assert.notEqual(tr[1], en[1]);
+  assert.equal(store.formatAmount(1230.1, "tr-TR"), store.formatAmount(1230.10, "tr-TR"));
 });
 
 test("snapshots apply only after every pending mutation settles", async function () {
@@ -643,6 +661,7 @@ for (const failure of ["throw", "reject"]) {
 
 function fakeDocument() {
   const byId = new Map();
+  let doc;
   function El(tag) {
     this.tagName = String(tag || "div").toUpperCase();
     this.nodeType = 1;
@@ -665,16 +684,41 @@ function fakeDocument() {
     },
     get classList() {
       const self = this;
+      function names() { return self.className.split(/\s+/).filter(Boolean); }
+      function write(list) { self.className = list.join(" "); }
       return {
         toggle: function (name, on) {
-          const names = self.className.split(/\s+/).filter(Boolean);
-          const has = names.indexOf(name) >= 0;
+          const current = names();
+          const has = current.indexOf(name) >= 0;
           const enable = on === undefined ? !has : !!on;
-          const next = names.filter(function (item) { return item !== name; });
+          const next = current.filter(function (item) { return item !== name; });
           if (enable) next.push(name);
-          self.className = next.join(" ");
-        }
+          write(next);
+        },
+        add: function () {
+          const next = names();
+          for (let i = 0; i < arguments.length; i++) {
+            if (next.indexOf(arguments[i]) < 0) next.push(arguments[i]);
+          }
+          write(next);
+        },
+        remove: function () {
+          const drop = Array.prototype.slice.call(arguments);
+          write(names().filter(function (name) { return drop.indexOf(name) < 0; }));
+        },
+        contains: function (name) { return names().indexOf(name) >= 0; }
       };
+    },
+    get style() {
+      if (!this._style) {
+        const props = {};
+        this._style = {
+          setProperty: function (name, value) { props[name] = String(value); },
+          removeProperty: function (name) { delete props[name]; },
+          getPropertyValue: function (name) { return props[name] || ""; }
+        };
+      }
+      return this._style;
     },
     set textContent(value) {
       this.childNodes = [{ nodeType: 3, textContent: value == null ? "" : String(value), parentElement: this }];
@@ -689,6 +733,7 @@ function fakeDocument() {
     get id() { return this._id || ""; },
     setAttribute: function (name, value) { this.attrs[name] = String(value); },
     getAttribute: function (name) { return Object.prototype.hasOwnProperty.call(this.attrs, name) ? this.attrs[name] : null; },
+    removeAttribute: function (name) { delete this.attrs[name]; },
     appendChild: function (node) {
       if (node.parentElement && node.parentElement.removeChild) node.parentElement.removeChild(node);
       node.parentElement = this;
@@ -696,6 +741,7 @@ function fakeDocument() {
       return node;
     },
     removeChild: function (node) {
+      if (node.contains && node.contains(doc.activeElement)) doc.activeElement = doc.body;
       const index = this.childNodes.indexOf(node);
       if (index >= 0) this.childNodes.splice(index, 1);
       node.parentElement = null;
@@ -720,20 +766,47 @@ function fakeDocument() {
       parent.childNodes.splice(index, 1, node);
       this.parentElement = null;
     },
+    contains: function (node) {
+      while (node) { if (node === this) return true; node = node.parentElement; }
+      return false;
+    },
+    closest: function (selector) {
+      let node = this;
+      while (node) { if (matches(node, selector)) return node; node = node.parentElement; }
+      return null;
+    },
+    focus: function () { doc.activeElement = this; },
     querySelector: function (selector) { return queryAll(this, selector)[0] || null; },
     querySelectorAll: function (selector) { return queryAll(this, selector); }
   };
-  function matches(el, selector) {
-    if (selector.charAt(0) === ".") return el.className.split(/\s+/).indexOf(selector.slice(1)) >= 0;
-    if (selector.charAt(0) === "[") {
+  function matchSimple(el, selector) {
+    if (!selector) return false;
+    if (selector.charAt(0) === "." && selector.indexOf("[") < 0) {
+      return el.className.split(/\s+/).indexOf(selector.slice(1)) >= 0;
+    }
+    if (selector.charAt(0) === "[" && selector.charAt(selector.length - 1) === "]") {
       const body = selector.slice(1, -1);
       const eq = body.indexOf("=");
       if (eq < 0) return el.getAttribute(body) !== null;
       let expected = body.slice(eq + 1).trim();
-      if (expected.charAt(0) === '"' || expected.charAt(0) === "'") expected = expected.slice(1, -1);
-      return el.getAttribute(body.slice(0, eq)) === expected;
+      if ((expected.charAt(0) === '"' && expected.charAt(expected.length - 1) === '"') ||
+          (expected.charAt(0) === "'" && expected.charAt(expected.length - 1) === "'")) {
+        expected = expected.slice(1, -1);
+      }
+      return el.getAttribute(body.slice(0, eq).trim()) === expected;
+    }
+    if (selector.indexOf("[") >= 0 || selector.indexOf(".") > 0) {
+      const tokens = selector.match(/(\.[a-zA-Z0-9_-]+|\[[^\]]+\]|[a-zA-Z][\w-]*)/g);
+      if (tokens && tokens.join("") === selector) {
+        return tokens.every(function (token) { return matchSimple(el, token); });
+      }
     }
     return el.tagName === selector.toUpperCase();
+  }
+  function matches(el, selector) {
+    const parts = selector.split(",");
+    if (parts.length > 1) return parts.some(function (part) { return matches(el, part.trim()); });
+    return matchSimple(el, selector.trim());
   }
   function walk(node, visit) {
     node.childNodes.forEach(function (child) {
@@ -743,6 +816,15 @@ function fakeDocument() {
     });
   }
   function queryAll(root, selector) {
+    if (selector.indexOf(",") >= 0) {
+      const seen = [];
+      selector.split(",").forEach(function (part) {
+        queryAll(root, part.trim()).forEach(function (node) {
+          if (seen.indexOf(node) < 0) seen.push(node);
+        });
+      });
+      return seen;
+    }
     const parts = selector.trim().split(/\s+/);
     let current = [root];
     parts.forEach(function (part) {
@@ -756,10 +838,1743 @@ function fakeDocument() {
     });
     return current;
   }
-  return {
+  doc = {
     createElement: function (tag) { return new El(tag); },
     createTextNode: function (text) { return { nodeType: 3, textContent: String(text), parentElement: null }; },
     getElementById: function (id) { return byId.get(id) || null; },
     documentElement: { lang: "tr-TR" }
   };
+  doc.body = new El("body");
+  doc.activeElement = doc.body;
+  return doc;
 }
+
+function boardHarness(canManageOrders = true, extras) {
+  const previous = globalThis.document;
+  const doc = fakeDocument();
+  globalThis.document = doc;
+  const host = doc.createElement("div");
+  host.id = "ordersLiveScreenHost";
+  doc.body.appendChild(host);
+  let view = "board";
+  const options = extras || {};
+  const browser = store.attachBrowser({
+    opts: { displayCulture: "tr-TR", timeZoneId: "Europe/Istanbul", canManageOrders },
+    liveView: { getView: () => view },
+    getMessage: key => key,
+    liveDetailModal: options.liveDetailModal,
+    audio: options.audio
+  }, options.global || {}, store);
+  return { doc, host, browser,
+    view: value => { view = value; },
+    card: id => host.querySelector('.wasla-live-screen-card[data-order-id="' + id + '"]'),
+    restore: () => { globalThis.document = previous; }
+  };
+}
+
+test("Board groups actual statuses, keeps item notes and authorized actions, and moves the same card with focus", () => {
+  const h = boardHarness();
+  try {
+    const body = snapshot([1, 2, 3, 4, 5, 6].map(guid));
+    const statuses = ["New", "Accepted", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"];
+    body.orders.forEach((o, i) => { o.status = statuses[i]; });
+    body.orders[1].items[0].notes = "<script>not markup</script>";
+    h.browser.renderSnapshot(body);
+    const columns = h.host.querySelectorAll("[data-board-column]");
+    assert.equal(columns.length, 5);
+    assert.deepEqual(columns.map(c => c.querySelector("[data-board-count]").textContent), ["2", "1", "1", "1", "1"]);
+    const cards = h.host.querySelectorAll(".wasla-live-screen-card");
+    const accepted = cards[1];
+    assert.equal(accepted.getAttribute("data-order-status"), "Accepted");
+    assert.equal(accepted.querySelector("[data-status-badge]").textContent, "statusAccepted");
+    assert.equal(accepted.querySelector("[data-order-action]").getAttribute("data-order-action"), "start-preparing");
+    assert.deepEqual(cards[0].querySelectorAll("[data-order-action]").map(b => b.getAttribute("data-order-action")), ["approve", "reject"]);
+    assert.equal(accepted.querySelector(".wasla-live-screen-card__note").textContent, "<script>not markup</script>");
+    assert.equal(h.host.querySelectorAll("script").length, 0);
+    const item = accepted.querySelector(".wasla-live-screen-card__item");
+    accepted.querySelector("[data-order-action]").focus();
+    body.orders[1].status = "Preparing";
+    const diff = h.browser.renderSnapshot(body);
+    assert.equal(diff.changed, 1);
+    assert.equal(accepted.parentElement.getAttribute("data-board-list"), "preparing");
+    assert.equal(accepted.querySelector(".wasla-live-screen-card__item"), item);
+    assert.equal(h.doc.activeElement, accepted.querySelector("[data-order-action]"));
+    assert.equal(h.doc.activeElement.getAttribute("data-order-action"), "mark-ready");
+    assert.equal(h.browser.renderSnapshot(body).moved, 0);
+
+    const modalButton = h.doc.createElement("button");
+    h.doc.body.appendChild(modalButton);
+    modalButton.focus();
+    body.orders[1].status = "ReadyForPickup";
+    h.browser.renderSnapshot(body);
+    assert.equal(h.doc.activeElement, modalButton, "polling must not steal focus from the modal");
+
+    accepted.querySelector("[data-order-detail]").focus();
+    body.orders = body.orders.filter(o => o.id !== guid(2) && o.id !== guid(6));
+    assert.equal(h.browser.renderSnapshot(body).removed, 2);
+    assert.equal(h.doc.activeElement, h.host, "removed orders leave a keyboard focus target");
+    assert.equal(columns[4].querySelector("[data-board-empty]").hidden, false);
+  } finally { h.restore(); }
+});
+
+test("Grouped list uses Board groups once, shows customer and address, and reuses unchanged rows", () => {
+  const h = boardHarness(false);
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[0].status = "New";
+    body.orders[1].status = "Accepted";
+    body.orders[0].customerName = "Ada";
+    body.orders[0].customerAddress = "Ada Street 4";
+    body.orders[0].customerNote = "Zili çalmayın, arayın.";
+    body.orders[1].customerName = "Hidden Customer";
+    body.orders[1].customerAddress = "   ";
+    body.orders[1].customerNote = "   ";
+    body.orders[1].items[0].notes = "<b>not html</b>";
+    body.orders[1].items.push({ productName: "Ayran", quantity: 1, notes: "   " });
+    h.browser.renderSnapshot(body);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 1);
+    assert.equal(h.host.querySelectorAll("[data-order-note]").length, 1);
+    const boardNote = h.host.querySelector("[data-order-note]");
+    assert.equal(boardNote.querySelector("[data-order-note-text]").textContent, "Zili çalmayın, arayın.");
+    assert.equal(boardNote.parentElement.className.indexOf("wasla-live-card__secondary") >= 0, true);
+    assert.equal(h.host.querySelector(".wasla-live-screen-card__items").contains(boardNote), false);
+    assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, 2);
+
+    h.view("list");
+    const switched = h.browser.renderSnapshot(body);
+    assert.equal(switched.changed, 2);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 0);
+    assert.equal(h.host.querySelectorAll(".wasla-live-groups").length, 1);
+    assert.equal(h.host.querySelectorAll(".orders-card-grid").length, 0);
+    assert.equal(h.host.querySelectorAll("[data-board-column]").length, 5);
+    const rows = h.host.querySelectorAll(".wasla-live-screen-card");
+    assert.equal(rows.length, 2);
+    assert.equal(new Set(rows.map(row => row.getAttribute("data-order-id"))).size, 2);
+    assert.equal(rows[0].getAttribute("data-live-layout"), "list");
+    assert.equal(rows[0].parentElement.getAttribute("data-board-list"), "new");
+    assert.equal(rows[1].parentElement.getAttribute("data-board-list"), "new");
+    assert.equal(rows[0].querySelector("[data-status-badge]").textContent, "statusNew");
+    assert.equal(rows[1].querySelector("[data-status-badge]").textContent, "statusAccepted");
+    assert.equal(h.host.querySelectorAll(".wasla-live-list-columns").length, 0);
+    assert.equal(rows[0].children[0].className.indexOf("wasla-live-list-row__identity") >= 0, true);
+    assert.equal(rows[0].children[1].className.indexOf("wasla-live-list-row__items") >= 0, true);
+    assert.equal(rows[0].children[2].className.indexOf("wasla-live-list-row__customer") >= 0, true);
+    assert.equal(rows[0].children[3].className.indexOf("wasla-live-list-row__total") >= 0, true);
+    assert.equal(rows[0].children[4].className.indexOf("wasla-live-list-row__elapsed") >= 0, true);
+    assert.equal(rows[0].children[5].className.indexOf("wasla-live-list-row__aside") >= 0, true);
+    const identity = rows[0].querySelector(".wasla-live-list-row__identity");
+    const headline = identity.firstElementChild;
+    assert.equal(headline.className.indexOf("wasla-live-list-row__headline") >= 0, true);
+    assert.equal(headline.querySelector(".platform-badge") !== null, true);
+    assert.equal(headline.querySelector(".wasla-live-screen-card__code") !== null, true);
+    assert.equal(identity.contains(rows[0].querySelector("[data-total]")), false);
+    assert.equal(identity.contains(rows[0].querySelector("[data-received]")), true);
+    assert.equal(identity.querySelector(".wasla-live-list-row__received-label").textContent, "ordersFullscreenReceived");
+    assert.equal(headline.contains(rows[0].querySelector("[data-status-badge]")), true);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__meta").contains(rows[0].querySelector("[data-status-badge]")), false);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__aside").contains(rows[0].querySelector("[data-elapsed]")), false);
+    assert.equal(rows[0].children[4].getAttribute("data-elapsed") !== null, true);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__aside").contains(rows[0].querySelector("[data-total]")), false);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__total").contains(rows[0].querySelector("[data-total]")), true);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__total").firstElementChild.className.indexOf("wasla-live-list-row__total-label") >= 0, true);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__total-label").textContent, "listTotal");
+    assert.equal(identity.contains(rows[0].querySelector("[data-customer-name]")), false);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__customer-main").contains(rows[0].querySelector("[data-customer-name]")), true);
+    assert.equal(rows[0].querySelector("[data-customer-name]").textContent, "Ada");
+    assert.equal(rows[0].querySelector("[data-customer-address]").textContent, "Ada Street 4");
+    assert.equal(rows[0].querySelector("[data-customer-address]").hidden, false);
+    assert.equal(rows[1].querySelector("[data-customer-name]").textContent, "Hidden Customer");
+    assert.equal(rows[1].querySelector("[data-customer-address]").hidden, true);
+    const orderNote = rows[0].querySelector("[data-order-note]");
+    assert.equal(orderNote !== null, true);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__customer").contains(orderNote), true);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__items").contains(orderNote), false);
+    assert.equal(orderNote.querySelector(".wasla-live-list-row__order-note-label").textContent, "orderNote");
+    assert.equal(orderNote.querySelector("[data-order-note-text]").textContent, "Zili çalmayın, arayın.");
+    assert.equal(rows[0].className.indexOf("wasla-live-list-row__customer--with-note") >= 0, false);
+    assert.equal(rows[0].querySelector(".wasla-live-list-row__customer").className.indexOf("wasla-live-list-row__customer--with-note") >= 0, true);
+    assert.equal(rows[1].querySelector("[data-order-note]"), null);
+    body.orders[0].customerNote = "   ";
+    h.browser.renderSnapshot(body);
+    assert.equal(rows[0].querySelector("[data-order-note]"), null);
+    body.orders[0].customerNote = "Zili çalmayın, arayın.";
+    h.browser.renderSnapshot(body);
+    assert.equal(rows[0].querySelector("[data-order-note-text]").textContent, "Zili çalmayın, arayın.");
+    const note = rows[1].querySelector(".wasla-live-screen-card__note");
+    assert.equal(note.querySelector(".wasla-live-list-row__note-text").textContent, "<b>not html</b>");
+    assert.equal(note.querySelector(".wasla-live-list-row__note-icon").getAttribute("aria-hidden"), "true");
+    assert.equal(note.querySelector(".visually-hidden").textContent, "itemNote");
+    assert.equal(note.querySelector(".wasla-live-list-row__note-text").children.length, 0);
+    assert.equal(rows[1].querySelectorAll(".wasla-live-screen-card__note").length, 1);
+    assert.notEqual(rows[0].querySelector("[data-received]").textContent, "");
+    assert.equal(h.host.querySelectorAll("[data-order-action]").length, 0);
+    assert.equal(h.host.querySelectorAll("[data-order-detail]").length, 2);
+    assert.equal(h.host.querySelector('[data-board-column="preparing"] [data-board-empty]').hidden, false);
+
+    const row = id => h.host.querySelectorAll(".wasla-live-screen-card").find(el => el.getAttribute("data-order-id") === id);
+    const item = rows[1].querySelector(".wasla-live-screen-card__item");
+    const again = h.browser.renderSnapshot(body);
+    assert.equal(again.changed, 0);
+    assert.equal(again.moved, 0);
+    assert.equal(row(guid(2)).querySelector(".wasla-live-screen-card__item"), item);
+
+    body.serverTimeUtc = "2026-09-23T08:01:00Z";
+    const minute = h.browser.renderSnapshot(body);
+    assert.equal(minute.changed, 0);
+    assert.equal(minute.timeUpdates, 2);
+    assert.equal(row(guid(2)).querySelector(".wasla-live-screen-card__item"), item);
+    assert.equal(row(guid(2)).querySelector("[data-order-detail]").parentElement, row(guid(2)).querySelector("[data-order-actions]").parentElement);
+    body.orders[1].totalAmount = 1023.9;
+    const priced = h.browser.renderSnapshot(body);
+    assert.equal(priced.changed, 1);
+    assert.equal(row(guid(2)).querySelector(".wasla-live-list-row__total-label").textContent, "listTotal");
+    assert.equal(row(guid(2)).querySelector("[data-total]").textContent, "₺1.023,90");
+
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    assert.equal(h.host.querySelectorAll(".wasla-live-groups").length, 0);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 1);
+    assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, 2);
+    assert.equal(row(guid(1)).getAttribute("data-live-layout"), "board");
+    assert.equal(row(guid(1)).querySelector("[data-customer-name]"), null);
+    assert.equal(row(guid(1)).querySelector("[data-customer-address]"), null);
+    assert.equal(row(guid(1)).textContent.indexOf("Ada") < 0, true);
+    assert.equal(row(guid(1)).querySelector("[data-order-note-text]").textContent, "Zili çalmayın, arayın.");
+    h.view("list");
+    h.browser.renderSnapshot(snapshot([]));
+    assert.equal(h.host.querySelectorAll(".wasla-live-groups [data-board-column]").length, 0);
+    assert.equal(h.host.querySelector(".wasla-live-empty").getAttribute("data-live-empty"), "none");
+    assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, 0);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 0);
+  } finally { h.restore(); }
+});
+
+test("Grouped list keeps lifecycle actions and moves a row without rebuilding its products", () => {
+  const h = boardHarness(true);
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[1].status = "Accepted";
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    const row = id => h.host.querySelectorAll(".wasla-live-screen-card").find(el => el.getAttribute("data-order-id") === id);
+    const accepted = row(guid(2));
+    const item = accepted.querySelector(".wasla-live-screen-card__item");
+    assert.deepEqual(row(guid(1)).querySelectorAll("[data-order-action]").map(b => b.getAttribute("data-order-action")), ["approve", "reject"]);
+    assert.equal(accepted.querySelector("[data-order-action]").getAttribute("data-order-action"), "start-preparing");
+    accepted.querySelector("[data-order-action]").focus();
+    body.orders[1].status = "Preparing";
+    const diff = h.browser.renderSnapshot(body);
+    assert.equal(diff.changed, 1);
+    assert.equal(row(guid(2)), accepted);
+    assert.equal(accepted.parentElement.getAttribute("data-board-list"), "preparing");
+    assert.equal(accepted.querySelector(".wasla-live-screen-card__item"), item);
+    assert.equal(h.doc.activeElement.getAttribute("data-order-action"), "mark-ready");
+    assert.equal(h.host.querySelector('[data-board-column="new"] [data-board-count]').textContent, "1");
+    assert.equal(h.host.querySelector('[data-board-column="preparing"] [data-board-count]').textContent, "1");
+
+    const modalButton = h.doc.createElement("button");
+    h.doc.body.appendChild(modalButton);
+    modalButton.focus();
+    body.orders[1].status = "ReadyForPickup";
+    h.browser.renderSnapshot(body);
+    assert.equal(h.doc.activeElement, modalButton);
+  } finally { h.restore(); }
+});
+
+test("view preference defaults to Board and preserves cards/list even when storage is unavailable", () => {
+  const vm = require("node:vm");
+  const fs = require("node:fs");
+  const source = fs.readFileSync(require.resolve("../../../src/Wasla.Web/wwwroot/js/orders/orders-live-view.js"), "utf8");
+  for (const saved of [null, "invalid", "board", "cards", "list", "focus", "throws"]) {
+    let init;
+    let rendered = 0;
+    let written;
+    const O = { opts: { pageMode: "liveDisplay" }, liveStore: { refreshView: () => rendered++ } };
+    vm.runInNewContext(source, {
+      window: { WaslaOrders: O },
+      document: { getElementById: () => null, querySelectorAll: () => [], addEventListener: (name, fn) => { if (name === "DOMContentLoaded") init = fn; } },
+      localStorage: { getItem: () => { if (saved === "throws") throw Error("denied"); return saved; }, setItem: (key, value) => { written = value; } }
+    });
+    init();
+    assert.equal(O.liveView.getView(), saved === "list" || saved === "board" || saved === "focus" ? saved : "board");
+    assert.equal(written, saved === "cards" ? "board" : undefined, "only a retired cards preference is migrated");
+    O.liveView.setView("list");
+    assert.equal(written, "list");
+    assert.equal(rendered, 2);
+  }
+});
+
+for (const count of [30, 5755]) {
+  test("Board synthetic " + count + " orders retains all IDs and avoids unchanged DOM moves", () => {
+    const h = boardHarness();
+    try {
+      const body = snapshot(Array.from({ length: count }, (_, i) => guid(i + 1)));
+      const statuses = ["New", "Accepted", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"];
+      body.orders.forEach((o, i) => { o.status = statuses[i % 6]; });
+      const start = performance.now();
+      h.browser.renderSnapshot(body);
+      const first = performance.now();
+      const unchanged = h.browser.renderSnapshot(body);
+      const next = performance.now();
+      assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, count);
+      assert.equal(unchanged.moved, 0);
+      assert.equal(unchanged.changed, 0);
+      assert.equal(unchanged.timeUpdates, 0);
+      body.serverTimeUtc = "2026-09-23T08:01:00Z";
+      const minute = h.browser.renderSnapshot(body);
+      const end = performance.now();
+      assert.equal(minute.timeUpdates, count);
+      assert.equal(minute.changed, 0);
+      assert.equal(minute.moved, 0);
+      console.log(JSON.stringify({ fixture: "Board fake DOM (no layout/paint)", count, initialMs: +(first-start).toFixed(1), unchangedMs: +(next-first).toFixed(1), minuteMs: +(end-next).toFixed(1) }));
+    } finally { h.restore(); }
+  });
+}
+
+function paintDetail(container, action) {
+  while (container.firstChild) container.removeChild(container.firstChild);
+  const wrap = document.createElement("div");
+  wrap.className = "wasla-live-detail";
+  const actions = document.createElement("div");
+  actions.className = "wasla-live-detail__actions";
+  const button = document.createElement("button");
+  button.setAttribute("data-order-action", action);
+  actions.appendChild(button);
+  wrap.appendChild(actions);
+  container.appendChild(wrap);
+}
+
+test("Focus keeps Board groups, selects the first order once, and ignores unchanged snapshots", async () => {
+  let loads = 0;
+  const h = boardHarness(true, {
+    liveDetailModal: {
+      loadPanel: function (container) {
+        loads += 1;
+        paintDetail(container, "approve");
+        return Promise.resolve(true);
+      },
+      cancelPanel: function () {}
+    }
+  });
+  try {
+    const body = snapshot([guid(1), guid(2), guid(3)]);
+    body.orders[0].status = "New";
+    body.orders[0].displayNumber = "TY-10000000000000000001";
+    body.orders[0].customerName = "Secret Customer";
+    body.orders[0].items = [
+      { productName: "Soup", quantity: 1, notes: "no onion" },
+      { productName: "Rice", quantity: 2, notes: null },
+      { productName: "Tea", quantity: 1, notes: null }
+    ];
+    body.orders[1].status = "Accepted";
+    body.orders[1].customerName = "Other Customer";
+    body.orders[2].status = "Preparing";
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 0);
+    assert.equal(h.host.querySelectorAll(".wasla-live-groups").length, 0);
+    assert.equal(h.host.querySelectorAll(".wasla-live-focus").length, 1);
+    assert.equal(h.host.querySelectorAll("[data-board-column]").length, 5);
+    const entries = h.host.querySelectorAll("[data-focus-select]");
+    assert.equal(entries.length, 3);
+    assert.equal(entries[0].parentElement.getAttribute("data-board-list"), "new");
+    assert.equal(entries[1].parentElement.getAttribute("data-board-list"), "new");
+    assert.equal(entries[2].parentElement.getAttribute("data-board-list"), "preparing");
+    assert.equal(entries[0].getAttribute("aria-pressed"), "true");
+    assert.equal(entries[0].querySelector("[data-status-badge]").textContent, "statusNew");
+    assert.equal(entries[1].querySelector("[data-status-badge]").textContent, "statusAccepted");
+    assert.equal(entries[0].querySelector("[data-order-code]").textContent, "TY-10000000000000000001");
+    assert.equal(entries[0].querySelector("[data-product-summary]").textContent.indexOf("1× Soup"), 0);
+    assert.equal(entries[0].querySelector("[data-product-summary]").textContent.indexOf("Tea"), -1);
+    assert.equal(entries[0].querySelector("[data-product-summary]").textContent.indexOf("no onion"), -1);
+    assert.equal(h.host.textContent.indexOf("Secret Customer"), -1);
+    assert.equal(h.host.querySelectorAll("[data-focus-select] [data-order-action]").length, 0);
+    assert.equal(h.browser.getSelectedOrderId(), guid(1));
+    assert.equal(loads, 1);
+    await flush();
+    h.browser.renderSnapshot(body);
+    assert.equal(loads, 1);
+    const summary = entries[0].querySelector("[data-product-summary]");
+    body.serverTimeUtc = "2026-09-23T08:01:00Z";
+    const timed = h.browser.renderSnapshot(body);
+    assert.equal(timed.changed, 0);
+    assert.equal(timed.timeUpdates, 3);
+    assert.equal(entries[0].querySelector("[data-product-summary]"), summary);
+    assert.equal(loads, 1);
+
+    const header = h.doc.createElement("button");
+    h.doc.body.appendChild(header);
+    header.focus();
+    body.orders.unshift({
+      id: guid(9),
+      displayNumber: "NEW-1",
+      platform: "GetirYemek",
+      status: "New",
+      receivedAtUtc: "2026-09-23T07:59:00Z",
+      deliveredAtUtc: null,
+      customerName: "Incoming",
+      totalAmount: 5,
+      items: [{ productName: "Water", quantity: 1, notes: null }]
+    });
+    h.browser.renderSnapshot(body);
+    assert.equal(h.browser.getSelectedOrderId(), guid(1));
+    assert.equal(h.doc.activeElement, header);
+    assert.equal(loads, 1);
+  } finally { h.restore(); }
+});
+
+test("Focus keeps a status change selected, moves its group, and drops outdated actions", async () => {
+  let calls = 0;
+  let second;
+  const h = boardHarness(true, {
+    liveDetailModal: {
+      loadPanel: function (container) {
+        calls += 1;
+        if (calls === 1) {
+          paintDetail(container, "approve");
+          return Promise.resolve(true);
+        }
+        return new Promise(function (resolve) { second = { container: container, resolve: resolve }; });
+      },
+      cancelPanel: function () {}
+    }
+  });
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[1].status = "Accepted";
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    await flush();
+    const selected = h.host.querySelectorAll("[data-focus-select]")[0];
+    assert.equal(h.host.querySelector("[data-order-action]").getAttribute("data-order-action"), "approve");
+    body.orders[0].status = "Preparing";
+    h.browser.renderSnapshot(body);
+    assert.equal(h.browser.getSelectedOrderId(), guid(1));
+    assert.equal(selected.parentElement.getAttribute("data-board-list"), "preparing");
+    assert.equal(selected.getAttribute("aria-pressed"), "true");
+    assert.equal(h.host.querySelector("[data-order-action]"), null);
+    assert.equal(calls, 2);
+    paintDetail(second.container, "mark-ready");
+    second.resolve(true);
+    await flush();
+    assert.equal(h.host.querySelector("[data-order-action]").getAttribute("data-order-action"), "mark-ready");
+  } finally { h.restore(); }
+});
+
+test("Focus detail failure can be retried without treating the failed snapshot as fresh", async () => {
+  let calls = 0;
+  const h = boardHarness(true, {
+    liveDetailModal: {
+      loadPanel: function (container) {
+        calls += 1;
+        while (container.firstChild) container.removeChild(container.firstChild);
+        if (calls === 1) {
+          const retry = document.createElement("button");
+          retry.setAttribute("data-focus-detail-retry", "");
+          retry.textContent = "detailRetry";
+          container.appendChild(retry);
+          return Promise.resolve(false);
+        }
+        paintDetail(container, "approve");
+        return Promise.resolve(true);
+      },
+      cancelPanel: function () {}
+    }
+  });
+  try {
+    const body = snapshot([guid(1)]);
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    await flush();
+    assert.equal(h.host.querySelector("[data-focus-detail-retry]").textContent, "detailRetry");
+    h.browser.renderSnapshot(body);
+    assert.equal(calls, 1);
+    h.browser.retrySelectedDetail();
+    await flush();
+    assert.equal(calls, 2);
+    assert.equal(h.host.querySelector("[data-order-action]").getAttribute("data-order-action"), "approve");
+  } finally { h.restore(); }
+});
+
+test("removing the selected order cancels its detail request and ignores a late response", async () => {
+  const pending = [];
+  const h = boardHarness(true, {
+    liveDetailModal: wiredDetailClient(pending)
+  });
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[0].customerName = "Secret Customer";
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    const detail = h.host.querySelector("[data-focus-detail]");
+    assert.equal(pending.length, 1);
+    body.orders = [body.orders[1]];
+    h.browser.renderSnapshot(body);
+    assert.equal(h.browser.getSelectedOrderId(), null);
+    assert.equal(pending[0].signal.aborted, true);
+    assert.equal(detail.querySelector(".wasla-live-empty").getAttribute("data-live-empty"), "selectOrder");
+    assert.equal(detail.textContent.indexOf("selectOrder") >= 0, true);
+    assert.equal(h.host.querySelectorAll("[data-focus-select]").length, 1);
+    assert.equal(h.host.textContent.indexOf("Secret Customer"), -1);
+    const placeholder = detail.querySelector(".wasla-live-empty");
+    pending[0].resolve({ ok: true, text: async () => "<button data-order-action='approve'>Late</button>" });
+    await flush();
+    assert.equal(detail.querySelector(".wasla-live-empty"), placeholder);
+    assert.equal(detail.querySelector("[data-order-action]"), null);
+    assert.equal(detail.innerHTML, undefined);
+    assert.equal(h.browser.getSelectedOrderId(), null);
+  } finally { h.restore(); }
+});
+
+test("leaving Focus cancels a pending detail request", async () => {
+  const pending = [];
+  const notes = [];
+  let fetches = 0;
+  const previousFetch = global.fetch;
+  global.fetch = function () {
+    fetches += 1;
+    return Promise.reject(new Error("snapshot"));
+  };
+  const h = boardHarness(true, {
+    audio: { showBrowserNotificationIfAllowed: function () { notes.push("notify"); } },
+    liveDetailModal: wiredDetailClient(pending)
+  });
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    h.browser.renderSnapshot(body);
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    const detail = h.host.querySelector("[data-focus-detail]");
+    assert.equal(pending.length, 1);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 0);
+    assert.equal(h.host.querySelectorAll(".wasla-live-groups").length, 0);
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    assert.equal(pending[0].signal.aborted, true);
+    assert.equal(h.host.querySelector(".wasla-live-focus"), null);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 1);
+    pending[0].resolve({ ok: true, text: async () => "<p>LATE</p>" });
+    await flush();
+    assert.equal(detail.innerHTML, undefined);
+    assert.equal(fetches, 0);
+    assert.deepEqual(notes, []);
+  } finally {
+    global.fetch = previousFetch;
+    h.restore();
+  }
+});
+
+test("a late detail response cannot replace a newer Focus selection", async () => {
+  const doc = fakeDocument();
+  const container = doc.createElement("div");
+  container.isConnected = true;
+  const pending = [];
+  const client = detailModal.createDetailClient({
+    fetch: function (url, options) {
+      return new Promise(function (resolve) {
+        pending.push({ url: url, signal: options.signal, resolve: resolve });
+      });
+    },
+    getMessage: function (key) { return key; },
+    urlFor: function (id) { return "/panel/" + id; },
+    document: doc
+  });
+  const first = client.load(container, guid(1), "focus");
+  const second = client.load(container, guid(2), "focus");
+  assert.equal(pending[0].signal.aborted, true);
+  pending[0].resolve({ ok: true, text: async () => "<p>AAA</p>" });
+  assert.equal(await first, false);
+  assert.notEqual(container.innerHTML, "<p>AAA</p>");
+  pending[1].resolve({ ok: true, text: async () => "<p>BBB</p>" });
+  assert.equal(await second, true);
+  assert.equal(container.innerHTML, "<p>BBB</p>");
+});
+
+test("detail failure renders a retry control for the current Focus selection", async () => {
+  const doc = fakeDocument();
+  const container = doc.createElement("div");
+  container.isConnected = true;
+  let fail = true;
+  const client = detailModal.createDetailClient({
+    fetch: function () {
+      return Promise.resolve(fail
+        ? { ok: false, status: 503, text: async () => "" }
+        : { ok: true, text: async () => "<p>ready</p>" });
+    },
+    getMessage: function (key) { return key; },
+    urlFor: function (id) { return "/panel/" + id; },
+    document: doc
+  });
+  assert.equal(await client.load(container, guid(1), "focus"), false);
+  assert.equal(container.querySelector("[data-focus-detail-retry]").textContent, "detailRetry");
+  fail = false;
+  assert.equal(await client.load(container, guid(1), "focus"), true);
+  assert.equal(container.innerHTML, "<p>ready</p>");
+});
+
+test("narrow Focus shows the queue until an order is chosen", () => {
+  const h = boardHarness(true, {
+    global: { matchMedia: function () { return { matches: true, addEventListener: function () {}, addListener: function () {} }; } },
+    liveDetailModal: {
+      loadPanel: function (container) {
+        paintDetail(container, "approve");
+        return Promise.resolve(true);
+      },
+      cancelPanel: function () {}
+    }
+  });
+  try {
+    const body = snapshot([guid(1)]);
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    assert.equal(h.browser.getSelectedOrderId(), null);
+    assert.equal(h.host.querySelector("[data-focus-detail] .wasla-live-empty").getAttribute("data-live-empty"), "selectOrder");
+    assert.equal(h.host.querySelectorAll("[data-focus-select]").length, 1);
+    assert.equal(h.host.querySelector(".wasla-live-focus").className.indexOf("wasla-live-focus--show-detail"), -1);
+    h.browser.selectOrder(guid(1), true);
+    assert.equal(h.host.querySelector(".wasla-live-focus").className.indexOf("wasla-live-focus--show-detail") >= 0, true);
+    const opener = h.host.querySelector("[data-focus-select]");
+    h.doc.body.focus();
+    h.browser.showQueue();
+    assert.equal(h.host.querySelector(".wasla-live-focus").className.indexOf("wasla-live-focus--show-detail"), -1);
+    assert.equal(h.doc.activeElement, opener);
+  } finally { h.restore(); }
+});
+
+test("an empty Focus snapshot uses one branded empty state and the next order restores Focus", () => {
+  const h = boardHarness();
+  try {
+    h.view("focus");
+    h.browser.renderSnapshot(snapshot([]));
+    const empty = h.host.querySelector(".wasla-live-empty");
+    assert.equal(empty.getAttribute("data-live-empty"), "none");
+    assert.equal(empty.parentElement, h.host);
+    assert.equal(empty.textContent.indexOf("noDisplayableOrders") >= 0, true);
+    assert.equal(h.host.querySelectorAll(".wasla-live-empty").length, 1);
+    assert.equal(h.host.querySelector(".wasla-live-focus"), null);
+    assert.equal(h.host.querySelector("[data-board-column]"), null);
+    h.browser.renderSnapshot(snapshot([]));
+    assert.equal(h.host.querySelector(".wasla-live-empty"), empty);
+    h.browser.renderSnapshot(snapshot([guid(1)]));
+    assert.equal(h.host.querySelector(".wasla-live-empty"), null);
+    assert.equal(h.host.querySelectorAll("[data-focus-select]").length, 1);
+    assert.equal(h.browser.getSelectedOrderId(), guid(1));
+  } finally { h.restore(); }
+});
+
+function groupIds(host, key) {
+  const cards = host.querySelectorAll('[data-board-list="' + key + '"] .wasla-live-screen-card');
+  const entries = cards.length ? cards : host.querySelectorAll('[data-board-list="' + key + '"] [data-focus-select]');
+  return entries.map(function (el) { return el.getAttribute("data-order-id"); });
+}
+
+test("New and Accepted keep received-time order across polls, views, and group changes", () => {
+  const h = boardHarness(true, {
+    liveDetailModal: {
+      loadPanel: function () { return Promise.resolve(true); },
+      cancelPanel: function () {}
+    }
+  });
+  try {
+    const body = snapshot([1, 2, 3, 4, 5, 6, 7].map(guid));
+    const received = {
+      [guid(1)]: "2026-09-23T07:50:00Z",
+      [guid(2)]: "2026-09-23T07:40:00Z",
+      [guid(3)]: "2026-09-23T07:30:00Z",
+      [guid(4)]: "2026-09-23T07:30:00Z",
+      [guid(5)]: "2026-09-23T07:10:00Z",
+      [guid(6)]: "2026-09-23T07:25:00Z",
+      [guid(7)]: "2026-09-23T07:05:00Z"
+    };
+    body.orders.forEach(function (order) { order.receivedAtUtc = received[order.id]; });
+    body.orders[0].status = "New";
+    body.orders[1].status = "New";
+    body.orders[2].status = "Accepted";
+    body.orders[3].status = "New";
+    body.orders[4].status = "New";
+    body.orders[5].status = "Preparing";
+    body.orders[6].status = "Preparing";
+    // Status-sorted input would place the Accepted order after every New order.
+    body.orders = [0, 1, 3, 4, 2, 5, 6].map(function (index) { return body.orders[index]; });
+    h.browser.renderSnapshot(body);
+    const newestFirst = [guid(1), guid(2), guid(3), guid(4), guid(5)];
+    assert.deepEqual(groupIds(h.host, "new"), newestFirst, "mixed New and Accepted follow received time, then id");
+    assert.deepEqual(groupIds(h.host, "preparing"), [guid(6), guid(7)]);
+
+    const cardById = function (id) {
+      return h.host.querySelectorAll(".wasla-live-screen-card").find(function (el) {
+        return el.getAttribute("data-order-id") === id;
+      });
+    };
+    const middle = cardById(guid(2));
+    const item = middle.querySelector(".wasla-live-screen-card__item");
+    middle.querySelector("[data-order-action]").focus();
+    const second = body.orders.find(function (order) { return order.id === guid(2); });
+    second.status = "Accepted";
+    body.orders = body.orders.filter(function (order) { return order.id !== guid(2); }).concat([second]);
+    const accepted = h.browser.renderSnapshot(body);
+    assert.deepEqual(groupIds(h.host, "new"), newestFirst);
+    assert.equal(accepted.moved, 0);
+    assert.equal(cardById(guid(2)), middle);
+    assert.equal(middle.querySelector(".wasla-live-screen-card__item"), item);
+    assert.equal(middle.querySelector("[data-status-badge]").textContent, "statusAccepted");
+    assert.equal(middle.querySelector("[data-order-action]").getAttribute("data-order-action"), "start-preparing");
+    assert.equal(h.doc.activeElement, middle.querySelector("[data-order-action]"));
+
+    const first = body.orders.find(function (order) { return order.id === guid(1); });
+    first.status = "Accepted";
+    body.orders = [guid(5), guid(4), guid(3), guid(2), guid(1), guid(7), guid(6)].map(function (id) {
+      return body.orders.find(function (order) { return order.id === id; });
+    });
+    h.browser.renderSnapshot(body);
+    assert.deepEqual(groupIds(h.host, "new"), newestFirst, "a later status-sorted snapshot does not reshuffle the group");
+
+    const preparing = body.orders.find(function (order) { return order.id === guid(4); });
+    preparing.status = "Preparing";
+    h.browser.renderSnapshot(body);
+    assert.deepEqual(groupIds(h.host, "new"), [guid(1), guid(2), guid(3), guid(5)]);
+    assert.deepEqual(groupIds(h.host, "preparing"), [guid(4), guid(6), guid(7)]);
+
+    body.orders.push({
+      id: guid(8),
+      displayNumber: "NEW",
+      platform: "TrendyolYemek",
+      status: "New",
+      receivedAtUtc: "2026-09-23T07:55:00Z",
+      deliveredAtUtc: null,
+      customerName: "Incoming",
+      totalAmount: 5,
+      items: [{ productName: "Water", quantity: 1, notes: null }]
+    });
+    body.orders = body.orders.filter(function (order) { return order.id !== guid(3); });
+    h.browser.renderSnapshot(body);
+    assert.deepEqual(groupIds(h.host, "new"), [guid(8), guid(1), guid(2), guid(5)]);
+    assert.deepEqual(groupIds(h.host, "preparing"), [guid(4), guid(6), guid(7)]);
+
+    const boardNew = groupIds(h.host, "new");
+    const boardPreparing = groupIds(h.host, "preparing");
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    assert.deepEqual(groupIds(h.host, "new"), boardNew);
+    assert.deepEqual(groupIds(h.host, "preparing"), boardPreparing);
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    assert.deepEqual(groupIds(h.host, "new"), boardNew);
+    assert.deepEqual(groupIds(h.host, "preparing"), boardPreparing);
+    const queue = h.host.querySelector(".wasla-live-focus__queue");
+    queue.scrollTop = 48;
+    const entry = h.host.querySelectorAll("[data-focus-select]").find(function (el) {
+      return el.getAttribute("data-order-id") === guid(8);
+    });
+    h.browser.selectOrder(guid(8), true);
+    const focused = body.orders.find(function (order) { return order.id === guid(8); });
+    focused.status = "Accepted";
+    body.orders = body.orders.filter(function (order) { return order !== focused; }).concat([focused]);
+    h.browser.renderSnapshot(body);
+    assert.equal(h.browser.getSelectedOrderId(), guid(8));
+    assert.deepEqual(groupIds(h.host, "new"), [guid(8), guid(1), guid(2), guid(5)]);
+    assert.equal(entry.parentElement !== null, true);
+    assert.equal(entry.getAttribute("data-order-status"), "Accepted");
+    assert.equal(entry.parentElement.getAttribute("data-board-list"), "new");
+    assert.equal(queue.scrollTop, 48);
+  } finally { h.restore(); }
+});
+
+function wiredDetailClient(pending) {
+  let client;
+  return {
+    loadPanel: function (container, orderId, consumer) {
+      client = client || detailModal.createDetailClient({
+        fetch: function (url, options) {
+          return new Promise(function (resolve) {
+            pending.push({ url: url, signal: options.signal, resolve: resolve });
+          });
+        },
+        getMessage: function (key) { return key; },
+        urlFor: function (id) { return "/panel/" + id; },
+        document: document
+      });
+      return client.load(container, orderId, consumer);
+    },
+    cancelPanel: function (consumer) {
+      if (client) client.cancel(consumer);
+    }
+  };
+}
+
+function attentionClock(start) {
+  let now = start;
+  let seq = 1;
+  const timers = [];
+  return {
+    now: function () { return now; },
+    Date: { now: function () { return now; } },
+    setTimeout: function (fn, ms) {
+      const id = seq++;
+      timers.push({ id: id, fn: fn, at: now + ms, cleared: false, ran: false });
+      return id;
+    },
+    clearTimeout: function (id) {
+      timers.forEach(function (timer) {
+        if (timer.id === id) timer.cleared = true;
+      });
+    },
+    pending: function () {
+      return timers.filter(function (timer) { return !timer.cleared && !timer.ran; }).length;
+    },
+    advance: async function (ms) {
+      const target = now + ms;
+      while (true) {
+        const due = timers
+          .filter(function (timer) { return !timer.cleared && !timer.ran && timer.at <= target; })
+          .sort(function (a, b) { return a.at - b.at; });
+        if (!due.length) break;
+        now = due[0].at;
+        due[0].ran = true;
+        due[0].fn();
+        await flush();
+      }
+      now = target;
+    }
+  };
+}
+
+function attentionHarness(options) {
+  const previous = globalThis.document;
+  const doc = fakeDocument();
+  globalThis.document = doc;
+  const host = doc.createElement("div");
+  host.id = "ordersLiveScreenHost";
+  doc.body.appendChild(host);
+  let view = "list";
+  const clock = options.clock;
+  const vm = require("node:vm");
+  const fs = require("node:fs");
+  const source = fs.readFileSync(require.resolve("../../../src/Wasla.Web/wwwroot/js/orders/orders-table.js"), "utf8");
+  const O = {
+    opts: {
+      displayCulture: "tr-TR",
+      timeZoneId: "Europe/Istanbul",
+      canManageOrders: true,
+      pageMode: "liveDisplay"
+    },
+    state: {
+      notificationSettings: {
+        newOrderHighlightDurationSeconds: options.highlightSeconds,
+        newOrderHighlightColor: options.highlightColor || "yellow",
+        newOrderHighlightBehavior: options.highlightBehavior || "fade"
+      }
+    },
+    liveView: { getView: function () { return view; } },
+    getMessage: function (key) { return key; },
+    liveDetailModal: options.liveDetailModal
+  };
+  vm.runInNewContext(source, {
+    window: { WaslaOrders: O },
+    document: doc,
+    setTimeout: clock.setTimeout,
+    clearTimeout: clock.clearTimeout,
+    Date: clock.Date
+  });
+  clock.matchMedia = options.matchMedia || function () { return { matches: false }; };
+  const browser = store.attachBrowser(O, clock, store);
+  function row(id) {
+    return host.querySelectorAll(".wasla-live-screen-card").find(function (card) {
+      return card.getAttribute("data-order-id") === id;
+    });
+  }
+  return {
+    doc: doc,
+    host: host,
+    browser: browser,
+    table: O.table,
+    clock: clock,
+    row: row,
+    view: function (value) { view = value; },
+    restore: function () { globalThis.document = previous; }
+  };
+}
+
+function notedSnapshot(ids, notes) {
+  const body = snapshot(ids);
+  body.orders.forEach(function (order, index) {
+    order.customerNote = notes[index].customerNote;
+    order.customerAddress = "Kadıköy";
+    order.items[0].notes = notes[index].itemNote;
+  });
+  return body;
+}
+
+function hasClass(el, name) {
+  return !!el && el.className.split(/\s+/).indexOf(name) >= 0;
+}
+
+test("Board uses the shared highlight lifecycle without a second timer", async function () {
+  const clock = attentionClock(4000000);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 10,
+    highlightColor: "orange",
+    highlightBehavior: "pulse"
+  });
+  try {
+    const id = guid(21);
+    const body = notedSnapshot([id], [{ customerNote: "Kapıya bırakın.", itemNote: "No onions" }]);
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    const baseline = h.row(id);
+    assert.equal(baseline.getAttribute("data-live-layout"), "board");
+    assert.equal(hasClass(baseline, "order-row-new"), false);
+    assert.equal(baseline.querySelector("[data-order-note-text]").textContent, "Kapıya bırakın.");
+    assert.equal(hasClass(baseline.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+
+    h.table.markOrdersAsRecentlyNew([id]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    assert.equal(hasClass(h.row(id), "order-row-new"), true);
+    assert.equal(hasClass(h.row(id), "color-orange"), true);
+    assert.equal(hasClass(h.row(id), "behavior-pulse"), true);
+    assert.equal(hasClass(h.row(id).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+
+    const pending = h.clock.pending();
+    const node = h.row(id);
+    h.browser.renderSnapshot(body);
+    assert.equal(h.row(id), node);
+    assert.equal(hasClass(node, "order-row-new"), true);
+    assert.equal(h.clock.pending(), pending);
+    assert.equal(h.host.querySelectorAll("[data-order-id='" + id + "'].wasla-live-screen-card").length, 1);
+
+    body.orders[0].status = "Preparing";
+    h.browser.renderSnapshot(body);
+    assert.equal(h.row(id), node, "a status move reuses the board card");
+    assert.equal(h.row(id).getAttribute("data-order-status"), "Preparing");
+    assert.equal(hasClass(node, "order-row-new"), true);
+    assert.equal(hasClass(node, "behavior-pulse"), true);
+    assert.equal(h.clock.pending(), pending);
+    assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, 1);
+
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    assert.equal(hasClass(h.row(id), "order-row-new"), true);
+    assert.equal(hasClass(h.row(id), "color-orange"), true);
+    assert.equal(h.clock.pending(), pending, "switching views must not restart the highlight timer");
+    assert.equal(hasClass(h.row(id).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+
+    await clock.advance(10029);
+    assert.equal(hasClass(h.row(id), "order-row-new"), true);
+    await clock.advance(1);
+    assert.equal(hasClass(h.row(id), "order-row-new"), false);
+    assert.equal(hasClass(h.row(id), "color-orange"), false);
+
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    assert.equal(hasClass(h.row(id), "order-row-new"), false);
+    assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, 1);
+
+    const css = require("node:fs").readFileSync(require.resolve("../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8");
+    assert.match(css, /\.wasla-live-screen-host--board \.wasla-live-screen-card\.order-row-new\.color-orange\s*\{[^}]*background-color:\s*#ffe4d1/);
+    assert.match(css, /\.wasla-live-screen-host--board \.wasla-live-screen-card\.order-row-new\.behavior-pulse\s*\{[^}]*animation:\s*orderRowPulseBg/);
+    assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*\.wasla-live-screen-host--board \.wasla-live-screen-card\.order-row-new\.behavior-pulse[\s\S]*animation:\s*none !important/);
+  } finally { h.restore(); }
+});
+
+test("a custom highlight color reaches the reused Board card", async function () {
+  const clock = attentionClock(5000000);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 20,
+    highlightColor: "#c47a3a",
+    highlightBehavior: "borderGlow"
+  });
+  try {
+    const id = guid(22);
+    h.view("board");
+    h.browser.renderSnapshot(snapshot([id]));
+    h.table.markOrdersAsRecentlyNew([id]);
+    h.table.applyNewOrderVisualState();
+    const card = h.row(id);
+    assert.equal(hasClass(card, "color-custom"), true);
+    assert.equal(hasClass(card, "behavior-border-glow"), true);
+    assert.equal(card.style.getPropertyValue("--new-order-highlight-bg"), "rgba(196,122,58,0.45)");
+    assert.equal(card.style.getPropertyValue("--new-order-highlight-border"), "#c47a3a");
+    h.browser.renderSnapshot(snapshot([id]));
+    assert.equal(h.row(id), card);
+    assert.equal(card.style.getPropertyValue("--new-order-highlight-border"), "#c47a3a");
+  } finally { h.restore(); }
+});
+
+test("Board order note stays separate and pulses only after the shared card highlight", async function () {
+  const clock = attentionClock(6000000);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 10,
+    highlightColor: "orange",
+    highlightBehavior: "pulse"
+  });
+  try {
+    const noted = guid(31);
+    const itemOnly = guid(32);
+    const both = guid(33);
+    const neither = guid(34);
+    const fresh = guid(35);
+    const body = notedSnapshot([noted, itemOnly, both, neither], [
+      { customerNote: "Kapıya bırakın.", itemNote: null },
+      { customerNote: "   ", itemNote: "No onions" },
+      { customerNote: "Zili çalmayın.", itemNote: "No onions" },
+      { customerNote: null, itemNote: null }
+    ]);
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    assert.equal(h.row(noted).querySelector("[data-order-note-text]").textContent, "Kapıya bırakın.");
+    assert.equal(h.row(noted).querySelector(".wasla-live-screen-card__note"), null);
+    assert.equal(h.row(itemOnly).querySelector("[data-order-note]"), null);
+    assert.equal(h.row(itemOnly).querySelector(".wasla-live-screen-card__note").textContent, "No onions");
+    const bothCard = h.row(both);
+    const orderBlock = bothCard.querySelector("[data-order-note]");
+    const itemBlock = bothCard.querySelector(".wasla-live-screen-card__note");
+    assert.equal(orderBlock.querySelector("[data-order-note-text]").textContent, "Zili çalmayın.");
+    assert.equal(itemBlock.textContent, "No onions");
+    assert.equal(orderBlock.contains(itemBlock), false);
+    assert.equal(itemBlock.contains(orderBlock), false);
+    assert.equal(h.row(neither).querySelector("[data-order-note]"), null);
+    assert.equal(h.row(neither).querySelector(".wasla-live-screen-card__note"), null);
+    assert.equal(hasClass(orderBlock, "wasla-order-note-attention"), false);
+    await clock.advance(60000);
+    assert.equal(h.browser.orderNoteAttentionState(noted).phase, "idle");
+
+    body.orders.push(Object.assign({}, body.orders[0], {
+      id: fresh,
+      customerNote: "Uzun sipariş notu satır satır sarmalı ve kartı bozmamalı.",
+      items: [{ productName: "Lahmacun", quantity: 1, notes: "No onions" }]
+    }));
+    h.browser.renderSnapshot(body);
+    assert.equal(hasClass(h.row(fresh), "order-row-new"), false);
+    h.table.markOrdersAsRecentlyNew([fresh]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    const freshNote = h.row(fresh).querySelector("[data-order-note]");
+    assert.equal(hasClass(h.row(fresh), "order-row-new"), true);
+    assert.equal(hasClass(h.row(fresh), "color-orange"), true);
+    assert.equal(hasClass(freshNote, "wasla-order-note-attention"), false);
+    assert.equal(h.row(fresh).querySelector(".wasla-live-screen-card__note").textContent, "No onions");
+
+    const pending = h.clock.pending();
+    const node = h.row(fresh);
+    h.browser.renderSnapshot(body);
+    assert.equal(h.row(fresh), node);
+    assert.equal(hasClass(node.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.clock.pending(), pending);
+
+    await clock.advance(10029);
+    assert.equal(hasClass(h.row(fresh), "order-row-new"), true);
+    assert.equal(hasClass(h.row(fresh).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    await clock.advance(1);
+    assert.equal(hasClass(h.row(fresh), "order-row-new"), false);
+    assert.equal(hasClass(h.row(fresh).querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+    assert.equal(h.browser.orderNoteAttentionState(fresh).endsAt - clock.now(), 10000);
+
+    const duringPulse = h.clock.pending();
+    body.orders[body.orders.length - 1].status = "Preparing";
+    h.browser.renderSnapshot(body);
+    assert.equal(h.row(fresh), node, "a column move reuses the pulsing card");
+    assert.equal(h.row(fresh).getAttribute("data-order-status"), "Preparing");
+    assert.equal(hasClass(node.querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+    assert.equal(h.clock.pending(), duringPulse);
+    h.browser.renderSnapshot(body);
+    assert.equal(h.clock.pending(), duringPulse);
+
+    await clock.advance(9999);
+    assert.equal(hasClass(h.row(fresh).querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+    await clock.advance(1);
+    assert.equal(hasClass(h.row(fresh).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.row(fresh).querySelector("[data-order-note-text]").textContent.indexOf("Uzun sipariş notu") >= 0, true);
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "done");
+
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    assert.equal(hasClass(h.row(fresh), "order-row-new"), false);
+    assert.equal(hasClass(h.row(fresh).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "done");
+    assert.equal(h.host.querySelectorAll(".wasla-live-screen-card[data-order-id='" + fresh + "']").length, 1);
+
+    const css = require("node:fs").readFileSync(require.resolve("../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8");
+    assert.match(css, /\.wasla-live-board \.wasla-live-board-order-note\s*\{[^}]*background:\s*#fff7ef/);
+    assert.match(css, /\.wasla-live-board \.wasla-live-board-order-note__text\s*\{[^}]*font-size:\s*\.6875rem/);
+    assert.match(css, /\.wasla-live-board \.wasla-live-board-order-note__text\s*\{[^}]*-webkit-line-clamp:\s*4/);
+    assert.match(css, /\.wasla-live-board \[data-order-note\]\.wasla-order-note-attention\s*\{[^}]*animation-name:\s*waslaOrderNoteAttention/);
+    assert.equal(/\.wasla-live-board \.wasla-live-board-order-note\s*\{[^}]*(#0d6efd|#6ea8fe)/i.test(css), false);
+  } finally { h.restore(); }
+});
+
+test("reduced motion keeps the Board order note static after the card highlight", async function () {
+  const clock = attentionClock(7000000);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 2,
+    matchMedia: function () { return { matches: true }; }
+  });
+  try {
+    const id = guid(36);
+    h.view("board");
+    h.browser.renderSnapshot(notedSnapshot([id], [{ customerNote: "Temassız teslimat.", itemNote: null }]));
+    h.table.markOrdersAsRecentlyNew([id]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    await clock.advance(2029);
+    assert.equal(hasClass(h.row(id).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    await clock.advance(1);
+    const block = h.row(id).querySelector("[data-order-note]");
+    assert.equal(hasClass(h.row(id), "order-row-new"), false);
+    assert.equal(hasClass(block, "wasla-order-note-attention"), false);
+    assert.equal(hasClass(block, "wasla-order-note-attention-static"), true);
+    assert.equal(block.querySelector("[data-order-note-text]").textContent, "Temassız teslimat.");
+    await clock.advance(10000);
+    assert.equal(hasClass(h.row(id).querySelector("[data-order-note]"), "wasla-order-note-attention-static"), false);
+    assert.equal(h.row(id).querySelector("[data-order-note-text]").textContent, "Temassız teslimat.");
+  } finally { h.restore(); }
+});
+
+test("saved highlight color, style, and duration reach a new list row only", async function () {
+  const clock = attentionClock(3000000);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 12,
+    highlightColor: "blue",
+    highlightBehavior: "pulse"
+  });
+  try {
+    const noted = guid(11);
+    const plain = guid(12);
+    const body = notedSnapshot([noted, plain], [
+      { customerNote: "Kapıya bırakın.", itemNote: null },
+      { customerNote: "  ", itemNote: "No onions" }
+    ]);
+    h.browser.renderSnapshot(body);
+    assert.equal(hasClass(h.row(noted), "order-row-new"), false);
+    assert.equal(hasClass(h.row(plain), "order-row-new"), false);
+
+    h.table.markOrdersAsRecentlyNew([noted, plain]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    assert.equal(hasClass(h.row(noted), "order-row-new"), true);
+    assert.equal(hasClass(h.row(noted), "color-blue"), true);
+    assert.equal(hasClass(h.row(noted), "behavior-pulse"), true);
+    assert.equal(hasClass(h.row(plain), "behavior-pulse"), true);
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+
+    const pending = h.clock.pending();
+    const node = h.row(noted);
+    h.browser.renderSnapshot(body);
+    assert.equal(h.row(noted), node);
+    assert.equal(hasClass(node, "order-row-new"), true);
+    assert.equal(hasClass(node, "behavior-pulse"), true);
+    assert.equal(h.clock.pending(), pending);
+
+    await clock.advance(12029);
+    assert.equal(hasClass(h.row(noted), "order-row-new"), true);
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    await clock.advance(1);
+    assert.equal(hasClass(h.row(noted), "order-row-new"), false);
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+    assert.equal(h.row(plain).querySelector("[data-order-note]"), null);
+    assert.equal(h.browser.orderNoteAttentionState(plain).phase, "skipped");
+  } finally { h.restore(); }
+});
+
+test("order-note attention waits for the configured row highlight and then runs for 10 seconds", async function () {
+  const clock = attentionClock(1000000);
+  const h = attentionHarness({ clock: clock, highlightSeconds: 8 });
+  try {
+    const plain = guid(1);
+    const noted = guid(2);
+    const both = guid(3);
+    const body = notedSnapshot([plain, noted, both], [
+      { customerNote: "   ", itemNote: "No onions" },
+      { customerNote: "Zili çalmayın, arayın.", itemNote: null },
+      { customerNote: "Kapıya bırakabilirsiniz.", itemNote: "No onions" }
+    ]);
+    h.browser.renderSnapshot(body);
+    assert.equal(h.browser.orderNoteAttentionState(noted).phase, "idle");
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    await clock.advance(60000);
+    assert.equal(h.browser.orderNoteAttentionState(noted).phase, "idle", "baseline rows do not start a note effect");
+
+    h.table.markOrdersAsRecentlyNew([plain, noted, both]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    assert.equal(hasClass(h.row(noted), "order-row-new"), true);
+    assert.equal(hasClass(h.row(plain), "order-row-new"), true);
+    assert.equal(h.row(noted).querySelector("[data-order-note]") !== null, true);
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+
+    const rowNode = h.row(noted);
+    const highlightClass = rowNode.className;
+    const pendingHighlight = h.clock.pending();
+    const duringHighlight = h.browser.renderSnapshot(body);
+    assert.equal(duringHighlight.unchanged, 3);
+    assert.equal(h.row(noted), rowNode);
+    assert.equal(rowNode.className, highlightClass, "an unchanged poll must not restart the row highlight");
+    assert.equal(hasClass(rowNode.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(noted).phase, "idle");
+    assert.equal(h.clock.pending(), pendingHighlight);
+
+    rowNode.className = "wasla-live-screen-card wasla-live-list-row";
+    h.browser.renderSnapshot(body);
+    assert.equal(h.row(noted), rowNode, "reconciliation reuses the list row");
+    assert.equal(hasClass(rowNode, "order-row-new"), true);
+    assert.equal(hasClass(rowNode, "color-yellow"), true);
+    assert.equal(hasClass(rowNode, "behavior-fade"), true);
+    assert.equal(hasClass(rowNode.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(noted).phase, "idle");
+    assert.equal(h.clock.pending(), pendingHighlight, "restoring a stripped highlight must not add a timer");
+    assert.equal(hasClass(h.row(both).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.row(plain).querySelector("[data-order-note]"), null);
+
+    await clock.advance(8029);
+    assert.equal(hasClass(h.row(noted), "order-row-new"), true);
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+
+    await clock.advance(1);
+    assert.equal(hasClass(h.row(noted), "order-row-new"), false);
+    assert.equal(hasClass(h.row(plain), "order-row-new"), false);
+    assert.equal(h.browser.orderNoteAttentionState(plain).phase, "skipped");
+    assert.equal(h.row(plain).querySelector("[data-order-note]"), null);
+    const notedBlock = h.row(noted).querySelector("[data-order-note]");
+    const bothBlock = h.row(both).querySelector("[data-order-note]");
+    assert.equal(hasClass(notedBlock, "wasla-order-note-attention"), true);
+    assert.equal(hasClass(bothBlock, "wasla-order-note-attention"), true);
+    assert.equal(h.browser.orderNoteAttentionState(noted).endsAt - clock.now(), 10000);
+    assert.equal(h.row(both).querySelector(".wasla-live-screen-card__items").contains(bothBlock), false);
+    assert.equal(h.row(both).querySelector(".wasla-live-screen-card__item").contains(h.row(both).querySelector(".wasla-live-list-row__item-note")), true);
+    assert.equal(hasClass(h.row(both).querySelector(".wasla-live-list-row__item-note"), "wasla-order-note-attention"), false);
+    assert.equal(h.row(plain).querySelector(".wasla-live-list-row__item-note").textContent.indexOf("No onions") >= 0, true);
+
+    const pendingDuring = h.clock.pending();
+    const unchanged = h.browser.renderSnapshot(body);
+    assert.equal(unchanged.changed, 0);
+    assert.equal(h.row(noted).querySelector("[data-order-note]"), notedBlock);
+    assert.equal(hasClass(notedBlock, "wasla-order-note-attention"), true);
+    assert.equal(h.browser.orderNoteAttentionState(noted).endsAt - clock.now(), 10000);
+    assert.equal(h.clock.pending(), pendingDuring);
+
+    await clock.advance(9999);
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+    await clock.advance(1);
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(noted).phase, "done");
+    assert.equal(notedBlock.querySelector("[data-order-note-text]").textContent, "Zili çalmayın, arayın.");
+
+    h.table.markOrdersAsRecentlyNew([noted]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    await clock.advance(8030);
+    assert.equal(hasClass(h.row(noted).querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(noted).phase, "done");
+  } finally { h.restore(); }
+});
+
+test("view changes and removed orders do not restart or throw the order-note effect", async function () {
+  const clock = attentionClock(5000000);
+  const h = attentionHarness({ clock: clock, highlightSeconds: 4 });
+  try {
+    const id = guid(4);
+    const body = notedSnapshot([id], [{ customerNote: "Sosları ayrı gönderin.", itemNote: "No onions" }]);
+    h.browser.renderSnapshot(body);
+    h.table.markOrdersAsRecentlyNew([id]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    await clock.advance(4030);
+    const started = h.browser.orderNoteAttentionState(id).endsAt;
+    assert.equal(hasClass(h.row(id).querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+
+    await clock.advance(2500);
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    const boardNote = h.host.querySelector("[data-order-note]");
+    assert.equal(boardNote.querySelector("[data-order-note-text]").textContent, "Sosları ayrı gönderin.");
+    assert.equal(hasClass(boardNote, "wasla-order-note-attention"), true);
+    assert.equal(h.browser.orderNoteAttentionState(id).endsAt, started);
+    assert.equal(h.host.querySelector(".wasla-live-screen-card__items").contains(boardNote), false);
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    assert.equal(h.host.querySelector("[data-order-note]"), null);
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    const resumed = h.row(id).querySelector("[data-order-note]");
+    assert.equal(hasClass(resumed, "wasla-order-note-attention"), true);
+    assert.equal(h.browser.orderNoteAttentionState(id).endsAt, started);
+    assert.equal(resumed.getAttribute("data-order-note-attention-delay").indexOf("-") === 0, true);
+    assert.equal(h.row(id).querySelector(".wasla-live-list-row__item-note").textContent.indexOf("No onions") >= 0, true);
+
+    body.orders = [];
+    h.browser.renderSnapshot(body);
+    await clock.advance(20000);
+    assert.equal(h.host.querySelector("[data-order-note]"), null);
+    assert.equal(h.browser.orderNoteAttentionState(id).phase, "done");
+  } finally { h.restore(); }
+});
+
+test("reduced motion uses static order-note emphasis without the pulse class", async function () {
+  const clock = attentionClock(8000000);
+  const css = require("node:fs").readFileSync(require.resolve("../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8");
+  const pulseAt = css.indexOf("@keyframes waslaOrderNoteAttention {");
+  const pulseEnd = css.indexOf("@keyframes waslaOrderNoteAttentionDark");
+  const pulse = css.slice(pulseAt, pulseEnd);
+  assert.equal(pulseAt >= 0, true);
+  assert.equal(/visibility\s*:\s*hidden/.test(pulse), false);
+  assert.equal(/opacity\s*:/.test(pulse), false);
+  assert.equal(/color-mix\(/.test(pulse), false);
+  assert.match(css, /\.wasla-live-list-row__order-note-text\s*\{[^}]*font-size:\s*\.75rem/);
+  assert.equal(/#(?:0d6efd|6ea8fe|b6d4fe|cfe2ff|e8f2ff)/i.test(pulse), false);
+  assert.match(css, /\.wasla-live-screen-host--list \.wasla-live-screen-card\.order-row-new\.color-yellow\s*\{[^}]*background-color:\s*#fff3cd/);
+  assert.match(css, /\.wasla-live-screen-host--list \.wasla-live-screen-card\.order-row-new\.behavior-fade\s*\{[^}]*animation:\s*orderRowFadeBg/);
+  assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*\.wasla-live-screen-page \*[\s\S]*animation:\s*none !important/);
+  assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*\.wasla-live-screen-host--list \.wasla-live-screen-card\.order-row-new\.behavior-fade[\s\S]*animation:\s*none !important/);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 2,
+    matchMedia: function () { return { matches: true }; }
+  });
+  try {
+    const id = guid(5);
+    const body = notedSnapshot([id], [{ customerNote: "Temassız teslimat rica ediyorum.", itemNote: null }]);
+    h.browser.renderSnapshot(body);
+    h.table.markOrdersAsRecentlyNew([id]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    await clock.advance(2030);
+    const block = h.row(id).querySelector("[data-order-note]");
+    assert.equal(hasClass(block, "wasla-order-note-attention"), false);
+    assert.equal(hasClass(block, "wasla-order-note-attention-static"), true);
+    assert.equal(block.querySelector("[data-order-note-text]").textContent, "Temassız teslimat rica ediyorum.");
+    await clock.advance(10000);
+    assert.equal(hasClass(h.row(id).querySelector("[data-order-note]"), "wasla-order-note-attention-static"), false);
+  } finally { h.restore(); }
+});
+
+function paintFocusDetail(container, orderId) {
+  while (container.firstChild) container.removeChild(container.firstChild);
+  const wrap = document.createElement("div");
+  wrap.className = "wasla-live-detail";
+  wrap.setAttribute("data-order-id", orderId);
+  const body = document.createElement("div");
+  body.className = "wasla-live-detail__body";
+  const products = document.createElement("section");
+  products.className = "wasla-live-detail__products";
+  const itemNote = document.createElement("p");
+  itemNote.className = "wasla-live-detail__note";
+  itemNote.textContent = "No onions";
+  products.appendChild(itemNote);
+  const facts = document.createElement("aside");
+  facts.className = "wasla-live-detail__facts";
+  const customer = document.createElement("p");
+  customer.className = "wasla-live-detail__customer";
+  customer.textContent = "Ada";
+  facts.appendChild(customer);
+  body.appendChild(products);
+  body.appendChild(facts);
+  const actions = document.createElement("div");
+  actions.className = "wasla-live-detail__actions";
+  const button = document.createElement("button");
+  button.setAttribute("data-order-action", "approve");
+  actions.appendChild(button);
+  wrap.appendChild(body);
+  wrap.appendChild(actions);
+  container.appendChild(wrap);
+}
+
+function focusDetailModal() {
+  return {
+    loadPanel: function (container, id) {
+      paintFocusDetail(container, id);
+      return Promise.resolve(true);
+    },
+    cancelPanel: function () {}
+  };
+}
+
+function focusEntry(host, id) {
+  const entries = host.querySelectorAll("[data-focus-select]");
+  for (let i = 0; i < entries.length; i++) {
+    if (entries[i].getAttribute("data-order-id") === id) return entries[i];
+  }
+  return null;
+}
+
+test("Focus renders the order note apart from the item note and omits an empty note", async function () {
+  const clock = attentionClock(1000);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 4,
+    liveDetailModal: focusDetailModal()
+  });
+  try {
+    const noted = guid(1);
+    const plain = guid(2);
+    const body = notedSnapshot([noted, plain], [
+      { customerNote: "Zili çalmayın, arayın.", itemNote: "No onions" },
+      { customerNote: "   ", itemNote: "No onions" }
+    ]);
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    await flush();
+    const panel = h.host.querySelector(".wasla-live-detail");
+    const orderNote = panel.querySelector("[data-order-note]");
+    const itemNote = panel.querySelector(".wasla-live-detail__note");
+    assert.equal(panel.getAttribute("data-order-id"), noted);
+    assert.equal(orderNote.querySelector("[data-order-note-text]").textContent, "Zili çalmayın, arayın.");
+    assert.equal(orderNote.querySelector(".wasla-live-focus-order-note__label").textContent, "orderNote");
+    assert.equal(itemNote.textContent, "No onions");
+    assert.equal(orderNote.contains(itemNote), false);
+    assert.equal(itemNote.contains(orderNote), false);
+    assert.equal(hasClass(orderNote, "wasla-live-detail__note"), false);
+    assert.equal(panel.querySelector(".wasla-live-detail__body").contains(orderNote), true);
+    assert.equal(panel.querySelector(".wasla-live-detail__facts").nextElementSibling, orderNote);
+    assert.equal(panel.querySelector(".wasla-live-detail__actions").contains(orderNote), false);
+    assert.equal(hasClass(panel, "order-row-new"), false);
+    assert.equal(hasClass(orderNote, "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(noted).phase, "idle");
+
+    h.browser.selectOrder(plain, true);
+    await flush();
+    const next = h.host.querySelector(".wasla-live-detail");
+    assert.equal(next.getAttribute("data-order-id"), plain);
+    assert.equal(next.querySelector("[data-order-note]"), null);
+    assert.equal(next.querySelector(".wasla-live-detail__note") !== null, true);
+    assert.equal(hasClass(next, "order-row-new"), false);
+    assert.equal(h.browser.orderNoteAttentionState(plain).phase, "idle");
+  } finally { h.restore(); }
+});
+
+test("Focus highlight finishes before the order-note pulse and selection does not restart it", async function () {
+  const clock = attentionClock(2000000);
+  const css = require("node:fs").readFileSync(require.resolve("../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8");
+  const focusPulse = css.match(/\.wasla-live-focus \[data-order-note\]\.wasla-order-note-attention\s*\{[^}]*\}/);
+  assert.equal(focusPulse !== null, true);
+  assert.equal(/!important/.test(focusPulse[0]), false);
+  assert.match(focusPulse[0], /animation-name:\s*waslaOrderNoteAttention/);
+  assert.match(css, /\.wasla-live-focus \.wasla-live-focus-order-note__text\s*\{[^}]*font-size:\s*\.875rem/);
+  assert.match(css, /\.wasla-live-focus \.wasla-live-focus-order-note\s*\{[^}]*border-inline-start:\s*3px solid #e0b48a/);
+  assert.match(css, /\.wasla-live-screen-host--focus \.wasla-live-detail\.order-row-new\.color-orange,[\s\S]*?background-color:\s*#ffe4d1/);
+  assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*\.wasla-live-screen-host--focus \.wasla-live-detail\.order-row-new\.behavior-pulse[\s\S]*animation:\s*none !important/);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 4,
+    highlightColor: "orange",
+    highlightBehavior: "pulse",
+    liveDetailModal: focusDetailModal()
+  });
+  try {
+    const existing = guid(1);
+    const fresh = guid(2);
+    const baseline = notedSnapshot([existing], [{ customerNote: "Kapıya bırakın.", itemNote: null }]);
+    h.view("focus");
+    h.browser.renderSnapshot(baseline);
+    await flush();
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(existing).phase, "idle");
+
+    const body = notedSnapshot([existing, fresh], [
+      { customerNote: "Kapıya bırakın.", itemNote: null },
+      { customerNote: "Güvenliğe teslim.", itemNote: "Extra spicy" }
+    ]);
+    h.browser.renderSnapshot(body);
+    h.table.markOrdersAsRecentlyNew([fresh]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    await flush();
+    const queued = focusEntry(h.host, fresh);
+    assert.equal(hasClass(queued, "order-row-new"), true);
+    assert.equal(hasClass(queued, "color-orange"), true);
+    assert.equal(hasClass(queued, "behavior-pulse"), true);
+    assert.equal(queued.querySelector("[data-order-note]"), null);
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "idle");
+
+    h.browser.selectOrder(fresh, true);
+    await flush();
+    const panel = h.host.querySelector(".wasla-live-detail");
+    const note = panel.querySelector("[data-order-note]");
+    assert.equal(panel.getAttribute("data-order-id"), fresh);
+    assert.equal(hasClass(panel, "order-row-new"), true);
+    assert.equal(hasClass(focusEntry(h.host, fresh), "order-row-new"), false);
+    assert.equal(note.querySelector("[data-order-note-text]").textContent, "Güvenliğe teslim.");
+    assert.equal(panel.querySelector(".wasla-live-detail__note").contains(note), false);
+    assert.equal(hasClass(note, "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "idle");
+
+    await clock.advance(4029);
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), true);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    await clock.advance(1);
+    const started = h.browser.orderNoteAttentionState(fresh).endsAt;
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+    assert.equal(started - clock.now(), 10000);
+
+    h.browser.renderSnapshot(body);
+    await flush();
+    assert.equal(h.browser.orderNoteAttentionState(fresh).endsAt, started);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+
+    body.orders[1].status = "Preparing";
+    h.browser.renderSnapshot(body);
+    await flush();
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "running");
+    assert.equal(h.browser.orderNoteAttentionState(fresh).endsAt, started);
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail [data-order-note]"), "wasla-order-note-attention"), true);
+
+    h.browser.selectOrder(existing, true);
+    await flush();
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail [data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(existing).phase, "idle");
+    assert.equal(h.browser.orderNoteAttentionState(fresh).endsAt, started);
+
+    h.browser.selectOrder(fresh, true);
+    await flush();
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+    assert.equal(h.browser.orderNoteAttentionState(fresh).endsAt, started);
+
+    await clock.advance(9999);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
+    await clock.advance(1);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "done");
+    assert.equal(h.host.querySelector("[data-order-note-text]").textContent, "Güvenliğe teslim.");
+
+    h.browser.renderSnapshot(body);
+    await flush();
+    h.browser.selectOrder(existing, true);
+    await flush();
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "done");
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail [data-order-note]"), "wasla-order-note-attention"), false);
+
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    await flush();
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "done");
+    assert.equal(h.browser.orderNoteAttentionState(existing).phase, "idle");
+    assert.equal(h.host.querySelector(".wasla-live-detail [data-order-note].wasla-order-note-attention"), null);
+
+    const gone = guid(3);
+    const departing = notedSnapshot([existing, gone], [
+      { customerNote: "Kapıya bırakın.", itemNote: null },
+      { customerNote: "Sipariş notu silinecek.", itemNote: null }
+    ]);
+    h.browser.renderSnapshot(departing);
+    h.table.markOrdersAsRecentlyNew([gone]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    h.browser.selectOrder(gone, true);
+    await flush();
+    await clock.advance(4030);
+    assert.equal(h.browser.orderNoteAttentionState(gone).phase, "running");
+    assert.equal(clock.pending(), 1);
+    departing.orders = departing.orders.filter(function (order) { return order.id !== gone; });
+    h.browser.renderSnapshot(departing);
+    assert.equal(h.browser.orderNoteAttentionState(gone).phase, "done");
+    assert.equal(clock.pending(), 0);
+    assert.equal(h.host.querySelector('[data-order-id="' + gone + '"]'), null);
+    await clock.advance(20000);
+    assert.equal(h.browser.orderNoteAttentionState(gone).phase, "done");
+  } finally { h.restore(); }
+});
+
+test("Focus reduced motion shows the order note without the pulse class", async function () {
+  const clock = attentionClock(3000000);
+  const h = attentionHarness({
+    clock: clock,
+    highlightSeconds: 2,
+    liveDetailModal: focusDetailModal(),
+    matchMedia: function (query) {
+      return {
+        matches: String(query).indexOf("prefers-reduced-motion") >= 0,
+        addEventListener: function () {},
+        addListener: function () {}
+      };
+    }
+  });
+  try {
+    const existing = guid(8);
+    const fresh = guid(9);
+    const baseline = notedSnapshot([existing], [{ customerNote: "Kapıya bırakın.", itemNote: null }]);
+    h.view("focus");
+    h.browser.renderSnapshot(baseline);
+    await flush();
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention-static"), false);
+
+    const body = notedSnapshot([existing, fresh], [
+      { customerNote: "Kapıya bırakın.", itemNote: null },
+      { customerNote: "Temassız teslimat rica ediyorum.", itemNote: null }
+    ]);
+    h.browser.renderSnapshot(body);
+    h.table.markOrdersAsRecentlyNew([fresh]);
+    h.table.applyNewOrderVisualState();
+    h.table.scheduleNewOrderHighlightCleanup();
+    h.browser.selectOrder(fresh, true);
+    await flush();
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), true);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
+    await clock.advance(2030);
+    const block = h.host.querySelector("[data-order-note]");
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(hasClass(block, "wasla-order-note-attention"), false);
+    assert.equal(hasClass(block, "wasla-order-note-attention-static"), true);
+    assert.equal(block.querySelector("[data-order-note-text]").textContent, "Temassız teslimat rica ediyorum.");
+    await clock.advance(10000);
+    assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention-static"), false);
+    assert.equal(h.host.querySelector("[data-order-note-text]").textContent, "Temassız teslimat rica ediyorum.");
+    assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "done");
+  } finally { h.restore(); }
+});
+
+test("Board, List, and Focus totals use the same TRY formatter", async function () {
+  const h = boardHarness(true, {
+    liveDetailModal: {
+      loadPanel: function (container, id) {
+        while (container.firstChild) container.removeChild(container.firstChild);
+        const wrap = document.createElement("div");
+        wrap.className = "wasla-live-detail";
+        wrap.setAttribute("data-order-id", id);
+        const grand = document.createElement("div");
+        grand.className = "wasla-live-detail__grand";
+        const amount = document.createElement("dd");
+        amount.textContent = "0,00";
+        grand.appendChild(amount);
+        wrap.appendChild(grand);
+        container.appendChild(wrap);
+        return Promise.resolve(true);
+      },
+      cancelPanel: function () {}
+    }
+  });
+  try {
+    const amounts = [100, 1230.10, 98765.43];
+    const ids = [guid(1), guid(2), guid(3)];
+    const body = snapshot(ids);
+    body.orders.forEach(function (order, index) { order.totalAmount = amounts[index]; });
+    function cardTotal(id) {
+      return h.host.querySelector('.wasla-live-screen-card[data-order-id="' + id + '"]')
+        .querySelector("[data-total]").textContent;
+    }
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    ids.forEach(function (id, index) {
+      const text = cardTotal(id);
+      assert.equal(text, store.formatAmount(amounts[index], "tr-TR"));
+      assert.equal(text.indexOf("₺") >= 0, true);
+      assert.equal(text.indexOf("TRY"), -1);
+    });
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    ids.forEach(function (id, index) {
+      const text = cardTotal(id);
+      assert.equal(text.indexOf(store.formatAmount(amounts[index], "tr-TR")) >= 0, true);
+      assert.equal(text.indexOf("₺") >= 0, true);
+      assert.equal(text.indexOf("TRY"), -1);
+      assert.equal(text.indexOf("$"), -1);
+    });
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    await flush();
+    assert.equal(h.host.querySelector(".wasla-live-detail__grand dd").textContent, store.formatAmount(100, "tr-TR"));
+    assert.equal(h.host.querySelector(".wasla-live-detail__grand dd").textContent.indexOf("₺") >= 0, true);
+    assert.equal(h.host.querySelector(".wasla-live-detail__grand dd").textContent.indexOf("TRY"), -1);
+    h.browser.selectOrder(guid(2), true);
+    await flush();
+    assert.equal(h.host.querySelector(".wasla-live-detail__grand dd").textContent, store.formatAmount(1230.10, "tr-TR"));
+    h.browser.selectOrder(guid(3), true);
+    await flush();
+    assert.equal(h.host.querySelector(".wasla-live-detail__grand dd").textContent, store.formatAmount(98765.43, "tr-TR"));
+  } finally { h.restore(); }
+});
+
+test("order detail money uses the shared TRY formatter without touching notes", async () => {
+  const doc = fakeDocument();
+  const container = doc.createElement("div");
+  container.isConnected = true;
+  function addMoney(amount, surcharge, className) {
+    const el = doc.createElement(surcharge ? "span" : "dd");
+    el.setAttribute("data-money", amount);
+    if (surcharge) el.setAttribute("data-money-wrap", "surcharge");
+    if (className) el.className = className;
+    el.textContent = "plain";
+    container.appendChild(el);
+    return el;
+  }
+  const item = addMoney("286.70", false, "wasla-live-detail__amount");
+  const cheese = addMoney("14.90", true);
+  const sauce = addMoney("9.90", true);
+  const delivery = addMoney("24.90", false);
+  const service = addMoney("5.00", false);
+  const total = addMoney("1504.00", false);
+  const blank = doc.createElement("span");
+  blank.setAttribute("data-money", "");
+  blank.textContent = "plain";
+  const orderNote = doc.createElement("p");
+  orderNote.className = "wasla-live-detail-order-note__text";
+  orderNote.textContent = "Siparişi kapının önüne bırakın. ".repeat(20);
+  const itemNote = doc.createElement("p");
+  itemNote.className = "wasla-live-detail__note";
+  itemNote.textContent = "No onions";
+  container.appendChild(blank);
+  container.appendChild(orderNote);
+  container.appendChild(itemNote);
+
+  ["tr-TR", "en-US", "ar-SA", "ru-RU"].forEach(function (culture) {
+    store.applyDetailCurrency(container, culture);
+    [item, delivery, service, total].forEach(function (node) {
+      const formatted = store.formatAmount(node.getAttribute("data-money"), culture);
+      assert.equal(node.textContent, formatted);
+      assert.equal(formatted.indexOf("$"), -1);
+      assert.equal(formatted.indexOf("SAR"), -1);
+      assert.equal(formatted.indexOf("₽"), -1);
+      assert.equal(formatted.indexOf("RUB"), -1);
+      assert.equal(formatted.indexOf("₺") >= 0, true);
+      assert.equal(formatted.indexOf("TRY"), -1);
+      assert.equal((formatted.match(/₺/g) || []).length, 1);
+    });
+    [cheese, sauce].forEach(function (node) {
+      const formatted = store.formatAmount(node.getAttribute("data-money"), culture);
+      assert.equal(node.textContent, "(+" + formatted + ")");
+      assert.equal(node.textContent.indexOf(formatted), 2);
+    });
+  });
+  store.applyDetailCurrency(container, "tr-TR");
+  assert.equal(item.textContent, store.formatAmount("286.70", "tr-TR"));
+  assert.equal((item.textContent.match(/₺/g) || []).length, 1);
+  assert.equal((cheese.textContent.match(/₺/g) || []).length, 1);
+  assert.equal(total.textContent, store.formatAmount("1504.00", "tr-TR"));
+  assert.equal(blank.textContent, "plain");
+  assert.equal(orderNote.textContent.length > 200, true);
+  assert.equal(itemNote.textContent, "No onions");
+  assert.equal(container.querySelectorAll(".wasla-live-detail__note").length, 1);
+  assert.equal(container.querySelector(".wasla-live-detail-order-note__text"), orderNote);
+
+  const loaded = [];
+  const client = detailModal.createDetailClient({
+    fetch: function () { return Promise.resolve({ ok: true, text: async () => "<p>panel</p>" }); },
+    getMessage: function (key) { return key; },
+    urlFor: function (id) { return "/panel/" + id; },
+    document: doc,
+    onLoaded: function (_node, consumer) { loaded.push(consumer); }
+  });
+  assert.equal(await client.load(doc.createElement("div"), guid(1), "modal"), true);
+  assert.equal(await client.load(doc.createElement("div"), guid(2), "focus"), true);
+  assert.deepEqual(loaded, ["modal", "focus"]);
+});

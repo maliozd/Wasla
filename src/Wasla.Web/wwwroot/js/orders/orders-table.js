@@ -164,6 +164,30 @@
   function applyHighlightClassesToRow(row) {
     var color = getHighlightColorName();
     var beh = getHighlightBehaviorName();
+    var colorClass = "color-" + color;
+    var behaviorClass = "behavior-" + beh;
+    var customBg = "";
+    var customBorder = "";
+    if (color && String(color).indexOf("#") === 0) {
+      var hex = String(color).replace("#", "");
+      var red = parseInt(hex.substring(0, 2), 16);
+      var green = parseInt(hex.substring(2, 4), 16);
+      var blue = parseInt(hex.substring(4, 6), 16);
+      colorClass = "color-custom";
+      customBg = "rgba(" + red + "," + green + "," + blue + ",0.45)";
+      customBorder = String(color);
+    }
+    // Re-applying the same classes removes and adds them, which restarts the
+    // CSS animation. Leave an already-correct row untouched.
+    var alreadyApplied = row.classList.contains("order-row-new")
+      && row.classList.contains(colorClass)
+      && row.classList.contains(behaviorClass);
+    if (alreadyApplied && colorClass === "color-custom") {
+      alreadyApplied = row.style.getPropertyValue("--new-order-highlight-bg") === customBg
+        && row.style.getPropertyValue("--new-order-highlight-border") === customBorder;
+    }
+    if (alreadyApplied) return;
+
     row.classList.remove(
       "order-row-new",
       "order-row-new-flash",
@@ -173,19 +197,14 @@
     row.style.removeProperty("--new-order-highlight-bg");
     row.style.removeProperty("--new-order-highlight-border");
 
-    if (color && String(color).indexOf("#") === 0) {
-      // Custom hex color -> CSS variables
-      var h = String(color).replace("#", "");
-      var r = parseInt(h.substring(0, 2), 16);
-      var g = parseInt(h.substring(2, 4), 16);
-      var b = parseInt(h.substring(4, 6), 16);
-      row.style.setProperty("--new-order-highlight-bg", "rgba(" + r + "," + g + "," + b + ",0.18)");
-      row.style.setProperty("--new-order-highlight-border", String(color));
-      row.classList.add("order-row-new", "color-custom", "behavior-" + beh);
+    if (colorClass === "color-custom") {
+      row.style.setProperty("--new-order-highlight-bg", customBg);
+      row.style.setProperty("--new-order-highlight-border", customBorder);
+      row.classList.add("order-row-new", "color-custom", behaviorClass);
       return;
     }
 
-    row.classList.add("order-row-new", "color-" + color, "behavior-" + beh);
+    row.classList.add("order-row-new", colorClass, behaviorClass);
   }
 
   function markOrdersAsRecentlyNew(orderIds) {
@@ -217,6 +236,31 @@
     }, delay);
   }
 
+  function findNewOrderHighlightHost(container, id) {
+    const selector = "[data-order-id=\"" + id + "\"]";
+    return container.querySelector(".wasla-live-detail" + selector)
+      || container.querySelector(".wasla-live-screen-card" + selector)
+      || container.querySelector(selector);
+  }
+
+  function clearNewOrderHighlight(container, id, keep) {
+    const nodes = container.querySelectorAll("[data-order-id=\"" + id + "\"]");
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (keep && node === keep) continue;
+      node.classList.remove(
+        "order-row-new",
+        "order-row-new-flash",
+        "color-orange", "color-blue", "color-green", "color-yellow", "color-red", "color-custom",
+        "behavior-fade", "behavior-pulse", "behavior-blink", "behavior-border-glow", "behavior-none"
+      );
+      if (node.style && typeof node.style.removeProperty === "function") {
+        node.style.removeProperty("--new-order-highlight-bg");
+        node.style.removeProperty("--new-order-highlight-border");
+      }
+    }
+  }
+
   function applyNewOrderVisualState() {
     const container = getRefreshContainer();
     if (!container) return;
@@ -232,24 +276,24 @@
     for (const entry of Array.from(T.recentlyNewOrderIds.entries())) {
       const id = entry[0];
       const exp = entry[1];
-      // Prefer the card/row host, not nested action buttons that also carry data-order-id.
-      const row = container.querySelector("[data-order-id=\"" + id + "\"].wasla-live-screen-card, [data-order-id=\"" + id + "\"]");
+      // List and Board keep the card. Focus prefers the open detail panel, then the queue entry.
+      const row = findNewOrderHighlightHost(container, id);
       if (exp <= now) {
-        if (row) {
-          row.classList.remove(
-            "order-row-new",
-            "order-row-new-flash",
-            "color-orange", "color-blue", "color-green", "color-yellow", "color-red", "color-custom",
-            "behavior-fade", "behavior-pulse", "behavior-blink", "behavior-border-glow", "behavior-none"
-          );
-          row.style.removeProperty("--new-order-highlight-bg");
-          row.style.removeProperty("--new-order-highlight-border");
-          setNewBadgeVisible(row, false);
-        }
+        const nodes = container.querySelectorAll("[data-order-id=\"" + id + "\"]");
+        for (let n = 0; n < nodes.length; n++) setNewBadgeVisible(nodes[n], false);
+        clearNewOrderHighlight(container, id, null);
         T.recentlyNewOrderIds.delete(id);
+        if (isLiveDisplayPage() && typeof T.onRowHighlightEnded === "function") {
+          try {
+            T.onRowHighlightEnded(id);
+          } catch (error) {
+            if (O.isDebugEnabled && O.isDebugEnabled()) O.debugWarn("onRowHighlightEnded", error);
+          }
+        }
         continue;
       }
       if (!row) continue;
+      clearNewOrderHighlight(container, id, row);
       applyHighlightClassesToRow(row);
       setNewBadgeVisible(row, true);
     }

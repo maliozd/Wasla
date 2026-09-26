@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
     <value>{0} د</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve">
+    <value>{0} س {1} د</value>
+  </data>
   <data name="Orders.LiveScreen.ViewCards" xml:space="preserve">
     <value>بطاقات</value>
   </data>
@@ -661,7 +664,7 @@
     <value>تعذر إضافة الإيصال إلى قائمة الطباعة.</value>
   </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
-    <value>فتح صفحة الطلب</value>
+    <value>فتح الطلب</value>
   </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>إغلاق العرض</value>
@@ -677,6 +680,12 @@
   </data>
   <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
     <value>آخر تحديث</value>
+  </data>
+  <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
+    <value>مباشر</value>
+  </data>
+  <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
+    <value>صوت الإشعارات</value>
   </data>
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>تم حظر النافذة المنبثقة. يتم فتح العرض المباشر في هذا التبويب.</value>
@@ -3515,4 +3524,20 @@
   <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>لا يوجد مستخدمون مطابقون</value></data>
   <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>جرّب بحثًا أو عوامل تصفية مختلفة.</value></data>
   <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>غير مسجّل</value></data>
+  <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>اللوحة</value></data>
+  <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>المكتملة</value></data>
+  <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>لا توجد طلبات</value></data>
+  <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>الطلب</value></data>
+  <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>المدة</value></data>
+  <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>الإجمالي</value></data>
+  <data name="Orders.LiveScreen.ItemNote" xml:space="preserve"><value>ملاحظة</value></data>
+  <data name="Orders.LiveScreen.OrderNote" xml:space="preserve"><value>ملاحظة الطلب</value></data>
+  <data name="Orders.LiveScreen.ViewFocus" xml:space="preserve"><value>التركيز</value></data>
+  <data name="Orders.LiveScreen.SelectOrder" xml:space="preserve"><value>اختر طلبًا</value></data>
+  <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>اختر طلبًا من القائمة لعرض التفاصيل والإجراءات.</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>لا توجد طلبات للعرض الآن</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>ستظهر الطلبات هنا عند وصولها.</value></data>
+  <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>العودة إلى الطلبات</value></data>
+  <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>إعادة المحاولة</value></data>
+  <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>الطلبات</value></data>
 </root>

@@ -12,6 +12,7 @@
   if (!root || !root.WaslaOrders) return;
 
   const O = root.WaslaOrders;
+  O.applyDetailCurrency = api.applyDetailCurrency;
   const browser = attachBrowser(O, root, api);
   O.liveStore = browser;
 })(typeof window !== "undefined" ? window : globalThis, function () {
@@ -61,6 +62,8 @@
       order.displayNumber || "",
       order.platform || "",
       order.customerName || "",
+      order.customerAddress || "",
+      order.customerNote || "",
       order.totalAmount,
       order.receivedAtUtc || "",
       order.deliveredAtUtc || "",
@@ -68,13 +71,43 @@
     ].join("\u001d");
   }
 
+  const liveMoneyFormats = new Map();
+
+  function liveMoneyFormat(culture) {
+    const locale = culture || "tr-TR";
+    let format = liveMoneyFormats.get(locale);
+    if (!format) {
+      format = new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: "TRY",
+        currencyDisplay: "narrowSymbol",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      liveMoneyFormats.set(locale, format);
+    }
+    return format;
+  }
+
   function formatAmount(amount, culture) {
     const value = typeof amount === "number" ? amount : Number(amount);
     if (!isFinite(value)) return "";
-    return new Intl.NumberFormat(culture || "tr-TR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
+    return liveMoneyFormat(culture).format(value);
+  }
+
+  function applyDetailCurrency(root, culture) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const nodes = root.querySelectorAll("[data-money]");
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      const raw = node.getAttribute("data-money");
+      if (raw == null || String(raw).trim() === "") continue;
+      const formatted = formatAmount(raw, culture);
+      if (!formatted) continue;
+      node.textContent = node.getAttribute("data-money-wrap") === "surcharge"
+        ? "(+" + formatted + ")"
+        : formatted;
+    }
   }
 
   function elapsedMinutes(serverTimeUtc, receivedAtUtc) {
@@ -139,6 +172,8 @@
       if (!isTimestamp(order.receivedAtUtc)) return { ok: false, reason: "received" };
       if (order.deliveredAtUtc != null && !isTimestamp(order.deliveredAtUtc)) return { ok: false, reason: "delivered" };
       if (typeof order.customerName !== "string") return { ok: false, reason: "customer" };
+      if (order.customerAddress != null && typeof order.customerAddress !== "string") return { ok: false, reason: "address" };
+      if (order.customerNote != null && typeof order.customerNote !== "string") return { ok: false, reason: "orderNote" };
       if (typeof order.totalAmount !== "number" || !isFinite(order.totalAmount)) return { ok: false, reason: "amount" };
       if (!Array.isArray(order.items)) return { ok: false, reason: "items" };
       for (let n = 0; n < order.items.length; n++) {
@@ -366,6 +401,7 @@
     demoImageUrl: demoImageUrl,
     orderContentSignature: orderContentSignature,
     formatAmount: formatAmount,
+    applyDetailCurrency: applyDetailCurrency,
     elapsedMinutes: elapsedMinutes,
     collectNewIds: collectNewIds,
     validateSnapshot: validateSnapshot,
@@ -382,6 +418,26 @@ function attachBrowser(O, global, api) {
   let timeFormat = null;
   let dateTimeFormat = null;
   let dayFormat = null;
+  let actionFocus = null;
+  let selectedOrderId = null;
+  let selectionDismissed = false;
+  let focusActive = false;
+  let focusHadOrders = false;
+  let narrowDetail = false;
+  let focusOpener = null;
+  let queueScrollTop = 0;
+  let loadedOrderId = null;
+  let loadedSignature = null;
+  let failedOrderId = null;
+  let failedSignature = null;
+  let loadingOrderId = null;
+  let loadingSignature = null;
+  let detailStale = false;
+  let detailGeneration = 0;
+  let renderedSnapshot = null;
+  let narrowMedia = null;
+  const cardTimes = new WeakMap();
+  const cardItems = new WeakMap();
   const lastTimings = {
     payloadBytes: 0,
     parseMs: 0,
@@ -409,6 +465,10 @@ function attachBrowser(O, global, api) {
     return api.formatAmount(amount, culture());
   }
 
+  function formatListMoney(amount) {
+    return formatMoney(amount);
+  }
+
   function ensureDateFormatters() {
     if (timeFormat) return;
     const zone = timeZone();
@@ -432,9 +492,27 @@ function attachBrowser(O, global, api) {
     return receivedDay === serverDay ? timeFormat.format(received) : dateTimeFormat.format(received);
   }
 
+  function markReceivedDay(row, receivedAtUtc, serverTimeUtc) {
+    if (!row) return;
+    const received = new Date(receivedAtUtc);
+    const server = new Date(serverTimeUtc);
+    if (isNaN(received.getTime()) || isNaN(server.getTime())) {
+      row.setAttribute("data-same-day", "false");
+      return;
+    }
+    ensureDateFormatters();
+    row.setAttribute("data-same-day", dayFormat.format(received) === dayFormat.format(server) ? "true" : "false");
+  }
+
   function formatElapsed(serverTimeUtc, receivedAtUtc) {
-    const template = message("elapsedMinutes");
     const minutes = api.elapsedMinutes(serverTimeUtc, receivedAtUtc);
+    if (minutes >= 60) {
+      const template = message("elapsedHoursMinutes");
+      const hours = Math.floor(minutes / 60);
+      const rest = minutes % 60;
+      if (template.indexOf("{0}") >= 0) return template.replace("{0}", String(hours)).replace("{1}", String(rest));
+    }
+    const template = message("elapsedMinutes");
     return template.indexOf("{0}") >= 0 ? template.replace("{0}", String(minutes)) : String(minutes);
   }
 
@@ -500,7 +578,9 @@ function attachBrowser(O, global, api) {
   function statusClass(status) {
     if (status === "New") return "wasla-dash-status wasla-dash-status--new";
     if (status === "Accepted") return "wasla-dash-status wasla-dash-status--accepted";
-    if (status === "Preparing" || status === "ReadyForPickup" || status === "OnTheWay") return "wasla-dash-status wasla-dash-status--progress";
+    if (status === "Preparing") return "wasla-dash-status wasla-dash-status--progress";
+    if (status === "ReadyForPickup") return "wasla-dash-status wasla-dash-status--ready";
+    if (status === "OnTheWay") return "wasla-dash-status wasla-dash-status--on-the-way";
     if (status === "Delivered") return "wasla-dash-status wasla-dash-status--delivered";
     if (status === "Cancelled") return "wasla-dash-status wasla-dash-status--cancelled";
     if (status === "Failed") return "wasla-dash-status wasla-dash-status--failed";
@@ -554,37 +634,40 @@ function attachBrowser(O, global, api) {
     article.setAttribute("data-order-id", String(order.id));
     article.setAttribute("data-order-status", order.status || "");
     article.setAttribute("data-received-at", order.receivedAtUtc || "");
+    article.setAttribute("data-live-layout", "board");
 
     const imageWrap = document.createElement("div");
     imageWrap.className = "orders-card-image orders-card-image--kitchen";
     const image = document.createElement("img");
     image.src = api.demoImageUrl(order);
-    image.alt = (order.items && order.items[0] && order.items[0].productName) || order.customerName || "";
+    image.alt = (order.items && order.items[0] && order.items[0].productName) || "";
     image.loading = "lazy";
     imageWrap.appendChild(image);
 
     const body = document.createElement("div");
     body.className = "orders-card-body";
 
-    const top = document.createElement("div");
-    top.className = "orders-card-top";
-    const badges = document.createElement("div");
-    badges.className = "orders-card-badges";
+    const head = document.createElement("div");
+    head.className = "wasla-live-card__head";
     const platformHost = document.createElement("div");
     platformHost.className = "orders-card-platform";
     platformHost.appendChild(createPlatformBadge(order.platform));
-    badges.appendChild(platformHost);
     const status = document.createElement("span");
     status.className = statusClass(order.status);
     status.setAttribute("data-status-badge", "");
     status.textContent = statusLabel(order.status);
-    badges.appendChild(status);
     const fresh = document.createElement("span");
     fresh.className = "badge text-bg-primary d-none wasla-orders-new-badge";
     fresh.setAttribute("data-new-badge", "");
     fresh.textContent = message("statusNewBadge");
-    badges.appendChild(fresh);
-    top.appendChild(badges);
+    const elapsed = document.createElement("span");
+    elapsed.className = "wasla-live-screen-card__elapsed";
+    elapsed.setAttribute("data-elapsed", "");
+    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    head.appendChild(platformHost);
+    head.appendChild(status);
+    head.appendChild(fresh);
+    head.appendChild(elapsed);
 
     const code = document.createElement("div");
     code.className = "orders-card-code wasla-live-screen-card__code";
@@ -593,32 +676,24 @@ function attachBrowser(O, global, api) {
     link.textContent = order.displayNumber || "";
     code.appendChild(link);
 
-    const customer = document.createElement("div");
-    customer.className = "orders-card-customer";
-    const customerLabel = document.createElement("span");
-    customerLabel.className = "orders-card-meta__label";
-    customerLabel.textContent = message("ordersFullscreenCustomer") + ":";
-    customer.appendChild(customerLabel);
-    customer.appendChild(document.createTextNode(" "));
-    const customerValue = document.createElement("span");
-    customerValue.setAttribute("data-customer-name", "");
-    customerValue.textContent = order.customerName || "";
-    customer.appendChild(customerValue);
+    const identity = document.createElement("div");
+    identity.className = "wasla-live-card__identity";
+    identity.appendChild(head);
+    identity.appendChild(code);
 
     const items = document.createElement("ul");
-    items.className = "wasla-live-screen-card__items list-unstyled mb-2";
+    items.className = "wasla-live-screen-card__items list-unstyled";
     fillItems(items, order.items || []);
 
-    const meta = document.createElement("div");
-    meta.className = "orders-card-meta orders-card-meta--kitchen";
-    meta.appendChild(metaRow(message("ordersFullscreenTotal"), formatMoney(order.totalAmount), "data-total"));
+    const totalRow = metaRow(message("ordersFullscreenTotal"), formatMoney(order.totalAmount), "data-total");
     const receivedRow = metaRow(message("ordersFullscreenReceived"), formatReceived(order.receivedAtUtc, serverTimeUtc), "data-received");
-    const elapsed = document.createElement("span");
-    elapsed.className = "wasla-live-screen-card__elapsed text-muted";
-    elapsed.setAttribute("data-elapsed", "");
-    elapsed.textContent = " · " + formatElapsed(serverTimeUtc, order.receivedAtUtc);
-    receivedRow.appendChild(elapsed);
-    meta.appendChild(receivedRow);
+    receivedRow.setAttribute("data-received-row", "");
+    markReceivedDay(receivedRow, order.receivedAtUtc, serverTimeUtc);
+    const secondary = document.createElement("div");
+    secondary.className = "wasla-live-card__secondary";
+    secondary.appendChild(totalRow);
+    secondary.appendChild(receivedRow);
+    syncBoardOrderNote(secondary, order);
 
     const actions = document.createElement("div");
     actions.className = "orders-card-actions wasla-orders-card__actions";
@@ -636,15 +711,141 @@ function attachBrowser(O, global, api) {
     actions.appendChild(actionGroup);
     actions.appendChild(details);
 
-    body.appendChild(top);
-    body.appendChild(code);
-    body.appendChild(customer);
+    body.appendChild(identity);
     body.appendChild(items);
-    body.appendChild(meta);
+    body.appendChild(secondary);
     body.appendChild(actions);
     article.appendChild(imageWrap);
     article.appendChild(body);
     article.setAttribute("data-live-signature", api.orderContentSignature(order));
+    cardItems.set(article, JSON.stringify(order.items || []));
+    cardTimes.set(article, timeKey(order, serverTimeUtc));
+    return article;
+  }
+
+  function createListRow(order, serverTimeUtc) {
+    const article = document.createElement("article");
+    const muted = order.status === "Delivered" || order.status === "Cancelled" || order.status === "Failed";
+    article.className = "wasla-live-screen-card wasla-live-list-row" + (muted ? " orders-card--muted" : "");
+    article.setAttribute("role", "listitem");
+    article.setAttribute("data-order-id", String(order.id));
+    article.setAttribute("data-order-status", order.status || "");
+    article.setAttribute("data-received-at", order.receivedAtUtc || "");
+    article.setAttribute("data-live-layout", "list");
+
+    const identity = document.createElement("div");
+    identity.className = "wasla-live-list-row__identity";
+    const headline = document.createElement("div");
+    headline.className = "wasla-live-list-row__headline";
+    const platformHost = document.createElement("div");
+    platformHost.className = "orders-card-platform";
+    platformHost.appendChild(createPlatformBadge(order.platform));
+    const code = document.createElement("div");
+    code.className = "orders-card-code wasla-live-screen-card__code";
+    const link = document.createElement("a");
+    link.href = "/orders/details/" + encodeURIComponent(String(order.id));
+    link.textContent = order.displayNumber || "";
+    code.appendChild(link);
+    const statusSlot = document.createElement("div");
+    statusSlot.className = "wasla-live-list-row__status";
+    const status = document.createElement("span");
+    status.className = statusClass(order.status);
+    status.setAttribute("data-status-badge", "");
+    status.textContent = statusLabel(order.status);
+    const fresh = document.createElement("span");
+    fresh.className = "badge text-bg-primary d-none wasla-orders-new-badge";
+    fresh.setAttribute("data-new-badge", "");
+    fresh.textContent = message("statusNewBadge");
+    statusSlot.appendChild(status);
+    statusSlot.appendChild(fresh);
+    headline.appendChild(platformHost);
+    headline.appendChild(code);
+    headline.appendChild(statusSlot);
+    const meta = document.createElement("div");
+    meta.className = "wasla-live-list-row__meta";
+    const received = document.createElement("div");
+    received.className = "wasla-live-list-row__received";
+    received.setAttribute("data-received-row", "");
+    const receivedLabel = document.createElement("span");
+    receivedLabel.className = "wasla-live-list-row__received-label";
+    receivedLabel.textContent = message("ordersFullscreenReceived");
+    const receivedValue = document.createElement("span");
+    receivedValue.setAttribute("data-received", "");
+    receivedValue.textContent = formatReceived(order.receivedAtUtc, serverTimeUtc);
+    received.appendChild(receivedLabel);
+    received.appendChild(receivedValue);
+    markReceivedDay(received, order.receivedAtUtc, serverTimeUtc);
+    meta.appendChild(received);
+    identity.appendChild(headline);
+    identity.appendChild(meta);
+
+    const customer = document.createElement("div");
+    customer.className = "wasla-live-list-row__customer";
+    const customerIdentity = document.createElement("div");
+    customerIdentity.className = "wasla-live-list-row__customer-identity";
+    const customerMain = document.createElement("div");
+    customerMain.className = "wasla-live-list-row__customer-main";
+    const customerName = document.createElement("span");
+    customerName.className = "wasla-live-list-row__customer-name";
+    customerName.setAttribute("data-customer-name", "");
+    const customerAddress = document.createElement("p");
+    customerAddress.className = "wasla-live-list-row__customer-address";
+    customerAddress.setAttribute("data-customer-address", "");
+    customerMain.appendChild(customerName);
+    customerIdentity.appendChild(customerMain);
+    customerIdentity.appendChild(customerAddress);
+    customer.appendChild(customerIdentity);
+    syncListCustomer(customer, order);
+    const total = document.createElement("div");
+    total.className = "wasla-live-list-row__total";
+    const totalLabel = document.createElement("span");
+    totalLabel.className = "wasla-live-list-row__total-label";
+    totalLabel.textContent = message("listTotal");
+    const totalValue = document.createElement("span");
+    totalValue.className = "wasla-live-list-row__total-value";
+    totalValue.setAttribute("data-total", "");
+    totalValue.textContent = formatListMoney(order.totalAmount);
+    total.appendChild(totalLabel);
+    total.appendChild(totalValue);
+
+    const items = document.createElement("ul");
+    items.className = "wasla-live-screen-card__items wasla-live-list-row__items list-unstyled";
+    fillItems(items, order.items || []);
+
+    const elapsed = document.createElement("span");
+    elapsed.className = "wasla-live-screen-card__elapsed wasla-live-list-row__elapsed";
+    elapsed.setAttribute("data-elapsed", "");
+    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+
+    const aside = document.createElement("div");
+    aside.className = "wasla-live-list-row__aside";
+
+    const actions = document.createElement("div");
+    actions.className = "orders-card-actions wasla-orders-card__actions wasla-live-list-row__actions";
+    const actionGroup = document.createElement("div");
+    actionGroup.className = "wasla-orders-actions";
+    actionGroup.setAttribute("role", "group");
+    actionGroup.setAttribute("aria-label", message("ordersActions"));
+    actionGroup.setAttribute("data-order-actions", "");
+    fillActions(actionGroup, order);
+    const details = document.createElement("button");
+    details.type = "button";
+    details.className = "btn btn-outline-secondary wasla-live-screen-card__details";
+    details.setAttribute("data-order-detail", String(order.id));
+    details.textContent = message("viewDetails");
+    actions.appendChild(actionGroup);
+    actions.appendChild(details);
+    aside.appendChild(actions);
+
+    article.appendChild(identity);
+    article.appendChild(items);
+    article.appendChild(customer);
+    article.appendChild(total);
+    article.appendChild(elapsed);
+    article.appendChild(aside);
+    article.setAttribute("data-live-signature", api.orderContentSignature(order));
+    cardItems.set(article, JSON.stringify(order.items || []));
+    cardTimes.set(article, timeKey(order, serverTimeUtc));
     return article;
   }
 
@@ -692,6 +893,7 @@ function attachBrowser(O, global, api) {
   }
 
   function fillItems(list, items) {
+    const listLayout = list.className.indexOf("wasla-live-list-row__items") >= 0;
     while (list.firstChild) list.removeChild(list.firstChild);
     items.forEach(function (item) {
       const li = document.createElement("li");
@@ -705,10 +907,27 @@ function attachBrowser(O, global, api) {
       li.appendChild(qty);
       li.appendChild(document.createTextNode(" "));
       li.appendChild(product);
-      if (item.notes && String(item.notes).trim()) {
+      const noteText = item.notes == null ? "" : String(item.notes);
+      if (noteText.trim()) {
         const note = document.createElement("div");
-        note.className = "wasla-live-screen-card__note text-muted";
-        note.textContent = item.notes;
+        if (listLayout) {
+          note.className = "wasla-live-screen-card__note wasla-live-list-row__item-note";
+          const icon = document.createElement("span");
+          icon.className = "bi bi-sticky wasla-live-list-row__note-icon";
+          icon.setAttribute("aria-hidden", "true");
+          const label = document.createElement("span");
+          label.className = "visually-hidden";
+          label.textContent = message("itemNote");
+          const text = document.createElement("span");
+          text.className = "wasla-live-list-row__note-text";
+          text.textContent = noteText;
+          note.appendChild(icon);
+          note.appendChild(label);
+          note.appendChild(text);
+        } else {
+          note.className = "wasla-live-screen-card__note text-muted";
+          note.textContent = noteText;
+        }
         li.appendChild(note);
       }
       list.appendChild(li);
@@ -716,9 +935,280 @@ function attachBrowser(O, global, api) {
     list.hidden = items.length === 0;
   }
 
+  function orderNoteText(order) {
+    if (!order || order.customerNote == null) return "";
+    return String(order.customerNote).trim();
+  }
+
+  function syncBoardOrderNote(root, order) {
+    const secondary = root.classList && root.classList.contains("wasla-live-card__secondary")
+      ? root
+      : root.querySelector(".wasla-live-card__secondary");
+    if (!secondary) return;
+    const note = orderNoteText(order);
+    let block = secondary.querySelector("[data-order-note]");
+    if (!note) {
+      if (block) block.remove();
+      return;
+    }
+    if (!block) {
+      block = document.createElement("div");
+      block.className = "wasla-live-board-order-note";
+      block.setAttribute("data-order-note", "");
+      const label = document.createElement("span");
+      label.className = "wasla-live-board-order-note__label";
+      label.textContent = message("orderNote");
+      const text = document.createElement("p");
+      text.className = "wasla-live-board-order-note__text";
+      text.setAttribute("data-order-note-text", "");
+      block.appendChild(label);
+      block.appendChild(text);
+      const total = secondary.querySelector("[data-total]");
+      const totalRow = total ? total.parentElement : null;
+      if (totalRow && totalRow.parentElement === secondary) secondary.insertBefore(block, totalRow);
+      else secondary.appendChild(block);
+    }
+    const textEl = block.querySelector("[data-order-note-text]");
+    if (textEl && textEl.textContent !== note) textEl.textContent = note;
+    if (textEl) textEl.title = note;
+  }
+
+  function syncListOrderNote(customer, order) {
+    const note = orderNoteText(order);
+    let block = customer.querySelector("[data-order-note]");
+    if (!note) {
+      if (block) block.remove();
+      customer.classList.toggle("wasla-live-list-row__customer--with-note", false);
+      return;
+    }
+    if (!block) {
+      block = document.createElement("div");
+      block.className = "wasla-live-list-row__order-note";
+      block.setAttribute("data-order-note", "");
+      const label = document.createElement("span");
+      label.className = "wasla-live-list-row__order-note-label";
+      label.textContent = message("orderNote");
+      const text = document.createElement("p");
+      text.className = "wasla-live-list-row__order-note-text";
+      text.setAttribute("data-order-note-text", "");
+      block.appendChild(label);
+      block.appendChild(text);
+      customer.appendChild(block);
+    }
+    const textEl = block.querySelector("[data-order-note-text]");
+    if (textEl && textEl.textContent !== note) textEl.textContent = note;
+    if (textEl) textEl.title = note;
+    customer.classList.toggle("wasla-live-list-row__customer--with-note", true);
+  }
+
+  function syncListCustomer(root, order) {
+    const customer = root.className && root.className.indexOf("wasla-live-list-row__customer") >= 0
+      ? root
+      : root.querySelector(".wasla-live-list-row__customer");
+    if (!customer) return;
+    const name = order.customerName == null ? "" : String(order.customerName);
+    const address = order.customerAddress == null ? "" : String(order.customerAddress).trim();
+    const nameEl = customer.querySelector("[data-customer-name]");
+    if (nameEl && nameEl.className.indexOf("wasla-live-list-row__customer-name") >= 0) {
+      if (nameEl.textContent !== name) nameEl.textContent = name;
+      nameEl.hidden = !name.trim();
+    }
+    const addressEl = customer.querySelector("[data-customer-address]");
+    if (addressEl) {
+      if (addressEl.textContent !== address) addressEl.textContent = address;
+      addressEl.hidden = !address;
+      addressEl.title = address;
+    }
+    syncListOrderNote(customer, order);
+  }
+
+  const ORDER_NOTE_ATTENTION_MS = 10000;
+  const ORDER_NOTE_ATTENTION_CLASS = "wasla-order-note-attention";
+  const ORDER_NOTE_ATTENTION_STATIC_CLASS = "wasla-order-note-attention-static";
+  const sequencedOrderNotes = new Set();
+  const noteAttention = new Map();
+
+  function noteNow() {
+    const date = global.Date || Date;
+    return date.now();
+  }
+
+  function noteLater(fn, ms) {
+    const schedule = global.setTimeout || setTimeout;
+    return schedule(fn, ms);
+  }
+
+  function noteCancel(timerId) {
+    if (timerId == null) return;
+    const clear = global.clearTimeout || clearTimeout;
+    clear(timerId);
+  }
+
+  function prefersReducedMotion() {
+    try {
+      if (!global.matchMedia) return false;
+      return !!global.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function findLiveOrderNote(orderId) {
+    const host = document.getElementById(hostId);
+    if (!host) return null;
+    const cards = host.querySelectorAll(".wasla-live-screen-card, .wasla-live-detail");
+    const id = String(orderId);
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
+      if (card.getAttribute("data-order-id") !== id) continue;
+      if (card.classList.contains("wasla-live-detail")) return card.querySelector("[data-order-note]");
+      const layout = card.getAttribute("data-live-layout");
+      if (layout !== "list" && layout !== "board") return null;
+      return card.querySelector("[data-order-note]");
+    }
+    return null;
+  }
+
+  function snapshotHasOrderNote(orderId) {
+    const orders = renderedSnapshot && renderedSnapshot.orders;
+    if (!orders) return false;
+    const id = String(orderId);
+    for (let i = 0; i < orders.length; i++) {
+      if (String(orders[i].id) === id) return orderNoteText(orders[i]).length > 0;
+    }
+    return false;
+  }
+
+  function clearOrderNoteAttentionPaint(block) {
+    if (!block || !block.classList) return;
+    block.classList.remove(ORDER_NOTE_ATTENTION_CLASS, ORDER_NOTE_ATTENTION_STATIC_CLASS);
+    if (block.style && typeof block.style.removeProperty === "function") {
+      block.style.removeProperty("--wasla-order-note-attention-delay");
+    }
+    if (typeof block.removeAttribute === "function") block.removeAttribute("data-order-note-attention-delay");
+  }
+
+  function paintOrderNoteAttention(orderId) {
+    const state = noteAttention.get(String(orderId));
+    if (!state || state.phase !== "running") return;
+    const block = findLiveOrderNote(orderId);
+    if (!block || !block.classList) return;
+    const reduced = prefersReducedMotion();
+    const active = reduced ? ORDER_NOTE_ATTENTION_STATIC_CLASS : ORDER_NOTE_ATTENTION_CLASS;
+    const inactive = reduced ? ORDER_NOTE_ATTENTION_CLASS : ORDER_NOTE_ATTENTION_STATIC_CLASS;
+    if (block.classList.contains(active) && !block.classList.contains(inactive)) return;
+    block.classList.remove(ORDER_NOTE_ATTENTION_CLASS, ORDER_NOTE_ATTENTION_STATIC_CLASS);
+    if (!reduced) {
+      const elapsed = Math.max(0, noteNow() - (state.endsAt - ORDER_NOTE_ATTENTION_MS));
+      const delay = (-elapsed) + "ms";
+      block.setAttribute("data-order-note-attention-delay", delay);
+      if (block.style && typeof block.style.setProperty === "function") {
+        block.style.setProperty("--wasla-order-note-attention-delay", delay);
+      }
+    }
+    block.classList.add(active);
+  }
+
+  function endOrderNoteAttention(orderId) {
+    const id = String(orderId);
+    const state = noteAttention.get(id);
+    if (state && state.timer != null) {
+      noteCancel(state.timer);
+      state.timer = null;
+    }
+    if (state) state.phase = "done";
+    clearOrderNoteAttentionPaint(findLiveOrderNote(id));
+  }
+
+  function beginOrderNoteAttention(orderId) {
+    const id = String(orderId);
+    if (sequencedOrderNotes.has(id)) return;
+    sequencedOrderNotes.add(id);
+    if (!snapshotHasOrderNote(id)) return;
+    const endsAt = noteNow() + ORDER_NOTE_ATTENTION_MS;
+    const state = { phase: "running", endsAt: endsAt, timer: null };
+    noteAttention.set(id, state);
+    paintOrderNoteAttention(id);
+    state.timer = noteLater(function () {
+      try {
+        const current = noteAttention.get(id);
+        if (!current || current !== state || current.phase !== "running") return;
+        current.timer = null;
+        endOrderNoteAttention(id);
+      } catch (error) {
+        if (typeof O.debugWarn === "function") O.debugWarn("orderNoteAttention", error);
+      }
+    }, ORDER_NOTE_ATTENTION_MS);
+  }
+
+  function syncOrderNoteAttention() {
+    const orders = (renderedSnapshot && renderedSnapshot.orders) || [];
+    const present = new Set();
+    for (let i = 0; i < orders.length; i++) present.add(String(orders[i].id));
+    Array.from(noteAttention.keys()).forEach(function (id) {
+      const state = noteAttention.get(id);
+      if (!state || state.phase !== "running") return;
+      if (!present.has(id)) {
+        if (state.timer != null) {
+          noteCancel(state.timer);
+          state.timer = null;
+        }
+        state.phase = "done";
+        return;
+      }
+      if (noteNow() >= state.endsAt || !snapshotHasOrderNote(id)) {
+        endOrderNoteAttention(id);
+        return;
+      }
+      paintOrderNoteAttention(id);
+    });
+  }
+
+  function finishRender(result) {
+    try { syncFocusOrderNoteFromSnapshot(); } catch (error) {
+      if (typeof O.debugWarn === "function") O.debugWarn("focusOrderNote", error);
+    }
+    try {
+      // The highlight map is the duration source of truth. Re-paint after
+      // reconciliation so a reused or replaced list row keeps the class for
+      // the remaining window without scheduling another timer.
+      if (O.table && typeof O.table.applyNewOrderVisualState === "function") {
+        O.table.applyNewOrderVisualState();
+      }
+    } catch (error) {
+      if (typeof O.debugWarn === "function") O.debugWarn("applyNewOrderVisualState", error);
+    }
+    try {
+      syncOrderNoteAttention();
+    } catch (error) {
+      if (typeof O.debugWarn === "function") O.debugWarn("orderNoteAttention", error);
+    }
+    return result;
+  }
+
+  function orderNoteAttentionState(orderId) {
+    const id = String(orderId);
+    const state = noteAttention.get(id);
+    let phase = "idle";
+    if (state) phase = state.phase;
+    else if (sequencedOrderNotes.has(id)) phase = "skipped";
+    return {
+      sequenced: sequencedOrderNotes.has(id),
+      phase: phase,
+      endsAt: state ? state.endsAt : null,
+      durationMs: ORDER_NOTE_ATTENTION_MS
+    };
+  }
+
+  function timeKey(order, serverTimeUtc) {
+    return Math.floor(Date.parse(serverTimeUtc) / 3600000) + "|" + api.elapsedMinutes(serverTimeUtc, order.receivedAtUtc) + "|" + order.receivedAtUtc;
+  }
+
   function syncTimeLabels(card, order, serverTimeUtc) {
-    const elapsed = " · " + formatElapsed(serverTimeUtc, order.receivedAtUtc);
-    const received = " " + formatReceived(order.receivedAtUtc, serverTimeUtc);
+    const key = timeKey(order, serverTimeUtc);
+    if (cardTimes.get(card) === key) return false;
+    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    const received = (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(order.receivedAtUtc, serverTimeUtc);
     let changed = false;
     const elapsedEl = card.querySelector("[data-elapsed]");
     if (elapsedEl && elapsedEl.textContent !== elapsed) {
@@ -730,6 +1220,8 @@ function attachBrowser(O, global, api) {
       receivedEl.textContent = received;
       changed = true;
     }
+    markReceivedDay(card.querySelector("[data-received-row]"), order.receivedAtUtc, serverTimeUtc);
+    cardTimes.set(card, key);
     return changed;
   }
 
@@ -747,7 +1239,8 @@ function attachBrowser(O, global, api) {
     const image = card.querySelector("img");
     if (image && image.className.indexOf("platform-badge") < 0) {
       image.src = api.demoImageUrl(order);
-      image.alt = (order.items && order.items[0] && order.items[0].productName) || order.customerName || "";
+      image.alt = (order.items && order.items[0] && order.items[0].productName)
+        || (card.getAttribute("data-live-layout") === "board" ? "" : (order.customerName || ""));
     }
     const status = card.querySelector("[data-status-badge]");
     if (status) {
@@ -756,113 +1249,836 @@ function attachBrowser(O, global, api) {
     }
     const link = card.querySelector(".wasla-live-screen-card__code a");
     if (link) link.textContent = order.displayNumber || "";
-    setText(card.querySelector("[data-customer-name]"), order.customerName || "");
+    if (card.getAttribute("data-live-layout") === "list") syncListCustomer(card, order);
+    else if (card.getAttribute("data-live-layout") === "board") {
+      const customer = card.querySelector(".orders-card-customer");
+      if (customer) customer.remove();
+      syncBoardOrderNote(card, order);
+    }
     const items = card.querySelector(".wasla-live-screen-card__items");
-    if (items) fillItems(items, order.items || []);
-    setText(card.querySelector("[data-total]"), " " + formatMoney(order.totalAmount));
-    setText(card.querySelector("[data-received]"), " " + formatReceived(order.receivedAtUtc, serverTimeUtc));
-    setText(card.querySelector("[data-elapsed]"), " · " + formatElapsed(serverTimeUtc, order.receivedAtUtc));
+    const itemsSignature = JSON.stringify(order.items || []);
+    if (items && cardItems.get(card) !== itemsSignature) {
+      fillItems(items, order.items || []);
+      cardItems.set(card, itemsSignature);
+    }
+    setText(
+      card.querySelector("[data-total]"),
+      card.getAttribute("data-live-layout") === "list"
+        ? formatListMoney(order.totalAmount)
+        : (" " + formatMoney(order.totalAmount)));
+    setText(card.querySelector("[data-received]"), (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(order.receivedAtUtc, serverTimeUtc));
+    setText(card.querySelector("[data-elapsed]"), formatElapsed(serverTimeUtc, order.receivedAtUtc));
+    markReceivedDay(card.querySelector("[data-received-row]"), order.receivedAtUtc, serverTimeUtc);
     if (statusChanged) {
       const actions = card.querySelector("[data-order-actions]");
       if (actions) fillActions(actions, order);
     }
     card.setAttribute("data-live-signature", signature);
+    cardTimes.set(card, timeKey(order, serverTimeUtc));
     return true;
   }
 
-  function ensureEmpty(host) {
-    let empty = host.querySelector(".wasla-orders-empty");
-    if (!empty) {
-      empty = document.createElement("div");
-      empty.className = "wasla-orders-empty text-center py-5";
-      empty.setAttribute("role", "status");
-      const title = document.createElement("div");
-      title.className = "wasla-orders-empty__title fw-semibold mb-1";
-      title.textContent = message("noLiveOrders");
-      const desc = document.createElement("div");
-      desc.className = "wasla-orders-empty__desc text-muted";
-      desc.textContent = message("noLiveOrdersDescription");
-      empty.appendChild(title);
-      empty.appendChild(desc);
-      host.appendChild(empty);
+  const boardColumns = [
+    { key: "new", label: "statusNew" },
+    { key: "preparing", label: "statusPreparing" },
+    { key: "ready", label: "statusReadyForPickup" },
+    { key: "on-the-way", label: "statusOnTheWay" },
+    { key: "completed", label: "boardCompleted" }
+  ];
+
+  function columnKey(status) {
+    if (status === "New" || status === "Accepted") return "new";
+    if (status === "Preparing") return "preparing";
+    if (status === "ReadyForPickup") return "ready";
+    if (status === "OnTheWay") return "on-the-way";
+    // The endpoint currently returns Delivered as its only terminal status.
+    // If that contract expands, retain the actual status rather than dropping orders.
+    return "completed";
+  }
+
+  function groupRank(status) {
+    const key = columnKey(status);
+    if (key === "new") return 0;
+    if (key === "preparing") return 1;
+    if (key === "ready") return 2;
+    if (key === "on-the-way") return 3;
+    return 4;
+  }
+
+  // Newest received time first within a visual group, then the immutable id.
+  // Actual status must not separate New from Accepted or reshuffle a group.
+  function comparePresentation(a, b) {
+    const group = groupRank(a.status) - groupRank(b.status);
+    if (group) return group;
+    const timeA = Date.parse(a.receivedAtUtc);
+    const timeB = Date.parse(b.receivedAtUtc);
+    const validA = timeA === timeA;
+    const validB = timeB === timeB;
+    if (validA && validB && timeA !== timeB) return timeB - timeA;
+    if (validA !== validB) return validA ? -1 : 1;
+    const idA = String(a.id);
+    const idB = String(b.id);
+    if (idA < idB) return -1;
+    if (idA > idB) return 1;
+    return 0;
+  }
+
+  function presentationOrders(orders) {
+    return orders.slice().sort(comparePresentation);
+  }
+
+  function createGroupedLayout(mode) {
+    const board = mode === "board";
+    const focus = mode === "focus";
+    const root = document.createElement("div");
+    root.className = board ? "wasla-live-board" : (focus ? "wasla-live-focus__groups" : "wasla-live-groups");
+    const prefix = board ? "live-board-" : (focus ? "live-focus-" : "live-list-");
+    boardColumns.forEach(function (spec) {
+      const column = document.createElement("section");
+      column.className = board ? "wasla-live-board__column" : (focus ? "wasla-live-focus__group" : "wasla-live-group");
+      column.setAttribute("data-board-column", spec.key);
+      const heading = document.createElement("h2");
+      heading.id = prefix + spec.key;
+      heading.className = board ? "wasla-live-board__heading" : (focus ? "wasla-live-focus__heading" : "wasla-live-group__heading");
+      column.setAttribute("aria-labelledby", heading.id);
+      const title = document.createElement("span");
+      title.textContent = message(spec.label);
+      const count = document.createElement("span");
+      count.className = board ? "wasla-live-board__count" : (focus ? "wasla-live-focus__count" : "wasla-live-group__count");
+      count.setAttribute("data-board-count", "");
+      heading.appendChild(title);
+      heading.appendChild(count);
+      const list = document.createElement("div");
+      list.className = board ? "wasla-live-board__orders" : (focus ? "wasla-live-focus__orders" : "wasla-live-group__orders");
+      list.setAttribute("data-board-list", spec.key);
+      list.setAttribute("role", "list");
+      list.setAttribute("aria-labelledby", heading.id);
+      const empty = document.createElement("p");
+      empty.className = board ? "wasla-live-board__empty" : (focus ? "wasla-live-focus__empty" : "wasla-live-group__empty");
+      empty.setAttribute("data-board-empty", "");
+      empty.textContent = message("boardEmpty");
+      column.appendChild(heading);
+      column.appendChild(list);
+      column.appendChild(empty);
+      root.appendChild(column);
+    });
+    return root;
+  }
+
+  function currentLayout() {
+    const view = O.liveView && O.liveView.getView();
+    if (view === "list" || view === "focus") return view;
+    return "board";
+  }
+
+  function isNarrow() {
+    if (narrowMedia) return !!narrowMedia.matches;
+    if (!global.matchMedia) return false;
+    try {
+      return !!global.matchMedia("(max-width: 767.98px)").matches;
+    } catch (e) {
+      return false;
     }
+  }
+
+  function findOrder(id) {
+    const orders = renderedSnapshot && renderedSnapshot.orders ? renderedSnapshot.orders : [];
+    for (let i = 0; i < orders.length; i++) {
+      if (String(orders[i].id) === String(id)) return orders[i];
+    }
+    return null;
+  }
+
+  function detailNode() {
+    const host = document.getElementById(hostId);
+    return host ? host.querySelector("[data-focus-detail]") : null;
+  }
+
+  function productSummary(items) {
+    const list = items || [];
+    if (!list.length) return "";
+    const max = 2;
+    const parts = [];
+    const count = Math.min(list.length, max);
+    for (let i = 0; i < count; i++) {
+      parts.push(String(list[i].quantity) + "× " + (list[i].productName || ""));
+    }
+    if (list.length > max) {
+      const extra = message("itemsMore");
+      parts.push(extra.indexOf("{0}") >= 0 ? extra.replace("{0}", String(list.length - max)) : extra);
+    }
+    return parts.join(", ");
+  }
+
+  function queueSignature(order) {
+    const items = order.items || [];
+    const itemPart = items.map(function (item) {
+      return String(item.quantity) + "\u001f" + (item.productName || "");
+    }).join("\u001e");
+    return [order.status || "", order.displayNumber || "", order.platform || "", itemPart].join("\u001d");
+  }
+
+  function createBrandedEmpty(kind) {
+    const empty = document.createElement("div");
+    empty.className = "wasla-live-empty";
+    empty.setAttribute("data-live-empty", kind);
+    empty.setAttribute("role", "status");
+    const mark = document.createElement("div");
+    mark.className = "wasla-live-empty__mark";
+    mark.setAttribute("aria-hidden", "true");
+    mark.textContent = "W";
+    const title = document.createElement("h2");
+    title.className = "wasla-live-empty__title";
+    const description = document.createElement("p");
+    description.className = "wasla-live-empty__text";
+    if (kind === "selectOrder") {
+      title.textContent = message("selectOrder");
+      description.textContent = message("selectOrderDescription");
+    } else {
+      title.textContent = message("noDisplayableOrders");
+      description.textContent = message("noDisplayableOrdersDescription");
+    }
+    empty.appendChild(mark);
+    empty.appendChild(title);
+    empty.appendChild(description);
     return empty;
+  }
+
+  function removeLivePresentations(host) {
+    const loading = host.querySelector("[data-live-loading]");
+    if (loading) loading.remove();
+    Array.from(host.querySelectorAll(".wasla-live-board")).forEach(function (el) { el.remove(); });
+    Array.from(host.querySelectorAll(".wasla-live-groups")).forEach(function (el) { el.remove(); });
+    Array.from(host.querySelectorAll(".wasla-live-focus")).forEach(function (el) { el.remove(); });
+    Array.from(host.querySelectorAll(".orders-card-grid")).forEach(function (el) { el.remove(); });
+    Array.from(host.querySelectorAll(".wasla-orders-empty")).forEach(function (el) { el.remove(); });
+  }
+
+  function hostEmpty(host) {
+    const nodes = host.querySelectorAll(".wasla-live-empty");
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i].parentElement === host) return nodes[i];
+    }
+    return null;
+  }
+
+  function showAcceptedEmpty(host) {
+    removeLivePresentations(host);
+    const existing = hostEmpty(host);
+    if (existing && existing.getAttribute("data-live-empty") === "none") return existing;
+    if (existing) existing.remove();
+    const empty = createBrandedEmpty("none");
+    host.appendChild(empty);
+    return empty;
+  }
+
+  function createFocusShell() {
+    const root = document.createElement("div");
+    root.className = "wasla-live-focus";
+    const queue = document.createElement("div");
+    queue.className = "wasla-live-focus__queue";
+    const queueHeading = document.createElement("h2");
+    queueHeading.id = "ordersLiveFocusQueueHeading";
+    queueHeading.className = "visually-hidden";
+    queueHeading.textContent = message("focusQueue");
+    queue.setAttribute("role", "region");
+    queue.setAttribute("aria-labelledby", queueHeading.id);
+    queue.appendChild(queueHeading);
+    queue.appendChild(createGroupedLayout("focus"));
+    const panel = document.createElement("div");
+    panel.className = "wasla-live-focus__panel";
+    const panelHeading = document.createElement("h2");
+    panelHeading.id = "ordersLiveFocusPanelHeading";
+    panelHeading.className = "visually-hidden";
+    panelHeading.textContent = message("viewDetails");
+    panel.setAttribute("role", "region");
+    panel.setAttribute("aria-labelledby", panelHeading.id);
+    const back = document.createElement("button");
+    back.className = "btn btn-link btn-sm px-0 wasla-live-focus__back";
+    back.setAttribute("type", "button");
+    back.setAttribute("data-focus-back", "");
+    back.textContent = message("backToQueue");
+    const detail = document.createElement("div");
+    detail.id = "ordersLiveFocusDetail";
+    detail.className = "wasla-live-focus__detail";
+    detail.setAttribute("data-focus-detail", "");
+    panel.appendChild(panelHeading);
+    panel.appendChild(back);
+    panel.appendChild(detail);
+    root.appendChild(queue);
+    root.appendChild(panel);
+    return root;
+  }
+
+  function createFocusEntry(order, serverTimeUtc) {
+    const button = document.createElement("button");
+    button.className = "wasla-live-focus-entry";
+    button.setAttribute("type", "button");
+    button.setAttribute("data-focus-select", "");
+    button.setAttribute("data-order-id", String(order.id));
+    button.setAttribute("data-order-status", order.status || "");
+    button.setAttribute("data-received-at", order.receivedAtUtc || "");
+    button.setAttribute("aria-pressed", "false");
+
+    const code = document.createElement("span");
+    code.className = "wasla-live-focus-entry__code";
+    code.setAttribute("data-order-code", "");
+    code.textContent = order.displayNumber || "";
+
+    const meta = document.createElement("span");
+    meta.className = "wasla-live-focus-entry__meta";
+    const platformHost = document.createElement("span");
+    platformHost.setAttribute("data-platform-host", "");
+    platformHost.appendChild(createPlatformBadge(order.platform));
+    const status = document.createElement("span");
+    status.className = statusClass(order.status);
+    status.setAttribute("data-status-badge", "");
+    status.textContent = statusLabel(order.status);
+    const elapsed = document.createElement("span");
+    elapsed.className = "wasla-live-focus-entry__elapsed";
+    elapsed.setAttribute("data-elapsed", "");
+    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    meta.appendChild(platformHost);
+    meta.appendChild(status);
+    meta.appendChild(elapsed);
+
+    const summary = document.createElement("span");
+    summary.className = "wasla-live-focus-entry__summary";
+    summary.setAttribute("data-product-summary", "");
+    summary.textContent = productSummary(order.items);
+
+    button.appendChild(code);
+    button.appendChild(meta);
+    button.appendChild(summary);
+    button.setAttribute("data-live-signature", queueSignature(order));
+    button.setAttribute("data-platform", order.platform || "");
+    return button;
+  }
+
+  function updateFocusEntry(entry, order, serverTimeUtc) {
+    const signature = queueSignature(order);
+    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    if (entry.getAttribute("data-live-signature") === signature) {
+      const elapsedEl = entry.querySelector("[data-elapsed]");
+      if (elapsedEl && elapsedEl.textContent !== elapsed) {
+        elapsedEl.textContent = elapsed;
+        return "time";
+      }
+      return "same";
+    }
+    entry.setAttribute("data-order-status", order.status || "");
+    entry.setAttribute("data-received-at", order.receivedAtUtc || "");
+    const code = entry.querySelector("[data-order-code]");
+    if (code) code.textContent = order.displayNumber || "";
+    const status = entry.querySelector("[data-status-badge]");
+    if (status) {
+      status.className = statusClass(order.status);
+      status.textContent = statusLabel(order.status);
+    }
+    if (entry.getAttribute("data-platform") !== (order.platform || "")) {
+      const platformHost = entry.querySelector("[data-platform-host]");
+      if (platformHost) {
+        while (platformHost.firstChild) platformHost.removeChild(platformHost.firstChild);
+        platformHost.appendChild(createPlatformBadge(order.platform));
+      }
+      entry.setAttribute("data-platform", order.platform || "");
+    }
+    const summary = entry.querySelector("[data-product-summary]");
+    const summaryText = productSummary(order.items);
+    if (summary && summary.textContent !== summaryText) summary.textContent = summaryText;
+    const elapsedEl = entry.querySelector("[data-elapsed]");
+    if (elapsedEl) elapsedEl.textContent = elapsed;
+    entry.setAttribute("data-live-signature", signature);
+    return "changed";
+  }
+
+  function markPressed() {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    const entries = host.querySelectorAll("[data-focus-select]");
+    for (let i = 0; i < entries.length; i++) {
+      const on = entries[i].getAttribute("data-order-id") === selectedOrderId;
+      entries[i].setAttribute("aria-pressed", on ? "true" : "false");
+      entries[i].classList.toggle("is-selected", on);
+    }
+  }
+
+  function syncDetailElapsed(order, serverTimeUtc, root) {
+    const detail = root || detailNode();
+    if (!detail || typeof detail.querySelector !== "function") return;
+    const panel = detail.querySelector(".wasla-live-detail");
+    if (!panel || panel.getAttribute("data-order-id") !== String(order.id)) return;
+    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    const elapsedEl = panel.querySelector("[data-elapsed]");
+    if (elapsedEl && elapsedEl.textContent !== elapsed) elapsedEl.textContent = elapsed;
+    if (typeof order.totalAmount === "number" && isFinite(order.totalAmount)) {
+      const totalEl = panel.querySelector(".wasla-live-detail__grand dd");
+      const total = formatMoney(order.totalAmount);
+      if (totalEl && totalEl.textContent !== total) totalEl.textContent = total;
+    }
+  }
+
+  function syncFocusOrderNote(root, order) {
+    if (!root || !order || typeof root.querySelector !== "function") return;
+    const panel = root.classList && root.classList.contains("wasla-live-detail")
+      ? root
+      : root.querySelector(".wasla-live-detail");
+    if (!panel) return;
+    const id = String(order.id);
+    const panelId = panel.getAttribute("data-order-id");
+    if (panelId && panelId !== id) return;
+    if (!panelId) panel.setAttribute("data-order-id", id);
+    const note = orderNoteText(order);
+    let block = panel.querySelector("[data-order-note]");
+    if (!note) {
+      if (block) block.remove();
+      return;
+    }
+    if (!block) {
+      block = document.createElement("div");
+      block.className = "wasla-live-focus-order-note";
+      block.setAttribute("data-order-note", "");
+      const label = document.createElement("span");
+      label.className = "wasla-live-focus-order-note__label";
+      label.textContent = message("orderNote");
+      const text = document.createElement("p");
+      text.className = "wasla-live-focus-order-note__text";
+      text.setAttribute("data-order-note-text", "");
+      block.appendChild(label);
+      block.appendChild(text);
+      const body = panel.querySelector(".wasla-live-detail__body");
+      const actions = panel.querySelector(".wasla-live-detail__actions");
+      if (body) body.appendChild(block);
+      else if (actions && actions.parentElement === panel) panel.insertBefore(block, actions);
+      else panel.appendChild(block);
+    }
+    const textEl = block.querySelector("[data-order-note-text]");
+    if (textEl && textEl.textContent !== note) textEl.textContent = note;
+    if (textEl) textEl.title = note;
+  }
+
+  function syncFocusOrderNoteFromSnapshot() {
+    if (currentLayout() !== "focus" || !selectedOrderId || !renderedSnapshot) return;
+    const order = findOrder(selectedOrderId);
+    if (!order) return;
+    syncFocusOrderNote(detailNode(), order);
+  }
+
+  function syncFocusedDetailPresentation(order, serverTimeUtc, root) {
+    syncDetailElapsed(order, serverTimeUtc, root);
+    syncFocusOrderNote(root || detailNode(), order);
+    try {
+      if (O.table && typeof O.table.applyNewOrderVisualState === "function") {
+        O.table.applyNewOrderVisualState();
+      }
+    } catch (error) {
+      if (typeof O.debugWarn === "function") O.debugWarn("applyNewOrderVisualState", error);
+    }
+    try { syncOrderNoteAttention(); } catch (error) {
+      if (typeof O.debugWarn === "function") O.debugWarn("orderNoteAttention", error);
+    }
+  }
+
+  function showDetailMessage(key) {
+    const detail = detailNode();
+    if (!detail) return;
+    const existing = detail.querySelector(".wasla-live-empty");
+    if (existing && existing.getAttribute("data-live-empty") === key && !detail.querySelector("[data-order-action]")) return;
+    while (detail.firstChild) detail.removeChild(detail.firstChild);
+    detail.appendChild(createBrandedEmpty(key));
+    detail.setAttribute("aria-busy", "false");
+  }
+
+  function prepareDetail(detail, replaceAll) {
+    detail.setAttribute("aria-busy", "true");
+    if (replaceAll) {
+      while (detail.firstChild) detail.removeChild(detail.firstChild);
+      const paragraph = document.createElement("p");
+      paragraph.className = "text-muted small mb-0";
+      paragraph.setAttribute("role", "status");
+      paragraph.textContent = message("commonLoading");
+      detail.appendChild(paragraph);
+      return;
+    }
+    const actions = detail.querySelector(".wasla-live-detail__actions");
+    if (actions) while (actions.firstChild) actions.removeChild(actions.firstChild);
+  }
+
+  function abandonDetail() {
+    detailGeneration += 1;
+    loadingOrderId = null;
+    loadingSignature = null;
+    loadedOrderId = null;
+    loadedSignature = null;
+    failedOrderId = null;
+    failedSignature = null;
+    detailStale = false;
+    if (O.liveDetailModal && O.liveDetailModal.cancelPanel) O.liveDetailModal.cancelPanel("focus");
+  }
+
+  function ensureDetail(order, force) {
+    const id = String(order.id);
+    const signature = api.orderContentSignature(order);
+    if (!force && !detailStale && loadedOrderId === id && loadedSignature === signature) return;
+    if (!force && !detailStale && failedOrderId === id && failedSignature === signature) return;
+    if (!force && !detailStale && loadingOrderId === id && loadingSignature === signature) return;
+    const detail = detailNode();
+    const loader = O.liveDetailModal && O.liveDetailModal.loadPanel;
+    if (!detail || !loader) return;
+    const replaceAll = loadedOrderId !== id || !detail.querySelector(".wasla-live-detail");
+    prepareDetail(detail, replaceAll);
+    const generation = ++detailGeneration;
+    loadingOrderId = id;
+    loadingSignature = signature;
+    detailStale = false;
+    Promise.resolve(loader(detail, id, "focus")).then(function (ok) {
+      if (generation !== detailGeneration) return;
+      if (loadingOrderId === id) {
+        loadingOrderId = null;
+        loadingSignature = null;
+      }
+      if (selectedOrderId === id) {
+        if (ok) {
+          loadedOrderId = id;
+          loadedSignature = signature;
+          failedOrderId = null;
+          failedSignature = null;
+          const refreshed = findOrder(id);
+          if (refreshed && renderedSnapshot) syncFocusedDetailPresentation(refreshed, renderedSnapshot.serverTimeUtc, detail);
+        } else {
+          loadedOrderId = null;
+          loadedSignature = null;
+          failedOrderId = id;
+          failedSignature = signature;
+        }
+        detail.setAttribute("aria-busy", "false");
+      }
+    }, function () {
+      if (generation !== detailGeneration) return;
+      if (loadingOrderId === id) {
+        loadingOrderId = null;
+        loadingSignature = null;
+      }
+    });
+  }
+
+  function selectedEntry(host) {
+    if (!host || !selectedOrderId) return null;
+    const entries = host.querySelectorAll("[data-focus-select]");
+    for (let i = 0; i < entries.length; i++) {
+      if (entries[i].getAttribute("data-order-id") === selectedOrderId) return entries[i];
+    }
+    return null;
+  }
+
+  function selectOrder(id, fromUser) {
+    if (!id || !findOrder(id)) return;
+    const next = String(id);
+    const host = document.getElementById(hostId);
+    const changed = selectedOrderId !== next;
+    selectionDismissed = false;
+    selectedOrderId = next;
+    if (fromUser && host) {
+      focusOpener = selectedEntry(host);
+      const queue = host.querySelector(".wasla-live-focus__queue");
+      if (queue) queueScrollTop = queue.scrollTop || 0;
+      if (isNarrow()) narrowDetail = true;
+    }
+    const root = host && host.querySelector(".wasla-live-focus");
+    if (root) root.classList.toggle("wasla-live-focus--show-detail", !!(narrowDetail && isNarrow()));
+    markPressed();
+    const order = findOrder(next);
+    if (order && (changed || loadedOrderId !== next || detailStale)) {
+      ensureDetail(order, changed);
+      if (changed && O.table && typeof O.table.applyNewOrderVisualState === "function") {
+        try { O.table.applyNewOrderVisualState(); } catch (error) {
+          if (typeof O.debugWarn === "function") O.debugWarn("applyNewOrderVisualState", error);
+        }
+      }
+    }
+  }
+
+  function showQueue() {
+    narrowDetail = false;
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    const root = host.querySelector(".wasla-live-focus");
+    if (root) root.classList.toggle("wasla-live-focus--show-detail", false);
+    const queue = host.querySelector(".wasla-live-focus__queue");
+    if (queue) queue.scrollTop = queueScrollTop;
+    const target = (focusOpener && focusOpener.parentElement && focusOpener) || selectedEntry(host) || host.querySelector("[data-focus-select]") || host;
+    if (target && typeof target.focus === "function") target.focus({ preventScroll: true });
+  }
+
+  function retrySelectedDetail() {
+    const order = selectedOrderId ? findOrder(selectedOrderId) : null;
+    if (!order) return;
+    detailStale = true;
+    loadedSignature = null;
+    ensureDetail(order, true);
+  }
+
+  function onOrderAction(ev) {
+    if (!focusActive || !selectedOrderId) return;
+    const changedId = ev && ev.detail ? ev.detail.orderId : null;
+    if (changedId && String(changedId) !== String(selectedOrderId)) return;
+    const order = findOrder(selectedOrderId);
+    if (!order) return;
+    detailStale = true;
+    loadedSignature = null;
+    ensureDetail(order, true);
+  }
+
+  function moveFocusOutOfHidden(root) {
+    const active = document.activeElement;
+    if (!active || active === document.body || !root.contains(active)) return;
+    const panel = root.querySelector(".wasla-live-focus__panel");
+    const back = root.querySelector("[data-focus-back]");
+    const panelHidden = isNarrow() && !narrowDetail;
+    const backHidden = !isNarrow();
+    const stuck = (panelHidden && panel && panel.contains(active)) || (backHidden && active === back);
+    if (!stuck) return;
+    const host = document.getElementById(hostId);
+    const target = selectedEntry(host) || root.querySelector("[data-focus-select]") || host;
+    if (target && typeof target.focus === "function") target.focus({ preventScroll: true });
+  }
+
+  function reconcileNarrowFocus() {
+    if (!focusActive) return;
+    const host = document.getElementById(hostId);
+    const root = host && host.querySelector(".wasla-live-focus");
+    if (!root) return;
+    root.classList.toggle("wasla-live-focus--show-detail", !!(narrowDetail && isNarrow()));
+    moveFocusOutOfHidden(root);
+  }
+
+  function bindNarrowWatcher() {
+    if (narrowMedia || !global.matchMedia) return;
+    try {
+      narrowMedia = global.matchMedia("(max-width: 767.98px)");
+    } catch (e) {
+      narrowMedia = null;
+      return;
+    }
+    const onChange = function () { reconcileNarrowFocus(); };
+    if (typeof narrowMedia.addEventListener === "function") narrowMedia.addEventListener("change", onChange);
+    else if (typeof narrowMedia.addListener === "function") narrowMedia.addListener(onChange);
+  }
+
+  function renderFocusSnapshot(snapshot) {
+    const host = document.getElementById(hostId);
+    if (!host) return { added: 0, removed: 0, changed: 0, unchanged: 0, timeUpdates: 0, moved: 0 };
+    const orders = presentationOrders(snapshot.orders || []);
+    const serverTimeUtc = snapshot.serverTimeUtc;
+    const entering = !focusActive;
+    focusActive = true;
+    const focused = document.activeElement === document.body && actionFocus ? actionFocus : document.activeElement;
+    actionFocus = null;
+    const focusedEntry = focused && focused.closest ? focused.closest("[data-focus-select]") : null;
+    const focusedId = focusedEntry && focusedEntry.getAttribute("data-order-id");
+    const loading = host.querySelector("[data-live-loading]");
+    if (loading) loading.remove();
+    Array.from(host.querySelectorAll(".wasla-live-board")).forEach(function (el) { el.remove(); });
+    Array.from(host.querySelectorAll(".wasla-live-groups")).forEach(function (el) { el.remove(); });
+    Array.from(host.querySelectorAll(".orders-card-grid")).forEach(function (el) { el.remove(); });
+
+    if (!orders.length) {
+      focusHadOrders = false;
+      abandonDetail();
+      selectedOrderId = null;
+      selectionDismissed = false;
+      showAcceptedEmpty(host);
+      if (focusedId && document.activeElement !== focused) host.focus({ preventScroll: true });
+      return finishRender({ added: 0, removed: 0, changed: 0, unchanged: 0, timeUpdates: 0, moved: 0 });
+    }
+
+    const hadOrders = focusHadOrders;
+    focusHadOrders = true;
+    const hostLevelEmpty = hostEmpty(host);
+    if (hostLevelEmpty) hostLevelEmpty.remove();
+    const legacyEmpty = host.querySelector(".wasla-orders-empty");
+    if (legacyEmpty) legacyEmpty.remove();
+    let root = host.querySelector(".wasla-live-focus");
+    if (!root) {
+      root = createFocusShell();
+      host.appendChild(root);
+    }
+    if (!selectedOrderId && !selectionDismissed && !isNarrow() && (entering || !hadOrders)) {
+      selectedOrderId = String(orders[0].id);
+    }
+    root.classList.toggle("wasla-live-focus--show-detail", !!(narrowDetail && isNarrow()));
+
+    const lists = {};
+    const counts = {};
+    const anchors = {};
+    boardColumns.forEach(function (spec) {
+      lists[spec.key] = root.querySelector('[data-board-list="' + spec.key + '"]');
+      counts[spec.key] = 0;
+    });
+    const byId = new Map();
+    Array.from(root.querySelectorAll("[data-focus-select]")).forEach(function (entry) {
+      byId.set(entry.getAttribute("data-order-id"), entry);
+    });
+    const seen = new Set();
+    let added = 0;
+    let changed = 0;
+    let unchanged = 0;
+    let timeUpdates = 0;
+    let moved = 0;
+    orders.forEach(function (order) {
+      const id = String(order.id);
+      seen.add(id);
+      let entry = byId.get(id);
+      if (!entry) {
+        entry = createFocusEntry(order, serverTimeUtc);
+        added += 1;
+      } else {
+        const result = updateFocusEntry(entry, order, serverTimeUtc);
+        if (result === "changed") changed += 1;
+        else if (result === "time") timeUpdates += 1;
+        else unchanged += 1;
+      }
+      const key = columnKey(order.status);
+      const list = lists[key];
+      counts[key] += 1;
+      const anchor = anchors[key];
+      const expected = anchor ? anchor.nextElementSibling : list.firstElementChild;
+      if (entry !== expected) {
+        list.insertBefore(entry, expected);
+        moved += 1;
+      }
+      anchors[key] = entry;
+      byId.set(id, entry);
+    });
+    let removed = 0;
+    byId.forEach(function (entry, id) {
+      if (!seen.has(id)) {
+        entry.remove();
+        removed += 1;
+      }
+    });
+    boardColumns.forEach(function (spec) {
+      const column = root.querySelector('[data-board-column="' + spec.key + '"]');
+      const count = column.querySelector("[data-board-count]");
+      const text = String(counts[spec.key]);
+      if (count.textContent !== text) count.textContent = text;
+      column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0;
+    });
+    markPressed();
+
+    if (selectedOrderId && !seen.has(selectedOrderId)) {
+      selectedOrderId = null;
+      selectionDismissed = true;
+      focusOpener = null;
+      abandonDetail();
+      showDetailMessage("selectOrder");
+    } else if (!selectedOrderId) {
+      showDetailMessage("selectOrder");
+    } else {
+      const order = findOrder(selectedOrderId);
+      if (order) {
+        ensureDetail(order, false);
+        syncDetailElapsed(order, serverTimeUtc);
+      }
+    }
+
+    if (focusedId && document.activeElement !== focused) {
+      const panel = root.querySelector(".wasla-live-focus__panel");
+      const focusInPanel = panel && panel.contains(document.activeElement) && document.activeElement !== document.body;
+      if (!focusInPanel) {
+        const entry = seen.has(focusedId) ? byId.get(focusedId) : null;
+        const target = entry || root.querySelector("[data-focus-select]") || host;
+        if (target && typeof target.focus === "function") target.focus({ preventScroll: true });
+      }
+    }
+    return finishRender({ added: added, removed: removed, changed: changed, unchanged: unchanged, timeUpdates: timeUpdates, moved: moved });
   }
 
   function renderSnapshot(snapshot) {
     const host = document.getElementById(hostId);
     if (!host) return { added: 0, removed: 0, changed: 0, unchanged: 0 };
-    const orders = snapshot.orders || [];
-    const serverTimeUtc = snapshot.serverTimeUtc;
-    let grid = host.querySelector(".orders-card-grid");
-    if (!orders.length) {
-      if (grid) grid.remove();
-      ensureEmpty(host);
-      return { added: 0, removed: 0, changed: 0, unchanged: 0 };
+    renderedSnapshot = snapshot;
+    const layout = currentLayout();
+    if (layout === "focus") return renderFocusSnapshot(snapshot);
+    if (focusActive) {
+      abandonDetail();
+      focusActive = false;
+      narrowDetail = false;
     }
-    const empty = host.querySelector(".wasla-orders-empty");
-    if (empty) empty.remove();
+    const focusShell = host.querySelector(".wasla-live-focus");
+    if (focusShell) focusShell.remove();
+    const orders = presentationOrders(snapshot.orders || []);
+    const serverTimeUtc = snapshot.serverTimeUtc;
+    const focused = document.activeElement === document.body && actionFocus ? actionFocus : document.activeElement;
+    actionFocus = null;
+    const focusedCard = focused && focused.closest ? focused.closest(".wasla-live-screen-card") : null;
+    const focusedId = focusedCard && focusedCard.getAttribute("data-order-id");
+    if (!orders.length) {
+      showAcceptedEmpty(host);
+      if (focusedId && document.activeElement !== focused) host.focus({ preventScroll: true });
+      return finishRender({ added: 0, removed: 0, changed: 0, unchanged: 0, timeUpdates: 0, moved: 0 });
+    }
+    const loading = host.querySelector("[data-live-loading]");
+    if (loading) loading.remove();
+    const hostLevelEmpty = hostEmpty(host);
+    if (hostLevelEmpty) hostLevelEmpty.remove();
+    const legacyEmpty = host.querySelector(".wasla-orders-empty");
+    if (legacyEmpty) legacyEmpty.remove();
+    let grid = host.querySelector(layout === "board" ? ".wasla-live-board" : ".wasla-live-groups");
     if (!grid) {
-      grid = document.createElement("div");
-      grid.className = "orders-card-grid wasla-live-screen-grid";
-      grid.setAttribute("role", "list");
+      grid = createGroupedLayout(layout);
       host.appendChild(grid);
     }
-
-    const cards = [];
-    for (let i = 0; i < grid.children.length; i++) {
-      const child = grid.children[i];
-      if (child.getAttribute && child.getAttribute("data-order-id")) cards.push(child);
-    }
-
-    if (cards.length === orders.length) {
-      let same = true;
-      for (let i = 0; i < orders.length; i++) {
-        if (cards[i].getAttribute("data-order-id") !== String(orders[i].id)
-          || cards[i].getAttribute("data-live-signature") !== api.orderContentSignature(orders[i])) {
-          same = false;
-          break;
-        }
-      }
-      if (same) {
-        let timeUpdates = 0;
-        for (let i = 0; i < orders.length; i++) {
-          if (syncTimeLabels(cards[i], orders[i], serverTimeUtc)) timeUpdates += 1;
-        }
-        return { added: 0, removed: 0, changed: 0, unchanged: orders.length, timeUpdates: timeUpdates };
-      }
-    }
-
+    const cards = Array.from(host.querySelectorAll(".wasla-live-screen-card"));
+    const lists = {};
+    const counts = {};
+    const anchors = {};
+    boardColumns.forEach(function (spec) {
+      lists[spec.key] = grid.querySelector('[data-board-list="' + spec.key + '"]');
+      counts[spec.key] = 0;
+    });
     const byId = new Map();
     cards.forEach(function (card) { byId.set(card.getAttribute("data-order-id"), card); });
     const seen = new Set();
     let added = 0;
     let changed = 0;
     let unchanged = 0;
-    let anchor = null;
+    let timeUpdates = 0;
+    let moved = 0;
+    function createEntry(order) {
+      return layout === "board" ? createCard(order, serverTimeUtc) : createListRow(order, serverTimeUtc);
+    }
     orders.forEach(function (order) {
       const id = String(order.id);
       seen.add(id);
       let card = byId.get(id);
       if (!card) {
-        card = createCard(order, serverTimeUtc);
+        card = createEntry(order);
         added += 1;
-      } else if (!card.getAttribute("data-live-signature")) {
-        const replacement = createCard(order, serverTimeUtc);
+      } else if (card.getAttribute("data-live-layout") !== layout || !card.getAttribute("data-live-signature")) {
+        const replacement = createEntry(order);
         card.replaceWith(replacement);
         card = replacement;
         changed += 1;
       } else if (card.getAttribute("data-live-signature") === api.orderContentSignature(order)) {
-        syncTimeLabels(card, order, serverTimeUtc);
+        if (syncTimeLabels(card, order, serverTimeUtc)) timeUpdates += 1;
         unchanged += 1;
       } else if (updateCard(card, order, serverTimeUtc)) {
         changed += 1;
       } else {
         unchanged += 1;
       }
-      const expected = anchor ? anchor.nextElementSibling : grid.firstElementChild;
-      if (card !== expected) grid.insertBefore(card, expected);
-      anchor = card;
+      const key = columnKey(order.status);
+      const list = lists[key];
+      counts[key] += 1;
+      const anchor = anchors[key];
+      const expected = anchor ? anchor.nextElementSibling : list.firstElementChild;
+      if (card !== expected) {
+        list.insertBefore(card, expected);
+        moved += 1;
+      }
+      anchors[key] = card;
+      byId.set(id, card);
     });
     let removed = 0;
     byId.forEach(function (card, id) {
@@ -871,7 +2087,24 @@ function attachBrowser(O, global, api) {
         removed += 1;
       }
     });
-    return { added: added, removed: removed, changed: changed, unchanged: unchanged };
+    Array.from(host.querySelectorAll(layout === "board" ? ".wasla-live-groups" : ".wasla-live-board")).forEach(function (el) { el.remove(); });
+    Array.from(host.querySelectorAll(".orders-card-grid")).forEach(function (el) { el.remove(); });
+    boardColumns.forEach(function (spec) {
+      const column = grid.querySelector('[data-board-column="' + spec.key + '"]');
+      const count = column.querySelector("[data-board-count]");
+      const text = String(counts[spec.key]);
+      if (count.textContent !== text) count.textContent = text;
+      column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0;
+    });
+    // Reparenting or replacing an action button may blur it. Never steal focus
+    // from a modal or a header control that was active when reconciliation began.
+    if (focusedId && document.activeElement !== focused) {
+      const card = seen.has(focusedId) ? byId.get(focusedId) : null;
+      const target = card && (card.contains(focused) ? focused :
+        card.querySelector("[data-order-action]") || card.querySelector("[data-order-detail]"));
+      (target || host).focus({ preventScroll: true });
+    }
+    return finishRender({ added: added, removed: removed, changed: changed, unchanged: unchanged, timeUpdates: timeUpdates, moved: moved });
   }
 
   async function fetchSnapshot(signal) {
@@ -928,25 +2161,18 @@ function attachBrowser(O, global, api) {
 
       const settings = O.state && O.state.notificationSettings;
       if (settings && settings.newOrderSoundEnabled && O.audio && typeof O.audio.playSoundNow === "function") {
-        if (!O.audio.isSoundUnlocked()) {
-          if (O.table && !O.table.hintShownForUnlock) {
-            O.table.hintShownForUnlock = true;
-            O.showMessage(message("soundUnlockHint"), "info");
-          }
-        } else {
-          try {
-            await O.audio.playSoundNow({
-              newOrderSoundEnabled: true,
-              newOrderSoundName: settings.newOrderSoundName,
-              newOrderSoundRepeatCount: settings.newOrderSoundRepeatCount,
-              newOrderSoundVolumePercent: settings.newOrderSoundVolumePercent != null
-                ? settings.newOrderSoundVolumePercent
-                : Math.round((settings.newOrderSoundVolume || 1) * 100),
-              showBrowserNotification: settings.showBrowserNotification
-            });
-          } catch (error) {
-            if (typeof O.debugWarn === "function") O.debugWarn("playSoundNow", error);
-          }
+        try {
+          await O.audio.playSoundNow({
+            newOrderSoundEnabled: true,
+            newOrderSoundName: settings.newOrderSoundName,
+            newOrderSoundRepeatCount: settings.newOrderSoundRepeatCount,
+            newOrderSoundVolumePercent: settings.newOrderSoundVolumePercent != null
+              ? settings.newOrderSoundVolumePercent
+              : Math.round((settings.newOrderSoundVolume || 1) * 100),
+            showBrowserNotification: settings.showBrowserNotification
+          });
+        } catch (error) {
+          if (typeof O.debugWarn === "function") O.debugWarn("playSoundNow", error);
         }
       }
       if (O.audio && typeof O.audio.showBrowserNotificationIfAllowed === "function") {
@@ -973,11 +2199,37 @@ function attachBrowser(O, global, api) {
     return coordinator;
   }
 
+  if (typeof document.addEventListener === "function") {
+    document.addEventListener("wasla:order-action-completed", onOrderAction);
+  }
+  bindNarrowWatcher();
+  if (O.table) {
+    O.table.onRowHighlightEnded = function (orderId) {
+      try {
+        beginOrderNoteAttention(orderId);
+      } catch (error) {
+        if (typeof O.debugWarn === "function") O.debugWarn("orderNoteAttention", error);
+      }
+    };
+  }
+
   return {
     start: function () { return ensureCoordinator().start(); },
-    beginMutation: function () { return ensureCoordinator().beginMutation(); },
+    beginMutation: function (origin) {
+      if (origin && document.activeElement === origin) actionFocus = origin;
+      return ensureCoordinator().beginMutation();
+    },
     requestRefresh: function () { return ensureCoordinator().requestRefresh(); },
+    refreshView: function () {
+      const snapshot = coordinator && coordinator.lastSnapshot();
+      if (snapshot) renderSnapshot(snapshot);
+    },
+    selectOrder: selectOrder,
+    showQueue: showQueue,
+    retrySelectedDetail: retrySelectedDetail,
+    getSelectedOrderId: function () { return selectedOrderId; },
     lastTimings: lastTimings,
-    renderSnapshot: renderSnapshot
+    renderSnapshot: renderSnapshot,
+    orderNoteAttentionState: orderNoteAttentionState
   };
 }

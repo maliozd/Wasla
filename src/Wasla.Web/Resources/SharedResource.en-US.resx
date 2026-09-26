@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
     <value>{0} min</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve">
+    <value>{0} hr {1} min</value>
+  </data>
   <data name="Orders.LiveScreen.ViewCards" xml:space="preserve">
     <value>Cards</value>
   </data>
@@ -661,7 +664,7 @@
     <value>The receipt could not be queued for printing.</value>
   </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
-    <value>Open full order</value>
+    <value>Open order</value>
   </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Close Display</value>
@@ -677,6 +680,12 @@
   </data>
   <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
     <value>Last updated</value>
+  </data>
+  <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
+    <value>Notification Sound</value>
   </data>
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>Popup was blocked. Opening live display in this tab.</value>
@@ -3515,4 +3524,20 @@
   <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>No matching users</value></data>
   <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>Try a different search or filter.</value></data>
   <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>Not recorded</value></data>
+  <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Board</value></data>
+  <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>No orders</value></data>
+  <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Order</value></data>
+  <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Elapsed</value></data>
+  <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>Total</value></data>
+  <data name="Orders.LiveScreen.ItemNote" xml:space="preserve"><value>Note</value></data>
+  <data name="Orders.LiveScreen.OrderNote" xml:space="preserve"><value>Order note</value></data>
+  <data name="Orders.LiveScreen.ViewFocus" xml:space="preserve"><value>Focus</value></data>
+  <data name="Orders.LiveScreen.SelectOrder" xml:space="preserve"><value>Select an order</value></data>
+  <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Select an order from the list to see its details and actions.</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>No orders to show right now</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Orders will appear here when they arrive.</value></data>
+  <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Back to orders</value></data>
+  <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Orders</value></data>
 </root>
