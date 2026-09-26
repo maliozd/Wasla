@@ -173,6 +173,34 @@ internal static class CliCommands
         }
     }
 
+    public static async Task<int> ResetPasswordAsync(
+        IHost host,
+        string? scope,
+        string? email,
+        string? tenantSelector,
+        bool dryRun,
+        CancellationToken ct,
+        ICliPasswordReader? passwordReader = null,
+        Func<Tenant, CancellationToken, Task<TenantDbContext>>? openTenant = null)
+    {
+        using var diScope = host.Services.CreateScope();
+        var central = diScope.ServiceProvider.GetRequiredService<CentralDbContext>();
+        openTenant ??= (tenant, token) => CliPasswordReset.OpenTenantDatabaseAsync(
+            diScope.ServiceProvider.GetRequiredService<ISecretManager>(),
+            tenant,
+            token);
+
+        return await CliPasswordReset.ExecuteAsync(
+            central,
+            scope,
+            email,
+            tenantSelector,
+            dryRun,
+            openTenant,
+            passwordReader ?? new ConsoleCliPasswordReader(),
+            ct).ConfigureAwait(false);
+    }
+
     public static async Task<int> ListCentralAdminsAsync(IHost host, CancellationToken ct)
     {
         try

@@ -40,10 +40,16 @@ internal static class CliHelpPrinter
         "list-central-admins"
     ];
 
+    private static readonly string[] AccountCommands =
+    [
+        "reset-password"
+    ];
+
     private static readonly HashSet<string> AllCommands = new(
         CustomerCommands
             .Concat(MigrationCommands)
             .Concat(CentralAdminCommands)
+            .Concat(AccountCommands)
             .Concat(UtilityCommands),
         StringComparer.OrdinalIgnoreCase);
 
@@ -78,6 +84,10 @@ internal static class CliHelpPrinter
         Console.WriteLine("  add-central-admin          Create a central admin user in CentralDb.");
         Console.WriteLine("  reset-central-admin-password Reset a central admin password in CentralDb.");
         Console.WriteLine("  list-central-admins        List central admin users (safe fields only).");
+        Console.WriteLine();
+
+        Console.WriteLine("Account commands:");
+        Console.WriteLine("  reset-password            Reset an existing central or tenant user password.");
         Console.WriteLine();
 
         Console.WriteLine("Utility commands:");
@@ -252,6 +262,23 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Example:");
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- reset-central-admin-password --email admin@Wasla.com --password \"NewPassword123!\"");
+                return;
+
+            case "reset-password":
+                Console.WriteLine("reset-password");
+                Console.WriteLine();
+                Console.WriteLine("Resets the password of an existing account. Does not create users.");
+                Console.WriteLine("The new password is prompted interactively and is not accepted as --password.");
+                Console.WriteLine("--dry-run resolves the account and writes nothing.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  reset-password --scope central --email <email> [--dry-run]");
+                Console.WriteLine("  reset-password --scope tenant --tenant <slug-or-id> --email <email> [--dry-run]");
+                Console.WriteLine();
+                Console.WriteLine("Examples:");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope central --email user@example.com");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope tenant --tenant mengen --email user@example.com");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope central --email user@example.com --dry-run");
                 return;
 
             case "list-central-admins":
