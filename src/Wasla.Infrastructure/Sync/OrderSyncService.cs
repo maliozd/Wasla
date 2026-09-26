@@ -1,16 +1,20 @@
 ﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Platform.Mock;
 using Polly;
 using Polly.Retry;
 using Polly.Timeout;
@@ -25,6 +29,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly IOrderAutoApproveService _autoApprove;
     private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly ILogger<OrderSyncService> _logger;
+    private readonly ITenantBusinessSubtypeReader? _businessSubtypeReader;
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
         new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
@@ -48,7 +53,8 @@ public sealed class OrderSyncService : IOrderSyncService
         IOrderStatusMapper statusMapper,
         IOrderAutoApproveService autoApprove,
         IOrderReceiptCreationService receiptCreation,
-        ILogger<OrderSyncService> logger)
+        ILogger<OrderSyncService> logger,
+        ITenantBusinessSubtypeReader? businessSubtypeReader = null)
     {
         _customerDbFactory = customerDbFactory;
         _platformClients = platformClients;
@@ -56,6 +62,7 @@ public sealed class OrderSyncService : IOrderSyncService
         _autoApprove = autoApprove;
         _receiptCreation = receiptCreation;
         _logger = logger;
+        _businessSubtypeReader = businessSubtypeReader;
     }
 
     public async Task SyncCustomerAsync(Guid customerId, CancellationToken ct)
@@ -138,16 +145,24 @@ public sealed class OrderSyncService : IOrderSyncService
         var failedConnections = 0;
         var connectionResults = new List<OrderSyncConnectionResult>(dueConnections.Count);
 
-        foreach (var connection in dueConnections)
+        var mockGenerationScope = await BeginMockGenerationScopeAsync(customerId, db, ct).ConfigureAwait(false);
+        try
         {
-            var result = await SyncConnectionAsync(customerId, db, connection, ct).ConfigureAwait(false);
-            connectionResults.Add(result);
-            fetched += result.FetchedCount;
-            inserted += result.InsertedCount;
-            updated += result.UpdatedCount;
-            skipped += result.SkippedCount;
-            unchanged += result.UnchangedCount;
-            if (result.IsFailed) failedConnections++;
+            foreach (var connection in dueConnections)
+            {
+                var result = await SyncConnectionAsync(customerId, db, connection, ct).ConfigureAwait(false);
+                connectionResults.Add(result);
+                fetched += result.FetchedCount;
+                inserted += result.InsertedCount;
+                updated += result.UpdatedCount;
+                skipped += result.SkippedCount;
+                unchanged += result.UnchangedCount;
+                if (result.IsFailed) failedConnections++;
+            }
+        }
+        finally
+        {
+            mockGenerationScope?.Dispose();
         }
 
         swCustomer.Stop();
@@ -200,6 +215,53 @@ public sealed class OrderSyncService : IOrderSyncService
             .ConfigureAwait(false);
 
         return row?.OrderSyncEnabled ?? true;
+    }
+
+    private async Task<IDisposable?> BeginMockGenerationScopeAsync(
+        Guid customerId,
+        TenantDbContext db,
+        CancellationToken ct)
+    {
+        if (_businessSubtypeReader is null)
+            return null;
+
+        var codes = await _businessSubtypeReader.GetSubtypeCodesAsync(customerId, ct).ConfigureAwait(false);
+        if (codes is null)
+            return null;
+
+        var culture = await ReadReceiptLanguageAsync(db, ct).ConfigureAwait(false);
+        return MockOrderGenerationContext.Begin(codes, culture);
+    }
+
+    private static async Task<string> ReadReceiptLanguageAsync(TenantDbContext db, CancellationToken ct)
+    {
+        var json = await db.TenantOperationalSettings.AsNoTracking()
+            .Where(x => x.Id == TenantOperationalSettingsSingletonId)
+            .Select(x => x.ReceiptTemplateSettingsJson)
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(json))
+            return ReceiptLanguageCodes.Turkish;
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                if (property.Name.Equals("ReceiptLanguage", StringComparison.OrdinalIgnoreCase)
+                    && property.Value.ValueKind == JsonValueKind.String)
+                {
+                    return ReceiptLanguageCodes.Normalize(property.Value.GetString());
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            return ReceiptLanguageCodes.Turkish;
+        }
+
+        return ReceiptLanguageCodes.Turkish;
     }
 
     private async Task<OrderSyncConnectionResult> SyncConnectionAsync(

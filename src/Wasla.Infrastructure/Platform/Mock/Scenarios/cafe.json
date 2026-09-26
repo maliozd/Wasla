@@ -1,0 +1,16 @@
+{
+  "businessSubtype": "Cafe",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoSugar"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Cafe.Product.Americano", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.Small", "Mock.Modifier.Medium", "Mock.Modifier.Large", "Mock.Modifier.Hot", "Mock.Modifier.ExtraShot"] },
+    { "key": "Mock.Cafe.Product.Latte", "minPrice": 90, "maxPrice": 140, "modifiers": ["Mock.Modifier.Small", "Mock.Modifier.Medium", "Mock.Modifier.Large", "Mock.Modifier.OatMilk", "Mock.Modifier.LactoseFreeMilk", "Mock.Modifier.NoSugar"] },
+    { "key": "Mock.Cafe.Product.Cappuccino", "minPrice": 90, "maxPrice": 140, "modifiers": ["Mock.Modifier.Medium", "Mock.Modifier.OatMilk", "Mock.Modifier.NoSugar"] },
+    { "key": "Mock.Cafe.Product.IcedAmericano", "minPrice": 80, "maxPrice": 120, "modifiers": ["Mock.Modifier.Iced", "Mock.Modifier.ExtraShot", "Mock.Modifier.NoSugar"] },
+    { "key": "Mock.Cafe.Product.IcedLatte", "minPrice": 100, "maxPrice": 150, "modifiers": ["Mock.Modifier.Iced", "Mock.Modifier.OatMilk", "Mock.Modifier.LactoseFreeMilk"] },
+    { "key": "Mock.Cafe.Product.Tea", "minPrice": 30, "maxPrice": 50, "modifiers": ["Mock.Modifier.NoSugar"] },
+    { "key": "Mock.Cafe.Product.SanSebastian", "minPrice": 140, "maxPrice": 190, "modifiers": ["Mock.Modifier.SinglePortion"] },
+    { "key": "Mock.Cafe.Product.Brownie", "minPrice": 90, "maxPrice": 140, "modifiers": ["Mock.Modifier.IceCreamOnTheSide"] },
+    { "key": "Mock.Cafe.Product.Croissant", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.WithCheese"] }
+  ]
+}

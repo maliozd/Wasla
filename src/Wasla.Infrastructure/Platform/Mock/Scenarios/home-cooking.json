@@ -1,0 +1,15 @@
+{
+  "businessSubtype": "HomeCooking",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Home.Product.LentilSoup", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.ExtraBread"] },
+    { "key": "Mock.Home.Product.Rice", "minPrice": 50, "maxPrice": 80, "modifiers": ["Mock.Modifier.ExtraBread"] },
+    { "key": "Mock.Home.Product.BulgurPilaf", "minPrice": 50, "maxPrice": 80, "modifiers": ["Mock.Modifier.NoBread"] },
+    { "key": "Mock.Home.Product.DryBeans", "minPrice": 120, "maxPrice": 180, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Bulgur", "Mock.Modifier.ExtraBread"] },
+    { "key": "Mock.Home.Product.Chickpeas", "minPrice": 110, "maxPrice": 170, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Yogurt"] },
+    { "key": "Mock.Home.Product.Meatballs", "minPrice": 160, "maxPrice": 240, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Bulgur", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Home.Product.ChickenSaute", "minPrice": 180, "maxPrice": 260, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Home.Product.Cacik", "minPrice": 50, "maxPrice": 80, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.Yogurt"] }
+  ]
+}

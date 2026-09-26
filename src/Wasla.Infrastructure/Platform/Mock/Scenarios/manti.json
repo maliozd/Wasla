@@ -1,0 +1,10 @@
+{
+  "businessSubtype": "Manti",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Manti.Product.Traditional", "minPrice": 180, "maxPrice": 280, "modifiers": ["Mock.Modifier.Yogurt", "Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy", "Mock.Modifier.ExtraSauce"] },
+    { "key": "Mock.Manti.Product.Fried", "minPrice": 190, "maxPrice": 290, "modifiers": ["Mock.Modifier.Yogurt", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Manti.Product.Mini", "minPrice": 160, "maxPrice": 240, "modifiers": ["Mock.Modifier.NotSpicy", "Mock.Modifier.Yogurt"] }
+  ]
+}

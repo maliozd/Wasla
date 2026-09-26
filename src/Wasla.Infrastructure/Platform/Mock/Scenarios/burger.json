@@ -1,0 +1,16 @@
+{
+  "businessSubtype": "Burger",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.SauceOnTheSide", "Mock.OrderNote.NotTooSpicy", "Mock.OrderNote.DoNotRingBell"],
+  "products": [
+    { "key": "Mock.Burger.Product.Cheeseburger", "minPrice": 260, "maxPrice": 340, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.NoPickles", "Mock.Modifier.ExtraCheddar", "Mock.Modifier.ExtraSauce"] },
+    { "key": "Mock.Burger.Product.DoubleCheeseburger", "minPrice": 320, "maxPrice": 420, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraCheddar", "Mock.Modifier.ExtraSauce"] },
+    { "key": "Mock.Burger.Product.ChickenBurger", "minPrice": 250, "maxPrice": 330, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraSauce", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Burger.Product.SmashBurger", "minPrice": 280, "maxPrice": 360, "modifiers": ["Mock.Modifier.NoPickles", "Mock.Modifier.ExtraCheddar", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Burger.Product.CrispyChickenBurger", "minPrice": 270, "maxPrice": 350, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.ExtraSauce", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Burger.Product.BurgerMenu", "minPrice": 340, "maxPrice": 460, "modifiers": ["Mock.Modifier.LargeFries", "Mock.Modifier.RegularFries", "Mock.Modifier.Cola", "Mock.Modifier.ColaZero", "Mock.Modifier.Fanta", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.Burger.Product.ChickenBurgerMenu", "minPrice": 330, "maxPrice": 450, "modifiers": ["Mock.Modifier.LargeFries", "Mock.Modifier.Cola", "Mock.Modifier.Ayran", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Burger.Product.OnionRings", "minPrice": 90, "maxPrice": 140, "modifiers": ["Mock.Modifier.ExtraSauce"] },
+    { "key": "Mock.Burger.Product.FrenchFries", "minPrice": 80, "maxPrice": 130, "modifiers": ["Mock.Modifier.LargeFries", "Mock.Modifier.RegularFries", "Mock.Modifier.ExtraSauce"] }
+  ]
+}

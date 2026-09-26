@@ -1,0 +1,11 @@
+{
+  "businessSubtype": "CigKofte",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.CigKofte.Product.Portion", "minPrice": 90, "maxPrice": 150, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy", "Mock.Modifier.ExtraLemon", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.CigKofte.Product.Wrap", "minPrice": 110, "maxPrice": 170, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.NoOnion", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.CigKofte.Product.Half", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.NotSpicy", "Mock.Modifier.ExtraLemon"] },
+    { "key": "Mock.CigKofte.Product.Ayran", "minPrice": 25, "maxPrice": 40, "modifiers": ["Mock.Modifier.Ayran"] }
+  ]
+}

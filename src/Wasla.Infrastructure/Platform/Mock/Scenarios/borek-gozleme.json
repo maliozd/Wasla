@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "BorekGozleme",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Borek.Product.CheeseBorek", "minPrice": 90, "maxPrice": 150, "modifiers": ["Mock.Modifier.Yogurt", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.Borek.Product.SpinachBorek", "minPrice": 90, "maxPrice": 150, "modifiers": ["Mock.Modifier.Yogurt"] },
+    { "key": "Mock.Borek.Product.MeatBorek", "minPrice": 110, "maxPrice": 170, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.Borek.Product.PotatoGozleme", "minPrice": 80, "maxPrice": 140, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.Ayran", "Mock.Modifier.Yogurt"] },
+    { "key": "Mock.Borek.Product.CheeseGozleme", "minPrice": 80, "maxPrice": 140, "modifiers": ["Mock.Modifier.Ayran", "Mock.Modifier.ExtraLemon"] }
+  ]
+}

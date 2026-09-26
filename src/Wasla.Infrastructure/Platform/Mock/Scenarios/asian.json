@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Asian",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Asian.Product.PadThai", "minPrice": 220, "maxPrice": 320, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Asian.Product.Noodles", "minPrice": 180, "maxPrice": 280, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.ExtraSauce"] },
+    { "key": "Mock.Asian.Product.FriedRice", "minPrice": 170, "maxPrice": 260, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Asian.Product.SpringRolls", "minPrice": 90, "maxPrice": 150, "modifiers": ["Mock.Modifier.ExtraSauce"] },
+    { "key": "Mock.Asian.Product.Curry", "minPrice": 210, "maxPrice": 320, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy"] }
+  ]
+}

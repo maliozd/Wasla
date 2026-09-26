@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Steakhouse",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Steak.Product.Ribeye", "minPrice": 480, "maxPrice": 720, "modifiers": ["Mock.Modifier.Fries", "Mock.Modifier.ExtraSauce", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Steak.Product.Tenderloin", "minPrice": 520, "maxPrice": 780, "modifiers": ["Mock.Modifier.Fries", "Mock.Modifier.ExtraSauce"] },
+    { "key": "Mock.Steak.Product.GrilledMeatballs", "minPrice": 260, "maxPrice": 380, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.Rice", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Steak.Product.LambChops", "minPrice": 540, "maxPrice": 820, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.ExtraLavash"] },
+    { "key": "Mock.Steak.Product.MashedPotato", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.ExtraSauce"] }
+  ]
+}
