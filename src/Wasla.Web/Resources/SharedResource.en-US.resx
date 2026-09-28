@@ -3578,4 +3578,7 @@
   <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>Other</value></data>
   <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>Select at least one business subtype.</value></data>
   <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>Select at least one subtype for each chosen category.</value></data>
+  <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>The operation could not be completed. Try again. If it continues, give this reference code to support.</value></data>
+  <data name="Errors.ReferenceCode" xml:space="preserve"><value>Reference code</value></data>
 </root>

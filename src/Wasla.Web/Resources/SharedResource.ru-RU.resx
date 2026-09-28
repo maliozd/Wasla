@@ -4062,4 +4062,7 @@
   <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>Другое</value></data>
   <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>Выберите хотя бы один подтип.</value></data>
   <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>Для каждой выбранной категории отметьте хотя бы один подтип.</value></data>
+  <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Произошла непредвиденная ошибка</value></data>
+  <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>Операция не выполнена. Повторите попытку. Если ошибка повторится, сообщите в поддержку этот код.</value></data>
+  <data name="Errors.ReferenceCode" xml:space="preserve"><value>Код обращения</value></data>
 </root>

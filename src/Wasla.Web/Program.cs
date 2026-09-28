@@ -13,6 +13,7 @@ using Wasla.Web;
 using Wasla.Web.Localization;
 using Wasla.Web.Middleware;
 using Wasla.Web.Security;
+using Wasla.Infrastructure.Diagnostics;
 using Wasla.Web.Tenant;
 
 // Web needs encryption master key to decrypt CustomerDb connection strings
@@ -173,6 +174,7 @@ builder.Services
 
 builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
+builder.Services.AddWaslaHealthChecks();
 
 var app = builder.Build();
 
@@ -181,9 +183,11 @@ app.Logger.LogInformation(
     app.Environment.EnvironmentName,
     authCookieSecurePolicy);
 
+app.UseMiddleware<RequestDiagnosticsMiddleware>();
+app.UseWaslaExceptionHandling(app.Environment);
+
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/auth/login");
     app.UseHsts();
 }
 
@@ -214,5 +218,6 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapWaslaHealthChecks();
 
 app.Run();

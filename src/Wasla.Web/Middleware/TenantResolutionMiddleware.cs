@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Infrastructure.Diagnostics;
 using Wasla.Infrastructure.Options;
 
 namespace Wasla.Web.Middleware;
@@ -26,6 +27,7 @@ public sealed class TenantResolutionMiddleware
         "/setlanguage",
         "/swagger",
         "/health",
+        "/error",
         "/api/print-bridge",
         "/css",
         "/js",
@@ -94,8 +96,7 @@ public sealed class TenantResolutionMiddleware
         var cacheKey = $"tenant:{host.ToLowerInvariant()}";
         if (cache.TryGetValue(cacheKey, out ResolvedTenantDto? cachedTenant) && cachedTenant is not null)
         {
-            context.Items[ItemKey] = cachedTenant;
-            await _next(context);
+            await ContinueWithTenantAsync(context, logger, cachedTenant);
             return;
         }
 
@@ -124,10 +125,21 @@ public sealed class TenantResolutionMiddleware
             return;
         }
 
-        context.Items[ItemKey] = tenant;
         cache.Set(cacheKey, tenant, CacheTtl);
+        await ContinueWithTenantAsync(context, logger, tenant);
+    }
 
-        await _next(context);
+    private async Task ContinueWithTenantAsync(HttpContext context, ILogger logger, ResolvedTenantDto tenant)
+    {
+        context.Items[ItemKey] = tenant;
+        TenantDiagnosticContext.Apply(context, tenant.Id);
+        using (logger.BeginScope(new Dictionary<string, object>
+        {
+            ["TenantId"] = tenant.Id.ToString("D")
+        }))
+        {
+            await _next(context);
+        }
     }
 
     private static bool IsBypassPath(string path)

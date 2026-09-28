@@ -108,7 +108,7 @@ public sealed class OrderSyncWorker : BackgroundService
         }
         else
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Order sync cycle started. StartedAtUtc={StartedAtUtc}, IntervalSeconds={IntervalSeconds}, ActiveCustomers={CustomerCount}",
                 cycleStartUtc,
                 CycleIntervalSeconds,
@@ -161,6 +161,15 @@ public sealed class OrderSyncWorker : BackgroundService
         ConcurrentBag<OrderSyncCustomerResult> results,
         CancellationToken ct)
     {
+        using var activity = new Activity("Wasla.OrderSync");
+        activity.SetTag("tenant.id", customer.Id.ToString("D"));
+        activity.Start();
+        using var logScope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["TraceId"] = activity.TraceId.ToString(),
+            ["TenantId"] = customer.Id.ToString("D")
+        });
+
         using var scope = _scopeFactory.CreateScope();
         var syncer = scope.ServiceProvider.GetRequiredService<IOrderSyncService>();
 
@@ -225,7 +234,9 @@ public sealed class OrderSyncWorker : BackgroundService
         }
         else
         {
-            _logger.LogInformation(
+            var level = totals.FailedConnections > 0 ? LogLevel.Warning : LogLevel.Debug;
+            _logger.Log(
+                level,
                 "Order sync cycle completed in {ElapsedMs} ms. Customers={CustomerCount}, Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnectionCount}",
                 elapsedMs,
                 totals.CustomerCount,

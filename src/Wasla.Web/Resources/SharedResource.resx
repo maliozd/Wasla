@@ -1116,4 +1116,7 @@
   <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>Diğer</value></data>
   <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>En az bir işletme alt türü seçin.</value></data>
   <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>Seçilen her kategori için en az bir alt tür işaretleyin.</value></data>
+  <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Beklenmeyen bir sorun oluştu</value></data>
+  <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>İşlem tamamlanamadı. Lütfen yeniden deneyin. Sorun sürerse destek ekibine referans kodunu iletin.</value></data>
+  <data name="Errors.ReferenceCode" xml:space="preserve"><value>Referans kodu</value></data>
 </root>
