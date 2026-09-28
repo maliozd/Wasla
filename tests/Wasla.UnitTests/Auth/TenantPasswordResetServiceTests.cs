@@ -298,9 +298,10 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
         }, TestContext.Current.CancellationToken);
 
         var line = Assert.Single(logger.Messages);
-        Assert.Contains("BodyPreviewSuppressed=true", line);
-        Assert.DoesNotContain(resetUrl, line);
-        Assert.DoesNotContain("secret-token", line);
+        Assert.Contains("RecipientDomain=example.test", line, StringComparison.Ordinal);
+        Assert.DoesNotContain(resetUrl, line, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret-token", line, StringComparison.Ordinal);
+        Assert.DoesNotContain("owner@", line, StringComparison.Ordinal);
     }
 
     private TenantPasswordResetService CreateService() => new(
