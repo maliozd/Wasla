@@ -1,0 +1,11 @@
+@model Wasla.Web.Models.Tours.ProductTourViewModel
+<button type="button" class="btn btn-link btn-sm wasla-tour-replay" data-wasla-tour-replay>
+    @Model.ReplayLabel
+</button>
+<link rel="stylesheet" href="~/css/wasla-tour.css" asp-append-version="true" />
+<script src="~/js/wasla-tour.js" asp-append-version="true"></script>
+<script>
+    try {
+        WaslaTour.mount(@Html.Raw(Model.ConfigJson));
+    } catch (e) { }
+</script>

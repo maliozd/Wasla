@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Demos;
 using Wasla.Application.Orders;
 using Wasla.Application.Time;
 using Wasla.Domain.Enums;
@@ -28,6 +29,8 @@ public sealed class OrdersController : BaseController
     private readonly ITenantOrderSettingsService _orderSettings;
     private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly IManualOrderPrintService _manualPrint;
+    private readonly IGuidedDemoService _demos;
+    private readonly IAuthorizationService _authorization;
     private readonly IValidator<UpdateTenantOrderSettingsCommand> _orderSettingsValidator;
     private readonly ILogger<OrdersController> _logger;
     private readonly IStringLocalizer<Wasla.Web.SharedResource> _localizer;
@@ -40,6 +43,8 @@ public sealed class OrdersController : BaseController
         ITenantOrderSettingsService orderSettings,
         IOrderReceiptCreationService receiptCreation,
         IManualOrderPrintService manualPrint,
+        IGuidedDemoService demos,
+        IAuthorizationService authorization,
         IValidator<UpdateTenantOrderSettingsCommand> orderSettingsValidator,
         ILogger<OrdersController> logger,
         IStringLocalizer<Wasla.Web.SharedResource> localizer)
@@ -51,6 +56,8 @@ public sealed class OrdersController : BaseController
         _orderSettings = orderSettings;
         _receiptCreation = receiptCreation;
         _manualPrint = manualPrint;
+        _demos = demos;
+        _authorization = authorization;
         _orderSettingsValidator = orderSettingsValidator;
         _logger = logger;
         _localizer = localizer;
@@ -291,6 +298,31 @@ public sealed class OrdersController : BaseController
         if (tenant is null) return NotFound();
 
         var snapshot = await _orders.GetLiveScreenSnapshotAsync(tenant.Id, ct);
+        var userIdValue = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User?.FindFirst("UserId")?.Value;
+        // Only users who may run the demo actions can own a demo; skip the per-poll lookup for everyone else.
+        if (Guid.TryParse(userIdValue, out var userId)
+            && (await _authorization.AuthorizeAsync(User!, TenantPolicies.CanManageOrders)).Succeeded)
+        {
+            try
+            {
+                var demo = await _demos.GetForLiveScreenAsync(tenant.Id, userId, ct);
+                if (demo is not null)
+                {
+                    var merged = new List<LiveScreenOrderDto>(snapshot.Orders.Count + 1)
+                    {
+                        GuidedDemoLiveMapper.ToLiveOrder(_localizer, demo)
+                    };
+                    merged.AddRange(snapshot.Orders);
+                    snapshot = snapshot with { Orders = merged };
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning("Guided demo could not be read: {ExceptionType}", ex.GetType().Name);
+            }
+        }
+
         return Ok(snapshot);
     }
 
@@ -577,6 +609,9 @@ public sealed class OrdersController : BaseController
         return messageKey switch
         {
             "Orders.InvalidStatusForAction" => "ordersInvalidStatusForAction",
+            // The UI never offers these actions; a direct request gets the normal invalid-action response.
+            OrderDeliveryPolicy.UserPickupNotAllowedKey => "ordersInvalidStatusForAction",
+            OrderDeliveryPolicy.UserDeliveryNotAllowedKey => "ordersInvalidStatusForAction",
             "Orders.ActionFailed" => "ordersActionFailed",
             "Orders.OrderActionFailed" => "ordersOrderActionFailed",
             "Orders.ApproveFailed" => "ordersApproveFailed",

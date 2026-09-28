@@ -45,25 +45,5 @@ else if (Model.CanManageOrders && Model.Status == OrderStatus.Preparing)
         </button>
     </div>
 }
-else if (Model.CanManageOrders && Model.Status == OrderStatus.ReadyForPickup)
-{
-    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-        <button type="button"
-                class="btn btn-primary @sizeClass"
-                data-order-action="hand-to-courier"
-                data-order-id="@Model.OrderId">
-            @L["Orders.HandToCourier"]
-        </button>
-    </div>
-}
-else if (Model.CanManageOrders && Model.Status == OrderStatus.OnTheWay)
-{
-    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-        <button type="button"
-                class="btn btn-primary @sizeClass"
-                data-order-action="mark-delivered"
-                data-order-id="@Model.OrderId">
-            @L["Orders.MarkDelivered"]
-        </button>
-    </div>
-}
+@* The restaurant's last action is Mark ready. The platform courier reports OnTheWay and Delivered
+   through provider sync (OrderDeliveryPolicy), so ReadyForPickup and OnTheWay have no action. *@

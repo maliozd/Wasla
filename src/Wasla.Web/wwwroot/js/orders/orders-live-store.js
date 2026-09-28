@@ -121,7 +121,8 @@
     const fresh = [];
     for (let i = 0; i < orders.length; i++) {
       const id = String(orders[i].id);
-      if (!known.has(id)) fresh.push(id);
+      if (orders[i].isDemo || known.has(id)) continue;
+      fresh.push(id);
     }
     return fresh;
   }
@@ -544,6 +545,7 @@ function attachBrowser(O, global, api) {
     let active = 0;
     const orders = snapshot.orders || [];
     for (let i = 0; i < orders.length; i++) {
+      if (orders[i].isDemo) continue;
       if (api.ACTIVE_STATUSES[orders[i].status]) active += 1;
     }
     const activeEl = document.getElementById("ordersLiveDisplayActiveCount");
@@ -603,8 +605,8 @@ function attachBrowser(O, global, api) {
     }
     if (status === "Accepted") return [{ action: "start-preparing", className: "btn btn-primary btn-lg", label: message("ordersStartPreparing") }];
     if (status === "Preparing") return [{ action: "mark-ready", className: "btn btn-primary btn-lg", label: message("ordersMarkReady") }];
-    if (status === "ReadyForPickup") return [{ action: "hand-to-courier", className: "btn btn-primary btn-lg", label: message("ordersHandToCourier") }];
-    if (status === "OnTheWay") return [{ action: "mark-delivered", className: "btn btn-primary btn-lg", label: message("ordersMarkDelivered") }];
+    // Mark ready is the restaurant's last action: the platform courier reports OnTheWay and
+    // Delivered through provider sync, so ReadyForPickup and OnTheWay have no action.
     return [];
   }
 
@@ -613,18 +615,32 @@ function attachBrowser(O, global, api) {
     const buttons = actionButtons(order.status);
     if (!buttons.length) {
       container.hidden = true;
+      container.removeAttribute("data-tour");
       return;
     }
     container.hidden = false;
+    if (order.isDemo) {
+      container.setAttribute("data-tour", "demo-order-actions");
+    } else {
+      container.removeAttribute("data-tour");
+    }
     buttons.forEach(function (spec) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = spec.className;
       button.setAttribute("data-order-action", spec.action);
       button.setAttribute("data-order-id", String(order.id));
+      if (order.isDemo) button.setAttribute("data-wasla-demo", "true");
       button.textContent = spec.label;
       container.appendChild(button);
     });
+  }
+
+  function markDemo(article, order) {
+    if (!order || !order.isDemo) return;
+    article.setAttribute("data-wasla-demo", "true");
+    article.setAttribute("data-wasla-demo-card", "true");
+    article.setAttribute("data-tour", "demo-order-card");
   }
 
   function createCard(order, serverTimeUtc) {
@@ -637,6 +653,7 @@ function attachBrowser(O, global, api) {
     article.setAttribute("data-order-status", order.status || "");
     article.setAttribute("data-received-at", order.receivedAtUtc || "");
     article.setAttribute("data-live-layout", "board");
+    markDemo(article, order);
 
     const imageWrap = document.createElement("div");
     imageWrap.className = "orders-card-image orders-card-image--kitchen";
@@ -653,7 +670,7 @@ function attachBrowser(O, global, api) {
     head.className = "wasla-live-card__head";
     const platformHost = document.createElement("div");
     platformHost.className = "orders-card-platform";
-    platformHost.appendChild(createPlatformBadge(order.platform));
+    platformHost.appendChild(createPlatformBadge(order.platform, order));
     const status = document.createElement("span");
     status.className = statusClass(order.status);
     status.setAttribute("data-status-badge", "");
@@ -665,6 +682,7 @@ function attachBrowser(O, global, api) {
     const elapsed = document.createElement("span");
     elapsed.className = "wasla-live-screen-card__elapsed";
     elapsed.setAttribute("data-elapsed", "");
+    elapsed.setAttribute("data-tour", "live-timer");
     elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
     head.appendChild(platformHost);
     head.appendChild(status);
@@ -673,8 +691,8 @@ function attachBrowser(O, global, api) {
 
     const code = document.createElement("div");
     code.className = "orders-card-code wasla-live-screen-card__code";
-    const link = document.createElement("a");
-    link.href = "/orders/details/" + encodeURIComponent(String(order.id));
+    const link = document.createElement(order.isDemo ? "span" : "a");
+    if (!order.isDemo) link.href = "/orders/details/" + encodeURIComponent(String(order.id));
     link.textContent = order.displayNumber || "";
     code.appendChild(link);
 
@@ -715,6 +733,7 @@ function attachBrowser(O, global, api) {
     details.className = "btn btn-outline-secondary wasla-live-screen-card__details";
     details.setAttribute("data-order-detail", String(order.id));
     details.textContent = message("viewDetails");
+    if (order.isDemo) details.hidden = true;
     actions.appendChild(actionGroup);
     actions.appendChild(details);
 
@@ -740,6 +759,7 @@ function attachBrowser(O, global, api) {
     article.setAttribute("data-order-status", order.status || "");
     article.setAttribute("data-received-at", order.receivedAtUtc || "");
     article.setAttribute("data-live-layout", "list");
+    markDemo(article, order);
 
     const identity = document.createElement("div");
     identity.className = "wasla-live-list-row__identity";
@@ -747,11 +767,11 @@ function attachBrowser(O, global, api) {
     headline.className = "wasla-live-list-row__headline";
     const platformHost = document.createElement("div");
     platformHost.className = "orders-card-platform";
-    platformHost.appendChild(createPlatformBadge(order.platform));
+    platformHost.appendChild(createPlatformBadge(order.platform, order));
     const code = document.createElement("div");
     code.className = "orders-card-code wasla-live-screen-card__code";
-    const link = document.createElement("a");
-    link.href = "/orders/details/" + encodeURIComponent(String(order.id));
+    const link = document.createElement(order.isDemo ? "span" : "a");
+    if (!order.isDemo) link.href = "/orders/details/" + encodeURIComponent(String(order.id));
     link.textContent = order.displayNumber || "";
     code.appendChild(link);
     const statusSlot = document.createElement("div");
@@ -823,6 +843,7 @@ function attachBrowser(O, global, api) {
     const elapsed = document.createElement("span");
     elapsed.className = "wasla-live-screen-card__elapsed wasla-live-list-row__elapsed";
     elapsed.setAttribute("data-elapsed", "");
+    elapsed.setAttribute("data-tour", "live-timer");
     elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
 
     const aside = document.createElement("div");
@@ -841,6 +862,7 @@ function attachBrowser(O, global, api) {
     details.className = "btn btn-outline-secondary wasla-live-screen-card__details";
     details.setAttribute("data-order-detail", String(order.id));
     details.textContent = message("viewDetails");
+    if (order.isDemo) details.hidden = true;
     actions.appendChild(actionGroup);
     actions.appendChild(details);
     aside.appendChild(actions);
@@ -857,7 +879,15 @@ function attachBrowser(O, global, api) {
     return article;
   }
 
-  function createPlatformBadge(platform) {
+  function createPlatformBadge(platform, order) {
+    if (order && order.isDemo) {
+      const badge = document.createElement("span");
+      badge.className = "platform-badge wasla-demo-badge";
+      const label = message("demoBadge");
+      badge.setAttribute("aria-label", label);
+      badge.textContent = label;
+      return badge;
+    }
     const spec = platformSpec(platform);
     const badge = document.createElement("span");
     badge.className = "platform-badge " + spec.css;
@@ -1530,6 +1560,7 @@ function attachBrowser(O, global, api) {
     button.setAttribute("data-order-status", order.status || "");
     button.setAttribute("data-received-at", order.receivedAtUtc || "");
     button.setAttribute("aria-pressed", "false");
+    if (order.isDemo) button.setAttribute("data-wasla-demo", "true");
 
     const code = document.createElement("span");
     code.className = "wasla-live-focus-entry__code";
@@ -1540,7 +1571,7 @@ function attachBrowser(O, global, api) {
     meta.className = "wasla-live-focus-entry__meta";
     const platformHost = document.createElement("span");
     platformHost.setAttribute("data-platform-host", "");
-    platformHost.appendChild(createPlatformBadge(order.platform));
+    platformHost.appendChild(createPlatformBadge(order.platform, order));
     const status = document.createElement("span");
     status.className = statusClass(order.status);
     status.setAttribute("data-status-badge", "");
@@ -1548,6 +1579,7 @@ function attachBrowser(O, global, api) {
     const elapsed = document.createElement("span");
     elapsed.className = "wasla-live-focus-entry__elapsed";
     elapsed.setAttribute("data-elapsed", "");
+    elapsed.setAttribute("data-tour", "live-timer");
     elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
     meta.appendChild(platformHost);
     meta.appendChild(status);
@@ -1590,7 +1622,7 @@ function attachBrowser(O, global, api) {
       const platformHost = entry.querySelector("[data-platform-host]");
       if (platformHost) {
         while (platformHost.firstChild) platformHost.removeChild(platformHost.firstChild);
-        platformHost.appendChild(createPlatformBadge(order.platform));
+        platformHost.appendChild(createPlatformBadge(order.platform, order));
       }
       entry.setAttribute("data-platform", order.platform || "");
     }
@@ -1750,6 +1782,18 @@ function attachBrowser(O, global, api) {
     if (!force && !detailStale && failedOrderId === id && failedSignature === signature) return;
     if (!force && !detailStale && loadingOrderId === id && loadingSignature === signature) return;
     const detail = detailNode();
+    if (detail && order.isDemo) {
+      abandonDetail();
+      while (detail.firstChild) detail.removeChild(detail.firstChild);
+      const card = createCard(order, renderedSnapshot.serverTimeUtc);
+      card.classList.add("wasla-demo-focus-card");
+      card.setAttribute("role", "group");
+      detail.appendChild(card);
+      detail.setAttribute("aria-busy", "false");
+      loadedOrderId = id;
+      loadedSignature = signature;
+      return;
+    }
     const loader = O.liveDetailModal && O.liveDetailModal.loadPanel;
     if (!detail || !loader) return;
     const replaceAll = loadedOrderId !== id || !detail.querySelector(".wasla-live-detail");
@@ -1968,7 +2012,7 @@ function attachBrowser(O, global, api) {
       }
       const key = columnKey(order.status);
       const list = lists[key];
-      counts[key] += 1;
+      counts[key] += order.isDemo ? 0 : 1;
       const anchor = anchors[key];
       const expected = anchor ? anchor.nextElementSibling : list.firstElementChild;
       if (entry !== expected) {
@@ -1990,7 +2034,8 @@ function attachBrowser(O, global, api) {
       const count = column.querySelector("[data-board-count]");
       const text = String(counts[spec.key]);
       if (count.textContent !== text) count.textContent = text;
-      column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0;
+      var hasCard = !!column.querySelector("[data-order-id]");
+      column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0 || hasCard;
     });
     markPressed();
 
@@ -2159,7 +2204,7 @@ function attachBrowser(O, global, api) {
       }
       const key = columnKey(order.status);
       const list = lists[key];
-      counts[key] += 1;
+      counts[key] += order.isDemo ? 0 : 1;
       const anchor = anchors[key];
       const expected = anchor ? anchor.nextElementSibling : list.firstElementChild;
       if (card !== expected) {
@@ -2184,7 +2229,8 @@ function attachBrowser(O, global, api) {
       const count = column.querySelector("[data-board-count]");
       const text = String(counts[spec.key]);
       if (count.textContent !== text) count.textContent = text;
-      column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0;
+      var hasCard = !!column.querySelector("[data-order-id]");
+      column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0 || hasCard;
     });
     if (layout === "board") syncBoardOverflow(host);
     // Reparenting or replacing an action button may blur it. Never steal focus
@@ -2238,6 +2284,7 @@ function attachBrowser(O, global, api) {
     lastTimings.timeUpdates = diff.timeUpdates || 0;
     setSummary(snapshot);
     touchUpdated();
+    document.dispatchEvent(new CustomEvent("wasla:live-rendered"));
   }
 
   async function onNotify(snapshot, meta) {
@@ -2249,6 +2296,9 @@ function attachBrowser(O, global, api) {
         O.table.applyNewOrderVisualState();
         O.table.scheduleNewOrderHighlightCleanup();
       }
+      document.dispatchEvent(new CustomEvent("wasla:real-order-arrived", {
+        detail: { orderId: String(meta.newIds[0]) }
+      }));
 
       const settings = O.state && O.state.notificationSettings;
       if (settings && settings.newOrderSoundEnabled && O.audio && typeof O.audio.playSoundNow === "function") {

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Wasla.Application.Abstractions.Orders.Services;
+using Wasla.Application.Demos;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Platform;
 using Wasla.Worker.Console;
@@ -203,6 +204,35 @@ public sealed class OrderSyncWorker : BackgroundService
 
             if (_env.IsDevelopment())
                 WorkerConsole.WriteError($"Sync failed for {customer.Name} ({customer.Slug})");
+        }
+
+        await DeliverGuidedDemosAsync(scope, customer, ct);
+    }
+
+    /// <summary>
+    /// Plays the platform courier for guided demos in this cycle. Runs even when the tenant's
+    /// sync is disabled or has no connection yet (onboarding tenants), and only touches demo sessions.
+    /// </summary>
+    private async Task DeliverGuidedDemosAsync(IServiceScope scope, ActiveCustomer customer, CancellationToken ct)
+    {
+        try
+        {
+            var simulator = scope.ServiceProvider.GetRequiredService<IGuidedDemoDeliverySimulator>();
+            var advanced = await simulator.AdvanceDueAsync(customer.Id, ct);
+            if (advanced > 0)
+                _logger.LogDebug("Guided demo courier simulated for {CustomerSlug}. Advanced={Advanced}", customer.Slug, advanced);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // A training convenience must never disturb order synchronization.
+            _logger.LogWarning(
+                "Guided demo delivery simulation failed for {CustomerSlug}: {ExceptionType}",
+                customer.Slug,
+                ex.GetType().Name);
         }
     }
 

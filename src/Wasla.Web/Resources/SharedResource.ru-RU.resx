@@ -4106,4 +4106,83 @@
   <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>Открыть Live Screen</value></data>
   <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Открытие не сохраняется</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>Ещё позиции в деталях</value></data>
+  <data name="Tour.Skip" xml:space="preserve"><value>Пропустить</value></data>
+  <data name="Tour.Back" xml:space="preserve"><value>Назад</value></data>
+  <data name="Tour.Continue" xml:space="preserve"><value>Далее</value></data>
+  <data name="Tour.Finish" xml:space="preserve"><value>Понятно</value></data>
+  <data name="Tour.Replay" xml:space="preserve"><value>Показать обучение этого экрана</value></data>
+  <data name="Tour.Progress" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Tour.Close" xml:space="preserve"><value>Закрыть обучение</value></data>
+  <data name="Tour.Dashboard.Summary.Title" xml:space="preserve"><value>Сводка за день</value></data>
+  <data name="Tour.Dashboard.Summary.Body" xml:space="preserve"><value>Здесь видна операционная сводка за сегодня.</value></data>
+  <data name="Tour.Dashboard.Recent.Title" xml:space="preserve"><value>Последние заказы</value></data>
+  <data name="Tour.Dashboard.Recent.Body" xml:space="preserve"><value>Отсюда можно быстро открыть последние заказы.</value></data>
+  <data name="Tour.Live.Orders.Title" xml:space="preserve"><value>Новые заказы</value></data>
+  <data name="Tour.Live.Orders.Body" xml:space="preserve"><value>Заказы с подключённых платформ появляются здесь.</value></data>
+  <data name="Tour.Live.Actions.Title" xml:space="preserve"><value>Действия с заказом</value></data>
+  <data name="Tour.Live.Actions.Body" xml:space="preserve"><value>Здесь можно управлять заказом.</value></data>
+  <data name="Tour.Live.Timer.Title" xml:space="preserve"><value>Время ожидания</value></data>
+  <data name="Tour.Live.Timer.Body" xml:space="preserve"><value>Здесь видно, как долго заказ ожидает.</value></data>
+  <data name="Tour.Live.Views.Title" xml:space="preserve"><value>Вид</value></data>
+  <data name="Tour.Live.Views.Body" xml:space="preserve"><value>Здесь можно выбрать вид, удобный для работы.</value></data>
+  <data name="Tour.Platform.List.Title" xml:space="preserve"><value>Подключения платформ</value></data>
+  <data name="Tour.Platform.List.Body" xml:space="preserve"><value>Здесь можно подключить платформы заказов к Wasla.</value></data>
+  <data name="Tour.Platform.Connect.Title" xml:space="preserve"><value>Добавить платформу</value></data>
+  <data name="Tour.Platform.Connect.Body" xml:space="preserve"><value>Здесь можно добавить новое подключение платформы.</value></data>
+  <data name="Demo.LaunchTitle" xml:space="preserve"><value>Попробуем Wasla</value></data>
+  <data name="Demo.LaunchAction" xml:space="preserve"><value>Отправить демо-заказ</value></data>
+  <data name="Demo.Badge" xml:space="preserve"><value>Демо</value></data>
+  <data name="Demo.CustomerName" xml:space="preserve"><value>Демо-клиент</value></data>
+  <data name="Demo.StartTitle" xml:space="preserve"><value>Попробуем Wasla</value></data>
+  <data name="Demo.StartBody" xml:space="preserve"><value>Изучите обработку заказа, не затрагивая реальные заказы.</value></data>
+  <data name="Demo.ApproveTitle" xml:space="preserve"><value>Примите заказ</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>Примите заказ отсюда.</value></data>
+  <data name="Demo.PrepareTitle" xml:space="preserve"><value>Начните готовить</value></data>
+  <data name="Demo.PrepareBody" xml:space="preserve"><value>Переведите принятый заказ в приготовление.</value></data>
+  <data name="Demo.ReadyTitle" xml:space="preserve"><value>Отметьте готовым</value></data>
+  <data name="Demo.ReadyBody" xml:space="preserve"><value>Когда заказ готов, отметьте это здесь.</value></data>
+  <data name="Demo.SuccessTitle" xml:space="preserve"><value>Вы провели первый заказ</value></data>
+  <data name="Demo.SuccessBody" xml:space="preserve"><value>Вы прошли обучение. Реальные доставленные заказы видны на живом экране {0} минуты, затем исчезают только с этого рабочего экрана. Историю заказов можно найти на странице «Заказы».</value></data>
+  <data name="Demo.Sushi.Roll" xml:space="preserve"><value>Ролл с лососем</value></data>
+  <data name="Demo.Sushi.Edamame" xml:space="preserve"><value>Эдамаме</value></data>
+  <data name="Demo.Sushi.Note" xml:space="preserve"><value>Меньше васаби.</value></data>
+  <data name="Demo.Burger.Burger" xml:space="preserve"><value>Чизбургер</value></data>
+  <data name="Demo.Burger.Fries" xml:space="preserve"><value>Картофель фри</value></data>
+  <data name="Demo.Burger.Drink" xml:space="preserve"><value>Кола</value></data>
+  <data name="Demo.Burger.Note" xml:space="preserve"><value>Без лука.</value></data>
+  <data name="Demo.Cafe.Coffee" xml:space="preserve"><value>Латте</value></data>
+  <data name="Demo.Cafe.Dessert" xml:space="preserve"><value>Чизкейк</value></data>
+  <data name="Demo.Cafe.Note" xml:space="preserve"><value>С молоком.</value></data>
+  <data name="Demo.Pizza.Pizza" xml:space="preserve"><value>Пицца ассорти</value></data>
+  <data name="Demo.Pizza.Drink" xml:space="preserve"><value>Айран</value></data>
+  <data name="Demo.Pizza.Note" xml:space="preserve"><value>Тонкое тесто.</value></data>
+  <data name="Demo.Doner.Wrap" xml:space="preserve"><value>Дюрум донер</value></data>
+  <data name="Demo.Doner.Drink" xml:space="preserve"><value>Айран</value></data>
+  <data name="Demo.Doner.Note" xml:space="preserve"><value>Не острое.</value></data>
+  <data name="Demo.Kebab.Kebab" xml:space="preserve"><value>Кебаб адана</value></data>
+  <data name="Demo.Kebab.Rice" xml:space="preserve"><value>Рис</value></data>
+  <data name="Demo.Kebab.Note" xml:space="preserve"><value>Слабо острое.</value></data>
+  <data name="Demo.Dessert.Baklava" xml:space="preserve"><value>Пахлава</value></data>
+  <data name="Demo.Dessert.Kunefe" xml:space="preserve"><value>Кюнефе</value></data>
+  <data name="Demo.Dessert.Note" xml:space="preserve"><value>Меньше сиропа.</value></data>
+  <data name="Demo.Lokanta.Kofte" xml:space="preserve"><value>Кёфте на гриле</value></data>
+  <data name="Demo.Lokanta.Rice" xml:space="preserve"><value>Рис</value></data>
+  <data name="Demo.Lokanta.Note" xml:space="preserve"><value>С рисом.</value></data>
+  <data name="Tour.RealOrderPaused" xml:space="preserve"><value>Поступил реальный заказ. Мы временно приостановили обучение.</value></data>
+  <data name="Tour.ViewRealOrder" xml:space="preserve"><value>Показать реальный заказ</value></data>
+  <data name="Tour.ContinueTraining" xml:space="preserve"><value>Продолжить обучение</value></data>
+  <data name="Demo.PickupWaitTitle" xml:space="preserve"><value>Ожидаем курьера</value></data>
+  <data name="Demo.PickupWaitBody" xml:space="preserve"><value>Заказ готов. Когда курьер платформы заберёт заказ, Wasla автоматически сменит статус на «В пути», и обучение само перейдёт к следующему шагу.</value></data>
+  <data name="Demo.DeliveryWaitTitle" xml:space="preserve"><value>Курьер доставляет заказ</value></data>
+  <data name="Demo.DeliveryWaitBody" xml:space="preserve"><value>Статус доставки приходит автоматически от курьера платформы. Когда доставка завершится, Wasla обновит заказ и переведёт обучение к последнему шагу.</value></data>
+  <data name="Demo.ContinueLive" xml:space="preserve"><value>Перейти на живой экран</value></data>
+  <data name="Demo.SkipTraining" xml:space="preserve"><value>Пропустить обучение</value></data>
+  <data name="Demo.SkipConfirmTitle" xml:space="preserve"><value>Пропустить обучение?</value></data>
+  <data name="Demo.SkipConfirmBody" xml:space="preserve"><value>Вы сможете начать это обучение заново позже с помощью кнопки «{0}» на живом экране.</value></data>
+  <data name="Demo.SkipConfirmAction" xml:space="preserve"><value>Пропустить и перейти на живой экран</value></data>
+  <data name="Demo.SkipConfirmCancel" xml:space="preserve"><value>Продолжить обучение</value></data>
+  <data name="Demo.StartFailed" xml:space="preserve"><value>Не удалось начать демозаказ. Попробуйте ещё раз.</value></data>
+  <data name="Demo.SelectTitle" xml:space="preserve"><value>Выберите демозаказ</value></data>
+  <data name="Demo.SelectBody" xml:space="preserve"><value>Откройте заказ с отметкой DEMO, чтобы продолжить обучение.</value></data>
+  <data name="Tour.TrainingPaused" xml:space="preserve"><value>Обучение приостановлено. Продолжите, когда будете готовы.</value></data>
 </root>

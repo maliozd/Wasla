@@ -17,6 +17,8 @@ public class TenantDbContext : DbContext
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<UserNotificationSettings> UserNotificationSettings => Set<UserNotificationSettings>();
+    public DbSet<UserProductTourCompletion> UserProductTourCompletions => Set<UserProductTourCompletion>();
+    public DbSet<GuidedDemoSession> GuidedDemoSessions => Set<GuidedDemoSession>();
     public DbSet<TenantOperationalSettings> TenantOperationalSettings => Set<TenantOperationalSettings>();
     public DbSet<PlatformConnection> PlatformConnections => Set<PlatformConnection>();
     public DbSet<Order> Orders => Set<Order>();
@@ -32,6 +34,8 @@ public class TenantDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AppUserConfiguration());
         modelBuilder.ApplyConfiguration(new PasswordResetTokenConfiguration());
         modelBuilder.ApplyConfiguration(new UserNotificationSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new UserProductTourCompletionConfiguration());
+        modelBuilder.ApplyConfiguration(new GuidedDemoSessionConfiguration());
         modelBuilder.ApplyConfiguration(new TenantOperationalSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new PlatformConnectionConfiguration());
         modelBuilder.ApplyConfiguration(new OrderConfiguration());

@@ -1164,4 +1164,83 @@
   <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Açılış kaydı tutulmuyor</value></data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve"><value>Bu platform için zaten bir bağlantı mevcut.</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>Devamı detaylarda</value></data>
+  <data name="Tour.Skip" xml:space="preserve"><value>Geç</value></data>
+  <data name="Tour.Back" xml:space="preserve"><value>Geri</value></data>
+  <data name="Tour.Continue" xml:space="preserve"><value>Devam</value></data>
+  <data name="Tour.Finish" xml:space="preserve"><value>Anladım</value></data>
+  <data name="Tour.Replay" xml:space="preserve"><value>Bu ekranın eğitimini göster</value></data>
+  <data name="Tour.Progress" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Tour.Close" xml:space="preserve"><value>Eğitimi kapat</value></data>
+  <data name="Tour.Dashboard.Summary.Title" xml:space="preserve"><value>Günlük özet</value></data>
+  <data name="Tour.Dashboard.Summary.Body" xml:space="preserve"><value>Günlük operasyon özetinizi burada takip edebilirsiniz.</value></data>
+  <data name="Tour.Dashboard.Recent.Title" xml:space="preserve"><value>Son siparişler</value></data>
+  <data name="Tour.Dashboard.Recent.Body" xml:space="preserve"><value>Son siparişlerinize buradan hızlıca ulaşabilirsiniz.</value></data>
+  <data name="Tour.Live.Orders.Title" xml:space="preserve"><value>Yeni siparişler</value></data>
+  <data name="Tour.Live.Orders.Body" xml:space="preserve"><value>Bağlı platformlardan gelen siparişler burada görünür.</value></data>
+  <data name="Tour.Live.Actions.Title" xml:space="preserve"><value>Sipariş işlemleri</value></data>
+  <data name="Tour.Live.Actions.Body" xml:space="preserve"><value>Sipariş işlemlerini buradan yönetebilirsiniz.</value></data>
+  <data name="Tour.Live.Timer.Title" xml:space="preserve"><value>Bekleme süresi</value></data>
+  <data name="Tour.Live.Timer.Body" xml:space="preserve"><value>Siparişin ne kadar süredir beklediğini buradan takip edebilirsiniz.</value></data>
+  <data name="Tour.Live.Views.Title" xml:space="preserve"><value>Görünüm</value></data>
+  <data name="Tour.Live.Views.Body" xml:space="preserve"><value>Operasyonunuza uygun görünümü buradan seçebilirsiniz.</value></data>
+  <data name="Tour.Platform.List.Title" xml:space="preserve"><value>Platform bağlantıları</value></data>
+  <data name="Tour.Platform.List.Body" xml:space="preserve"><value>Sipariş platformlarınızı buradan Wasla'ya bağlayabilirsiniz.</value></data>
+  <data name="Tour.Platform.Connect.Title" xml:space="preserve"><value>Platform ekle</value></data>
+  <data name="Tour.Platform.Connect.Body" xml:space="preserve"><value>Yeni bir platform bağlantısını buradan ekleyebilirsiniz.</value></data>
+  <data name="Demo.LaunchTitle" xml:space="preserve"><value>Wasla'yı deneyelim</value></data>
+  <data name="Demo.LaunchAction" xml:space="preserve"><value>Demo sipariş gönder</value></data>
+  <data name="Demo.Badge" xml:space="preserve"><value>Demo</value></data>
+  <data name="Demo.CustomerName" xml:space="preserve"><value>Demo müşteri</value></data>
+  <data name="Demo.StartTitle" xml:space="preserve"><value>Wasla'yı deneyelim</value></data>
+  <data name="Demo.StartBody" xml:space="preserve"><value>Gerçek siparişlerinizi etkilemeden sipariş akışını deneyebilirsiniz.</value></data>
+  <data name="Demo.ApproveTitle" xml:space="preserve"><value>Siparişi onaylayın</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>Siparişi buradan onaylayın.</value></data>
+  <data name="Demo.PrepareTitle" xml:space="preserve"><value>Hazırlığa alın</value></data>
+  <data name="Demo.PrepareBody" xml:space="preserve"><value>Onaylanan siparişi hazırlığa alın.</value></data>
+  <data name="Demo.ReadyTitle" xml:space="preserve"><value>Hazır işaretleyin</value></data>
+  <data name="Demo.ReadyBody" xml:space="preserve"><value>Sipariş hazır olduğunda buradan bildirin.</value></data>
+  <data name="Demo.SuccessTitle" xml:space="preserve"><value>İlk siparişinizi yönettiniz</value></data>
+  <data name="Demo.SuccessBody" xml:space="preserve"><value>Eğitimi tamamladınız. Gerçek teslim edilmiş siparişler Canlı Ekran&apos;da {0} dakika görünür, ardından yalnızca bu operasyon ekranından kaldırılır. Sipariş geçmişinize Siparişler sayfasından ulaşabilirsiniz.</value></data>
+  <data name="Demo.Sushi.Roll" xml:space="preserve"><value>Somon roll</value></data>
+  <data name="Demo.Sushi.Edamame" xml:space="preserve"><value>Edamame</value></data>
+  <data name="Demo.Sushi.Note" xml:space="preserve"><value>Wasabi az olsun.</value></data>
+  <data name="Demo.Burger.Burger" xml:space="preserve"><value>Cheeseburger</value></data>
+  <data name="Demo.Burger.Fries" xml:space="preserve"><value>Patates kızartması</value></data>
+  <data name="Demo.Burger.Drink" xml:space="preserve"><value>Kola</value></data>
+  <data name="Demo.Burger.Note" xml:space="preserve"><value>Soğansız olsun.</value></data>
+  <data name="Demo.Cafe.Coffee" xml:space="preserve"><value>Latte</value></data>
+  <data name="Demo.Cafe.Dessert" xml:space="preserve"><value>Cheesecake</value></data>
+  <data name="Demo.Cafe.Note" xml:space="preserve"><value>Sütlü olsun.</value></data>
+  <data name="Demo.Pizza.Pizza" xml:space="preserve"><value>Karışık pizza</value></data>
+  <data name="Demo.Pizza.Drink" xml:space="preserve"><value>Ayran</value></data>
+  <data name="Demo.Pizza.Note" xml:space="preserve"><value>İnce hamur olsun.</value></data>
+  <data name="Demo.Doner.Wrap" xml:space="preserve"><value>Döner dürüm</value></data>
+  <data name="Demo.Doner.Drink" xml:space="preserve"><value>Ayran</value></data>
+  <data name="Demo.Doner.Note" xml:space="preserve"><value>Acısız olsun.</value></data>
+  <data name="Demo.Kebab.Kebab" xml:space="preserve"><value>Adana kebap</value></data>
+  <data name="Demo.Kebab.Rice" xml:space="preserve"><value>Pilav</value></data>
+  <data name="Demo.Kebab.Note" xml:space="preserve"><value>Az acılı olsun.</value></data>
+  <data name="Demo.Dessert.Baklava" xml:space="preserve"><value>Baklava</value></data>
+  <data name="Demo.Dessert.Kunefe" xml:space="preserve"><value>Künefe</value></data>
+  <data name="Demo.Dessert.Note" xml:space="preserve"><value>Az şerbetli olsun.</value></data>
+  <data name="Demo.Lokanta.Kofte" xml:space="preserve"><value>Izgara köfte</value></data>
+  <data name="Demo.Lokanta.Rice" xml:space="preserve"><value>Pilav</value></data>
+  <data name="Demo.Lokanta.Note" xml:space="preserve"><value>Yanına pilav olsun.</value></data>
+  <data name="Tour.RealOrderPaused" xml:space="preserve"><value>Gerçek bir sipariş geldi. Eğitimi geçici olarak duraklattık.</value></data>
+  <data name="Tour.ViewRealOrder" xml:space="preserve"><value>Gerçek siparişi göster</value></data>
+  <data name="Tour.ContinueTraining" xml:space="preserve"><value>Eğitime devam et</value></data>
+  <data name="Demo.PickupWaitTitle" xml:space="preserve"><value>Kurye bekleniyor</value></data>
+  <data name="Demo.PickupWaitBody" xml:space="preserve"><value>Siparişiniz hazır. Platform kuryesi siparişi aldığında Wasla durumu otomatik olarak Yolda olarak güncelleyecek. Eğitiminiz otomatik olarak bir sonraki adıma geçecek.</value></data>
+  <data name="Demo.DeliveryWaitTitle" xml:space="preserve"><value>Kurye teslimatı sürüyor</value></data>
+  <data name="Demo.DeliveryWaitBody" xml:space="preserve"><value>Teslimat durumu platformun kuryesinden otomatik olarak gelir. Teslimat tamamlandığında Wasla siparişi güncelleyecek ve eğitimi son adıma taşıyacak.</value></data>
+  <data name="Demo.ContinueLive" xml:space="preserve"><value>Canlı Ekran&apos;a geç</value></data>
+  <data name="Demo.SkipTraining" xml:space="preserve"><value>Eğitimi atla</value></data>
+  <data name="Demo.SkipConfirmTitle" xml:space="preserve"><value>Eğitim atlansın mı?</value></data>
+  <data name="Demo.SkipConfirmBody" xml:space="preserve"><value>Bu eğitimi daha sonra Canlı Ekran&apos;daki “{0}” bağlantısından yeniden başlatabilirsiniz.</value></data>
+  <data name="Demo.SkipConfirmAction" xml:space="preserve"><value>Atla ve Canlı Ekran&apos;a geç</value></data>
+  <data name="Demo.SkipConfirmCancel" xml:space="preserve"><value>Eğitime devam et</value></data>
+  <data name="Demo.StartFailed" xml:space="preserve"><value>Demo sipariş başlatılamadı. Lütfen tekrar deneyin.</value></data>
+  <data name="Demo.SelectTitle" xml:space="preserve"><value>Demo siparişini seçin</value></data>
+  <data name="Demo.SelectBody" xml:space="preserve"><value>Eğitime devam etmek için DEMO etiketli siparişi açın.</value></data>
+  <data name="Tour.TrainingPaused" xml:space="preserve"><value>Eğitim duraklatıldı. Hazır olduğunuzda devam edebilirsiniz.</value></data>
 </root>

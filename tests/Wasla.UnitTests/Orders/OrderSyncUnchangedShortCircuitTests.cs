@@ -8,11 +8,13 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
+using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 
 namespace Wasla.UnitTests.Orders;
@@ -521,6 +523,43 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         Assert.NotNull(after.CancelledAt);
     }
 
+    [Fact]
+    public async Task CourierSteps_ComeFromTheProvider_NotFromRestaurantCommands()
+    {
+        var sync = await CreateSyncAsync();
+        var order = Sample(externalStatus: "Invoiced");
+        await SyncAsync(sync, order);
+        var ready = await ReadAsync(order.ExternalOrderId);
+        Assert.Equal(OrderStatus.ReadyForPickup, ready.InternalStatus);
+        var actions = new OrderActionService(_db, [_client], NullLogger<OrderActionService>.Instance);
+
+        // Pickup: refused before any provider call or status change; provider sync applies it.
+        var manualPickup = await actions.MarkOnTheWayAsync(_tenantId, ready.Id, CancellationToken);
+        Assert.False(manualPickup.Succeeded);
+        Assert.Equal(OrderDeliveryPolicy.UserPickupNotAllowedKey, manualPickup.MessageKey);
+        Assert.Equal(0, _client.MarkShippedCalls);
+        Assert.Equal(OrderStatus.ReadyForPickup, (await ReadAsync(order.ExternalOrderId)).InternalStatus);
+
+        Assert.Equal(1, (await SyncAsync(sync, order with { ExternalStatus = "Shipped" })).UpdatedCount);
+        var onTheWay = await ReadAsync(order.ExternalOrderId);
+        Assert.Equal(OrderStatus.OnTheWay, onTheWay.InternalStatus);
+
+        // Delivery: same rule.
+        var manualDelivery = await actions.MarkDeliveredAsync(_tenantId, onTheWay.Id, CancellationToken);
+        Assert.False(manualDelivery.Succeeded);
+        Assert.Equal(OrderDeliveryPolicy.UserDeliveryNotAllowedKey, manualDelivery.MessageKey);
+        Assert.Equal(0, _client.MarkDeliveredCalls);
+        var refused = await ReadAsync(order.ExternalOrderId);
+        Assert.Equal(OrderStatus.OnTheWay, refused.InternalStatus);
+        Assert.Null(refused.DeliveredAt);
+
+        Assert.Equal(1, (await SyncAsync(sync, order with { ExternalStatus = "Delivered" })).UpdatedCount);
+        var delivered = await ReadAsync(order.ExternalOrderId);
+        Assert.Equal(ready.Id, delivered.Id);
+        Assert.Equal(OrderStatus.Delivered, delivered.InternalStatus);
+        Assert.NotNull(delivered.DeliveredAt);
+    }
+
     public void Dispose() => _db.Dispose();
 
     private CancellationToken CancellationToken => TestContext.Current.CancellationToken;
@@ -737,11 +776,21 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
-            Task.CompletedTask;
+        public int MarkShippedCalls { get; private set; }
 
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
-            Task.CompletedTask;
+        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+        {
+            MarkShippedCalls++;
+            return Task.CompletedTask;
+        }
+
+        public int MarkDeliveredCalls { get; private set; }
+
+        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+        {
+            MarkDeliveredCalls++;
+            return Task.CompletedTask;
+        }
 
         public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) =>
             Task.CompletedTask;

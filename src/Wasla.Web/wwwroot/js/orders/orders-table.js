@@ -303,6 +303,11 @@
         continue;
       }
       if (!row) continue;
+      if (row.hasAttribute("data-wasla-demo")) {
+        setNewBadgeVisible(row, false);
+        clearNewOrderHighlight(container, id, null);
+        continue;
+      }
       clearNewOrderHighlight(container, id, row);
       applyHighlightClassesToRow(row);
       setNewBadgeVisible(row, true);

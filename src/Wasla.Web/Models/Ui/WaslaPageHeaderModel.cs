@@ -13,4 +13,6 @@ public sealed class WaslaPageHeaderModel
     public string? ActionText { get; init; }
 
     public string? ActionIconClass { get; init; }
+
+    public string? ActionTourTarget { get; init; }
 }

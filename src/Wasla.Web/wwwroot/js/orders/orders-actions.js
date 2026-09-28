@@ -18,19 +18,9 @@
       confirmMessage: "ordersMarkReadyConfirmMessage",
       fallbackSuccess: "ordersMarkReadySuccess",
       toastKey: "order-mark-ready-success"
-    },
-    "hand-to-courier": {
-      confirmTitle: "ordersHandToCourierConfirmTitle",
-      confirmMessage: "ordersHandToCourierConfirmMessage",
-      fallbackSuccess: "ordersHandToCourierSuccess",
-      toastKey: "order-hand-to-courier-success"
-    },
-    "mark-delivered": {
-      confirmTitle: "ordersMarkDeliveredConfirmTitle",
-      confirmMessage: "ordersMarkDeliveredConfirmMessage",
-      fallbackSuccess: "ordersMarkDeliveredSuccess",
-      toastKey: "order-mark-delivered-success"
     }
+    // No "hand-to-courier" or "mark-delivered": the platform courier reports OnTheWay and
+    // Delivered through provider sync.
   };
 
   function getCsrfToken() {
@@ -44,12 +34,18 @@
     return (O && typeof O.getMessage === "function" ? O.getMessage(key) : null) || key;
   }
 
-  async function postAction(url) {
+  async function postAction(url, demo) {
     const token = getCsrfToken();
     const headers = { "X-Requested-With": "XMLHttpRequest" };
+    let body = undefined;
     if (token) headers["RequestVerificationToken"] = token;
+    // Real order actions keep their header-only request; only the guided demo also posts the token as a form field.
+    if (token && demo) {
+      headers["Content-Type"] = "application/x-www-form-urlencoded";
+      body = "__RequestVerificationToken=" + encodeURIComponent(token);
+    }
 
-    const resp = await fetch(url, { method: "POST", headers: headers });
+    const resp = await fetch(url, { method: "POST", headers: headers, body: body });
     let payload = null;
     try {
       payload = await resp.json();
@@ -100,8 +96,11 @@
       toastKey = lc.toastKey;
     }
 
-    const ok = global.confirm(localize(confirmTitleKey) + "\n\n" + localize(confirmMessageKey));
-    if (!ok) return;
+    const demo = btn.hasAttribute("data-wasla-demo");
+    if (!demo) {
+      const ok = global.confirm(localize(confirmTitleKey) + "\n\n" + localize(confirmMessageKey));
+      if (!ok) return;
+    }
 
     const liveStore = O.opts.pageMode === "liveDisplay" ? O.liveStore : null;
     const endMutation = liveStore && typeof liveStore.beginMutation === "function"
@@ -109,8 +108,9 @@
       : null;
     btn.disabled = true;
     try {
-      const url = "/orders/" + encodeURIComponent(orderId) + "/" + encodeURIComponent(action);
-      const result = await postAction(url);
+      const url = (demo ? "/orders/demo/" : "/orders/")
+        + encodeURIComponent(orderId) + "/" + encodeURIComponent(action);
+      const result = await postAction(url, demo);
 
       if (!result.resp.ok) {
         var defaultErr =
@@ -125,7 +125,7 @@
 
       // Lets an open detail panel re-read the new server status without duplicating lifecycle rules.
       document.dispatchEvent(new CustomEvent("wasla:order-action-completed", {
-        detail: { orderId: orderId, action: action }
+        detail: { orderId: orderId, action: action, demo: btn.hasAttribute("data-wasla-demo") }
       }));
 
       if (!liveStore) {

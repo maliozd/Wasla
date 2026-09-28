@@ -3622,4 +3622,83 @@
   <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>Open Live Screen</value></data>
   <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Opening is not recorded</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>More items in details</value></data>
+  <data name="Tour.Skip" xml:space="preserve"><value>Skip</value></data>
+  <data name="Tour.Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Tour.Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Tour.Finish" xml:space="preserve"><value>Got it</value></data>
+  <data name="Tour.Replay" xml:space="preserve"><value>Show this screen's tour</value></data>
+  <data name="Tour.Progress" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Tour.Close" xml:space="preserve"><value>Close tour</value></data>
+  <data name="Tour.Dashboard.Summary.Title" xml:space="preserve"><value>Today's summary</value></data>
+  <data name="Tour.Dashboard.Summary.Body" xml:space="preserve"><value>You can follow today's operational summary here.</value></data>
+  <data name="Tour.Dashboard.Recent.Title" xml:space="preserve"><value>Recent orders</value></data>
+  <data name="Tour.Dashboard.Recent.Body" xml:space="preserve"><value>You can reach your latest orders from here.</value></data>
+  <data name="Tour.Live.Orders.Title" xml:space="preserve"><value>New orders</value></data>
+  <data name="Tour.Live.Orders.Body" xml:space="preserve"><value>Orders from connected platforms appear here.</value></data>
+  <data name="Tour.Live.Actions.Title" xml:space="preserve"><value>Order actions</value></data>
+  <data name="Tour.Live.Actions.Body" xml:space="preserve"><value>You can manage the order from here.</value></data>
+  <data name="Tour.Live.Timer.Title" xml:space="preserve"><value>Waiting time</value></data>
+  <data name="Tour.Live.Timer.Body" xml:space="preserve"><value>You can see how long the order has been waiting here.</value></data>
+  <data name="Tour.Live.Views.Title" xml:space="preserve"><value>View</value></data>
+  <data name="Tour.Live.Views.Body" xml:space="preserve"><value>You can choose the view that fits your operation here.</value></data>
+  <data name="Tour.Platform.List.Title" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="Tour.Platform.List.Body" xml:space="preserve"><value>You can connect your ordering platforms to Wasla here.</value></data>
+  <data name="Tour.Platform.Connect.Title" xml:space="preserve"><value>Add a platform</value></data>
+  <data name="Tour.Platform.Connect.Body" xml:space="preserve"><value>You can add a new platform connection here.</value></data>
+  <data name="Demo.LaunchTitle" xml:space="preserve"><value>Try Wasla</value></data>
+  <data name="Demo.LaunchAction" xml:space="preserve"><value>Send a demo order</value></data>
+  <data name="Demo.Badge" xml:space="preserve"><value>Demo</value></data>
+  <data name="Demo.CustomerName" xml:space="preserve"><value>Demo customer</value></data>
+  <data name="Demo.StartTitle" xml:space="preserve"><value>Let's try Wasla</value></data>
+  <data name="Demo.StartBody" xml:space="preserve"><value>Practice the order flow without affecting your real orders.</value></data>
+  <data name="Demo.ApproveTitle" xml:space="preserve"><value>Accept the order</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>Accept the order from here.</value></data>
+  <data name="Demo.PrepareTitle" xml:space="preserve"><value>Start preparation</value></data>
+  <data name="Demo.PrepareBody" xml:space="preserve"><value>Move the accepted order into preparation.</value></data>
+  <data name="Demo.ReadyTitle" xml:space="preserve"><value>Mark it ready</value></data>
+  <data name="Demo.ReadyBody" xml:space="preserve"><value>When the order is ready, mark it here.</value></data>
+  <data name="Demo.SuccessTitle" xml:space="preserve"><value>You managed your first order</value></data>
+  <data name="Demo.SuccessBody" xml:space="preserve"><value>You have completed the training. Real delivered orders stay on the Live Screen for {0} minutes and are then removed from this operational screen only. You can find your order history on the Orders page.</value></data>
+  <data name="Demo.Sushi.Roll" xml:space="preserve"><value>Salmon roll</value></data>
+  <data name="Demo.Sushi.Edamame" xml:space="preserve"><value>Edamame</value></data>
+  <data name="Demo.Sushi.Note" xml:space="preserve"><value>Light on wasabi.</value></data>
+  <data name="Demo.Burger.Burger" xml:space="preserve"><value>Cheeseburger</value></data>
+  <data name="Demo.Burger.Fries" xml:space="preserve"><value>Fries</value></data>
+  <data name="Demo.Burger.Drink" xml:space="preserve"><value>Cola</value></data>
+  <data name="Demo.Burger.Note" xml:space="preserve"><value>No onion.</value></data>
+  <data name="Demo.Cafe.Coffee" xml:space="preserve"><value>Latte</value></data>
+  <data name="Demo.Cafe.Dessert" xml:space="preserve"><value>Cheesecake</value></data>
+  <data name="Demo.Cafe.Note" xml:space="preserve"><value>With milk.</value></data>
+  <data name="Demo.Pizza.Pizza" xml:space="preserve"><value>Mixed pizza</value></data>
+  <data name="Demo.Pizza.Drink" xml:space="preserve"><value>Ayran</value></data>
+  <data name="Demo.Pizza.Note" xml:space="preserve"><value>Thin crust.</value></data>
+  <data name="Demo.Doner.Wrap" xml:space="preserve"><value>Doner wrap</value></data>
+  <data name="Demo.Doner.Drink" xml:space="preserve"><value>Ayran</value></data>
+  <data name="Demo.Doner.Note" xml:space="preserve"><value>Not spicy.</value></data>
+  <data name="Demo.Kebab.Kebab" xml:space="preserve"><value>Adana kebab</value></data>
+  <data name="Demo.Kebab.Rice" xml:space="preserve"><value>Rice</value></data>
+  <data name="Demo.Kebab.Note" xml:space="preserve"><value>Mild spice.</value></data>
+  <data name="Demo.Dessert.Baklava" xml:space="preserve"><value>Baklava</value></data>
+  <data name="Demo.Dessert.Kunefe" xml:space="preserve"><value>Kunefe</value></data>
+  <data name="Demo.Dessert.Note" xml:space="preserve"><value>Light on syrup.</value></data>
+  <data name="Demo.Lokanta.Kofte" xml:space="preserve"><value>Grilled meatballs</value></data>
+  <data name="Demo.Lokanta.Rice" xml:space="preserve"><value>Rice</value></data>
+  <data name="Demo.Lokanta.Note" xml:space="preserve"><value>With rice.</value></data>
+  <data name="Tour.RealOrderPaused" xml:space="preserve"><value>A real order has arrived. We have paused training for now.</value></data>
+  <data name="Tour.ViewRealOrder" xml:space="preserve"><value>Show real order</value></data>
+  <data name="Tour.ContinueTraining" xml:space="preserve"><value>Continue training</value></data>
+  <data name="Demo.PickupWaitTitle" xml:space="preserve"><value>Waiting for the courier</value></data>
+  <data name="Demo.PickupWaitBody" xml:space="preserve"><value>Your order is ready. When the platform courier collects it, Wasla updates the status to On the way automatically, and the training moves to the next step on its own.</value></data>
+  <data name="Demo.DeliveryWaitTitle" xml:space="preserve"><value>Courier delivery in progress</value></data>
+  <data name="Demo.DeliveryWaitBody" xml:space="preserve"><value>The delivery status comes automatically from the platform courier. When the delivery is completed, Wasla updates the order and moves the training to the last step.</value></data>
+  <data name="Demo.ContinueLive" xml:space="preserve"><value>Continue to Live Screen</value></data>
+  <data name="Demo.SkipTraining" xml:space="preserve"><value>Skip training</value></data>
+  <data name="Demo.SkipConfirmTitle" xml:space="preserve"><value>Skip training?</value></data>
+  <data name="Demo.SkipConfirmBody" xml:space="preserve"><value>You can restart this training later with “{0}” on the Live Screen.</value></data>
+  <data name="Demo.SkipConfirmAction" xml:space="preserve"><value>Skip and continue to Live Screen</value></data>
+  <data name="Demo.SkipConfirmCancel" xml:space="preserve"><value>Continue training</value></data>
+  <data name="Demo.StartFailed" xml:space="preserve"><value>Could not start the demo order. Please try again.</value></data>
+  <data name="Demo.SelectTitle" xml:space="preserve"><value>Select the demo order</value></data>
+  <data name="Demo.SelectBody" xml:space="preserve"><value>Open the order marked DEMO to continue training.</value></data>
+  <data name="Tour.TrainingPaused" xml:space="preserve"><value>Training is paused. Continue when you are ready.</value></data>
 </root>

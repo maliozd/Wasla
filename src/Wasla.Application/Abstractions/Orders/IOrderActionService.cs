@@ -21,10 +21,16 @@ public interface IOrderActionService
     /// <summary>Preparing → ReadyForPickup via IFoodPlatformClient.MarkInvoicedAsync.</summary>
     Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct);
 
-    /// <summary>ReadyForPickup → OnTheWay via IFoodPlatformClient.MarkShippedAsync.</summary>
+    /// <summary>
+    /// User command ReadyForPickup → OnTheWay. Refused with <see cref="Wasla.Application.Orders.OrderDeliveryPolicy.UserPickupNotAllowedKey"/>
+    /// for platforms whose courier reports pickup (all current platforms); provider sync applies OnTheWay instead.
+    /// </summary>
     Task<OrderActionResult> MarkOnTheWayAsync(Guid customerId, Guid orderId, CancellationToken ct);
 
-    /// <summary>OnTheWay → Delivered via IFoodPlatformClient.MarkDeliveredAsync; sets DeliveredAt when applicable.</summary>
+    /// <summary>
+    /// User command OnTheWay → Delivered. Refused with <see cref="Wasla.Application.Orders.OrderDeliveryPolicy.UserDeliveryNotAllowedKey"/>
+    /// for platforms whose courier reports delivery (all current platforms); provider sync applies Delivered instead.
+    /// </summary>
     Task<OrderActionResult> MarkDeliveredAsync(Guid customerId, Guid orderId, CancellationToken ct);
 }
 

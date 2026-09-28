@@ -16,6 +16,8 @@ using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Onboarding;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Setup;
+using Wasla.Application.Abstractions.Tours;
+using Wasla.Application.Demos;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Tenant;
@@ -106,6 +108,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITenantSetupStatusService, TenantSetupStatusService>();
+        services.AddScoped<IUserProductTourService, UserProductTourService>();
+        services.AddScoped<IGuidedDemoService, GuidedDemoService>();
+        services.AddScoped<IGuidedDemoDeliverySimulator, GuidedDemoDeliverySimulator>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderActionService, OrderActionService>();
         services.AddScoped<IOrderSyncSettingsService, OrderSyncSettingsService>();

@@ -875,6 +875,73 @@ function boardHarness(canManageOrders = true, extras) {
   };
 }
 
+test("demo cards never change operational column counts or new-order notifications in any view", () => {
+  const h = boardHarness();
+  try {
+    for (const view of ["board", "list", "focus"]) {
+      h.view(view);
+      const body = snapshot([guid(1), guid(2)]);
+      body.orders[1].isDemo = true;
+      h.browser.renderSnapshot(body);
+      assert.equal(h.host.querySelectorAll("[data-board-count]").reduce((n, e) => n + Number(e.textContent), 0), 1);
+      assert.deepEqual(store.collectNewIds(new Set([guid(1)]), body.orders, true), []);
+      body.orders.push(Object.assign({}, body.orders[0], { id: guid(3) }));
+      assert.deepEqual(store.collectNewIds(new Set([guid(1)]), body.orders, true), [guid(3)]);
+    }
+  } finally { h.restore(); }
+});
+
+test("Focus renders demo controls locally and leaves real detail loading available", () => {
+  let reads = 0;
+  const h = boardHarness(true, { liveDetailModal: { loadPanel: () => { reads++; return Promise.resolve(true); } } });
+  try {
+    h.view("focus");
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[0].isDemo = true;
+    h.browser.renderSnapshot(body);
+    h.browser.selectOrder(guid(1), true);
+    assert.equal(reads, 0);
+    const card = h.host.querySelector("[data-wasla-demo-card]");
+    assert.ok(card);
+    assert.equal(card.querySelector("[data-order-action]").getAttribute("data-wasla-demo"), "true");
+    body.orders[0].status = "OnTheWay";
+    h.browser.renderSnapshot(body);
+    const onTheWay = h.host.querySelector("[data-wasla-demo-card]");
+    assert.equal(onTheWay.getAttribute("data-order-status"), "OnTheWay");
+    assert.equal(onTheWay.querySelector("[data-order-action]"), null, "the platform courier delivers; no restaurant action");
+    h.browser.selectOrder(guid(2), true);
+    assert.equal(reads, 1);
+  } finally { h.restore(); }
+});
+
+test("Courier steps offer no manual Hand to courier or Delivered action in Board, List or Focus, real or demo", () => {
+  const h = boardHarness(true, { liveDetailModal: { loadPanel: () => Promise.resolve(true) } });
+  try {
+    const body = snapshot([guid(1), guid(2), guid(3), guid(4), guid(5)]);
+    body.orders[0].status = "OnTheWay";
+    body.orders[1].status = "OnTheWay";
+    body.orders[1].isDemo = true;
+    body.orders[2].status = "Delivered";
+    body.orders[3].status = "ReadyForPickup";
+    body.orders[4].status = "Preparing";
+    for (const view of ["board", "list", "focus"]) {
+      h.view(view);
+      h.browser.renderSnapshot(body);
+      if (view === "focus") h.browser.selectOrder(guid(2), true);
+      const actions = h.host.querySelectorAll("[data-order-action]").map(b => b.getAttribute("data-order-action"));
+      assert.equal(actions.indexOf("mark-delivered"), -1, view + " must not render mark-delivered");
+      assert.equal(actions.indexOf("hand-to-courier"), -1, view + " must not render hand-to-courier");
+      if (view !== "focus") assert.ok(actions.indexOf("mark-ready") >= 0, view + ": Mark ready stays the last restaurant action");
+      for (const id of [guid(1), guid(2), guid(4)]) {
+        const withActions = h.host.querySelectorAll("[data-order-action]").filter(b => b.getAttribute("data-order-id") === id);
+        assert.equal(withActions.length, 0, view + ": courier-step order " + id + " has no restaurant action");
+      }
+      const delivered = h.host.querySelectorAll("[data-order-status='Delivered']");
+      assert.ok(delivered.length > 0 || view === "focus", view + " still shows Delivered orders");
+    }
+  } finally { h.restore(); }
+});
+
 test("Board groups actual statuses, keeps item notes and authorized actions, and moves the same card with focus", () => {
   const h = boardHarness();
   try {

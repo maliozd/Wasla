@@ -1,5 +1,6 @@
 ﻿@model Wasla.Web.Models.Dashboard.DashboardViewModel
 @using System.Globalization
+@using Wasla.Application.Tours
 @using Wasla.Web.Ui
 @using Wasla.Web.Models.Ui
 @{
@@ -26,10 +27,15 @@
             <span class="badge rounded-pill text-bg-light border wasla-dash-today-badge">
                 @L.GetString("Dashboard.TodayDateLabel", L["Common.Today"], todayLabel)
             </span>
+            @await Component.InvokeAsync("ProductTour", new
+            {
+                tourKey = ProductTourKeys.DashboardIntro,
+                suppressAutoStart = Model.Setup is not null
+            })
         </div>
     </header>
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4" data-tour="dashboard-summary">
         <div class="col">
             <div class="wasla-dash-kpi wasla-dash-kpi--orders">
                 <div class="wasla-dash-kpi__icon" aria-hidden="true"><i class="bi bi-receipt"></i></div>
@@ -83,7 +89,7 @@
     </div>
 
     <div class="row g-3">
-        <div class="col-lg-7">
+        <div class="col-lg-7" data-tour="dashboard-recent">
             <div class="card wasla-card wasla-dash-section">
                 <div class="card-body">
                     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">

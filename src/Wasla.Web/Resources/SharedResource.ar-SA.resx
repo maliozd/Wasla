@@ -3622,4 +3622,83 @@
   <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>افتح Live Screen</value></data>
   <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>لا يُحفظ سجل الفتح</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>المزيد من العناصر في التفاصيل</value></data>
+  <data name="Tour.Skip" xml:space="preserve"><value>تخطي</value></data>
+  <data name="Tour.Back" xml:space="preserve"><value>رجوع</value></data>
+  <data name="Tour.Continue" xml:space="preserve"><value>متابعة</value></data>
+  <data name="Tour.Finish" xml:space="preserve"><value>فهمت</value></data>
+  <data name="Tour.Replay" xml:space="preserve"><value>اعرض تدريب هذه الشاشة</value></data>
+  <data name="Tour.Progress" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Tour.Close" xml:space="preserve"><value>إغلاق التدريب</value></data>
+  <data name="Tour.Dashboard.Summary.Title" xml:space="preserve"><value>ملخص اليوم</value></data>
+  <data name="Tour.Dashboard.Summary.Body" xml:space="preserve"><value>يمكنكم متابعة ملخص التشغيل اليومي هنا.</value></data>
+  <data name="Tour.Dashboard.Recent.Title" xml:space="preserve"><value>أحدث الطلبات</value></data>
+  <data name="Tour.Dashboard.Recent.Body" xml:space="preserve"><value>يمكنكم الوصول إلى أحدث الطلبات من هنا.</value></data>
+  <data name="Tour.Live.Orders.Title" xml:space="preserve"><value>الطلبات الجديدة</value></data>
+  <data name="Tour.Live.Orders.Body" xml:space="preserve"><value>تظهر هنا الطلبات القادمة من المنصات المتصلة.</value></data>
+  <data name="Tour.Live.Actions.Title" xml:space="preserve"><value>إجراءات الطلب</value></data>
+  <data name="Tour.Live.Actions.Body" xml:space="preserve"><value>يمكنكم إدارة إجراءات الطلب من هنا.</value></data>
+  <data name="Tour.Live.Timer.Title" xml:space="preserve"><value>مدة الانتظار</value></data>
+  <data name="Tour.Live.Timer.Body" xml:space="preserve"><value>يمكنكم متابعة مدة انتظار الطلب من هنا.</value></data>
+  <data name="Tour.Live.Views.Title" xml:space="preserve"><value>العرض</value></data>
+  <data name="Tour.Live.Views.Body" xml:space="preserve"><value>يمكنكم اختيار العرض المناسب لعملكم من هنا.</value></data>
+  <data name="Tour.Platform.List.Title" xml:space="preserve"><value>اتصالات المنصات</value></data>
+  <data name="Tour.Platform.List.Body" xml:space="preserve"><value>يمكنكم ربط منصات الطلب بـ Wasla من هنا.</value></data>
+  <data name="Tour.Platform.Connect.Title" xml:space="preserve"><value>إضافة منصة</value></data>
+  <data name="Tour.Platform.Connect.Body" xml:space="preserve"><value>يمكنكم إضافة اتصال منصة جديد من هنا.</value></data>
+  <data name="Demo.LaunchTitle" xml:space="preserve"><value>لنجرب Wasla</value></data>
+  <data name="Demo.LaunchAction" xml:space="preserve"><value>إرسال طلب تجريبي</value></data>
+  <data name="Demo.Badge" xml:space="preserve"><value>تجريبي</value></data>
+  <data name="Demo.CustomerName" xml:space="preserve"><value>عميل تجريبي</value></data>
+  <data name="Demo.StartTitle" xml:space="preserve"><value>لنجرب وصلة</value></data>
+  <data name="Demo.StartBody" xml:space="preserve"><value>جرّب سير الطلب دون التأثير على طلباتك الحقيقية.</value></data>
+  <data name="Demo.ApproveTitle" xml:space="preserve"><value>اقبلوا الطلب</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>اقبلوا الطلب من هنا.</value></data>
+  <data name="Demo.PrepareTitle" xml:space="preserve"><value>ابدأوا التحضير</value></data>
+  <data name="Demo.PrepareBody" xml:space="preserve"><value>انقلوا الطلب المقبول إلى التحضير.</value></data>
+  <data name="Demo.ReadyTitle" xml:space="preserve"><value>علّموه جاهزًا</value></data>
+  <data name="Demo.ReadyBody" xml:space="preserve"><value>عندما يجهز الطلب، علّموه من هنا.</value></data>
+  <data name="Demo.SuccessTitle" xml:space="preserve"><value>أدرتم أول طلب</value></data>
+  <data name="Demo.SuccessBody" xml:space="preserve"><value>لقد أكملتم التدريب. تبقى الطلبات الحقيقية المسلَّمة على الشاشة المباشرة لمدة {0} دقائق، ثم تُزال من هذه الشاشة التشغيلية فقط. يمكنكم الوصول إلى سجل طلباتكم من صفحة الطلبات.</value></data>
+  <data name="Demo.Sushi.Roll" xml:space="preserve"><value>سوشي السلمون</value></data>
+  <data name="Demo.Sushi.Edamame" xml:space="preserve"><value>إدامامي</value></data>
+  <data name="Demo.Sushi.Note" xml:space="preserve"><value>واسابي قليل.</value></data>
+  <data name="Demo.Burger.Burger" xml:space="preserve"><value>تشيز برغر</value></data>
+  <data name="Demo.Burger.Fries" xml:space="preserve"><value>بطاطس مقلية</value></data>
+  <data name="Demo.Burger.Drink" xml:space="preserve"><value>كولا</value></data>
+  <data name="Demo.Burger.Note" xml:space="preserve"><value>بدون بصل.</value></data>
+  <data name="Demo.Cafe.Coffee" xml:space="preserve"><value>لاتيه</value></data>
+  <data name="Demo.Cafe.Dessert" xml:space="preserve"><value>تشيز كيك</value></data>
+  <data name="Demo.Cafe.Note" xml:space="preserve"><value>مع الحليب.</value></data>
+  <data name="Demo.Pizza.Pizza" xml:space="preserve"><value>بيتزا مشكلة</value></data>
+  <data name="Demo.Pizza.Drink" xml:space="preserve"><value>عيران</value></data>
+  <data name="Demo.Pizza.Note" xml:space="preserve"><value>عجينة رقيقة.</value></data>
+  <data name="Demo.Doner.Wrap" xml:space="preserve"><value>لفة دونر</value></data>
+  <data name="Demo.Doner.Drink" xml:space="preserve"><value>عيران</value></data>
+  <data name="Demo.Doner.Note" xml:space="preserve"><value>بدون حر.</value></data>
+  <data name="Demo.Kebab.Kebab" xml:space="preserve"><value>كباب أضنة</value></data>
+  <data name="Demo.Kebab.Rice" xml:space="preserve"><value>أرز</value></data>
+  <data name="Demo.Kebab.Note" xml:space="preserve"><value>حار قليل.</value></data>
+  <data name="Demo.Dessert.Baklava" xml:space="preserve"><value>بقلاوة</value></data>
+  <data name="Demo.Dessert.Kunefe" xml:space="preserve"><value>كنافة</value></data>
+  <data name="Demo.Dessert.Note" xml:space="preserve"><value>قطر قليل.</value></data>
+  <data name="Demo.Lokanta.Kofte" xml:space="preserve"><value>كفتة مشوية</value></data>
+  <data name="Demo.Lokanta.Rice" xml:space="preserve"><value>أرز</value></data>
+  <data name="Demo.Lokanta.Note" xml:space="preserve"><value>مع الأرز.</value></data>
+  <data name="Tour.RealOrderPaused" xml:space="preserve"><value>وصل طلب حقيقي. أوقفنا التدريب مؤقتًا.</value></data>
+  <data name="Tour.ViewRealOrder" xml:space="preserve"><value>عرض الطلب الحقيقي</value></data>
+  <data name="Tour.ContinueTraining" xml:space="preserve"><value>متابعة التدريب</value></data>
+  <data name="Demo.PickupWaitTitle" xml:space="preserve"><value>بانتظار المندوب</value></data>
+  <data name="Demo.PickupWaitBody" xml:space="preserve"><value>طلبكم جاهز. عندما يستلم مندوب المنصة الطلب، يحدّث Wasla الحالة تلقائيًا إلى «في الطريق»، وينتقل التدريب إلى الخطوة التالية تلقائيًا.</value></data>
+  <data name="Demo.DeliveryWaitTitle" xml:space="preserve"><value>توصيل المندوب قيد التنفيذ</value></data>
+  <data name="Demo.DeliveryWaitBody" xml:space="preserve"><value>تصل حالة التوصيل تلقائيًا من مندوب المنصة. عند اكتمال التوصيل، يحدّث Wasla الطلب وينقل التدريب إلى الخطوة الأخيرة.</value></data>
+  <data name="Demo.ContinueLive" xml:space="preserve"><value>الانتقال إلى الشاشة المباشرة</value></data>
+  <data name="Demo.SkipTraining" xml:space="preserve"><value>تخطي التدريب</value></data>
+  <data name="Demo.SkipConfirmTitle" xml:space="preserve"><value>هل تريدون تخطي التدريب؟</value></data>
+  <data name="Demo.SkipConfirmBody" xml:space="preserve"><value>يمكنكم إعادة بدء هذا التدريب لاحقًا من «{0}» على الشاشة المباشرة.</value></data>
+  <data name="Demo.SkipConfirmAction" xml:space="preserve"><value>التخطي والانتقال إلى الشاشة المباشرة</value></data>
+  <data name="Demo.SkipConfirmCancel" xml:space="preserve"><value>متابعة التدريب</value></data>
+  <data name="Demo.StartFailed" xml:space="preserve"><value>تعذّر بدء الطلب التجريبي. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Demo.SelectTitle" xml:space="preserve"><value>اختر الطلب التجريبي</value></data>
+  <data name="Demo.SelectBody" xml:space="preserve"><value>افتح الطلب المميز بشارة التجربة لمتابعة التدريب.</value></data>
+  <data name="Tour.TrainingPaused" xml:space="preserve"><value>تم إيقاف التدريب مؤقتًا. تابع عندما تكون جاهزًا.</value></data>
 </root>

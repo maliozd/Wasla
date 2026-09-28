@@ -20,7 +20,8 @@ public sealed record LiveScreenOrderDto(
     string CustomerAddress,
     string? CustomerNote,
     decimal TotalAmount,
-    IReadOnlyList<LiveScreenLineItemDto> Items);
+    IReadOnlyList<LiveScreenLineItemDto> Items,
+    bool IsDemo = false);
 
 public sealed record LiveScreenLineItemDto(
     string ProductName,

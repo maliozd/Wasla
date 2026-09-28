@@ -1,6 +1,7 @@
 ﻿@model Wasla.Web.Models.PlatformConnections.PlatformConnectionListViewModel
 @using Microsoft.Extensions.Localization
 @using System.Text.Json
+@using Wasla.Application.Tours
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
     ViewData["Title"] = L["PlatformConnections.Title"];
@@ -22,10 +23,13 @@
         Description = L["PlatformConnections.NoteRole"].Value,
         ActionUrl = "/platform-connections/create",
         ActionText = L["PlatformConnections.Create"].Value,
-        ActionIconClass = "bi bi-plus-lg"
+        ActionIconClass = "bi bi-plus-lg",
+        ActionTourTarget = "platform-connect"
     })
 
-    <section class="wasla-surface" aria-labelledby="platform-connections-heading">
+    @await Component.InvokeAsync("ProductTour", new { tourKey = ProductTourKeys.PlatformConnectionsIntro })
+
+    <section class="wasla-surface" aria-labelledby="platform-connections-heading" data-tour="platform-list">
         <h2 id="platform-connections-heading" class="visually-hidden">@L["PlatformConnections.Title"]</h2>
         <form id="platformConnectionsAntiForgery" class="d-none" method="post">
             @Html.AntiForgeryToken()

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Application.Printing;
 using Wasla.Domain.Entities.Central;
@@ -61,19 +62,19 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         Assert.False(courierTooEarly.Succeeded);
         Assert.Equal(new[] { "accept", "invoiced" }, client.Calls);
 
+        // Mark ready is the restaurant's last action: the platform courier reports pickup and
+        // delivery through provider sync, so both commands are refused before any provider call.
         var onTheWay = await actions.MarkOnTheWayAsync(_tenantId, orderId, Ct);
-        Assert.True(onTheWay.Succeeded);
-        Assert.Equal(new[] { "accept", "invoiced", "shipped" }, client.Calls);
+        Assert.False(onTheWay.Succeeded);
+        Assert.Equal(OrderDeliveryPolicy.UserPickupNotAllowedKey, onTheWay.MessageKey);
+        Assert.Equal(new[] { "accept", "invoiced" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.ReadyForPickup, accepted: true, delivered: false, cancelled: false);
 
         var delivered = await actions.MarkDeliveredAsync(_tenantId, orderId, Ct);
-        Assert.True(delivered.Succeeded);
-        Assert.Equal(new[] { "accept", "invoiced", "shipped", "delivered" }, client.Calls);
-        await AssertStatusAsync(orderId, OrderStatus.Delivered, accepted: true, delivered: true, cancelled: false);
-
-        var again = await actions.MarkDeliveredAsync(_tenantId, orderId, Ct);
-        Assert.False(again.Succeeded);
-        Assert.Equal("Orders.InvalidStatusForAction", again.MessageKey);
-        Assert.Equal(4, client.Calls.Count);
+        Assert.False(delivered.Succeeded);
+        Assert.Equal("Orders.InvalidStatusForAction", delivered.MessageKey);
+        Assert.Equal(new[] { "accept", "invoiced" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.ReadyForPickup, accepted: true, delivered: false, cancelled: false);
 
         await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
         Assert.Equal(0, await db.PrintJobs.CountAsync(Ct));
@@ -227,8 +228,9 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         Assert.Contains("data-order-action=\"reject\"", actions, StringComparison.Ordinal);
         Assert.Contains("data-order-action=\"start-preparing\"", actions, StringComparison.Ordinal);
         Assert.Contains("data-order-action=\"mark-ready\"", actions, StringComparison.Ordinal);
-        Assert.Contains("data-order-action=\"hand-to-courier\"", actions, StringComparison.Ordinal);
-        Assert.Contains("data-order-action=\"mark-delivered\"", actions, StringComparison.Ordinal);
+        // The platform courier reports pickup and delivery; no view may offer those actions.
+        Assert.DoesNotContain("hand-to-courier", actions, StringComparison.Ordinal);
+        Assert.DoesNotContain("mark-delivered", actions, StringComparison.Ordinal);
     }
 
     private OrderActionService CreateActions(RecordingPlatformClient client) =>

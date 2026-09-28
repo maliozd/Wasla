@@ -10,7 +10,7 @@ namespace Wasla.Infrastructure.Services;
 
 public sealed class OrderReadService : IOrderReadService
 {
-    private static readonly TimeSpan RecentDeliveredWindow = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan RecentDeliveredWindow = LiveScreenVisibility.RecentDeliveredWindow;
     private static readonly OrderStatus[] ActiveStatuses =
     [
         OrderStatus.New,

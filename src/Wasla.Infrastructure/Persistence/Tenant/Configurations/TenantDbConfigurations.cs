@@ -62,6 +62,53 @@ public class PasswordResetTokenConfiguration : IEntityTypeConfiguration<Password
     }
 }
 
+public class GuidedDemoSessionConfiguration : IEntityTypeConfiguration<GuidedDemoSession>
+{
+    public void Configure(EntityTypeBuilder<GuidedDemoSession> builder)
+    {
+        builder.ToTable("GuidedDemoSessions");
+        builder.HasKey(session => session.Id);
+        builder.Property(session => session.UserId).IsRequired();
+        builder.Property(session => session.ScenarioCode).IsRequired().HasMaxLength(64);
+        builder.Property(session => session.CustomerNameKey).IsRequired().HasMaxLength(128);
+        builder.Property(session => session.NoteKey).HasMaxLength(128);
+        builder.Property(session => session.ItemsJson).IsRequired();
+        builder.Property(session => session.ReceivedAtUtc).IsRequired();
+        builder.Property(session => session.ExpiresAtUtc).IsRequired();
+
+        builder.HasOne(session => session.User)
+            .WithMany()
+            .HasForeignKey(session => session.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        builder.HasIndex(session => new { session.UserId, session.CompletedAtUtc })
+            .HasDatabaseName("IX_GuidedDemoSessions_UserId_CompletedAtUtc");
+    }
+}
+
+public class UserProductTourCompletionConfiguration : IEntityTypeConfiguration<UserProductTourCompletion>
+{
+    public void Configure(EntityTypeBuilder<UserProductTourCompletion> builder)
+    {
+        builder.ToTable("UserProductTourCompletions");
+        builder.HasKey(completion => completion.Id);
+        builder.Property(completion => completion.UserId).IsRequired();
+        builder.Property(completion => completion.TourKey).IsRequired().HasMaxLength(64);
+        builder.Property(completion => completion.CompletedAtUtc).IsRequired();
+
+        builder.HasOne(completion => completion.User)
+            .WithMany()
+            .HasForeignKey(completion => completion.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        builder.HasIndex(completion => new { completion.UserId, completion.TourKey })
+            .IsUnique()
+            .HasDatabaseName("IX_UserProductTourCompletions_UserId_TourKey");
+    }
+}
+
 public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<UserNotificationSettings>
 {
     public void Configure(EntityTypeBuilder<UserNotificationSettings> builder)

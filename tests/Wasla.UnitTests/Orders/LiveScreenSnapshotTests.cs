@@ -360,6 +360,8 @@ public sealed class LiveScreenSnapshotTests : IDisposable
             orderSettings: null!,
             receiptCreation: null!,
             manualPrint: null!,
+            demos: null!,
+            authorization: null!,
             orderSettingsValidator: null!,
             logger: null!,
             localizer: null!);

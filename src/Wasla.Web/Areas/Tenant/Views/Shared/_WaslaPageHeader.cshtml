@@ -15,7 +15,7 @@
     @if (!string.IsNullOrWhiteSpace(Model.ActionUrl) && !string.IsNullOrWhiteSpace(Model.ActionText))
     {
         <div class="wasla-page-header__actions">
-            <a class="wasla-btn wasla-btn--primary" href="@Model.ActionUrl">
+            <a class="wasla-btn wasla-btn--primary" href="@Model.ActionUrl" data-tour="@Model.ActionTourTarget">
                 @if (!string.IsNullOrWhiteSpace(Model.ActionIconClass))
                 {
                     <i class="@Model.ActionIconClass" aria-hidden="true"></i>
