@@ -575,24 +575,8 @@ public sealed class WaslaVisualFoundationTests
         }
     }
 
-    private static bool IsDirty(string relativePath)
-    {
-        var fullPath = Path.Combine(GetRepositoryRoot(), relativePath.Replace('/', Path.DirectorySeparatorChar));
-        var psi = new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "git",
-            Arguments = $"diff --name-only -- \"{relativePath.Replace('\\', '/')}\"",
-            WorkingDirectory = GetRepositoryRoot(),
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-        using var process = System.Diagnostics.Process.Start(psi)
-            ?? throw new InvalidOperationException("git could not be started.");
-        var output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        return !string.IsNullOrWhiteSpace(output);
-    }
+    private static bool IsDirty(string relativePath) =>
+        GitWorkingTree.IsDirty(GetRepositoryRoot(), relativePath);
 
     private static int CountOccurrences(string source, string value)
     {

@@ -83,9 +83,9 @@ On existing orders, mapped external status is merged via `MergeInternalStatusFor
 
 When a semantic change is detected, sync opens a transaction, updates scalars (including `CustomerNote`, money, platform status, etc.), sets `UpdatedAt`, deletes existing `OrderItemOption` / `OrderItem` rows with `ExecuteDeleteAsync`, then inserts items/options from the provider payload and `SaveChanges`.
 
-### Unchanged-order short circuit (working tree)
+### Unchanged-order short circuit
 
-**Present in the working tree** in `src/Wasla.Infrastructure/Sync/OrderSyncService.cs` (uncommitted at documentation time; verify with `git status` / `git diff` before treating as committed history).
+Implemented in `src/Wasla.Infrastructure/Sync/OrderSyncService.cs`.
 
 Behavior when `IsSemanticallyUnchanged` returns true:
 
