@@ -14,7 +14,6 @@ Priorities when working on Wasla:
 5. Maintainable, testable code.
 6. A user experience suited to restaurant operations.
 
-Communicate with the user in Turkish.
 Code identifiers, routes, classes, and file names must be in English.
 
 Perform the investigation needed to complete the requested task.
@@ -90,8 +89,13 @@ When the user requests code changes:
 
 ## 4. Product definition and scope
 
-Wasla is a multi-tenant SaaS that lets restaurants manage orders from different
-food-delivery platforms in one operational workflow.
+Wasla is a restaurant software ecosystem with two products: Wasla Orders and
+Wasla POS. This repository currently implements Wasla Orders. Wasla POS is a
+separate product and has no project or module in this solution yet. Read
+`docs/product/product-boundaries.md` before product-scope or POS work.
+
+Wasla Orders is a multi-tenant SaaS that lets restaurants manage orders from
+different food-delivery platforms in one operational workflow.
 
 Core scope:
 
@@ -104,7 +108,7 @@ Core scope:
 - Tenant users, roles, and settings.
 - Tenant signup, payment, provisioning, and central administration.
 
-Out of scope unless explicitly requested:
+Out of scope for this repository unless explicitly requested:
 
 - A full POS system.
 - Inventory and warehouse management.
@@ -112,6 +116,9 @@ Out of scope unless explicitly requested:
 - Broad CRM functionality.
 - Restaurant ERP.
 - General-purpose infrastructure redesign unrelated to the current need.
+
+Do not turn the Wasla Orders Live Screen into the POS application. Add shared
+infrastructure only when the requested work establishes a real cross-product need.
 
 Remain MVP-focused without weakening tenant isolation, authorization, or data
 consistency in the name of an MVP.
@@ -137,6 +144,7 @@ Invalid example:
 Additional rules:
 
 - A different StoreId does not make a second connection valid.
+- StoreId is provider configuration, not part of connection uniqueness.
 - Deactivating a connection does not permit creating a second connection.
 - Store and credential changes are managed through the existing connection.
 - This rule does not prevent connections to different platforms.
