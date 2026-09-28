@@ -1,4 +1,4 @@
-﻿@using System.Globalization
+@using System.Globalization
 @using Microsoft.Extensions.Localization
 @using Wasla.Application.Abstractions.Plans
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
@@ -84,15 +84,50 @@
                     <p class="small text-muted mb-0">@L["Landing.TenantNote"]</p>
                 </div>
                 <div class="col-lg-6">
-                    <div class="wasla-hero-illu rounded-4 border bg-white p-3 p-md-4 shadow">
+                    <div class="wasla-hero-illu rounded-4 border bg-white p-3 p-md-4 shadow" aria-hidden="true">
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                             <span class="fw-semibold text-dark">Wasla</span>
                             <span class="badge rounded-pill wasla-badge-live">@L["Landing.Live"]</span>
                         </div>
-                        <div class="wasla-illu-rows">
-                            <div class="wasla-illu-row"></div>
-                            <div class="wasla-illu-row wasla-illu-row--short"></div>
-                            <div class="wasla-illu-row"></div>
+                        <div class="wasla-illu-board">
+                            <div class="wasla-illu-order">
+                                <div class="wasla-illu-order-top">
+                                    <div class="wasla-illu-order-id">
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">@L["Landing.NewOrder"]</span>
+                                        <span class="font-monospace fw-semibold">YS-901</span>
+                                    </div>
+                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"Yemeksepeti", (string?)null))
+                                </div>
+                                <div class="wasla-illu-order-meta">
+                                    <span class="font-monospace text-secondary">₺132,00</span>
+                                    <span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span>
+                                </div>
+                            </div>
+                            <div class="wasla-illu-order">
+                                <div class="wasla-illu-order-top">
+                                    <div class="wasla-illu-order-id">
+                                        <span class="font-monospace fw-semibold">GY-204</span>
+                                    </div>
+                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"GetirYemek", (string?)null))
+                                </div>
+                                <div class="wasla-illu-order-meta">
+                                    <span class="font-monospace text-secondary">₺67,25</span>
+                                    <span class="badge bg-success-subtle text-success border">@L["Landing.Delivered"]</span>
+                                </div>
+                            </div>
+                            <div class="wasla-illu-order">
+                                <div class="wasla-illu-order-top">
+                                    <div class="wasla-illu-order-id">
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">@L["Landing.NewOrder"]</span>
+                                        <span class="font-monospace fw-semibold">TY-991</span>
+                                    </div>
+                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"TrendyolYemek", (string?)null))
+                                </div>
+                                <div class="wasla-illu-order-meta">
+                                    <span class="font-monospace text-secondary">₺341,00</span>
+                                    <span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -153,7 +188,9 @@
                                             <span class="font-monospace">YS-901</span>
                                             <i class="bi bi-bell-fill text-primary small ms-1" title="@L["Landing.SoundNotification"]" aria-label="@L["Landing.SoundNotification"]"></i>
                                         </td>
-                                        <td><span class="wasla-platform-tile">Yemeksepeti</span></td>
+                                        <td>
+                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"Yemeksepeti", (string?)null))
+                                        </td>
                                         <td class="text-end font-monospace">₺132,00</td>
                                         <td><span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span></td>
                                     </tr>
@@ -162,7 +199,9 @@
                                             <span class="font-monospace">GY-204</span>
                                             <i class="bi bi-volume-up-fill text-primary small ms-1" title="@L["Landing.SoundNotification"]" aria-label="@L["Landing.SoundNotification"]"></i>
                                         </td>
-                                        <td><span class="wasla-platform-tile">GetirYemek</span></td>
+                                        <td>
+                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"GetirYemek", (string?)null))
+                                        </td>
                                         <td class="text-end font-monospace">₺67,25</td>
                                         <td><span class="badge bg-success-subtle text-success border">@L["Landing.Delivered"]</span></td>
                                     </tr>
@@ -171,7 +210,9 @@
                                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1">@L["Landing.NewOrder"]</span>
                                             <span class="font-monospace">TY-991</span>
                                         </td>
-                                        <td><span class="wasla-platform-tile">TrendyolYemek</span></td>
+                                        <td>
+                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"TrendyolYemek", (string?)null))
+                                        </td>
                                         <td class="text-end font-monospace">₺341,00</td>
                                         <td><span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span></td>
                                     </tr>
