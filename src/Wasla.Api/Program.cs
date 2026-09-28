@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Wasla.Api.Middleware;
+using Wasla.Api.Security;
 using Wasla.Api.Tenant;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Tenant;
@@ -68,27 +68,7 @@ builder.Services.Configure<RequestDiagnosticsOptions>(options =>
     options.LogRequestCompletion = false;
 });
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.Cookie.Name = "orderhub_auth";
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
-        options.Events.OnRedirectToLogin = ctx =>
-        {
-            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return Task.CompletedTask;
-        };
-        options.Events.OnRedirectToAccessDenied = ctx =>
-        {
-            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-            return Task.CompletedTask;
-        };
-    });
-builder.Services.AddAuthorization();
+builder.Services.AddWaslaApiTenantAuthentication(CookieSecurePolicy.Always);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -128,6 +108,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseMiddleware<PrintBridgeAuthMiddleware>();
+app.UseMiddleware<ExpireLegacyTenantAuthCookieMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

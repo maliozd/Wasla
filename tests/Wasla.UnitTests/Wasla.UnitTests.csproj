@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Wasla.Api\Wasla.Api.csproj" />
     <ProjectReference Include="..\..\src\Wasla.Application\Wasla.Application.csproj" />
     <ProjectReference Include="..\..\src\Wasla.Cli\Wasla.Cli.csproj" />
     <ProjectReference Include="..\..\src\Wasla.Infrastructure\Wasla.Infrastructure.csproj" />
