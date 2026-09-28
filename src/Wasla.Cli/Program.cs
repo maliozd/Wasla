@@ -142,6 +142,9 @@ var optAdminPassword = new Option<string>("--admin-password", "First admin passw
 var optAdminName = new Option<string>("--admin-name", () => "Admin", "Admin full name");
 var optSqlServer = new Option<string?>("--sql-server", "SQL Server instance; default from config CustomerDb:ServerInstance or '.'");
 var optSqlAuth = new Option<string>("--sql-auth", () => "trusted", "Trusted Windows auth, or 'sql:username:password'");
+var optBusinessPhone = new Option<string?>("--business-phone", "Restaurant business phone (required by the setup checklist)");
+var optCity = new Option<string?>("--city", "Restaurant city (the setup checklist needs a city or country)");
+var optCountry = new Option<string?>("--country", "Restaurant country (the setup checklist needs a city or country)");
 
 addCustomer.AddOption(optName);
 addCustomer.AddOption(optSlug);
@@ -151,6 +154,9 @@ addCustomer.AddOption(optAdminPassword);
 addCustomer.AddOption(optAdminName);
 addCustomer.AddOption(optSqlServer);
 addCustomer.AddOption(optSqlAuth);
+addCustomer.AddOption(optBusinessPhone);
+addCustomer.AddOption(optCity);
+addCustomer.AddOption(optCountry);
 
 addCustomer.SetHandler(async (InvocationContext context) =>
 {
@@ -164,8 +170,37 @@ addCustomer.SetHandler(async (InvocationContext context) =>
     var sqlServer = p.GetValueForOption(optSqlServer);
     var sqlAuth = p.GetValueForOption(optSqlAuth) ?? "trusted";
     var ct = context.GetCancellationToken();
+    var contact = new TenantContactUpdate(
+        p.GetValueForOption(optBusinessPhone),
+        p.GetValueForOption(optCity),
+        p.GetValueForOption(optCountry));
     context.ExitCode = await CliCommands.AddCustomerAsync(
-        host, name, slug, domain, adminEmail, adminPassword, adminName, sqlServer, sqlAuth, ct);
+        host, name, slug, domain, adminEmail, adminPassword, adminName, sqlServer, sqlAuth, contact, ct);
+});
+
+// --- update-customer-profile ---
+var updateCustomerProfile = new Command(
+    "update-customer-profile",
+    "Set the restaurant business phone, city or country used by the setup checklist (idempotent).");
+var optProfileTenant = new Option<string>("--tenant", "Customer slug or id in CentralDb") { IsRequired = true };
+var optProfilePhone = new Option<string?>("--business-phone", "Restaurant business phone");
+var optProfileCity = new Option<string?>("--city", "Restaurant city");
+var optProfileCountry = new Option<string?>("--country", "Restaurant country");
+updateCustomerProfile.AddOption(optProfileTenant);
+updateCustomerProfile.AddOption(optProfilePhone);
+updateCustomerProfile.AddOption(optProfileCity);
+updateCustomerProfile.AddOption(optProfileCountry);
+updateCustomerProfile.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.UpdateCustomerProfileAsync(
+        host,
+        p.GetValueForOption(optProfileTenant),
+        new TenantContactUpdate(
+            p.GetValueForOption(optProfilePhone),
+            p.GetValueForOption(optProfileCity),
+            p.GetValueForOption(optProfileCountry)),
+        context.GetCancellationToken());
 });
 
 // --- migrate-central ---
@@ -506,6 +541,7 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     resetCustomerDb,
     resetAllCustomerDbs,
     seedCustomerAdmin,
+    updateCustomerProfile,
     listCustomers,
     encrypt,
     createUser,

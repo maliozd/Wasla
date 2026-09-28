@@ -10,7 +10,8 @@ internal static class CliHelpPrinter
         "delete-customer",
         "reset-customer-db",
         "reset-all-customer-dbs",
-        "seed-customer-admin"
+        "seed-customer-admin",
+        "update-customer-profile"
     ];
 
     private static readonly string[] MigrationCommands =
@@ -69,6 +70,7 @@ internal static class CliHelpPrinter
         Console.WriteLine("  reset-customer-db         Drop/recreate a single customer database. Requires --confirm.");
         Console.WriteLine("  reset-all-customer-dbs    Drop/recreate all active customer databases. Requires --confirm.");
         Console.WriteLine("  seed-customer-admin       Create an Owner admin user for a customer DB if missing.");
+        Console.WriteLine("  update-customer-profile   Set the restaurant phone, city or country used by the setup checklist.");
         Console.WriteLine();
 
         Console.WriteLine("Migration commands:");
@@ -131,9 +133,26 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  add-customer --name <name> --slug <slug> --domain <domain> --admin-email <email> --admin-password <password> --admin-name <name>");
+                Console.WriteLine("               [--business-phone <phone>] [--city <city>] [--country <country>]");
+                Console.WriteLine();
+                Console.WriteLine("Also records the tenant membership. The dashboard setup checklist needs a business phone");
+                Console.WriteLine("and a city or country; without them, set them later with update-customer-profile.");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
-                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-customer --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\"");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-customer --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\" --business-phone \"+90 212 000 00 00\" --city Istanbul");
+                return;
+
+            case "update-customer-profile":
+                Console.WriteLine("update-customer-profile");
+                Console.WriteLine();
+                Console.WriteLine("Sets the restaurant contact used by the dashboard setup checklist. Creates the tenant's");
+                Console.WriteLine("membership row when missing. Omitted fields keep their value; repeating a call changes nothing.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  update-customer-profile --tenant <slug-or-id> [--business-phone <phone>] [--city <city>] [--country <country>]");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- update-customer-profile --tenant ahmet --business-phone \"+90 212 000 00 00\" --city Istanbul");
                 return;
 
             case "provision-signup-request":
