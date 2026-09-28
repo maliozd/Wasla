@@ -7,6 +7,7 @@ using Wasla.Application.Tours;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Persistence.Tenant.Configurations;
 using Wasla.Infrastructure.Services;
 
 namespace Wasla.UnitTests.Demos;
@@ -325,6 +326,102 @@ public sealed class GuidedDemoServiceTests : IDisposable
         return await db.GuidedDemoSessions.Where(row => row.Id == demoId).Select(row => row.Status).SingleAsync();
     }
 
+    [Fact]
+    public async Task SecondStart_ReturnsTheSameOpenSession()
+    {
+        await SeedAsync(_tenantA, _userA);
+        var service = CreateService(null);
+
+        var first = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+        var second = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+
+        Assert.Equal(first.Id, second.Id);
+        Assert.Equal(1, await CountOpenSessionsAsync(_tenantA, _userA));
+    }
+
+    [Fact]
+    public async Task ExpiredOpenSession_IsClosedAndDoesNotBlockANewStart()
+    {
+        await SeedAsync(_tenantA, _userA);
+        var service = CreateService(null);
+        var expired = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+        _clock.Now = _clock.Now.AddHours(3);
+
+        var fresh = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+
+        Assert.NotEqual(expired.Id, fresh.Id);
+        Assert.Equal(1, await CountOpenSessionsAsync(_tenantA, _userA));
+        await using var db = await _tenants.CreateAsync(_tenantA, CancellationToken.None);
+        Assert.NotNull((await db.GuidedDemoSessions.SingleAsync(row => row.Id == expired.Id, TestContext.Current.CancellationToken)).CompletedAtUtc);
+    }
+
+    [Fact]
+    public async Task ConcurrentStart_ThatLosesTheInsertRace_ReturnsTheWinningSession()
+    {
+        await SeedAsync(_tenantA, _userA);
+        var winnerId = Guid.NewGuid();
+        // Runs after the service found no active demo and before it inserts, like a second tab.
+        var service = new GuidedDemoService(_tenants, new FixedSubtypes(null, async () =>
+        {
+            await using var competing = await _tenants.CreateAsync(_tenantA, CancellationToken.None);
+            competing.GuidedDemoSessions.Add(OpenSession(winnerId, _userA));
+            await competing.SaveChangesAsync();
+        }), _clock);
+
+        var result = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+
+        Assert.Equal(winnerId, result.Id);
+        Assert.Equal(1, await CountOpenSessionsAsync(_tenantA, _userA));
+    }
+
+    [Fact]
+    public async Task Database_RejectsASecondOpenSessionForTheSameUser()
+    {
+        await SeedAsync(_tenantA, _userA, _userB);
+        await using (var db = await _tenants.CreateAsync(_tenantA, CancellationToken.None))
+        {
+            db.GuidedDemoSessions.Add(OpenSession(Guid.NewGuid(), _userA));
+            db.GuidedDemoSessions.Add(OpenSession(Guid.NewGuid(), _userB));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var duplicate = await _tenants.CreateAsync(_tenantA, CancellationToken.None);
+        duplicate.GuidedDemoSessions.Add(OpenSession(Guid.NewGuid(), _userA));
+        var error = await Assert.ThrowsAsync<DbUpdateException>(() => duplicate.SaveChangesAsync(TestContext.Current.CancellationToken));
+
+        Assert.True(GuidedDemoService.IsOpenSessionConflict(error));
+    }
+
+    [Fact]
+    public void OpenSessionConflict_RecognizesSqlServerAndIgnoresOtherErrors()
+    {
+        var sqlServer = new DbUpdateException("update failed", new Exception(
+            "Cannot insert duplicate key row in object 'dbo.GuidedDemoSessions' with unique index 'IX_GuidedDemoSessions_UserId_Open'. The duplicate key value is (x)."));
+        var other = new DbUpdateException("update failed", new Exception(
+            "Cannot insert duplicate key row in object 'dbo.PlatformConnections' with unique index 'IX_PlatformConnections_Platform'."));
+
+        Assert.True(GuidedDemoService.IsOpenSessionConflict(sqlServer));
+        Assert.False(GuidedDemoService.IsOpenSessionConflict(other));
+    }
+
+    private GuidedDemoSession OpenSession(Guid id, Guid userId) => new()
+    {
+        Id = id,
+        UserId = userId,
+        ScenarioCode = "lokanta",
+        Status = OrderStatus.New,
+        CustomerNameKey = "Demo.Customer",
+        ItemsJson = "[]",
+        ReceivedAtUtc = _clock.Now.UtcDateTime,
+        ExpiresAtUtc = _clock.Now.UtcDateTime.AddHours(2)
+    };
+
+    private async Task<int> CountOpenSessionsAsync(Guid tenantId, Guid userId)
+    {
+        await using var db = await _tenants.CreateAsync(tenantId, CancellationToken.None);
+        return await db.GuidedDemoSessions.CountAsync(row => row.UserId == userId && row.CompletedAtUtc == null);
+    }
+
     private GuidedDemoService CreateService(IReadOnlyList<string>? codes) =>
         new(_tenants, new FixedSubtypes(codes), _clock);
 
@@ -366,9 +463,20 @@ public sealed class GuidedDemoServiceTests : IDisposable
     private sealed class FixedSubtypes : ITenantBusinessSubtypeReader
     {
         private readonly IReadOnlyList<string>? _codes;
-        public FixedSubtypes(IReadOnlyList<string>? codes) => _codes = codes;
-        public Task<IReadOnlyList<string>?> GetSubtypeCodesAsync(Guid tenantId, CancellationToken ct) =>
-            Task.FromResult(_codes);
+        private readonly Func<Task>? _beforeReturn;
+
+        public FixedSubtypes(IReadOnlyList<string>? codes, Func<Task>? beforeReturn = null)
+        {
+            _codes = codes;
+            _beforeReturn = beforeReturn;
+        }
+
+        public async Task<IReadOnlyList<string>?> GetSubtypeCodesAsync(Guid tenantId, CancellationToken ct)
+        {
+            if (_beforeReturn is not null)
+                await _beforeReturn();
+            return _codes;
+        }
     }
 
     private sealed class TenantSqlite : ITenantDbContextFactory, IDisposable
@@ -414,13 +522,8 @@ public sealed class GuidedDemoServiceTests : IDisposable
                 builder.Property(user => user.Email).IsRequired();
                 builder.Property(user => user.PasswordHash).IsRequired();
             });
-            modelBuilder.Entity<GuidedDemoSession>(builder =>
-            {
-                builder.ToTable("GuidedDemoSessions");
-                builder.HasKey(session => session.Id);
-                builder.Property(session => session.ItemsJson).IsRequired();
-                builder.HasOne(session => session.User).WithMany().HasForeignKey(session => session.UserId);
-            });
+            // The real configuration, so the unique open-session index is exercised.
+            modelBuilder.ApplyConfiguration(new GuidedDemoSessionConfiguration());
         }
     }
 }

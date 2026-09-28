@@ -62,6 +62,11 @@ public class PasswordResetTokenConfiguration : IEntityTypeConfiguration<Password
     }
 }
 
+public static class GuidedDemoSessionIndexes
+{
+    public const string UserOpen = "IX_GuidedDemoSessions_UserId_Open";
+}
+
 public class GuidedDemoSessionConfiguration : IEntityTypeConfiguration<GuidedDemoSession>
 {
     public void Configure(EntityTypeBuilder<GuidedDemoSession> builder)
@@ -84,6 +89,12 @@ public class GuidedDemoSessionConfiguration : IEntityTypeConfiguration<GuidedDem
 
         builder.HasIndex(session => new { session.UserId, session.CompletedAtUtc })
             .HasDatabaseName("IX_GuidedDemoSessions_UserId_CompletedAtUtc");
+
+        // At most one open demo per user; concurrent starts are resolved by the database.
+        builder.HasIndex(session => session.UserId)
+            .IsUnique()
+            .HasFilter("[CompletedAtUtc] IS NULL")
+            .HasDatabaseName(GuidedDemoSessionIndexes.UserOpen);
     }
 }
 

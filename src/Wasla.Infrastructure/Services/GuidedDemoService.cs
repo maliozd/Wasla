@@ -6,6 +6,7 @@ using Wasla.Application.Orders;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Persistence.Tenant.Configurations;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -41,12 +42,18 @@ public sealed class GuidedDemoService : IGuidedDemoService
         var scenario = GuidedDemoScenarioCatalog.ForSubtypes(codes);
 
         await using var db = await _tenantDbs.CreateAsync(tenantId, ct).ConfigureAwait(false);
-        var open = await db.GuidedDemoSessions
-            .Where(session => session.UserId == userId && session.CompletedAtUtc == null)
-            .ToListAsync(ct)
+        // Close only sessions that can no longer resume. A session a concurrent start just created
+        // stays open, so the unique open-session index decides the race below.
+        await db.GuidedDemoSessions
+            .Where(session => session.UserId == userId
+                && session.CompletedAtUtc == null
+                && (session.ExpiresAtUtc <= now
+                    || session.Status == OrderStatus.Cancelled
+                    || session.Status == OrderStatus.Delivered))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(session => session.CompletedAtUtc, now)
+                .SetProperty(session => session.UpdatedAt, now), ct)
             .ConfigureAwait(false);
-        foreach (var session in open)
-            session.CompletedAtUtc = now;
 
         var created = new GuidedDemoSession
         {
@@ -60,8 +67,35 @@ public sealed class GuidedDemoService : IGuidedDemoService
             ExpiresAtUtc = now.Add(Lifetime)
         };
         db.GuidedDemoSessions.Add(created);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (IsOpenSessionConflict(ex))
+        {
+            // Another request started this user's demo first; reuse it instead of failing.
+            var winner = await GetActiveAsync(tenantId, userId, ct).ConfigureAwait(false);
+            if (winner is not null)
+                return winner;
+            throw;
+        }
+
         return ToState(created);
+    }
+
+    internal static bool IsOpenSessionConflict(DbUpdateException exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            var message = current.Message;
+            if (message.Contains(GuidedDemoSessionIndexes.UserOpen, StringComparison.Ordinal))
+                return true;
+
+            if (message.Contains("UNIQUE constraint failed: GuidedDemoSessions.UserId", StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
     }
 
     public async Task<GuidedDemoSessionState?> GetActiveAsync(Guid tenantId, Guid userId, CancellationToken ct)
