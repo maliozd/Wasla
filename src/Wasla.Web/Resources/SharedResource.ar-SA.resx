@@ -3578,4 +3578,5 @@
   <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>حدث خطأ غير متوقع</value></data>
   <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>تعذر إكمال العملية. أعد المحاولة. إذا استمرت المشكلة، أرسل رمز المرجع إلى الدعم.</value></data>
   <data name="Errors.ReferenceCode" xml:space="preserve"><value>رمز المرجع</value></data>
+  <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>المزيد من العناصر في التفاصيل</value></data>
 </root>

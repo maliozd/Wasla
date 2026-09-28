@@ -733,6 +733,7 @@ function fakeDocument() {
     get id() { return this._id || ""; },
     setAttribute: function (name, value) { this.attrs[name] = String(value); },
     getAttribute: function (name) { return Object.prototype.hasOwnProperty.call(this.attrs, name) ? this.attrs[name] : null; },
+    hasAttribute: function (name) { return Object.prototype.hasOwnProperty.call(this.attrs, name); },
     removeAttribute: function (name) { delete this.attrs[name]; },
     appendChild: function (node) {
       if (node.parentElement && node.parentElement.removeChild) node.parentElement.removeChild(node);
@@ -839,6 +840,8 @@ function fakeDocument() {
     return current;
   }
   doc = {
+    addEventListener: function () {},
+    dispatchEvent: function () { return true; },
     createElement: function (tag) { return new El(tag); },
     createTextNode: function (text) { return { nodeType: 3, textContent: String(text), parentElement: null }; },
     getElementById: function (id) { return byId.get(id) || null; },
@@ -936,7 +939,11 @@ test("Grouped list uses Board groups once, shows customer and address, and reuse
     assert.equal(h.host.querySelectorAll("[data-order-note]").length, 1);
     const boardNote = h.host.querySelector("[data-order-note]");
     assert.equal(boardNote.querySelector("[data-order-note-text]").textContent, "Zili çalmayın, arayın.");
-    assert.equal(boardNote.parentElement.className.indexOf("wasla-live-card__secondary") >= 0, true);
+    const boardBody = boardNote.parentElement;
+    assert.equal(boardBody.className.indexOf("orders-card-body") >= 0, true);
+    assert.equal(boardBody.children[0].className.indexOf("wasla-live-card__identity") >= 0, true);
+    assert.equal(boardBody.children[1], boardNote);
+    assert.equal(boardBody.children[2].className.indexOf("wasla-live-board-items") >= 0, true);
     assert.equal(h.host.querySelector(".wasla-live-screen-card__items").contains(boardNote), false);
     assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, 2);
 
@@ -1046,6 +1053,127 @@ test("Grouped list uses Board groups once, shows customer and address, and reuse
     assert.equal(h.host.querySelector(".wasla-live-empty").getAttribute("data-live-empty"), "none");
     assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, 0);
     assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 0);
+  } finally { h.restore(); }
+});
+
+test("Board places the order note above items and keeps only elapsed time", () => {
+  const h = boardHarness();
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[0].customerNote = "Güvenliğe bırakmayın, 3. kata çıkarabilir misiniz?";
+    body.orders[0].items = [
+      { productName: "Cacık", quantity: 1, notes: null },
+      { productName: "Kuru Fasulye", quantity: 1, notes: "Yağı mümkünse az olsun." }
+    ];
+    body.orders[0].receivedAtUtc = "2026-09-22T16:30:00Z";
+    body.orders[1].customerNote = null;
+    h.browser.renderSnapshot(body);
+    const card = h.card(guid(1));
+    const classes = Array.from(card.querySelector(".orders-card-body").children).map(el => el.className);
+    assert.equal(classes[0].indexOf("wasla-live-card__identity") >= 0, true);
+    assert.equal(classes[1].indexOf("wasla-live-board-order-note") >= 0, true);
+    assert.equal(classes[2].indexOf("wasla-live-board-items") >= 0, true);
+    assert.equal(classes[3].indexOf("wasla-live-card__secondary") >= 0, true);
+    assert.equal(classes[4].indexOf("orders-card-actions") >= 0, true);
+    const note = card.querySelector("[data-order-note-text]");
+    assert.equal(note.textContent, "Güvenliğe bırakmayın, 3. kata çıkarabilir misiniz?");
+    assert.equal(note.title, note.textContent);
+    assert.equal(card.querySelector(".wasla-live-board-items").contains(note), false);
+    const item = card.querySelectorAll(".wasla-live-screen-card__item")[1];
+    assert.equal(item.querySelector(".wasla-live-screen-card__product").textContent, "Kuru Fasulye");
+    assert.equal(item.querySelector(".wasla-live-screen-card__note").textContent, "Yağı mümkünse az olsun.");
+    assert.equal(card.querySelector("[data-received]"), null);
+    assert.equal(card.querySelector("[data-received-row]"), null);
+    assert.notEqual(card.querySelector("[data-elapsed]").textContent, "");
+    assert.equal(card.textContent.indexOf("2026") < 0, true);
+    assert.equal(card.querySelector("[data-status-badge]") !== null, true);
+    assert.equal(card.querySelector("[data-total]") !== null, true);
+    const plain = h.card(guid(2));
+    assert.equal(plain.querySelector("[data-order-note]"), null);
+    assert.equal(plain.querySelector("[data-received]"), null);
+    assert.equal(plain.querySelector(".orders-card-body").children[0].className.indexOf("wasla-live-card__identity") >= 0, true);
+    assert.equal(plain.querySelector(".orders-card-body").children[1].className.indexOf("wasla-live-board-items") >= 0, true);
+    assert.notEqual(plain.querySelector("[data-elapsed]").textContent, "");
+
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    const list = h.card(guid(1));
+    assert.notEqual(list.querySelector("[data-received]"), null);
+    assert.equal(list.querySelector("[data-order-note]").className.indexOf("wasla-live-list-row__order-note") >= 0, true);
+    assert.equal(list.querySelector(".wasla-live-board-order-note"), null);
+
+    const fs = require("fs");
+    const path = require("path");
+    const detail = fs.readFileSync(path.join(__dirname, "../../../src/Wasla.Web/Areas/Tenant/Views/Orders/_OrderDetailPanel.cshtml"), "utf8");
+    assert.match(detail, /Model\.CustomerNote/);
+    assert.match(detail, /FormatReceivedAtUtc/);
+    assert.match(detail, /@foreach \(var i in Model\.Items\)/);
+  } finally { h.restore(); }
+});
+
+test("board product overflow is marked only when the item area is taller than its viewport", () => {
+  const h = boardHarness();
+  try {
+    const body = snapshot([guid(1)]);
+    body.orders[0].items = [{ productName: "Lahmacun", quantity: 1, notes: "Acısız" }];
+    h.browser.renderSnapshot(body);
+    const card = h.card(guid(1));
+    const viewport = card.querySelector(".wasla-live-board-items__viewport");
+    const shell = card.querySelector(".wasla-live-board-items");
+    const details = card.querySelector(".wasla-live-screen-card__details");
+    assert.ok(viewport);
+    assert.equal(shell.classList.contains("has-item-overflow"), false);
+    assert.equal(details.classList.contains("has-item-overflow"), false);
+    assert.equal(shell.querySelector(".wasla-live-board-items__more").textContent, "boardItemsMore");
+    assert.equal(card.querySelector(".wasla-live-screen-card__items").contains(shell.querySelector(".wasla-live-board-items__more")), false);
+
+    viewport.scrollHeight = 40;
+    viewport.clientHeight = 80;
+    h.browser.renderSnapshot(body);
+    assert.equal(shell.classList.contains("has-item-overflow"), false);
+    assert.equal(details.classList.contains("has-item-overflow"), false);
+
+    viewport.scrollHeight = 400;
+    viewport.clientHeight = 0;
+    h.browser.renderSnapshot(body);
+    assert.equal(shell.classList.contains("has-item-overflow"), false);
+
+    const names = ["A", "B", "C", "D", "E", "F", "G", "H"];
+    body.orders[0].items = names.map(name => ({ productName: name, quantity: 1, notes: "note " + name }));
+    viewport.scrollHeight = 400;
+    viewport.clientHeight = 80;
+    h.browser.renderSnapshot(body);
+    const longCard = h.card(guid(1));
+    assert.equal(longCard.querySelector(".wasla-live-board-items").classList.contains("has-item-overflow"), true);
+    assert.equal(longCard.querySelector(".wasla-live-screen-card__details").classList.contains("has-item-overflow"), true);
+    assert.deepEqual(longCard.querySelectorAll(".wasla-live-screen-card__product").map(node => node.textContent), names);
+    assert.deepEqual(longCard.querySelectorAll(".wasla-live-screen-card__note").map(node => node.textContent), names.map(name => "note " + name));
+
+    body.orders[0].items = [{ productName: "Lahmacun", quantity: 1, notes: null }];
+    longCard.querySelector(".wasla-live-board-items__viewport").scrollHeight = 30;
+    longCard.querySelector(".wasla-live-board-items__viewport").clientHeight = 80;
+    h.browser.renderSnapshot(body);
+    const shortCard = h.card(guid(1));
+    assert.equal(shortCard.querySelector(".wasla-live-board-items").classList.contains("has-item-overflow"), false);
+    assert.equal(shortCard.querySelector(".wasla-live-screen-card__details").classList.contains("has-item-overflow"), false);
+    assert.equal(shortCard.querySelector(".wasla-live-screen-card__product").textContent, "Lahmacun");
+
+    h.view("list");
+    h.browser.renderSnapshot(snapshot([guid(2)]));
+    const listCard = h.card(guid(2));
+    assert.equal(listCard.querySelector(".wasla-live-board-items"), null);
+    assert.equal(listCard.querySelector(".wasla-live-screen-card__details").classList.contains("has-item-overflow"), false);
+
+    const fs = require("fs");
+    const path = require("path");
+    const detail = fs.readFileSync(path.join(__dirname, "../../../src/Wasla.Web/Areas/Tenant/Views/Orders/_OrderDetailPanel.cshtml"), "utf8");
+    assert.match(detail, /@foreach \(var i in Model\.Items\)/);
+    assert.match(detail, /wasla-live-detail__product/);
+    assert.equal(detail.includes("wasla-live-board-items"), false);
+    const css = fs.readFileSync(path.join(__dirname, "../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8");
+    assert.match(css, /\.wasla-live-board \.wasla-live-board-items__viewport \{\s*max-height: 6\.75rem;\s*overflow: hidden;/);
+    assert.match(css, /\.wasla-live-board \.wasla-live-screen-card__details\.has-item-overflow \{\s*animation: wasla-board-details-nudge 2\.4s ease-in-out infinite;/);
+    assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.wasla-live-board \.wasla-live-screen-card__details\.has-item-overflow \{\s*animation: none;/);
   } finally { h.restore(); }
 });
 
@@ -1908,7 +2036,7 @@ test("Board order note stays separate and pulses only after the shared card high
     const css = require("node:fs").readFileSync(require.resolve("../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8");
     assert.match(css, /\.wasla-live-board \.wasla-live-board-order-note\s*\{[^}]*background:\s*#fff7ef/);
     assert.match(css, /\.wasla-live-board \.wasla-live-board-order-note__text\s*\{[^}]*font-size:\s*\.6875rem/);
-    assert.match(css, /\.wasla-live-board \.wasla-live-board-order-note__text\s*\{[^}]*-webkit-line-clamp:\s*4/);
+    assert.match(css, /\.wasla-live-board \.wasla-live-board-order-note__text\s*\{[^}]*-webkit-line-clamp:\s*2/);
     assert.match(css, /\.wasla-live-board \[data-order-note\]\.wasla-order-note-attention\s*\{[^}]*animation-name:\s*waslaOrderNoteAttention/);
     assert.equal(/\.wasla-live-board \.wasla-live-board-order-note\s*\{[^}]*(#0d6efd|#6ea8fe)/i.test(css), false);
   } finally { h.restore(); }
@@ -2178,7 +2306,13 @@ function paintFocusDetail(container, orderId) {
   const customer = document.createElement("p");
   customer.className = "wasla-live-detail__customer";
   customer.textContent = "Ada";
+  const factsList = document.createElement("dl");
+  factsList.className = "wasla-live-detail__fact-list";
+  const payment = document.createElement("div");
+  payment.setAttribute("data-payment-method", "");
+  factsList.appendChild(payment);
   facts.appendChild(customer);
+  facts.appendChild(factsList);
   body.appendChild(products);
   body.appendChild(facts);
   const actions = document.createElement("div");
@@ -2236,8 +2370,13 @@ test("Focus renders the order note apart from the item note and omits an empty n
     assert.equal(orderNote.contains(itemNote), false);
     assert.equal(itemNote.contains(orderNote), false);
     assert.equal(hasClass(orderNote, "wasla-live-detail__note"), false);
-    assert.equal(panel.querySelector(".wasla-live-detail__body").contains(orderNote), true);
-    assert.equal(panel.querySelector(".wasla-live-detail__facts").nextElementSibling, orderNote);
+    const facts = panel.querySelector(".wasla-live-detail__facts");
+    const paymentList = facts.querySelector(".wasla-live-detail__fact-list");
+    assert.equal(facts.contains(orderNote), true);
+    assert.equal(paymentList.nextElementSibling, orderNote);
+    assert.equal(paymentList.querySelector("[data-payment-method]").nextElementSibling, null);
+    assert.equal(panel.querySelector(".wasla-live-detail__products").contains(orderNote), false);
+    assert.equal(panel.querySelectorAll("[data-order-note]").length, 1);
     assert.equal(panel.querySelector(".wasla-live-detail__actions").contains(orderNote), false);
     assert.equal(hasClass(panel, "order-row-new"), false);
     assert.equal(hasClass(orderNote, "wasla-order-note-attention"), false);
@@ -2262,9 +2401,12 @@ test("Focus highlight finishes before the order-note pulse and selection does no
   assert.equal(/!important/.test(focusPulse[0]), false);
   assert.match(focusPulse[0], /animation-name:\s*waslaOrderNoteAttention/);
   assert.match(css, /\.wasla-live-focus \.wasla-live-focus-order-note__text\s*\{[^}]*font-size:\s*\.875rem/);
+  assert.match(css, /\.wasla-live-focus \.wasla-live-focus-order-note__text\s*\{[^}]*white-space:\s*normal/);
+  assert.equal(/\.wasla-live-focus \.wasla-live-focus-order-note__text\s*\{[^}]*-webkit-line-clamp/.test(css), false);
   assert.match(css, /\.wasla-live-focus \.wasla-live-focus-order-note\s*\{[^}]*border-inline-start:\s*3px solid #e0b48a/);
-  assert.match(css, /\.wasla-live-screen-host--focus \.wasla-live-detail\.order-row-new\.color-orange,[\s\S]*?background-color:\s*#ffe4d1/);
-  assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*\.wasla-live-screen-host--focus \.wasla-live-detail\.order-row-new\.behavior-pulse[\s\S]*animation:\s*none !important/);
+  assert.match(css, /\.wasla-live-screen-host--focus \.wasla-live-focus-entry\.order-row-new\.color-orange\s*\{[^}]*background-color:\s*#ffe4d1/);
+  assert.equal(css.includes(".wasla-live-detail.order-row-new"), false);
+  assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*\.wasla-live-screen-host--focus \.wasla-live-focus-entry\.order-row-new\.behavior-pulse[\s\S]*animation:\s*none !important/);
   const h = attentionHarness({
     clock: clock,
     highlightSeconds: 4,
@@ -2305,19 +2447,30 @@ test("Focus highlight finishes before the order-note pulse and selection does no
     const panel = h.host.querySelector(".wasla-live-detail");
     const note = panel.querySelector("[data-order-note]");
     assert.equal(panel.getAttribute("data-order-id"), fresh);
-    assert.equal(hasClass(panel, "order-row-new"), true);
-    assert.equal(hasClass(focusEntry(h.host, fresh), "order-row-new"), false);
+    assert.equal(hasClass(panel, "order-row-new"), false);
+    assert.equal(hasClass(panel, "color-orange"), false);
+    assert.equal(hasClass(panel, "behavior-pulse"), false);
+    assert.equal(hasClass(focusEntry(h.host, fresh), "order-row-new"), true);
+    assert.equal(hasClass(focusEntry(h.host, fresh), "color-orange"), true);
+    h.browser.selectOrder(existing, true);
+    await flush();
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(hasClass(focusEntry(h.host, fresh), "order-row-new"), true);
+    h.browser.selectOrder(fresh, true);
+    await flush();
     assert.equal(note.querySelector("[data-order-note-text]").textContent, "Güvenliğe teslim.");
     assert.equal(panel.querySelector(".wasla-live-detail__note").contains(note), false);
     assert.equal(hasClass(note, "wasla-order-note-attention"), false);
     assert.equal(h.browser.orderNoteAttentionState(fresh).phase, "idle");
 
     await clock.advance(4029);
-    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), true);
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(hasClass(focusEntry(h.host, fresh), "order-row-new"), true);
     assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
     await clock.advance(1);
     const started = h.browser.orderNoteAttentionState(fresh).endsAt;
     assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(hasClass(focusEntry(h.host, fresh), "order-row-new"), false);
     assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), true);
     assert.equal(started - clock.now(), 10000);
 
@@ -2428,7 +2581,8 @@ test("Focus reduced motion shows the order note without the pulse class", async 
     h.table.scheduleNewOrderHighlightCleanup();
     h.browser.selectOrder(fresh, true);
     await flush();
-    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), true);
+    assert.equal(hasClass(h.host.querySelector(".wasla-live-detail"), "order-row-new"), false);
+    assert.equal(hasClass(focusEntry(h.host, fresh), "order-row-new"), true);
     assert.equal(hasClass(h.host.querySelector("[data-order-note]"), "wasla-order-note-attention"), false);
     await clock.advance(2030);
     const block = h.host.querySelector("[data-order-note]");

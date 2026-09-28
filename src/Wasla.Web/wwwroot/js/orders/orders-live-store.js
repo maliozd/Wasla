@@ -436,6 +436,8 @@ function attachBrowser(O, global, api) {
   let detailGeneration = 0;
   let renderedSnapshot = null;
   let narrowMedia = null;
+  let boardOverflowObserver = null;
+  let boardOverflowResizeBound = false;
   const cardTimes = new WeakMap();
   const cardItems = new WeakMap();
   const lastTimings = {
@@ -681,19 +683,24 @@ function attachBrowser(O, global, api) {
     identity.appendChild(head);
     identity.appendChild(code);
 
+    const itemsShell = document.createElement("div");
+    itemsShell.className = "wasla-live-board-items";
+    const itemsViewport = document.createElement("div");
+    itemsViewport.className = "wasla-live-board-items__viewport";
     const items = document.createElement("ul");
     items.className = "wasla-live-screen-card__items list-unstyled";
     fillItems(items, order.items || []);
+    const itemsMore = document.createElement("p");
+    itemsMore.className = "wasla-live-board-items__more";
+    itemsMore.textContent = message("boardItemsMore");
+    itemsViewport.appendChild(items);
+    itemsShell.appendChild(itemsViewport);
+    itemsShell.appendChild(itemsMore);
 
     const totalRow = metaRow(message("ordersFullscreenTotal"), formatMoney(order.totalAmount), "data-total");
-    const receivedRow = metaRow(message("ordersFullscreenReceived"), formatReceived(order.receivedAtUtc, serverTimeUtc), "data-received");
-    receivedRow.setAttribute("data-received-row", "");
-    markReceivedDay(receivedRow, order.receivedAtUtc, serverTimeUtc);
     const secondary = document.createElement("div");
     secondary.className = "wasla-live-card__secondary";
     secondary.appendChild(totalRow);
-    secondary.appendChild(receivedRow);
-    syncBoardOrderNote(secondary, order);
 
     const actions = document.createElement("div");
     actions.className = "orders-card-actions wasla-orders-card__actions";
@@ -712,11 +719,12 @@ function attachBrowser(O, global, api) {
     actions.appendChild(details);
 
     body.appendChild(identity);
-    body.appendChild(items);
+    body.appendChild(itemsShell);
     body.appendChild(secondary);
     body.appendChild(actions);
     article.appendChild(imageWrap);
     article.appendChild(body);
+    syncBoardOrderNote(article, order);
     article.setAttribute("data-live-signature", api.orderContentSignature(order));
     cardItems.set(article, JSON.stringify(order.items || []));
     cardTimes.set(article, timeKey(order, serverTimeUtc));
@@ -941,12 +949,13 @@ function attachBrowser(O, global, api) {
   }
 
   function syncBoardOrderNote(root, order) {
-    const secondary = root.classList && root.classList.contains("wasla-live-card__secondary")
+    const card = root.getAttribute && root.getAttribute("data-live-layout") === "board"
       ? root
-      : root.querySelector(".wasla-live-card__secondary");
-    if (!secondary) return;
+      : (root.closest ? root.closest(".wasla-live-screen-card") : null);
+    const body = card && card.querySelector ? card.querySelector(".orders-card-body") : null;
+    if (!body) return;
     const note = orderNoteText(order);
-    let block = secondary.querySelector("[data-order-note]");
+    let block = body.querySelector("[data-order-note]");
     if (!note) {
       if (block) block.remove();
       return;
@@ -963,10 +972,11 @@ function attachBrowser(O, global, api) {
       text.setAttribute("data-order-note-text", "");
       block.appendChild(label);
       block.appendChild(text);
-      const total = secondary.querySelector("[data-total]");
-      const totalRow = total ? total.parentElement : null;
-      if (totalRow && totalRow.parentElement === secondary) secondary.insertBefore(block, totalRow);
-      else secondary.appendChild(block);
+    }
+    const items = body.querySelector(".wasla-live-board-items");
+    if (block.parentElement !== body || (items && block.nextElementSibling !== items)) {
+      if (items) body.insertBefore(block, items);
+      else body.appendChild(block);
     }
     const textEl = block.querySelector("[data-order-note-text]");
     if (textEl && textEl.textContent !== note) textEl.textContent = note;
@@ -1445,6 +1455,7 @@ function attachBrowser(O, global, api) {
   }
 
   function removeLivePresentations(host) {
+    releaseBoardOverflow(host);
     const loading = host.querySelector("[data-live-loading]");
     if (loading) loading.remove();
     Array.from(host.querySelectorAll(".wasla-live-board")).forEach(function (el) { el.remove(); });
@@ -1646,15 +1657,31 @@ function attachBrowser(O, global, api) {
       text.setAttribute("data-order-note-text", "");
       block.appendChild(label);
       block.appendChild(text);
-      const body = panel.querySelector(".wasla-live-detail__body");
-      const actions = panel.querySelector(".wasla-live-detail__actions");
-      if (body) body.appendChild(block);
-      else if (actions && actions.parentElement === panel) panel.insertBefore(block, actions);
-      else panel.appendChild(block);
+      placeFocusOrderNote(panel, block);
+    } else {
+      placeFocusOrderNote(panel, block);
     }
     const textEl = block.querySelector("[data-order-note-text]");
     if (textEl && textEl.textContent !== note) textEl.textContent = note;
     if (textEl) textEl.title = note;
+  }
+
+  function placeFocusOrderNote(panel, block) {
+    const facts = panel.querySelector(".wasla-live-detail__facts");
+    const list = facts && facts.querySelector(".wasla-live-detail__fact-list");
+    if (facts && list && list.parentElement === facts) {
+      if (list.nextElementSibling !== block) facts.insertBefore(block, list.nextSibling);
+      return;
+    }
+    if (facts) {
+      if (block.parentElement !== facts) facts.appendChild(block);
+      return;
+    }
+    const body = panel.querySelector(".wasla-live-detail__body");
+    const actions = panel.querySelector(".wasla-live-detail__actions");
+    if (body) body.appendChild(block);
+    else if (actions && actions.parentElement === panel) panel.insertBefore(block, actions);
+    else panel.appendChild(block);
   }
 
   function syncFocusOrderNoteFromSnapshot() {
@@ -1878,6 +1905,7 @@ function attachBrowser(O, global, api) {
     const focusedId = focusedEntry && focusedEntry.getAttribute("data-order-id");
     const loading = host.querySelector("[data-live-loading]");
     if (loading) loading.remove();
+    releaseBoardOverflow(host);
     Array.from(host.querySelectorAll(".wasla-live-board")).forEach(function (el) { el.remove(); });
     Array.from(host.querySelectorAll(".wasla-live-groups")).forEach(function (el) { el.remove(); });
     Array.from(host.querySelectorAll(".orders-card-grid")).forEach(function (el) { el.remove(); });
@@ -1994,6 +2022,66 @@ function attachBrowser(O, global, api) {
     return finishRender({ added: added, removed: removed, changed: changed, unchanged: unchanged, timeUpdates: timeUpdates, moved: moved });
   }
 
+  function boardItemsOverflow(viewport) {
+    const scroll = viewport.scrollHeight;
+    const client = viewport.clientHeight;
+    if (typeof scroll !== "number" || typeof client !== "number" || client <= 0) return null;
+    return scroll - client > 1;
+  }
+
+  function syncBoardItemOverflow(card) {
+    if (!card || card.getAttribute("data-live-layout") !== "board") return;
+    const shell = card.querySelector(".wasla-live-board-items");
+    const viewport = shell && shell.querySelector(".wasla-live-board-items__viewport");
+    if (!shell || !viewport) return;
+    const overflow = boardItemsOverflow(viewport);
+    if (overflow === null) return;
+    shell.classList.toggle("has-item-overflow", overflow);
+    const details = card.querySelector(".wasla-live-screen-card__details");
+    if (details) details.classList.toggle("has-item-overflow", overflow);
+  }
+
+  function watchBoardCardOverflow(card) {
+    if (!global.IntersectionObserver || !card) return;
+    if (!boardOverflowObserver) {
+      boardOverflowObserver = new global.IntersectionObserver(function (entries) {
+        for (let i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) syncBoardItemOverflow(entries[i].target);
+        }
+      });
+    }
+    boardOverflowObserver.observe(card);
+  }
+
+  function releaseBoardOverflow(root) {
+    if (!boardOverflowObserver || !root || typeof root.querySelectorAll !== "function") return;
+    const cards = root.querySelectorAll(".wasla-live-screen-card");
+    for (let i = 0; i < cards.length; i++) boardOverflowObserver.unobserve(cards[i]);
+  }
+
+  function syncBoardOverflow(host) {
+    if (!host) return;
+    const cards = host.querySelectorAll('.wasla-live-screen-card[data-live-layout="board"]');
+    for (let i = 0; i < cards.length; i++) {
+      syncBoardItemOverflow(cards[i]);
+      watchBoardCardOverflow(cards[i]);
+    }
+  }
+
+  function bindBoardOverflowResize() {
+    if (boardOverflowResizeBound || typeof global.addEventListener !== "function") return;
+    boardOverflowResizeBound = true;
+    let timer = 0;
+    global.addEventListener("resize", function () {
+      if (currentLayout() !== "board") return;
+      if (timer) global.clearTimeout(timer);
+      timer = global.setTimeout(function () {
+        timer = 0;
+        syncBoardOverflow(document.getElementById(hostId));
+      }, 80);
+    });
+  }
+
   function renderSnapshot(snapshot) {
     const host = document.getElementById(hostId);
     if (!host) return { added: 0, removed: 0, changed: 0, unchanged: 0 };
@@ -2056,6 +2144,7 @@ function attachBrowser(O, global, api) {
         card = createEntry(order);
         added += 1;
       } else if (card.getAttribute("data-live-layout") !== layout || !card.getAttribute("data-live-signature")) {
+        if (boardOverflowObserver) boardOverflowObserver.unobserve(card);
         const replacement = createEntry(order);
         card.replaceWith(replacement);
         card = replacement;
@@ -2083,6 +2172,7 @@ function attachBrowser(O, global, api) {
     let removed = 0;
     byId.forEach(function (card, id) {
       if (!seen.has(id)) {
+        if (boardOverflowObserver) boardOverflowObserver.unobserve(card);
         card.remove();
         removed += 1;
       }
@@ -2096,6 +2186,7 @@ function attachBrowser(O, global, api) {
       if (count.textContent !== text) count.textContent = text;
       column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0;
     });
+    if (layout === "board") syncBoardOverflow(host);
     // Reparenting or replacing an action button may blur it. Never steal focus
     // from a modal or a header control that was active when reconciliation began.
     if (focusedId && document.activeElement !== focused) {
@@ -2203,6 +2294,7 @@ function attachBrowser(O, global, api) {
     document.addEventListener("wasla:order-action-completed", onOrderAction);
   }
   bindNarrowWatcher();
+  bindBoardOverflowResize();
   if (O.table) {
     O.table.onRowHighlightEnded = function (orderId) {
       try {

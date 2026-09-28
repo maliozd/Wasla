@@ -4062,4 +4062,5 @@
   <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Произошла непредвиденная ошибка</value></data>
   <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>Операция не выполнена. Повторите попытку. Если ошибка повторится, сообщите в поддержку этот код.</value></data>
   <data name="Errors.ReferenceCode" xml:space="preserve"><value>Код обращения</value></data>
+  <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>Ещё позиции в деталях</value></data>
 </root>

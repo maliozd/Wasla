@@ -236,11 +236,21 @@
     }, delay);
   }
 
+  function isFocusWorkingSurface(node) {
+    return !!(node && node.closest && node.closest(".wasla-live-focus__panel"));
+  }
+
   function findNewOrderHighlightHost(container, id) {
     const selector = "[data-order-id=\"" + id + "\"]";
-    return container.querySelector(".wasla-live-detail" + selector)
-      || container.querySelector(".wasla-live-screen-card" + selector)
-      || container.querySelector(selector);
+    const focusEntry = container.querySelector(".wasla-live-focus-entry" + selector);
+    if (focusEntry) return focusEntry;
+    const detail = container.querySelector(".wasla-live-detail" + selector);
+    if (detail && !isFocusWorkingSurface(detail)) return detail;
+    const card = container.querySelector(".wasla-live-screen-card" + selector);
+    if (card) return card;
+    const fallback = container.querySelector(selector);
+    if (fallback && isFocusWorkingSurface(fallback)) return null;
+    return fallback;
   }
 
   function clearNewOrderHighlight(container, id, keep) {
@@ -276,7 +286,7 @@
     for (const entry of Array.from(T.recentlyNewOrderIds.entries())) {
       const id = entry[0];
       const exp = entry[1];
-      // List and Board keep the card. Focus prefers the open detail panel, then the queue entry.
+      // List and Board keep the card. Focus highlights the queue entry, not the working surface.
       const row = findNewOrderHighlightHost(container, id);
       if (exp <= now) {
         const nodes = container.querySelectorAll("[data-order-id=\"" + id + "\"]");

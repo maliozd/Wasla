@@ -4510,91 +4510,70 @@ body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--b
         animation: none !important;
     }
 }
-/* Focus has no card surface. The open detail is the operational highlight;
-   the queue entry is the fallback while another order is selected. */
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-yellow,
+/* Focus queue entries carry new-order attention. The selected-order panel stays neutral. */
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-yellow {
     background-color: #fff3cd;
     box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.85);
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-orange,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-orange {
     background-color: #ffe4d1;
     box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.75);
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-blue,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-blue {
     background-color: #dbeafe;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-green,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-green {
     background-color: #d1fae5;
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.7);
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-red,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-red {
     background-color: #fee2e2;
     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-custom,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-custom {
     background-color: var(--new-order-highlight-bg, #fff3cd);
     box-shadow: 0 0 0 2px var(--new-order-highlight-border, rgba(255, 193, 7, 0.85));
 }
-[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-yellow,
 [data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-yellow {
     background-color: rgba(245, 158, 11, 0.28);
     box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.72);
 }
-[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-orange,
 [data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-orange {
     background-color: rgba(242, 107, 58, 0.28);
     box-shadow: 0 0 0 2px rgba(242, 107, 58, 0.7);
 }
-[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-blue,
 [data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-blue {
     background-color: rgba(59, 130, 246, 0.28);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
 }
-[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-green,
 [data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-green {
     background-color: rgba(34, 197, 94, 0.28);
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.7);
 }
-[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.color-red,
 [data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-red {
     background-color: rgba(239, 68, 68, 0.28);
     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-fade,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-fade {
     animation: orderRowFadeBg 1.35s ease-in-out infinite !important;
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-pulse,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-pulse {
     animation: orderRowPulseBg 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-blink,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-blink {
     animation: orderRowBlinkBg 0.8s ease-in-out infinite !important;
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-border-glow,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-border-glow {
     animation: orderRowBorderGlow 1.2s ease-in-out infinite !important;
 }
-.wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-none,
 .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-none {
     animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-    .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-fade,
     .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-fade,
-    .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-pulse,
     .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-pulse,
-    .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-blink,
     .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-blink,
-    .wasla-live-screen-host--focus .wasla-live-detail.order-row-new.behavior-border-glow,
     .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-border-glow {
         animation: none !important;
     }
@@ -4631,6 +4610,24 @@ body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--b
     line-height: 1.3;
     overflow-wrap: anywhere;
 }
+.wasla-live-board .wasla-live-board-items__viewport {
+    max-height: 6.75rem;
+    overflow: hidden;
+}
+.wasla-live-board .wasla-live-board-items.has-item-overflow .wasla-live-board-items__viewport {
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent);
+}
+.wasla-live-board .wasla-live-board-items__more {
+    display: none;
+    margin: 2px 0 0;
+    font-size: .75rem;
+    line-height: 1.25;
+    color: var(--wasla-muted, #6c757d);
+}
+.wasla-live-board .wasla-live-board-items.has-item-overflow .wasla-live-board-items__more {
+    display: block;
+}
 .wasla-live-board .wasla-live-screen-card__items {
     margin: 0;
     padding: 0;
@@ -4654,34 +4651,18 @@ body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--b
     color: var(--wasla-text, inherit);
 }
 .wasla-live-board .wasla-live-card__secondary {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    justify-content: flex-end;
     align-items: baseline;
-    column-gap: 12px;
-    row-gap: 2px;
     font-size: .8125rem;
     color: color-mix(in srgb, var(--wasla-text, #212529) 68%, var(--wasla-muted, #6c757d));
 }
-.wasla-live-board .orders-card-meta__row:has([data-total]) { grid-column: 2; grid-row: 1; justify-self: end; margin: 0; }
-.wasla-live-board [data-received-row] { grid-column: 1; grid-row: 1; margin: 0; align-self: center; }
-.wasla-live-board .wasla-live-card__secondary:has([data-order-note]) [data-order-note] {
-    grid-column: 1 / -1;
-    grid-row: 1;
-}
-.wasla-live-board .wasla-live-card__secondary:has([data-order-note]) [data-received-row] {
-    grid-column: 1;
-    grid-row: 2;
-    align-self: center;
-}
-.wasla-live-board .wasla-live-card__secondary:has([data-order-note]) .orders-card-meta__row:has([data-total]) {
-    grid-column: 2;
-    grid-row: 2;
-    align-self: center;
-}
+.wasla-live-board .orders-card-meta__row:has([data-total]) { margin: 0; }
 .wasla-live-board .wasla-live-board-order-note {
     min-width: 0;
     max-width: 100%;
-    margin: 1px 0 0;
+    margin-block: 0;
+    margin-inline: 0;
     padding: .18rem .38rem;
     border: 1px solid #ead3b8;
     border-inline-start: 3px solid #e0b48a;
@@ -4707,7 +4688,7 @@ body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--b
     overflow-wrap: anywhere;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 2;
     overflow: hidden;
 }
 [data-bs-theme="dark"] .wasla-live-board .wasla-live-board-order-note {
@@ -4746,7 +4727,6 @@ body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--b
     color: var(--wasla-text, inherit);
     margin-inline-start: auto;
 }
-.wasla-live-board [data-same-day="true"] { display: none; }
 .wasla-live-board .orders-card-actions {
     display: flex;
     flex-wrap: wrap;
@@ -4791,6 +4771,23 @@ body.wasla-orders-live-display .wasla-live-board .btn.wasla-live-screen-card__de
 }
 .wasla-live-board .wasla-orders-actions .btn:disabled,
 .wasla-live-board .wasla-live-screen-card__details:disabled { min-height: 40px; }
+@keyframes wasla-board-details-nudge {
+    0%, 100% {
+        border-color: color-mix(in srgb, var(--wasla-text, #212529) 18%, var(--wasla-border));
+    }
+    50% {
+        border-color: color-mix(in srgb, var(--bs-primary, #0d6efd) 62%, var(--wasla-border));
+    }
+}
+.wasla-live-board .wasla-live-screen-card__details.has-item-overflow {
+    animation: wasla-board-details-nudge 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .wasla-live-board .wasla-live-screen-card__details.has-item-overflow {
+        animation: none;
+        border-color: color-mix(in srgb, var(--bs-primary, #0d6efd) 50%, var(--wasla-border));
+    }
+}
 .wasla-live-display-sound-active {
     display: inline-flex;
     align-items: center;
@@ -5785,10 +5782,10 @@ body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__d
 }
 
 .wasla-live-focus .wasla-live-focus-order-note {
-    grid-column: 1 / -1;
     min-width: 0;
     max-width: 100%;
-    margin: .15rem 0 0;
+    margin-block: .65rem 0;
+    margin-inline: 0;
     padding: .42rem .65rem;
     border: 1px solid #ead3b8;
     border-inline-start: 3px solid #e0b48a;
@@ -5812,10 +5809,7 @@ body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__d
     line-height: 1.35;
     color: #3f342c;
     overflow-wrap: anywhere;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 8;
-    overflow: hidden;
+    white-space: normal;
 }
 [data-bs-theme="dark"] .wasla-live-focus .wasla-live-focus-order-note {
     background: rgba(232, 184, 122, 0.12);
