@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Wasla.Application.GuidedSetup;
 using Wasla.Domain.Entities.Customer;
 
 namespace Wasla.Infrastructure.Persistence.Tenant.Configurations;
@@ -117,6 +118,35 @@ public class UserProductTourCompletionConfiguration : IEntityTypeConfiguration<U
         builder.HasIndex(completion => new { completion.UserId, completion.TourKey })
             .IsUnique()
             .HasDatabaseName("IX_UserProductTourCompletions_UserId_TourKey");
+    }
+}
+
+public static class UserGuidedSetupStateIndexes
+{
+    public const string User = "IX_UserGuidedSetupStates_UserId";
+}
+
+public class UserGuidedSetupStateConfiguration : IEntityTypeConfiguration<UserGuidedSetupState>
+{
+    public void Configure(EntityTypeBuilder<UserGuidedSetupState> builder)
+    {
+        builder.ToTable("UserGuidedSetupStates");
+        builder.HasKey(state => state.Id);
+        builder.Property(state => state.UserId).IsRequired();
+        builder.Property(state => state.Status).IsRequired();
+        builder.Property(state => state.CurrentSectionKey).HasMaxLength(GuidedSetupSections.MaxKeyLength);
+        builder.Property(state => state.CurrentStepKey).HasMaxLength(GuidedSetupSections.MaxKeyLength);
+
+        builder.HasOne(state => state.User)
+            .WithMany()
+            .HasForeignKey(state => state.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        // One row per user in this tenant database; concurrent first writes are resolved by the database.
+        builder.HasIndex(state => state.UserId)
+            .IsUnique()
+            .HasDatabaseName(UserGuidedSetupStateIndexes.User);
     }
 }
 
