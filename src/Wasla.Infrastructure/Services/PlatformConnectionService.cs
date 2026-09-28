@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Security;
@@ -76,7 +76,7 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         var storeId = (command.StoreId ?? string.Empty).Trim();
 
         var exists = await db.PlatformConnections
-            .AnyAsync(p => p.Platform == command.Platform && p.StoreId == storeId, ct);
+            .AnyAsync(p => p.Platform == command.Platform, ct);
         if (exists)
         {
             return new CreatePlatformConnectionResult
@@ -110,7 +110,10 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         };
 
         db.PlatformConnections.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var duplicate = await SaveOrPlatformDuplicateAsync(db, ct);
+        if (duplicate is not null)
+            return duplicate;
+
         return new CreatePlatformConnectionResult { Succeeded = true, Id = entity.Id };
     }
 
@@ -123,18 +126,20 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             return new CreatePlatformConnectionResult { Succeeded = false, ErrorCode = "NotFound", ErrorMessage = "Not found." };
         }
 
-        var storeId = (command.StoreId ?? string.Empty).Trim();
-        var exists = await db.PlatformConnections
-            .AnyAsync(p => p.Id != id && p.Platform == command.Platform && p.StoreId == storeId, ct);
-        if (exists)
+        // Platform identifies the connection row and is immutable after creation.
+        // A different posted platform must fail before any field is written, including
+        // when the target platform has no connection yet.
+        if (command.Platform != entity.Platform)
         {
             return new CreatePlatformConnectionResult
             {
                 Succeeded = false,
-                ErrorCode = "Duplicate",
+                ErrorCode = "PlatformImmutable",
                 ErrorMessage = null
             };
         }
+
+        var storeId = (command.StoreId ?? string.Empty).Trim();
 
         entity.StoreId = storeId;
         entity.IsActive = command.IsActive;
@@ -170,8 +175,31 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
 
         entity.EncryptionKeyVersion = keyVerMax;
 
-        await db.SaveChangesAsync(ct);
+        var duplicate = await SaveOrPlatformDuplicateAsync(db, ct);
+        if (duplicate is not null)
+            return duplicate;
+
         return new CreatePlatformConnectionResult { Succeeded = true, Id = entity.Id };
+    }
+
+    private static async Task<CreatePlatformConnectionResult?> SaveOrPlatformDuplicateAsync(
+        TenantDbContext db,
+        CancellationToken ct)
+    {
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            return null;
+        }
+        catch (DbUpdateException ex) when (PlatformConnectionUniqueViolation.IsPlatformUnique(ex))
+        {
+            return new CreatePlatformConnectionResult
+            {
+                Succeeded = false,
+                ErrorCode = "Duplicate",
+                ErrorMessage = null
+            };
+        }
     }
 
     public async Task<bool> SetActiveAsync(Guid customerId, Guid id, bool isActive, CancellationToken ct)

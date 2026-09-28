@@ -928,7 +928,7 @@
     <value>Henüz platform bağlantısı eklenmemiş.</value>
   </data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve">
-    <value>Bu platform ve mağaza kodu zaten tanımlı.</value>
+    <value>Bu platform için zaten bir bağlantı mevcut.</value>
   </data>
   <data name="PlatformConnections.Back" xml:space="preserve">
     <value>Geri</value>
@@ -2255,9 +2255,6 @@
   </data>
   <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
     <value>Platform bağlantısı durumu değiştirilemedi.</value>
-  </data>
-  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
-    <value>Aynı platform ve mağaza kodu ile başka bir bağlantı zaten mevcut.</value>
   </data>
   <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
     <value>Platform bağlantılarını yönetmek için Owner veya Manager rolü gerekir.</value>

@@ -1119,4 +1119,5 @@
   <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Beklenmeyen bir sorun oluştu</value></data>
   <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>İşlem tamamlanamadı. Lütfen yeniden deneyin. Sorun sürerse destek ekibine referans kodunu iletin.</value></data>
   <data name="Errors.ReferenceCode" xml:space="preserve"><value>Referans kodu</value></data>
+  <data name="PlatformConnections.DuplicateError" xml:space="preserve"><value>Bu platform için zaten bir bağlantı mevcut.</value></data>
 </root>

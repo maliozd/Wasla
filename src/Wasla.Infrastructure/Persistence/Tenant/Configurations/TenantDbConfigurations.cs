@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Wasla.Domain.Entities.Customer;
 
@@ -166,11 +166,10 @@ public class PlatformConnectionConfiguration : IEntityTypeConfiguration<Platform
         builder.Property(p => p.EncryptedApiKey).HasMaxLength(2000);
         builder.Property(p => p.EncryptedApiSecret).HasMaxLength(2000);
 
-        // One row per external store: duplicate Platform + StoreId is blocked.
-        // Same platform with a different StoreId is allowed (multiple stores).
-        builder.HasIndex(p => new { p.Platform, p.StoreId })
+        // One connection per platform. StoreId is provider configuration, not identity.
+        builder.HasIndex(p => p.Platform)
             .IsUnique()
-            .HasDatabaseName("IX_PlatformConnections_Platform_StoreId");
+            .HasDatabaseName("IX_PlatformConnections_Platform");
 
         builder.HasIndex(p => p.IsActive).HasDatabaseName("IX_PlatformConnections_IsActive");
         builder.HasIndex(p => p.LastSuccessfulSync).HasDatabaseName("IX_PlatformConnections_LastSuccessfulSync");

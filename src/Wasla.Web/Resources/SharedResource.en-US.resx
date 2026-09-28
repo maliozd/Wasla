@@ -928,7 +928,7 @@
     <value>No platform connections added yet.</value>
   </data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve">
-    <value>This platform and store id is already defined.</value>
+    <value>A connection already exists for this platform.</value>
   </data>
   <data name="PlatformConnections.Back" xml:space="preserve">
     <value>Back</value>
@@ -2258,9 +2258,6 @@
   </data>
   <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
     <value>Platform connection status could not be changed.</value>
-  </data>
-  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
-    <value>A connection with the same platform and store id already exists.</value>
   </data>
   <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
     <value>Owner or Manager role is required to manage platform connections.</value>

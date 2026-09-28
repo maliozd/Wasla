@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.PlatformConnections;
@@ -103,7 +103,7 @@ public sealed class PlatformConnectionsController : BaseController
         {
             if (string.Equals(result.ErrorCode, "Duplicate", StringComparison.OrdinalIgnoreCase))
             {
-                ModelState.AddModelError(nameof(EditPlatformConnectionViewModel.StoreId), _localizer["PlatformConnections.DuplicatePlatformStore"].Value);
+                ModelState.AddModelError(nameof(EditPlatformConnectionViewModel.Platform), _localizer["PlatformConnections.DuplicateError"].Value);
             }
             else
             {
@@ -130,19 +130,25 @@ public sealed class PlatformConnectionsController : BaseController
     }
 
     [HttpGet("create")]
-    public IActionResult Create()
+    public async Task<IActionResult> Create(CancellationToken ct)
     {
-        return View(new CreatePlatformConnectionViewModel());
+        var model = new CreatePlatformConnectionViewModel();
+        await PopulateConfiguredPlatformsAsync(model, ct);
+        return View(model);
     }
 
     [ValidateAntiForgeryToken]
     [HttpPost("create")]
     public async Task<IActionResult> Create(CreatePlatformConnectionViewModel model, CancellationToken ct)
     {
-        if (!ModelState.IsValid) return View(model);
-
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
+
+        if (!ModelState.IsValid)
+        {
+            await PopulateConfiguredPlatformsAsync(model, ct);
+            return View(model);
+        }
 
         var cmd = new CreatePlatformConnectionCommand(
             model.Platform,
@@ -158,6 +164,7 @@ public sealed class PlatformConnectionsController : BaseController
         {
             foreach (var e in validation.Errors)
                 ModelState.AddModelError(e.PropertyName, _localizer[e.ErrorMessage].Value);
+            await PopulateConfiguredPlatformsAsync(model, ct);
             return View(model);
         }
 
@@ -166,12 +173,13 @@ public sealed class PlatformConnectionsController : BaseController
         {
             if (string.Equals(result.ErrorCode, "Duplicate", StringComparison.OrdinalIgnoreCase))
             {
-                ModelState.AddModelError(nameof(CreatePlatformConnectionViewModel.StoreId), _localizer["PlatformConnections.DuplicatePlatformStore"].Value);
+                ModelState.AddModelError(nameof(CreatePlatformConnectionViewModel.Platform), _localizer["PlatformConnections.DuplicateError"].Value);
             }
             else
             {
                 ModelState.AddModelError(string.Empty, result.ErrorMessage ?? _localizer["PlatformConnections.CreateFailed"].Value);
             }
+            await PopulateConfiguredPlatformsAsync(model, ct);
             return View(model);
         }
 
@@ -191,6 +199,19 @@ public sealed class PlatformConnectionsController : BaseController
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
         return await SetActive(id, false, ct);
+    }
+
+    private async Task PopulateConfiguredPlatformsAsync(CreatePlatformConnectionViewModel model, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null)
+        {
+            model.ConfiguredPlatforms = [];
+            return;
+        }
+
+        var list = await _connections.GetListAsync(tenant.Id, ct);
+        model.ConfiguredPlatforms = list.Select(x => x.Platform).Distinct().ToArray();
     }
 
     private async Task<IActionResult> SetActive(Guid id, bool isActive, CancellationToken ct)

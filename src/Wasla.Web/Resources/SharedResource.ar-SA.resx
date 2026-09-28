@@ -928,7 +928,7 @@
     <value>لم تتم إضافة اتصالات منصات بعد.</value>
   </data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve">
-    <value>تم تعريف هذه المنصة ومعرّف المتجر مسبقًا.</value>
+    <value>يوجد اتصال بالفعل لهذه المنصة.</value>
   </data>
   <data name="PlatformConnections.Back" xml:space="preserve">
     <value>رجوع</value>
@@ -2258,9 +2258,6 @@
   </data>
   <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
     <value>تعذر تغيير حالة اتصال المنصة.</value>
-  </data>
-  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
-    <value>يوجد اتصال آخر بنفس المنصة ومعرّف المتجر.</value>
   </data>
   <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
     <value>يلزم دور Owner أو Manager لإدارة اتصالات المنصة.</value>

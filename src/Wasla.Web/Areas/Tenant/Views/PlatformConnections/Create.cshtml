@@ -1,4 +1,4 @@
-﻿@model Wasla.Web.Models.PlatformConnections.CreatePlatformConnectionViewModel
+@model Wasla.Web.Models.PlatformConnections.CreatePlatformConnectionViewModel
 @using Wasla.Domain.Enums
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
@@ -23,7 +23,15 @@
                     <select class="form-select" asp-for="Platform" id="platformSelect">
                         @foreach (var p in Enum.GetValues<FoodPlatform>())
                         {
-                            <option value="@p">@p</option>
+                            var alreadyConnected = Model.ConfiguredPlatforms.Contains(p);
+                            if (alreadyConnected)
+                            {
+                                <option value="@p" disabled>@p — @L["PlatformConnections.DuplicateError"]</option>
+                            }
+                            else
+                            {
+                                <option value="@p">@p</option>
+                            }
                         }
                     </select>
                     <span class="text-danger" asp-validation-for="Platform"></span>

@@ -416,7 +416,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             {
                 builder.ToTable("PlatformConnections");
                 builder.HasKey(x => x.Id);
-                builder.HasIndex(x => new { x.Platform, x.StoreId }).IsUnique();
+                builder.HasIndex(x => x.Platform).IsUnique();
             });
 
             modelBuilder.Entity<Order>(builder =>

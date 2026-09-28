@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Web.Models.PlatformConnections;
@@ -30,5 +30,7 @@ public sealed class CreatePlatformConnectionViewModel
     [Display(Name = "PlatformConnections.ExecutorEmail")]
     [EmailAddress(ErrorMessage = "Validation.ExecutorEmailInvalid")]
     public string? ExecutorEmail { get; set; }
+
+    public IReadOnlyList<FoodPlatform> ConfiguredPlatforms { get; set; } = [];
 }
 

@@ -928,7 +928,7 @@
     <value>Подключения к платформе пока не добавлены.</value>
   </data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve">
-    <value>Эта платформа и идентификатор магазина уже определены.</value>
+    <value>Для этой платформы подключение уже существует.</value>
   </data>
   <data name="PlatformConnections.Back" xml:space="preserve">
     <value>Назад</value>
@@ -2258,9 +2258,6 @@
   </data>
   <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
     <value>Статус подключения платформы не удалось изменить.</value>
-  </data>
-  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
-    <value>Соединение с той же платформой и идентификатором магазина уже существует.</value>
   </data>
   <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
     <value>Для управления подключениями к платформе необходима роль владельца или менеджера.</value>
