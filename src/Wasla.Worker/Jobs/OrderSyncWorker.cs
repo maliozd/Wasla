@@ -229,6 +229,7 @@ public sealed class OrderSyncWorker : BackgroundService
                 totals.FetchedCount,
                 totals.InsertedCount,
                 totals.UpdatedCount,
+                totals.UnchangedCount,
                 totals.FailedConnections,
                 elapsedMs);
         }

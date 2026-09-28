@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -9,11 +10,20 @@ using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Diagnostics;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo;
 
 public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 {
+    /// <summary>Provider page size. Matches the historical packages request.</summary>
+    internal const int FetchPageSize = 50;
+
+    /// <summary>
+    /// Defensive cap. Twenty pages cover 1,000 packages in the one-hour fetch window.
+    /// </summary>
+    internal const int MaxFetchPages = 20;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -55,38 +65,170 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         if (string.IsNullOrWhiteSpace(supplierId))
             throw new InvalidOperationException("SupplierId could not be resolved (SupplierId and StoreId are empty)");
 
+        var sinceMs = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeMilliseconds();
+        var collected = new List<ExternalOrderDto>();
+        var seenPackages = new Dictionary<string, string>(StringComparer.Ordinal);
+        int? previousTotalPages = null;
+        var pagesFetched = 0;
+        var swAll = Stopwatch.StartNew();
+
+        for (var pageIndex = 0; pageIndex < MaxFetchPages; pageIndex++)
+        {
+            ct.ThrowIfCancellationRequested();
+            var page = await FetchPackagePageAsync(connection, supplierId, sinceMs, pageIndex, ct);
+            pagesFetched++;
+
+            if (page.TotalPages is < 0 || page.TotalCount is < 0 || page.Page is < 0)
+                throw PaginationFault("invalid pagination metadata", pagesFetched, collected.Count, page.TotalPages);
+
+            if (page.Page is int echoedPage && echoedPage != pageIndex)
+                throw PaginationFault("response page did not advance", pagesFetched, collected.Count, page.TotalPages);
+
+            var content = page.Content ?? [];
+            _logger.LogDebug(
+                "Provider page fetched. Provider={Provider} Operation={Operation} Page={Page} PageCount={PageCount} PageSize={PageSize} ReportedTotalPages={ReportedTotalPages}",
+                "TrendyolGo",
+                "FetchOrders",
+                pageIndex,
+                content.Count,
+                FetchPageSize,
+                page.TotalPages);
+
+            if (content.Count == 0)
+            {
+                if (ClaimsFurtherPages(page.TotalPages, previousTotalPages, pageIndex))
+                    throw PaginationFault("empty page while more pages were reported", pagesFetched, collected.Count, page.TotalPages ?? previousTotalPages);
+
+                break;
+            }
+
+            AddPackages(content, collected, seenPackages, pagesFetched);
+
+            if (!HasAnotherPage(page.TotalPages, pageIndex, content.Count, FetchPageSize))
+                break;
+
+            if (pageIndex + 1 >= MaxFetchPages)
+                throw PaginationFault("page cap reached while more pages were reported", pagesFetched, collected.Count, page.TotalPages ?? previousTotalPages);
+
+            previousTotalPages = page.TotalPages ?? previousTotalPages;
+        }
+
+        swAll.Stop();
+        _logger.LogDebug(
+            "Provider fetch completed. Provider={Provider} Operation={Operation} PagesFetched={PagesFetched} OrdersFetched={OrdersFetched} ElapsedMs={ElapsedMs}",
+            "TrendyolGo",
+            "FetchOrders",
+            pagesFetched,
+            collected.Count,
+            swAll.ElapsedMilliseconds);
+
+        return collected;
+    }
+
+    private async Task<TrendyolGoPackagesResponse> FetchPackagePageAsync(
+        PlatformConnection connection,
+        string supplierId,
+        long sinceMs,
+        int pageIndex,
+        CancellationToken ct)
+    {
         var query = new List<string>
         {
             "packageStatuses=Created,Picking,Invoiced,Shipped",
-            "size=50",
-            "page=0"
+            $"size={FetchPageSize}",
+            $"page={pageIndex}"
         };
 
         if (!string.IsNullOrWhiteSpace(connection.StoreId))
             query.Add($"storeId={Uri.EscapeDataString(connection.StoreId)}");
 
-        var sinceMs = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeMilliseconds();
         query.Add($"packageModificationStartDate={sinceMs}");
 
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages?{string.Join("&", query)}";
-
         using var req = await BuildRequestAsync(HttpMethod.Get, path, connection, supplierId, ct);
+        var sw = Stopwatch.StartNew();
         using var resp = await _httpClient.SendAsync(req, ct);
+        sw.Stop();
 
         if (!resp.IsSuccessStatusCode)
-        {
-            var body = await resp.Content.ReadAsStringAsync(ct);
-            throw new HttpRequestException(
-                $"TrendyolGo fetch failed: {(int)resp.StatusCode} {resp.StatusCode}. Body: {Truncate(body, 500)}",
-                null,
-                resp.StatusCode);
-        }
+            throw ProviderFailure("TrendyolGo", "FetchOrders", resp, sw.ElapsedMilliseconds, externalOrderId: null);
 
         await using var stream = await resp.Content.ReadAsStreamAsync(ct);
-        var page = await JsonSerializer.DeserializeAsync<TrendyolGoPackagesResponse>(stream, JsonOptions, ct);
-        if (page?.Content is null || page.Content.Count == 0) return Array.Empty<ExternalOrderDto>();
+        return await JsonSerializer.DeserializeAsync<TrendyolGoPackagesResponse>(stream, JsonOptions, ct)
+            ?? new TrendyolGoPackagesResponse();
+    }
 
-        return page.Content.Select(p => MapToExternalOrderDto(p)).ToList();
+    private void AddPackages(
+        List<TrendyolGoPackage> content,
+        List<ExternalOrderDto> collected,
+        Dictionary<string, string> seenPackages,
+        int pagesFetched)
+    {
+        foreach (var package in content)
+        {
+            var dto = MapToExternalOrderDto(package);
+            if (string.IsNullOrWhiteSpace(dto.ExternalOrderId))
+            {
+                collected.Add(dto);
+                continue;
+            }
+
+            var signature = PackageSignature(dto);
+            if (seenPackages.TryGetValue(dto.ExternalOrderId, out var existing))
+            {
+                if (!string.Equals(existing, signature, StringComparison.Ordinal))
+                {
+                    throw PaginationFault(
+                        "conflicting duplicate package",
+                        pagesFetched,
+                        ordersFetched: collected.Count,
+                        reportedTotalPages: null);
+                }
+
+                _logger.LogDebug(
+                    "Duplicate package skipped. Provider={Provider} Operation={Operation} ExternalOrderId={ExternalOrderId}",
+                    "TrendyolGo",
+                    "FetchOrders",
+                    dto.ExternalOrderId);
+                continue;
+            }
+
+            seenPackages[dto.ExternalOrderId] = signature;
+            collected.Add(dto);
+        }
+    }
+
+    private static string PackageSignature(ExternalOrderDto dto) =>
+        string.Join('\u001f', dto.ExternalStatus, dto.Total.ToString(System.Globalization.CultureInfo.InvariantCulture), dto.CustomerNote, dto.Items.Count);
+
+    private static bool HasAnotherPage(int? totalPages, int pageIndex, int count, int pageSize)
+    {
+        if (totalPages is > 0)
+            return pageIndex + 1 < totalPages.Value;
+
+        return count >= pageSize;
+    }
+
+    private static bool ClaimsFurtherPages(int? totalPages, int? previousTotalPages, int pageIndex)
+    {
+        if (totalPages is > 0)
+            return pageIndex + 1 < totalPages.Value;
+
+        return previousTotalPages is > 0 && pageIndex + 1 < previousTotalPages.Value;
+    }
+
+    private InvalidOperationException PaginationFault(string reason, int pagesFetched, int ordersFetched, int? reportedTotalPages)
+    {
+        _logger.LogWarning(
+            "Provider pagination failed. Provider={Provider} Operation={Operation} Reason={Reason} PagesFetched={PagesFetched} OrdersFetched={OrdersFetched} ReportedTotalPages={ReportedTotalPages}",
+            "TrendyolGo",
+            "FetchOrders",
+            reason,
+            pagesFetched,
+            ordersFetched,
+            reportedTotalPages);
+        return new InvalidOperationException(
+            $"TrendyolGo FetchOrders pagination failed: {reason}. PagesFetched={pagesFetched}.");
     }
 
     public async Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
@@ -95,8 +237,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/picked";
         using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { packageId = externalOrderId, preparationTime = preparationMinutes }, options: JsonOptions);
-        using var resp = await _httpClient.SendAsync(req, ct);
-        await EnsureSuccessAsync(resp, "AcceptOrder", externalOrderId, ct);
+        await SendAndEnsureSuccessAsync(req, "AcceptOrder", externalOrderId, ct);
     }
 
     public async Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
@@ -105,8 +246,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/invoiced";
         using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { packageId = externalOrderId, actualDate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }, options: JsonOptions);
-        using var resp = await _httpClient.SendAsync(req, ct);
-        await EnsureSuccessAsync(resp, "MarkInvoiced", externalOrderId, ct);
+        await SendAndEnsureSuccessAsync(req, "MarkInvoiced", externalOrderId, ct);
     }
 
     public async Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
@@ -115,8 +255,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/{externalOrderId}/manual-shipped";
         using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { actualDate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }, options: JsonOptions);
-        using var resp = await _httpClient.SendAsync(req, ct);
-        await EnsureSuccessAsync(resp, "MarkShipped", externalOrderId, ct);
+        await SendAndEnsureSuccessAsync(req, "MarkShipped", externalOrderId, ct);
     }
 
     public async Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
@@ -125,8 +264,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/{externalOrderId}/manual-delivered";
         using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { actualDate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }, options: JsonOptions);
-        using var resp = await _httpClient.SendAsync(req, ct);
-        await EnsureSuccessAsync(resp, "MarkDelivered", externalOrderId, ct);
+        await SendAndEnsureSuccessAsync(req, "MarkDelivered", externalOrderId, ct);
     }
 
     public async Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct)
@@ -135,8 +273,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/unsupplied";
         using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
         req.Content = JsonContent.Create(new { packageId = externalOrderId, itemIdList, reasonId }, options: JsonOptions);
-        using var resp = await _httpClient.SendAsync(req, ct);
-        await EnsureSuccessAsync(resp, "RejectOrder", externalOrderId, ct);
+        await SendAndEnsureSuccessAsync(req, "RejectOrder", externalOrderId, ct);
     }
 
     private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string path, PlatformConnection connection, string supplierId, CancellationToken ct)
@@ -300,25 +437,47 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         return string.Join(", ", parts);
     }
 
-    private async Task EnsureSuccessAsync(HttpResponseMessage resp, string operation, string externalOrderId, CancellationToken ct)
+    private async Task SendAndEnsureSuccessAsync(
+        HttpRequestMessage request,
+        string operation,
+        string? externalOrderId,
+        CancellationToken ct)
     {
-        if (resp.IsSuccessStatusCode) return;
-        var body = await resp.Content.ReadAsStringAsync(ct);
-        var msg = $"TrendyolGo {operation} failed for package {externalOrderId}: {(int)resp.StatusCode}. Body: {Truncate(body, 500)}";
-        _logger.LogError("{Message}", msg);
-        throw new HttpRequestException(msg, null, resp.StatusCode);
+        var sw = Stopwatch.StartNew();
+        using var resp = await _httpClient.SendAsync(request, ct);
+        sw.Stop();
+        if (resp.IsSuccessStatusCode)
+            return;
+
+        throw ProviderFailure("TrendyolGo", operation, resp, sw.ElapsedMilliseconds, externalOrderId);
     }
 
-    private static string Truncate(string s, int maxLen) => string.IsNullOrEmpty(s) ? string.Empty : (s.Length <= maxLen ? s : s[..maxLen]);
+    private ProviderRequestException ProviderFailure(
+        string provider,
+        string operation,
+        HttpResponseMessage response,
+        long elapsedMs,
+        string? externalOrderId)
+    {
+        var statusCode = (int)response.StatusCode;
+        _logger.LogWarning(
+            "Provider request failed. Provider={Provider} Operation={Operation} StatusCode={StatusCode} ElapsedMs={ElapsedMs} ExternalOrderId={ExternalOrderId}",
+            provider,
+            operation,
+            statusCode,
+            elapsedMs,
+            externalOrderId);
+        return new ProviderRequestException(provider, operation, statusCode);
+    }
 
     // ---- internal DTOs (minimal) ----
 
     private sealed class TrendyolGoPackagesResponse
     {
-        public int Page { get; set; }
-        public int Size { get; set; }
-        public int TotalPages { get; set; }
-        public int TotalCount { get; set; }
+        public int? Page { get; set; }
+        public int? Size { get; set; }
+        public int? TotalPages { get; set; }
+        public int? TotalCount { get; set; }
         public List<TrendyolGoPackage>? Content { get; set; }
     }
 

@@ -11,6 +11,7 @@ using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Diagnostics;
 
 namespace Wasla.Infrastructure.Platform.Yemeksepeti;
 
@@ -21,6 +22,12 @@ namespace Wasla.Infrastructure.Platform.Yemeksepeti;
 /// </summary>
 public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
 {
+    /// <summary>
+    /// Defensive cap. Fifty pages at the default page size of 20 cover 1,000 orders
+    /// in the one-hour fetch window.
+    /// </summary>
+    internal const int MaxFetchPages = 50;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -97,61 +104,177 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
                 $"Yemeksepeti credentials (clientId/clientSecret) are missing for PlatformConnection {connection.Id}.");
 
         var token = await GetOrRefreshTokenAsync(clientId, clientSecret, ct);
-        return await FetchOrdersWithTokenAsync(chainId, vendorId, token, connection.Id, ct);
+        return await FetchOrdersWithTokenAsync(chainId, vendorId, token, ct);
     }
 
     private async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersWithTokenAsync(
-        string chainId, string vendorId, string token, Guid connectionId, CancellationToken ct)
+        string chainId, string vendorId, string token, CancellationToken ct)
     {
         var pageSize = _options.DefaultPageSize;
+        if (pageSize <= 0)
+            throw new InvalidOperationException("Yemeksepeti DefaultPageSize must be positive.");
+
         var now = DateTimeOffset.UtcNow;
         // TODO: Use sync window from connection's LastSuccessfulSync if available; for now use a safe 1-hour lookback.
         var startTime = now.AddHours(-1).ToUnixTimeMilliseconds();
-        var endTime   = now.ToUnixTimeMilliseconds();
+        var endTime = now.ToUnixTimeMilliseconds();
 
-        // TODO: Confirm exact orders endpoint path with Yemeksepeti Partner API docs.
-        // Documented shape: GET /v2/chains/{chainId}/vendors/{vendorId}/orders
-        var path = $"/v2/chains/{Uri.EscapeDataString(chainId)}/vendors/{Uri.EscapeDataString(vendorId)}/orders" +
-                   $"?start_time={startTime}&end_time={endTime}&page_size={pageSize}&page=0";
-
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Yemeksepeti fetch started. ChainId={ChainId} VendorId={VendorId} StartTime={Start} EndTime={End} PageSize={PageSize}",
             chainId, vendorId, startTime, endTime, pageSize);
 
-        var sw = Stopwatch.StartNew();
+        var collected = new List<ExternalOrderDto>();
+        var seenOrders = new Dictionary<string, string>(StringComparer.Ordinal);
+        int? previousTotalPages = null;
+        var pagesFetched = 0;
+        var swAll = Stopwatch.StartNew();
+
+        for (var pageIndex = 0; pageIndex < MaxFetchPages; pageIndex++)
+        {
+            ct.ThrowIfCancellationRequested();
+            var page = await FetchOrderPageAsync(chainId, vendorId, token, startTime, endTime, pageSize, pageIndex, ct);
+            pagesFetched++;
+
+            if (page.TotalPages is < 0 || page.TotalCount is < 0 || page.Page is < 0)
+                throw PaginationFault("invalid pagination metadata", pagesFetched, collected.Count, page.TotalPages);
+
+            if (page.Page is int echoedPage && echoedPage != pageIndex)
+                throw PaginationFault("response page did not advance", pagesFetched, collected.Count, page.TotalPages);
+
+            var data = page.Data ?? [];
+            _logger.LogDebug(
+                "Provider page fetched. Provider={Provider} Operation={Operation} Page={Page} PageCount={PageCount} PageSize={PageSize} ReportedTotalPages={ReportedTotalPages}",
+                "Yemeksepeti",
+                "FetchOrders",
+                pageIndex,
+                data.Count,
+                pageSize,
+                page.TotalPages);
+
+            if (data.Count == 0)
+            {
+                if (ClaimsFurtherPages(page.TotalPages, previousTotalPages, pageIndex))
+                    throw PaginationFault("empty page while more pages were reported", pagesFetched, collected.Count, page.TotalPages ?? previousTotalPages);
+
+                break;
+            }
+
+            AddOrders(data, collected, seenOrders, pagesFetched);
+
+            if (!HasAnotherPage(page.TotalPages, pageIndex, data.Count, pageSize))
+                break;
+
+            if (pageIndex + 1 >= MaxFetchPages)
+                throw PaginationFault("page cap reached while more pages were reported", pagesFetched, collected.Count, page.TotalPages ?? previousTotalPages);
+
+            previousTotalPages = page.TotalPages ?? previousTotalPages;
+        }
+
+        swAll.Stop();
+        _logger.LogDebug(
+            "Yemeksepeti fetch completed. ChainId={ChainId} VendorId={VendorId} PagesFetched={PagesFetched} OrdersFetched={OrdersFetched} Count={Count} ElapsedMs={ElapsedMs}",
+            chainId, vendorId, pagesFetched, collected.Count, collected.Count, swAll.ElapsedMilliseconds);
+
+        return collected;
+    }
+
+    private async Task<YemeksepetiOrdersResponse> FetchOrderPageAsync(
+        string chainId,
+        string vendorId,
+        string token,
+        long startTime,
+        long endTime,
+        int pageSize,
+        int pageIndex,
+        CancellationToken ct)
+    {
+        // TODO: Confirm exact orders endpoint path with Yemeksepeti Partner API docs.
+        // Documented shape: GET /v2/chains/{chainId}/vendors/{vendorId}/orders
+        var path = $"/v2/chains/{Uri.EscapeDataString(chainId)}/vendors/{Uri.EscapeDataString(vendorId)}/orders" +
+                   $"?start_time={startTime}&end_time={endTime}&page_size={pageSize}&page={pageIndex}";
 
         using var req = new HttpRequestMessage(HttpMethod.Get, path);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+        var sw = Stopwatch.StartNew();
         using var resp = await _httpClient.SendAsync(req, ct);
         sw.Stop();
 
         if (!resp.IsSuccessStatusCode)
-        {
-            var body = await resp.Content.ReadAsStringAsync(ct);
-            _logger.LogError(
-                "Yemeksepeti fetch failed. ChainId={ChainId} VendorId={VendorId} StatusCode={StatusCode} Body={Body}",
-                chainId, vendorId, (int)resp.StatusCode, Truncate(body, 500));
-            throw new HttpRequestException(
-                $"Yemeksepeti fetch failed: {(int)resp.StatusCode} {resp.StatusCode}",
-                null,
-                resp.StatusCode);
-        }
+            throw LogProviderFailure("Yemeksepeti", "FetchOrders", (int)resp.StatusCode, sw.ElapsedMilliseconds);
 
         await using var stream = await resp.Content.ReadAsStreamAsync(ct);
-        var page = await JsonSerializer.DeserializeAsync<YemeksepetiOrdersResponse>(stream, JsonOptions, ct);
+        return await JsonSerializer.DeserializeAsync<YemeksepetiOrdersResponse>(stream, JsonOptions, ct)
+            ?? new YemeksepetiOrdersResponse();
+    }
 
-        var orders = page?.Data ?? [];
+    private void AddOrders(
+        List<YemeksepetiOrder> data,
+        List<ExternalOrderDto> collected,
+        Dictionary<string, string> seenOrders,
+        int pagesFetched)
+    {
+        foreach (var order in data)
+        {
+            var dto = MapToExternalOrderDto(order);
+            if (string.IsNullOrWhiteSpace(dto.ExternalOrderId))
+            {
+                collected.Add(dto);
+                continue;
+            }
 
-        _logger.LogInformation(
-            "Yemeksepeti fetch completed. ChainId={ChainId} VendorId={VendorId} Count={Count} ElapsedMs={ElapsedMs}",
-            chainId, vendorId, orders.Count, sw.ElapsedMilliseconds);
+            var signature = string.Join(
+                '\u001f',
+                dto.ExternalStatus,
+                dto.Total.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                dto.CustomerNote,
+                dto.Items.Count);
+            if (seenOrders.TryGetValue(dto.ExternalOrderId, out var existing))
+            {
+                if (!string.Equals(existing, signature, StringComparison.Ordinal))
+                    throw PaginationFault("conflicting duplicate order", pagesFetched, collected.Count, null);
 
-        if (orders.Count == 0)
-            return [];
+                _logger.LogDebug(
+                    "Duplicate order skipped. Provider={Provider} Operation={Operation} ExternalOrderId={ExternalOrderId}",
+                    "Yemeksepeti",
+                    "FetchOrders",
+                    dto.ExternalOrderId);
+                continue;
+            }
 
-        // TODO: Page through results if total_pages > 1 and abstraction requires it.
-        return orders.Select(o => MapToExternalOrderDto(o)).ToList();
+            seenOrders[dto.ExternalOrderId] = signature;
+            collected.Add(dto);
+        }
+    }
+
+    private static bool HasAnotherPage(int? totalPages, int pageIndex, int count, int pageSize)
+    {
+        if (totalPages is > 0)
+            return pageIndex + 1 < totalPages.Value;
+
+        return count >= pageSize;
+    }
+
+    private static bool ClaimsFurtherPages(int? totalPages, int? previousTotalPages, int pageIndex)
+    {
+        if (totalPages is > 0)
+            return pageIndex + 1 < totalPages.Value;
+
+        return previousTotalPages is > 0 && pageIndex + 1 < previousTotalPages.Value;
+    }
+
+    private InvalidOperationException PaginationFault(string reason, int pagesFetched, int ordersFetched, int? reportedTotalPages)
+    {
+        _logger.LogWarning(
+            "Provider pagination failed. Provider={Provider} Operation={Operation} Reason={Reason} PagesFetched={PagesFetched} OrdersFetched={OrdersFetched} ReportedTotalPages={ReportedTotalPages}",
+            "Yemeksepeti",
+            "FetchOrders",
+            reason,
+            pagesFetched,
+            ordersFetched,
+            reportedTotalPages);
+        return new InvalidOperationException(
+            $"Yemeksepeti FetchOrders pagination failed: {reason}. PagesFetched={pagesFetched}.");
     }
 
     // ── Token handling ────────────────────────────────────────────────────────
@@ -178,19 +301,20 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
             Content = new FormUrlEncodedContent(form)
         };
 
+        var sw = Stopwatch.StartNew();
         using var resp = await _httpClient.SendAsync(req, ct);
+        sw.Stop();
 
         if (!resp.IsSuccessStatusCode)
         {
-            var body = await resp.Content.ReadAsStringAsync(ct);
-            // Never log clientId/clientSecret in full — log only masked clientId.
-            _logger.LogError(
-                "Yemeksepeti token request failed. MaskedClientId={MaskedClientId} StatusCode={StatusCode} Body={Body}",
-                MaskClientId(clientId), (int)resp.StatusCode, Truncate(body, 500));
-            throw new HttpRequestException(
-                $"Yemeksepeti token request failed: {(int)resp.StatusCode} {resp.StatusCode}",
-                null,
-                resp.StatusCode);
+            _logger.LogWarning(
+                "Provider request failed. Provider={Provider} Operation={Operation} StatusCode={StatusCode} ElapsedMs={ElapsedMs} MaskedClientId={MaskedClientId}",
+                "Yemeksepeti",
+                "Token",
+                (int)resp.StatusCode,
+                sw.ElapsedMilliseconds,
+                MaskClientId(clientId));
+            throw new ProviderRequestException("Yemeksepeti", "Token", (int)resp.StatusCode);
         }
 
         await using var stream = await resp.Content.ReadAsStreamAsync(ct);
@@ -336,8 +460,16 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
         return clientId[..4] + new string('*', Math.Min(clientId.Length - 4, 8));
     }
 
-    private static string Truncate(string s, int max)
-        => string.IsNullOrEmpty(s) ? string.Empty : s.Length <= max ? s : s[..max];
+    private ProviderRequestException LogProviderFailure(string provider, string operation, int statusCode, long elapsedMs)
+    {
+        _logger.LogWarning(
+            "Provider request failed. Provider={Provider} Operation={Operation} StatusCode={StatusCode} ElapsedMs={ElapsedMs}",
+            provider,
+            operation,
+            statusCode,
+            elapsedMs);
+        return new ProviderRequestException(provider, operation, statusCode);
+    }
 
     // ── Token cache entry ─────────────────────────────────────────────────────
 
