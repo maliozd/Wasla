@@ -11,5 +11,5 @@ namespace Wasla.Web.Areas.Tenant.Controllers;
 public sealed class OnboardingController : Controller
 {
     [HttpGet("")]
-    public IActionResult Index() => View();
+    public IActionResult Index() => Redirect("/dashboard");
 }

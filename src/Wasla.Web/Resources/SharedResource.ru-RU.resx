@@ -4062,5 +4062,48 @@
   <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Произошла непредвиденная ошибка</value></data>
   <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>Операция не выполнена. Повторите попытку. Если ошибка повторится, сообщите в поддержку этот код.</value></data>
   <data name="Errors.ReferenceCode" xml:space="preserve"><value>Код обращения</value></data>
+  <data name="Setup.Title" xml:space="preserve"><value>Подготовьте Wasla к работе</value></data>
+  <data name="Setup.Progress" xml:space="preserve"><value>Выполнено {0} из {1}</value></data>
+  <data name="Setup.ProgressLabel" xml:space="preserve"><value>Ход настройки</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Прогресс считает обязательные шаги. Принтер необязателен и не мешает готовности.</value></data>
+  <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla готова</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Платформа заказов подключена, операционный экран готов к работе.</value></data>
+  <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Открыть Live Screen</value></data>
+  <data name="Setup.AddTeamMember" xml:space="preserve"><value>Добавить сотрудника</value></data>
+  <data name="Setup.FinishSetup" xml:space="preserve"><value>Завершить настройку</value></data>
+  <data name="Setup.GuidanceCompleted" xml:space="preserve"><value>Подсказка по настройке завершена.</value></data>
+  <data name="Setup.GuidanceCompleteFailed" xml:space="preserve"><value>Не удалось завершить настройку. Повторите попытку.</value></data>
+  <data name="Setup.NextStepLabel" xml:space="preserve"><value>Следующий шаг</value></data>
+  <data name="Setup.NextStepBody" xml:space="preserve"><value>Добавьте команду и назначьте права.</value></data>
+  <data name="Setup.Optional" xml:space="preserve"><value>Необязательно</value></data>
+  <data name="Setup.StatusComplete" xml:space="preserve"><value>Готово</value></data>
+  <data name="Setup.StatusIncomplete" xml:space="preserve"><value>Не готово</value></data>
+  <data name="Setup.StatusUnavailable" xml:space="preserve"><value>Статус недоступен</value></data>
+  <data name="Setup.WelcomeTitle" xml:space="preserve"><value>{0} готов к работе в Wasla.</value></data>
+  <data name="Setup.WelcomeTitleRest" xml:space="preserve"><value>готов к работе в Wasla.</value></data>
+  <data name="Setup.WelcomeBody" xml:space="preserve"><value>Выполните несколько шагов, чтобы начать принимать заказы.</value></data>
+  <data name="Setup.StartSetup" xml:space="preserve"><value>Начать настройку</value></data>
+  <data name="Setup.BrowsePanel" xml:space="preserve"><value>Открыть панель</value></data>
+  <data name="Setup.ChecklistSummary" xml:space="preserve"><value>Показать шаги настройки</value></data>
+  <data name="Setup.Restaurant.Title" xml:space="preserve"><value>Проверьте данные ресторана</value></data>
+  <data name="Setup.Restaurant.Incomplete" xml:space="preserve"><value>Не хватает названия, телефона или местоположения.</value></data>
+  <data name="Setup.Restaurant.Action" xml:space="preserve"><value>Открыть данные</value></data>
+  <data name="Setup.Platform.Title" xml:space="preserve"><value>Подключите платформу заказов</value></data>
+  <data name="Setup.Platform.Incomplete" xml:space="preserve"><value>Передавайте заказы Yemeksepeti, Getir или Trendyol GO в Wasla.</value></data>
+  <data name="Setup.Platform.Action" xml:space="preserve"><value>Подключить платформу</value></data>
+  <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} подключена</value></data>
+  <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>Подключено платформ: {0}</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Настройте уведомления о заказах</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Звук уведомлений выключен или ещё не сохранён.</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Проверить звук можно в настройках уведомлений.</value></data>
+  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Настроить уведомления</value></data>
+  <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Звук уведомлений включён</value></data>
+  <data name="Setup.Printing.Title" xml:space="preserve"><value>Подключите принтер чеков</value></data>
+  <data name="Setup.Printing.Complete" xml:space="preserve"><value>Принтер подключён</value></data>
+  <data name="Setup.Printing.Action" xml:space="preserve"><value>Подключить принтер</value></data>
+  <data name="Setup.LiveScreen.Title" xml:space="preserve"><value>Проверьте Live Screen</value></data>
+  <data name="Setup.LiveScreen.Detail" xml:space="preserve"><value>Откройте операционный экран и проверьте вид новых заказов.</value></data>
+  <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>Открыть Live Screen</value></data>
+  <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Открытие не сохраняется</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>Ещё позиции в деталях</value></data>
 </root>

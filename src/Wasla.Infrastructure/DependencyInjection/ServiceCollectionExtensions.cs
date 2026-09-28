@@ -15,6 +15,7 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Onboarding;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
+using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Tenant;
@@ -104,6 +105,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantDatabaseProvisioningOperations, SqlServerTenantDatabaseProvisioningOperations>();
         services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<ITenantSetupStatusService, TenantSetupStatusService>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderActionService, OrderActionService>();
         services.AddScoped<IOrderSyncSettingsService, OrderSyncSettingsService>();

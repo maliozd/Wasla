@@ -3578,5 +3578,48 @@
   <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Something went wrong</value></data>
   <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>The operation could not be completed. Try again. If it continues, give this reference code to support.</value></data>
   <data name="Errors.ReferenceCode" xml:space="preserve"><value>Reference code</value></data>
+  <data name="Setup.Title" xml:space="preserve"><value>Get Wasla ready</value></data>
+  <data name="Setup.Progress" xml:space="preserve"><value>{0} / {1} complete</value></data>
+  <data name="Setup.ProgressLabel" xml:space="preserve"><value>Setup progress</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Progress counts required steps. A printer is optional and does not block readiness.</value></data>
+  <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla is ready</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Your order platform is connected and your operations screen is ready to use.</value></data>
+  <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Open Live Screen</value></data>
+  <data name="Setup.AddTeamMember" xml:space="preserve"><value>Add a team member</value></data>
+  <data name="Setup.FinishSetup" xml:space="preserve"><value>Finish setup</value></data>
+  <data name="Setup.GuidanceCompleted" xml:space="preserve"><value>Setup guidance is finished.</value></data>
+  <data name="Setup.GuidanceCompleteFailed" xml:space="preserve"><value>Setup could not be finished. Try again.</value></data>
+  <data name="Setup.NextStepLabel" xml:space="preserve"><value>Next step</value></data>
+  <data name="Setup.NextStepBody" xml:space="preserve"><value>Add your team and set their permissions.</value></data>
+  <data name="Setup.Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="Setup.StatusComplete" xml:space="preserve"><value>Complete</value></data>
+  <data name="Setup.StatusIncomplete" xml:space="preserve"><value>Not complete</value></data>
+  <data name="Setup.StatusUnavailable" xml:space="preserve"><value>Status unavailable</value></data>
+  <data name="Setup.WelcomeTitle" xml:space="preserve"><value>{0} is ready on Wasla.</value></data>
+  <data name="Setup.WelcomeTitleRest" xml:space="preserve"><value>is ready on Wasla.</value></data>
+  <data name="Setup.WelcomeBody" xml:space="preserve"><value>Complete a few steps to start receiving orders.</value></data>
+  <data name="Setup.StartSetup" xml:space="preserve"><value>Start setup</value></data>
+  <data name="Setup.BrowsePanel" xml:space="preserve"><value>Browse the panel</value></data>
+  <data name="Setup.ChecklistSummary" xml:space="preserve"><value>Show setup steps</value></data>
+  <data name="Setup.Restaurant.Title" xml:space="preserve"><value>Review restaurant information</value></data>
+  <data name="Setup.Restaurant.Incomplete" xml:space="preserve"><value>Business name, phone, or location is missing.</value></data>
+  <data name="Setup.Restaurant.Action" xml:space="preserve"><value>Open details</value></data>
+  <data name="Setup.Platform.Title" xml:space="preserve"><value>Connect an order platform</value></data>
+  <data name="Setup.Platform.Incomplete" xml:space="preserve"><value>Bring Yemeksepeti, Getir, or Trendyol GO orders into Wasla.</value></data>
+  <data name="Setup.Platform.Action" xml:space="preserve"><value>Connect platform</value></data>
+  <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} connected</value></data>
+  <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} platforms connected</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Set order notifications</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Notification sound is off or has not been saved yet.</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>You can test the sound from notification settings.</value></data>
+  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Set notifications</value></data>
+  <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Notification sound is on</value></data>
+  <data name="Setup.Printing.Title" xml:space="preserve"><value>Connect a receipt printer</value></data>
+  <data name="Setup.Printing.Complete" xml:space="preserve"><value>Printer connected</value></data>
+  <data name="Setup.Printing.Action" xml:space="preserve"><value>Connect printer</value></data>
+  <data name="Setup.LiveScreen.Title" xml:space="preserve"><value>Check Live Screen</value></data>
+  <data name="Setup.LiveScreen.Detail" xml:space="preserve"><value>Open the operations screen and review the new-order view.</value></data>
+  <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>Open Live Screen</value></data>
+  <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Opening is not recorded</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>More items in details</value></data>
 </root>

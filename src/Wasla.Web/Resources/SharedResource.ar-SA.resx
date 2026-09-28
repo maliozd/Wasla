@@ -3578,5 +3578,48 @@
   <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>حدث خطأ غير متوقع</value></data>
   <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>تعذر إكمال العملية. أعد المحاولة. إذا استمرت المشكلة، أرسل رمز المرجع إلى الدعم.</value></data>
   <data name="Errors.ReferenceCode" xml:space="preserve"><value>رمز المرجع</value></data>
+  <data name="Setup.Title" xml:space="preserve"><value>جهّز Wasla للاستخدام</value></data>
+  <data name="Setup.Progress" xml:space="preserve"><value>اكتمل {0} / {1}</value></data>
+  <data name="Setup.ProgressLabel" xml:space="preserve"><value>تقدم الإعداد</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>يحتسب التقدم الخطوات المطلوبة. الطابعة اختيارية ولا تمنع الجاهزية.</value></data>
+  <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla جاهزة</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>منصة الطلبات متصلة وشاشة العمليات جاهزة للاستخدام.</value></data>
+  <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>افتح Live Screen</value></data>
+  <data name="Setup.AddTeamMember" xml:space="preserve"><value>أضف عضو فريق</value></data>
+  <data name="Setup.FinishSetup" xml:space="preserve"><value>إنهاء الإعداد</value></data>
+  <data name="Setup.GuidanceCompleted" xml:space="preserve"><value>تم إنهاء إرشاد الإعداد.</value></data>
+  <data name="Setup.GuidanceCompleteFailed" xml:space="preserve"><value>تعذر إنهاء الإعداد. أعد المحاولة.</value></data>
+  <data name="Setup.NextStepLabel" xml:space="preserve"><value>الخطوة التالية</value></data>
+  <data name="Setup.NextStepBody" xml:space="preserve"><value>أضف فريقك وحدد صلاحياتهم.</value></data>
+  <data name="Setup.Optional" xml:space="preserve"><value>اختياري</value></data>
+  <data name="Setup.StatusComplete" xml:space="preserve"><value>مكتمل</value></data>
+  <data name="Setup.StatusIncomplete" xml:space="preserve"><value>غير مكتمل</value></data>
+  <data name="Setup.StatusUnavailable" xml:space="preserve"><value>تعذر معرفة الحالة</value></data>
+  <data name="Setup.WelcomeTitle" xml:space="preserve"><value>{0} جاهز على Wasla.</value></data>
+  <data name="Setup.WelcomeTitleRest" xml:space="preserve"><value>جاهز على Wasla.</value></data>
+  <data name="Setup.WelcomeBody" xml:space="preserve"><value>أكمل بضع خطوات لبدء استلام الطلبات.</value></data>
+  <data name="Setup.StartSetup" xml:space="preserve"><value>ابدأ الإعداد</value></data>
+  <data name="Setup.BrowsePanel" xml:space="preserve"><value>تصفح اللوحة</value></data>
+  <data name="Setup.ChecklistSummary" xml:space="preserve"><value>إظهار خطوات الإعداد</value></data>
+  <data name="Setup.Restaurant.Title" xml:space="preserve"><value>راجع معلومات المطعم</value></data>
+  <data name="Setup.Restaurant.Incomplete" xml:space="preserve"><value>اسم النشاط أو الهاتف أو الموقع ناقص.</value></data>
+  <data name="Setup.Restaurant.Action" xml:space="preserve"><value>فتح البيانات</value></data>
+  <data name="Setup.Platform.Title" xml:space="preserve"><value>اربط منصة الطلبات</value></data>
+  <data name="Setup.Platform.Incomplete" xml:space="preserve"><value>انقل طلبات Yemeksepeti أو Getir أو Trendyol GO إلى Wasla.</value></data>
+  <data name="Setup.Platform.Action" xml:space="preserve"><value>ربط المنصة</value></data>
+  <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} متصلة</value></data>
+  <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} منصات متصلة</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>اضبط إشعارات الطلبات</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>صوت الإشعار متوقف أو لم يُحفظ بعد.</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>يمكنك تجربة الصوت من إعدادات الإشعارات.</value></data>
+  <data name="Setup.Notifications.Action" xml:space="preserve"><value>ضبط الإشعارات</value></data>
+  <data name="Setup.Notifications.Complete" xml:space="preserve"><value>صوت الإشعار مفعّل</value></data>
+  <data name="Setup.Printing.Title" xml:space="preserve"><value>اربط طابعة الإيصالات</value></data>
+  <data name="Setup.Printing.Complete" xml:space="preserve"><value>الطابعة متصلة</value></data>
+  <data name="Setup.Printing.Action" xml:space="preserve"><value>ربط الطابعة</value></data>
+  <data name="Setup.LiveScreen.Title" xml:space="preserve"><value>راجع Live Screen</value></data>
+  <data name="Setup.LiveScreen.Detail" xml:space="preserve"><value>افتح شاشة العمليات وراجع عرض الطلبات الجديدة.</value></data>
+  <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>افتح Live Screen</value></data>
+  <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>لا يُحفظ سجل الفتح</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>المزيد من العناصر في التفاصيل</value></data>
 </root>

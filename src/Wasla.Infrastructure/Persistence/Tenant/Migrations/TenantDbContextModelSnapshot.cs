@@ -593,6 +593,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<string>("ReceiptTemplateSettingsJson")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("SetupGuidanceCompletedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 

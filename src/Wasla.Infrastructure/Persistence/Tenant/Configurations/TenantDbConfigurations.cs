@@ -117,6 +117,8 @@ public class TenantOperationalSettingsConfiguration : IEntityTypeConfiguration<T
         builder.Property(x => x.ReceiptTemplateSettingsJson)
             .HasColumnType("nvarchar(max)");
 
+        builder.Property(x => x.SetupGuidanceCompletedAtUtc);
+
         // Single-row table pattern (enforced by always updating a known row id in the service).
         builder.HasIndex(x => x.Id)
             .IsUnique()

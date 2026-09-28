@@ -119,7 +119,7 @@ public sealed class AuthController : Controller
         }
 
         await SignInSessionAsync(payload, rememberMe: false, ct);
-        return Redirect("/onboarding");
+        return Redirect("/dashboard");
     }
 
     [AllowAnonymous]

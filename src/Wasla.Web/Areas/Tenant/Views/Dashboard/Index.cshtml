@@ -12,6 +12,11 @@
 }
 
 <div class="wasla-dashboard">
+    @if (Model.Setup is not null)
+    {
+        @await Html.PartialAsync("_TenantSetupPanel", Model.Setup)
+    }
+
     <header class="wasla-customer-page-header wasla-dash-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
         <div class="wasla-customer-page-header__main">
             <h1 class="wasla-customer-page-header__title wasla-dash-header__title h4 mb-1">@L["Dashboard.Title"]</h1>

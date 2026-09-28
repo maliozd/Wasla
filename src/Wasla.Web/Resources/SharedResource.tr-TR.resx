@@ -3575,5 +3575,48 @@
   <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Beklenmeyen bir sorun oluştu</value></data>
   <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>İşlem tamamlanamadı. Lütfen yeniden deneyin. Sorun sürerse destek ekibine referans kodunu iletin.</value></data>
   <data name="Errors.ReferenceCode" xml:space="preserve"><value>Referans kodu</value></data>
+  <data name="Setup.Title" xml:space="preserve"><value>Wasla'yı kullanıma hazırla</value></data>
+  <data name="Setup.Progress" xml:space="preserve"><value>{0} / {1} tamamlandı</value></data>
+  <data name="Setup.ProgressLabel" xml:space="preserve"><value>Kurulum ilerlemesi</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>İlerleme zorunlu adımları sayar. Yazıcı isteğe bağlıdır ve hazır olmayı engellemez.</value></data>
+  <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla hazır</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Sipariş platformunuz bağlı ve operasyon ekranınız kullanıma hazır.</value></data>
+  <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Live Screen'i aç</value></data>
+  <data name="Setup.AddTeamMember" xml:space="preserve"><value>Ekip üyesi ekle</value></data>
+  <data name="Setup.FinishSetup" xml:space="preserve"><value>Kurulumu tamamla</value></data>
+  <data name="Setup.GuidanceCompleted" xml:space="preserve"><value>Kurulum rehberi kapatıldı.</value></data>
+  <data name="Setup.GuidanceCompleteFailed" xml:space="preserve"><value>Kurulum tamamlanamadı. Lütfen yeniden deneyin.</value></data>
+  <data name="Setup.NextStepLabel" xml:space="preserve"><value>Sonraki adım</value></data>
+  <data name="Setup.NextStepBody" xml:space="preserve"><value>Ekip üyelerinizi ekleyin ve yetkilerini belirleyin.</value></data>
+  <data name="Setup.Optional" xml:space="preserve"><value>İsteğe bağlı</value></data>
+  <data name="Setup.StatusComplete" xml:space="preserve"><value>Tamamlandı</value></data>
+  <data name="Setup.StatusIncomplete" xml:space="preserve"><value>Tamamlanmadı</value></data>
+  <data name="Setup.StatusUnavailable" xml:space="preserve"><value>Durum alınamadı</value></data>
+  <data name="Setup.WelcomeTitle" xml:space="preserve"><value>{0} Wasla'da hazır.</value></data>
+  <data name="Setup.WelcomeTitleRest" xml:space="preserve"><value>Wasla'da hazır.</value></data>
+  <data name="Setup.WelcomeBody" xml:space="preserve"><value>Sipariş almaya başlamak için birkaç adımı tamamlayın.</value></data>
+  <data name="Setup.StartSetup" xml:space="preserve"><value>Kuruluma başla</value></data>
+  <data name="Setup.BrowsePanel" xml:space="preserve"><value>Panele göz at</value></data>
+  <data name="Setup.ChecklistSummary" xml:space="preserve"><value>Kurulum adımlarını göster</value></data>
+  <data name="Setup.Restaurant.Title" xml:space="preserve"><value>Restoran bilgilerini kontrol et</value></data>
+  <data name="Setup.Restaurant.Incomplete" xml:space="preserve"><value>İşletme adı, telefon veya konum bilgisi eksik.</value></data>
+  <data name="Setup.Restaurant.Action" xml:space="preserve"><value>Bilgileri aç</value></data>
+  <data name="Setup.Platform.Title" xml:space="preserve"><value>Sipariş platformunu bağla</value></data>
+  <data name="Setup.Platform.Incomplete" xml:space="preserve"><value>Yemeksepeti, Getir veya Trendyol GO siparişlerinizi Wasla'ya aktarın.</value></data>
+  <data name="Setup.Platform.Action" xml:space="preserve"><value>Platform bağla</value></data>
+  <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} bağlı</value></data>
+  <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} platform bağlı</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Sipariş bildirimlerini ayarla</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Bildirim sesi kapalı veya henüz kaydedilmedi.</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Ses denemesini bildirim ayarlarından yapabilirsiniz.</value></data>
+  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Bildirimleri ayarla</value></data>
+  <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Bildirim sesi açık</value></data>
+  <data name="Setup.Printing.Title" xml:space="preserve"><value>Fiş yazıcısını bağla</value></data>
+  <data name="Setup.Printing.Complete" xml:space="preserve"><value>Yazıcı bağlı</value></data>
+  <data name="Setup.Printing.Action" xml:space="preserve"><value>Yazıcıyı bağla</value></data>
+  <data name="Setup.LiveScreen.Title" xml:space="preserve"><value>Live Screen'i kontrol et</value></data>
+  <data name="Setup.LiveScreen.Detail" xml:space="preserve"><value>Operasyon ekranını açıp yeni sipariş görünümünü kontrol edin.</value></data>
+  <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>Live Screen'i aç</value></data>
+  <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Açılış kaydı tutulmuyor</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>Devamı detaylarda</value></data>
 </root>

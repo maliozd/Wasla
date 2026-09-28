@@ -20,5 +20,11 @@ public sealed class TenantOperationalSettings : BaseEntity
     /// JSON-serialized receipt template/content settings.
     /// </summary>
     public string? ReceiptTemplateSettingsJson { get; set; }
+
+    /// <summary>
+    /// When set, the tenant has dismissed the initial setup guidance.
+    /// This is not operational readiness and is not cleared when a platform later disconnects.
+    /// </summary>
+    public DateTime? SetupGuidanceCompletedAtUtc { get; set; }
 }
 

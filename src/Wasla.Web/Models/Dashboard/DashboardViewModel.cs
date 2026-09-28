@@ -11,6 +11,7 @@ public sealed class DashboardViewModel
 
     public List<RecentOrderRow> RecentOrders { get; set; } = new();
     public List<PlatformSummaryRow> PlatformSummary { get; set; } = new();
+    public TenantSetupPanelViewModel? Setup { get; set; }
 
     public sealed class RecentOrderRow
     {
