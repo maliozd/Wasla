@@ -1,0 +1,132 @@
+/* Help and Guides: readable documentation. Logical properties keep Arabic (RTL) mirrored. */
+
+.wasla-help {
+  min-inline-size: 0;
+}
+
+.wasla-help__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+@media (min-width: 992px) {
+  .wasla-help__layout {
+    grid-template-columns: 15rem minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .wasla-help__contents {
+    position: sticky;
+    inset-block-start: 1rem;
+  }
+}
+
+.wasla-help__contents,
+.wasla-help__topic {
+  border: 1px solid var(--wasla-border, #E3DDD3);
+  border-radius: var(--wasla-radius-md, 0.65rem);
+  background: var(--wasla-surface, #FFFEFA);
+}
+
+.wasla-help__contents {
+  padding: 0.9rem 1rem;
+  font-size: 0.875rem;
+}
+
+.wasla-help__contents-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-transform: none;
+  color: var(--wasla-text-secondary, #746D66);
+}
+
+.wasla-help__contents-list,
+.wasla-help__contents-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wasla-help__contents-list ul {
+  margin-block: 0.2rem 0.6rem;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 1px solid var(--wasla-border, #E3DDD3);
+}
+
+.wasla-help__contents-list a {
+  display: inline-block;
+  padding-block: 0.2rem;
+  color: var(--wasla-text, #28231F);
+  text-decoration: none;
+}
+
+.wasla-help__contents-list a:hover {
+  text-decoration: underline;
+}
+
+.wasla-help__contents-group {
+  font-weight: 600;
+}
+
+.wasla-help__group + .wasla-help__group {
+  margin-block-start: 1.75rem;
+}
+
+.wasla-help__group-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 650;
+  color: var(--wasla-text, #28231F);
+}
+
+.wasla-help__topic {
+  padding: 0.9rem 1rem;
+  scroll-margin-block-start: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.wasla-help__topic + .wasla-help__topic {
+  margin-block-start: 0.75rem;
+}
+
+.wasla-help__topic h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.975rem;
+  font-weight: 650;
+  color: var(--wasla-text, #28231F);
+}
+
+.wasla-help__topic p,
+.wasla-help__topic ol,
+.wasla-help__topic ul {
+  margin-block: 0 0.5rem;
+  color: var(--wasla-text-secondary, #5F5852);
+}
+
+.wasla-help__topic ol,
+.wasla-help__topic ul {
+  padding-inline-start: 1.25rem;
+}
+
+.wasla-help__topic li + li {
+  margin-block-start: 0.2rem;
+}
+
+.wasla-help__action,
+.wasla-help__permission {
+  margin: 0.4rem 0 0;
+}
+
+.wasla-help__permission {
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.wasla-help a:focus-visible {
+  outline: 2px solid var(--wasla-focus, #1F6FEB);
+  outline-offset: 2px;
+}

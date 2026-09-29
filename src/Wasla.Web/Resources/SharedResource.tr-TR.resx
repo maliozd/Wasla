@@ -3698,4 +3698,110 @@
   <data name="Demo.SelectTitle" xml:space="preserve"><value>Demo siparişini seçin</value></data>
   <data name="Demo.SelectBody" xml:space="preserve"><value>Eğitime devam etmek için DEMO etiketli siparişi açın.</value></data>
   <data name="Tour.TrainingPaused" xml:space="preserve"><value>Eğitim duraklatıldı. Hazır olduğunuzda devam edebilirsiniz.</value></data>
+  <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>Wasla'yı kullanıma hazırlayalım</value></data>
+  <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>Platform bağlantılarınızı ve yazıcınızı kurup deneme siparişiyle temel sipariş akışını öğrenebilirsiniz. Hazır olmayan adımları daha sonra tamamlayabilirsiniz.</value></data>
+  <data name="GuidedSetup.FirstUse.BodyOrderTraining" xml:space="preserve"><value>Deneme siparişiyle siparişi onaylama, hazırlamaya başlama ve hazır işaretleme adımlarını öğrenebilirsiniz.</value></data>
+  <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>Bu rehberde:</value></data>
+  <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>Platform bağlantıları</value></data>
+  <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>Yazıcı kurulumu (Wasla Print Bridge)</value></data>
+  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Deneme siparişiyle sipariş eğitimi</value></data>
+  <data name="GuidedSetup.Start" xml:space="preserve"><value>Rehberli kuruluma başla</value></data>
+  <data name="GuidedSetup.Skip" xml:space="preserve"><value>Rehberli kurulumu atla</value></data>
+  <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>Rehberli kurulumu atlarsanız uygulama içinde tekrar gösterilmez. Kullanım anlatımlarına Yardım ve Rehberler bölümünden ulaşabilirsiniz.</value></data>
+  <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>Rehberli kurulumunuz yarım kaldı.</value></data>
+  <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>Kaldığınız bölüm: {0}</value></data>
+  <data name="GuidedSetup.Continue" xml:space="preserve"><value>Rehberli kuruluma devam et</value></data>
+  <data name="GuidedSetup.End" xml:space="preserve"><value>Rehberli kurulumu sonlandır</value></data>
+  <data name="GuidedSetup.EndDialog.Title" xml:space="preserve"><value>Rehberli kurulum sonlandırılsın mı?</value></data>
+  <data name="GuidedSetup.EndDialog.Body" xml:space="preserve"><value>Kaydedilen ilerlemeniz bırakılır ve rehberli kurulum uygulama içinde tekrar gösterilmez. Yaptığınız ayarlar korunur. Kullanım anlatımlarına Yardım ve Rehberler bölümünden ulaşabilirsiniz.</value></data>
+  <data name="GuidedSetup.EndDialog.Confirm" xml:space="preserve"><value>Evet, sonlandır</value></data>
+  <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Sıradaki bölüm: sipariş eğitimi</value></data>
+  <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>Rehberli kurulum ilerlemeniz kaydedildi. Sıradaki bölümde deneme siparişiyle siparişi onaylamayı, hazırlamaya başlamayı ve hazır işaretlemeyi öğreneceksiniz.</value></data>
+  <data name="GuidedSetup.Next.NotYetAvailable" xml:space="preserve"><value>Sipariş eğitimi henüz açılmadı; kullanıma açıldığında buradan başlatabileceksiniz.</value></data>
+  <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>Rehberli kurulum</value></data>
+  <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>Bölüm {0} / {1}</value></data>
+  <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>Devam et</value></data>
+  <data name="GuidedSetup.Panel.Next" xml:space="preserve"><value>Sıradaki: {0}</value></data>
+  <data name="GuidedSetup.Platform.Title" xml:space="preserve"><value>Sipariş platformlarınızı bağlayın</value></data>
+  <data name="GuidedSetup.Platform.Body" xml:space="preserve"><value>Wasla, Trendyol GO ve Yemeksepeti siparişlerini tek ekranda toplar. Gerçek siparişlerin Wasla'ya gelmesi için en az bir etkin platform bağlantısı gerekir.</value></data>
+  <data name="GuidedSetup.Platform.Where" xml:space="preserve"><value>Yeni bağlantıyı "{0}" düğmesiyle ekleyin; mağaza kimliğini ve platformdan aldığınız API bilgilerini girin. Mevcut bağlantıları aşağıdaki tablodan düzenleyebilir, etkinleştirebilir veya kapatabilirsiniz.</value></data>
+  <data name="GuidedSetup.Platform.Check" xml:space="preserve"><value>Bağlantının çalıştığını, yeni siparişler geldikçe güncellenen son başarılı eşitleme zamanından anlayabilirsiniz.</value></data>
+  <data name="GuidedSetup.Platform.Later" xml:space="preserve"><value>Mağaza ve API bilgileriniz henüz hazır değilse bu adımı daha sonra tamamlayabilirsiniz.</value></data>
+  <data name="GuidedSetup.Platform.Ready" xml:space="preserve"><value>En az bir etkin platform bağlantınız var.</value></data>
+  <data name="GuidedSetup.Platform.NotReady" xml:space="preserve"><value>Henüz etkin bir platform bağlantınız yok.</value></data>
+  <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>Daha sonra kurarım</value></data>
+  <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>Fiş yazıcınızı bağlayın</value></data>
+  <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge, yazıcıya bağlı bilgisayarınıza kurulan Windows uygulamasıdır. Wasla'da oluşan sipariş fişlerini seçtiğiniz yazıcıdan yazdırır.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Bu sayfadan uygulamayı indirip kurun; kuruluysa "{0}" düğmesiyle açın.</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Uygulama, tek kullanımlık kurulum koduyla bu hesaba güvenli şekilde bağlanır; cihaz anahtarını elle kopyalamanız gerekmez.</value></data>
+  <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>Ardından Print Bridge ayarlarından yazıcınızı seçin ve "Yazıcıyı test et" ile deneme fişi yazdırın.</value></data>
+  <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>Yazıcınız veya bilgisayarınız hazır değilse bu adımı daha sonra tamamlayabilirsiniz.</value></data>
+  <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>Bağlı bir Print Bridge cihazınız var.</value></data>
+  <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>Henüz bağlı bir Print Bridge cihazı yok.</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpNow" xml:space="preserve"><value>Print Bridge'i şimdi kur</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>Daha sonra kuracağım</value></data>
+  <data name="GuidedSetup.Closed" xml:space="preserve"><value>Rehberli kurulum kapatıldı. Kullanım anlatımlarına Yardım ve Rehberler bölümünden ulaşabilirsiniz.</value></data>
+  <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>Rehberli kurulum işlemi tamamlanamadı. Lütfen yeniden deneyin.</value></data>
+  <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>Rehberli kurulum hesabınızın yetkileri için kullanılamıyor.</value></data>
+  <data name="Help.Title" xml:space="preserve"><value>Yardım ve Rehberler</value></data>
+  <data name="Help.Subtitle" xml:space="preserve"><value>Wasla'yı kurmak ve günlük siparişleri yönetmek için adım adım anlatımlar.</value></data>
+  <data name="Help.Contents" xml:space="preserve"><value>Bu sayfada</value></data>
+  <data name="Help.Group.Platforms" xml:space="preserve"><value>Platform bağlantıları</value></data>
+  <data name="Help.Group.Printing" xml:space="preserve"><value>Yazdırma</value></data>
+  <data name="Help.Group.Orders" xml:space="preserve"><value>Siparişler ve Canlı Ekran</value></data>
+  <data name="Help.Group.Support" xml:space="preserve"><value>Sorun giderme ve destek</value></data>
+  <data name="Help.Trendyol.Title" xml:space="preserve"><value>Trendyol GO'yu bağlama</value></data>
+  <data name="Help.Trendyol.Intro" xml:space="preserve"><value>Başlamadan önce Trendyol GO satıcı panelinizden mağaza kimliğinizi ve API bilgilerinizi (API anahtarı ve gizli anahtar) alın.</value></data>
+  <data name="Help.Trendyol.Step1" xml:space="preserve"><value>Platform Bağlantıları sayfasında "{0}" düğmesine basın ve platform olarak Trendyol GO'yu seçin.</value></data>
+  <data name="Help.Trendyol.Step2" xml:space="preserve"><value>Mağaza kimliğini (Store Id), API anahtarını ve API gizli anahtarını girin. Tedarikçi kimliği (Supplier Id) boş bırakılırsa mağaza kimliği kullanılır.</value></data>
+  <data name="Help.Trendyol.Step3" xml:space="preserve"><value>Trendyol GO isteklerinde kullanılan işlem yapan kullanıcının e-posta adresini (Executor email) girin, bağlantıyı etkin bırakın ve kaydedin.</value></data>
+  <data name="Help.Yemeksepeti.Title" xml:space="preserve"><value>Yemeksepeti'ni bağlama</value></data>
+  <data name="Help.Yemeksepeti.Intro" xml:space="preserve"><value>Başlamadan önce Yemeksepeti iş ortağı entegrasyon bilgilerinizi alın: zincir kimliği (chain id), şube kimliği (vendor id), istemci kimliği (client id) ve istemci gizli anahtarı (client secret).</value></data>
+  <data name="Help.Yemeksepeti.Step1" xml:space="preserve"><value>Platform Bağlantıları sayfasında "{0}" düğmesine basın ve platform olarak Yemeksepeti'ni seçin.</value></data>
+  <data name="Help.Yemeksepeti.Step2" xml:space="preserve"><value>Zincir kimliğini Supplier Id alanına, şube kimliğini Store Id alanına girin.</value></data>
+  <data name="Help.Yemeksepeti.Step3" xml:space="preserve"><value>İstemci kimliğini API anahtarı alanına, istemci gizli anahtarını API gizli anahtarı alanına girin ve kaydedin.</value></data>
+  <data name="Help.PlatformManage.Title" xml:space="preserve"><value>Bağlantıları test etme ve yönetme</value></data>
+  <data name="Help.PlatformManage.Body" xml:space="preserve"><value>Platform Bağlantıları tablosunda her bağlantının durumunu görebilirsiniz. Anahtarla bağlantıyı etkinleştirip kapatabilir, düzenleme ile mağaza ve API bilgilerini güncelleyebilirsiniz. Her platform için yalnızca bir bağlantı eklenebilir.</value></data>
+  <data name="Help.PlatformManage.Check" xml:space="preserve"><value>Bağlantıyı test etmek için "{0}" sütununa bakın: yeni siparişler eşitlendikçe bu zaman güncellenir. Hata sayısı veya geçici durdurma uyarısı görürseniz API bilgilerinizi kontrol edin.</value></data>
+  <data name="Help.PrintBridge.Title" xml:space="preserve"><value>Print Bridge'i kurma ve bağlama</value></data>
+  <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge, fişleri yazıcınıza gönderen Windows uygulamasıdır. Kurulumu yazıcının bağlı olduğu bilgisayarda yapın.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>Print Bridge kurulum sayfasından paketi indirin ve bilgisayara kurun.</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Kurulum sayfasında "{0}" düğmesine basın. Uygulama açılır ve tek kullanımlık kurulum koduyla hesabınıza güvenli şekilde bağlanır.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Uygulama açılmazsa kurulum sayfasındaki elle kurulum bölümünü kullanın. Cihaz anahtarını kimseyle paylaşmayın.</value></data>
+  <data name="Help.Printer.Title" xml:space="preserve"><value>Yazıcı seçme</value></data>
+  <data name="Help.Printer.Body" xml:space="preserve"><value>Print Bridge uygulamasında Ayarlar bölümünü açın, "Yazıcı adı" listesinden fiş yazıcınızı seçin ve ayarları kaydedin.</value></data>
+  <data name="Help.Printer.Template" xml:space="preserve"><value>Fişin içeriği ve görünümü Wasla'daki "{0}" sayfasından ayarlanır.</value></data>
+  <data name="Help.TestPrint.Title" xml:space="preserve"><value>Test fişi yazdırma</value></data>
+  <data name="Help.TestPrint.Body" xml:space="preserve"><value>Yazıcıyı seçtikten sonra Print Bridge uygulamasında "Yazıcıyı test et" düğmesine basın. Yazıcıdan deneme fişi çıkmalıdır.</value></data>
+  <data name="Help.TestPrint.Check" xml:space="preserve"><value>Çıktı gelmezse yazıcının açık ve kağıdının takılı olduğunu, Windows'ta doğru yazıcının seçildiğini kontrol edin. Print Bridge cihazları sayfasında cihazın bağlantı durumunu ve son yazdırma işlerini görebilirsiniz.</value></data>
+  <data name="Help.LiveScreen.Title" xml:space="preserve"><value>Canlı Ekran'a genel bakış</value></data>
+  <data name="Help.LiveScreen.Body" xml:space="preserve"><value>Canlı Ekran, gelen siparişleri mutfakta ve kasada anlık takip etmeniz içindir. Siparişleri {0}, {1} veya {2} görünümünde izleyebilir; yeni siparişlerde sesli ve tarayıcı bildirimi alabilirsiniz.</value></data>
+  <data name="Help.Approve.Title" xml:space="preserve"><value>Siparişi onaylama</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>Yeni bir sipariş geldiğinde içeriğini kontrol edin ve "{0}" düğmesine basın; onay platforma iletilir. Siparişi karşılayamayacaksanız "{1}" düğmesini kullanın.</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>Hazırlamaya başlama</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>Onaylanan siparişte "{0}" düğmesine basarak hazırlığın başladığını ekibinize gösterin.</value></data>
+  <data name="Help.Ready.Title" xml:space="preserve"><value>Siparişi hazır işaretleme</value></data>
+  <data name="Help.Ready.Body" xml:space="preserve"><value>Sipariş hazır olduğunda "{0}" düğmesine basın. Bu, restoranın siparişte yaptığı son işlemdir; bilgi platforma iletilir.</value></data>
+  <data name="Help.CourierPickup.Title" xml:space="preserve"><value>Kuryenin siparişi alması</value></data>
+  <data name="Help.CourierPickup.Body" xml:space="preserve"><value>Siparişi platformun kuryesi alır. Kurye siparişi teslim aldığında platform bunu bildirir ve Wasla siparişi otomatik olarak "{0}" durumuna geçirir. Wasla'da ayrıca bir işlem yapmanız gerekmez.</value></data>
+  <data name="Help.Delivered.Title" xml:space="preserve"><value>Teslimatın tamamlanması</value></data>
+  <data name="Help.Delivered.Body" xml:space="preserve"><value>Teslimatı da platform bildirir. Kurye siparişi teslim ettiğinde Wasla siparişi otomatik olarak "{0}" durumuna geçirir.</value></data>
+  <data name="Help.DeliveredWindow.Title" xml:space="preserve"><value>Teslim edilen siparişler Canlı Ekran'da ne kadar kalır?</value></data>
+  <data name="Help.DeliveredWindow.Body" xml:space="preserve"><value>Teslim edilen siparişler Canlı Ekran'da {0} dakika görünür, ardından yalnızca bu ekrandan kaldırılır. Siparişler silinmez.</value></data>
+  <data name="Help.OrderHistory.Title" xml:space="preserve"><value>Tamamlanan siparişleri bulma</value></data>
+  <data name="Help.OrderHistory.Body" xml:space="preserve"><value>Teslim edilen ve iptal edilen tüm siparişler "{0}" sayfasındadır. Platforma, duruma ve tarihe göre filtreleyebilir, sipariş koduyla arama yapabilirsiniz.</value></data>
+  <data name="Help.Troubleshooting.Title" xml:space="preserve"><value>Sorun giderme ve destek</value></data>
+  <data name="Help.Troubleshooting.NoOrders" xml:space="preserve"><value>Siparişler gelmiyorsa: Platform Bağlantıları'nda bağlantının etkin olduğunu ve son başarılı eşitleme zamanını kontrol edin.</value></data>
+  <data name="Help.Troubleshooting.NoPrint" xml:space="preserve"><value>Fiş yazdırılmıyorsa: Print Bridge cihazının bağlı göründüğünü ve uygulamada doğru yazıcının seçili olduğunu kontrol edin; Print Bridge sayfasında son yazdırma işlerine bakın.</value></data>
+  <data name="Help.Troubleshooting.NoSound" xml:space="preserve"><value>Yeni sipariş sesi çalmıyorsa: Canlı Ekran'da ses ayarının açık olduğunu ve tarayıcının ses çalmaya izin verdiğini kontrol edin.</value></data>
+  <data name="Help.Troubleshooting.MissingPage" xml:space="preserve"><value>Bir sayfayı veya düğmeyi göremiyorsanız rolünüz bu işlem için yetkili olmayabilir; restoran sahibinden yardım isteyin.</value></data>
+  <data name="Help.Troubleshooting.Support" xml:space="preserve"><value>Sorun devam ederse destek ekibine ulaşın. Bir hata sayfası gördüyseniz üzerindeki referans kodunu paylaşmanız sorunun bulunmasını hızlandırır.</value></data>
+  <data name="Help.NeedsPermission" xml:space="preserve"><value>Bu sayfayı açma yetkiniz yok; gerekirse restoran sahibinden yardım isteyin.</value></data>
+  <data name="Help.Action.OpenPlatformConnections" xml:space="preserve"><value>Platform bağlantılarını aç</value></data>
+  <data name="Help.Action.OpenPrintBridgeSetup" xml:space="preserve"><value>Print Bridge kurulumunu aç</value></data>
+  <data name="Help.Action.OpenPrintBridgeDevices" xml:space="preserve"><value>Print Bridge cihazlarını aç</value></data>
+  <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>Fiş ve yazıcı ayarlarını aç</value></data>
+  <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>Canlı Ekran'ı aç</value></data>
+  <data name="Help.Action.OpenOrders" xml:space="preserve"><value>Siparişleri aç</value></data>
 </root>

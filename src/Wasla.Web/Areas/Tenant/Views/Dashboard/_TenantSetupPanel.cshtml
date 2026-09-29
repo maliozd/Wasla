@@ -1,7 +1,14 @@
 @model Wasla.Web.Models.Dashboard.TenantSetupPanelViewModel
+@{
+    var hideWelcome = ViewData["HideSetupWelcome"] is true;
+}
 <link rel="stylesheet" href="~/css/wasla-setup.css" asp-append-version="true" />
 <section class="wasla-setup" aria-labelledby="@(Model.IsReady ? "wasla-setup-ready-title" : "wasla-setup-heading")">
-    @if (!Model.IsReady)
+    @if (!Model.IsReady && hideWelcome)
+    {
+        @* The guided-setup card is the welcome for now; the checklist below stays. *@
+    }
+    else if (!Model.IsReady)
     {
         <div class="wasla-setup-welcome" id="waslaSetupWelcome" data-storage-key="Wasla.setupWelcome.dismissed.@Model.TenantId">
             <div class="wasla-setup-welcome__copy">

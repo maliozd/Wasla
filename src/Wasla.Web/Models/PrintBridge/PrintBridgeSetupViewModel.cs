@@ -14,6 +14,9 @@ public sealed class PrintBridgeSetupViewModel
     public string? ActiveDeviceName { get; set; }
     public List<PrintBridgeSetupDeviceOptionViewModel> Devices { get; set; } = [];
     public bool IsDevelopment { get; set; }
+
+    /// <summary>Set only while Print Bridge is the user's current guided-setup section.</summary>
+    public Wasla.Web.Models.GuidedSetup.GuidedSetupSectionPanelViewModel? GuidedSetup { get; set; }
 }
 
 public sealed class PrintBridgeSetupDeviceOptionViewModel

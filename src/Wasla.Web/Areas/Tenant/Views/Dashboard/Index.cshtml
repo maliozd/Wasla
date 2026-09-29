@@ -1,6 +1,5 @@
 ﻿@model Wasla.Web.Models.Dashboard.DashboardViewModel
 @using System.Globalization
-@using Wasla.Application.Tours
 @using Wasla.Web.Ui
 @using Wasla.Web.Models.Ui
 @{
@@ -13,10 +12,6 @@
 }
 
 <div class="wasla-dashboard">
-    @if (Model.Setup is not null)
-    {
-        @await Html.PartialAsync("_TenantSetupPanel", Model.Setup)
-    }
 
     <header class="wasla-customer-page-header wasla-dash-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
         <div class="wasla-customer-page-header__main">
@@ -27,13 +22,20 @@
             <span class="badge rounded-pill text-bg-light border wasla-dash-today-badge">
                 @L.GetString("Dashboard.TodayDateLabel", L["Common.Today"], todayLabel)
             </span>
-            @await Component.InvokeAsync("ProductTour", new
-            {
-                tourKey = ProductTourKeys.DashboardIntro,
-                suppressAutoStart = Model.Setup is not null
-            })
         </div>
     </header>
+
+    @if (Model.GuidedSetup is not null)
+    {
+        @* Calm and optional: no modal and no automatic coachmark. *@
+        @await Html.PartialAsync("_GuidedSetupCard", Model.GuidedSetup)
+    }
+
+    @if (Model.Setup is not null)
+    {
+        @* The operational checklist stays; only its welcome banner yields to the guided-setup card. *@
+        @await Html.PartialAsync("_TenantSetupPanel", Model.Setup, new ViewDataDictionary(ViewData) { ["HideSetupWelcome"] = Model.GuidedSetup is not null })
+    }
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4" data-tour="dashboard-summary">
         <div class="col">

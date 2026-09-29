@@ -10,6 +10,7 @@ using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Security;
 using Wasla.Web;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Localization;
 using Wasla.Web.Middleware;
 using Wasla.Web.Security;
@@ -112,6 +113,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
 builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
+builder.Services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
 
 builder.Services.AddAuthorization(options =>
 {

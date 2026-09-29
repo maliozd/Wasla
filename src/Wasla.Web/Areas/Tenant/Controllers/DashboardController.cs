@@ -6,6 +6,7 @@ using Wasla.Application.Abstractions.Dashboard;
 using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Web.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.Dashboard;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -22,6 +23,7 @@ public sealed class DashboardController : BaseController
     private readonly IDashboardService _dashboard;
     private readonly ITenantSetupStatusService _setup;
     private readonly IAuthorizationService _authorization;
+    private readonly IGuidedSetupCoordinator _guidedSetup;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly ILogger<DashboardController> _logger;
 
@@ -30,6 +32,7 @@ public sealed class DashboardController : BaseController
         IDashboardService dashboard,
         ITenantSetupStatusService setup,
         IAuthorizationService authorization,
+        IGuidedSetupCoordinator guidedSetup,
         IStringLocalizer<SharedResource> localizer,
         ILogger<DashboardController> logger)
     {
@@ -37,6 +40,7 @@ public sealed class DashboardController : BaseController
         _dashboard = dashboard;
         _setup = setup;
         _authorization = authorization;
+        _guidedSetup = guidedSetup;
         _localizer = localizer;
         _logger = logger;
     }
@@ -72,6 +76,14 @@ public sealed class DashboardController : BaseController
         };
 
         vm.Setup = await TryLoadSetupAsync(tenant.Id, tenant.Name, ct);
+
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("UserId");
+        if (Guid.TryParse(userIdValue, out var userId))
+        {
+            // Fails closed inside the coordinator: a read error hides guidance, never the Dashboard.
+            vm.GuidedSetup = await _guidedSetup.GetDashboardCardAsync(tenant.Id, userId, User, ct);
+        }
+
         return View("Index", vm);
     }
 

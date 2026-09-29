@@ -4,7 +4,6 @@
 @using Microsoft.Extensions.Localization
 @using Wasla.Application.Time
 @using Wasla.Web.Security
-@using Wasla.Application.Tours
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject ITenantNavigationAuthorizationService TenantNavigation
 @{
@@ -149,25 +148,6 @@
                 <kbd class="wasla-live-display-kbd">F11</kbd>
                 @L["Orders.LiveDisplay.FullscreenHintSuffix"]
             </p>
-            @if (navPermissions.CanManageOrders)
-            {
-                @await Component.InvokeAsync("ProductTour", new
-                {
-                    tourKey = ProductTourKeys.GuidedDemo,
-                    waitUntilGone = "[data-live-loading]",
-                    finishUrl = "/orders/demo/finish",
-                    resumeWhenPresent = "#ordersLiveScreenHost [data-wasla-demo]:not([data-order-status='Delivered'])",
-                    skipConfirmModal = "#waslaTourSkipModal"
-                })
-            }
-            else
-            {
-                @await Component.InvokeAsync("ProductTour", new
-                {
-                    tourKey = ProductTourKeys.LiveScreenIntro,
-                    waitUntilGone = "[data-live-loading]"
-                })
-            }
             <button type="button" id="ordersLiveDisplayClose" class="btn btn-outline-primary btn-sm wasla-live-display-close-btn">
                 @L["Orders.LiveDisplay.CloseDisplay"]
             </button>
@@ -191,34 +171,6 @@
             </button>
         </div>
     </div>
-
-    @if (navPermissions.CanManageOrders)
-    {
-        <form class="wasla-demo-launch" method="post" action="/orders/demo" data-error-message="@L["Demo.StartFailed"]">
-            @Html.AntiForgeryToken()
-            <p class="wasla-demo-launch__title mb-0">@L["Demo.LaunchTitle"]</p>
-            <button type="submit" class="btn btn-outline-primary btn-sm" data-tour="demo-order-start">@L["Demo.LaunchAction"]</button>
-        </form>
-
-        @* Skip training is a deliberate opt-out; the tour asks here first (wasla-tour.js). *@
-        <div class="modal fade" id="waslaTourSkipModal" tabindex="-1" aria-labelledby="waslaTourSkipModalTitle" aria-describedby="waslaTourSkipModalBody" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2 class="modal-title h6" id="waslaTourSkipModalTitle">@L["Demo.SkipConfirmTitle"]</h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Demo.SkipConfirmCancel"]"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="mb-0" id="waslaTourSkipModalBody">@L["Demo.SkipConfirmBody", L["Tour.Replay"].Value]</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">@L["Demo.SkipConfirmCancel"]</button>
-                        <button type="button" class="btn btn-primary btn-sm" data-tour-skip-confirm>@L["Demo.SkipConfirmAction"]</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
 
     @* The first validated snapshot renders only the selected view. *@
     <div id="ordersLiveScreenHost" class="wasla-live-screen-host wasla-live-screen-host--board" data-live-screen-view="board" data-tour="live-orders" tabindex="-1" role="region" aria-label="@L["Orders.LiveDisplay.Title"]">
@@ -380,5 +332,4 @@
     <script src="~/js/orders/orders-live-detail-modal.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-store.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>
-    <script src="~/js/wasla-demo.js" asp-append-version="true"></script>
 }

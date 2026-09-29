@@ -1,0 +1,70 @@
+@model Wasla.Web.Models.GuidedSetup.GuidedSetupSectionPanelViewModel
+@using Wasla.Application.GuidedSetup
+@using Wasla.Web.Models.GuidedSetup
+@{
+    var isPlatform = Model.SectionKey == GuidedSetupSections.PlatformConnections;
+    var prefix = isPlatform ? "GuidedSetup.Platform" : "GuidedSetup.PrintBridge";
+}
+<link rel="stylesheet" href="~/css/wasla-guided-setup.css" asp-append-version="true" />
+@* A page-level guide for the user's current guided-setup section. It never collects credentials or creates devices;
+   the page's own controls do the real work. *@
+<section class="wasla-guided-setup-panel@(Model.IsReady ? " is-ready" : "")" aria-labelledby="waslaGuidedSetupPanelTitle" data-guided-setup-panel="@Model.SectionKey">
+    <p class="wasla-guided-setup-panel__eyebrow">
+        <span>@L["GuidedSetup.Panel.Eyebrow"]</span>
+        <span aria-hidden="true">·</span>
+        <span>@L["GuidedSetup.Panel.Progress", Model.SectionNumber, Model.SectionCount]</span>
+    </p>
+    <h2 id="waslaGuidedSetupPanelTitle" class="wasla-guided-setup-panel__title">@L[prefix + ".Title"]</h2>
+    <p class="wasla-guided-setup-panel__body">@L[prefix + ".Body"]</p>
+    <ul class="wasla-guided-setup-panel__points">
+        @if (isPlatform)
+        {
+            <li>@L["GuidedSetup.Platform.Where", L["PlatformConnections.Create"].Value]</li>
+            <li>@L["GuidedSetup.Platform.Check"]</li>
+        }
+        else
+        {
+            <li>@L["GuidedSetup.PrintBridge.Install", L["PrintBridge.Auto.OpenButton"].Value]</li>
+            <li>@L["GuidedSetup.PrintBridge.Secure"]</li>
+            <li>@L["GuidedSetup.PrintBridge.Printer"]</li>
+        }
+        <li>@L[prefix + ".Later"]</li>
+    </ul>
+
+    <p class="wasla-guided-setup-panel__status" role="status">
+        <i class="bi @(Model.IsReady ? "bi-check-circle-fill" : "bi-info-circle")" aria-hidden="true"></i>
+        <span>@L[prefix + (Model.IsReady ? ".Ready" : ".NotReady")]</span>
+    </p>
+
+    <div class="wasla-guided-setup-panel__actions">
+        @if (!Model.IsReady)
+        {
+            @if (isPlatform)
+            {
+                <a class="btn btn-primary" href="/platform-connections/create">@L["PlatformConnections.Create"]</a>
+            }
+            else
+            {
+                <a class="btn btn-primary" href="#pbSetupModeGroup">@L["GuidedSetup.PrintBridge.SetUpNow"]</a>
+            }
+        }
+        <form method="post" action="/guided-setup/advance" data-guided-setup-form>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="section" value="@Model.SectionKey" />
+            @if (Model.IsReady)
+            {
+                <button type="submit" class="btn btn-primary">@L["GuidedSetup.Panel.Continue"]</button>
+            }
+            else
+            {
+                <button type="submit" class="btn btn-outline-secondary">@L[prefix + ".SetUpLater"]</button>
+            }
+        </form>
+    </div>
+
+    @if (Model.NextSectionKey is not null)
+    {
+        <p class="wasla-guided-setup-panel__next">@L["GuidedSetup.Panel.Next", L[GuidedSetupCopy.SectionNameKey(Model.NextSectionKey)].Value]</p>
+    }
+</section>
+<script src="~/js/wasla-guided-setup.js" asp-append-version="true"></script>

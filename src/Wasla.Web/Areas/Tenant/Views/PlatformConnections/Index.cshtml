@@ -1,7 +1,6 @@
 ﻿@model Wasla.Web.Models.PlatformConnections.PlatformConnectionListViewModel
 @using Microsoft.Extensions.Localization
 @using System.Text.Json
-@using Wasla.Application.Tours
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
     ViewData["Title"] = L["PlatformConnections.Title"];
@@ -27,7 +26,10 @@
         ActionTourTarget = "platform-connect"
     })
 
-    @await Component.InvokeAsync("ProductTour", new { tourKey = ProductTourKeys.PlatformConnectionsIntro })
+    @if (Model.GuidedSetup is not null)
+    {
+        @await Html.PartialAsync("_GuidedSetupSectionPanel", Model.GuidedSetup)
+    }
 
     <section class="wasla-surface" aria-labelledby="platform-connections-heading" data-tour="platform-list">
         <h2 id="platform-connections-heading" class="visually-hidden">@L["PlatformConnections.Title"]</h2>

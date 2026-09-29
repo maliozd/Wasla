@@ -3701,4 +3701,110 @@
   <data name="Demo.SelectTitle" xml:space="preserve"><value>Select the demo order</value></data>
   <data name="Demo.SelectBody" xml:space="preserve"><value>Open the order marked DEMO to continue training.</value></data>
   <data name="Tour.TrainingPaused" xml:space="preserve"><value>Training is paused. Continue when you are ready.</value></data>
+  <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>Let's get Wasla ready to use</value></data>
+  <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>Set up your platform connections and printer, then learn the basic order flow with a practice order. You can finish any step that isn't ready yet later.</value></data>
+  <data name="GuidedSetup.FirstUse.BodyOrderTraining" xml:space="preserve"><value>Learn how to approve an order, start preparing it and mark it ready with a practice order.</value></data>
+  <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>This guide covers:</value></data>
+  <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>Printer setup (Wasla Print Bridge)</value></data>
+  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Order training with a practice order</value></data>
+  <data name="GuidedSetup.Start" xml:space="preserve"><value>Start guided setup</value></data>
+  <data name="GuidedSetup.Skip" xml:space="preserve"><value>Skip guided setup</value></data>
+  <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>If you skip guided setup, it won't be shown again in the app. You can find how-to guides in Help and Guides.</value></data>
+  <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>Your guided setup isn't finished yet.</value></data>
+  <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>Where you left off: {0}</value></data>
+  <data name="GuidedSetup.Continue" xml:space="preserve"><value>Continue guided setup</value></data>
+  <data name="GuidedSetup.End" xml:space="preserve"><value>End guided setup</value></data>
+  <data name="GuidedSetup.EndDialog.Title" xml:space="preserve"><value>End guided setup?</value></data>
+  <data name="GuidedSetup.EndDialog.Body" xml:space="preserve"><value>Your saved progress will be discarded and guided setup won't be shown again in the app. Settings you've already made are kept. You can find how-to guides in Help and Guides.</value></data>
+  <data name="GuidedSetup.EndDialog.Confirm" xml:space="preserve"><value>Yes, end it</value></data>
+  <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>Keep going</value></data>
+  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Next: order training</value></data>
+  <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>Your guided setup progress is saved. In the next section you'll practise approving an order, starting preparation and marking it ready with a practice order.</value></data>
+  <data name="GuidedSetup.Next.NotYetAvailable" xml:space="preserve"><value>Order training isn't available yet; once it is, you'll be able to start it here.</value></data>
+  <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>Guided setup</value></data>
+  <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>Section {0} of {1}</value></data>
+  <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="GuidedSetup.Panel.Next" xml:space="preserve"><value>Next: {0}</value></data>
+  <data name="GuidedSetup.Platform.Title" xml:space="preserve"><value>Connect your ordering platforms</value></data>
+  <data name="GuidedSetup.Platform.Body" xml:space="preserve"><value>Wasla brings your Trendyol GO and Yemeksepeti orders onto one screen. Real orders only reach Wasla once at least one platform connection is active.</value></data>
+  <data name="GuidedSetup.Platform.Where" xml:space="preserve"><value>Add a connection with "{0}" and enter your store ID and the API details from the platform. You can edit, activate or turn off existing connections in the table below.</value></data>
+  <data name="GuidedSetup.Platform.Check" xml:space="preserve"><value>You'll know a connection works when its last successful sync time updates as new orders arrive.</value></data>
+  <data name="GuidedSetup.Platform.Later" xml:space="preserve"><value>If your store and API details aren't ready yet, you can finish this step later.</value></data>
+  <data name="GuidedSetup.Platform.Ready" xml:space="preserve"><value>At least one platform connection is active.</value></data>
+  <data name="GuidedSetup.Platform.NotReady" xml:space="preserve"><value>No platform connection is active yet.</value></data>
+  <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>Set up later</value></data>
+  <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>Connect your receipt printer</value></data>
+  <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge is a Windows app for the computer your printer is connected to. It prints the order receipts Wasla creates on the printer you choose.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Download and install the app from this page; if it's already installed, open it with "{0}".</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>The app connects to this account securely with a one-time setup code, so you don't need to copy a device token by hand.</value></data>
+  <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>Then choose your printer in the Print Bridge settings and use "Print test receipt" to print a test receipt.</value></data>
+  <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>If your printer or computer isn't ready yet, you can finish this step later.</value></data>
+  <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>A Print Bridge device is connected.</value></data>
+  <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>No Print Bridge device is connected yet.</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpNow" xml:space="preserve"><value>Set up Print Bridge now</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>I'll set it up later</value></data>
+  <data name="GuidedSetup.Closed" xml:space="preserve"><value>Guided setup is closed. You can find how-to guides in Help and Guides.</value></data>
+  <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>The guided setup action couldn't be completed. Please try again.</value></data>
+  <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>Guided setup isn't available for your account's permissions.</value></data>
+  <data name="Help.Title" xml:space="preserve"><value>Help and Guides</value></data>
+  <data name="Help.Subtitle" xml:space="preserve"><value>Step-by-step guides for setting up Wasla and handling daily orders.</value></data>
+  <data name="Help.Contents" xml:space="preserve"><value>On this page</value></data>
+  <data name="Help.Group.Platforms" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="Help.Group.Printing" xml:space="preserve"><value>Printing</value></data>
+  <data name="Help.Group.Orders" xml:space="preserve"><value>Orders and the Live Screen</value></data>
+  <data name="Help.Group.Support" xml:space="preserve"><value>Troubleshooting and support</value></data>
+  <data name="Help.Trendyol.Title" xml:space="preserve"><value>Connecting Trendyol GO</value></data>
+  <data name="Help.Trendyol.Intro" xml:space="preserve"><value>Before you start, get your store ID and API details (API key and secret) from your Trendyol GO seller panel.</value></data>
+  <data name="Help.Trendyol.Step1" xml:space="preserve"><value>On the Platform Connections page, select "{0}" and choose Trendyol GO as the platform.</value></data>
+  <data name="Help.Trendyol.Step2" xml:space="preserve"><value>Enter the Store Id, API key and API secret. If Supplier Id is left empty, the Store Id is used.</value></data>
+  <data name="Help.Trendyol.Step3" xml:space="preserve"><value>Enter the executor email Trendyol GO uses for requests, keep the connection active and save.</value></data>
+  <data name="Help.Yemeksepeti.Title" xml:space="preserve"><value>Connecting Yemeksepeti</value></data>
+  <data name="Help.Yemeksepeti.Intro" xml:space="preserve"><value>Before you start, get your Yemeksepeti partner integration details: chain ID, vendor ID, client ID and client secret.</value></data>
+  <data name="Help.Yemeksepeti.Step1" xml:space="preserve"><value>On the Platform Connections page, select "{0}" and choose Yemeksepeti as the platform.</value></data>
+  <data name="Help.Yemeksepeti.Step2" xml:space="preserve"><value>Enter the chain ID in the Supplier Id field and the vendor ID in the Store Id field.</value></data>
+  <data name="Help.Yemeksepeti.Step3" xml:space="preserve"><value>Enter the client ID in the API key field and the client secret in the API secret field, then save.</value></data>
+  <data name="Help.PlatformManage.Title" xml:space="preserve"><value>Testing and managing connections</value></data>
+  <data name="Help.PlatformManage.Body" xml:space="preserve"><value>The Platform Connections table shows each connection's status. Use the switch to turn a connection on or off, and edit it to update store and API details. Each platform can have only one connection.</value></data>
+  <data name="Help.PlatformManage.Check" xml:space="preserve"><value>To test a connection, check the "{0}" column: it updates as new orders sync. If you see an error count or a temporary pause warning, check your API details.</value></data>
+  <data name="Help.PrintBridge.Title" xml:space="preserve"><value>Installing and connecting Print Bridge</value></data>
+  <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge is the Windows app that sends receipts to your printer. Install it on the computer the printer is connected to.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>Download the package from the Print Bridge setup page and install it on the computer.</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>On the setup page, select "{0}". The app opens and connects to your account securely with a one-time setup code.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>If the app doesn't open, use the manual setup section on the setup page. Never share the device token.</value></data>
+  <data name="Help.Printer.Title" xml:space="preserve"><value>Choosing a printer</value></data>
+  <data name="Help.Printer.Body" xml:space="preserve"><value>In the Print Bridge app, open Settings, choose your receipt printer from the "Printer name" list and save.</value></data>
+  <data name="Help.Printer.Template" xml:space="preserve"><value>The receipt's content and layout are set on the "{0}" page in Wasla.</value></data>
+  <data name="Help.TestPrint.Title" xml:space="preserve"><value>Sending a test print</value></data>
+  <data name="Help.TestPrint.Body" xml:space="preserve"><value>After choosing the printer, select "Print test receipt" in the Print Bridge app. A test receipt should come out of the printer.</value></data>
+  <data name="Help.TestPrint.Check" xml:space="preserve"><value>If nothing prints, check that the printer is on, has paper and is the right printer in Windows. The Print Bridge devices page shows the device's connection status and recent print jobs.</value></data>
+  <data name="Help.LiveScreen.Title" xml:space="preserve"><value>Live Screen overview</value></data>
+  <data name="Help.LiveScreen.Body" xml:space="preserve"><value>The Live Screen is for following incoming orders in the kitchen and at the counter in real time. View orders as {0}, {1} or {2}, and get sound and browser notifications for new orders.</value></data>
+  <data name="Help.Approve.Title" xml:space="preserve"><value>Approving an order</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>When a new order arrives, check it and select "{0}"; the approval is sent to the platform. If you can't fulfil the order, use "{1}".</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>Starting preparation</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>On an approved order, select "{0}" to show your team that preparation has started.</value></data>
+  <data name="Help.Ready.Title" xml:space="preserve"><value>Marking an order ready</value></data>
+  <data name="Help.Ready.Body" xml:space="preserve"><value>When the order is ready, select "{0}". This is the restaurant's last action on the order; the platform is notified.</value></data>
+  <data name="Help.CourierPickup.Title" xml:space="preserve"><value>Courier pickup</value></data>
+  <data name="Help.CourierPickup.Body" xml:space="preserve"><value>The platform's courier collects the order. When the courier picks it up, the platform reports it and Wasla moves the order to "{0}" automatically. You don't need to do anything in Wasla.</value></data>
+  <data name="Help.Delivered.Title" xml:space="preserve"><value>Delivery completion</value></data>
+  <data name="Help.Delivered.Body" xml:space="preserve"><value>Delivery is reported by the platform too. When the courier delivers the order, Wasla moves it to "{0}" automatically.</value></data>
+  <data name="Help.DeliveredWindow.Title" xml:space="preserve"><value>How long delivered orders stay on the Live Screen</value></data>
+  <data name="Help.DeliveredWindow.Body" xml:space="preserve"><value>Delivered orders stay on the Live Screen for {0} minutes and are then removed from that screen only. The orders are not deleted.</value></data>
+  <data name="Help.OrderHistory.Title" xml:space="preserve"><value>Finding completed orders</value></data>
+  <data name="Help.OrderHistory.Body" xml:space="preserve"><value>All delivered and cancelled orders are on the "{0}" page. Filter by platform, status and date, or search by order code.</value></data>
+  <data name="Help.Troubleshooting.Title" xml:space="preserve"><value>Troubleshooting and support</value></data>
+  <data name="Help.Troubleshooting.NoOrders" xml:space="preserve"><value>Orders aren't arriving: check on Platform Connections that the connection is active and look at its last successful sync time.</value></data>
+  <data name="Help.Troubleshooting.NoPrint" xml:space="preserve"><value>Receipts aren't printing: check that the Print Bridge device shows as connected and the right printer is selected in the app, then look at recent print jobs on the Print Bridge page.</value></data>
+  <data name="Help.Troubleshooting.NoSound" xml:space="preserve"><value>The new-order sound doesn't play: check that sound is on for the Live Screen and that the browser allows audio.</value></data>
+  <data name="Help.Troubleshooting.MissingPage" xml:space="preserve"><value>If you can't see a page or button, your role may not have permission for it; ask the restaurant owner for help.</value></data>
+  <data name="Help.Troubleshooting.Support" xml:space="preserve"><value>If the problem continues, contact support. If you saw an error page, sharing its reference code helps find the problem faster.</value></data>
+  <data name="Help.NeedsPermission" xml:space="preserve"><value>You don't have permission to open this page; ask the restaurant owner if you need it.</value></data>
+  <data name="Help.Action.OpenPlatformConnections" xml:space="preserve"><value>Open platform connections</value></data>
+  <data name="Help.Action.OpenPrintBridgeSetup" xml:space="preserve"><value>Open Print Bridge setup</value></data>
+  <data name="Help.Action.OpenPrintBridgeDevices" xml:space="preserve"><value>Open Print Bridge devices</value></data>
+  <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>Open receipt and printer settings</value></data>
+  <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>Open the Live Screen</value></data>
+  <data name="Help.Action.OpenOrders" xml:space="preserve"><value>Open orders</value></data>
 </root>

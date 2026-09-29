@@ -1,0 +1,206 @@
+/* Guided setup: a calm, optional card on the Dashboard and a page-level panel on setup pages.
+   Logical properties only, so Arabic (RTL) mirrors without overrides. */
+
+.wasla-guided-setup-card,
+.wasla-guided-setup-panel {
+  border: 1px solid var(--wasla-border, #E3DDD3);
+  border-inline-start: 3px solid var(--wasla-accent, #E87342);
+  border-radius: var(--wasla-radius-md, 0.65rem);
+  background: var(--wasla-surface, #FFFEFA);
+  box-shadow: var(--wasla-shadow-sm, 0 1px 2px rgba(42, 36, 31, 0.05));
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.wasla-guided-setup-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+  margin-block-end: 1.25rem;
+}
+
+.wasla-guided-setup-card--resume,
+.wasla-guided-setup-card--next {
+  padding-block: 0.8rem;
+}
+
+.wasla-guided-setup-card__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 50%;
+  background: var(--wasla-accent-soft, #FCEBE2);
+  color: var(--wasla-accent, #E87342);
+  font-size: 1.1rem;
+}
+
+.wasla-guided-setup-card__main {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.wasla-guided-setup-card__title,
+.wasla-guided-setup-panel__title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--wasla-text, #28231F);
+}
+
+.wasla-guided-setup-card__body,
+.wasla-guided-setup-panel__body {
+  margin: 0 0 0.6rem;
+  color: var(--wasla-text-secondary, #746D66);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.wasla-guided-setup-card__label {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--wasla-text, #28231F);
+}
+
+.wasla-guided-setup-card__sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0 0 0.85rem;
+  padding-inline-start: 1.2rem;
+  font-size: 0.875rem;
+  color: var(--wasla-text, #28231F);
+}
+
+.wasla-guided-setup-card__actions,
+.wasla-guided-setup-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wasla-guided-setup-card__actions form,
+.wasla-guided-setup-panel__actions form {
+  margin: 0;
+}
+
+.wasla-guided-setup-card__actions .btn,
+.wasla-guided-setup-panel__actions .btn {
+  min-block-size: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wasla-guided-setup-card__note {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--wasla-text-secondary, #746D66);
+}
+
+.wasla-guided-setup-panel {
+  padding: 0.9rem 1rem;
+  margin-block: 0 1.25rem;
+}
+
+.wasla-guided-setup-panel__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--wasla-accent-strong, #B85527);
+}
+
+.wasla-guided-setup-panel__points {
+  margin: 0 0 0.75rem;
+  padding-inline-start: 1.2rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--wasla-text, #28231F);
+}
+
+.wasla-guided-setup-panel__points li + li {
+  margin-block-start: 0.25rem;
+}
+
+.wasla-guided-setup-panel__status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--wasla-text-secondary, #746D66);
+}
+
+.wasla-guided-setup-panel.is-ready .wasla-guided-setup-panel__status {
+  color: var(--wasla-success, #2F7D4F);
+}
+
+.wasla-guided-setup-panel__next {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--wasla-text-secondary, #746D66);
+}
+
+.wasla-guided-setup-card .btn:focus-visible,
+.wasla-guided-setup-panel .btn:focus-visible,
+.wasla-guided-setup-dialog .btn:focus-visible {
+  outline: 2px solid var(--wasla-focus, #1F6FEB);
+  outline-offset: 2px;
+}
+
+/* Keep the close button at the far edge in both directions. */
+.wasla-guided-setup-dialog .modal-header .btn-close {
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+}
+
+.wasla-guided-setup-dialog .modal-footer {
+  gap: 0.5rem;
+}
+
+.wasla-guided-setup-dialog .modal-footer > * {
+  margin: 0;
+}
+
+@media (max-width: 575.98px) {
+  .wasla-guided-setup-card {
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.9rem;
+  }
+
+  .wasla-guided-setup-card__actions,
+  .wasla-guided-setup-panel__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wasla-guided-setup-card__actions .btn,
+  .wasla-guided-setup-panel__actions .btn,
+  .wasla-guided-setup-card__actions form,
+  .wasla-guided-setup-panel__actions form {
+    inline-size: 100%;
+  }
+
+  .wasla-guided-setup-dialog .modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .wasla-guided-setup-dialog .modal-footer .btn,
+  .wasla-guided-setup-dialog .modal-footer form {
+    inline-size: 100%;
+  }
+}

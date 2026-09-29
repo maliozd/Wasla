@@ -4185,4 +4185,110 @@
   <data name="Demo.SelectTitle" xml:space="preserve"><value>Выберите демозаказ</value></data>
   <data name="Demo.SelectBody" xml:space="preserve"><value>Откройте заказ с отметкой DEMO, чтобы продолжить обучение.</value></data>
   <data name="Tour.TrainingPaused" xml:space="preserve"><value>Обучение приостановлено. Продолжите, когда будете готовы.</value></data>
+  <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>Подготовим Wasla к работе</value></data>
+  <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>Настройте подключения к платформам и принтер, а затем освойте основной порядок работы с заказами на тренировочном заказе. Шаги, к которым вы ещё не готовы, можно завершить позже.</value></data>
+  <data name="GuidedSetup.FirstUse.BodyOrderTraining" xml:space="preserve"><value>Узнайте на тренировочном заказе, как подтвердить заказ, начать его приготовление и отметить готовность.</value></data>
+  <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>В этом руководстве:</value></data>
+  <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>Подключения к платформам</value></data>
+  <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>Настройка принтера (Wasla Print Bridge)</value></data>
+  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Обучение работе с заказами на тренировочном заказе</value></data>
+  <data name="GuidedSetup.Start" xml:space="preserve"><value>Начать пошаговую настройку</value></data>
+  <data name="GuidedSetup.Skip" xml:space="preserve"><value>Пропустить пошаговую настройку</value></data>
+  <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>Если вы пропустите пошаговую настройку, она больше не будет показываться в приложении. Инструкции всегда доступны в разделе «Помощь и руководства».</value></data>
+  <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>Пошаговая настройка не завершена.</value></data>
+  <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>Вы остановились на разделе: {0}</value></data>
+  <data name="GuidedSetup.Continue" xml:space="preserve"><value>Продолжить пошаговую настройку</value></data>
+  <data name="GuidedSetup.End" xml:space="preserve"><value>Завершить пошаговую настройку</value></data>
+  <data name="GuidedSetup.EndDialog.Title" xml:space="preserve"><value>Завершить пошаговую настройку?</value></data>
+  <data name="GuidedSetup.EndDialog.Body" xml:space="preserve"><value>Сохранённый прогресс будет сброшен, и пошаговая настройка больше не появится в приложении. Уже выполненные настройки сохранятся. Инструкции доступны в разделе «Помощь и руководства».</value></data>
+  <data name="GuidedSetup.EndDialog.Confirm" xml:space="preserve"><value>Да, завершить</value></data>
+  <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Далее: обучение работе с заказами</value></data>
+  <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>Прогресс пошаговой настройки сохранён. В следующем разделе вы на тренировочном заказе научитесь подтверждать заказ, начинать приготовление и отмечать готовность.</value></data>
+  <data name="GuidedSetup.Next.NotYetAvailable" xml:space="preserve"><value>Обучение работе с заказами пока недоступно; когда оно появится, его можно будет начать здесь.</value></data>
+  <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>Пошаговая настройка</value></data>
+  <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>Раздел {0} из {1}</value></data>
+  <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>Продолжить</value></data>
+  <data name="GuidedSetup.Panel.Next" xml:space="preserve"><value>Далее: {0}</value></data>
+  <data name="GuidedSetup.Platform.Title" xml:space="preserve"><value>Подключите платформы заказов</value></data>
+  <data name="GuidedSetup.Platform.Body" xml:space="preserve"><value>Wasla собирает заказы Trendyol GO и Yemeksepeti на одном экране. Реальные заказы начнут поступать только после того, как будет активно хотя бы одно подключение к платформе.</value></data>
+  <data name="GuidedSetup.Platform.Where" xml:space="preserve"><value>Добавьте подключение кнопкой «{0}» и введите ID магазина и данные API, полученные на платформе. Существующие подключения можно изменить, включить или отключить в таблице ниже.</value></data>
+  <data name="GuidedSetup.Platform.Check" xml:space="preserve"><value>Подключение работает, если время последней успешной синхронизации обновляется по мере поступления новых заказов.</value></data>
+  <data name="GuidedSetup.Platform.Later" xml:space="preserve"><value>Если данные магазина и API ещё не готовы, этот шаг можно завершить позже.</value></data>
+  <data name="GuidedSetup.Platform.Ready" xml:space="preserve"><value>Активно хотя бы одно подключение к платформе.</value></data>
+  <data name="GuidedSetup.Platform.NotReady" xml:space="preserve"><value>Активных подключений к платформам пока нет.</value></data>
+  <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>Настрою позже</value></data>
+  <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>Подключите принтер чеков</value></data>
+  <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge — приложение Windows для компьютера, к которому подключён принтер. Оно печатает чеки заказов, созданные в Wasla, на выбранном вами принтере.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Скачайте и установите приложение с этой страницы; если оно уже установлено, откройте его кнопкой «{0}».</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Приложение безопасно подключается к этой учётной записи с помощью одноразового кода настройки, поэтому копировать токен устройства вручную не нужно.</value></data>
+  <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>Затем выберите принтер в настройках Print Bridge и нажмите «Распечатать тестовую квитанцию».</value></data>
+  <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>Если принтер или компьютер ещё не готовы, этот шаг можно завершить позже.</value></data>
+  <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>Устройство Print Bridge подключено.</value></data>
+  <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>Подключённых устройств Print Bridge пока нет.</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpNow" xml:space="preserve"><value>Настроить Print Bridge сейчас</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>Настрою позже</value></data>
+  <data name="GuidedSetup.Closed" xml:space="preserve"><value>Пошаговая настройка закрыта. Инструкции доступны в разделе «Помощь и руководства».</value></data>
+  <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>Не удалось выполнить действие пошаговой настройки. Попробуйте ещё раз.</value></data>
+  <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>Пошаговая настройка недоступна для прав вашей учётной записи.</value></data>
+  <data name="Help.Title" xml:space="preserve"><value>Помощь и руководства</value></data>
+  <data name="Help.Subtitle" xml:space="preserve"><value>Пошаговые инструкции по настройке Wasla и работе с ежедневными заказами.</value></data>
+  <data name="Help.Contents" xml:space="preserve"><value>На этой странице</value></data>
+  <data name="Help.Group.Platforms" xml:space="preserve"><value>Подключения к платформам</value></data>
+  <data name="Help.Group.Printing" xml:space="preserve"><value>Печать</value></data>
+  <data name="Help.Group.Orders" xml:space="preserve"><value>Заказы и живой экран</value></data>
+  <data name="Help.Group.Support" xml:space="preserve"><value>Устранение неполадок и поддержка</value></data>
+  <data name="Help.Trendyol.Title" xml:space="preserve"><value>Подключение Trendyol GO</value></data>
+  <data name="Help.Trendyol.Intro" xml:space="preserve"><value>Прежде чем начать, получите ID магазина и данные API (ключ и секрет) в панели продавца Trendyol GO.</value></data>
+  <data name="Help.Trendyol.Step1" xml:space="preserve"><value>На странице подключений к платформам нажмите «{0}» и выберите платформу Trendyol GO.</value></data>
+  <data name="Help.Trendyol.Step2" xml:space="preserve"><value>Введите Store Id, ключ API и секрет API. Если Supplier Id не указан, используется Store Id.</value></data>
+  <data name="Help.Trendyol.Step3" xml:space="preserve"><value>Укажите email исполнителя (Executor email), который Trendyol GO использует в запросах, оставьте подключение активным и сохраните.</value></data>
+  <data name="Help.Yemeksepeti.Title" xml:space="preserve"><value>Подключение Yemeksepeti</value></data>
+  <data name="Help.Yemeksepeti.Intro" xml:space="preserve"><value>Прежде чем начать, получите данные партнёрской интеграции Yemeksepeti: ID сети, ID филиала, client ID и client secret.</value></data>
+  <data name="Help.Yemeksepeti.Step1" xml:space="preserve"><value>На странице подключений к платформам нажмите «{0}» и выберите платформу Yemeksepeti.</value></data>
+  <data name="Help.Yemeksepeti.Step2" xml:space="preserve"><value>Введите ID сети в поле Supplier Id, а ID филиала — в поле Store Id.</value></data>
+  <data name="Help.Yemeksepeti.Step3" xml:space="preserve"><value>Введите client ID в поле ключа API, а client secret — в поле секрета API, затем сохраните.</value></data>
+  <data name="Help.PlatformManage.Title" xml:space="preserve"><value>Проверка подключений и управление ими</value></data>
+  <data name="Help.PlatformManage.Body" xml:space="preserve"><value>В таблице подключений к платформам виден статус каждого подключения. Переключателем подключение включается и отключается, а при редактировании обновляются данные магазина и API. Для каждой платформы можно добавить только одно подключение.</value></data>
+  <data name="Help.PlatformManage.Check" xml:space="preserve"><value>Чтобы проверить подключение, посмотрите столбец «{0}»: время обновляется при синхронизации новых заказов. Если видите счётчик ошибок или предупреждение о временной паузе, проверьте данные API.</value></data>
+  <data name="Help.PrintBridge.Title" xml:space="preserve"><value>Установка и подключение Print Bridge</value></data>
+  <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge — приложение Windows, которое отправляет чеки на принтер. Установите его на компьютер, к которому подключён принтер.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>Скачайте пакет на странице настройки Print Bridge и установите его на компьютер.</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>На странице настройки нажмите «{0}». Приложение откроется и безопасно подключится к вашей учётной записи с помощью одноразового кода.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Если приложение не открылось, воспользуйтесь разделом ручной настройки на той же странице. Никому не сообщайте токен устройства.</value></data>
+  <data name="Help.Printer.Title" xml:space="preserve"><value>Выбор принтера</value></data>
+  <data name="Help.Printer.Body" xml:space="preserve"><value>В приложении Print Bridge откройте «Настройки», выберите принтер чеков в списке «Имя принтера» и сохраните.</value></data>
+  <data name="Help.Printer.Template" xml:space="preserve"><value>Содержание и вид чека настраиваются на странице «{0}» в Wasla.</value></data>
+  <data name="Help.TestPrint.Title" xml:space="preserve"><value>Пробная печать</value></data>
+  <data name="Help.TestPrint.Body" xml:space="preserve"><value>Выбрав принтер, нажмите «Распечатать тестовую квитанцию» в приложении Print Bridge. Принтер должен напечатать тестовый чек.</value></data>
+  <data name="Help.TestPrint.Check" xml:space="preserve"><value>Если ничего не напечаталось, проверьте, что принтер включён, в нём есть бумага и в Windows выбран нужный принтер. На странице устройств Print Bridge видны статус подключения и последние задания печати.</value></data>
+  <data name="Help.LiveScreen.Title" xml:space="preserve"><value>Обзор живого экрана</value></data>
+  <data name="Help.LiveScreen.Body" xml:space="preserve"><value>Живой экран нужен, чтобы в реальном времени следить за поступающими заказами на кухне и на кассе. Заказы можно смотреть в видах «{0}», «{1}» или «{2}» и получать звуковые и браузерные уведомления о новых заказах.</value></data>
+  <data name="Help.Approve.Title" xml:space="preserve"><value>Подтверждение заказа</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>Когда поступит новый заказ, проверьте его и нажмите «{0}» — подтверждение уйдёт на платформу. Если вы не можете выполнить заказ, нажмите «{1}».</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>Начало приготовления</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>У подтверждённого заказа нажмите «{0}», чтобы команда видела, что приготовление началось.</value></data>
+  <data name="Help.Ready.Title" xml:space="preserve"><value>Отметка о готовности заказа</value></data>
+  <data name="Help.Ready.Body" xml:space="preserve"><value>Когда заказ готов, нажмите «{0}». Это последнее действие ресторана по заказу; платформа получит уведомление.</value></data>
+  <data name="Help.CourierPickup.Title" xml:space="preserve"><value>Передача заказа курьеру</value></data>
+  <data name="Help.CourierPickup.Body" xml:space="preserve"><value>Заказ забирает курьер платформы. Когда курьер забирает заказ, платформа сообщает об этом, и Wasla автоматически переводит заказ в статус «{0}». Ничего делать в Wasla не нужно.</value></data>
+  <data name="Help.Delivered.Title" xml:space="preserve"><value>Завершение доставки</value></data>
+  <data name="Help.Delivered.Body" xml:space="preserve"><value>О доставке также сообщает платформа. Когда курьер доставит заказ, Wasla автоматически переведёт его в статус «{0}».</value></data>
+  <data name="Help.DeliveredWindow.Title" xml:space="preserve"><value>Сколько доставленные заказы остаются на живом экране</value></data>
+  <data name="Help.DeliveredWindow.Body" xml:space="preserve"><value>Доставленные заказы видны на живом экране {0} мин., после чего исчезают только с этого экрана. Сами заказы не удаляются.</value></data>
+  <data name="Help.OrderHistory.Title" xml:space="preserve"><value>Поиск завершённых заказов</value></data>
+  <data name="Help.OrderHistory.Body" xml:space="preserve"><value>Все доставленные и отменённые заказы находятся на странице «{0}». Их можно фильтровать по платформе, статусу и дате или искать по коду заказа.</value></data>
+  <data name="Help.Troubleshooting.Title" xml:space="preserve"><value>Устранение неполадок и поддержка</value></data>
+  <data name="Help.Troubleshooting.NoOrders" xml:space="preserve"><value>Заказы не поступают: проверьте на странице подключений, что подключение активно, и посмотрите время последней успешной синхронизации.</value></data>
+  <data name="Help.Troubleshooting.NoPrint" xml:space="preserve"><value>Чеки не печатаются: убедитесь, что устройство Print Bridge отображается как подключённое и в приложении выбран нужный принтер, затем посмотрите последние задания печати на странице Print Bridge.</value></data>
+  <data name="Help.Troubleshooting.NoSound" xml:space="preserve"><value>Нет звука нового заказа: проверьте, что звук на живом экране включён и браузер разрешает воспроизведение.</value></data>
+  <data name="Help.Troubleshooting.MissingPage" xml:space="preserve"><value>Если вы не видите страницу или кнопку, у вашей роли может не быть прав; обратитесь к владельцу ресторана.</value></data>
+  <data name="Help.Troubleshooting.Support" xml:space="preserve"><value>Если проблема не исчезает, обратитесь в поддержку. Если вы видели страницу ошибки, сообщите указанный на ней код — это ускорит поиск причины.</value></data>
+  <data name="Help.NeedsPermission" xml:space="preserve"><value>У вас нет прав на эту страницу; при необходимости обратитесь к владельцу ресторана.</value></data>
+  <data name="Help.Action.OpenPlatformConnections" xml:space="preserve"><value>Открыть подключения к платформам</value></data>
+  <data name="Help.Action.OpenPrintBridgeSetup" xml:space="preserve"><value>Открыть настройку Print Bridge</value></data>
+  <data name="Help.Action.OpenPrintBridgeDevices" xml:space="preserve"><value>Открыть устройства Print Bridge</value></data>
+  <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>Открыть настройки чека и принтера</value></data>
+  <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>Открыть живой экран</value></data>
+  <data name="Help.Action.OpenOrders" xml:space="preserve"><value>Открыть заказы</value></data>
 </root>

@@ -251,6 +251,15 @@
                     </li>
                     }
 
+                    @if (navPermissions.CanViewOrders)
+                    {
+                    <li class="nav-item">
+                        <a class="nav-link @Active("/help")" asp-area="Tenant" asp-controller="Help" asp-action="Index">
+                            <i class="bi bi-question-circle me-2" aria-hidden="true"></i><span class="nav-text">@L["Help.Title"]</span>
+                        </a>
+                    </li>
+                    }
+
                 </ul>
 
 

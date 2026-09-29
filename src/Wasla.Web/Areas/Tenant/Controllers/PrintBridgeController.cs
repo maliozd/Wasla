@@ -7,7 +7,9 @@ using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Orders;
 using Wasla.Application.Time;
 using Wasla.Domain.Enums;
+using Wasla.Application.GuidedSetup;
 using Wasla.Web.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.PrintBridge;
 using Wasla.Web.PrintBridge;
 using Wasla.Web.Routing;
@@ -30,6 +32,7 @@ public sealed class PrintBridgeController : BaseController
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly IStringLocalizer<Wasla.Web.SharedResource> _localizer;
+    private readonly IGuidedSetupCoordinator _guidedSetup;
 
     public PrintBridgeController(
         ICurrentTenantService currentTenant,
@@ -38,7 +41,8 @@ public sealed class PrintBridgeController : BaseController
         IPrintJobHistoryService printJobHistory,
         IWebHostEnvironment environment,
         IConfiguration configuration,
-        IStringLocalizer<Wasla.Web.SharedResource> localizer)
+        IStringLocalizer<Wasla.Web.SharedResource> localizer,
+        IGuidedSetupCoordinator guidedSetup)
     {
         _currentTenant = currentTenant;
         _devices = devices;
@@ -47,6 +51,7 @@ public sealed class PrintBridgeController : BaseController
         _environment = environment;
         _configuration = configuration;
         _localizer = localizer;
+        _guidedSetup = guidedSetup;
     }
 
     [HttpGet("")]
@@ -141,9 +146,13 @@ public sealed class PrintBridgeController : BaseController
         var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
         var packageFileName = PrintBridgePackagePaths.GetPackageFileName(_configuration);
         var packageAvailable = System.IO.File.Exists(packagePath);
+        var guidedSetup = await _guidedSetup
+            .GetSectionPanelAsync(tenant.Id, CurrentUserId, User, GuidedSetupSections.PrintBridge, ct)
+            .ConfigureAwait(false);
 
         return View(new PrintBridgeSetupViewModel
         {
+            GuidedSetup = guidedSetup,
             PackageDownloadUrl = Url.Action(nameof(DownloadPackage), "PrintBridge", new { area = AreaNames.Tenant })
                 ?? "/print-bridge/download/package",
             DevicesUrl = Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices",

@@ -87,6 +87,11 @@
                     <p class="text-muted mb-0">@L["PrintBridge.SetupPageSubtitle"]</p>
                 </header>
 
+                @if (Model.GuidedSetup is not null)
+                {
+                    @await Html.PartialAsync("_GuidedSetupSectionPanel", Model.GuidedSetup)
+                }
+
                 <fieldset class="mb-4" id="pbSetupModeGroup">
                     <legend class="form-label fw-semibold mb-3">@L["PrintBridge.Auto.SetupModeTitle"]</legend>
                     <div class="vstack gap-3">

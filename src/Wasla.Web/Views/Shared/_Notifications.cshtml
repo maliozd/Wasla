@@ -2,17 +2,19 @@
 @{
     var success = TempData["Success"] as string;
     var error = TempData["Error"] as string;
+    // Optional per-message duration for the success toast; absent means the toast's own default.
+    int? successDurationMs = TempData["SuccessDurationMs"] is int ms && ms > 0 ? ms : null;
 
     if (!string.IsNullOrWhiteSpace(success) || !string.IsNullOrWhiteSpace(error))
     {
-        var payload = new { success = success, error = error };
+        var payload = new { success = success, error = error, successDurationMs = successDurationMs };
         var payloadJson = JsonSerializer.Serialize(payload);
         <script>
             (function () {
                 var data = @Html.Raw(payloadJson);
                 function fire() {
                     if (!window.WaslaToast) return;
-                    if (data.success) window.WaslaToast.success(data.success);
+                    if (data.success) window.WaslaToast.success(data.success, data.successDurationMs ? { durationMs: data.successDurationMs } : undefined);
                     if (data.error)   window.WaslaToast.error(data.error);
                 }
                 if (document.readyState === "loading") {

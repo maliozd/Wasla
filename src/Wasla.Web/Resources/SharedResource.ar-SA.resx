@@ -3701,4 +3701,110 @@
   <data name="Demo.SelectTitle" xml:space="preserve"><value>اختر الطلب التجريبي</value></data>
   <data name="Demo.SelectBody" xml:space="preserve"><value>افتح الطلب المميز بشارة التجربة لمتابعة التدريب.</value></data>
   <data name="Tour.TrainingPaused" xml:space="preserve"><value>تم إيقاف التدريب مؤقتًا. تابع عندما تكون جاهزًا.</value></data>
+  <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>لنجهّز Wasla للاستخدام</value></data>
+  <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>يمكنك إعداد اتصالات المنصات والطابعة، ثم تعلّم سير الطلبات الأساسي بطلب تجريبي. يمكنك إكمال أي خطوة غير جاهزة لاحقًا.</value></data>
+  <data name="GuidedSetup.FirstUse.BodyOrderTraining" xml:space="preserve"><value>تعلّم كيف تقبل الطلب وتبدأ تحضيره وتضع عليه علامة جاهز باستخدام طلب تجريبي.</value></data>
+  <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>يشمل هذا الدليل:</value></data>
+  <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>اتصالات المنصات</value></data>
+  <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>إعداد الطابعة (Wasla Print Bridge)</value></data>
+  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>التدريب على الطلبات بطلب تجريبي</value></data>
+  <data name="GuidedSetup.Start" xml:space="preserve"><value>ابدأ الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.Skip" xml:space="preserve"><value>تخطَّ الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>إذا تخطّيت الإعداد الموجّه فلن يظهر مرة أخرى في التطبيق. يمكنك الوصول إلى شروحات الاستخدام من قسم المساعدة والأدلة.</value></data>
+  <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>لم يكتمل الإعداد الموجّه بعد.</value></data>
+  <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>توقفت عند: {0}</value></data>
+  <data name="GuidedSetup.Continue" xml:space="preserve"><value>متابعة الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.End" xml:space="preserve"><value>إنهاء الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.EndDialog.Title" xml:space="preserve"><value>هل تريد إنهاء الإعداد الموجّه؟</value></data>
+  <data name="GuidedSetup.EndDialog.Body" xml:space="preserve"><value>سيتم تجاهل تقدّمك المحفوظ ولن يظهر الإعداد الموجّه مرة أخرى في التطبيق. تبقى الإعدادات التي أجريتها محفوظة. يمكنك الوصول إلى شروحات الاستخدام من قسم المساعدة والأدلة.</value></data>
+  <data name="GuidedSetup.EndDialog.Confirm" xml:space="preserve"><value>نعم، إنهاء</value></data>
+  <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>تراجع</value></data>
+  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>التالي: التدريب على الطلبات</value></data>
+  <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>تم حفظ تقدّمك في الإعداد الموجّه. في القسم التالي ستتدرّب على قبول الطلب وبدء تحضيره ووضع علامة جاهز عليه باستخدام طلب تجريبي.</value></data>
+  <data name="GuidedSetup.Next.NotYetAvailable" xml:space="preserve"><value>التدريب على الطلبات غير متاح بعد؛ ستتمكن من بدئه من هنا عندما يصبح متاحًا.</value></data>
+  <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>القسم {0} من {1}</value></data>
+  <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>متابعة</value></data>
+  <data name="GuidedSetup.Panel.Next" xml:space="preserve"><value>التالي: {0}</value></data>
+  <data name="GuidedSetup.Platform.Title" xml:space="preserve"><value>اربط منصات الطلبات</value></data>
+  <data name="GuidedSetup.Platform.Body" xml:space="preserve"><value>يجمع Wasla طلبات Trendyol GO وYemeksepeti في شاشة واحدة. لا تصل الطلبات الحقيقية إلى Wasla إلا بعد تفعيل اتصال منصة واحد على الأقل.</value></data>
+  <data name="GuidedSetup.Platform.Where" xml:space="preserve"><value>أضف اتصالًا عبر "{0}" وأدخل معرّف المتجر وبيانات API من المنصة. يمكنك تعديل الاتصالات الحالية أو تفعيلها أو إيقافها من الجدول أدناه.</value></data>
+  <data name="GuidedSetup.Platform.Check" xml:space="preserve"><value>ستعرف أن الاتصال يعمل عندما يتحدّث وقت آخر مزامنة ناجحة مع وصول طلبات جديدة.</value></data>
+  <data name="GuidedSetup.Platform.Later" xml:space="preserve"><value>إذا لم تكن بيانات المتجر وAPI جاهزة بعد، يمكنك إكمال هذه الخطوة لاحقًا.</value></data>
+  <data name="GuidedSetup.Platform.Ready" xml:space="preserve"><value>لديك اتصال منصة نشط واحد على الأقل.</value></data>
+  <data name="GuidedSetup.Platform.NotReady" xml:space="preserve"><value>لا يوجد اتصال منصة نشط بعد.</value></data>
+  <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>سأعدّه لاحقًا</value></data>
+  <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>اربط طابعة الإيصالات</value></data>
+  <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge تطبيق Windows يُثبَّت على الحاسوب المتصل بالطابعة. يطبع إيصالات الطلبات التي ينشئها Wasla على الطابعة التي تختارها.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>نزّل التطبيق من هذه الصفحة وثبّته؛ وإذا كان مثبّتًا فافتحه عبر "{0}".</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>يتصل التطبيق بهذا الحساب بأمان باستخدام رمز إعداد لمرة واحدة، فلا حاجة إلى نسخ رمز الجهاز يدويًا.</value></data>
+  <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>بعد ذلك اختر طابعتك من إعدادات Print Bridge واستخدم "طباعة إيصال تجريبي" لطباعة إيصال تجريبي.</value></data>
+  <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>إذا لم تكن الطابعة أو الحاسوب جاهزين بعد، يمكنك إكمال هذه الخطوة لاحقًا.</value></data>
+  <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>يوجد جهاز Print Bridge متصل.</value></data>
+  <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>لا يوجد جهاز Print Bridge متصل بعد.</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpNow" xml:space="preserve"><value>إعداد Print Bridge الآن</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>سأعدّه لاحقًا</value></data>
+  <data name="GuidedSetup.Closed" xml:space="preserve"><value>تم إغلاق الإعداد الموجّه. يمكنك الوصول إلى شروحات الاستخدام من قسم المساعدة والأدلة.</value></data>
+  <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>تعذّر إكمال إجراء الإعداد الموجّه. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>الإعداد الموجّه غير متاح لصلاحيات حسابك.</value></data>
+  <data name="Help.Title" xml:space="preserve"><value>المساعدة والأدلة</value></data>
+  <data name="Help.Subtitle" xml:space="preserve"><value>شروحات خطوة بخطوة لإعداد Wasla وإدارة الطلبات اليومية.</value></data>
+  <data name="Help.Contents" xml:space="preserve"><value>في هذه الصفحة</value></data>
+  <data name="Help.Group.Platforms" xml:space="preserve"><value>اتصالات المنصات</value></data>
+  <data name="Help.Group.Printing" xml:space="preserve"><value>الطباعة</value></data>
+  <data name="Help.Group.Orders" xml:space="preserve"><value>الطلبات والشاشة المباشرة</value></data>
+  <data name="Help.Group.Support" xml:space="preserve"><value>حل المشكلات والدعم</value></data>
+  <data name="Help.Trendyol.Title" xml:space="preserve"><value>ربط Trendyol GO</value></data>
+  <data name="Help.Trendyol.Intro" xml:space="preserve"><value>قبل البدء، احصل على معرّف المتجر وبيانات API (المفتاح والمفتاح السري) من لوحة البائع في Trendyol GO.</value></data>
+  <data name="Help.Trendyol.Step1" xml:space="preserve"><value>في صفحة اتصالات المنصات اضغط "{0}" واختر Trendyol GO منصةً.</value></data>
+  <data name="Help.Trendyol.Step2" xml:space="preserve"><value>أدخل معرّف المتجر (Store Id) ومفتاح API والمفتاح السري. إذا تُرك معرّف المورّد (Supplier Id) فارغًا فسيُستخدم معرّف المتجر.</value></data>
+  <data name="Help.Trendyol.Step3" xml:space="preserve"><value>أدخل البريد الإلكتروني للمستخدم المنفّذ (Executor email) الذي يستخدمه Trendyol GO في الطلبات، وأبقِ الاتصال نشطًا ثم احفظه.</value></data>
+  <data name="Help.Yemeksepeti.Title" xml:space="preserve"><value>ربط Yemeksepeti</value></data>
+  <data name="Help.Yemeksepeti.Intro" xml:space="preserve"><value>قبل البدء، احصل على بيانات تكامل شريك Yemeksepeti: معرّف السلسلة ومعرّف الفرع ومعرّف العميل والمفتاح السري للعميل.</value></data>
+  <data name="Help.Yemeksepeti.Step1" xml:space="preserve"><value>في صفحة اتصالات المنصات اضغط "{0}" واختر Yemeksepeti منصةً.</value></data>
+  <data name="Help.Yemeksepeti.Step2" xml:space="preserve"><value>أدخل معرّف السلسلة في حقل Supplier Id ومعرّف الفرع في حقل Store Id.</value></data>
+  <data name="Help.Yemeksepeti.Step3" xml:space="preserve"><value>أدخل معرّف العميل في حقل مفتاح API والمفتاح السري للعميل في حقل المفتاح السري، ثم احفظ.</value></data>
+  <data name="Help.PlatformManage.Title" xml:space="preserve"><value>اختبار الاتصالات وإدارتها</value></data>
+  <data name="Help.PlatformManage.Body" xml:space="preserve"><value>يعرض جدول اتصالات المنصات حالة كل اتصال. استخدم المفتاح لتشغيل الاتصال أو إيقافه، وعدّله لتحديث بيانات المتجر وAPI. لكل منصة اتصال واحد فقط.</value></data>
+  <data name="Help.PlatformManage.Check" xml:space="preserve"><value>لاختبار الاتصال، راجع عمود "{0}": يتحدّث هذا الوقت مع مزامنة الطلبات الجديدة. إذا ظهر عدد أخطاء أو تحذير إيقاف مؤقت فتحقّق من بيانات API.</value></data>
+  <data name="Help.PrintBridge.Title" xml:space="preserve"><value>تثبيت Print Bridge وربطه</value></data>
+  <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge هو تطبيق Windows الذي يرسل الإيصالات إلى الطابعة. ثبّته على الحاسوب المتصل بالطابعة.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>نزّل الحزمة من صفحة إعداد Print Bridge وثبّتها على الحاسوب.</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>في صفحة الإعداد اضغط "{0}". سيفتح التطبيق ويتصل بحسابك بأمان باستخدام رمز إعداد لمرة واحدة.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>إذا لم يُفتح التطبيق فاستخدم قسم الإعداد اليدوي في صفحة الإعداد. لا تشارك رمز الجهاز مع أحد.</value></data>
+  <data name="Help.Printer.Title" xml:space="preserve"><value>اختيار الطابعة</value></data>
+  <data name="Help.Printer.Body" xml:space="preserve"><value>في تطبيق Print Bridge افتح الإعدادات، واختر طابعة الإيصالات من قائمة "اسم الطابعة"، ثم احفظ.</value></data>
+  <data name="Help.Printer.Template" xml:space="preserve"><value>يُضبط محتوى الإيصال وشكله من صفحة "{0}" في Wasla.</value></data>
+  <data name="Help.TestPrint.Title" xml:space="preserve"><value>طباعة إيصال تجريبي</value></data>
+  <data name="Help.TestPrint.Body" xml:space="preserve"><value>بعد اختيار الطابعة اضغط "طباعة إيصال تجريبي" في تطبيق Print Bridge. يجب أن يخرج إيصال تجريبي من الطابعة.</value></data>
+  <data name="Help.TestPrint.Check" xml:space="preserve"><value>إذا لم تتم الطباعة فتحقّق من أن الطابعة قيد التشغيل وبها ورق وأنها الطابعة الصحيحة في Windows. تعرض صفحة أجهزة Print Bridge حالة اتصال الجهاز وآخر مهام الطباعة.</value></data>
+  <data name="Help.LiveScreen.Title" xml:space="preserve"><value>نظرة عامة على الشاشة المباشرة</value></data>
+  <data name="Help.LiveScreen.Body" xml:space="preserve"><value>الشاشة المباشرة مخصّصة لمتابعة الطلبات الواردة في المطبخ وعند الكاشير لحظة بلحظة. اعرض الطلبات بطريقة {0} أو {1} أو {2}، واحصل على تنبيهات صوتية وتنبيهات المتصفح للطلبات الجديدة.</value></data>
+  <data name="Help.Approve.Title" xml:space="preserve"><value>قبول الطلب</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>عند وصول طلب جديد راجعه واضغط "{0}"؛ يُرسَل القبول إلى المنصة. إذا لم تتمكن من تلبية الطلب فاستخدم "{1}".</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>بدء التحضير</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>في الطلب المقبول اضغط "{0}" لإظهار بدء التحضير لفريقك.</value></data>
+  <data name="Help.Ready.Title" xml:space="preserve"><value>وضع علامة جاهز على الطلب</value></data>
+  <data name="Help.Ready.Body" xml:space="preserve"><value>عندما يصبح الطلب جاهزًا اضغط "{0}". هذا آخر إجراء يقوم به المطعم على الطلب، ويتم إبلاغ المنصة.</value></data>
+  <data name="Help.CourierPickup.Title" xml:space="preserve"><value>استلام المندوب للطلب</value></data>
+  <data name="Help.CourierPickup.Body" xml:space="preserve"><value>يستلم مندوب المنصة الطلب. عند استلامه تُبلغ المنصة بذلك وينقل Wasla الطلب تلقائيًا إلى حالة "{0}". لا حاجة لأي إجراء منك في Wasla.</value></data>
+  <data name="Help.Delivered.Title" xml:space="preserve"><value>اكتمال التسليم</value></data>
+  <data name="Help.Delivered.Body" xml:space="preserve"><value>تُبلغ المنصة عن التسليم أيضًا. عندما يسلّم المندوب الطلب ينقله Wasla تلقائيًا إلى حالة "{0}".</value></data>
+  <data name="Help.DeliveredWindow.Title" xml:space="preserve"><value>مدة بقاء الطلبات المسلَّمة على الشاشة المباشرة</value></data>
+  <data name="Help.DeliveredWindow.Body" xml:space="preserve"><value>يبقى الطلب المكتمل ظاهرًا مؤقتًا قبل انتقاله إلى سجل الطلبات. المدة بالدقائق: {0}.</value></data>
+  <data name="Help.OrderHistory.Title" xml:space="preserve"><value>العثور على الطلبات المكتملة</value></data>
+  <data name="Help.OrderHistory.Body" xml:space="preserve"><value>جميع الطلبات المسلَّمة والملغاة موجودة في صفحة "{0}". يمكنك التصفية حسب المنصة والحالة والتاريخ أو البحث برمز الطلب.</value></data>
+  <data name="Help.Troubleshooting.Title" xml:space="preserve"><value>حل المشكلات والدعم</value></data>
+  <data name="Help.Troubleshooting.NoOrders" xml:space="preserve"><value>الطلبات لا تصل: تحقّق في اتصالات المنصات من أن الاتصال نشط وراجع وقت آخر مزامنة ناجحة.</value></data>
+  <data name="Help.Troubleshooting.NoPrint" xml:space="preserve"><value>الإيصالات لا تُطبع: تحقّق من أن جهاز Print Bridge يظهر متصلًا وأن الطابعة الصحيحة مختارة في التطبيق، ثم راجع آخر مهام الطباعة في صفحة Print Bridge.</value></data>
+  <data name="Help.Troubleshooting.NoSound" xml:space="preserve"><value>صوت الطلب الجديد لا يعمل: تحقّق من تفعيل الصوت في الشاشة المباشرة ومن سماح المتصفح بتشغيل الصوت.</value></data>
+  <data name="Help.Troubleshooting.MissingPage" xml:space="preserve"><value>إذا لم تظهر لك صفحة أو زر فقد لا يملك دورك صلاحية ذلك؛ اطلب المساعدة من مالك المطعم.</value></data>
+  <data name="Help.Troubleshooting.Support" xml:space="preserve"><value>إذا استمرت المشكلة فتواصل مع الدعم. إذا ظهرت لك صفحة خطأ فإن مشاركة رمز المرجع الموجود عليها يساعد على إيجاد المشكلة أسرع.</value></data>
+  <data name="Help.NeedsPermission" xml:space="preserve"><value>ليست لديك صلاحية فتح هذه الصفحة؛ اطلب المساعدة من مالك المطعم إذا احتجت إليها.</value></data>
+  <data name="Help.Action.OpenPlatformConnections" xml:space="preserve"><value>فتح اتصالات المنصات</value></data>
+  <data name="Help.Action.OpenPrintBridgeSetup" xml:space="preserve"><value>فتح إعداد Print Bridge</value></data>
+  <data name="Help.Action.OpenPrintBridgeDevices" xml:space="preserve"><value>فتح أجهزة Print Bridge</value></data>
+  <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>فتح إعدادات الإيصال والطابعة</value></data>
+  <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>فتح الشاشة المباشرة</value></data>
+  <data name="Help.Action.OpenOrders" xml:space="preserve"><value>فتح الطلبات</value></data>
 </root>

@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.GuidedSetup;
 using Wasla.Web.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.PlatformConnections;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -21,17 +23,20 @@ public sealed class PlatformConnectionsController : BaseController
     private readonly IPlatformConnectionService _connections;
     private readonly IValidator<CreatePlatformConnectionCommand> _createValidator;
     private readonly IStringLocalizer<Wasla.Web.SharedResource> _localizer;
+    private readonly IGuidedSetupCoordinator _guidedSetup;
 
     public PlatformConnectionsController(
         ICurrentTenantService currentTenant,
         IPlatformConnectionService connections,
         IValidator<CreatePlatformConnectionCommand> createValidator,
-        IStringLocalizer<Wasla.Web.SharedResource> localizer)
+        IStringLocalizer<Wasla.Web.SharedResource> localizer,
+        IGuidedSetupCoordinator guidedSetup)
     {
         _currentTenant = currentTenant;
         _connections = connections;
         _createValidator = createValidator;
         _localizer = localizer;
+        _guidedSetup = guidedSetup;
     }
 
     [HttpGet("")]
@@ -52,7 +57,14 @@ public sealed class PlatformConnectionsController : BaseController
             LastSuccessfulSyncUtc = x.LastSuccessfulSyncUtc
         }).ToList();
 
-        return View("Index", new PlatformConnectionListViewModel { Connections = rows });
+        var guidedSetup = await _guidedSetup.GetSectionPanelAsync(
+            tenant.Id, CurrentUserId, User, GuidedSetupSections.PlatformConnections, ct);
+
+        return View("Index", new PlatformConnectionListViewModel
+        {
+            Connections = rows,
+            GuidedSetup = guidedSetup
+        });
     }
 
     [HttpGet("{id:guid}/edit")]
