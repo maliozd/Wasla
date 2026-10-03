@@ -88,6 +88,39 @@ Interactive states expected where applicable: default, hover, focus, active, dis
 
 Operational density: Live Screen cards/columns and Orders filters should stay compact and scannable; do not expand into marketing card grids.
 
+### Tables and sorting
+
+Tenant data tables use the shared `.wasla-table` primitive in `wasla-foundation.css` (inside `.wasla-table-wrap`, which scrolls sideways only): muted uppercase headers, border-first rows, `.wasla-table__num` for amounts and times (end-aligned, tabular figures), `.wasla-table__actions`, `.wasla-table__datetime` (a received time may wrap only between date and time; both tables render it with the shared `_ReceivedAtTime` partial: time only for today, date and time otherwise) and `.wasla-table__empty`. Page CSS only adjusts spacing (`wasla-dash-table` and `wasla-orders-table` in `wasla-theme.css`).
+
+Responsive modifiers:
+
+- `.wasla-table--stack`: below 768 px each row becomes a block of labelled cells (each cell carries a `.wasla-table__cell-label`).
+- `.wasla-table--stack-lg`: from 768 to 1199 px each row is a compact card with a three-column grid of labelled cells and the actions on their own line, for tables too wide for tablets (Orders).
+- `.wasla-table--sortable`: on stacked layouts the header row becomes a small "sort by" bar that keeps only the sortable headers, so no focusable sort control is ever hidden. A plain stacked table keeps its header for screen readers only.
+
+Sorting rules:
+
+- Paginated or growing lists sort on the server, before `Skip`/`Take`, from an allowlist of column names (never a raw column name or SQL fragment), with a deterministic tie-breaker (newest `ReceivedAt`, then `Id`).
+- A sort link keeps every filter, the search and the page size, and returns to page 1. Culture is a cookie, so it is unaffected.
+- A small list that is fully rendered on the page sorts in the browser, stably, with a deterministic tie-breaker.
+- The sorted column's header cell carries `aria-sort`; the control is a link (server-side) or a button (client-side), keyboard-operable with a visible focus ring; the arrow icon is decorative.
+- Action columns and columns without a meaningful or truthful order are not sortable.
+
+| Table | Kind | Sorting |
+| --- | --- | --- |
+| Orders (`Orders/_OrdersTable.cshtml`) | Sortable data table (paginated) | Server-side: platform, customer, status, total, received, with `aria-sort`, icons and a stable tie-breaker. Order code and actions are intentionally not sortable; search finds a specific order. |
+| Users (`TenantUsers/Index.cshtml`) | Sortable data table (complete list on the page) | Client-side, stable (`tenant-users-index.js`): name (display name, else email), role (by permission level, Owner first, not by the translated label), created. Ties fall back to email, then the rendered order. Status, last login and actions are not sortable. Last login is not sortable because tenant users' last login is not recorded yet (the column shows "not recorded"). |
+| Dashboard Recent Orders (`Dashboard/Index.cshtml`) | Chronological snapshot | Not sortable: the latest 10, newest first, is its meaning; "View all" opens the sortable Orders list. |
+| Print jobs (`PrintBridge/_PrintJobHistory.cshtml`) | Chronological snapshot (capped feed) | Not sortable: the latest 50, newest first, refreshed in place. |
+| Order items (`Orders/Details.cshtml`, Live Screen detail) | Ordered item list | Not sortable: an order's items in one fixed order. That order is by item record (`OrderItems.Id`, a GUID), which is stable but not guaranteed to be the provider's sequence. |
+| Platform connections (`PlatformConnections/Index.cshtml`) | Small operational list | Not sortable: at most one row per platform (three today). |
+| Branches (`Branches/Index.cshtml`) | Small operational list | Not sortable: one location per tenant today. |
+| Print Bridge devices (rendered by `print-bridge-page.js`) | Small operational list | Not sortable: few devices, re-rendered on poll. |
+
+### Known limitation: dark mode in the tenant shell
+
+Choosing dark mode does not restyle the tenant shell: the body, cards and tables stay light on every tenant page (for example Branches). This predates the dashboard and table work, which does not fix it; the foundation tokens on `body.wasla-tenant-shell` have no dark values yet.
+
 ---
 
 ## Typography

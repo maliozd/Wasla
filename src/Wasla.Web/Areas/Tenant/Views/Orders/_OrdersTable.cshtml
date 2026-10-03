@@ -9,30 +9,34 @@
 
 @{
     var canManageOrders = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManageOrders)).Succeeded;
-    string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
 }
 
 <div class="orders-table-meta d-none" data-total-count="@Model.TotalCount"></div>
 
-<div class="table-responsive">
-    <table class="table table-sm align-middle mb-0 wasla-orders-table">
+@* Shared tenant table (wasla-table): sortable headers are server-side links; on phones rows stack with cell labels. *@
+<div class="wasla-table-wrap">
+    <table class="wasla-table wasla-table--stack wasla-table--stack-lg wasla-table--sortable wasla-orders-table">
+        <caption class="visually-hidden">@L["Orders.Title"]</caption>
         <thead>
         <tr>
-            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "platform", L["Orders.Platform"].Value))</th>
-            <th>@L["Orders.OrderCode"]</th>
-            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "customerName", L["Orders.Customer"].Value))</th>
-            <th>@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "status", L["Orders.Status"].Value))</th>
-            <th class="text-end">@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "totalAmount", L["Orders.TotalAmount"].Value))</th>
-            <th class="text-end">@await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "receivedAt", L["Orders.ReceivedAt"].Value))</th>
-            <th class="text-end">@L["Orders.Actions"]</th>
+            @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "platform", L["Orders.Platform"].Value))
+            <th scope="col">@L["Orders.OrderCode"]</th>
+            @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "customerName", L["Orders.Customer"].Value))
+            @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "status", L["Orders.Status"].Value))
+            @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "totalAmount", L["Orders.TotalAmount"].Value, IsNumeric: true))
+            @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "receivedAt", L["Orders.ReceivedAt"].Value, IsNumeric: true))
+            <th scope="col" class="wasla-table__actions">@L["Orders.Actions"]</th>
         </tr>
         </thead>
         <tbody>
         @if (Model.Orders.Count == 0)
         {
-            <tr>
-                <td colspan="7" class="text-center text-muted py-4">
-                    @(Model.UseSimpleNoOrdersMessage ? L["Orders.NoOrdersFound"] : L["Orders.NoFilteredOrdersFound"])
+            <tr class="wasla-table__empty-row">
+                <td colspan="7">
+                    <div class="wasla-table__empty">
+                        <i class="bi bi-inbox" aria-hidden="true"></i>
+                        <span>@(Model.UseSimpleNoOrdersMessage ? L["Orders.NoOrdersFound"] : L["Orders.NoFilteredOrdersFound"])</span>
+                    </div>
                 </td>
             </tr>
         }
@@ -47,22 +51,38 @@
                     data-item-count="@o.ItemCount"
                     data-first-product="@o.FirstProductName">
                     <td>
+                        <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.Platform"]</span>
                         @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)o.Platform, DisplayName: (string?)null))
                     </td>
-                    <td>
-                        <a href="/orders/details/@o.Id">@o.ExternalOrderCode</a>
-                        <span class="order-sound-indicator d-none" data-order-speaker="@o.Id" title="@L["Orders.SoundPlayingTitle"]">
-                            <i class="bi bi-volume-up"></i>
+                    <td class="wasla-table__primary">
+                        <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.OrderCode"]</span>
+                        <span>
+                            <a class="wasla-table__link" href="/orders/details/@o.Id">@o.ExternalOrderCode</a>
+                            <span class="order-sound-indicator d-none" data-order-speaker="@o.Id" title="@L["Orders.SoundPlayingTitle"]">
+                                <i class="bi bi-volume-up"></i>
+                            </span>
                         </span>
                     </td>
-                    <td>@o.CustomerName</td>
-                    <td>
-                        <span class="me-2">@StatusLabel(o.Status)</span>
-                        <span class="badge text-bg-primary d-none wasla-orders-new-badge" data-new-badge>@L["Orders.StatusNewBadge"]</span>
+                    <td class="wasla-table__truncate">
+                        <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.Customer"]</span>
+                        <span dir="auto" title="@o.CustomerName">@o.CustomerName</span>
                     </td>
-                    <td class="text-end">@o.TotalAmount.ToString("C")</td>
-                    <td class="text-end">@o.ReceivedAtLocal.ToString("g")</td>
-                    <td class="text-end">
+                    <td>
+                        <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.Status"]</span>
+                        <span class="wasla-table__status">
+                            @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(o.Status))
+                            <span class="badge text-bg-primary d-none wasla-orders-new-badge" data-new-badge>@L["Orders.StatusNewBadge"]</span>
+                        </span>
+                    </td>
+                    <td class="wasla-table__num wasla-table__amount">
+                        <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.TotalAmount"]</span>
+                        <span>@o.TotalAmount.ToString("C")</span>
+                    </td>
+                    <td class="wasla-table__num wasla-table__muted wasla-table__datetime">
+                        <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.ReceivedAt"]</span>
+                        @await Html.PartialAsync("_ReceivedAtTime", new ReceivedAtTimeModel(o.ReceivedAtUtc, o.ReceivedAtLocal, Model.TurkeyLocalToday))
+                    </td>
+                    <td class="wasla-table__actions">
                         @await Html.PartialAsync("_OrderLifecycleActions", new Wasla.Web.Models.Orders.OrderLifecycleActionsModel
                         {
                             OrderId = o.Id,

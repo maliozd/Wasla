@@ -793,8 +793,10 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
   font-size: 0.875rem;
 }
 
+/* Tables scroll sideways only; a vertical scrollbar here would only ever show a stray pixel. */
 .wasla-table-wrap {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .wasla-table {
@@ -855,6 +857,347 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Shared table additions: numeric cells, sortable headers, empty state.
+   Sorting is always server-side links; aria-sort sits on the <th>. */
+.wasla-table__num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Same specificity as ".wasla-table td", so numbers and actions really sit at the end of their cells. */
+.wasla-table th.wasla-table__num,
+.wasla-table td.wasla-table__num {
+  text-align: end;
+}
+
+/* Date and time may break onto two lines (older rows show the full date), never mid-value. */
+.wasla-table__datetime {
+  min-width: 5.5rem;
+  white-space: normal;
+}
+
+.wasla-table__amount {
+  color: var(--wasla-text);
+  font-weight: 650;
+}
+
+.wasla-table__muted {
+  color: var(--wasla-text-muted);
+  font-size: 0.85rem;
+}
+
+.wasla-table__primary {
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.wasla-table__link {
+  color: var(--wasla-text);
+  font-weight: 650;
+  text-decoration: none;
+  border-radius: var(--wasla-radius-sm);
+}
+
+.wasla-table__link:hover {
+  color: var(--wasla-accent-hover);
+  text-decoration: underline;
+}
+
+.wasla-table__link:focus-visible,
+.wasla-table__sort:focus-visible {
+  outline: 2px solid var(--wasla-accent);
+  outline-offset: 2px;
+}
+
+.wasla-table__truncate > span:not(.wasla-table__cell-label) {
+  display: inline-block;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.wasla-table__status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wasla-table__actions {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.wasla-table th.wasla-table__actions,
+.wasla-table td.wasla-table__actions {
+  text-align: end;
+}
+
+.wasla-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.75rem;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--wasla-radius-sm);
+}
+
+button.wasla-table__sort {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.wasla-table__sort:hover,
+.wasla-table__sort.is-active {
+  color: var(--wasla-text);
+}
+
+.wasla-table__sort-icon {
+  font-size: 0.8rem;
+  opacity: 0.45;
+}
+
+.wasla-table__sort.is-active .wasla-table__sort-icon {
+  color: var(--wasla-accent-hover);
+  opacity: 1;
+}
+
+.wasla-table__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2rem 1rem;
+  color: var(--wasla-text-muted);
+  text-align: center;
+}
+
+.wasla-table__empty .bi {
+  font-size: 1.5rem;
+  opacity: 0.6;
+}
+
+.wasla-table tbody tr.wasla-table__empty-row:hover {
+  background: transparent;
+}
+
+/* Phones: each row becomes a compact block with visible cell labels. A plain table keeps its header
+   for screen readers only; a sortable table (.wasla-table--sortable) turns the header row into a small
+   "sort by" bar that keeps only the sortable headers, so no focusable control is ever hidden. */
+@media (max-width: 767.98px) {
+  .wasla-table--stack:not(.wasla-table--sortable) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead th {
+    display: none;
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead th.wasla-table__sortable {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead .wasla-table__sort {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--wasla-border-strong);
+    border-radius: 999px;
+    background: var(--wasla-surface-elevated);
+    font-size: 0.72rem;
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead .wasla-table__sort.is-active {
+    border-color: var(--wasla-accent-border);
+    background: var(--wasla-accent-soft);
+  }
+
+  .wasla-table--stack,
+  .wasla-table--stack tbody,
+  .wasla-table--stack tr,
+  .wasla-table--stack td {
+    display: block;
+    width: 100%;
+  }
+
+  .wasla-table--stack tr {
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-table--stack td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem 0.75rem;
+    padding: 0.25rem 0;
+    border-bottom: 0;
+    text-align: start;
+  }
+
+  .wasla-table--stack td.wasla-table__num,
+  .wasla-table--stack td.wasla-table__actions {
+    text-align: start;
+  }
+
+  .wasla-table--stack .wasla-table__cell-label {
+    display: block;
+    color: var(--wasla-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .wasla-table--stack .wasla-table__truncate > span:not(.wasla-table__cell-label) {
+    max-width: 60%;
+  }
+
+  .wasla-table--stack tr.wasla-table__empty-row td {
+    justify-content: center;
+  }
+}
+
+/* Wide tables on tablets (768-1199px) with .wasla-table--stack-lg: each row is a compact card with a
+   three-column grid of labelled cells; the actions take a full line, so nothing scrolls out of view. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .wasla-table--stack-lg:not(.wasla-table--sortable) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .wasla-table--stack-lg,
+  .wasla-table--stack-lg thead,
+  .wasla-table--stack-lg tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead th {
+    display: none;
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead th.wasla-table__sortable {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead .wasla-table__sort {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--wasla-border-strong);
+    border-radius: 999px;
+    background: var(--wasla-surface-elevated);
+    font-size: 0.72rem;
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead .wasla-table__sort.is-active {
+    border-color: var(--wasla-accent-border);
+    background: var(--wasla-accent-soft);
+  }
+
+  .wasla-table--stack-lg tbody tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-table--stack-lg tbody td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: 0;
+    border-bottom: 0;
+    text-align: start;
+  }
+
+  .wasla-table--stack-lg tbody td.wasla-table__num {
+    text-align: start;
+  }
+
+  .wasla-table--stack-lg tbody td.wasla-table__actions {
+    grid-column: 1 / -1;
+    align-items: flex-end;
+  }
+
+  .wasla-table--stack-lg tbody td.wasla-table__actions:empty,
+  .wasla-table--stack-lg tbody td.wasla-table__actions:not(:has(*)) {
+    display: none;
+  }
+
+  .wasla-table--stack-lg tbody tr.wasla-table__empty-row {
+    display: block;
+  }
+
+  .wasla-table--stack-lg .wasla-table__cell-label {
+    display: block;
+    color: var(--wasla-text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .wasla-table--stack-lg .wasla-table__truncate > span:not(.wasla-table__cell-label) {
+    max-width: 100%;
+  }
+
+  .wasla-table--stack-lg .wasla-table__primary {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
 }
 
 .wasla-avatar {
@@ -1358,5 +1701,55 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
   body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-backdrop,
   .wasla-btn {
     transition: none !important;
+  }
+}
+
+/* Users: same phone sort bar as .wasla-table--stack (its own phone rules clip the header). */
+@media (max-width: 767.98px) {
+  .wasla-users .wasla-table thead {
+    position: static;
+    width: auto;
+    max-width: none;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    pointer-events: auto;
+    display: block;
+  }
+
+  .wasla-users .wasla-table thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .wasla-users .wasla-table thead th {
+    display: none;
+  }
+
+  .wasla-users .wasla-table thead th.wasla-table__sortable {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .wasla-users .wasla-table thead .wasla-table__sort {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--wasla-border-strong);
+    border-radius: 999px;
+    background: var(--wasla-surface-elevated);
+    font-size: 0.72rem;
+  }
+
+  .wasla-users .wasla-table thead .wasla-table__sort.is-active {
+    border-color: var(--wasla-accent-border);
+    background: var(--wasla-accent-soft);
   }
 }

@@ -72,27 +72,19 @@ public sealed class OrderReadService : IOrderReadService
         var safeSortBy = string.IsNullOrWhiteSpace(sortBy) ? "receivedAt" : sortBy.Trim();
         var safeSortDirection = string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
 
-        q = safeSortBy switch
+        var ascending = safeSortDirection == "asc";
+        var ordered = safeSortBy switch
         {
-            "platform" => safeSortDirection == "asc"
-                ? q.OrderBy(o => o.Platform)
-                : q.OrderByDescending(o => o.Platform),
-            "status" => safeSortDirection == "asc"
-                ? q.OrderBy(o => o.InternalStatus)
-                : q.OrderByDescending(o => o.InternalStatus),
-            "customerName" => safeSortDirection == "asc"
-                ? q.OrderBy(o => o.CustomerName)
-                : q.OrderByDescending(o => o.CustomerName),
-            "totalAmount" => safeSortDirection == "asc"
-                ? q.OrderBy(o => o.TotalAmount)
-                : q.OrderByDescending(o => o.TotalAmount),
-            "receivedAt" => safeSortDirection == "asc"
-                ? q.OrderBy(o => o.ReceivedAt)
-                : q.OrderByDescending(o => o.ReceivedAt),
-            _ => safeSortDirection == "asc"
-                ? q.OrderBy(o => o.ReceivedAt)
-                : q.OrderByDescending(o => o.ReceivedAt)
+            "platform" => ascending ? q.OrderBy(o => o.Platform) : q.OrderByDescending(o => o.Platform),
+            "status" => ascending ? q.OrderBy(o => o.InternalStatus) : q.OrderByDescending(o => o.InternalStatus),
+            "customerName" => ascending ? q.OrderBy(o => o.CustomerName) : q.OrderByDescending(o => o.CustomerName),
+            "totalAmount" => ascending ? q.OrderBy(o => o.TotalAmount) : q.OrderByDescending(o => o.TotalAmount),
+            _ => ascending ? q.OrderBy(o => o.ReceivedAt) : q.OrderByDescending(o => o.ReceivedAt)
         };
+
+        // Rows that tie on the sorted column (same platform, status, customer or amount) need a fixed order,
+        // or a row could appear on two pages or on none. Newest first, then the unique ID.
+        q = ordered.ThenByDescending(o => o.ReceivedAt).ThenBy(o => o.Id);
 
         var total = await q.CountAsync(ct);
 
