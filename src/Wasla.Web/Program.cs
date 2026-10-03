@@ -10,6 +10,7 @@ using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Security;
 using Wasla.Web;
+using Wasla.Web.DevelopmentTools;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Localization;
 using Wasla.Web.Middleware;
@@ -166,8 +167,15 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+// Temporary Development tools: off unless Development and explicitly enabled (appsettings.Development.json).
+var developmentToolsSection = builder.Configuration.GetSection(DevelopmentToolsOptions.SectionName);
+builder.Services.Configure<DevelopmentToolsOptions>(developmentToolsSection);
+var tenantResetAvailable = DevelopmentToolsAvailability.IsTenantResetAvailable(
+    builder.Environment,
+    developmentToolsSection.Get<DevelopmentToolsOptions>());
+
 builder.Services
-    .AddControllersWithViews()
+    .AddControllersWithViews(options => options.Conventions.Add(new DevelopmentToolsConvention(tenantResetAvailable)))
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
     .AddDataAnnotationsLocalization(options =>
     {

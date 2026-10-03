@@ -7,6 +7,7 @@ using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Branches;
 using Wasla.Application.Abstractions.Dashboard;
+using Wasla.Application.Abstractions.DevelopmentTools;
 using Wasla.Application.Abstractions.Notifications;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
@@ -113,6 +114,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGuidedDemoService, GuidedDemoService>();
         services.AddScoped<IGuidedDemoDeliverySimulator, GuidedDemoDeliverySimulator>();
         services.AddScoped<IGuidedSetupService, GuidedSetupService>();
+        services.AddScoped<ITenantOperationalModeService, TenantOperationalModeService>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderActionService, OrderActionService>();
         services.AddScoped<IOrderSyncSettingsService, OrderSyncSettingsService>();
@@ -130,6 +132,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPrintBridgeDeviceManagementService, PrintBridgeDeviceManagementService>();
         services.AddScoped<IPrintBridgeSetupTenantLock, SqlServerPrintBridgeSetupTenantLock>();
         services.AddScoped<IPrintBridgeSetupSessionService, PrintBridgeSetupSessionService>();
+        // Temporary Development tool; the Web layer only exposes it in Development with an explicit option.
+        services.AddScoped<ITenantDevelopmentResetService, TenantDevelopmentResetService>();
         services.AddScoped<IPrintJobHistoryService, PrintJobHistoryService>();
         services.AddScoped<IManualOrderPrintService, ManualOrderPrintService>();
 

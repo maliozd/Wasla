@@ -207,6 +207,11 @@ public class TenantOperationalSettingsConfiguration : IEntityTypeConfiguration<T
 
         builder.Property(x => x.SetupGuidanceCompletedAtUtc);
 
+        // Stored as int. No database default is configured: EF always writes the value, and the migration that
+        // added the column filled existing rows with 0 (Live).
+        builder.Property(x => x.OperationalMode)
+            .IsRequired();
+
         // Single-row table pattern (enforced by always updating a known row id in the service).
         builder.HasIndex(x => x.Id)
             .IsUnique()

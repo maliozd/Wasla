@@ -508,6 +508,9 @@ internal static class CliCommands
                 };
                 userDb.AppUsers.Add(appUser);
                 await userDb.SaveChangesAsync(ct).ConfigureAwait(false);
+
+                // A new restaurant starts in Setup until a user completes or skips guided setup.
+                await TenantOperationalModes.EnsureNewTenantStartsInSetupAsync(userDb, now, ct).ConfigureAwait(false);
             }
 
             Console.ForegroundColor = ConsoleColor.Green;

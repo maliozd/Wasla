@@ -37,6 +37,17 @@ public sealed class OrderReceiptCreationService : IOrderReceiptCreationService
             .FirstOrDefaultAsync(x => x.Id == TenantOperationalSettingsSingletonId, ct)
             .ConfigureAwait(false);
 
+        // A tenant still in Setup prints nothing automatically, whoever accepted the order; manual printing is a
+        // separate path. Decided when the order is accepted; going live later never replays it.
+        if (settings?.OperationalMode == Wasla.Domain.Enums.TenantOperationalMode.Setup)
+        {
+            _logger.LogDebug(
+                "Tenant is in setup mode, skipping automatic receipt. CustomerId={CustomerId}, OrderId={OrderId}",
+                customerId,
+                orderId);
+            return;
+        }
+
         if (!(settings?.AutoPrintReceiptOnAutoApprove ?? false))
         {
             _logger.LogDebug(
