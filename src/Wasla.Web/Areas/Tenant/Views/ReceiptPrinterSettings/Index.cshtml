@@ -69,6 +69,11 @@
                                 </div>
                             </label>
                         </div>
+                        @* The saved choice stays as chosen; this says automatic receipts are not created yet while the restaurant is in setup. *@
+                        <p id="receiptAutomationPendingSetup" class="small text-warning-emphasis mb-0 mt-2" role="note" hidden>
+                            <i class="bi bi-hourglass-split me-1" aria-hidden="true"></i><strong>@L["Orders.Automation.PendingSetup"]</strong>
+                            <span>@L["Orders.Automation.PendingSetupDescription"]</span>
+                        </p>
                     </div>
                 </div>
             </section>

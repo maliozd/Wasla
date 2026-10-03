@@ -8,7 +8,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 
 `docs/future/` is planning only. It is not current architecture.
 
-`docs/product/onboarding.md` is not written yet. Signup and provisioning entry points are summarized in [operations/cli.md](operations/cli.md) and [architecture/tenancy.md](architecture/tenancy.md).
+[product/onboarding.md](product/onboarding.md) covers guided setup and the tenant's operational mode only. Signup and provisioning entry points are summarized in [operations/cli.md](operations/cli.md) and [architecture/tenancy.md](architecture/tenancy.md).
 
 ## Map
 
@@ -33,6 +33,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [product/product-boundaries.md](product/product-boundaries.md) | Wasla Orders, Wasla POS, and shared-infrastructure boundaries |
 | [product/terminology.md](product/terminology.md) | Tenant vs order customer |
 | [product/roles-and-permissions.md](product/roles-and-permissions.md) | Server-side role matrix |
+| [product/onboarding.md](product/onboarding.md) | Per-user guided setup, tenant operational mode (Setup / Live), going live |
 | [future/printjob-status-signalr.md](future/printjob-status-signalr.md) | Future PrintJob SignalR only |
 
 ## Task → documents
@@ -45,6 +46,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | Hosts, databases, secrets | [architecture/tenancy.md](architecture/tenancy.md) |
 | Login, roles, password reset | [architecture/tenancy.md](architecture/tenancy.md), [architecture/authentication.md](architecture/authentication.md), [product/roles-and-permissions.md](product/roles-and-permissions.md) |
 | Live Screen | [orders/live-screen.md](orders/live-screen.md), [orders/lifecycle.md](orders/lifecycle.md), [frontend/architecture.md](frontend/architecture.md), [frontend/design-system.md](frontend/design-system.md) |
+| Guided setup or order training | [product/onboarding.md](product/onboarding.md), [orders/live-screen.md](orders/live-screen.md) |
 | Orders management UI | [orders/lifecycle.md](orders/lifecycle.md), [frontend/architecture.md](frontend/architecture.md) |
 | Provider or sync | [architecture/tenancy.md](architecture/tenancy.md), [orders/synchronization.md](orders/synchronization.md), [integrations/food-platforms.md](integrations/food-platforms.md) |
 | Print Bridge | [architecture/tenancy.md](architecture/tenancy.md), [integrations/print-bridge.md](integrations/print-bridge.md) |

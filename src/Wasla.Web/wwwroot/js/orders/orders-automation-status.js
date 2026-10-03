@@ -1,61 +1,81 @@
-// Read-only automation status summary on the Orders page header.
-(function (global) {
+// Live Screen automation status (settings menu): order synchronization, automatic approval and automatic receipts.
+// Each Live Screen snapshot carries their effective state from the server (Active, Off, or PendingSetup while the
+// tenant is still in setup); this script only shows it. Nothing is inferred from the page, and no request is sent.
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  if (root && root.document && root.WaslaOrders && !root.WaslaAutomationStatus) {
+    root.WaslaAutomationStatus = api;
+    api.boot(root.document, root.WaslaOrders);
+  }
+})(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  const O = global.WaslaOrders;
-  if (!O) return;
+  var ACTIVE_CLASS = "wasla-orders-status-chip--active";
+  var OFF_CLASS = "wasla-orders-status-chip--muted";
+  var PENDING_CLASS = "wasla-orders-status-chip--pending";
+  var HINT_ID = "automationPendingSetupHint";
 
-  function setBadge(el, active, activeLabel, disabledLabel) {
-    if (!el) return;
-    el.textContent = active ? activeLabel : disabledLabel;
-    el.classList.remove("wasla-orders-status-chip--active", "wasla-orders-status-chip--muted");
-    el.classList.add(active ? "wasla-orders-status-chip--active" : "wasla-orders-status-chip--muted");
+  var INDICATORS = [
+    { id: "automationStatusSync", key: "orderSync", active: "automationStatusSyncActive", off: "automationStatusSyncDisabled" },
+    { id: "automationStatusAutoApprove", key: "autoApprove", active: "automationStatusAutoApproveActive", off: "automationStatusAutoApproveDisabled" },
+    { id: "automationStatusReceipt", key: "autoReceipt", active: "automationStatusReceiptPrintingActive", off: "automationStatusReceiptPrintingDisabled" }
+  ];
+
+  /**
+   * Text and style for one effective state; null for anything unknown (the indicator then keeps what it shows).
+   * Each state has its own words, so the meaning never depends on color.
+   */
+  function stateView(state, labels) {
+    if (state === "Active") return { text: labels.active, className: ACTIVE_CLASS, pending: false };
+    if (state === "Off") return { text: labels.off, className: OFF_CLASS, pending: false };
+    if (state === "PendingSetup") return { text: labels.pending, className: PENDING_CLASS, pending: true };
+    return null;
   }
 
-  async function loadStatus() {
-    const syncEl = document.getElementById("automationStatusSync");
-    const approveEl = document.getElementById("automationStatusAutoApprove");
-    const receiptEl = document.getElementById("automationStatusReceipt");
-    if (!syncEl && !approveEl && !receiptEl) return;
+  /**
+   * Updates the indicators from a snapshot's automation section. Absent only when the server could not read the
+   * status: then nothing changes and the last shown state stays. A pending indicator is described by the visible
+   * explanation line.
+   */
+  function apply(doc, automation, message) {
+    if (!automation || typeof automation !== "object") return false;
+    var hint = doc.getElementById(HINT_ID);
+    var anyPending = false;
 
-    const syncActiveLabel = O.getMessage("automationStatusSyncActive");
-    const syncDisabledLabel = O.getMessage("automationStatusSyncDisabled");
-    const approveActiveLabel = O.getMessage("automationStatusAutoApproveActive");
-    const approveDisabledLabel = O.getMessage("automationStatusAutoApproveDisabled");
-    const receiptActiveLabel = O.getMessage("automationStatusReceiptPrintingActive");
-    const receiptDisabledLabel = O.getMessage("automationStatusReceiptPrintingDisabled");
+    for (var i = 0; i < INDICATORS.length; i++) {
+      var indicator = INDICATORS[i];
+      var el = doc.getElementById(indicator.id);
+      var view = stateView(automation[indicator.key], {
+        active: message(indicator.active),
+        off: message(indicator.off),
+        pending: message("automationStatusPendingSetup")
+      });
+      if (!el || !view) continue;
 
-    try {
-      const syncUrl = O.opts.orderSyncSettingsUrl || "/orders/sync-settings";
-      const settingsUrl = O.opts.orderSettingsUrl || "/orders/order-settings";
-      const headers = { "X-Requested-With": "XMLHttpRequest" };
-
-      const [syncResp, settingsResp] = await Promise.all([
-        fetch(syncUrl, { headers: headers }),
-        fetch(settingsUrl, { headers: headers })
-      ]);
-
-      if (!syncResp.ok || !settingsResp.ok) {
-        throw new Error("HTTP " + syncResp.status + " / " + settingsResp.status);
-      }
-
-      const syncData = await syncResp.json();
-      const settingsData = await settingsResp.json();
-
-      setBadge(syncEl, !!syncData.orderSyncEnabled, syncActiveLabel, syncDisabledLabel);
-      setBadge(approveEl, !!settingsData.autoApproveNewOrders, approveActiveLabel, approveDisabledLabel);
-      setBadge(
-        receiptEl,
-        !!settingsData.autoPrintReceiptOnAutoApprove,
-        receiptActiveLabel,
-        receiptDisabledLabel
-      );
-    } catch (e) {
-      if (O.isDebugEnabled()) O.debugWarn("Automation status load failed", e);
+      if (el.textContent !== view.text) el.textContent = view.text;
+      el.classList.remove(ACTIVE_CLASS, OFF_CLASS, PENDING_CLASS);
+      el.classList.add(view.className);
+      if (view.pending && hint) el.setAttribute("aria-describedby", HINT_ID);
+      else el.removeAttribute("aria-describedby");
+      anyPending = anyPending || view.pending;
     }
+
+    if (hint) hint.hidden = !anyPending;
+    return true;
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    loadStatus();
-  });
-})(window);
+  function boot(doc, O) {
+    doc.addEventListener("wasla:live-rendered", function (event) {
+      var detail = event && event.detail ? event.detail : null;
+      if (!detail) return;
+      apply(doc, detail.automation, function (key) { return O.getMessage(key); });
+    });
+  }
+
+  return {
+    stateView: stateView,
+    apply: apply,
+    boot: boot
+  };
+});

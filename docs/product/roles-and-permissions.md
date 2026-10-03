@@ -60,7 +60,7 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 |------------|--------|------------------------------|
 | View orders / history | `CanViewOrders` | `OrdersController` class-level |
 | Mutate order lifecycle | `CanManageOrders` | Order action endpoints on `OrdersController` |
-| Live Screen view / poll | `CanViewLiveScreen` | `/orders/live-display`, `/orders/live-screen`, `/orders/live-data` |
+| Live Screen view / poll, including the read-only effective automation states | `CanViewLiveScreen` | `/orders/live-display`, `/orders/live-screen`, `/orders/live-data` |
 | Manual print / reprint | `CanManualPrint` | Orders print actions; some Print Bridge job actions |
 | Order sync / order automation settings | `TenantManagerOrOwner` | Orders sync/order-settings endpoints; `OrderSettingsController`; nav `CanManageOrderSettings` |
 | Platform, receipt printer, account, and branch settings pages | `CanManageTenantSettings` | `PlatformConnectionsController`, `ReceiptPrinterSettingsController`, `AccountSettingsController`, `BranchesController` |
@@ -68,6 +68,7 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 | Print Bridge devices | `CanManagePrintBridgeDevices` | Device management actions on `PrintBridgeController` |
 | Print Bridge device security (tokens, etc.) | `CanManageDeviceSecurity` | Security-sensitive Print Bridge actions |
 | Dashboard / reports | `CanViewReports` | `DashboardController` |
+| Guided setup and order training (card, section panels, commands, practice order) | `TenantOwner` | `GuidedSetupController` and `GuidedDemoController` class-level; nav `CanUseGuidedSetup`. See [onboarding.md](onboarding.md) |
 
 `PrintBridgeController` is authenticated under the tenant scheme; individual actions apply device vs security vs manual-print policies as above.
 

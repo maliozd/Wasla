@@ -48,6 +48,11 @@
                     <div class="wasla-settings-section-text">
                         <h2 class="h6 mb-1">@L["Settings.AutoApproval.Title"]</h2>
                         <p class="text-muted small mb-0">@L["Settings.AutoApproval.Description"]</p>
+                        @* The saved setting stays as chosen; this says it is not operating yet while the restaurant is in setup. *@
+                        <p id="autoApprovePendingSetup" class="small text-warning-emphasis mb-0 mt-1" role="note" hidden>
+                            <i class="bi bi-hourglass-split me-1" aria-hidden="true"></i><strong>@L["Orders.Automation.PendingSetup"]</strong>
+                            <span>@L["Orders.Automation.PendingSetupDescription"]</span>
+                        </p>
                     </div>
                     <div class="wasla-settings-section-controls">
                         <span class="small text-muted text-nowrap">@L["Settings.AutoApproval.EnableAutoApprove"]</span>

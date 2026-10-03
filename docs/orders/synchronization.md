@@ -52,12 +52,24 @@ Behavior:
 - Tenants sync in parallel up to five at a time. One tenant’s exception does not stop the others.
 - Development uses `WorkerConsole` for cycle/customer summaries. Non-Development logs cycle start at Debug and cycle completion at Debug (Warning if any connection failed).
 - Per-tenant sync starts a `Activity("Wasla.OrderSync")` and scopes `TraceId` / `TenantId` into logs.
+- After each tenant's sync, the cycle also reads that tenant's open guided-demo practice orders (`IGuidedDemoDeliverySimulator.AdvanceDueAndPlanAsync`: one small read, plus an update only when a stage is due) and hands the next practice deadline to `GuidedDemoScheduler`. That second hosted service in the Worker moves a practice order at its deadline between cycles. It touches only `GuidedDemoSessions` and changes none of the constants above: provider calls, webhooks and real orders keep this cycle's cadence. See [../product/onboarding.md](../product/onboarding.md#practice-order-countdown).
 
 ## Tenant Order Sync gate
 
 If the tenant’s Order Sync setting is disabled, `OrderSyncService` skips provider work for that tenant, logs at Debug, and returns `WasSyncDisabled = true`. Existing orders remain in the tenant DB and stay visible in the UI. Other tenants are unaffected.
 
 Order Sync is separate from Auto Approve and from automatic receipt creation.
+
+## Operational mode: Setup
+
+A tenant whose operational mode is Setup (a new tenant before anyone completes or skips guided setup; see [../product/onboarding.md](../product/onboarding.md)) is synchronized exactly like a Live tenant. Orders are fetched, upserted idempotently and listed on Orders and in history.
+
+The difference is in the shared side-effect services, so every ingestion path (sync today, webhooks later) obeys it:
+
+- `OrderAutoApproveService` accepts nothing automatically while the tenant is in Setup.
+- `OrderReceiptCreationService` creates no automatic receipt PrintJob while the tenant is in Setup. This covers the provider-accepted path and the automatic receipt after an operator approves an order. Manual printing (`ManualOrderPrintService`) is a separate path and is unaffected.
+
+Each decision is taken when its trigger happens (an order is inserted, or becomes Accepted), using the mode at that moment. Going live replays nothing: orders that arrived or were accepted during Setup are never auto-approved or auto-printed afterwards. Only triggers after activation follow the Auto Approve and receipt settings.
 
 ## Platform connection eligibility
 
@@ -166,7 +178,7 @@ Idempotency key: SHA-256 of `Platform:ExternalOrderId` (Base64), stored as `Orde
 Rules:
 
 - Preserve parent `Order` row, `Id`, and `CreatedAt`.
-- New orders are inserted; then auto-approve / receipt hooks may run for eligible new rows.
+- New orders are inserted; then auto-approve / receipt hooks may run for eligible new rows (never while the tenant is in Setup; see [Operational mode: Setup](#operational-mode-setup)).
 - Real updates replace child `OrderItems` / `OrderItemOptions` via `ExecuteDeleteAsync` then reinsert, update scalars, set `UpdatedAt`, and rewrite `RawPayloadJson`.
 - Provider internal status is **merged** with local progress so stale provider statuses cannot undo operator progress (see `MergeInternalStatusForSync`).
 - Missing `ExternalOrderId` skips the order (counted as skipped).

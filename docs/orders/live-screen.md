@@ -53,6 +53,7 @@ Authorization: Live Screen actions use `CanViewLiveScreen` where applied on thos
 - Preference key: `Wasla.liveScreen.viewMode` (overridable via `viewModeStorageKey`)
 - **One selected view is materially rendered** into `#ordersLiveScreenHost`. Switching view refreshes that host; unused view trees are not kept as duplicate full DOMs
 - Board columns group `New`+`Accepted` together; then Preparing, Ready, On the way, Completed (recent Delivered)
+- Board cards have one height on desktop and tablet (≥ 768 px): `--wasla-live-board-card-block-size` (20.5rem) on every status, with identity and status at the top, the note and product preview in the middle, and the price and actions on the bottom edge. The product preview keeps its 6.75rem cap and "more in details" line. When a card holds more than fits (a long note, wrapped actions, the practice-order countdown), only the preview gives way, and a `ResizeObserver` keeps that line in step. On phones, Board cards size to their content with a shared minimum (`--wasla-live-board-card-min-block-size`, 15rem). List, Focus and the detail modal keep their own sizing
 - Focus: queue + detail panel; narrow viewports toggle queue/detail; detail is loaded lazily
 
 ### Snapshot coordinator (one poll)
@@ -61,7 +62,7 @@ Authorization: Live Screen actions use `CanViewLiveScreen` where applied on thos
 
 - Default interval: **10000 ms** (`waslaOrdersOptions.pollingIntervalMs` / `orders-core.js` default)
 - One in-flight fetch; mutations invalidate and refresh; errors use exponential backoff (cap 30s)
-- First successful snapshot is the **notification baseline** (no sound/notify for pre-existing IDs)
+- First successful snapshot is the **notification baseline** (no sound/notify for pre-existing IDs); so is the first snapshot after the snapshot's training isolation changes (see Order training below)
 - Later polls detect new order IDs, then notify **after** render acceptance (notify failure does not roll back the snapshot)
 
 ### Incremental DOM reuse
@@ -77,6 +78,19 @@ Cards/rows carry `data-live-signature` from `orderContentSignature` (status, dis
 ### Lifecycle actions on Live Screen
 
 Same `orders-actions.js` POST + antiforgery path as Orders. On Live Screen, `liveStore.beginMutation` pauses/invalidates polling until the action completes, then refreshes. Event `wasla:order-action-completed` refreshes open detail UIs.
+
+### Order training (guided setup)
+
+The last guided-setup section (`live-screen-demo`) runs here. Guided setup is Owner-only (see [../product/onboarding.md](../product/onboarding.md)); other roles see the ordinary Live Screen without any training panel. `OrdersController.LiveDisplay` asks `IGuidedSetupCoordinator.GetLiveScreenAsync` (read-only) and renders `_GuidedTrainingPanel` in the page flow above the orders:
+
+- The Owner's first-use Start / Skip decision is on the Dashboard only. The panel has no first-use variant: every role that may use guided setup also has the Dashboard, so nothing is rendered here before the Owner starts.
+- **Training** while InProgress and the current section is `live-screen-demo`. Step keys (`GuidedTrainingSteps`): `intro`, `practice-new`, `practice-accepted`, `practice-preparing`, `practice-ready`, `practice-on-the-way`, `practice-delivered`. The step is derived from the saved step and the user's latest practice order (`IGuidedDemoService.GetLatestAsync`), so reloads and closed pages resume correctly.
+- The practice order is a `GuidedDemoSession` (not an `Order`): merged into `/orders/live-data` for its owner only, marked `isDemo`, never synced, printed or counted. Browser actions: Approve, Start preparing, Mark ready only (`GuidedDemoTransitions.UserActions`). `OnTheWay` and `Delivered` come only from `Wasla.Worker` (`IGuidedDemoDeliverySimulator`, run at the deadline by `GuidedDemoScheduler`), each `GuidedDemoTiming.StageDuration` (20 s) after the previous status began. When a stage's deadline passes, the countdown asks the store for one read-only refresh (`requestRefresh`, coalesced with the poll) and retries once a second at most 8 times, so the next stage shows near its 20 seconds. A delivered practice order leaves the Live Screen after the same 20 s; real delivered orders keep `RecentDeliveredWindow` (2 min). The practice order's card shows a display-only countdown for these three stages (see [../product/onboarding.md](../product/onboarding.md#practice-order-countdown)).
+- Commands: `POST /guided-setup/training/practice` (idempotent start) and `POST /guided-setup/training/complete` (only once the practice order was delivered). Complete, Skip and End take a tenant that is still in Setup live and open the normal Live Screen (see [../product/onboarding.md](../product/onboarding.md)).
+- `wasla-guided-training.js` follows `wasla:live-rendered` (which carries the snapshot's `orders`, `training` and `automation`) forward only and outlines the practice order in Board, List and Focus. Real orders never pause, advance or otherwise change training. Escape hides the panel for this page view only. Provider synchronization and polling never stop for training.
+- **Per-user isolation during order training:** for the Owner who is in order training, `/orders/live-data` leaves real orders out of `orders` (only the practice order remains) and adds `training: { isolated: true, realOrdersReceived }`: how many orders have a `ReceivedAt` at or after that user's guided-setup start, in any status. This depends only on the user being in order training, not on the tenant's operational mode: an Owner training in an already-live restaurant is isolated too, while everyone else keeps the normal snapshot (`training: null`) and the restaurant's automation keeps running. The header counters are unchanged. The page shows the count in one polite status line (`role="status"`) below the training actions: updated in place, never focused, absent at zero, only the number (`GuidedSetup.Training.RealOrders.*`). Real orders are still synchronized and listed on Orders. If the training state cannot be read, the normal snapshot is returned.
+- **Silent first live snapshot:** besides the first snapshot after a page load, the coordinator also treats the first snapshot whose isolation differs from the previous one (entering or leaving isolated training, e.g. the Owner completed or skipped in another tab) as the notification baseline. The orders it reveals get no sound, browser notification or highlight; orders after it are announced as usual. Complete and Skip redirect to the Live Screen, so their first snapshot is a fresh baseline too. Orders that arrived during training then appear by the usual snapshot rules: active ones on the Live Screen, terminal ones only on Orders and in history.
+- Push (SignalR) is still future work; isolation and the count use the existing polling.
 
 ### Customer note and money
 
@@ -106,6 +120,8 @@ Runtime state in `orders-audio.js`: `unknown`, `allowed`, or `blocked`. Page loa
 `sessionUnlocked` is an in-memory flag set when a play in this tab succeeds. It is not the permission state. Do not treat `sessionUnlocked === false` as blocked audio.
 
 Stop Sound: `#ordersLiveDisplayStopSound`. Browser Notification API runs only if settings allow it and permission is `granted`. The Live Screen settings gear shows sync, auto-approve, receipt, and sound status. “Manage settings” opens `/settings/orders`. The notification modal is not on the Orders header.
+
+**Automation indicators (effective state):** for every Live Screen user (`CanViewLiveScreen`: Owner, Manager, Kitchen, Cashier, Viewer), each `/orders/live-data` snapshot carries `automation: { orderSync, autoApprove, autoReceipt }`, each `Active`, `Off` or `PendingSetup`, computed on the server from the resolved tenant's settings row (`ITenantOperationalModeService`). It is read-only operational status; the settings themselves stay behind `TenantManagerOrOwner`, and only those users see “Manage settings”. The indicators show `…` until the first snapshot arrives. `PendingSetup` means configured on while the tenant is in Setup ([../product/onboarding.md](../product/onboarding.md#configured-and-effective-automation)): it is shown as `Orders.Automation.PendingSetup` in a warning tone (neither the green Active nor the Off look), with the visible explanation `Orders.Automation.PendingSetupDescription`. Order sync is never pending, because Setup does not stop ingestion. `orders-automation-status.js` only displays the section from `wasla:live-rendered`; it sends no request and infers nothing from the page. Each poll refreshes it, so completing or skipping guided setup in another tab shows on the next snapshot without a reload. The section never takes part in new-order detection, so the change plays no sound, shows no notification and highlights nothing. If the status cannot be read, the snapshot is returned without it and the indicators keep their last state. Push (SignalR) is still future work.
 
 **Implementation quirk:** `localStorage` key `Wasla.soundUnlocked` is written when unlock succeeds and is not read on load. It is a cleanup candidate, not part of the audio contract.
 
@@ -155,4 +171,6 @@ Stop Sound: `#ordersLiveDisplayStopSound`. Browser Notification API runs only if
 | Detail modal | `wwwroot/js/orders/orders-live-detail-modal.js` |
 | Page init | `wwwroot/js/orders/orders-live-display-page.js` |
 | Audio / notifications | `wwwroot/js/orders/orders-audio.js` |
+| Automation indicators | `wwwroot/js/orders/orders-automation-status.js`, `src/Wasla.Application/Abstractions/Setup/TenantAutomationStatus.cs` |
 | Orders bootstrap | `wwwroot/js/orders/orders-page.js` |
+| Order training | `…/Views/Orders/_GuidedTrainingPanel.cshtml`, `wwwroot/js/wasla-guided-training.js`, `src/Wasla.Web/GuidedSetup/GuidedSetupCoordinator.cs` |

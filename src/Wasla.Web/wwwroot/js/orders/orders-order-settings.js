@@ -86,6 +86,18 @@
       autoApproveBadge.classList.remove("text-bg-secondary", "text-bg-success");
       autoApproveBadge.classList.add(autoApproveEnabled ? "text-bg-success" : "text-bg-secondary");
     }
+
+    // The controls show the saved configuration. Whether it operates yet is the server's answer ("effective"):
+    // PendingSetup while the restaurant is still in setup. Only a server response carries it.
+    if (settings.effective) {
+      setPendingNote("autoApprovePendingSetup", settings.effective.autoApprove === "PendingSetup");
+      setPendingNote("receiptAutomationPendingSetup", settings.effective.autoReceipt === "PendingSetup");
+    }
+  }
+
+  function setPendingNote(id, pending) {
+    const note = document.getElementById(id);
+    if (note) note.hidden = !pending;
   }
 
   function readUi() {
