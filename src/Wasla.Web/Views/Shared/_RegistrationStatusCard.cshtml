@@ -71,7 +71,10 @@ else
         </ul>
     </div>
 
-    <p class="small text-muted mb-4 opacity-75">@L["Signup.PendingTestNote"]</p>
+    @if (Model.ShowPaymentSimulatorNote)
+    {
+        <p class="small text-muted mb-4 opacity-75">@L["Signup.PendingTestNote"]</p>
+    }
 
     @if (Model.ShowCheckoutAction)
     {

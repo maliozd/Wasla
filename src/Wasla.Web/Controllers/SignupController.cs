@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,6 +13,7 @@ using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Web.Models.Signup;
+using Wasla.Web.Security;
 
 namespace Wasla.Web.Controllers;
 
@@ -26,6 +28,7 @@ public sealed class SignupController : Controller
     private readonly CustomerOnboardingOptions _options;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
+    private readonly SignupRegistrationOwnership _ownership;
 
     public SignupController(
         IPendingRegistrationService pendingRegistrations,
@@ -34,7 +37,8 @@ public sealed class SignupController : Controller
         IValidator<PendingRegistrationRequest> signupValidator,
         IOptions<CustomerOnboardingOptions> options,
         IStringLocalizer<SharedResource> localizer,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IDataProtectionProvider dataProtection)
     {
         _pendingRegistrations = pendingRegistrations;
         _referenceData = referenceData;
@@ -43,6 +47,7 @@ public sealed class SignupController : Controller
         _options = options.Value;
         _localizer = localizer;
         _environment = environment;
+        _ownership = new SignupRegistrationOwnership(dataProtection, environment);
     }
 
     [HttpGet("")]
@@ -143,7 +148,14 @@ public sealed class SignupController : Controller
             return View(model);
         }
 
-        return RedirectToAction(nameof(Pending), new { id = result.RegistrationId });
+        var registrationId = result.RegistrationId!.Value;
+        // The only place ownership proof is issued: this browser just submitted this registration.
+        _ownership.Grant(
+            HttpContext,
+            registrationId,
+            DateTimeOffset.UtcNow.AddDays(Math.Max(1, _options.PendingRegistrationExpiryDays)));
+
+        return RedirectToAction(nameof(Pending), new { id = registrationId });
     }
 
     [HttpGet("districts")]
@@ -182,6 +194,9 @@ public sealed class SignupController : Controller
         }));
     }
 
+    // The same URL shows the applicant's details to their browser and only the status to anyone else,
+    // so no cache may store a response for reuse.
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [HttpGet("pending/{id:guid}")]
     public async Task<IActionResult> Pending(Guid id, CancellationToken ct)
     {
@@ -192,12 +207,15 @@ public sealed class SignupController : Controller
         var plan = _planCatalog.FindByCode(summary.PlanCode);
         var planDisplay = plan is not null ? _localizer[plan.DisplayNameKey].Value : summary.PlanCode;
 
+        // Anyone can open this page with the ID (the pending-tenant redirect reveals it), so only the
+        // browser that submitted the signup sees its private details and the checkout action.
         return View(SignupPendingViewModelMapper.FromSummary(
             summary,
             planDisplay,
             Request,
             _environment,
             _options.MarketingBaseDomain,
+            includePrivateDetails: _ownership.IsOwner(Request, id),
             showCheckoutAction: summary.Status is PendingRegistrationStatus.AwaitingPayment
                 or PendingRegistrationStatus.Draft));
     }
