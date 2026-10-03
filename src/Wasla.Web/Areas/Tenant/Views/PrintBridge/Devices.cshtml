@@ -5,39 +5,15 @@
 @{
     ViewData["Title"] = L["PrintBridge.DevicesPageTitle"];
 
-    var initialDevices = Model.Devices.Select(d => new
-    {
-        id = d.Id,
-        name = d.Name,
-        isActive = d.IsActive,
-        connectionStatus = d.ConnectionStatus.ToString(),
-        connectionStatusLabelKey = d.ConnectionStatusLabelKey,
-        isConnected = d.IsConnected,
-        lastSeenAtUtc = d.LastSeenAtUtc,
-        machineName = d.MachineName,
-        printerName = d.PrinterName,
-        appVersion = d.AppVersion,
-        detailsUrl = Url.Action("DeviceDetails", "PrintBridge", new { area = "Tenant", id = d.Id })
-    });
+    // The initial device state is the same snapshot GET /print-bridge/devices/list returns (UTC times with "Z").
+    var initialSnapshotJson = JsonSerializer.Serialize(Model.DeviceSnapshot, Wasla.Web.Models.PrintBridge.PrintBridgeDeviceSnapshot.JsonOptions);
 
-    var initialConnectedCount = Model.Devices.Count(d => d.IsConnected);
-    var initialLatestLastSeen = Model.Devices
-        .Where(d => d.LastSeenAtUtc.HasValue)
-        .Select(d => d.LastSeenAtUtc)
-        .OrderByDescending(d => d)
-        .FirstOrDefault();
-
-    var initialQuota = new
+    // Times are shown in the restaurant's time zone and the UI culture, as on the Live Screen.
+    var timeZoneId = Wasla.Application.Time.TimeZoneHelper.ResolveTurkeyTimeZone().Id;
+    if (timeZoneId == "Turkey Standard Time")
     {
-        allowedActiveDeviceCount = Model.AllowedActiveDeviceCount,
-        activeDeviceCount = Model.ActiveDeviceCount,
-        canCreateActiveDevice = Model.CanCreateActiveDevice,
-        activeCountExceedsLimit = Model.ActiveCountExceedsLimit,
-        connectedDeviceCount = initialConnectedCount,
-        latestLastSeenAtUtc = initialLatestLastSeen,
-        printJobsTodayCount = Model.PrintJobsTodayCount,
-        lastConnectedDeviceName = Model.LastConnectedDeviceName
-    };
+        timeZoneId = "Europe/Istanbul";
+    }
 
     var pbMessages = new
     {
@@ -112,6 +88,11 @@
         </a>
     </div>
 </div>
+
+@if (Model.GuidedDeviceGuide is not null)
+{
+    @await Html.PartialAsync("_GuidedDeviceGuide", Model.GuidedDeviceGuide)
+}
 
 <div id="printBridgeMessageHost"></div>
 @if (TempData["PrintBridgeDeviceMessage"] is string successMessage)
@@ -215,15 +196,15 @@
         window.WaslaPrintBridge = {
             messages: @Html.Raw(pbMessagesJson),
             devicesUrl: "/print-bridge/devices/list",
+            devicesPollIntervalMs: 15000,
             setActiveUrlTemplate: "/print-bridge/devices/{id}/set-active",
             printJobsUrl: "/print-bridge/print-jobs",
             reprintUrlTemplate: "/print-bridge/print-jobs/{id}/reprint",
             printJobsPollIntervalMs: 3000,
             setupUrl: "@Model.SetupUrl",
-            initialState: {
-                devices: @Html.Raw(JsonSerializer.Serialize(initialDevices)),
-                quota: @Html.Raw(JsonSerializer.Serialize(initialQuota))
-            }
+            displayCulture: "@System.Globalization.CultureInfo.CurrentUICulture.Name",
+            timeZoneId: "@timeZoneId",
+            initialState: @Html.Raw(initialSnapshotJson)
         };
     </script>
     <script src="~/js/print-bridge/print-bridge-page.js" asp-append-version="true"></script>

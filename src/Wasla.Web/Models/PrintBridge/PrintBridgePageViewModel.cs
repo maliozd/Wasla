@@ -30,6 +30,12 @@ public sealed class PrintBridgePageViewModel
 
     public IReadOnlyList<PrintJobHistoryRowViewModel> PrintJobs { get; set; } =
         Array.Empty<PrintJobHistoryRowViewModel>();
+
+    /// <summary>Set only while the connected Print Bridge section's device guide applies to the user.</summary>
+    public Wasla.Web.Models.GuidedSetup.GuidedDeviceGuideViewModel? GuidedDeviceGuide { get; set; }
+
+    /// <summary>The page's initial device state, in the same contract as the device list endpoint.</summary>
+    public PrintBridgeDeviceSnapshot? DeviceSnapshot { get; set; }
 }
 
 public sealed class PrintJobHistoryRowViewModel
@@ -87,4 +93,7 @@ public sealed class PrintBridgeDeviceDetailsViewModel
     public string DevicesUrl { get; set; } = "/print-bridge/devices";
     public string SetupUrl { get; set; } = "/print-bridge/setup";
     public string PrintJobsUrl { get; set; } = "/print-bridge/devices#recent-print-activity";
+
+    /// <summary>Set only while the connected Print Bridge section's device guide applies to the user.</summary>
+    public Wasla.Web.Models.GuidedSetup.GuidedDeviceGuideViewModel? GuidedDeviceGuide { get; set; }
 }

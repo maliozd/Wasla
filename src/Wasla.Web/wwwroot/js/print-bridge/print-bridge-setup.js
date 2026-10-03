@@ -1,4 +1,5 @@
-// Print Bridge setup page: copy server URL to clipboard.
+// Print Bridge setup page: automatic connection (open the app from the browser) and the manual connection with
+// the Wasla Web Panel URL and a device token, the two values the app's Settings screen asks for.
 (function () {
     "use strict";
 
@@ -14,7 +15,6 @@
 
     var cfg = readConfig();
     var messages = cfg.messages || {};
-    var currentManualSetupCode = null;
 
     function escapeHtml(value) {
         return String(value == null ? "" : value)
@@ -58,10 +58,17 @@
             });
     }
 
-    function copyText(text, button, successMessage) {
+    /** One polite announcement per copy; the button itself shows the visible feedback. */
+    function announceCopy(text) {
+        var status = document.getElementById("pbManualCopyStatus");
+        if (status) status.textContent = text || "";
+    }
+
+    function copyText(text, button, successMessage, announcement) {
         if (!text) return Promise.reject(new Error("empty"));
 
         function onSuccess() {
+            announceCopy(announcement);
             if (!button) return;
             var original = button.innerHTML;
             var originalClass = button.className;
@@ -101,17 +108,18 @@
         var copyServerBtn = document.getElementById("pbSetupCopyServerUrlBtn");
         if (copyServerBtn && serverInput) {
             copyServerBtn.addEventListener("click", function () {
-                copyText(serverInput.value, copyServerBtn, messages.copied).catch(function () {
+                copyText(serverInput.value, copyServerBtn, messages.copied, messages.webPanelUrlCopied).catch(function () {
                     showMessage(messages.copyFailed || "Copy failed", "danger");
                 });
             });
         }
 
-        var copySetupCodeBtn = document.getElementById("pbManualCopySetupCodeBtn");
-        if (copySetupCodeBtn) {
-            copySetupCodeBtn.addEventListener("click", function () {
-                copyText(currentManualSetupCode, copySetupCodeBtn, messages.copied).catch(function () {
-                    showMessage(messages.copyFailed || "Could not copy setup code", "danger");
+        var tokenInput = document.getElementById("pbManualTokenValue");
+        var copyTokenBtn = document.getElementById("pbManualCopyTokenBtn");
+        if (copyTokenBtn && tokenInput) {
+            copyTokenBtn.addEventListener("click", function () {
+                copyText(tokenInput.value, copyTokenBtn, messages.copied, messages.deviceTokenCopied).catch(function () {
+                    showMessage(messages.copyFailed || "Copy failed", "danger");
                 });
             });
         }
@@ -142,7 +150,9 @@
     function showFallback() {
         var fb = document.getElementById("pbAutoFallback");
         if (fb) fb.classList.remove("d-none");
-        expandManualSetupSection(false);
+        // In the guided first install the manual connection opens only when the user chooses it (its own button, or
+        // "Connect manually" in this fallback); the ordinary page keeps opening it here.
+        if (!cfg.guidedFirstInstall) expandManualSetupSection(false);
     }
 
     function clearTimers() {
@@ -157,6 +167,18 @@
         if (type) showMessage(text, type);
     }
 
+    /**
+     * The canonical "Print Bridge setup completed" notification of the automatic flow. Sent only for a verified
+     * server success; a guided-setup panel then re-reads the device's readiness from the server (the same fact
+     * as the setup checklist), never from this message.
+     */
+    function notifySetupCompleted(data) {
+        if (!data || data.status !== "Completed" || !data.connectionVerified) return;
+        document.dispatchEvent(new CustomEvent("wasla:print-bridge-setup-completed", {
+            detail: { connectionVerified: true }
+        }));
+    }
+
     function pollStatus(statusUrl) {
         pollTimer = setInterval(function () {
             fetch(statusUrl, { headers: { "Accept": "application/json" }, credentials: "same-origin" })
@@ -167,6 +189,7 @@
                         case "Completed":
                             finish(data.connectionVerified ? messages.connected : messages.savedUnverified,
                                 data.connectionVerified ? "success" : "info");
+                            notifySetupCompleted(data);
                             break;
                         case "Failed":
                             finish(data.message || messages.failed, "danger");
@@ -373,11 +396,11 @@
         var reconnect = getSelectedSetupMode() === "reconnect";
         var section = document.getElementById("pbReconnectDeviceSection");
         if (section) section.classList.toggle("d-none", !reconnect);
-        var manualSetupCodeText = document.getElementById("pbManualSetupCodeActionText");
-        if (manualSetupCodeText) {
-            manualSetupCodeText.textContent = reconnect
-                ? (messages.generateReconnectSetupCode || "Generate reconnect setup code")
-                : (messages.generateNewDeviceSetupCode || "Generate new device setup code");
+        var manualTokenText = document.getElementById("pbManualTokenActionText");
+        if (manualTokenText) {
+            manualTokenText.textContent = reconnect
+                ? (messages.createReconnectToken || "Create a new token for the selected device")
+                : (messages.createNewDeviceToken || "Create a device token");
         }
         updatePrimaryCtaState();
     }
@@ -395,13 +418,89 @@
     }
 
     function expandManualSetupSection(scrollIntoView) {
+        var anchor = document.getElementById("pbManualSetup");
+        // The guided first install keeps it hidden until the user tried to open the app or asked for it.
+        if (anchor) anchor.hidden = false;
         var collapse = document.getElementById("pbManualSetupCollapse");
         if (collapse && window.bootstrap && window.bootstrap.Collapse) {
             bootstrap.Collapse.getOrCreateInstance(collapse).show();
         }
-        if (scrollIntoView) {
-            var anchor = document.getElementById("pbManualSetup");
-            if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (scrollIntoView && anchor) {
+            anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+            // Asked for explicitly: keyboard users land on the section they just opened.
+            var header = cfg.guidedFirstInstall && typeof anchor.querySelector === "function"
+                ? anchor.querySelector(".accordion-button")
+                : null;
+            if (header && typeof header.focus === "function") header.focus();
+        }
+    }
+
+    // --- Guided first install (download, install, open and connect) ---
+
+    /** Print Bridge is a Windows desktop app: phones, tablets and other systems get a notice instead. */
+    function isWindowsDesktop(nav) {
+        if (!nav) return false;
+        var data = nav.userAgentData;
+        var ua = nav.userAgent || "";
+        if ((data && data.mobile) || /Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return false;
+        var platform = (data && data.platform) || nav.platform || "";
+        return /^win/i.test(platform) || /Windows NT/i.test(ua);
+    }
+
+    /** Shows hidden steps; their numbers are fixed in the markup, so they never shift. */
+    function revealSteps(ids) {
+        ids.forEach(function (id) {
+            var step = document.getElementById(id);
+            if (step) step.hidden = false;
+        });
+    }
+
+    function focusStep(titleId) {
+        var title = document.getElementById(titleId);
+        if (title && typeof title.focus === "function") title.focus();
+    }
+
+    /** Step 3 (choose automatic or manual) and step 4 (printer test), after the user says the app is ready. */
+    function showConnectionChoice() {
+        revealSteps(["pbStepConnect", "pbStepPrinter"]);
+        focusStep("pbStepConnectTitle");
+    }
+
+    /**
+     * Nothing here runs on load except the Windows notice. Each step appears after an explicit click, and focus
+     * follows only that click. The download is the link's own navigation: no session, device or token is created,
+     * and starting a download says nothing about installing. None of these buttons creates a session either: only
+     * "Open Print Bridge and connect" does (the automatic flow above), and only "Connect manually" opens the manual
+     * section.
+     */
+    function bindFirstInstall() {
+        if (!cfg.guidedFirstInstall) return;
+
+        var notice = document.getElementById("pbNotWindowsNotice");
+        if (notice && !isWindowsDesktop(window.navigator)) notice.classList.remove("d-none");
+
+        var download = document.getElementById("pbDownloadBtn");
+        if (download) {
+            download.addEventListener("click", function () {
+                var status = document.getElementById("pbDownloadStatus");
+                if (status) status.textContent = messages.downloadStarted || "";
+                revealSteps(["pbStepPrepare"]);
+                focusStep("pbStepPrepareTitle");
+            });
+        }
+
+        // The browser cannot tell when the ZIP is extracted or the app has started, so the user confirms it.
+        var prepared = document.getElementById("pbPreparedBtn");
+        if (prepared) prepared.addEventListener("click", showConnectionChoice);
+
+        var installed = document.getElementById("pbAlreadyInstalledBtn");
+        if (installed) installed.addEventListener("click", showConnectionChoice);
+
+        var manual = document.getElementById("pbChooseManualBtn");
+        if (manual) {
+            manual.addEventListener("click", function () {
+                expandManualSetupSection(true);
+            });
         }
     }
 
@@ -413,73 +512,131 @@
             });
         });
 
-        if (window.location.hash === "#pbManualSetup") {
+        // The first install shows no connection controls before step 3, whatever the address says.
+        if (!cfg.guidedFirstInstall && window.location.hash === "#pbManualSetup") {
             expandManualSetupSection(true);
         }
     }
 
-    function showManualSetupCode(code, mode, options) {
-        options = options || {};
-        expandManualSetupSection(true);
-        currentManualSetupCode = code || null;
-        var box = document.getElementById("pbManualSetupCodeBox");
-        var title = document.getElementById("pbManualSetupCodeTitle");
-        var notice = document.getElementById("pbManualSetupCodeNotice");
-        var warning = document.getElementById("pbManualSetupCodeWarning");
-        var value = document.getElementById("pbManualSetupCodeValue");
-        if (!box || !value || !currentManualSetupCode) return;
+    // --- Manual connection (Wasla Web Panel URL + device token, pasted into the app's Settings) ---
 
-        if (title) title.textContent = options.title || messages.oneTimeSetupCodeCreated || "";
-        if (notice) notice.textContent = options.notice || "";
-        if (warning) {
-            var warningText = options.warning || "";
-            warning.textContent = warningText;
-            warning.classList.toggle("d-none", !warningText);
-        }
-        value.textContent = currentManualSetupCode;
-        box.classList.remove("d-none");
-        box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    var manualTokenIssued = false;
+
+    function formatMessage(template, value) {
+        return String(template || "").replace("{0}", value == null ? "" : String(value));
     }
 
-    function bindManualSetupCodeButtons() {
-        var actionBtn = document.getElementById("pbManualSetupCodeActionBtn");
+    /**
+     * Masks or reveals the token field. Only the field's type changes: the value stays where it is, the toggle's
+     * own name says what it will do next ("Show token" / "Hide token"), and Copy works either way.
+     */
+    function setTokenMasked(masked) {
+        var value = document.getElementById("pbManualTokenValue");
+        var text = document.getElementById("pbManualTokenToggleText");
+        var icon = document.getElementById("pbManualTokenToggleIcon");
+        if (value) value.type = masked ? "password" : "text";
+        if (text) text.textContent = masked ? (messages.showToken || "Show token") : (messages.hideToken || "Hide token");
+        if (icon) icon.className = masked ? "bi bi-eye" : "bi bi-eye-slash";
+    }
+
+    function bindTokenToggle() {
+        var toggle = document.getElementById("pbManualTokenToggleBtn");
+        var value = document.getElementById("pbManualTokenValue");
+        if (!toggle || !value) return;
+        toggle.addEventListener("click", function () {
+            setTokenMasked(value.type !== "password");
+        });
+    }
+
+    function setManualStatus(text) {
+        var status = document.getElementById("pbManualConnectionStatus");
+        if (status && status.textContent !== (text || "")) status.textContent = text || "";
+    }
+
+    /**
+     * Shows the token the server just issued. Its only copy on this page is the read-only field's value for this
+     * page view: it is not stored, logged or put in any URL, and a reload cannot show it again. Issuing it says
+     * nothing about the connection; only the guided panel's server readiness check can report that.
+     */
+    function showManualToken(data, mode) {
+        var result = document.getElementById("pbManualTokenResult");
+        var value = document.getElementById("pbManualTokenValue");
+        if (!result || !value) return;
+
+        var title = document.getElementById("pbManualTokenTitle");
+        var warning = document.getElementById("pbManualTokenWarning");
+        var manage = document.getElementById("pbManualManageDeviceLink");
+        var actionBtn = document.getElementById("pbManualTokenActionBtn");
+
+        // Every new result starts masked, whatever the previous one showed.
+        setTokenMasked(true);
+        value.value = data.token;
+        if (title) title.textContent = formatMessage(messages.tokenCreatedFor, data.deviceName);
+        if (warning) {
+            var replaced = mode === "reconnect";
+            warning.textContent = replaced ? (messages.oldTokenInvalidAfterRegenerate || "") : "";
+            warning.classList.toggle("d-none", !replaced);
+        }
+        if (manage && data.deviceId) {
+            manage.href = data.detailsUrl || ("/print-bridge/devices/" + encodeURIComponent(data.deviceId));
+            manage.classList.remove("d-none");
+        }
+        // One token per page view: another click must never silently replace it or add another device.
+        if (actionBtn) actionBtn.classList.add("d-none");
+        result.classList.remove("d-none");
+        setManualStatus(messages.manualNotConnectedYet);
+        if (title && typeof title.focus === "function") title.focus();
+
+        // Lets a guided-setup panel start reading the server's readiness. It carries no token and no state.
+        document.dispatchEvent(new CustomEvent("wasla:print-bridge-manual-setup-started"));
+    }
+
+    function bindManualToken() {
+        var actionBtn = document.getElementById("pbManualTokenActionBtn");
         if (!actionBtn) return;
 
         actionBtn.addEventListener("click", function () {
+            if (manualTokenIssued || actionBtn.disabled) return;
+
             var mode = getSelectedSetupMode();
-            if (mode === "reconnect" && !validateReconnectSelection()) return;
+            var url = cfg.manualDeviceCreateUrl;
             if (mode === "reconnect") {
-                if (!window.confirm(messages.reconnectConfirm || messages.reconnectTokenWarning || messages.confirmRegenerateToken || "Continue with reconnect?")) {
-                    return;
-                }
+                if (!validateReconnectSelection()) return;
+                var deviceId = getSelectedReconnectDeviceId();
+                var device = getDeviceById(deviceId);
+                // Replacing a device's token stops the old one at once, so the user confirms it for that device.
+                if (!window.confirm(formatMessage(messages.regenerateConfirm, device ? getReconnectDisplayName(device) : ""))) return;
+                url = String(cfg.regenerateTokenUrlTemplate || "").replace("{id}", encodeURIComponent(deviceId));
             }
+            if (!url) return;
 
             actionBtn.disabled = true;
-            var fields = { setupMode: mode };
-            if (mode === "reconnect") {
-                fields.deviceId = getSelectedReconnectDeviceId();
-                fields.confirmReplaceActiveToken = "true";
-            }
+            postForm(url, {})
+                .then(function (data) {
+                    if (!data || !data.success || !data.token) throw new Error(messages.manualTokenFailed);
+                    manualTokenIssued = true;
+                    showManualToken(data, mode);
+                })
+                .catch(function (err) {
+                    showMessage((err && err.message) || messages.manualTokenFailed, "danger");
+                })
+                .finally(function () {
+                    actionBtn.disabled = false;
+                });
+        });
+    }
 
-            postForm(cfg.sessionCreateUrl, fields)
-                    .then(function (data) {
-                        if (!data || !data.success || !data.code) throw new Error(messages.manualTokenFailed);
-                        var expires = data.expiresAtUtc
-                            ? (messages.setupCodeExpires || "Expires: {0}").replace("{0}", new Date(data.expiresAtUtc).toLocaleString())
-                            : "";
-                        showManualSetupCode(data.code, mode, {
-                            title: messages.oneTimeSetupCodeCreated,
-                            notice: expires,
-                            warning: ""
-                        });
-                        showMessage(messages.oneTimeSetupCodeCreated || "Setup code created.", "success");
-                    })
-                    .catch(function (err) {
-                        showMessage(err.message || messages.manualTokenFailed, "danger");
-                    })
-                    .finally(function () {
-                        actionBtn.disabled = false;
-                    });
+    /** The guided panel reports the server's verdict; this line only mirrors it next to the token. */
+    function bindManualConnectionStatus() {
+        document.addEventListener("wasla:guided-setup-state-changed", function (event) {
+            var detail = event && event.detail;
+            if (!manualTokenIssued || !detail || detail.section !== "print-bridge") return;
+            setManualStatus(detail.state === "ready" ? messages.manualVerified : messages.manualNotConnectedYet);
+        });
+        document.addEventListener("wasla:guided-setup-watch-ended", function (event) {
+            var detail = event && event.detail;
+            if (!manualTokenIssued || !detail || detail.section !== "print-bridge" || detail.state === "ready") return;
+            setManualStatus(messages.manualStillWaiting);
         });
     }
 
@@ -487,7 +644,10 @@
         bindCopyButtons();
         bindSetupMode();
         bindAutomaticSetup();
-        bindManualSetupCodeButtons();
+        bindManualToken();
+        bindTokenToggle();
+        bindManualConnectionStatus();
         bindManualSectionLinks();
+        bindFirstInstall();
     });
 })();

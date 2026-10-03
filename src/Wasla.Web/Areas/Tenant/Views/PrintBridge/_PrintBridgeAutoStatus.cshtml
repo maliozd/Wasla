@@ -1,0 +1,30 @@
+@model Wasla.Web.Models.PrintBridge.PrintBridgeSetupViewModel
+@*
+    Status and fallback of the automatic "open and connect" flow, shared by the ordinary page and the guided first
+    install. Shown by print-bridge-setup.js only after the user started that flow.
+*@
+<div id="pbAutoStatus" class="mt-3 d-none" role="status" aria-live="polite">
+    <div class="d-flex align-items-center gap-2">
+        <span class="spinner-border spinner-border-sm text-primary" id="pbAutoSpinner" aria-hidden="true"></span>
+        <span id="pbAutoStatusText" class="small"></span>
+    </div>
+</div>
+
+<div id="pbAutoFallback" class="mt-3 d-none">
+    <p class="small text-muted mb-2">@L["PrintBridge.Auto.NotOpening"]</p>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-primary btn-sm" id="pbAutoRetryBtn">
+            <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.TryAgain"]
+        </button>
+        @* The guided first install never offers a download that is not there. *@
+        @if (!Model.IsGuidedFirstInstall || Model.PackageAvailable)
+        {
+            <a class="btn btn-outline-secondary btn-sm" href="@Model.PackageDownloadUrl">
+                <i class="bi bi-download me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.Download"]
+            </a>
+        }
+        <a class="btn btn-outline-secondary btn-sm" href="#pbManualSetup" id="pbAutoUseManualLink">
+            <i class="bi bi-sliders me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.UseManual"]
+        </a>
+    </div>
+</div>

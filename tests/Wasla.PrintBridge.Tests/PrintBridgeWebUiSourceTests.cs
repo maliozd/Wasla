@@ -102,7 +102,10 @@ public sealed class PrintBridgeWebUiSourceTests
         Assert.Contains("PrintBridge.Auto.ReconnectConnectionNotice", setupView);
         Assert.Contains("id=\"pbSetupServerUrl\"", setupView);
         Assert.Contains("id=\"pbSetupCopyServerUrlBtn\"", setupView);
-        Assert.Contains("id=\"pbManualSetupCodeActionBtn\"", setupView);
+        // Manual connection: the Web Panel URL and a device token issued on request, never a setup code.
+        Assert.Contains("id=\"pbManualTokenActionBtn\"", setupView);
+        Assert.Contains("id=\"pbManualTokenValue\"", setupView);
+        Assert.DoesNotContain("pbManualSetupCode", setupView);
         Assert.Contains("PrintBridge.Auto.OpenButton", setupView);
         Assert.Contains("PrintBridge.Auto.ManualSectionTitle", setupView);
         Assert.Contains("PrintBridge.Troubleshooting", setupView);

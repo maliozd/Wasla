@@ -17,33 +17,37 @@
     ViewData["Title"] = L["PrintBridge.SetupPageTitle"];
     var sessionCreateUrl = Url.Action("CreateSetupSession", "PrintBridge", new { area = "Tenant" })
         ?? "/print-bridge/setup/session";
+    var manualDeviceCreateUrl = Url.Action("CreateManualDevice", "PrintBridge", new { area = "Tenant" })
+        ?? "/print-bridge/setup/manual-device";
     var setupConfig = new
     {
         serverUrl = Model.ServerUrl ?? "",
         sessionCreateUrl,
+        manualDeviceCreateUrl,
+        // Decided on the server (guided setup in progress at Print Bridge); the script never infers it from the page.
+        guidedFirstInstall = Model.IsGuidedFirstInstall,
         messages = new
         {
+            downloadStarted = L["PrintBridge.FirstInstall.DownloadStarted"].Value,
             copied = L["PrintBridge.Copied"].Value,
             copyFailed = L["PrintBridge.CopyFailed"].Value,
-            copyServerUrl = L["PrintBridge.CopyServerUrl"].Value,
-            copy = L["PrintBridge.Copy"].Value,
-            copyToken = L["PrintBridge.CopyToken"].Value,
-            tokenCopied = L["PrintBridge.TokenCopied"].Value,
-            tokenCopyFailed = L["PrintBridge.TokenCopyFailed"].Value,
-            tokenShownOnce = L["PrintBridge.TokenShownOnce"].Value,
-            tokenCreated = L["PrintBridge.TokenCreated"].Value,
-            tokenRegenerated = L["PrintBridge.TokenRegenerated"].Value,
-            oldTokenInvalidAfterRegenerate = L["PrintBridge.OldTokenInvalidAfterRegenerate"].Value,
-            confirmRegenerateToken = L["PrintBridge.RegenerateConfirm", Model.ActiveDeviceName ?? ""].Value,
             manualTokenFailed = L["PrintBridge.Auto.ManualTokenFailed"].Value,
             autoReplaceTokenConfirm = L["PrintBridge.Auto.ReplaceTokenConfirm", Model.ActiveDeviceName ?? ""].Value,
-            selectDevice = L["PrintBridge.Auto.SelectDevice"].Value,
             reconnectTokenWarning = L["PrintBridge.Auto.ReconnectTokenWarning"].Value,
             reconnectConfirm = L["PrintBridge.Auto.ReconnectConfirm"].Value,
-            generateNewDeviceSetupCode = L["PrintBridge.Auto.GenerateNewDeviceSetupCode"].Value,
-            generateReconnectSetupCode = L["PrintBridge.Auto.GenerateReconnectSetupCode"].Value,
-            oneTimeSetupCodeCreated = L["PrintBridge.Auto.OneTimeSetupCodeCreated"].Value,
-            setupCodeExpires = L["PrintBridge.Auto.SetupCodeExpires"].Value,
+            // Formatted in the browser with the device the user selected; the server never picks it.
+            regenerateConfirm = L["PrintBridge.RegenerateConfirm"].Value,
+            createNewDeviceToken = L["PrintBridge.Manual.CreateNewDeviceToken"].Value,
+            createReconnectToken = L["PrintBridge.Manual.CreateReconnectToken"].Value,
+            tokenCreatedFor = L["PrintBridge.Manual.TokenCreatedFor"].Value,
+            oldTokenInvalidAfterRegenerate = L["PrintBridge.OldTokenInvalidAfterRegenerate"].Value,
+            showToken = L["PrintBridge.Manual.ShowToken"].Value,
+            hideToken = L["PrintBridge.Manual.HideToken"].Value,
+            webPanelUrlCopied = L["PrintBridge.Manual.WebPanelUrlCopied"].Value,
+            deviceTokenCopied = L["PrintBridge.Manual.DeviceTokenCopied"].Value,
+            manualNotConnectedYet = L["PrintBridge.Manual.NotConnectedYet"].Value,
+            manualVerified = L["PrintBridge.Manual.Verified"].Value,
+            manualStillWaiting = L["PrintBridge.Manual.StillWaiting"].Value,
             starting = L["PrintBridge.Auto.Starting"].Value,
             waiting = L["PrintBridge.Auto.Waiting"].Value,
             connected = L["PrintBridge.Auto.Connected"].Value,
@@ -51,7 +55,7 @@
             failed = L["PrintBridge.Auto.Failed"].Value,
             expired = L["PrintBridge.Auto.Expired"].Value,
             sessionError = L["PrintBridge.Auto.SessionError"].Value,
-            openButton = L["PrintBridge.Auto.OpenButton"].Value,
+            openButton = (Model.IsGuidedFirstInstall ? L["PrintBridge.FirstInstall.Connect.Automatic.Button"] : L["PrintBridge.Auto.OpenButton"]).Value,
             reconnectOpenButton = L["PrintBridge.Auto.ReconnectOpenButton"].Value,
             deviceActive = L["Orders.Active"].Value,
             devicePassive = L["Orders.Passive"].Value,
@@ -92,6 +96,12 @@
                     @await Html.PartialAsync("_GuidedSetupSectionPanel", Model.GuidedSetup)
                 }
 
+                @if (Model.IsGuidedFirstInstall)
+                {
+                    @await Html.PartialAsync("_PrintBridgeFirstInstall", Model)
+                }
+                else
+                {
                 <fieldset class="mb-4" id="pbSetupModeGroup">
                     <legend class="form-label fw-semibold mb-3">@L["PrintBridge.Auto.SetupModeTitle"]</legend>
                     <div class="vstack gap-3">
@@ -154,32 +164,15 @@
                     </p>
                 </div>
 
-                <div id="pbAutoStatus" class="mt-3 d-none" role="status" aria-live="polite">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="spinner-border spinner-border-sm text-primary" id="pbAutoSpinner" aria-hidden="true"></span>
-                        <span id="pbAutoStatusText" class="small"></span>
-                    </div>
-                </div>
-
-                <div id="pbAutoFallback" class="mt-3 d-none">
-                    <p class="small text-muted mb-2">@L["PrintBridge.Auto.NotOpening"]</p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="pbAutoRetryBtn">
-                            <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.TryAgain"]
-                        </button>
-                        <a class="btn btn-outline-secondary btn-sm" href="@Model.PackageDownloadUrl">
-                            <i class="bi bi-download me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.Download"]
-                        </a>
-                        <a class="btn btn-outline-secondary btn-sm" href="#pbManualSetup" id="pbAutoUseManualLink">
-                            <i class="bi bi-sliders me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.UseManual"]
-                        </a>
-                    </div>
-                </div>
+                @await Html.PartialAsync("_PrintBridgeAutoStatus", Model)
+                }
             </div>
         </section>
 
         <div class="wasla-print-bridge-setup-below-fold">
-        <div class="accordion wasla-print-bridge-setup-accordion mb-2" id="pbManualSetup">
+        @* In the guided first install the manual connection stays out of the way until the user tried to open the
+           app or asked for it (print-bridge-setup.js reveals it); elsewhere it is always there. *@
+        <div class="accordion wasla-print-bridge-setup-accordion mb-2" id="pbManualSetup" hidden="@Model.IsGuidedFirstInstall">
             <div class="accordion-item border-0">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed wasla-print-bridge-setup-accordion-btn"
@@ -193,6 +186,9 @@
                 </h2>
                 <div id="pbManualSetupCollapse" class="accordion-collapse collapse" data-bs-parent="#pbManualSetup">
                     <div class="accordion-body pt-0">
+                        @* The guided first install already starts with the download. *@
+                        @if (!Model.IsGuidedFirstInstall)
+                        {
                         <section class="mb-4 wasla-print-bridge-package-card" id="pbPackageSection">
                             @if (Model.PackageAvailable)
                             {
@@ -236,10 +232,18 @@
                                 </div>
                             }
                         </section>
+                        }
 
-                        <section class="mb-4 wasla-print-bridge-connection-card">
-                            <h3 class="h6 mb-2">@L["PrintBridge.ConnectionInfoTitle"]</h3>
-                            <label class="form-label small fw-semibold mb-1" for="pbSetupServerUrl">@L["PrintBridge.ServerUrlLabel"]</label>
+                        @*
+                            Manual connection: exactly the two values the desktop app's Settings screen asks for. The token
+                            is created only on an explicit click, returned once by the server and written into the masked
+                            field by the script; it is never rendered here, so a reload can never show it again. The
+                            device page link is rendered only for users its own policy admits.
+                        *@
+                        <section class="mb-4 wasla-print-bridge-connection-card" id="pbManualConnection" aria-labelledby="pbManualConnectionTitle">
+                            <h3 class="h6 mb-2" id="pbManualConnectionTitle">@L["PrintBridge.Manual.Title"]</h3>
+                            <p class="small text-muted mb-3">@L["PrintBridge.Manual.Intro"]</p>
+                            <label class="form-label small fw-semibold mb-1" for="pbSetupServerUrl">@L["PrintBridge.Manual.WebPanelUrlLabel"]</label>
                             @if (!string.IsNullOrWhiteSpace(Model.ServerUrl))
                             {
                                 <div class="input-group input-group-sm mb-2">
@@ -247,12 +251,13 @@
                                            class="form-control font-monospace wasla-print-bridge-setup-value"
                                            id="pbSetupServerUrl"
                                            value="@Model.ServerUrl"
+                                           dir="ltr"
                                            readonly />
                                     <button type="button"
                                             class="btn btn-outline-secondary"
                                             id="pbSetupCopyServerUrlBtn"
-                                            title="@L["PrintBridge.CopyServerUrl"]"
-                                            aria-label="@L["PrintBridge.CopyServerUrl"]">
+                                            title="@L["PrintBridge.Manual.CopyWebPanelUrl"]"
+                                            aria-label="@L["PrintBridge.Manual.CopyWebPanelUrl"]">
                                         <i class="bi bi-clipboard" aria-hidden="true"></i>
                                         <span class="d-none d-md-inline ms-1">@L["PrintBridge.Copy"]</span>
                                     </button>
@@ -262,27 +267,51 @@
                             {
                                 <p class="small text-muted mb-2">@L["PrintBridge.ServerUrlUnavailable"]</p>
                             }
-                            <p class="small text-muted mb-0">@L["PrintBridge.Auto.NetworkHelp"]</p>
-                        </section>
+                            <p class="small text-muted mb-3">@L["PrintBridge.Auto.NetworkHelp"]</p>
 
-                        <section class="mb-4" id="pbManualSetupCodeCard">
-                            <h3 class="h6 mb-2">@L["PrintBridge.Auto.OneTimeSetupCode"]</h3>
-                            <p class="small text-muted mb-3">@L["PrintBridge.Auto.SetupCodeHelp"]</p>
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="pbManualSetupCodeActionBtn">
-                                <i class="bi bi-shield-lock me-1" aria-hidden="true"></i><span id="pbManualSetupCodeActionText">@L["PrintBridge.Auto.GenerateNewDeviceSetupCode"]</span>
+                            <p class="small text-muted mb-2">@L[Model.IsGuidedFirstInstall ? "PrintBridge.Manual.TokenIntroNewDevice" : "PrintBridge.Manual.TokenIntro"]</p>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="pbManualTokenActionBtn">
+                                <i class="bi bi-key me-1" aria-hidden="true"></i><span id="pbManualTokenActionText">@L["PrintBridge.Manual.CreateNewDeviceToken"]</span>
                             </button>
 
-                            <div id="pbManualSetupCodeBox" class="wasla-print-bridge-setup-code-result mt-3 d-none" role="status" aria-live="polite">
-                                <div class="fw-semibold small mb-1" id="pbManualSetupCodeTitle"></div>
-                                <p class="small text-muted mb-2" id="pbManualSetupCodeNotice"></p>
-                                <div id="pbManualSetupCodeWarning" class="small text-danger mb-2 d-none" role="alert"></div>
-                                <div class="d-flex flex-wrap align-items-stretch gap-2">
-                                    <pre id="pbManualSetupCodeValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break wasla-print-bridge-token-value"></pre>
-                                    <button type="button" class="btn btn-sm btn-outline-primary align-self-start" id="pbManualCopySetupCodeBtn">
-                                        <i class="bi bi-clipboard me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.CopySetupCode"]
+                            <div id="pbManualTokenResult" class="wasla-print-bridge-manual-token-result mt-3 d-none">
+                                <h4 class="small fw-semibold mb-1" id="pbManualTokenTitle" tabindex="-1"></h4>
+                                <p class="small text-danger mb-2">@L["PrintBridge.Manual.ShownOnce"]</p>
+                                <p class="small text-danger mb-2 d-none" id="pbManualTokenWarning"></p>
+                                <label class="form-label small fw-semibold mb-1" for="pbManualTokenValue">@L["PrintBridge.Manual.DeviceTokenLabel"]</label>
+                                <div class="input-group input-group-sm mb-2">
+                                    @* Masked by default; the toggle only changes how the field is displayed. *@
+                                    <input type="password"
+                                           class="form-control font-monospace wasla-print-bridge-setup-value"
+                                           id="pbManualTokenValue"
+                                           dir="ltr"
+                                           autocomplete="off"
+                                           spellcheck="false"
+                                           readonly />
+                                    <button type="button"
+                                            class="btn btn-outline-secondary"
+                                            id="pbManualTokenToggleBtn"
+                                            aria-controls="pbManualTokenValue">
+                                        <i class="bi bi-eye" id="pbManualTokenToggleIcon" aria-hidden="true"></i>
+                                        <span class="ms-1" id="pbManualTokenToggleText">@L["PrintBridge.Manual.ShowToken"]</span>
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-outline-secondary"
+                                            id="pbManualCopyTokenBtn"
+                                            title="@L["PrintBridge.Manual.CopyDeviceToken"]"
+                                            aria-label="@L["PrintBridge.Manual.CopyDeviceToken"]">
+                                        <i class="bi bi-clipboard" aria-hidden="true"></i>
+                                        <span class="d-none d-md-inline ms-1">@L["PrintBridge.Copy"]</span>
                                     </button>
                                 </div>
+                                <p class="small mb-2">@L["PrintBridge.Manual.Next"]</p>
+                                <p class="small text-muted mb-2" id="pbManualConnectionStatus" role="status"></p>
+                                @if (Model.CanManageDevices)
+                                {
+                                    <a class="small d-none" id="pbManualManageDeviceLink" href="@Model.DevicesUrl">@L["PrintBridge.Manual.ManageDevice"]</a>
+                                }
                             </div>
+                            <p class="visually-hidden" id="pbManualCopyStatus" role="status" aria-live="polite"></p>
                         </section>
 
                         <section class="mb-4">

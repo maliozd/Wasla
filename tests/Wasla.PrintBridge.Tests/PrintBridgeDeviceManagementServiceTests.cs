@@ -5,6 +5,7 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
+using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Services;
 
 namespace Wasla.PrintBridge.Tests;
@@ -51,6 +52,35 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
         Assert.Equal("1.0.0", details.AppVersion);
         Assert.True(details.IsActive);
         Assert.True(details.HasToken);
+    }
+
+    [Fact]
+    public async Task IssuedTokens_AreStoredOnlyAsHashes_AndNoReadReturnsThemAgain()
+    {
+        var created = await _service.CreateDeviceAsync(_tenantId, string.Empty, CancellationToken.None);
+        var stored = await LoadDeviceAsync(created.DeviceId);
+
+        Assert.Equal("Print Bridge", created.DeviceName);
+        Assert.Equal(PrintBridgeTokenHasher.HashToken(created.RawToken), stored.TokenHash);
+        Assert.NotEqual(created.RawToken, stored.TokenHash);
+        Assert.DoesNotContain(typeof(PrintBridgeDevice).GetProperties(),
+            p => p.Name.Contains("Token", StringComparison.Ordinal) && p.Name != nameof(PrintBridgeDevice.TokenHash));
+
+        var regenerated = await _service.RegenerateTokenAsync(_tenantId, created.DeviceId, CancellationToken.None);
+        Assert.NotEqual(created.RawToken, regenerated.RawToken);
+        Assert.Equal(PrintBridgeTokenHasher.HashToken(regenerated.RawToken), (await LoadDeviceAsync(created.DeviceId)).TokenHash);
+
+        // Reads only say whether a token exists.
+        var details = await _service.GetDeviceDetailsAsync(_tenantId, created.DeviceId, CancellationToken.None);
+        Assert.True(details!.HasToken);
+        foreach (var type in new[] { typeof(PrintBridgeDeviceSummaryDto), typeof(PrintBridgeDeviceDetailsDto) })
+            Assert.DoesNotContain(type.GetProperties(), p => p.PropertyType == typeof(string) && p.Name.Contains("Token", StringComparison.OrdinalIgnoreCase));
+
+        // Another tenant cannot replace this device's token.
+        var foreignTenantId = SeedTenant("foreign-token", "foreign-token.wasla.local");
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.RegenerateTokenAsync(foreignTenantId, created.DeviceId, CancellationToken.None));
+        Assert.Equal(PrintBridgeTokenHasher.HashToken(regenerated.RawToken), (await LoadDeviceAsync(created.DeviceId)).TokenHash);
     }
 
     [Fact]

@@ -51,6 +51,11 @@
     </div>
 </div>
 
+@if (Model.GuidedDeviceGuide is not null)
+{
+    @await Html.PartialAsync("_GuidedDeviceGuide", Model.GuidedDeviceGuide)
+}
+
 @if (TempData["PrintBridgeDeviceMessage"] is string successMessage)
 {
     <div class="alert alert-success small py-2" role="alert">@successMessage</div>
