@@ -33,5 +33,11 @@ public interface IOrderReadService
     /// Today and cancelled counts are Turkey-local-day aggregates and are not loaded into <c>Orders</c>.
     /// </summary>
     Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid customerId, CancellationToken ct);
+
+    /// <summary>
+    /// How many orders arrived at or after <paramref name="sinceUtc"/>, by the canonical <c>ReceivedAt</c>, in any
+    /// status. Practice orders are not orders and never count. Only the number is read.
+    /// </summary>
+    Task<int> CountReceivedSinceAsync(Guid customerId, DateTime sinceUtc, CancellationToken ct);
 }
 

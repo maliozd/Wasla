@@ -8,45 +8,52 @@ using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Demos;
 using Wasla.Domain.Enums;
 using Wasla.Web.Areas.Tenant.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Security;
+using static Wasla.UnitTests.GuidedSetup.GuidedSetupCoordinatorTests;
 
 namespace Wasla.UnitTests.Demos;
 
 /// <summary>
-/// The Live Screen polls every few seconds. Only users who may run demo actions can own a demo,
-/// so the per-poll demo lookup must not run for anyone else.
+/// The Live Screen polls every few seconds. Order training is Owner-only, so only an Owner can own a practice order,
+/// and the per-poll lookups must not run for anyone else.
 /// </summary>
 public sealed class LiveDataDemoLookupTests
 {
     private static readonly ResolvedTenantDto Tenant = new(Guid.NewGuid(), "Demo Tenant", "demo-tenant", "demo-tenant.wasla.local");
 
     [Fact]
-    public async Task UserWithoutOrderManagement_DoesNotTriggerTheDemoLookup()
+    public async Task ANonOwner_DoesNotTriggerTheDemoLookup()
     {
         var demos = new CountingDemos();
-        var controller = CreateController(demos, canManageOrders: false);
+        var controller = CreateController(demos, isOwner: false);
 
-        var result = await controller.LiveData(CancellationToken.None);
+        var result = await controller.LiveData(NoTraining(), new FakeTenantModes(), CancellationToken.None);
 
         Assert.IsType<OkObjectResult>(result);
         Assert.Equal(0, demos.LookupCount);
     }
 
     [Fact]
-    public async Task UserWithOrderManagement_StillLooksUpTheirOwnDemo()
+    public async Task AnOwner_StillLooksUpTheirOwnDemo()
     {
         var demos = new CountingDemos();
         var userId = Guid.NewGuid();
-        var controller = CreateController(demos, canManageOrders: true, userId);
+        var controller = CreateController(demos, isOwner: true, userId);
 
-        var result = await controller.LiveData(CancellationToken.None);
+        var result = await controller.LiveData(NoTraining(), new FakeTenantModes(), CancellationToken.None);
 
         Assert.IsType<OkObjectResult>(result);
         Assert.Equal(1, demos.LookupCount);
         Assert.Equal(userId, demos.LastUserId);
     }
 
-    private static OrdersController CreateController(CountingDemos demos, bool canManageOrders, Guid? userId = null)
+    /// <summary>Guided setup with nobody training and a live tenant: the normal snapshot.</summary>
+    private static GuidedSetupCoordinator NoTraining() =>
+        new(new FakeGuidedSetup(), new FixedNavigation(new TenantNavigationPermissions(true, true, true, true, true, true, true, true, true, true, true)),
+            new FakeSetupStatus(), new FakeDemos(), new FakePrintBridgeDevices(), new CapturingLogger());
+
+    private static OrdersController CreateController(CountingDemos demos, bool isOwner, Guid? userId = null)
     {
         var controller = new OrdersController(
             new FixedTenant(),
@@ -57,7 +64,7 @@ public sealed class LiveDataDemoLookupTests
             receiptCreation: null!,
             manualPrint: null!,
             demos: demos,
-            authorization: new PolicyResult(canManageOrders),
+            authorization: new PolicyResult(isOwner),
             orderSettingsValidator: null!,
             logger: NullLogger<OrdersController>.Instance,
             localizer: null!);
@@ -88,16 +95,19 @@ public sealed class LiveDataDemoLookupTests
 
         public Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct) =>
             throw new NotSupportedException();
+
+        public Task<int> CountReceivedSinceAsync(Guid customerId, DateTime sinceUtc, CancellationToken ct) =>
+            throw new NotSupportedException();
     }
 
     private sealed class PolicyResult : IAuthorizationService
     {
-        private readonly bool _canManageOrders;
+        private readonly bool _isOwner;
 
-        public PolicyResult(bool canManageOrders) => _canManageOrders = canManageOrders;
+        public PolicyResult(bool isOwner) => _isOwner = isOwner;
 
         public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, string policyName) =>
-            Task.FromResult(policyName == TenantPolicies.CanManageOrders && _canManageOrders
+            Task.FromResult(policyName == TenantPolicies.TenantOwner && _isOwner
                 ? AuthorizationResult.Success()
                 : AuthorizationResult.Failed());
 
@@ -119,6 +129,9 @@ public sealed class LiveDataDemoLookupTests
         }
 
         public Task<GuidedDemoSessionState?> GetActiveAsync(Guid tenantId, Guid userId, CancellationToken ct) =>
+            throw new NotSupportedException();
+
+        public Task<GuidedDemoSummary?> GetLatestAsync(Guid tenantId, Guid userId, CancellationToken ct) =>
             throw new NotSupportedException();
 
         public Task<GuidedDemoSessionState> StartAsync(Guid tenantId, Guid userId, CancellationToken ct) =>

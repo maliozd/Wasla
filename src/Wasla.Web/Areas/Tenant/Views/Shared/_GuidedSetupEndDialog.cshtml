@@ -1,0 +1,29 @@
+@model string?
+@* The only permanent exit from a started journey. Model: the allow-listed origin (e.g. "live-screen") or null. *@
+<div class="modal fade wasla-guided-setup-dialog" id="waslaGuidedSetupEndDialog" tabindex="-1"
+     aria-labelledby="waslaGuidedSetupEndTitle" aria-describedby="waslaGuidedSetupEndBody" aria-hidden="true"
+     data-guided-setup-dialog>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="waslaGuidedSetupEndTitle">@L["GuidedSetup.EndDialog.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["GuidedSetup.EndDialog.Cancel"]"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="waslaGuidedSetupEndBody">@L["GuidedSetup.EndDialog.Body"]</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-guided-setup-cancel>@L["GuidedSetup.EndDialog.Cancel"]</button>
+                <form method="post" action="/guided-setup/end" data-guided-setup-form>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="confirmed" value="true" />
+                    @if (!string.IsNullOrEmpty(Model))
+                    {
+                        <input type="hidden" name="origin" value="@Model" />
+                    }
+                    <button type="submit" class="btn btn-danger">@L["GuidedSetup.EndDialog.Confirm"]</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

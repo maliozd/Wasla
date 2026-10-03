@@ -18,9 +18,7 @@
         @if (Model.Kind == GuidedSetupCardKind.FirstUse)
         {
             <h2 id="waslaGuidedSetupTitle" class="wasla-guided-setup-card__title">@L["GuidedSetup.FirstUse.Title"]</h2>
-            <p class="wasla-guided-setup-card__body">
-                @(Model.IsOrderTrainingOnly ? L["GuidedSetup.FirstUse.BodyOrderTraining"] : L["GuidedSetup.FirstUse.Body"])
-            </p>
+            <p class="wasla-guided-setup-card__body">@L["GuidedSetup.FirstUse.Body"]</p>
             <p class="wasla-guided-setup-card__label" id="waslaGuidedSetupSectionsLabel">@L["GuidedSetup.SectionsLabel"]</p>
             <ol class="wasla-guided-setup-card__sections" aria-labelledby="waslaGuidedSetupSectionsLabel">
                 @foreach (var section in Model.Sections)
@@ -54,11 +52,14 @@
         }
         else
         {
-            @* Order training arrives in the next phase; this card only says it is next and never starts a demo. *@
+            @* Order training continues on the Live Screen; the page there starts the practice order. *@
             <h2 id="waslaGuidedSetupTitle" class="wasla-guided-setup-card__title">@L["GuidedSetup.Next.Title"]</h2>
             <p class="wasla-guided-setup-card__body">@L["GuidedSetup.Next.Body"]</p>
-            <p class="wasla-guided-setup-card__note">@L["GuidedSetup.Next.NotYetAvailable"]</p>
             <div class="wasla-guided-setup-card__actions" data-guided-setup-next-actions>
+                <form method="post" action="/guided-setup/continue" data-guided-setup-form>
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">@L["GuidedSetup.Next.Open"]</button>
+                </form>
                 <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#waslaGuidedSetupEndDialog">@L["GuidedSetup.End"]</button>
             </div>
         }
@@ -67,28 +68,6 @@
 
 @if (canEnd)
 {
-    <div class="modal fade wasla-guided-setup-dialog" id="waslaGuidedSetupEndDialog" tabindex="-1"
-         aria-labelledby="waslaGuidedSetupEndTitle" aria-describedby="waslaGuidedSetupEndBody" aria-hidden="true"
-         data-guided-setup-dialog>
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title h5" id="waslaGuidedSetupEndTitle">@L["GuidedSetup.EndDialog.Title"]</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["GuidedSetup.EndDialog.Cancel"]"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-0" id="waslaGuidedSetupEndBody">@L["GuidedSetup.EndDialog.Body"]</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-guided-setup-cancel>@L["GuidedSetup.EndDialog.Cancel"]</button>
-                    <form method="post" action="/guided-setup/end" data-guided-setup-form>
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="confirmed" value="true" />
-                        <button type="submit" class="btn btn-danger">@L["GuidedSetup.EndDialog.Confirm"]</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    @await Html.PartialAsync("_GuidedSetupEndDialog", (string?)null)
 }
 <script src="~/js/wasla-guided-setup.js" asp-append-version="true"></script>

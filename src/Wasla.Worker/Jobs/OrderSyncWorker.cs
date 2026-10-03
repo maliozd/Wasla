@@ -6,6 +6,7 @@ using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Demos;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Platform;
+using Wasla.Infrastructure.Services;
 using Wasla.Worker.Console;
 
 namespace Wasla.Worker.Jobs;
@@ -20,17 +21,20 @@ public sealed class OrderSyncWorker : BackgroundService
     private readonly ILogger<OrderSyncWorker> _logger;
     private readonly IConfiguration _config;
     private readonly IHostEnvironment _env;
+    private readonly GuidedDemoSchedule _demoSchedule;
 
     public OrderSyncWorker(
         IServiceScopeFactory scopeFactory,
         ILogger<OrderSyncWorker> logger,
         IConfiguration config,
-        IHostEnvironment env)
+        IHostEnvironment env,
+        GuidedDemoSchedule demoSchedule)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _config = config;
         _env = env;
+        _demoSchedule = demoSchedule;
     }
 
     public override Task StartAsync(CancellationToken cancellationToken)
@@ -212,15 +216,19 @@ public sealed class OrderSyncWorker : BackgroundService
     /// <summary>
     /// Plays the platform courier for guided demos in this cycle. Runs even when the tenant's
     /// sync is disabled or has no connection yet (onboarding tenants), and only touches demo sessions.
+    /// It also hands the tenant's next demo deadline to <see cref="GuidedDemoScheduler"/>, which moves the practice
+    /// order on time between cycles (and this first cycle catches up overdue stages after a restart). The cycle's own
+    /// timing does not change.
     /// </summary>
     private async Task DeliverGuidedDemosAsync(IServiceScope scope, ActiveCustomer customer, CancellationToken ct)
     {
         try
         {
             var simulator = scope.ServiceProvider.GetRequiredService<IGuidedDemoDeliverySimulator>();
-            var advanced = await simulator.AdvanceDueAsync(customer.Id, ct);
-            if (advanced > 0)
-                _logger.LogDebug("Guided demo courier simulated for {CustomerSlug}. Advanced={Advanced}", customer.Slug, advanced);
+            var result = await simulator.AdvanceDueAndPlanAsync(customer.Id, ct);
+            _demoSchedule.Plan(customer.Id, result.NextCheckAtUtc);
+            if (result.Advanced > 0)
+                _logger.LogDebug("Guided demo courier simulated for {CustomerSlug}. Advanced={Advanced}", customer.Slug, result.Advanced);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

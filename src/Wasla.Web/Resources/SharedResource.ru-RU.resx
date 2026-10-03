@@ -2400,9 +2400,6 @@
   <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
     <value>Этот токен отображается только один раз. Скопируйте и сохраните его в конфигурации Print Bridge. Если вы потеряете его, восстановите токен.</value>
   </data>
-  <data name="PrintBridge.TokenCreated" xml:space="preserve">
-    <value>Распечатать токен моста создан</value>
-  </data>
   <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
     <value>Токен моста для печати восстановлен.</value>
   </data>
@@ -2590,10 +2587,10 @@
     <value>Пакет Wasla Print Bridge</value>
   </data>
   <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
-    <value>Портативный пакет установки для Windows скоро появится здесь.</value>
+    <value>Пакет приложения для Windows скоро появится здесь.</value>
   </data>
   <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
-    <value>WaslaPrintBridge-portable.zip</value>
+    <value>Wasla.PrintBridge-win-x64.zip</value>
   </data>
   <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
     <value>Статус:</value>
@@ -2608,16 +2605,10 @@
     <value>Скоро</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
-    <value>Загрузите портативный пакет установки для ПК с ОС Windows, подключенного к чековому принтеру.</value>
+    <value>Скачайте пакет приложения для Windows на компьютер с Windows, подключённый к принтеру чеков.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
     <value>В среде разработки можно запустить приложение Print Bridge напрямую.</value>
-  </data>
-  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
-    <value>Детали подключения</value>
-  </data>
-  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>Адрес веб-панели</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>Токен устройства</value>
@@ -2647,13 +2638,13 @@
     <value>Скопируйте URL веб-панели Wasla.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Создайте код настройки.</value>
+    <value>Создайте токен устройства и скопируйте его.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Введите URL и код настройки в приложении.</value>
+    <value>В Print Bridge откройте «Настройки» и вставьте Wasla Веб-панель URL и токен устройства.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Завершите подключение.</value>
+    <value>Нажмите «Сохранить подключение», затем «Тестовое соединение».</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Выберите принтер и сохраните.</value>
@@ -2671,7 +2662,7 @@
     <value>подключение к Интернету</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>Временный код настройки (вводится в настольном приложении)</value>
+    <value>Для подключения вручную: токен устройства, созданный на этой странице</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>Компьютер, на котором установлено приложение, должен оставаться включенным.</value>
@@ -3017,9 +3008,6 @@
   </data>
   <data name="PrintBridge.DeviceToken" xml:space="preserve">
     <value>Токен устройства</value>
-  </data>
-  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
-    <value>Копирующий сервер URL</value>
   </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
     <value>Сервер URL не удалось определить. Откройте эту страницу из своего клиентского домена или обратитесь к своему администратору.</value>
@@ -3810,11 +3798,11 @@
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Не удалось начать настройку. Повторите попытку.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Попробовать открыть снова</value></data>
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Скачать Wasla Print Bridge</value></data>
-  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Ручная настройка</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Подключить вручную</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Не открылось? Убедитесь, что Wasla Print Bridge установлен и был запущен хотя бы один раз.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Не открылось автоматически? Используйте шаги ручной настройки.</value></data>
-  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Открыть ручную настройку</value></data>
-  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Ручная настройка</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Не открылось автоматически?</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Подключите вручную по URL веб-панели и токену устройства</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Подключить вручную</value></data>
   <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>Если Print Bridge работает на том же компьютере, можно использовать localhost. На другом компьютере используйте IP-адрес или домен.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>Адрес сервера сейчас недоступен.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>Нет доступного устройства Print Bridge. Сначала создайте его.</value></data>
@@ -3822,6 +3810,49 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Перед заменой токена текущего активного устройства требуется подтверждение.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Автоматическая настройка создаст новый токен для устройства {0}; старый токен перестанет работать.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Не удалось выполнить действие с токеном.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Title" xml:space="preserve"><value>Скачайте пакет приложения для Windows</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Requirement" xml:space="preserve"><value>Print Bridge — приложение для Windows 10 и 11. Вы распакуете скачанный ZIP-файл и запустите Wasla.PrintBridge.exe на компьютере, к которому подключён принтер чеков.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.File" xml:space="preserve"><value>Файл: {0}</value></data>
+  <data name="PrintBridge.FirstInstall.NotWindows" xml:space="preserve"><value>Похоже, это не компьютер с Windows. Откройте эту страницу на компьютере с Windows, к которому подключён принтер чеков, и завершите настройку там. Ничего не скачивается, пока вы сами этого не выберете.</value></data>
+  <data name="PrintBridge.FirstInstall.DownloadStarted" xml:space="preserve"><value>Загрузка началась. Когда браузер сохранит ZIP-файл, выполните шаг 2.</value></data>
+  <data name="PrintBridge.FirstInstall.AlreadyInstalled" xml:space="preserve"><value>Print Bridge уже установлен</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Button" xml:space="preserve"><value>Скачать Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Missing" xml:space="preserve"><value>Пакет Print Bridge здесь ещё не опубликован, поэтому скачать его с этой страницы нельзя. Если Print Bridge уже установлен, продолжите ниже или выполните настройку позже.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Title" xml:space="preserve"><value>Подготовьте Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Extract" xml:space="preserve"><value>Распакуйте скачанный ZIP-файл в папку, например C:\Wasla\PrintBridge.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Run" xml:space="preserve"><value>Запустите Wasla.PrintBridge.exe один раз и не закрывайте его. После этого эта страница сможет открывать Print Bridge за вас.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Runtime" xml:space="preserve"><value>Этому пакету нужна среда .NET 8 Desktop Runtime. Если Windows её запросит, разрешите установку или скачайте её с сайта Microsoft, затем снова запустите Print Bridge.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Done" xml:space="preserve"><value>Print Bridge скачан и открыт</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Title" xml:space="preserve"><value>Автоматическое подключение</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Body" xml:space="preserve"><value>Открывает Print Bridge на этом компьютере и подключает его к Wasla как новое устройство. Браузер может спросить, разрешить ли открыть приложение.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Button" xml:space="preserve"><value>Открыть Print Bridge и подключить</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Title" xml:space="preserve"><value>Подключение вручную</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>Вы сами вводите Wasla Веб-панель URL и токен устройства в «Настройках» Print Bridge. Используйте этот способ, если приложение не открывается автоматически.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Выберите способ подключения</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Выберите и проверьте принтер</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>В Print Bridge откройте «Настройки», выберите принтер чеков в разделе «Настройка принтера», нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
+  <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>Когда Wasla подтвердит подключение, панель пошаговой настройки вверху страницы покажет «{0}». Дальше — знакомство с устройством, затем обучение работе с заказами.</value></data>
+  <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Веб-панель URL и токен устройства</value></data>
+  <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Используйте этот способ, если Print Bridge не открывается с этой страницы. На экране «Настройки» Print Bridge нужны именно эти два значения.</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlLabel" xml:space="preserve"><value>Wasla Веб-панель URL</value></data>
+  <data name="PrintBridge.Manual.CopyWebPanelUrl" xml:space="preserve"><value>Копировать Wasla Веб-панель URL</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlCopied" xml:space="preserve"><value>Wasla Веб-панель URL скопирован.</value></data>
+  <data name="PrintBridge.Manual.TokenIntro" xml:space="preserve"><value>Токен устройства создаётся по выбору выше: для нового устройства или для существующего устройства, выбранного для повторного подключения.</value></data>
+  <data name="PrintBridge.Manual.TokenIntroNewDevice" xml:space="preserve"><value>Токен устройства создаётся для нового устройства.</value></data>
+  <data name="PrintBridge.Manual.CreateNewDeviceToken" xml:space="preserve"><value>Создать токен устройства</value></data>
+  <data name="PrintBridge.Manual.CreateReconnectToken" xml:space="preserve"><value>Создать новый токен для выбранного устройства</value></data>
+  <data name="PrintBridge.Manual.TokenCreatedFor" xml:space="preserve"><value>Токен устройства для «{0}» создан.</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenLabel" xml:space="preserve"><value>Токен устройства</value></data>
+  <data name="PrintBridge.Manual.ShownOnce" xml:space="preserve"><value>Этот токен показывается только один раз. После ухода с этой страницы или её перезагрузки его нельзя показать снова; если вы его потеряете, создайте для этого устройства новый токен.</value></data>
+  <data name="PrintBridge.Manual.CopyDeviceToken" xml:space="preserve"><value>Копировать токен устройства</value></data>
+  <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Показать токен</value></data>
+  <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Скрыть токен</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Токен устройства скопирован.</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Теперь откройте «Настройки» в Print Bridge, вставьте оба значения в поля с такими же названиями, затем нажмите «Сохранить подключение» и «Тестовое соединение».</value></data>
+  <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Создание или копирование токена не подключает Print Bridge. Подключение засчитывается только после того, как Wasla подтвердит соединение от Print Bridge.</value></data>
+  <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla подтвердил подключение Print Bridge. Продолжить можно на панели пошаговой настройки вверху этой страницы.</value></data>
+  <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla ещё не подтвердил подключение. Нажмите «Тестовое соединение» в Print Bridge, затем перезагрузите эту страницу, чтобы проверить снова.</value></data>
+  <data name="PrintBridge.Manual.ManageDevice" xml:space="preserve"><value>Управление устройством: обновить токен или удалить устройство</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Режим настройки</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Настроить новое устройство</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Подключает этот компьютер как новое устройство Print Bridge.</value></data>
@@ -3834,18 +3865,9 @@
   <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Создать новое подключение для выбранного устройства? Старое подключение больше не будет работать.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Повторное подключение создает новый токен для выбранного устройства и делает предыдущий токен этого устройства недействительным.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Выберите устройство для повторного подключения, чтобы продолжить.</value></data>
-  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Выберите устройство, чтобы продолжить.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Для повторного подключения существующего устройства необходимо выбрать устройство.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>Выбранное устройство не найдено для этого ресторана.</value></data>
   <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>Выберите допустимый режим настройки.</value></data>
-  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>Код настройки использует выбранный выше режим. Настоящий токен устройства создается только после обмена кода настольным приложением.</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>Одноразовый код настройки</value></data>
-  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>Используйте этот краткосрочный код вместе с адресом сервера в настольном приложении Print Bridge. Это не обычный API-токен.</value></data>
-  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>Создать новый код настройки</value></data>
-  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>Создать код повторного подключения</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>Одноразовый код настройки создан.</value></data>
-  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>Истекает: {0}</value></data>
-  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>Скопировать код настройки</value></data>
   <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>Настроить новое устройство</value></data>
   <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>Сведения об устройстве</value></data>
   <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>Веб-имя, состояние подключения и техническая информация этого устройства Print Bridge.</value></data>
@@ -4187,13 +4209,21 @@
   <data name="Tour.TrainingPaused" xml:space="preserve"><value>Обучение приостановлено. Продолжите, когда будете готовы.</value></data>
   <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>Подготовим Wasla к работе</value></data>
   <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>Настройте подключения к платформам и принтер, а затем освойте основной порядок работы с заказами на тренировочном заказе. Шаги, к которым вы ещё не готовы, можно завершить позже.</value></data>
-  <data name="GuidedSetup.FirstUse.BodyOrderTraining" xml:space="preserve"><value>Узнайте на тренировочном заказе, как подтвердить заказ, начать его приготовление и отметить готовность.</value></data>
   <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>В этом руководстве:</value></data>
   <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>Подключения к платформам</value></data>
   <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>Настройка принтера (Wasla Print Bridge)</value></data>
   <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Обучение работе с заказами на тренировочном заказе</value></data>
   <data name="GuidedSetup.Start" xml:space="preserve"><value>Начать пошаговую настройку</value></data>
   <data name="GuidedSetup.Skip" xml:space="preserve"><value>Пропустить пошаговую настройку</value></data>
+  <data name="Orders.Automation.PendingSetup" xml:space="preserve"><value>Заработает после настройки</value></data>
+  <data name="Orders.Automation.PendingSetupDescription" xml:space="preserve"><value>Включится автоматически, когда пошаговая настройка будет завершена или пропущена.</value></data>
+  <data name="Orders.DemoCountdown.PickUp" xml:space="preserve"><value>Курьер заберёт заказ через {0} сек.</value></data>
+  <data name="Orders.DemoCountdown.Deliver" xml:space="preserve"><value>Доставка завершится через {0} сек.</value></data>
+  <data name="Orders.DemoCountdown.Leave" xml:space="preserve"><value>Тренировочный заказ исчезнет с Живого экрана через {0} сек.</value></data>
+  <data name="Orders.DemoCountdown.Waiting" xml:space="preserve"><value>Ожидаем обновления от платформы…</value></data>
+  <data name="Orders.DemoCountdown.Seconds" xml:space="preserve"><value>{0} с</value></data>
+  <data name="Orders.DemoCountdown.Label" xml:space="preserve"><value>Время до автоматического шага</value></data>
+  <data name="Orders.DemoCountdown.Hint" xml:space="preserve"><value>Этот шаг выполняется сам, ничего делать не нужно.</value></data>
   <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>Если вы пропустите пошаговую настройку, она больше не будет показываться в приложении. Инструкции всегда доступны в разделе «Помощь и руководства».</value></data>
   <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>Пошаговая настройка не завершена.</value></data>
   <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>Вы остановились на разделе: {0}</value></data>
@@ -4205,7 +4235,6 @@
   <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>Отмена</value></data>
   <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Далее: обучение работе с заказами</value></data>
   <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>Прогресс пошаговой настройки сохранён. В следующем разделе вы на тренировочном заказе научитесь подтверждать заказ, начинать приготовление и отмечать готовность.</value></data>
-  <data name="GuidedSetup.Next.NotYetAvailable" xml:space="preserve"><value>Обучение работе с заказами пока недоступно; когда оно появится, его можно будет начать здесь.</value></data>
   <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>Пошаговая настройка</value></data>
   <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>Раздел {0} из {1}</value></data>
   <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>Продолжить</value></data>
@@ -4220,14 +4249,19 @@
   <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>Настрою позже</value></data>
   <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>Подключите принтер чеков</value></data>
   <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge — приложение Windows для компьютера, к которому подключён принтер. Оно печатает чеки заказов, созданные в Wasla, на выбранном вами принтере.</value></data>
-  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Скачайте и установите приложение с этой страницы; если оно уже установлено, откройте его кнопкой «{0}».</value></data>
-  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Приложение безопасно подключается к этой учётной записи с помощью одноразового кода настройки, поэтому копировать токен устройства вручную не нужно.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Скачайте ниже пакет приложения для Windows, распакуйте его и один раз запустите Print Bridge; затем подключите его кнопкой «{0}» или вручную.</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Если открыть Print Bridge с этой страницы, он подключится к этой учётной записи автоматически и безопасно. Если приложение не открылось, подключите его вручную: создайте здесь токен устройства и вставьте его вместе с Wasla Веб-панель URL в «Настройки» Print Bridge.</value></data>
   <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>Затем выберите принтер в настройках Print Bridge и нажмите «Распечатать тестовую квитанцию».</value></data>
   <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>Если принтер или компьютер ещё не готовы, этот шаг можно завершить позже.</value></data>
   <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>Устройство Print Bridge подключено.</value></data>
   <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>Подключённых устройств Print Bridge пока нет.</value></data>
-  <data name="GuidedSetup.PrintBridge.SetUpNow" xml:space="preserve"><value>Настроить Print Bridge сейчас</value></data>
   <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>Настрою позже</value></data>
+  <data name="GuidedSetup.PrintBridge.MeetDevice" xml:space="preserve"><value>Познакомьтесь с устройством</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Title" xml:space="preserve"><value>Print Bridge подключён</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Body" xml:space="preserve"><value>Познакомьтесь с устройством, чтобы продолжить настройку.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Title" xml:space="preserve"><value>Познакомьтесь с устройством Print Bridge</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.Device" xml:space="preserve"><value>Print Bridge подключён. Здесь вы будете управлять этим устройством. Посмотрите, что означает каждый раздел; сейчас ничего менять не нужно.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.List" xml:space="preserve"><value>Print Bridge подключён. В этом списке показана каждая установка Print Bridge; чтобы управлять устройством, откройте его сведения. Посмотрите, что означает каждый раздел; сейчас ничего менять не нужно.</value></data>
   <data name="GuidedSetup.Closed" xml:space="preserve"><value>Пошаговая настройка закрыта. Инструкции доступны в разделе «Помощь и руководства».</value></data>
   <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>Не удалось выполнить действие пошаговой настройки. Попробуйте ещё раз.</value></data>
   <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>Пошаговая настройка недоступна для прав вашей учётной записи.</value></data>
@@ -4253,9 +4287,29 @@
   <data name="Help.PlatformManage.Check" xml:space="preserve"><value>Чтобы проверить подключение, посмотрите столбец «{0}»: время обновляется при синхронизации новых заказов. Если видите счётчик ошибок или предупреждение о временной паузе, проверьте данные API.</value></data>
   <data name="Help.PrintBridge.Title" xml:space="preserve"><value>Установка и подключение Print Bridge</value></data>
   <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge — приложение Windows, которое отправляет чеки на принтер. Установите его на компьютер, к которому подключён принтер.</value></data>
-  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>Скачайте пакет на странице настройки Print Bridge и установите его на компьютер.</value></data>
-  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>На странице настройки нажмите «{0}». Приложение откроется и безопасно подключится к вашей учётной записи с помощью одноразового кода.</value></data>
-  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Если приложение не открылось, воспользуйтесь разделом ручной настройки на той же странице. Никому не сообщайте токен устройства.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>На компьютере с Windows, к которому подключён принтер чеков, откройте страницу настройки Print Bridge и скачайте пакет приложения для Windows (ZIP).</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Распакуйте ZIP-файл в папку.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Один раз запустите Wasla.PrintBridge.exe. Если Windows запросит .NET 8 Desktop Runtime, установите её.</value></data>
+  <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>На странице настройки выберите способ подключения: «{0}» откроет приложение и подключит его автоматически (рекомендуется), или подключите вручную, вставив токен устройства и Wasla Веб-панель URL в «Настройки» Print Bridge. Никому не сообщайте токен устройства.</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>В Print Bridge откройте «Настройки», выберите принтер чеков, нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
+  <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Когда Wasla подтвердит подключение, познакомьтесь с устройством: на его странице видно подключение, там же можно восстановить токен или удалить устройство. Подробнее — в разделе «{0}» ниже.</value></data>
+  <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Управление устройствами Print Bridge</value></data>
+  <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Каждая установка Print Bridge отображается как устройство в списке устройств Print Bridge. Откройте сведения об устройстве, чтобы переименовать его, проверить подключение, восстановить токен или удалить устройство.</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Title" xml:space="preserve"><value>Имя устройства</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Body" xml:space="preserve"><value>Имя, под которым Wasla показывает одну установку Print Bridge, рядом с именем компьютера. Каждый компьютер с Print Bridge — отдельное устройство.</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Title" xml:space="preserve"><value>Подключение и последний сеанс</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>«Подключено» означает, что Wasla получал сигнал от этой установки в течение последней минуты. «Последний раз видели» показывает, когда она в последний раз выходила на связь; более раннее время обычно означает, что приложение или компьютер выключены.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Токен устройства</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>Токен устройства позволяет этой установке входить в Wasla и получать задания печати. Wasla не хранит сам токен, поэтому после создания его нельзя показать снова.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Восстановить токен</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Создаёт новый токен для этого устройства.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Старый токен сразу перестаёт работать, и эта установка не сможет печатать, пока не получит новый.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Введите новый токен в разделе «Настройки» приложения Print Bridge, затем сохраните и проверьте подключение.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>Новый токен показывается только один раз.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Удалить устройство</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Прекращает доступ этого устройства к Wasla; его токен перестаёт работать.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Jobs" xml:space="preserve"><value>Эта установка больше не получает задания печати.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.When" xml:space="preserve"><value>Используйте только для установки, которая выведена из работы, потеряна или заменена.</value></data>
   <data name="Help.Printer.Title" xml:space="preserve"><value>Выбор принтера</value></data>
   <data name="Help.Printer.Body" xml:space="preserve"><value>В приложении Print Bridge откройте «Настройки», выберите принтер чеков в списке «Имя принтера» и сохраните.</value></data>
   <data name="Help.Printer.Template" xml:space="preserve"><value>Содержание и вид чека настраиваются на странице «{0}» в Wasla.</value></data>
@@ -4291,4 +4345,54 @@
   <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>Открыть настройки чека и принтера</value></data>
   <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>Открыть живой экран</value></data>
   <data name="Help.Action.OpenOrders" xml:space="preserve"><value>Открыть заказы</value></data>
+  <data name="GuidedSetup.Next.Open" xml:space="preserve"><value>Открыть обучение работе с заказами</value></data>
+  <data name="GuidedSetup.Training.Progress" xml:space="preserve"><value>Шаг {0} из {1}</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>Обучение работе с заказами на живом экране</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>Новые заказы появляются здесь в виде карточек и переходят дальше по мере работы с ними. Запустите тренировочный заказ, чтобы попробовать весь процесс. Он помечен как «{6}» и виден только вам: он не отправляется в Trendyol GO или Yemeksepeti, не печатается и не учитывается в ваших заказах и отчётах.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>Пришёл тренировочный заказ</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>Тренировочный заказ с пометкой «{6}» ждёт как новый заказ. Подтвердите его кнопкой «{1}» на карточке.</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>Начните подготовку</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>Заказ подтверждён. Нажмите «{2}», когда кухня приступит к нему.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>Отметьте готовность заказа</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>Когда заказ упакован, нажмите «{3}». Это последний шаг ресторана.</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>Курьер забирает заказ</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>Больше ничего нажимать не нужно. Курьер платформы забирает заказ, и его статус автоматически меняется на «{4}».</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>Заказ в пути</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Body" xml:space="preserve"><value>Заказ у курьера. Когда он доберётся до клиента, платформа автоматически отметит его как «{5}».</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Title" xml:space="preserve"><value>Заказ доставлен</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Body" xml:space="preserve"><value>Выполненные реальные заказы остаются на живом экране {0} мин., после чего исчезают с этого экрана. Они не удаляются: их по-прежнему можно найти на странице заказов и в истории заказов. Этот тренировочный заказ туда не сохраняется.</value></data>
+  <data name="GuidedSetup.Training.StartPractice" xml:space="preserve"><value>Запустить тренировочный заказ</value></data>
+  <data name="GuidedSetup.Training.Complete" xml:space="preserve"><value>Завершить обучение</value></data>
+  <data name="GuidedSetup.Training.ShowPractice" xml:space="preserve"><value>Показать тренировочный заказ</value></data>
+  <data name="GuidedSetup.Training.Hide" xml:space="preserve"><value>Скрыть подсказку</value></data>
+  <data name="GuidedSetup.Training.Reopen" xml:space="preserve"><value>Показать обучение</value></data>
+  <data name="GuidedSetup.Training.Waiting" xml:space="preserve"><value>Всё ещё ждёте? Обновления от курьера приходят из фоновой службы Wasla. Если она приостановлена, тренировочный заказ спокойно остаётся на этом шаге, пока служба снова не заработает.</value></data>
+  <data name="GuidedSetup.Training.CourierNote" xml:space="preserve"><value>После готовности ресторан больше не меняет статус заказа: получение и доставку курьер платформы отмечает автоматически.</value></data>
+  <data name="GuidedSetup.Training.HelpNote" xml:space="preserve"><value>Руководства всегда доступны в разделе</value></data>
+  <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Обучение работе с заказами пройдено, пошаговая настройка завершена. Руководства по-прежнему доступны в разделе «Помощь и руководства».</value></data>
+  <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>Не удалось запустить тренировочный заказ. Попробуйте ещё раз.</value></data>
+  <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>Обучение можно завершить после доставки тренировочного заказа.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Пока вы проходили обучение, пришёл реальный заказ</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Пока вы проходили обучение, пришли реальные заказы: {0}</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Вы можете продолжить обучение. Заказ можно обработать в панели платформы. Когда обучение завершится, активные заказы появятся на живом экране.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Вы можете продолжить обучение. Заказы можно обработать в панели платформы. Когда обучение завершится, активные заказы появятся на живом экране.</value></data>
+  <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Перейти к Print Bridge</value></data>
+  <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Перейти к обучению работе с заказами</value></data>
+  <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>Этот шаг ещё не завершён. Завершите настройку или выберите настройку позже.</value></data>
+  <data name="DevelopmentTools.Title" xml:space="preserve"><value>Инструменты разработки</value></data>
+  <data name="DevelopmentTools.Reset.Title" xml:space="preserve"><value>Вернуть тестового арендатора к первому запуску</value></data>
+  <data name="DevelopmentTools.Reset.Intro" xml:space="preserve"><value>Видно только в локальной среде разработки. Возвращает этого арендатора в состояние сразу после подготовки, чтобы можно было снова проверить пошаговую настройку с первого выбора «Начать/Пропустить».</value></data>
+  <data name="DevelopmentTools.Reset.Warning" xml:space="preserve"><value>Это действие нельзя отменить. Будут удалены заказы этого арендатора, подключения к платформам, устройства Print Bridge и тестовые настройки. Задания печати, состояние синхронизации, настройки уведомлений, прогресс пошаговой настройки и тренировочные заказы тоже будут сброшены.</value></data>
+  <data name="DevelopmentTools.Reset.Keeps" xml:space="preserve"><value>Сохраняются: арендатор, его домен и slug, все пользователи, пароли и роли, филиалы, записи о подписке и оплате. На платформах ничего не отзывается — удаляется только локальная конфигурация Wasla.</value></data>
+  <data name="DevelopmentTools.Reset.BrowserPermission" xml:space="preserve"><value>Разрешение браузера на уведомления приложение сбросить не может. При проверке этого сценария сбросьте его вручную в настройках сайта в Chrome.</value></data>
+  <data name="DevelopmentTools.Reset.Button" xml:space="preserve"><value>Сбросить тестового арендатора</value></data>
+  <data name="DevelopmentTools.Reset.DialogTitle" xml:space="preserve"><value>Сбросить тестового арендатора?</value></data>
+  <data name="DevelopmentTools.Reset.ConfirmLabel" xml:space="preserve"><value>Для подтверждения введите slug этого арендатора в точности:</value></data>
+  <data name="DevelopmentTools.Reset.Confirm" xml:space="preserve"><value>Да, сбросить</value></data>
+  <data name="DevelopmentTools.Reset.Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="DevelopmentTools.Reset.SlugMismatch" xml:space="preserve"><value>Введённый slug не совпадает с этим арендатором. Ничего не изменено.</value></data>
+  <data name="DevelopmentTools.Reset.Failed" xml:space="preserve"><value>Сброс не удалось завершить, и он был отменён. Ничего не изменено.</value></data>
+  <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>Тестовый арендатор возвращён к первому запуску. При необходимости сбросьте разрешение браузера на уведомления вручную в настройках сайта в Chrome.</value></data>
+  <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Перед сбросом остановите Wasla.Worker, закройте приложение Print Bridge и убедитесь, что сейчас не выполняется настройка Print Bridge. Иначе ещё идущий цикл синхронизации или настройка могут снова добавить данные после сброса, а тестовый (mock) провайдер хранит номера заказов в памяти. После завершения сброса снова запустите Worker.</value></data>
+  <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>Сброс выполнен лишь частично: устройства Print Bridge удалены, но остальные изменения отменены. Запустите сброс ещё раз, чтобы завершить его.</value></data>
 </root>

@@ -14,6 +14,7 @@
         ("help-printing", "Help.Group.Printing", new[]
         {
             ("help-print-bridge", "Help.PrintBridge.Title"),
+            ("help-print-bridge-devices", "Help.PrintBridgeDevices.Title"),
             ("help-printer", "Help.Printer.Title"),
             ("help-test-print", "Help.TestPrint.Title")
         }),
@@ -60,6 +61,12 @@
                         </ul>
                     </li>
                 }
+                @if (Model.ShowDevelopmentTools)
+                {
+                    <li>
+                        <a href="#help-development-tools" class="wasla-help__contents-group">@L["DevelopmentTools.Title"]</a>
+                    </li>
+                }
             </ul>
         </nav>
 
@@ -103,12 +110,24 @@
                 <article id="help-print-bridge" class="wasla-help__topic" aria-labelledby="help-print-bridge-title">
                     <h3 id="help-print-bridge-title">@L["Help.PrintBridge.Title"]</h3>
                     <p>@L["Help.PrintBridge.Intro"]</p>
+                    @* Same order as the guided first install: download the ZIP, extract it, run Print Bridge once,
+                       choose automatic or manual connection, test the printer, then get to know the device. *@
                     <ol>
                         <li>@L["Help.PrintBridge.Step1"]</li>
-                        <li>@L["Help.PrintBridge.Step2", L["PrintBridge.Auto.OpenButton"].Value]</li>
+                        <li>@L["Help.PrintBridge.Step2"]</li>
                         <li>@L["Help.PrintBridge.Step3"]</li>
+                        <li>@L["Help.PrintBridge.Step4", L["PrintBridge.FirstInstall.Connect.Automatic.Button"].Value]</li>
+                        <li>@L["Help.PrintBridge.Step5"]</li>
+                        <li>@L["Help.PrintBridge.Step6", L["Help.PrintBridgeDevices.Title"].Value]</li>
                     </ol>
                     <partial name="_HelpAction" model="@(Model.CanOpenPrintBridgeSetup, "/print-bridge/setup", "Help.Action.OpenPrintBridgeSetup")" />
+                </article>
+
+                <article id="help-print-bridge-devices" class="wasla-help__topic" aria-labelledby="help-print-bridge-devices-title">
+                    <h3 id="help-print-bridge-devices-title">@L["Help.PrintBridgeDevices.Title"]</h3>
+                    <p>@L["Help.PrintBridgeDevices.Intro"]</p>
+                    <partial name="_PrintBridgeDeviceTopics" />
+                    <partial name="_HelpAction" model="@(Model.CanOpenPrintBridgeDevices, "/print-bridge/devices", "Help.Action.OpenPrintBridgeDevices")" />
                 </article>
 
                 <article id="help-printer" class="wasla-help__topic" aria-labelledby="help-printer-title">
@@ -186,6 +205,11 @@
                     </ul>
                 </article>
             </section>
+
+            @if (Model.ShowDevelopmentTools)
+            {
+                @await Html.PartialAsync("_DevelopmentTools", Model.DevelopmentTenantResetSlug)
+            }
         </div>
     </div>
 </div>

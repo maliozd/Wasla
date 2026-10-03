@@ -267,6 +267,13 @@ public sealed class OrderReadService : IOrderReadService
         return new LiveScreenSnapshotResult(utcServer, orders, todayOrderCount, cancelledOrderCount);
     }
 
+    public async Task<int> CountReceivedSinceAsync(Guid customerId, DateTime sinceUtc, CancellationToken ct)
+    {
+        var since = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : SpecifyUtc(sinceUtc);
+        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        return await db.Orders.AsNoTracking().CountAsync(o => o.ReceivedAt >= since, ct);
+    }
+
     private static DateTime SpecifyUtc(DateTime value) =>
         DateTime.SpecifyKind(value, DateTimeKind.Utc);
 }

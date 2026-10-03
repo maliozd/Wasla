@@ -2397,9 +2397,6 @@
   <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
     <value>Bu token yalnızca bir kez gösterilir. Print Bridge yapılandırmasına kopyalayıp kaydedin. Kaybederseniz token yenileyin.</value>
   </data>
-  <data name="PrintBridge.TokenCreated" xml:space="preserve">
-    <value>Print Bridge token oluşturuldu</value>
-  </data>
   <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
     <value>Print Bridge token yenilendi</value>
   </data>
@@ -2587,10 +2584,10 @@
     <value>Wasla Print Bridge paketi</value>
   </data>
   <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
-    <value>Windows için taşınabilir kurulum paketi yakında burada olacak.</value>
+    <value>Windows uygulama paketi yakında burada olacak.</value>
   </data>
   <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
-    <value>WaslaPrintBridge-portable.zip</value>
+    <value>Wasla.PrintBridge-win-x64.zip</value>
   </data>
   <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
     <value>Durum:</value>
@@ -2605,13 +2602,7 @@
     <value>Yakında</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
-    <value>Fiş yazıcısına bağlı Windows bilgisayarınız için taşınabilir kurulum paketini indirin.</value>
-  </data>
-  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
-    <value>Bağlantı bilgileri</value>
-  </data>
-  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>Web panel adresi</value>
+    <value>Fiş yazıcısına bağlı Windows bilgisayarınız için Windows uygulama paketini indirin.</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>Cihaz token'ı</value>
@@ -2641,13 +2632,13 @@
     <value>Wasla Web Panel URL'sini kopyalayın.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Kurulum kodunu oluşturun.</value>
+    <value>Cihaz tokenı oluşturup kopyalayın.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Uygulamada URL ve kurulum kodunu girin.</value>
+    <value>Print Bridge'de Ayarlar'ı açın; Wasla Web Panel Linki ile cihaz tokenını yapıştırın.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Bağlantıyı tamamlayın.</value>
+    <value>"Bağlantıyı kaydet" düğmesine, ardından "Bağlantıyı test et" düğmesine tıklayın.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Yazıcınızı seçip kaydedin.</value>
@@ -2665,7 +2656,7 @@
     <value>İnternet bağlantısı</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>Geçici kurulum kodu (masaüstü uygulamasına girilir)</value>
+    <value>Manuel bağlantı için: bu sayfada oluşturulan cihaz tokenı</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>Uygulamanın çalıştığı bilgisayar açık kalmalı</value>
@@ -3015,9 +3006,6 @@
   <data name="PrintBridge.DeviceToken" xml:space="preserve">
     <value>Cihaz Tokenı</value>
   </data>
-  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
-    <value>Sunucu adresini kopyala</value>
-  </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
     <value>Sunucu adresi belirlenemedi. Lütfen müşteri alan adınız üzerinden bu sayfayı açın veya yöneticinize başvurun.</value>
   </data>
@@ -3323,11 +3311,11 @@
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Kurulum başlatılamadı. Lütfen tekrar deneyin.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Yeniden açmayı dene</value></data>
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Wasla Print Bridge'i indir</value></data>
-  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Manuel kurulumu kullan</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Manuel bağlan</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Açılmadı mı? Wasla Print Bridge'in kurulu olduğundan ve en az bir kez çalıştırıldığından emin olun.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Otomatik açılmadı mı? Manuel kurulum adımlarını kullanın.</value></data>
-  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Manuel kurulumu aç</value></data>
-  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Manuel kurulum</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Otomatik açılmadı mı?</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Web Panel Linki ve cihaz tokenıyla manuel bağlanın</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Manuel bağlan</value></data>
   <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>Print Bridge aynı bilgisayarda çalışıyorsa localhost kullanılabilir. Farklı bilgisayarda IP adresi veya domain kullanın.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>Sunucu adresi şu anda kullanılamıyor.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>Kullanılabilir Print Bridge cihazı yok. Önce bir cihaz oluşturun.</value></data>
@@ -3335,6 +3323,49 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Mevcut aktif cihaz token'ını değiştirmek için onay gerekir.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Otomatik kurulum {0} cihazı için yeni token oluşturur; eski token artık çalışmaz.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Token işlemi tamamlanamadı.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Title" xml:space="preserve"><value>Windows uygulama paketini indirin</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Requirement" xml:space="preserve"><value>Print Bridge, Windows 10 ve 11 için bir uygulamadır. İndirilen ZIP dosyasını fiş yazıcınızın bağlı olduğu bilgisayarda çıkaracak ve Wasla.PrintBridge.exe dosyasını çalıştıracaksınız.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.File" xml:space="preserve"><value>Dosya: {0}</value></data>
+  <data name="PrintBridge.FirstInstall.NotWindows" xml:space="preserve"><value>Bu bir Windows bilgisayarı gibi görünmüyor. Bu sayfayı fiş yazıcınızın bağlı olduğu Windows bilgisayarında açın ve kurulumu orada tamamlayın. Siz seçmedikçe hiçbir şey indirilmez.</value></data>
+  <data name="PrintBridge.FirstInstall.DownloadStarted" xml:space="preserve"><value>İndirme başladı. Tarayıcınız ZIP dosyasını kaydettiğinde 2. adımı izleyin.</value></data>
+  <data name="PrintBridge.FirstInstall.AlreadyInstalled" xml:space="preserve"><value>Print Bridge zaten kurulu</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Button" xml:space="preserve"><value>Print Bridge'i indir</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Missing" xml:space="preserve"><value>Print Bridge paketi burada henüz yayımlanmadı, bu yüzden bu sayfadan indirilemiyor. Print Bridge zaten kuruluysa aşağıdan devam edebilir ya da bu adımı daha sonra tamamlayabilirsiniz.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Title" xml:space="preserve"><value>Print Bridge'i hazırlayın</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Extract" xml:space="preserve"><value>İndirilen ZIP dosyasını bir klasöre çıkarın, örneğin C:\Wasla\PrintBridge.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Run" xml:space="preserve"><value>Wasla.PrintBridge.exe dosyasını bir kez çalıştırın ve açık bırakın. Bundan sonra bu sayfa Print Bridge'i sizin için açabilir.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Runtime" xml:space="preserve"><value>Bu paket .NET 8 Desktop Runtime gerektirir. Windows isterse kurulmasına izin verin veya Microsoft'un sitesinden kurun, ardından Print Bridge'i yeniden çalıştırın.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Done" xml:space="preserve"><value>Print Bridge'i indirdim ve açtım</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Title" xml:space="preserve"><value>Otomatik bağlantı</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Body" xml:space="preserve"><value>Bu bilgisayardaki Print Bridge'i açar ve Wasla'ya yeni bir cihaz olarak bağlar. Tarayıcınız uygulamayı açmak için izin isteyebilir.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Button" xml:space="preserve"><value>Print Bridge'i aç ve bağlan</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Title" xml:space="preserve"><value>Manuel bağlantı</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>Wasla Web Panel Linki ile bir cihaz tokenını Print Bridge'in Ayarlar ekranına kendiniz girersiniz. Uygulama otomatik açılmazsa bunu kullanın.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Bağlantı yöntemini seçin</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Yazıcınızı seçin ve test edin</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>Print Bridge'de Ayarlar'ı açın, Yazıcı yapılandırması bölümünde fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
+  <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>Wasla bağlantıyı doğruladığında bu sayfanın üstündeki rehberli kurulum paneli "{0}" seçeneğini gösterir. Sırada cihaz rehberi, ardından sipariş eğitimi var.</value></data>
+  <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Web Panel Linki ve cihaz tokenı</value></data>
+  <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Print Bridge bu sayfadan açılmıyorsa bunu kullanın. Print Bridge'in Ayarlar ekranı tam olarak bu iki bilgiyi ister.</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlLabel" xml:space="preserve"><value>Wasla Web Panel Linki</value></data>
+  <data name="PrintBridge.Manual.CopyWebPanelUrl" xml:space="preserve"><value>Wasla Web Panel Linkini kopyala</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlCopied" xml:space="preserve"><value>Wasla Web Panel Linki kopyalandı.</value></data>
+  <data name="PrintBridge.Manual.TokenIntro" xml:space="preserve"><value>Cihaz tokenı yukarıdaki seçime göre oluşturulur: yeni bir cihaz ya da yeniden bağlamak için seçtiğiniz mevcut cihaz.</value></data>
+  <data name="PrintBridge.Manual.TokenIntroNewDevice" xml:space="preserve"><value>Cihaz tokenı yeni bir cihaz için oluşturulur.</value></data>
+  <data name="PrintBridge.Manual.CreateNewDeviceToken" xml:space="preserve"><value>Cihaz tokenı oluştur</value></data>
+  <data name="PrintBridge.Manual.CreateReconnectToken" xml:space="preserve"><value>Seçilen cihaz için yeni token oluştur</value></data>
+  <data name="PrintBridge.Manual.TokenCreatedFor" xml:space="preserve"><value>{0} için cihaz tokenı oluşturuldu.</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenLabel" xml:space="preserve"><value>Cihaz tokenı</value></data>
+  <data name="PrintBridge.Manual.ShownOnce" xml:space="preserve"><value>Bu token yalnızca bir kez gösterilir. Bu sayfadan ayrıldıktan veya sayfayı yeniledikten sonra tekrar gösterilemez; kaybederseniz bu cihaz için yeni bir token oluşturun.</value></data>
+  <data name="PrintBridge.Manual.CopyDeviceToken" xml:space="preserve"><value>Cihaz tokenını kopyala</value></data>
+  <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Tokenı göster</value></data>
+  <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Tokenı gizle</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Cihaz tokenı kopyalandı.</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Şimdi Print Bridge'de Ayarlar'ı açın, iki bilgiyi aynı adlı alanlara yapıştırın, "Bağlantıyı kaydet" ve ardından "Bağlantıyı test et" düğmesine tıklayın.</value></data>
+  <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Token oluşturmak veya kopyalamak Print Bridge'i bağlamaz. Bağlantı ancak Wasla, Print Bridge'den gelen bağlantıyı doğruladıktan sonra tamamlanmış sayılır.</value></data>
+  <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla, Print Bridge bağlantısını doğruladı. Bu sayfanın üstündeki rehberli kurulum panelinden devam edebilirsiniz.</value></data>
+  <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla bağlantıyı henüz doğrulamadı. Print Bridge'de "Bağlantıyı test et" düğmesine tıklayın, ardından yeniden kontrol etmek için bu sayfayı yenileyin.</value></data>
+  <data name="PrintBridge.Manual.ManageDevice" xml:space="preserve"><value>Bu cihazı yönetin: tokenını yenileyin veya cihazı kaldırın</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Kurulum türü</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Yeni cihaz kur</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Bu bilgisayarı yeni bir Print Bridge cihazı olarak bağlar.</value></data>
@@ -3347,18 +3378,9 @@
   <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Seçilen cihaz için yeni bağlantı oluşturulsun mu? Eski bağlantı artık çalışmaz.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Yeniden bağlama seçilen cihaz için yeni token oluşturur ve o cihazın eski token'ını geçersiz kılar.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Devam etmek için yeniden bağlanacak cihazı seçin.</value></data>
-  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Devam etmek için bir cihaz seçin.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Mevcut cihazı yeniden bağlamak için cihaz seçimi zorunludur.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>Seçilen cihaz bu restorana ait değil veya bulunamadı.</value></data>
   <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>Geçerli bir kurulum türü seçin.</value></data>
-  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>Kurulum kodu yukarıda seçilen kurulum türünü kullanır. Gerçek cihaz token'ı yalnızca masaüstü uygulama kodu değiştirdiğinde oluşturulur.</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>Tek kullanımlık kurulum kodu</value></data>
-  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>Bu kısa süreli kodu masaüstü Print Bridge uygulamasında Server URL ile birlikte kullanın. Normal API token'ı değildir.</value></data>
-  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>Yeni kurulum kodu oluştur</value></data>
-  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>Yeniden bağlama kodu oluştur</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>Tek kullanımlık kurulum kodu oluşturuldu.</value></data>
-  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>Süre sonu: {0}</value></data>
-  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>Kurulum kodunu kopyala</value></data>
   <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>Yeni cihaz kur</value></data>
   <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>Cihaz detayları</value></data>
   <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>Bu Print Bridge cihazının Web adı, bağlantı durumu ve teknik bilgileri.</value></data>
@@ -3700,13 +3722,21 @@
   <data name="Tour.TrainingPaused" xml:space="preserve"><value>Eğitim duraklatıldı. Hazır olduğunuzda devam edebilirsiniz.</value></data>
   <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>Wasla'yı kullanıma hazırlayalım</value></data>
   <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>Platform bağlantılarınızı ve yazıcınızı kurup deneme siparişiyle temel sipariş akışını öğrenebilirsiniz. Hazır olmayan adımları daha sonra tamamlayabilirsiniz.</value></data>
-  <data name="GuidedSetup.FirstUse.BodyOrderTraining" xml:space="preserve"><value>Deneme siparişiyle siparişi onaylama, hazırlamaya başlama ve hazır işaretleme adımlarını öğrenebilirsiniz.</value></data>
   <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>Bu rehberde:</value></data>
   <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>Platform bağlantıları</value></data>
   <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>Yazıcı kurulumu (Wasla Print Bridge)</value></data>
-  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Deneme siparişiyle sipariş eğitimi</value></data>
+  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Sipariş eğitimi</value></data>
   <data name="GuidedSetup.Start" xml:space="preserve"><value>Rehberli kuruluma başla</value></data>
   <data name="GuidedSetup.Skip" xml:space="preserve"><value>Rehberli kurulumu atla</value></data>
+  <data name="Orders.Automation.PendingSetup" xml:space="preserve"><value>Kurulum tamamlanınca aktif</value></data>
+  <data name="Orders.Automation.PendingSetupDescription" xml:space="preserve"><value>Eğitimi tamamladığınızda veya atladığınızda otomatik olarak etkinleşir.</value></data>
+  <data name="Orders.DemoCountdown.PickUp" xml:space="preserve"><value>Kurye siparişi {0} saniye içinde teslim alacak.</value></data>
+  <data name="Orders.DemoCountdown.Deliver" xml:space="preserve"><value>Teslimat {0} saniye içinde tamamlanacak.</value></data>
+  <data name="Orders.DemoCountdown.Leave" xml:space="preserve"><value>Deneme siparişi {0} saniye içinde Canlı Ekran'dan kalkacak.</value></data>
+  <data name="Orders.DemoCountdown.Waiting" xml:space="preserve"><value>Platformdan güncelleme bekleniyor…</value></data>
+  <data name="Orders.DemoCountdown.Seconds" xml:space="preserve"><value>{0} sn</value></data>
+  <data name="Orders.DemoCountdown.Label" xml:space="preserve"><value>Otomatik adıma kalan süre</value></data>
+  <data name="Orders.DemoCountdown.Hint" xml:space="preserve"><value>Bu adım kendiliğinden ilerler; bir şey yapmanız gerekmez.</value></data>
   <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>Rehberli kurulumu atlarsanız uygulama içinde tekrar gösterilmez. Kullanım anlatımlarına Yardım ve Rehberler bölümünden ulaşabilirsiniz.</value></data>
   <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>Rehberli kurulumunuz yarım kaldı.</value></data>
   <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>Kaldığınız bölüm: {0}</value></data>
@@ -3716,9 +3746,8 @@
   <data name="GuidedSetup.EndDialog.Body" xml:space="preserve"><value>Kaydedilen ilerlemeniz bırakılır ve rehberli kurulum uygulama içinde tekrar gösterilmez. Yaptığınız ayarlar korunur. Kullanım anlatımlarına Yardım ve Rehberler bölümünden ulaşabilirsiniz.</value></data>
   <data name="GuidedSetup.EndDialog.Confirm" xml:space="preserve"><value>Evet, sonlandır</value></data>
   <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>Vazgeç</value></data>
-  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Sıradaki bölüm: sipariş eğitimi</value></data>
+  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Sıradaki bölüm: Sipariş eğitimi</value></data>
   <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>Rehberli kurulum ilerlemeniz kaydedildi. Sıradaki bölümde deneme siparişiyle siparişi onaylamayı, hazırlamaya başlamayı ve hazır işaretlemeyi öğreneceksiniz.</value></data>
-  <data name="GuidedSetup.Next.NotYetAvailable" xml:space="preserve"><value>Sipariş eğitimi henüz açılmadı; kullanıma açıldığında buradan başlatabileceksiniz.</value></data>
   <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>Rehberli kurulum</value></data>
   <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>Bölüm {0} / {1}</value></data>
   <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>Devam et</value></data>
@@ -3733,14 +3762,19 @@
   <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>Daha sonra kurarım</value></data>
   <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>Fiş yazıcınızı bağlayın</value></data>
   <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge, yazıcıya bağlı bilgisayarınıza kurulan Windows uygulamasıdır. Wasla'da oluşan sipariş fişlerini seçtiğiniz yazıcıdan yazdırır.</value></data>
-  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Bu sayfadan uygulamayı indirip kurun; kuruluysa "{0}" düğmesiyle açın.</value></data>
-  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Uygulama, tek kullanımlık kurulum koduyla bu hesaba güvenli şekilde bağlanır; cihaz anahtarını elle kopyalamanız gerekmez.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Aşağıdan Windows uygulama paketini indirin, çıkarın ve Print Bridge'i bir kez çalıştırın; ardından "{0}" ile otomatik ya da manuel bağlanın.</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Print Bridge'i bu sayfadan açtığınızda bu hesaba otomatik ve güvenli şekilde bağlanır. Açılmazsa manuel bağlanın: burada bir cihaz tokenı oluşturup Wasla Web Panel Linki ile birlikte Print Bridge Ayarlar'ına yapıştırın.</value></data>
   <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>Ardından Print Bridge ayarlarından yazıcınızı seçin ve "Yazıcıyı test et" ile deneme fişi yazdırın.</value></data>
   <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>Yazıcınız veya bilgisayarınız hazır değilse bu adımı daha sonra tamamlayabilirsiniz.</value></data>
   <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>Bağlı bir Print Bridge cihazınız var.</value></data>
   <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>Henüz bağlı bir Print Bridge cihazı yok.</value></data>
-  <data name="GuidedSetup.PrintBridge.SetUpNow" xml:space="preserve"><value>Print Bridge'i şimdi kur</value></data>
   <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>Daha sonra kuracağım</value></data>
+  <data name="GuidedSetup.PrintBridge.MeetDevice" xml:space="preserve"><value>Cihazını tanı</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Title" xml:space="preserve"><value>Print Bridge bağlandı</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Body" xml:space="preserve"><value>Kuruluma devam etmek için cihazınızı tanıyın.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Title" xml:space="preserve"><value>Print Bridge cihazınızı tanıyın</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.Device" xml:space="preserve"><value>Print Bridge bağlandı. Bu cihazı ileride bu sayfadan yönetirsiniz. Her bölümün ne anlama geldiğine bir göz atın; şimdi hiçbir şeyi değiştirmeniz gerekmiyor.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.List" xml:space="preserve"><value>Print Bridge bağlandı. Bu liste her Print Bridge kurulumunu gösterir; bir cihazı yönetmek için detaylarını açın. Her bölümün ne anlama geldiğine bir göz atın; şimdi hiçbir şeyi değiştirmeniz gerekmiyor.</value></data>
   <data name="GuidedSetup.Closed" xml:space="preserve"><value>Rehberli kurulum kapatıldı. Kullanım anlatımlarına Yardım ve Rehberler bölümünden ulaşabilirsiniz.</value></data>
   <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>Rehberli kurulum işlemi tamamlanamadı. Lütfen yeniden deneyin.</value></data>
   <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>Rehberli kurulum hesabınızın yetkileri için kullanılamıyor.</value></data>
@@ -3766,9 +3800,29 @@
   <data name="Help.PlatformManage.Check" xml:space="preserve"><value>Bağlantıyı test etmek için "{0}" sütununa bakın: yeni siparişler eşitlendikçe bu zaman güncellenir. Hata sayısı veya geçici durdurma uyarısı görürseniz API bilgilerinizi kontrol edin.</value></data>
   <data name="Help.PrintBridge.Title" xml:space="preserve"><value>Print Bridge'i kurma ve bağlama</value></data>
   <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge, fişleri yazıcınıza gönderen Windows uygulamasıdır. Kurulumu yazıcının bağlı olduğu bilgisayarda yapın.</value></data>
-  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>Print Bridge kurulum sayfasından paketi indirin ve bilgisayara kurun.</value></data>
-  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Kurulum sayfasında "{0}" düğmesine basın. Uygulama açılır ve tek kullanımlık kurulum koduyla hesabınıza güvenli şekilde bağlanır.</value></data>
-  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Uygulama açılmazsa kurulum sayfasındaki elle kurulum bölümünü kullanın. Cihaz anahtarını kimseyle paylaşmayın.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>Fiş yazıcınızın bağlı olduğu Windows bilgisayarında Print Bridge kurulum sayfasını açın ve Windows uygulama paketini (ZIP) indirin.</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>ZIP dosyasını bir klasöre çıkarın.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Wasla.PrintBridge.exe dosyasını bir kez çalıştırın. Windows .NET 8 Desktop Runtime isterse kurun.</value></data>
+  <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>Kurulum sayfasında bağlantı yöntemini seçin: "{0}" uygulamayı açıp otomatik bağlar (önerilir); ya da manuel bağlanıp bir cihaz tokenını Wasla Web Panel Linki ile birlikte Print Bridge Ayarlar'ına yapıştırın. Cihaz tokenını kimseyle paylaşmayın.</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>Print Bridge'de Ayarlar'ı açın, fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
+  <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Wasla bağlantıyı doğruladıktan sonra cihazınızı tanıyın: cihaz sayfası bağlantıyı gösterir; tokenı yenilemek veya cihazı kaldırmak da oradan yapılır. Ayrıntılar için "{0}" bölümüne bakın.</value></data>
+  <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Print Bridge cihazlarını yönetme</value></data>
+  <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Her Print Bridge kurulumu, Print Bridge Cihazları listesinde bir cihaz olarak görünür. Cihazı yeniden adlandırmak, bağlantısını kontrol etmek, tokenını yenilemek veya cihazı kaldırmak için cihazın detaylarını açın.</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Title" xml:space="preserve"><value>Cihaz adı</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Body" xml:space="preserve"><value>Wasla'nın tek bir Print Bridge kurulumu için gösterdiği addır; bilgisayar adıyla birlikte görünür. Print Bridge çalışan her bilgisayar ayrı bir cihazdır.</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Title" xml:space="preserve"><value>Bağlantı ve son görülme</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>"Bağlı", Wasla'nın bu kurulumdan son bir dakika içinde haber aldığı anlamına gelir. Son görülme, kurulumun en son ne zaman bağlandığını gösterir; daha eski bir zaman genellikle uygulamanın veya bilgisayarın kapalı olduğunu gösterir.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Cihaz tokenı</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>Cihaz tokenı, bu kurulumun Wasla'ya bağlanmasını ve yazdırma işlerini almasını sağlar. Wasla tokenın kendisini saklamaz; bu yüzden oluşturulduktan sonra bir daha gösterilemez.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Token yenile</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Bu cihaz için yeni bir cihaz tokenı oluşturur.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Eski token hemen geçersiz olur; bu kurulum yeni tokenı alana kadar yazdıramaz.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Yeni tokenı Print Bridge uygulamasında Ayarlar ekranına girin, ardından bağlantıyı kaydedip test edin.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>Yeni token yalnızca bir kez gösterilir.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Cihazı kaldır</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Bu cihazın Wasla erişimini sonlandırır; tokenı artık çalışmaz.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Jobs" xml:space="preserve"><value>O kurulum artık yazdırma işi almaz.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.When" xml:space="preserve"><value>Yalnızca emekliye ayrılan, kaybolan veya değiştirilen bir kurulum için kullanın.</value></data>
   <data name="Help.Printer.Title" xml:space="preserve"><value>Yazıcı seçme</value></data>
   <data name="Help.Printer.Body" xml:space="preserve"><value>Print Bridge uygulamasında Ayarlar bölümünü açın, "Yazıcı adı" listesinden fiş yazıcınızı seçin ve ayarları kaydedin.</value></data>
   <data name="Help.Printer.Template" xml:space="preserve"><value>Fişin içeriği ve görünümü Wasla'daki "{0}" sayfasından ayarlanır.</value></data>
@@ -3804,4 +3858,54 @@
   <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>Fiş ve yazıcı ayarlarını aç</value></data>
   <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>Canlı Ekran'ı aç</value></data>
   <data name="Help.Action.OpenOrders" xml:space="preserve"><value>Siparişleri aç</value></data>
+  <data name="GuidedSetup.Next.Open" xml:space="preserve"><value>Sipariş eğitimini aç</value></data>
+  <data name="GuidedSetup.Training.Progress" xml:space="preserve"><value>Adım {0}/{1}</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>Sipariş eğitimi: Canlı Ekran</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>Yeni siparişler burada kart olarak görünür ve üzerinde çalıştıkça ilerler. Akışı denemek için bir deneme siparişi başlatın. Deneme siparişi {6} olarak işaretlidir ve yalnızca siz görürsünüz: Trendyol GO'ya veya Yemeksepeti'ne gönderilmez, yazdırılmaz, siparişlerinize ve raporlarınıza sayılmaz.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>Deneme siparişi geldi</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>{6} olarak işaretli deneme siparişi yeni sipariş olarak bekliyor. Kartındaki {1} düğmesiyle onaylayın.</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>Hazırlamaya başlayın</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>Sipariş onaylandı. Mutfak hazırlamaya başladığında {2} düğmesine basın.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>Siparişi hazır işaretleyin</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>Sipariş paketlendiğinde {3} düğmesine basın. Bu, restoranın son adımıdır.</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>Kurye siparişi teslim alıyor</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>Başka bir düğmeye basmanız gerekmez. Platformun kuryesi siparişi teslim alır ve durumu kendiliğinden {4} olarak güncellenir.</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>Sipariş yolda</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Body" xml:space="preserve"><value>Sipariş kuryede. Müşteriye ulaştığında platform onu kendiliğinden {5} olarak işaretler.</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Title" xml:space="preserve"><value>Sipariş teslim edildi</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Body" xml:space="preserve"><value>Tamamlanan gerçek siparişler Canlı Ekran'da {0} dakika görünür, ardından bu ekrandan kalkar. Silinmezler: Siparişler sayfasında ve sipariş geçmişinde bulmaya devam edersiniz. Bu deneme siparişi oraya kaydedilmez.</value></data>
+  <data name="GuidedSetup.Training.StartPractice" xml:space="preserve"><value>Deneme siparişi başlat</value></data>
+  <data name="GuidedSetup.Training.Complete" xml:space="preserve"><value>Eğitimi tamamla</value></data>
+  <data name="GuidedSetup.Training.ShowPractice" xml:space="preserve"><value>Deneme siparişini göster</value></data>
+  <data name="GuidedSetup.Training.Hide" xml:space="preserve"><value>Rehberi gizle</value></data>
+  <data name="GuidedSetup.Training.Reopen" xml:space="preserve"><value>Sipariş eğitimini göster</value></data>
+  <data name="GuidedSetup.Training.Waiting" xml:space="preserve"><value>Hâlâ bekliyor musunuz? Kurye güncellemeleri Wasla'nın arka plan hizmetinden gelir. Hizmet durmuşsa deneme siparişi, hizmet yeniden çalışana kadar bu adımda güvenle bekler.</value></data>
+  <data name="GuidedSetup.Training.CourierNote" xml:space="preserve"><value>Sipariş hazır olduktan sonra restoran onu artık güncellemez: teslim alma ve teslimatı platformun kuryesi kendiliğinden bildirir.</value></data>
+  <data name="GuidedSetup.Training.HelpNote" xml:space="preserve"><value>Nasıl yapılır rehberlerine her zaman şuradan ulaşabilirsiniz:</value></data>
+  <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Sipariş eğitimi tamamlandı ve rehberli kurulum bitti. Nasıl yapılır rehberleri Yardım ve Rehberler'de kalmaya devam ediyor.</value></data>
+  <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>Deneme siparişi başlatılamadı. Lütfen tekrar deneyin.</value></data>
+  <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>Eğitimi, deneme siparişi teslim edildikten sonra tamamlayabilirsiniz.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Siz eğitimdeyken gerçek bir sipariş geldi</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Siz eğitimdeyken {0} gerçek sipariş geldi</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Eğitime devam edebilirsiniz. Siparişi platform panelinizden yönetebilirsiniz. Eğitim tamamlandığında aktif siparişler Canlı Ekran'da gösterilecektir.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Eğitime devam edebilirsiniz. Siparişleri platform panelinizden yönetebilirsiniz. Eğitim tamamlandığında aktif siparişler Canlı Ekran'da gösterilecektir.</value></data>
+  <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Print Bridge kurulumuna devam et</value></data>
+  <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Sipariş eğitimine devam et</value></data>
+  <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>Bu adım henüz tamamlanmadı. Kurulumu bitirebilir ya da daha sonra kurmayı seçebilirsiniz.</value></data>
+  <data name="DevelopmentTools.Title" xml:space="preserve"><value>Geliştirme araçları</value></data>
+  <data name="DevelopmentTools.Reset.Title" xml:space="preserve"><value>Test tenant’ını ilk kullanım durumuna döndür</value></data>
+  <data name="DevelopmentTools.Reset.Intro" xml:space="preserve"><value>Yalnızca yerel geliştirme ortamında görünür. Bu tenant’ı sağlandıktan hemen sonraki haline döndürür; böylece rehberli kurulumu ilk Başla/Atla seçiminden itibaren yeniden test edebilirsiniz.</value></data>
+  <data name="DevelopmentTools.Reset.Warning" xml:space="preserve"><value>Bu işlem geri alınamaz. Bu tenant’ın siparişleri, platform bağlantıları, Print Bridge cihazları ve test ayarları silinir. Yazdırma işleri, senkronizasyon durumu, bildirim ayarları, rehberli kurulum ilerlemesi ve deneme siparişleri de sıfırlanır.</value></data>
+  <data name="DevelopmentTools.Reset.Keeps" xml:space="preserve"><value>Korunanlar: tenant, alan adı ve slug, tüm kullanıcılar, şifreler ve roller, şubeler, abonelik ve ödeme kayıtları. Platformlarda hiçbir şey iptal edilmez; yalnızca Wasla’daki yerel yapılandırma silinir.</value></data>
+  <data name="DevelopmentTools.Reset.BrowserPermission" xml:space="preserve"><value>Tarayıcının bildirim izni uygulama tarafından sıfırlanamaz. Bu senaryoyu test ederken izni Chrome’un site ayarlarından elle sıfırlayın.</value></data>
+  <data name="DevelopmentTools.Reset.Button" xml:space="preserve"><value>Test tenant’ını sıfırla</value></data>
+  <data name="DevelopmentTools.Reset.DialogTitle" xml:space="preserve"><value>Test tenant’ı sıfırlansın mı?</value></data>
+  <data name="DevelopmentTools.Reset.ConfirmLabel" xml:space="preserve"><value>Onaylamak için bu tenant’ın slug’ını aynen yazın:</value></data>
+  <data name="DevelopmentTools.Reset.Confirm" xml:space="preserve"><value>Evet, sıfırla</value></data>
+  <data name="DevelopmentTools.Reset.Cancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="DevelopmentTools.Reset.SlugMismatch" xml:space="preserve"><value>Yazdığınız slug bu tenant’la eşleşmiyor. Hiçbir şey değiştirilmedi.</value></data>
+  <data name="DevelopmentTools.Reset.Failed" xml:space="preserve"><value>Sıfırlama tamamlanamadı ve geri alındı. Hiçbir şey değiştirilmedi.</value></data>
+  <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>Test tenant’ı ilk kullanım durumuna döndürüldü. Tarayıcının bildirim iznini gerekirse Chrome’un site ayarlarından elle sıfırlayın.</value></data>
+  <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Sıfırlamayı kullanmadan önce Wasla.Worker’ı durdurun, Print Bridge uygulamasını kapatın ve şu anda devam eden bir Print Bridge kurulumu olmadığından emin olun. Aksi hâlde hâlâ çalışan bir senkronizasyon döngüsü ya da kurulum, sıfırlamadan sonra yeniden veri ekleyebilir; ayrıca sahte (mock) sağlayıcı sipariş numaralarını bellekte tutar. Sıfırlama bittikten sonra Worker’ı yeniden başlatın.</value></data>
+  <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>Sıfırlama yarım kaldı: Print Bridge cihazları kaldırıldı, ancak diğer veriler geri alındı. Tamamlamak için sıfırlamayı yeniden çalıştırın.</value></data>
 </root>

@@ -13,6 +13,12 @@ namespace Wasla.Infrastructure.Services;
 /// inserts the user's single row (the unique index decides concurrent inserts) and later writes
 /// are conditional on the status they were decided from. A write that loses a race re-reads the
 /// row and decides again, so concurrent requests never rewrite a terminal state.
+/// <para>
+/// Completing or skipping also moves the tenant from Setup to Live, in the same database transaction as the
+/// user's own change: a user is never recorded as finished while the tenant stays in Setup. The tenant change is
+/// conditional (Setup → Live only), so it is idempotent, a later user's choice never changes a Live tenant, and
+/// starting guided setup never touches the tenant.
+/// </para>
 /// </summary>
 public sealed class GuidedSetupService : IGuidedSetupService
 {
@@ -75,7 +81,8 @@ public sealed class GuidedSetupService : IGuidedSetupService
             var now = _time.GetUtcNow().UtcDateTime;
             if (row is null)
             {
-                var created = await TryInsertAsync(db, NewRow(userId, command, position, now), ct).ConfigureAwait(false);
+                var created = await TryInsertAsync(db, NewRow(userId, command, position, now), FinishesGuidedSetup(command), now, ct)
+                    .ConfigureAwait(false);
                 if (created is not null)
                     return new GuidedSetupResult(GuidedSetupOutcome.Applied, ToState(created));
                 continue;
@@ -124,7 +131,10 @@ public sealed class GuidedSetupService : IGuidedSetupService
         throw new InvalidOperationException($"{command} cannot create guided setup state.");
     }
 
-    /// <summary>Applies the change only if the row still has the status the decision was based on.</summary>
+    /// <summary>
+    /// Applies the change only if the row still has the status the decision was based on. Completing or skipping
+    /// also takes the tenant live; both commit together or not at all.
+    /// </summary>
     private static async Task<bool> TryUpdateAsync(
         TenantDbContext db,
         UserGuidedSetupState row,
@@ -133,6 +143,9 @@ public sealed class GuidedSetupService : IGuidedSetupService
         DateTime now,
         CancellationToken ct)
     {
+        var finishing = FinishesGuidedSetup(command);
+        await using var transaction = finishing ? await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false) : null;
+
         var target = db.UserGuidedSetupStates.Where(state => state.Id == row.Id && state.Status == row.Status);
         var changed = command switch
         {
@@ -150,8 +163,21 @@ public sealed class GuidedSetupService : IGuidedSetupService
                 .SetProperty(state => state.UpdatedAt, now), ct).ConfigureAwait(false),
             _ => throw new InvalidOperationException($"{command} does not update existing guided setup state.")
         };
-        return changed == 1;
+        if (changed != 1)
+            return false;
+
+        if (transaction is not null)
+        {
+            await TenantOperationalModes.ActivateAsync(db, now, ct).ConfigureAwait(false);
+            await transaction.CommitAsync(ct).ConfigureAwait(false);
+        }
+
+        return true;
     }
+
+    /// <summary>Completed and Skipped end the user's guided setup; both take the tenant live.</summary>
+    private static bool FinishesGuidedSetup(GuidedSetupCommand command) =>
+        command is GuidedSetupCommand.Complete or GuidedSetupCommand.Skip;
 
     /// <summary>
     /// The user's row, or null when they have not started. This table is the only source of truth:
@@ -162,15 +188,24 @@ public sealed class GuidedSetupService : IGuidedSetupService
             .AsNoTracking()
             .SingleOrDefaultAsync(state => state.UserId == userId, ct);
 
-    /// <summary>Inserts the user's row, or returns null when a concurrent request inserted it first.</summary>
+    /// <summary>
+    /// Inserts the user's row, or returns null when a concurrent request inserted it first. A skip before starting
+    /// also takes the tenant live: both changes go to the database in one SaveChanges, which is one transaction, so
+    /// a lost insert race changes the tenant as little as the user.
+    /// </summary>
     private static async Task<UserGuidedSetupState?> TryInsertAsync(
         TenantDbContext db,
         UserGuidedSetupState row,
+        bool takeTenantLive,
+        DateTime now,
         CancellationToken ct)
     {
         db.UserGuidedSetupStates.Add(row);
         try
         {
+            if (takeTenantLive)
+                await TenantOperationalModes.StageActivationAsync(db, now, ct).ConfigureAwait(false);
+
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
             return row;
         }

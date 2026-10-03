@@ -89,7 +89,10 @@ public sealed class OrdersLiveScreenRenderingTests
         var liveDisplayIdx = controller.IndexOf("[HttpGet(\"live-display\")]", StringComparison.Ordinal);
         Assert.True(liveScreenIdx > 0 && liveDisplayIdx > liveScreenIdx);
         Assert.Contains("includeLineItems: true", controller.Substring(liveScreenIdx, liveDisplayIdx - liveScreenIdx), StringComparison.Ordinal);
-        Assert.Contains("includeLineItems: true", controller.Substring(liveDisplayIdx, 800), StringComparison.Ordinal);
+        // Bounded by the next action, not a character count, so line endings (CRLF checkouts) do not matter.
+        var nextActionIdx = controller.IndexOf("[Http", liveDisplayIdx + 1, StringComparison.Ordinal);
+        Assert.True(nextActionIdx > liveDisplayIdx);
+        Assert.Contains("includeLineItems: true", controller.Substring(liveDisplayIdx, nextActionIdx - liveDisplayIdx), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -230,9 +230,11 @@ public sealed class OrdersLiveScreenSeparationTests
         Assert.Contains("navPermissions.CanManageOrderSettings", liveView, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.ManageSettings\"]", liveView, StringComparison.Ordinal);
 
-        // Read-only status summary reuses the existing endpoints; no alternate backend.
-        Assert.Contains("orderSyncSettingsUrl: \"/orders/sync-settings\"", liveView, StringComparison.Ordinal);
-        Assert.Contains("orderSettingsUrl: \"/orders/order-settings\"", liveView, StringComparison.Ordinal);
+        // The read-only status summary comes with the Live Screen snapshot it already polls (effective states, see
+        // LiveScreenAutomationStatusTests); the Live Screen calls no settings endpoint and has no alternate backend.
+        Assert.Contains("liveDataUrl: \"/orders/live-data\"", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("orderSyncSettingsUrl", liveView, StringComparison.Ordinal);
+        Assert.DoesNotContain("orderSettingsUrl", liveView, StringComparison.Ordinal);
 
         // Historical filters stay on Orders.
         Assert.DoesNotContain("name=\"search\"", liveView, StringComparison.Ordinal);

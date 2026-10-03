@@ -70,6 +70,33 @@ public sealed class GuidedDemoTransitionTests
     }
 
     [Fact]
+    public void BrowserActions_AreOnlyApproveStartPreparingAndMarkReady()
+    {
+        Assert.Equal(new[] { "approve", "start-preparing", "mark-ready" }, GuidedDemoTransitions.UserActions);
+    }
+
+    /// <summary>
+    /// Every provider- or courier-owned action a browser could post, from every status: none moves a
+    /// practice order. OnTheWay and Delivered come only from Wasla.Worker; reject would end the training.
+    /// </summary>
+    [Fact]
+    public void BrowserCannotTriggerCourierDeliveryOrRejection_FromAnyStatus()
+    {
+        string[] forbidden =
+        [
+            "reject", "cancel", "hand-to-courier", "on-the-way", "ontheway", "OnTheWay", "pick-up", "pickup",
+            "mark-delivered", "deliver", "delivered", "Delivered", "complete-delivery", "complete"
+        ];
+
+        foreach (var status in Enum.GetValues<OrderStatus>())
+        foreach (var action in forbidden)
+        {
+            Assert.False(GuidedDemoTransitions.TryMove(status, action, out var next, out _), $"{action} from {status}");
+            Assert.Equal(status, next);
+        }
+    }
+
+    [Fact]
     public void InvalidTransition_IsRejected()
     {
         Assert.False(GuidedDemoTransitions.TryMove(OrderStatus.New, "mark-ready", out var next, out var key));
@@ -164,12 +191,12 @@ public sealed class GuidedDemoServiceTests : IDisposable
         Assert.False((await service.ApplyActionAsync(_tenantA, _userA, created.Id, "hand-to-courier", CancellationToken.None)).Succeeded);
         var simulator = CreateSimulator();
 
-        _clock.Now = _clock.Now.AddSeconds(10);
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
         Assert.Equal(1, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
         Assert.Equal(OrderStatus.OnTheWay, (await service.GetActiveAsync(_tenantA, _userA, CancellationToken.None))!.Status);
         Assert.False((await service.ApplyActionAsync(_tenantA, _userA, created.Id, "mark-delivered", CancellationToken.None)).Succeeded);
 
-        _clock.Now = _clock.Now.AddSeconds(10);
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
         Assert.Equal(1, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
 
         Assert.Null(await service.GetActiveAsync(_tenantA, _userA, CancellationToken.None));
@@ -210,12 +237,12 @@ public sealed class GuidedDemoServiceTests : IDisposable
 
         Assert.Equal(0, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
 
-        _clock.Now = _clock.Now.Add(GuidedDemoDeliverySimulator.CourierDelay);
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
         Assert.Equal(1, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
         Assert.Equal(OrderStatus.OnTheWay, await ReadStatusAsync(ready.Id));
         Assert.Equal(0, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
 
-        _clock.Now = _clock.Now.Add(GuidedDemoDeliverySimulator.CourierDelay);
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
         Assert.Equal(1, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
         Assert.Equal(OrderStatus.Delivered, await ReadStatusAsync(ready.Id));
         Assert.Equal(OrderStatus.Accepted, await ReadStatusAsync(accepted.Id));
@@ -267,8 +294,13 @@ public sealed class GuidedDemoServiceTests : IDisposable
         await MarkReadyAsync(service, finished.Id, _tenantA);
         await service.FinishActiveAsync(_tenantA, _userA, CancellationToken.None);
 
+        // Users can no longer reject a practice order, but a cancelled row (e.g. from before) must still be ignored.
         var cancelled = await service.StartAsync(_tenantA, _userB, CancellationToken.None);
-        Assert.True((await service.ApplyActionAsync(_tenantA, _userB, cancelled.Id, "reject", CancellationToken.None)).Succeeded);
+        await using (var db = await _tenants.CreateAsync(_tenantA, CancellationToken.None))
+        {
+            await db.GuidedDemoSessions.Where(row => row.Id == cancelled.Id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.Status, OrderStatus.Cancelled), TestContext.Current.CancellationToken);
+        }
 
         var expired = await service.StartAsync(_tenantB, _userA, CancellationToken.None);
         await MarkReadyAsync(service, expired.Id, _tenantB);
@@ -290,9 +322,9 @@ public sealed class GuidedDemoServiceTests : IDisposable
         var demo = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
         await MarkReadyAsync(service, demo.Id);
         var simulator = CreateSimulator();
-        _clock.Now = _clock.Now.AddSeconds(10);
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
         await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None);
-        _clock.Now = _clock.Now.AddSeconds(10);
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
         await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None);
         Assert.Equal(OrderStatus.Delivered, await ReadStatusAsync(demo.Id));
 
@@ -304,11 +336,166 @@ public sealed class GuidedDemoServiceTests : IDisposable
             Assert.Empty(await db.PrintJobs.ToListAsync(TestContext.Current.CancellationToken));
         }
 
-        // The same canonical window as real delivered orders on the Live Screen.
-        _clock.Now = _clock.Now.Add(LiveScreenVisibility.RecentDeliveredWindow).AddSeconds(-1);
+        // The practice order's own short delivered stage, not the real orders' two-minute window.
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration).AddSeconds(-1);
         Assert.NotNull(await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None));
         _clock.Now = _clock.Now.AddSeconds(2);
         Assert.Null(await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task WebActions_CannotPickUpDeliverOrReject_AtAnyCourierStep()
+    {
+        await SeedAsync(_tenantA, _userA);
+        var service = CreateService(null);
+        var demo = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+        Assert.False((await service.ApplyActionAsync(_tenantA, _userA, demo.Id, "reject", CancellationToken.None)).Succeeded);
+        await MarkReadyAsync(service, demo.Id);
+
+        foreach (var action in new[] { "hand-to-courier", "on-the-way", "mark-delivered", "deliver", "reject" })
+            Assert.False((await service.ApplyActionAsync(_tenantA, _userA, demo.Id, action, CancellationToken.None)).Succeeded);
+        Assert.Equal(OrderStatus.ReadyForPickup, await ReadStatusAsync(demo.Id));
+
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
+        await CreateSimulator().AdvanceDueAsync(_tenantA, CancellationToken.None);
+        foreach (var action in new[] { "mark-delivered", "deliver", "complete-delivery" })
+            Assert.False((await service.ApplyActionAsync(_tenantA, _userA, demo.Id, action, CancellationToken.None)).Succeeded);
+        Assert.Equal(OrderStatus.OnTheWay, await ReadStatusAsync(demo.Id));
+    }
+
+    [Fact]
+    public async Task Courier_WaitsWhileTheWorkerIsStopped_AndResumesAfterARestart()
+    {
+        await SeedAsync(_tenantA, _userA);
+        var service = CreateService(null);
+        var demo = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+        await MarkReadyAsync(service, demo.Id);
+
+        // No Worker cycle runs: time passing alone never moves the practice order.
+        _clock.Now = _clock.Now.AddMinutes(30);
+        Assert.Equal(OrderStatus.ReadyForPickup, await ReadStatusAsync(demo.Id));
+        Assert.Null((await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None))!.DeliveredAtUtc);
+
+        // A new Worker process picks it up, then delivers after one more delay.
+        Assert.Equal(1, await CreateSimulator().AdvanceDueAsync(_tenantA, CancellationToken.None));
+        Assert.Equal(0, await CreateSimulator().AdvanceDueAsync(_tenantA, CancellationToken.None));
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
+        Assert.Equal(1, await CreateSimulator().AdvanceDueAsync(_tenantA, CancellationToken.None));
+        Assert.Equal(OrderStatus.Delivered, await ReadStatusAsync(demo.Id));
+    }
+
+    [Fact]
+    public void EveryAutomaticStage_LastsExactlyTwentySeconds()
+    {
+        Assert.Equal(TimeSpan.FromSeconds(20), GuidedDemoTiming.StageDuration);
+        var entered = new DateTime(2026, 10, 3, 9, 0, 0, DateTimeKind.Utc);
+        Assert.Equal(new GuidedDemoAutomaticStep(GuidedDemoTiming.PickUp, entered.AddSeconds(20)), GuidedDemoTiming.StepFor(OrderStatus.ReadyForPickup, entered));
+        Assert.Equal(new GuidedDemoAutomaticStep(GuidedDemoTiming.Deliver, entered.AddSeconds(20)), GuidedDemoTiming.StepFor(OrderStatus.OnTheWay, entered));
+        Assert.Equal(new GuidedDemoAutomaticStep(GuidedDemoTiming.Leave, entered.AddSeconds(20)), GuidedDemoTiming.StepFor(OrderStatus.Delivered, entered));
+        foreach (var manual in new[] { OrderStatus.New, OrderStatus.Accepted, OrderStatus.Preparing, OrderStatus.Cancelled })
+            Assert.Null(GuidedDemoTiming.StepFor(manual, entered));
+        // Real delivered orders keep their own, longer Live Screen window.
+        Assert.Equal(TimeSpan.FromMinutes(2), LiveScreenVisibility.RecentDeliveredWindow);
+    }
+
+    /// <summary>
+    /// The deadline the Live Screen shows is exactly the moment the Worker moves the order: not a tick before, and at
+    /// the deadline itself. Ready → OnTheWay → Delivered → gone from the Live Screen, each 20 seconds after it began.
+    /// </summary>
+    [Fact]
+    public async Task EachAutomaticStage_EndsExactlyAtTheDeadlineTheLiveScreenShows()
+    {
+        await SeedAsync(_tenantA, _userA);
+        var service = CreateService(null);
+        var demo = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+        Assert.Null(demo.Automatic);
+        await MarkReadyAsync(service, demo.Id);
+        var simulator = CreateSimulator();
+
+        // Ready: picked up exactly at its deadline.
+        var ready = (await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None))!;
+        Assert.Equal(GuidedDemoTiming.PickUp, ready.Automatic!.Action);
+        Assert.Equal(_clock.Now.UtcDateTime.Add(GuidedDemoTiming.StageDuration), ready.Automatic.DueAtUtc);
+        Assert.Equal(DateTimeKind.Utc, ready.Automatic.DueAtUtc.Kind);
+        _clock.Now = new DateTimeOffset(ready.Automatic.DueAtUtc.AddMilliseconds(-1));
+        Assert.Equal(0, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
+        Assert.Equal(OrderStatus.ReadyForPickup, await ReadStatusAsync(demo.Id));
+        Assert.Equal(ready.Automatic, (await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None))!.Automatic);
+        _clock.Now = new DateTimeOffset(ready.Automatic.DueAtUtc);
+        Assert.Equal(1, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
+
+        // OnTheWay: a new 20 seconds from the pick-up, delivered exactly then.
+        var onTheWay = (await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None))!;
+        Assert.Equal(OrderStatus.OnTheWay, onTheWay.Status);
+        Assert.Equal(new GuidedDemoAutomaticStep(GuidedDemoTiming.Deliver, ready.Automatic.DueAtUtc.Add(GuidedDemoTiming.StageDuration)), onTheWay.Automatic);
+        _clock.Now = new DateTimeOffset(onTheWay.Automatic!.DueAtUtc.AddMilliseconds(-1));
+        Assert.Equal(0, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
+        Assert.Equal(OrderStatus.OnTheWay, await ReadStatusAsync(demo.Id));
+        _clock.Now = new DateTimeOffset(onTheWay.Automatic.DueAtUtc);
+        Assert.Equal(1, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
+
+        // Delivered: on the Live Screen until its deadline, then gone; training still knows it was delivered.
+        var delivered = (await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None))!;
+        Assert.Equal(OrderStatus.Delivered, delivered.Status);
+        Assert.Equal(new GuidedDemoAutomaticStep(GuidedDemoTiming.Leave, onTheWay.Automatic.DueAtUtc.Add(GuidedDemoTiming.StageDuration)), delivered.Automatic);
+        _clock.Now = new DateTimeOffset(delivered.Automatic!.DueAtUtc.AddMilliseconds(-1));
+        Assert.Equal(demo.Id, (await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None))!.Id);
+        Assert.Equal(0, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
+        _clock.Now = new DateTimeOffset(delivered.Automatic.DueAtUtc);
+        Assert.Null(await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None));
+        Assert.Equal(new GuidedDemoSummary(demo.Id, OrderStatus.Delivered, false), await service.GetLatestAsync(_tenantA, _userA, CancellationToken.None));
+
+        // Leaving the screen is not a status change: the row stays Delivered, never Cancelled, and nothing else moved.
+        Assert.Equal(OrderStatus.Delivered, await ReadStatusAsync(demo.Id));
+        Assert.Equal(0, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
+        await using var db = await _tenants.CreateAsync(_tenantA, CancellationToken.None);
+        Assert.Empty(await db.Orders.ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(await db.PrintJobs.ToListAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task TheDeadline_IsPersisted_SoReadingAgainOrFromAnotherTabNeverRestartsIt()
+    {
+        await SeedAsync(_tenantA, _userA, _userB);
+        var service = CreateService(null);
+        var demo = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+        await MarkReadyAsync(service, demo.Id);
+        var first = (await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None))!.Automatic;
+
+        _clock.Now = _clock.Now.AddSeconds(7);
+        var reload = (await CreateService(null).GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None))!.Automatic;
+        var otherTab = (await service.GetActiveAsync(_tenantA, _userA, CancellationToken.None))!.Automatic;
+
+        Assert.Equal(first, reload);
+        Assert.Equal(first, otherTab);
+        Assert.Null(await service.GetForLiveScreenAsync(_tenantA, _userB, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetLatest_ReportsTheMostRecentPracticeOrder_AndWhetherItCanStillMove()
+    {
+        await SeedAsync(_tenantA, _userA, _userB);
+        var service = CreateService(null);
+        Assert.Null(await service.GetLatestAsync(_tenantA, _userA, CancellationToken.None));
+
+        var demo = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+        Assert.Equal(new GuidedDemoSummary(demo.Id, OrderStatus.New, true), await service.GetLatestAsync(_tenantA, _userA, CancellationToken.None));
+        Assert.Null(await service.GetLatestAsync(_tenantA, _userB, CancellationToken.None));
+
+        await MarkReadyAsync(service, demo.Id);
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
+        await CreateSimulator().AdvanceDueAsync(_tenantA, CancellationToken.None);
+        _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
+        await CreateSimulator().AdvanceDueAsync(_tenantA, CancellationToken.None);
+
+        // Long after it left the Live Screen, training still knows the practice order was delivered.
+        _clock.Now = _clock.Now.AddDays(1);
+        Assert.Null(await service.GetForLiveScreenAsync(_tenantA, _userA, CancellationToken.None));
+        Assert.Equal(new GuidedDemoSummary(demo.Id, OrderStatus.Delivered, false), await service.GetLatestAsync(_tenantA, _userA, CancellationToken.None));
+
+        var expired = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
+        _clock.Now = _clock.Now.AddHours(3);
+        Assert.Equal(new GuidedDemoSummary(expired.Id, OrderStatus.New, false), await service.GetLatestAsync(_tenantA, _userA, CancellationToken.None));
     }
 
     /// <summary>The restaurant's last demo action is Mark ready; the courier steps follow on their own.</summary>

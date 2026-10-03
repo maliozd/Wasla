@@ -5,8 +5,10 @@ namespace Wasla.Application.Abstractions.GuidedSetup;
 
 /// <summary>
 /// The current tenant user's guided-setup choice and position. State is per user inside the
-/// tenant database; nothing here marks the tenant, another user, or operational setup complete.
-/// Callers pass the tenant and user resolved server-side for the current request.
+/// tenant database; nothing here marks another user or operational setup (platforms, Print Bridge) complete.
+/// The one tenant-level effect: <see cref="SkipAsync"/> and <see cref="CompleteAsync"/> also move the tenant's
+/// operational mode from Setup to Live, atomically with the user's change (see <c>TenantOperationalMode</c>).
+/// Callers pass the tenant and user resolved server-side for the current request, after their own authorization.
 /// </summary>
 public interface IGuidedSetupService
 {
@@ -16,7 +18,10 @@ public interface IGuidedSetupService
     /// </summary>
     Task<GuidedSetupState> GetAsync(Guid tenantId, Guid userId, CancellationToken ct);
 
-    /// <summary>NotStarted → InProgress at <paramref name="position"/>. Starting again keeps the saved position.</summary>
+    /// <summary>
+    /// NotStarted → InProgress at <paramref name="position"/>. Starting again keeps the saved position. The tenant's
+    /// operational mode is not touched.
+    /// </summary>
     Task<GuidedSetupResult> StartAsync(Guid tenantId, Guid userId, GuidedSetupPosition position, CancellationToken ct);
 
     /// <summary>
@@ -25,10 +30,10 @@ public interface IGuidedSetupService
     /// </summary>
     Task<GuidedSetupResult> SaveProgressAsync(Guid tenantId, Guid userId, GuidedSetupPosition position, CancellationToken ct);
 
-    /// <summary>NotStarted or InProgress → Skipped. Never overwrites Completed.</summary>
+    /// <summary>NotStarted or InProgress → Skipped, and the tenant Setup → Live. Never overwrites Completed.</summary>
     Task<GuidedSetupResult> SkipAsync(Guid tenantId, Guid userId, CancellationToken ct);
 
-    /// <summary>InProgress → Completed. Never overwrites Skipped.</summary>
+    /// <summary>InProgress → Completed, and the tenant Setup → Live. Never overwrites Skipped.</summary>
     Task<GuidedSetupResult> CompleteAsync(Guid tenantId, Guid userId, CancellationToken ct);
 }
 

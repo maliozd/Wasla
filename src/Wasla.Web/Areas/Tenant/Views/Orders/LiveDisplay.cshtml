@@ -100,6 +100,8 @@
                             <span class="wasla-live-settings-menu__label">@L["Settings.ReceiptPrinting.Title"]</span>
                             <span id="automationStatusReceipt" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
                         </div>
+                        @* Shown while an automation is configured on but waits for setup; pending indicators point to it. *@
+                        <p id="automationPendingSetupHint" class="wasla-live-settings-menu__hint" hidden>@L["Orders.Automation.PendingSetupDescription"]</p>
                         <div class="wasla-live-settings-menu__row">
                             <span class="wasla-live-settings-menu__label">@L["Orders.LiveDisplay.NotificationSound"]</span>
                             <span id="ordersLiveDisplaySoundStatus"
@@ -172,6 +174,11 @@
         </div>
     </div>
 
+    @if (Model.GuidedTraining is not null)
+    {
+        @await Html.PartialAsync("_GuidedTrainingPanel", Model.GuidedTraining)
+    }
+
     @* The first validated snapshot renders only the selected view. *@
     <div id="ordersLiveScreenHost" class="wasla-live-screen-host wasla-live-screen-host--board" data-live-screen-view="board" data-tour="live-orders" tabindex="-1" role="region" aria-label="@L["Orders.LiveDisplay.Title"]">
         <p data-live-loading role="status" class="text-muted p-3">@L["Common.Loading"]</p>
@@ -207,8 +214,6 @@
             timeZoneId: "@timeZoneId",
             notificationSettingsUrl: "/notification-settings",
             notificationSettingsJsonUrl: "/notification-settings/current",
-            orderSyncSettingsUrl: "/orders/sync-settings",
-            orderSettingsUrl: "/orders/order-settings",
             orderDetailPanelUrl: "/orders/{id}/detail-panel",
             orderPrintUrl: "/orders/{id}/print",
             viewModeStorageKey: "Wasla.liveScreen.viewMode",
@@ -241,6 +246,14 @@
                 ["automationStatusAutoApproveDisabled"] = L["Notification.Disabled"].Value,
                 ["automationStatusReceiptPrintingActive"] = L["Common.Active"].Value,
                 ["automationStatusReceiptPrintingDisabled"] = L["Notification.Disabled"].Value,
+                ["automationStatusPendingSetup"] = L["Orders.Automation.PendingSetup"].Value,
+                ["demoCountdownPickUp"] = L["Orders.DemoCountdown.PickUp"].Value,
+                ["demoCountdownDeliver"] = L["Orders.DemoCountdown.Deliver"].Value,
+                ["demoCountdownLeave"] = L["Orders.DemoCountdown.Leave"].Value,
+                ["demoCountdownWaiting"] = L["Orders.DemoCountdown.Waiting"].Value,
+                ["demoCountdownSeconds"] = L["Orders.DemoCountdown.Seconds"].Value,
+                ["demoCountdownLabel"] = L["Orders.DemoCountdown.Label"].Value,
+                ["demoCountdownHint"] = L["Orders.DemoCountdown.Hint"].Value,
                 ["liveScreenDetailLoadFailed"] = L["Orders.LiveScreen.DetailLoadFailed"].Value,
                 ["commonLoading"] = L["Common.Loading"].Value,
                 ["orderPrintAction"] = L["Orders.Print.Action"].Value,
@@ -325,6 +338,7 @@
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-demo-countdown.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>

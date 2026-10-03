@@ -25,6 +25,11 @@ public static class GuidedDemoLiveMapper
             session.NoteKey is null ? null : localizer[session.NoteKey].Value,
             total,
             items,
-            IsDemo: true);
+            IsDemo: true)
+        {
+            DemoAutomation = session.Automatic is { } step
+                ? new LiveScreenDemoAutomation(step.Action, step.DueAtUtc, (int)GuidedDemoTiming.StageDuration.TotalSeconds)
+                : null
+        };
     }
 }

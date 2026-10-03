@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Demos;
 using Wasla.Application.Orders;
 using Wasla.Application.Time;
 using Wasla.Domain.Enums;
 using Wasla.Web.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.Orders;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -153,6 +155,10 @@ public sealed class OrdersController : BaseController
         return Ok(new { orderSyncEnabled = r.OrderSyncEnabled });
     }
 
+    /// <summary>
+    /// The saved order settings, as configured, plus <c>effective</c>: what automatic approval and automatic receipts do
+    /// right now (PendingSetup while the tenant is still in Setup). The saved values are never changed by the mode.
+    /// </summary>
     [HttpGet("order-settings")]
     [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> GetOrderSettings(CancellationToken ct = default)
@@ -166,9 +172,17 @@ public sealed class OrdersController : BaseController
             autoApproveNewOrders = r.AutoApproveNewOrders,
             autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
             receiptCreationTiming = ReceiptCreationTimingCodes.FromAutoPrintReceiptSetting(r.AutoPrintReceiptOnAutoApprove),
-            receiptPrintCopyCount = r.ReceiptPrintCopyCount
+            receiptPrintCopyCount = r.ReceiptPrintCopyCount,
+            effective = EffectiveAutomation(r)
         });
     }
+
+    private static object EffectiveAutomation(TenantOrderSettingsResult settings) =>
+        new
+        {
+            autoApprove = TenantAutomationStatus.Effective(settings.OperationalMode, settings.AutoApproveNewOrders).ToString(),
+            autoReceipt = TenantAutomationStatus.Effective(settings.OperationalMode, settings.AutoPrintReceiptOnAutoApprove).ToString()
+        };
 
     [ValidateAntiForgeryToken]
     [HttpPost("order-settings")]
@@ -204,7 +218,8 @@ public sealed class OrdersController : BaseController
                 autoApproveNewOrders = r.AutoApproveNewOrders,
                 autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
                 receiptCreationTiming = ReceiptCreationTimingCodes.FromAutoPrintReceiptSetting(r.AutoPrintReceiptOnAutoApprove),
-                receiptPrintCopyCount = r.ReceiptPrintCopyCount
+                receiptPrintCopyCount = r.ReceiptPrintCopyCount,
+                effective = EffectiveAutomation(r)
             });
         }
         catch (ValidationException)
@@ -266,7 +281,7 @@ public sealed class OrdersController : BaseController
 
     [HttpGet("live-display")]
     [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
-    public async Task<IActionResult> LiveDisplay(CancellationToken ct = default)
+    public async Task<IActionResult> LiveDisplay([FromServices] IGuidedSetupCoordinator guidedSetup, CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
@@ -282,28 +297,68 @@ public sealed class OrdersController : BaseController
             logDateFilterAs: null, ct,
             includeLineItems: true);
 
+        // Read-only; guided-setup read failures hide the guidance and never break the Live Screen.
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("UserId")?.Value;
+        if (Guid.TryParse(userIdValue, out var userId))
+            vm.GuidedTraining = await guidedSetup.GetLiveScreenAsync(tenant.Id, userId, User, ct);
+
         ViewData["CustomerName"] = tenant.Name;
         return View("LiveDisplay", vm);
     }
 
     /// <summary>
     /// Read-only Live Screen snapshot. The UI still polls the HTML partial.
+    /// <para>
+    /// While this user (an Owner; order training is Owner-only) is in order training, their snapshot leaves real orders
+    /// out (they are still synchronized, kept and listed on Orders) and carries only how many arrived since the user
+    /// started guided setup, whatever the tenant's operational mode. Every other user gets the normal snapshot. This is
+    /// presentation for one user only: automatic acceptance and printing depend on the tenant's mode, never on this.
+    /// </para>
     /// </summary>
     [HttpGet("live-data")]
     [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
-    public async Task<IActionResult> LiveData(CancellationToken ct = default)
+    public async Task<IActionResult> LiveData(
+        [FromServices] IGuidedSetupCoordinator guidedSetup,
+        [FromServices] ITenantOperationalModeService operationalModes,
+        CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
         var snapshot = await _orders.GetLiveScreenSnapshotAsync(tenant.Id, ct);
+
+        // The settings menu's automation indicators, for everyone who may view the Live Screen: read-only effective
+        // states (Active, Off, PendingSetup), never the settings themselves. From the server on every poll, so
+        // Setup → Live shows up without a reload. The settings endpoints keep their own Manager/Owner policy.
+        try
+        {
+            var automation = await operationalModes.GetAutomationStatusAsync(tenant.Id, ct);
+            snapshot = snapshot with { Automation = LiveScreenAutomationStatus.From(automation) };
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The indicators keep their last state; the orders are unaffected.
+            _logger.LogWarning("Automation status could not be read: {ExceptionType}", ex.GetType().Name);
+        }
+
         var userIdValue = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
             ?? User?.FindFirst("UserId")?.Value;
-        // Only users who may run the demo actions can own a demo; skip the per-poll lookup for everyone else.
-        if (Guid.TryParse(userIdValue, out var userId)
-            && (await _authorization.AuthorizeAsync(User!, TenantPolicies.CanManageOrders)).Succeeded)
+        if (!Guid.TryParse(userIdValue, out var userId))
+            return Ok(snapshot);
+
+        // Only Owners can train or own a practice order (the same TenantOwner policy guards those endpoints); skip the
+        // per-poll lookups for everyone else.
+        if ((await _authorization.AuthorizeAsync(User!, TenantPolicies.TenantOwner)).Succeeded)
         {
+            var currentUserOrderTraining = await guidedSetup.GetLiveScreenIsolationAsync(tenant.Id, userId, User!, ct);
+            if (currentUserOrderTraining is not null)
+            {
+                var received = await _orders.CountReceivedSinceAsync(tenant.Id, currentUserOrderTraining.TrainingStartedAtUtc, ct);
+                snapshot = snapshot with { Orders = [], Training = new LiveScreenTrainingIsolation(received) };
+            }
+
             try
             {
                 var demo = await _demos.GetForLiveScreenAsync(tenant.Id, userId, ct);

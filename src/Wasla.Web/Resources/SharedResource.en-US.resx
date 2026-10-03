@@ -2400,9 +2400,6 @@
   <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
     <value>This token is shown only once. Copy and save it into your Print Bridge configuration. If you lose it, regenerate the token.</value>
   </data>
-  <data name="PrintBridge.TokenCreated" xml:space="preserve">
-    <value>Print Bridge token created</value>
-  </data>
   <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
     <value>Print Bridge token regenerated</value>
   </data>
@@ -2590,10 +2587,10 @@
     <value>Wasla Print Bridge package</value>
   </data>
   <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
-    <value>The portable Windows setup package will be available here soon.</value>
+    <value>The Windows application package will be available here soon.</value>
   </data>
   <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
-    <value>WaslaPrintBridge-portable.zip</value>
+    <value>Wasla.PrintBridge-win-x64.zip</value>
   </data>
   <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
     <value>Status:</value>
@@ -2608,16 +2605,10 @@
     <value>Coming soon</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
-    <value>Download the portable setup package for the Windows PC connected to your receipt printer.</value>
+    <value>Download the Windows application package for the Windows PC connected to your receipt printer.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
     <value>In development environments, you can run the Print Bridge app directly.</value>
-  </data>
-  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
-    <value>Connection details</value>
-  </data>
-  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>Web panel address</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>Device token</value>
@@ -2647,13 +2638,13 @@
     <value>Copy the Wasla Web Panel URL.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Generate a setup code.</value>
+    <value>Create a device token and copy it.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Enter the URL and setup code in the app.</value>
+    <value>In Print Bridge, open Settings and paste the Wasla Web Panel URL and the device token.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Complete the connection.</value>
+    <value>Click "Save connection", then "Test connection".</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Select your printer and save.</value>
@@ -2671,7 +2662,7 @@
     <value>Internet connection</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>Temporary setup code (entered in the desktop app)</value>
+    <value>For a manual connection: a device token created on this page</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>The computer running the app must stay on</value>
@@ -3018,9 +3009,6 @@
   <data name="PrintBridge.DeviceToken" xml:space="preserve">
     <value>Device Token</value>
   </data>
-  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
-    <value>Copy Server URL</value>
-  </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
     <value>Server URL could not be determined. Open this page from your customer domain or contact your administrator.</value>
   </data>
@@ -3326,11 +3314,11 @@
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Could not start setup. Please try again.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Try opening again</value></data>
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Download Wasla Print Bridge</value></data>
-  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Use manual setup</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Connect manually</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Didn't open? Make sure Wasla Print Bridge is installed and has been run once.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Didn't open automatically? Use the manual setup steps.</value></data>
-  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Open manual setup</value></data>
-  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Manual setup</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Didn't open automatically?</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Connect manually with the Web Panel URL and a device token</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Connect manually</value></data>
   <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>If Print Bridge runs on the same computer, localhost can be used. On a different computer, use an IP address or domain.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>The server address is unavailable right now.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>No Print Bridge device is available. Create one first.</value></data>
@@ -3338,6 +3326,49 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Confirmation is required before replacing the current active device token.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Automatic setup creates a new token for {0}; the old token will stop working.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>The token action could not be completed.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Title" xml:space="preserve"><value>Download the Windows application package</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Requirement" xml:space="preserve"><value>Print Bridge is a Windows 10 and 11 application. You'll extract the downloaded ZIP file and run Wasla.PrintBridge.exe on the computer your receipt printer is connected to.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.File" xml:space="preserve"><value>File: {0}</value></data>
+  <data name="PrintBridge.FirstInstall.NotWindows" xml:space="preserve"><value>This doesn't look like a Windows computer. Open this page on the Windows computer your receipt printer is connected to and finish the setup there. Nothing is downloaded unless you choose to.</value></data>
+  <data name="PrintBridge.FirstInstall.DownloadStarted" xml:space="preserve"><value>Download started. When your browser has saved the ZIP file, follow step 2.</value></data>
+  <data name="PrintBridge.FirstInstall.AlreadyInstalled" xml:space="preserve"><value>Print Bridge is already installed</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Button" xml:space="preserve"><value>Download Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Missing" xml:space="preserve"><value>The Print Bridge package hasn't been published here yet, so it can't be downloaded from this page. If Print Bridge is already installed, you can continue below, or set this up later.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Title" xml:space="preserve"><value>Prepare Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Extract" xml:space="preserve"><value>Extract the downloaded ZIP file to a folder, for example C:\Wasla\PrintBridge.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Run" xml:space="preserve"><value>Run Wasla.PrintBridge.exe once and leave it open. After that, this page can open Print Bridge for you.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Runtime" xml:space="preserve"><value>This package needs the .NET 8 Desktop Runtime. If Windows asks for it, allow the installation or get it from Microsoft's website, then run Print Bridge again.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Done" xml:space="preserve"><value>I downloaded and opened Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Title" xml:space="preserve"><value>Automatic connection</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Body" xml:space="preserve"><value>Opens Print Bridge on this computer and connects it to Wasla as a new device. Your browser may ask whether to open the app.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Button" xml:space="preserve"><value>Open Print Bridge and connect</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Title" xml:space="preserve"><value>Manual connection</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>You enter the Wasla Web Panel URL and a device token in Print Bridge's Settings yourself. Use this if the app doesn't open automatically.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Choose how to connect</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Choose and test your printer</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>In Print Bridge, open Settings, choose your receipt printer under Printer configuration, click "Save printer", then "Print test receipt".</value></data>
+  <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>When Wasla verifies the connection, the guided setup panel at the top of this page shows "{0}". The device guide comes next, then order training.</value></data>
+  <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Web Panel URL and device token</value></data>
+  <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Use this if Print Bridge doesn't open from this page. Print Bridge's Settings screen asks for exactly these two values.</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlLabel" xml:space="preserve"><value>Wasla Web Panel URL</value></data>
+  <data name="PrintBridge.Manual.CopyWebPanelUrl" xml:space="preserve"><value>Copy Wasla Web Panel URL</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlCopied" xml:space="preserve"><value>Wasla Web Panel URL copied.</value></data>
+  <data name="PrintBridge.Manual.TokenIntro" xml:space="preserve"><value>The device token is created for your choice above: a new device, or the existing device you selected to reconnect.</value></data>
+  <data name="PrintBridge.Manual.TokenIntroNewDevice" xml:space="preserve"><value>The device token is created for a new device.</value></data>
+  <data name="PrintBridge.Manual.CreateNewDeviceToken" xml:space="preserve"><value>Create a device token</value></data>
+  <data name="PrintBridge.Manual.CreateReconnectToken" xml:space="preserve"><value>Create a new token for the selected device</value></data>
+  <data name="PrintBridge.Manual.TokenCreatedFor" xml:space="preserve"><value>Device token created for {0}.</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenLabel" xml:space="preserve"><value>Device token</value></data>
+  <data name="PrintBridge.Manual.ShownOnce" xml:space="preserve"><value>This token is shown only once. After you leave or reload this page it can't be shown again; if you lose it, create a new token for this device.</value></data>
+  <data name="PrintBridge.Manual.CopyDeviceToken" xml:space="preserve"><value>Copy device token</value></data>
+  <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Show token</value></data>
+  <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Hide token</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Device token copied.</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Now open Settings in Print Bridge, paste both values into the fields with the same names, then click "Save connection" and "Test connection".</value></data>
+  <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Creating or copying the token doesn't connect Print Bridge. It counts as connected only after Wasla verifies the connection from Print Bridge.</value></data>
+  <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla verified the Print Bridge connection. You can continue from the guided setup panel at the top of this page.</value></data>
+  <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla hasn't verified the connection yet. Click "Test connection" in Print Bridge, then reload this page to check again.</value></data>
+  <data name="PrintBridge.Manual.ManageDevice" xml:space="preserve"><value>Manage this device: regenerate its token or remove it</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Setup mode</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Set up a new device</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Connects this computer as a new Print Bridge device.</value></data>
@@ -3350,18 +3381,9 @@
   <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Create a new connection for the selected device? The old connection will no longer work.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Reconnect creates a new token for the selected device and invalidates that device's previous token.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Select the device to reconnect before continuing.</value></data>
-  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Select a device to continue.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Selecting a device is required to reconnect an existing device.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>The selected device was not found for this restaurant.</value></data>
   <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>Select a valid setup mode.</value></data>
-  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>The setup code uses the setup mode selected above. The real device token is created only when the desktop app exchanges the code.</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>One-time setup code</value></data>
-  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>Use this short-lived code with the Server URL in the desktop Print Bridge app. It is not a normal API token.</value></data>
-  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>Generate a new setup code</value></data>
-  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>Generate reconnect setup code</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>One-time setup code created.</value></data>
-  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>Expires: {0}</value></data>
-  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>Copy setup code</value></data>
   <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>Set up a new device</value></data>
   <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>Device details</value></data>
   <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>Web name, connection status, and technical information for this Print Bridge device.</value></data>
@@ -3703,13 +3725,21 @@
   <data name="Tour.TrainingPaused" xml:space="preserve"><value>Training is paused. Continue when you are ready.</value></data>
   <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>Let's get Wasla ready to use</value></data>
   <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>Set up your platform connections and printer, then learn the basic order flow with a practice order. You can finish any step that isn't ready yet later.</value></data>
-  <data name="GuidedSetup.FirstUse.BodyOrderTraining" xml:space="preserve"><value>Learn how to approve an order, start preparing it and mark it ready with a practice order.</value></data>
   <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>This guide covers:</value></data>
   <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>Platform connections</value></data>
   <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>Printer setup (Wasla Print Bridge)</value></data>
   <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Order training with a practice order</value></data>
   <data name="GuidedSetup.Start" xml:space="preserve"><value>Start guided setup</value></data>
   <data name="GuidedSetup.Skip" xml:space="preserve"><value>Skip guided setup</value></data>
+  <data name="Orders.Automation.PendingSetup" xml:space="preserve"><value>Active once setup is complete</value></data>
+  <data name="Orders.Automation.PendingSetupDescription" xml:space="preserve"><value>Turns on automatically when guided setup is completed or skipped.</value></data>
+  <data name="Orders.DemoCountdown.PickUp" xml:space="preserve"><value>The courier will pick up the order in {0} seconds.</value></data>
+  <data name="Orders.DemoCountdown.Deliver" xml:space="preserve"><value>Delivery will be completed in {0} seconds.</value></data>
+  <data name="Orders.DemoCountdown.Leave" xml:space="preserve"><value>The practice order will leave the Live Screen in {0} seconds.</value></data>
+  <data name="Orders.DemoCountdown.Waiting" xml:space="preserve"><value>Waiting for the platform's update…</value></data>
+  <data name="Orders.DemoCountdown.Seconds" xml:space="preserve"><value>{0} s</value></data>
+  <data name="Orders.DemoCountdown.Label" xml:space="preserve"><value>Time left until the automatic step</value></data>
+  <data name="Orders.DemoCountdown.Hint" xml:space="preserve"><value>This step happens on its own; you don't need to do anything.</value></data>
   <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>If you skip guided setup, it won't be shown again in the app. You can find how-to guides in Help and Guides.</value></data>
   <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>Your guided setup isn't finished yet.</value></data>
   <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>Where you left off: {0}</value></data>
@@ -3721,7 +3751,6 @@
   <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>Keep going</value></data>
   <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Next: order training</value></data>
   <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>Your guided setup progress is saved. In the next section you'll practise approving an order, starting preparation and marking it ready with a practice order.</value></data>
-  <data name="GuidedSetup.Next.NotYetAvailable" xml:space="preserve"><value>Order training isn't available yet; once it is, you'll be able to start it here.</value></data>
   <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>Guided setup</value></data>
   <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>Section {0} of {1}</value></data>
   <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>Continue</value></data>
@@ -3736,14 +3765,19 @@
   <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>Set up later</value></data>
   <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>Connect your receipt printer</value></data>
   <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge is a Windows app for the computer your printer is connected to. It prints the order receipts Wasla creates on the printer you choose.</value></data>
-  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Download and install the app from this page; if it's already installed, open it with "{0}".</value></data>
-  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>The app connects to this account securely with a one-time setup code, so you don't need to copy a device token by hand.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Download the Windows application package below, extract it and run Print Bridge once; then connect with "{0}" or manually.</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Opening Print Bridge from this page connects it to this account automatically and securely. If it doesn't open, connect manually: create a device token here and paste it, with the Wasla Web Panel URL, into Print Bridge's Settings.</value></data>
   <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>Then choose your printer in the Print Bridge settings and use "Print test receipt" to print a test receipt.</value></data>
   <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>If your printer or computer isn't ready yet, you can finish this step later.</value></data>
   <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>A Print Bridge device is connected.</value></data>
   <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>No Print Bridge device is connected yet.</value></data>
-  <data name="GuidedSetup.PrintBridge.SetUpNow" xml:space="preserve"><value>Set up Print Bridge now</value></data>
   <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>I'll set it up later</value></data>
+  <data name="GuidedSetup.PrintBridge.MeetDevice" xml:space="preserve"><value>Get to know your device</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Title" xml:space="preserve"><value>Print Bridge connected</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Body" xml:space="preserve"><value>Get to know your device to continue setup.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Title" xml:space="preserve"><value>Get to know your Print Bridge device</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.Device" xml:space="preserve"><value>Print Bridge is connected. This is where you'll manage this device later. Take a look at what each part means; you don't need to change anything now.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.List" xml:space="preserve"><value>Print Bridge is connected. This list shows each Print Bridge installation; open a device's details to manage it. Take a look at what each part means; you don't need to change anything now.</value></data>
   <data name="GuidedSetup.Closed" xml:space="preserve"><value>Guided setup is closed. You can find how-to guides in Help and Guides.</value></data>
   <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>The guided setup action couldn't be completed. Please try again.</value></data>
   <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>Guided setup isn't available for your account's permissions.</value></data>
@@ -3769,9 +3803,29 @@
   <data name="Help.PlatformManage.Check" xml:space="preserve"><value>To test a connection, check the "{0}" column: it updates as new orders sync. If you see an error count or a temporary pause warning, check your API details.</value></data>
   <data name="Help.PrintBridge.Title" xml:space="preserve"><value>Installing and connecting Print Bridge</value></data>
   <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge is the Windows app that sends receipts to your printer. Install it on the computer the printer is connected to.</value></data>
-  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>Download the package from the Print Bridge setup page and install it on the computer.</value></data>
-  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>On the setup page, select "{0}". The app opens and connects to your account securely with a one-time setup code.</value></data>
-  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>If the app doesn't open, use the manual setup section on the setup page. Never share the device token.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>On the Windows computer your receipt printer is connected to, open the Print Bridge setup page and download the Windows application package (ZIP).</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Extract the ZIP file to a folder.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Run Wasla.PrintBridge.exe once. If Windows asks for the .NET 8 Desktop Runtime, install it.</value></data>
+  <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>On the setup page, choose how to connect: "{0}" opens the app and connects it automatically (recommended), or connect manually by pasting a device token and the Wasla Web Panel URL into Print Bridge's Settings. Never share the device token.</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>In Print Bridge, open Settings, choose your receipt printer, click "Save printer", then "Print test receipt".</value></data>
+  <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Once Wasla verifies the connection, get to know your device: its page shows the connection, and it's where you regenerate its token or remove it. See "{0}" below.</value></data>
+  <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Managing Print Bridge devices</value></data>
+  <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Each Print Bridge installation appears as a device under Print Bridge Devices. Open a device's details to rename it, check its connection, regenerate its token or remove it.</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Title" xml:space="preserve"><value>Device name</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Body" xml:space="preserve"><value>The name Wasla shows for one Print Bridge installation, next to the computer's name. Each computer that runs Print Bridge is a separate device.</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Title" xml:space="preserve"><value>Connection and last seen</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>"Connected" means Wasla heard from this installation within the last minute. Last seen shows when it last checked in; an older time usually means the app or the computer is off.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Device token</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>The device token lets this installation sign in to Wasla and receive print jobs. Wasla doesn't keep the token itself, so it can never be shown again after it was created.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Regenerate token</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Creates a new device token for this device.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>The old token stops working immediately, so this installation can't print until it has the new one.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Enter the new token in the Print Bridge app's Settings, then save and test the connection.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>The new token is shown only once.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Remove device</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Ends this device's access to Wasla; its token stops working.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Jobs" xml:space="preserve"><value>That installation no longer receives print jobs.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.When" xml:space="preserve"><value>Use it only for an installation that is retired, lost or replaced.</value></data>
   <data name="Help.Printer.Title" xml:space="preserve"><value>Choosing a printer</value></data>
   <data name="Help.Printer.Body" xml:space="preserve"><value>In the Print Bridge app, open Settings, choose your receipt printer from the "Printer name" list and save.</value></data>
   <data name="Help.Printer.Template" xml:space="preserve"><value>The receipt's content and layout are set on the "{0}" page in Wasla.</value></data>
@@ -3807,4 +3861,54 @@
   <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>Open receipt and printer settings</value></data>
   <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>Open the Live Screen</value></data>
   <data name="Help.Action.OpenOrders" xml:space="preserve"><value>Open orders</value></data>
+  <data name="GuidedSetup.Next.Open" xml:space="preserve"><value>Open order training</value></data>
+  <data name="GuidedSetup.Training.Progress" xml:space="preserve"><value>Step {0} of {1}</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>Order training on the Live Screen</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>New orders appear here as cards and move forward as you work on them. Start a practice order to try the flow. It is marked {6} and only you can see it: it is not sent to Trendyol GO or Yemeksepeti, not printed, and not counted in your orders or reports.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>A practice order has arrived</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>The practice order marked {6} is waiting as a new order. Accept it with the {1} button on its card.</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>Start preparing</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>The order is accepted. Press {2} when the kitchen starts on it.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>Mark the order ready</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>When the order is packed, press {3}. This is the restaurant's last step.</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>The courier collects the order</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>You don't need to press anything else. The platform's courier collects the order, and its status changes to {4} automatically.</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>The order is on the way</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Body" xml:space="preserve"><value>The courier has the order. When it reaches the customer, the platform marks it {5} automatically.</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Title" xml:space="preserve"><value>The order was delivered</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Body" xml:space="preserve"><value>Completed real orders stay on the Live Screen for {0} minutes and then leave this screen. They are not deleted: you can still find them in Orders and order history. This practice order is not saved there.</value></data>
+  <data name="GuidedSetup.Training.StartPractice" xml:space="preserve"><value>Start a practice order</value></data>
+  <data name="GuidedSetup.Training.Complete" xml:space="preserve"><value>Complete training</value></data>
+  <data name="GuidedSetup.Training.ShowPractice" xml:space="preserve"><value>Show the practice order</value></data>
+  <data name="GuidedSetup.Training.Hide" xml:space="preserve"><value>Hide guide</value></data>
+  <data name="GuidedSetup.Training.Reopen" xml:space="preserve"><value>Show order training</value></data>
+  <data name="GuidedSetup.Training.Waiting" xml:space="preserve"><value>Still waiting? Courier updates come from Wasla's background service. If it is paused, the practice order stays safely at this step until the service runs again.</value></data>
+  <data name="GuidedSetup.Training.CourierNote" xml:space="preserve"><value>Once the order is ready, the restaurant doesn't update it any more: the platform's courier reports collection and delivery automatically.</value></data>
+  <data name="GuidedSetup.Training.HelpNote" xml:space="preserve"><value>How-to guides are always available in</value></data>
+  <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Order training is complete, and guided setup is finished. How-to guides stay available in Help and Guides.</value></data>
+  <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>The practice order couldn't be started. Please try again.</value></data>
+  <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>You can complete the training once the practice order has been delivered.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>A real order arrived while you were training</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>{0} real orders arrived while you were training</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>You can continue training. You can manage the order from your platform panel. Active orders will be shown on the Live Screen once training is complete.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>You can continue training. You can manage the orders from your platform panel. Active orders will be shown on the Live Screen once training is complete.</value></data>
+  <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Continue to Print Bridge</value></data>
+  <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Continue to order training</value></data>
+  <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>This step isn't finished yet. You can finish the setup or choose to set it up later.</value></data>
+  <data name="DevelopmentTools.Title" xml:space="preserve"><value>Development tools</value></data>
+  <data name="DevelopmentTools.Reset.Title" xml:space="preserve"><value>Return the test tenant to first use</value></data>
+  <data name="DevelopmentTools.Reset.Intro" xml:space="preserve"><value>Only visible in local Development. Returns this tenant to the state it had right after provisioning, so you can test guided setup again from the first Start/Skip choice.</value></data>
+  <data name="DevelopmentTools.Reset.Warning" xml:space="preserve"><value>This can't be undone. This tenant's orders, provider connections, Print Bridge devices and test configuration will be removed. Print jobs, synchronization state, notification settings, guided-setup progress and practice orders are reset too.</value></data>
+  <data name="DevelopmentTools.Reset.Keeps" xml:space="preserve"><value>Kept: the tenant, its domain and slug, all users, passwords and roles, branches, and subscription and payment records. Nothing is revoked at the platforms; only Wasla's local configuration is removed.</value></data>
+  <data name="DevelopmentTools.Reset.BrowserPermission" xml:space="preserve"><value>The browser's notification permission can't be reset by the app. When testing that scenario, reset it manually in Chrome's site settings.</value></data>
+  <data name="DevelopmentTools.Reset.Button" xml:space="preserve"><value>Reset test tenant</value></data>
+  <data name="DevelopmentTools.Reset.DialogTitle" xml:space="preserve"><value>Reset the test tenant?</value></data>
+  <data name="DevelopmentTools.Reset.ConfirmLabel" xml:space="preserve"><value>To confirm, type this tenant's slug exactly:</value></data>
+  <data name="DevelopmentTools.Reset.Confirm" xml:space="preserve"><value>Yes, reset it</value></data>
+  <data name="DevelopmentTools.Reset.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="DevelopmentTools.Reset.SlugMismatch" xml:space="preserve"><value>The slug you typed doesn't match this tenant. Nothing was changed.</value></data>
+  <data name="DevelopmentTools.Reset.Failed" xml:space="preserve"><value>The reset couldn't be completed and was rolled back. Nothing was changed.</value></data>
+  <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>The test tenant is back at first use. If you need to, reset the browser's notification permission manually in Chrome's site settings.</value></data>
+  <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Before using the reset, stop Wasla.Worker, close the Print Bridge application and make sure no Print Bridge setup is currently in progress. Otherwise a sync cycle or setup that is still running could add data again after the reset, and the mock provider keeps order numbers in memory. Start the Worker again once the reset is done.</value></data>
+  <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>The reset only partly finished: the Print Bridge devices were removed, but the rest was rolled back. Run the reset again to complete it.</value></data>
 </root>

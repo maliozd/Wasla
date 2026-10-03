@@ -18,7 +18,9 @@ public sealed record TenantNavigationPermissions(
     bool CanManageTenantSettings,
     bool CanManagePrintBridgeDevices,
     bool CanManageDeviceSecurity,
-    bool CanManageOrderSettings)
+    bool CanManageOrderSettings,
+    // Guided setup and order training are Owner-only (TenantOwner policy); every guided-setup endpoint enforces the same policy.
+    bool CanUseGuidedSetup = false)
 {
     public bool CanViewAnyPrintBridgeLink => CanManagePrintBridgeDevices || CanManageDeviceSecurity;
 
@@ -49,6 +51,7 @@ public sealed class TenantNavigationAuthorizationService : ITenantNavigationAuth
         var canManagePrintBridgeDevices = await IsAuthorizedAsync(user, TenantPolicies.CanManagePrintBridgeDevices).ConfigureAwait(false);
         var canManageDeviceSecurity = await IsAuthorizedAsync(user, TenantPolicies.CanManageDeviceSecurity).ConfigureAwait(false);
         var canManageOrderSettings = await IsAuthorizedAsync(user, TenantPolicies.TenantManagerOrOwner).ConfigureAwait(false);
+        var canUseGuidedSetup = await IsAuthorizedAsync(user, TenantPolicies.TenantOwner).ConfigureAwait(false);
 
         return new TenantNavigationPermissions(
             canViewReports,
@@ -60,7 +63,8 @@ public sealed class TenantNavigationAuthorizationService : ITenantNavigationAuth
             canManageTenantSettings,
             canManagePrintBridgeDevices,
             canManageDeviceSecurity,
-            canManageOrderSettings);
+            canManageOrderSettings,
+            canUseGuidedSetup);
     }
 
     private async Task<bool> IsAuthorizedAsync(ClaimsPrincipal user, string policy) =>

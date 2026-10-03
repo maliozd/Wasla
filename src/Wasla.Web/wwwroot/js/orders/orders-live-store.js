@@ -131,6 +131,14 @@
     for (let i = 0; i < orders.length; i++) known.add(String(orders[i].id));
   }
 
+  /**
+   * True for an isolated trainee's snapshot: the tenant is still in setup and this user is in order training, so the
+   * server left real orders out and sent only how many arrived.
+   */
+  function isIsolatedSnapshot(snapshot) {
+    return !!(snapshot && snapshot.training && snapshot.training.isolated === true);
+  }
+
   const SUPPORTED_STATUSES = {
     New: true,
     Accepted: true,
@@ -160,6 +168,11 @@
     if (!Array.isArray(snapshot.orders)) return { ok: false, reason: "orders" };
     if (!isWholeNumber(snapshot.todayOrderCount)) return { ok: false, reason: "today" };
     if (!isWholeNumber(snapshot.cancelledOrderCount)) return { ok: false, reason: "cancelled" };
+    if (snapshot.training != null) {
+      const training = snapshot.training;
+      if (typeof training !== "object" || Array.isArray(training)) return { ok: false, reason: "training" };
+      if (!isWholeNumber(training.realOrdersReceived)) return { ok: false, reason: "training" };
+    }
     const seen = new Set();
     for (let i = 0; i < snapshot.orders.length; i++) {
       const order = snapshot.orders[i];
@@ -210,6 +223,8 @@
     let retryAttempt = 0;
     let stopped = false;
     let baselineReady = false;
+    // Whether the last accepted snapshot was an isolated trainee's (see isIsolatedSnapshot).
+    let lastIsolated = false;
     let lastSnapshot = null;
     let pendingMutations = 0;
 
@@ -305,11 +320,16 @@
             return { applied: false, reason: "error", kept: lastSnapshot };
           }
 
-          const isBaseline = !baselineReady;
-          const newIds = collectNewIds(known, result.snapshot.orders, baselineReady);
+          // The first snapshot is the baseline: orders already there are not announced. So is the first snapshot after
+          // entering or leaving isolated order training (e.g. the tenant went live): the real orders it reveals arrived
+          // earlier and get no sound, browser notification or highlight. Only orders after that are new.
+          const isolated = isIsolatedSnapshot(result.snapshot);
+          const isBaseline = !baselineReady || isolated !== lastIsolated;
+          const newIds = collectNewIds(known, result.snapshot.orders, !isBaseline);
           const meta = {
             newIds: newIds,
             isBaseline: isBaseline,
+            isolated: isolated,
             reason: reason,
             payloadBytes: result.payloadBytes || 0,
             parseMs: result.parseMs || 0
@@ -326,6 +346,7 @@
             }
             rememberOrderIds(known, result.snapshot.orders);
             baselineReady = true;
+            lastIsolated = isolated;
             lastSnapshot = result.snapshot;
             retryAttempt = 0;
             ticket.outcome = "ok";
@@ -405,6 +426,7 @@
     applyDetailCurrency: applyDetailCurrency,
     elapsedMinutes: elapsedMinutes,
     collectNewIds: collectNewIds,
+    isIsolatedSnapshot: isIsolatedSnapshot,
     validateSnapshot: validateSnapshot,
     looksLikeHtml: looksLikeHtml,
     nextBackoffMs: nextBackoffMs,
@@ -438,6 +460,8 @@ function attachBrowser(O, global, api) {
   let renderedSnapshot = null;
   let narrowMedia = null;
   let boardOverflowObserver = null;
+  let boardItemsResizeObserver = null;
+  let boardItemsResizePending = null;
   let boardOverflowResizeBound = false;
   const cardTimes = new WeakMap();
   const cardItems = new WeakMap();
@@ -595,11 +619,14 @@ function attachBrowser(O, global, api) {
     return message("status" + status) || status;
   }
 
-  function actionButtons(status) {
+  function actionButtons(status, isDemo) {
     if (!O.opts.canManageOrders) return [];
     if (status === "New") {
+      const approve = { action: "approve", className: "btn btn-success btn-lg", label: message("ordersApprove") };
+      // A practice order is only approved: rejecting it would end the training, and the server refuses it.
+      if (isDemo) return [approve];
       return [
-        { action: "approve", className: "btn btn-success btn-lg", label: message("ordersApprove") },
+        approve,
         { action: "reject", className: "btn btn-outline-danger btn-lg", label: message("ordersReject") }
       ];
     }
@@ -612,7 +639,7 @@ function attachBrowser(O, global, api) {
 
   function fillActions(container, order) {
     while (container.firstChild) container.removeChild(container.firstChild);
-    const buttons = actionButtons(order.status);
+    const buttons = actionButtons(order.status, !!order.isDemo);
     if (!buttons.length) {
       container.hidden = true;
       container.removeAttribute("data-tour");
@@ -2087,21 +2114,53 @@ function attachBrowser(O, global, api) {
   }
 
   function watchBoardCardOverflow(card) {
-    if (!global.IntersectionObserver || !card) return;
-    if (!boardOverflowObserver) {
-      boardOverflowObserver = new global.IntersectionObserver(function (entries) {
+    if (!card) return;
+    if (global.IntersectionObserver) {
+      if (!boardOverflowObserver) {
+        boardOverflowObserver = new global.IntersectionObserver(function (entries) {
+          for (let i = 0; i < entries.length; i++) {
+            if (entries[i].isIntersecting) syncBoardItemOverflow(entries[i].target);
+          }
+        });
+      }
+      boardOverflowObserver.observe(card);
+    }
+    // A Board card keeps one height, so its product preview gets whatever room is left: a note, wrapped actions or the
+    // practice-order countdown change that room without changing the card. The "more in details" line follows the
+    // preview's own size, re-checked on the next frame.
+    const viewport = card.querySelector(".wasla-live-board-items__viewport");
+    if (!global.ResizeObserver || !viewport) return;
+    if (!boardItemsResizeObserver) {
+      boardItemsResizeObserver = new global.ResizeObserver(function (entries) {
+        const first = !boardItemsResizePending;
+        if (first) boardItemsResizePending = new Set();
         for (let i = 0; i < entries.length; i++) {
-          if (entries[i].isIntersecting) syncBoardItemOverflow(entries[i].target);
+          const owner = entries[i].target && entries[i].target.closest ? entries[i].target.closest(".wasla-live-screen-card") : null;
+          if (owner) boardItemsResizePending.add(owner);
         }
+        if (!first) return;
+        const nextFrame = global.requestAnimationFrame || function (fn) { return global.setTimeout(fn, 16); };
+        nextFrame(function () {
+          const cards = boardItemsResizePending;
+          boardItemsResizePending = null;
+          if (cards) cards.forEach(function (owner) { if (owner.isConnected !== false) syncBoardItemOverflow(owner); });
+        });
       });
     }
-    boardOverflowObserver.observe(card);
+    boardItemsResizeObserver.observe(viewport);
+  }
+
+  function unwatchBoardCard(card) {
+    if (!card) return;
+    if (boardOverflowObserver) boardOverflowObserver.unobserve(card);
+    const viewport = boardItemsResizeObserver && card.querySelector ? card.querySelector(".wasla-live-board-items__viewport") : null;
+    if (viewport) boardItemsResizeObserver.unobserve(viewport);
   }
 
   function releaseBoardOverflow(root) {
-    if (!boardOverflowObserver || !root || typeof root.querySelectorAll !== "function") return;
+    if ((!boardOverflowObserver && !boardItemsResizeObserver) || !root || typeof root.querySelectorAll !== "function") return;
     const cards = root.querySelectorAll(".wasla-live-screen-card");
-    for (let i = 0; i < cards.length; i++) boardOverflowObserver.unobserve(cards[i]);
+    for (let i = 0; i < cards.length; i++) unwatchBoardCard(cards[i]);
   }
 
   function syncBoardOverflow(host) {
@@ -2189,7 +2248,7 @@ function attachBrowser(O, global, api) {
         card = createEntry(order);
         added += 1;
       } else if (card.getAttribute("data-live-layout") !== layout || !card.getAttribute("data-live-signature")) {
-        if (boardOverflowObserver) boardOverflowObserver.unobserve(card);
+        unwatchBoardCard(card);
         const replacement = createEntry(order);
         card.replaceWith(replacement);
         card = replacement;
@@ -2217,7 +2276,7 @@ function attachBrowser(O, global, api) {
     let removed = 0;
     byId.forEach(function (card, id) {
       if (!seen.has(id)) {
-        if (boardOverflowObserver) boardOverflowObserver.unobserve(card);
+        unwatchBoardCard(card);
         card.remove();
         removed += 1;
       }
@@ -2284,7 +2343,17 @@ function attachBrowser(O, global, api) {
     lastTimings.timeUpdates = diff.timeUpdates || 0;
     setSummary(snapshot);
     touchUpdated();
-    document.dispatchEvent(new CustomEvent("wasla:live-rendered"));
+    // Listeners such as order training, the automation status and the practice-order countdown read the accepted
+    // snapshot instead of scraping one view's DOM. Neither the automation section nor the practice order's countdown
+    // deadline takes part in new-order detection; serverTimeUtc lets the countdown measure the server's deadline.
+    document.dispatchEvent(new CustomEvent("wasla:live-rendered", {
+      detail: {
+        orders: snapshot.orders,
+        training: snapshot.training || null,
+        automation: snapshot.automation || null,
+        serverTimeUtc: snapshot.serverTimeUtc
+      }
+    }));
   }
 
   async function onNotify(snapshot, meta) {

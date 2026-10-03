@@ -15,8 +15,6 @@ public sealed class GuidedDemoService : IGuidedDemoService
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly TimeSpan Lifetime = TimeSpan.FromHours(2);
 
-    private static readonly TimeSpan RecentDeliveredWindow = LiveScreenVisibility.RecentDeliveredWindow;
-
     private readonly ITenantDbContextFactory _tenantDbs;
     private readonly ITenantBusinessSubtypeReader _subtypes;
     private readonly TimeProvider _time;
@@ -120,19 +118,42 @@ public sealed class GuidedDemoService : IGuidedDemoService
         if (active is not null)
             return active;
 
+        // A delivered practice order stays for its own short stage, then leaves the Live Screen. Training goes on:
+        // GetLatestAsync still reports it as delivered. Real delivered orders keep LiveScreenVisibility's window.
         var now = _time.GetUtcNow().UtcDateTime;
-        var windowStart = now - RecentDeliveredWindow;
+        var dueFrom = GuidedDemoTiming.DueFrom(now);
         await using var db = await _tenantDbs.CreateAsync(tenantId, ct).ConfigureAwait(false);
         var delivered = await db.GuidedDemoSessions.AsNoTracking()
             .Where(row => row.UserId == userId
                 && row.Status == OrderStatus.Delivered
                 && row.CompletedAtUtc != null
-                && row.CompletedAtUtc >= windowStart
+                && row.CompletedAtUtc > dueFrom
                 && row.CompletedAtUtc <= now)
             .OrderByDescending(row => row.CompletedAtUtc)
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
         return delivered is null ? null : ToState(delivered);
+    }
+
+    public async Task<GuidedDemoSummary?> GetLatestAsync(Guid tenantId, Guid userId, CancellationToken ct)
+    {
+        var now = _time.GetUtcNow().UtcDateTime;
+        await using var db = await _tenantDbs.CreateAsync(tenantId, ct).ConfigureAwait(false);
+        var latest = await db.GuidedDemoSessions.AsNoTracking()
+            .Where(row => row.UserId == userId)
+            .OrderByDescending(row => row.ReceivedAtUtc)
+            .Select(row => new { row.Id, row.Status, row.CompletedAtUtc, row.ExpiresAtUtc })
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+        if (latest is null)
+            return null;
+
+        // The same definition of "open" as GetActiveAsync: it can still move.
+        var isOpen = latest.CompletedAtUtc == null
+            && latest.ExpiresAtUtc > now
+            && latest.Status != OrderStatus.Cancelled
+            && latest.Status != OrderStatus.Delivered;
+        return new GuidedDemoSummary(latest.Id, latest.Status, isOpen);
     }
 
     public async Task<GuidedDemoActionResult> ApplyActionAsync(
@@ -185,6 +206,10 @@ public sealed class GuidedDemoService : IGuidedDemoService
     private static GuidedDemoSessionState ToState(GuidedDemoSession session)
     {
         var lines = JsonSerializer.Deserialize<List<GuidedDemoLine>>(session.ItemsJson, JsonOptions) ?? [];
+        // The time it entered its status: every status change sets UpdatedAt (and CompletedAtUtc for Delivered).
+        var enteredAt = DateTime.SpecifyKind(
+            session.Status == OrderStatus.Delivered && session.CompletedAtUtc is { } completed ? completed : session.UpdatedAt,
+            DateTimeKind.Utc);
         return new GuidedDemoSessionState(
             session.Id,
             session.UserId,
@@ -196,6 +221,9 @@ public sealed class GuidedDemoService : IGuidedDemoService
             lines,
             session.Status == OrderStatus.Delivered && session.CompletedAtUtc is { } deliveredAt
                 ? DateTime.SpecifyKind(deliveredAt, DateTimeKind.Utc)
-                : null);
+                : null)
+        {
+            Automatic = GuidedDemoTiming.StepFor(session.Status, enteredAt)
+        };
     }
 }

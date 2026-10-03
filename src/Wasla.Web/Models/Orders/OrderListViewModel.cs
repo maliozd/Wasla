@@ -9,6 +9,9 @@ public sealed class OrderListViewModel
 
     public int TotalCount { get; set; }
 
+    /// <summary>Live Screen only: the guided-setup decision or order training, when it applies to this user.</summary>
+    public Wasla.Web.Models.GuidedSetup.GuidedTrainingViewModel? GuidedTraining { get; set; }
+
     /// <summary>Restaurant local (Turkey) calendar date used for "default live" and empty-state copy.</summary>
     public DateOnly TurkeyLocalToday { get; set; }
 

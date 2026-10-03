@@ -914,6 +914,31 @@ test("Focus renders demo controls locally and leaves real detail loading availab
   } finally { h.restore(); }
 });
 
+test("A new practice order offers Approve but no Reject in Board, List or Focus; real orders keep Reject", () => {
+  const h = boardHarness(true, { liveDetailModal: { loadPanel: () => Promise.resolve(true) } });
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[0].status = "New";
+    body.orders[0].isDemo = true;
+    body.orders[1].status = "New";
+    for (const view of ["board", "list", "focus"]) {
+      h.view(view);
+      h.browser.renderSnapshot(body);
+      if (view === "focus") h.browser.selectOrder(guid(1), true);
+      const demoActions = h.host.querySelectorAll("[data-order-action]")
+        .filter(b => b.getAttribute("data-order-id") === guid(1))
+        .map(b => b.getAttribute("data-order-action"));
+      assert.deepEqual(demoActions, ["approve"], view + ": practice order is only approved");
+      if (view !== "focus") {
+        const realActions = h.host.querySelectorAll("[data-order-action]")
+          .filter(b => b.getAttribute("data-order-id") === guid(2))
+          .map(b => b.getAttribute("data-order-action"));
+        assert.deepEqual(realActions, ["approve", "reject"], view + ": real orders are unchanged");
+      }
+    }
+  } finally { h.restore(); }
+});
+
 test("Courier steps offer no manual Hand to courier or Delivered action in Board, List or Focus, real or demo", () => {
   const h = boardHarness(true, { liveDetailModal: { loadPanel: () => Promise.resolve(true) } });
   try {
@@ -2798,4 +2823,457 @@ test("order detail money uses the shared TRY formatter without touching notes", 
   assert.equal(await client.load(doc.createElement("div"), guid(1), "modal"), true);
   assert.equal(await client.load(doc.createElement("div"), guid(2), "focus"), true);
   assert.deepEqual(loaded, ["modal", "focus"]);
+});
+
+// Order training while the tenant is in setup -------------------------------------------------------------
+
+function notifyingHarness() {
+  const time = clock();
+  const http = deferredFetch();
+  const accepted = [];
+  const notified = [];
+  const coordinator = store.createRefreshCoordinator({
+    intervalMs: 10000,
+    timeoutMs: 15000,
+    maxBackoffMs: 30000,
+    setTimeout: time.setTimeout,
+    clearTimeout: time.clearTimeout,
+    createAbortController: function () { return { abort: http.abort }; },
+    fetchSnapshot: http.fetch,
+    onStatus: function () {},
+    onAccepted: function (body, meta) { accepted.push(meta); },
+    onNotify: function (body, meta) { notified.push(meta.newIds.slice()); }
+  });
+  return { time: time, http: http, accepted: accepted, notified: notified, coordinator: coordinator };
+}
+
+const PRACTICE = guid(900);
+
+/** A snapshot with the practice order and the given real orders; isolated: an isolated trainee's snapshot. */
+function trainingSnapshot(realIds, isolated, realOrdersReceived) {
+  const body = snapshot([PRACTICE].concat(realIds));
+  body.orders[0].isDemo = true;
+  body.training = isolated ? { isolated: true, realOrdersReceived: realOrdersReceived || 0 } : null;
+  return body;
+}
+
+async function poll(h, body) {
+  h.http.pending.resolve({ kind: "ok", snapshot: body });
+  await flush();
+  await flush();
+}
+
+test("isolated order training: real orders never reach the trainee, so nothing is announced while the count grows", async function () {
+  const h = notifyingHarness();
+  h.coordinator.start();
+  await flush();
+  await poll(h, trainingSnapshot([], true, 0));
+  for (let received = 1; received <= 3; received++) {
+    await h.time.advance(10000);
+    await poll(h, trainingSnapshot([], true, received));
+  }
+
+  assert.deepEqual(h.notified, [], "no sound, browser notification or highlight");
+  assert.equal(h.accepted.length, 4);
+  assert.ok(h.accepted.every(function (meta) { return meta.newIds.length === 0 && meta.isolated === true; }));
+});
+
+test("the first snapshot after the tenant goes live is a silent baseline, then new orders notify normally", async function () {
+  const h = notifyingHarness();
+  h.coordinator.start();
+  await flush();
+  await poll(h, trainingSnapshot([], true, 2));
+
+  // Completed or skipped in another tab: the same page now receives the real orders that arrived during training.
+  await h.time.advance(10000);
+  await poll(h, trainingSnapshot([guid(1), guid(2)], false));
+  assert.equal(h.accepted[1].isBaseline, true);
+  assert.deepEqual(h.accepted[1].newIds, []);
+  assert.deepEqual(h.notified, [], "the revealed orders get no sound, notification or highlight");
+
+  await h.time.advance(10000);
+  await poll(h, trainingSnapshot([guid(1), guid(2), guid(3)], false));
+  assert.equal(h.accepted[2].isBaseline, false);
+  assert.deepEqual(h.notified, [[guid(3)]], "a genuinely new order behaves normally");
+});
+
+test("entering isolated order training is a silent baseline as well", async function () {
+  const h = notifyingHarness();
+  h.coordinator.start();
+  await flush();
+  await poll(h, snapshot([guid(1)]));
+  await h.time.advance(10000);
+  await poll(h, trainingSnapshot([], true, 1));
+  await h.time.advance(10000);
+  await poll(h, trainingSnapshot([], true, 2));
+
+  assert.equal(h.accepted[1].isBaseline, true);
+  assert.deepEqual(h.notified, []);
+});
+
+test("the practice order itself is never announced", async function () {
+  const h = notifyingHarness();
+  h.coordinator.start();
+  await flush();
+  await poll(h, snapshot([]));
+  await h.time.advance(10000);
+  const withPractice = snapshot([]);
+  withPractice.orders = trainingSnapshot([], false).orders;
+  await poll(h, withPractice);
+
+  assert.deepEqual(h.notified, []);
+});
+
+test("a training section must carry a whole-number count, and only an isolated one counts as isolation", function () {
+  assert.equal(store.validateSnapshot(trainingSnapshot([], true, 3)).ok, true);
+  assert.equal(store.validateSnapshot(trainingSnapshot([], false)).ok, true);
+  const negative = trainingSnapshot([], true, 1);
+  negative.training.realOrdersReceived = -1;
+  assert.equal(store.validateSnapshot(negative).reason, "training");
+  const text = trainingSnapshot([], true, 1);
+  text.training.realOrdersReceived = "2";
+  assert.equal(store.validateSnapshot(text).reason, "training");
+
+  assert.equal(store.isIsolatedSnapshot(trainingSnapshot([], true, 0)), true);
+  assert.equal(store.isIsolatedSnapshot(trainingSnapshot([], false)), false);
+  assert.equal(store.isIsolatedSnapshot({ training: { isolated: "true" } }), false);
+  assert.equal(store.isIsolatedSnapshot(snapshot([])), false);
+});
+
+test("leaving isolated order training is exactly one silent baseline, in a setup or an already-live restaurant", async function () {
+  const h = notifyingHarness();
+  h.coordinator.start();
+  await flush();
+  await poll(h, trainingSnapshot([], true, 1));
+  await h.time.advance(10000);
+  await poll(h, trainingSnapshot([guid(1), guid(2)], false));
+  for (let i = 0; i < 3; i++) {
+    await h.time.advance(10000);
+    await poll(h, trainingSnapshot([guid(1), guid(2)], false));
+  }
+  await h.time.advance(10000);
+  await poll(h, trainingSnapshot([guid(1), guid(2), guid(7)], false));
+
+  assert.deepEqual(h.accepted.map(function (meta) { return meta.isBaseline; }), [true, true, false, false, false, false]);
+  assert.deepEqual(h.notified, [[guid(7)]]);
+});
+
+test("in the same restaurant a colleague's Live Screen announces a new order while the training Owner's does not", async function () {
+  const trainee = notifyingHarness();
+  const colleague = notifyingHarness();
+  trainee.coordinator.start();
+  colleague.coordinator.start();
+  await flush();
+  await poll(trainee, trainingSnapshot([], true, 0));
+  await poll(colleague, snapshot([guid(1)]));
+
+  // The same real order arrives for both.
+  await trainee.time.advance(10000);
+  await colleague.time.advance(10000);
+  await poll(trainee, trainingSnapshot([], true, 1));
+  await poll(colleague, snapshot([guid(1), guid(2)]));
+
+  assert.deepEqual(trainee.notified, [], "no sound, browser notification or highlight for the trainee");
+  assert.deepEqual(colleague.notified, [[guid(2)]], "the colleague keeps the normal new-order behaviour");
+});
+
+// Automation status in the snapshot ------------------------------------------------------------------------
+
+/** The snapshot as a Manager or Owner receives it: the orders plus the automation section. */
+function withAutomation(body, autoApprove, autoReceipt) {
+  body.automation = { orderSync: "Active", autoApprove: autoApprove, autoReceipt: autoReceipt };
+  return body;
+}
+
+test("Setup → Live changes only the automation section: same orders, no sound, notification, highlight or new ids", async function () {
+  const h = notifyingHarness();
+  h.coordinator.start();
+  await flush();
+  await poll(h, withAutomation(snapshot([guid(1), guid(2)]), "PendingSetup", "PendingSetup"));
+  await h.time.advance(10000);
+  await poll(h, withAutomation(snapshot([guid(1), guid(2)]), "Active", "Active"));
+  await h.time.advance(10000);
+  await poll(h, withAutomation(snapshot([guid(1), guid(2)]), "Active", "Active"));
+
+  assert.equal(h.accepted.length, 3);
+  assert.deepEqual(h.accepted.map(function (meta) { return meta.isBaseline; }), [true, false, false], "the baseline is not reset");
+  assert.ok(h.accepted.every(function (meta) { return meta.newIds.length === 0; }));
+  assert.deepEqual(h.notified, []);
+
+  await h.time.advance(10000);
+  await poll(h, withAutomation(snapshot([guid(1), guid(2), guid(3)]), "Active", "Active"));
+  assert.deepEqual(h.notified, [[guid(3)]], "a genuinely new order still notifies normally");
+});
+
+test("Setup → Live together with the end of isolated training is one silent baseline; existing orders are not new", async function () {
+  const h = notifyingHarness();
+  h.coordinator.start();
+  await flush();
+  await poll(h, withAutomation(trainingSnapshot([], true, 2), "PendingSetup", "Off"));
+
+  // The Owner completes in another tab: the same poll ends isolation and makes automatic approval active.
+  await h.time.advance(10000);
+  await poll(h, withAutomation(trainingSnapshot([guid(1), guid(2)], false), "Active", "Off"));
+
+  assert.equal(h.accepted[1].isBaseline, true);
+  assert.deepEqual(h.accepted[1].newIds, []);
+  assert.deepEqual(h.notified, [], "the revealed orders and the status change get no sound, notification or highlight");
+});
+
+test("a transient status-read failure keeps polling the orders and announces nothing", async function () {
+  const h = notifyingHarness();
+  h.coordinator.start();
+  await flush();
+  await poll(h, withAutomation(snapshot([guid(1)]), "PendingSetup", "Off"));
+  // The server could not read the status: the snapshot arrives without the section, orders as usual.
+  await h.time.advance(10000);
+  await poll(h, snapshot([guid(1)]));
+  await h.time.advance(10000);
+  await poll(h, withAutomation(snapshot([guid(1)]), "Active", "Off"));
+
+  assert.equal(h.accepted.length, 3, "every poll was accepted");
+  assert.deepEqual(h.accepted.map(function (meta) { return meta.isBaseline; }), [true, false, false]);
+  assert.deepEqual(h.notified, []);
+
+  await h.time.advance(10000);
+  await poll(h, snapshot([guid(1), guid(2)]));
+  assert.deepEqual(h.notified, [[guid(2)]], "polling and new-order detection continue normally");
+});
+
+test("the automation section never decides whether a snapshot is valid", function () {
+  assert.equal(store.validateSnapshot(withAutomation(snapshot([guid(1)]), "PendingSetup", "Active")).ok, true);
+  assert.equal(store.validateSnapshot(withAutomation(snapshot([guid(1)]), "Unknown", 7)).ok, true);
+  const without = snapshot([guid(1)]);
+  assert.equal(store.validateSnapshot(without).ok, true);
+});
+
+// Board card height -----------------------------------------------------------------------------------------------
+
+function boardCss() {
+  const fs = require("fs");
+  const path = require("path");
+  return fs.readFileSync(path.join(__dirname, "../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8");
+}
+
+/** The Board card sizing block: from its comment to the Board's own phone grid rule after it. */
+function boardHeightBlock(css) {
+  const start = css.indexOf("/* Board cards: one block size on desktop and tablet");
+  const end = css.indexOf(".wasla-live-board { grid-template-columns: minmax(0, 1fr); }", start);
+  assert.ok(start > 0 && end > start, "the Board card sizing block exists");
+  return css.slice(start, end);
+}
+
+/** Every rule as { media, selector, body }, one level of @media deep (enough for wasla-theme.css). */
+function cssRules(css) {
+  const rules = [];
+  const text = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  let i = 0;
+  let media = "";
+  let depth = 0;
+  while (i < text.length) {
+    const open = text.indexOf("{", i);
+    const close = text.indexOf("}", i);
+    if (close < 0) break;
+    if (open >= 0 && open < close) {
+      const head = text.slice(i, open).trim();
+      if (head.startsWith("@")) {
+        media = head;
+        depth += 1;
+        i = open + 1;
+        continue;
+      }
+      const end = text.indexOf("}", open);
+      rules.push({ media: depth ? media : "", selector: head, body: text.slice(open + 1, end) });
+      i = end + 1;
+    } else {
+      if (depth) { depth -= 1; if (!depth) media = ""; }
+      i = close + 1;
+    }
+  }
+  return rules;
+}
+
+const CANONICAL_CARD = '.wasla-live-board .wasla-live-screen-card[data-live-layout="board"]';
+const SIZE_PROPERTY = /(^|[;\s])(block-size|height|min-block-size|min-height|max-block-size|max-height)\s*:/;
+
+test("Board cards use one canonical desktop and tablet block size", () => {
+  const rules = cssRules(boardCss());
+  const sizing = rules.filter(r => r.selector === CANONICAL_CARD && /(^|[;\s])block-size\s*:/.test(r.body));
+  assert.equal(sizing.length, 1, "one fixed block-size rule");
+  assert.equal(sizing[0].media, "@media (min-width: 768px)");
+  assert.match(sizing[0].body, /block-size: var\(--wasla-live-board-card-block-size\);/);
+  assert.match(sizing[0].body, /contain-intrinsic-size: auto var\(--wasla-live-board-card-block-size\);/);
+  assert.match(sizing[0].body, /flex: none;/);
+  const token = rules.filter(r => /--wasla-live-board-card-block-size\s*:/.test(r.body));
+  assert.equal(token.length, 1, "the size is defined once");
+  assert.equal(token[0].selector, ".wasla-live-board");
+  assert.match(token[0].body, /--wasla-live-board-card-block-size: 20\.5rem;/);
+});
+
+test("every status uses the same Board card shell, and no status, demo or countdown rule resizes it", () => {
+  const h = boardHarness();
+  try {
+    const body = snapshot([guid(1), guid(2), guid(3), guid(4), guid(5), guid(6), guid(7)]);
+    ["New", "Accepted", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"].forEach((status, i) => { body.orders[i].status = status; });
+    body.orders[6].status = "ReadyForPickup";
+    body.orders[6].isDemo = true;
+    h.browser.renderSnapshot(body);
+    const shells = h.host.querySelectorAll(".wasla-live-screen-card");
+    assert.equal(shells.length, 7);
+    for (const card of shells) {
+      assert.equal(card.getAttribute("data-live-layout"), "board");
+      for (const name of ["orders-card", "wasla-live-screen-card"]) assert.equal(card.classList.contains(name), true, name);
+      const parts = card.querySelector(".orders-card-body").children.map(el => el.className.split(" ")[0]);
+      assert.deepEqual(parts, ["wasla-live-card__identity", "wasla-live-board-items", "wasla-live-card__secondary", "orders-card-actions"], card.getAttribute("data-order-status"));
+    }
+  } finally { h.restore(); }
+
+  // Only the canonical rules size a Board card; nothing keyed on status, muted, new-order, demo or countdown state.
+  const isCard = selector => selector.split(",").some(part => {
+    const tokens = part.trim().split(/\s+/);
+    return /wasla-live-board|wasla-live-screen-host--board/.test(part)
+      && /^\.(wasla-live-screen-card|orders-card)(--[\w-]+)?([.[:].*)?$/.test(tokens[tokens.length - 1]);
+  });
+  const existingBase = ".wasla-live-board .wasla-live-screen-card, .wasla-live-board .orders-card--kitchen";
+  const offenders = cssRules(boardCss()).filter(r => isCard(r.selector) && SIZE_PROPERTY.test(r.body)
+    && r.selector.replace(/\s+/g, " ") !== existingBase
+    && !(r.selector === CANONICAL_CARD && (r.media === "@media (min-width: 768px)" || r.media === "@media (max-width: 767.98px)")));
+  assert.deepEqual(offenders.map(r => (r.media + " " + r.selector).trim()), []);
+  for (const rule of cssRules(boardCss()).filter(r => /wasla-live-board/.test(r.selector) && SIZE_PROPERTY.test(r.body)))
+    assert.equal(/data-order-status|orders-card--muted|order-row-new|data-wasla-demo|:has\(/.test(rule.selector), false, rule.selector);
+});
+
+test("price and actions sit on the bottom edge; identity stays on top; only the product preview gives way", () => {
+  const block = boardHeightBlock(boardCss());
+  const rules = cssRules(block);
+  const find = (suffix, media) => rules.find(r => r.selector === CANONICAL_CARD + suffix && r.media === media);
+  const desktop = "@media (min-width: 768px)";
+  assert.match(find(" > .orders-card-body", desktop).body, /flex: 1 1 auto;\s*min-block-size: 0;/);
+  assert.match(find(" .wasla-live-card__secondary", desktop).body, /margin-block-start: auto;/);
+  const items = find(" .wasla-live-board-items", desktop).body;
+  for (const rule of ["display: flex;", "flex-direction: column;", "flex: 1 1 auto;", "min-block-size: 0;", "overflow: hidden;"])
+    assert.ok(items.includes(rule), rule);
+  assert.match(find(" .wasla-live-board-items__viewport", desktop).body, /flex: 0 1 auto;\s*min-block-size: 0;/);
+  const fixed = rules.find(r => r.media === desktop && r.selector.includes(CANONICAL_CARD + " .wasla-live-card__identity"));
+  for (const part of ["wasla-live-card__identity", "wasla-live-board-order-note", "wasla-live-card__secondary", "orders-card-actions", "wasla-live-board-items__more"])
+    assert.ok(fixed.selector.includes(part), part + " keeps its size");
+  assert.match(fixed.body, /flex: none;/);
+  // The base card clips, so nothing can paint outside it; the existing preview cap and clamps stay.
+  const css = boardCss();
+  assert.match(css, /\.orders-card,\n\.wasla-orders-card \{[^}]*overflow: hidden;/);
+  assert.match(css, /\.wasla-live-board \.wasla-live-board-items__viewport \{\s*max-height: 6\.75rem;\s*overflow: hidden;/);
+  assert.match(css, /\.wasla-live-board \.wasla-live-board-order-note__text \{[^}]*-webkit-line-clamp: 2;/);
+});
+
+test("long names, notes and badges wrap inside the card, and Details stays available on every real order", () => {
+  const block = boardHeightBlock(boardCss());
+  assert.match(block, /\.wasla-live-screen-card__product,\n[^{]*\.wasla-live-screen-card__note \{\s*min-inline-size: 0;\s*overflow-wrap: anywhere;/);
+  assert.match(block, /\.wasla-dash-status \{\s*max-inline-size: 100%;\s*white-space: normal;\s*overflow-wrap: anywhere;/);
+  const h = boardHarness();
+  try {
+    const body = snapshot([guid(1), guid(2), guid(3), guid(4), guid(5)]);
+    const long = "Izgara Tavuk Kanat Menü Büyük Boy Acılı Soslu Patates ve Ayranla ".repeat(3);
+    ["New", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"].forEach((status, i) => {
+      body.orders[i].status = status;
+      body.orders[i].customerNote = long;
+      body.orders[i].items = Array.from({ length: 8 }, (_, n) => ({ productName: long + n, quantity: n + 1, notes: long }));
+    });
+    h.browser.renderSnapshot(body);
+    for (const card of h.host.querySelectorAll(".wasla-live-screen-card")) {
+      const details = card.querySelector("[data-order-detail]");
+      assert.ok(details && !details.hidden, card.getAttribute("data-order-status") + " keeps Details");
+      assert.equal(card.querySelectorAll(".wasla-live-screen-card__item").length, 8, "every product is still in the card, previewed by the cap");
+    }
+    const actions = id => h.card(id).querySelectorAll("[data-order-action]").map(b => b.getAttribute("data-order-action"));
+    assert.deepEqual(actions(guid(1)), ["approve", "reject"]);
+    assert.deepEqual(actions(guid(2)), ["mark-ready"]);
+  } finally { h.restore(); }
+});
+
+test("the product preview's 'more in details' line follows its own size as room inside the fixed card changes", () => {
+  const observed = new Set();
+  let callback = null;
+  const frames = [];
+  function ResizeObserver(fn) { callback = fn; }
+  ResizeObserver.prototype.observe = function (el) { observed.add(el); };
+  ResizeObserver.prototype.unobserve = function (el) { observed.delete(el); };
+  const h = boardHarness(true, { global: { ResizeObserver, requestAnimationFrame: fn => frames.push(fn) } });
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    h.browser.renderSnapshot(body);
+    const card = h.card(guid(1));
+    const viewport = card.querySelector(".wasla-live-board-items__viewport");
+    assert.equal(observed.has(viewport), true);
+    assert.equal(card.querySelector(".wasla-live-board-items").classList.contains("has-item-overflow"), false);
+
+    // The countdown appears above it: same card, smaller preview, now overflowing.
+    viewport.scrollHeight = 60;
+    viewport.clientHeight = 21;
+    callback([{ target: viewport }, { target: viewport }]);
+    assert.equal(frames.length, 1, "one re-check per frame");
+    frames.shift()();
+    assert.equal(card.querySelector(".wasla-live-board-items").classList.contains("has-item-overflow"), true);
+    assert.equal(card.querySelector(".wasla-live-screen-card__details").classList.contains("has-item-overflow"), true);
+
+    // It goes away again.
+    viewport.clientHeight = 80;
+    callback([{ target: viewport }]);
+    frames.shift()();
+    assert.equal(card.querySelector(".wasla-live-board-items").classList.contains("has-item-overflow"), false);
+
+    // A card that leaves is no longer observed.
+    h.browser.renderSnapshot(snapshot([guid(2)]));
+    assert.equal(observed.has(viewport), false);
+  } finally { h.restore(); }
+});
+
+test("the practice-order countdown fits inside the fixed card: no size of its own, no rule that grows the card", () => {
+  const css = boardCss();
+  const block = boardHeightBlock(css);
+  assert.match(block, new RegExp(CANONICAL_CARD.replace(/[.[\]"=]/g, "\\$&") + " \\.wasla-demo-countdown \\{\\s*margin-block: 0;\\s*\\}"));
+  const countdown = css.slice(css.indexOf("/* Practice-order countdown"));
+  assert.equal(SIZE_PROPERTY.test(cssRules(countdown).filter(r => r.selector === ".wasla-demo-countdown").map(r => r.body).join(";")), false);
+  assert.equal(/:has\(\[data-demo-countdown\]\)|:has\(\.wasla-demo-countdown\)/.test(css), false, "no card rule keyed on the countdown");
+  // It sits in the card's top region (after the status row), so it takes room from the preview, not from the card.
+  const fs = require("fs");
+  const path = require("path");
+  const script = fs.readFileSync(path.join(__dirname, "../../../src/Wasla.Web/wwwroot/js/orders/orders-demo-countdown.js"), "utf8");
+  assert.match(script, /var badge = card\.querySelector\("\[data-status-badge\]"\);/);
+});
+
+test("List, Focus, the detail modal and phones are not given the Board's fixed height", () => {
+  const rules = cssRules(boardCss());
+  const fixed = rules.filter(r => /(^|[;\s])block-size: var\(--wasla-live-board-card-block-size\)/.test(r.body));
+  assert.equal(fixed.length, 1);
+  assert.equal(fixed[0].media, "@media (min-width: 768px)");
+  for (const other of ["wasla-live-groups", "wasla-live-group", "wasla-live-list-row", "wasla-live-focus", "wasla-live-detail", "modal", "orders-card-grid"])
+    assert.equal(fixed[0].selector.includes(other), false, other);
+  const phone = rules.filter(r => r.selector === CANONICAL_CARD && r.media === "@media (max-width: 767.98px)");
+  assert.equal(phone.length, 1);
+  assert.match(phone[0].body, /min-block-size: var\(--wasla-live-board-card-min-block-size\);/);
+  assert.equal(/(^|[;\s])block-size\s*:/.test(phone[0].body), false, "phones grow with their content");
+  assert.ok(rules.some(r => r.selector === ".wasla-live-board" && /--wasla-live-board-card-min-block-size: 15rem;/.test(r.body)));
+
+  const h = boardHarness(true, { liveDetailModal: { loadPanel: () => Promise.resolve(true) } });
+  try {
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[1].isDemo = true;
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 0);
+    assert.ok(h.host.querySelectorAll(".wasla-live-screen-card").every(row => row.getAttribute("data-live-layout") === "list"));
+    h.view("focus");
+    h.browser.renderSnapshot(body);
+    h.browser.selectOrder(guid(2), true);
+    assert.equal(h.host.querySelectorAll(".wasla-live-board").length, 0, "the Focus detail card is outside any Board");
+    assert.ok(h.host.querySelector(".wasla-demo-focus-card"));
+  } finally { h.restore(); }
+});
+
+test("the Board sizing is logical (RTL-safe) and colour-free (dark mode keeps its tokens)", () => {
+  const block = boardHeightBlock(boardCss());
+  for (const physical of ["margin-left", "margin-right", "padding-left", "padding-right", "border-left", "border-right", "text-align: left", "text-align: right"])
+    assert.equal(block.includes(physical), false, physical);
+  assert.equal(/[\s{;](left|right|top|bottom|width|height|min-height|max-height)\s*:/.test(block.replace(/\/\*[\s\S]*?\*\//g, "")), false, "block-size and inline-size, not physical sizes");
+  assert.equal(/#[0-9a-f]{3,8}\b|rgba?\(|color\s*:|background/.test(block.replace(/\/\*[\s\S]*?\*\//g, "")), false, "no colours: light and dark keep the existing tokens");
 });

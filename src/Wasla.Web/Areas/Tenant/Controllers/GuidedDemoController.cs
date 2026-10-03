@@ -3,13 +3,19 @@ using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Demos;
 using Wasla.Web.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
 
 namespace Wasla.Web.Areas.Tenant.Controllers;
 
+/// <summary>
+/// The practice order of guided order training. Order training is Owner-only, so every action also requires the
+/// TenantOwner policy, like the guided-setup commands.
+/// </summary>
 [Area(AreaNames.Tenant)]
 [Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.CanManageOrders)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.TenantOwner)]
 [Route("orders/demo")]
 public sealed class GuidedDemoController : BaseController
 {
@@ -37,9 +43,17 @@ public sealed class GuidedDemoController : BaseController
         return Redirect("/orders/live-display");
     }
 
+    /// <summary>
+    /// Approve, Start preparing or Mark ready on the user's own practice order
+    /// (<see cref="GuidedDemoTransitions.UserActions"/>). Courier steps are never accepted here.
+    /// </summary>
     [HttpPost("{id:guid}/{actionName}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Act(Guid id, string actionName, CancellationToken ct)
+    public async Task<IActionResult> Act(
+        Guid id,
+        string actionName,
+        [FromServices] IGuidedSetupCoordinator guidedSetup,
+        CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null)
@@ -48,6 +62,9 @@ public sealed class GuidedDemoController : BaseController
         var result = await _demos.ApplyActionAsync(tenant.Id, CurrentUserId, id, actionName, ct);
         if (!result.Succeeded)
             return BadRequest(new { message = ToClientMessageKey(result.MessageKey) });
+
+        if (result.Status is { } status)
+            await guidedSetup.RecordPracticeProgressAsync(tenant.Id, CurrentUserId, User, status, ct);
 
         return Ok(new { message = ToClientMessageKey(result.MessageKey), status = result.Status?.ToString() });
     }

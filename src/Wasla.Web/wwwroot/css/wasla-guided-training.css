@@ -1,0 +1,222 @@
+/* Order training on the Live Screen. The panel sits in the page flow above the orders (never over
+   them), so it cannot cover an order or its action on any screen size. Logical properties only, so
+   Arabic (RTL) mirrors without overrides. */
+
+.wasla-guided-training {
+  margin: 0.75rem 1rem;
+}
+
+.wasla-guided-training__panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--wasla-border, #E3DDD3);
+  border-inline-start: 3px solid var(--wasla-accent, #E87342);
+  border-radius: var(--wasla-radius-md, 0.65rem);
+  background: var(--wasla-surface, #FFFEFA);
+  box-shadow: var(--wasla-shadow-sm, 0 1px 2px rgba(42, 36, 31, 0.05));
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.wasla-guided-training__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 50%;
+  background: var(--wasla-accent-soft, #FCEBE2);
+  color: var(--wasla-accent, #E87342);
+  font-size: 1.1rem;
+}
+
+.wasla-guided-training__main {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.wasla-guided-training__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--wasla-accent-strong, #B85527);
+}
+
+.wasla-guided-training__progress {
+  color: var(--wasla-text-secondary, #746D66);
+  font-weight: 500;
+}
+
+.wasla-guided-training__title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--wasla-text, #28231F);
+}
+
+.wasla-guided-training__title:focus {
+  outline: none;
+}
+
+.wasla-guided-training__title:focus-visible {
+  outline: 2px solid var(--wasla-accent, #E87342);
+  outline-offset: 2px;
+}
+
+.wasla-guided-training__body {
+  margin: 0 0 0.6rem;
+  max-inline-size: 60rem;
+  color: var(--wasla-text-secondary, #746D66);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.wasla-guided-training__waiting {
+  margin: 0 0 0.7rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--wasla-radius-sm, 0.5rem);
+  background: var(--wasla-warning-soft, #FDF3E1);
+  color: var(--wasla-text, #28231F);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+/* Real orders that arrived during training: informational and quieter than the training action above it. The
+   live region has no box of its own, so nothing is drawn while it is empty. */
+.wasla-guided-training__real-orders-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.7rem;
+  max-inline-size: 60rem;
+  border: 1px solid var(--wasla-border, #E3DDD3);
+  border-radius: var(--wasla-radius-sm, 0.5rem);
+  background: var(--wasla-surface-muted, #F7F4EF);
+  color: var(--wasla-text-secondary, #746D66);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.wasla-guided-training__real-orders-icon {
+  flex: 0 0 auto;
+  margin-block-start: 0.1rem;
+  color: var(--wasla-info, #3A6EA5);
+}
+
+.wasla-guided-training__real-orders-copy {
+  min-inline-size: 0;
+}
+
+.wasla-guided-training__real-orders-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--wasla-text, #28231F);
+}
+
+.wasla-guided-training__real-orders-body {
+  margin: 0.15rem 0 0;
+}
+
+.wasla-guided-training__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wasla-guided-training__actions form,
+.wasla-guided-training__slot {
+  margin: 0;
+}
+
+.wasla-guided-training__actions .btn {
+  min-block-size: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wasla-guided-training__actions .btn-sm {
+  min-block-size: 2.25rem;
+}
+
+.wasla-guided-training__note {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--wasla-text-secondary, #746D66);
+}
+
+.wasla-guided-training__reopen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-block-size: 2.25rem;
+}
+
+.wasla-guided-training__reopen[hidden],
+.wasla-guided-training__panel[hidden],
+.wasla-guided-training [hidden] {
+  display: none !important;
+}
+
+/* The pointer on the practice order: an outline, not an overlay, so the card stays fully usable. */
+.wasla-guided-training-target {
+  outline: 3px solid var(--wasla-accent, #E87342);
+  outline-offset: 2px;
+}
+
+.wasla-guided-training-target--action {
+  box-shadow: 0 0 0 3px var(--wasla-surface, #FFFEFA), 0 0 0 6px var(--wasla-accent, #E87342);
+  animation: wasla-guided-training-pulse 1.6s ease-in-out 3;
+}
+
+@keyframes wasla-guided-training-pulse {
+  50% {
+    box-shadow: 0 0 0 3px var(--wasla-surface, #FFFEFA), 0 0 0 9px rgba(232, 115, 66, 0.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wasla-guided-training-target--action {
+    animation: none;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .wasla-guided-training {
+    margin: 0.5rem;
+  }
+
+  .wasla-guided-training__panel {
+    padding: 0.75rem 0.85rem;
+    gap: 0.6rem;
+  }
+
+  .wasla-guided-training__icon {
+    display: none;
+  }
+
+  .wasla-guided-training__actions .btn,
+  .wasla-guided-training__actions form,
+  .wasla-guided-training__slot {
+    flex: 1 1 100%;
+  }
+
+  .wasla-guided-training__actions form .btn {
+    inline-size: 100%;
+  }
+
+  .wasla-guided-training__actions .wasla-guided-training__end {
+    flex: 0 0 auto;
+  }
+}

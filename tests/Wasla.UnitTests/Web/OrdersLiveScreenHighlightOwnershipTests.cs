@@ -64,7 +64,9 @@ public sealed class OrdersLiveScreenHighlightOwnershipTests
     {
         var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        Assert.Contains("const newIds = collectNewIds(known, result.snapshot.orders, baselineReady);", storeJs, StringComparison.Ordinal);
+        // New ids are collected only outside a baseline (the first snapshot, or entering/leaving isolated order training).
+        Assert.Contains("const isBaseline = !baselineReady || isolated !== lastIsolated;", storeJs, StringComparison.Ordinal);
+        Assert.Contains("const newIds = collectNewIds(known, result.snapshot.orders, !isBaseline);", storeJs, StringComparison.Ordinal);
         Assert.Contains("if (meta.isBaseline || !meta.newIds || !meta.newIds.length) return;", storeJs, StringComparison.Ordinal);
         Assert.Contains("if (accepted && accepted.accepted === false)", storeJs, StringComparison.Ordinal);
         var acceptIndex = storeJs.IndexOf("options.onAccepted(result.snapshot", StringComparison.Ordinal);

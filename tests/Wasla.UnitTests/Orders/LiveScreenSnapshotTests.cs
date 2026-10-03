@@ -239,17 +239,22 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         var orders = new RecordingOrders();
         var controller = CreateController(new FixedTenant(new ResolvedTenantDto(tenantId, "Sushi M", "sushi-m", "sushi-m.wasla.local")), orders);
 
-        var result = await controller.LiveData(CancellationToken.None);
+        var modes = new Wasla.UnitTests.GuidedSetup.GuidedSetupCoordinatorTests.FakeTenantModes();
+        var result = await controller.LiveData(guidedSetup: null!, operationalModes: modes, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Same(orders.Snapshot, ok.Value);
+        var snapshot = Assert.IsType<LiveScreenSnapshotResult>(ok.Value);
+        Assert.Same(orders.Snapshot.Orders, snapshot.Orders);
+        Assert.NotNull(snapshot.Automation);
         Assert.Equal(tenantId, orders.RequestedTenantId);
+        Assert.Equal([tenantId], modes.ReadTenants);
 
         var missingTenant = CreateController(new FixedTenant(null), orders);
-        Assert.IsType<NotFoundResult>(await missingTenant.LiveData(CancellationToken.None));
+        Assert.IsType<NotFoundResult>(await missingTenant.LiveData(guidedSetup: null!, operationalModes: modes, CancellationToken.None));
 
         orders.Failure = new InvalidOperationException("database unavailable");
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.LiveData(CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.LiveData(guidedSetup: null!, operationalModes: modes, CancellationToken.None));
+        Assert.Equal([tenantId], modes.ReadTenants);
     }
 
     [Fact]
@@ -415,6 +420,9 @@ public sealed class LiveScreenSnapshotTests : IDisposable
             throw new NotSupportedException();
 
         public Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct) =>
+            throw new NotSupportedException();
+
+        public Task<int> CountReceivedSinceAsync(Guid customerId, DateTime sinceUtc, CancellationToken ct) =>
             throw new NotSupportedException();
     }
 
