@@ -1463,4 +1463,6 @@
   <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>Test tenant’ı ilk kullanım durumuna döndürüldü. Tarayıcının bildirim iznini gerekirse Chrome’un site ayarlarından elle sıfırlayın.</value></data>
   <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Sıfırlamayı kullanmadan önce Wasla.Worker’ı durdurun, Print Bridge uygulamasını kapatın ve şu anda devam eden bir Print Bridge kurulumu olmadığından emin olun. Aksi hâlde hâlâ çalışan bir senkronizasyon döngüsü ya da kurulum, sıfırlamadan sonra yeniden veri ekleyebilir; ayrıca sahte (mock) sağlayıcı sipariş numaralarını bellekte tutar. Sıfırlama bittikten sonra Worker’ı yeniden başlatın.</value></data>
   <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>Sıfırlama yarım kaldı: Print Bridge cihazları kaldırıldı, ancak diğer veriler geri alındı. Tamamlamak için sıfırlamayı yeniden çalıştırın.</value></data>
+  <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>Otomasyon</value></data>
+  <data name="Notification.Notifications" xml:space="preserve"><value>Bildirimler</value></data>
 </root>

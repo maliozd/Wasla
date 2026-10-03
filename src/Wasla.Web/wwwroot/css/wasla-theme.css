@@ -2809,8 +2809,8 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
   right: auto;
   inset-inline-start: 0;
   inset-inline-end: auto;
-  min-width: 16rem;
-  max-width: min(18rem, calc(100vw - 1.5rem));
+  min-width: 17rem;
+  max-width: min(20rem, calc(100vw - 1.5rem));
   margin-block-start: .3rem;
   padding-block: .35rem;
   padding-inline: 0;
@@ -2820,42 +2820,77 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
   box-shadow: 0 4px 12px rgba(40, 32, 24, 0.08);
 }
 
+/* Read-only status in two labelled groups (automation, notifications); one row per setting. */
+.wasla-live-screen-page .wasla-live-settings-menu__group {
+  padding-block: .35rem .4rem;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__group + .wasla-live-settings-menu__group {
+  border-block-start: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__heading {
+  margin: 0;
+  padding-block: .15rem .3rem;
+  padding-inline: .75rem;
+  color: var(--wasla-muted, #6c757d);
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
 .wasla-live-screen-page .wasla-live-settings-menu__row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: .75rem;
-  padding-block: .28rem;
+  min-height: 2rem;
+  padding-block: .2rem;
   padding-inline: .75rem;
 }
 
 .wasla-live-screen-page .wasla-live-settings-menu__label {
+  flex: 1 1 auto;
   min-width: 0;
-  color: var(--wasla-muted, #6c757d);
-  font-size: .75rem;
+  color: var(--wasla-text, #212529);
+  font-size: .8125rem;
   font-weight: 500;
   line-height: 1.3;
   text-align: start;
 }
 
+/* Values are small pills so active, off and waiting-for-setup read the same way in every row. */
 .wasla-live-screen-page .wasla-live-settings-menu__value {
-  flex: 0 0 auto;
-  font-size: .8125rem;
+  flex: 0 1 auto;
+  max-width: 58%;
+  padding-block: .1rem;
+  padding-inline: .5rem;
+  border: 1px solid transparent;
+  border-radius: .6rem;
+  font-size: .75rem;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.35;
   white-space: nowrap;
 }
 
 .wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--active {
+  border-color: color-mix(in srgb, #146c43 30%, transparent);
+  background: color-mix(in srgb, #146c43 10%, var(--wasla-surface, #fff));
   color: #146c43;
 }
 
 .wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--muted {
+  border-color: color-mix(in srgb, var(--wasla-border) 90%, transparent);
+  background: color-mix(in srgb, var(--wasla-border) 25%, var(--wasla-surface, #fff));
   color: var(--wasla-muted, #6c757d);
   font-weight: 600;
 }
 
 .wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--pending {
+  border-color: color-mix(in srgb, #8a5a00 30%, transparent);
+  background: color-mix(in srgb, #f3c76b 22%, var(--wasla-surface, #fff));
   color: #8a5a00;
   font-weight: 600;
   white-space: normal;
@@ -2864,7 +2899,7 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
 
 .wasla-live-screen-page .wasla-live-settings-menu__hint {
   margin: 0;
-  padding-block: 0 .3rem;
+  padding-block: .1rem .3rem;
   padding-inline: .75rem;
   color: var(--wasla-muted, #6c757d);
   font-size: .75rem;
@@ -2904,10 +2939,12 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
 }
 
 [data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--active {
+  background: transparent;
   color: #9ed9b4;
 }
 
 [data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--pending {
+  background: transparent;
   color: #f3c76b;
 }
 
@@ -6063,6 +6100,29 @@ body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__d
     box-shadow: none;
     padding: .9rem 1rem 1rem;
 }
+/* Focus detail: prices line up in one column at the panel edge, item rows stay compact, and the
+   actions stay visible at the bottom of the panel while a long item list scrolls. */
+.wasla-live-focus .wasla-live-detail__products,
+.wasla-live-focus .wasla-live-detail__items {
+    width: 100%;
+}
+.wasla-live-focus .wasla-live-detail__items {
+    grid-template-columns: minmax(0, 1fr) auto minmax(4.5rem, auto);
+    row-gap: .45rem;
+}
+.wasla-live-focus .wasla-live-detail__product {
+    font-size: .875rem;
+}
+.wasla-live-focus .wasla-live-detail__actions {
+    position: sticky;
+    /* Flush with the panel edge: the bar also covers the panel's 1rem bottom padding. */
+    inset-block-end: -1rem;
+    z-index: 1;
+    margin-block-end: -1rem;
+    padding-block: .6rem 1.6rem;
+    border-block-start: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+    background: var(--wasla-surface, #fff);
+}
 .wasla-live-focus__panel:has(.wasla-live-empty) {
     display: flex;
     flex-direction: column;
@@ -6192,7 +6252,14 @@ body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__d
     font-variant-numeric: tabular-nums;
     color: color-mix(in srgb, var(--wasla-text, #212529) 72%, var(--wasla-muted, #6c757d));
 }
+/* Long product names must not make queue rows tall: two lines at most. The full text stays in the
+   button's accessible name and title, and the selected order shows every item in the panel. */
 .wasla-live-focus-entry__summary {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
     font-size: .8125rem;
     line-height: 1.35;
     color: color-mix(in srgb, var(--wasla-text, #212529) 78%, var(--wasla-muted, #6c757d));

@@ -88,33 +88,40 @@
                      id="ordersLiveDisplaySettingsMenu"
                      aria-labelledby="ordersLiveDisplaySettingsToggle">
                     <div class="wasla-live-settings-menu__status" aria-label="@L["Settings.OrderSettings.Title"]">
-                        <div class="wasla-live-settings-menu__row">
-                            <span class="wasla-live-settings-menu__label">@L["Settings.OrderSynchronization.Title"]</span>
-                            <span id="automationStatusSync" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                        @* Two labelled groups: what runs automatically, then how new orders get attention. Read-only; settings change on /settings/orders. *@
+                        <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsAutomationHeading">
+                            <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsAutomationHeading">@L["Orders.LiveSettings.AutomationGroup"]</p>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.OrderSynchronization.Title"]</span>
+                                <span id="automationStatusSync" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.AutoApproval.Title"]</span>
+                                <span id="automationStatusAutoApprove" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.ReceiptPrinting.Title"]</span>
+                                <span id="automationStatusReceipt" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            @* Shown while an automation is configured on but waits for setup; pending indicators point to it. *@
+                            <p id="automationPendingSetupHint" class="wasla-live-settings-menu__hint" hidden>@L["Orders.Automation.PendingSetupDescription"]</p>
                         </div>
-                        <div class="wasla-live-settings-menu__row">
-                            <span class="wasla-live-settings-menu__label">@L["Settings.AutoApproval.Title"]</span>
-                            <span id="automationStatusAutoApprove" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
-                        </div>
-                        <div class="wasla-live-settings-menu__row">
-                            <span class="wasla-live-settings-menu__label">@L["Settings.ReceiptPrinting.Title"]</span>
-                            <span id="automationStatusReceipt" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
-                        </div>
-                        @* Shown while an automation is configured on but waits for setup; pending indicators point to it. *@
-                        <p id="automationPendingSetupHint" class="wasla-live-settings-menu__hint" hidden>@L["Orders.Automation.PendingSetupDescription"]</p>
-                        <div class="wasla-live-settings-menu__row">
-                            <span class="wasla-live-settings-menu__label">@L["Orders.LiveDisplay.NotificationSound"]</span>
-                            <span id="ordersLiveDisplaySoundStatus"
-                                  class="wasla-live-settings-menu__value wasla-orders-status-chip--muted"
-                                  data-label-active="@L["Common.Active"]"
-                                  data-label-disabled="@L["Notification.Disabled"]">…</span>
-                        </div>
-                        <div id="ordersLiveDisplaySoundActive"
-                             class="wasla-live-display-sound-active"
-                             role="status"
-                             hidden>
-                            <i class="bi bi-volume-up" aria-hidden="true"></i>
-                            <span>@L["Notification.SoundActive"]</span>
+                        <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsNotificationsHeading">
+                            <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsNotificationsHeading">@L["Notification.Notifications"]</p>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Orders.LiveDisplay.NotificationSound"]</span>
+                                <span id="ordersLiveDisplaySoundStatus"
+                                      class="wasla-live-settings-menu__value wasla-orders-status-chip--muted"
+                                      data-label-active="@L["Common.Active"]"
+                                      data-label-disabled="@L["Notification.Disabled"]">…</span>
+                            </div>
+                            <div id="ordersLiveDisplaySoundActive"
+                                 class="wasla-live-display-sound-active"
+                                 role="status"
+                                 hidden>
+                                <i class="bi bi-volume-up" aria-hidden="true"></i>
+                                <span>@L["Notification.SoundActive"]</span>
+                            </div>
                         </div>
                     </div>
                     @if (navPermissions.CanManageOrderSettings)

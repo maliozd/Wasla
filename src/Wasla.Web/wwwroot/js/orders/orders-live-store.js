@@ -1616,6 +1616,7 @@ function attachBrowser(O, global, api) {
     summary.className = "wasla-live-focus-entry__summary";
     summary.setAttribute("data-product-summary", "");
     summary.textContent = productSummary(order.items);
+    summary.title = summary.textContent;
 
     button.appendChild(code);
     button.appendChild(meta);
@@ -1655,7 +1656,10 @@ function attachBrowser(O, global, api) {
     }
     const summary = entry.querySelector("[data-product-summary]");
     const summaryText = productSummary(order.items);
-    if (summary && summary.textContent !== summaryText) summary.textContent = summaryText;
+    if (summary && summary.textContent !== summaryText) {
+      summary.textContent = summaryText;
+      summary.title = summaryText;
+    }
     const elapsedEl = entry.querySelector("[data-elapsed]");
     if (elapsedEl) elapsedEl.textContent = elapsed;
     entry.setAttribute("data-live-signature", signature);

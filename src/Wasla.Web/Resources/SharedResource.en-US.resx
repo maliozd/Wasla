@@ -3911,4 +3911,5 @@
   <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>The test tenant is back at first use. If you need to, reset the browser's notification permission manually in Chrome's site settings.</value></data>
   <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Before using the reset, stop Wasla.Worker, close the Print Bridge application and make sure no Print Bridge setup is currently in progress. Otherwise a sync cycle or setup that is still running could add data again after the reset, and the mock provider keeps order numbers in memory. Start the Worker again once the reset is done.</value></data>
   <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>The reset only partly finished: the Print Bridge devices were removed, but the rest was rolled back. Run the reset again to complete it.</value></data>
+  <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>Automation</value></data>
 </root>
