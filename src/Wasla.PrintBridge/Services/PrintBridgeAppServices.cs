@@ -26,7 +26,7 @@ public static class PrintBridgeAppServices
         var holder = new PrintBridgeSettingsHolder();
         holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
 
-        var appVersion = new AppVersionInfo();
+        var appVersion = new AppVersionInfo(typeof(PrintBridgeAppServices).Assembly);
 
         var uiLogBuffer = new UiLogBuffer();
         var logPath = Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "orderhub-print-bridge-.log");

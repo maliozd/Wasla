@@ -16,6 +16,7 @@ Browser
 Wasla.Worker           order sync only (no HTTP server)
 Wasla.Cli              migrations, provisioning, destructive tenant ops
 Wasla.PrintBridge      Windows process; polls Web or API and prints locally
+  → Wasla.PrintBridge.Core   UI-independent engine (polling, claim, print, settings)
 
 CentralDb              tenant registry, admins, devices, signup
 Tenant DB (one each)   orders, users, connections, print jobs

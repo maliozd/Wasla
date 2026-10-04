@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="tr" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Wasla Print Bridge</title>
+  <link rel="stylesheet" href="shell.css">
+  <script src="shell-model.js" defer></script>
+  <script src="shell.js" defer></script>
+</head>
+<body>
+  <div class="pb-app" id="app" aria-busy="true">
+    <header class="pb-header">
+      <div class="pb-brand">
+        <span class="pb-brand-mark" aria-hidden="true">W</span>
+        <div class="pb-brand-text">
+          <h1 class="pb-title" data-i18n="Common.AppTitle"></h1>
+          <p class="pb-subtitle" data-i18n="Common.Subtitle"></p>
+        </div>
+      </div>
+      <label class="pb-language" for="language">
+        <span class="pb-language-label" data-i18n="Settings.Language"></span>
+        <select class="pb-select" id="language"></select>
+      </label>
+    </header>
+
+    <main class="pb-main">
+      <p class="pb-notice" data-i18n="Shell.Preview.Notice"></p>
+
+      <section class="pb-hero" id="connection" data-state="connecting" aria-labelledby="connection-title">
+        <span class="pb-dot" aria-hidden="true"></span>
+        <div class="pb-hero-text">
+          <h2 class="pb-eyebrow" id="connection-title" data-i18n="Dashboard.ServerStatus"></h2>
+          <p class="pb-hero-label" id="connection-label"></p>
+          <p class="pb-hero-detail" id="connection-detail"></p>
+        </div>
+      </section>
+
+      <p class="pb-dry-run" id="dry-run" data-i18n="Settings.DryRunEnabledWarning" hidden></p>
+
+      <div class="pb-grid">
+        <section class="pb-card" aria-labelledby="device-title">
+          <h2 class="pb-card-title" id="device-title" data-i18n="Dashboard.DeviceName"></h2>
+          <p class="pb-value" id="device-name"></p>
+        </section>
+
+        <section class="pb-card" id="printer" data-state="" aria-labelledby="printer-title">
+          <h2 class="pb-card-title" id="printer-title" data-i18n="Dashboard.PrinterStatus"></h2>
+          <p class="pb-value" id="printer-name"></p>
+          <p><span class="pb-badge" id="printer-state"></span></p>
+        </section>
+
+        <section class="pb-card" aria-labelledby="contact-title">
+          <h2 class="pb-card-title" id="contact-title" data-i18n="Dashboard.LastContact"></h2>
+          <p class="pb-value pb-number" id="last-contact"></p>
+        </section>
+
+        <section class="pb-card" aria-labelledby="today-title">
+          <h2 class="pb-card-title" id="today-title" data-i18n="Shell.Today.Title"></h2>
+          <dl class="pb-stats">
+            <div class="pb-stat">
+              <dt data-i18n="Dashboard.JobsToday"></dt>
+              <dd class="pb-number" id="jobs-today"></dd>
+            </div>
+            <div class="pb-stat" id="failed-stat">
+              <dt data-i18n="Dashboard.FailedToday"></dt>
+              <dd class="pb-number" id="failed-today"></dd>
+            </div>
+            <div class="pb-stat">
+              <dt data-i18n="Dashboard.LastPrint"></dt>
+              <dd class="pb-number" id="last-print"></dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+
+      <section class="pb-card pb-job" id="last-job" data-status="" aria-labelledby="last-job-title">
+        <h2 class="pb-card-title" id="last-job-title" data-i18n="Shell.LastJob.Title"></h2>
+        <p class="pb-empty" id="last-job-empty" data-i18n="RecentJobs.Empty"></p>
+        <div class="pb-job-row" id="last-job-row" hidden>
+          <span class="pb-job-order" id="last-job-order"></span>
+          <span class="pb-job-type" id="last-job-type"></span>
+          <span class="pb-job-time pb-number" id="last-job-time"></span>
+          <span class="pb-badge" id="last-job-status"></span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pb-footer">
+      <button type="button" class="pb-button" id="open-classic" data-i18n="Shell.OpenClassicWindow"></button>
+      <span class="pb-version" id="version"></span>
+    </footer>
+
+    <div class="pb-visually-hidden" id="announcer" role="status" aria-live="polite" aria-atomic="true"></div>
+  </div>
+</body>
+</html>

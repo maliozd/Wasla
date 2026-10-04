@@ -626,4 +626,43 @@
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>رابط الإعداد غير صالح أو منتهي الصلاحية.</value></data>
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge على هذا الكمبيوتر مسجل بالفعل كجهاز نشط. استخدم خيار "إعادة توصيل جهاز موجود" في Wasla Web بدل إعداد جهاز جديد، أو أزل سجل الجهاز القديم أولًا.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد التلقائي.</value></data>
+  <data name="Shell.Connection.Connecting" xml:space="preserve">
+    <value>جارٍ الاتصال</value>
+  </data>
+  <data name="Shell.Detail.Online" xml:space="preserve">
+    <value>متصل بـ Wasla. بانتظار مهام إيصالات جديدة.</value>
+  </data>
+  <data name="Shell.Detail.Connecting" xml:space="preserve">
+    <value>جارٍ الاتصال بخادم Wasla…</value>
+  </data>
+  <data name="Shell.Detail.Stopped" xml:space="preserve">
+    <value>الاستماع متوقف. لا يتم استلام مهام طباعة جديدة.</value>
+  </data>
+  <data name="Shell.Detail.NotConfigured" xml:space="preserve">
+    <value>لم يتم ربط هذا الجهاز بـ Wasla بعد. اربطه من الإعدادات في النافذة الكلاسيكية.</value>
+  </data>
+  <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
+    <value>حدث خطأ غير متوقع. راجع علامة التبويب السجلات في النافذة الكلاسيكية لمعرفة التفاصيل.</value>
+  </data>
+  <data name="Shell.LastJob.Title" xml:space="preserve">
+    <value>آخر مهمة طباعة</value>
+  </data>
+  <data name="Shell.Today.Title" xml:space="preserve">
+    <value>اليوم</value>
+  </data>
+  <data name="Shell.OpenClassicWindow" xml:space="preserve">
+    <value>فتح النافذة الكلاسيكية</value>
+  </data>
+  <data name="Shell.Preview.Notice" xml:space="preserve">
+    <value>معاينة: يعرض هذا العرض الحالة فقط. تبقى الإعدادات وسجل الطباعة في النافذة الكلاسيكية.</value>
+  </data>
+  <data name="Shell.Fallback.Title" xml:space="preserve">
+    <value>تم فتح النافذة الكلاسيكية</value>
+  </data>
+  <data name="Shell.Fallback.RuntimeMissing" xml:space="preserve">
+    <value>يتطلب العرض الجديد Microsoft Edge WebView2 Runtime. يتم استخدام النافذة الكلاسيكية بدلاً منه.</value>
+  </data>
+  <data name="Shell.Fallback.StartFailed" xml:space="preserve">
+    <value>تعذر تشغيل العرض الجديد. يتم استخدام النافذة الكلاسيكية بدلاً منه.</value>
+  </data>
 </root>

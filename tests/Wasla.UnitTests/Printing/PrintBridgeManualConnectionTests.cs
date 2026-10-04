@@ -306,7 +306,7 @@ public sealed partial class PrintBridgeManualConnectionTests
         var controller = Read("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "PrintBridgeController.cs");
         var setupApi = Read("src", "Wasla.Web", "Controllers", "PrintBridgeSetupApiController.cs");
         var registrations = Read("src", "Wasla.Infrastructure", "DependencyInjection", "ServiceCollectionExtensions.cs");
-        var desktopClient = Read("src", "Wasla.PrintBridge", "Services", "WaslaPrintBridgeClient.cs");
+        var desktopClient = Read("src", "Wasla.PrintBridge.Core", "Services", "WaslaPrintBridgeClient.cs");
 
         // The browser creates a session and opens the app with its one-time code inside the link...
         Assert.Contains("fetch(cfg.sessionCreateUrl, { method: \"POST\", body: form, credentials: \"same-origin\" })", script, StringComparison.Ordinal);

@@ -175,6 +175,7 @@ public sealed partial class MainForm : Form
         _jobsRefreshTimer.Start();
 
         _runtime.StatusChanged += OnRuntimeStatusChanged;
+        _cultureService.CultureChanged += OnCultureChangedElsewhere;
         _uiLogBuffer.Changed += (_, _) => QueueRefreshLogs();
         _tabs.SelectedIndexChanged += (_, _) =>
         {
@@ -932,6 +933,23 @@ public sealed partial class MainForm : Form
         });
     }
 
+    private void OnCultureChangedElsewhere(object? sender, EventArgs e)
+    {
+        // A change made in this window is applied by SaveSelectedLanguageAsync itself.
+        if (_isSavingLanguage)
+            return;
+
+        QueueUiAction(() =>
+        {
+            ApplyStartupLocalization();
+            SelectSavedLanguage();
+            RefreshDashboard();
+            RefreshRecentJobsFromRuntime();
+            if (_tabs.SelectedTab == _historyTab)
+                RefreshPrintHistory();
+        });
+    }
+
     private void QueueRefreshDashboard() => QueueUiAction(RefreshDashboard);
 
     private void QueueRefreshRecentJobs() => QueueUiAction(RefreshRecentJobsFromRuntime);
@@ -1026,10 +1044,8 @@ public sealed partial class MainForm : Form
     private void PopulateLanguageCombo()
     {
         _cmbLanguage.Items.Clear();
-        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Turkish, "Türkçe"));
-        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.English, "English"));
-        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Arabic, "العربية"));
-        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Russian, "Русский"));
+        foreach (var culture in SupportedCultures.All)
+            _cmbLanguage.Items.Add(new LanguageOption(culture, SupportedCultures.GetNativeName(culture)));
     }
 
     private void SelectSavedLanguage()
@@ -1631,6 +1647,7 @@ public sealed partial class MainForm : Form
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         PersistWindowLayout();
+        _cultureService.CultureChanged -= OnCultureChangedElsewhere;
         _dashboardTimer.Stop();
         _dashboardTimer.Dispose();
         _jobsRefreshTimer.Stop();

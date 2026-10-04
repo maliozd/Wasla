@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "type": "snapshot.updated",
+  "sequence": 1,
+  "payload": {
+    "culture": "tr-TR",
+    "direction": "ltr",
+    "connection": {
+      "state": "online",
+      "label": "Çevrimiçi",
+      "detail": "Wasla'ya bağlı. Yeni fiş işleri bekleniyor."
+    },
+    "device": {
+      "name": "Kasa 1"
+    },
+    "printer": {
+      "name": "POS-58",
+      "state": "ready",
+      "label": "Hazır"
+    },
+    "activity": {
+      "lastContact": "04.10.2026 20:20",
+      "lastPrint": "04.10.2026 20:23",
+      "jobsToday": 1,
+      "failedToday": 0
+    },
+    "lastJob": {
+      "status": "printed",
+      "statusLabel": "✓ Yazdırıldı",
+      "order": "GTR-1001",
+      "typeLabel": "Fiş",
+      "time": "04.10.2026 20:23"
+    },
+    "dryRun": true,
+    "versionLabel": "Sürüm: v1.0.0",
+    "languages": [
+      { "culture": "tr-TR", "nativeName": "Türkçe" },
+      { "culture": "en-US", "nativeName": "English" },
+      { "culture": "ar-SA", "nativeName": "العربية" },
+      { "culture": "ru-RU", "nativeName": "Русский" }
+    ],
+    "strings": {
+      "Common.AppTitle": "Wasla Print Bridge",
+      "Common.Subtitle": "Fiş yazdırma köprüsü",
+      "Common.Dash": "-",
+      "Dashboard.ServerStatus": "Sunucu Bağlantısı",
+      "Dashboard.DeviceName": "Cihaz Adı",
+      "Dashboard.PrinterStatus": "Yazıcı Durumu",
+      "Dashboard.LastContact": "Son İletişim",
+      "Dashboard.LastPrint": "Son Yazdırma",
+      "Dashboard.JobsToday": "Bugünkü İşler",
+      "Dashboard.FailedToday": "Bugün Başarısız",
+      "Settings.Language": "Dil",
+      "Settings.DryRunEnabledWarning": "Test modu açık. Fişler yazdırılmaz; işler yalnızca loglanır.",
+      "RecentJobs.Empty": "Bu oturumda henüz yazdırma işi işlenmedi.",
+      "Shell.LastJob.Title": "Son yazdırma işi",
+      "Shell.Today.Title": "Bugün",
+      "Shell.OpenClassicWindow": "Klasik pencereyi aç",
+      "Shell.Preview.Notice": "Önizleme: Bu görünüm yalnızca durumu gösterir. Ayarlar ve yazdırma geçmişi klasik pencerede kalır."
+    }
+  }
+}
