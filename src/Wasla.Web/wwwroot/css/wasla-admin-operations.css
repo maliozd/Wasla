@@ -1,0 +1,176 @@
+/*
+ * Wasla central Admin: Tenant Operations Center.
+ * Scoped to .wasla-admin-ops. Built on Bootstrap 5.3 semantic variables so the Admin light/dark toggle and RTL keep
+ * working; no new palette. Status meaning is always carried by text, never by color alone.
+ */
+
+.wasla-admin-ops .min-w-0 {
+    min-width: 0;
+}
+
+/* Cards: border-first, minimal shadow (design-system direction). */
+.wasla-admin-ops .wasla-admin-card {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.65rem;
+    box-shadow: none;
+}
+
+.wasla-admin-ops .wasla-admin-card > .card-header,
+.wasla-admin-ops .wasla-admin-card > .card-footer {
+    background-color: var(--bs-tertiary-bg);
+}
+
+/* Metric tiles */
+.wasla-admin-ops .wasla-admin-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    height: 100%;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.65rem;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    text-decoration: none;
+}
+
+.wasla-admin-ops a.wasla-admin-metric:hover {
+    border-color: var(--bs-secondary-color);
+}
+
+.wasla-admin-ops a.wasla-admin-metric:focus-visible,
+.wasla-admin-ops .wasla-admin-sort:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.wasla-admin-ops .wasla-admin-metric__label {
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color);
+}
+
+.wasla-admin-ops .wasla-admin-metric__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.wasla-admin-ops .wasla-admin-metric--compact .wasla-admin-metric__value {
+    font-size: 1.25rem;
+}
+
+.wasla-admin-ops .wasla-admin-metric__hint {
+    font-size: 0.75rem;
+}
+
+.wasla-admin-ops .wasla-admin-metric--warning {
+    border-color: var(--bs-warning-border-subtle);
+    background-color: var(--bs-warning-bg-subtle);
+}
+
+.wasla-admin-ops .wasla-admin-metric--warning .wasla-admin-metric__hint {
+    color: var(--bs-warning-text-emphasis);
+}
+
+.wasla-admin-ops .wasla-admin-metric--danger {
+    border-color: var(--bs-danger-border-subtle);
+    background-color: var(--bs-danger-bg-subtle);
+}
+
+.wasla-admin-ops .wasla-admin-metric--danger .wasla-admin-metric__hint {
+    color: var(--bs-danger-text-emphasis);
+}
+
+/* Status badges: icon + text, tone as reinforcement. */
+.wasla-admin-ops .wasla-admin-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+    white-space: normal;
+    text-align: start;
+}
+
+.wasla-admin-ops .wasla-admin-status--success {
+    color: var(--bs-success-text-emphasis);
+    background-color: var(--bs-success-bg-subtle);
+    border-color: var(--bs-success-border-subtle);
+}
+
+.wasla-admin-ops .wasla-admin-status--warning {
+    color: var(--bs-warning-text-emphasis);
+    background-color: var(--bs-warning-bg-subtle);
+    border-color: var(--bs-warning-border-subtle);
+}
+
+.wasla-admin-ops .wasla-admin-status--danger {
+    color: var(--bs-danger-text-emphasis);
+    background-color: var(--bs-danger-bg-subtle);
+    border-color: var(--bs-danger-border-subtle);
+}
+
+.wasla-admin-ops .wasla-admin-status--info {
+    color: var(--bs-info-text-emphasis);
+    background-color: var(--bs-info-bg-subtle);
+    border-color: var(--bs-info-border-subtle);
+}
+
+.wasla-admin-ops .wasla-admin-status--neutral {
+    color: var(--bs-secondary-text-emphasis);
+    background-color: var(--bs-secondary-bg-subtle);
+    border-color: var(--bs-secondary-border-subtle);
+}
+
+/* Sortable headers */
+.wasla-admin-ops .wasla-admin-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 0.25rem;
+}
+
+.wasla-admin-ops .wasla-admin-sort:hover span {
+    text-decoration: underline;
+}
+
+.wasla-admin-ops th:not([aria-sort]) .wasla-admin-sort .bi {
+    opacity: 0.45;
+}
+
+.wasla-admin-ops .wasla-admin-table caption {
+    caption-side: top;
+    color: var(--bs-secondary-color);
+}
+
+.wasla-admin-ops .wasla-admin-table__name {
+    max-width: 22rem;
+}
+
+.wasla-admin-ops .wasla-admin-dl dt {
+    font-weight: 500;
+    color: var(--bs-secondary-color);
+}
+
+.wasla-admin-ops .wasla-admin-dl dd {
+    margin-bottom: 0.5rem;
+}
+
+/* Previous/next chevrons point the reading direction in RTL. */
+[dir="rtl"] .wasla-admin-ops .wasla-admin-flip {
+    display: inline-block;
+    transform: scaleX(-1);
+}
+
+@media (max-width: 575.98px) {
+    .wasla-admin-ops .wasla-admin-metric__value {
+        font-size: 1.25rem;
+    }
+
+    .wasla-admin-ops .wasla-admin-table__name {
+        max-width: 12rem;
+    }
+}

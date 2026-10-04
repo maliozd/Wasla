@@ -253,7 +253,7 @@
     <value>السمة</value>
   </data>
   <data name="Layout.CentralAdmin" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Layout.Customers" xml:space="preserve">
     <value>المطاعم</value>
@@ -1540,7 +1540,7 @@
     <value>آخر مزامنة ناجحة (UTC)</value>
   </data>
   <data name="Admin.LoginTitle" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Admin.LoginSubtitle" xml:space="preserve">
     <value>سجّل الدخول بحساب الإدارة المركزية</value>
@@ -1630,7 +1630,7 @@
     <value>الموقع العام</value>
   </data>
   <data name="Admin.CentralAdmin" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Admin.CustomerNotFound" xml:space="preserve">
     <value>المطعم غير موجود.</value>
@@ -3912,4 +3912,171 @@
   <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>قبل استخدام إعادة التعيين، أوقف Wasla.Worker، وأغلق تطبيق Print Bridge، وتأكد من عدم وجود عملية إعداد لـ Print Bridge قيد التشغيل حاليًا. وإلا فقد تضيف دورة مزامنة أو عملية إعداد لا تزال قيد التشغيل بيانات من جديد بعد إعادة التعيين، كما يحتفظ المزوّد التجريبي (mock) بأرقام الطلبات في الذاكرة. شغّل Worker من جديد بعد انتهاء إعادة التعيين.</value></data>
   <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>لم تكتمل إعادة التعيين: أُزيلت أجهزة Print Bridge، لكن تم التراجع عن بقية البيانات. شغّل إعادة التعيين مرة أخرى لإكمالها.</value></data>
   <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>الأتمتة</value></data>
+  <data name="Admin.Ops.OverviewTitle" xml:space="preserve"><value>نظرة عامة على العمليات</value></data>
+  <data name="Admin.Ops.OverviewSubtitle" xml:space="preserve"><value>حالة المطاعم والتسجيلات وPrint Bridge من السجل المركزي.</value></data>
+  <data name="Admin.Ops.OverviewCentralOnlyNote" xml:space="preserve"><value>تقرأ هذه الصفحة قاعدة البيانات المركزية فقط. يتم فحص قاعدة بيانات المطعم والمزامنة وحالة الطلبات فقط في صفحة عمليات ذلك المطعم.</value></data>
+  <data name="Admin.Ops.ReadAt" xml:space="preserve"><value>وقت القراءة</value></data>
+  <data name="Admin.Ops.Section.Tenants" xml:space="preserve"><value>المطاعم</value></data>
+  <data name="Admin.Ops.Section.Signup" xml:space="preserve"><value>التسجيل والتجهيز</value></data>
+  <data name="Admin.Ops.Section.PrintBridgeFleet" xml:space="preserve"><value>أجهزة Print Bridge</value></data>
+  <data name="Admin.Ops.Metric.MigrationFailed" xml:space="preserve"><value>فشل آخر ترحيل</value></data>
+  <data name="Admin.Ops.Metric.MigrationNotRecorded" xml:space="preserve"><value>لا يوجد سجل ترحيل</value></data>
+  <data name="Admin.Ops.Metric.NeedsAttention" xml:space="preserve"><value>يحتاج إلى متابعة</value></data>
+  <data name="Admin.Ops.Metric.OldestWaiting" xml:space="preserve"><value>الأقدم: {0}</value></data>
+  <data name="Admin.Ops.Metric.ExpiredOrCancelled" xml:space="preserve"><value>منتهية أو ملغاة</value></data>
+  <data name="Admin.Ops.Signup.ProvisioningFailuresNotTracked" xml:space="preserve"><value>لا تُسجَّل محاولات التجهيز الفاشلة كحالة منفصلة. يبقى التسجيل المدفوع غير المجهَّز ضمن عدد المدفوعات المستلمة.</value></data>
+  <data name="Admin.Ops.PrintBridge.Online" xml:space="preserve"><value>متصل</value></data>
+  <data name="Admin.Ops.PrintBridge.Stale" xml:space="preserve"><value>متأخر</value></data>
+  <data name="Admin.Ops.PrintBridge.Offline" xml:space="preserve"><value>غير متصل</value></data>
+  <data name="Admin.Ops.PrintBridge.NeverConnected" xml:space="preserve"><value>لم يتصل أبدًا</value></data>
+  <data name="Admin.Ops.PrintBridge.Disabled" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Ops.PrintBridge.ThresholdNote" xml:space="preserve"><value>متصل: آخر إشارة قبل 60 ثانية كحد أقصى. متأخر: قبل 5 دقائق كحد أقصى. غير متصل: أقدم من ذلك.</value></data>
+  <data name="Admin.Ops.RecentTenants" xml:space="preserve"><value>المطاعم المضافة مؤخرًا</value></data>
+  <data name="Admin.Ops.LoadError.Title" xml:space="preserve"><value>تعذّرت قراءة البيانات المركزية</value></data>
+  <data name="Admin.Ops.LoadError.Body" xml:space="preserve"><value>لا يمكن الوصول إلى قاعدة البيانات المركزية حاليًا. أعد تحميل الصفحة بعد بضع دقائق، وإذا استمرت المشكلة فراجع سجلات الخادم.</value></data>
+  <data name="Admin.Ops.List.Subtitle" xml:space="preserve"><value>المطاعم في السجل المركزي. تُقرأ حالة قاعدة البيانات فقط في صفحة عمليات المطعم.</value></data>
+  <data name="Admin.Ops.List.FiltersLabel" xml:space="preserve"><value>البحث عن المطاعم وتصفيتها</value></data>
+  <data name="Admin.Ops.List.SearchPlaceholder" xml:space="preserve"><value>الاسم أو المعرّف المختصر أو النطاق</value></data>
+  <data name="Admin.Ops.List.MigrationRecord" xml:space="preserve"><value>سجل الترحيل</value></data>
+  <data name="Admin.Ops.List.AnyMigrationRecord" xml:space="preserve"><value>أي سجل</value></data>
+  <data name="Admin.Ops.List.AnyPlan" xml:space="preserve"><value>كل الخطط</value></data>
+  <data name="Admin.Ops.List.NoPlan" xml:space="preserve"><value>بلا عضوية</value></data>
+  <data name="Admin.Ops.List.PageSize" xml:space="preserve"><value>لكل صفحة</value></data>
+  <data name="Admin.Ops.List.ClearFilters" xml:space="preserve"><value>مسح عوامل التصفية</value></data>
+  <data name="Admin.Ops.List.NoMatches" xml:space="preserve"><value>لا توجد مطاعم تطابق عوامل التصفية هذه.</value></data>
+  <data name="Admin.Ops.List.Showing" xml:space="preserve"><value>عرض {0}–{1} من أصل {2} مطعمًا</value></data>
+  <data name="Admin.Ops.List.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.List.NoDevices" xml:space="preserve"><value>لا توجد أجهزة</value></data>
+  <data name="Admin.Ops.List.DevicesOnline" xml:space="preserve"><value>{0} من {1} متصل</value></data>
+  <data name="Admin.Ops.List.Operations" xml:space="preserve"><value>العمليات</value></data>
+  <data name="Admin.Ops.List.Pagination" xml:space="preserve"><value>صفحات قائمة المطاعم</value></data>
+  <data name="Admin.Ops.List.PreviousPage" xml:space="preserve"><value>الصفحة السابقة</value></data>
+  <data name="Admin.Ops.List.NextPage" xml:space="preserve"><value>الصفحة التالية</value></data>
+  <data name="Admin.Ops.List.PageNumber" xml:space="preserve"><value>الصفحة {0}</value></data>
+  <data name="Admin.Ops.MigrationRecord.Succeeded" xml:space="preserve"><value>ناجح</value></data>
+  <data name="Admin.Ops.MigrationRecord.Failed" xml:space="preserve"><value>فشل</value></data>
+  <data name="Admin.Ops.MigrationRecord.NotRecorded" xml:space="preserve"><value>غير مسجّل</value></data>
+  <data name="Admin.Ops.State.Unknown" xml:space="preserve"><value>غير معروف</value></data>
+  <data name="Admin.Ops.Database.Reachable" xml:space="preserve"><value>متاحة</value></data>
+  <data name="Admin.Ops.Database.NotConfigured" xml:space="preserve"><value>غير مُهيّأة</value></data>
+  <data name="Admin.Ops.Database.Unreachable" xml:space="preserve"><value>غير متاحة</value></data>
+  <data name="Admin.Ops.Database.TimedOut" xml:space="preserve"><value>انتهت المهلة</value></data>
+  <data name="Admin.Ops.Database.ConfigurationUnreadable" xml:space="preserve"><value>تعذّرت قراءة بيانات الاتصال</value></data>
+  <data name="Admin.Ops.Database.Connection" xml:space="preserve"><value>قاعدة البيانات</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelTitle" xml:space="preserve"><value>تعذّرت قراءة قاعدة بيانات المطعم</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelBody" xml:space="preserve"><value>لا يمكن عرض تفاصيل قاعدة البيانات والترحيل والوضع والاتصالات والطلبات. تأتي بيانات الهوية والتجهيز وPrint Bridge من السجل المركزي وهي معروضة في هذه الصفحة. توجد التفاصيل في سجلات الخادم.</value></data>
+  <data name="Admin.Ops.Migrations.Title" xml:space="preserve"><value>عمليات الترحيل</value></data>
+  <data name="Admin.Ops.Migrations.Current" xml:space="preserve"><value>محدّثة</value></data>
+  <data name="Admin.Ops.Migrations.Pending" xml:space="preserve"><value>توجد عمليات ترحيل معلّقة</value></data>
+  <data name="Admin.Ops.Migrations.DatabaseAhead" xml:space="preserve"><value>قاعدة البيانات أحدث من التطبيق</value></data>
+  <data name="Admin.Ops.Migrations.PendingCount" xml:space="preserve"><value>{0} معلّقة</value></data>
+  <data name="Admin.Ops.Migrations.Applied" xml:space="preserve"><value>آخر ترحيل مطبّق</value></data>
+  <data name="Admin.Ops.Migrations.Expected" xml:space="preserve"><value>المتوقع من هذا التطبيق</value></data>
+  <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>هذه الصفحة للقراءة فقط؛ تُطبَّق عمليات الترحيل عبر CLI ضمن إجراءات الإصدار.</value></data>
+  <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>وضع التشغيل</value></data>
+  <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>مباشر</value></data>
+  <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>الإعداد</value></data>
+  <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>مزامنة الطلبات</value></data>
+  <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>القبول التلقائي</value></data>
+  <data name="Admin.Ops.Automation.AutoReceipt" xml:space="preserve"><value>الإيصالات التلقائية</value></data>
+  <data name="Admin.Ops.Automation.Active" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Ops.Automation.Off" xml:space="preserve"><value>متوقف</value></data>
+  <data name="Admin.Ops.Automation.PendingSetup" xml:space="preserve"><value>يُفعَّل بعد اكتمال الإعداد</value></data>
+  <data name="Admin.Ops.GuidedSetup.Title" xml:space="preserve"><value>الإعداد الموجَّه</value></data>
+  <data name="Admin.Ops.GuidedSetup.Counts" xml:space="preserve"><value>قيد التنفيذ: {0} · مكتمل: {1} · تم التخطي: {2}</value></data>
+  <data name="Admin.Ops.Users.Title" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="Admin.Ops.Users.Counts" xml:space="preserve"><value>المستخدمون النشطون: {0} · المالكون النشطون: {1}</value></data>
+  <data name="Admin.Ops.SectionUnavailable" xml:space="preserve"><value>تعذّرت قراءة هذا القسم.</value></data>
+  <data name="Admin.Ops.Section.Guidance" xml:space="preserve"><value>الخطوات التالية</value></data>
+  <data name="Admin.Ops.Section.Identity" xml:space="preserve"><value>المطعم</value></data>
+  <data name="Admin.Ops.Section.Provisioning" xml:space="preserve"><value>التجهيز</value></data>
+  <data name="Admin.Ops.Section.Database" xml:space="preserve"><value>قاعدة البيانات والترحيل</value></data>
+  <data name="Admin.Ops.Section.OperationalMode" xml:space="preserve"><value>وضع التشغيل والأتمتة</value></data>
+  <data name="Admin.Ops.Section.Providers" xml:space="preserve"><value>اتصالات المنصات</value></data>
+  <data name="Admin.Ops.Section.Orders" xml:space="preserve"><value>الطلبات</value></data>
+  <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>حالة الحساب</value></data>
+  <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>ملخص الحالة</value></data>
+  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>يُفتح في علامة تبويب جديدة</value></data>
+  <data name="Admin.Ops.Membership" xml:space="preserve"><value>العضوية</value></data>
+  <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>تجربة</value></data>
+  <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>نشطة</value></data>
+  <data name="Admin.Ops.Membership.PendingPayment" xml:space="preserve"><value>بانتظار الدفع</value></data>
+  <data name="Admin.Ops.Membership.Cancelled" xml:space="preserve"><value>ملغاة</value></data>
+  <data name="Admin.Ops.Membership.None" xml:space="preserve"><value>لا يوجد سجل عضوية</value></data>
+  <data name="Admin.Ops.Membership.TrialEnds" xml:space="preserve"><value>تنتهي التجربة</value></data>
+  <data name="Admin.Ops.Membership.PeriodEnds" xml:space="preserve"><value>تنتهي الفترة</value></data>
+  <data name="Admin.Ops.Provisioning.Registration" xml:space="preserve"><value>طلب التسجيل</value></data>
+  <data name="Admin.Ops.Provisioning.OpenRegistration" xml:space="preserve"><value>فتح الطلب</value></data>
+  <data name="Admin.Ops.Provisioning.NoRegistration" xml:space="preserve"><value>لا يوجد طلب مرتبط (مثلًا أُنشئ عبر CLI)</value></data>
+  <data name="Admin.Ops.Provisioning.LastMigrationRecord" xml:space="preserve"><value>آخر سجل ترحيل</value></data>
+  <data name="Admin.Ops.Provisioning.Note" xml:space="preserve"><value>لا يُعرض نص الخطأ؛ التفاصيل في مخرجات CLI وسجلات الخادم.</value></data>
+  <data name="Admin.Ops.ProviderMode.Process" xml:space="preserve"><value>وضع المزوّد</value></data>
+  <data name="Admin.Ops.ProviderMode.Mock" xml:space="preserve"><value>Mock (تجريبي)</value></data>
+  <data name="Admin.Ops.ProviderMode.Real" xml:space="preserve"><value>Real (حقيقي)</value></data>
+  <data name="Admin.Ops.ProviderMode.NotRegistered" xml:space="preserve"><value>لا يوجد عميل مسجّل</value></data>
+  <data name="Admin.Ops.Providers.None" xml:space="preserve"><value>لا توجد منصة متصلة.</value></data>
+  <data name="Admin.Ops.Providers.Platform" xml:space="preserve"><value>المنصة</value></data>
+  <data name="Admin.Ops.Providers.Health" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Ops.Providers.LastSuccess" xml:space="preserve"><value>آخر مزامنة ناجحة</value></data>
+  <data name="Admin.Ops.Providers.LastFailure" xml:space="preserve"><value>آخر مزامنة فاشلة (7 أيام)</value></data>
+  <data name="Admin.Ops.Providers.Client" xml:space="preserve"><value>العميل</value></data>
+  <data name="Admin.Ops.Providers.Store" xml:space="preserve"><value>المتجر</value></data>
+  <data name="Admin.Ops.Providers.ConsecutiveFailures" xml:space="preserve"><value>إخفاقات متتالية: {0}</value></data>
+  <data name="Admin.Ops.Providers.PausedUntil" xml:space="preserve"><value>متوقف مؤقتًا حتى</value></data>
+  <data name="Admin.Ops.Providers.Enabled" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Ops.Providers.DisabledLabel" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Ops.Providers.Note" xml:space="preserve"><value>لا تُعرض بيانات الاعتماد ونصوص الأخطاء. يدير مالك المطعم الاتصالات من لوحته.</value></data>
+  <data name="Admin.Ops.Connection.Healthy" xml:space="preserve"><value>سليم</value></data>
+  <data name="Admin.Ops.Connection.Disabled" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Ops.Connection.SyncOff" xml:space="preserve"><value>المزامنة متوقفة</value></data>
+  <data name="Admin.Ops.Connection.CircuitOpen" xml:space="preserve"><value>متوقف بعد إخفاقات متكررة</value></data>
+  <data name="Admin.Ops.Connection.Failing" xml:space="preserve"><value>يفشل</value></data>
+  <data name="Admin.Ops.Connection.NeverSynced" xml:space="preserve"><value>لم تتم المزامنة بعد</value></data>
+  <data name="Admin.Ops.Connection.Stale" xml:space="preserve"><value>المزامنة متأخرة</value></data>
+  <data name="Admin.Ops.Orders.Last24Hours" xml:space="preserve"><value>آخر 24 ساعة</value></data>
+  <data name="Admin.Ops.Orders.Last7Days" xml:space="preserve"><value>آخر 7 أيام</value></data>
+  <data name="Admin.Ops.Orders.Open" xml:space="preserve"><value>مفتوحة</value></data>
+  <data name="Admin.Ops.Orders.Latest" xml:space="preserve"><value>آخر طلب</value></data>
+  <data name="Admin.Ops.PrintBridge.NoDevices" xml:space="preserve"><value>لا يوجد جهاز Print Bridge مسجّل.</value></data>
+  <data name="Admin.Ops.PrintBridge.LastSeen" xml:space="preserve"><value>آخر ظهور</value></data>
+  <data name="Admin.Ops.PrintJobs.Counts" xml:space="preserve"><value>مهام الطباعة في الانتظار: {0} · الفاشلة خلال 24 ساعة: {1}</value></data>
+  <data name="Admin.Ops.PrintJobs.Unavailable" xml:space="preserve"><value>تعذّرت قراءة أعداد مهام الطباعة.</value></data>
+  <data name="Admin.Ops.Guidance.ReadOnlyNote" xml:space="preserve"><value>تستند هذه الاقتراحات إلى الملاحظة فقط؛ لا تُصلح هذه الصفحة أي شيء ولا تغيّره.</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Critical" xml:space="preserve"><value>حرج</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Warning" xml:space="preserve"><value>تحذير</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Info" xml:space="preserve"><value>معلومة</value></data>
+  <data name="Admin.Ops.Guidance.Severity.AllClear" xml:space="preserve"><value>لا مشكلات</value></data>
+  <data name="Admin.Ops.Age.JustNow" xml:space="preserve"><value>الآن</value></data>
+  <data name="Admin.Ops.Age.Minutes" xml:space="preserve"><value>قبل {0} دقيقة</value></data>
+  <data name="Admin.Ops.Age.Hours" xml:space="preserve"><value>قبل {0} ساعة</value></data>
+  <data name="Admin.Ops.Age.Days" xml:space="preserve"><value>قبل {0} يوم</value></data>
+  <data name="Admin.Ops.BackToTenants" xml:space="preserve"><value>العودة إلى المطاعم</value></data>
+  <data name="Admin.Ops.Guidance.TenantInactive" xml:space="preserve"><value>المطعم غير نشط: لا يمكن للمستخدمين تسجيل الدخول ولا يزامن Worker طلباته. إذا لم يكن ذلك مقصودًا، فتأكد مع المالك قبل تفعيله.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseNotConfigured" xml:space="preserve"><value>لا توجد بيانات اتصال مخزنة لقاعدة بيانات هذا المطعم. على الأرجح لم يكتمل التجهيز؛ راجع طلب التسجيل ومخرجات CLI الخاصة بالتجهيز.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseUnreachable" xml:space="preserve"><value>تعذّر الوصول إلى قاعدة بيانات المطعم. تحقق من تشغيل SQL Server ومن وجود قاعدة البيانات، ثم شغّل migration-status من CLI.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>لم تستجب قاعدة بيانات المطعم خلال بضع ثوانٍ. تحقق من تشغيل SQL Server ومن وجود قاعدة البيانات هذه وقبولها لبيانات الدخول المهيأة، ثم أعد تحميل هذه الصفحة.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>تعذّر فك تشفير بيانات الاتصال المخزنة. تحقق من أن هذا الخادم يستخدم ENCRYPTION_MASTER_KEY نفسه الذي جُهّز به المطعم.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>تعذّر فحص قاعدة بيانات المطعم بسبب خطأ غير متوقع. راجع سجلات الخادم الخاصة بهذا المطعم.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>تنقص قاعدة بيانات المطعم عمليات ترحيل يحتاجها هذا الإصدار. طبّقها عبر CLI ‏(migrate-customer أو migrate-all-customers) وفق إجراءات الإصدار؛ قد تفشل الميزات التي تستخدم أعمدة جديدة حتى ذلك الحين.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>تحتوي قاعدة بيانات المطعم على عمليات ترحيل لا يعرفها هذا الإصدار من التطبيق. ربما رحّلها إصدار أحدث؛ تحقق من الإصدار المنشور.</value></data>
+  <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>فشل آخر ترحيل مسجّل لهذا المطعم. شغّل migration-status عبر CLI وأعد محاولة الترحيل لهذا المطعم.</value></data>
+  <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>تعذّرت قراءة بعض الأقسام. السبب المعتاد هو ترحيل معلّق؛ راجع سجلات الخادم.</value></data>
+  <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>لا يزال المطعم في وضع الإعداد: تتم مزامنة الطلبات، لكن لا يُقبل أو يُطبع أي شيء تلقائيًا حتى يكمل المالك الإعداد الموجَّه أو يتخطاه.</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>لا يوجد مالك نشط للمطعم. المالك وحده يمكنه إدارة الإعدادات والاتصالات والأجهزة؛ أضف مالكًا عبر CLI ‏(seed-customer-admin) عند الحاجة.</value></data>
+  <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>لا توجد منصة توصيل متصلة، لذلك لا يمكن وصول طلبات. يضيف المالك اتصالًا من قسم اتصالات المنصات.</value></data>
+  <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>جميع اتصالات المنصات معطّلة، لذلك لا يتم جلب أي طلبات. تأكد مع المالك مما إذا كان ذلك مقصودًا.</value></data>
+  <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>مزامنة الطلبات متوقفة في إعدادات المطعم؛ يتخطاه Worker. تبقى الطلبات الحالية ظاهرة.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionCircuitOpen" xml:space="preserve"><value>تم إيقاف اتصال منصة مؤقتًا بعد إخفاقات متكررة. تحقق من حالة المنصة واطلب من المالك التحقق من بيانات اعتماد الاتصال.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionFailing" xml:space="preserve"><value>فشلت آخر محاولات مزامنة لاتصال منصة. إذا استمر ذلك، فتحقق من حالة المنصة وبيانات اعتماد الاتصال.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionStale" xml:space="preserve"><value>لم تنجح مزامنة اتصال منصة منذ أكثر من 10 دقائق. تحقق من أن Worker يعمل.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionNeverSynced" xml:space="preserve"><value>لم تنجح مزامنة اتصال منصة أبدًا. إذا أُضيف منذ مدة، فتحقق من أن Worker يعمل.</value></data>
+  <data name="Admin.Ops.Guidance.NoRecentOrders" xml:space="preserve"><value>تتم مزامنة الاتصالات، لكن لم يصل أي طلب خلال آخر 7 أيام. تأكد مع المالك أن المتجر مفتوح على المنصات.</value></data>
+  <data name="Admin.Ops.Guidance.NoPrintBridgeDevice" xml:space="preserve"><value>لا يوجد جهاز Print Bridge مسجّل؛ لا يمكن طباعة الإيصالات إلا بعد إعداد جهاز.</value></data>
+  <data name="Admin.Ops.Guidance.AutoReceiptWithoutDevice" xml:space="preserve"><value>الإيصالات التلقائية مفعّلة، لكن لا يوجد جهاز Print Bridge مسجّل. تنتظر الإيصالات في قائمة الانتظار حتى يعدّ المالك جهازًا.</value></data>
+  <data name="Admin.Ops.Guidance.PrintBridgeOffline" xml:space="preserve"><value>لا يوجد جهاز Print Bridge نشط متصل. اطلب من المطعم التحقق من أن حاسوب Print Bridge يعمل ومتصل.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsQueuedWithoutOnlineDevice" xml:space="preserve"><value>توجد مهام طباعة في الانتظار ولا يوجد جهاز متصل؛ يستلمها الجهاز عند إعادة اتصاله.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>فشلت بعض مهام الطباعة خلال آخر 24 ساعة. يمكن للمالك فحص الطابعة على حاسوب Print Bridge.</value></data>
+  <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>طلب التسجيل المرتبط غير معلَّم كمجهَّز. افتحه لمراجعة حالته؛ ولا تغيّره يدويًا.</value></data>
+  <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>لا شيء يحتاج إلى متابعة حاليًا.</value></data>
 </root>

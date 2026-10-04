@@ -3052,7 +3052,8 @@ test("the automation section never decides whether a snapshot is valid", functio
 function boardCss() {
   const fs = require("fs");
   const path = require("path");
-  return fs.readFileSync(path.join(__dirname, "../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8");
+  // Normalized so the contract does not depend on the checkout's line endings (CRLF on Windows with autocrlf).
+  return fs.readFileSync(path.join(__dirname, "../../../src/Wasla.Web/wwwroot/css/wasla-theme.css"), "utf8").replace(/\r\n/g, "\n");
 }
 
 /** The Board card sizing block: from its comment to the Board's own phone grid rule after it. */

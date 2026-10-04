@@ -165,6 +165,8 @@ Current implementation:
 
 There is no security stamp or session-version check on the auth cookies. Password reset, on the Web and in the CLI, changes the stored credential and does not revoke already-issued authentication cookies. A browser that already has `.Wasla.TenantAuth` or `.Wasla.CentralAdminAuth` can keep using that cookie until it expires or the user signs out.
 
+Central Admin authorization is scheme-only (`[Authorize(AuthenticationSchemes = AuthSchemes.CentralAdmin)]`): the account is not re-checked against CentralDb on each request, so a deactivated central admin also keeps access until the cookie expires. This is an open high-priority security follow-up; see [../operations/tenant-operations-center.md](../operations/tenant-operations-center.md#security-follow-up-high-priority-not-implemented).
+
 ### API testing
 
 `POST /api/auth/validate` validates credentials only. Wasla.Api does not expose an endpoint that signs in a browser. Web login on `{slug}.wasla.local` does not authenticate `localhost` API requests. See [../operations/local-development.md](../operations/local-development.md).

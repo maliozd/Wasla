@@ -1,107 +1,418 @@
-﻿@model Wasla.Web.Areas.Admin.Models.CentralAdminTenantDetailViewModel
+@model Wasla.Web.Areas.Admin.Models.TenantOperations.AdminTenantDetailViewModel
 @using Microsoft.Extensions.Localization
+@using Wasla.Application.Abstractions.Admin
+@using Wasla.Application.Abstractions.Printing
+@using Wasla.Web.Areas.Admin.Models.TenantOperations
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
-    ViewData["Title"] = L["Admin.CustomerDetails"].Value;
+    var detail = Model.Detail;
+    var health = Model.Health;
+    ViewData["Title"] = detail?.Name ?? L["Admin.CustomerDetails"].Value;
+    var now = Model.NowUtc;
+
+    string? Age(DateTime? utc) => AdminOperationsPresenter.Age(utc, now, L);
 }
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb small mb-0">
-        <li class="breadcrumb-item"><a href="/admin">@L["Admin.DashboardTitle"]</a></li>
-        <li class="breadcrumb-item"><a href="/admin/customers">@L["Admin.Customers"]</a></li>
-        <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
-    </ol>
-</nav>
+<div class="wasla-admin-ops">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item"><a href="/admin">@L["Admin.Ops.OverviewTitle"]</a></li>
+            <li class="breadcrumb-item"><a href="/admin/customers">@L["Admin.Customers"]</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@(detail?.Name ?? L["Admin.CustomerDetails"].Value)</li>
+        </ol>
+    </nav>
 
-<div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-1">@Model.Name</h1>
-        <p class="text-muted small mb-0">@L["Admin.CustomerDetails"]</p>
-    </div>
-    <div>
-        @if (Model.IsActive)
-        {
-            <span class="badge text-bg-success">@L["Admin.StatusActive"]</span>
-        }
-        else
-        {
-            <span class="badge text-bg-secondary">@L["Admin.StatusInactive"]</span>
-        }
-    </div>
-</div>
-
-@if (!Model.IsActive)
-{
-    <div class="alert alert-warning" role="alert">@L["Admin.InactiveWarning"]</div>
-}
-
-<div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-white fw-semibold">@L["Admin.GeneralInfo"]</div>
-    <div class="card-body">
-        <dl class="row small mb-0">
-            <dt class="col-sm-3 text-muted">@L["Admin.Name"]</dt>
-            <dd class="col-sm-9">@Model.Name</dd>
-            <dt class="col-sm-3 text-muted">@L["Admin.Slug"]</dt>
-            <dd class="col-sm-9"><code>@Model.Slug</code></dd>
-            <dt class="col-sm-3 text-muted">@L["Admin.PrimaryDomain"]</dt>
-            <dd class="col-sm-9">@Model.PrimaryDomain</dd>
-            <dt class="col-sm-3 text-muted">@L["Common.Status"]</dt>
-            <dd class="col-sm-9">
-                @if (Model.IsActive)
-                {
-                    <span class="badge text-bg-success">@L["Admin.StatusActive"]</span>
-                }
-                else
-                {
-                    <span class="badge text-bg-secondary">@L["Admin.StatusInactive"]</span>
-                }
-            </dd>
-            <dt class="col-sm-3 text-muted">@L["Admin.CreatedAt"]</dt>
-            <dd class="col-sm-9">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
-            <dt class="col-sm-3 text-muted">@L["Admin.UpdatedAt"]</dt>
-            <dd class="col-sm-9">@Model.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
-        </dl>
-    </div>
-</div>
-
-<div class="accordion mb-4" id="adminTechnicalInfo">
-    <div class="accordion-item border-0 shadow-sm">
-        <h2 class="accordion-header">
-            <button class="accordion-button collapsed bg-white fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#adminTechnicalInfoBody" aria-expanded="false" aria-controls="adminTechnicalInfoBody">
-                @L["Admin.TechnicalInfo"]
-            </button>
-        </h2>
-        <div id="adminTechnicalInfoBody" class="accordion-collapse collapse" data-bs-parent="#adminTechnicalInfo">
-            <div class="accordion-body">
-                <dl class="row small mb-0">
-                    <dt class="col-sm-3 text-muted">@L["Admin.DatabaseName"]</dt>
-                    <dd class="col-sm-9"><code>@Model.DatabaseName</code></dd>
-                    <dt class="col-sm-3 text-muted">@L["Admin.SchemaVersion"]</dt>
-                    <dd class="col-sm-9">@Model.SchemaVersion</dd>
-                    <dt class="col-sm-3 text-muted">@L["Admin.LastMigrationAt"]</dt>
-                    <dd class="col-sm-9">@(Model.LastMigrationAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
-                    <dt class="col-sm-3 text-muted">@L["Admin.LastMigrationResult"]</dt>
-                    <dd class="col-sm-9">@(Model.LastMigrationResult ?? "—")</dd>
-                </dl>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="d-flex flex-wrap gap-2">
-    <a class="btn btn-outline-secondary" href="/admin/customers">@L["Admin.BackToDashboard"]</a>
-    @if (Model.IsActive)
+    @if (detail is null || health is null)
     {
-        <form method="post" action="/admin/customers/@Model.Id/deactivate" class="d-inline">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-warning">@L["Admin.Deactivate"]</button>
-        </form>
+        <h1 class="h4 mb-3">@L["Admin.CustomerDetails"]</h1>
+        <partial name="_AdminLoadError" />
     }
     else
     {
-        <form method="post" action="/admin/customers/@Model.Id/activate" class="d-inline">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-success">@L["Admin.Activate"]</button>
-        </form>
+        <header class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+            <div class="min-w-0">
+                <h1 class="h4 mb-1 text-break">@detail.Name</h1>
+                <p class="text-body-secondary small mb-0">
+                    <code>@detail.Slug</code> · @L["Admin.Ops.ReadAt"]: @AdminOperationsPresenter.Time(health.ReadAtUtc)
+                </p>
+            </div>
+            <div class="d-flex flex-wrap gap-2" aria-label="@L["Admin.Ops.Detail.Summary"]" role="group">
+                <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.TenantActive(detail.IsActive)" />
+                <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Database(health.Database)" />
+                @if (health.Automation is { } headerAutomation)
+                {
+                    <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.OperationalMode(headerAutomation.Mode)" />
+                }
+            </div>
+        </header>
+
+        @if (!detail.IsActive)
+        {
+            <div class="alert alert-warning small" role="status">@L["Admin.InactiveWarning"]</div>
+        }
+
+        @* 8. Operator guidance first: it answers "what next". *@
+        <section class="card wasla-admin-card mb-3" aria-labelledby="opsGuidanceHeading">
+            <div class="card-header"><h2 id="opsGuidanceHeading" class="h6 mb-0"><i class="bi bi-signpost-2 me-1" aria-hidden="true"></i>@L["Admin.Ops.Section.Guidance"]</h2></div>
+            <ul class="list-group list-group-flush">
+                @foreach (var item in Model.Guidance)
+                {
+                    <li class="list-group-item d-flex flex-wrap flex-sm-nowrap gap-2 align-items-start">
+                        <span class="flex-shrink-0"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Guidance(item.Severity, item.Code)" /></span>
+                        <span class="small">@L[AdminOperationsPresenter.GuidanceKey(item.Code)]</span>
+                    </li>
+                }
+            </ul>
+            <div class="card-footer small text-body-secondary">@L["Admin.Ops.Guidance.ReadOnlyNote"]</div>
+        </section>
+
+        <div class="row g-3">
+            @* 1. Identity *@
+            <div class="col-12 col-xl-6">
+                <section class="card wasla-admin-card h-100" aria-labelledby="opsIdentityHeading">
+                    <div class="card-header"><h2 id="opsIdentityHeading" class="h6 mb-0">@L["Admin.Ops.Section.Identity"]</h2></div>
+                    <div class="card-body">
+                        <dl class="row small mb-0 wasla-admin-dl">
+                            <dt class="col-sm-4">@L["Admin.Name"]</dt>
+                            <dd class="col-sm-8 text-break">@detail.Name</dd>
+                            <dt class="col-sm-4">@L["Admin.Slug"]</dt>
+                            <dd class="col-sm-8"><code>@detail.Slug</code></dd>
+                            <dt class="col-sm-4">@L["Admin.PrimaryDomain"]</dt>
+                            <dd class="col-sm-8 text-break">
+                                @if (Model.TenantAddressUrl is { } address)
+                                {
+                                    <a href="@address" target="_blank" rel="noopener noreferrer">@detail.PrimaryDomain<i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i><span class="visually-hidden"> (@L["Admin.Ops.OpensInNewTab"])</span></a>
+                                }
+                                else
+                                {
+                                    @detail.PrimaryDomain
+                                }
+                            </dd>
+                            <dt class="col-sm-4">@L["Common.Status"]</dt>
+                            <dd class="col-sm-8"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.TenantActive(detail.IsActive)" /></dd>
+                            <dt class="col-sm-4">@L["Admin.CreatedAt"]</dt>
+                            <dd class="col-sm-8">@AdminOperationsPresenter.Time(detail.CreatedAtUtc)</dd>
+                            <dt class="col-sm-4">@L["Admin.UpdatedAt"]</dt>
+                            <dd class="col-sm-8">@AdminOperationsPresenter.Time(detail.UpdatedAtUtc)</dd>
+                            <dt class="col-sm-4">@L["Admin.Ops.Membership"]</dt>
+                            <dd class="col-sm-8">
+                                @if (detail.Membership is { } membership)
+                                {
+                                    <span class="fw-medium">@membership.PlanCode</span>
+                                    <span class="text-body-secondary">· @membership.BillingPeriod · @L[AdminOperationsPresenter.MembershipStatusKey(membership.Status)]</span>
+                                    @if (membership.TrialEndsAtUtc is { } trialEnds)
+                                    {
+                                        <span class="d-block">@L["Admin.Ops.Membership.TrialEnds"]: @AdminOperationsPresenter.Time(trialEnds)</span>
+                                    }
+                                    @if (membership.CurrentPeriodEndsAtUtc is { } periodEnds)
+                                    {
+                                        <span class="d-block">@L["Admin.Ops.Membership.PeriodEnds"]: @AdminOperationsPresenter.Time(periodEnds)</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-body-secondary">@L["Admin.Ops.Membership.None"]</span>
+                                }
+                            </dd>
+                        </dl>
+                    </div>
+                </section>
+            </div>
+
+            @* 2. Provisioning *@
+            <div class="col-12 col-xl-6">
+                <section class="card wasla-admin-card h-100" aria-labelledby="opsProvisioningHeading">
+                    <div class="card-header"><h2 id="opsProvisioningHeading" class="h6 mb-0">@L["Admin.Ops.Section.Provisioning"]</h2></div>
+                    <div class="card-body">
+                        <dl class="row small mb-0 wasla-admin-dl">
+                            <dt class="col-sm-4">@L["Admin.Ops.Provisioning.Registration"]</dt>
+                            <dd class="col-sm-8">
+                                @if (detail.Registration is { } registration)
+                                {
+                                    <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Registration(registration.Status)" />
+                                    <a class="ms-1" href="/admin/pending-registrations/@registration.Id">@L["Admin.Ops.Provisioning.OpenRegistration"]</a>
+                                }
+                                else
+                                {
+                                    <span class="text-body-secondary">@L["Admin.Ops.Provisioning.NoRegistration"]</span>
+                                }
+                            </dd>
+                            @if (detail.Registration is { } reg)
+                            {
+                                <dt class="col-sm-4">@L["Admin.CreatedAt"]</dt>
+                                <dd class="col-sm-8">@AdminOperationsPresenter.Time(reg.CreatedAtUtc)</dd>
+                                <dt class="col-sm-4">@L["Admin.PendingReg.PaymentSucceededAt"]</dt>
+                                <dd class="col-sm-8">@AdminOperationsPresenter.Time(reg.PaymentSucceededAtUtc)</dd>
+                                @if (reg.PaymentFailedAtUtc is not null)
+                                {
+                                    <dt class="col-sm-4">@L["Admin.PendingReg.PaymentFailedAt"]</dt>
+                                    <dd class="col-sm-8">@AdminOperationsPresenter.Time(reg.PaymentFailedAtUtc)</dd>
+                                }
+                                <dt class="col-sm-4">@L["Admin.PendingReg.ProvisionedAt"]</dt>
+                                <dd class="col-sm-8">@AdminOperationsPresenter.Time(reg.ProvisionedAtUtc)</dd>
+                            }
+                            <dt class="col-sm-4">@L["Admin.Ops.Provisioning.LastMigrationRecord"]</dt>
+                            <dd class="col-sm-8">
+                                <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.MigrationRecord(detail.MigrationRecord)" />
+                                <span class="d-block mt-1">@AdminOperationsPresenter.Time(detail.LastMigrationAtUtc)</span>
+                            </dd>
+                        </dl>
+                        <p class="small text-body-secondary mt-3 mb-0">@L["Admin.Ops.Provisioning.Note"]</p>
+                    </div>
+                </section>
+            </div>
+
+            @* 3. Database and migrations *@
+            <div class="col-12 col-xl-6">
+                <section class="card wasla-admin-card h-100" aria-labelledby="opsDatabaseHeading">
+                    <div class="card-header"><h2 id="opsDatabaseHeading" class="h6 mb-0">@L["Admin.Ops.Section.Database"]</h2></div>
+                    <div class="card-body">
+                        <dl class="row small mb-0 wasla-admin-dl">
+                            <dt class="col-sm-4">@L["Admin.Ops.Database.Connection"]</dt>
+                            <dd class="col-sm-8"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Database(health.Database)" /></dd>
+                            <dt class="col-sm-4">@L["Admin.DatabaseName"]</dt>
+                            <dd class="col-sm-8"><code class="text-break">@detail.DatabaseName</code></dd>
+                            @if (health.Migrations is { } migrations)
+                            {
+                                <dt class="col-sm-4">@L["Admin.Ops.Migrations.Title"]</dt>
+                                <dd class="col-sm-8">
+                                    <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Migrations(migrations.State)" />
+                                    @if (migrations.PendingCount > 0)
+                                    {
+                                        <span class="d-block mt-1">@L["Admin.Ops.Migrations.PendingCount", migrations.PendingCount]</span>
+                                    }
+                                </dd>
+                                <dt class="col-sm-4">@L["Admin.Ops.Migrations.Applied"]</dt>
+                                <dd class="col-sm-8"><code class="text-break">@(migrations.LatestAppliedMigration ?? "—")</code> <span class="text-body-secondary">(@migrations.AppliedCount)</span></dd>
+                                <dt class="col-sm-4">@L["Admin.Ops.Migrations.Expected"]</dt>
+                                <dd class="col-sm-8"><code class="text-break">@(migrations.LatestExpectedMigration ?? "—")</code> <span class="text-body-secondary">(@migrations.ExpectedCount)</span></dd>
+                            }
+                        </dl>
+                        @if (!health.IsReachable)
+                        {
+                            <div class="alert alert-secondary small mt-3 mb-0" role="status">
+                                <p class="fw-semibold mb-1">@L["Admin.Ops.Database.UnavailablePanelTitle"]</p>
+                                <p class="mb-0">@L["Admin.Ops.Database.UnavailablePanelBody"]</p>
+                            </div>
+                        }
+                        <p class="small text-body-secondary mt-3 mb-0">@L["Admin.Ops.Migrations.ReadOnlyNote"]</p>
+                    </div>
+                </section>
+            </div>
+
+            @* 4. Operational mode *@
+            <div class="col-12 col-xl-6">
+                <section class="card wasla-admin-card h-100" aria-labelledby="opsModeHeading">
+                    <div class="card-header"><h2 id="opsModeHeading" class="h6 mb-0">@L["Admin.Ops.Section.OperationalMode"]</h2></div>
+                    <div class="card-body">
+                        @if (health.Automation is { } automation)
+                        {
+                            <dl class="row small mb-0 wasla-admin-dl">
+                                <dt class="col-sm-5">@L["Admin.Ops.Mode.Title"]</dt>
+                                <dd class="col-sm-7"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.OperationalMode(automation.Mode)" /></dd>
+                                <dt class="col-sm-5">@L["Admin.Ops.Automation.OrderSync"]</dt>
+                                <dd class="col-sm-7"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Automation(automation.OrderSync)" /></dd>
+                                <dt class="col-sm-5">@L["Admin.Ops.Automation.AutoApprove"]</dt>
+                                <dd class="col-sm-7"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Automation(automation.AutoApprove)" /></dd>
+                                <dt class="col-sm-5">@L["Admin.Ops.Automation.AutoReceipt"]</dt>
+                                <dd class="col-sm-7"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Automation(automation.AutoReceipt)" /></dd>
+                                @if (health.GuidedSetup is { } guided)
+                                {
+                                    <dt class="col-sm-5">@L["Admin.Ops.GuidedSetup.Title"]</dt>
+                                    <dd class="col-sm-7">@L["Admin.Ops.GuidedSetup.Counts", guided.InProgress, guided.Completed, guided.Skipped]</dd>
+                                }
+                                @if (health.Users is { } users)
+                                {
+                                    <dt class="col-sm-5">@L["Admin.Ops.Users.Title"]</dt>
+                                    <dd class="col-sm-7">@L["Admin.Ops.Users.Counts", users.ActiveUsers, users.ActiveOwners]</dd>
+                                }
+                            </dl>
+                        }
+                        else
+                        {
+                            <p class="small text-body-secondary mb-0">@L["Admin.Ops.SectionUnavailable"]</p>
+                        }
+                    </div>
+                </section>
+            </div>
+
+            @* 5. Provider connections *@
+            <div class="col-12">
+                <section class="card wasla-admin-card" aria-labelledby="opsProvidersHeading">
+                    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <h2 id="opsProvidersHeading" class="h6 mb-0">@L["Admin.Ops.Section.Providers"]</h2>
+                        <span class="small text-body-secondary">@L["Admin.Ops.ProviderMode.Process"]: <span class="fw-medium">@L[AdminOperationsPresenter.ProviderModeKey(health.ProviderMode)]</span></span>
+                    </div>
+                    @if (health.Connections is not { } connections)
+                    {
+                        <div class="card-body"><p class="small text-body-secondary mb-0">@L["Admin.Ops.SectionUnavailable"]</p></div>
+                    }
+                    else if (connections.Count == 0)
+                    {
+                        <div class="card-body"><p class="small text-body-secondary mb-0">@L["Admin.Ops.Providers.None"]</p></div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th scope="col">@L["Admin.Ops.Providers.Platform"]</th>
+                                    <th scope="col">@L["Admin.Ops.Providers.Health"]</th>
+                                    <th scope="col" class="d-none d-md-table-cell">@L["Admin.Ops.Providers.LastSuccess"]</th>
+                                    <th scope="col" class="d-none d-md-table-cell">@L["Admin.Ops.Providers.LastFailure"]</th>
+                                    <th scope="col" class="d-none d-lg-table-cell">@L["Admin.Ops.Providers.Client"]</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var connection in connections)
+                                {
+                                    <tr>
+                                        <th scope="row" class="fw-medium">
+                                            @L[AdminOperationsPresenter.PlatformKey(connection.Platform)]
+                                            @if (connection.StoreId is { } storeId)
+                                            {
+                                                <span class="d-block small text-body-secondary fw-normal">@L["Admin.Ops.Providers.Store"]: <code>@storeId</code></span>
+                                            }
+                                        </th>
+                                        <td>
+                                            <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Connection(connection.State)" />
+                                            @if (connection.ConsecutiveFailures > 0)
+                                            {
+                                                <span class="d-block small mt-1">@L["Admin.Ops.Providers.ConsecutiveFailures", connection.ConsecutiveFailures]</span>
+                                            }
+                                            @if (connection.CircuitOpenUntilUtc is { } openUntil && openUntil > health.ReadAtUtc)
+                                            {
+                                                <span class="d-block small">@L["Admin.Ops.Providers.PausedUntil"]: @AdminOperationsPresenter.Time(openUntil)</span>
+                                            }
+                                            <span class="d-block d-md-none small text-body-secondary mt-1">@L["Admin.Ops.Providers.LastSuccess"]: @AdminOperationsPresenter.Time(connection.LastSuccessfulSyncUtc)</span>
+                                        </td>
+                                        <td class="small d-none d-md-table-cell">
+                                            @AdminOperationsPresenter.Time(connection.LastSuccessfulSyncUtc)
+                                            @if (Age(connection.LastSuccessfulSyncUtc) is { } successAge)
+                                            {
+                                                <span class="d-block text-body-secondary">@successAge</span>
+                                            }
+                                        </td>
+                                        <td class="small d-none d-md-table-cell">
+                                            @AdminOperationsPresenter.Time(connection.LastFailedSyncUtc)
+                                            @if (Age(connection.LastFailedSyncUtc) is { } failureAge)
+                                            {
+                                                <span class="d-block text-body-secondary">@failureAge</span>
+                                            }
+                                        </td>
+                                        <td class="small d-none d-lg-table-cell">
+                                            @L[AdminOperationsPresenter.ClientKindKey(connection.ClientKind)]
+                                            <span class="d-block text-body-secondary">@(connection.IsActive ? L["Admin.Ops.Providers.Enabled"] : L["Admin.Ops.Providers.DisabledLabel"])</span>
+                                        </td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer small text-body-secondary">@L["Admin.Ops.Providers.Note"]</div>
+                    }
+                </section>
+            </div>
+
+            @* 6. Orders *@
+            <div class="col-12 col-xl-6">
+                <section class="card wasla-admin-card h-100" aria-labelledby="opsOrdersHeading">
+                    <div class="card-header"><h2 id="opsOrdersHeading" class="h6 mb-0">@L["Admin.Ops.Section.Orders"]</h2></div>
+                    <div class="card-body">
+                        @if (health.Orders is { } orders)
+                        {
+                            <div class="row g-2 row-cols-3 mb-3">
+                                <div class="col"><div class="wasla-admin-metric wasla-admin-metric--compact"><span class="wasla-admin-metric__label">@L["Admin.Ops.Orders.Last24Hours"]</span><span class="wasla-admin-metric__value">@orders.ReceivedLast24Hours</span></div></div>
+                                <div class="col"><div class="wasla-admin-metric wasla-admin-metric--compact"><span class="wasla-admin-metric__label">@L["Admin.Ops.Orders.Last7Days"]</span><span class="wasla-admin-metric__value">@orders.ReceivedLast7Days</span></div></div>
+                                <div class="col"><div class="wasla-admin-metric wasla-admin-metric--compact"><span class="wasla-admin-metric__label">@L["Admin.Ops.Orders.Open"]</span><span class="wasla-admin-metric__value">@orders.OpenOrders</span></div></div>
+                            </div>
+                            <p class="small mb-0">
+                                @L["Admin.Ops.Orders.Latest"]: @AdminOperationsPresenter.Time(orders.LatestReceivedAtUtc)
+                                @if (Age(orders.LatestReceivedAtUtc) is { } latestAge)
+                                {
+                                    <span class="text-body-secondary">(@latestAge)</span>
+                                }
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="small text-body-secondary mb-0">@L["Admin.Ops.SectionUnavailable"]</p>
+                        }
+                    </div>
+                </section>
+            </div>
+
+            @* 7. Print Bridge *@
+            <div class="col-12 col-xl-6">
+                <section class="card wasla-admin-card h-100" aria-labelledby="opsPrintBridgeHeading">
+                    <div class="card-header"><h2 id="opsPrintBridgeHeading" class="h6 mb-0">@L["Admin.Ops.Section.PrintBridge"]</h2></div>
+                    @if (detail.PrintBridgeDevices.Count == 0)
+                    {
+                        <div class="card-body"><p class="small text-body-secondary mb-0">@L["Admin.Ops.PrintBridge.NoDevices"]</p></div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var device in detail.PrintBridgeDevices)
+                            {
+                                <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <div class="min-w-0 small">
+                                        <span class="fw-medium d-block text-break">@device.Name</span>
+                                        <span class="text-body-secondary">
+                                            @L["Admin.Ops.PrintBridge.LastSeen"]: @AdminOperationsPresenter.Time(device.LastSeenAtUtc)
+                                            @if (Age(device.LastSeenAtUtc) is { } seenAge)
+                                            {
+                                                <text>(@seenAge)</text>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(device.AppVersion))
+                                            {
+                                                <text> · v@(device.AppVersion)</text>
+                                            }
+                                        </span>
+                                    </div>
+                                    <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.PrintBridge(device.ConnectionStatus)" />
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <div class="card-body border-top small">
+                        @if (health.PrintJobs is { } jobs)
+                        {
+                            <span>@L["Admin.Ops.PrintJobs.Counts", jobs.Queued, jobs.FailedLast24Hours]</span>
+                        }
+                        else
+                        {
+                            <span class="text-body-secondary">@L["Admin.Ops.PrintJobs.Unavailable"]</span>
+                        }
+                        <p class="text-body-secondary mt-2 mb-0">@L["Admin.Ops.PrintBridge.ThresholdNote"]</p>
+                    </div>
+                </section>
+            </div>
+
+            @* Existing administrative state change, kept as it was before this page. *@
+            <div class="col-12">
+                <section class="card wasla-admin-card" aria-labelledby="opsAdminStateHeading">
+                    <div class="card-header"><h2 id="opsAdminStateHeading" class="h6 mb-0">@L["Admin.Ops.Section.AdministrativeState"]</h2></div>
+                    <div class="card-body d-flex flex-wrap align-items-center gap-2">
+                        <a class="btn btn-sm btn-outline-secondary" href="/admin/customers">@L["Admin.Ops.BackToTenants"]</a>
+                        @if (detail.IsActive)
+                        {
+                            <form method="post" action="/admin/customers/@detail.Id/deactivate" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-warning">@L["Admin.Deactivate"]</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" action="/admin/customers/@detail.Id/activate" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-success">@L["Admin.Activate"]</button>
+                            </form>
+                        }
+                    </div>
+                </section>
+            </div>
+        </div>
     }
 </div>

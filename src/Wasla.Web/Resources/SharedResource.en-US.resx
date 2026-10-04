@@ -3912,4 +3912,171 @@
   <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Before using the reset, stop Wasla.Worker, close the Print Bridge application and make sure no Print Bridge setup is currently in progress. Otherwise a sync cycle or setup that is still running could add data again after the reset, and the mock provider keeps order numbers in memory. Start the Worker again once the reset is done.</value></data>
   <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>The reset only partly finished: the Print Bridge devices were removed, but the rest was rolled back. Run the reset again to complete it.</value></data>
   <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>Automation</value></data>
+  <data name="Admin.Ops.OverviewTitle" xml:space="preserve"><value>Operations overview</value></data>
+  <data name="Admin.Ops.OverviewSubtitle" xml:space="preserve"><value>Restaurant, signup and Print Bridge status from the central registry.</value></data>
+  <data name="Admin.Ops.OverviewCentralOnlyNote" xml:space="preserve"><value>This page reads only the central database. A restaurant&apos;s database, synchronization and order status are checked only on that restaurant&apos;s operations page.</value></data>
+  <data name="Admin.Ops.ReadAt" xml:space="preserve"><value>Read at</value></data>
+  <data name="Admin.Ops.Section.Tenants" xml:space="preserve"><value>Restaurants</value></data>
+  <data name="Admin.Ops.Section.Signup" xml:space="preserve"><value>Signup and provisioning</value></data>
+  <data name="Admin.Ops.Section.PrintBridgeFleet" xml:space="preserve"><value>Print Bridge devices</value></data>
+  <data name="Admin.Ops.Metric.MigrationFailed" xml:space="preserve"><value>Last migration failed</value></data>
+  <data name="Admin.Ops.Metric.MigrationNotRecorded" xml:space="preserve"><value>No migration record</value></data>
+  <data name="Admin.Ops.Metric.NeedsAttention" xml:space="preserve"><value>Needs attention</value></data>
+  <data name="Admin.Ops.Metric.OldestWaiting" xml:space="preserve"><value>Oldest: {0}</value></data>
+  <data name="Admin.Ops.Metric.ExpiredOrCancelled" xml:space="preserve"><value>Expired or cancelled</value></data>
+  <data name="Admin.Ops.Signup.ProvisioningFailuresNotTracked" xml:space="preserve"><value>Failed provisioning attempts are not recorded as a separate state. A paid registration that has not been provisioned stays in the payment-received count.</value></data>
+  <data name="Admin.Ops.PrintBridge.Online" xml:space="preserve"><value>Online</value></data>
+  <data name="Admin.Ops.PrintBridge.Stale" xml:space="preserve"><value>Stale</value></data>
+  <data name="Admin.Ops.PrintBridge.Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="Admin.Ops.PrintBridge.NeverConnected" xml:space="preserve"><value>Never connected</value></data>
+  <data name="Admin.Ops.PrintBridge.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Admin.Ops.PrintBridge.ThresholdNote" xml:space="preserve"><value>Online: last heartbeat at most 60 seconds ago. Stale: at most 5 minutes ago. Offline: older.</value></data>
+  <data name="Admin.Ops.RecentTenants" xml:space="preserve"><value>Recently added restaurants</value></data>
+  <data name="Admin.Ops.LoadError.Title" xml:space="preserve"><value>Central data could not be read</value></data>
+  <data name="Admin.Ops.LoadError.Body" xml:space="preserve"><value>The central database cannot be reached right now. Reload the page in a few minutes; if it continues, check the server logs.</value></data>
+  <data name="Admin.Ops.List.Subtitle" xml:space="preserve"><value>Restaurants in the central registry. Database health is read only on a restaurant&apos;s operations page.</value></data>
+  <data name="Admin.Ops.List.FiltersLabel" xml:space="preserve"><value>Search and filter restaurants</value></data>
+  <data name="Admin.Ops.List.SearchPlaceholder" xml:space="preserve"><value>Name, slug or domain</value></data>
+  <data name="Admin.Ops.List.MigrationRecord" xml:space="preserve"><value>Migration record</value></data>
+  <data name="Admin.Ops.List.AnyMigrationRecord" xml:space="preserve"><value>Any record</value></data>
+  <data name="Admin.Ops.List.AnyPlan" xml:space="preserve"><value>All plans</value></data>
+  <data name="Admin.Ops.List.NoPlan" xml:space="preserve"><value>No membership</value></data>
+  <data name="Admin.Ops.List.PageSize" xml:space="preserve"><value>Per page</value></data>
+  <data name="Admin.Ops.List.ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Admin.Ops.List.NoMatches" xml:space="preserve"><value>No restaurants match these filters.</value></data>
+  <data name="Admin.Ops.List.Showing" xml:space="preserve"><value>Showing {0}–{1} of {2} restaurants</value></data>
+  <data name="Admin.Ops.List.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.List.NoDevices" xml:space="preserve"><value>No devices</value></data>
+  <data name="Admin.Ops.List.DevicesOnline" xml:space="preserve"><value>{0} of {1} online</value></data>
+  <data name="Admin.Ops.List.Operations" xml:space="preserve"><value>Operations</value></data>
+  <data name="Admin.Ops.List.Pagination" xml:space="preserve"><value>Restaurant list pages</value></data>
+  <data name="Admin.Ops.List.PreviousPage" xml:space="preserve"><value>Previous page</value></data>
+  <data name="Admin.Ops.List.NextPage" xml:space="preserve"><value>Next page</value></data>
+  <data name="Admin.Ops.List.PageNumber" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="Admin.Ops.MigrationRecord.Succeeded" xml:space="preserve"><value>Succeeded</value></data>
+  <data name="Admin.Ops.MigrationRecord.Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Admin.Ops.MigrationRecord.NotRecorded" xml:space="preserve"><value>Not recorded</value></data>
+  <data name="Admin.Ops.State.Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Admin.Ops.Database.Reachable" xml:space="preserve"><value>Reachable</value></data>
+  <data name="Admin.Ops.Database.NotConfigured" xml:space="preserve"><value>Not configured</value></data>
+  <data name="Admin.Ops.Database.Unreachable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Admin.Ops.Database.TimedOut" xml:space="preserve"><value>Timed out</value></data>
+  <data name="Admin.Ops.Database.ConfigurationUnreadable" xml:space="preserve"><value>Connection details unreadable</value></data>
+  <data name="Admin.Ops.Database.Connection" xml:space="preserve"><value>Database</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelTitle" xml:space="preserve"><value>The restaurant database could not be read</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelBody" xml:space="preserve"><value>Database, migration, mode, connection and order details cannot be shown. Identity, provisioning and Print Bridge details come from the central registry and are shown on this page. Details are in the server logs.</value></data>
+  <data name="Admin.Ops.Migrations.Title" xml:space="preserve"><value>Migrations</value></data>
+  <data name="Admin.Ops.Migrations.Current" xml:space="preserve"><value>Up to date</value></data>
+  <data name="Admin.Ops.Migrations.Pending" xml:space="preserve"><value>Migrations pending</value></data>
+  <data name="Admin.Ops.Migrations.DatabaseAhead" xml:space="preserve"><value>Database newer than app</value></data>
+  <data name="Admin.Ops.Migrations.PendingCount" xml:space="preserve"><value>{0} pending</value></data>
+  <data name="Admin.Ops.Migrations.Applied" xml:space="preserve"><value>Latest applied</value></data>
+  <data name="Admin.Ops.Migrations.Expected" xml:space="preserve"><value>Expected by this app</value></data>
+  <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>This page only reads; migrations are applied with the CLI as part of the release procedure.</value></data>
+  <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>Operational mode</value></data>
+  <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>Live</value></data>
+  <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>Setup</value></data>
+  <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>Order sync</value></data>
+  <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>Auto-approve</value></data>
+  <data name="Admin.Ops.Automation.AutoReceipt" xml:space="preserve"><value>Automatic receipts</value></data>
+  <data name="Admin.Ops.Automation.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Ops.Automation.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Admin.Ops.Automation.PendingSetup" xml:space="preserve"><value>Active once setup completes</value></data>
+  <data name="Admin.Ops.GuidedSetup.Title" xml:space="preserve"><value>Guided setup</value></data>
+  <data name="Admin.Ops.GuidedSetup.Counts" xml:space="preserve"><value>In progress: {0} · Completed: {1} · Skipped: {2}</value></data>
+  <data name="Admin.Ops.Users.Title" xml:space="preserve"><value>Users</value></data>
+  <data name="Admin.Ops.Users.Counts" xml:space="preserve"><value>Active users: {0} · Active owners: {1}</value></data>
+  <data name="Admin.Ops.SectionUnavailable" xml:space="preserve"><value>This section could not be read.</value></data>
+  <data name="Admin.Ops.Section.Guidance" xml:space="preserve"><value>Next steps</value></data>
+  <data name="Admin.Ops.Section.Identity" xml:space="preserve"><value>Restaurant</value></data>
+  <data name="Admin.Ops.Section.Provisioning" xml:space="preserve"><value>Provisioning</value></data>
+  <data name="Admin.Ops.Section.Database" xml:space="preserve"><value>Database and migrations</value></data>
+  <data name="Admin.Ops.Section.OperationalMode" xml:space="preserve"><value>Operational mode and automation</value></data>
+  <data name="Admin.Ops.Section.Providers" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="Admin.Ops.Section.Orders" xml:space="preserve"><value>Orders</value></data>
+  <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>Account state</value></data>
+  <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>Status summary</value></data>
+  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>opens in a new tab</value></data>
+  <data name="Admin.Ops.Membership" xml:space="preserve"><value>Membership</value></data>
+  <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>Trial</value></data>
+  <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Ops.Membership.PendingPayment" xml:space="preserve"><value>Payment pending</value></data>
+  <data name="Admin.Ops.Membership.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.Ops.Membership.None" xml:space="preserve"><value>No membership record</value></data>
+  <data name="Admin.Ops.Membership.TrialEnds" xml:space="preserve"><value>Trial ends</value></data>
+  <data name="Admin.Ops.Membership.PeriodEnds" xml:space="preserve"><value>Period ends</value></data>
+  <data name="Admin.Ops.Provisioning.Registration" xml:space="preserve"><value>Signup registration</value></data>
+  <data name="Admin.Ops.Provisioning.OpenRegistration" xml:space="preserve"><value>Open registration</value></data>
+  <data name="Admin.Ops.Provisioning.NoRegistration" xml:space="preserve"><value>No linked registration (for example, created with the CLI)</value></data>
+  <data name="Admin.Ops.Provisioning.LastMigrationRecord" xml:space="preserve"><value>Last migration record</value></data>
+  <data name="Admin.Ops.Provisioning.Note" xml:space="preserve"><value>Failure text is not shown; details are in the CLI output and server logs.</value></data>
+  <data name="Admin.Ops.ProviderMode.Process" xml:space="preserve"><value>Provider mode</value></data>
+  <data name="Admin.Ops.ProviderMode.Mock" xml:space="preserve"><value>Mock</value></data>
+  <data name="Admin.Ops.ProviderMode.Real" xml:space="preserve"><value>Real</value></data>
+  <data name="Admin.Ops.ProviderMode.NotRegistered" xml:space="preserve"><value>No client registered</value></data>
+  <data name="Admin.Ops.Providers.None" xml:space="preserve"><value>No platform connected.</value></data>
+  <data name="Admin.Ops.Providers.Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Admin.Ops.Providers.Health" xml:space="preserve"><value>Health</value></data>
+  <data name="Admin.Ops.Providers.LastSuccess" xml:space="preserve"><value>Last successful sync</value></data>
+  <data name="Admin.Ops.Providers.LastFailure" xml:space="preserve"><value>Last failed sync (7 days)</value></data>
+  <data name="Admin.Ops.Providers.Client" xml:space="preserve"><value>Client</value></data>
+  <data name="Admin.Ops.Providers.Store" xml:space="preserve"><value>Store</value></data>
+  <data name="Admin.Ops.Providers.ConsecutiveFailures" xml:space="preserve"><value>Consecutive failures: {0}</value></data>
+  <data name="Admin.Ops.Providers.PausedUntil" xml:space="preserve"><value>Paused until</value></data>
+  <data name="Admin.Ops.Providers.Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="Admin.Ops.Providers.DisabledLabel" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Admin.Ops.Providers.Note" xml:space="preserve"><value>Credentials and error text are not shown. The restaurant owner manages connections in their own panel.</value></data>
+  <data name="Admin.Ops.Connection.Healthy" xml:space="preserve"><value>Healthy</value></data>
+  <data name="Admin.Ops.Connection.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Admin.Ops.Connection.SyncOff" xml:space="preserve"><value>Sync off</value></data>
+  <data name="Admin.Ops.Connection.CircuitOpen" xml:space="preserve"><value>Paused after repeated failures</value></data>
+  <data name="Admin.Ops.Connection.Failing" xml:space="preserve"><value>Failing</value></data>
+  <data name="Admin.Ops.Connection.NeverSynced" xml:space="preserve"><value>Not synced yet</value></data>
+  <data name="Admin.Ops.Connection.Stale" xml:space="preserve"><value>Sync overdue</value></data>
+  <data name="Admin.Ops.Orders.Last24Hours" xml:space="preserve"><value>Last 24 hours</value></data>
+  <data name="Admin.Ops.Orders.Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="Admin.Ops.Orders.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Admin.Ops.Orders.Latest" xml:space="preserve"><value>Latest order</value></data>
+  <data name="Admin.Ops.PrintBridge.NoDevices" xml:space="preserve"><value>No Print Bridge device is registered.</value></data>
+  <data name="Admin.Ops.PrintBridge.LastSeen" xml:space="preserve"><value>Last seen</value></data>
+  <data name="Admin.Ops.PrintJobs.Counts" xml:space="preserve"><value>Queued print jobs: {0} · Failed in the last 24 hours: {1}</value></data>
+  <data name="Admin.Ops.PrintJobs.Unavailable" xml:space="preserve"><value>Print job counts could not be read.</value></data>
+  <data name="Admin.Ops.Guidance.ReadOnlyNote" xml:space="preserve"><value>These suggestions are based only on what was observed; this page does not repair or change anything.</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Critical" xml:space="preserve"><value>Critical</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Info" xml:space="preserve"><value>Info</value></data>
+  <data name="Admin.Ops.Guidance.Severity.AllClear" xml:space="preserve"><value>All clear</value></data>
+  <data name="Admin.Ops.Age.JustNow" xml:space="preserve"><value>just now</value></data>
+  <data name="Admin.Ops.Age.Minutes" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="Admin.Ops.Age.Hours" xml:space="preserve"><value>{0} h ago</value></data>
+  <data name="Admin.Ops.Age.Days" xml:space="preserve"><value>{0} d ago</value></data>
+  <data name="Admin.Ops.BackToTenants" xml:space="preserve"><value>Back to restaurants</value></data>
+  <data name="Admin.Ops.Guidance.TenantInactive" xml:space="preserve"><value>The restaurant is inactive: users cannot sign in and the Worker does not sync its orders. If this was not intended, confirm with the owner before activating it.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseNotConfigured" xml:space="preserve"><value>No connection details are stored for this restaurant&apos;s database. Provisioning probably did not finish; check the registration and the provisioning CLI output.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseUnreachable" xml:space="preserve"><value>The restaurant database could not be reached. Check that SQL Server is running and that the database exists, then run migration-status from the CLI.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>The restaurant database did not answer within a few seconds. Check that SQL Server is running and that this database exists and accepts the configured login, then reload this page.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>The stored connection details could not be decrypted. Check that this server uses the same ENCRYPTION_MASTER_KEY that provisioned the restaurant.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>The restaurant database could not be checked because of an unexpected error. See the server logs for this restaurant.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>The restaurant database is missing migrations this version needs. Apply them with the CLI (migrate-customer or migrate-all-customers) following the release procedure; features that use new columns may fail until then.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>The restaurant database has migrations this application version does not know. A newer version may have migrated it; check which version is deployed.</value></data>
+  <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>The last recorded migration for this restaurant failed. Run migration-status with the CLI and retry the migration for this restaurant.</value></data>
+  <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>Some sections could not be read. A pending migration is the usual cause; see the server logs.</value></data>
+  <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>The restaurant is still in Setup: orders are synchronized, but nothing is accepted or printed automatically until an owner completes or skips guided setup.</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>The restaurant has no active owner. Only an owner can manage settings, connections and devices; add an owner with the CLI (seed-customer-admin) if needed.</value></data>
+  <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>No delivery platform is connected, so no orders can arrive. The owner adds a connection under Platform connections.</value></data>
+  <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>Every platform connection is disabled, so no orders are fetched. Confirm with the owner whether this is intended.</value></data>
+  <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>Order sync is turned off in the restaurant&apos;s settings; the Worker skips it. Existing orders stay visible.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionCircuitOpen" xml:space="preserve"><value>A platform connection is paused after repeated failures. Check the platform&apos;s status and ask the owner to verify the connection&apos;s credentials.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionFailing" xml:space="preserve"><value>A platform connection&apos;s last sync attempts failed. If it continues, check the platform&apos;s status and the connection&apos;s credentials.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionStale" xml:space="preserve"><value>A platform connection has not synced successfully for more than 10 minutes. Check that the Worker is running.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionNeverSynced" xml:space="preserve"><value>A platform connection has never synced successfully. If it was added a while ago, check that the Worker is running.</value></data>
+  <data name="Admin.Ops.Guidance.NoRecentOrders" xml:space="preserve"><value>Connections are syncing, but no order has arrived in the last 7 days. Confirm with the owner that the store is open on the platforms.</value></data>
+  <data name="Admin.Ops.Guidance.NoPrintBridgeDevice" xml:space="preserve"><value>No Print Bridge device is registered; receipts can be printed only once a device is set up.</value></data>
+  <data name="Admin.Ops.Guidance.AutoReceiptWithoutDevice" xml:space="preserve"><value>Automatic receipts are active, but no Print Bridge device is registered. Receipts wait in the queue until the owner sets up a device.</value></data>
+  <data name="Admin.Ops.Guidance.PrintBridgeOffline" xml:space="preserve"><value>No active Print Bridge device is online. Ask the restaurant to check that the Print Bridge computer is on and connected.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsQueuedWithoutOnlineDevice" xml:space="preserve"><value>Print jobs are waiting while no device is online; a device picks them up when it reconnects.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>Some print jobs failed in the last 24 hours. The owner can check the printer on the Print Bridge computer.</value></data>
+  <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>The linked signup registration is not marked provisioned. Open it to review its state; do not change it by hand.</value></data>
+  <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Nothing needs attention right now.</value></data>
 </root>

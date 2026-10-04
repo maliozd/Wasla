@@ -4396,4 +4396,171 @@
   <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Перед сбросом остановите Wasla.Worker, закройте приложение Print Bridge и убедитесь, что сейчас не выполняется настройка Print Bridge. Иначе ещё идущий цикл синхронизации или настройка могут снова добавить данные после сброса, а тестовый (mock) провайдер хранит номера заказов в памяти. После завершения сброса снова запустите Worker.</value></data>
   <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>Сброс выполнен лишь частично: устройства Print Bridge удалены, но остальные изменения отменены. Запустите сброс ещё раз, чтобы завершить его.</value></data>
   <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>Автоматизация</value></data>
+  <data name="Admin.Ops.OverviewTitle" xml:space="preserve"><value>Обзор операций</value></data>
+  <data name="Admin.Ops.OverviewSubtitle" xml:space="preserve"><value>Состояние ресторанов, регистраций и Print Bridge по центральному реестру.</value></data>
+  <data name="Admin.Ops.OverviewCentralOnlyNote" xml:space="preserve"><value>Эта страница читает только центральную базу данных. База данных ресторана, синхронизация и заказы проверяются только на странице операций этого ресторана.</value></data>
+  <data name="Admin.Ops.ReadAt" xml:space="preserve"><value>Время чтения</value></data>
+  <data name="Admin.Ops.Section.Tenants" xml:space="preserve"><value>Рестораны</value></data>
+  <data name="Admin.Ops.Section.Signup" xml:space="preserve"><value>Регистрация и подготовка</value></data>
+  <data name="Admin.Ops.Section.PrintBridgeFleet" xml:space="preserve"><value>Устройства Print Bridge</value></data>
+  <data name="Admin.Ops.Metric.MigrationFailed" xml:space="preserve"><value>Последняя миграция не удалась</value></data>
+  <data name="Admin.Ops.Metric.MigrationNotRecorded" xml:space="preserve"><value>Нет записи о миграции</value></data>
+  <data name="Admin.Ops.Metric.NeedsAttention" xml:space="preserve"><value>Требует внимания</value></data>
+  <data name="Admin.Ops.Metric.OldestWaiting" xml:space="preserve"><value>Самая давняя: {0}</value></data>
+  <data name="Admin.Ops.Metric.ExpiredOrCancelled" xml:space="preserve"><value>Истекли или отменены</value></data>
+  <data name="Admin.Ops.Signup.ProvisioningFailuresNotTracked" xml:space="preserve"><value>Неудачные попытки подготовки не сохраняются как отдельное состояние. Оплаченная, но не подготовленная регистрация остаётся в числе полученных оплат.</value></data>
+  <data name="Admin.Ops.PrintBridge.Online" xml:space="preserve"><value>В сети</value></data>
+  <data name="Admin.Ops.PrintBridge.Stale" xml:space="preserve"><value>Сигнал устарел</value></data>
+  <data name="Admin.Ops.PrintBridge.Offline" xml:space="preserve"><value>Не в сети</value></data>
+  <data name="Admin.Ops.PrintBridge.NeverConnected" xml:space="preserve"><value>Ни разу не подключалось</value></data>
+  <data name="Admin.Ops.PrintBridge.Disabled" xml:space="preserve"><value>Отключено</value></data>
+  <data name="Admin.Ops.PrintBridge.ThresholdNote" xml:space="preserve"><value>В сети: последний сигнал не более 60 секунд назад. Сигнал устарел: не более 5 минут назад. Не в сети: давнее.</value></data>
+  <data name="Admin.Ops.RecentTenants" xml:space="preserve"><value>Недавно добавленные рестораны</value></data>
+  <data name="Admin.Ops.LoadError.Title" xml:space="preserve"><value>Не удалось прочитать центральные данные</value></data>
+  <data name="Admin.Ops.LoadError.Body" xml:space="preserve"><value>Центральная база данных сейчас недоступна. Обновите страницу через несколько минут; если проблема сохранится, проверьте журналы сервера.</value></data>
+  <data name="Admin.Ops.List.Subtitle" xml:space="preserve"><value>Рестораны в центральном реестре. Состояние базы данных читается только на странице операций ресторана.</value></data>
+  <data name="Admin.Ops.List.FiltersLabel" xml:space="preserve"><value>Поиск и фильтрация ресторанов</value></data>
+  <data name="Admin.Ops.List.SearchPlaceholder" xml:space="preserve"><value>Название, слаг или домен</value></data>
+  <data name="Admin.Ops.List.MigrationRecord" xml:space="preserve"><value>Запись о миграции</value></data>
+  <data name="Admin.Ops.List.AnyMigrationRecord" xml:space="preserve"><value>Любая запись</value></data>
+  <data name="Admin.Ops.List.AnyPlan" xml:space="preserve"><value>Все тарифы</value></data>
+  <data name="Admin.Ops.List.NoPlan" xml:space="preserve"><value>Нет подписки</value></data>
+  <data name="Admin.Ops.List.PageSize" xml:space="preserve"><value>На странице</value></data>
+  <data name="Admin.Ops.List.ClearFilters" xml:space="preserve"><value>Сбросить фильтры</value></data>
+  <data name="Admin.Ops.List.NoMatches" xml:space="preserve"><value>Нет ресторанов, соответствующих этим фильтрам.</value></data>
+  <data name="Admin.Ops.List.Showing" xml:space="preserve"><value>Показаны {0}–{1} из {2} ресторанов</value></data>
+  <data name="Admin.Ops.List.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.List.NoDevices" xml:space="preserve"><value>Нет устройств</value></data>
+  <data name="Admin.Ops.List.DevicesOnline" xml:space="preserve"><value>{0} из {1} в сети</value></data>
+  <data name="Admin.Ops.List.Operations" xml:space="preserve"><value>Операции</value></data>
+  <data name="Admin.Ops.List.Pagination" xml:space="preserve"><value>Страницы списка ресторанов</value></data>
+  <data name="Admin.Ops.List.PreviousPage" xml:space="preserve"><value>Предыдущая страница</value></data>
+  <data name="Admin.Ops.List.NextPage" xml:space="preserve"><value>Следующая страница</value></data>
+  <data name="Admin.Ops.List.PageNumber" xml:space="preserve"><value>Страница {0}</value></data>
+  <data name="Admin.Ops.MigrationRecord.Succeeded" xml:space="preserve"><value>Успешно</value></data>
+  <data name="Admin.Ops.MigrationRecord.Failed" xml:space="preserve"><value>Ошибка</value></data>
+  <data name="Admin.Ops.MigrationRecord.NotRecorded" xml:space="preserve"><value>Не записано</value></data>
+  <data name="Admin.Ops.State.Unknown" xml:space="preserve"><value>Неизвестно</value></data>
+  <data name="Admin.Ops.Database.Reachable" xml:space="preserve"><value>Доступна</value></data>
+  <data name="Admin.Ops.Database.NotConfigured" xml:space="preserve"><value>Не настроена</value></data>
+  <data name="Admin.Ops.Database.Unreachable" xml:space="preserve"><value>Недоступна</value></data>
+  <data name="Admin.Ops.Database.TimedOut" xml:space="preserve"><value>Превышено время ожидания</value></data>
+  <data name="Admin.Ops.Database.ConfigurationUnreadable" xml:space="preserve"><value>Данные подключения не читаются</value></data>
+  <data name="Admin.Ops.Database.Connection" xml:space="preserve"><value>База данных</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelTitle" xml:space="preserve"><value>Не удалось прочитать базу данных ресторана</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelBody" xml:space="preserve"><value>Сведения о базе данных, миграциях, режиме, подключениях и заказах показать нельзя. Данные о ресторане, подготовке и Print Bridge берутся из центрального реестра и показаны на этой странице. Подробности — в журналах сервера.</value></data>
+  <data name="Admin.Ops.Migrations.Title" xml:space="preserve"><value>Миграции</value></data>
+  <data name="Admin.Ops.Migrations.Current" xml:space="preserve"><value>Актуальны</value></data>
+  <data name="Admin.Ops.Migrations.Pending" xml:space="preserve"><value>Есть ожидающие миграции</value></data>
+  <data name="Admin.Ops.Migrations.DatabaseAhead" xml:space="preserve"><value>База новее приложения</value></data>
+  <data name="Admin.Ops.Migrations.PendingCount" xml:space="preserve"><value>Ожидают: {0}</value></data>
+  <data name="Admin.Ops.Migrations.Applied" xml:space="preserve"><value>Последняя применённая</value></data>
+  <data name="Admin.Ops.Migrations.Expected" xml:space="preserve"><value>Ожидается приложением</value></data>
+  <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>Эта страница только читает; миграции применяются через CLI в рамках процедуры выпуска.</value></data>
+  <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>Режим работы</value></data>
+  <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>Рабочий</value></data>
+  <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>Настройка</value></data>
+  <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>Синхронизация заказов</value></data>
+  <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>Автопринятие</value></data>
+  <data name="Admin.Ops.Automation.AutoReceipt" xml:space="preserve"><value>Автоматические чеки</value></data>
+  <data name="Admin.Ops.Automation.Active" xml:space="preserve"><value>Активно</value></data>
+  <data name="Admin.Ops.Automation.Off" xml:space="preserve"><value>Выключено</value></data>
+  <data name="Admin.Ops.Automation.PendingSetup" xml:space="preserve"><value>Включится после настройки</value></data>
+  <data name="Admin.Ops.GuidedSetup.Title" xml:space="preserve"><value>Пошаговая настройка</value></data>
+  <data name="Admin.Ops.GuidedSetup.Counts" xml:space="preserve"><value>В процессе: {0} · Завершили: {1} · Пропустили: {2}</value></data>
+  <data name="Admin.Ops.Users.Title" xml:space="preserve"><value>Пользователи</value></data>
+  <data name="Admin.Ops.Users.Counts" xml:space="preserve"><value>Активных пользователей: {0} · Активных владельцев: {1}</value></data>
+  <data name="Admin.Ops.SectionUnavailable" xml:space="preserve"><value>Этот раздел не удалось прочитать.</value></data>
+  <data name="Admin.Ops.Section.Guidance" xml:space="preserve"><value>Следующие шаги</value></data>
+  <data name="Admin.Ops.Section.Identity" xml:space="preserve"><value>Ресторан</value></data>
+  <data name="Admin.Ops.Section.Provisioning" xml:space="preserve"><value>Подготовка</value></data>
+  <data name="Admin.Ops.Section.Database" xml:space="preserve"><value>База данных и миграции</value></data>
+  <data name="Admin.Ops.Section.OperationalMode" xml:space="preserve"><value>Режим работы и автоматизация</value></data>
+  <data name="Admin.Ops.Section.Providers" xml:space="preserve"><value>Подключения к платформам</value></data>
+  <data name="Admin.Ops.Section.Orders" xml:space="preserve"><value>Заказы</value></data>
+  <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>Состояние аккаунта</value></data>
+  <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>Сводка состояния</value></data>
+  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>откроется в новой вкладке</value></data>
+  <data name="Admin.Ops.Membership" xml:space="preserve"><value>Подписка</value></data>
+  <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>Пробный период</value></data>
+  <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>Активна</value></data>
+  <data name="Admin.Ops.Membership.PendingPayment" xml:space="preserve"><value>Ожидает оплаты</value></data>
+  <data name="Admin.Ops.Membership.Cancelled" xml:space="preserve"><value>Отменена</value></data>
+  <data name="Admin.Ops.Membership.None" xml:space="preserve"><value>Нет записи о подписке</value></data>
+  <data name="Admin.Ops.Membership.TrialEnds" xml:space="preserve"><value>Пробный период до</value></data>
+  <data name="Admin.Ops.Membership.PeriodEnds" xml:space="preserve"><value>Период до</value></data>
+  <data name="Admin.Ops.Provisioning.Registration" xml:space="preserve"><value>Заявка на регистрацию</value></data>
+  <data name="Admin.Ops.Provisioning.OpenRegistration" xml:space="preserve"><value>Открыть заявку</value></data>
+  <data name="Admin.Ops.Provisioning.NoRegistration" xml:space="preserve"><value>Нет связанной заявки (например, создан через CLI)</value></data>
+  <data name="Admin.Ops.Provisioning.LastMigrationRecord" xml:space="preserve"><value>Последняя запись о миграции</value></data>
+  <data name="Admin.Ops.Provisioning.Note" xml:space="preserve"><value>Текст ошибки не показывается; подробности — в выводе CLI и журналах сервера.</value></data>
+  <data name="Admin.Ops.ProviderMode.Process" xml:space="preserve"><value>Режим провайдеров</value></data>
+  <data name="Admin.Ops.ProviderMode.Mock" xml:space="preserve"><value>Mock (тест)</value></data>
+  <data name="Admin.Ops.ProviderMode.Real" xml:space="preserve"><value>Real (боевой)</value></data>
+  <data name="Admin.Ops.ProviderMode.NotRegistered" xml:space="preserve"><value>Клиент не зарегистрирован</value></data>
+  <data name="Admin.Ops.Providers.None" xml:space="preserve"><value>Нет подключённых платформ.</value></data>
+  <data name="Admin.Ops.Providers.Platform" xml:space="preserve"><value>Платформа</value></data>
+  <data name="Admin.Ops.Providers.Health" xml:space="preserve"><value>Состояние</value></data>
+  <data name="Admin.Ops.Providers.LastSuccess" xml:space="preserve"><value>Последняя успешная синхронизация</value></data>
+  <data name="Admin.Ops.Providers.LastFailure" xml:space="preserve"><value>Последняя неудачная синхронизация (7 дней)</value></data>
+  <data name="Admin.Ops.Providers.Client" xml:space="preserve"><value>Клиент</value></data>
+  <data name="Admin.Ops.Providers.Store" xml:space="preserve"><value>Магазин</value></data>
+  <data name="Admin.Ops.Providers.ConsecutiveFailures" xml:space="preserve"><value>Ошибок подряд: {0}</value></data>
+  <data name="Admin.Ops.Providers.PausedUntil" xml:space="preserve"><value>Приостановлено до</value></data>
+  <data name="Admin.Ops.Providers.Enabled" xml:space="preserve"><value>Включено</value></data>
+  <data name="Admin.Ops.Providers.DisabledLabel" xml:space="preserve"><value>Отключено</value></data>
+  <data name="Admin.Ops.Providers.Note" xml:space="preserve"><value>Учётные данные и тексты ошибок не показываются. Подключениями управляет владелец ресторана в своей панели.</value></data>
+  <data name="Admin.Ops.Connection.Healthy" xml:space="preserve"><value>Исправно</value></data>
+  <data name="Admin.Ops.Connection.Disabled" xml:space="preserve"><value>Отключено</value></data>
+  <data name="Admin.Ops.Connection.SyncOff" xml:space="preserve"><value>Синхронизация выключена</value></data>
+  <data name="Admin.Ops.Connection.CircuitOpen" xml:space="preserve"><value>Приостановлено после повторных ошибок</value></data>
+  <data name="Admin.Ops.Connection.Failing" xml:space="preserve"><value>Ошибки</value></data>
+  <data name="Admin.Ops.Connection.NeverSynced" xml:space="preserve"><value>Ещё не синхронизировано</value></data>
+  <data name="Admin.Ops.Connection.Stale" xml:space="preserve"><value>Давно не синхронизировалось</value></data>
+  <data name="Admin.Ops.Orders.Last24Hours" xml:space="preserve"><value>За 24 часа</value></data>
+  <data name="Admin.Ops.Orders.Last7Days" xml:space="preserve"><value>За 7 дней</value></data>
+  <data name="Admin.Ops.Orders.Open" xml:space="preserve"><value>Открытые</value></data>
+  <data name="Admin.Ops.Orders.Latest" xml:space="preserve"><value>Последний заказ</value></data>
+  <data name="Admin.Ops.PrintBridge.NoDevices" xml:space="preserve"><value>Нет зарегистрированных устройств Print Bridge.</value></data>
+  <data name="Admin.Ops.PrintBridge.LastSeen" xml:space="preserve"><value>Последний сигнал</value></data>
+  <data name="Admin.Ops.PrintJobs.Counts" xml:space="preserve"><value>Заданий печати в очереди: {0} · Неудачных за 24 часа: {1}</value></data>
+  <data name="Admin.Ops.PrintJobs.Unavailable" xml:space="preserve"><value>Не удалось прочитать количество заданий печати.</value></data>
+  <data name="Admin.Ops.Guidance.ReadOnlyNote" xml:space="preserve"><value>Эти рекомендации основаны только на наблюдениях; страница ничего не исправляет и не изменяет.</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Critical" xml:space="preserve"><value>Критично</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Warning" xml:space="preserve"><value>Предупреждение</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Info" xml:space="preserve"><value>Информация</value></data>
+  <data name="Admin.Ops.Guidance.Severity.AllClear" xml:space="preserve"><value>Всё в порядке</value></data>
+  <data name="Admin.Ops.Age.JustNow" xml:space="preserve"><value>только что</value></data>
+  <data name="Admin.Ops.Age.Minutes" xml:space="preserve"><value>{0} мин назад</value></data>
+  <data name="Admin.Ops.Age.Hours" xml:space="preserve"><value>{0} ч назад</value></data>
+  <data name="Admin.Ops.Age.Days" xml:space="preserve"><value>{0} дн. назад</value></data>
+  <data name="Admin.Ops.BackToTenants" xml:space="preserve"><value>К списку ресторанов</value></data>
+  <data name="Admin.Ops.Guidance.TenantInactive" xml:space="preserve"><value>Ресторан неактивен: пользователи не могут войти, а Worker не синхронизирует его заказы. Если это не задумано, уточните у владельца перед активацией.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseNotConfigured" xml:space="preserve"><value>Для базы данных этого ресторана не сохранены данные подключения. Скорее всего, подготовка не завершилась; проверьте заявку и вывод CLI подготовки.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseUnreachable" xml:space="preserve"><value>Не удалось подключиться к базе данных ресторана. Проверьте, что SQL Server работает и база существует, затем выполните migration-status через CLI.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>База данных ресторана не ответила за несколько секунд. Проверьте, что SQL Server работает, а эта база существует и принимает настроенный вход, затем обновите страницу.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>Не удалось расшифровать сохранённые данные подключения. Проверьте, что сервер использует тот же ENCRYPTION_MASTER_KEY, с которым ресторан был подготовлен.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>Базу данных ресторана не удалось проверить из-за непредвиденной ошибки. Смотрите журналы сервера для этого ресторана.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>В базе данных ресторана нет миграций, нужных этой версии. Примените их через CLI (migrate-customer или migrate-all-customers) по процедуре выпуска; до этого функции, использующие новые столбцы, могут не работать.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>В базе данных ресторана есть миграции, неизвестные этой версии приложения. Возможно, её обновила более новая версия; проверьте, какая версия развёрнута.</value></data>
+  <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>Последняя записанная миграция для этого ресторана не удалась. Выполните migration-status через CLI и повторите миграцию для этого ресторана.</value></data>
+  <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>Некоторые разделы не удалось прочитать. Обычно причина — ожидающая миграция; смотрите журналы сервера.</value></data>
+  <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>Ресторан всё ещё в режиме настройки: заказы синхронизируются, но ничего не принимается и не печатается автоматически, пока владелец не завершит или не пропустит пошаговую настройку.</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>У ресторана нет активного владельца. Только владелец управляет настройками, подключениями и устройствами; при необходимости добавьте владельца через CLI (seed-customer-admin).</value></data>
+  <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>Не подключена ни одна платформа доставки, поэтому заказы не поступают. Владелец добавляет подключение в разделе «Подключения к платформам».</value></data>
+  <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>Все подключения к платформам отключены, поэтому заказы не загружаются. Уточните у владельца, задумано ли это.</value></data>
+  <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>Синхронизация заказов выключена в настройках ресторана; Worker его пропускает. Существующие заказы остаются видимыми.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionCircuitOpen" xml:space="preserve"><value>Подключение к платформе приостановлено после повторных ошибок. Проверьте состояние платформы и попросите владельца проверить учётные данные подключения.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionFailing" xml:space="preserve"><value>Последние попытки синхронизации подключения к платформе не удались. Если это продолжится, проверьте состояние платформы и учётные данные.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionStale" xml:space="preserve"><value>Подключение к платформе не синхронизировалось успешно более 10 минут. Проверьте, что Worker запущен.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionNeverSynced" xml:space="preserve"><value>Подключение к платформе ни разу не синхронизировалось успешно. Если оно добавлено давно, проверьте, что Worker запущен.</value></data>
+  <data name="Admin.Ops.Guidance.NoRecentOrders" xml:space="preserve"><value>Подключения синхронизируются, но за последние 7 дней не пришло ни одного заказа. Уточните у владельца, открыт ли магазин на платформах.</value></data>
+  <data name="Admin.Ops.Guidance.NoPrintBridgeDevice" xml:space="preserve"><value>Нет зарегистрированного устройства Print Bridge; чеки можно будет печатать только после его настройки.</value></data>
+  <data name="Admin.Ops.Guidance.AutoReceiptWithoutDevice" xml:space="preserve"><value>Автоматические чеки включены, но нет зарегистрированного устройства Print Bridge. Чеки ждут в очереди, пока владелец не настроит устройство.</value></data>
+  <data name="Admin.Ops.Guidance.PrintBridgeOffline" xml:space="preserve"><value>Нет ни одного активного устройства Print Bridge в сети. Попросите ресторан проверить, что компьютер с Print Bridge включён и подключён.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsQueuedWithoutOnlineDevice" xml:space="preserve"><value>Задания печати ждут, а ни одно устройство не в сети; устройство заберёт их после повторного подключения.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>За последние 24 часа часть заданий печати завершилась ошибкой. Владелец может проверить принтер на компьютере с Print Bridge.</value></data>
+  <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>Связанная заявка на регистрацию не отмечена как подготовленная. Откройте её, чтобы проверить состояние; не меняйте её вручную.</value></data>
+  <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Сейчас ничего не требует внимания.</value></data>
 </root>
