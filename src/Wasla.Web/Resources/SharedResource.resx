@@ -1364,6 +1364,7 @@
   <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>"Bağlı", Wasla'nın bu kurulumdan son bir dakika içinde haber aldığı anlamına gelir. Son görülme, kurulumun en son ne zaman bağlandığını gösterir; daha eski bir zaman genellikle uygulamanın veya bilgisayarın kapalı olduğunu gösterir.</value></data>
   <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Cihaz tokenı</value></data>
   <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>Cihaz tokenı, bu kurulumun Wasla'ya bağlanmasını ve yazdırma işlerini almasını sağlar. Wasla tokenın kendisini saklamaz; bu yüzden oluşturulduktan sonra bir daha gösterilemez.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Display" xml:space="preserve"><value>Yeni bir token maskeli olarak ve yalnızca bir kez gösterilir. Kontrol etmek için Tokenı göster / Tokenı gizle düğmesini, Print Bridge uygulamasına yapıştırmak için kopyalama düğmesini kullanın; kopyalama, token maskeli kalırken de çalışır.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Token yenile</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Bu cihaz için yeni bir cihaz tokenı oluşturur.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Eski token hemen geçersiz olur; bu kurulum yeni tokenı alana kadar yazdıramaz.</value></data>

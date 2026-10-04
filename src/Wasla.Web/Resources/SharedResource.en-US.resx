@@ -3817,6 +3817,7 @@
   <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>"Connected" means Wasla heard from this installation within the last minute. Last seen shows when it last checked in; an older time usually means the app or the computer is off.</value></data>
   <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Device token</value></data>
   <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>The device token lets this installation sign in to Wasla and receive print jobs. Wasla doesn't keep the token itself, so it can never be shown again after it was created.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Display" xml:space="preserve"><value>A new token is shown only once, masked. Use Show token / Hide token to check it and the copy button to paste it into the Print Bridge app; copying works while the token stays masked.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Regenerate token</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Creates a new device token for this device.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>The old token stops working immediately, so this installation can't print until it has the new one.</value></data>
