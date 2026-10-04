@@ -3397,7 +3397,7 @@
   <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Token yok</value></data>
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Kurulum / yeniden bağlama</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Son yazdırma hareketleri</value></data>
-  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Ham cihaz token'ı ve token hash'i bu sayfada gösterilmez.</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Mevcut cihaz tokenı bir daha gösterilemez. Token yenile yeni bir token oluşturur ve eski token hemen geçersiz olur. Yeni token yalnızca bir kez gösterilir ve maskeli başlar: Tokenı göster / Tokenı gizle yalnızca görünümünü değiştirir; Token kopyala, token maskeliyken de çalışır. Tokenı güvenli bir yerde saklayın; kutuyu kapattıktan, sayfadan ayrıldıktan veya sayfayı yeniledikten sonra bir daha gösterilemez.</value></data>
   <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Kimlik</value></data>
   <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Cihaz işlemleri</value></data>
   <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Cihazı etkinleştir</value></data>

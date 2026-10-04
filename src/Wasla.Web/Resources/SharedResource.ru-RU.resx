@@ -3884,7 +3884,7 @@
   <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Токен отсутствует</value></data>
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Настройка / повторное подключение</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Последняя активность печати</value></data>
-  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Исходный токен устройства и хэш токена на этой странице не отображаются.</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Текущий токен устройства больше нельзя показать. «Восстановить токен» создаёт новый токен, а старый сразу перестаёт работать. Новый токен показывается только один раз и сначала скрыт: «Показать токен» / «Скрыть токен» меняет только его отображение, а «Копировать токен» работает, пока токен скрыт. Сохраните его в надёжном месте: после закрытия окна, ухода со страницы или её перезагрузки его нельзя будет показать снова.</value></data>
   <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Идентификация</value></data>
   <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Действия устройства</value></data>
   <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Включить устройство</value></data>

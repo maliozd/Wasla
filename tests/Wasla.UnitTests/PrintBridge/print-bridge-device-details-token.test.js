@@ -158,3 +158,16 @@ test("dismissing removes the token from the page, not only from view", async () 
   await flush();
   assert.deepEqual(clipboard, [], "nothing is left to copy after dismissing");
 });
+
+test("a fresh page view (navigation or reload) has no token to show or copy", async () => {
+  // The page note promises the token cannot be shown again once the page is left: nothing renders one on load.
+  const { els, clipboard, posts } = page({ responses: [] });
+  assert.equal(els.printBridgeDetailTokenBox.classList.contains("d-none"), true);
+  assert.equal(els.printBridgeDetailTokenValue.value, "");
+  assert.equal(els.printBridgeDetailTokenValue.type, "password");
+  assert.deepEqual(posts, [], "loading the page never requests a token");
+
+  els.printBridgeDetailCopyTokenBtn.click();
+  await flush();
+  assert.deepEqual(clipboard, []);
+});

@@ -3400,7 +3400,7 @@
   <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>لا يوجد رمز</value></data>
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>الإعداد / إعادة التوصيل</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>نشاط الطباعة الأخير</value></data>
-  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>لا يتم عرض رمز الجهاز الخام أو تجزئة الرمز في هذه الصفحة.</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>لا يمكن عرض رمز الجهاز الحالي مرة أخرى. يُنشئ «إعادة توليد الرمز» رمزًا جديدًا ويتوقف الرمز القديم عن العمل فورًا. يُعرض الرمز الجديد مرة واحدة فقط ويبدأ مخفيًا: «إظهار الرمز» / «إخفاء الرمز» يغيّر طريقة عرضه فقط، ويعمل «نسخ الرمز» وهو مخفي. احفظه في مكان آمن؛ بعد إغلاق المربع أو مغادرة هذه الصفحة أو إعادة تحميلها لا يمكن عرضه مرة أخرى.</value></data>
   <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>الهوية</value></data>
   <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>إجراءات الجهاز</value></data>
   <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>تفعيل الجهاز</value></data>
