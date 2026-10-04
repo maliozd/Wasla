@@ -3884,7 +3884,7 @@
   <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Токен отсутствует</value></data>
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Настройка / повторное подключение</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Последняя активность печати</value></data>
-  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Исходный токен устройства и хэш токена на этой странице не отображаются.</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Текущий токен устройства больше нельзя показать. «Восстановить токен» создаёт новый токен, а старый сразу перестаёт работать. Новый токен показывается только один раз и сначала скрыт: «Показать токен» / «Скрыть токен» меняет только его отображение, а «Копировать токен» работает, пока токен скрыт. Сохраните его в надёжном месте: после закрытия окна, ухода со страницы или её перезагрузки его нельзя будет показать снова.</value></data>
   <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Идентификация</value></data>
   <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Действия устройства</value></data>
   <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Включить устройство</value></data>
@@ -4301,6 +4301,7 @@
   <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>«Подключено» означает, что Wasla получал сигнал от этой установки в течение последней минуты. «Последний раз видели» показывает, когда она в последний раз выходила на связь; более раннее время обычно означает, что приложение или компьютер выключены.</value></data>
   <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Токен устройства</value></data>
   <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>Токен устройства позволяет этой установке входить в Wasla и получать задания печати. Wasla не хранит сам токен, поэтому после создания его нельзя показать снова.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Display" xml:space="preserve"><value>Новый токен показывается только один раз и в скрытом виде. Чтобы проверить его, используйте «Показать токен» / «Скрыть токен», а чтобы вставить его в приложение Print Bridge, — кнопку копирования; копирование работает, пока токен остаётся скрытым.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Восстановить токен</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Создаёт новый токен для этого устройства.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Старый токен сразу перестаёт работать, и эта установка не сможет печатать, пока не получит новый.</value></data>
