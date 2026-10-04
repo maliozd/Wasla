@@ -29,4 +29,11 @@
     <ProjectReference Include="..\..\src\Wasla.PrintBridge\Wasla.PrintBridge.csproj" />
   </ItemGroup>
 
+  <!-- Same as the desktop host: the WebView2 package's WPF wrapper is unused and conflicts with WinForms (MSB3277). -->
+  <Target Name="ExcludeWebView2WpfReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
+
 </Project>

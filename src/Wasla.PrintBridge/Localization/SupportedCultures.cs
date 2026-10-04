@@ -36,4 +36,18 @@ internal static class SupportedCultures
 
         return Default;
     }
+
+    /// <summary>Exact, case-sensitive match against <see cref="All"/>; no trimming or fallback.</summary>
+    public static bool IsExactSupportedName(string? culture) =>
+        culture is not null && All.Contains(culture, StringComparer.Ordinal);
+
+    /// <summary>The language's own name, shown in language pickers regardless of the current UI culture.</summary>
+    public static string GetNativeName(string culture) => culture switch
+    {
+        Turkish => "Türkçe",
+        English => "English",
+        Arabic => "العربية",
+        Russian => "Русский",
+        _ => culture
+    };
 }

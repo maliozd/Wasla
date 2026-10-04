@@ -9,11 +9,29 @@ public static class PrintBridgePaths
     public const string ServiceName = "WaslaPrintBridge";
     public const string ProductDisplayName = "Wasla Print Bridge";
 
+    /// <summary>
+    /// Debug builds only: an absolute directory that replaces ProgramData so a development instance
+    /// runs with its own settings, token, history and logs. Ignored by Release builds.
+    /// </summary>
+    public const string DevelopmentDataRootVariable = "WASLA_PRINTBRIDGE_DATA_ROOT";
+
+    private static readonly string? DevelopmentDataRoot = ResolveDevelopmentDataRoot();
+
     private static string? _testRootOverride;
 
     public static string ProgramDataRoot =>
         Volatile.Read(ref _testRootOverride)
+        ?? DevelopmentDataRoot
         ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Wasla", "PrintBridge");
+
+    /// <summary>
+    /// True when a Debug build runs against <see cref="DevelopmentDataRootVariable"/>. Such an instance must
+    /// not register machine-wide integrations (protocol handler, setup IPC) that belong to the real install.
+    /// </summary>
+    public static bool IsIsolatedDevelopmentRoot => DevelopmentDataRoot is not null;
+
+    /// <summary>True while <see cref="UseRootForTests"/> is active.</summary>
+    internal static bool HasTestRootOverride => Volatile.Read(ref _testRootOverride) is not null;
 
     public static string ProgramDataConfigPath =>
         Path.Combine(ProgramDataRoot, "appsettings.json");
@@ -41,6 +59,18 @@ public static class PrintBridgePaths
 
         var previous = Interlocked.Exchange(ref _testRootOverride, root);
         return new RootScope(previous);
+    }
+
+    private static string? ResolveDevelopmentDataRoot()
+    {
+#if DEBUG
+        var value = Environment.GetEnvironmentVariable(DevelopmentDataRootVariable)?.Trim();
+        return !string.IsNullOrEmpty(value) && Path.IsPathFullyQualified(value)
+            ? Path.GetFullPath(value)
+            : null;
+#else
+        return null;
+#endif
     }
 
     private sealed class RootScope(string? previous) : IDisposable

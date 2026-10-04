@@ -626,4 +626,43 @@
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>Ссылка настройки недействительна или её срок истёк.</value></data>
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge на этом компьютере уже зарегистрирован как активное устройство. Используйте в Wasla Web вариант "Повторно подключить существующее устройство" вместо настройки нового устройства или сначала удалите старую запись устройства.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Не удалось завершить автоматическую настройку.</value></data>
+  <data name="Shell.Connection.Connecting" xml:space="preserve">
+    <value>Подключение</value>
+  </data>
+  <data name="Shell.Detail.Online" xml:space="preserve">
+    <value>Подключено к Wasla. Ожидание новых заданий печати чеков.</value>
+  </data>
+  <data name="Shell.Detail.Connecting" xml:space="preserve">
+    <value>Подключение к серверу Wasla…</value>
+  </data>
+  <data name="Shell.Detail.Stopped" xml:space="preserve">
+    <value>Прослушивание остановлено. Новые задания печати не принимаются.</value>
+  </data>
+  <data name="Shell.Detail.NotConfigured" xml:space="preserve">
+    <value>Это устройство ещё не подключено к Wasla. Подключите его в разделе «Настройки» классического окна.</value>
+  </data>
+  <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
+    <value>Произошла непредвиденная ошибка. Подробности — на вкладке «Журналы» классического окна.</value>
+  </data>
+  <data name="Shell.LastJob.Title" xml:space="preserve">
+    <value>Последнее задание печати</value>
+  </data>
+  <data name="Shell.Today.Title" xml:space="preserve">
+    <value>Сегодня</value>
+  </data>
+  <data name="Shell.OpenClassicWindow" xml:space="preserve">
+    <value>Открыть классическое окно</value>
+  </data>
+  <data name="Shell.Preview.Notice" xml:space="preserve">
+    <value>Предварительная версия: здесь показано только состояние. Настройки и история печати остаются в классическом окне.</value>
+  </data>
+  <data name="Shell.Fallback.Title" xml:space="preserve">
+    <value>Открыто классическое окно</value>
+  </data>
+  <data name="Shell.Fallback.RuntimeMissing" xml:space="preserve">
+    <value>Для нового вида требуется Microsoft Edge WebView2 Runtime. Вместо него используется классическое окно.</value>
+  </data>
+  <data name="Shell.Fallback.StartFailed" xml:space="preserve">
+    <value>Не удалось запустить новый вид. Вместо него используется классическое окно.</value>
+  </data>
 </root>

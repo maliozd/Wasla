@@ -626,4 +626,43 @@
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>Kurulum bağlantısı geçersiz veya süresi dolmuş.</value></data>
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Bu bilgisayardaki Print Bridge zaten aktif bir cihaz olarak kayıtlı. Yeni cihaz kurmak yerine Wasla Web'de "Mevcut cihazı yeniden bağla" seçeneğini kullanın veya önce eski cihaz kaydını kaldırın.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Otomatik kurulum tamamlanamadı.</value></data>
+  <data name="Shell.Connection.Connecting" xml:space="preserve">
+    <value>Bağlanıyor</value>
+  </data>
+  <data name="Shell.Detail.Online" xml:space="preserve">
+    <value>Wasla'ya bağlı. Yeni fiş işleri bekleniyor.</value>
+  </data>
+  <data name="Shell.Detail.Connecting" xml:space="preserve">
+    <value>Wasla sunucusuyla bağlantı kuruluyor…</value>
+  </data>
+  <data name="Shell.Detail.Stopped" xml:space="preserve">
+    <value>Dinleme durduruldu. Yeni yazdırma işleri alınmıyor.</value>
+  </data>
+  <data name="Shell.Detail.NotConfigured" xml:space="preserve">
+    <value>Bu cihaz henüz Wasla'ya bağlanmadı. Klasik penceredeki Ayarlar bölümünden bağlayın.</value>
+  </data>
+  <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
+    <value>Beklenmeyen bir hata oluştu. Ayrıntılar için klasik penceredeki Loglar sekmesine bakın.</value>
+  </data>
+  <data name="Shell.LastJob.Title" xml:space="preserve">
+    <value>Son yazdırma işi</value>
+  </data>
+  <data name="Shell.Today.Title" xml:space="preserve">
+    <value>Bugün</value>
+  </data>
+  <data name="Shell.OpenClassicWindow" xml:space="preserve">
+    <value>Klasik pencereyi aç</value>
+  </data>
+  <data name="Shell.Preview.Notice" xml:space="preserve">
+    <value>Önizleme: Bu görünüm yalnızca durumu gösterir. Ayarlar ve yazdırma geçmişi klasik pencerede kalır.</value>
+  </data>
+  <data name="Shell.Fallback.Title" xml:space="preserve">
+    <value>Klasik pencere açıldı</value>
+  </data>
+  <data name="Shell.Fallback.RuntimeMissing" xml:space="preserve">
+    <value>Yeni görünüm için Microsoft Edge WebView2 Runtime gerekiyor. Klasik pencere kullanılıyor.</value>
+  </data>
+  <data name="Shell.Fallback.StartFailed" xml:space="preserve">
+    <value>Yeni görünüm başlatılamadı. Klasik pencere kullanılıyor.</value>
+  </data>
 </root>

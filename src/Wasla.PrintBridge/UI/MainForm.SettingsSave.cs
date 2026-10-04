@@ -463,7 +463,7 @@ public sealed partial class MainForm
             BridgeName = source.BridgeName
         };
 
-    private static UiOptions CloneUiOptions(UiOptions source) =>
+    internal static UiOptions CloneUiOptions(UiOptions source) =>
         new()
         {
             Language = source.Language,
@@ -473,7 +473,8 @@ public sealed partial class MainForm
             WindowHeight = source.WindowHeight,
             WindowLeft = source.WindowLeft,
             WindowTop = source.WindowTop,
-            WindowState = source.WindowState
+            WindowState = source.WindowState,
+            Shell = source.Shell
         };
 
     private void SetConnectionFieldsEnabled(bool enabled)

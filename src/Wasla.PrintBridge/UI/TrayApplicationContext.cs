@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
+using Microsoft.Extensions.Logging;
+
 using Wasla.PrintBridge.Configuration;
 
 using Wasla.PrintBridge.Localization;
@@ -9,6 +11,8 @@ using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Services;
 
 using Wasla.PrintBridge.Setup;
+
+using Wasla.PrintBridge.WebShell;
 
 
 
@@ -50,6 +54,14 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private readonly ToolStripMenuItem _exitMenuItem;
 
+    private readonly IWebView2RuntimeProbe _webViewRuntimeProbe = new WebView2RuntimeProbe();
+
+    private PrintBridgeShellForm? _shellForm;
+
+    private bool _shellFailedThisSession;
+
+    private bool _shellFallbackNotified;
+
 
 
     public TrayApplicationContext(ServiceProvider services)
@@ -76,7 +88,7 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _connectionMenuItem = new ToolStripMenuItem { Enabled = false };
 
-        _openMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ShowMainWindow());
+        _openMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ShowPrimaryWindow());
 
         _printHistoryMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ShowPrintHistory());
 
@@ -122,11 +134,13 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         };
 
-        _trayIcon.DoubleClick += (_, _) => ShowMainWindow();
+        _trayIcon.DoubleClick += (_, _) => ShowPrimaryWindow();
 
 
 
         _runtime.StatusChanged += (_, _) => UpdateTrayMenu();
+
+        _cultureService.CultureChanged += (_, _) => UpdateTrayMenu();
 
         ApplyTrayLocalization();
 
@@ -206,6 +220,87 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _mainForm.Activate();
 
+    }
+
+
+
+    /// <summary>
+    /// Tray "Open" and double-click. Opens the WebView2 status shell only when <c>Ui.Shell</c> is
+    /// <c>WebView2</c> and the runtime is usable; otherwise, and for every other entry point (history,
+    /// settings, automatic setup), the classic window opens as before.
+    /// </summary>
+    private void ShowPrimaryWindow()
+    {
+        var holder = _services.GetRequiredService<PrintBridgeSettingsHolder>();
+        var decision = _shellFailedThisSession
+            ? new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable)
+            : ShellSelection.Decide(holder.Ui.Shell, _webViewRuntimeProbe);
+
+        if (decision.Mode == PrintBridgeShellMode.WebView2)
+        {
+            GetOrCreateShellForm().ShowShell();
+            return;
+        }
+
+        if (decision.FallbackReason is ShellFallbackReason.RuntimeUnavailable or ShellFallbackReason.UnrecognizedSetting)
+        {
+            _services.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("Wasla.PrintBridge.Shell")
+                .LogWarning("WebView2 shell not used; opening the classic window. Reason={Reason}", decision.FallbackReason);
+        }
+
+        if (decision.FallbackReason == ShellFallbackReason.RuntimeUnavailable)
+            NotifyShellFallback("Shell.Fallback.RuntimeMissing");
+
+        ShowMainWindow();
+    }
+
+    private PrintBridgeShellForm GetOrCreateShellForm()
+    {
+        if (_shellForm is { IsDisposed: false })
+            return _shellForm;
+
+        _shellForm = new PrintBridgeShellForm(
+            _runtime,
+            _localizer,
+            _cultureService,
+            new PrintBridgeLanguageService(
+                _services.GetRequiredService<PrintBridgeSettingsStore>(),
+                _services.GetRequiredService<PrintBridgeSettingsHolder>(),
+                _cultureService,
+                _services.GetRequiredService<ILoggerFactory>().CreateLogger<PrintBridgeLanguageService>()),
+            _services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Shell"));
+        _shellForm.ClassicWindowRequested += (_, _) => ShowMainWindow();
+        _shellForm.ShellUnavailable += OnShellUnavailable;
+        return _shellForm;
+    }
+
+    private void OnShellUnavailable(object? sender, EventArgs e)
+    {
+        _shellFailedThisSession = true;
+        if (sender is PrintBridgeShellForm failed)
+        {
+            failed.ShellUnavailable -= OnShellUnavailable;
+            if (ReferenceEquals(_shellForm, failed))
+                _shellForm = null;
+            failed.BeginInvoke(failed.Dispose);
+        }
+
+        NotifyShellFallback("Shell.Fallback.StartFailed");
+        ShowMainWindow();
+    }
+
+    private void NotifyShellFallback(string messageKey)
+    {
+        if (_shellFallbackNotified)
+            return;
+
+        _shellFallbackNotified = true;
+        _trayIcon.ShowBalloonTip(
+            5000,
+            _localizer["Shell.Fallback.Title"],
+            _localizer[messageKey],
+            ToolTipIcon.Info);
     }
 
 
@@ -463,6 +558,8 @@ public sealed class TrayApplicationContext : ApplicationContext
         _mainForm.FormClosing -= OnMainFormClosing;
 
         _mainForm.Close();
+
+        _shellForm?.Dispose();
 
         _runtime.Dispose();
 

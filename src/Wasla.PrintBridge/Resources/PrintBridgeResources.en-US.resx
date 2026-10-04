@@ -664,4 +664,43 @@
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>The setup link is invalid or has expired.</value></data>
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge on this computer is already registered as an active device. Use "Reconnect existing device" in Wasla Web instead of setting up a new device, or remove the old device record first.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Automatic setup could not be completed.</value></data>
+  <data name="Shell.Connection.Connecting" xml:space="preserve">
+    <value>Connecting</value>
+  </data>
+  <data name="Shell.Detail.Online" xml:space="preserve">
+    <value>Connected to Wasla. Waiting for new receipt jobs.</value>
+  </data>
+  <data name="Shell.Detail.Connecting" xml:space="preserve">
+    <value>Contacting the Wasla server…</value>
+  </data>
+  <data name="Shell.Detail.Stopped" xml:space="preserve">
+    <value>Listening is stopped. New print jobs are not being received.</value>
+  </data>
+  <data name="Shell.Detail.NotConfigured" xml:space="preserve">
+    <value>This device is not connected to Wasla yet. Connect it from Settings in the classic window.</value>
+  </data>
+  <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
+    <value>An unexpected error occurred. See the Logs tab in the classic window for details.</value>
+  </data>
+  <data name="Shell.LastJob.Title" xml:space="preserve">
+    <value>Latest print job</value>
+  </data>
+  <data name="Shell.Today.Title" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Shell.OpenClassicWindow" xml:space="preserve">
+    <value>Open classic window</value>
+  </data>
+  <data name="Shell.Preview.Notice" xml:space="preserve">
+    <value>Preview: this view shows status only. Settings and print history remain in the classic window.</value>
+  </data>
+  <data name="Shell.Fallback.Title" xml:space="preserve">
+    <value>Classic window opened</value>
+  </data>
+  <data name="Shell.Fallback.RuntimeMissing" xml:space="preserve">
+    <value>The new view needs the Microsoft Edge WebView2 Runtime. The classic window is used instead.</value>
+  </data>
+  <data name="Shell.Fallback.StartFailed" xml:space="preserve">
+    <value>The new view could not start. The classic window is used instead.</value>
+  </data>
 </root>

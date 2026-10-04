@@ -1,0 +1,502 @@
+/* Wasla Print Bridge status shell.
+   Tokens follow src/Wasla.Web/wwwroot/css/wasla-foundation.css (warm operational minimalism:
+   paper/ink, restrained orange, border-first). Dark values follow the Windows app theme through
+   prefers-color-scheme; the desktop app has no theme setting of its own. Logical properties keep RTL correct. */
+
+:root {
+  color-scheme: light;
+  --wasla-accent: #E87342;
+  --wasla-accent-hover: #B94F2A;
+  --wasla-accent-soft: #FBE9DF;
+  --wasla-accent-text: #ffffff;
+  --wasla-canvas: #F7F4EE;
+  --wasla-surface: #FFFEFA;
+  --wasla-surface-muted: #F4F0E9;
+  --wasla-border: #E3DDD3;
+  --wasla-border-strong: #D3CABD;
+  --wasla-text: #28231F;
+  --wasla-text-secondary: #746D66;
+  --wasla-success: #2f6f4e;
+  --wasla-success-soft: rgba(47, 111, 78, 0.12);
+  /* Darker than the foundation amber (#b7791f) so small warning text keeps AA contrast on the surface. */
+  --wasla-warning: #8a5a12;
+  --wasla-warning-soft: rgba(183, 121, 31, 0.16);
+  --wasla-danger: #b4232c;
+  --wasla-danger-soft: rgba(180, 35, 44, 0.12);
+  --wasla-info: #3b6ea5;
+  --wasla-info-soft: rgba(59, 110, 165, 0.12);
+  --wasla-neutral: #6b645d;
+  --wasla-neutral-soft: rgba(116, 109, 102, 0.14);
+  --wasla-shadow-sm: 0 1px 2px rgba(42, 36, 31, 0.05);
+  --wasla-radius-sm: 0.4rem;
+  --wasla-radius-md: 0.65rem;
+  --wasla-radius-lg: 0.9rem;
+  --wasla-space-1: 0.25rem;
+  --wasla-space-2: 0.5rem;
+  --wasla-space-3: 0.75rem;
+  --wasla-space-4: 1rem;
+  --wasla-space-5: 1.25rem;
+  --wasla-space-6: 1.5rem;
+  --wasla-transition: 140ms ease;
+  --pb-state: var(--wasla-neutral);
+  --pb-state-soft: var(--wasla-neutral-soft);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --wasla-accent: #E87342;
+    --wasla-accent-hover: #F0915F;
+    --wasla-accent-soft: rgba(232, 115, 66, 0.16);
+    --wasla-canvas: #1B1816;
+    --wasla-surface: #24201D;
+    --wasla-surface-muted: #2C2724;
+    --wasla-border: #3A332E;
+    --wasla-border-strong: #4A423B;
+    --wasla-text: #F2EDE6;
+    --wasla-text-secondary: #B8AFA5;
+    --wasla-success: #7CC49B;
+    --wasla-success-soft: rgba(124, 196, 155, 0.14);
+    --wasla-warning: #E3AE57;
+    --wasla-warning-soft: rgba(227, 174, 87, 0.15);
+    --wasla-danger: #F2878C;
+    --wasla-danger-soft: rgba(242, 135, 140, 0.14);
+    --wasla-info: #93B9E6;
+    --wasla-info-soft: rgba(147, 185, 230, 0.14);
+    --wasla-neutral: #B8AFA5;
+    --wasla-neutral-soft: rgba(184, 175, 165, 0.14);
+    --wasla-shadow-sm: none;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--wasla-canvas);
+  color: var(--wasla-text);
+}
+
+body {
+  font-family: "Segoe UI Variable Text", "Segoe UI", Tahoma, system-ui, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+h1,
+h2,
+p,
+dl,
+dd {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--wasla-accent);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.pb-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.pb-app {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100vh;
+  max-inline-size: 64rem;
+  margin-inline: auto;
+  padding: var(--wasla-space-5) var(--wasla-space-6) var(--wasla-space-4);
+  gap: var(--wasla-space-4);
+}
+
+.pb-app[aria-busy="true"] .pb-main,
+.pb-app[aria-busy="true"] .pb-footer,
+.pb-app[aria-busy="true"] .pb-language {
+  visibility: hidden;
+}
+
+/* Header */
+
+.pb-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wasla-space-3) var(--wasla-space-4);
+}
+
+.pb-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--wasla-space-3);
+  min-inline-size: 0;
+}
+
+.pb-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 0.55rem;
+  background: var(--wasla-accent);
+  color: var(--wasla-accent-text);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pb-brand-text {
+  min-inline-size: 0;
+}
+
+.pb-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pb-subtitle {
+  color: var(--wasla-text-secondary);
+  font-size: 0.85rem;
+}
+
+.pb-language {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wasla-space-2);
+  color: var(--wasla-text-secondary);
+  font-size: 0.85rem;
+}
+
+.pb-select {
+  min-block-size: 2.25rem;
+  padding-block: 0;
+  padding-inline: var(--wasla-space-3);
+  border: 1px solid var(--wasla-border-strong);
+  border-radius: var(--wasla-radius-sm);
+  background: var(--wasla-surface);
+  color: var(--wasla-text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+/* Main */
+
+.pb-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wasla-space-4);
+  flex: 1;
+}
+
+.pb-notice {
+  padding: var(--wasla-space-2) var(--wasla-space-3);
+  border: 1px dashed var(--wasla-border-strong);
+  border-radius: var(--wasla-radius-sm);
+  color: var(--wasla-text-secondary);
+  font-size: 0.85rem;
+}
+
+.pb-hero {
+  --pb-state: var(--wasla-neutral);
+  --pb-state-soft: var(--wasla-neutral-soft);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wasla-space-4);
+  padding: var(--wasla-space-5);
+  border: 1px solid var(--wasla-border);
+  border-inline-start: 4px solid var(--pb-state);
+  border-radius: var(--wasla-radius-lg);
+  background: var(--wasla-surface);
+  box-shadow: var(--wasla-shadow-sm);
+}
+
+.pb-hero[data-state="online"] {
+  --pb-state: var(--wasla-success);
+  --pb-state-soft: var(--wasla-success-soft);
+}
+
+.pb-hero[data-state="connecting"] {
+  --pb-state: var(--wasla-info);
+  --pb-state-soft: var(--wasla-info-soft);
+}
+
+.pb-hero[data-state="offline"],
+.pb-hero[data-state="notConfigured"] {
+  --pb-state: var(--wasla-warning);
+  --pb-state-soft: var(--wasla-warning-soft);
+}
+
+.pb-hero[data-state="error"] {
+  --pb-state: var(--wasla-danger);
+  --pb-state-soft: var(--wasla-danger-soft);
+}
+
+.pb-dot {
+  position: relative;
+  flex-shrink: 0;
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  margin-block-start: 0.4rem;
+  border-radius: 50%;
+  background: var(--pb-state);
+  box-shadow: 0 0 0 0.35rem var(--pb-state-soft);
+}
+
+.pb-hero[data-state="connecting"] .pb-dot {
+  animation: pb-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pb-pulse {
+  50% {
+    box-shadow: 0 0 0 0.6rem var(--pb-state-soft);
+  }
+}
+
+.pb-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wasla-space-1);
+  min-inline-size: 0;
+}
+
+.pb-eyebrow {
+  color: var(--wasla-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.pb-hero-label {
+  color: var(--pb-state);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pb-hero-detail {
+  color: var(--wasla-text);
+  overflow-wrap: anywhere;
+}
+
+.pb-dry-run {
+  padding: var(--wasla-space-3) var(--wasla-space-4);
+  border: 1px solid var(--wasla-info);
+  border-radius: var(--wasla-radius-md);
+  background: var(--wasla-info-soft);
+  color: var(--wasla-text);
+  font-weight: 600;
+}
+
+.pb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
+  gap: var(--wasla-space-3);
+}
+
+.pb-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wasla-space-2);
+  min-inline-size: 0;
+  padding: var(--wasla-space-4);
+  border: 1px solid var(--wasla-border);
+  border-radius: var(--wasla-radius-md);
+  background: var(--wasla-surface);
+}
+
+.pb-card-title {
+  color: var(--wasla-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.pb-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.pb-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.pb-badge {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: var(--wasla-radius-sm);
+  background: var(--pb-state-soft);
+  color: var(--pb-state);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+#printer[data-state="ready"],
+.pb-job[data-status="printed"] {
+  --pb-state: var(--wasla-success);
+  --pb-state-soft: var(--wasla-success-soft);
+}
+
+#printer[data-state="dryRun"],
+.pb-job[data-status="printing"] {
+  --pb-state: var(--wasla-info);
+  --pb-state-soft: var(--wasla-info-soft);
+}
+
+#printer[data-state="notConfigured"],
+.pb-job[data-status="pending"] {
+  --pb-state: var(--wasla-warning);
+  --pb-state-soft: var(--wasla-warning-soft);
+}
+
+#printer[data-state="notFound"],
+.pb-job[data-status="failed"] {
+  --pb-state: var(--wasla-danger);
+  --pb-state-soft: var(--wasla-danger-soft);
+}
+
+.pb-stats {
+  display: grid;
+  gap: var(--wasla-space-1);
+}
+
+.pb-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wasla-space-3);
+}
+
+.pb-stat dt {
+  color: var(--wasla-text-secondary);
+  font-size: 0.85rem;
+}
+
+.pb-stat dd {
+  font-weight: 600;
+  text-align: end;
+}
+
+.pb-stat[data-alert="true"] dd {
+  color: var(--wasla-danger);
+}
+
+.pb-empty {
+  color: var(--wasla-text-secondary);
+}
+
+.pb-job-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wasla-space-2) var(--wasla-space-4);
+}
+
+.pb-job-order {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.pb-job-type,
+.pb-job-time {
+  color: var(--wasla-text-secondary);
+}
+
+.pb-job-row .pb-badge {
+  margin-inline-start: auto;
+}
+
+/* Footer */
+
+.pb-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wasla-space-3);
+  padding-block-start: var(--wasla-space-3);
+  border-block-start: 1px solid var(--wasla-border);
+}
+
+.pb-button {
+  min-block-size: 2.25rem;
+  padding-block: 0;
+  padding-inline: var(--wasla-space-4);
+  border: 1px solid var(--wasla-border-strong);
+  border-radius: var(--wasla-radius-sm);
+  background: var(--wasla-surface);
+  color: var(--wasla-text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--wasla-transition), background-color var(--wasla-transition);
+}
+
+.pb-button:hover {
+  border-color: var(--wasla-accent);
+  background: var(--wasla-accent-soft);
+}
+
+.pb-version {
+  color: var(--wasla-text-secondary);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 34rem) {
+  .pb-app {
+    padding: var(--wasla-space-4);
+  }
+
+  .pb-hero {
+    padding: var(--wasla-space-4);
+  }
+
+  .pb-hero-label {
+    font-size: 1.3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .pb-dot {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+  }
+
+  .pb-hero {
+    border-inline-start-width: 4px;
+  }
+}

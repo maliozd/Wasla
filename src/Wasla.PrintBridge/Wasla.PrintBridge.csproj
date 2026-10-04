@@ -19,6 +19,7 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
 		<PackageReference Include="System.Drawing.Common" Version="8.0.10" />
@@ -40,6 +41,22 @@
 		</None>
 		<None Update="appsettings.Development.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<!-- The WebView2 package always references its WPF wrapper. The shell uses the WinForms control only,
+	     so drop that reference: it conflicts with the WinForms WindowsBase (MSB3277) and would ship unused. -->
+	<Target Name="ExcludeWebView2WpfReference" BeforeTargets="ResolveAssemblyReferences">
+		<ItemGroup>
+			<Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+		</ItemGroup>
+	</Target>
+
+	<!-- WebView2 status shell page (WAS-53). Served only from the shell-ui folder next to the executable. -->
+	<ItemGroup>
+		<None Include="WebShell\Assets\**\*" Link="shell-ui\%(RecursiveDir)%(Filename)%(Extension)">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</None>
 	</ItemGroup>
 
