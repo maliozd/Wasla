@@ -416,7 +416,9 @@ public sealed partial class PrintBridgeFirstInstallTests
             .Where(element => element.Attribute("name") is not null)
             .ToDictionary(element => element.Attribute("name")!.Value, element => element.Element("value")?.Value.Trim() ?? string.Empty, StringComparer.Ordinal);
 
-    private static string Read(params string[] segments) => File.ReadAllText(Path.Combine([Root(), .. segments]));
+    // Normalized so the contract does not depend on the checkout's line endings (CRLF on Windows with autocrlf).
+    private static string Read(params string[] segments) =>
+        File.ReadAllText(Path.Combine([Root(), .. segments])).ReplaceLineEndings("\n");
 
     private static string Root()
     {
