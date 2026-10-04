@@ -3908,4 +3908,171 @@
   <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>Test tenant’ı ilk kullanım durumuna döndürüldü. Tarayıcının bildirim iznini gerekirse Chrome’un site ayarlarından elle sıfırlayın.</value></data>
   <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Sıfırlamayı kullanmadan önce Wasla.Worker’ı durdurun, Print Bridge uygulamasını kapatın ve şu anda devam eden bir Print Bridge kurulumu olmadığından emin olun. Aksi hâlde hâlâ çalışan bir senkronizasyon döngüsü ya da kurulum, sıfırlamadan sonra yeniden veri ekleyebilir; ayrıca sahte (mock) sağlayıcı sipariş numaralarını bellekte tutar. Sıfırlama bittikten sonra Worker’ı yeniden başlatın.</value></data>
   <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>Sıfırlama yarım kaldı: Print Bridge cihazları kaldırıldı, ancak diğer veriler geri alındı. Tamamlamak için sıfırlamayı yeniden çalıştırın.</value></data>
+  <data name="Admin.Ops.OverviewTitle" xml:space="preserve"><value>Operasyon özeti</value></data>
+  <data name="Admin.Ops.OverviewSubtitle" xml:space="preserve"><value>Merkezi kayıttan restoran, kayıt ve Print Bridge durumu.</value></data>
+  <data name="Admin.Ops.OverviewCentralOnlyNote" xml:space="preserve"><value>Bu sayfa yalnızca merkezi veritabanını okur. Bir restoranın veritabanı, senkronizasyon ve sipariş durumu yalnızca o restoranın operasyon sayfasında kontrol edilir.</value></data>
+  <data name="Admin.Ops.ReadAt" xml:space="preserve"><value>Okunma zamanı</value></data>
+  <data name="Admin.Ops.Section.Tenants" xml:space="preserve"><value>Restoranlar</value></data>
+  <data name="Admin.Ops.Section.Signup" xml:space="preserve"><value>Kayıt ve hesap oluşturma</value></data>
+  <data name="Admin.Ops.Section.PrintBridgeFleet" xml:space="preserve"><value>Print Bridge cihazları</value></data>
+  <data name="Admin.Ops.Metric.MigrationFailed" xml:space="preserve"><value>Son geçiş başarısız</value></data>
+  <data name="Admin.Ops.Metric.MigrationNotRecorded" xml:space="preserve"><value>Geçiş kaydı yok</value></data>
+  <data name="Admin.Ops.Metric.NeedsAttention" xml:space="preserve"><value>İnceleme gerekiyor</value></data>
+  <data name="Admin.Ops.Metric.OldestWaiting" xml:space="preserve"><value>En eski: {0}</value></data>
+  <data name="Admin.Ops.Metric.ExpiredOrCancelled" xml:space="preserve"><value>Süresi doldu / iptal</value></data>
+  <data name="Admin.Ops.Signup.ProvisioningFailuresNotTracked" xml:space="preserve"><value>Başarısız hesap oluşturma denemeleri ayrı bir durum olarak kaydedilmez. Ödemesi alınmış ancak oluşturulmamış bir kayıt, ödeme alınanlar sayısında kalır.</value></data>
+  <data name="Admin.Ops.PrintBridge.Online" xml:space="preserve"><value>Çevrimiçi</value></data>
+  <data name="Admin.Ops.PrintBridge.Stale" xml:space="preserve"><value>Gecikmeli</value></data>
+  <data name="Admin.Ops.PrintBridge.Offline" xml:space="preserve"><value>Çevrimdışı</value></data>
+  <data name="Admin.Ops.PrintBridge.NeverConnected" xml:space="preserve"><value>Hiç bağlanmadı</value></data>
+  <data name="Admin.Ops.PrintBridge.Disabled" xml:space="preserve"><value>Pasif</value></data>
+  <data name="Admin.Ops.PrintBridge.ThresholdNote" xml:space="preserve"><value>Çevrimiçi: son sinyal en fazla 60 saniye önce. Gecikmeli: en fazla 5 dakika önce. Çevrimdışı: daha eski.</value></data>
+  <data name="Admin.Ops.RecentTenants" xml:space="preserve"><value>Son eklenen restoranlar</value></data>
+  <data name="Admin.Ops.LoadError.Title" xml:space="preserve"><value>Merkezi veriler okunamadı</value></data>
+  <data name="Admin.Ops.LoadError.Body" xml:space="preserve"><value>Merkezi veritabanına şu anda ulaşılamıyor. Birkaç dakika sonra sayfayı yenileyin; sorun sürerse sunucu kayıtlarını kontrol edin.</value></data>
+  <data name="Admin.Ops.List.Subtitle" xml:space="preserve"><value>Merkezi kayıttaki restoranlar. Veritabanı durumu yalnızca restoranın operasyon sayfasında okunur.</value></data>
+  <data name="Admin.Ops.List.FiltersLabel" xml:space="preserve"><value>Restoranları ara ve filtrele</value></data>
+  <data name="Admin.Ops.List.SearchPlaceholder" xml:space="preserve"><value>Ad, kısa ad veya alan adı</value></data>
+  <data name="Admin.Ops.List.MigrationRecord" xml:space="preserve"><value>Geçiş kaydı</value></data>
+  <data name="Admin.Ops.List.AnyMigrationRecord" xml:space="preserve"><value>Tüm kayıtlar</value></data>
+  <data name="Admin.Ops.List.AnyPlan" xml:space="preserve"><value>Tüm planlar</value></data>
+  <data name="Admin.Ops.List.NoPlan" xml:space="preserve"><value>Üyelik yok</value></data>
+  <data name="Admin.Ops.List.PageSize" xml:space="preserve"><value>Sayfa başına</value></data>
+  <data name="Admin.Ops.List.ClearFilters" xml:space="preserve"><value>Filtreleri temizle</value></data>
+  <data name="Admin.Ops.List.NoMatches" xml:space="preserve"><value>Bu filtrelerle eşleşen restoran yok.</value></data>
+  <data name="Admin.Ops.List.Showing" xml:space="preserve"><value>{2} restorandan {0}–{1} arası gösteriliyor</value></data>
+  <data name="Admin.Ops.List.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.List.NoDevices" xml:space="preserve"><value>Cihaz yok</value></data>
+  <data name="Admin.Ops.List.DevicesOnline" xml:space="preserve"><value>{0}/{1} çevrimiçi</value></data>
+  <data name="Admin.Ops.List.Operations" xml:space="preserve"><value>Operasyon</value></data>
+  <data name="Admin.Ops.List.Pagination" xml:space="preserve"><value>Restoran listesi sayfaları</value></data>
+  <data name="Admin.Ops.List.PreviousPage" xml:space="preserve"><value>Önceki sayfa</value></data>
+  <data name="Admin.Ops.List.NextPage" xml:space="preserve"><value>Sonraki sayfa</value></data>
+  <data name="Admin.Ops.List.PageNumber" xml:space="preserve"><value>Sayfa {0}</value></data>
+  <data name="Admin.Ops.MigrationRecord.Succeeded" xml:space="preserve"><value>Başarılı</value></data>
+  <data name="Admin.Ops.MigrationRecord.Failed" xml:space="preserve"><value>Başarısız</value></data>
+  <data name="Admin.Ops.MigrationRecord.NotRecorded" xml:space="preserve"><value>Kayıt yok</value></data>
+  <data name="Admin.Ops.State.Unknown" xml:space="preserve"><value>Bilinmiyor</value></data>
+  <data name="Admin.Ops.Database.Reachable" xml:space="preserve"><value>Erişilebilir</value></data>
+  <data name="Admin.Ops.Database.NotConfigured" xml:space="preserve"><value>Yapılandırılmamış</value></data>
+  <data name="Admin.Ops.Database.Unreachable" xml:space="preserve"><value>Erişilemiyor</value></data>
+  <data name="Admin.Ops.Database.TimedOut" xml:space="preserve"><value>Zaman aşımı</value></data>
+  <data name="Admin.Ops.Database.ConfigurationUnreadable" xml:space="preserve"><value>Bağlantı bilgisi okunamadı</value></data>
+  <data name="Admin.Ops.Database.Connection" xml:space="preserve"><value>Veritabanı</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelTitle" xml:space="preserve"><value>Restoran veritabanı okunamadı</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelBody" xml:space="preserve"><value>Veritabanı, geçiş, mod, bağlantı ve sipariş bilgileri gösterilemiyor. Kimlik, hesap oluşturma ve Print Bridge bilgileri merkezi kayıttan gelir ve bu sayfada yer alır. Ayrıntılar sunucu kayıtlarındadır.</value></data>
+  <data name="Admin.Ops.Migrations.Title" xml:space="preserve"><value>Geçişler</value></data>
+  <data name="Admin.Ops.Migrations.Current" xml:space="preserve"><value>Güncel</value></data>
+  <data name="Admin.Ops.Migrations.Pending" xml:space="preserve"><value>Bekleyen geçiş var</value></data>
+  <data name="Admin.Ops.Migrations.DatabaseAhead" xml:space="preserve"><value>Veritabanı uygulamadan yeni</value></data>
+  <data name="Admin.Ops.Migrations.PendingCount" xml:space="preserve"><value>{0} geçiş bekliyor</value></data>
+  <data name="Admin.Ops.Migrations.Applied" xml:space="preserve"><value>Son uygulanan</value></data>
+  <data name="Admin.Ops.Migrations.Expected" xml:space="preserve"><value>Uygulamanın beklediği</value></data>
+  <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>Bu sayfa yalnızca okur; geçişler CLI ile ve yayın sürecine göre uygulanır.</value></data>
+  <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>Çalışma modu</value></data>
+  <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>Canlı</value></data>
+  <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>Kurulum</value></data>
+  <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>Sipariş senkronizasyonu</value></data>
+  <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>Otomatik onay</value></data>
+  <data name="Admin.Ops.Automation.AutoReceipt" xml:space="preserve"><value>Otomatik fiş</value></data>
+  <data name="Admin.Ops.Automation.Active" xml:space="preserve"><value>Etkin</value></data>
+  <data name="Admin.Ops.Automation.Off" xml:space="preserve"><value>Kapalı</value></data>
+  <data name="Admin.Ops.Automation.PendingSetup" xml:space="preserve"><value>Kurulum bitince etkin</value></data>
+  <data name="Admin.Ops.GuidedSetup.Title" xml:space="preserve"><value>Rehberli kurulum</value></data>
+  <data name="Admin.Ops.GuidedSetup.Counts" xml:space="preserve"><value>Devam eden: {0} · Tamamlayan: {1} · Atlayan: {2}</value></data>
+  <data name="Admin.Ops.Users.Title" xml:space="preserve"><value>Kullanıcılar</value></data>
+  <data name="Admin.Ops.Users.Counts" xml:space="preserve"><value>Aktif kullanıcı: {0} · Aktif sahip: {1}</value></data>
+  <data name="Admin.Ops.SectionUnavailable" xml:space="preserve"><value>Bu bölüm okunamadı.</value></data>
+  <data name="Admin.Ops.Section.Guidance" xml:space="preserve"><value>Sıradaki adımlar</value></data>
+  <data name="Admin.Ops.Section.Identity" xml:space="preserve"><value>Restoran</value></data>
+  <data name="Admin.Ops.Section.Provisioning" xml:space="preserve"><value>Hesap oluşturma</value></data>
+  <data name="Admin.Ops.Section.Database" xml:space="preserve"><value>Veritabanı ve geçişler</value></data>
+  <data name="Admin.Ops.Section.OperationalMode" xml:space="preserve"><value>Çalışma modu ve otomasyon</value></data>
+  <data name="Admin.Ops.Section.Providers" xml:space="preserve"><value>Platform bağlantıları</value></data>
+  <data name="Admin.Ops.Section.Orders" xml:space="preserve"><value>Siparişler</value></data>
+  <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>Hesap durumu</value></data>
+  <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>Durum özeti</value></data>
+  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>yeni sekmede açılır</value></data>
+  <data name="Admin.Ops.Membership" xml:space="preserve"><value>Üyelik</value></data>
+  <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>Deneme</value></data>
+  <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>Aktif</value></data>
+  <data name="Admin.Ops.Membership.PendingPayment" xml:space="preserve"><value>Ödeme bekleniyor</value></data>
+  <data name="Admin.Ops.Membership.Cancelled" xml:space="preserve"><value>İptal edildi</value></data>
+  <data name="Admin.Ops.Membership.None" xml:space="preserve"><value>Üyelik kaydı yok</value></data>
+  <data name="Admin.Ops.Membership.TrialEnds" xml:space="preserve"><value>Deneme bitişi</value></data>
+  <data name="Admin.Ops.Membership.PeriodEnds" xml:space="preserve"><value>Dönem bitişi</value></data>
+  <data name="Admin.Ops.Provisioning.Registration" xml:space="preserve"><value>Kayıt başvurusu</value></data>
+  <data name="Admin.Ops.Provisioning.OpenRegistration" xml:space="preserve"><value>Başvuruyu aç</value></data>
+  <data name="Admin.Ops.Provisioning.NoRegistration" xml:space="preserve"><value>Bağlı başvuru yok (ör. CLI ile oluşturuldu)</value></data>
+  <data name="Admin.Ops.Provisioning.LastMigrationRecord" xml:space="preserve"><value>Son geçiş kaydı</value></data>
+  <data name="Admin.Ops.Provisioning.Note" xml:space="preserve"><value>Hata metinleri gösterilmez; ayrıntılar CLI çıktısında ve sunucu kayıtlarındadır.</value></data>
+  <data name="Admin.Ops.ProviderMode.Process" xml:space="preserve"><value>Sağlayıcı modu</value></data>
+  <data name="Admin.Ops.ProviderMode.Mock" xml:space="preserve"><value>Mock (test)</value></data>
+  <data name="Admin.Ops.ProviderMode.Real" xml:space="preserve"><value>Real (canlı)</value></data>
+  <data name="Admin.Ops.ProviderMode.NotRegistered" xml:space="preserve"><value>İstemci kayıtlı değil</value></data>
+  <data name="Admin.Ops.Providers.None" xml:space="preserve"><value>Bağlı platform yok.</value></data>
+  <data name="Admin.Ops.Providers.Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Admin.Ops.Providers.Health" xml:space="preserve"><value>Durum</value></data>
+  <data name="Admin.Ops.Providers.LastSuccess" xml:space="preserve"><value>Son başarılı senkronizasyon</value></data>
+  <data name="Admin.Ops.Providers.LastFailure" xml:space="preserve"><value>Son başarısız senkronizasyon (7 gün)</value></data>
+  <data name="Admin.Ops.Providers.Client" xml:space="preserve"><value>İstemci</value></data>
+  <data name="Admin.Ops.Providers.Store" xml:space="preserve"><value>Mağaza</value></data>
+  <data name="Admin.Ops.Providers.ConsecutiveFailures" xml:space="preserve"><value>Art arda hata: {0}</value></data>
+  <data name="Admin.Ops.Providers.PausedUntil" xml:space="preserve"><value>Duraklatma bitişi</value></data>
+  <data name="Admin.Ops.Providers.Enabled" xml:space="preserve"><value>Etkin</value></data>
+  <data name="Admin.Ops.Providers.DisabledLabel" xml:space="preserve"><value>Devre dışı</value></data>
+  <data name="Admin.Ops.Providers.Note" xml:space="preserve"><value>Kimlik bilgileri ve hata metinleri gösterilmez. Bağlantıları restoran sahibi kendi panelinden yönetir.</value></data>
+  <data name="Admin.Ops.Connection.Healthy" xml:space="preserve"><value>Sağlıklı</value></data>
+  <data name="Admin.Ops.Connection.Disabled" xml:space="preserve"><value>Devre dışı</value></data>
+  <data name="Admin.Ops.Connection.SyncOff" xml:space="preserve"><value>Senkronizasyon kapalı</value></data>
+  <data name="Admin.Ops.Connection.CircuitOpen" xml:space="preserve"><value>Tekrarlanan hatalar nedeniyle duraklatıldı</value></data>
+  <data name="Admin.Ops.Connection.Failing" xml:space="preserve"><value>Hata veriyor</value></data>
+  <data name="Admin.Ops.Connection.NeverSynced" xml:space="preserve"><value>Henüz senkronize edilmedi</value></data>
+  <data name="Admin.Ops.Connection.Stale" xml:space="preserve"><value>Senkronizasyon gecikti</value></data>
+  <data name="Admin.Ops.Orders.Last24Hours" xml:space="preserve"><value>Son 24 saat</value></data>
+  <data name="Admin.Ops.Orders.Last7Days" xml:space="preserve"><value>Son 7 gün</value></data>
+  <data name="Admin.Ops.Orders.Open" xml:space="preserve"><value>Açık</value></data>
+  <data name="Admin.Ops.Orders.Latest" xml:space="preserve"><value>Son sipariş</value></data>
+  <data name="Admin.Ops.PrintBridge.NoDevices" xml:space="preserve"><value>Kayıtlı Print Bridge cihazı yok.</value></data>
+  <data name="Admin.Ops.PrintBridge.LastSeen" xml:space="preserve"><value>Son görülme</value></data>
+  <data name="Admin.Ops.PrintJobs.Counts" xml:space="preserve"><value>Kuyruktaki yazdırma işi: {0} · Son 24 saatte başarısız: {1}</value></data>
+  <data name="Admin.Ops.PrintJobs.Unavailable" xml:space="preserve"><value>Yazdırma işi sayıları okunamadı.</value></data>
+  <data name="Admin.Ops.Guidance.ReadOnlyNote" xml:space="preserve"><value>Bu öneriler yalnızca gözleme dayanır; bu sayfa hiçbir onarım veya değişiklik yapmaz.</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Critical" xml:space="preserve"><value>Kritik</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Warning" xml:space="preserve"><value>Uyarı</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Info" xml:space="preserve"><value>Bilgi</value></data>
+  <data name="Admin.Ops.Guidance.Severity.AllClear" xml:space="preserve"><value>Sorun yok</value></data>
+  <data name="Admin.Ops.Age.JustNow" xml:space="preserve"><value>az önce</value></data>
+  <data name="Admin.Ops.Age.Minutes" xml:space="preserve"><value>{0} dk önce</value></data>
+  <data name="Admin.Ops.Age.Hours" xml:space="preserve"><value>{0} sa önce</value></data>
+  <data name="Admin.Ops.Age.Days" xml:space="preserve"><value>{0} gün önce</value></data>
+  <data name="Admin.Ops.BackToTenants" xml:space="preserve"><value>Restoran listesine dön</value></data>
+  <data name="Admin.Ops.Guidance.TenantInactive" xml:space="preserve"><value>Restoran pasif: kullanıcılar giriş yapamaz ve Worker siparişlerini senkronize etmez. Bilinçli değilse, etkinleştirmeden önce sahiple teyit edin.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseNotConfigured" xml:space="preserve"><value>Bu restoranın veritabanı için bağlantı bilgisi kayıtlı değil. Hesap oluşturma büyük olasılıkla tamamlanmadı; başvuruyu ve CLI çıktısını kontrol edin.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseUnreachable" xml:space="preserve"><value>Restoran veritabanına ulaşılamadı. SQL Server&apos;ın çalıştığını ve veritabanının var olduğunu kontrol edin, ardından CLI ile migration-status çalıştırın.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>Restoran veritabanı birkaç saniye içinde yanıt vermedi. SQL Server&apos;ın çalıştığını, bu veritabanının var olduğunu ve yapılandırılmış girişi kabul ettiğini kontrol edip sayfayı yenileyin.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>Kayıtlı bağlantı bilgisi çözülemedi. Bu sunucunun, restoranı oluşturan sunucuyla aynı ENCRYPTION_MASTER_KEY değerini kullandığını kontrol edin.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>Beklenmeyen bir hata nedeniyle restoran veritabanı kontrol edilemedi. Bu restoran için sunucu kayıtlarına bakın.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>Restoran veritabanında bu sürümün ihtiyaç duyduğu geçişler eksik. Yayın sürecine uyarak CLI ile uygulayın (migrate-customer veya migrate-all-customers); o zamana kadar yeni sütunları kullanan özellikler hata verebilir.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>Restoran veritabanında bu uygulama sürümünün bilmediği geçişler var. Daha yeni bir sürüm geçiş yapmış olabilir; hangi sürümün yayında olduğunu kontrol edin.</value></data>
+  <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>Bu restoran için kaydedilen son geçiş başarısız oldu. CLI ile migration-status çalıştırın ve bu restoranın geçişini yeniden deneyin.</value></data>
+  <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>Bazı bölümler okunamadı. Genellikle bekleyen bir geçiş neden olur; sunucu kayıtlarına bakın.</value></data>
+  <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>Restoran hâlâ Kurulum modunda: siparişler senkronize edilir ancak bir sahip rehberli kurulumu tamamlayana veya atlayana kadar hiçbir şey otomatik onaylanmaz veya yazdırılmaz.</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>Restoranın aktif sahibi yok. Ayarları, bağlantıları ve cihazları yalnızca sahip yönetebilir; gerekirse CLI ile (seed-customer-admin) bir sahip ekleyin.</value></data>
+  <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>Bağlı teslimat platformu yok, bu nedenle sipariş gelemez. Sahip, Platform bağlantıları bölümünden bağlantı ekler.</value></data>
+  <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>Tüm platform bağlantıları devre dışı, bu nedenle sipariş alınmıyor. Bunun bilinçli olup olmadığını sahiple teyit edin.</value></data>
+  <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>Restoran ayarlarında sipariş senkronizasyonu kapalı; Worker bu restoranı atlar. Mevcut siparişler görünür kalır.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionCircuitOpen" xml:space="preserve"><value>Bir platform bağlantısı tekrarlanan hatalardan sonra duraklatıldı. Platformun durumunu kontrol edin ve sahipten bağlantı bilgilerini doğrulamasını isteyin.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionFailing" xml:space="preserve"><value>Bir platform bağlantısının son senkronizasyon denemeleri başarısız oldu. Sürerse platform durumunu ve bağlantı bilgilerini kontrol edin.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionStale" xml:space="preserve"><value>Bir platform bağlantısı 10 dakikadan uzun süredir başarılı senkronize olmadı. Worker&apos;ın çalıştığını kontrol edin.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionNeverSynced" xml:space="preserve"><value>Bir platform bağlantısı hiç başarılı senkronize olmadı. Bir süre önce eklendiyse Worker&apos;ın çalıştığını kontrol edin.</value></data>
+  <data name="Admin.Ops.Guidance.NoRecentOrders" xml:space="preserve"><value>Bağlantılar senkronize oluyor ancak son 7 günde sipariş gelmedi. Mağazanın platformlarda açık olduğunu sahiple teyit edin.</value></data>
+  <data name="Admin.Ops.Guidance.NoPrintBridgeDevice" xml:space="preserve"><value>Kayıtlı Print Bridge cihazı yok; fişler ancak bir cihaz kurulduktan sonra yazdırılabilir.</value></data>
+  <data name="Admin.Ops.Guidance.AutoReceiptWithoutDevice" xml:space="preserve"><value>Otomatik fiş etkin ancak kayıtlı Print Bridge cihazı yok. Sahip bir cihaz kurana kadar fişler kuyrukta bekler.</value></data>
+  <data name="Admin.Ops.Guidance.PrintBridgeOffline" xml:space="preserve"><value>Çevrimiçi aktif Print Bridge cihazı yok. Restorandan Print Bridge bilgisayarının açık ve bağlı olduğunu kontrol etmesini isteyin.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsQueuedWithoutOnlineDevice" xml:space="preserve"><value>Çevrimiçi cihaz yokken yazdırma işleri bekliyor; bir cihaz yeniden bağlandığında onları alır.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>Son 24 saatte bazı yazdırma işleri başarısız oldu. Sahip, Print Bridge bilgisayarındaki yazıcıyı kontrol edebilir.</value></data>
+  <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>Bağlı kayıt başvurusu oluşturuldu olarak işaretli değil. Durumunu incelemek için açın; elle değiştirmeyin.</value></data>
+  <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Şu anda dikkat gerektiren bir şey yok.</value></data>
 </root>

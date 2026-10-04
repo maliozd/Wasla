@@ -1,0 +1,5 @@
+@model Wasla.Web.Areas.Admin.Models.TenantOperations.AdminStatus
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@* The text carries the meaning; icon and tone only reinforce it. *@
+<span class="badge wasla-admin-status wasla-admin-status--@Model.CssModifier"><i class="bi @Model.Icon" aria-hidden="true"></i><span>@L[Model.LabelKey]</span></span>

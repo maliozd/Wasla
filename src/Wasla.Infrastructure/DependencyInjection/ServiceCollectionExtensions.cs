@@ -105,6 +105,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantUserRoleService, TenantUserRoleService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
+        services.AddScoped<ICentralAdminTenantOperationsService, CentralAdminTenantOperationsService>();
+        services.AddOptions<TenantOperationalHealthOptions>();
+        // Singleton so concurrent detail requests for the same tenant share one in-flight read.
+        services.AddSingleton<ITenantOperationalHealthReader, TenantOperationalHealthReader>();
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
         services.AddScoped<ITenantDatabaseProvisioningOperations, SqlServerTenantDatabaseProvisioningOperations>();
         services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();

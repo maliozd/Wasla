@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Admin;
-using Wasla.Web.Areas.Admin.Models;
+using Wasla.Web.Areas.Admin.Models.TenantOperations;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
 
@@ -12,51 +13,35 @@ namespace Wasla.Web.Areas.Admin.Controllers;
 [Route("admin")]
 public sealed class DashboardController : Controller
 {
-    private readonly ICentralAdminTenantService _customers;
+    private readonly ICentralAdminTenantOperationsService _operations;
     private readonly ICentralAdminPendingRegistrationService _pendingRegs;
+    private readonly ILogger<DashboardController> _logger;
 
     public DashboardController(
-        ICentralAdminTenantService customers,
-        ICentralAdminPendingRegistrationService pendingRegs)
+        ICentralAdminTenantOperationsService operations,
+        ICentralAdminPendingRegistrationService pendingRegs,
+        ILogger<DashboardController> logger)
     {
-        _customers = customers;
+        _operations = operations;
         _pendingRegs = pendingRegs;
+        _logger = logger;
     }
 
+    /// <summary>Operations overview from CentralDb only; no tenant database is opened here.</summary>
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var data = await _customers.GetDashboardAsync(ct).ConfigureAwait(false);
-        var attention = await _pendingRegs.GetAttentionListAsync(ct).ConfigureAwait(false);
-
-        static CentralAdminTenantListItemViewModel MapTenant(CentralAdminTenantListItemDto c) => new()
+        try
         {
-            Id = c.Id,
-            Name = c.Name,
-            Slug = c.Slug,
-            PrimaryDomain = c.PrimaryDomain,
-            DatabaseName = c.DatabaseName,
-            IsActive = c.IsActive,
-            SchemaVersion = c.SchemaVersion,
-            LastMigrationAt = c.LastMigrationAt,
-            LastMigrationResult = c.LastMigrationResult,
-            CreatedAt = c.CreatedAt
-        };
-
-        var vm = new CentralAdminDashboardViewModel
+            var overview = await _operations.GetOverviewAsync(ct).ConfigureAwait(false);
+            var attention = await _pendingRegs.GetAttentionListAsync(ct).ConfigureAwait(false);
+            return View(new AdminOverviewViewModel { Overview = overview, AttentionRegistrations = attention });
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            TotalCustomers = data.TotalCustomers,
-            ActiveCustomers = data.ActiveCustomers,
-            InactiveCustomers = data.InactiveCustomers,
-            Customers = data.Customers.Select(MapTenant).ToList(),
-            RecentCustomers = data.RecentCustomers.Select(MapTenant).ToList(),
-            RegPendingPayment = data.RegPendingPayment,
-            RegPaymentReceivedSetupPending = data.RegPaymentReceivedSetupPending,
-            RegProvisioned = data.RegProvisioned,
-            AttentionRegistrations = attention
-        };
-
-        return View(vm);
+            _logger.LogError("Admin overview could not read CentralDb ({ExceptionType}).", ex.GetType().Name);
+            Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            return View(new AdminOverviewViewModel());
+        }
     }
 }
-
