@@ -6,7 +6,7 @@ using Wasla.PrintBridge.Printing;
 
 namespace Wasla.PrintBridge.Services;
 
-public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource
+public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
 {
     private const int MaxRecentJobs = 50;
 

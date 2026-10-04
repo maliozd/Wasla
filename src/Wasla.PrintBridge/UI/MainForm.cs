@@ -1008,6 +1008,17 @@ public sealed partial class MainForm : Form
         }
     }
 
+    /// <summary>
+    /// The trusted native connection setup used by the WebView2 shell's reconnect action. The server URL and
+    /// device token are only ever entered here, never in the WebView2 page.
+    /// </summary>
+    public void FocusConnectionSettingsSection()
+    {
+        SelectSettingsTab();
+        _connectionGroup.Focus();
+        _txtServerUrl.Focus();
+    }
+
     public void FocusPrinterSettingsSection()
     {
         SelectSettingsTab();

@@ -12,21 +12,26 @@ namespace Wasla.PrintBridge.Tests.WebShell;
 public sealed class ShellBridgeTests : IDisposable
 {
     private readonly CultureScope _cultureScope = new();
-    private readonly Localization.PrintBridgeCultureService _culture = Culture();
-    private readonly FakeStatusSource _source = new();
-    private readonly FakeShellHost _host = new();
+    private readonly ShellTestRig _rig;
+    private readonly FakeStatusSource _source;
+    private readonly FakeShellHost _host;
     private readonly FakeLanguageSwitcher _languages;
     private readonly ShellBridge _bridge;
 
     public ShellBridgeTests()
     {
-        _languages = new FakeLanguageSwitcher(_culture);
-        _bridge = new ShellBridge(_source, Factory(_culture), _host, _languages, _culture, NullLogger.Instance);
+        _rig = new ShellTestRig(Culture());
+        // Printers already discovered, so the first ui.ready does not trigger a background discovery.
+        _rig.Catalog.RefreshAsync(CancellationToken.None).GetAwaiter().GetResult();
+        _source = _rig.Engine;
+        _host = _rig.Host;
+        _languages = _rig.Languages;
+        _bridge = _rig.Bridge;
     }
 
     public void Dispose()
     {
-        _bridge.Dispose();
+        _rig.Dispose();
         _cultureScope.Dispose();
     }
 
@@ -47,7 +52,7 @@ public sealed class ShellBridgeTests : IDisposable
 
         Assert.Equal(ShellMessageOutcome.Accepted, outcome);
         var message = JsonDocument.Parse(Assert.Single(_host.Sent)).RootElement;
-        Assert.Equal(1, message.GetProperty("version").GetInt32());
+        Assert.Equal(2, message.GetProperty("version").GetInt32());
         Assert.Equal("snapshot.updated", message.GetProperty("type").GetString());
         Assert.Equal(1, message.GetProperty("sequence").GetInt64());
         Assert.Equal("online", message.GetProperty("payload").GetProperty("connection").GetProperty("state").GetString());
@@ -67,7 +72,7 @@ public sealed class ShellBridgeTests : IDisposable
             _host.Sent.Select(s => JsonDocument.Parse(s).RootElement.GetProperty("sequence").GetInt64()));
         Assert.Single(_host.Sent.Select(s => JsonDocument.Parse(s).RootElement.GetProperty("payload").GetRawText()).Distinct());
         Assert.Empty(_languages.Requests);
-        Assert.Equal(0, _host.ClassicWindowRequests);
+        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
     }
 
     [Fact]
@@ -131,19 +136,19 @@ public sealed class ShellBridgeTests : IDisposable
         var outcome = _bridge.HandleWebMessage(source, Command("classicWindow.open"));
 
         Assert.Equal(ShellMessageOutcome.Rejected, outcome);
-        Assert.Equal(0, _host.ClassicWindowRequests);
+        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
         Assert.Empty(_host.Sent);
     }
 
     [Theory]
     [InlineData("not json")]
-    [InlineData("""{"version":1,"type":"host.exec","payload":{"method":"Exit"}}""")]
-    [InlineData("""{"version":1,"type":"ui.ready","payload":{},"extra":1}""")]
+    [InlineData("""{"version":2,"type":"host.exec","payload":{"method":"Exit"}}""")]
+    [InlineData("""{"version":2,"type":"ui.ready","payload":{},"extra":1}""")]
     public void MalformedOrUnknownMessages_AreRejectedWithoutEffect(string raw)
     {
         Assert.Equal(ShellMessageOutcome.Rejected, _bridge.HandleWebMessage(ShellDocument, raw));
         Assert.Empty(_host.Sent);
-        Assert.Equal(0, _host.ClassicWindowRequests);
+        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
     }
 
     [Fact]
@@ -151,7 +156,7 @@ public sealed class ShellBridgeTests : IDisposable
     {
         _bridge.HandleWebMessage(ShellDocument, Command("classicWindow.open"));
 
-        Assert.Equal(1, _host.ClassicWindowRequests);
+        Assert.Equal(1, _rig.Native.ClassicWindowRequests);
     }
 
     [Fact]

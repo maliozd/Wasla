@@ -653,9 +653,6 @@
   <data name="Shell.OpenClassicWindow" xml:space="preserve">
     <value>Klasik pencereyi aç</value>
   </data>
-  <data name="Shell.Preview.Notice" xml:space="preserve">
-    <value>Önizleme: Bu görünüm yalnızca durumu gösterir. Ayarlar ve yazdırma geçmişi klasik pencerede kalır.</value>
-  </data>
   <data name="Shell.Fallback.Title" xml:space="preserve">
     <value>Klasik pencere açıldı</value>
   </data>
@@ -664,5 +661,182 @@
   </data>
   <data name="Shell.Fallback.StartFailed" xml:space="preserve">
     <value>Yeni görünüm başlatılamadı. Klasik pencere kullanılıyor.</value>
+  </data>
+  <data name="Shell.Nav.Label" xml:space="preserve">
+    <value>Bölümler</value>
+  </data>
+  <data name="Shell.Tab.Overview" xml:space="preserve">
+    <value>Genel bakış</value>
+  </data>
+  <data name="Shell.Tab.Printer" xml:space="preserve">
+    <value>Yazıcı</value>
+  </data>
+  <data name="Shell.Tile.Printer" xml:space="preserve">
+    <value>Yazıcı</value>
+  </data>
+  <data name="Shell.Tile.Engine" xml:space="preserve">
+    <value>Dinleme</value>
+  </data>
+  <data name="Shell.Overview.Actions" xml:space="preserve">
+    <value>Hızlı işlemler</value>
+  </data>
+  <data name="Shell.Action.Reconnect" xml:space="preserve">
+    <value>Yeniden bağlan</value>
+  </data>
+  <data name="Shell.Action.ConfigurePrinter" xml:space="preserve">
+    <value>Yazıcı seç</value>
+  </data>
+  <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
+    <value>Tanılamayı göster</value>
+  </data>
+  <data name="Shell.Action.OpenSetup" xml:space="preserve">
+    <value>Bağlantı ayarlarını aç</value>
+  </data>
+  <data name="Shell.Action.Working" xml:space="preserve">
+    <value>İşleniyor…</value>
+  </data>
+  <data name="Shell.Action.Confirm" xml:space="preserve">
+    <value>Onayla</value>
+  </data>
+  <data name="Shell.Action.Cancel" xml:space="preserve">
+    <value>Vazgeç</value>
+  </data>
+  <data name="Shell.Printer.Title" xml:space="preserve">
+    <value>Fiş yazıcısı</value>
+  </data>
+  <data name="Shell.Printer.Help" xml:space="preserve">
+    <value>Fişlerin gönderileceği Windows yazıcısını seçip kaydedin. Yazdırılmakta olan bir iş, kaydettiğiniz anda kesilmez.</value>
+  </data>
+  <data name="Shell.Printer.Placeholder" xml:space="preserve">
+    <value>Yazıcı seçin</value>
+  </data>
+  <data name="Shell.Printer.NoneInstalled" xml:space="preserve">
+    <value>Bu bilgisayarda yüklü yazıcı bulunamadı. Yazıcıyı Windows'a ekleyip Yenile'ye basın.</value>
+  </data>
+  <data name="Shell.Printer.SavedNotInstalled" xml:space="preserve">
+    <value>Kayıtlı yazıcı bu bilgisayarda bulunamadı. Başka bir yazıcı seçin veya yazıcıyı Windows'a yeniden ekleyin.</value>
+  </data>
+  <data name="Shell.Printer.TestHelp" xml:space="preserve">
+    <value>Test fişi kayıtlı yazıcıya gönderilir. Windows'un işi kabul etmesi kağıdın basıldığını garanti etmez.</value>
+  </data>
+  <data name="Shell.Printer.NotInstalled" xml:space="preserve">
+    <value>Seçilen yazıcı bu bilgisayarda bulunamadı.</value>
+  </data>
+  <data name="Shell.History.Range" xml:space="preserve">
+    <value>Zaman aralığı</value>
+  </data>
+  <data name="Shell.History.ConfirmReprint" xml:space="preserve">
+    <value>Yeniden yazdırılsın mı?</value>
+  </data>
+  <data name="Shell.History.Previous" xml:space="preserve">
+    <value>Önceki</value>
+  </data>
+  <data name="Shell.History.Next" xml:space="preserve">
+    <value>Sonraki</value>
+  </data>
+  <data name="Shell.History.Loading" xml:space="preserve">
+    <value>Geçmiş yükleniyor…</value>
+  </data>
+  <data name="Shell.History.Error.Printer" xml:space="preserve">
+    <value>Yazıcıya ulaşılamadı.</value>
+  </data>
+  <data name="Shell.History.Error.Server" xml:space="preserve">
+    <value>Sunucu işi onaylamadı.</value>
+  </data>
+  <data name="Shell.History.Error.Generic" xml:space="preserve">
+    <value>Yazdırılamadı. Ayrıntılar log dosyasında.</value>
+  </data>
+  <data name="Shell.History.Skipped" xml:space="preserve">
+    <value>İş başka bir yerde işlendi veya artık beklemiyordu.</value>
+  </data>
+  <data name="Shell.History.DryRun" xml:space="preserve">
+    <value>Test modu: kağıda basılmadı.</value>
+  </data>
+  <data name="Shell.Settings.Connection" xml:space="preserve">
+    <value>Wasla bağlantısı</value>
+  </data>
+  <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
+    <value>Sunucu adresi ve cihaz anahtarı güvenlik nedeniyle yalnızca yerel kurulum penceresinde girilir; bu ekran onları görmez.</value>
+  </data>
+  <data name="Shell.Settings.Appearance" xml:space="preserve">
+    <value>Dil ve görünüm</value>
+  </data>
+  <data name="Shell.Settings.ThemeFollowsWindows" xml:space="preserve">
+    <value>Açık veya koyu görünüm Windows uygulama temasını izler.</value>
+  </data>
+  <data name="Shell.Settings.TestMode" xml:space="preserve">
+    <value>Test modu</value>
+  </data>
+  <data name="Shell.Settings.TestModeOn" xml:space="preserve">
+    <value>Açık — fişler kağıda basılmaz</value>
+  </data>
+  <data name="Shell.Settings.TestModeOff" xml:space="preserve">
+    <value>Kapalı</value>
+  </data>
+  <data name="Shell.Settings.AdvancedHelp" xml:space="preserve">
+    <value>Test modu ve kontrol aralıkları klasik penceredeki Gelişmiş bölümünden değiştirilir.</value>
+  </data>
+  <data name="Shell.Diagnostics.Title" xml:space="preserve">
+    <value>Tanılama</value>
+  </data>
+  <data name="Shell.Diagnostics.AppVersion" xml:space="preserve">
+    <value>Uygulama sürümü</value>
+  </data>
+  <data name="Shell.Diagnostics.WebView2" xml:space="preserve">
+    <value>WebView2 çalışma zamanı</value>
+  </data>
+  <data name="Shell.Diagnostics.Engine" xml:space="preserve">
+    <value>Dinleme durumu</value>
+  </data>
+  <data name="Shell.Diagnostics.LastError" xml:space="preserve">
+    <value>Son hata</value>
+  </data>
+  <data name="Shell.Diagnostics.None" xml:space="preserve">
+    <value>Yok</value>
+  </data>
+  <data name="Shell.Diagnostics.Unavailable" xml:space="preserve">
+    <value>Bilinmiyor</value>
+  </data>
+  <data name="Shell.Diagnostics.Fallback" xml:space="preserve">
+    <value>Klasik pencere</value>
+  </data>
+  <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
+    <value>Klasik pencere yedek olarak kullanılabilir; gelişmiş ayarlar ve loglar oradadır.</value>
+  </data>
+  <data name="Shell.Toast.Dismiss" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="Shell.Device.Unknown" xml:space="preserve">
+    <value>Cihaz adı henüz alınmadı</value>
+  </data>
+  <data name="Shell.Op.Started" xml:space="preserve">
+    <value>Dinleme başlatıldı.</value>
+  </data>
+  <data name="Shell.Op.Stopped" xml:space="preserve">
+    <value>Dinleme durduruldu.</value>
+  </data>
+  <data name="Shell.Op.Busy" xml:space="preserve">
+    <value>Bu işlem zaten sürüyor.</value>
+  </data>
+  <data name="Shell.Op.Failed" xml:space="preserve">
+    <value>İşlem tamamlanamadı. Ayrıntılar log dosyasında.</value>
+  </data>
+  <data name="Shell.Op.TimedOut" xml:space="preserve">
+    <value>İşlem zaman aşımına uğradı. Tekrar deneyin.</value>
+  </data>
+  <data name="Shell.Op.PrintersRefreshed" xml:space="preserve">
+    <value>Yazıcı listesi yenilendi.</value>
+  </data>
+  <data name="Shell.Op.PrinterSaved" xml:space="preserve">
+    <value>Yazıcı kaydedildi.</value>
+  </data>
+  <data name="Shell.Op.ResetDone" xml:space="preserve">
+    <value>Bağlantı sıfırlandı. Wasla Web'den bu cihazı yeniden bağlayın.</value>
+  </data>
+  <data name="Shell.Op.ResetCancelled" xml:space="preserve">
+    <value>Bağlantı sıfırlanmadı.</value>
+  </data>
+  <data name="Shell.Op.LogsOpened" xml:space="preserve">
+    <value>Log klasörü açıldı.</value>
   </data>
 </root>

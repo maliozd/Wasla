@@ -653,9 +653,6 @@
   <data name="Shell.OpenClassicWindow" xml:space="preserve">
     <value>Открыть классическое окно</value>
   </data>
-  <data name="Shell.Preview.Notice" xml:space="preserve">
-    <value>Предварительная версия: здесь показано только состояние. Настройки и история печати остаются в классическом окне.</value>
-  </data>
   <data name="Shell.Fallback.Title" xml:space="preserve">
     <value>Открыто классическое окно</value>
   </data>
@@ -664,5 +661,182 @@
   </data>
   <data name="Shell.Fallback.StartFailed" xml:space="preserve">
     <value>Не удалось запустить новый вид. Вместо него используется классическое окно.</value>
+  </data>
+  <data name="Shell.Nav.Label" xml:space="preserve">
+    <value>Разделы</value>
+  </data>
+  <data name="Shell.Tab.Overview" xml:space="preserve">
+    <value>Обзор</value>
+  </data>
+  <data name="Shell.Tab.Printer" xml:space="preserve">
+    <value>Принтер</value>
+  </data>
+  <data name="Shell.Tile.Printer" xml:space="preserve">
+    <value>Принтер</value>
+  </data>
+  <data name="Shell.Tile.Engine" xml:space="preserve">
+    <value>Прослушивание</value>
+  </data>
+  <data name="Shell.Overview.Actions" xml:space="preserve">
+    <value>Быстрые действия</value>
+  </data>
+  <data name="Shell.Action.Reconnect" xml:space="preserve">
+    <value>Переподключить</value>
+  </data>
+  <data name="Shell.Action.ConfigurePrinter" xml:space="preserve">
+    <value>Выбрать принтер</value>
+  </data>
+  <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
+    <value>Показать диагностику</value>
+  </data>
+  <data name="Shell.Action.OpenSetup" xml:space="preserve">
+    <value>Открыть настройку подключения</value>
+  </data>
+  <data name="Shell.Action.Working" xml:space="preserve">
+    <value>Выполняется…</value>
+  </data>
+  <data name="Shell.Action.Confirm" xml:space="preserve">
+    <value>Подтвердить</value>
+  </data>
+  <data name="Shell.Action.Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="Shell.Printer.Title" xml:space="preserve">
+    <value>Принтер чеков</value>
+  </data>
+  <data name="Shell.Printer.Help" xml:space="preserve">
+    <value>Выберите и сохраните принтер Windows для чеков. Задание, которое уже печатается, при сохранении не прерывается.</value>
+  </data>
+  <data name="Shell.Printer.Placeholder" xml:space="preserve">
+    <value>Выберите принтер</value>
+  </data>
+  <data name="Shell.Printer.NoneInstalled" xml:space="preserve">
+    <value>На этом компьютере нет установленных принтеров. Добавьте принтер в Windows и нажмите «Обновить».</value>
+  </data>
+  <data name="Shell.Printer.SavedNotInstalled" xml:space="preserve">
+    <value>Сохранённый принтер не установлен на этом компьютере. Выберите другой или снова добавьте его в Windows.</value>
+  </data>
+  <data name="Shell.Printer.TestHelp" xml:space="preserve">
+    <value>Тестовый чек отправляется на сохранённый принтер. То, что Windows принял задание, не гарантирует печать на бумаге.</value>
+  </data>
+  <data name="Shell.Printer.NotInstalled" xml:space="preserve">
+    <value>Выбранный принтер не установлен на этом компьютере.</value>
+  </data>
+  <data name="Shell.History.Range" xml:space="preserve">
+    <value>Период</value>
+  </data>
+  <data name="Shell.History.ConfirmReprint" xml:space="preserve">
+    <value>Напечатать этот чек повторно?</value>
+  </data>
+  <data name="Shell.History.Previous" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="Shell.History.Next" xml:space="preserve">
+    <value>Далее</value>
+  </data>
+  <data name="Shell.History.Loading" xml:space="preserve">
+    <value>Загрузка истории…</value>
+  </data>
+  <data name="Shell.History.Error.Printer" xml:space="preserve">
+    <value>Не удалось связаться с принтером.</value>
+  </data>
+  <data name="Shell.History.Error.Server" xml:space="preserve">
+    <value>Сервер не подтвердил задание.</value>
+  </data>
+  <data name="Shell.History.Error.Generic" xml:space="preserve">
+    <value>Не удалось напечатать. Подробности в журнале.</value>
+  </data>
+  <data name="Shell.History.Skipped" xml:space="preserve">
+    <value>Задание обработано в другом месте или больше не ожидало.</value>
+  </data>
+  <data name="Shell.History.DryRun" xml:space="preserve">
+    <value>Тестовый режим: на бумаге не напечатано.</value>
+  </data>
+  <data name="Shell.Settings.Connection" xml:space="preserve">
+    <value>Подключение к Wasla</value>
+  </data>
+  <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
+    <value>В целях безопасности адрес сервера и токен устройства вводятся только в локальном окне настройки; этот экран их не видит.</value>
+  </data>
+  <data name="Shell.Settings.Appearance" xml:space="preserve">
+    <value>Язык и оформление</value>
+  </data>
+  <data name="Shell.Settings.ThemeFollowsWindows" xml:space="preserve">
+    <value>Светлое или тёмное оформление следует теме приложений Windows.</value>
+  </data>
+  <data name="Shell.Settings.TestMode" xml:space="preserve">
+    <value>Тестовый режим</value>
+  </data>
+  <data name="Shell.Settings.TestModeOn" xml:space="preserve">
+    <value>Включён — чеки не печатаются</value>
+  </data>
+  <data name="Shell.Settings.TestModeOff" xml:space="preserve">
+    <value>Выключен</value>
+  </data>
+  <data name="Shell.Settings.AdvancedHelp" xml:space="preserve">
+    <value>Тестовый режим и интервалы опроса меняются в разделе «Дополнительно» классического окна.</value>
+  </data>
+  <data name="Shell.Diagnostics.Title" xml:space="preserve">
+    <value>Диагностика</value>
+  </data>
+  <data name="Shell.Diagnostics.AppVersion" xml:space="preserve">
+    <value>Версия приложения</value>
+  </data>
+  <data name="Shell.Diagnostics.WebView2" xml:space="preserve">
+    <value>Среда выполнения WebView2</value>
+  </data>
+  <data name="Shell.Diagnostics.Engine" xml:space="preserve">
+    <value>Состояние прослушивания</value>
+  </data>
+  <data name="Shell.Diagnostics.LastError" xml:space="preserve">
+    <value>Последняя ошибка</value>
+  </data>
+  <data name="Shell.Diagnostics.None" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="Shell.Diagnostics.Unavailable" xml:space="preserve">
+    <value>Неизвестно</value>
+  </data>
+  <data name="Shell.Diagnostics.Fallback" xml:space="preserve">
+    <value>Классическое окно</value>
+  </data>
+  <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
+    <value>Классическое окно остаётся резервным вариантом, включая дополнительные настройки и журналы.</value>
+  </data>
+  <data name="Shell.Toast.Dismiss" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="Shell.Device.Unknown" xml:space="preserve">
+    <value>Имя устройства ещё не получено</value>
+  </data>
+  <data name="Shell.Op.Started" xml:space="preserve">
+    <value>Прослушивание запущено.</value>
+  </data>
+  <data name="Shell.Op.Stopped" xml:space="preserve">
+    <value>Прослушивание остановлено.</value>
+  </data>
+  <data name="Shell.Op.Busy" xml:space="preserve">
+    <value>Эта операция уже выполняется.</value>
+  </data>
+  <data name="Shell.Op.Failed" xml:space="preserve">
+    <value>Не удалось выполнить операцию. Подробности в журнале.</value>
+  </data>
+  <data name="Shell.Op.TimedOut" xml:space="preserve">
+    <value>Время ожидания истекло. Повторите попытку.</value>
+  </data>
+  <data name="Shell.Op.PrintersRefreshed" xml:space="preserve">
+    <value>Список принтеров обновлён.</value>
+  </data>
+  <data name="Shell.Op.PrinterSaved" xml:space="preserve">
+    <value>Принтер сохранён.</value>
+  </data>
+  <data name="Shell.Op.ResetDone" xml:space="preserve">
+    <value>Подключение сброшено. Переподключите устройство через Wasla Web.</value>
+  </data>
+  <data name="Shell.Op.ResetCancelled" xml:space="preserve">
+    <value>Подключение не сброшено.</value>
+  </data>
+  <data name="Shell.Op.LogsOpened" xml:space="preserve">
+    <value>Папка журналов открыта.</value>
   </data>
 </root>

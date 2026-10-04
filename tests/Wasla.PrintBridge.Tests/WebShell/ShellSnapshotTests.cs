@@ -83,26 +83,35 @@ public sealed class ShellSnapshotTests : IDisposable
     [Fact]
     public void SerializedSnapshot_ContainsNoTokenServerUrlOrInstallationIdentity()
     {
-        var culture = Culture();
-        var snapshot = Factory(culture).Create(Status());
+        // The factory reads the live settings (printer, test mode, whether a token exists), so give it real ones.
+        using var rig = new ShellTestRig(Culture(), ShellTestRig.NewSettings(SentinelToken));
+        var snapshot = rig.Factory.Create(Status());
 
         var json = ShellMessageSerializer.SerializeSnapshotMessage(snapshot, 7);
+        var withoutStrings = JsonNode.Parse(json)!.AsObject();
+        withoutStrings["payload"]!.AsObject().Remove("strings");
 
+        Assert.DoesNotContain(SentinelToken, json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("SENTINEL", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(SentinelServerUrl, json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("sentinel-tenant", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("token", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("serverUrl", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("QA-MACHINE", json, StringComparison.Ordinal);
+        Assert.DoesNotContain(Environment.MachineName, json, StringComparison.OrdinalIgnoreCase);
+        // Outside the static UI strings (which may explain what a token is), no field names or values mention one.
+        Assert.DoesNotContain("token", withoutStrings.ToJsonString(), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("serverUrl", withoutStrings.ToJsonString(), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void SnapshotModel_HasNoCredentialOrTenantFields()
     {
-        var forbidden = new[] { "token", "secret", "password", "serverurl", "url", "installation", "tenant", "credential" };
+        var forbidden = new[] { "token", "secret", "password", "serverurl", "url", "installation", "tenant", "credential", "machine", "path" };
         var types = new[]
         {
             typeof(ShellSnapshot), typeof(ShellConnectionView), typeof(ShellDeviceView), typeof(ShellPrinterView),
-            typeof(ShellActivityView), typeof(ShellJobView), typeof(ShellLanguageOption), typeof(ShellSnapshotMessage)
+            typeof(ShellActivityView), typeof(ShellJobView), typeof(ShellLanguageOption), typeof(ShellHostMessage<ShellSnapshot>),
+            typeof(ShellEngineView), typeof(ShellActionsView), typeof(ShellBusyState), typeof(ShellDiagnosticsView),
+            typeof(ShellHistoryPage), typeof(ShellHistoryItem), typeof(ShellHistoryResult), typeof(ShellOperationResultView)
         };
 
         foreach (var property in types.SelectMany(t => t.GetProperties()))
@@ -120,13 +129,13 @@ public sealed class ShellSnapshotTests : IDisposable
         var root = JsonNode.Parse(ShellMessageSerializer.SerializeSnapshotMessage(snapshot, 3))!.AsObject();
 
         Assert.Equal(["version", "type", "sequence", "payload"], root.Select(p => p.Key));
-        Assert.Equal(1, root["version"]!.GetValue<int>());
+        Assert.Equal(2, root["version"]!.GetValue<int>());
         Assert.Equal("snapshot.updated", root["type"]!.GetValue<string>());
         Assert.Equal(3, root["sequence"]!.GetValue<long>());
     }
 
     [Fact]
-    public void SerializedShape_MatchesTheSharedFixtureUsedByThePageTests()
+    public async Task SerializedShape_MatchesTheSharedFixtureUsedByThePageTests()
     {
         var fixturePath = Path.Combine(FindRepositoryRoot(), "tests", "Wasla.PrintBridge.Tests", "WebShell", "shell-snapshot.fixture.json");
         var fixture = JsonNode.Parse(File.ReadAllText(fixturePath))!;
@@ -139,7 +148,10 @@ public sealed class ShellSnapshotTests : IDisposable
             CreatedAtUtc = DateTime.UtcNow,
             PrintedAtUtc = DateTime.UtcNow
         };
-        var snapshot = Factory(Culture()).Create(Status(jobs: [job], dryRun: true, lastPrintUtc: DateTime.UtcNow));
+        // A configured, discovered printer list so every optional value and array in the shape is populated.
+        using var rig = new ShellTestRig(Culture());
+        await rig.Catalog.RefreshAsync(TestContext.Current.CancellationToken);
+        var snapshot = rig.Factory.Create(Status(jobs: [job], lastPrintUtc: DateTime.UtcNow));
         var actual = JsonNode.Parse(ShellMessageSerializer.SerializeSnapshotMessage(snapshot, 1))!;
 
         Assert.Equal(Shape(fixture), Shape(actual));
