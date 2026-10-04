@@ -79,3 +79,4 @@ The page only reads. It never migrates, repairs, retries, provisions or changes 
 | CentralDb reads | `src/Wasla.Infrastructure/Services/CentralAdminTenantOperationsService.cs` |
 | Tenant health read | `src/Wasla.Infrastructure/Services/TenantOperationalHealthReader.cs` |
 | Controllers and views | `src/Wasla.Web/Areas/Admin/` |
+| Admin layout RTL corrections | `src/Wasla.Web/wwwroot/css/wasla-admin-layout.css` |

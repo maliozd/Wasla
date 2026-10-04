@@ -253,7 +253,7 @@
     <value>السمة</value>
   </data>
   <data name="Layout.CentralAdmin" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Layout.Customers" xml:space="preserve">
     <value>المطاعم</value>
@@ -1540,7 +1540,7 @@
     <value>آخر مزامنة ناجحة (UTC)</value>
   </data>
   <data name="Admin.LoginTitle" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Admin.LoginSubtitle" xml:space="preserve">
     <value>سجّل الدخول بحساب الإدارة المركزية</value>
@@ -1630,7 +1630,7 @@
     <value>الموقع العام</value>
   </data>
   <data name="Admin.CentralAdmin" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Admin.CustomerNotFound" xml:space="preserve">
     <value>المطعم غير موجود.</value>
