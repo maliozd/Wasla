@@ -11,8 +11,9 @@ Source of the commands below: `Wasla.sln`, `tests/Wasla.UnitTests`, `tests/Wasla
 | Layer | Where | What it covers |
 | --- | --- | --- |
 | Unit and source-contract tests | `tests/Wasla.UnitTests` | Application, infrastructure, Web contracts, orders, auth, sync, signup |
-| Print Bridge tests | `tests/Wasla.PrintBridge.Tests` | Desktop client settings, polling, setup |
-| Node tests | `tests/Wasla.UnitTests/**/*.test.js` | Live Screen coordinator, audio, notifications, signup business types. Not compiled by the csproj |
+| Print Bridge tests | `tests/Wasla.PrintBridge.Tests` | Desktop client settings, polling, setup, the Core engine against a fake API (`PrintBridgeRuntimeEngineTests`), and the WebView2 shell contract, security policy and localization (`WebShell/`) |
+| Print Bridge WebView2 runtime tests | `tests/Wasla.PrintBridge.Tests/WebShell/ShellWebViewRuntimeTests.cs` (trait `Category=WebView2Runtime`) | Real WebView2 control: applied settings, host-to-page rendering, blocked popups, navigation, remote requests, permissions and invalid messages. Skipped when no WebView2 Runtime is installed; needs an interactive Windows session |
+| Node tests | `tests/Wasla.UnitTests/**/*.test.js`, `tests/Wasla.PrintBridge.Tests/WebShell/*.test.js` | Live Screen coordinator, audio, notifications, signup business types, Print Bridge shell message model. Not compiled by the csproj |
 | Browser smoke | Manual | Flows with no automated browser runner in this repo |
 
 CI (`.github/workflows/ci.yml`) builds `Wasla.sln` in Release on `windows-latest` and runs **only** `Wasla.UnitTests`. It does not run Print Bridge tests or Node tests.
@@ -26,7 +27,10 @@ dotnet build Wasla.sln
 dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj
 dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj
 node --test tests/Wasla.UnitTests/Orders/*.test.js tests/Wasla.UnitTests/Signup/*.test.js
+node --test tests/Wasla.PrintBridge.Tests/WebShell/shell-model.test.js
 ```
+
+Print Bridge tests reference the shipped `Wasla.PrintBridge.Core` and `Wasla.PrintBridge` assemblies. Engine and WebView2 tests redirect every Print Bridge path to a temporary folder (`PrintBridgePaths.UseRootForTests`), so they never read or write `C:\ProgramData\Wasla\PrintBridge`, and they print only to a recording fake. To leave out the real-runtime tests, filter with `--filter "Category!=WebView2Runtime"`.
 
 Focused runs use `dotnet test <project> --filter <FullyQualifiedName>` (or a trait/name filter the runner accepts). Prefer a focused filter before the full project when the change is narrow.
 
@@ -39,6 +43,7 @@ Node files present today:
 - `tests/Wasla.UnitTests/Orders/notification-preview-stop.test.js`
 - `tests/Wasla.UnitTests/Orders/notification-sound-preview.test.js`
 - `tests/Wasla.UnitTests/Signup/signup-business-types.test.js`
+- `tests/Wasla.PrintBridge.Tests/WebShell/shell-model.test.js` (shares `shell-snapshot.fixture.json` with the C# serializer test)
 
 Run the files that match the change. `node --test` on one file is a focused frontend check, not the whole suite.
 

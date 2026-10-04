@@ -1,5 +1,5 @@
 /* Wasla Print Bridge status shell.
-   Tokens follow src/Wasla.Web/wwwroot/css/wasla-foundation.css (warm operational minimalism:
+   Design values follow src/Wasla.Web/wwwroot/css/wasla-foundation.css (warm operational minimalism:
    paper/ink, restrained orange, border-first). Dark values follow the Windows app theme through
    prefers-color-scheme; the desktop app has no theme setting of its own. Logical properties keep RTL correct. */
 
