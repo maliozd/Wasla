@@ -346,6 +346,8 @@ public sealed partial class GuidedSetupDeviceGuideTests
         Assert.Contains("aria-labelledby=\"waslaGuidedDeviceGuideTitle\"", guide, StringComparison.Ordinal);
         Assert.Contains("<dl class=\"wasla-print-bridge-device-topics\">", topics, StringComparison.Ordinal);
         Assert.Equal(5, Regex.Matches(topics, "<dt>").Count);
+        // The device token topic also explains how a new token is presented: masked, Show/Hide and Copy.
+        Assert.Contains("<dd>@L[\"Help.PrintBridgeDevices.Token.Body\"] @L[\"Help.PrintBridgeDevices.Token.Display\"]</dd>", topics, StringComparison.Ordinal);
         Assert.Equal(2, Regex.Matches(topics, "<ul>").Count);
     }
 
@@ -376,6 +378,8 @@ public sealed partial class GuidedSetupDeviceGuideTests
         // The same explanation as the guide, permanently: what each action does and when to use it.
         Assert.Contains("stops working immediately", english["Help.PrintBridgeDevices.Regenerate.OldStops"], StringComparison.Ordinal);
         Assert.Contains("shown only once", english["Help.PrintBridgeDevices.Regenerate.ShownOnce"], StringComparison.Ordinal);
+        Assert.Contains("shown only once, masked", english["Help.PrintBridgeDevices.Token.Display"], StringComparison.Ordinal);
+        Assert.Contains("copying works while the token stays masked", english["Help.PrintBridgeDevices.Token.Display"], StringComparison.Ordinal);
         Assert.Contains("Settings", english["Help.PrintBridgeDevices.Regenerate.EnterAgain"], StringComparison.Ordinal);
         Assert.Contains("no longer receives print jobs", english["Help.PrintBridgeDevices.Remove.Jobs"], StringComparison.Ordinal);
         Assert.Contains("retired, lost or replaced", english["Help.PrintBridgeDevices.Remove.When"], StringComparison.Ordinal);
@@ -391,7 +395,7 @@ public sealed partial class GuidedSetupDeviceGuideTests
             .Where(k => k.StartsWith("Help.PrintBridgeDevices.", StringComparison.Ordinal) || k.StartsWith("GuidedSetup.DeviceGuide.", StringComparison.Ordinal))
             .Append("GuidedSetup.PrintBridge.MeetDevice")
             .ToArray();
-        Assert.Equal(21, keys.Length);
+        Assert.Equal(22, keys.Length);
 
         foreach (var culture in Cultures)
         {
@@ -425,6 +429,9 @@ public sealed partial class GuidedSetupDeviceGuideTests
         Assert.Equal(desktop["Settings.AgentToken"], copy["Help.PrintBridgeDevices.Token.Title"]);
         Assert.Contains(desktop["Tab.Settings"], copy["Help.PrintBridgeDevices.Regenerate.EnterAgain"], StringComparison.Ordinal);
         Assert.Contains(ui["PrintBridge.StatusConnected"], copy["Help.PrintBridgeDevices.Status.Body"], StringComparison.Ordinal);
+        // The token presentation names the real Show/Hide toggle labels used by the setup and device details pages.
+        Assert.Contains(ui["PrintBridge.Manual.ShowToken"], copy["Help.PrintBridgeDevices.Token.Display"], StringComparison.Ordinal);
+        Assert.Contains(ui["PrintBridge.Manual.HideToken"], copy["Help.PrintBridgeDevices.Token.Display"], StringComparison.Ordinal);
     }
 
     // Helpers ----------------------------------------------------------------------------------------

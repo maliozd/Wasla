@@ -143,6 +143,11 @@ Controllers exist on both **Web** (`PrintBridgeApiController`, setup APIs) and *
 - Every snapshot time is UTC with `Z`. The page shows times with `Intl.DateTimeFormat` in the current UI culture and the Türkiye time zone (`Europe/Istanbul`), as the Live Screen does; a missing or zone-less time shows the "never" placeholder.
 - The refresh is a fallback; there is no push channel yet. A future SignalR consumer should call `window.WaslaPrintBridge.refreshDevices()` instead of rendering devices itself.
 
+## New device tokens in the Web panel
+
+- A token issued on the setup page (manual setup) or by Regenerate token on the device details page is shown once, in a read-only field that starts masked. Show token / Hide token changes only the field's type; the field's value is the token's single copy on the page, and Copy works while it stays masked. Dismissing the details page's token box clears the value. The token is never written into an HTML attribute.
+- The same rules are explained in the shared device topics (`_PrintBridgeDeviceTopics`), shown in the guided device guide and on Help.
+
 ## WebView2 status shell (preview, WAS-53)
 
 A first vertical slice of the modern desktop UI. It shows host-owned state only: connection state (online, connecting, offline, error, not configured, stopped) with a localized explanation, device name, selected printer and its state, last successful contact, today's job and failure counts, last print time, the most recent job of this session, and the dry-run warning. It can change the UI language and open the classic window. Settings, print history, logs, test print and start/stop stay in the classic window until WAS-54.

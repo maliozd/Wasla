@@ -3400,7 +3400,7 @@
   <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>لا يوجد رمز</value></data>
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>الإعداد / إعادة التوصيل</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>نشاط الطباعة الأخير</value></data>
-  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>لا يتم عرض رمز الجهاز الخام أو تجزئة الرمز في هذه الصفحة.</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>لا يمكن عرض رمز الجهاز الحالي مرة أخرى. يُنشئ «إعادة توليد الرمز» رمزًا جديدًا ويتوقف الرمز القديم عن العمل فورًا. يُعرض الرمز الجديد مرة واحدة فقط ويبدأ مخفيًا: «إظهار الرمز» / «إخفاء الرمز» يغيّر طريقة عرضه فقط، ويعمل «نسخ الرمز» وهو مخفي. احفظه في مكان آمن؛ بعد إغلاق المربع أو مغادرة هذه الصفحة أو إعادة تحميلها لا يمكن عرضه مرة أخرى.</value></data>
   <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>الهوية</value></data>
   <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>إجراءات الجهاز</value></data>
   <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>تفعيل الجهاز</value></data>
@@ -3817,6 +3817,7 @@
   <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>تعني "متصل" أن Wasla تلقّى إشارة من هذا التثبيت خلال الدقيقة الأخيرة. ويُظهر آخر ظهور آخر مرة اتصل فيها؛ والوقت الأقدم يعني عادةً أن التطبيق أو الحاسوب مُطفأ.</value></data>
   <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>رمز الجهاز</value></data>
   <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>يتيح رمز الجهاز لهذا التثبيت تسجيل الدخول إلى Wasla واستلام مهام الطباعة. لا يحتفظ Wasla بالرمز نفسه، لذلك لا يمكن عرضه مرة أخرى بعد إنشائه.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Display" xml:space="preserve"><value>يُعرض الرمز الجديد مرة واحدة فقط وبشكل مخفي. استخدم إظهار الرمز / إخفاء الرمز للتحقق منه، وزر النسخ للصقه في تطبيق Print Bridge؛ يعمل النسخ بينما يبقى الرمز مخفيًا.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>إعادة توليد الرمز</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>يُنشئ رمز جهاز جديدًا لهذا الجهاز.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>يتوقف الرمز القديم عن العمل فورًا، فلا يستطيع هذا التثبيت الطباعة حتى يحصل على الرمز الجديد.</value></data>
