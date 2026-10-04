@@ -83,18 +83,32 @@ public sealed class CentralAdminPendingRegistrationService : ICentralAdminPendin
         };
     }
 
+    /// <remarks>
+    /// Projects only the columns the Admin overview's attention list shows. The password hash, owner contact data,
+    /// address and payment reference are never selected; the owner fields of the returned items stay empty.
+    /// </remarks>
     public async Task<IReadOnlyList<AdminPendingRegistrationListItemDto>> GetAttentionListAsync(CancellationToken ct)
     {
-        var rows = await _db.PendingRegistrations
+        return await _db.PendingRegistrations
             .AsNoTracking()
             .Where(r => r.Status == PendingRegistrationStatus.PaymentSucceeded && r.TenantId == null)
             .OrderBy(r => r.PaymentSucceededAtUtc ?? r.CreatedAtUtc)
             .ThenBy(r => r.Id)
             .Take(20)
+            .Select(r => new AdminPendingRegistrationListItemDto
+            {
+                Id = r.Id,
+                BusinessName = r.BusinessName,
+                Slug = r.Slug,
+                PlanCode = r.PlanCode,
+                BillingPeriod = r.BillingPeriod,
+                Status = r.Status,
+                CreatedAtUtc = r.CreatedAtUtc,
+                PaymentSucceededAtUtc = r.PaymentSucceededAtUtc,
+                IsEligibleForProvisioning = r.Status == PendingRegistrationStatus.PaymentSucceeded && r.TenantId == null
+            })
             .ToListAsync(ct)
             .ConfigureAwait(false);
-
-        return rows.Select(r => MapListItem(r, new Dictionary<Guid, string>())).ToList();
     }
 
     public async Task<AdminPendingRegistrationDetailDto?> GetDetailAsync(Guid id, CancellationToken ct)
