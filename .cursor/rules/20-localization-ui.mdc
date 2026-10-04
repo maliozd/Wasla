@@ -1,16 +1,17 @@
 ---
-description: Localization and UI rules for OrderHub
+description: Localization and UI rules for Wasla
 alwaysApply: true
 ---
 
 # Localization and UI Rules
 
-OrderHub UI is localized.
+Wasla UI is localized.
 
 Supported cultures:
 - tr-TR
 - en-US
 - ar-SA
+- ru-RU
 
 Default/fallback culture:
 - tr-TR
@@ -23,6 +24,7 @@ Rules:
   - `SharedResource.tr-TR.resx`
   - `SharedResource.en-US.resx`
   - `SharedResource.ar-SA.resx`
+  - `SharedResource.ru-RU.resx` when Russian resources are part of the touched surface.
 - Use stable resource keys, for example:
   - `Orders.NoOrdersFound`
   - `Common.Save`
@@ -31,6 +33,9 @@ Rules:
 - Do not translate database values or user-entered values.
 - Arabic must support RTL through existing localization/layout behavior.
 - Do not add user-facing strings only in Turkish or only in English.
+- Russian is a supported/planned application and receipt language; do not remove it solely because coverage is incomplete.
+- Do not falsely claim all screens are fully translated if resource coverage is incomplete.
+- Do not duplicate resource keys with slightly different wording for the same concept.
 
 UI style:
 - Prefer clean Bootstrap 5/Razor UI.
@@ -42,6 +47,15 @@ UI style:
 - Do not duplicate Notification Settings in the account dropdown.
 - Notification Settings should stay on the Orders page header unless explicitly moved.
 - Auto Approve and Order Sync are different concepts and should not be mixed.
+- User-facing status pages must not show technical enum names.
+- Clickable text must be rendered as a real `<a href>`, not a styled span.
+- Preserve clean standalone layouts for signup/payment/provisioning status pages.
+- Do not expose passwords, password hashes, tokens, or connection information in UI.
+
+Phone UI:
+- Turkish phone UI should use a fixed `+90` prefix where applicable.
+- Turkish mobile display format is `531 324 12 45`.
+- Normalize to digits for persistence where the backend expects digits.
 
 Orders page UI:
 - Filters should remain clear and predictable.

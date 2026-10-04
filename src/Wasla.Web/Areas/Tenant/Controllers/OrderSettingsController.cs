@@ -7,7 +7,7 @@ using Wasla.Web.Security;
 namespace Wasla.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.TenantManagerOrOwner)]
 [Route("settings/orders")]
 public sealed class OrderSettingsController : BaseController
 {

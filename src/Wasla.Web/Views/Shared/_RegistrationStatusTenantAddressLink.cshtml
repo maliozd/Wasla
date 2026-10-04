@@ -1,0 +1,14 @@
+@model Wasla.Web.Models.Signup.SignupPendingViewModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    var cssClass = ViewData["TenantAddressLinkClass"] as string ?? "link-primary link-underline-opacity-25 link-underline-opacity-100-hover";
+    var openTitle = string.Format(L["Signup.OpenTenantAddressTitle"].Value, Model.PrimaryDomain);
+}
+@if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain) && !string.IsNullOrWhiteSpace(Model.TenantAddressUrl))
+{
+    <a href="@Model.TenantAddressUrl"
+       class="@cssClass"
+       title="@openTitle"
+       aria-label="@openTitle">@Model.PrimaryDomain</a>
+}

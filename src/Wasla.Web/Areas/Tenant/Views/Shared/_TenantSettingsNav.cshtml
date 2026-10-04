@@ -1,5 +1,9 @@
+@using Wasla.Web.Security
+@inject ITenantNavigationAuthorizationService TenantNavigation
+
 @{
     var path = Context.Request.Path.Value ?? "/";
+    var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
     var isOrderSettings = path.Equals("/settings/orders", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/settings/orders/", StringComparison.OrdinalIgnoreCase)
         || path.Equals("/settings/order", StringComparison.OrdinalIgnoreCase)
@@ -9,26 +13,31 @@
         || path.StartsWith("/settings/receipt-printer/", StringComparison.OrdinalIgnoreCase);
     var isAccountSettings = path.Equals("/settings/account", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/settings/account/", StringComparison.OrdinalIgnoreCase);
-    var settingsActive = isOrderSettings || isReceiptPrinterSettings || isAccountSettings;
+    var hasSettingsLinks = navPermissions.CanViewAnySettingsLink;
+    var settingsActive = hasSettingsLinks && (isOrderSettings || isReceiptPrinterSettings || isAccountSettings);
 }
 
-<div class="oh-sidebar-settings">
+@if (hasSettingsLinks)
+{
+<div class="wasla-sidebar-settings">
     <div class="dropup position-static w-100">
         <button type="button"
-                class="oh-sidebar-action-btn dropdown-toggle oh-sidebar-settings-toggle w-100 @(settingsActive ? "active" : "")"
+                class="wasla-sidebar-action-btn dropdown-toggle wasla-sidebar-settings-toggle w-100 @(settingsActive ? "wasla-sidebar-nav-parent--current" : "")"
                 id="tenantSettingsMenuToggle"
                 data-bs-toggle="dropdown"
                 data-bs-auto-close="true"
                 aria-expanded="@(settingsActive ? "true" : "false")"
                 aria-haspopup="true"
                 aria-controls="tenantSettingsMenu">
-            <i class="bi bi-gear oh-sidebar-action-icon" aria-hidden="true"></i>
-            <span class="oh-sidebar-action-label nav-text">@L["Navigation.Settings"]</span>
+            <i class="bi bi-gear wasla-sidebar-action-icon" aria-hidden="true"></i>
+            <span class="wasla-sidebar-action-label nav-text">@L["Navigation.Settings"]</span>
         </button>
-        <ul class="dropdown-menu oh-sidebar-dropdown-menu oh-sidebar-settings-menu w-100 mb-1"
+        <ul class="dropdown-menu wasla-sidebar-dropdown-menu wasla-sidebar-settings-menu w-100 mb-1"
             id="tenantSettingsMenu"
             role="menu"
             aria-labelledby="tenantSettingsMenuToggle">
+            @if (navPermissions.CanManageOrderSettings)
+            {
             <li role="none">
                 <a class="dropdown-item @(isOrderSettings ? "active" : "")"
                    role="menuitem"
@@ -38,6 +47,9 @@
                     @L["Navigation.OrderSettings"]
                 </a>
             </li>
+            }
+            @if (navPermissions.CanManageTenantSettings)
+            {
             <li role="none">
                 <a class="dropdown-item @(isReceiptPrinterSettings ? "active" : "")"
                    role="menuitem"
@@ -56,6 +68,7 @@
                     @L["Navigation.AccountSettings"]
                 </a>
             </li>
+            }
             @if (User?.Identity?.IsAuthenticated == true)
             {
                 <li role="none"><hr class="dropdown-divider" /></li>
@@ -71,3 +84,16 @@
         </ul>
     </div>
 </div>
+}
+else if (User?.Identity?.IsAuthenticated == true)
+{
+    <div class="wasla-sidebar-settings">
+        <form method="post" asp-area="Tenant" asp-controller="Auth" asp-action="Logout">
+            @Html.AntiForgeryToken()
+            <button class="wasla-sidebar-action-btn text-danger w-100" type="submit">
+                <i class="bi bi-box-arrow-right wasla-sidebar-action-icon" aria-hidden="true"></i>
+                <span class="wasla-sidebar-action-label nav-text">@L["Account.Logout"]</span>
+            </button>
+        </form>
+    </div>
+}

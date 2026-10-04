@@ -1,0 +1,6425 @@
+/* Wasla shell + AdminLTE overrides. Load after AdminLTE. */
+
+:root {
+  /* --- Semantic tokens (light) --- */
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-muted: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  --color-text: #2c2c2c;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6c6c6c;
+  --color-text-disabled: #9ca3af;
+
+  --color-accent: #ff6b35;
+  --color-accent-hover: #e8541c;
+  --color-accent-soft: rgba(255, 107, 53, 0.12);
+  --color-accent-border: rgba(255, 107, 53, 0.35);
+  --color-accent-text: #ffffff;
+
+  --color-success: #198754;
+  --color-success-soft: rgba(25, 135, 84, 0.12);
+  --color-success-border: rgba(25, 135, 84, 0.28);
+  --color-warning: #ffc107;
+  --color-warning-soft: rgba(255, 193, 7, 0.18);
+  --color-warning-border: rgba(255, 193, 7, 0.35);
+  --color-danger: #dc3545;
+  --color-danger-soft: rgba(220, 53, 69, 0.12);
+  --color-danger-border: rgba(220, 53, 69, 0.28);
+  --color-info: #0d6efd;
+  --color-info-soft: rgba(13, 110, 253, 0.12);
+  --color-info-border: rgba(13, 110, 253, 0.28);
+
+  --color-input-bg: #ffffff;
+  --color-input-border: #dee2e6;
+  --color-input-text: var(--color-text);
+  --color-input-placeholder: var(--color-text-muted);
+  --color-input-focus-border: var(--color-accent);
+  --color-input-focus-ring: rgba(255, 107, 53, 0.25);
+
+  --color-table-header-bg: transparent;
+  --color-table-row-hover: rgba(255, 107, 53, 0.06);
+  --color-table-border: var(--color-border);
+
+  --color-sidebar-bg: #f3f4f6;
+  --color-sidebar-surface: #ffffff;
+  --color-sidebar-text: #1f2937;
+  --color-sidebar-muted: #6b7280;
+  --color-sidebar-hover: rgba(255, 107, 53, 0.10);
+  --color-sidebar-active-bg: var(--color-accent);
+  --color-sidebar-active-text: #ffffff;
+  --color-sidebar-border: var(--color-border);
+
+  /* --- Legacy aliases (keep existing selectors working) --- */
+  --wasla-primary: var(--color-accent);
+  --wasla-primary-dark: var(--color-accent-hover);
+  --wasla-primary-light: #ff8a5b;
+  --wasla-surface: var(--color-surface);
+  --wasla-bg: var(--color-bg);
+  --wasla-text: var(--color-text);
+  --wasla-muted: var(--color-text-muted);
+  --wasla-sidebar: var(--color-sidebar-bg);
+  --wasla-sidebar-text: var(--color-sidebar-text);
+  --wasla-border: var(--color-border);
+  --wasla-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+  /* Live Screen status colors. Group dots and status badges share these. */
+  --wasla-status-new: #e0a800;
+  --wasla-status-accepted: #b45309;
+  --wasla-status-preparing: #0d6efd;
+  --wasla-status-ready: #198754;
+  --wasla-status-on-the-way: #6f42c1;
+  --wasla-status-completed: #6c757d;
+
+  --wasla-topbar-h: calc(3.5rem + 1px);
+  --wasla-sidebar-width: 252px;
+  --wasla-sidebar-collapsed-width: 68px;
+  --wasla-radius: 0.5rem;
+
+  --wasla-surface-elevated: var(--color-surface-elevated);
+  --wasla-surface-muted: var(--color-surface-muted);
+  --wasla-sidebar-bg: var(--color-sidebar-bg);
+  --wasla-topbar-bg: var(--color-surface);
+
+  --bs-primary: var(--color-accent);
+  --bs-primary-rgb: 255, 107, 53;
+  --bs-body-bg: var(--wasla-bg);
+  --bs-body-color: var(--wasla-text);
+  --bs-border-color: var(--color-border);
+  --bs-secondary-color: var(--color-text-muted);
+  --bs-tertiary-color: var(--color-text-secondary);
+  --bs-tertiary-bg: var(--color-surface-muted);
+}
+
+[data-bs-theme="dark"] {
+  --color-bg: #0f1115;
+  --color-surface: #171a21;
+  --color-surface-elevated: #1c2028;
+  --color-surface-muted: #141820;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+
+  --color-text: #f3f4f6;
+  --color-text-secondary: #aeb4c0;
+  --color-text-muted: #737b89;
+  --color-text-disabled: #555c68;
+
+  --color-accent: #f26b3a;
+  --color-accent-hover: #ff7d4f;
+  --color-accent-soft: rgba(242, 107, 58, 0.14);
+  --color-accent-border: rgba(242, 107, 58, 0.35);
+  --color-accent-text: #ffffff;
+
+  --color-success: #86efac;
+  --color-success-soft: rgba(34, 197, 94, 0.14);
+  --color-success-border: rgba(34, 197, 94, 0.28);
+  --color-warning: #fcd34d;
+  --color-warning-soft: rgba(245, 158, 11, 0.14);
+  --color-warning-border: rgba(245, 158, 11, 0.28);
+  --color-danger: #fca5a5;
+  --color-danger-soft: rgba(239, 68, 68, 0.14);
+  --color-danger-border: rgba(239, 68, 68, 0.28);
+  --color-info: #93c5fd;
+  --color-info-soft: rgba(59, 130, 246, 0.14);
+  --color-info-border: rgba(59, 130, 246, 0.28);
+
+  --color-input-bg: #141820;
+  --color-input-border: rgba(255, 255, 255, 0.12);
+  --color-input-text: var(--color-text);
+  --color-input-placeholder: var(--color-text-muted);
+  --color-input-focus-border: var(--color-accent);
+  --color-input-focus-ring: rgba(242, 107, 58, 0.28);
+
+  --color-table-header-bg: rgba(255, 255, 255, 0.03);
+  --color-table-row-hover: rgba(242, 107, 58, 0.08);
+  --color-table-border: var(--color-border);
+
+  --color-sidebar-bg: #111318;
+  --color-sidebar-surface: #161920;
+  --color-sidebar-text: #e8eaed;
+  --color-sidebar-muted: #8b939f;
+  --color-sidebar-hover: rgba(242, 107, 58, 0.10);
+  --color-sidebar-active-bg: var(--color-accent);
+  --color-sidebar-active-text: #ffffff;
+  --color-sidebar-border: rgba(255, 255, 255, 0.08);
+
+  --wasla-primary-light: #ff8a5b;
+  --wasla-shadow: none;
+
+  --wasla-primary: var(--color-accent);
+  --wasla-primary-dark: var(--color-accent-hover);
+  --wasla-surface: var(--color-surface);
+  --wasla-bg: var(--color-bg);
+  --wasla-text: var(--color-text);
+  --wasla-muted: var(--color-text-muted);
+  --wasla-sidebar: var(--color-sidebar-bg);
+  --wasla-sidebar-text: var(--color-sidebar-text);
+  --wasla-border: var(--color-border);
+  --wasla-surface-elevated: var(--color-surface-elevated);
+  --wasla-surface-muted: var(--color-surface-muted);
+  --wasla-sidebar-bg: var(--color-sidebar-bg);
+  --wasla-topbar-bg: var(--color-sidebar-bg);
+
+  --bs-primary-rgb: 242, 107, 58;
+  --bs-body-bg: var(--wasla-bg);
+  --bs-body-color: var(--wasla-text);
+  --bs-border-color: var(--color-border);
+  --bs-secondary-color: var(--color-text-muted);
+  --bs-tertiary-color: var(--color-text-secondary);
+  --bs-tertiary-bg: var(--color-surface-muted);
+}
+
+/* Single page scroll — body.wasla-app; do not reserve a permanent scrollbar gutter. */
+html {
+  min-height: 100%;
+  scrollbar-gutter: auto;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body.wasla-app {
+  overflow-y: auto;
+  margin-bottom: 0;
+  background: var(--wasla-bg);
+  color: var(--wasla-text);
+}
+
+/* AdminLTE shell: body.layout-fixed + .app-wrapper.
+   One vertical scrollbar on body — never nested page scroll in main/content-wrapper. */
+body.wasla-app .app-wrapper,
+body.wasla-app.layout-fixed .app-wrapper {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+body.wasla-app .content-wrapper,
+body.wasla-app .app-content,
+body.wasla-app .app-main {
+  max-height: none !important;
+}
+
+/* AdminLTE layout-fixed sets overflow:auto on .app-main (sidebar-expand-*).
+   That creates a nested scroll container and a persistent right-edge scrollbar. */
+body.wasla-app[class*="sidebar-expand"].layout-fixed .app-main,
+body.wasla-app[class*="sidebar-expand"].layout-fixed .app-main.wasla-content {
+  overflow: visible !important;
+}
+
+/* AdminLTE uses max-width:100vw on shell nodes; 100vw includes scrollbar width. */
+body.wasla-tenant.wasla-app .app-wrapper {
+  max-width: 100%;
+}
+
+/* Tenant shell: no top navbar — sidebar is full viewport height. */
+body.wasla-tenant.wasla-app {
+  --wasla-topbar-h: 0px;
+}
+
+/* AdminLTE grid expects a header row; tenant uses sidebar-only shell. */
+body.wasla-tenant.wasla-app.layout-fixed .app-wrapper {
+  display: block;
+  grid-template-areas: none;
+  grid-template-rows: none;
+  grid-template-columns: none;
+}
+
+.app-header.navbar {
+  background: var(--wasla-topbar-bg) !important;
+  border-color: var(--wasla-border) !important;
+  min-height: 3.5rem;
+}
+
+#waslaAppHeader {
+  z-index: 1030;
+}
+
+.app-sidebar {
+  background: var(--wasla-sidebar-bg) !important;
+  color: var(--wasla-sidebar-text) !important;
+  border-color: var(--wasla-border) !important;
+  overflow: visible;
+}
+
+.app-main {
+  display: block;
+  min-width: 0;
+  height: auto;
+  /* AdminLTE .app-wrapper grid (min-content + 1fr) already fills the viewport.
+     A second min-height calc here stacks with the header row and causes spurious scroll. */
+  min-height: 0;
+  overflow: visible;
+  background: var(--wasla-bg) !important;
+}
+
+.app-content {
+  height: auto;
+  overflow: visible;
+}
+
+.app-main.wasla-content {
+  min-height: 0;
+  overflow: visible;
+}
+
+.content-wrapper {
+  height: auto;
+  min-height: auto;
+  overflow: visible;
+}
+
+.wasla-app .app-main .table-responsive,
+.wasla-app .table-responsive {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Topbar brand + links */
+a.wasla-sidebar-brand,
+.wasla-sidebar-brand {
+  color: var(--wasla-primary) !important;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.wasla-app .sidebar-menu .nav-link {
+  color: var(--wasla-sidebar-text) !important;
+  border-radius: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+
+.wasla-app .sidebar-menu .nav-link:hover {
+  background: color-mix(in srgb, var(--wasla-primary) 12%, transparent);
+  color: var(--wasla-text) !important;
+}
+
+.wasla-app .sidebar-menu .nav-link.active {
+  background: color-mix(in srgb, var(--wasla-primary) 22%, transparent);
+  color: var(--wasla-text) !important;
+  font-weight: 600;
+  border-left: 3px solid var(--wasla-primary);
+  padding-left: calc(0.75rem - 3px);
+}
+
+/* Tenant: readable active state (white on primary) + soft hover on inactive */
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link:hover:not(.active) {
+  background: color-mix(in srgb, var(--wasla-primary) 12%, var(--wasla-sidebar-bg)) !important;
+  color: var(--wasla-sidebar-text) !important;
+}
+
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active,
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active:focus {
+  background: var(--wasla-primary) !important;
+  color: #ffffff !important;
+  border-left: 3px solid rgba(255, 255, 255, 0.4);
+  padding-left: calc(0.625rem - 3px);
+}
+
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active i,
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active .me-2,
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active .nav-text {
+  color: #ffffff !important;
+}
+
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active:hover,
+body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active:focus:hover {
+  background: var(--wasla-primary-dark) !important;
+  color: #ffffff !important;
+}
+
+[dir="rtl"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active,
+[dir="rtl"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active:focus {
+  border-left: none;
+  border-right: 3px solid rgba(255, 255, 255, 0.4);
+  padding-left: 0.625rem;
+  padding-right: calc(0.625rem - 3px);
+}
+
+.card {
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  box-shadow: var(--wasla-shadow);
+  color: var(--wasla-text);
+}
+
+[data-bs-theme="dark"] .card {
+  --bs-card-bg: var(--wasla-surface);
+}
+
+.wasla-app .btn-primary {
+  --bs-btn-bg: var(--wasla-primary);
+  --bs-btn-border-color: var(--wasla-primary);
+  --bs-btn-hover-bg: var(--wasla-primary-dark);
+  --bs-btn-hover-border-color: var(--wasla-primary-dark);
+}
+
+.wasla-app .btn-outline-primary {
+  --bs-btn-color: var(--wasla-primary);
+  --bs-btn-border-color: color-mix(in srgb, var(--wasla-primary) 55%, white);
+  --bs-btn-hover-bg: var(--wasla-primary);
+  --bs-btn-hover-border-color: var(--wasla-primary);
+}
+
+.wasla-card {
+  background: var(--wasla-surface) !important;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent) !important;
+  box-shadow: var(--wasla-shadow) !important;
+}
+
+/* --- Tenant: typography (shell + pages) --- */
+body.wasla-tenant.wasla-app {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.wasla-tenant.wasla-app h1,
+body.wasla-tenant.wasla-app h2,
+body.wasla-tenant.wasla-app h3,
+body.wasla-tenant.wasla-app h4,
+body.wasla-tenant.wasla-app h5,
+body.wasla-tenant.wasla-app h6,
+body.wasla-tenant.wasla-app .h4,
+body.wasla-tenant.wasla-app .h5 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--wasla-text);
+}
+
+body.wasla-tenant.wasla-app .text-muted,
+body.wasla-tenant.wasla-app .form-label,
+body.wasla-tenant.wasla-app small {
+  color: var(--wasla-muted) !important;
+}
+
+/* --- Tenant: sidebar + main (AdminLTE + collapse) --- */
+body.wasla-tenant.wasla-app .app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: auto;
+  height: 100dvh;
+  height: 100vh;
+  z-index: 1020;
+  width: var(--wasla-sidebar-width);
+  min-width: var(--wasla-sidebar-width);
+  transition: width 0.2s ease, min-width 0.2s ease;
+  overflow-x: hidden;
+  overflow-y: visible;
+  border-right: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent) !important;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+[dir="rtl"] body.wasla-tenant.wasla-app .app-sidebar {
+  left: auto;
+  right: 0;
+  border-right: 0;
+  border-left: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent) !important;
+}
+
+body.wasla-tenant.wasla-app .app-main {
+  transition: margin 0.2s ease, margin-inline 0.2s ease, padding 0.2s ease, padding-inline 0.2s ease;
+  margin-inline-start: var(--wasla-sidebar-width) !important;
+  width: auto;
+  max-width: 100%;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar {
+  width: var(--wasla-sidebar-collapsed-width);
+  min-width: var(--wasla-sidebar-collapsed-width);
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-main {
+  margin-inline-start: var(--wasla-sidebar-collapsed-width) !important;
+}
+
+body.wasla-tenant.wasla-app .sidebar-menu.wasla-sidebar-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  font-size: 0.9375rem;
+  box-sizing: border-box;
+}
+
+/* Brand header */
+body.wasla-tenant.wasla-app .wasla-sidebar-brand-area {
+  flex-shrink: 0;
+  padding: 1.125rem 0.875rem 0.875rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--wasla-border) 65%, transparent);
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-brand .brand-text {
+  font-size: 1.3125rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-tenant-name {
+  margin-top: 0.3rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--wasla-muted) !important;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 70%, transparent);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--wasla-muted);
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn:focus-visible {
+  background: color-mix(in srgb, var(--wasla-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--wasla-primary) 35%, var(--wasla-border));
+  color: var(--wasla-sidebar-text);
+  outline: none;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn i {
+  font-size: 1rem;
+}
+
+/* Main navigation */
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.375rem 0.625rem;
+  margin-bottom: 0;
+  scrollbar-width: thin;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main .nav-item {
+  margin-bottom: 0.125rem;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  padding: 0 0.625rem;
+  margin-bottom: 0;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main .nav-link i {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  flex-shrink: 0;
+  margin: 0 !important;
+  text-align: center;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-main .nav-link .nav-text {
+  min-width: 0;
+}
+
+/* Bottom panel */
+body.wasla-tenant.wasla-app .wasla-sidebar-bottom {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.625rem calc(0.625rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 65%, transparent);
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-footer-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-action-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-action-row--split {
+  align-items: center;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-action-grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Shared sidebar action buttons (language, settings) */
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 0.625rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--wasla-sidebar-text) !important;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  text-align: start;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn::after {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn:focus-visible,
+body.wasla-tenant.wasla-app .wasla-sidebar-action-btn.show {
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--wasla-sidebar-bg)) !important;
+  color: var(--wasla-sidebar-text) !important;
+  outline: none;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-action-icon {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  flex-shrink: 0;
+  text-align: center;
+  color: inherit;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-action-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--wasla-sidebar-text);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn:focus-visible {
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--wasla-sidebar-bg));
+  color: var(--wasla-sidebar-text);
+  outline: none;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn i {
+  font-size: 1.125rem;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 2.5rem;
+  padding: 0 0.625rem;
+  border-radius: 0.5rem;
+  color: var(--wasla-muted) !important;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  margin-bottom: 0;
+  user-select: none;
+  pointer-events: none;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-user i {
+  color: color-mix(in srgb, var(--wasla-muted) 85%, var(--wasla-sidebar-text)) !important;
+  flex-shrink: 0;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-user-label {
+  min-width: 0;
+  font-weight: 500;
+}
+
+/* Collapsed sidebar */
+body.wasla-tenant.wasla-app.sidebar-collapsed .brand-text,
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-tenant-name,
+body.wasla-tenant.wasla-app.sidebar-collapsed .customer-text,
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-text,
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-label,
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-footer .footer-label,
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-user-label {
+  display: none;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand-area {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand-row {
+  justify-content: center;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand .brand-text {
+  display: none;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-btn {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-btn::after {
+  display: none;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-user {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-row--split {
+  justify-content: center;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-row--split .wasla-sidebar-action-grow {
+  flex-grow: 0 !important;
+  width: auto;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  border-left: none;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link i,
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link .me-2 {
+  margin: 0 !important;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link.active {
+  background: var(--wasla-primary) !important;
+  color: #fff !important;
+  border-left: none;
+  box-shadow: none;
+  padding-left: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link.active i,
+body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link.active .me-2 {
+  color: #fff !important;
+}
+
+[dir="rtl"] body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-link.active {
+  box-shadow: none;
+}
+
+/* Sidebar settings (bottom dropup) */
+.wasla-sidebar-settings {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: 0;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active {
+  background: var(--wasla-primary) !important;
+  color: #ffffff !important;
+  border-left: 3px solid rgba(255, 255, 255, 0.4);
+  padding-left: calc(0.625rem - 3px);
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active i,
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active .nav-text,
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active .wasla-sidebar-action-label {
+  color: #ffffff !important;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active:focus-visible {
+  background: var(--wasla-primary-dark) !important;
+  color: #ffffff !important;
+}
+
+[dir="rtl"] body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active {
+  border-left: none;
+  border-right: 3px solid rgba(255, 255, 255, 0.4);
+  padding-left: 0.625rem;
+  padding-right: calc(0.625rem - 3px);
+}
+
+.wasla-sidebar-dropdown-menu,
+.wasla-sidebar-settings-menu {
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  box-shadow: var(--wasla-shadow);
+  background: var(--wasla-surface) !important;
+  border-radius: 0.5rem;
+  padding: 0.35rem;
+  min-width: 100%;
+  z-index: 1050;
+}
+
+.wasla-sidebar-settings-menu .dropdown-item,
+.wasla-sidebar-lang-menu .dropdown-item {
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--wasla-text);
+  padding: 0.45rem 0.625rem;
+}
+
+.wasla-sidebar-settings-menu .dropdown-item:hover,
+.wasla-sidebar-settings-menu .dropdown-item:focus,
+.wasla-sidebar-lang-menu .dropdown-item:hover,
+.wasla-sidebar-lang-menu .dropdown-item:focus {
+  background: color-mix(in srgb, var(--wasla-primary) 12%, transparent);
+  color: var(--wasla-text);
+}
+
+.wasla-sidebar-settings-menu .dropdown-item.active,
+.wasla-sidebar-settings-menu .dropdown-item:active,
+.wasla-sidebar-lang-menu .dropdown-item.active,
+.wasla-sidebar-lang-menu .dropdown-item:active {
+  background: color-mix(in srgb, var(--wasla-primary) 20%, transparent) !important;
+  color: var(--wasla-text) !important;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-settings-toggle {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  border-left: none;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-settings-toggle::after {
+  display: none;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-settings-menu {
+  min-width: 12.5rem;
+}
+
+body.wasla-tenant.wasla-app .wasla-onboarding-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--wasla-primary) 12%, transparent);
+  color: var(--wasla-primary);
+  font-size: 1.1rem;
+}
+
+/* --- Tenant: order settings single card --- */
+.wasla-settings-card .wasla-settings-section {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+}
+
+.wasla-settings-card .wasla-settings-section:first-child {
+  border-top: 0;
+}
+
+.wasla-settings-section-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.wasla-settings-section-text {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.wasla-settings-section-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 0.75rem;
+  flex: 0 0 auto;
+}
+
+.wasla-settings-section-controls--button {
+  align-self: center;
+}
+
+.wasla-settings-subrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
+}
+
+.wasla-settings-copy-select {
+  width: 4.5rem;
+  flex-shrink: 0;
+}
+
+.wasla-settings-status-list {
+  display: grid;
+  gap: 0.5rem 1rem;
+  margin-top: 0.75rem;
+  padding: 0 1.25rem;
+}
+
+.wasla-settings-status-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+}
+
+.wasla-settings-status-item dt {
+  margin: 0;
+  font-weight: 500;
+}
+
+.wasla-settings-status-item dd {
+  margin: 0;
+  text-align: end;
+}
+
+.wasla-settings-subrow--actions {
+  justify-content: flex-start;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  padding-bottom: 0.25rem;
+  border-top: 0;
+  margin-top: 0.5rem;
+  padding-top: 0;
+}
+
+.wasla-settings-section--actions {
+  margin-top: 0;
+}
+
+.wasla-settings-section-controls--stacked {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.wasla-receipt-language-select {
+  min-width: 10.5rem;
+}
+
+/* Receipt creation timing — vertical choice group */
+.wasla-receipt-timing-section .receipt-timing-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.receipt-timing-section__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.receipt-timing-section__label {
+  font-weight: 500;
+  margin: 0;
+}
+
+.receipt-timing-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.625rem;
+  width: 100%;
+  max-width: 45rem;
+}
+
+.receipt-timing-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
+  border-radius: 0.875rem;
+  background: var(--wasla-surface);
+  margin: 0;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+label.receipt-timing-option:hover:not(:has(.receipt-timing-option__radio:disabled)) {
+  border-color: color-mix(in srgb, var(--wasla-primary) 35%, var(--wasla-border));
+}
+
+.receipt-timing-option:has(.receipt-timing-option__radio:checked) {
+  border-color: color-mix(in srgb, var(--wasla-primary) 55%, var(--wasla-border));
+  background: color-mix(in srgb, var(--wasla-primary) 8%, var(--wasla-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wasla-primary) 12%, transparent);
+}
+
+.receipt-timing-option--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.receipt-timing-option__radio {
+  flex-shrink: 0;
+  margin: 0.15rem 0 0;
+}
+
+.receipt-timing-option__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.receipt-timing-option__title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--wasla-text);
+}
+
+.receipt-timing-option__desc {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--wasla-muted);
+  line-height: 1.4;
+}
+
+.receipt-timing-option__soon {
+  font-size: 0.68rem;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.wasla-receipt-creation-help {
+  max-width: 16rem;
+  text-align: end;
+  line-height: 1.35;
+}
+
+.wasla-receipt-language-note {
+  max-width: 16rem;
+  text-align: end;
+  line-height: 1.35;
+}
+
+.wasla-receipt-preview-paper--rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.wasla-receipt-preview-paper--rtl .wasla-receipt-preview-line {
+  flex-direction: row-reverse;
+}
+
+.wasla-receipt-preview-paper--rtl .wasla-receipt-preview-header,
+.wasla-receipt-preview-paper--rtl .wasla-receipt-preview-footer {
+  text-align: center;
+}
+
+.wasla-receipt-field-group {
+  padding: 0;
+}
+
+.wasla-receipt-editor-layout {
+  align-items: flex-start;
+}
+
+.wasla-receipt-editor-layout .wasla-receipt-editor-card {
+  height: auto !important;
+}
+
+.wasla-receipt-editor-card .wasla-receipt-editor-section {
+  border-bottom: 0;
+  padding: 1.25rem 1.5rem 0;
+}
+
+.wasla-receipt-editor-section .wasla-settings-section-row--stacked {
+  margin-bottom: 1.125rem;
+}
+
+.wasla-receipt-editor-section .wasla-settings-section-text .h6 {
+  margin-bottom: 0.35rem !important;
+}
+
+.wasla-receipt-editor-card .wasla-settings-section--actions {
+  margin-top: 0;
+  border-top-color: color-mix(in srgb, var(--wasla-border) 55%, transparent) !important;
+}
+
+.wasla-receipt-editor-card .wasla-settings-section--actions > .d-flex {
+  padding: 1rem 1.5rem 1.125rem !important;
+}
+
+.wasla-receipt-required-block {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 48%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--wasla-border) 8%, transparent);
+}
+
+.wasla-receipt-required-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.wasla-receipt-required-block-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--wasla-text);
+}
+
+.wasla-receipt-required-block-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  color: var(--wasla-muted);
+  line-height: 1.35;
+}
+
+.wasla-receipt-required-block-note .bi {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.wasla-receipt-required-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.wasla-receipt-required-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--wasla-text);
+  background: color-mix(in srgb, var(--wasla-surface-elevated, var(--wasla-surface)) 98%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 42%, transparent);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.wasla-receipt-content-accordion {
+  --bs-accordion-border-color: color-mix(in srgb, var(--wasla-border) 45%, transparent);
+  --bs-accordion-btn-bg: transparent;
+  --bs-accordion-active-bg: color-mix(in srgb, var(--wasla-primary, #0d6efd) 5%, transparent);
+  --bs-accordion-active-color: var(--wasla-text);
+  --bs-accordion-btn-color: var(--wasla-text);
+  --bs-accordion-btn-focus-box-shadow: none;
+  --bs-accordion-body-padding-x: 1rem;
+  --bs-accordion-body-padding-y: 0.5rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 45%, transparent);
+}
+
+.wasla-receipt-content-accordion .accordion-item {
+  border-color: color-mix(in srgb, var(--wasla-border) 38%, transparent);
+  background: transparent;
+}
+
+.wasla-receipt-content-accordion .accordion-item:last-of-type {
+  border-bottom: 0;
+}
+
+.wasla-receipt-content-accordion .accordion-item:has(.accordion-button:not(.collapsed)) {
+  background: color-mix(in srgb, var(--wasla-border) 7%, transparent);
+}
+
+.wasla-receipt-content-accordion .accordion-button {
+  padding: 0.9rem 1rem;
+  min-height: 3.25rem;
+  font-size: 0.84rem;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
+}
+
+.wasla-receipt-content-accordion .accordion-button:hover {
+  background: color-mix(in srgb, var(--wasla-border) 12%, transparent);
+}
+
+.wasla-receipt-content-accordion .accordion-button:not(.collapsed) {
+  box-shadow: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--wasla-border) 30%, transparent);
+}
+
+.wasla-receipt-content-accordion .accordion-button::after {
+  width: 0.8rem;
+  height: 0.8rem;
+  background-size: 0.8rem;
+  flex-shrink: 0;
+  margin-inline-start: 0.65rem;
+  opacity: 0.65;
+}
+
+.wasla-receipt-accordion-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  text-align: start;
+  padding-inline-end: 0.25rem;
+}
+
+.wasla-receipt-accordion-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.wasla-receipt-accordion-title {
+  font-weight: 600;
+  font-size: 0.84rem;
+  line-height: 1.3;
+}
+
+.wasla-receipt-accordion-desc {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--wasla-muted);
+  line-height: 1.35;
+}
+
+.wasla-receipt-accordion-enabled-badge {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--wasla-muted) !important;
+  background: color-mix(in srgb, var(--wasla-border) 18%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 40%, transparent) !important;
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+}
+
+.wasla-receipt-content-accordion .accordion-body {
+  padding-top: 0.35rem;
+  padding-bottom: 0.65rem;
+}
+
+.wasla-receipt-field-list {
+  margin-bottom: 0;
+}
+
+.wasla-receipt-field-list--coming-soon {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed color-mix(in srgb, var(--wasla-border) 32%, transparent);
+}
+
+.wasla-receipt-field-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.15rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--wasla-border) 28%, transparent);
+  font-size: 0.84rem;
+}
+
+.wasla-receipt-field-row:last-child {
+  border-bottom: 0;
+}
+
+.wasla-receipt-field-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.wasla-receipt-field-row__label {
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.wasla-receipt-field-row__hint {
+  font-size: 0.73rem;
+  color: var(--wasla-muted);
+  line-height: 1.35;
+}
+
+.wasla-receipt-field-row .form-check {
+  flex-shrink: 0;
+  padding-top: 0.15rem;
+}
+
+.wasla-receipt-field-row--coming-soon {
+  opacity: 0.9;
+}
+
+.wasla-receipt-field-row--coming-soon .wasla-receipt-field-row__label {
+  color: var(--wasla-muted);
+}
+
+.wasla-receipt-coming-soon-badge {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--wasla-muted) !important;
+  background: color-mix(in srgb, var(--wasla-border) 16%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 36%, transparent) !important;
+  padding: 0.25rem 0.45rem;
+  border-radius: 999px;
+}
+
+.wasla-receipt-message-fields {
+  margin: 0.5rem 0.15rem 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 36%, transparent);
+  background: color-mix(in srgb, var(--wasla-surface-elevated, var(--wasla-surface)) 96%, transparent);
+}
+
+.wasla-receipt-message-field--muted {
+  opacity: 0.65;
+}
+
+.wasla-receipt-message-field--muted textarea:disabled {
+  background: color-mix(in srgb, var(--wasla-border) 12%, transparent);
+  cursor: not-allowed;
+}
+
+.wasla-receipt-editor-layout .wasla-receipt-preview-card .card-body {
+  padding: 1.25rem 1.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .wasla-receipt-editor-card .wasla-receipt-editor-section {
+    padding-inline: 1rem;
+  }
+
+  .wasla-receipt-editor-card .wasla-settings-section--actions > .d-flex {
+    padding-inline: 1rem !important;
+  }
+
+  .wasla-receipt-accordion-header-inner {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 0.35rem;
+  }
+
+  .wasla-receipt-accordion-enabled-badge {
+    margin-inline-start: 0;
+  }
+
+  .wasla-receipt-field-row {
+    flex-wrap: wrap;
+    padding-inline: 0;
+  }
+
+  .wasla-receipt-field-row .form-check {
+    margin-inline-start: auto;
+  }
+}
+
+.wasla-receipt-preview-card {
+  position: sticky;
+  top: 1rem;
+}
+
+.wasla-receipt-preview {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 12rem;
+}
+
+.wasla-receipt-preview-paper {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  line-height: 1.38;
+  width: 100%;
+  max-width: 16.5rem;
+  background: #fff;
+  color: #111;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 70%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.9rem 0.7rem;
+  margin: 0 auto;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.wasla-receipt-preview-header,
+.wasla-receipt-preview-footer {
+  text-align: center;
+  font-weight: 600;
+}
+
+.wasla-receipt-preview-sep {
+  border-top: 1px dashed #bbb;
+  margin: 0.45rem 0;
+}
+
+.wasla-receipt-preview-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.wasla-receipt-preview-label {
+  flex-shrink: 0;
+}
+
+.wasla-receipt-preview-item {
+  font-weight: 600;
+}
+
+@media (max-width: 575.98px) {
+  .wasla-settings-section-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .wasla-settings-subrow {
+    align-items: flex-start;
+  }
+}
+
+/* --- Tenant: button polish (keep danger) --- */
+body.wasla-tenant.wasla-app .btn {
+  border-radius: 0.65rem;
+  font-weight: 500;
+  padding: 0.4rem 0.85rem;
+}
+
+body.wasla-tenant.wasla-app .btn-sm {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+}
+
+body.wasla-tenant.wasla-app .btn:focus-visible,
+body.wasla-tenant.wasla-app .btn-wasla-primary:focus-visible {
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--wasla-primary) 35%, transparent);
+  outline: none;
+}
+
+body.wasla-tenant.wasla-app .btn-wasla-primary {
+  --bs-btn-bg: var(--wasla-primary);
+  --bs-btn-border-color: var(--wasla-primary);
+  --bs-btn-hover-bg: var(--wasla-primary-dark);
+  --bs-btn-hover-border-color: var(--wasla-primary-dark);
+  color: #fff;
+}
+
+body.wasla-tenant.wasla-app .btn-wasla-primary:hover {
+  color: #fff;
+}
+
+body.wasla-tenant.wasla-app .btn-primary {
+  --bs-btn-font-weight: 500;
+  --bs-btn-padding-y: 0.45rem;
+  --bs-btn-padding-x: 0.9rem;
+}
+
+body.wasla-tenant.wasla-app .btn-outline-secondary {
+  --bs-btn-color: var(--wasla-muted);
+  --bs-btn-border-color: color-mix(in srgb, var(--wasla-border) 90%, var(--wasla-muted));
+  --bs-btn-hover-border-color: var(--wasla-border);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--wasla-surface) 50%, var(--wasla-primary));
+  --bs-btn-hover-color: var(--wasla-text);
+}
+
+body.wasla-tenant.wasla-app .btn-outline-primary {
+  --bs-btn-border-color: color-mix(in srgb, var(--wasla-primary) 40%, var(--wasla-surface));
+}
+
+/* --- Orders page header + toolbar --- */
+.orders-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.orders-page-header__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.orders-page-header__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--wasla-text);
+}
+
+.orders-page-header__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--wasla-muted);
+  line-height: 1.4;
+}
+
+.orders-page-header__metric.orders-total-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  min-width: 6.875rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
+  border-radius: 0.875rem;
+  background: var(--wasla-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wasla-text) 5%, transparent);
+  text-align: center;
+}
+
+.orders-page-header__metric-value,
+.orders-total-card__number {
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--wasla-text);
+  letter-spacing: -0.02em;
+}
+
+.orders-page-header__metric-label,
+.orders-total-card__label {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--wasla-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.orders-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 70%, transparent);
+  border-radius: 1rem;
+  background: var(--wasla-surface);
+  margin-bottom: 1rem;
+}
+
+.orders-toolbar-left,
+.orders-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.orders-toolbar-right {
+  justify-content: flex-end;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.wasla-orders-status-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wasla-orders-status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.wasla-orders-status-chip--active {
+  background: color-mix(in srgb, var(--bs-success) 10%, var(--wasla-surface));
+  border-color: color-mix(in srgb, var(--bs-success) 28%, transparent);
+  color: color-mix(in srgb, var(--bs-success) 80%, var(--wasla-text));
+}
+
+.wasla-orders-status-chip--muted {
+  background: color-mix(in srgb, var(--wasla-border) 20%, var(--wasla-surface));
+  border-color: color-mix(in srgb, var(--wasla-border) 45%, transparent);
+  color: var(--wasla-muted);
+}
+
+/* Configured on but waiting for setup to finish: a quiet warning tone, neither the green Active nor the Off look.
+   The words differ too ("active after setup"), so the meaning never depends on color. */
+.wasla-orders-status-chip--pending {
+  background: color-mix(in srgb, var(--bs-warning) 12%, var(--wasla-surface));
+  border-color: color-mix(in srgb, var(--bs-warning) 35%, transparent);
+  color: color-mix(in srgb, var(--bs-warning) 40%, var(--wasla-text));
+}
+
+.orders-manage-settings {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--wasla-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 50%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--wasla-border) 10%, var(--wasla-surface));
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.orders-manage-settings:hover {
+  color: var(--wasla-primary);
+  border-color: color-mix(in srgb, var(--wasla-primary) 35%, var(--wasla-border));
+  background: color-mix(in srgb, var(--wasla-primary) 6%, var(--wasla-surface));
+  text-decoration: none;
+}
+
+.orders-toolbar-right .wasla-orders-view-mode {
+  flex-shrink: 0;
+}
+
+.orders-toolbar-right .wasla-orders-view-mode .btn,
+.orders-toolbar-right > .btn {
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.75rem;
+  min-height: 2rem;
+  line-height: 1.2;
+}
+
+.orders-toolbar-right .wasla-orders-view-mode .btn {
+  border-color: color-mix(in srgb, var(--wasla-border) 65%, transparent);
+}
+
+@media (max-width: 767.98px) {
+  .orders-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .orders-page-header__metric.orders-total-card {
+    align-self: flex-start;
+  }
+
+  .orders-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .orders-toolbar-right {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .orders-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .orders-toolbar-right {
+    margin-left: auto;
+  }
+}
+
+.wasla-orders-page .wasla-orders-filters .card-body {
+  padding: 1.1rem 1.25rem;
+}
+
+.wasla-orders-page .wasla-orders-filters .form-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.wasla-orders-page .wasla-orders-table-card {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wasla-text) 6%, transparent);
+}
+
+/* The Orders table uses the shared .wasla-table (wasla-foundation.css); this keeps it inside its card. */
+.wasla-orders-page .wasla-orders-table-host .wasla-table-wrap {
+  border: 1px solid var(--wasla-border);
+  border-radius: var(--wasla-radius-md, 0.65rem);
+  background: var(--wasla-surface);
+}
+
+.wasla-orders-page .wasla-orders-table-host .wasla-orders-table {
+  font-size: 0.9rem;
+}
+
+.wasla-orders-page .wasla-orders-table-host .wasla-orders-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.wasla-orders-page .wasla-orders-table-host .wasla-orders-table .wasla-orders-actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.wasla-orders-page .wasla-orders-table-host .wasla-orders-table .wasla-table__truncate > span:not(.wasla-table__cell-label) {
+  max-width: 12rem;
+}
+
+/* Narrower desktops (1200-1399px): tighter cells so all seven columns fit, including full dates. */
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+  .wasla-orders-page .wasla-orders-table-host .wasla-orders-table th,
+  .wasla-orders-page .wasla-orders-table-host .wasla-orders-table td {
+    padding-inline: 0.55rem;
+  }
+
+  .wasla-orders-page .wasla-orders-table-host .wasla-orders-table .wasla-table__truncate > span:not(.wasla-table__cell-label) {
+    max-width: 9rem;
+  }
+
+  .wasla-orders-page .wasla-orders-table-host .wasla-orders-table .wasla-table__primary {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Toast styling moved to wasla-toast.css (custom system). */
+
+/* --- Tenant: subtle card + table base polish (non-orders pages) --- */
+body.wasla-tenant.wasla-app .wasla-card,
+body.wasla-tenant.wasla-app .card {
+  border-color: color-mix(in srgb, var(--wasla-border) 90%, var(--wasla-text)) !important;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--wasla-text) 5%, transparent);
+}
+
+body.wasla-tenant.wasla-app .table {
+  --bs-table-color: var(--wasla-text);
+  font-size: 0.9rem;
+}
+
+body.wasla-tenant.wasla-app .table thead th {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--wasla-muted);
+}
+
+/* Orders table: platform badge + actions */
+.platform-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 32px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  border: 1px solid var(--wasla-border);
+  background: var(--wasla-surface);
+  color: var(--wasla-text);
+  white-space: nowrap;
+}
+
+.platform-badge__icon {
+  height: 20px;
+  width: auto;
+  max-width: 64px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.platform-badge__text {
+  line-height: 1;
+}
+
+.platform-badge--wordmark .platform-badge__text {
+  display: none;
+}
+
+.platform-badge--icon-missing .platform-badge__text {
+  display: inline;
+}
+
+.platform-badge--yemeksepeti {
+  background: rgba(238, 43, 36, .08);
+  border-color: rgba(238, 43, 36, .18);
+}
+
+.platform-badge--getiryemek {
+  background: rgba(93, 62, 188, .14);
+  border-color: rgba(93, 62, 188, .30);
+}
+
+/* Getir: remove "outer pill" look; keep only inner purple chip */
+.platform-badge--getiryemek.platform-badge {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  padding: 0;
+  min-height: 0;
+}
+
+.platform-badge--getiryemek.platform-badge .platform-badge__icon-wrap {
+  padding: 3px 8px;
+}
+
+.platform-badge--getiryemek.platform-badge .platform-badge__icon {
+  display: block;
+}
+
+.platform-badge--getiryemek .platform-badge__icon {
+  height: 20px;
+  width: auto;
+  max-width: 76px;
+  object-fit: contain;
+}
+
+.platform-badge--getiryemek .platform-badge__icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(93, 62, 188, .95);
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+
+.platform-badge--trendyol {
+  background: rgba(247, 124, 0, .10);
+  border-color: rgba(247, 124, 0, .20);
+}
+
+[data-bs-theme="dark"] .platform-badge {
+  border-color: color-mix(in srgb, var(--wasla-border) 85%, #fff);
+  background: color-mix(in srgb, var(--wasla-surface) 88%, transparent);
+}
+
+[data-bs-theme="dark"] .platform-badge--yemeksepeti {
+  background: rgba(238, 43, 36, .14);
+  border-color: rgba(238, 43, 36, .26);
+}
+
+[data-bs-theme="dark"] .platform-badge--getiryemek {
+  background: rgba(93, 62, 188, .20);
+  border-color: rgba(93, 62, 188, .38);
+}
+
+[data-bs-theme="dark"] .platform-badge--getiryemek.platform-badge {
+  background: transparent;
+  border-color: transparent;
+}
+
+[data-bs-theme="dark"] .platform-badge--trendyol {
+  background: rgba(247, 124, 0, .16);
+  border-color: rgba(247, 124, 0, .28);
+}
+
+.wasla-orders-actions {
+  display: inline-flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.wasla-orders-actions .btn {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  border-radius: 0.55rem;
+}
+
+.wasla-orders-new-badge {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* --- Orders: view modes + live display --- */
+.wasla-orders-normal-view-escape {
+  display: none !important;
+}
+
+.wasla-orders-view-mode .btn.active {
+  background: var(--wasla-primary);
+  border-color: var(--wasla-primary);
+  color: #fff;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-view-mode .btn:not(.active) {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-view-mode .btn:not(.active):hover {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.orders-filter-toggle {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--wasla-muted);
+  align-self: flex-start;
+}
+
+.orders-filter-toggle:hover,
+.orders-filter-toggle:focus-visible {
+  color: var(--wasla-primary);
+  text-decoration: none;
+}
+
+.orders-card-grid,
+.wasla-orders-cards-host {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.wasla-orders-view-compact .orders-card-grid,
+body.wasla-orders-view-compact .wasla-orders-cards-host,
+body.wasla-orders-live-display.wasla-orders-view-compact .wasla-live-display-cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+
+body.wasla-orders-view-kitchen .orders-card-grid,
+body.wasla-orders-view-kitchen .wasla-orders-cards-host,
+body.wasla-orders-live-display.wasla-orders-view-kitchen .wasla-live-display-cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+
+@media (min-width: 1400px) {
+  body.wasla-orders-view-kitchen .orders-card-grid,
+  body.wasla-orders-view-kitchen .wasla-orders-cards-host,
+  body.wasla-orders-live-display.wasla-orders-view-kitchen .wasla-live-display-cards {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  }
+}
+
+.orders-card,
+.wasla-orders-card {
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  border-radius: 0.75rem;
+  box-shadow: var(--wasla-shadow);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.orders-card--compact,
+.wasla-orders-card--compact {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  min-height: 7.5rem;
+}
+
+.orders-card--kitchen,
+.wasla-orders-card--kitchen {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.85rem;
+}
+
+.orders-card--muted,
+.wasla-orders-card--muted {
+  opacity: 0.72;
+}
+
+.orders-card-image,
+.wasla-orders-card__image-wrap {
+  overflow: hidden;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--wasla-border) 28%, var(--wasla-surface));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orders-card-image--compact,
+.wasla-orders-card__image-wrap--compact {
+  width: 80px;
+  min-width: 80px;
+  height: 80px;
+  border-radius: 0.55rem;
+}
+
+.orders-card-image--kitchen,
+.wasla-orders-card__image-wrap--kitchen {
+  width: 100%;
+  height: clamp(140px, 22vw, 168px);
+  border-radius: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.orders-card-image img,
+.wasla-orders-card__image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+}
+
+.orders-card-image--kitchen img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.orders-card-body,
+.wasla-orders-card__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.orders-card--kitchen .orders-card-body,
+.wasla-orders-card--kitchen .wasla-orders-card__content {
+  gap: 0.45rem;
+}
+
+.orders-card-top,
+.wasla-orders-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.orders-card-badges {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.orders-card-platform .platform-badge {
+  max-width: 100%;
+}
+
+.orders-card-status {
+  flex-shrink: 0;
+}
+
+.orders-card-code,
+.wasla-orders-card__code {
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--wasla-text);
+}
+
+.orders-card--kitchen .orders-card-code,
+.wasla-orders-card--kitchen .wasla-orders-card__code {
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.orders-card-code a,
+.wasla-orders-card__code a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.orders-card-code a:hover,
+.wasla-orders-card__code a:hover {
+  color: var(--wasla-primary);
+}
+
+.orders-card-customer,
+.wasla-orders-card__customer {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--wasla-text);
+}
+
+.orders-card--kitchen .orders-card-customer,
+.wasla-orders-card--kitchen .wasla-orders-card__customer {
+  font-size: 1rem;
+}
+
+.orders-card-items-more,
+.wasla-orders-card__more-items {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.orders-card-meta__label,
+.wasla-orders-card__label {
+  font-size: inherit;
+  font-weight: 500;
+  color: var(--wasla-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.orders-card-meta--compact,
+.wasla-orders-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--wasla-muted);
+  margin-top: 0.1rem;
+}
+
+.orders-card-meta__amount {
+  font-weight: 600;
+  color: var(--wasla-text);
+}
+
+.orders-card-meta__sep {
+  opacity: 0.55;
+}
+
+.orders-card-meta--kitchen {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9375rem;
+  margin-top: 0.15rem;
+}
+
+.orders-card-meta__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.orders-card-actions,
+.wasla-orders-card__actions {
+  margin-top: auto;
+  padding-top: 0.45rem;
+}
+
+.orders-card-actions .wasla-orders-actions,
+.wasla-orders-card__actions .wasla-orders-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.4rem;
+}
+
+.orders-card--compact .orders-card-actions .btn,
+.wasla-orders-card--compact .wasla-orders-card__actions .btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+.orders-card--kitchen .orders-card-actions .btn-lg,
+.wasla-orders-card--kitchen .wasla-orders-card__actions .btn-lg {
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+.wasla-orders-empty__title {
+  font-size: 1.1rem;
+}
+
+.wasla-live-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 28rem);
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  min-height: min(22rem, calc(100dvh - 18rem));
+}
+
+.wasla-live-screen-host > .wasla-live-empty {
+  background: var(--wasla-surface, #fff);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+  border-radius: .75rem;
+}
+
+.wasla-live-empty__mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5.5rem;
+  height: 5.5rem;
+  margin: 0 0 1rem;
+  border-radius: 1.15rem;
+  background: var(--color-accent);
+  color: var(--color-accent-text, #fff);
+  font-size: 2.35rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .02em;
+}
+
+.wasla-live-empty__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--wasla-text, #212529);
+}
+
+.wasla-live-empty__text {
+  margin: .45rem 0 0;
+  max-width: 34rem;
+  font-size: .9375rem;
+  line-height: 1.5;
+  color: var(--wasla-muted, #5c6570);
+  overflow-wrap: anywhere;
+}
+
+/* --- Orders: dedicated live display page --- */
+body.wasla-orders-live-display {
+  margin: 0;
+  overflow-x: hidden;
+  min-height: 100dvh;
+  background: var(--wasla-bg, var(--wasla-bg));
+}
+
+body.wasla-orders-live-display:has(#ordersLiveScreenHost.wasla-live-screen-host--board),
+body.wasla-orders-live-display:has(#ordersLiveScreenHost.wasla-live-screen-host--list),
+body.wasla-orders-live-display:has(#ordersLiveScreenHost.wasla-live-screen-host--focus) {
+  background: color-mix(in srgb, var(--wasla-border) 32%, var(--wasla-bg, #f4f5f7));
+}
+
+body.wasla-orders-live-display:has(#ordersLiveScreenHost.wasla-live-screen-host--board) .wasla-live-display-header,
+body.wasla-orders-live-display:has(#ordersLiveScreenHost.wasla-live-screen-host--list) .wasla-live-display-header,
+body.wasla-orders-live-display:has(#ordersLiveScreenHost.wasla-live-screen-host--focus) .wasla-live-display-header {
+  background: color-mix(in srgb, var(--wasla-border) 32%, var(--wasla-bg, #f4f5f7));
+}
+
+body.wasla-orders-live-display .wasla-orders-live-display-root {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+  padding: 0.4rem 0.75rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow-x: hidden;
+}
+
+body.wasla-orders-live-display .wasla-live-display-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  align-items: flex-start;
+  padding: 0.15rem 0 0.2rem;
+  background: color-mix(in srgb, var(--wasla-border) 32%, var(--wasla-bg, #f4f5f7));
+  backdrop-filter: none;
+  border-bottom: 0;
+}
+
+.wasla-live-screen-page .wasla-live-display-header__left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .55rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 100%;
+}
+
+.wasla-live-display-identity {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  max-width: 28rem;
+}
+
+.wasla-live-display-identity__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  border: 1px solid #f0d3bf;
+  border-radius: .7rem;
+  background: #fff4ec;
+  color: #e07a45;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.wasla-live-display-identity__copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.wasla-live-display-identity__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .3rem .5rem;
+  min-width: 0;
+}
+
+.wasla-live-screen-page .wasla-fs-header__title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.wasla-live-display-status {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  padding-block: .08rem;
+  padding-inline: .28rem .42rem;
+  border: 0;
+  border-radius: 999px;
+  background: #e8f6ee;
+  color: #1c8a4a;
+  font-size: .6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.wasla-live-display-status__dot {
+  width: .4rem;
+  height: .4rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.wasla-live-screen-page .wasla-live-display-header__subtitle,
+.wasla-live-screen-page .wasla-live-display-header__meta,
+.wasla-live-screen-page .wasla-live-display-fullscreen-hint {
+  font-size: .75rem;
+  line-height: 1.3;
+}
+
+.wasla-live-screen-page .wasla-live-display-header__subtitle {
+  color: var(--wasla-muted, #6c757d);
+}
+
+.wasla-live-screen-page .wasla-live-display-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .15rem .4rem;
+  color: var(--wasla-muted, #6c757d);
+  font-size: .6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.wasla-live-screen-page .wasla-live-display-header__meta .wasla-fs-header__sep::before {
+  content: "•";
+  font-size: .7rem;
+  line-height: 1;
+  opacity: .7;
+}
+
+.wasla-live-screen-page .wasla-live-display-connection {
+  margin-inline-start: .25rem;
+}
+
+.wasla-live-screen-page .wasla-live-display-summary {
+  display: flex;
+  align-items: stretch;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+}
+
+.wasla-live-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: max-content;
+  max-width: 100%;
+  min-height: 0;
+  background: var(--wasla-surface, #fff);
+  border: 1px solid #ece7e2;
+  border-radius: .7rem;
+  box-shadow: 0 1px 2px rgba(40, 32, 24, 0.04);
+  overflow: hidden;
+  cursor: default;
+}
+
+.wasla-live-summary__metric {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .55rem;
+  min-width: 0;
+  padding-block: .45rem;
+  padding-inline: .8rem;
+  cursor: default;
+}
+
+.wasla-live-summary__metric + .wasla-live-summary__metric {
+  border-inline-start: 1px solid #efeae5;
+}
+
+.wasla-live-summary__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  flex: 0 0 auto;
+  border-radius: .4rem;
+  font-size: .85rem;
+  line-height: 1;
+}
+
+.wasla-live-summary__icon--today { background: #eef3f8; color: #5d7390; }
+.wasla-live-summary__icon--active { background: #e7f6ee; color: #1f8a4c; }
+.wasla-live-summary__icon--cancelled { background: #fdeeee; color: #d4534e; }
+
+.wasla-live-summary__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .05rem;
+  min-width: 0;
+}
+
+.wasla-live-summary__value {
+  min-width: 1.5ch;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--wasla-text, #1f1a17);
+}
+
+.wasla-live-summary__label {
+  font-size: .6875rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: #8d8680;
+  overflow-wrap: anywhere;
+}
+
+[data-bs-theme="dark"] .wasla-live-display-identity__mark {
+  background: rgba(224, 122, 69, 0.14);
+  border-color: rgba(224, 122, 69, 0.35);
+  color: #f0a27a;
+}
+[data-bs-theme="dark"] .wasla-live-summary__label { color: #b7aea6; }
+[data-bs-theme="dark"] .wasla-live-display-status {
+  color: #9ed9b4;
+  background: rgba(31, 138, 76, 0.18);
+}
+[data-bs-theme="dark"] .wasla-live-summary {
+  border-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  box-shadow: none;
+}
+[data-bs-theme="dark"] .wasla-live-summary__metric + .wasla-live-summary__metric {
+  border-inline-start-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);
+}
+[data-bs-theme="dark"] .wasla-live-summary__icon--today { background: rgba(93, 115, 144, 0.2); color: #b7c7da; }
+[data-bs-theme="dark"] .wasla-live-summary__icon--active { background: rgba(31, 138, 76, 0.18); color: #9ed9b4; }
+[data-bs-theme="dark"] .wasla-live-summary__icon--cancelled { background: rgba(212, 83, 78, 0.18); color: #f0a8a4; }
+
+.wasla-orders-sound-enable-btn {
+  font-weight: 600;
+}
+
+.wasla-live-display-sound-banner {
+  margin: 0;
+}
+
+.wasla-live-display-sound-active {
+  margin: 0;
+}
+
+body.wasla-orders-live-display .wasla-live-display-cards {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+body.wasla-orders-live-display .wasla-live-screen-host {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@keyframes wasla-live-view-enter {
+  from {
+    opacity: 0.96;
+    transform: translate3d(var(--wasla-live-view-shift, 12px), 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-view-enter {
+  --wasla-live-view-shift: 12px;
+  animation: wasla-live-view-enter 160ms ease-out both;
+}
+
+body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-view-enter--back {
+  --wasla-live-view-shift: -12px;
+}
+
+[dir="rtl"] body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-view-enter {
+  --wasla-live-view-shift: -12px;
+}
+
+[dir="rtl"] body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-view-enter--back {
+  --wasla-live-view-shift: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-view-enter {
+    animation: none;
+  }
+}
+
+body.wasla-orders-live-display .wasla-live-screen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+/* Grouped List replaces the old single-column card list. Row styles live with the Board section. */
+
+.wasla-live-screen-card__details {
+  white-space: nowrap;
+}
+
+.wasla-live-screen-view-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 2px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 85%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--wasla-border) 38%, var(--wasla-surface, #fff));
+}
+
+.wasla-live-screen-view-switch__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  min-height: 34px;
+  margin: 0;
+  padding: .2rem .7rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--wasla-text, #212529) 62%, var(--wasla-muted, #6c757d));
+  font-family: inherit;
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.wasla-live-screen-view-switch__option .bi {
+  font-size: .95rem;
+  line-height: 1;
+}
+
+.wasla-live-screen-view-switch__option:hover {
+  background: color-mix(in srgb, var(--wasla-surface, #fff) 72%, transparent);
+  color: var(--wasla-text, #212529);
+}
+
+.wasla-live-screen-view-switch__option[aria-pressed="true"] {
+  background: var(--wasla-surface, #fff);
+  border-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .08);
+  color: var(--color-accent);
+}
+
+.wasla-live-screen-view-switch__option[aria-pressed="true"]:hover {
+  background: var(--wasla-surface, #fff);
+  color: var(--color-accent);
+}
+
+.wasla-live-screen-view-switch__option:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.wasla-live-screen-card__code {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.wasla-live-screen-card__items {
+  margin: 0.35rem 0 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--wasla-surface-2, var(--bs-secondary-bg)) 80%, transparent);
+}
+
+.wasla-live-screen-card__item {
+  display: block;
+  margin: 0.2rem 0;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.wasla-live-screen-card__qty {
+  font-weight: 700;
+  margin-inline-end: 0.3rem;
+}
+
+.wasla-live-screen-card__product {
+  font-weight: 600;
+}
+
+.wasla-live-screen-card__note {
+  margin-top: 0.15rem;
+  margin-inline-start: 1.35rem;
+  font-size: 0.86rem;
+  font-style: italic;
+}
+
+.wasla-live-screen-card__elapsed {
+  margin-inline-start: 0.25rem;
+  font-size: 0.9em;
+}
+
+.wasla-live-screen-card.order-row-new {
+  /* Subtle operational emphasis — no row-table animations on Live cards. */
+  animation: none !important;
+  box-shadow: 0 0 0 2px var(--new-order-highlight-border, rgba(255, 193, 7, 0.55));
+  background-color: var(--new-order-highlight-bg, rgba(255, 243, 205, 0.42));
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.wasla-live-screen-card.order-row-new.color-yellow {
+  background-color: rgba(255, 243, 205, 0.45);
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.55);
+}
+
+.wasla-live-screen-card.order-row-new.color-orange {
+  background-color: rgba(255, 228, 209, 0.45);
+  box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.5);
+}
+
+.wasla-live-screen-card.order-row-new.color-blue {
+  background-color: rgba(219, 234, 254, 0.45);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.wasla-live-screen-card.order-row-new.color-green {
+  background-color: rgba(209, 250, 229, 0.45);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
+}
+
+.wasla-live-screen-card.order-row-new.color-red {
+  background-color: rgba(254, 226, 226, 0.45);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-yellow {
+  background-color: rgba(245, 158, 11, 0.16);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4);
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-orange {
+  background-color: rgba(242, 107, 58, 0.16);
+  box-shadow: 0 0 0 2px rgba(242, 107, 58, 0.4);
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-blue {
+  background-color: rgba(59, 130, 246, 0.16);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-green {
+  background-color: rgba(34, 197, 94, 0.16);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-card.order-row-new.color-red {
+  background-color: rgba(239, 68, 68, 0.16);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
+}
+
+body.wasla-orders-live-display .wasla-live-display-table {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
+  min-height: 100vh;
+  padding: 1rem 1.25rem;
+}
+
+.wasla-live-display-header__brand {
+  font-weight: 500;
+}
+
+.wasla-live-display-fullscreen-hint {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.wasla-live-display-kbd {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-family: inherit;
+  padding: 0.08rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 85%, transparent);
+  background: color-mix(in srgb, var(--wasla-surface) 90%, var(--wasla-muted));
+  color: var(--wasla-text);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--wasla-border) 60%, transparent);
+}
+
+.wasla-live-display-close-btn {
+  font-size: 0.8125rem;
+  padding: 0.2rem 0.55rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-settings {
+  position: relative;
+}
+
+.wasla-live-screen-page .wasla-live-settings__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.125rem;
+  min-width: 2.125rem;
+  height: 2.125rem;
+  padding: 0;
+  border-color: color-mix(in srgb, var(--wasla-border) 85%, transparent);
+  background: var(--wasla-surface, #fff);
+  color: var(--wasla-text, #212529);
+}
+
+.wasla-live-screen-page .wasla-live-settings__toggle .bi {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu {
+  top: 100%;
+  left: auto;
+  right: auto;
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+  min-width: 17rem;
+  max-width: min(20rem, calc(100vw - 1.5rem));
+  margin-block-start: .3rem;
+  padding-block: .35rem;
+  padding-inline: 0;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  border-radius: .65rem;
+  background: var(--wasla-surface, #fff);
+  box-shadow: 0 4px 12px rgba(40, 32, 24, 0.08);
+}
+
+/* Read-only status in two labelled groups (automation, notifications); one row per setting. */
+.wasla-live-screen-page .wasla-live-settings-menu__group {
+  padding-block: .35rem .4rem;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__group + .wasla-live-settings-menu__group {
+  border-block-start: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__heading {
+  margin: 0;
+  padding-block: .15rem .3rem;
+  padding-inline: .75rem;
+  color: var(--wasla-muted, #6c757d);
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  min-height: 2rem;
+  padding-block: .2rem;
+  padding-inline: .75rem;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--wasla-text, #212529);
+  font-size: .8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: start;
+}
+
+/* Values are small pills so active, off and waiting-for-setup read the same way in every row. */
+.wasla-live-screen-page .wasla-live-settings-menu__value {
+  flex: 0 1 auto;
+  max-width: 58%;
+  padding-block: .1rem;
+  padding-inline: .5rem;
+  border: 1px solid transparent;
+  border-radius: .6rem;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--active {
+  border-color: color-mix(in srgb, #146c43 30%, transparent);
+  background: color-mix(in srgb, #146c43 10%, var(--wasla-surface, #fff));
+  color: #146c43;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--muted {
+  border-color: color-mix(in srgb, var(--wasla-border) 90%, transparent);
+  background: color-mix(in srgb, var(--wasla-border) 25%, var(--wasla-surface, #fff));
+  color: var(--wasla-muted, #6c757d);
+  font-weight: 600;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--pending {
+  border-color: color-mix(in srgb, #8a5a00 30%, transparent);
+  background: color-mix(in srgb, #f3c76b 22%, var(--wasla-surface, #fff));
+  color: #8a5a00;
+  font-weight: 600;
+  white-space: normal;
+  text-align: end;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__hint {
+  margin: 0;
+  padding-block: .1rem .3rem;
+  padding-inline: .75rem;
+  color: var(--wasla-muted, #6c757d);
+  font-size: .75rem;
+  line-height: 1.35;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu .dropdown-divider {
+  margin-block: .25rem;
+  margin-inline: 0;
+  border-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  opacity: 1;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu .orders-manage-settings {
+  display: flex;
+  width: auto;
+  margin: .1rem .35rem .15rem;
+  padding-block: .4rem;
+  padding-inline: .55rem;
+  border: 0;
+  border-radius: .4rem;
+  background: transparent;
+  color: var(--wasla-text, #212529);
+  font-size: .8125rem;
+  font-weight: 600;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu .orders-manage-settings:hover,
+.wasla-live-screen-page .wasla-live-settings-menu .orders-manage-settings:focus-visible {
+  background: color-mix(in srgb, var(--wasla-primary) 8%, var(--wasla-surface, #fff));
+  color: var(--wasla-primary);
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu .wasla-live-display-sound-active {
+  margin-block: .15rem .25rem;
+  margin-inline: .75rem;
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--active {
+  background: transparent;
+  color: #9ed9b4;
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--pending {
+  background: transparent;
+  color: #f3c76b;
+}
+
+.wasla-fs-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 0.75rem 0;
+  background: color-mix(in srgb, var(--wasla-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--wasla-border);
+}
+
+.wasla-fs-header__title {
+  font-size: 1.65rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.wasla-fs-header__meta {
+  font-size: 0.95rem;
+  color: var(--wasla-muted);
+}
+
+.wasla-fs-header__sep {
+  margin: 0 0.35rem;
+}
+
+.wasla-fs-header__actions {
+  margin-inline-start: auto;
+}
+
+.wasla-fs-stat {
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  border-radius: 0.85rem;
+  padding: 1rem 1.15rem;
+  box-shadow: var(--wasla-shadow);
+  height: 100%;
+}
+
+.wasla-fs-stat__label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--wasla-muted);
+  margin-bottom: 0.35rem;
+}
+
+.wasla-fs-stat__value {
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.wasla-fs-table-panel {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.wasla-fs-table-panel .wasla-orders-table-card {
+  margin-bottom: 0;
+}
+
+body.wasla-orders-live-display.wasla-orders-view-table .wasla-orders-table-host .table.wasla-orders-table {
+  font-size: 0.95rem;
+}
+
+body.wasla-orders-live-display.wasla-orders-view-table .wasla-orders-table-host .table.wasla-orders-table thead th {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 767.98px) {
+  .wasla-fs-stat__value {
+    font-size: 1.85rem;
+  }
+
+  .wasla-fs-header__actions {
+    width: 100%;
+  }
+}
+
+/* --- Tenant: shared customer page patterns --- */
+.wasla-customer-page-header__title,
+.wasla-dash-header__title,
+.wasla-order-details__title {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.wasla-notification-settings-modal {
+  max-width: 520px;
+}
+
+/* --- Tenant: Order History --- */
+.wasla-order-history-page .wasla-order-history-filters .card-body {
+  padding: 1.1rem 1.25rem;
+}
+
+.wasla-order-history-page .wasla-order-history-filters .form-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.wasla-order-history-page .wasla-order-history-table-card {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wasla-text) 6%, transparent);
+}
+
+.wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table {
+  font-size: 0.9rem;
+}
+
+.wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table thead th {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--wasla-muted);
+  border-bottom-width: 1px;
+  padding: 0.6rem 0.75rem;
+  white-space: nowrap;
+}
+
+.wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table tbody td {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table tbody tr:hover {
+  background-color: color-mix(in srgb, var(--wasla-primary) 6%, var(--wasla-surface)) !important;
+}
+
+[data-bs-theme="dark"] .wasla-order-history-page .wasla-order-history-table-card .table.wasla-orders-table tbody tr:hover {
+  background-color: color-mix(in srgb, var(--wasla-primary) 12%, var(--wasla-surface)) !important;
+}
+
+/* --- Tenant: Dashboard --- */
+.wasla-dashboard {
+  max-width: 100%;
+}
+
+.wasla-dash-today-badge {
+  font-weight: 500;
+  font-size: 0.8rem;
+  padding: 0.45rem 0.75rem;
+}
+
+/* KPI cards: border-first, label + icon on one line, one emphasized number.
+   Five across on wide screens, three on tablets, two on phones. */
+.wasla-dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.wasla-dash-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  background: var(--wasla-surface);
+  border: 1px solid var(--wasla-border);
+  border-radius: var(--wasla-radius-md, 0.65rem);
+  box-shadow: var(--wasla-shadow-sm, none);
+}
+
+.wasla-dash-kpi__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.wasla-dash-kpi__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--wasla-radius-sm, 0.4rem);
+  font-size: 0.9rem;
+  background: var(--wasla-accent-soft, color-mix(in srgb, var(--wasla-primary) 10%, var(--wasla-surface)));
+  color: var(--wasla-accent-hover, var(--wasla-primary));
+}
+
+.wasla-dash-kpi--revenue .wasla-dash-kpi__icon {
+  background: var(--wasla-success-soft, rgba(47, 111, 78, 0.12));
+  color: var(--wasla-success, #2f6f4e);
+}
+
+.wasla-dash-kpi--active .wasla-dash-kpi__icon {
+  background: var(--wasla-info-soft, rgba(59, 110, 165, 0.12));
+  color: var(--wasla-info, #3b6ea5);
+}
+
+.wasla-dash-kpi--cancelled .wasla-dash-kpi__icon {
+  background: var(--wasla-danger-soft, rgba(180, 35, 44, 0.12));
+  color: var(--wasla-danger, #b4232c);
+}
+
+.wasla-dash-kpi--average .wasla-dash-kpi__icon {
+  background: var(--wasla-surface-muted, #F4F0E9);
+  color: var(--wasla-text-secondary, var(--wasla-muted));
+}
+
+.wasla-dash-kpi__label {
+  margin: 0;
+  min-width: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--wasla-text-secondary, var(--wasla-muted));
+}
+
+/* Pushed to the bottom so numbers stay level when a translated label wraps to two lines. */
+.wasla-dash-kpi__value {
+  margin: auto 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--wasla-text);
+  overflow-wrap: anywhere;
+}
+
+.wasla-dash-kpi__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--wasla-muted);
+}
+
+/* Tablets: three cards on the first row, the last two share the second row (no empty slot). */
+@media (max-width: 1199.98px) {
+  .wasla-dash-kpis {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .wasla-dash-kpi {
+    grid-column: span 2;
+  }
+
+  .wasla-dash-kpi:nth-child(n + 4) {
+    grid-column: span 3;
+  }
+
+  /* Keep all six Recent Orders columns visible: shorter customer cells, long order codes may wrap. */
+  .wasla-dash-table .wasla-table__truncate > span:not(.wasla-table__cell-label) {
+    max-width: 8rem;
+  }
+
+  .wasla-dash-table .wasla-table__primary {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .wasla-dash-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .wasla-dash-kpi {
+    padding: 0.7rem 0.75rem;
+  }
+
+  .wasla-dash-kpi__value {
+    font-size: 1.25rem;
+  }
+
+  .wasla-dash-kpi__hint {
+    display: none;
+  }
+
+  .wasla-dash-kpi,
+  .wasla-dash-kpi:nth-child(n + 4) {
+    grid-column: auto;
+  }
+
+  /* The fifth card spans the row instead of leaving a gap. */
+  .wasla-dash-kpi:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Where subgrid is supported, label, number and note rows line up across every card in a row,
+   even when one translation wraps to two lines. */
+@supports (grid-template-rows: subgrid) {
+  .wasla-dash-kpi {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0.35rem;
+  }
+
+  .wasla-dash-kpi__value {
+    margin: 0;
+    align-self: end;
+  }
+
+  @media (max-width: 575.98px) {
+    .wasla-dash-kpi {
+      grid-row: span 2;
+    }
+  }
+}
+
+.wasla-dash-section__title {
+  font-weight: 600;
+}
+
+/* Recent Orders uses the shared .wasla-table; only dashboard-specific spacing here. */
+.wasla-dash-table-wrap {
+  margin-inline: -1rem;
+}
+
+.wasla-dash-table th,
+.wasla-dash-table td {
+  padding-block: 0.55rem;
+  padding-inline: 0.65rem;
+}
+
+@media (min-width: 1200px) {
+  .wasla-dash-table .wasla-table__truncate > span:not(.wasla-table__cell-label) {
+    max-width: 12rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .wasla-dash-table th:first-child,
+  .wasla-dash-table td:first-child {
+    padding-inline-start: 1rem;
+  }
+
+  .wasla-dash-table th:last-child,
+  .wasla-dash-table td:last-child {
+    padding-inline-end: 1rem;
+  }
+}
+
+.wasla-dash-received {
+  white-space: nowrap;
+}
+
+/* Shared order status badge (Dashboard, History, Details, Orders view-mode cards) */
+.wasla-dash-status {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.wasla-dash-status--new {
+  background: color-mix(in srgb, var(--wasla-status-new) 22%, var(--wasla-surface));
+  color: #856404;
+  border: 1px solid color-mix(in srgb, var(--wasla-status-new) 45%, transparent);
+}
+
+.wasla-dash-status--accepted {
+  background: color-mix(in srgb, var(--wasla-status-accepted) 14%, var(--wasla-surface));
+  color: #7c3e0a;
+  border: 1px solid color-mix(in srgb, var(--wasla-status-accepted) 40%, transparent);
+}
+
+.wasla-dash-status--progress {
+  background: color-mix(in srgb, var(--wasla-status-preparing) 14%, var(--wasla-surface));
+  color: #084298;
+  border: 1px solid color-mix(in srgb, var(--wasla-status-preparing) 30%, transparent);
+}
+
+.wasla-dash-status--ready {
+  background: color-mix(in srgb, var(--wasla-status-ready) 16%, var(--wasla-surface));
+  color: #146c43;
+  border: 1px solid color-mix(in srgb, var(--wasla-status-ready) 35%, transparent);
+}
+
+.wasla-dash-status--on-the-way {
+  background: color-mix(in srgb, var(--wasla-status-on-the-way) 14%, var(--wasla-surface));
+  color: #5a32a3;
+  border: 1px solid color-mix(in srgb, var(--wasla-status-on-the-way) 32%, transparent);
+}
+
+.wasla-dash-status--delivered {
+  background: color-mix(in srgb, var(--wasla-status-completed) 12%, var(--wasla-surface));
+  color: var(--wasla-status-completed);
+  border: 1px solid color-mix(in srgb, var(--wasla-status-completed) 28%, transparent);
+}
+
+.wasla-dash-status--cancelled,
+.wasla-dash-status--failed {
+  background: color-mix(in srgb, #dc3545 10%, var(--wasla-surface));
+  color: #842029;
+  border: 1px solid color-mix(in srgb, #dc3545 25%, transparent);
+}
+
+.wasla-dash-empty__icon {
+  font-size: 2rem;
+  opacity: 0.55;
+}
+
+.wasla-dash-empty__title {
+  font-weight: 500;
+  color: var(--wasla-text);
+}
+
+/* Full-width section below Recent Orders: platforms sit side by side and stack on narrow screens. */
+.wasla-dash-platform-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.wasla-dash-platform-item {
+  padding-block: 0.75rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 65%, transparent);
+}
+
+.wasla-dash-platform-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.wasla-dash-platform-item__stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  margin-inline-start: auto;
+}
+
+.wasla-dash-platform-item__count {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.wasla-dash-platform-item__revenue {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.wasla-dash-platform-item__share {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+
+.wasla-dash-platform-item__bar {
+  flex: 1;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wasla-border) 55%, transparent);
+  overflow: hidden;
+}
+
+.wasla-dash-platform-item__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wasla-primary);
+  min-width: 2%;
+}
+
+.wasla-dash-platform-item__pct {
+  white-space: nowrap;
+  min-width: 3.5rem;
+  text-align: end;
+}
+
+[data-bs-theme="dark"] .wasla-dash-status--new {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  border-color: var(--color-warning-border);
+}
+
+[data-bs-theme="dark"] .wasla-dash-status--accepted {
+  background: rgba(180, 83, 9, 0.22);
+  color: #fdba74;
+  border-color: rgba(180, 83, 9, 0.45);
+}
+
+[data-bs-theme="dark"] .wasla-dash-status--progress {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  border-color: var(--color-info-border);
+}
+
+[data-bs-theme="dark"] .wasla-dash-status--ready {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  border-color: var(--color-success-border);
+}
+
+[data-bs-theme="dark"] .wasla-dash-status--on-the-way {
+  background: rgba(111, 66, 193, 0.22);
+  color: #d8b4fe;
+  border-color: rgba(111, 66, 193, 0.45);
+}
+
+[data-bs-theme="dark"] .wasla-dash-status--delivered {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+[data-bs-theme="dark"] .wasla-dash-status--cancelled,
+[data-bs-theme="dark"] .wasla-dash-status--failed {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+}
+
+/* --- Tenant: Order Details --- */
+.wasla-order-details__code {
+  font-size: 0.95rem;
+  color: var(--wasla-text);
+}
+
+.wasla-order-details-stat {
+  height: 100%;
+  padding: 0.75rem 0.9rem;
+  background: var(--wasla-surface);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+  border-radius: 0.65rem;
+  box-shadow: var(--wasla-shadow);
+}
+
+.wasla-order-details-stat__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--wasla-muted);
+  margin-bottom: 0.35rem;
+}
+
+.wasla-order-details-stat__value {
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.wasla-order-details-stat__value--amount {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--wasla-text);
+}
+
+.wasla-order-details-stat__value--time {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--wasla-text);
+}
+
+.wasla-order-details-card__title {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.wasla-order-details-dl__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
+}
+
+.wasla-order-details-dl__row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.wasla-order-details-dl__row:last-child {
+  padding-bottom: 0;
+}
+
+.wasla-order-details-dl dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--wasla-muted);
+  margin: 0;
+}
+
+.wasla-order-details-dl dd {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--wasla-text);
+}
+
+.wasla-order-details-address {
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.wasla-order-details-phone {
+  text-decoration: none;
+}
+
+.wasla-order-details-phone:hover {
+  text-decoration: underline;
+}
+
+.wasla-order-details-items thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--wasla-muted);
+  border-bottom-width: 1px;
+  white-space: nowrap;
+}
+
+.wasla-order-details-items tbody tr + tr td {
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
+}
+
+.wasla-order-details-item-name {
+  color: var(--wasla-text);
+}
+
+.wasla-order-details-item-options li + li {
+  margin-top: 0.1rem;
+}
+
+.wasla-order-details-qty {
+  display: inline-block;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.wasla-order-details-qty--highlight {
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wasla-primary) 12%, var(--wasla-surface));
+  border: 1px solid color-mix(in srgb, var(--wasla-primary) 25%, transparent);
+}
+
+.wasla-order-details-totals-dl__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+}
+
+.wasla-order-details-totals-dl__row + .wasla-order-details-totals-dl__row {
+  border-top: 1px solid color-mix(in srgb, var(--wasla-border) 55%, transparent);
+}
+
+.wasla-order-details-totals-dl dt {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--wasla-muted);
+}
+
+.wasla-order-details-totals-dl dd {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--wasla-text);
+}
+
+.wasla-order-details-totals-dl__row--grand {
+  margin-top: 0.35rem;
+  padding-top: 0.75rem;
+  border-top: 2px solid color-mix(in srgb, var(--wasla-border) 80%, transparent) !important;
+}
+
+.wasla-order-details-totals-dl__row--grand dt {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--wasla-text);
+}
+
+.wasla-order-details-totals-dl__row--grand dd {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--wasla-text);
+}
+
+@media (max-width: 575.98px) {
+  .wasla-order-details__header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Print Bridge device management */
+.wasla-print-bridge-page .wasla-print-bridge-stat {
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border-radius: var(--wasla-radius, 0.5rem);
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 70%, transparent);
+  background: var(--wasla-surface);
+}
+
+.wasla-print-bridge-stat__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--wasla-muted);
+  margin-bottom: 0.35rem;
+}
+
+.wasla-print-bridge-stat__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--wasla-text);
+}
+
+.wasla-print-bridge-stat__value--text {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.wasla-print-bridge-stat__hint {
+  margin-top: 0.35rem;
+}
+
+.wasla-print-bridge-devices-table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--wasla-muted);
+  border-bottom-width: 1px;
+  white-space: nowrap;
+}
+
+.wasla-print-bridge-devices-table tbody td {
+  vertical-align: middle;
+}
+
+.wasla-print-bridge-token-value {
+  min-height: 3rem;
+  max-height: 8rem;
+  overflow: auto;
+}
+
+.wasla-print-bridge-setup-info {
+  background: var(--color-surface-muted, rgba(0, 0, 0, 0.02));
+}
+
+.wasla-print-bridge-setup-steps li {
+  margin-bottom: 0.35rem;
+}
+
+.wasla-print-bridge-setup-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.wasla-print-bridge-setup-value {
+  min-height: 2.5rem;
+  max-height: 6rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Print Bridge sidebar sub-navigation */
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-group {
+  margin-bottom: 0.15rem;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-group__head {
+  font-weight: 600;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub {
+  list-style: none;
+  margin: 0.15rem 0 0.35rem;
+  padding: 0 0 0 0.35rem;
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link {
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.75rem 0.35rem 2rem !important;
+  border-radius: 0.375rem;
+  color: var(--color-sidebar-muted, rgba(255, 255, 255, 0.72));
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link:hover,
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link:focus-visible {
+  color: var(--color-sidebar-text, #fff);
+  background: color-mix(in srgb, var(--wasla-primary) 8%, transparent);
+}
+
+body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link.active {
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 12%, transparent);
+  font-weight: 600;
+}
+
+body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-nav-sub {
+  display: none;
+}
+
+/* Print Bridge setup guide */
+.wasla-print-bridge-setup-page .wasla-print-bridge-setup-layout {
+  max-width: 50rem;
+  margin-inline: auto;
+}
+
+.wasla-print-bridge-setup-main-card .card-body {
+  padding: 2rem 2.25rem;
+}
+
+.wasla-print-bridge-setup-header .h4 {
+  font-weight: 600;
+}
+
+.wasla-print-bridge-setup-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--color-surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--wasla-primary) 22%, transparent);
+}
+
+.wasla-print-bridge-setup-mode-option {
+  border: 2px solid color-mix(in srgb, var(--color-border, #dee2e6) 90%, transparent);
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wasla-print-bridge-setup-mode-option:hover {
+  border-color: color-mix(in srgb, var(--wasla-primary) 25%, var(--color-border, #dee2e6));
+}
+
+.wasla-print-bridge-setup-mode-option:has(input:checked) {
+  border-color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 7%, var(--color-surface, #fff));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wasla-primary) 18%, transparent);
+}
+
+.wasla-print-bridge-setup-mode-option:has(input:checked) .form-check-input {
+  border-color: var(--wasla-primary);
+  background-color: var(--wasla-primary);
+}
+
+.wasla-print-bridge-reconnect-device-details .badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.wasla-print-bridge-reconnect-device-details__sep {
+  color: color-mix(in srgb, var(--color-text, inherit) 45%, transparent);
+}
+
+.wasla-print-bridge-setup-reconnect-panel {
+  padding: 1rem 1.125rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 85%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 98%, var(--wasla-primary) 2%);
+}
+
+.wasla-print-bridge-setup-cta-block {
+  padding-top: 0.25rem;
+}
+
+.wasla-print-bridge-setup-helper {
+  line-height: 1.5;
+  max-width: 38rem;
+}
+
+.wasla-print-bridge-setup-manual-link {
+  margin-inline-start: 0.35rem;
+  white-space: nowrap;
+}
+
+.wasla-print-bridge-setup-below-fold {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 70%, transparent);
+}
+
+.wasla-print-bridge-setup-below-fold .wasla-print-bridge-setup-accordion-btn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--color-text, inherit) 72%, transparent);
+}
+
+.wasla-print-bridge-setup-below-fold .wasla-print-bridge-setup-accordion-btn:not(.collapsed) {
+  color: var(--wasla-primary);
+}
+
+.wasla-print-bridge-package-card {
+  padding: 1rem 1.125rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 85%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 99%, var(--wasla-primary) 1%);
+}
+
+.wasla-print-bridge-package-placeholder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px dashed color-mix(in srgb, var(--color-border, #dee2e6) 90%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 97%, var(--color-border, #dee2e6) 3%);
+}
+
+.wasla-print-bridge-package-placeholder-row--ready {
+  border-style: solid;
+  background: var(--color-surface, #fff);
+}
+
+.wasla-print-bridge-package-placeholder-row__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 10%, var(--color-surface, #fff));
+  flex-shrink: 0;
+}
+
+.wasla-print-bridge-package-placeholder-row__icon .bi {
+  font-size: 1.125rem;
+}
+
+.wasla-print-bridge-package-status-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text, inherit) 68%, transparent);
+  background: color-mix(in srgb, var(--color-border, #dee2e6) 35%, var(--color-surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 80%, transparent);
+}
+
+.wasla-print-bridge-setup-accordion .accordion-item {
+  background: transparent;
+}
+
+.wasla-print-bridge-setup-accordion-btn {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text, inherit);
+  background: transparent;
+  box-shadow: none;
+  padding-inline: 0;
+}
+
+.wasla-print-bridge-setup-accordion-btn:not(.collapsed) {
+  color: var(--wasla-primary);
+  background: transparent;
+  box-shadow: none;
+}
+
+.wasla-print-bridge-setup-accordion .accordion-body {
+  padding-inline: 0;
+}
+
+.wasla-print-bridge-manual-token-result {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-border, #dee2e6) 80%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 98%, var(--wasla-primary) 2%);
+}
+
+.wasla-print-bridge-setup-page .wasla-print-bridge-guide-step {
+  position: relative;
+}
+
+.wasla-print-bridge-setup-steps {
+  padding-inline-start: 1.25rem;
+  margin-bottom: 0;
+}
+
+.wasla-print-bridge-setup-steps li {
+  margin-bottom: 0.45rem;
+}
+
+.wasla-print-bridge-setup-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.wasla-print-bridge-download-card .badge,
+.wasla-print-bridge-connection-card .badge {
+  white-space: nowrap;
+}
+
+.wasla-print-bridge-faq .accordion-button {
+  font-weight: 600;
+  color: var(--color-text, inherit);
+  background: transparent;
+  box-shadow: none;
+}
+
+.wasla-print-bridge-faq .accordion-button:not(.collapsed) {
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 8%, transparent);
+}
+
+.wasla-print-bridge-faq .accordion-item {
+  border-inline: 0;
+  border-radius: 0;
+}
+
+.wasla-print-bridge-faq .accordion-item:first-of-type {
+  border-top: 0;
+}
+
+.wasla-print-bridge-faq .accordion-item:last-of-type {
+  border-bottom: 0;
+}
+
+.wasla-print-bridge-guide-step__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  background: var(--wasla-primary);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.wasla-print-bridge-guide-checklist {
+  padding-inline-start: 1.25rem;
+  margin-bottom: 0;
+}
+
+.wasla-print-bridge-guide-checklist li {
+  margin-bottom: 0.35rem;
+}
+
+.wasla-print-bridge-guide-checklist li:last-child {
+  margin-bottom: 0;
+}
+
+.wasla-print-bridge-guide-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px dashed var(--color-border, #dee2e6);
+  border-radius: 0.5rem;
+  background: var(--color-surface-muted, rgba(0, 0, 0, 0.02));
+  color: var(--color-text-muted, #6c757d);
+  font-size: 0.875rem;
+}
+
+.wasla-print-bridge-guide-placeholder i {
+  font-size: 1.35rem;
+  opacity: 0.75;
+}
+
+.wasla-print-bridge-server-url-info {
+  border-style: dashed !important;
+}
+
+.wasla-print-bridge-troubleshooting li {
+  position: relative;
+  padding-inline-start: 1.1rem;
+  margin-bottom: 0.55rem;
+}
+
+.wasla-print-bridge-troubleshooting li:last-child {
+  margin-bottom: 0;
+}
+
+.wasla-print-bridge-troubleshooting li::before {
+  content: "•";
+  position: absolute;
+  inset-inline-start: 0;
+  color: var(--wasla-primary);
+}
+
+.wasla-print-bridge-empty__icon {
+  opacity: 0.65;
+}
+
+/* =============================================================================
+   Dark theme — customer panel component system (token-driven)
+   ============================================================================= */
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app {
+  color-scheme: dark;
+}
+
+/* Surfaces & cards */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .card,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-card,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-order-details-stat,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-fs-stat,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-print-bridge-page .wasla-print-bridge-stat,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-page-header__metric.orders-total-card,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-toolbar,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-card,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-card {
+  background: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: none !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-card:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-card:hover {
+  border-color: var(--color-border-strong) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-card-image,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-card__image-wrap {
+  background: var(--color-surface-muted);
+}
+
+/* Sidebar */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .app-sidebar {
+  background: var(--color-sidebar-bg) !important;
+  color: var(--color-sidebar-text) !important;
+  border-color: var(--color-sidebar-border) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-tenant-name,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-user {
+  color: var(--color-sidebar-muted) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link {
+  color: var(--color-sidebar-text) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link:hover:not(.active),
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-action-btn:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-action-btn.show,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-icon-btn:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn:hover {
+  background: var(--color-sidebar-hover) !important;
+  color: var(--color-sidebar-text) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-collapse-btn {
+  border-color: var(--color-border);
+  color: var(--color-sidebar-muted);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .sidebar-menu .nav-link.active,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-settings-toggle.active {
+  background: var(--color-sidebar-active-bg) !important;
+  color: var(--color-sidebar-active-text) !important;
+}
+
+/* Forms & inputs */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-select,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control-sm,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-select-sm,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app textarea.form-control,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .input-group-text {
+  background-color: var(--color-input-bg);
+  border-color: var(--color-input-border);
+  color: var(--color-input-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control::placeholder,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app textarea.form-control::placeholder {
+  color: var(--color-input-placeholder);
+  opacity: 1;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control:focus,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-select:focus,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app textarea.form-control:focus {
+  background-color: var(--color-input-bg);
+  border-color: var(--color-input-focus-border);
+  color: var(--color-input-text);
+  box-shadow: 0 0 0 0.2rem var(--color-input-focus-ring);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-control:disabled,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-select:disabled,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app textarea.form-control:disabled {
+  background-color: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-disabled);
+  opacity: 1;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app input[type="date"],
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app input[type="time"],
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-check-input {
+  background-color: var(--color-input-bg);
+  border-color: var(--color-input-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-check-input:checked {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem var(--color-input-focus-ring);
+}
+
+/* Tables */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--color-text);
+  --bs-table-border-color: var(--color-table-border);
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+  --bs-table-hover-bg: var(--color-table-row-hover);
+  --bs-table-hover-color: var(--color-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .table thead th {
+  background-color: var(--color-table-header-bg);
+  color: var(--color-text-muted);
+  border-bottom-color: var(--color-border-strong);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .table > :not(caption) > * > * {
+  border-bottom-color: var(--color-table-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .table tbody tr:hover > * {
+  background-color: var(--color-table-row-hover);
+  color: var(--color-text);
+}
+
+/* Buttons */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-primary,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-wasla-primary {
+  --bs-btn-bg: var(--color-accent);
+  --bs-btn-border-color: var(--color-accent);
+  --bs-btn-hover-bg: var(--color-accent-hover);
+  --bs-btn-hover-border-color: var(--color-accent-hover);
+  --bs-btn-color: var(--color-accent-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-outline-primary {
+  --bs-btn-color: var(--color-accent);
+  --bs-btn-border-color: var(--color-accent-border);
+  --bs-btn-hover-bg: var(--color-accent-soft);
+  --bs-btn-hover-border-color: var(--color-accent);
+  --bs-btn-hover-color: var(--color-accent);
+  --bs-btn-active-bg: var(--color-accent-soft);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-outline-secondary,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-secondary {
+  --bs-btn-color: var(--color-text-secondary);
+  --bs-btn-border-color: var(--color-border-strong);
+  --bs-btn-bg: transparent;
+  --bs-btn-hover-bg: var(--color-surface-elevated);
+  --bs-btn-hover-border-color: var(--color-border-strong);
+  --bs-btn-hover-color: var(--color-text);
+  --bs-btn-active-bg: var(--color-surface-muted);
+  --bs-btn-active-border-color: var(--color-border-strong);
+  --bs-btn-active-color: var(--color-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-outline-danger {
+  --bs-btn-color: var(--color-danger);
+  --bs-btn-border-color: var(--color-danger-border);
+  --bs-btn-hover-bg: var(--color-danger-soft);
+  --bs-btn-hover-border-color: var(--color-danger-border);
+  --bs-btn-hover-color: var(--color-danger);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-manage-settings {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-manage-settings:hover {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+}
+
+/* Badges — Bootstrap utility variants */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-success {
+  background: var(--color-success-soft) !important;
+  color: var(--color-success) !important;
+  border: 1px solid var(--color-success-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-warning {
+  background: var(--color-warning-soft) !important;
+  color: var(--color-warning) !important;
+  border: 1px solid var(--color-warning-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-danger {
+  background: var(--color-danger-soft) !important;
+  color: var(--color-danger) !important;
+  border: 1px solid var(--color-danger-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-info {
+  background: var(--color-info-soft) !important;
+  color: var(--color-info) !important;
+  border: 1px solid var(--color-info-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-secondary {
+  background: rgba(148, 163, 184, 0.12) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .badge.text-bg-primary {
+  background: var(--color-accent-soft) !important;
+  color: var(--color-accent) !important;
+  border: 1px solid var(--color-accent-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-status-chip--active {
+  background: var(--color-success-soft);
+  border-color: var(--color-success-border);
+  color: var(--color-success);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-status-chip--muted {
+  background: rgba(148, 163, 184, 0.10);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-orders-status-chip--pending {
+  background: rgba(243, 199, 107, 0.10);
+  border-color: rgba(243, 199, 107, 0.30);
+  color: #f3c76b;
+}
+
+/* Dropdowns & menus */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-menu,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-dropdown-menu,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-settings-menu {
+  background: var(--color-surface-elevated) !important;
+  border-color: var(--color-border-strong) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item {
+  color: var(--color-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item:focus {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item.active,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-item:active {
+  background: var(--color-accent-soft) !important;
+  color: var(--color-accent) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .dropdown-divider {
+  border-top-color: var(--color-border);
+}
+
+/* Modals */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .modal-content {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .modal-header,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .modal-footer {
+  border-color: var(--color-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+  opacity: 0.65;
+}
+
+/* Alerts */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-info {
+  background: var(--color-info-soft);
+  border-color: var(--color-info-border);
+  color: var(--color-info);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-warning {
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-danger {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-success {
+  background: var(--color-success-soft);
+  border-color: var(--color-success-border);
+  color: var(--color-success);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .alert-secondary {
+  background: rgba(148, 163, 184, 0.10);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .bg-warning-subtle {
+  background-color: var(--color-warning-soft) !important;
+  color: var(--color-warning) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .text-warning-emphasis {
+  color: var(--color-warning) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link {
+  color: var(--color-sidebar-muted);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-sidebar-nav-sub__link.active {
+  color: var(--wasla-primary);
+  background: color-mix(in srgb, var(--wasla-primary) 16%, transparent);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-print-bridge-guide-placeholder {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app #printBridgeTokenBox pre,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-print-bridge-token-value,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-print-bridge-setup-value {
+  background: var(--color-surface-muted) !important;
+  border-color: var(--color-border-strong) !important;
+  color: var(--color-text) !important;
+}
+
+/* Accordion (receipt settings) */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-content-accordion {
+  --bs-accordion-bg: transparent;
+  --bs-accordion-btn-bg: transparent;
+  --bs-accordion-active-bg: var(--color-surface-muted);
+  --bs-accordion-border-color: var(--color-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-content-accordion .accordion-button {
+  color: var(--color-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-content-accordion .accordion-button:not(.collapsed) {
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-content-accordion .accordion-button::after {
+  filter: invert(1) opacity(0.55);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .receipt-timing-option {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .receipt-timing-option:has(.receipt-timing-option__radio:checked) {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-border);
+  box-shadow: 0 0 0 1px var(--color-accent-soft);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-required-tag,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-coming-soon-badge,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-accordion-enabled-badge {
+  background: var(--color-surface-muted) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-message-fields {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+
+/* Receipt preview — keep paper look inside dark card */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-receipt-preview-paper {
+  background: #f4f4f5;
+  color: #111827;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* Dashboard KPI icons */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi__icon {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi--revenue .wasla-dash-kpi__icon {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi--active .wasla-dash-kpi__icon {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi--cancelled .wasla-dash-kpi__icon {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-dash-kpi--average .wasla-dash-kpi__icon {
+  background: rgba(167, 139, 250, 0.14);
+  color: #c4b5fd;
+}
+
+/* Links */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.nav-link):not(.dropdown-item) {
+  color: color-mix(in srgb, var(--color-accent) 88%, #fff);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
+  color: var(--color-accent-hover);
+}
+
+/* Live Display */
+[data-bs-theme="dark"] body.wasla-orders-live-display {
+  background: var(--color-bg);
+}
+
+[data-bs-theme="dark"] body.wasla-orders-live-display .wasla-live-display-header,
+[data-bs-theme="dark"] body.wasla-orders-live-display .wasla-fs-header {
+  background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+  border-bottom-color: var(--color-border);
+}
+
+[data-bs-theme="dark"] body.wasla-orders-live-display .wasla-live-display-kbd {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+
+/* List group (if used) */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .list-group-item {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .list-group-item-action:hover,
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .list-group-item-action:focus {
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+}
+.wasla-live-board {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(280px, 1fr));
+    align-items: start;
+    gap: .75rem;
+    padding: .25rem .25rem .75rem;
+}
+
+body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--board {
+    overflow-x: auto;
+    min-width: 0;
+}
+@media (min-width: 768px) {
+    .wasla-live-board { width: max(100%, calc(5 * 280px + 4 * .75rem)); }
+}
+.wasla-live-board__column {
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    padding: 0 4px;
+}
+.wasla-live-board__heading {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .4rem;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 .5rem;
+    padding: 0;
+}
+.wasla-live-board__heading::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    background: var(--wasla-muted, #6c757d);
+}
+.wasla-live-board__column[data-board-column="new"] .wasla-live-board__heading::before { background: var(--wasla-status-new); }
+.wasla-live-board__column[data-board-column="preparing"] .wasla-live-board__heading::before { background: var(--wasla-status-preparing); }
+.wasla-live-board__column[data-board-column="ready"] .wasla-live-board__heading::before { background: var(--wasla-status-ready); }
+.wasla-live-board__column[data-board-column="on-the-way"] .wasla-live-board__heading::before { background: var(--wasla-status-on-the-way); }
+.wasla-live-board__column[data-board-column="completed"] .wasla-live-board__heading::before { background: var(--wasla-status-completed); }
+.wasla-live-board__count {
+    font-size: .75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    padding: .12rem .45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wasla-border) 65%, var(--wasla-surface, #fff));
+    color: var(--wasla-muted, #5c6570);
+}
+.wasla-live-board__orders { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.wasla-live-board__empty {
+    color: var(--wasla-muted, #6c757d);
+    font-size: .8125rem;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
+}
+.wasla-live-board .wasla-live-screen-card,
+.wasla-live-board .orders-card--kitchen {
+    min-width: 0;
+    margin: 0;
+    height: auto;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+    background: var(--wasla-surface, #fff);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .05);
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
+}
+/* The board surface above paints after the shared live-card tint, and
+   .order-row-new forces animation:none. These rules show the same
+   notification-settings color and style on the whole board card. */
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new {
+    content-visibility: visible;
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-yellow {
+    background-color: #fff3cd;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.85);
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-orange {
+    background-color: #ffe4d1;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.75);
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-blue {
+    background-color: #dbeafe;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-green {
+    background-color: #d1fae5;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.7);
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-red {
+    background-color: #fee2e2;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-custom {
+    background-color: var(--new-order-highlight-bg, #fff3cd);
+    box-shadow: 0 0 0 2px var(--new-order-highlight-border, rgba(255, 193, 7, 0.85));
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-yellow {
+    background-color: rgba(245, 158, 11, 0.28);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.72);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-orange {
+    background-color: rgba(242, 107, 58, 0.28);
+    box-shadow: 0 0 0 2px rgba(242, 107, 58, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-blue {
+    background-color: rgba(59, 130, 246, 0.28);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-green {
+    background-color: rgba(34, 197, 94, 0.28);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.color-red {
+    background-color: rgba(239, 68, 68, 0.28);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-fade {
+    animation: orderRowFadeBg 1.35s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-pulse {
+    animation: orderRowPulseBg 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-blink {
+    animation: orderRowBlinkBg 0.8s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-border-glow {
+    animation: orderRowBorderGlow 1.2s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-none {
+    animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-fade,
+    .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-pulse,
+    .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-blink,
+    .wasla-live-screen-host--board .wasla-live-screen-card.order-row-new.behavior-border-glow {
+        animation: none !important;
+    }
+}
+/* Focus queue entries carry new-order attention. The selected-order panel stays neutral. */
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-yellow {
+    background-color: #fff3cd;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.85);
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-orange {
+    background-color: #ffe4d1;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.75);
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-blue {
+    background-color: #dbeafe;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-green {
+    background-color: #d1fae5;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.7);
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-red {
+    background-color: #fee2e2;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-custom {
+    background-color: var(--new-order-highlight-bg, #fff3cd);
+    box-shadow: 0 0 0 2px var(--new-order-highlight-border, rgba(255, 193, 7, 0.85));
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-yellow {
+    background-color: rgba(245, 158, 11, 0.28);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.72);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-orange {
+    background-color: rgba(242, 107, 58, 0.28);
+    box-shadow: 0 0 0 2px rgba(242, 107, 58, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-blue {
+    background-color: rgba(59, 130, 246, 0.28);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-green {
+    background-color: rgba(34, 197, 94, 0.28);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.color-red {
+    background-color: rgba(239, 68, 68, 0.28);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-fade {
+    animation: orderRowFadeBg 1.35s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-pulse {
+    animation: orderRowPulseBg 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-blink {
+    animation: orderRowBlinkBg 0.8s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-border-glow {
+    animation: orderRowBorderGlow 1.2s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-none {
+    animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-fade,
+    .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-pulse,
+    .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-blink,
+    .wasla-live-screen-host--focus .wasla-live-focus-entry.order-row-new.behavior-border-glow {
+        animation: none !important;
+    }
+}
+.wasla-live-board .orders-card-image { display: none; }
+.wasla-live-board .orders-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 10px 12px;
+}
+.wasla-live-board .wasla-live-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+}
+.wasla-live-board .wasla-live-screen-card__elapsed {
+    margin-inline-start: auto;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 72%, var(--wasla-muted, #6c757d));
+}
+.wasla-live-board .wasla-live-card__identity {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.wasla-live-board .wasla-live-screen-card__code {
+    margin: 0;
+    font-size: .98rem;
+    font-weight: 600;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+.wasla-live-board .wasla-live-board-items__viewport {
+    max-height: 6.75rem;
+    overflow: hidden;
+}
+.wasla-live-board .wasla-live-board-items.has-item-overflow .wasla-live-board-items__viewport {
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent);
+}
+.wasla-live-board .wasla-live-board-items__more {
+    display: none;
+    margin: 2px 0 0;
+    font-size: .75rem;
+    line-height: 1.25;
+    color: var(--wasla-muted, #6c757d);
+}
+.wasla-live-board .wasla-live-board-items.has-item-overflow .wasla-live-board-items__more {
+    display: block;
+}
+.wasla-live-board .wasla-live-screen-card__items {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+.wasla-live-board .wasla-live-screen-card__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 6px;
+    margin: 1px 0;
+    font-size: .875rem;
+}
+.wasla-live-board .wasla-live-screen-card__qty { font-weight: 700; }
+.wasla-live-board .wasla-live-screen-card__product { font-weight: 500; }
+.wasla-live-board .wasla-live-screen-card__note {
+    grid-column: 2;
+    margin: 0;
+    font-size: .8125rem;
+    font-style: normal;
+    line-height: 1.35;
+    color: var(--wasla-text, inherit);
+}
+.wasla-live-board .wasla-live-card__secondary {
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    font-size: .8125rem;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 68%, var(--wasla-muted, #6c757d));
+}
+.wasla-live-board .orders-card-meta__row:has([data-total]) { margin: 0; }
+.wasla-live-board .wasla-live-board-order-note {
+    min-width: 0;
+    max-width: 100%;
+    margin-block: 0;
+    margin-inline: 0;
+    padding: .18rem .38rem;
+    border: 1px solid #ead3b8;
+    border-inline-start: 3px solid #e0b48a;
+    background: #fff7ef;
+    border-radius: .3rem;
+}
+.wasla-live-board .wasla-live-board-order-note__label {
+    display: block;
+    margin-bottom: .06rem;
+    font-size: .625rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: .01em;
+    color: #8a5a32;
+}
+.wasla-live-board .wasla-live-board-order-note__text {
+    margin: 0;
+    max-width: 100%;
+    font-size: .6875rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: #3f342c;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+[data-bs-theme="dark"] .wasla-live-board .wasla-live-board-order-note {
+    background: rgba(232, 184, 122, 0.12);
+    border-color: rgba(212, 168, 112, 0.4);
+    border-inline-start-color: rgba(212, 168, 112, 0.72);
+}
+[data-bs-theme="dark"] .wasla-live-board .wasla-live-board-order-note__label { color: #e6c98a; }
+[data-bs-theme="dark"] .wasla-live-board .wasla-live-board-order-note__text { color: #f6efe4; }
+.wasla-live-board [data-order-note].wasla-order-note-attention {
+    animation-name: waslaOrderNoteAttention;
+    animation-duration: 1.8s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-delay: var(--wasla-order-note-attention-delay, 0ms);
+}
+.wasla-live-board [data-order-note].wasla-order-note-attention-static {
+    animation: none;
+    background: #fde8d4;
+    border-color: #e0b48a;
+    border-inline-start-color: #d4a574;
+}
+[data-bs-theme="dark"] .wasla-live-board [data-order-note].wasla-order-note-attention {
+    animation-name: waslaOrderNoteAttentionDark;
+}
+[data-bs-theme="dark"] .wasla-live-board [data-order-note].wasla-order-note-attention-static {
+    background: rgba(232, 184, 122, 0.22);
+    border-color: rgba(224, 180, 122, 0.62);
+    border-inline-start-color: #e0b87a;
+}
+.wasla-live-board .orders-card-meta__label { display: none; }
+.wasla-live-board [data-total] {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--wasla-text, inherit);
+    margin-inline-start: auto;
+}
+.wasla-live-board .orders-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+}
+.wasla-live-board .wasla-orders-actions { display: contents; }
+.wasla-live-board .wasla-orders-actions .btn {
+    flex: 0 1 auto;
+    font-size: .875rem;
+    font-weight: 600;
+    padding: .35rem .7rem;
+    min-height: 40px;
+}
+.wasla-live-board .wasla-orders-actions .btn-outline-danger {
+    background: color-mix(in srgb, #dc3545 10%, var(--wasla-surface, #fff));
+    border-color: transparent;
+    color: #b02a37;
+}
+.wasla-live-board .wasla-live-screen-card__details {
+    flex: 0 1 auto;
+    min-height: 40px;
+    padding: .35rem .7rem;
+    border: 1px solid color-mix(in srgb, var(--wasla-text, #212529) 18%, var(--wasla-border));
+    border-radius: var(--bs-border-radius, .375rem);
+    background: transparent;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 78%, var(--wasla-muted, #6c757d));
+    font-size: .875rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+.wasla-live-board .wasla-live-screen-card__details:hover {
+    background: color-mix(in srgb, var(--wasla-border) 40%, transparent);
+    border-color: color-mix(in srgb, var(--wasla-text, #212529) 22%, var(--wasla-border));
+}
+body.wasla-orders-live-display .wasla-live-board .btn.wasla-live-screen-card__details:focus-visible {
+    outline: 3px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+.wasla-live-board .wasla-orders-actions .btn:disabled,
+.wasla-live-board .wasla-live-screen-card__details:disabled { min-height: 40px; }
+@keyframes wasla-board-details-nudge {
+    0%, 100% {
+        border-color: color-mix(in srgb, var(--wasla-text, #212529) 18%, var(--wasla-border));
+    }
+    50% {
+        border-color: color-mix(in srgb, var(--bs-primary, #0d6efd) 62%, var(--wasla-border));
+    }
+}
+.wasla-live-board .wasla-live-screen-card__details.has-item-overflow {
+    animation: wasla-board-details-nudge 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .wasla-live-board .wasla-live-screen-card__details.has-item-overflow {
+        animation: none;
+        border-color: color-mix(in srgb, var(--bs-primary, #0d6efd) 50%, var(--wasla-border));
+    }
+}
+.wasla-live-display-sound-active {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin: 0;
+    padding: .2rem .55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, #198754 12%, var(--wasla-surface, #fff));
+    color: #146c43;
+    font-size: .75rem;
+    line-height: 1.3;
+}
+.wasla-live-board :focus-visible { outline: 3px solid var(--bs-primary, #0d6efd); outline-offset: 3px; }
+/* Board cards: one block size on desktop and tablet for every status (New, Preparing, Ready, OnTheWay, Delivered),
+   whatever their content or actions. Identity and status stay at the top, the note and the product preview fill a
+   stable middle, and the price and actions sit on the bottom edge. The preview keeps its own cap and "more in details"
+   line; when a card has more than fits (a long note, wrapped actions, the practice-order countdown) only the preview
+   gives way, so nothing overlaps or leaves the card. Phones keep content-sized cards with a shared minimum. Other
+   views (List, Focus, the detail modal) are not Board cards and keep their own sizing. */
+.wasla-live-board {
+    --wasla-live-board-card-block-size: 20.5rem;
+    --wasla-live-board-card-min-block-size: 15rem;
+}
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-dash-status {
+    max-inline-size: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-screen-card__product,
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-screen-card__note {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+}
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-demo-countdown {
+    margin-block: 0;
+}
+@media (min-width: 768px) {
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] {
+        flex: none;
+        block-size: var(--wasla-live-board-card-block-size);
+        contain-intrinsic-size: auto var(--wasla-live-board-card-block-size);
+    }
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] > .orders-card-body {
+        flex: 1 1 auto;
+        min-block-size: 0;
+    }
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__identity,
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-order-note,
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__secondary,
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .orders-card-actions,
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items__more {
+        flex: none;
+    }
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-block-size: 0;
+        overflow: hidden;
+    }
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items__viewport {
+        flex: 0 1 auto;
+        min-block-size: 0;
+    }
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__secondary {
+        margin-block-start: auto;
+    }
+}
+@media (max-width: 767.98px) {
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] {
+        min-block-size: var(--wasla-live-board-card-min-block-size);
+    }
+    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__secondary {
+        margin-block-start: auto;
+    }
+}
+@media (max-width: 767.98px) {
+    .wasla-live-board { grid-template-columns: minmax(0, 1fr); }
+    .wasla-live-board .wasla-live-card__identity { gap: 6px; }
+    .wasla-live-screen-page .wasla-live-display-header { position: static; }
+    .wasla-live-summary { width: 100%; }
+    .wasla-live-summary__metric {
+        flex: 1 1 7.5rem;
+        min-width: 0;
+        padding-block: .4rem;
+        padding-inline: .55rem;
+    }
+    .wasla-live-screen-view-switch { width: 100%; }
+    .wasla-live-screen-view-switch__option { flex: 1 1 0; min-width: 0; padding-inline: .45rem; }
+    .wasla-live-screen-view-switch__option span { overflow-wrap: anywhere; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .wasla-live-screen-page *, .wasla-live-screen-page *::before, .wasla-live-screen-page *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.wasla-live-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+}
+.wasla-live-group {
+    min-width: 0;
+    background: var(--wasla-surface, #fff);
+    border: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+    border-radius: .65rem;
+    box-shadow: none;
+}
+.wasla-live-group:has([data-board-list]:empty) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: .65rem;
+    background: transparent;
+    border: 0;
+}
+.wasla-live-group:has([data-board-list]:empty) .wasla-live-group__heading {
+    flex: 0 0 14.5rem;
+    width: 14.5rem;
+    max-width: 100%;
+    border-radius: .4rem;
+}
+.wasla-live-group:has([data-board-list]:empty) .wasla-live-group__orders { display: none; }
+.wasla-live-group__heading {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .4rem;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 .75rem;
+    border-start-start-radius: calc(.65rem - 1px);
+    border-start-end-radius: calc(.65rem - 1px);
+    background: color-mix(in srgb, var(--wasla-status-completed) 12%, var(--wasla-surface, #fff));
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+.wasla-live-group[data-board-column="new"] .wasla-live-group__heading {
+    background: color-mix(in srgb, var(--wasla-status-new) 14%, var(--wasla-surface, #fff));
+}
+.wasla-live-group[data-board-column="preparing"] .wasla-live-group__heading {
+    background: color-mix(in srgb, var(--wasla-status-preparing) 12%, var(--wasla-surface, #fff));
+}
+.wasla-live-group[data-board-column="ready"] .wasla-live-group__heading {
+    background: color-mix(in srgb, var(--wasla-status-ready) 12%, var(--wasla-surface, #fff));
+}
+.wasla-live-group[data-board-column="on-the-way"] .wasla-live-group__heading {
+    background: color-mix(in srgb, var(--wasla-status-on-the-way) 12%, var(--wasla-surface, #fff));
+}
+.wasla-live-group[data-board-column="completed"] .wasla-live-group__heading {
+    background: color-mix(in srgb, var(--wasla-status-completed) 12%, var(--wasla-surface, #fff));
+}
+.wasla-live-group__heading::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    background: var(--wasla-muted, #6c757d);
+}
+.wasla-live-group[data-board-column="new"] .wasla-live-group__heading::before { background: var(--wasla-status-new); }
+.wasla-live-group[data-board-column="preparing"] .wasla-live-group__heading::before { background: var(--wasla-status-preparing); }
+.wasla-live-group[data-board-column="ready"] .wasla-live-group__heading::before { background: var(--wasla-status-ready); }
+.wasla-live-group[data-board-column="on-the-way"] .wasla-live-group__heading::before { background: var(--wasla-status-on-the-way); }
+.wasla-live-group[data-board-column="completed"] .wasla-live-group__heading::before { background: var(--wasla-status-completed); }
+.wasla-live-group__count {
+    font-size: .75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    padding: .12rem .45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wasla-border) 65%, var(--wasla-surface, #fff));
+    color: var(--wasla-muted, #5c6570);
+}
+.wasla-live-group__orders { min-width: 0; }
+.wasla-live-screen-host--list .wasla-live-group:not(:has([data-board-list]:empty)) {
+    background: color-mix(in srgb, var(--wasla-status-completed) 5%, var(--wasla-surface, #fff));
+}
+.wasla-live-screen-host--list .wasla-live-group[data-board-column="new"]:not(:has([data-board-list]:empty)) {
+    background: color-mix(in srgb, var(--wasla-status-new) 7%, var(--wasla-surface, #fff));
+}
+.wasla-live-screen-host--list .wasla-live-group[data-board-column="preparing"]:not(:has([data-board-list]:empty)) {
+    background: color-mix(in srgb, var(--wasla-status-preparing) 6%, var(--wasla-surface, #fff));
+}
+.wasla-live-screen-host--list .wasla-live-group[data-board-column="ready"]:not(:has([data-board-list]:empty)) {
+    background: color-mix(in srgb, var(--wasla-status-ready) 6%, var(--wasla-surface, #fff));
+}
+.wasla-live-screen-host--list .wasla-live-group[data-board-column="on-the-way"]:not(:has([data-board-list]:empty)) {
+    background: color-mix(in srgb, var(--wasla-status-on-the-way) 6%, var(--wasla-surface, #fff));
+}
+.wasla-live-screen-host--list .wasla-live-group[data-board-column="completed"]:not(:has([data-board-list]:empty)) {
+    background: color-mix(in srgb, var(--wasla-status-completed) 6%, var(--wasla-surface, #fff));
+}
+.wasla-live-screen-host--list .wasla-live-group__orders {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px 10px;
+}
+.wasla-live-group__empty {
+    margin: 0;
+    padding: 0;
+    color: var(--wasla-muted, #6c757d);
+    font-size: .8125rem;
+    background: transparent;
+    border: 0;
+}
+.wasla-live-screen-host--list .wasla-live-screen-card {
+    display: grid;
+    grid-template-columns: minmax(22rem, 1.05fr) minmax(10rem, 1.45fr) minmax(8rem, 0.9fr) minmax(6.25rem, 7.75rem) max-content minmax(16.75rem, max-content);
+    grid-template-areas: "identity products customer total elapsed aside";
+    column-gap: 1rem;
+    align-items: center;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--wasla-border) 88%, #fff);
+    border-radius: .5rem;
+    background: var(--wasla-surface, #fff);
+    box-shadow: 0 1px 2px color-mix(in srgb, #1a1d21 6%, transparent);
+}
+.wasla-live-list-row.orders-card--muted {
+    opacity: 1;
+    background: color-mix(in srgb, var(--wasla-status-completed) 8%, var(--wasla-surface, #fff));
+    box-shadow: none;
+}
+/* List surface background is painted later than the shared live-card tint, and
+   .order-row-new forces animation:none. These rules keep the notification-settings
+   color and behavior on the list row. Focus stays on the shared rules. */
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-yellow {
+    background-color: #fff3cd;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.85);
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-orange {
+    background-color: #ffe4d1;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.75);
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-blue {
+    background-color: #dbeafe;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-green {
+    background-color: #d1fae5;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.7);
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-red {
+    background-color: #fee2e2;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-custom {
+    background-color: var(--new-order-highlight-bg, #fff3cd);
+    box-shadow: 0 0 0 2px var(--new-order-highlight-border, rgba(255, 193, 7, 0.85));
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-yellow {
+    background-color: rgba(245, 158, 11, 0.28);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.72);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-orange {
+    background-color: rgba(242, 107, 58, 0.28);
+    box-shadow: 0 0 0 2px rgba(242, 107, 58, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-blue {
+    background-color: rgba(59, 130, 246, 0.28);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-green {
+    background-color: rgba(34, 197, 94, 0.28);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.7);
+}
+[data-bs-theme="dark"] .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.color-red {
+    background-color: rgba(239, 68, 68, 0.28);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-fade {
+    animation: orderRowFadeBg 1.35s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-pulse {
+    animation: orderRowPulseBg 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-blink {
+    animation: orderRowBlinkBg 0.8s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-border-glow {
+    animation: orderRowBorderGlow 1.2s ease-in-out infinite !important;
+}
+.wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-none {
+    animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-fade,
+    .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-pulse,
+    .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-blink,
+    .wasla-live-screen-host--list .wasla-live-screen-card.order-row-new.behavior-border-glow {
+        animation: none !important;
+    }
+}
+.wasla-live-list-row__identity,
+.wasla-live-list-row__items,
+.wasla-live-list-row__customer,
+.wasla-live-list-row__total,
+.wasla-live-list-row__elapsed,
+.wasla-live-list-row__aside { min-width: 0; }
+.wasla-live-list-row__identity { grid-area: identity; }
+.wasla-live-list-row__items { grid-area: products; }
+.wasla-live-list-row__customer { grid-area: customer; }
+.wasla-live-list-row__total { grid-area: total; }
+.wasla-live-list-row__elapsed { grid-area: elapsed; }
+.wasla-live-list-row__aside { grid-area: aside; justify-self: end; }
+.wasla-live-list-row__identity {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, max-content) minmax(0, 1fr);
+    column-gap: .5rem;
+    row-gap: 2px;
+    align-items: center;
+    align-self: center;
+}
+.wasla-live-list-row__headline {
+    display: contents;
+}
+.wasla-live-list-row__headline .orders-card-platform {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    align-self: center;
+    width: 6rem;
+    min-height: 1.25rem;
+    overflow: hidden;
+}
+.wasla-live-list-row__headline .wasla-live-screen-card__code {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    min-width: 0;
+    white-space: nowrap;
+}
+.wasla-live-list-row__status {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    align-self: center;
+    gap: .35rem;
+    min-width: 0;
+}
+.wasla-live-list-row__meta {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    align-self: start;
+    justify-content: flex-start;
+    min-width: 0;
+    margin: 0;
+}
+.wasla-live-list-row__identity .platform-badge__text {
+    border: 0;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    white-space: nowrap;
+}
+.wasla-live-list-row__identity .platform-badge--icon-missing .platform-badge__text {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    clip: auto;
+    clip-path: none;
+    overflow: visible;
+    white-space: normal;
+}
+.wasla-live-groups .wasla-live-screen-card__code {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    color: var(--wasla-text, #212529);
+}
+.wasla-live-groups .wasla-live-screen-card__code a {
+    color: inherit;
+    text-decoration: none;
+}
+.wasla-live-list-row__headline .wasla-live-screen-card__code {
+    flex: 1 1 8rem;
+    min-width: 0;
+}
+.wasla-live-list-row__aside {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    align-self: center;
+    justify-content: flex-end;
+    min-width: 0;
+}
+.wasla-live-list-row__elapsed {
+    align-self: center;
+    min-width: max-content;
+    margin: 0;
+    font-size: .75rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: var(--wasla-muted, #6c757d);
+}
+.wasla-live-list-row__received {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .3rem;
+    font-size: .75rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: #5c6570;
+}
+.wasla-live-list-row__received-label::after { content: ":"; }
+.wasla-live-groups .wasla-live-screen-card__items {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+.wasla-live-groups .wasla-live-screen-card__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 6px;
+    margin: 1px 0;
+    font-size: .9375rem;
+    line-height: 1.35;
+}
+.wasla-live-groups .wasla-live-screen-card__qty { font-weight: 700; }
+.wasla-live-groups .wasla-live-screen-card__product {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+.wasla-live-groups .wasla-live-screen-card__note {
+    grid-column: 2;
+    justify-self: start;
+    display: inline-flex;
+    align-items: flex-start;
+    gap: .28rem;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    margin: 3px 0 1px;
+    padding: .12rem .42rem;
+    border: 1px solid #e4d2a8;
+    border-radius: .4rem;
+    background: #fbf6ea;
+    color: #5c4b32;
+    font-size: .75rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+[data-bs-theme="dark"] .wasla-live-groups .wasla-live-screen-card__note {
+    background: rgba(232, 196, 122, 0.14);
+    border-color: rgba(232, 196, 122, 0.38);
+    color: #f4e7c8;
+}
+.wasla-live-list-row__note-icon {
+    flex: 0 0 auto;
+    margin-top: .08rem;
+    font-size: .75rem;
+    line-height: 1;
+    color: #8a6d32;
+}
+[data-bs-theme="dark"] .wasla-live-list-row__note-icon {
+    color: #e6c98a;
+}
+.wasla-live-list-row__note-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.wasla-live-list-row__customer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+}
+.wasla-live-list-row__customer-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .15rem .6rem;
+    min-width: 0;
+    max-width: 100%;
+}
+.wasla-live-list-row__customer-name {
+    min-width: 0;
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 82%, var(--wasla-muted, #6c757d));
+    overflow-wrap: anywhere;
+}
+.wasla-live-list-row__customer-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+    max-width: 100%;
+}
+.wasla-live-list-row__customer--with-note {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    column-gap: .75rem;
+    row-gap: .25rem;
+    align-items: start;
+    justify-content: stretch;
+}
+.wasla-live-list-row__customer-address {
+    margin: 0;
+    max-width: 100%;
+    font-size: .75rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--wasla-muted, #6c757d);
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+.wasla-live-list-row__order-note {
+    min-width: 0;
+    max-width: 100%;
+    padding: .32rem .5rem;
+    border: 1px solid #ead3b8;
+    border-inline-start: 3px solid #e0b48a;
+    background: #fff7ef;
+    border-radius: .4rem;
+}
+.wasla-live-list-row__order-note-label {
+    display: block;
+    margin-bottom: .12rem;
+    font-size: .6875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: .01em;
+    color: #8a5a32;
+}
+.wasla-live-list-row__order-note-text {
+    margin: 0;
+    max-width: 100%;
+    font-size: .75rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #3f342c;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    overflow: hidden;
+}
+[data-bs-theme="dark"] .wasla-live-list-row__order-note {
+    background: rgba(232, 184, 122, 0.12);
+    border-color: rgba(212, 168, 112, 0.4);
+    border-inline-start-color: rgba(212, 168, 112, 0.72);
+}
+[data-bs-theme="dark"] .wasla-live-list-row__order-note-label {
+    color: #e6c98a;
+}
+[data-bs-theme="dark"] .wasla-live-list-row__order-note-text {
+    color: #f6efe4;
+}
+.wasla-live-groups .wasla-live-list-row__order-note.wasla-order-note-attention {
+    animation-name: waslaOrderNoteAttention;
+    animation-duration: 1.8s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-delay: var(--wasla-order-note-attention-delay, 0ms);
+}
+.wasla-live-groups .wasla-live-list-row__order-note.wasla-order-note-attention-static {
+    animation: none;
+    background: #fde8d4;
+    border-color: #e0b48a;
+    border-inline-start-color: #d4a574;
+}
+[data-bs-theme="dark"] .wasla-live-groups .wasla-live-list-row__order-note.wasla-order-note-attention-static {
+    background: rgba(232, 184, 122, 0.22);
+    border-color: rgba(224, 180, 122, 0.62);
+    border-inline-start-color: #e0b87a;
+}
+@keyframes waslaOrderNoteAttention {
+    0%, 100% {
+        background-color: #fff7ef;
+        border-color: #ead3b8;
+        border-inline-start-color: #e0b48a;
+        box-shadow: 0 0 0 0 rgba(196, 140, 74, 0);
+    }
+    50% {
+        background-color: #fde8d4;
+        border-color: #e0b48a;
+        border-inline-start-color: #c9956c;
+        box-shadow: 0 0 0 3px rgba(196, 140, 74, 0.16);
+    }
+}
+@keyframes waslaOrderNoteAttentionDark {
+    0%, 100% {
+        background-color: rgba(232, 184, 122, 0.12);
+        border-color: rgba(212, 168, 112, 0.4);
+        border-inline-start-color: rgba(212, 168, 112, 0.72);
+        box-shadow: 0 0 0 0 rgba(212, 168, 112, 0);
+    }
+    50% {
+        background-color: rgba(232, 184, 122, 0.24);
+        border-color: rgba(224, 180, 122, 0.7);
+        border-inline-start-color: #e0b87a;
+        box-shadow: 0 0 0 3px rgba(212, 168, 112, 0.18);
+    }
+}
+[data-bs-theme="dark"] .wasla-live-groups .wasla-live-list-row__order-note.wasla-order-note-attention {
+    animation-name: waslaOrderNoteAttentionDark;
+}
+.wasla-live-list-row__total {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: center;
+    justify-content: center;
+    gap: 0;
+    min-width: 0;
+    margin: 0;
+    line-height: 1.2;
+}
+.wasla-live-list-row__total-label {
+    font-size: .8125rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 62%, var(--wasla-muted, #6c757d));
+}
+.wasla-live-list-row__total-value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+    color: var(--wasla-text, #212529);
+    overflow-wrap: anywhere;
+}
+.wasla-live-list-row__actions {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    align-content: center;
+    justify-content: flex-end;
+    width: max-content;
+    max-width: 100%;
+    gap: 6px;
+    margin-top: 0;
+    padding-top: 0;
+}
+.wasla-live-groups .wasla-orders-actions { display: contents; }
+.wasla-live-groups .wasla-orders-actions .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: .8125rem;
+    font-weight: 600;
+    padding: .28rem .6rem;
+    min-height: 36px;
+}
+.wasla-live-groups .wasla-orders-actions .btn-outline-danger {
+    background: color-mix(in srgb, #dc3545 10%, var(--wasla-surface, #fff));
+    border-color: transparent;
+    color: #b02a37;
+}
+.wasla-live-groups .wasla-live-screen-card__details {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 36px;
+    padding: .28rem .6rem;
+    border: 1px solid color-mix(in srgb, var(--wasla-text, #212529) 18%, var(--wasla-border));
+    border-radius: var(--bs-border-radius, .375rem);
+    background: transparent;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 78%, var(--wasla-muted, #6c757d));
+    font-size: .875rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+.wasla-live-groups .wasla-live-screen-card__details:hover {
+    background: color-mix(in srgb, var(--wasla-border) 40%, transparent);
+    border-color: color-mix(in srgb, var(--wasla-text, #212529) 22%, var(--wasla-border));
+}
+body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__details:focus-visible {
+    outline: 3px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+.wasla-live-groups .wasla-orders-actions .btn:disabled,
+.wasla-live-groups .wasla-live-screen-card__details:disabled { min-height: 36px; }
+.wasla-live-groups :focus-visible { outline: 3px solid var(--bs-primary, #0d6efd); outline-offset: 3px; }
+.wasla-live-groups .platform-badge {
+    min-height: 0;
+    gap: .25rem;
+    padding: .1rem .35rem;
+    font-size: .75rem;
+}
+.wasla-live-groups .platform-badge__icon {
+    height: 15px;
+    width: auto;
+    max-width: none;
+    object-fit: contain;
+}
+.wasla-live-groups .platform-badge--getiryemek .platform-badge__icon {
+    height: 15px;
+    width: auto;
+    max-width: none;
+}
+.wasla-live-groups .platform-badge--getiryemek.platform-badge .platform-badge__icon-wrap { padding: 1px 5px; }
+.wasla-live-groups .platform-badge--icon-missing { white-space: normal; }
+.wasla-live-list-row__headline .platform-badge {
+    padding: 0;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+@media (max-width: 1199.98px) {
+    .wasla-live-screen-host--list .wasla-live-screen-card {
+        grid-template-columns: minmax(20rem, 1fr) minmax(0, 1.35fr) minmax(7.5rem, 0.85fr) minmax(6rem, 7.5rem) max-content minmax(16.5rem, max-content);
+    }
+}
+@media (max-width: 991.98px) {
+    .wasla-live-screen-host--list .wasla-live-screen-card {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        grid-template-areas:
+            "identity identity"
+            "products products"
+            "customer customer"
+            "total elapsed"
+            "aside aside";
+        row-gap: .45rem;
+        align-items: start;
+    }
+    .wasla-live-screen-host--list .wasla-live-list-row__actions { flex-wrap: wrap; width: 100%; justify-content: flex-start; }
+    .wasla-live-screen-host--list .wasla-live-list-row__aside { justify-self: stretch; }
+}
+@media (max-width: 767.98px) {
+    .wasla-live-screen-host--list .wasla-live-screen-card {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        grid-template-areas:
+            "identity identity"
+            "products products"
+            "customer customer"
+            "total elapsed"
+            "aside aside";
+        row-gap: .4rem;
+    }
+    .wasla-live-groups .wasla-orders-actions .btn,
+    .wasla-live-groups .wasla-live-screen-card__details,
+    .wasla-live-groups .wasla-orders-actions .btn:disabled,
+    .wasla-live-groups .wasla-live-screen-card__details:disabled { min-height: 44px; }
+    .wasla-live-screen-host--list .wasla-live-list-row__customer--with-note {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.wasla-live-detail {
+    container-type: inline-size;
+    container-name: live-detail;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    min-width: 0;
+}
+.wasla-live-detail__head {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: .35rem;
+    min-width: 0;
+    margin: 0;
+}
+.wasla-live-detail__code {
+    margin: 0;
+    font-size: 1.1875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+.wasla-live-detail__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem .5rem;
+    min-width: 0;
+}
+.wasla-live-detail__elapsed {
+    font-size: .875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 78%, var(--wasla-muted, #6c757d));
+}
+.wasla-live-detail__received {
+    margin: 0;
+    font-size: .8125rem;
+    line-height: 1.35;
+    color: var(--wasla-muted, #5c6570);
+    overflow-wrap: anywhere;
+}
+.wasla-live-detail-order-note {
+    min-width: 0;
+    max-width: 100%;
+    padding: .42rem .65rem;
+    border: 1px solid #ead3b8;
+    border-inline-start: 3px solid #e0b48a;
+    background: #fff7ef;
+    border-radius: .4rem;
+}
+.wasla-live-detail-order-note__label {
+    display: block;
+    margin-bottom: .12rem;
+    font-size: .75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: .01em;
+    color: #8a5a32;
+}
+.wasla-live-detail-order-note__text {
+    margin: 0;
+    max-width: 100%;
+    font-size: .875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #3f342c;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+[data-bs-theme="dark"] .wasla-live-detail-order-note {
+    background: rgba(232, 184, 122, 0.12);
+    border-color: rgba(212, 168, 112, 0.4);
+    border-inline-start-color: rgba(212, 168, 112, 0.72);
+}
+[data-bs-theme="dark"] .wasla-live-detail-order-note__label { color: #e6c98a; }
+[data-bs-theme="dark"] .wasla-live-detail-order-note__text { color: #f6efe4; }
+.wasla-live-focus .wasla-live-detail-order-note { display: none; }
+#ordersLiveDetailModal .modal-body { overflow-x: hidden; }
+#ordersLiveDetailModal .wasla-live-detail__items {
+    width: 100%;
+    max-width: 100%;
+}
+#ordersLiveDetailModal .wasla-live-detail__surcharge { white-space: nowrap; }
+.wasla-live-detail__body {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    min-width: 0;
+}
+.wasla-live-detail__products,
+.wasla-live-detail__facts { min-width: 0; }
+.wasla-live-detail__section {
+    margin: 0 0 .45rem;
+    font-size: .8125rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--wasla-muted, #5c6570);
+}
+.wasla-live-detail__empty {
+    margin: 0 0 .5rem;
+    color: var(--wasla-muted, #6c757d);
+}
+.wasla-live-detail__products { width: fit-content; max-width: 100%; }
+.wasla-live-detail__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 36rem) auto auto;
+    width: max-content;
+    max-width: 100%;
+    row-gap: .7rem;
+}
+.wasla-live-detail__item {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    column-gap: .75rem;
+    row-gap: .2rem;
+    align-items: baseline;
+    min-width: 0;
+}
+.wasla-live-detail__product {
+    grid-column: 1;
+    font-size: .9375rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.wasla-live-detail__qty,
+.wasla-live-detail__amount {
+    font-size: .875rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.wasla-live-detail__qty { grid-column: 2; font-weight: 700; }
+.wasla-live-detail__amount { grid-column: 3; justify-self: end; font-weight: 600; }
+.wasla-live-detail__options,
+.wasla-live-detail__note { grid-column: 1; min-width: 0; }
+.wasla-live-detail__options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: .8125rem;
+    line-height: 1.4;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 72%, var(--wasla-muted, #6c757d));
+    overflow-wrap: anywhere;
+}
+.wasla-live-detail__note {
+    margin: 0;
+    font-size: .875rem;
+    font-style: normal;
+    line-height: 1.4;
+    color: var(--wasla-text, inherit);
+    overflow-wrap: anywhere;
+}
+.wasla-live-detail__surcharge { font-variant-numeric: tabular-nums; }
+.wasla-live-detail__totals {
+    display: grid;
+    gap: .3rem;
+    width: 100%;
+    max-width: none;
+    margin: .85rem 0 0;
+    padding-top: .55rem;
+    border-top: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+}
+.wasla-live-detail__totals > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: .75rem;
+    align-items: baseline;
+    font-size: .875rem;
+}
+.wasla-live-detail__totals dt,
+.wasla-live-detail__totals dd { margin: 0; }
+.wasla-live-detail__totals dt { font-weight: 500; color: var(--wasla-muted, #5c6570); }
+.wasla-live-detail__totals dd { font-variant-numeric: tabular-nums; font-weight: 600; }
+.wasla-live-detail__grand { font-size: 1rem; }
+.wasla-live-detail__grand dt,
+.wasla-live-detail__grand dd { color: var(--wasla-text, inherit); font-weight: 700; }
+.wasla-live-detail__grand dd { white-space: nowrap; }
+.wasla-live-detail__facts {
+    padding-top: .85rem;
+    border-top: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+}
+.wasla-live-detail__customer {
+    margin: 0 0 .55rem;
+    font-size: .9375rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.wasla-live-detail__fact-list {
+    display: grid;
+    gap: .55rem;
+    margin: 0;
+}
+.wasla-live-detail__fact-list > div { min-width: 0; }
+.wasla-live-detail__fact-list dt {
+    margin: 0;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--wasla-muted, #5c6570);
+}
+.wasla-live-detail__fact-list dd {
+    margin: 0;
+    font-size: .875rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+.wasla-live-detail__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding-top: .75rem;
+    border-top: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+}
+.wasla-live-detail__actions .wasla-orders-actions { display: contents; }
+.wasla-live-detail__actions .btn:not(.btn-link) {
+    flex: 0 1 auto;
+    font-size: .875rem;
+    font-weight: 600;
+    padding: .35rem .7rem;
+    min-height: 40px;
+}
+.wasla-live-detail__actions .btn-outline-danger {
+    background: color-mix(in srgb, #dc3545 10%, var(--wasla-surface, #fff));
+    border-color: transparent;
+    color: #b02a37;
+}
+.wasla-live-detail__actions a.btn.wasla-live-detail__open {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    flex: 0 1 auto;
+    min-height: 40px;
+    margin: 0;
+    border-color: color-mix(in srgb, var(--wasla-text, #212529) 18%, var(--wasla-border));
+    background: transparent;
+    box-shadow: none;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 82%, var(--wasla-muted, #6c757d));
+    text-decoration: none;
+    white-space: normal;
+}
+
+.wasla-live-detail__actions a.btn.wasla-live-detail__open:hover {
+    background: color-mix(in srgb, var(--wasla-border) 40%, transparent);
+    border-color: color-mix(in srgb, var(--wasla-text, #212529) 28%, var(--wasla-border));
+    color: var(--wasla-text, #212529);
+}
+
+.wasla-live-detail__actions a.btn.wasla-live-detail__open:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+@container live-detail (min-width: 42rem) {
+    .wasla-live-detail__body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+        align-items: start;
+        column-gap: 1.5rem;
+        row-gap: 0;
+    }
+    .wasla-live-detail__facts {
+        padding-top: 0;
+        padding-inline-start: 1.25rem;
+        border-top: 0;
+        border-inline-start: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+    }
+}
+
+.wasla-live-focus .wasla-live-focus-order-note {
+    min-width: 0;
+    max-width: 100%;
+    margin-block: .65rem 0;
+    margin-inline: 0;
+    padding: .42rem .65rem;
+    border: 1px solid #ead3b8;
+    border-inline-start: 3px solid #e0b48a;
+    background: #fff7ef;
+    border-radius: .4rem;
+}
+.wasla-live-focus .wasla-live-focus-order-note__label {
+    display: block;
+    margin-bottom: .12rem;
+    font-size: .75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: .01em;
+    color: #8a5a32;
+}
+.wasla-live-focus .wasla-live-focus-order-note__text {
+    margin: 0;
+    max-width: 100%;
+    font-size: .875rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #3f342c;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+[data-bs-theme="dark"] .wasla-live-focus .wasla-live-focus-order-note {
+    background: rgba(232, 184, 122, 0.12);
+    border-color: rgba(212, 168, 112, 0.4);
+    border-inline-start-color: rgba(212, 168, 112, 0.72);
+}
+[data-bs-theme="dark"] .wasla-live-focus .wasla-live-focus-order-note__label { color: #e6c98a; }
+[data-bs-theme="dark"] .wasla-live-focus .wasla-live-focus-order-note__text { color: #f6efe4; }
+.wasla-live-focus [data-order-note].wasla-order-note-attention {
+    animation-name: waslaOrderNoteAttention;
+    animation-duration: 1.8s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-delay: var(--wasla-order-note-attention-delay, 0ms);
+}
+.wasla-live-focus [data-order-note].wasla-order-note-attention-static {
+    animation: none;
+    background: #fde8d4;
+    border-color: #e0b48a;
+    border-inline-start-color: #d4a574;
+}
+[data-bs-theme="dark"] .wasla-live-focus [data-order-note].wasla-order-note-attention {
+    animation-name: waslaOrderNoteAttentionDark;
+}
+[data-bs-theme="dark"] .wasla-live-focus [data-order-note].wasla-order-note-attention-static {
+    background: rgba(232, 184, 122, 0.22);
+    border-color: rgba(224, 180, 122, 0.62);
+    border-inline-start-color: #e0b87a;
+}
+.wasla-live-focus {
+    display: grid;
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+    gap: .75rem;
+    align-items: start;
+    min-width: 0;
+}
+.wasla-live-focus__queue,
+.wasla-live-focus__panel {
+    min-width: 0;
+    max-width: 100%;
+    overflow: auto;
+    max-height: calc(100dvh - 12.5rem);
+}
+.wasla-live-focus__queue {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 2px 2px 8px;
+}
+.wasla-live-focus__panel {
+    background: var(--wasla-surface, #fff);
+    border: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+    border-radius: .5rem;
+    box-shadow: none;
+    padding: .9rem 1rem 1rem;
+}
+/* Focus detail: prices line up in one column at the panel edge, item rows stay compact, and the
+   actions stay visible at the bottom of the panel while a long item list scrolls. */
+.wasla-live-focus .wasla-live-detail__products,
+.wasla-live-focus .wasla-live-detail__items {
+    width: 100%;
+}
+.wasla-live-focus .wasla-live-detail__items {
+    grid-template-columns: minmax(0, 1fr) auto minmax(4.5rem, auto);
+    row-gap: .45rem;
+}
+.wasla-live-focus .wasla-live-detail__product {
+    font-size: .875rem;
+}
+.wasla-live-focus .wasla-live-detail__actions {
+    position: sticky;
+    /* Flush with the panel edge: the bar also covers the panel's 1rem bottom padding. */
+    inset-block-end: -1rem;
+    z-index: 1;
+    margin-block-end: -1rem;
+    padding-block: .6rem 1.6rem;
+    border-block-start: 1px solid color-mix(in srgb, var(--wasla-border) 75%, transparent);
+    background: var(--wasla-surface, #fff);
+}
+.wasla-live-focus__panel:has(.wasla-live-empty) {
+    display: flex;
+    flex-direction: column;
+}
+.wasla-live-focus__panel:has(.wasla-live-empty) .wasla-live-focus__detail {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    min-height: min(22rem, calc(100dvh - 16rem));
+}
+.wasla-live-focus__panel .wasla-live-empty {
+    min-height: 0;
+    background: transparent;
+    border: 0;
+}
+.wasla-live-focus__groups { min-width: 0; }
+.wasla-live-focus__group { min-width: 0; margin: 0 0 18px; background: transparent; border: 0; box-shadow: none; }
+.wasla-live-focus__group:last-child { margin-bottom: 0; }
+.wasla-live-focus__group:has([data-board-list]:empty) { margin-bottom: 6px; }
+.wasla-live-focus__heading {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .4rem;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 32px;
+    margin: 0 0 8px;
+    padding: 0 .65rem;
+    border: 0;
+    border-radius: .4rem;
+    background: color-mix(in srgb, var(--wasla-status-completed) 12%, var(--wasla-surface, #fff));
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+.wasla-live-focus__group:has([data-board-list]:empty) .wasla-live-focus__heading { margin-bottom: 2px; }
+.wasla-live-focus__heading::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    background: var(--wasla-status-completed);
+}
+.wasla-live-focus__group[data-board-column="new"] .wasla-live-focus__heading {
+    background: color-mix(in srgb, var(--wasla-status-new) 14%, var(--wasla-surface, #fff));
+}
+.wasla-live-focus__group[data-board-column="preparing"] .wasla-live-focus__heading {
+    background: color-mix(in srgb, var(--wasla-status-preparing) 12%, var(--wasla-surface, #fff));
+}
+.wasla-live-focus__group[data-board-column="ready"] .wasla-live-focus__heading {
+    background: color-mix(in srgb, var(--wasla-status-ready) 12%, var(--wasla-surface, #fff));
+}
+.wasla-live-focus__group[data-board-column="on-the-way"] .wasla-live-focus__heading {
+    background: color-mix(in srgb, var(--wasla-status-on-the-way) 12%, var(--wasla-surface, #fff));
+}
+.wasla-live-focus__group[data-board-column="completed"] .wasla-live-focus__heading {
+    background: color-mix(in srgb, var(--wasla-status-completed) 12%, var(--wasla-surface, #fff));
+}
+.wasla-live-focus__group[data-board-column="new"] .wasla-live-focus__heading::before { background: var(--wasla-status-new); }
+.wasla-live-focus__group[data-board-column="preparing"] .wasla-live-focus__heading::before { background: var(--wasla-status-preparing); }
+.wasla-live-focus__group[data-board-column="ready"] .wasla-live-focus__heading::before { background: var(--wasla-status-ready); }
+.wasla-live-focus__group[data-board-column="on-the-way"] .wasla-live-focus__heading::before { background: var(--wasla-status-on-the-way); }
+.wasla-live-focus__group[data-board-column="completed"] .wasla-live-focus__heading::before { background: var(--wasla-status-completed); }
+.wasla-live-focus__count {
+    margin-inline-start: auto;
+    font-size: .75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    padding: .12rem .45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wasla-border) 65%, var(--wasla-surface, #fff));
+    color: var(--wasla-muted, #5c6570);
+}
+.wasla-live-focus__orders {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+}
+.wasla-live-focus__empty {
+    margin: 0;
+    padding: 0;
+    font-size: .8125rem;
+    color: var(--wasla-muted, #6c757d);
+    background: transparent;
+    border: 0;
+}
+.wasla-live-focus-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .35rem;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+    border-radius: .5rem;
+    background: var(--wasla-surface, #fff);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .05);
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+.wasla-live-focus-entry__code {
+    font-size: .98rem;
+    font-weight: 600;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+.wasla-live-focus-entry__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem .45rem;
+    min-width: 0;
+}
+.wasla-live-focus-entry__elapsed {
+    font-size: .8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 72%, var(--wasla-muted, #6c757d));
+}
+/* Long product names must not make queue rows tall: two lines at most. The full text stays in the
+   button's accessible name and title, and the selected order shows every item in the panel. */
+.wasla-live-focus-entry__summary {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    font-size: .8125rem;
+    line-height: 1.35;
+    color: color-mix(in srgb, var(--wasla-text, #212529) 78%, var(--wasla-muted, #6c757d));
+    overflow-wrap: anywhere;
+}
+.wasla-live-focus-entry .wasla-dash-status { white-space: normal; }
+.wasla-live-focus-entry:hover {
+    border-color: color-mix(in srgb, var(--wasla-text, #212529) 16%, var(--wasla-border));
+}
+.wasla-live-focus-entry[aria-pressed="true"] {
+    padding-inline-start: 10px;
+    background: var(--color-accent-soft);
+    border-color: var(--color-accent-border);
+    border-inline-start: 3px solid var(--color-accent);
+}
+.wasla-live-focus-entry[aria-pressed="true"]:hover {
+    background: color-mix(in srgb, var(--color-accent) 16%, var(--wasla-surface, #fff));
+}
+.wasla-live-focus-entry:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+}
+.wasla-live-focus-entry .platform-badge,
+.wasla-live-focus__panel .wasla-live-detail__head .platform-badge {
+    min-height: 0;
+    gap: .25rem;
+    padding: .1rem .35rem;
+    font-size: .75rem;
+}
+.wasla-live-focus-entry .platform-badge__icon,
+.wasla-live-focus__panel .wasla-live-detail__head .platform-badge__icon {
+    height: 15px;
+    width: auto;
+    max-width: none;
+    object-fit: contain;
+}
+.wasla-live-focus-entry .platform-badge--getiryemek .platform-badge__icon,
+.wasla-live-focus__panel .wasla-live-detail__head .platform-badge--getiryemek .platform-badge__icon {
+    height: 15px;
+    width: auto;
+    max-width: none;
+}
+.wasla-live-focus-entry .platform-badge--getiryemek.platform-badge .platform-badge__icon-wrap,
+.wasla-live-focus__panel .wasla-live-detail__head .platform-badge--getiryemek.platform-badge .platform-badge__icon-wrap {
+    padding: 1px 5px;
+}
+.wasla-live-focus-entry .platform-badge--icon-missing,
+.wasla-live-focus__panel .wasla-live-detail__head .platform-badge--icon-missing {
+    white-space: normal;
+}
+.wasla-live-focus__back { display: none; }
+@media (max-width: 991.98px) and (min-width: 768px) {
+    .wasla-live-focus { grid-template-columns: minmax(260px, 300px) minmax(0, 1fr); }
+}
+@media (max-width: 767.98px) {
+    .wasla-live-focus { grid-template-columns: minmax(0, 1fr); }
+    .wasla-live-focus__panel,
+    .wasla-live-focus__panel:has(.wasla-live-empty) { display: none; }
+    .wasla-live-screen-host > .wasla-live-empty { min-height: min(16rem, 48dvh); width: 100%; }
+    .wasla-live-focus--show-detail .wasla-live-focus__queue { display: none; }
+    .wasla-live-focus--show-detail .wasla-live-focus__panel,
+    .wasla-live-focus--show-detail .wasla-live-focus__panel:has(.wasla-live-empty) {
+        display: flex;
+        flex-direction: column;
+    }
+    .wasla-live-focus--show-detail .wasla-live-focus__detail {
+        width: 100%;
+        min-width: 0;
+    }
+    .wasla-live-focus--show-detail .wasla-live-focus__back { display: inline-flex; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .wasla-live-focus-entry { transition: none; }
+}
+
+/* Practice-order countdown (guided order training only): inside the practice order's card, below its status row. It
+   shows how long until the Worker moves the order on; the bar starts full and drains toward the inline start (to the
+   left in LTR, to the right in Arabic). Words and seconds carry the meaning, not only the color. */
+.wasla-demo-countdown {
+  --wasla-demo-countdown-color: var(--wasla-status-ready, #198754);
+  display: grid;
+  gap: 0.25rem;
+  margin-block: 0.4rem 0.2rem;
+  padding-block: 0.35rem;
+  padding-inline: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-demo-countdown-color) 30%, transparent);
+  border-radius: var(--wasla-radius, 0.5rem);
+  background: color-mix(in srgb, var(--wasla-demo-countdown-color) 7%, var(--wasla-surface, #fff));
+  color: var(--wasla-text, #28231F);
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.wasla-demo-countdown--on-the-way {
+  --wasla-demo-countdown-color: var(--wasla-status-on-the-way, #6f42c1);
+}
+
+.wasla-demo-countdown--delivered {
+  --wasla-demo-countdown-color: var(--wasla-status-completed, #6c757d);
+}
+
+.wasla-demo-countdown__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wasla-demo-countdown__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wasla-demo-countdown__bar {
+  position: relative;
+  flex: 1 1 auto;
+  block-size: 0.35rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wasla-demo-countdown-color) 18%, transparent);
+}
+
+.wasla-demo-countdown__fill {
+  display: block;
+  block-size: 100%;
+  inline-size: 100%;
+  border-radius: inherit;
+  background: var(--wasla-demo-countdown-color);
+}
+
+.wasla-demo-countdown__seconds {
+  flex: none;
+  min-inline-size: 3.5ch;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  color: color-mix(in srgb, var(--wasla-demo-countdown-color) 70%, var(--wasla-text, #28231F));
+}
+
+.wasla-demo-countdown.is-waiting .wasla-demo-countdown__text {
+  color: var(--wasla-text-secondary, #746D66);
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wasla-demo-countdown__fill {
+    transition: inline-size 1s linear;
+  }
+}
+
+[data-bs-theme="dark"] .wasla-demo-countdown {
+  background: color-mix(in srgb, var(--wasla-demo-countdown-color) 14%, var(--wasla-surface, #171a21));
+  border-color: color-mix(in srgb, var(--wasla-demo-countdown-color) 45%, transparent);
+}
+
+[data-bs-theme="dark"] .wasla-demo-countdown__seconds {
+  color: color-mix(in srgb, var(--wasla-demo-countdown-color) 45%, #ffffff);
+}
+
+@media (max-width: 575.98px) {
+  .wasla-demo-countdown {
+    font-size: 0.75rem;
+  }
+}

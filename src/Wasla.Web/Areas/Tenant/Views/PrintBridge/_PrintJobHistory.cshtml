@@ -1,10 +1,14 @@
 ﻿@model Wasla.Web.Models.PrintBridge.PrintJobHistoryListViewModel
 @using System.Globalization
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
 @using Wasla.Web.Models.PrintBridge
+@using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IAuthorizationService AuthorizationService
 @{
     var emptyValue = "—";
+    var canManualPrint = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManualPrint)).Succeeded;
 }
 
 @if (Model.Jobs.Count == 0)
@@ -17,7 +21,7 @@
 else
 {
     <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0 oh-print-job-history-table">
+        <table class="table table-sm align-middle mb-0 wasla-print-job-history-table">
             <thead>
                 <tr>
                     <th>@L["PrintBridge.ExternalOrderId"]</th>
@@ -34,7 +38,7 @@ else
                 @foreach (var job in Model.Jobs)
                 {
                     var badge = PrintJobStatusBadge.Get(job.Status);
-                    <tr class="oh-print-job-row @badge.RowClass" data-print-job-id="@job.Id" data-print-job-status="@job.Status">
+                    <tr class="wasla-print-job-row @badge.RowClass" data-print-job-id="@job.Id" data-print-job-status="@job.Status">
                         <td class="fw-semibold">@(string.IsNullOrWhiteSpace(job.OrderDisplay) ? emptyValue : job.OrderDisplay)</td>
                         <td>
                             <partial name="_PlatformBadge" model="@((object?)job.Platform, (string?)job.PlatformDisplayName)" />
@@ -51,7 +55,7 @@ else
                         <td class="text-muted small">@job.AttemptCount</td>
                         <td class="text-muted small">@(string.IsNullOrWhiteSpace(job.LockedBy) ? emptyValue : job.LockedBy)</td>
                         <td class="text-end">
-                            @if (job.CanReprint)
+                            @if (canManualPrint && job.CanReprint)
                             {
                                 <button type="button"
                                         class="btn btn-sm btn-outline-primary pb-reprint-job-btn"
@@ -68,7 +72,7 @@ else
                     </tr>
                     @if (!string.IsNullOrWhiteSpace(job.ErrorMessage))
                     {
-                        <tr class="table-light oh-print-job-error-row">
+                        <tr class="table-light wasla-print-job-error-row">
                             <td colspan="8" class="py-1 px-3">
                                 <div class="text-danger small">
                                     @L["PrintBridge.ErrorMessage"]: @job.ErrorMessage

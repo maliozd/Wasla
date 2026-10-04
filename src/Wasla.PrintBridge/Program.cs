@@ -1,7 +1,10 @@
 ﻿using System.Globalization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.Setup;
 using Wasla.PrintBridge.UI;
 
 namespace Wasla.PrintBridge;
@@ -9,7 +12,7 @@ namespace Wasla.PrintBridge;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         var startupCulture = InitializeStartupCulture();
 
@@ -23,6 +26,9 @@ internal static class Program
             return;
         }
 
+        // A wasla-printbridge://setup?... URI may be passed by the OS when the browser launches us.
+        var setupUri = ExtractSetupUri(args);
+
         ApplicationConfiguration.Initialize();
         System.Windows.Forms.Application.EnableVisualStyles();
         System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
@@ -30,6 +36,13 @@ internal static class Program
         using var singleInstance = SingleInstanceGuard.TryAcquire();
         if (singleInstance is null)
         {
+            // Already running: forward the setup URI to the primary instance instead of starting a second tray app.
+            if (!string.IsNullOrWhiteSpace(setupUri) &&
+                SetupInstanceChannel.TrySend(setupUri!, TimeSpan.FromSeconds(3)))
+            {
+                return;
+            }
+
             MessageBox.Show(
                 PrintBridgeLocalizer.GetStringForCulture("Message.AlreadyRunning", startupCulture, Environment.NewLine),
                 PrintBridgePaths.ProductDisplayName,
@@ -39,8 +52,39 @@ internal static class Program
         }
 
         var services = PrintBridgeAppServices.Build();
-        System.Windows.Forms.Application.Run(new TrayApplicationContext(services));
+
+        // Register/repair the per-user protocol handler on each launch (no admin rights required).
+        var startupLogger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Startup");
+        PrintBridgeProtocolRegistrar.RegisterOrRepair(startupLogger);
+
+        var context = new TrayApplicationContext(services);
+
+        // Receive setup URIs forwarded from future second instances.
+        using var channel = new SetupInstanceChannel(
+            services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.SetupIpc"));
+        channel.UriReceived += uri => context.HandleSetupUri(uri);
+        channel.StartListening();
+
+        // Process a setup URI supplied on this launch once the message loop is running.
+        if (!string.IsNullOrWhiteSpace(setupUri))
+        {
+            var startupTimer = new System.Windows.Forms.Timer { Interval = 250 };
+            startupTimer.Tick += (_, _) =>
+            {
+                startupTimer.Stop();
+                startupTimer.Dispose();
+                context.HandleSetupUri(setupUri!);
+            };
+            startupTimer.Start();
+        }
+
+        System.Windows.Forms.Application.Run(context);
     }
+
+    private static string? ExtractSetupUri(string[] args) =>
+        args?.FirstOrDefault(a =>
+            !string.IsNullOrWhiteSpace(a) &&
+            a.StartsWith(PrintBridgeProtocolUri.Scheme + "://", StringComparison.OrdinalIgnoreCase));
 
     private static string InitializeStartupCulture()
     {

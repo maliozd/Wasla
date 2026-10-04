@@ -6,9 +6,11 @@ public sealed class PrintBridgeRuntimeStatus
     public bool IsConnected { get; init; }
     public DateTime? LastSuccessfulContactUtc { get; init; }
     public DateTime? LastPollUtc { get; init; }
+    public PrintBridgeRuntimeIssue? LastIssue { get; init; }
     public string? LastError { get; init; }
     public string ServerUrl { get; init; } = string.Empty;
     public string PrinterName { get; init; } = string.Empty;
+    public string LocalDeviceName { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
     public bool ServerDeviceNameResolved { get; init; }
     public string MachineName { get; init; } = string.Empty;
@@ -22,27 +24,53 @@ public sealed class PrintBridgeRuntimeStatus
     public PrinterHealthStatus PrinterHealthStatus { get; init; }
     public TrayIconState TrayIconState { get; init; }
 
+    public static bool ResolveEffectiveConnection(
+        bool hasRecentSuccessfulContact,
+        PrintBridgeRuntimeIssue? lastIssue) =>
+        lastIssue is null && hasRecentSuccessfulContact;
+
     public static BridgeServerConnectionStatus ResolveServerConnectionStatus(
+        bool isConfigured,
         bool isRunning,
         bool isConnected,
-        string? lastError)
+        PrintBridgeRuntimeIssue? lastIssue)
     {
+        if (!isConfigured)
+            return BridgeServerConnectionStatus.NotConfigured;
+
+        if (lastIssue is not null)
+            return BridgeServerConnectionStatus.Error;
+
         if (!isRunning)
             return BridgeServerConnectionStatus.Stopped;
-
-        if (!string.IsNullOrWhiteSpace(lastError))
-            return BridgeServerConnectionStatus.Error;
 
         return isConnected
             ? BridgeServerConnectionStatus.Connected
             : BridgeServerConnectionStatus.Disconnected;
     }
 
+    public static BridgeServerConnectionStatus ResolveServerConnectionStatus(
+        bool isConfigured,
+        bool isRunning,
+        bool isConnected,
+        string? lastError) =>
+        ResolveServerConnectionStatus(
+            isConfigured,
+            isRunning,
+            isConnected,
+            string.IsNullOrWhiteSpace(lastError)
+                ? null
+                : PrintBridgeRuntimeIssue.FromResource(lastError));
+
     public static TrayIconState ResolveTrayIconState(
         bool isRunning,
         bool isConnected,
-        IReadOnlyList<LocalPrintJobRecord> jobs)
+        IReadOnlyList<LocalPrintJobRecord> jobs,
+        PrintBridgeRuntimeIssue? lastIssue = null)
     {
+        if (lastIssue is not null)
+            return TrayIconState.ConnectionLost;
+
         if (jobs.Any(j => j.Status == LocalPrintJobStatus.Printing))
             return TrayIconState.Printing;
 
@@ -56,5 +84,40 @@ public sealed class PrintBridgeRuntimeStatus
             return TrayIconState.Connected;
 
         return TrayIconState.ConnectionLost;
+    }
+
+    public static bool ShouldReportConnectionSuccess(PrintBridgeRuntimeStatus status) =>
+        status.LastIssue is null || !status.LastIssue.IsBlockingLifecycleIssue;
+
+    public static string ResolveHeaderBadgeResourceKey(PrintBridgeRuntimeStatus status)
+    {
+        if (status.LastIssue is { IsBlockingLifecycleIssue: true } issue
+            && !string.IsNullOrWhiteSpace(issue.EffectiveTitleResourceKey))
+            return issue.EffectiveTitleResourceKey;
+
+        if (status.LastIssue is { IsBlockingLifecycleIssue: true })
+            return "Status.Error";
+
+        if (status.IsRunning && status.IsConnected)
+            return status.DryRun ? "Status.RunningDryRun" : "Status.Running";
+
+        if (status.IsRunning)
+            return "Status.Running";
+
+        if (status.IsConnected)
+            return "Status.Connected";
+
+        return "Status.Stopped";
+    }
+
+    public static string ResolveLocalDeviceLabel(string? localDeviceName, string? machineName)
+    {
+        if (!string.IsNullOrWhiteSpace(localDeviceName))
+            return localDeviceName.Trim();
+
+        if (!string.IsNullOrWhiteSpace(machineName))
+            return machineName.Trim();
+
+        return Environment.MachineName;
     }
 }

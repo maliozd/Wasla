@@ -1,0 +1,87 @@
+@model Wasla.Web.Models.Signup.SignupPendingViewModel
+@using Microsoft.Extensions.Localization
+@using Wasla.Domain.Enums
+@using Wasla.Web.Formatting
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    var billingLabel = string.Equals(Model.BillingPeriod, "Yearly", StringComparison.OrdinalIgnoreCase)
+        ? L["Signup.BillingYearly"]
+        : L["Signup.BillingMonthly"];
+
+    var paymentStatusKey = Model.Status switch
+    {
+        PendingRegistrationStatus.Provisioned or PendingRegistrationStatus.PaymentSucceeded => "Signup.PaymentStatusPaid",
+        PendingRegistrationStatus.PaymentFailed => "Signup.PaymentStatusFailed",
+        PendingRegistrationStatus.Cancelled => "Signup.PaymentStatusCancelled",
+        PendingRegistrationStatus.Expired => "Signup.PaymentStatusExpired",
+        _ => "Signup.PaymentStatusPending"
+    };
+
+    var provisioningStatusKey = Model.Status switch
+    {
+        PendingRegistrationStatus.Provisioned => "Signup.ProvisioningStatusComplete",
+        PendingRegistrationStatus.PaymentSucceeded => "Signup.ProvisioningStatusInProgress",
+        _ => "Signup.ProvisioningStatusPending"
+    };
+}
+
+<section class="text-start bg-body-tertiary rounded p-3 mb-4">
+    <h2 class="h6 fw-semibold mb-3">@L["Signup.PendingRegistrationDetails"]</h2>
+    <dl class="row small mb-0">
+        @if (Model.ShowPrivateDetails)
+        {
+            <dt class="col-sm-4">@L["Signup.PendingLabelRestaurant"]</dt>
+            <dd class="col-sm-8">@Model.BusinessName</dd>
+        }
+
+        <dt class="col-sm-4">@L["Signup.PendingLabelOrderHubAddress"]</dt>
+        <dd class="col-sm-8">
+            <partial name="_RegistrationStatusTenantAddressLink" model="Model" />
+        </dd>
+
+        @if (Model.ShowPrivateDetails)
+        {
+            <dt class="col-sm-4">@L["Signup.PendingLabelPackage"]</dt>
+            <dd class="col-sm-8">@Model.PlanDisplayName</dd>
+
+            <dt class="col-sm-4">@L["Signup.PendingLabelPaymentPeriod"]</dt>
+            <dd class="col-sm-8">@billingLabel</dd>
+        }
+
+        <dt class="col-sm-4">@L["Signup.PendingLabelPaymentStatus"]</dt>
+        <dd class="col-sm-8">@L[paymentStatusKey]</dd>
+
+        <dt class="col-sm-4">@L["Signup.PendingLabelProvisioningStatus"]</dt>
+        <dd class="col-sm-8">@L[provisioningStatusKey]</dd>
+
+        @if (Model.ShowPrivateDetails)
+        {
+            if (!string.IsNullOrWhiteSpace(Model.BusinessPhone))
+            {
+                <dt class="col-sm-4">@L["Signup.PendingLabelBusinessPhone"]</dt>
+                <dd class="col-sm-8">@TurkishPhoneDisplayFormatter.FormatWithCountryCode(Model.BusinessPhone)</dd>
+            }
+
+            if (!string.IsNullOrWhiteSpace(Model.BusinessEmail))
+            {
+                <dt class="col-sm-4">@L["Signup.PendingLabelBusinessEmail"]</dt>
+                <dd class="col-sm-8">@Model.BusinessEmail</dd>
+            }
+
+            <dt class="col-sm-4">@L["Signup.PendingLabelOwnerName"]</dt>
+            <dd class="col-sm-8">@Model.OwnerFullName</dd>
+
+            <dt class="col-sm-4">@L["Signup.PendingLabelOwnerEmail"]</dt>
+            <dd class="col-sm-8">@Model.OwnerEmail</dd>
+
+            if (!string.IsNullOrWhiteSpace(Model.OwnerPhone))
+            {
+                <dt class="col-sm-4">@L["Signup.PendingLabelOwnerPhone"]</dt>
+                <dd class="col-sm-8">@TurkishPhoneDisplayFormatter.FormatWithCountryCode(Model.OwnerPhone)</dd>
+            }
+
+            <dt class="col-sm-4">@L["Signup.PendingLabelCreatedAt"]</dt>
+            <dd class="col-sm-8">@Model.CreatedAtUtc.ToLocalTime().ToString("g")</dd>
+        }
+    </dl>
+</section>

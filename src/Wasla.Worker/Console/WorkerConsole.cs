@@ -15,6 +15,7 @@ internal static class WorkerConsole
     private const int ColInserted  = 9;  // "Inserted" header is 8 chars
     private const int ColUpdated   = 8;
     private const int ColSkipped   = 8;
+    private const int ColUnchanged = 9;
 
     // Customer section fixed widths.
     private const int CustomerNameWidth = 28;
@@ -69,7 +70,7 @@ internal static class WorkerConsole
 
     public static void WriteCycleCompleted(
         int customerCount, int connectionCount,
-        int fetched, int inserted, int updated, int failed, long elapsedMs)
+        int fetched, int inserted, int updated, int unchanged, int failed, long elapsedMs)
     {
         var sepWidth = SafeWindowWidth();
         lock (_lock)
@@ -82,6 +83,7 @@ internal static class WorkerConsole
             WriteKvNum("fetched",  fetched,  ConsoleColor.Cyan);
             WriteKvNum("inserted", inserted, ConsoleColor.Green);
             WriteKvNum("updated",  updated,  ConsoleColor.Yellow);
+            WriteKvNum("unchanged", unchanged, ConsoleColor.DarkCyan);
             WriteKvNum("failed",   failed,   ConsoleColor.Red);
             WriteKv("elapsed", FormatElapsed(elapsedMs), ConsoleColor.DarkGray, last: true);
             System.Console.WriteLine();
@@ -174,6 +176,8 @@ internal static class WorkerConsole
         System.Console.Write("  ");
         WriteCell("Skipped",   ColSkipped,  ConsoleColor.DarkGray);
         System.Console.Write("  ");
+        WriteCell("Unchanged", ColUnchanged, ConsoleColor.DarkGray);
+        System.Console.Write("  ");
         WriteC("Time", ConsoleColor.DarkGray);
         System.Console.WriteLine();
     }
@@ -192,6 +196,8 @@ internal static class WorkerConsole
         WriteC(new string('-', ColUpdated),  ConsoleColor.DarkGray);
         System.Console.Write("  ");
         WriteC(new string('-', ColSkipped),  ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteC(new string('-', ColUnchanged), ConsoleColor.DarkGray);
         System.Console.Write("  ");
         WriteC("------", ConsoleColor.DarkGray);
         System.Console.WriteLine();
@@ -215,6 +221,9 @@ internal static class WorkerConsole
         System.Console.Write("  ");
         WriteCell(c.SkippedCount.ToString(),   ColSkipped,
             c.SkippedCount  > 0 ? ConsoleColor.DarkYellow  : ConsoleColor.DarkGray);
+        System.Console.Write("  ");
+        WriteCell(c.UnchangedCount.ToString(), ColUnchanged,
+            c.UnchangedCount > 0 ? ConsoleColor.DarkCyan : ConsoleColor.DarkGray);
         System.Console.Write("  ");
         WriteC(FormatElapsed(c.ElapsedMs), ConsoleColor.DarkGray);
         if (c.IsFailed)

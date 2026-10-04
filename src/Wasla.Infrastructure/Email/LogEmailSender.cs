@@ -5,8 +5,6 @@ namespace Wasla.Infrastructure.Email;
 
 public sealed class LogEmailSender : IEmailSender
 {
-    private const int BodyPreviewLength = 240;
-
     private readonly ILogger<LogEmailSender> _logger;
 
     public LogEmailSender(ILogger<LogEmailSender> logger)
@@ -19,29 +17,20 @@ public sealed class LogEmailSender : IEmailSender
         _ = ct;
         ArgumentNullException.ThrowIfNull(message);
 
-        var preview = BuildBodyPreview(message.TextBody);
-        var recipient = string.IsNullOrWhiteSpace(message.ToName)
-            ? message.ToEmail
-            : $"{message.ToName} <{message.ToEmail}>";
-
         _logger.LogInformation(
-            "Email (Log provider): To={Recipient} Subject={Subject} Preview={Preview}",
-            recipient,
-            message.Subject,
-            preview);
+            "Email logged (not sent). RecipientDomain={RecipientDomain} Subject={Subject}",
+            GetDomain(message.ToEmail),
+            message.Subject);
 
         return Task.CompletedTask;
     }
 
-    private static string BuildBodyPreview(string textBody)
+    private static string GetDomain(string email)
     {
-        if (string.IsNullOrWhiteSpace(textBody))
-            return "(empty body)";
+        var at = email.LastIndexOf('@');
+        if (at < 0 || at == email.Length - 1)
+            return "unknown";
 
-        var normalized = textBody.Replace('\r', ' ').Replace('\n', ' ').Trim();
-        if (normalized.Length <= BodyPreviewLength)
-            return normalized;
-
-        return normalized[..BodyPreviewLength] + "…";
+        return email[(at + 1)..].Trim();
     }
 }

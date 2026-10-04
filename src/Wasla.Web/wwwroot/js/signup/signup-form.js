@@ -379,6 +379,55 @@
         }
     }
 
+    function initOptionalBusinessEmailValidation() {
+        var emailInput = document.getElementById("signupBusinessEmail");
+        if (!emailInput || !window.jQuery || !jQuery.validator) {
+            return;
+        }
+
+        if (config.emailInvalidText) {
+            emailInput.setAttribute("data-val-optionalemail", config.emailInvalidText);
+        }
+
+        if (!jQuery.validator.methods.optionalemail) {
+            jQuery.validator.addMethod("optionalemail", function (value) {
+                var trimmed = jQuery.trim(value);
+                if (trimmed.length === 0) {
+                    return true;
+                }
+
+                return jQuery.validator.methods.email.call(this, trimmed);
+            }, config.emailInvalidText || "");
+        }
+
+        if (jQuery.validator.unobtrusive && !initOptionalBusinessEmailValidation.adapterRegistered) {
+            jQuery.validator.unobtrusive.adapters.add("optionalemail", function (options) {
+                options.rules.optionalemail = true;
+                options.messages.optionalemail = options.message;
+            });
+            initOptionalBusinessEmailValidation.adapterRegistered = true;
+        }
+
+        function revalidateBusinessEmail() {
+            var $input = jQuery(emailInput);
+            var form = $input.closest("form");
+            if (form.length && form.data("validator")) {
+                $input.valid();
+            }
+        }
+
+        emailInput.addEventListener("input", revalidateBusinessEmail);
+        emailInput.addEventListener("blur", function () {
+            emailInput.value = jQuery.trim(emailInput.value);
+            revalidateBusinessEmail();
+        });
+
+        var form = document.getElementById("signupForm");
+        if (form && jQuery.validator.unobtrusive) {
+            jQuery.validator.unobtrusive.parse(form);
+        }
+    }
+
     function initPasswordToggles() {
         document.querySelectorAll(".signup-password-toggle").forEach(function (button) {
             button.addEventListener("click", function () {
@@ -497,10 +546,19 @@
     }
 
     if (phoneTypeSelect) {
-        phoneTypeSelect.addEventListener("change", updatePhoneUi);
+        phoneTypeSelect.addEventListener("change", function () {
+            updatePhoneUi();
+            if (window.WaslaSignupPhone) {
+                window.WaslaSignupPhone.refreshExistingValues();
+            }
+        });
     }
 
     initPasswordToggles();
+    initOptionalBusinessEmailValidation();
+    if (window.WaslaSignupPhone) {
+        window.WaslaSignupPhone.init();
+    }
     localizeCompareValidation();
     updateDomainPreview();
     updatePhoneUi();

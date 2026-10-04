@@ -1,108 +1,245 @@
-﻿@model Wasla.Web.Areas.Admin.Models.CentralAdminDashboardViewModel
+@model Wasla.Web.Areas.Admin.Models.TenantOperations.AdminTenantListViewModel
 @using Microsoft.Extensions.Localization
+@using Wasla.Application.Abstractions.Admin
+@using Wasla.Web.Areas.Admin.Models.TenantOperations
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
     ViewData["Title"] = L["Admin.Customers"].Value;
+    var query = Model.Query;
+    var result = Model.Page;
+
+    void SortHeader(TenantListSortField field, string labelKey, string cssClass)
+    {
+        var ariaSort = Model.AriaSort(field);
+        var icon = ariaSort switch
+        {
+            "ascending" => "bi-caret-up-fill",
+            "descending" => "bi-caret-down-fill",
+            _ => "bi-chevron-expand"
+        };
+        <th scope="col" class="@cssClass" aria-sort="@ariaSort">
+            <a class="wasla-admin-sort" href="@Url.Action("Index", Model.SortRouteValues(field))">
+                <span>@L[labelKey]</span><i class="bi @icon" aria-hidden="true"></i>
+            </a>
+        </th>
+    }
 }
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
-    <div>
-        <h1 class="h4 mb-1">@L["Admin.Customers"]</h1>
-        <p class="text-muted small mb-0">@L["Admin.BrandSubtitle"]</p>
-    </div>
-</div>
+<div class="wasla-admin-ops">
+    <header class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+        <div>
+            <h1 class="h4 mb-1">@L["Admin.Customers"]</h1>
+            <p class="text-body-secondary small mb-0">@L["Admin.Ops.List.Subtitle"]</p>
+        </div>
+    </header>
 
-<div class="row g-3 mb-4">
-    <div class="col-sm-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body py-3">
-                <div class="text-muted small">@L["Admin.TotalCustomers"]</div>
-                <div class="fs-4 fw-bold mb-0">@Model.TotalCustomers</div>
+    <form method="get" action="/admin/customers" class="card wasla-admin-card wasla-admin-filters mb-3" role="search" aria-label="@L["Admin.Ops.List.FiltersLabel"]">
+        <div class="card-body">
+            <input type="hidden" name="sort" value="@TenantListQuery.SortToken(query.Sort)" />
+            <input type="hidden" name="dir" value="@TenantListQuery.DirectionToken(query.Direction)" />
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-lg-4">
+                    <label for="tenantSearch" class="form-label small mb-1">@L["Common.Search"]</label>
+                    <input id="tenantSearch" name="q" type="search" class="form-control form-control-sm" value="@query.Search"
+                           maxlength="@TenantListQuery.MaxSearchLength" placeholder="@L["Admin.Ops.List.SearchPlaceholder"]" autocomplete="off" />
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label for="tenantStatus" class="form-label small mb-1">@L["Common.Status"]</label>
+                    <select id="tenantStatus" name="status" class="form-select form-select-sm">
+                        <option value="" selected="@(query.Status == TenantListStatusFilter.All)">@L["Common.AllStatuses"]</option>
+                        <option value="active" selected="@(query.Status == TenantListStatusFilter.Active)">@L["Admin.StatusActive"]</option>
+                        <option value="inactive" selected="@(query.Status == TenantListStatusFilter.Inactive)">@L["Admin.StatusInactive"]</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label for="tenantMigration" class="form-label small mb-1">@L["Admin.Ops.List.MigrationRecord"]</label>
+                    <select id="tenantMigration" name="migration" class="form-select form-select-sm">
+                        <option value="" selected="@(query.Migration == TenantMigrationRecordFilter.All)">@L["Admin.Ops.List.AnyMigrationRecord"]</option>
+                        <option value="succeeded" selected="@(query.Migration == TenantMigrationRecordFilter.Succeeded)">@L["Admin.Ops.MigrationRecord.Succeeded"]</option>
+                        <option value="failed" selected="@(query.Migration == TenantMigrationRecordFilter.Failed)">@L["Admin.Ops.MigrationRecord.Failed"]</option>
+                        <option value="not-recorded" selected="@(query.Migration == TenantMigrationRecordFilter.NotRecorded)">@L["Admin.Ops.MigrationRecord.NotRecorded"]</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label for="tenantPlan" class="form-label small mb-1">@L["Admin.PendingReg.Plan"]</label>
+                    <select id="tenantPlan" name="plan" class="form-select form-select-sm">
+                        <option value="" selected="@(query.Plan is null)">@L["Admin.Ops.List.AnyPlan"]</option>
+                        @foreach (var code in Model.PlanCodes)
+                        {
+                            <option value="@code" selected="@(query.Plan == code)">@code</option>
+                        }
+                        <option value="@TenantListQuery.NoPlan" selected="@(query.Plan == TenantListQuery.NoPlan)">@L["Admin.Ops.List.NoPlan"]</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3 col-lg-1">
+                    <label for="tenantPageSize" class="form-label small mb-1">@L["Admin.Ops.List.PageSize"]</label>
+                    <select id="tenantPageSize" name="size" class="form-select form-select-sm">
+                        @foreach (var size in TenantListQuery.AllowedPageSizes)
+                        {
+                            <option value="@size" selected="@(query.PageSize == size)">@size</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-lg-1 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary flex-grow-1">@L["Common.Filter"]</button>
+                </div>
             </div>
+            @if (query.HasFilters)
+            {
+                <a class="small d-inline-block mt-2" href="/admin/customers">@L["Admin.Ops.List.ClearFilters"]</a>
+            }
         </div>
-    </div>
-    <div class="col-sm-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body py-3">
-                <div class="text-muted small">@L["Admin.ActiveCustomers"]</div>
-                <div class="fs-4 fw-bold text-success mb-0">@Model.ActiveCustomers</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body py-3">
-                <div class="text-muted small">@L["Admin.InactiveCustomers"]</div>
-                <div class="fs-4 fw-bold text-secondary mb-0">@Model.InactiveCustomers</div>
-            </div>
-        </div>
-    </div>
-</div>
+    </form>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        @if (Model.Customers.Count == 0)
-        {
-            <div class="text-center text-muted py-5 px-3">
-                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
-                <div class="fw-semibold">@L["Admin.NoCustomers"]</div>
-                <div class="small">@L["Admin.NoCustomersHint"]</div>
+    @if (result is null)
+    {
+        <partial name="_AdminLoadError" />
+    }
+    else if (result.Items.Count == 0)
+    {
+        <div class="card wasla-admin-card">
+            <div class="card-body text-center text-body-secondary py-5 px-3">
+                <i class="bi bi-inbox fs-2 d-block mb-2" aria-hidden="true"></i>
+                @if (result.RegistryIsEmpty)
+                {
+                    <p class="fw-semibold mb-1">@L["Admin.NoCustomers"]</p>
+                    <p class="small mb-0">@L["Admin.NoCustomersHint"]</p>
+                }
+                else
+                {
+                    <p class="fw-semibold mb-1">@L["Admin.Ops.List.NoMatches"]</p>
+                    <a class="small" href="/admin/customers">@L["Admin.Ops.List.ClearFilters"]</a>
+                }
             </div>
-        }
-        else
-        {
+        </div>
+    }
+    else
+    {
+        var first = (result.Query.Page - 1) * result.Query.PageSize + 1;
+        var last = first + result.Items.Count - 1;
+
+        <section class="card wasla-admin-card" aria-labelledby="tenantTableCaption">
             <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead class="table-light">
+                <table class="table table-sm table-hover align-middle mb-0 wasla-admin-table">
+                    <caption id="tenantTableCaption" class="px-3 small">@L["Admin.Ops.List.Showing", first, last, result.TotalCount]</caption>
+                    <thead>
                     <tr>
-                        <th>@L["Admin.Name"]</th>
-                        <th>@L["Admin.Slug"]</th>
-                        <th>@L["Admin.PrimaryDomain"]</th>
-                        <th>@L["Common.Status"]</th>
-                        <th>@L["Admin.CreatedAt"]</th>
-                        <th class="text-end">@L["Admin.Actions"]</th>
+                        @{ SortHeader(TenantListSortField.Name, "Admin.Name", ""); }
+                        @{ SortHeader(TenantListSortField.Slug, "Admin.Slug", "d-none d-md-table-cell"); }
+                        <th scope="col" class="d-none d-lg-table-cell">@L["Admin.PendingReg.Plan"]</th>
+                        @{ SortHeader(TenantListSortField.Status, "Common.Status", ""); }
+                        <th scope="col" class="d-none d-lg-table-cell">@L["Admin.Ops.List.MigrationRecord"]</th>
+                        <th scope="col" class="d-none d-md-table-cell">@L["Admin.Ops.List.PrintBridge"]</th>
+                        @{ SortHeader(TenantListSortField.CreatedAt, "Admin.CreatedAt", "d-none d-xl-table-cell"); }
+                        @{ SortHeader(TenantListSortField.UpdatedAt, "Admin.UpdatedAt", "d-none d-xl-table-cell"); }
+                        <th scope="col" class="text-end"><span class="visually-hidden">@L["Admin.Actions"]</span></th>
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach (var c in Model.Customers)
+                    @foreach (var t in result.Items)
                     {
                         <tr>
-                            <td class="fw-medium">@c.Name</td>
-                            <td><code class="small">@c.Slug</code></td>
-                            <td class="small text-muted">@c.PrimaryDomain</td>
-                            <td>
-                                @if (c.IsActive)
+                            <td class="wasla-admin-table__name">
+                                <span class="fw-medium d-block text-break">@t.Name</span>
+                                <span class="small text-body-secondary d-block text-break">@t.PrimaryDomain</span>
+                                <code class="small d-md-none">@t.Slug</code>
+                            </td>
+                            <td class="d-none d-md-table-cell"><code class="small">@t.Slug</code></td>
+                            <td class="d-none d-lg-table-cell small">
+                                @if (t.PlanCode is null)
                                 {
-                                    <span class="badge text-bg-success">@L["Admin.StatusActive"]</span>
+                                    <span class="text-body-secondary">@L["Admin.Ops.List.NoPlan"]</span>
                                 }
                                 else
                                 {
-                                    <span class="badge text-bg-secondary">@L["Admin.StatusInactive"]</span>
+                                    <span>@t.PlanCode</span>
+                                    @if (t.MembershipStatus is { } membershipStatus)
+                                    {
+                                        <span class="d-block text-body-secondary">@L[AdminOperationsPresenter.MembershipStatusKey(membershipStatus)]</span>
+                                    }
                                 }
                             </td>
-                            <td class="small text-muted">@c.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td class="text-end text-nowrap">
-                                <a class="btn btn-sm btn-outline-primary" href="/admin/customers/@c.Id">@L["Admin.Details"]</a>
-                                @if (c.IsActive)
+                            <td><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.TenantActive(t.IsActive)" /></td>
+                            <td class="d-none d-lg-table-cell"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.MigrationRecord(t.MigrationRecord)" /></td>
+                            <td class="d-none d-md-table-cell small">
+                                @if (t.ActivePrintBridgeDevices == 0)
                                 {
-                                    <form method="post" action="/admin/customers/@c.Id/deactivate" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-outline-warning">@L["Admin.Deactivate"]</button>
-                                    </form>
+                                    <span class="text-body-secondary">@L["Admin.Ops.List.NoDevices"]</span>
                                 }
                                 else
                                 {
-                                    <form method="post" action="/admin/customers/@c.Id/activate" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-outline-success">@L["Admin.Activate"]</button>
-                                    </form>
+                                    <span>@L["Admin.Ops.List.DevicesOnline", t.OnlinePrintBridgeDevices, t.ActivePrintBridgeDevices]</span>
                                 }
+                            </td>
+                            <td class="d-none d-xl-table-cell small">@AdminOperationsPresenter.Time(t.CreatedAtUtc)</td>
+                            <td class="d-none d-xl-table-cell small">@AdminOperationsPresenter.Time(t.UpdatedAtUtc)</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary text-nowrap" href="/admin/customers/@t.Id">@L["Admin.Ops.List.Operations"]<span class="visually-hidden">: @t.Name</span></a>
                             </td>
                         </tr>
                     }
                     </tbody>
                 </table>
             </div>
+        </section>
+
+        @if (result.TotalPages > 1)
+        {
+            var current = result.Query.Page;
+            var windowStart = Math.Max(1, current - 2);
+            var windowEnd = Math.Min(result.TotalPages, current + 2);
+
+            <nav class="mt-3" aria-label="@L["Admin.Ops.List.Pagination"]">
+                <ul class="pagination pagination-sm flex-wrap mb-0">
+                    <li class="page-item @(current == 1 ? "disabled" : "")">
+                        @if (current == 1)
+                        {
+                            <span class="page-link"><i class="bi bi-chevron-left wasla-admin-flip" aria-hidden="true"></i><span class="visually-hidden">@L["Admin.Ops.List.PreviousPage"]</span></span>
+                        }
+                        else
+                        {
+                            <a class="page-link" href="@Url.Action("Index", Model.RouteValues(page: current - 1))"><i class="bi bi-chevron-left wasla-admin-flip" aria-hidden="true"></i><span class="visually-hidden">@L["Admin.Ops.List.PreviousPage"]</span></a>
+                        }
+                    </li>
+                    @if (windowStart > 1)
+                    {
+                        <li class="page-item"><a class="page-link" href="@Url.Action("Index", Model.RouteValues(page: 1))" aria-label="@L["Admin.Ops.List.PageNumber", 1]">1</a></li>
+                        @if (windowStart > 2)
+                        {
+                            <li class="page-item disabled" aria-hidden="true"><span class="page-link">…</span></li>
+                        }
+                    }
+                    @for (var p = windowStart; p <= windowEnd; p++)
+                    {
+                        if (p == current)
+                        {
+                            <li class="page-item active"><span class="page-link" aria-current="page" aria-label="@L["Admin.Ops.List.PageNumber", p]">@p</span></li>
+                        }
+                        else
+                        {
+                            <li class="page-item"><a class="page-link" href="@Url.Action("Index", Model.RouteValues(page: p))" aria-label="@L["Admin.Ops.List.PageNumber", p]">@p</a></li>
+                        }
+                    }
+                    @if (windowEnd < result.TotalPages)
+                    {
+                        @if (windowEnd < result.TotalPages - 1)
+                        {
+                            <li class="page-item disabled" aria-hidden="true"><span class="page-link">…</span></li>
+                        }
+                        <li class="page-item"><a class="page-link" href="@Url.Action("Index", Model.RouteValues(page: result.TotalPages))" aria-label="@L["Admin.Ops.List.PageNumber", result.TotalPages]">@result.TotalPages</a></li>
+                    }
+                    <li class="page-item @(current == result.TotalPages ? "disabled" : "")">
+                        @if (current == result.TotalPages)
+                        {
+                            <span class="page-link"><i class="bi bi-chevron-right wasla-admin-flip" aria-hidden="true"></i><span class="visually-hidden">@L["Admin.Ops.List.NextPage"]</span></span>
+                        }
+                        else
+                        {
+                            <a class="page-link" href="@Url.Action("Index", Model.RouteValues(page: current + 1))"><i class="bi bi-chevron-right wasla-admin-flip" aria-hidden="true"></i><span class="visually-hidden">@L["Admin.Ops.List.NextPage"]</span></a>
+                        }
+                    </li>
+                </ul>
+            </nav>
         }
-    </div>
+    }
 </div>

@@ -546,6 +546,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("InstallationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -569,6 +572,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<DateTime?>("RemovedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
@@ -589,7 +595,88 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_PrintBridgeDevices_TokenHash");
 
+                    b.HasIndex("TenantId", "InstallationId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PrintBridgeDevices_TenantId_InstallationId_Active")
+                        .HasFilter("[InstallationId] IS NOT NULL AND [RemovedAtUtc] IS NULL");
+
+                    b.HasIndex("TenantId", "RemovedAtUtc")
+                        .HasDatabaseName("IX_PrintBridgeDevices_TenantId_RemovedAtUtc");
+
                     b.ToTable("PrintBridgeDevices", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.PrintBridgeSetupSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(88)
+                        .HasColumnType("nvarchar(88)");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CompletionCredentialHash")
+                        .HasMaxLength(88)
+                        .HasColumnType("nvarchar(88)");
+
+                    b.Property<bool>("ConnectionVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExchangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FailedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid?>("PrintBridgeDeviceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ServerUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("SetupMode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodeHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PrintBridgeSetupSessions_CodeHash");
+
+                    b.HasIndex("ExpiresAtUtc")
+                        .HasDatabaseName("IX_PrintBridgeSetupSessions_ExpiresAtUtc");
+
+                    b.HasIndex("PrintBridgeDeviceId");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_PrintBridgeSetupSessions_TenantId");
+
+                    b.ToTable("PrintBridgeSetupSessions", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Central.Street", b =>
@@ -848,6 +935,24 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.PrintBridgeSetupSession", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Central.PrintBridgeDevice", "Device")
+                        .WithMany()
+                        .HasForeignKey("PrintBridgeDeviceId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Wasla.Domain.Entities.Central.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Device");
 
                     b.Navigation("Tenant");
                 });

@@ -33,7 +33,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Wasla.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="ReferenceData/turkey-reference-data.json" />
+    <EmbeddedResource Include="Platform/Mock/Scenarios/*.json">
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
     <EmbeddedResource Include="Email/Templates/*.html">
       <WithCulture>false</WithCulture>
     </EmbeddedResource>

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Email;
 using Wasla.Infrastructure.Email;
 using Wasla.Infrastructure.Options;
@@ -9,10 +10,14 @@ public static class EmailServiceCollectionExtensions
 {
     public static IServiceCollection AddWaslaEmail(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.AddOptions<EmailOptions>()
+            .Bind(configuration.GetSection(EmailOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<EmailOptions>, EmailOptionsValidator>();
 
         services.AddSingleton<EmailTemplateRenderer>();
         services.AddSingleton<ProvisioningEmailFactory>();
+        services.AddSingleton<PasswordResetEmailFactory>();
 
         var provider = configuration.GetSection(EmailOptions.SectionName).GetValue<string>("Provider") ?? "Log";
 

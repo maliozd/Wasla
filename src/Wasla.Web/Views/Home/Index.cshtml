@@ -1,4 +1,4 @@
-﻿@using System.Globalization
+@using System.Globalization
 @using Microsoft.Extensions.Localization
 @using Wasla.Application.Abstractions.Plans
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
@@ -15,6 +15,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="@L["Landing.MetaDescription"]" />
     <title>@L["Landing.Title"] — @L["Landing.Subtitle"]</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -25,11 +26,11 @@
         <link rel="stylesheet" href="~/css/rtl.css" asp-append-version="true" />
     }
 </head>
-<body class="oh-landing">
-<header class="oh-landing-header border-bottom">
+<body class="wasla-landing">
+<header class="wasla-landing-header border-bottom">
     <div class="container py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="d-flex align-items-center gap-2">
-            <div class="oh-logo-mark rounded-3 d-flex align-items-center justify-content-center" aria-hidden="true">
+            <div class="wasla-logo-mark rounded-3 d-flex align-items-center justify-content-center" aria-hidden="true">
                 <i class="bi bi-basket2-fill text-white"></i>
             </div>
             <div>
@@ -52,6 +53,9 @@
                     <li>
                         <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ar-SA" asp-route-returnUrl="@returnUrl">العربية</a>
                     </li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ru-RU" asp-route-returnUrl="@returnUrl">Русский</a>
+                    </li>
                 </ul>
             </div>
             <a class="btn btn-outline-secondary btn-sm" href="#pricing">@L["Pricing.NavTitle"]</a>
@@ -63,12 +67,12 @@
 </header>
 
 <main>
-    <section class="oh-hero py-5">
+    <section class="wasla-hero py-5">
         <div class="container">
             <div class="row align-items-center g-4 g-lg-5">
                 <div class="col-lg-6">
-                    <h1 class="oh-hero-title display-5 fw-bold mb-3">@L["Landing.HeroTitle"]</h1>
-                    <p class="oh-hero-sub lead text-secondary mb-4">@L["Landing.HeroSubtitle"]</p>
+                    <h1 class="wasla-hero-title display-5 fw-bold mb-3">@L["Landing.HeroTitle"]</h1>
+                    <p class="wasla-hero-sub lead text-secondary mb-4">@L["Landing.HeroSubtitle"]</p>
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <a class="btn btn-primary btn-lg rounded-pill px-4" href="/signup">
                             <i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>@L["Signup.StartNow"]
@@ -80,15 +84,50 @@
                     <p class="small text-muted mb-0">@L["Landing.TenantNote"]</p>
                 </div>
                 <div class="col-lg-6">
-                    <div class="oh-hero-illu rounded-4 border bg-white p-3 p-md-4 shadow">
+                    <div class="wasla-hero-illu rounded-4 border bg-white p-3 p-md-4 shadow" aria-hidden="true">
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                             <span class="fw-semibold text-dark">Wasla</span>
-                            <span class="badge rounded-pill oh-badge-live">@L["Landing.Live"]</span>
+                            <span class="badge rounded-pill wasla-badge-live">@L["Landing.Live"]</span>
                         </div>
-                        <div class="oh-illu-rows">
-                            <div class="oh-illu-row"></div>
-                            <div class="oh-illu-row oh-illu-row--short"></div>
-                            <div class="oh-illu-row"></div>
+                        <div class="wasla-illu-board">
+                            <div class="wasla-illu-order">
+                                <div class="wasla-illu-order-top">
+                                    <div class="wasla-illu-order-id">
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">@L["Landing.NewOrder"]</span>
+                                        <span class="font-monospace fw-semibold">YS-901</span>
+                                    </div>
+                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"Yemeksepeti", (string?)null))
+                                </div>
+                                <div class="wasla-illu-order-meta">
+                                    <span class="font-monospace text-secondary">₺132,00</span>
+                                    <span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span>
+                                </div>
+                            </div>
+                            <div class="wasla-illu-order">
+                                <div class="wasla-illu-order-top">
+                                    <div class="wasla-illu-order-id">
+                                        <span class="font-monospace fw-semibold">GY-204</span>
+                                    </div>
+                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"GetirYemek", (string?)null))
+                                </div>
+                                <div class="wasla-illu-order-meta">
+                                    <span class="font-monospace text-secondary">₺67,25</span>
+                                    <span class="badge bg-success-subtle text-success border">@L["Landing.Delivered"]</span>
+                                </div>
+                            </div>
+                            <div class="wasla-illu-order">
+                                <div class="wasla-illu-order-top">
+                                    <div class="wasla-illu-order-id">
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">@L["Landing.NewOrder"]</span>
+                                        <span class="font-monospace fw-semibold">TY-991</span>
+                                    </div>
+                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"TrendyolYemek", (string?)null))
+                                </div>
+                                <div class="wasla-illu-order-meta">
+                                    <span class="font-monospace text-secondary">₺341,00</span>
+                                    <span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -96,7 +135,32 @@
         </div>
     </section>
 
-    <section class="py-5 oh-section-muted" id="mockup">
+    <section class="py-5 bg-white" id="about">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold mb-3">@L["Landing.WhatIsWaslaTitle"]</h2>
+                    <p class="lead text-secondary mb-0">@L["Landing.WhatIsWaslaLead"]</p>
+                </div>
+            </div>
+            <div class="row g-3 g-lg-4 justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="wasla-intro-card h-100 rounded-4 border bg-light p-4">
+                        <div class="wasla-benefit-icon mb-3"><i class="bi bi-tablet" aria-hidden="true"></i></div>
+                        <p class="text-secondary mb-0">@L["Landing.WhatIsWaslaProblem"]</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-5">
+                    <div class="wasla-intro-card h-100 rounded-4 border-0 bg-white p-4 shadow-sm">
+                        <div class="wasla-benefit-icon mb-3"><i class="bi bi-grid-1x2" aria-hidden="true"></i></div>
+                        <p class="text-secondary mb-0">@L["Landing.WhatIsWaslaSolution"]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 wasla-section-muted" id="mockup">
         <div class="container">
             <div class="row justify-content-center text-center mb-4">
                 <div class="col-lg-8">
@@ -106,10 +170,10 @@
             </div>
             <div class="row justify-content-center">
                 <div class="col-xl-9">
-                    <div class="card border-0 shadow-sm oh-mockup-card">
+                    <div class="card border-0 shadow-sm wasla-mockup-card">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 oh-landing-table">
-                                <thead class="oh-landing-thead">
+                            <table class="table table-hover align-middle mb-0 wasla-landing-table">
+                                <thead class="wasla-landing-thead">
                                     <tr>
                                         <th scope="col">@L["Orders.OrderCode"]</th>
                                         <th scope="col">@L["Orders.Platform"]</th>
@@ -124,7 +188,9 @@
                                             <span class="font-monospace">YS-901</span>
                                             <i class="bi bi-bell-fill text-primary small ms-1" title="@L["Landing.SoundNotification"]" aria-label="@L["Landing.SoundNotification"]"></i>
                                         </td>
-                                        <td><span class="oh-platform-tile">Yemeksepeti</span></td>
+                                        <td>
+                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"Yemeksepeti", (string?)null))
+                                        </td>
                                         <td class="text-end font-monospace">₺132,00</td>
                                         <td><span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span></td>
                                     </tr>
@@ -133,7 +199,9 @@
                                             <span class="font-monospace">GY-204</span>
                                             <i class="bi bi-volume-up-fill text-primary small ms-1" title="@L["Landing.SoundNotification"]" aria-label="@L["Landing.SoundNotification"]"></i>
                                         </td>
-                                        <td><span class="oh-platform-tile">GetirYemek</span></td>
+                                        <td>
+                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"GetirYemek", (string?)null))
+                                        </td>
                                         <td class="text-end font-monospace">₺67,25</td>
                                         <td><span class="badge bg-success-subtle text-success border">@L["Landing.Delivered"]</span></td>
                                     </tr>
@@ -142,7 +210,9 @@
                                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1">@L["Landing.NewOrder"]</span>
                                             <span class="font-monospace">TY-991</span>
                                         </td>
-                                        <td><span class="oh-platform-tile">TrendyolYemek</span></td>
+                                        <td>
+                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"TrendyolYemek", (string?)null))
+                                        </td>
                                         <td class="text-end font-monospace">₺341,00</td>
                                         <td><span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span></td>
                                     </tr>
@@ -164,89 +234,158 @@
                 </div>
             </div>
             <div class="d-flex flex-wrap justify-content-center gap-2 gap-md-3">
-                <span class="oh-platform-pill">Yemeksepeti</span>
-                <span class="oh-platform-pill">GetirYemek</span>
-                <span class="oh-platform-pill">TrendyolYemek</span>
-                <span class="oh-platform-pill">Trendyol GO</span>
+                <span class="wasla-platform-pill">Yemeksepeti</span>
+                <span class="wasla-platform-pill">GetirYemek</span>
+                <span class="wasla-platform-pill">TrendyolYemek</span>
+                <span class="wasla-platform-pill">Trendyol GO</span>
             </div>
         </div>
     </section>
 
-    <section class="py-5 oh-section-muted" id="benefits">
-        <div class="container">
-            <div class="row justify-content-center text-center mb-4">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.BenefitsTitle"]</h2>
-                    <p class="text-secondary mb-0">@L["Landing.BenefitsDescription"]</p>
-                </div>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-6 col-lg-3">
-                    <div class="oh-benefit-card h-100 border-0 bg-white rounded-4 p-4 shadow-sm">
-                        <div class="oh-benefit-icon mb-2"><i class="bi bi-check2-circle"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.BenefitMissedOrders"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.BenefitMissedOrdersDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="oh-benefit-card h-100 border-0 bg-white rounded-4 p-4 shadow-sm">
-                        <div class="oh-benefit-icon mb-2"><i class="bi bi-layout-sidebar"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.BenefitLessSwitching"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.BenefitLessSwitchingDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="oh-benefit-card h-100 border-0 bg-white rounded-4 p-4 shadow-sm">
-                        <div class="oh-benefit-icon mb-2"><i class="bi bi-diagram-3"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.BenefitBranchTracking"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.BenefitBranchTrackingDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="oh-benefit-card h-100 border-0 bg-white rounded-4 p-4 shadow-sm">
-                        <div class="oh-benefit-icon mb-2"><i class="bi bi-people"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.BenefitSimpleOperation"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.BenefitSimpleOperationDescription"]</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-5 bg-white" id="how">
+    <section class="py-5 wasla-section-muted" id="how">
         <div class="container">
             <div class="row justify-content-center text-center mb-4">
                 <div class="col-lg-8">
                     <h2 class="h3 fw-bold mb-2">@L["Landing.HowItWorksTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.HowItWorksDescription"]</p>
+                </div>
+            </div>
+            <div class="wasla-flow-grid">
+                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="wasla-step-num mb-2" aria-hidden="true">1</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepConnectionsTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepConnectionsDescription"]</p>
+                </div>
+                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="wasla-step-num mb-2" aria-hidden="true">2</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepTrackTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepTrackDescription"]</p>
+                </div>
+                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="wasla-step-num mb-2" aria-hidden="true">3</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepReviewTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepReviewDescription"]</p>
+                </div>
+                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="wasla-step-num mb-2" aria-hidden="true">4</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepKitchenTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepKitchenDescription"]</p>
+                </div>
+                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
+                    <div class="wasla-step-num mb-2" aria-hidden="true">5</div>
+                    <h3 class="h6 fw-bold">@L["Landing.StepPrintTitle"]</h3>
+                    <p class="text-secondary small mb-0">@L["Landing.StepPrintDescription"]</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 bg-white" id="benefits">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold mb-2">@L["Landing.ProblemsTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.ProblemsDescription"]</p>
                 </div>
             </div>
             <div class="row g-3">
                 <div class="col-sm-6 col-lg-3">
-                    <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="oh-step-num mb-2">1</div>
-                        <h3 class="h6 fw-bold">@L["Landing.StepConnectionsTitle"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.StepConnectionsDescription"]</p>
+                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-collection" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemUnifiedOrders"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemUnifiedOrdersDescription"]</p>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="oh-step-num mb-2">2</div>
-                        <h3 class="h6 fw-bold">@L["Landing.StepTrackTitle"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.StepTrackDescription"]</p>
+                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-phone" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemFewerDevices"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemFewerDevicesDescription"]</p>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="oh-step-num mb-2">3</div>
-                        <h3 class="h6 fw-bold">@L["Landing.StepNotifyTitle"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.StepNotifyDescription"]</p>
+                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-check2-circle" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemMissedOrders"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemMissedOrdersDescription"]</p>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <div class="oh-step-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="oh-step-num mb-2">4</div>
-                        <h3 class="h6 fw-bold">@L["Landing.StepManageTitle"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.StepManageDescription"]</p>
+                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemKitchenCoordination"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemKitchenCoordinationDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-printer" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemAutoPrint"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemAutoPrintDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-clock-history" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemBusyHours"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemBusyHoursDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-layout-sidebar" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemLessSwitching"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemLessSwitchingDescription"]</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
+                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-eye" aria-hidden="true"></i></div>
+                        <h3 class="h6 fw-bold">@L["Landing.ProblemMonitorProcess"]</h3>
+                        <p class="text-secondary small mb-0">@L["Landing.ProblemMonitorProcessDescription"]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 wasla-section-muted" id="audience">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-4">
+                <div class="col-lg-8">
+                    <h2 class="h3 fw-bold mb-2">@L["Landing.WhoIsItForTitle"]</h2>
+                    <p class="text-secondary mb-0">@L["Landing.WhoIsItForDescription"]</p>
+                </div>
+            </div>
+            <div class="row g-2 g-md-3 justify-content-center">
+                <div class="col-sm-6 col-lg-4">
+                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-bag-check text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceDelivery"]</span>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-layers text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceMultiPlatform"]</span>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-building text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceChains"]</span>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-fire text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceKitchenWorkflow"]</span>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-printer text-primary flex-shrink-0" aria-hidden="true"></i>
+                        <span class="small fw-semibold">@L["Landing.AudienceAutoPrint"]</span>
                     </div>
                 </div>
             </div>
@@ -265,20 +404,20 @@
                 @foreach (var plan in PlanCatalog.GetPublicPlans())
                 {
                     <div class="col-md-6 col-xl-3">
-                        <div class="oh-pricing-card h-100 d-flex flex-column @(plan.IsRecommended ? "oh-pricing-card--featured" : "")">
+                        <div class="wasla-pricing-card h-100 d-flex flex-column @(plan.IsRecommended ? "wasla-pricing-card--featured" : "")">
                             @if (plan.IsRecommended)
                             {
-                                <div class="oh-pricing-badge">@L["Pricing.Recommended"]</div>
+                                <div class="wasla-pricing-badge">@L["Pricing.Recommended"]</div>
                             }
                             <h3 class="h5 fw-bold mb-1">@L[plan.DisplayNameKey]</h3>
                             <p class="text-secondary small mb-3">@L[plan.DescriptionKey]</p>
-                            <div class="oh-pricing-price mb-2">
-                                <span class="oh-pricing-amount">@L[plan.PriceLabelKey]</span>
+                            <div class="wasla-pricing-price mb-2">
+                                <span class="wasla-pricing-amount">@L[plan.PriceLabelKey]</span>
                             </div>
-                            <div class="oh-pricing-device-limit small fw-semibold text-primary mb-3">
+                            <div class="wasla-pricing-device-limit small fw-semibold text-primary mb-3">
                                 <i class="bi bi-printer me-1" aria-hidden="true"></i>@L[plan.DeviceLimitKey]
                             </div>
-                            <ul class="oh-pricing-features list-unstyled small mb-4 flex-grow-1">
+                            <ul class="wasla-pricing-features list-unstyled small mb-4 flex-grow-1">
                                 @foreach (var featureKey in plan.FeatureKeys)
                                 {
                                     <li><i class="bi bi-check2 text-success me-2" aria-hidden="true"></i>@L[featureKey]</li>
@@ -304,12 +443,12 @@
         </div>
     </section>
 
-    <section class="py-5 oh-section-muted" id="trust">
+    <section class="py-5 wasla-section-muted" id="trust">
         <div class="container">
             <div class="row justify-content-center text-center">
                 <div class="col-lg-8">
-                    <div class="oh-trust-bubble mx-auto p-4 p-md-5 bg-white rounded-4 shadow-sm border-0">
-                        <i class="bi bi-shield-check oh-trust-icon d-block mb-3" aria-hidden="true"></i>
+                    <div class="wasla-trust-bubble mx-auto p-4 p-md-5 bg-white rounded-4 shadow-sm border-0">
+                        <i class="bi bi-shield-check wasla-trust-icon d-block mb-3" aria-hidden="true"></i>
                         <h2 class="h4 fw-bold mb-2">@L["Landing.TrustTitle"]</h2>
                         <p class="text-secondary mb-0">@L["Landing.TrustDescription"]</p>
                     </div>
@@ -318,7 +457,7 @@
         </div>
     </section>
 
-    <section class="oh-cta-section py-5 text-white" id="cta">
+    <section class="wasla-cta-section py-5 text-white" id="cta">
         <div class="container">
             <div class="row justify-content-center text-center">
                 <div class="col-lg-8">
@@ -326,10 +465,10 @@
                     <p class="mb-4 opacity-90">@L["Landing.FinalCtaDescription"]</p>
                     <div class="d-flex flex-wrap justify-content-center gap-2">
                         <a class="btn btn-light btn-lg rounded-pill px-4" href="/signup">
-                            <i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>@L["Signup.StartNow"]
+                            <i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>@L["Landing.FinalCtaButton"]
                         </a>
-                        <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="/auth/login">
-                            <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>@L["Landing.CustomerLogin"]
+                        <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="#pricing">
+                            @L["Pricing.ViewPlans"]
                         </a>
                     </div>
                 </div>
@@ -338,7 +477,7 @@
     </section>
 </main>
 
-<footer class="oh-landing-footer border-top py-4">
+<footer class="wasla-landing-footer border-top py-4">
     <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="text-muted small">© @DateTime.UtcNow.Year Wasla</div>
         <div class="small text-muted">@L["Landing.FooterTagline"]</div>

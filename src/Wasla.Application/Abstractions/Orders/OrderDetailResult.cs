@@ -12,6 +12,7 @@ public sealed class OrderDetailResult
     public required string CustomerName { get; init; }
     public required string CustomerPhone { get; init; }
     public required string CustomerAddress { get; init; }
+    public string? CustomerNote { get; init; }
 
     public required decimal TotalAmount { get; init; }
     public required decimal DeliveryFee { get; init; }

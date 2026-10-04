@@ -1,0 +1,1755 @@
+/* Wasla tenant visual foundation.
+   Load after wasla-theme.css and site.css, only from _TenantLayout.
+   Tokens live on body.wasla-tenant-shell so Live Screen / public / admin
+   keep the shared :root baseline. Namespaced classes only. */
+
+body.wasla-tenant-shell {
+  --wasla-accent: #E87342;
+  --wasla-accent-hover: #B94F2A;
+  --wasla-accent-soft: #FBE9DF;
+  --wasla-accent-border: rgba(232, 115, 66, 0.35);
+  --wasla-accent-text: #ffffff;
+
+  --wasla-canvas: #F7F4EE;
+  --wasla-surface: #FFFEFA;
+  --wasla-surface-elevated: #ffffff;
+  --wasla-surface-muted: #F4F0E9;
+
+  --wasla-border: #E3DDD3;
+  --wasla-border-strong: #D3CABD;
+
+  --wasla-text: #28231F;
+  --wasla-text-secondary: #746D66;
+  --wasla-text-muted: #746D66;
+
+  --wasla-success: #2f6f4e;
+  --wasla-success-soft: rgba(47, 111, 78, 0.12);
+  --wasla-warning: #b7791f;
+  --wasla-warning-soft: rgba(183, 121, 31, 0.16);
+  --wasla-danger: #b4232c;
+  --wasla-danger-soft: rgba(180, 35, 44, 0.12);
+  --wasla-info: #3b6ea5;
+  --wasla-info-soft: rgba(59, 110, 165, 0.12);
+
+  --wasla-focus: rgba(255, 107, 53, 0.35);
+  --wasla-shadow-sm: 0 1px 2px rgba(42, 36, 31, 0.05);
+  --wasla-shadow-md: 0 6px 18px rgba(42, 36, 31, 0.06);
+  --wasla-radius-sm: 0.4rem;
+  --wasla-radius-md: 0.65rem;
+  --wasla-radius-lg: 0.9rem;
+  --wasla-space-1: 0.25rem;
+  --wasla-space-2: 0.5rem;
+  --wasla-space-3: 0.75rem;
+  --wasla-space-4: 1rem;
+  --wasla-space-5: 1.25rem;
+  --wasla-space-6: 1.5rem;
+  --wasla-control-h: 2.5rem;
+  --wasla-transition: 140ms ease;
+  --wasla-content-wide: 84rem;
+  --wasla-sidebar-width: 252px;
+  --wasla-sidebar-collapsed-width: 68px;
+
+  --color-bg: var(--wasla-canvas);
+  --color-surface: var(--wasla-surface);
+  --color-surface-elevated: var(--wasla-surface-elevated);
+  --color-surface-muted: var(--wasla-surface-muted);
+  --color-border: var(--wasla-border);
+  --color-border-strong: var(--wasla-border-strong);
+  --color-text: var(--wasla-text);
+  --color-text-secondary: var(--wasla-text-secondary);
+  --color-text-muted: var(--wasla-text-muted);
+  --color-sidebar-bg: #F1EDE6;
+  --color-sidebar-surface: var(--wasla-surface);
+  --color-sidebar-text: var(--wasla-text);
+  --color-sidebar-muted: var(--wasla-text-muted);
+  --color-sidebar-active-bg: var(--wasla-accent-soft);
+  --color-sidebar-active-text: var(--wasla-text);
+
+  --wasla-bg: var(--wasla-canvas);
+  --wasla-muted: var(--wasla-text-muted);
+  --wasla-sidebar: var(--color-sidebar-bg);
+  --wasla-sidebar-text: var(--color-sidebar-text);
+  --wasla-sidebar-bg: var(--color-sidebar-bg);
+  --wasla-topbar-bg: var(--wasla-surface);
+
+  --bs-body-bg: var(--wasla-canvas);
+  --bs-body-color: var(--wasla-text);
+  --bs-border-color: var(--wasla-border);
+  --bs-secondary-color: var(--wasla-text-muted);
+  --bs-tertiary-color: var(--wasla-text-secondary);
+  --bs-tertiary-bg: var(--wasla-surface-muted);
+
+  background: var(--wasla-canvas);
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell :focus-visible {
+  outline: 2px solid var(--wasla-accent);
+  outline-offset: 2px;
+}
+
+/* --- Tenant shell / sidebar --- */
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .app-sidebar {
+  background: var(--color-sidebar-bg) !important;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-area {
+  padding: 1rem 0.85rem 0.9rem;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  flex-shrink: 0;
+  border-radius: 0.45rem;
+  background: var(--wasla-accent);
+  color: var(--wasla-accent-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand .brand-text {
+  color: var(--wasla-text) !important;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-tenant-name {
+  margin-top: 0.45rem;
+  padding-inline-start: 0.1rem;
+  color: var(--wasla-text-muted) !important;
+  font-weight: 500;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-main {
+  padding: 0.55rem 0.7rem 0.35rem;
+  gap: 0.15rem;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-main .nav-link {
+  min-height: 2.55rem;
+  border-radius: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-main .nav-link i {
+  color: var(--wasla-text-secondary);
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active:not(.wasla-sidebar-nav-sub__link),
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active:not(.wasla-sidebar-nav-sub__link):focus,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active:not(.wasla-sidebar-nav-sub__link):hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active:not(.wasla-sidebar-nav-sub__link):focus:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item.active,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item.active:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item.active:focus {
+  background: var(--wasla-accent-soft) !important;
+  color: var(--wasla-text) !important;
+  border-inline-start: 3px solid var(--wasla-accent) !important;
+  border-inline-end: 0 !important;
+  padding-inline-start: calc(0.625rem - 3px) !important;
+  padding-inline-end: 0.625rem !important;
+  box-shadow: none;
+  font-weight: 650;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active i,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active .me-2,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active .nav-text {
+  color: var(--wasla-text) !important;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-group,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-group--open {
+  background: transparent !important;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-group__head {
+  font-weight: 600;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-parent--current,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-parent--current:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-parent--current:focus,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.wasla-sidebar-nav-parent--current,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.wasla-sidebar-nav-parent--current:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.wasla-sidebar-nav-parent--current:focus-visible {
+  background: transparent !important;
+  color: var(--wasla-text) !important;
+  border-inline-start: 0 !important;
+  border-inline-end: 0 !important;
+  box-shadow: none;
+  font-weight: 650;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-parent--current i,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-parent--current .nav-text,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.wasla-sidebar-nav-parent--current i,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.wasla-sidebar-nav-parent--current .nav-text,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.wasla-sidebar-nav-parent--current .wasla-sidebar-action-label {
+  color: var(--wasla-text) !important;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-sub {
+  list-style: none;
+  margin: 0.1rem 0 0.15rem;
+  margin-inline-start: 1.15rem;
+  padding: 0;
+  padding-inline-start: 0.55rem;
+  border: 0;
+  border-inline-start: 1px solid var(--wasla-border);
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link {
+  min-height: 2.375rem;
+  padding-block: 0.25rem !important;
+  padding-inline: 0.6rem !important;
+  border-radius: 0.45rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link:focus-visible {
+  background: color-mix(in srgb, var(--wasla-accent) 10%, transparent);
+  color: var(--wasla-text);
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link.active,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link.active:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link.active:focus-visible,
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .sidebar-menu .wasla-sidebar-nav-sub__link.active {
+  background: var(--wasla-accent-soft) !important;
+  color: var(--wasla-text) !important;
+  font-weight: 650;
+  border: 0 !important;
+  border-inline-start: 3px solid var(--wasla-accent) !important;
+  border-radius: 0.45rem;
+  box-shadow: none !important;
+  padding-inline-start: calc(0.6rem - 3px) !important;
+  padding-inline-end: 0.6rem !important;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-bottom {
+  gap: 0.35rem;
+  padding-top: 0.65rem;
+  background: color-mix(in srgb, var(--wasla-surface) 70%, var(--wasla-sidebar-bg));
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-user {
+  background: color-mix(in srgb, var(--wasla-surface) 80%, transparent);
+  color: var(--wasla-text-secondary) !important;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.active,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.active:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.active:focus-visible {
+  background: transparent !important;
+  color: var(--wasla-text) !important;
+  border-inline-start: 0 !important;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-mark {
+  margin-inline: auto;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-row {
+  flex-direction: column;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-link.active,
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-link.active i,
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-settings-toggle.wasla-sidebar-nav-parent--current {
+  background: var(--wasla-accent-soft) !important;
+  color: var(--wasla-text) !important;
+  border-inline-start: 0;
+  padding-inline: 0.5rem;
+}
+
+.wasla-tenant-nav-bar,
+.wasla-tenant-nav-close,
+.wasla-tenant-nav-backdrop {
+  display: none;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-nav-sub {
+  display: none;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .brand-text,
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-tenant-name,
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-text,
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-label,
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-user-label {
+  display: none !important;
+}
+
+/*
+  Tenant-shell geometry. Wasla is the only owner.
+  AdminLTE PushMenu is not loaded from _TenantLayout, and these rules do not
+  depend on sidebar-expand-lg, layout-fixed, sidebar-open, or sidebar-collapse.
+
+  Base AdminLTE still ships:
+  .app-wrapper { display:grid; grid-template-columns:auto 1fr; max-width:100vw }
+  .app-sidebar { grid-area:lte-app-sidebar; min-width/max-width:var(--lte-sidebar-width) }
+  The shell below replaces that geometry with fixed positioning.
+*/
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .app-wrapper {
+  direction: ltr;
+}
+
+html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell #app-sidebar-tenant,
+html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell #tenant-main {
+  direction: rtl;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .app-wrapper {
+  display: block !important;
+  grid-template-areas: none !important;
+  grid-template-rows: none !important;
+  grid-template-columns: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  filter: none;
+  perspective: none;
+  contain: none;
+  isolation: auto;
+  z-index: auto;
+  overflow: visible !important;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-overlay {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .app-sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  grid-area: auto !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-inline: 0 !important;
+  z-index: 1060 !important;
+  transform: none;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .app-main,
+body.wasla-tenant.wasla-app.wasla-tenant-shell #tenant-main {
+  display: block !important;
+  position: relative;
+  float: none !important;
+  min-width: 0 !important;
+  transform: none !important;
+  left: auto !important;
+  right: auto !important;
+  inset: auto !important;
+  z-index: auto;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .app-content,
+body.wasla-tenant.wasla-app.wasla-tenant-shell #tenant-main .container-fluid,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-dashboard,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-users,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-user-create,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connection-create,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  transform: none;
+}
+
+@media (max-width: 991.98px) {
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding: 0.5rem 0 0.75rem;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid var(--wasla-border-strong);
+    border-radius: 0.5rem;
+    background: var(--wasla-surface);
+    color: var(--wasla-text);
+    font-size: 0.9rem;
+    font-weight: 650;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-area {
+    position: relative;
+    padding-inline-end: 4.25rem;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-close {
+    display: inline-flex;
+    position: absolute;
+    inset-block-start: 12px;
+    inset-inline-end: 12px;
+    z-index: 2;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--wasla-text-secondary);
+    box-shadow: none;
+    pointer-events: auto;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-close:hover,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-close:focus-visible {
+    background: var(--wasla-surface-muted);
+    color: var(--wasla-text);
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-collapse-btn {
+    display: none !important;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .app-main,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell #tenant-main,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-main,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.wasla-nav-open .app-main {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-inline-start: 0 !important;
+    margin-inline-end: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell .app-sidebar {
+    left: 0 !important;
+    right: auto !important;
+    width: var(--wasla-sidebar-width) !important;
+    min-width: var(--wasla-sidebar-width) !important;
+    max-width: var(--wasla-sidebar-width) !important;
+    transform: translateX(-100%);
+    /* Beats AdminLTE's body:not(.app-loaded) .app-sidebar { transition: none !important }. */
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    pointer-events: none;
+  }
+
+  html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell .app-sidebar {
+    left: auto !important;
+    right: 0 !important;
+    width: var(--wasla-sidebar-width) !important;
+    min-width: var(--wasla-sidebar-width) !important;
+    max-width: var(--wasla-sidebar-width) !important;
+    transform: translateX(100%);
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    pointer-events: none;
+  }
+
+  html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell.wasla-nav-open .app-sidebar,
+  html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell.wasla-nav-open .app-sidebar {
+    transform: translateX(0);
+    pointer-events: auto !important;
+    box-shadow: var(--wasla-shadow-md);
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+    background: rgba(40, 35, 31, 0.42);
+    pointer-events: auto;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-backdrop[hidden] {
+    display: none;
+    pointer-events: none;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.wasla-nav-lock {
+    overflow: hidden;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-row {
+    flex-direction: row;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-mark {
+    margin-inline: 0;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .brand-text,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-tenant-name,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-text,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-label,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-user-label {
+    display: block !important;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-nav-sub {
+    display: block;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-link,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-btn,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-user {
+    justify-content: flex-start;
+    padding-inline: 0.625rem;
+  }
+
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-btn::after {
+    display: block;
+  }
+}
+
+@media (min-width: 992px) {
+  html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell .app-sidebar {
+    left: 0 !important;
+    right: auto !important;
+    width: var(--wasla-sidebar-width) !important;
+    min-width: var(--wasla-sidebar-width) !important;
+    max-width: var(--wasla-sidebar-width) !important;
+    transform: none !important;
+    transition: none !important;
+    pointer-events: auto !important;
+  }
+
+  html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell .app-sidebar {
+    left: auto !important;
+    right: 0 !important;
+    width: var(--wasla-sidebar-width) !important;
+    min-width: var(--wasla-sidebar-width) !important;
+    max-width: var(--wasla-sidebar-width) !important;
+    transform: none !important;
+    transition: none !important;
+    pointer-events: auto !important;
+  }
+
+  html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar {
+    width: var(--wasla-sidebar-collapsed-width) !important;
+    min-width: var(--wasla-sidebar-collapsed-width) !important;
+    max-width: var(--wasla-sidebar-collapsed-width) !important;
+  }
+
+  html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar {
+    width: var(--wasla-sidebar-collapsed-width) !important;
+    min-width: var(--wasla-sidebar-collapsed-width) !important;
+    max-width: var(--wasla-sidebar-collapsed-width) !important;
+  }
+
+  html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell .app-main,
+  html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell #tenant-main {
+    margin-left: var(--wasla-sidebar-width) !important;
+    margin-right: 0 !important;
+    margin-inline-start: var(--wasla-sidebar-width) !important;
+    margin-inline-end: 0 !important;
+    width: calc(100% - var(--wasla-sidebar-width)) !important;
+    max-width: calc(100% - var(--wasla-sidebar-width)) !important;
+  }
+
+  html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell .app-main,
+  html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell #tenant-main {
+    margin-left: 0 !important;
+    margin-right: var(--wasla-sidebar-width) !important;
+    margin-inline-start: var(--wasla-sidebar-width) !important;
+    margin-inline-end: 0 !important;
+    width: calc(100% - var(--wasla-sidebar-width)) !important;
+    max-width: calc(100% - var(--wasla-sidebar-width)) !important;
+  }
+
+  html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-main,
+  html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed #tenant-main {
+    margin-left: var(--wasla-sidebar-collapsed-width) !important;
+    margin-right: 0 !important;
+    margin-inline-start: var(--wasla-sidebar-collapsed-width) !important;
+    width: calc(100% - var(--wasla-sidebar-collapsed-width)) !important;
+    max-width: calc(100% - var(--wasla-sidebar-collapsed-width)) !important;
+  }
+
+  html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-main,
+  html[dir="rtl"] body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed #tenant-main {
+    margin-left: 0 !important;
+    margin-right: var(--wasla-sidebar-collapsed-width) !important;
+    margin-inline-start: var(--wasla-sidebar-collapsed-width) !important;
+    width: calc(100% - var(--wasla-sidebar-collapsed-width)) !important;
+    max-width: calc(100% - var(--wasla-sidebar-collapsed-width)) !important;
+  }
+}
+
+/* --- Reusable page header / buttons / surfaces --- */
+
+.wasla-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wasla-space-4);
+  margin-bottom: var(--wasla-space-5);
+}
+
+.wasla-page-header__main {
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.wasla-page-header__eyebrow {
+  margin: 0 0 0.3rem;
+  color: var(--wasla-text-muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wasla-page-header__title {
+  margin: 0;
+  color: var(--wasla-text);
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.wasla-page-header__description {
+  margin: 0.4rem 0 0;
+  max-width: 38rem;
+  color: var(--wasla-text-secondary);
+  font-size: 0.925rem;
+  line-height: 1.45;
+}
+
+.wasla-page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wasla-space-2);
+}
+
+.wasla-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: var(--wasla-control-h);
+  padding: 0 0.95rem;
+  border-radius: var(--wasla-radius-md);
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background-color var(--wasla-transition), border-color var(--wasla-transition), color var(--wasla-transition);
+}
+
+.wasla-btn i {
+  font-size: 1rem;
+}
+
+.wasla-btn--primary {
+  background: var(--wasla-accent);
+  border-color: var(--wasla-accent);
+  color: var(--wasla-accent-text);
+}
+
+.wasla-btn--primary:hover,
+.wasla-btn--primary:focus-visible {
+  background: var(--wasla-accent-hover);
+  border-color: var(--wasla-accent-hover);
+  color: var(--wasla-accent-text);
+}
+
+.wasla-btn--quiet {
+  background: transparent;
+  border-color: var(--wasla-border-strong);
+  color: var(--wasla-text-secondary);
+  min-height: 2.25rem;
+  min-width: 2.25rem;
+  padding-inline: 0.7rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.wasla-btn--quiet:hover,
+.wasla-btn--quiet:focus-visible {
+  background: var(--wasla-surface-muted);
+  color: var(--wasla-text);
+}
+
+.wasla-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wasla-space-2);
+  margin-bottom: var(--wasla-space-4);
+}
+
+.wasla-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 7.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--wasla-border);
+  border-radius: var(--wasla-radius-md);
+  background: var(--wasla-surface);
+  box-shadow: var(--wasla-shadow-sm);
+}
+
+.wasla-stat__label {
+  color: var(--wasla-text-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wasla-stat__value {
+  color: var(--wasla-text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.wasla-surface {
+  background: var(--wasla-surface);
+  border: 1px solid var(--wasla-border);
+  border-radius: var(--wasla-radius-lg);
+  box-shadow: var(--wasla-shadow-sm);
+}
+
+.wasla-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--wasla-space-3);
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--wasla-border);
+}
+
+.wasla-toolbar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 10rem;
+  flex: 1 1 12rem;
+}
+
+.wasla-toolbar__field--narrow {
+  flex: 0 1 10rem;
+  min-width: 8rem;
+}
+
+.wasla-toolbar__label {
+  color: var(--wasla-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.wasla-toolbar__control {
+  min-height: 2.25rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--wasla-border-strong);
+  border-radius: var(--wasla-radius-sm);
+  background: var(--wasla-surface-elevated);
+  color: var(--wasla-text);
+  font-size: 0.875rem;
+}
+
+/* Tables scroll sideways only; a vertical scrollbar here would only ever show a stray pixel. */
+.wasla-table-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.wasla-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.wasla-table th,
+.wasla-table td {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--wasla-border);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.wasla-table th {
+  color: var(--wasla-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--wasla-surface-muted) 70%, var(--wasla-surface));
+}
+
+.wasla-table tbody tr:hover {
+  background: color-mix(in srgb, var(--wasla-accent) 5%, var(--wasla-surface));
+}
+
+.wasla-table__cell-label {
+  display: none;
+}
+
+.wasla-table__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.wasla-table__identity-text {
+  min-width: 0;
+}
+
+.wasla-table__name {
+  display: block;
+  color: var(--wasla-text);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.wasla-table__email {
+  display: block;
+  max-width: 22rem;
+  color: var(--wasla-text-muted);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Shared table additions: numeric cells, sortable headers, empty state.
+   Sorting is always server-side links; aria-sort sits on the <th>. */
+.wasla-table__num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Same specificity as ".wasla-table td", so numbers and actions really sit at the end of their cells. */
+.wasla-table th.wasla-table__num,
+.wasla-table td.wasla-table__num {
+  text-align: end;
+}
+
+/* Date and time may break onto two lines (older rows show the full date), never mid-value. */
+.wasla-table__datetime {
+  min-width: 5.5rem;
+  white-space: normal;
+}
+
+.wasla-table__amount {
+  color: var(--wasla-text);
+  font-weight: 650;
+}
+
+.wasla-table__muted {
+  color: var(--wasla-text-muted);
+  font-size: 0.85rem;
+}
+
+.wasla-table__primary {
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.wasla-table__link {
+  color: var(--wasla-text);
+  font-weight: 650;
+  text-decoration: none;
+  border-radius: var(--wasla-radius-sm);
+}
+
+.wasla-table__link:hover {
+  color: var(--wasla-accent-hover);
+  text-decoration: underline;
+}
+
+.wasla-table__link:focus-visible,
+.wasla-table__sort:focus-visible {
+  outline: 2px solid var(--wasla-accent);
+  outline-offset: 2px;
+}
+
+.wasla-table__truncate > span:not(.wasla-table__cell-label) {
+  display: inline-block;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.wasla-table__status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wasla-table__actions {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.wasla-table th.wasla-table__actions,
+.wasla-table td.wasla-table__actions {
+  text-align: end;
+}
+
+.wasla-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.75rem;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--wasla-radius-sm);
+}
+
+button.wasla-table__sort {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.wasla-table__sort:hover,
+.wasla-table__sort.is-active {
+  color: var(--wasla-text);
+}
+
+.wasla-table__sort-icon {
+  font-size: 0.8rem;
+  opacity: 0.45;
+}
+
+.wasla-table__sort.is-active .wasla-table__sort-icon {
+  color: var(--wasla-accent-hover);
+  opacity: 1;
+}
+
+.wasla-table__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2rem 1rem;
+  color: var(--wasla-text-muted);
+  text-align: center;
+}
+
+.wasla-table__empty .bi {
+  font-size: 1.5rem;
+  opacity: 0.6;
+}
+
+.wasla-table tbody tr.wasla-table__empty-row:hover {
+  background: transparent;
+}
+
+/* Phones: each row becomes a compact block with visible cell labels. A plain table keeps its header
+   for screen readers only; a sortable table (.wasla-table--sortable) turns the header row into a small
+   "sort by" bar that keeps only the sortable headers, so no focusable control is ever hidden. */
+@media (max-width: 767.98px) {
+  .wasla-table--stack:not(.wasla-table--sortable) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead th {
+    display: none;
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead th.wasla-table__sortable {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead .wasla-table__sort {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--wasla-border-strong);
+    border-radius: 999px;
+    background: var(--wasla-surface-elevated);
+    font-size: 0.72rem;
+  }
+
+  .wasla-table--stack.wasla-table--sortable thead .wasla-table__sort.is-active {
+    border-color: var(--wasla-accent-border);
+    background: var(--wasla-accent-soft);
+  }
+
+  .wasla-table--stack,
+  .wasla-table--stack tbody,
+  .wasla-table--stack tr,
+  .wasla-table--stack td {
+    display: block;
+    width: 100%;
+  }
+
+  .wasla-table--stack tr {
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-table--stack td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem 0.75rem;
+    padding: 0.25rem 0;
+    border-bottom: 0;
+    text-align: start;
+  }
+
+  .wasla-table--stack td.wasla-table__num,
+  .wasla-table--stack td.wasla-table__actions {
+    text-align: start;
+  }
+
+  .wasla-table--stack .wasla-table__cell-label {
+    display: block;
+    color: var(--wasla-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .wasla-table--stack .wasla-table__truncate > span:not(.wasla-table__cell-label) {
+    max-width: 60%;
+  }
+
+  .wasla-table--stack tr.wasla-table__empty-row td {
+    justify-content: center;
+  }
+}
+
+/* Wide tables on tablets (768-1199px) with .wasla-table--stack-lg: each row is a compact card with a
+   three-column grid of labelled cells; the actions take a full line, so nothing scrolls out of view. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .wasla-table--stack-lg:not(.wasla-table--sortable) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .wasla-table--stack-lg,
+  .wasla-table--stack-lg thead,
+  .wasla-table--stack-lg tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead th {
+    display: none;
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead th.wasla-table__sortable {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead .wasla-table__sort {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--wasla-border-strong);
+    border-radius: 999px;
+    background: var(--wasla-surface-elevated);
+    font-size: 0.72rem;
+  }
+
+  .wasla-table--stack-lg.wasla-table--sortable thead .wasla-table__sort.is-active {
+    border-color: var(--wasla-accent-border);
+    background: var(--wasla-accent-soft);
+  }
+
+  .wasla-table--stack-lg tbody tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-table--stack-lg tbody td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: 0;
+    border-bottom: 0;
+    text-align: start;
+  }
+
+  .wasla-table--stack-lg tbody td.wasla-table__num {
+    text-align: start;
+  }
+
+  .wasla-table--stack-lg tbody td.wasla-table__actions {
+    grid-column: 1 / -1;
+    align-items: flex-end;
+  }
+
+  .wasla-table--stack-lg tbody td.wasla-table__actions:empty,
+  .wasla-table--stack-lg tbody td.wasla-table__actions:not(:has(*)) {
+    display: none;
+  }
+
+  .wasla-table--stack-lg tbody tr.wasla-table__empty-row {
+    display: block;
+  }
+
+  .wasla-table--stack-lg .wasla-table__cell-label {
+    display: block;
+    color: var(--wasla-text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .wasla-table--stack-lg .wasla-table__truncate > span:not(.wasla-table__cell-label) {
+    max-width: 100%;
+  }
+
+  .wasla-table--stack-lg .wasla-table__primary {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+}
+
+.wasla-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.wasla-avatar--0 { background: #f3e0d2; color: #6a3c22; }
+.wasla-avatar--1 { background: #e7ead4; color: #3f4a24; }
+.wasla-avatar--2 { background: #dde6ea; color: #2d4650; }
+.wasla-avatar--3 { background: #eadfd0; color: #5a4128; }
+.wasla-avatar--4 { background: #e8dce6; color: #4e3350; }
+
+.wasla-role {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.wasla-role--owner { background: #fde6d8; color: #8a3a16; border-color: #f3c4a8; }
+.wasla-role--manager { background: #efe4d2; color: #6a4b1f; border-color: #ddc7a2; }
+.wasla-role--cashier { background: #dceee8; color: #21584a; border-color: #b5d6cb; }
+.wasla-role--kitchen { background: #e7ecd6; color: #4a5424; border-color: #c9d3a4; }
+.wasla-role--viewer { background: #e7e4e0; color: #4d4742; border-color: #cfc9c2; }
+
+.wasla-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--wasla-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.wasla-status__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--wasla-text-muted);
+}
+
+.wasla-status--active { color: var(--wasla-success); }
+.wasla-status--active .wasla-status__dot { background: var(--wasla-success); }
+.wasla-status--inactive { color: var(--wasla-text-muted); }
+
+.wasla-empty {
+  padding: 2.25rem 1.25rem;
+  text-align: center;
+}
+
+.wasla-empty__title {
+  margin: 0 0 0.35rem;
+  color: var(--wasla-text);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.wasla-empty__copy {
+  margin: 0;
+  color: var(--wasla-text-secondary);
+  font-size: 0.9rem;
+}
+
+.wasla-muted {
+  color: var(--wasla-text-muted);
+}
+
+.wasla-nowrap {
+  white-space: nowrap;
+}
+
+/* --- Users index (reference screen) --- */
+
+.wasla-users {
+  max-width: var(--wasla-content-wide);
+  margin-inline: auto;
+}
+
+.wasla-users .wasla-stat-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--wasla-space-2);
+}
+
+.wasla-users .wasla-stat {
+  min-width: 0;
+}
+
+.wasla-users .wasla-table-wrap {
+  overflow-x: visible;
+}
+
+.wasla-users .wasla-table td:last-child {
+  text-align: end;
+}
+
+.wasla-users .wasla-table th:last-child {
+  text-align: end;
+}
+
+.wasla-users tr[data-user-row][hidden] {
+  display: none !important;
+}
+
+@media (max-width: 1199.98px) {
+  .wasla-users .wasla-stat-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .wasla-users .wasla-col--secondary {
+    display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .wasla-page-header,
+  .wasla-users .wasla-page-header {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    align-content: flex-start;
+    justify-content: flex-start;
+    gap: var(--wasla-space-5);
+    margin-bottom: var(--wasla-space-4);
+    min-height: 0;
+  }
+
+  .wasla-page-header__main,
+  .wasla-users .wasla-page-header__main {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .wasla-page-header__actions,
+  .wasla-users .wasla-page-header__actions {
+    flex: 0 0 auto;
+    align-self: stretch;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 0;
+    margin-top: 0;
+  }
+
+  .wasla-page-header__actions .wasla-btn {
+    width: 100%;
+  }
+
+  .wasla-stat {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+  }
+
+  .wasla-users .wasla-stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wasla-toolbar {
+    align-items: stretch;
+    min-width: 0;
+  }
+
+  .wasla-toolbar__field,
+  .wasla-toolbar__field--narrow {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .wasla-users .wasla-col--secondary {
+    display: block;
+  }
+
+  .wasla-users .wasla-table thead {
+    position: absolute;
+    inset-inline-start: 0;
+    width: 1px;
+    max-width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+    pointer-events: none;
+  }
+
+  .wasla-users .wasla-table,
+  .wasla-users .wasla-table tbody,
+  .wasla-users .wasla-table tr,
+  .wasla-users .wasla-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .wasla-users .wasla-table tr {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-users .wasla-table td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: 0;
+  }
+
+  .wasla-users .wasla-table td:last-child,
+  .wasla-users .wasla-table th:last-child {
+    text-align: start;
+  }
+
+  .wasla-users .wasla-table__cell-label {
+    display: block;
+    color: var(--wasla-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .wasla-users .wasla-table__identity {
+    width: 100%;
+  }
+
+  .wasla-users .wasla-table__email {
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .wasla-users .wasla-nowrap {
+    white-space: normal;
+  }
+
+  .wasla-users .wasla-btn--quiet {
+    width: 100%;
+  }
+}
+
+/* --- Management forms and platform connections --- */
+
+.wasla-user-create,
+.wasla-connection-create,
+.wasla-connections {
+  width: 100%;
+  margin-inline: 0;
+  min-width: 0;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-user-create {
+  max-width: 49rem;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connection-create {
+  max-width: 52rem;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
+  max-width: 64rem;
+}
+
+.wasla-manage-form__surface {
+  padding: var(--wasla-space-5) var(--wasla-space-6);
+}
+
+.wasla-manage-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wasla-space-4);
+  min-width: 0;
+}
+
+.wasla-manage-form__field {
+  min-width: 0;
+}
+
+.wasla-manage-form__field--wide {
+  grid-column: 1 / -1;
+}
+
+.wasla-manage-form .form-label {
+  margin-bottom: var(--wasla-space-2);
+  color: var(--wasla-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.wasla-manage-form .form-control,
+.wasla-manage-form .form-select {
+  width: 100%;
+  min-height: var(--wasla-control-h);
+  border-color: var(--wasla-border-strong);
+  border-radius: var(--wasla-radius-sm);
+  background: var(--wasla-surface-elevated);
+  color: var(--wasla-text);
+}
+
+.wasla-manage-form .form-text {
+  margin-top: var(--wasla-space-1);
+  color: var(--wasla-text-muted);
+}
+
+.wasla-manage-form__check {
+  display: flex;
+  align-items: center;
+  gap: var(--wasla-space-2);
+  min-height: var(--wasla-control-h);
+  margin: 0;
+  padding-inline: 0;
+}
+
+.wasla-manage-form__check .form-check-input {
+  float: none;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.wasla-manage-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wasla-space-2);
+  margin-top: var(--wasla-space-5);
+}
+
+.wasla-connections__status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wasla-space-1);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.wasla-connections__status-main {
+  display: flex;
+  align-items: center;
+  gap: var(--wasla-space-2);
+  min-width: 0;
+}
+
+.wasla-connections__switch {
+  display: flex;
+  align-items: center;
+  min-height: 1.25rem;
+  margin: 0;
+  padding-inline: 0;
+}
+
+.wasla-connections__switch .form-check-input {
+  float: none;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.wasla-connections__status-text {
+  color: var(--wasla-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.wasla-connections__status-text.is-active {
+  color: var(--wasla-success);
+}
+
+.wasla-connections__warning {
+  margin: 0;
+  max-width: min(18rem, 100%);
+  color: var(--wasla-warning);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+
+.wasla-connections__secondary {
+  color: var(--wasla-text-secondary);
+  overflow-wrap: break-word;
+}
+
+.wasla-connections .wasla-table-wrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.wasla-connections .wasla-table th:last-child,
+.wasla-connections .wasla-table td:last-child {
+  text-align: end;
+}
+
+@media (max-width: 767.98px) {
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-user-create,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connection-create,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
+    max-width: none;
+  }
+
+  .wasla-manage-form__surface {
+    padding: var(--wasla-space-4);
+  }
+
+  .wasla-manage-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wasla-manage-form__actions .wasla-btn {
+    width: 100%;
+  }
+
+  .wasla-connections .wasla-table thead {
+    position: absolute;
+    inset-inline-start: 0;
+    width: 1px;
+    max-width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+    pointer-events: none;
+  }
+
+  .wasla-connections .wasla-table,
+  .wasla-connections .wasla-table tbody,
+  .wasla-connections .wasla-table tr,
+  .wasla-connections .wasla-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .wasla-connections .wasla-table tr {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--wasla-border);
+  }
+
+  .wasla-connections .wasla-table td,
+  .wasla-connections .wasla-table td:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: 0;
+    text-align: start;
+  }
+
+  .wasla-connections .wasla-connections__status {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  .wasla-connections .wasla-table__cell-label {
+    display: block;
+    color: var(--wasla-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .wasla-connections .wasla-btn--quiet {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .app-sidebar,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .app-main,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-nav-main .nav-link,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-action-btn,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-icon-btn,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-collapse-btn,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-backdrop,
+  .wasla-btn {
+    transition: none !important;
+  }
+}
+
+/* Users: same phone sort bar as .wasla-table--stack (its own phone rules clip the header). */
+@media (max-width: 767.98px) {
+  .wasla-users .wasla-table thead {
+    position: static;
+    width: auto;
+    max-width: none;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    pointer-events: auto;
+    display: block;
+  }
+
+  .wasla-users .wasla-table thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .wasla-users .wasla-table thead th {
+    display: none;
+  }
+
+  .wasla-users .wasla-table thead th.wasla-table__sortable {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .wasla-users .wasla-table thead .wasla-table__sort {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--wasla-border-strong);
+    border-radius: 999px;
+    background: var(--wasla-surface-elevated);
+    font-size: 0.72rem;
+  }
+
+  .wasla-users .wasla-table thead .wasla-table__sort.is-active {
+    border-color: var(--wasla-accent-border);
+    background: var(--wasla-accent-soft);
+  }
+}

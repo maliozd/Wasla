@@ -7,6 +7,7 @@ using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Branches;
 using Wasla.Application.Abstractions.Dashboard;
+using Wasla.Application.Abstractions.DevelopmentTools;
 using Wasla.Application.Abstractions.Notifications;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
@@ -15,6 +16,10 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Onboarding;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
+using Wasla.Application.Abstractions.Setup;
+using Wasla.Application.Abstractions.Tours;
+using Wasla.Application.Demos;
+using Wasla.Application.Abstractions.GuidedSetup;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Tenant;
@@ -45,6 +50,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISecretManager, AesSecretManager>();
         services.AddSingleton<ITenantDbContextFactory, TenantDbContextFactory>();
         services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
+        services.AddSingleton(TimeProvider.System);
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
         services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
@@ -56,6 +62,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
+        services.AddScoped<ITenantBusinessSubtypeReader, TenantBusinessSubtypeReader>();
 
         var providerMode = ProviderModeResolver.Resolve(configuration);
 
@@ -93,9 +100,25 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantResolver, TenantResolver>();
 
         services.AddScoped<IAuthValidationService, AuthValidationService>();
+        services.AddScoped<IPasswordPolicy, DefaultPasswordPolicy>();
+        services.AddScoped<ITenantPasswordResetService, TenantPasswordResetService>();
+        services.AddScoped<ITenantUserRoleService, TenantUserRoleService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
+        services.AddScoped<ICentralAdminTenantOperationsService, CentralAdminTenantOperationsService>();
+        services.AddOptions<TenantOperationalHealthOptions>();
+        // Singleton so concurrent detail requests for the same tenant share one in-flight read.
+        services.AddSingleton<ITenantOperationalHealthReader, TenantOperationalHealthReader>();
+        services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
+        services.AddScoped<ITenantDatabaseProvisioningOperations, SqlServerTenantDatabaseProvisioningOperations>();
+        services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<ITenantSetupStatusService, TenantSetupStatusService>();
+        services.AddScoped<IUserProductTourService, UserProductTourService>();
+        services.AddScoped<IGuidedDemoService, GuidedDemoService>();
+        services.AddScoped<IGuidedDemoDeliverySimulator, GuidedDemoDeliverySimulator>();
+        services.AddScoped<IGuidedSetupService, GuidedSetupService>();
+        services.AddScoped<ITenantOperationalModeService, TenantOperationalModeService>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderActionService, OrderActionService>();
         services.AddScoped<IOrderSyncSettingsService, OrderSyncSettingsService>();
@@ -109,8 +132,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserNotificationSettingsService, UserNotificationSettingsService>();
         services.AddScoped<IPrintBridgeAuthService, PrintBridgeAuthService>();
         services.AddScoped<IPrintBridgeJobService, PrintBridgeJobService>();
+        services.AddScoped<IPrintBridgeActivePrintJobChecker, PrintBridgeActivePrintJobChecker>();
         services.AddScoped<IPrintBridgeDeviceManagementService, PrintBridgeDeviceManagementService>();
+        services.AddScoped<IPrintBridgeSetupTenantLock, SqlServerPrintBridgeSetupTenantLock>();
+        services.AddScoped<IPrintBridgeSetupSessionService, PrintBridgeSetupSessionService>();
+        // Temporary Development tool; the Web layer only exposes it in Development with an explicit option.
+        services.AddScoped<ITenantDevelopmentResetService, TenantDevelopmentResetService>();
         services.AddScoped<IPrintJobHistoryService, PrintJobHistoryService>();
+        services.AddScoped<IManualOrderPrintService, ManualOrderPrintService>();
 
         return services;
     }

@@ -19,14 +19,16 @@ public sealed class ProvisioningEmailFactory
         _options = options.Value;
     }
 
-    public EmailMessage BuildPanelReadyEmail(PendingRegistration registration)
+    public EmailMessage BuildPanelReadyEmail(PendingRegistration registration, string? panelLoginUrl = null)
     {
         ArgumentNullException.ThrowIfNull(registration);
 
         var ownerFullName = registration.OwnerFullName.Trim();
         var ownerEmail = registration.OwnerEmail.Trim();
         var primaryDomain = registration.PrimaryDomain.Trim();
-        var loginUrl = $"https://{primaryDomain}/auth/login";
+        var loginUrl = string.IsNullOrWhiteSpace(panelLoginUrl)
+            ? $"https://{primaryDomain}/auth/login"
+            : panelLoginUrl.Trim();
         var fromName = _options.FromName.Trim();
 
         var tokens = new Dictionary<string, string>(StringComparer.Ordinal)

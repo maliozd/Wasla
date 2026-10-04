@@ -18,6 +18,9 @@ public sealed class PrintBridgeOptions
 
     public bool DryRun { get; set; } = true;
 
+    /// <summary>Stable local installation identity. Generated once and sent to Wasla for device binding.</summary>
+    public string InstallationId { get; set; } = string.Empty;
+
     /// <summary>User-facing device label (e.g. Kasadaki POS). Synced from OrderHub Web panel.</summary>
     public string DisplayName { get; set; } = string.Empty;
 
@@ -27,6 +30,6 @@ public sealed class PrintBridgeOptions
     /// <summary>Windows machine name for diagnostics and server last-seen tracking.</summary>
     public string MachineName { get; set; } = string.Empty;
 
-    /// <summary>Legacy setting migrated to <see cref="DisplayName"/> on load.</summary>
+    /// <summary>Legacy setting migrated to <see cref="DisplayName"/> on load; not used as a separate alias.</summary>
     public string BridgeName { get; set; } = string.Empty;
 }

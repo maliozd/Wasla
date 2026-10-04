@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Italian",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Italian.Product.Bolognese", "minPrice": 200, "maxPrice": 300, "modifiers": ["Mock.Modifier.ExtraCheese", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Italian.Product.Alfredo", "minPrice": 210, "maxPrice": 310, "modifiers": ["Mock.Modifier.ExtraCheese", "Mock.Modifier.NoMushrooms"] },
+    { "key": "Mock.Italian.Product.Lasagna", "minPrice": 230, "maxPrice": 340, "modifiers": ["Mock.Modifier.ExtraCheese"] },
+    { "key": "Mock.Italian.Product.Ravioli", "minPrice": 220, "maxPrice": 320, "modifiers": ["Mock.Modifier.ExtraSauce", "Mock.Modifier.ExtraCheese"] },
+    { "key": "Mock.Italian.Product.GarlicBread", "minPrice": 60, "maxPrice": 100, "modifiers": ["Mock.Modifier.ExtraCheese"] }
+  ]
+}

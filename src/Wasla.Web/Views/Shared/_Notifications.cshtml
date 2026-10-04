@@ -2,18 +2,39 @@
 @{
     var success = TempData["Success"] as string;
     var error = TempData["Error"] as string;
-
-    if (!string.IsNullOrWhiteSpace(success) || !string.IsNullOrWhiteSpace(error))
+    // Optional per-message duration for the success toast; absent means the toast's own default.
+    int? successDurationMs = TempData["SuccessDurationMs"] is int ms && ms > 0 ? ms : null;
+    // Optional exact browser-storage keys to forget (e.g. onboarding dismissals after a Development tenant reset).
+    // Only Wasla-owned keys are accepted; storage is never cleared wholesale.
+    var clearKeys = Array.Empty<string>();
+    if (TempData["ClearBrowserKeys"] is string clearJson)
     {
-        var payload = new { success = success, error = error };
+        try
+        {
+            clearKeys = (JsonSerializer.Deserialize<string[]>(clearJson) ?? [])
+                .Where(key => key is not null && key.StartsWith("Wasla.", StringComparison.Ordinal))
+                .ToArray();
+        }
+        catch (JsonException)
+        {
+            clearKeys = [];
+        }
+    }
+
+    if (!string.IsNullOrWhiteSpace(success) || !string.IsNullOrWhiteSpace(error) || clearKeys.Length > 0)
+    {
+        var payload = new { success = success, error = error, successDurationMs = successDurationMs, clearKeys = clearKeys };
         var payloadJson = JsonSerializer.Serialize(payload);
         <script>
             (function () {
                 var data = @Html.Raw(payloadJson);
+                (data.clearKeys || []).forEach(function (key) {
+                    try { window.localStorage.removeItem(key); } catch (e) { }
+                });
                 function fire() {
-                    if (!window.OrderHubToast) return;
-                    if (data.success) window.OrderHubToast.success(data.success);
-                    if (data.error)   window.OrderHubToast.error(data.error);
+                    if (!window.WaslaToast) return;
+                    if (data.success) window.WaslaToast.success(data.success, data.successDurationMs ? { durationMs: data.successDurationMs } : undefined);
+                    if (data.error)   window.WaslaToast.error(data.error);
                 }
                 if (document.readyState === "loading") {
                     document.addEventListener("DOMContentLoaded", fire);

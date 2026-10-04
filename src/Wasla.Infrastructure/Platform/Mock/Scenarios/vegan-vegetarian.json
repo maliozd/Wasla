@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "VeganVegetarian",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Vegan.Product.Bowl", "minPrice": 180, "maxPrice": 280, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Vegan.Product.LentilBalls", "minPrice": 140, "maxPrice": 210, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Yogurt"] },
+    { "key": "Mock.Vegan.Product.ChickpeaStew", "minPrice": 130, "maxPrice": 200, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.ExtraBread"] },
+    { "key": "Mock.Vegan.Product.Salad", "minPrice": 90, "maxPrice": 150, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Vegan.Product.Juice", "minPrice": 50, "maxPrice": 90, "modifiers": ["Mock.Modifier.NoSugar"] }
+  ]
+}

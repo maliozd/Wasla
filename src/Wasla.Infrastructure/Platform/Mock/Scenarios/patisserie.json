@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Patisserie",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Patisserie.Product.Pogaca", "minPrice": 35, "maxPrice": 60, "modifiers": ["Mock.Modifier.WithCheese"] },
+    { "key": "Mock.Patisserie.Product.Acma", "minPrice": 30, "maxPrice": 55, "modifiers": ["Mock.Modifier.WithCheese"] },
+    { "key": "Mock.Patisserie.Product.Simit", "minPrice": 25, "maxPrice": 40, "modifiers": ["Mock.Modifier.WithCheese"] },
+    { "key": "Mock.Patisserie.Product.Cake", "minPrice": 90, "maxPrice": 150, "modifiers": ["Mock.Modifier.ChocolateSauce", "Mock.Modifier.SinglePortion"] },
+    { "key": "Mock.Patisserie.Product.Cookie", "minPrice": 25, "maxPrice": 45, "modifiers": ["Mock.Modifier.NoSugar"] }
+  ]
+}

@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.Checkout;
@@ -199,7 +201,15 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
                 p.PrimaryDomain,
                 p.PlanCode,
                 p.BillingPeriod,
-                p.Status))
+                p.Status,
+                p.BusinessPhone,
+                p.BusinessEmail,
+                p.OwnerFullName,
+                p.OwnerEmail,
+                p.OwnerPhone,
+                p.CreatedAtUtc,
+                p.PaymentSucceededAtUtc,
+                p.ProvisionedAtUtc))
             .FirstOrDefaultAsync(ct);
 
         return row;
@@ -213,16 +223,17 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         if (row is null)
             return null;
 
-        var businessTypesDisplay = await (
+        var businessTypeRows = await (
             from link in _central.PendingRegistrationBusinessTypes.AsNoTracking()
             join bt in _central.BusinessTypes.AsNoTracking() on link.BusinessTypeId equals bt.Id
             where link.PendingRegistrationId == registrationId
             orderby bt.SortOrder
-            select bt.DisplayName).ToListAsync(ct);
+            select new { bt.Code, bt.DisplayName }).ToListAsync(ct);
 
-        var businessTypesLabel = businessTypesDisplay.Count > 0
-            ? string.Join(", ", businessTypesDisplay)
+        var businessTypesLabel = businessTypeRows.Count > 0
+            ? string.Join(", ", businessTypeRows.Select(x => x.DisplayName))
             : row.BusinessType ?? string.Empty;
+        var businessTypeCodes = businessTypeRows.Select(x => x.Code).ToArray();
 
         var monthly = CheckoutSimulatedPricing.GetMonthlyPriceTry(row.PlanCode);
         var total = CheckoutSimulatedPricing.GetTotalPriceTry(row.PlanCode, row.BillingPeriod);
@@ -252,7 +263,8 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             row.Status,
             monthly,
             total,
-            CheckoutSimulatedPricing.IsYearlyBilling(row.BillingPeriod));
+            CheckoutSimulatedPricing.IsYearlyBilling(row.BillingPeriod),
+            businessTypeCodes);
     }
 
     public async Task<CheckoutSimulationResult> SimulatePaymentSuccessAsync(Guid registrationId, CancellationToken ct)
@@ -271,20 +283,17 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new CheckoutSimulationResult(CheckoutSimulationOutcome.InvalidState, registration.Id);
 
         if (IsExpired(registration))
-        {
-            registration.Status = PendingRegistrationStatus.Expired;
-            await _central.SaveChangesAsync(ct);
-            return new CheckoutSimulationResult(CheckoutSimulationOutcome.AlreadyExpired, registration.Id);
-        }
+            return await MarkExpiredAsync(registration, ct);
 
         var reference = GenerateSimulatedPaymentReference();
         var now = DateTime.UtcNow;
-        registration.Status = PendingRegistrationStatus.PaymentSucceeded;
-        registration.PaymentSucceededAtUtc = now;
-        registration.PaymentFailedAtUtc = null;
-        registration.SimulatedPaymentReference = reference;
-
-        await _central.SaveChangesAsync(ct);
+        var applied = await TryChangeStatusAsync(registration, setters => setters
+            .SetProperty(p => p.Status, PendingRegistrationStatus.PaymentSucceeded)
+            .SetProperty(p => p.PaymentSucceededAtUtc, now)
+            .SetProperty(p => p.PaymentFailedAtUtc, (DateTime?)null)
+            .SetProperty(p => p.SimulatedPaymentReference, reference), ct);
+        if (!applied)
+            return await OutcomeAfterConcurrentChangeAsync(registration.Id, ct);
 
         _logger.LogInformation(
             "Simulated payment success. RegistrationId={RegistrationId} Reference={Reference}",
@@ -310,16 +319,14 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new CheckoutSimulationResult(CheckoutSimulationOutcome.InvalidState, registration.Id);
 
         if (IsExpired(registration))
-        {
-            registration.Status = PendingRegistrationStatus.Expired;
-            await _central.SaveChangesAsync(ct);
-            return new CheckoutSimulationResult(CheckoutSimulationOutcome.AlreadyExpired, registration.Id);
-        }
+            return await MarkExpiredAsync(registration, ct);
 
-        registration.Status = PendingRegistrationStatus.PaymentFailed;
-        registration.PaymentFailedAtUtc = DateTime.UtcNow;
-
-        await _central.SaveChangesAsync(ct);
+        var now = DateTime.UtcNow;
+        var applied = await TryChangeStatusAsync(registration, setters => setters
+            .SetProperty(p => p.Status, PendingRegistrationStatus.PaymentFailed)
+            .SetProperty(p => p.PaymentFailedAtUtc, now), ct);
+        if (!applied)
+            return await OutcomeAfterConcurrentChangeAsync(registration.Id, ct);
 
         _logger.LogInformation("Simulated payment failure. RegistrationId={RegistrationId}", registration.Id);
 
@@ -346,12 +353,60 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         if (registration.Status is not (PendingRegistrationStatus.AwaitingPayment or PendingRegistrationStatus.PaymentFailed))
             return new CheckoutSimulationResult(CheckoutSimulationOutcome.InvalidState, registration.Id);
 
-        registration.Status = PendingRegistrationStatus.Cancelled;
-        await _central.SaveChangesAsync(ct);
+        var applied = await TryChangeStatusAsync(registration, setters => setters
+            .SetProperty(p => p.Status, PendingRegistrationStatus.Cancelled), ct);
+        if (!applied)
+            return await OutcomeAfterConcurrentChangeAsync(registration.Id, ct);
 
         _logger.LogInformation("Pending registration cancelled. RegistrationId={RegistrationId}", registration.Id);
 
         return new CheckoutSimulationResult(CheckoutSimulationOutcome.Applied, registration.Id);
+    }
+
+    /// <summary>
+    /// Applies a status change only if the stored status is still the one this request read. A second
+    /// request (another tab, a double submit) may change the registration in between, and that change
+    /// must not be overwritten; for example a paid registration must never become cancelled or failed.
+    /// </summary>
+    private async Task<bool> TryChangeStatusAsync(
+        PendingRegistration registration,
+        Expression<Func<SetPropertyCalls<PendingRegistration>, SetPropertyCalls<PendingRegistration>>> setters,
+        CancellationToken ct)
+    {
+        var id = registration.Id;
+        var observedStatus = registration.Status;
+        var updated = await _central.PendingRegistrations
+            .Where(p => p.Id == id && p.Status == observedStatus)
+            .ExecuteUpdateAsync(setters, ct);
+        return updated == 1;
+    }
+
+    private async Task<CheckoutSimulationResult> MarkExpiredAsync(PendingRegistration registration, CancellationToken ct)
+    {
+        var applied = await TryChangeStatusAsync(registration, setters => setters
+            .SetProperty(p => p.Status, PendingRegistrationStatus.Expired), ct);
+        return applied
+            ? new CheckoutSimulationResult(CheckoutSimulationOutcome.AlreadyExpired, registration.Id)
+            : await OutcomeAfterConcurrentChangeAsync(registration.Id, ct);
+    }
+
+    /// <summary>Reports the status another request just stored instead of applying this one.</summary>
+    private async Task<CheckoutSimulationResult> OutcomeAfterConcurrentChangeAsync(Guid registrationId, CancellationToken ct)
+    {
+        var status = await _central.PendingRegistrations
+            .AsNoTracking()
+            .Where(p => p.Id == registrationId)
+            .Select(p => (PendingRegistrationStatus?)p.Status)
+            .FirstOrDefaultAsync(ct);
+
+        return status switch
+        {
+            null => new CheckoutSimulationResult(CheckoutSimulationOutcome.NotFound, null),
+            PendingRegistrationStatus.PaymentFailed => new CheckoutSimulationResult(
+                CheckoutSimulationOutcome.AlreadyPaymentFailed, registrationId),
+            _ => MapTerminalOutcome(status.Value, registrationId)
+                ?? new CheckoutSimulationResult(CheckoutSimulationOutcome.InvalidState, registrationId)
+        };
     }
 
     private static CheckoutSimulationResult? MapTerminalOutcome(PendingRegistrationStatus status, Guid registrationId) =>
@@ -406,6 +461,45 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
                 BlockingStatuses.Contains(p.Status)
                 && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now)
                 && p.DatabaseName == databaseName, ct);
+    }
+
+    public async Task<PendingRegistrationSummary?> GetActiveByPrimaryDomainAsync(string primaryDomain, CancellationToken ct)
+    {
+        var normalizedHost = RegistrationNameNormalizer.NormalizeHostForComparison(primaryDomain);
+        if (string.IsNullOrWhiteSpace(normalizedHost))
+            return null;
+
+        var normalizedSlug = RegistrationNameNormalizer.ExtractSlugFromHost(
+            normalizedHost,
+            _options.MarketingBaseDomain);
+        var now = DateTime.UtcNow;
+
+        var row = await _central.PendingRegistrations.AsNoTracking()
+            .Where(p => (p.PrimaryDomain.ToLower() == normalizedHost
+                         || (normalizedSlug != null && p.Slug == normalizedSlug))
+                     && p.Status != PendingRegistrationStatus.PaymentFailed
+                     && p.Status != PendingRegistrationStatus.Cancelled
+                     && p.Status != PendingRegistrationStatus.Expired
+                     && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now))
+            .OrderByDescending(p => p.CreatedAtUtc)
+            .Select(p => new PendingRegistrationSummary(
+                p.Id,
+                p.BusinessName,
+                p.PrimaryDomain,
+                p.PlanCode,
+                p.BillingPeriod,
+                p.Status,
+                p.BusinessPhone,
+                p.BusinessEmail,
+                p.OwnerFullName,
+                p.OwnerEmail,
+                p.OwnerPhone,
+                p.CreatedAtUtc,
+                p.PaymentSucceededAtUtc,
+                p.ProvisionedAtUtc))
+            .FirstOrDefaultAsync(ct);
+
+        return row;
     }
 
     private async Task<string?> ResolveUniqueDatabaseNameAsync(string baseDatabaseName, CancellationToken ct)

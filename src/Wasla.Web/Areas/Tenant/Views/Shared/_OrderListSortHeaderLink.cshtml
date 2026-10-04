@@ -2,5 +2,17 @@
 @using Wasla.Web.Models.Orders
 @{
     var link = OrderListUrlHelper.BuildSortHeaderLink(Model.BasePath, Model.Filters, Model.SortBy, Model.Title);
+    var icon = link.Direction switch
+    {
+        SortHeaderDirection.Ascending => "bi-arrow-up",
+        SortHeaderDirection.Descending => "bi-arrow-down",
+        _ => "bi-arrow-down-up"
+    };
 }
-<a href="@link.Href">@link.Title@link.Arrow</a>
+@* Server-side sort: the whole header cell, so aria-sort sits on the <th> that screen readers announce. *@
+<th scope="col" class="wasla-table__sortable@(Model.IsNumeric ? " wasla-table__num" : "")" aria-sort="@link.AriaSort">
+    <a class="wasla-table__sort@(link.IsActive ? " is-active" : "")" href="@link.Href">
+        <span>@link.Title</span>
+        <i class="bi @icon wasla-table__sort-icon" aria-hidden="true"></i>
+    </a>
+</th>

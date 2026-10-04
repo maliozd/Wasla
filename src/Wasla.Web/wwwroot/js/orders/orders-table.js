@@ -2,7 +2,7 @@
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O) return;
 
   if (!O.table) {
@@ -33,7 +33,8 @@
 
   /** Default live: page 1, receivedAt desc, and date range is "today" (incl. empty URL: server uses today). */
   function isDefaultLiveOrdersView() {
-    if (isLiveDisplayPage()) return true;    const p = new URLSearchParams(global.location.search);
+    if (isLiveDisplayPage()) return true;
+    const p = new URLSearchParams(global.location.search);
     const sortBy = (p.get("sortBy") || p.get("sort") || "receivedAt").toLowerCase();
     const sortDirection = (p.get("sortDirection") || p.get("dir") || "desc").toLowerCase();
     const page = (p.get("page") || "1").trim();
@@ -103,8 +104,15 @@
     return newIds;
   }
 
+  function getRefreshContainer() {
+    if (isLiveDisplayPage()) {
+      return document.getElementById("ordersLiveScreenHost");
+    }
+    return document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
+  }
+
   function captureKnownOrderIdsFromContainer() {
-    const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
+    const container = getRefreshContainer();
     if (!container) return;
     T.knownOrderIds = new Set();
     container.querySelectorAll("[data-order-id]").forEach(function (r) {
@@ -156,6 +164,30 @@
   function applyHighlightClassesToRow(row) {
     var color = getHighlightColorName();
     var beh = getHighlightBehaviorName();
+    var colorClass = "color-" + color;
+    var behaviorClass = "behavior-" + beh;
+    var customBg = "";
+    var customBorder = "";
+    if (color && String(color).indexOf("#") === 0) {
+      var hex = String(color).replace("#", "");
+      var red = parseInt(hex.substring(0, 2), 16);
+      var green = parseInt(hex.substring(2, 4), 16);
+      var blue = parseInt(hex.substring(4, 6), 16);
+      colorClass = "color-custom";
+      customBg = "rgba(" + red + "," + green + "," + blue + ",0.45)";
+      customBorder = String(color);
+    }
+    // Re-applying the same classes removes and adds them, which restarts the
+    // CSS animation. Leave an already-correct row untouched.
+    var alreadyApplied = row.classList.contains("order-row-new")
+      && row.classList.contains(colorClass)
+      && row.classList.contains(behaviorClass);
+    if (alreadyApplied && colorClass === "color-custom") {
+      alreadyApplied = row.style.getPropertyValue("--new-order-highlight-bg") === customBg
+        && row.style.getPropertyValue("--new-order-highlight-border") === customBorder;
+    }
+    if (alreadyApplied) return;
+
     row.classList.remove(
       "order-row-new",
       "order-row-new-flash",
@@ -165,19 +197,14 @@
     row.style.removeProperty("--new-order-highlight-bg");
     row.style.removeProperty("--new-order-highlight-border");
 
-    if (color && String(color).indexOf("#") === 0) {
-      // Custom hex color -> CSS variables
-      var h = String(color).replace("#", "");
-      var r = parseInt(h.substring(0, 2), 16);
-      var g = parseInt(h.substring(2, 4), 16);
-      var b = parseInt(h.substring(4, 6), 16);
-      row.style.setProperty("--new-order-highlight-bg", "rgba(" + r + "," + g + "," + b + ",0.18)");
-      row.style.setProperty("--new-order-highlight-border", String(color));
-      row.classList.add("order-row-new", "color-custom", "behavior-" + beh);
+    if (colorClass === "color-custom") {
+      row.style.setProperty("--new-order-highlight-bg", customBg);
+      row.style.setProperty("--new-order-highlight-border", customBorder);
+      row.classList.add("order-row-new", "color-custom", behaviorClass);
       return;
     }
 
-    row.classList.add("order-row-new", "color-" + color, "behavior-" + beh);
+    row.classList.add("order-row-new", colorClass, behaviorClass);
   }
 
   function markOrdersAsRecentlyNew(orderIds) {
@@ -187,8 +214,65 @@
     });
   }
 
+  function scheduleNewOrderHighlightCleanup() {
+    if (!isLiveDisplayPage()) return;
+    if (T._highlightCleanupTimer) {
+      clearTimeout(T._highlightCleanupTimer);
+      T._highlightCleanupTimer = null;
+    }
+
+    var nextExpiry = null;
+    for (const entry of Array.from(T.recentlyNewOrderIds.entries())) {
+      const exp = entry[1];
+      if (nextExpiry === null || exp < nextExpiry) nextExpiry = exp;
+    }
+    if (nextExpiry === null) return;
+
+    var delay = Math.max(0, nextExpiry - Date.now()) + 30;
+    T._highlightCleanupTimer = setTimeout(function () {
+      T._highlightCleanupTimer = null;
+      applyNewOrderVisualState();
+      scheduleNewOrderHighlightCleanup();
+    }, delay);
+  }
+
+  function isFocusWorkingSurface(node) {
+    return !!(node && node.closest && node.closest(".wasla-live-focus__panel"));
+  }
+
+  function findNewOrderHighlightHost(container, id) {
+    const selector = "[data-order-id=\"" + id + "\"]";
+    const focusEntry = container.querySelector(".wasla-live-focus-entry" + selector);
+    if (focusEntry) return focusEntry;
+    const detail = container.querySelector(".wasla-live-detail" + selector);
+    if (detail && !isFocusWorkingSurface(detail)) return detail;
+    const card = container.querySelector(".wasla-live-screen-card" + selector);
+    if (card) return card;
+    const fallback = container.querySelector(selector);
+    if (fallback && isFocusWorkingSurface(fallback)) return null;
+    return fallback;
+  }
+
+  function clearNewOrderHighlight(container, id, keep) {
+    const nodes = container.querySelectorAll("[data-order-id=\"" + id + "\"]");
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (keep && node === keep) continue;
+      node.classList.remove(
+        "order-row-new",
+        "order-row-new-flash",
+        "color-orange", "color-blue", "color-green", "color-yellow", "color-red", "color-custom",
+        "behavior-fade", "behavior-pulse", "behavior-blink", "behavior-border-glow", "behavior-none"
+      );
+      if (node.style && typeof node.style.removeProperty === "function") {
+        node.style.removeProperty("--new-order-highlight-bg");
+        node.style.removeProperty("--new-order-highlight-border");
+      }
+    }
+  }
+
   function applyNewOrderVisualState() {
-    const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
+    const container = getRefreshContainer();
     if (!container) return;
 
     function setNewBadgeVisible(row, isVisible) {
@@ -202,17 +286,29 @@
     for (const entry of Array.from(T.recentlyNewOrderIds.entries())) {
       const id = entry[0];
       const exp = entry[1];
+      // List and Board keep the card. Focus highlights the queue entry, not the working surface.
+      const row = findNewOrderHighlightHost(container, id);
       if (exp <= now) {
-        const row = container.querySelector("[data-order-id=\"" + id + "\"]");
-        if (row) {
-          row.classList.remove("order-row-new", "order-row-new-flash");
-          setNewBadgeVisible(row, false);
-        }
+        const nodes = container.querySelectorAll("[data-order-id=\"" + id + "\"]");
+        for (let n = 0; n < nodes.length; n++) setNewBadgeVisible(nodes[n], false);
+        clearNewOrderHighlight(container, id, null);
         T.recentlyNewOrderIds.delete(id);
+        if (isLiveDisplayPage() && typeof T.onRowHighlightEnded === "function") {
+          try {
+            T.onRowHighlightEnded(id);
+          } catch (error) {
+            if (O.isDebugEnabled && O.isDebugEnabled()) O.debugWarn("onRowHighlightEnded", error);
+          }
+        }
         continue;
       }
-      const row = container.querySelector("[data-order-id=\"" + id + "\"]");
       if (!row) continue;
+      if (row.hasAttribute("data-wasla-demo")) {
+        setNewBadgeVisible(row, false);
+        clearNewOrderHighlight(container, id, null);
+        continue;
+      }
+      clearNewOrderHighlight(container, id, row);
       applyHighlightClassesToRow(row);
       setNewBadgeVisible(row, true);
     }
@@ -240,29 +336,46 @@
     });
   }
 
-  function buildPollUrl() {
-    if (isLiveDisplayPage()) {
-      const u = new URL(global.location.origin + O.opts.tableUrl);
-      const ymd = O.opts.todayYmd || localDateYmd();
-      if (ymd) {
-        u.searchParams.set("startDate", ymd);
-        u.searchParams.set("endDate", ymd);
+  function updateLiveScreenSummaryFromTmp(tmp) {
+    if (!isLiveDisplayPage() || !tmp) return;
+    try {
+      const meta = tmp.querySelector(".orders-live-screen-meta");
+      if (!meta) return;
+      [
+        ["ordersLiveDisplayTodayCount", "data-total-count"],
+        ["ordersLiveDisplayActiveCount", "data-active-count"],
+        ["ordersLiveDisplayCancelledCount", "data-cancelled-count"]
+      ].forEach(function (pair) {
+        const el = document.getElementById(pair[0]);
+        if (!el) return;
+        const v = meta.getAttribute(pair[1]);
+        if (v == null) return;
+        const n = parseInt(String(v), 10);
+        if (isNaN(n)) return;
+        el.textContent = String(n);
+      });
+    } catch (e) {
+      if (O.isDebugEnabled()) {
+        O.debugWarn("updateLiveScreenSummaryFromTmp failed", e);
       }
-      u.searchParams.set("page", "1");
-      u.searchParams.set("pageSize", String(O.opts.liveDisplayPageSize || 100));
-      u.searchParams.set("sortBy", "receivedAt");
-      u.searchParams.set("sortDirection", "desc");
-      return u;
     }
+  }
 
+  function buildPollUrl() {
     const u = new URL(global.location.origin + O.opts.tableUrl);
     u.search = global.location.search || "";
     return u;
   }
 
   async function refreshOrdersTable() {
+    if (isLiveDisplayPage()) {
+      if (O.liveStore && typeof O.liveStore.requestRefresh === "function") {
+        return O.liveStore.requestRefresh({ reason: "action" });
+      }
+      return;
+    }
+
     const live = isDefaultLiveOrdersView();
-    var audioPlayedOk = "-";
 
     try {
       const u = buildPollUrl();
@@ -309,15 +422,16 @@
       }
 
       const hasRows = tmp.querySelectorAll("tr").length > 0;
-      const hasDataOrderIds = tmp.querySelectorAll("[data-order-id]").length > 0;
-      if (hasRows && !hasDataOrderIds) {
+      const hasCards = tmp.querySelectorAll("[data-order-id]").length > 0;
+      const hasDataOrderIds = hasCards;
+      if (hasRows && !hasDataOrderIds && !isLiveDisplayPage()) {
         if (O.isDebugEnabled()) {
           O.debugWarn("rows without data-order-id");
         }
         O.showOrdersWarning("orders-table-missing-data", O.getMessage("tableMissingDataOrderId"));
       }
 
-      const container = document.getElementById("ordersTableHost") || document.getElementById("ordersTableContainer");
+      const container = getRefreshContainer();
       if (!container) {
         O.showOrdersWarning("orders-table-target-missing", O.getMessage("tableHostMissing"));
         return;
@@ -326,56 +440,14 @@
       container.innerHTML = html;
       updateTotalCountFromTmp(tmp);
       updateLastUpdatedTimestamps();
-
-      if (O.viewMode && typeof O.viewMode.syncFromTable === "function") {
-        O.viewMode.syncFromTable();
-      }
-
-      if (live && newIds.length > 0) {
-        markOrdersAsRecentlyNew(newIds);
-      }
-
       captureKnownOrderIdsFromContainer();
-      applyNewOrderVisualState();
-
-      if (!isLiveDisplayPage() && live && newIds.length > 0 && O.state.notificationSettings && O.audio) {        const st = O.state.notificationSettings;
-        if (st.newOrderSoundEnabled) {
-          if (!O.audio.isSoundUnlocked()) {
-            if (!T.hintShownForUnlock) {
-              T.hintShownForUnlock = true;
-              O.showMessage(O.getMessage("soundUnlockHint"), "info");
-            }
-            audioPlayedOk = "locked";
-          } else {
-            showSpeakerIndicators(newIds);
-            try {
-              await O.audio.playSoundNow({
-                newOrderSoundEnabled: true,
-                newOrderSoundName: st.newOrderSoundName,
-                newOrderSoundRepeatCount: st.newOrderSoundRepeatCount,
-                newOrderSoundVolumePercent: st.newOrderSoundVolumePercent != null
-                  ? st.newOrderSoundVolumePercent
-                  : Math.round((st.newOrderSoundVolume || 1) * 100),
-                showBrowserNotification: st.showBrowserNotification
-              });
-              audioPlayedOk = "ok";
-            } catch (e) {
-              audioPlayedOk = "error";
-              if (O.isDebugEnabled()) {
-                O.debugWarn("playSoundNow", e);
-              }
-            } finally {
-              hideSpeakerIndicators(newIds);
-            }
-          }
-        } else {
-          audioPlayedOk = "soundDisabled";
-        }
-        O.audio.showBrowserNotificationIfAllowed();
-      }
 
       if (O.isDebugEnabled() && live && newIds.length > 0) {
-        O.debugLog("poll", { newInTable: newIds.length, defaultLive: true, audio: audioPlayedOk });
+        O.debugLog("poll", {
+          newInTable: newIds.length,
+          defaultLive: true,
+          liveDisplay: false
+        });
       }
     } catch (error) {
       O.showOrdersWarning("orders-table-exception", O.getMessage("tableRefreshException"));
@@ -396,6 +468,7 @@
   T.detectNewOrderIds = detectNewOrderIds;
   T.markOrdersAsRecentlyNew = markOrdersAsRecentlyNew;
   T.applyNewOrderVisualState = applyNewOrderVisualState;
+  T.scheduleNewOrderHighlightCleanup = scheduleNewOrderHighlightCleanup;
   T.showSpeakerIndicators = showSpeakerIndicators;
   T.hideSpeakerIndicators = hideSpeakerIndicators;
   T.refreshOrdersTable = refreshOrdersTable;

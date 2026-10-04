@@ -1,5 +1,5 @@
 ---
-description: Architecture boundaries for OrderHub
+description: Architecture boundaries for Wasla
 alwaysApply: true
 ---
 
@@ -11,6 +11,7 @@ Keep these boundaries strict.
 
 - Web controllers must not use EF Core directly.
 - Web controllers must not inject DbContext.
+- `Wasla.Web` must not use `CentralDbContext` or `TenantDbContext` directly.
 - Web controllers must not use Infrastructure persistence classes directly.
 - Web controllers must not use provider clients directly.
 - Web middleware should not query EF directly.
@@ -18,6 +19,9 @@ Keep these boundaries strict.
 - MVC ViewModels must be Web-specific.
 - Do not use Contracts DTOs as MVC ViewModels.
 - Razor views should receive Web ViewModels, not EF entities.
+- Tenant URL/domain builders should be centralized; do not duplicate host/scheme/port logic in Razor views.
+- Development/Staging tenant links must preserve the current request port where the existing builder requires it.
+- Do not hardcode production tenant URLs.
 
 Allowed exception:
 - Web `Program.cs` may call Infrastructure DI registration as the composition root.
@@ -30,10 +34,11 @@ Allowed exception:
 - Application must not depend on Infrastructure implementation details.
 - Application should define interfaces that Infrastructure implements when needed.
 - Application should not leak EF Core types to Web.
+- Provisioning belongs in Application/Infrastructure and CLI orchestration, not in controllers or middleware.
 
 ## Infrastructure
 
-- Infrastructure owns EF Core, DbContexts, migrations, repositories, persistence, integrations, encryption, and secrets.
+- Infrastructure owns EF Core, DbContexts, migrations, repositories, persistence, integrations, provider clients, encryption, secrets, SMTP, and email implementations.
 - Infrastructure implements Application interfaces.
 - Infrastructure must not reference Web.
 - Infrastructure can reference Application and Domain.
@@ -50,6 +55,14 @@ Allowed exception:
 - Contracts are for API request/response models.
 - Contracts are not MVC ViewModels.
 - Contracts should not be used as Razor page models.
+
+## EF Core and provisioning
+
+- EF Core migration commands should use `Wasla.Cli` as the startup project.
+- Do not add EF tooling dependencies to `Wasla.Web`.
+- Tenant resolution must not create tenant databases or trigger provisioning.
+- Payment success must not automatically create a tenant database unless the provisioning flow explicitly performs it.
+- Do not use Web controllers or middleware as shortcuts for tenant provisioning.
 
 ## When unsure
 

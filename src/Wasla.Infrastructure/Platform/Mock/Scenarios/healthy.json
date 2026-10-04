@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Healthy",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoSugar"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Healthy.Product.ChickenSalad", "minPrice": 180, "maxPrice": 270, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.NoOnion", "Mock.Modifier.NotSpicy"] },
+    { "key": "Mock.Healthy.Product.FitBowl", "minPrice": 170, "maxPrice": 260, "modifiers": ["Mock.Modifier.NoSugar", "Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy"] },
+    { "key": "Mock.Healthy.Product.OatBowl", "minPrice": 90, "maxPrice": 140, "modifiers": ["Mock.Modifier.NoSugar"] },
+    { "key": "Mock.Healthy.Product.ProteinPlate", "minPrice": 220, "maxPrice": 320, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Yogurt", "Mock.Modifier.NotSpicy"] },
+    { "key": "Mock.Healthy.Product.Ayran", "minPrice": 25, "maxPrice": 40, "modifiers": ["Mock.Modifier.Ayran"] }
+  ]
+}

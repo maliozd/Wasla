@@ -23,17 +23,22 @@
         <link rel="stylesheet" href="~/css/rtl.css" asp-append-version="true" />
     }
 </head>
-<body class="oh-auth-bg">
+<body class="wasla-auth-bg">
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-4">
-            <div class="card oh-card">
+            <div class="card wasla-card">
                 <div class="card-body p-4">
                     <h1 class="h4 mb-3">@L["Auth.LoginTitle"]</h1>
 
                     @if (TempData["AuthMessage"] is string authMessage && !string.IsNullOrWhiteSpace(authMessage))
                     {
-                        <div class="alert alert-warning">@authMessage</div>
+                        <div class="alert alert-info">@authMessage</div>
+                    }
+
+                    @if (TempData["AuthSuccess"] is string authSuccess && !string.IsNullOrWhiteSpace(authSuccess))
+                    {
+                        <div class="alert alert-success">@authSuccess</div>
                     }
 
                     @if (!ViewData.ModelState.IsValid)
@@ -64,6 +69,15 @@
                                 </button>
                             </div>
                             <span class="text-danger" asp-validation-for="Password"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input class="form-check-input" asp-for="RememberMe" />
+                            <label class="form-check-label" asp-for="RememberMe">@L["Auth.RememberMe"]</label>
+                        </div>
+
+                        <div class="mb-3 text-end">
+                            <a href="/auth/forgot-password" class="small">@L["Auth.ForgotPassword.Link"]</a>
                         </div>
 
                         <button class="btn btn-primary w-100" type="submit">@L["Auth.LoginButton"]</button>

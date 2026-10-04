@@ -2,11 +2,15 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Orders;
+using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Demos;
 using Wasla.Application.Orders;
 using Wasla.Application.Time;
 using Wasla.Domain.Enums;
 using Wasla.Web.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.Orders;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -16,7 +20,7 @@ using Microsoft.Extensions.Localization;
 namespace Wasla.Web.Areas.Tenant.Controllers;
 
 [Area(AreaNames.Tenant)]
-[Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
+[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.CanViewOrders)]
 [Route("orders")]
 public sealed class OrdersController : BaseController
 {
@@ -26,6 +30,9 @@ public sealed class OrdersController : BaseController
     private readonly IOrderSyncSettingsService _orderSyncSettings;
     private readonly ITenantOrderSettingsService _orderSettings;
     private readonly IOrderReceiptCreationService _receiptCreation;
+    private readonly IManualOrderPrintService _manualPrint;
+    private readonly IGuidedDemoService _demos;
+    private readonly IAuthorizationService _authorization;
     private readonly IValidator<UpdateTenantOrderSettingsCommand> _orderSettingsValidator;
     private readonly ILogger<OrdersController> _logger;
     private readonly IStringLocalizer<Wasla.Web.SharedResource> _localizer;
@@ -37,6 +44,9 @@ public sealed class OrdersController : BaseController
         IOrderSyncSettingsService orderSyncSettings,
         ITenantOrderSettingsService orderSettings,
         IOrderReceiptCreationService receiptCreation,
+        IManualOrderPrintService manualPrint,
+        IGuidedDemoService demos,
+        IAuthorizationService authorization,
         IValidator<UpdateTenantOrderSettingsCommand> orderSettingsValidator,
         ILogger<OrdersController> logger,
         IStringLocalizer<Wasla.Web.SharedResource> localizer)
@@ -47,40 +57,20 @@ public sealed class OrdersController : BaseController
         _orderSyncSettings = orderSyncSettings;
         _orderSettings = orderSettings;
         _receiptCreation = receiptCreation;
+        _manualPrint = manualPrint;
+        _demos = demos;
+        _authorization = authorization;
         _orderSettingsValidator = orderSettingsValidator;
         _logger = logger;
         _localizer = localizer;
     }
 
+    /// <summary>
+    /// Orders is the management search page: current and historical lookup over the same
+    /// server-side filtered/paged query. Live operational display lives on <see cref="LiveDisplay" />.
+    /// </summary>
     [HttpGet("")]
     public async Task<IActionResult> Index(
-        [FromQuery] FoodPlatform? platform,
-        [FromQuery] OrderStatus? status,
-        [FromQuery] string? startDate,
-        [FromQuery] string? endDate,
-        [FromQuery] string? sortBy = "receivedAt",
-        [FromQuery] string? sortDirection = "desc",
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
-        CancellationToken ct = default)
-    {
-        var tenant = _currentTenant.CurrentTenant;
-        if (tenant is null) return NotFound();
-
-        if (IsLegacyFullscreenRequest())
-            return RedirectToAction(nameof(LiveDisplay));
-
-        var vm = await BuildOrderListViewModelAsync(
-            tenant.Id, platform, status, startDate, endDate, search: null,
-            sortBy, sortDirection, page, pageSize,
-            useHistoryDefaults: false,
-            addDateValidationErrors: true, logDateFilterAs: "Index", ct);
-
-        return View("Index", vm);
-    }
-
-    [HttpGet("history")]
-    public async Task<IActionResult> History(
         [FromQuery] FoodPlatform? platform,
         [FromQuery] OrderStatus? status,
         [FromQuery] string? startDate,
@@ -95,19 +85,55 @@ public sealed class OrdersController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
+        if (IsLegacyFullscreenRequest())
+            return RedirectToAction(nameof(LiveDisplay));
+
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, platform, status, startDate, endDate, search,
             sortBy, sortDirection, page, pageSize,
-            useHistoryDefaults: true,
-            addDateValidationErrors: true, logDateFilterAs: "History", ct);
+            useHistoryDefaults: false,
+            addDateValidationErrors: true, logDateFilterAs: "Index", ct,
+            includeLineItems: false);
 
-        vm.ListBasePath = "/orders/history";
-        vm.IsHistoryPage = true;
+        return View("Index", vm);
+    }
 
-        return View("History", vm);
+    /// <summary>Legacy Order History route: Orders now owns historical lookup, so keep old links working.</summary>
+    [HttpGet("history")]
+    public IActionResult History(
+        [FromQuery] FoodPlatform? platform,
+        [FromQuery] OrderStatus? status,
+        [FromQuery] string? startDate,
+        [FromQuery] string? endDate,
+        [FromQuery] string? search,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDirection,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize)
+    {
+        var preserved = new List<KeyValuePair<string, string?>>
+        {
+            new("platform", platform?.ToString()),
+            new("status", status?.ToString()),
+            new("startDate", startDate),
+            new("endDate", endDate),
+            new("search", search),
+            new("sortBy", sortBy),
+            new("sortDirection", sortDirection),
+            new("page", page?.ToString()),
+            new("pageSize", pageSize?.ToString())
+        };
+
+        var query = preserved
+            .Where(p => !string.IsNullOrWhiteSpace(p.Value))
+            .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value!.Trim())}")
+            .ToList();
+
+        return Redirect(query.Count == 0 ? "/orders" : "/orders?" + string.Join("&", query));
     }
 
     [HttpGet("sync-settings")]
+    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> GetOrderSyncSettings(CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -119,6 +145,7 @@ public sealed class OrdersController : BaseController
 
     [ValidateAntiForgeryToken]
     [HttpPost("sync-settings")]
+    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> UpdateOrderSyncSettings([FromForm] bool enabled, CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -128,7 +155,12 @@ public sealed class OrdersController : BaseController
         return Ok(new { orderSyncEnabled = r.OrderSyncEnabled });
     }
 
+    /// <summary>
+    /// The saved order settings, as configured, plus <c>effective</c>: what automatic approval and automatic receipts do
+    /// right now (PendingSetup while the tenant is still in Setup). The saved values are never changed by the mode.
+    /// </summary>
     [HttpGet("order-settings")]
+    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> GetOrderSettings(CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -140,12 +172,21 @@ public sealed class OrdersController : BaseController
             autoApproveNewOrders = r.AutoApproveNewOrders,
             autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
             receiptCreationTiming = ReceiptCreationTimingCodes.FromAutoPrintReceiptSetting(r.AutoPrintReceiptOnAutoApprove),
-            receiptPrintCopyCount = r.ReceiptPrintCopyCount
+            receiptPrintCopyCount = r.ReceiptPrintCopyCount,
+            effective = EffectiveAutomation(r)
         });
     }
 
+    private static object EffectiveAutomation(TenantOrderSettingsResult settings) =>
+        new
+        {
+            autoApprove = TenantAutomationStatus.Effective(settings.OperationalMode, settings.AutoApproveNewOrders).ToString(),
+            autoReceipt = TenantAutomationStatus.Effective(settings.OperationalMode, settings.AutoPrintReceiptOnAutoApprove).ToString()
+        };
+
     [ValidateAntiForgeryToken]
     [HttpPost("order-settings")]
+    [Authorize(Policy = TenantPolicies.TenantManagerOrOwner)]
     public async Task<IActionResult> UpdateOrderSettings(
         [FromForm] bool autoApproveNewOrders,
         [FromForm] bool autoPrintReceiptOnAutoApprove,
@@ -177,7 +218,8 @@ public sealed class OrdersController : BaseController
                 autoApproveNewOrders = r.AutoApproveNewOrders,
                 autoPrintReceiptOnAutoApprove = r.AutoPrintReceiptOnAutoApprove,
                 receiptCreationTiming = ReceiptCreationTimingCodes.FromAutoPrintReceiptSetting(r.AutoPrintReceiptOnAutoApprove),
-                receiptPrintCopyCount = r.ReceiptPrintCopyCount
+                receiptPrintCopyCount = r.ReceiptPrintCopyCount,
+                effective = EffectiveAutomation(r)
             });
         }
         catch (ValidationException)
@@ -186,12 +228,17 @@ public sealed class OrdersController : BaseController
         }
     }
 
+    /// <summary>
+    /// Table fragment used to re-render Orders after a lifecycle action. It must accept the same
+    /// filter set as <see cref="Index" /> so the refreshed page matches what the user is looking at.
+    /// </summary>
     [HttpGet("table")]
     public async Task<IActionResult> Table(
         [FromQuery] FoodPlatform? platform,
         [FromQuery] OrderStatus? status,
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
+        [FromQuery] string? search,
         [FromQuery] string? sortBy = "receivedAt",
         [FromQuery] string? sortDirection = "desc",
         [FromQuery] int page = 1,
@@ -202,16 +249,21 @@ public sealed class OrdersController : BaseController
         if (tenant is null) return NotFound();
 
         var vm = await BuildOrderListViewModelAsync(
-            tenant.Id, platform, status, startDate, endDate, search: null,
+            tenant.Id, platform, status, startDate, endDate, search,
             sortBy, sortDirection, page, pageSize,
             useHistoryDefaults: false,
-            addDateValidationErrors: false, logDateFilterAs: null, ct);
+            addDateValidationErrors: false, logDateFilterAs: null, ct,
+            includeLineItems: false);
 
         return PartialView("_OrdersTable", vm);
     }
 
-    [HttpGet("live-display")]
-    public async Task<IActionResult> LiveDisplay(CancellationToken ct = default)
+    /// <summary>
+    /// Polling partial for Live Screen operational cards. Same query shape as LiveDisplay; dedicated markup.
+    /// </summary>
+    [HttpGet("live-screen")]
+    [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
+    public async Task<IActionResult> LiveScreenPartial(CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
@@ -221,15 +273,117 @@ public sealed class OrdersController : BaseController
             tenant.Id, null, null, today, today, search: null,
             sortBy: "receivedAt", sortDirection: "desc", page: 1, pageSize: 100,
             useHistoryDefaults: false,
-            addDateValidationErrors: false, logDateFilterAs: null, ct);
+            addDateValidationErrors: false, logDateFilterAs: null, ct,
+            includeLineItems: true);
+
+        return PartialView("_LiveScreenOrders", vm);
+    }
+
+    [HttpGet("live-display")]
+    [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
+    public async Task<IActionResult> LiveDisplay([FromServices] IGuidedSetupCoordinator guidedSetup, CancellationToken ct = default)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
+        var vm = await BuildOrderListViewModelAsync(
+            tenant.Id, null, null, today, today, search: null,
+            sortBy: "receivedAt",
+            sortDirection: "desc",
+            page: 1, pageSize: 100,
+            useHistoryDefaults: false,
+            addDateValidationErrors: false,
+            logDateFilterAs: null, ct,
+            includeLineItems: true);
+
+        // Read-only; guided-setup read failures hide the guidance and never break the Live Screen.
+        var userIdValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("UserId")?.Value;
+        if (Guid.TryParse(userIdValue, out var userId))
+            vm.GuidedTraining = await guidedSetup.GetLiveScreenAsync(tenant.Id, userId, User, ct);
 
         ViewData["CustomerName"] = tenant.Name;
         return View("LiveDisplay", vm);
     }
 
     /// <summary>
-    /// Shared list query/projection for the Orders index page and the polling partial.
-    /// Both endpoints must return the same data shape; only validation/logging differ.
+    /// Read-only Live Screen snapshot. The UI still polls the HTML partial.
+    /// <para>
+    /// While this user (an Owner; order training is Owner-only) is in order training, their snapshot leaves real orders
+    /// out (they are still synchronized, kept and listed on Orders) and carries only how many arrived since the user
+    /// started guided setup, whatever the tenant's operational mode. Every other user gets the normal snapshot. This is
+    /// presentation for one user only: automatic acceptance and printing depend on the tenant's mode, never on this.
+    /// </para>
+    /// </summary>
+    [HttpGet("live-data")]
+    [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
+    public async Task<IActionResult> LiveData(
+        [FromServices] IGuidedSetupCoordinator guidedSetup,
+        [FromServices] ITenantOperationalModeService operationalModes,
+        CancellationToken ct = default)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var snapshot = await _orders.GetLiveScreenSnapshotAsync(tenant.Id, ct);
+
+        // The settings menu's automation indicators, for everyone who may view the Live Screen: read-only effective
+        // states (Active, Off, PendingSetup), never the settings themselves. From the server on every poll, so
+        // Setup → Live shows up without a reload. The settings endpoints keep their own Manager/Owner policy.
+        try
+        {
+            var automation = await operationalModes.GetAutomationStatusAsync(tenant.Id, ct);
+            snapshot = snapshot with { Automation = LiveScreenAutomationStatus.From(automation) };
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The indicators keep their last state; the orders are unaffected.
+            _logger.LogWarning("Automation status could not be read: {ExceptionType}", ex.GetType().Name);
+        }
+
+        var userIdValue = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User?.FindFirst("UserId")?.Value;
+        if (!Guid.TryParse(userIdValue, out var userId))
+            return Ok(snapshot);
+
+        // Only Owners can train or own a practice order (the same TenantOwner policy guards those endpoints); skip the
+        // per-poll lookups for everyone else.
+        if ((await _authorization.AuthorizeAsync(User!, TenantPolicies.TenantOwner)).Succeeded)
+        {
+            var currentUserOrderTraining = await guidedSetup.GetLiveScreenIsolationAsync(tenant.Id, userId, User!, ct);
+            if (currentUserOrderTraining is not null)
+            {
+                var received = await _orders.CountReceivedSinceAsync(tenant.Id, currentUserOrderTraining.TrainingStartedAtUtc, ct);
+                snapshot = snapshot with { Orders = [], Training = new LiveScreenTrainingIsolation(received) };
+            }
+
+            try
+            {
+                var demo = await _demos.GetForLiveScreenAsync(tenant.Id, userId, ct);
+                if (demo is not null)
+                {
+                    var merged = new List<LiveScreenOrderDto>(snapshot.Orders.Count + 1)
+                    {
+                        GuidedDemoLiveMapper.ToLiveOrder(_localizer, demo)
+                    };
+                    merged.AddRange(snapshot.Orders);
+                    snapshot = snapshot with { Orders = merged };
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning("Guided demo could not be read: {ExceptionType}", ex.GetType().Name);
+            }
+        }
+
+        return Ok(snapshot);
+    }
+
+    /// <summary>
+    /// Shared list query/projection for Orders management, Live Screen, and polling partials.
+    /// Live Screen opts into line-item projection; management list/history keep the lighter shape.
     /// </summary>
     private async Task<OrderListViewModel> BuildOrderListViewModelAsync(
         Guid customerId,
@@ -245,7 +399,8 @@ public sealed class OrdersController : BaseController
         bool useHistoryDefaults,
         bool addDateValidationErrors,
         string? logDateFilterAs,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool includeLineItems = false)
     {
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
         DefaultDateRangeIfNoDates(ref startDate, ref endDate, useHistoryDefaults);
@@ -272,7 +427,8 @@ public sealed class OrdersController : BaseController
             safePage,
             safePageSize,
             trimmedSearch,
-            ct);
+            ct,
+            includeLineItems);
 
         if (logDateFilterAs is not null)
         {
@@ -312,13 +468,36 @@ public sealed class OrdersController : BaseController
     }
 
     [HttpGet("details/{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, [FromQuery] string? from, CancellationToken ct)
+    public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+    {
+        var vm = await BuildOrderDetailViewModelAsync(id, ct);
+        if (vm is null) return NotFound();
+
+        return View("Details", vm);
+    }
+
+    /// <summary>
+    /// Lazy detail markup for the Live Screen modal. Same tenant-scoped read and authorization as
+    /// <see cref="Details" />; only the shell differs, so lifecycle rules are not duplicated.
+    /// </summary>
+    [HttpGet("{id:guid}/detail-panel")]
+    public async Task<IActionResult> DetailPanel(Guid id, CancellationToken ct)
+    {
+        var vm = await BuildOrderDetailViewModelAsync(id, ct);
+        if (vm is null) return NotFound();
+
+        return PartialView("_OrderDetailPanel", vm);
+    }
+
+    private async Task<OrderDetailViewModel?> BuildOrderDetailViewModelAsync(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
-        if (tenant is null) return NotFound();
+        if (tenant is null) return null;
 
         var order = await _orders.GetByIdAsync(tenant.Id, id, ct);
-        if (order is null) return NotFound();
+        if (order is null) return null;
+
+        var printState = await _manualPrint.GetReceiptPrintStateAsync(tenant.Id, id, ct);
 
         var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
         var receivedLocal = TimeZoneInfo.ConvertTimeFromUtc(
@@ -330,9 +509,7 @@ public sealed class OrdersController : BaseController
                 tz)
             : null;
 
-        var fromHistory = string.Equals(from, "history", StringComparison.OrdinalIgnoreCase);
-
-        var vm = new OrderDetailViewModel
+        return new OrderDetailViewModel
         {
             Id = order.Id,
             Platform = order.Platform,
@@ -342,6 +519,7 @@ public sealed class OrdersController : BaseController
             CustomerName = order.CustomerName,
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = order.CustomerAddress,
+            CustomerNote = order.CustomerNote,
             TotalAmount = order.TotalAmount,
             DeliveryFee = order.DeliveryFee,
             ServiceFee = order.ServiceFee,
@@ -351,8 +529,9 @@ public sealed class OrdersController : BaseController
             ReceivedAtLocal = receivedLocal,
             AcceptedAtUtc = order.AcceptedAtUtc,
             AcceptedAtLocal = acceptedLocal,
-            BackUrl = fromHistory ? "/orders/history" : "/orders",
-            BackFromHistory = fromHistory,
+            BackUrl = "/orders",
+            ReceiptPrintInProgress = printState.HasActiveJob,
+            ReceiptCanReprint = printState.CanReprint,
             Items = order.Items.Select(i => new OrderDetailViewModel.ItemRow
             {
                 ProductName = i.ProductName,
@@ -367,12 +546,40 @@ public sealed class OrdersController : BaseController
                 }).ToList()
             }).ToList()
         };
+    }
 
-        return View("Details", vm);
+    /// <summary>
+    /// Queues a receipt for the order through the existing Print Bridge job pipeline. Physical printing
+    /// is done by the desktop Print Bridge after it claims the job, so a success here means "queued".
+    /// </summary>
+    [HttpPost("{id:guid}/print")]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManualPrint)]
+    public async Task<IActionResult> Print(Guid id, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var result = await _manualPrint.QueueReceiptPrintAsync(tenant.Id, id, tenant.Name, ct);
+
+        var body = new
+        {
+            success = result.Success,
+            message = _localizer[result.MessageKey].Value
+        };
+
+        return result.Outcome switch
+        {
+            ManualOrderPrintOutcome.OrderNotFound => NotFound(body),
+            ManualOrderPrintOutcome.AlreadyQueued => Conflict(body),
+            _ when !result.Success => BadRequest(body),
+            _ => Ok(body)
+        };
     }
 
     [HttpPost("{id:guid}/approve")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> Approve(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -388,6 +595,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/reject")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> Reject(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -400,6 +608,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/start-preparing")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> StartPreparing(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -412,6 +621,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/mark-ready")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> MarkReady(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -424,6 +634,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/hand-to-courier")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> HandToCourier(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -436,6 +647,7 @@ public sealed class OrdersController : BaseController
 
     [HttpPost("{id:guid}/mark-delivered")]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageOrders)]
     public async Task<IActionResult> MarkDelivered(Guid id, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -452,6 +664,9 @@ public sealed class OrdersController : BaseController
         return messageKey switch
         {
             "Orders.InvalidStatusForAction" => "ordersInvalidStatusForAction",
+            // The UI never offers these actions; a direct request gets the normal invalid-action response.
+            OrderDeliveryPolicy.UserPickupNotAllowedKey => "ordersInvalidStatusForAction",
+            OrderDeliveryPolicy.UserDeliveryNotAllowedKey => "ordersInvalidStatusForAction",
             "Orders.ActionFailed" => "ordersActionFailed",
             "Orders.OrderActionFailed" => "ordersOrderActionFailed",
             "Orders.ApproveFailed" => "ordersApproveFailed",
@@ -488,7 +703,15 @@ public sealed class OrdersController : BaseController
                     timeZone),
                 ItemCount = o.ItemCount,
                 FirstProductName = o.FirstProductName,
-                DisplayImageUrl = OrderProductImageHelper.ResolveDisplayImageUrl(null, imageSeed)
+                DisplayImageUrl = OrderProductImageHelper.ResolveDisplayImageUrl(null, imageSeed),
+                LineItems = o.LineItems
+                    .Select(i => new OrderListViewModel.LineItem
+                    {
+                        ProductName = i.ProductName,
+                        Quantity = i.Quantity,
+                        Notes = i.Notes
+                    })
+                    .ToList()
             };
         }).ToList();
 

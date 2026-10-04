@@ -18,9 +18,14 @@ public sealed class PrintBridgeDevice : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
+    public Guid? InstallationId { get; set; }
+
     public string? MachineName { get; set; }
     public string? PrinterName { get; set; }
     public string? AppVersion { get; set; }
     public DateTime? LastSeenAt { get; set; }
     public string? LastIpAddress { get; set; }
+
+    /// <summary>UTC timestamp when the device was retired from normal management.</summary>
+    public DateTime? RemovedAtUtc { get; set; }
 }

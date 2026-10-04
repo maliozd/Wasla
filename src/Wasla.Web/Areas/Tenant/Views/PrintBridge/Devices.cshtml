@@ -5,66 +5,27 @@
 @{
     ViewData["Title"] = L["PrintBridge.DevicesPageTitle"];
 
-    var initialDevices = Model.Devices.Select(d => new
-    {
-        id = d.Id,
-        name = d.Name,
-        isActive = d.IsActive,
-        connectionStatus = d.ConnectionStatus.ToString(),
-        connectionStatusLabelKey = d.ConnectionStatusLabelKey,
-        isConnected = d.IsConnected,
-        lastSeenAtUtc = d.LastSeenAtUtc,
-        machineName = d.MachineName,
-        printerName = d.PrinterName,
-        appVersion = d.AppVersion
-    });
+    // The initial device state is the same snapshot GET /print-bridge/devices/list returns (UTC times with "Z").
+    var initialSnapshotJson = JsonSerializer.Serialize(Model.DeviceSnapshot, Wasla.Web.Models.PrintBridge.PrintBridgeDeviceSnapshot.JsonOptions);
 
-    var initialConnectedCount = Model.Devices.Count(d => d.IsConnected);
-    var initialLatestLastSeen = Model.Devices
-        .Where(d => d.LastSeenAtUtc.HasValue)
-        .Select(d => d.LastSeenAtUtc)
-        .OrderByDescending(d => d)
-        .FirstOrDefault();
-
-    var initialQuota = new
+    // Times are shown in the restaurant's time zone and the UI culture, as on the Live Screen.
+    var timeZoneId = Wasla.Application.Time.TimeZoneHelper.ResolveTurkeyTimeZone().Id;
+    if (timeZoneId == "Turkey Standard Time")
     {
-        allowedActiveDeviceCount = Model.AllowedActiveDeviceCount,
-        activeDeviceCount = Model.ActiveDeviceCount,
-        canCreateActiveDevice = Model.CanCreateActiveDevice,
-        activeCountExceedsLimit = Model.ActiveCountExceedsLimit,
-        connectedDeviceCount = initialConnectedCount,
-        latestLastSeenAtUtc = initialLatestLastSeen,
-        printJobsTodayCount = Model.PrintJobsTodayCount,
-        lastConnectedDeviceName = Model.LastConnectedDeviceName
-    };
+        timeZoneId = "Europe/Istanbul";
+    }
 
     var pbMessages = new
     {
-        tokenCreated = L["PrintBridge.TokenCreated"].Value,
-        tokenRegenerated = L["PrintBridge.TokenRegenerated"].Value,
-        tokenShownOnce = L["PrintBridge.TokenShownOnce"].Value,
-        oldTokenInvalidAfterRegenerate = L["PrintBridge.OldTokenInvalidAfterRegenerate"].Value,
-        tokenNotAvailableRegenerate = L["PrintBridge.TokenNotAvailableRegenerate"].Value,
-        confirmRegenerateToken = L["PrintBridge.ConfirmRegenerateToken"].Value,
-        tokenRegenerateWarning = L["PrintBridge.TokenRegenerateWarning"].Value,
-        deviceCreatedSuccessfully = L["PrintBridge.DeviceCreatedSuccessfully"].Value,
-        tokenGenerateFailed = L["PrintBridge.TokenGenerateFailed"].Value,
-        tokenRegenerateFailed = L["PrintBridge.TokenRegenerateFailed"].Value,
-        copyToken = L["PrintBridge.CopyToken"].Value,
-        tokenCopied = L["PrintBridge.TokenCopied"].Value,
-        tokenCopyFailed = L["PrintBridge.TokenCopyFailed"].Value,
-        dismissTokenBox = L["PrintBridge.DismissTokenBox"].Value,
         ordersActive = L["Orders.Active"].Value,
         ordersPassive = L["Orders.Passive"].Value,
         deviceUpdateFailed = L["PrintBridge.DeviceUpdateFailed"].Value,
-        tokenMasked = L["PrintBridge.TokenMasked"].Value,
         deviceLimitReached = L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount].Value,
         deviceLimitExceededWarning = L["PrintBridge.DeviceLimitExceededWarning"].Value,
         deactivateExtraDevices = L["PrintBridge.DeactivateExtraDevices"].Value,
         noDevicesTitle = L["PrintBridge.NoDevicesTitle"].Value,
         noDevicesDescription = L["PrintBridge.NoDevicesDescription"].Value,
-        addDevice = L["PrintBridge.CreateDeviceToken"].Value,
-        createDevice = L["PrintBridge.CreateDeviceToken"].Value,
+        setupNewDevice = L["PrintBridge.SetupNewDeviceAction"].Value,
         goToSetup = L["PrintBridge.GotoSetupLink"].Value,
         statusOnline = L["PrintBridge.Online"].Value,
         statusOffline = L["PrintBridge.Offline"].Value,
@@ -76,14 +37,13 @@
         lastSeenNever = L["PrintBridge.LastSeenNever"].Value,
         versionUnknown = L["PrintBridge.VersionUnknown"].Value,
         deviceName = L["PrintBridge.DeviceName"].Value,
-        localAlias = L["PrintBridge.LocalAlias"].Value,
         status = L["PrintBridge.Status"].Value,
         appVersion = L["PrintBridge.AppVersion"].Value,
         machineName = L["PrintBridge.MachineName"].Value,
+        details = L["PrintBridge.DetailsAction"].Value,
         printerName = L["PrintBridge.PrinterName"].Value,
         deviceActive = L["PrintBridge.DeviceActive"].Value,
         actions = L["Common.Actions"].Value,
-        regenerateToken = L["PrintBridge.RegenerateToken"].Value,
         emptyValue = "—",
         lastConnectedNone = L["PrintBridge.LastConnectedNone"].Value,
         printJobsTitle = L["PrintBridge.PrintJobsTitle"].Value,
@@ -103,7 +63,6 @@
         printJobStatusPrinted = L["PrintBridge.PrintJobStatusPrinted"].Value,
         printJobStatusFailed = L["PrintBridge.PrintJobStatusFailed"].Value,
         printJobStatusCancelled = L["PrintBridge.PrintJobStatusCancelled"].Value,
-        deviceToken = L["PrintBridge.DeviceToken"].Value,
         copied = L["PrintBridge.Copied"].Value,
         copyFailed = L["PrintBridge.CopyFailed"].Value
     };
@@ -117,11 +76,11 @@
     var lastConnectedDisplay = Model.LastConnectedDeviceName ?? L["PrintBridge.LastConnectedNone"].Value;
 }
 
-<div class="oh-print-bridge-page">
-<div class="oh-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
-    <div class="oh-customer-page-header__main">
-        <h1 class="oh-customer-page-header__title h4 mb-1">@L["PrintBridge.DevicesPageTitle"]</h1>
-        <p class="oh-customer-page-header__subtitle text-muted small mb-0">@L["PrintBridge.DevicesPageSubtitle"]</p>
+<div class="wasla-print-bridge-page">
+<div class="wasla-customer-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+    <div class="wasla-customer-page-header__main">
+        <h1 class="wasla-customer-page-header__title h4 mb-1">@L["PrintBridge.DevicesPageTitle"]</h1>
+        <p class="wasla-customer-page-header__subtitle text-muted small mb-0">@L["PrintBridge.DevicesPageSubtitle"]</p>
     </div>
     <div class="d-flex flex-wrap align-items-center gap-2">
         <a class="btn btn-outline-secondary btn-sm" href="@Model.ReceiptPrinterSettingsUrl">
@@ -130,7 +89,20 @@
     </div>
 </div>
 
+@if (Model.GuidedDeviceGuide is not null)
+{
+    @await Html.PartialAsync("_GuidedDeviceGuide", Model.GuidedDeviceGuide)
+}
+
 <div id="printBridgeMessageHost"></div>
+@if (TempData["PrintBridgeDeviceMessage"] is string successMessage)
+{
+    <div class="alert alert-success small py-2" role="alert">@successMessage</div>
+}
+@if (TempData["PrintBridgeDeviceError"] is string errorMessage)
+{
+    <div class="alert alert-danger small py-2" role="alert">@errorMessage</div>
+}
 
 <form id="printBridgeAntiForgery" method="post" class="d-none">
     @Html.AntiForgeryToken()
@@ -151,33 +123,33 @@
 
 <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
     <div class="col">
-        <div class="oh-print-bridge-stat">
-            <div class="oh-print-bridge-stat__label">@L["PrintBridge.ActiveDevices"]</div>
-            <div class="oh-print-bridge-stat__value" id="printBridgeSummaryActive">@Model.ActiveDeviceCount</div>
+        <div class="wasla-print-bridge-stat">
+            <div class="wasla-print-bridge-stat__label">@L["PrintBridge.ActiveDevices"]</div>
+            <div class="wasla-print-bridge-stat__value" id="printBridgeSummaryActive">@Model.ActiveDeviceCount</div>
         </div>
     </div>
     <div class="col">
-        <div class="oh-print-bridge-stat">
-            <div class="oh-print-bridge-stat__label">@L["PrintBridge.IncludedDevices"]</div>
-            <div class="oh-print-bridge-stat__value" id="printBridgeSummaryIncluded">@Model.AllowedActiveDeviceCount</div>
+        <div class="wasla-print-bridge-stat">
+            <div class="wasla-print-bridge-stat__label">@L["PrintBridge.IncludedDevices"]</div>
+            <div class="wasla-print-bridge-stat__value" id="printBridgeSummaryIncluded">@Model.AllowedActiveDeviceCount</div>
         </div>
     </div>
     <div class="col">
-        <div class="oh-print-bridge-stat">
-            <div class="oh-print-bridge-stat__label">@L["PrintBridge.LastConnectedDevice"]</div>
-            <div class="oh-print-bridge-stat__value oh-print-bridge-stat__value--text" id="printBridgeSummaryLastDevice">@lastConnectedDisplay</div>
-            <div class="oh-print-bridge-stat__hint text-muted small" id="printBridgeSummaryLastSeen">@L["PrintBridge.LastSeenNever"]</div>
+        <div class="wasla-print-bridge-stat">
+            <div class="wasla-print-bridge-stat__label">@L["PrintBridge.LastConnectedDevice"]</div>
+            <div class="wasla-print-bridge-stat__value wasla-print-bridge-stat__value--text" id="printBridgeSummaryLastDevice">@lastConnectedDisplay</div>
+            <div class="wasla-print-bridge-stat__hint text-muted small" id="printBridgeSummaryLastSeen">@L["PrintBridge.LastSeenNever"]</div>
         </div>
     </div>
     <div class="col">
-        <div class="oh-print-bridge-stat">
-            <div class="oh-print-bridge-stat__label">@L["PrintBridge.PrintJobsToday"]</div>
-            <div class="oh-print-bridge-stat__value" id="printBridgeSummaryPrintJobsToday">@Model.PrintJobsTodayCount</div>
+        <div class="wasla-print-bridge-stat">
+            <div class="wasla-print-bridge-stat__label">@L["PrintBridge.PrintJobsToday"]</div>
+            <div class="wasla-print-bridge-stat__value" id="printBridgeSummaryPrintJobsToday">@Model.PrintJobsTodayCount</div>
         </div>
     </div>
 </div>
 
-<div class="card oh-card oh-print-bridge-devices-card mb-3">
+<div class="card wasla-card wasla-print-bridge-devices-card mb-3">
     <div class="card-body">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
             <div>
@@ -186,36 +158,10 @@
             </div>
         </div>
 
-        <div class="row g-2 align-items-end mb-3" id="printBridgeCreateForm">
-            <div class="col-md-8">
-                <label class="form-label small" for="printBridgeDeviceName">@L["PrintBridge.DeviceName"]</label>
-                <input class="form-control form-control-sm" id="printBridgeDeviceName" type="text" maxlength="200"
-                       placeholder="@L["PrintBridge.DeviceNamePlaceholder"]" />
-            </div>
-            <div class="col-md-4">
-                <button type="button" class="btn btn-primary btn-sm w-100" id="printBridgeCreateDeviceBtn">
-                    <i class="bi bi-key me-1"></i>@L["PrintBridge.CreateDeviceToken"]
-                </button>
-            </div>
-        </div>
-
-        <div id="printBridgeTokenBox" class="d-none border rounded-3 p-3 mb-3 bg-body-tertiary" role="region" aria-live="polite">
-            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                <div class="flex-grow-1">
-                    <div class="form-label small fw-semibold mb-1">@L["PrintBridge.DeviceToken"]</div>
-                    <div id="printBridgeTokenTitle" class="small fw-semibold text-warning-emphasis"></div>
-                    <div id="printBridgeTokenNotice" class="text-muted small mt-1 mb-0"></div>
-                </div>
-                <button type="button" class="btn-close btn-close-sm mt-1" id="printBridgeDismissTokenBtn"
-                        aria-label="@L["PrintBridge.DismissTokenBox"]"></button>
-            </div>
-            <div id="printBridgeTokenWarning" class="alert alert-danger small py-2 mb-2 d-none" role="alert"></div>
-            <div class="d-flex flex-wrap align-items-stretch gap-2">
-                <pre id="printBridgeTokenValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break oh-print-bridge-token-value"></pre>
-                <button type="button" class="btn btn-sm btn-primary align-self-start" id="printBridgeCopyTokenBtn">
-                    <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyToken"]
-                </button>
-            </div>
+        <div class="mb-3">
+            <a class="btn btn-primary btn-sm" href="@Model.SetupUrl">
+                <i class="bi bi-plus-circle me-1"></i>@L["PrintBridge.SetupNewDeviceAction"]
+            </a>
         </div>
 
         <div id="printBridgeDevicesPanel"></div>
@@ -227,7 +173,7 @@
     </div>
 </div>
 
-<div class="card oh-card">
+<div class="card wasla-card" id="recent-print-activity">
     <div class="card-body">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
             <div>
@@ -247,20 +193,18 @@
 
 @section Scripts {
     <script>
-        window.OrderHubPrintBridge = {
+        window.WaslaPrintBridge = {
             messages: @Html.Raw(pbMessagesJson),
             devicesUrl: "/print-bridge/devices/list",
-            createDeviceUrl: "/print-bridge/devices/create",
-            regenerateTokenUrlTemplate: "/print-bridge/devices/{id}/regenerate-token",
+            devicesPollIntervalMs: 15000,
             setActiveUrlTemplate: "/print-bridge/devices/{id}/set-active",
             printJobsUrl: "/print-bridge/print-jobs",
             reprintUrlTemplate: "/print-bridge/print-jobs/{id}/reprint",
             printJobsPollIntervalMs: 3000,
             setupUrl: "@Model.SetupUrl",
-            initialState: {
-                devices: @Html.Raw(JsonSerializer.Serialize(initialDevices)),
-                quota: @Html.Raw(JsonSerializer.Serialize(initialQuota))
-            }
+            displayCulture: "@System.Globalization.CultureInfo.CurrentUICulture.Name",
+            timeZoneId: "@timeZoneId",
+            initialState: @Html.Raw(initialSnapshotJson)
         };
     </script>
     <script src="~/js/print-bridge/print-bridge-page.js" asp-append-version="true"></script>

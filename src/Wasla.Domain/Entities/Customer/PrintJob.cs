@@ -24,6 +24,7 @@ public sealed class PrintJob : BaseEntity
     public string? ErrorMessage { get; set; }
 
     public DateTime? LockedAt { get; set; }
+    public Guid? LockedByInstallationId { get; set; }
     public string? LockedBy { get; set; }
     public DateTime? LastAttemptAt { get; set; }
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Security;
 using Wasla.Contracts.Auth;
 using Wasla.Contracts.Enums;
 
@@ -37,6 +38,15 @@ public sealed class AuthController : ControllerBase
     [HttpGet("me")]
     public ActionResult<CurrentUserDto> Me()
     {
+        var tenant = _currentTenant.CurrentTenant;
+        var tenantClaim = User.FindFirst(WaslaAuthContracts.TenantIdClaim)?.Value;
+        if (tenant is null
+            || !Guid.TryParse(tenantClaim, out var claimTenantId)
+            || claimTenantId != tenant.Id)
+        {
+            return Forbid();
+        }
+
         var userIdClaim =
             User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
             User.FindFirst("UserId")?.Value;
@@ -53,7 +63,7 @@ public sealed class AuthController : ControllerBase
         var role =
             User.FindFirst(ClaimTypes.Role)?.Value ??
             User.FindFirst("Role")?.Value ??
-            "Staff";
+            "Viewer";
 
         _ = Guid.TryParse(userIdClaim, out var userId);
         _ = Enum.TryParse<UserRoleDto>(role, ignoreCase: true, out var roleDto);

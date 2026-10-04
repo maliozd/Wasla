@@ -3,78 +3,52 @@
 @using System.Text.Json
 @using Wasla.Domain.Enums
 @using Microsoft.Extensions.Localization
+@using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject ITenantNavigationAuthorizationService TenantNavigation
 @{
     ViewData["Title"] = L["Orders.Title"];
     var f = Model.Filters;
     var today = Model.TurkeyLocalToday;
+    var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
-    var isDefaultLive = f.Page == 1
-        && string.Equals(f.SortBy, "receivedAt", StringComparison.OrdinalIgnoreCase)
-        && string.Equals(f.SortDirection, "desc", StringComparison.OrdinalIgnoreCase)
-        && f.StartDate == today && f.EndDate == today;
 }
 
-<div class="oh-orders-page">
+<div class="wasla-orders-page">
 <div class="orders-page-header">
     <div class="orders-page-header__main">
         <h1 class="orders-page-header__title">@L["Orders.Title"]</h1>
+        <p class="orders-page-header__subtitle">@L["Orders.Subtitle"]</p>
         <p class="orders-page-header__subtitle">
-            @L["Orders.Today"] — @today.ToString("d") · @L["Orders.LastUpdated"]: <span id="ordersLastUpdated">-</span>
+            @L["Orders.Today"] — @today.ToString("d")
         </p>
     </div>
-    <div class="orders-page-header__metric orders-total-card" aria-live="polite">
+    <div class="orders-page-header__metric orders-total-card">
         <span class="orders-page-header__metric-value orders-total-card__number" id="ordersTotalCount">@Model.TotalCount</span>
-        <span class="orders-page-header__metric-label orders-total-card__label">@L["Orders.TotalOrders"]</span>
+        <span class="orders-page-header__metric-label orders-total-card__label">@L["Orders.History.TotalResults"]</span>
     </div>
 </div>
 
-<div class="orders-toolbar">
-    <div class="orders-toolbar-left">
-        <div class="oh-orders-status-group" aria-label="@L["Settings.OrderSettings.Title"]">
-            <span id="automationStatusSync" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
-            <span id="automationStatusAutoApprove" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
-            <span id="automationStatusReceipt" class="oh-orders-status-chip oh-orders-status-chip--muted">…</span>
-        </div>
-        <a class="orders-manage-settings" href="/settings/orders">@L["Orders.ManageSettings"]</a>
-    </div>
-    <div class="orders-toolbar-right">
-        <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
-            <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
-            <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
-            <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
-        </div>
-        <button type="button" id="ordersOpenLiveDisplay" class="btn btn-sm btn-primary text-nowrap"
-                title="@L["Orders.OpenLiveDisplay"]">
-            <i class="bi bi-display me-1" aria-hidden="true"></i>@L["Orders.OpenLiveDisplay"]
-        </button>
-        <a class="btn btn-sm btn-outline-secondary text-nowrap" href="/orders/history">@L["Orders.History.ViewOrderHistory"]</a>
-    </div>
-</div>
-
-<button type="button"
-        id="ordersFilterToggle"
-        class="btn btn-sm btn-link orders-filter-toggle d-none px-0 mb-2"
-        aria-expanded="false"
-        aria-controls="ordersFiltersPanel">
-    @L["Orders.ShowFilters"]
-</button>
-
-@if (!isDefaultLive)
+@if (navPermissions.CanViewLiveScreen)
 {
-    <div class="alert alert-info small py-2 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2" role="status">
-        <span>@L["Orders.LiveTrackingLimited"]</span>
-        <a class="btn btn-sm btn-outline-primary flex-shrink-0" href="/orders">@L["Orders.DefaultLiveView"]</a>
+    <div class="orders-toolbar">
+        <div class="orders-toolbar-right ms-auto">
+            @* Live Screen is the operational display and opens in its own tab. *@
+            <a class="btn btn-sm btn-primary text-nowrap" href="/orders/live-display"
+               target="_blank" rel="noopener noreferrer" title="@L["Orders.OpenLiveDisplay"]">
+                <i class="bi bi-display me-1" aria-hidden="true"></i>@L["Orders.OpenLiveDisplay"]
+            </a>
+        </div>
     </div>
 }
 
 <div id="ordersMessageHost"></div>
 
-<div id="ordersFiltersPanel" class="card oh-card mb-3 oh-orders-filters">
+<div id="ordersFiltersPanel" class="card wasla-card mb-3 wasla-orders-filters">
     <div class="card-body">
         <form id="ordersFilterForm" method="get" action="/orders" class="row g-3 align-items-end">
-            <div class="col-12 col-md-3">
-                <label class="form-label">@L["Orders.Platform"]</label>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label" for="platformSelect">@L["Orders.Platform"]</label>
                 <select id="platformSelect" class="form-select" name="platform">
                     <option value="">@L["Common.AllPlatforms"]</option>
                     @foreach (var p in Enum.GetValues<FoodPlatform>())
@@ -90,8 +64,8 @@
                     }
                 </select>
             </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label">@L["Orders.Status"]</label>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label" for="statusSelect">@L["Orders.Status"]</label>
                 <select id="statusSelect" class="form-select" name="status">
                     <option value="">@L["Common.AllStatuses"]</option>
                     @foreach (var s in Enum.GetValues<OrderStatus>())
@@ -107,23 +81,43 @@
                     }
                 </select>
             </div>
-            <div class="col-12 col-md-2">
-                <label class="form-label">@L["Orders.StartDate"]</label>
-                <input class="form-control" type="date" name="startDate" value="@(f.StartDate?.ToString("yyyy-MM-dd"))" />
+            <div class="col-12 col-md-4 col-lg-2">
+                <label class="form-label" for="ordersStartDate">@L["Orders.StartDate"]</label>
+                <input id="ordersStartDate" class="form-control" type="date" name="startDate" value="@(f.StartDate?.ToString("yyyy-MM-dd"))" />
             </div>
-            <div class="col-12 col-md-2">
-                <label class="form-label">@L["Orders.EndDate"]</label>
-                <input class="form-control" type="date" name="endDate" value="@(f.EndDate?.ToString("yyyy-MM-dd"))" />
+            <div class="col-12 col-md-4 col-lg-2">
+                <label class="form-label" for="ordersEndDate">@L["Orders.EndDate"]</label>
+                <input id="ordersEndDate" class="form-control" type="date" name="endDate" value="@(f.EndDate?.ToString("yyyy-MM-dd"))" />
             </div>
-            <div class="col-12 col-md-2 d-flex gap-2">
+            <div class="col-12 col-md-4 col-lg-2">
+                <label class="form-label" for="ordersPageSize">@L["Orders.History.PageSize"]</label>
+                <select id="ordersPageSize" class="form-select" name="pageSize">
+                    @foreach (var size in new[] { 25, 50, 100 })
+                    {
+                        if (f.PageSize == size)
+                        {
+                            <option value="@size" selected>@size</option>
+                        }
+                        else
+                        {
+                            <option value="@size">@size</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-lg-8">
+                <label class="form-label" for="ordersSearch">@L["Orders.History.Search"]</label>
+                <input id="ordersSearch" class="form-control" type="search" name="search" value="@f.Search"
+                       placeholder="@L["Orders.History.SearchPlaceholder"]" autocomplete="off" />
+            </div>
+            <div class="col-12 col-lg-4 d-flex gap-2">
                 <button class="btn btn-primary flex-grow-1" type="submit">@L["Orders.Filter"]</button>
                 <a class="btn btn-outline-secondary" href="/orders">@L["Orders.Clear"]</a>
             </div>
 
             <input type="hidden" name="sortBy" value="@f.SortBy" />
             <input type="hidden" name="sortDirection" value="@f.SortDirection" />
-            <input type="hidden" name="page" value="@f.Page" />
-            <input type="hidden" name="pageSize" value="@f.PageSize" />
+            <input type="hidden" name="page" value="1" />
         </form>
 
         @if (!ViewData.ModelState.IsValid)
@@ -140,12 +134,10 @@
     </div>
 </div>
 
-<div id="ordersCardsHost" class="orders-card-grid oh-orders-cards-host d-none" role="list" hidden></div>
-
 <div id="ordersNormalTableSlot">
-<div class="card oh-card oh-orders-table-card oh-orders-normal-content">
+<div class="card wasla-card wasla-orders-table-card wasla-orders-normal-content">
     <div class="card-body p-0 p-md-3">
-        <div id="ordersTableHost" class="oh-orders-table-host">
+        <div id="ordersTableHost" class="wasla-orders-table-host">
             @await Html.PartialAsync("_OrdersTable", Model)
         </div>
     </div>
@@ -154,51 +146,25 @@
 
 </div>
 
+<form id="ordersCsrfForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
 @section Scripts {
     <script>
-        window.orderHubOrdersOptions = {
+        window.waslaOrdersOptions = {
             tableUrl: "/orders/table",
-            notificationSettingsUrl: "/notification-settings",
-            notificationSettingsJsonUrl: "/notification-settings/current",
-            orderSyncSettingsUrl: "/orders/sync-settings",
-            orderSettingsUrl: "/orders/order-settings",
-            pollingIntervalMs: 10000,
             todayYmd: "@today.ToString("yyyy-MM-dd")",
-            defaultFoodImage: "/images/demo-food/chicken-rice-01.svg",
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
             {
                 ["genericError"] = L["Orders.GenericError"].Value,
                 ["alertClose"] = L["Common.Close"].Value,
                 ["debugBadgeEnabled"] = L["Orders.DebugBadgeEnabled"].Value,
-                ["newOrderArrived"] = L["Notification.NewOrderArrived"].Value,
-                ["checkOrdersPage"] = L["Notification.CheckOrdersPage"].Value,
-                ["soundCouldNotPlay"] = L["Notification.SoundCouldNotPlay"].Value,
-                ["settingsSaved"] = L["Notification.SettingsSaved"].Value,
-                ["settingsSaveFailed"] = L["Notification.SettingsSaveFailed"].Value,
-                ["commonSaved"] = L["Common.Saved"].Value,
-                ["commonSaveFailed"] = L["Common.SaveFailed"].Value,
-                ["soundEnabled"] = L["Notification.SoundEnabled"].Value,
-                ["soundUnlockHint"] = L["Notification.SoundUnlockHint"].Value,
-                ["notificationsOff"] = L["Notification.Disabled"].Value,
-                ["notificationsOffHelp"] = L["Notification.NotificationsHelp"].Value,
-                ["waitingForAudio"] = L["Notification.WaitingForBrowserAudio"].Value,
-                ["waitingForAudioHelp"] = L["Notification.NotificationsHelp"].Value,
-                ["notificationsOn"] = L["Notification.Enabled"].Value,
-                ["notificationsOnHelp"] = L["Notification.NotificationsHelp"].Value,
-                ["audioNotAllowed"] = L["Orders.AudioNotAllowed"].Value,
-                ["audioPlayFailed"] = L["Orders.AudioPlayFailed"].Value,
-                ["audioFileError"] = L["Orders.AudioFileError"].Value,
                 ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
-                ["notificationSettingsLoadFailed"] = L["Orders.NotificationSettingsLoadFailed"].Value,
                 ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
-                ["notificationSettingsUnexpectedFormat"] = L["Orders.NotificationSettingsUnexpectedFormat"].Value,
-                ["notificationSettingsLoadException"] = L["Orders.NotificationSettingsLoadException"].Value,
                 ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
                 ["tableHostMissing"] = L["Orders.TableHostMissing"].Value,
                 ["tableRefreshException"] = L["Orders.TableRefreshException"].Value,
-                ["notificationSettingsModalOpenFailed"] = L["Orders.NotificationSettingsModalOpenFailed"].Value,
-                ["notificationSettingsSaveFailed"] = L["Orders.NotificationSettingsSaveFailed"].Value,
-                ["notificationSettingsSaveException"] = L["Orders.NotificationSettingsSaveException"].Value,
                 ["pageInitFailed"] = L["Orders.PageInitFailed"].Value,
                 ["ordersApproveConfirmTitle"] = L["Orders.ApproveConfirmTitle"].Value,
                 ["ordersApproveConfirmMessage"] = L["Orders.ApproveConfirmMessage"].Value,
@@ -215,48 +181,13 @@
                 ["ordersStartPreparingConfirmMessage"] = L["Orders.StartPreparingConfirmMessage"].Value,
                 ["ordersMarkReadyConfirmTitle"] = L["Orders.MarkReadyConfirmTitle"].Value,
                 ["ordersMarkReadyConfirmMessage"] = L["Orders.MarkReadyConfirmMessage"].Value,
-                ["ordersHandToCourierConfirmTitle"] = L["Orders.HandToCourierConfirmTitle"].Value,
-                ["ordersHandToCourierConfirmMessage"] = L["Orders.HandToCourierConfirmMessage"].Value,
-                ["ordersMarkDeliveredConfirmTitle"] = L["Orders.MarkDeliveredConfirmTitle"].Value,
-                ["ordersMarkDeliveredConfirmMessage"] = L["Orders.MarkDeliveredConfirmMessage"].Value,
                 ["ordersStartPreparingSuccess"] = L["Orders.StartPreparingSuccess"].Value,
-                ["ordersMarkReadySuccess"] = L["Orders.MarkReadySuccess"].Value,
-                ["ordersHandToCourierSuccess"] = L["Orders.HandToCourierSuccess"].Value,
-                ["ordersMarkDeliveredSuccess"] = L["Orders.MarkDeliveredSuccess"].Value,
-
-                ["ordersActive"] = L["Orders.Active"].Value,
-                ["ordersPassive"] = L["Orders.Passive"].Value,
-                ["orderSyncEnabledMessage"] = L["Orders.OrderSyncEnabledMessage"].Value,
-                ["orderSyncDisabledMessage"] = L["Orders.OrderSyncDisabledMessage"].Value,
-                ["orderSyncUpdateFailed"] = L["Orders.OrderSyncUpdateFailed"].Value,
-                ["automationStatusSyncActive"] = L["Orders.AutomationStatus.SyncActive"].Value,
-                ["automationStatusSyncDisabled"] = L["Orders.AutomationStatus.SyncDisabled"].Value,
-                ["automationStatusAutoApproveActive"] = L["Orders.AutomationStatus.AutoApproveActive"].Value,
-                ["automationStatusAutoApproveDisabled"] = L["Orders.AutomationStatus.AutoApproveDisabled"].Value,
-                ["automationStatusReceiptPrintingActive"] = L["Orders.AutomationStatus.ReceiptPrintingActive"].Value,
-                ["automationStatusReceiptPrintingDisabled"] = L["Orders.AutomationStatus.ReceiptPrintingDisabled"].Value,
-
-                ["fullscreenEnterFailed"] = L["Orders.FullscreenEnterFailed"].Value,
-                ["liveDisplayPopupBlocked"] = L["Orders.LiveDisplay.PopupBlocked"].Value,
-                ["noLiveOrders"] = L["Orders.NoLiveOrders"].Value,
-                ["noLiveOrdersDescription"] = L["Orders.NoLiveOrdersDescription"].Value,
-                ["itemsMore"] = L["Orders.ItemsMore"].Value,
-                ["ordersFullscreenCustomer"] = L["Orders.Customer"].Value,
-                ["ordersFullscreenTotal"] = L["Orders.TotalAmount"].Value,
-                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value,
-                ["showFilters"] = L["Orders.ShowFilters"].Value,
-                ["hideFilters"] = L["Orders.HideFilters"].Value
+                ["ordersMarkReadySuccess"] = L["Orders.MarkReadySuccess"].Value
             }))
         };
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-view-mode.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-open-live-display.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-page.js" asp-append-version="true"></script>
 }
-

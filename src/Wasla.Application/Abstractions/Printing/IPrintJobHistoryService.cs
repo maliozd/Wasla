@@ -42,6 +42,10 @@ public interface IPrintJobHistoryService
         int limit,
         CancellationToken ct);
 
+    /// <summary>
+    /// Queues a receipt using current order data and tenant template settings.
+    /// Preserves the source job's copy count, clamped to the supported range of 1–3.
+    /// </summary>
     Task<ReprintReceiptResult> CreateReprintAsync(
         Guid customerId,
         Guid printJobId,

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Domain.Entities.Customer;
@@ -41,7 +42,17 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
         string? tenantDisplayName,
         CancellationToken ct)
     {
+        // Read template settings on a separate connection before taking the serializable lock.
+        // Holding that lock while opening a second tenant context can deadlock concurrent first-prints.
+        var template = await _templateSettings
+            .GetAsync(customerId, tenantDisplayName, null, ct)
+            .ConfigureAwait(false);
+
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+
+        await using var tx = await db.Database
+            .BeginTransactionAsync(IsolationLevel.Serializable, ct)
+            .ConfigureAwait(false);
 
         var hasActiveJob = await db.PrintJobs
             .AsNoTracking()
@@ -54,6 +65,8 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
         if (hasActiveJob)
         {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+
             _logger.LogInformation(
                 "Receipt PrintJob skipped because an active job already exists. CustomerId={CustomerId}, OrderId={OrderId}",
                 customerId,
@@ -70,6 +83,8 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
         if (order is null)
         {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+
             _logger.LogWarning(
                 "Receipt PrintJob creation skipped because order was not found. CustomerId={CustomerId}, OrderId={OrderId}",
                 customerId,
@@ -79,9 +94,6 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
         var safeCopyCount = Math.Clamp(copyCount, 1, 3);
         var nowUtc = DateTime.UtcNow;
-        var template = await _templateSettings
-            .GetAsync(customerId, tenantDisplayName, null, ct)
-            .ConfigureAwait(false);
 
         var job = new PrintJob
         {
@@ -100,9 +112,12 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
         try
         {
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            await tx.CommitAsync(ct).ConfigureAwait(false);
         }
         catch (DbUpdateException ex)
         {
+            await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+
             _logger.LogInformation(
                 ex,
                 "Receipt PrintJob skipped because a duplicate was created concurrently. CustomerId={CustomerId}, OrderId={OrderId}",

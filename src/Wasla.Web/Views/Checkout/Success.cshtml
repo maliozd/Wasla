@@ -1,64 +1,19 @@
-﻿@model Wasla.Web.Models.Checkout.CheckoutResultViewModel
+﻿@model Wasla.Web.Models.Signup.SignupPendingViewModel
 @using Microsoft.Extensions.Localization
 @using Wasla.Domain.Enums
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
-    Layout = "_PublicLayout";
+    Layout = "_RegistrationStatusLayout";
     var isProvisioned = Model.Status == PendingRegistrationStatus.Provisioned;
     ViewData["Title"] = isProvisioned ? L["Checkout.PanelReadyTitle"] : L["Checkout.PaymentReceivedPreparingTitle"];
 }
-<div class="oh-signup-page py-4 py-md-5">
+<div class="wasla-signup-page py-4 py-md-5">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
-                <div class="card border-0 shadow-sm oh-signup-card">
+                <div class="card border-0 shadow-sm wasla-signup-card">
                     <div class="card-body p-4 p-md-5 text-center">
-                        <div class="mb-3 text-success">
-                            <i class="bi bi-check-circle-fill" style="font-size: 2.5rem;" aria-hidden="true"></i>
-                        </div>
-
-                        @if (isProvisioned)
-                        {
-                            <h1 class="h4 fw-bold mb-2">@L["Checkout.PanelReadyTitle"]</h1>
-                            <p class="text-secondary mb-4">@L["Checkout.PanelReadyMessage"]</p>
-
-                            @if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
-                            {
-                                <p class="mb-4">
-                                    <code class="fs-6">@Model.PrimaryDomain</code>
-                                </p>
-                            }
-
-                            <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                @if (!string.IsNullOrWhiteSpace(Model.PanelLoginUrl))
-                                {
-                                    <a class="btn btn-primary rounded-pill d-inline-flex align-items-center justify-content-center gap-2 px-4"
-                                       href="@Model.PanelLoginUrl">
-                                        <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
-                                        <span>@L["Checkout.GoToPanel"]</span>
-                                    </a>
-                                }
-                                <a class="btn btn-outline-secondary rounded-pill px-4" href="/">@L["Signup.PendingBackHome"]</a>
-                            </div>
-                        }
-                        else
-                        {
-                            <h1 class="h4 fw-bold mb-2">@L["Checkout.PaymentReceivedPreparingTitle"]</h1>
-                            <p class="text-secondary mb-4">@L["Checkout.PaymentReceivedPreparingMessage"]</p>
-
-                            @if (!string.IsNullOrWhiteSpace(Model.BusinessName))
-                            {
-                                <div class="text-start bg-body-tertiary rounded p-3 mb-4 small">
-                                    <div><strong>@L["Signup.PendingLabelRestaurant"]:</strong> @Model.BusinessName</div>
-                                    @if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
-                                    {
-                                        <div class="mt-1"><strong>@L["Signup.PendingLabelOrderHubAddress"]:</strong> <code>@Model.PrimaryDomain</code></div>
-                                    }
-                                </div>
-                            }
-
-                            <a class="btn btn-outline-secondary rounded-pill px-4" href="/">@L["Signup.PendingBackHome"]</a>
-                        }
+                        <partial name="_RegistrationStatusCard" model="Model" />
                     </div>
                 </div>
             </div>

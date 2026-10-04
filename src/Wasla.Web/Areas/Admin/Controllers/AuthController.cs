@@ -27,8 +27,17 @@ public sealed class AuthController : Controller
 
     [AllowAnonymous]
     [HttpGet("login")]
-    public IActionResult Login([FromQuery] string? returnUrl = null)
+    public async Task<IActionResult> Login([FromQuery] string? returnUrl = null)
     {
+        var auth = await HttpContext.AuthenticateAsync(AuthSchemes.CentralAdmin).ConfigureAwait(false);
+        if (auth.Succeeded && auth.Principal?.Identity?.IsAuthenticated == true)
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            return Redirect("/admin");
+        }
+
         return View(new AdminLoginViewModel { ReturnUrl = returnUrl });
     }
 
@@ -61,7 +70,8 @@ public sealed class AuthController : Controller
         await HttpContext.SignInAsync(
             AuthSchemes.CentralAdmin,
             principal,
-            new AuthenticationProperties { IsPersistent = true, IssuedUtc = DateTimeOffset.UtcNow }).ConfigureAwait(false);
+            AuthCookiePersistence.Create(model.RememberMe, AuthCookiePersistence.CentralAdminPersistentDuration))
+            .ConfigureAwait(false);
 
         if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             return Redirect(model.ReturnUrl);
@@ -75,7 +85,23 @@ public sealed class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(AuthSchemes.CentralAdmin).ConfigureAwait(false);
+        ExpireCentralAdminAuthCookies();
         return Redirect("/admin/login");
+    }
+
+    private void ExpireCentralAdminAuthCookies()
+    {
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Path = "/",
+            SameSite = SameSiteMode.Lax
+        };
+
+        Response.Cookies.Delete(CentralAdminAuthCookieNames.Active, options);
+        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyOrderHub, options);
+        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyOrderHubScheme, options);
+        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyAspNetCoreOrderHubScheme, options);
     }
 }
 

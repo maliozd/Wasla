@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Seafood",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Seafood.Product.SeaBass", "minPrice": 420, "maxPrice": 640, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.NoOnion", "Mock.Modifier.Rice"] },
+    { "key": "Mock.Seafood.Product.Calamari", "minPrice": 220, "maxPrice": 320, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Seafood.Product.Shrimp", "minPrice": 280, "maxPrice": 420, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy", "Mock.Modifier.Rice"] },
+    { "key": "Mock.Seafood.Product.FishSandwich", "minPrice": 160, "maxPrice": 240, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraLemon", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.Seafood.Product.Salad", "minPrice": 80, "maxPrice": 120, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.NoOnion"] }
+  ]
+}

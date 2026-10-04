@@ -18,5 +18,6 @@ public sealed record ExternalOrderDto(
     PaymentStatus PaymentStatus,
     string ExternalStatus,
     string RawPayloadJson,
-    IReadOnlyCollection<ExternalOrderItemDto> Items);
+    IReadOnlyCollection<ExternalOrderItemDto> Items,
+    string? CustomerNote = null);
 

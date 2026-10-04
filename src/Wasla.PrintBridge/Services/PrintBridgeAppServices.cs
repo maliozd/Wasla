@@ -52,7 +52,7 @@ public static class PrintBridgeAppServices
         services.AddSingleton<ReceiptFormatter>();
 
         if (!OperatingSystem.IsWindows())
-            throw new PlatformNotSupportedException("OrderHub Print Bridge requires Windows.");
+            throw new PlatformNotSupportedException("Wasla Print Bridge requires Windows.");
 
         services.AddSingleton<IReceiptPrinter, WindowsReceiptPrinter>();
 
@@ -60,6 +60,7 @@ public static class PrintBridgeAppServices
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+        services.AddSingleton<PrintBridgeSetupHttpClientFactory>();
 
         services.AddSingleton(sp =>
         {
@@ -68,12 +69,14 @@ public static class PrintBridgeAppServices
             return new WaslaPrintBridgeClient(
                 http,
                 sp.GetRequiredService<PrintBridgeSettingsHolder>(),
+                sp.GetRequiredService<PrintBridgeSetupHttpClientFactory>(),
                 logger,
                 appVersion.HeaderValue);
         });
 
         services.AddSingleton<PrintBridgeDeviceMetadataSync>();
         services.AddSingleton<PrintBridgeRuntime>();
+        services.AddSingleton<Wasla.PrintBridge.Setup.PrintBridgeAutoSetupCoordinator>();
 
         var provider = services.BuildServiceProvider();
         LogStartup(provider, holder);

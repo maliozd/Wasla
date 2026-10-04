@@ -8,4 +8,12 @@ public sealed record PendingRegistrationSummary(
     string PrimaryDomain,
     string PlanCode,
     string BillingPeriod,
-    PendingRegistrationStatus Status);
+    PendingRegistrationStatus Status,
+    string BusinessPhone,
+    string? BusinessEmail,
+    string OwnerFullName,
+    string OwnerEmail,
+    string? OwnerPhone,
+    DateTime CreatedAtUtc,
+    DateTime? PaymentSucceededAtUtc,
+    DateTime? ProvisionedAtUtc);

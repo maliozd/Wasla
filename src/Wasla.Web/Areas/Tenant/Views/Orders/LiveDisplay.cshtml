@@ -1,75 +1,206 @@
-﻿@model Wasla.Web.Models.Orders.OrderListViewModel
+@model Wasla.Web.Models.Orders.OrderListViewModel
 @using System.Collections.Generic
 @using System.Text.Json
 @using Microsoft.Extensions.Localization
+@using Wasla.Application.Time
+@using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject ITenantNavigationAuthorizationService TenantNavigation
 @{
     Layout = "_OrdersDisplayLayout";
     ViewData["Title"] = L["Orders.LiveDisplay.Title"];
     var today = Model.TurkeyLocalToday;
     var customerName = ViewData["CustomerName"] as string;
+    var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
+    var timeZoneId = TimeZoneHelper.ResolveTurkeyTimeZone().Id;
+    if (timeZoneId == "Turkey Standard Time")
+    {
+        timeZoneId = "Europe/Istanbul";
+    }
 }
 
-<div id="ordersLiveDisplayRoot" class="oh-orders-live-display-root">
-    <header class="oh-live-display-header oh-fs-header">
-        <div class="oh-live-display-header__left oh-fs-header__left">
-            @if (!string.IsNullOrWhiteSpace(customerName))
-            {
-                <div class="oh-live-display-header__brand text-muted small mb-1">@customerName</div>
-            }
-            <h1 class="oh-live-display-header__title oh-fs-header__title mb-0">@L["Orders.LiveDisplay.Title"]</h1>
-            <p class="oh-live-display-header__meta oh-fs-header__meta mb-0">
-                <span>@L["Orders.Today"] — @today.ToString("d", System.Globalization.CultureInfo.CurrentCulture)</span>
-                <span class="oh-fs-header__sep" aria-hidden="true">·</span>
-                <span>@L["Orders.LiveDisplay.LastUpdated"]: <span id="ordersLiveDisplayLastUpdated">-</span></span>
-            </p>
-        </div>
-        <div class="oh-live-display-header__actions oh-fs-header__actions d-flex flex-wrap align-items-center gap-2">
-            <div class="btn-group btn-group-sm oh-orders-view-mode" role="group" aria-label="@L["Orders.ViewMode.Label"]">
-                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="table" aria-pressed="false">@L["Orders.ViewMode.Table"]</button>
-                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="compact" aria-pressed="false">@L["Orders.ViewMode.Compact"]</button>
-                <button type="button" class="btn btn-outline-secondary" data-orders-view-mode="kitchen" aria-pressed="false">@L["Orders.ViewMode.Kitchen"]</button>
+<div id="ordersLiveDisplayRoot" class="wasla-orders-live-display-root wasla-live-screen-page">
+    <header class="wasla-live-display-header wasla-fs-header">
+        <div class="wasla-live-display-header__left wasla-fs-header__left">
+            <div class="wasla-live-display-identity">
+                <span class="wasla-live-display-identity__mark" aria-hidden="true"><i class="bi bi-shop"></i></span>
+                <div class="wasla-live-display-identity__copy">
+                    <div class="wasla-live-display-identity__heading">
+                        @if (!string.IsNullOrWhiteSpace(customerName))
+                        {
+                            <h1 class="wasla-live-display-header__title wasla-fs-header__title mb-0">@customerName</h1>
+                        }
+                        <span class="wasla-live-display-status">
+                            <span class="wasla-live-display-status__dot" aria-hidden="true"></span>
+                            <span>@L["Orders.LiveDisplay.LiveStatus"]</span>
+                        </span>
+                    </div>
+                    <p class="wasla-live-display-header__meta wasla-fs-header__meta mb-0">
+                        <span>@L["Orders.Today"] @today.ToString("m", System.Globalization.CultureInfo.CurrentCulture)</span>
+                        <span class="wasla-fs-header__sep" aria-hidden="true"></span>
+                        <span>@L["Orders.LiveDisplay.LastUpdated"] <span id="ordersLiveDisplayLastUpdated">-</span></span>
+                        <span id="ordersLiveDisplayConnection" class="wasla-live-display-connection" role="status" hidden></span>
+                    </p>
+                </div>
             </div>
-            <p class="oh-live-display-fullscreen-hint text-muted small mb-0">
+            <div class="wasla-live-display-summary">
+                <div class="wasla-live-summary">
+                    <div class="wasla-live-summary__metric">
+                        <span class="wasla-live-summary__icon wasla-live-summary__icon--today" aria-hidden="true"><i class="bi bi-clipboard"></i></span>
+                        <span class="wasla-live-summary__text">
+                            <span class="wasla-live-summary__value" id="ordersLiveDisplayTodayCount">@Model.TotalCount</span>
+                            <span class="wasla-live-summary__label">@L["Orders.TodaysOrders"]</span>
+                        </span>
+                    </div>
+                    <div class="wasla-live-summary__metric">
+                        <span class="wasla-live-summary__icon wasla-live-summary__icon--active" aria-hidden="true"><i class="bi bi-box-seam"></i></span>
+                        <span class="wasla-live-summary__text">
+                            <span class="wasla-live-summary__value" id="ordersLiveDisplayActiveCount">0</span>
+                            <span class="wasla-live-summary__label">@L["Orders.ActiveOrders"]</span>
+                        </span>
+                    </div>
+                    <div class="wasla-live-summary__metric">
+                        <span class="wasla-live-summary__icon wasla-live-summary__icon--cancelled" aria-hidden="true"><i class="bi bi-x-circle"></i></span>
+                        <span class="wasla-live-summary__text">
+                            <span class="wasla-live-summary__value" id="ordersLiveDisplayCancelledCount">0</span>
+                            <span class="wasla-live-summary__label">@L["Orders.CancelledOrders"]</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wasla-live-display-header__actions wasla-fs-header__actions d-flex flex-wrap align-items-center gap-2">
+            @* Operational status stays on the live screen, inside one settings menu. *@
+            <div class="dropdown wasla-live-settings">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary wasla-live-settings__toggle"
+                        id="ordersLiveDisplaySettingsToggle"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        data-bs-auto-close="true"
+                        aria-expanded="false"
+                        aria-haspopup="true"
+                        aria-controls="ordersLiveDisplaySettingsMenu"
+                        aria-label="@L["Layout.Settings"]">
+                    <i class="bi bi-gear" aria-hidden="true"></i>
+                </button>
+                <div class="dropdown-menu wasla-live-settings-menu"
+                     id="ordersLiveDisplaySettingsMenu"
+                     aria-labelledby="ordersLiveDisplaySettingsToggle">
+                    <div class="wasla-live-settings-menu__status" aria-label="@L["Settings.OrderSettings.Title"]">
+                        @* Two labelled groups: what runs automatically, then how new orders get attention. Read-only; settings change on /settings/orders. *@
+                        <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsAutomationHeading">
+                            <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsAutomationHeading">@L["Orders.LiveSettings.AutomationGroup"]</p>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.OrderSynchronization.Title"]</span>
+                                <span id="automationStatusSync" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.AutoApproval.Title"]</span>
+                                <span id="automationStatusAutoApprove" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.ReceiptPrinting.Title"]</span>
+                                <span id="automationStatusReceipt" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            @* Shown while an automation is configured on but waits for setup; pending indicators point to it. *@
+                            <p id="automationPendingSetupHint" class="wasla-live-settings-menu__hint" hidden>@L["Orders.Automation.PendingSetupDescription"]</p>
+                        </div>
+                        <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsNotificationsHeading">
+                            <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsNotificationsHeading">@L["Notification.Notifications"]</p>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Orders.LiveDisplay.NotificationSound"]</span>
+                                <span id="ordersLiveDisplaySoundStatus"
+                                      class="wasla-live-settings-menu__value wasla-orders-status-chip--muted"
+                                      data-label-active="@L["Common.Active"]"
+                                      data-label-disabled="@L["Notification.Disabled"]">…</span>
+                            </div>
+                            <div id="ordersLiveDisplaySoundActive"
+                                 class="wasla-live-display-sound-active"
+                                 role="status"
+                                 hidden>
+                                <i class="bi bi-volume-up" aria-hidden="true"></i>
+                                <span>@L["Notification.SoundActive"]</span>
+                            </div>
+                        </div>
+                    </div>
+                    @if (navPermissions.CanManageOrderSettings)
+                    {
+                        <div class="dropdown-divider" role="separator"></div>
+                        <a class="dropdown-item orders-manage-settings" href="/settings/orders" target="_blank" rel="noopener noreferrer">@L["Orders.ManageSettings"]</a>
+                    }
+                </div>
+            </div>
+            <button type="button"
+                    id="ordersLiveDisplayStopSound"
+                    class="btn btn-sm btn-outline-secondary text-nowrap wasla-live-display-stop-sound-btn"
+                    hidden>
+                <i class="bi bi-volume-mute me-1" aria-hidden="true"></i>
+                <span>@L["Notification.StopSoundButton"]</span>
+            </button>
+            <div class="wasla-live-screen-view-switch" role="group" aria-label="@L["Orders.ViewMode.Label"]" data-tour="live-view-selector">
+                <button type="button" class="wasla-live-screen-view-switch__option" data-live-screen-view="board" aria-pressed="true">
+                    <i class="bi bi-layout-three-columns" aria-hidden="true"></i>
+                    <span>@L["Orders.LiveScreen.ViewBoard"]</span>
+                </button>
+                <button type="button" class="wasla-live-screen-view-switch__option" data-live-screen-view="list" aria-pressed="false">
+                    <i class="bi bi-view-stacked" aria-hidden="true"></i>
+                    <span>@L["Orders.LiveScreen.ViewList"]</span>
+                </button>
+                <button type="button" class="wasla-live-screen-view-switch__option" data-live-screen-view="focus" aria-pressed="false">
+                    <i class="bi bi-layout-sidebar" aria-hidden="true"></i>
+                    <span>@L["Orders.LiveScreen.ViewFocus"]</span>
+                </button>
+            </div>
+            <p class="wasla-live-display-fullscreen-hint text-muted small mb-0">
                 @L["Orders.LiveDisplay.FullscreenHintPrefix"]
-                <kbd class="oh-live-display-kbd">F11</kbd>
+                <kbd class="wasla-live-display-kbd">F11</kbd>
                 @L["Orders.LiveDisplay.FullscreenHintSuffix"]
             </p>
-            <button type="button" id="ordersLiveDisplayClose" class="btn btn-outline-primary btn-sm oh-live-display-close-btn">
+            <button type="button" id="ordersLiveDisplayClose" class="btn btn-outline-primary btn-sm wasla-live-display-close-btn">
                 @L["Orders.LiveDisplay.CloseDisplay"]
             </button>
         </div>
     </header>
 
-    <div class="oh-live-display-summary oh-fs-summary row g-3">
-        <div class="col-12 col-md-4">
-            <div class="oh-fs-stat">
-                <div class="oh-fs-stat__label">@L["Orders.TodaysOrders"]</div>
-                <div class="oh-fs-stat__value" id="ordersLiveDisplayTodayCount">@Model.TotalCount</div>
+    <div id="ordersLiveDisplaySoundBanner"
+         class="wasla-live-display-sound-banner alert alert-warning border-0 shadow-sm d-none"
+         role="status"
+         hidden>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="wasla-live-display-sound-banner__copy">
+                <div class="fw-semibold">@L["Notification.SoundMayBeOffTitle"]</div>
+                <div class="small mb-0">@L["Notification.SoundMayBeOffDescription"]</div>
             </div>
-        </div>
-        <div class="col-12 col-md-4">
-            <div class="oh-fs-stat">
-                <div class="oh-fs-stat__label">@L["Orders.ActiveOrders"]</div>
-                <div class="oh-fs-stat__value" id="ordersLiveDisplayActiveCount">0</div>
-            </div>
-        </div>
-        <div class="col-12 col-md-4">
-            <div class="oh-fs-stat">
-                <div class="oh-fs-stat__label">@L["Orders.CancelledOrders"]</div>
-                <div class="oh-fs-stat__value" id="ordersLiveDisplayCancelledCount">0</div>
-            </div>
+            <button type="button"
+                    id="ordersLiveDisplayEnableNotificationSound"
+                    class="btn btn-sm btn-primary text-nowrap wasla-orders-sound-enable-btn">
+                <i class="bi bi-volume-up me-1" aria-hidden="true"></i>
+                <span data-sound-enable-label>@L["Notification.EnableSoundButton"]</span>
+            </button>
         </div>
     </div>
 
-    <div id="ordersLiveDisplayCardsHost" class="orders-card-grid oh-live-display-cards oh-orders-cards-host d-none" role="list" hidden></div>
+    @if (Model.GuidedTraining is not null)
+    {
+        @await Html.PartialAsync("_GuidedTrainingPanel", Model.GuidedTraining)
+    }
 
-    <div id="ordersLiveDisplayTableSlot" class="oh-live-display-table oh-fs-table-panel">
-        <div class="card oh-card oh-orders-table-card">
-            <div class="card-body p-0 p-md-3">
-                <div id="ordersTableHost" class="oh-orders-table-host">
-                    @await Html.PartialAsync("_OrdersTable", Model)
-                </div>
+    @* The first validated snapshot renders only the selected view. *@
+    <div id="ordersLiveScreenHost" class="wasla-live-screen-host wasla-live-screen-host--board" data-live-screen-view="board" data-tour="live-orders" tabindex="-1" role="region" aria-label="@L["Orders.LiveDisplay.Title"]">
+        <p data-live-loading role="status" class="text-muted p-3">@L["Common.Loading"]</p>
+    </div>
+</div>
+
+<div class="modal fade" id="ordersLiveDetailModal" tabindex="-1" aria-hidden="true" aria-labelledby="ordersLiveDetailModalTitle">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h6 mb-0" id="ordersLiveDetailModalTitle">@L["Orders.Details.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Close"]"></button>
+            </div>
+            <div class="modal-body" id="ordersLiveDetailModalBody">
+                <p class="text-muted small mb-0">@L["Common.Loading"]</p>
             </div>
         </div>
     </div>
@@ -81,9 +212,19 @@
 
 @section Scripts {
     <script>
-        window.orderHubOrdersOptions = {
+        window.waslaOrdersOptions = {
             pageMode: "liveDisplay",
             tableUrl: "/orders/table",
+            liveDataUrl: "/orders/live-data",
+            canManageOrders: @(navPermissions.CanManageOrders ? "true" : "false"),
+            displayCulture: "@System.Globalization.CultureInfo.CurrentUICulture.Name",
+            timeZoneId: "@timeZoneId",
+            notificationSettingsUrl: "/notification-settings",
+            notificationSettingsJsonUrl: "/notification-settings/current",
+            orderDetailPanelUrl: "/orders/{id}/detail-panel",
+            orderPrintUrl: "/orders/{id}/print",
+            viewModeStorageKey: "Wasla.liveScreen.viewMode",
+            defaultViewMode: "kitchen",
             pollingIntervalMs: 10000,
             todayYmd: "@today.ToString("yyyy-MM-dd")",
             liveDisplayPageSize: 100,
@@ -92,6 +233,43 @@
             {
                 ["genericError"] = L["Orders.GenericError"].Value,
                 ["alertClose"] = L["Common.Close"].Value,
+                ["newOrderArrived"] = L["Notification.NewOrderArrived"].Value,
+                ["checkOrdersPage"] = L["Notification.CheckOrdersPage"].Value,
+                ["soundUnlockHint"] = L["Notification.SoundUnlockHint"].Value,
+                ["enableNotificationSound"] = L["Notification.EnableSoundButton"].Value,
+                ["soundActive"] = L["Notification.SoundActive"].Value,
+                ["soundMayBeOffTitle"] = L["Notification.SoundMayBeOffTitle"].Value,
+                ["soundMayBeOffDescription"] = L["Notification.SoundMayBeOffDescription"].Value,
+                ["stopSound"] = L["Notification.StopSoundButton"].Value,
+                ["audioNotAllowed"] = L["Orders.AudioNotAllowed"].Value,
+                ["audioPlayFailed"] = L["Orders.AudioPlayFailed"].Value,
+                ["audioFileError"] = L["Orders.AudioFileError"].Value,
+                ["notificationSettingsLoadFailed"] = L["Orders.NotificationSettingsLoadFailed"].Value,
+                ["notificationSettingsUnexpectedFormat"] = L["Orders.NotificationSettingsUnexpectedFormat"].Value,
+                ["notificationSettingsLoadException"] = L["Orders.NotificationSettingsLoadException"].Value,
+                ["automationStatusSyncActive"] = L["Common.Active"].Value,
+                ["automationStatusSyncDisabled"] = L["Notification.Disabled"].Value,
+                ["automationStatusAutoApproveActive"] = L["Common.Active"].Value,
+                ["automationStatusAutoApproveDisabled"] = L["Notification.Disabled"].Value,
+                ["automationStatusReceiptPrintingActive"] = L["Common.Active"].Value,
+                ["automationStatusReceiptPrintingDisabled"] = L["Notification.Disabled"].Value,
+                ["automationStatusPendingSetup"] = L["Orders.Automation.PendingSetup"].Value,
+                ["demoCountdownPickUp"] = L["Orders.DemoCountdown.PickUp"].Value,
+                ["demoCountdownDeliver"] = L["Orders.DemoCountdown.Deliver"].Value,
+                ["demoCountdownLeave"] = L["Orders.DemoCountdown.Leave"].Value,
+                ["demoCountdownWaiting"] = L["Orders.DemoCountdown.Waiting"].Value,
+                ["demoCountdownSeconds"] = L["Orders.DemoCountdown.Seconds"].Value,
+                ["demoCountdownLabel"] = L["Orders.DemoCountdown.Label"].Value,
+                ["demoCountdownHint"] = L["Orders.DemoCountdown.Hint"].Value,
+                ["liveScreenDetailLoadFailed"] = L["Orders.LiveScreen.DetailLoadFailed"].Value,
+                ["commonLoading"] = L["Common.Loading"].Value,
+                ["orderPrintAction"] = L["Orders.Print.Action"].Value,
+                ["orderPrintReprint"] = L["PrintBridge.Reprint"].Value,
+                ["orderPrintInQueue"] = L["Orders.Print.InQueue"].Value,
+                ["orderPrintQueued"] = L["Orders.Print.Queued"].Value,
+                ["orderPrintAlreadyQueued"] = L["Orders.Print.AlreadyQueued"].Value,
+                ["orderPrintConfirmReprint"] = L["Orders.Print.ConfirmReprint"].Value,
+                ["orderPrintFailed"] = L["Orders.Print.Failed"].Value,
                 ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
                 ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
                 ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
@@ -112,26 +290,67 @@
                 ["ordersStartPreparingConfirmMessage"] = L["Orders.StartPreparingConfirmMessage"].Value,
                 ["ordersMarkReadyConfirmTitle"] = L["Orders.MarkReadyConfirmTitle"].Value,
                 ["ordersMarkReadyConfirmMessage"] = L["Orders.MarkReadyConfirmMessage"].Value,
-                ["ordersHandToCourierConfirmTitle"] = L["Orders.HandToCourierConfirmTitle"].Value,
-                ["ordersHandToCourierConfirmMessage"] = L["Orders.HandToCourierConfirmMessage"].Value,
-                ["ordersMarkDeliveredConfirmTitle"] = L["Orders.MarkDeliveredConfirmTitle"].Value,
-                ["ordersMarkDeliveredConfirmMessage"] = L["Orders.MarkDeliveredConfirmMessage"].Value,
                 ["ordersStartPreparingSuccess"] = L["Orders.StartPreparingSuccess"].Value,
                 ["ordersMarkReadySuccess"] = L["Orders.MarkReadySuccess"].Value,
-                ["ordersHandToCourierSuccess"] = L["Orders.HandToCourierSuccess"].Value,
-                ["ordersMarkDeliveredSuccess"] = L["Orders.MarkDeliveredSuccess"].Value,
                 ["noLiveOrders"] = L["Orders.NoLiveOrders"].Value,
+                ["demoBadge"] = L["Demo.Badge"].Value,
+                ["boardCompleted"] = L["Orders.LiveScreen.Completed"].Value,
+                ["boardEmpty"] = L["Orders.LiveScreen.EmptyColumn"].Value,
+                ["columnOrder"] = L["Orders.LiveScreen.ColumnOrder"].Value,
+                ["columnElapsed"] = L["Orders.LiveScreen.ColumnElapsed"].Value,
+                ["columnProducts"] = L["Orders.Products"].Value,
                 ["noLiveOrdersDescription"] = L["Orders.NoLiveOrdersDescription"].Value,
                 ["itemsMore"] = L["Orders.ItemsMore"].Value,
+                ["boardItemsMore"] = L["Orders.LiveScreen.BoardItemsMore"].Value,
                 ["ordersFullscreenCustomer"] = L["Orders.Customer"].Value,
                 ["ordersFullscreenTotal"] = L["Orders.TotalAmount"].Value,
-                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value
+                ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value,
+                ["listTotal"] = L["Orders.LiveScreen.ListTotal"].Value,
+                ["itemNote"] = L["Orders.LiveScreen.ItemNote"].Value,
+                ["orderNote"] = L["Orders.LiveScreen.OrderNote"].Value,
+                ["elapsedMinutes"] = L["Orders.LiveScreen.ElapsedMinutes"].Value,
+                ["elapsedHoursMinutes"] = L["Orders.LiveScreen.ElapsedHoursMinutes"].Value,
+                ["liveScreenStale"] = L["Orders.LiveScreen.ConnectionStale"].Value,
+                ["liveScreenSessionExpired"] = L["Orders.LiveScreen.SessionExpired"].Value,
+                ["liveScreenCountUnavailable"] = L["Orders.LiveScreen.CountUnavailable"].Value,
+                ["ordersApprove"] = L["Orders.Approve"].Value,
+                ["ordersReject"] = L["Orders.Reject"].Value,
+                ["ordersStartPreparing"] = L["Orders.StartPreparing"].Value,
+                ["ordersMarkReady"] = L["Orders.MarkReady"].Value,
+                ["ordersActions"] = L["Orders.Actions"].Value,
+                ["viewDetails"] = L["Orders.History.ViewDetails"].Value,
+                ["selectOrder"] = L["Orders.LiveScreen.SelectOrder"].Value,
+                ["selectOrderDescription"] = L["Orders.LiveScreen.SelectOrderDescription"].Value,
+                ["noDisplayableOrders"] = L["Orders.LiveScreen.NoDisplayableOrders"].Value,
+                ["noDisplayableOrdersDescription"] = L["Orders.LiveScreen.NoDisplayableOrdersDescription"].Value,
+                ["backToQueue"] = L["Orders.LiveScreen.BackToQueue"].Value,
+                ["detailRetry"] = L["Orders.LiveScreen.DetailRetry"].Value,
+                ["focusQueue"] = L["Orders.LiveScreen.Queue"].Value,
+                ["statusNewBadge"] = L["Orders.StatusNewBadge"].Value,
+                ["statusNew"] = L["OrderStatus.New"].Value,
+                ["statusAccepted"] = L["OrderStatus.Accepted"].Value,
+                ["statusPreparing"] = L["OrderStatus.Preparing"].Value,
+                ["statusReadyForPickup"] = L["OrderStatus.ReadyForPickup"].Value,
+                ["statusOnTheWay"] = L["OrderStatus.OnTheWay"].Value,
+                ["statusDelivered"] = L["OrderStatus.Delivered"].Value,
+                ["statusCancelled"] = L["OrderStatus.Cancelled"].Value,
+                ["statusFailed"] = L["OrderStatus.Failed"].Value,
+                ["platformYemeksepeti"] = L["Orders.PlatformYemeksepeti"].Value,
+                ["platformGetirYemek"] = L["Orders.PlatformGetirYemek"].Value,
+                ["platformTrendyolYemek"] = L["Orders.PlatformTrendyolYemek"].Value
             }))
         };
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
-    <script src="~/js/orders/orders-view-mode.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-demo-countdown.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-live-view.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-live-detail-modal.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-live-store.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>
 }

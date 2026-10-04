@@ -2,19 +2,14 @@
 (function () {
   "use strict";
 
-  var cfg = window.OrderHubPrintBridge;
+  var cfg = window.WaslaPrintBridge;
   if (!cfg) return;
 
   var messages = cfg.messages || {};
-  var currentToken = null;
   var lastQuota = null;
   var reprintInFlight = {};
   var printJobsRefreshInFlight = false;
   var printJobsPollTimer = null;
-
-  function formatMsg(template, value) {
-    return String(template || "").replace("{0}", String(value == null ? "" : value));
-  }
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -22,6 +17,10 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function formatMessage(template, value) {
+    return String(template || "").replace(/\{0\}/g, value == null ? "" : String(value));
   }
 
   function getAntiForgeryToken() {
@@ -40,104 +39,6 @@
       '<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Close"></button></div>';
   }
 
-  function copyText(text, button, options) {
-    options = options || {};
-    if (!text) return Promise.reject(new Error("empty"));
-
-    var successMessage = options.successMessage || messages.copied || "Copied";
-
-    function onSuccess() {
-      if (!button) return;
-      var original = button.innerHTML;
-      var originalClass = button.className;
-      button.innerHTML = '<i class="bi bi-check2 me-1"></i>' + escapeHtml(successMessage);
-      button.classList.add("btn-success");
-      button.classList.remove("btn-outline-secondary", "btn-outline-dark", "btn-primary");
-      setTimeout(function () {
-        button.innerHTML = original;
-        button.className = originalClass;
-      }, 1800);
-    }
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text).then(onSuccess);
-    }
-
-    var ta = document.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "");
-    ta.style.position = "absolute";
-    ta.style.left = "-9999px";
-    document.body.appendChild(ta);
-    ta.select();
-    try {
-      document.execCommand("copy");
-      onSuccess();
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    } finally {
-      document.body.removeChild(ta);
-    }
-  }
-
-  function hideToken() {
-    currentToken = null;
-    var box = document.getElementById("printBridgeTokenBox");
-    var value = document.getElementById("printBridgeTokenValue");
-    var title = document.getElementById("printBridgeTokenTitle");
-    var notice = document.getElementById("printBridgeTokenNotice");
-    var warning = document.getElementById("printBridgeTokenWarning");
-    if (!box || !value) return;
-
-    box.classList.add("d-none");
-    value.textContent = "";
-    if (title) title.textContent = "";
-    if (notice) notice.textContent = "";
-    if (warning) {
-      warning.textContent = "";
-      warning.classList.add("d-none");
-    }
-  }
-
-  function showToken(token, options) {
-    options = options || {};
-    currentToken = token || null;
-    var box = document.getElementById("printBridgeTokenBox");
-    var value = document.getElementById("printBridgeTokenValue");
-    var title = document.getElementById("printBridgeTokenTitle");
-    var notice = document.getElementById("printBridgeTokenNotice");
-    var warning = document.getElementById("printBridgeTokenWarning");
-    if (!box || !value) return;
-
-    if (!currentToken) {
-      hideToken();
-      return;
-    }
-
-    var mode = options.mode || "create";
-    var titleText = options.title
-      || (mode === "regenerate" ? messages.tokenRegenerated : messages.tokenCreated)
-      || "";
-    var noticeText = options.notice || messages.tokenShownOnce || "";
-    var warningText = options.warning || "";
-
-    if (title) title.textContent = titleText;
-    if (notice) notice.textContent = noticeText;
-    if (warning) {
-      if (warningText) {
-        warning.textContent = warningText;
-        warning.classList.remove("d-none");
-      } else {
-        warning.textContent = "";
-        warning.classList.add("d-none");
-      }
-    }
-
-    value.textContent = currentToken;
-    box.classList.remove("d-none");
-    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
 
   function postForm(url, fields) {
     var token = getAntiForgeryToken();
@@ -163,26 +64,42 @@
     });
   }
 
-  function formatOptionalTime(iso) {
-    if (!iso) return messages.emptyValue || "—";
-    try {
-      var d = new Date(iso);
-      if (isNaN(d.getTime())) return messages.emptyValue || "—";
-      return d.toLocaleString();
-    } catch (_) {
-      return messages.emptyValue || "—";
-    }
+  // --- Times: UTC instants from the server, shown in the restaurant's time zone and the UI culture ---
+
+  /** Only ISO times that state they are UTC ("Z") or carry an offset are trusted; anything else counts as missing. */
+  function parseUtc(value) {
+    if (typeof value !== "string" || !/(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null;
+    var ms = Date.parse(value);
+    return isNaN(ms) ? null : ms;
   }
 
-  function formatLastSeen(iso) {
-    if (!iso) return messages.lastSeenNever || messages.emptyValue || "—";
-    try {
-      var d = new Date(iso);
-      if (isNaN(d.getTime())) return messages.lastSeenNever || messages.emptyValue || "—";
-      return d.toLocaleString();
-    } catch (_) {
-      return messages.lastSeenNever || messages.emptyValue || "—";
+  var dateTimeFormat = null;
+
+  function displayCulture() {
+    return cfg.displayCulture || (document.documentElement && document.documentElement.lang) || "tr-TR";
+  }
+
+  /** The same Intl approach as the Live Screen: the UI culture, in the configured restaurant time zone. */
+  function formatInstant(ms) {
+    if (!dateTimeFormat) {
+      var options = { timeZone: cfg.timeZoneId || "Europe/Istanbul", dateStyle: "short", timeStyle: "medium" };
+      try {
+        dateTimeFormat = new Intl.DateTimeFormat(displayCulture(), options);
+      } catch (_) {
+        try {
+          dateTimeFormat = new Intl.DateTimeFormat("tr-TR", options);
+        } catch (__) {
+          // No time-zone data at all: an unambiguous UTC value rather than the browser's own clock.
+          dateTimeFormat = { format: function (date) { return date.toISOString(); } };
+        }
+      }
     }
+    return dateTimeFormat.format(new Date(ms));
+  }
+
+  function formatLastSeen(value) {
+    var ms = parseUtc(value);
+    return ms === null ? (messages.lastSeenNever || messages.emptyValue || "—") : formatInstant(ms);
   }
 
   function displayValue(value) {
@@ -190,6 +107,7 @@
     return String(value);
   }
 
+  // The list shows "Online" only for Connected; RecentlySeen, Disconnected and NeverConnected all read "Offline".
   function deviceStatusBadge(device) {
     if (!device.isActive) {
       return { cls: "text-bg-secondary", text: messages.statusUnknown || "Unknown" };
@@ -229,9 +147,12 @@
     var lastName = quota.lastConnectedDeviceName || null;
 
     if (!lastName && devices.length > 0) {
+      var latestMs = parseUtc(latestLastSeen);
       devices.forEach(function (d) {
-        if (!d.lastSeenAtUtc) return;
-        if (!latestLastSeen || new Date(d.lastSeenAtUtc) > new Date(latestLastSeen)) {
+        var seenMs = parseUtc(d.lastSeenAtUtc);
+        if (seenMs === null) return;
+        if (latestMs === null || seenMs > latestMs) {
+          latestMs = seenMs;
           latestLastSeen = d.lastSeenAtUtc;
           lastName = d.name;
         }
@@ -253,97 +174,116 @@
     }
   }
 
+  var lastDevicesHtml = null;
+
+  /** The device control that has keyboard focus inside the table, so a re-render can give it back. */
+  function focusedDeviceControl(panel) {
+    var active = document.activeElement;
+    if (!active || typeof panel.contains !== "function" || !panel.contains(active) || typeof active.closest !== "function") return null;
+    var row = active.closest("tr[data-device-id]");
+    if (!row) return null;
+    return {
+      id: row.getAttribute("data-device-id"),
+      toggle: !!(active.classList && active.classList.contains("pb-device-active-toggle"))
+    };
+  }
+
+  function restoreFocus(panel, key) {
+    if (!key || typeof panel.querySelectorAll !== "function") return;
+    var rows = panel.querySelectorAll("tr[data-device-id]");
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].getAttribute("data-device-id") !== key.id) continue;
+      var target = rows[i].querySelector(key.toggle ? ".pb-device-active-toggle" : "a");
+      if (target && typeof target.focus === "function") target.focus();
+      return;
+    }
+  }
+
   function renderDevicesTable(devices) {
     var panel = document.getElementById("printBridgeDevicesPanel");
     if (!panel) return;
 
     devices = devices || [];
+    var html;
     if (devices.length === 0) {
-      panel.innerHTML =
-        '<div class="oh-print-bridge-empty text-center py-5">' +
-          '<div class="oh-print-bridge-empty__icon text-muted mb-2" aria-hidden="true"><i class="bi bi-hdd-network fs-3"></i></div>' +
+      html =
+        '<div class="wasla-print-bridge-empty text-center py-5">' +
+          '<div class="wasla-print-bridge-empty__icon text-muted mb-2" aria-hidden="true"><i class="bi bi-hdd-network fs-3"></i></div>' +
           '<div class="fw-semibold mb-1">' + escapeHtml(messages.noDevicesTitle || "") + '</div>' +
           '<p class="text-muted small mb-3">' + escapeHtml(messages.noDevicesDescription || "") + '</p>' +
           '<div class="d-flex flex-wrap justify-content-center gap-2">' +
-            '<button type="button" class="btn btn-primary btn-sm" id="printBridgeEmptyAddDeviceBtn">' +
-              '<i class="bi bi-key me-1"></i>' + escapeHtml(messages.addDevice || messages.createDevice || "Create token") +
-            '</button>' +
-            '<a class="btn btn-outline-secondary btn-sm" href="' + escapeHtml(cfg.setupUrl || "/print-bridge/setup") + '">' +
-              '<i class="bi bi-book me-1"></i>' + escapeHtml(messages.goToSetup || "Setup") +
+            '<a class="btn btn-primary btn-sm" href="' + escapeHtml(cfg.setupUrl || "/print-bridge/setup") + '">' +
+              '<i class="bi bi-plus-circle me-1"></i>' + escapeHtml(messages.setupNewDevice || messages.goToSetup || "Set up a new device") +
             '</a>' +
           '</div>' +
         '</div>';
+    } else {
+      var rows = devices.map(function (device) {
+        var connection = deviceStatusBadge(device);
+        var activeBadgeCls = device.isActive ? "text-bg-success" : "text-bg-secondary";
+        var activeText = device.isActive ? (messages.ordersActive || "Active") : (messages.ordersPassive || "Passive");
+        var printerHint = displayValue(device.printerName);
+        var machineHint = displayValue(device.machineName);
+        var detailsUrl = device.detailsUrl || ("/print-bridge/devices/" + encodeURIComponent(device.id));
+        return (
+          '<tr data-device-id="' + escapeHtml(device.id) + '">' +
+            '<td>' +
+              '<div class="fw-semibold">' + escapeHtml(device.name) + '</div>' +
+              (machineHint !== (messages.emptyValue || "—")
+                ? '<div class="text-muted small">' + escapeHtml(messages.machineName || "Computer") + ': ' + escapeHtml(machineHint) + '</div>'
+                : '') +
+              (printerHint !== (messages.emptyValue || "—")
+                ? '<div class="text-muted small">' + escapeHtml(messages.printerName || "Printer") + ': ' + escapeHtml(printerHint) + '</div>'
+                : '') +
+            '</td>' +
+            '<td>' +
+              '<div class="d-flex flex-wrap align-items-center gap-1">' +
+                '<span class="badge ' + connection.cls + '">' + escapeHtml(connection.text) + '</span>' +
+                '<span class="badge ' + activeBadgeCls + ' pb-device-active-badge">' + escapeHtml(activeText) + '</span>' +
+              '</div>' +
+            '</td>' +
+            '<td class="text-muted small text-nowrap">' + escapeHtml(formatLastSeen(device.lastSeenAtUtc)) + '</td>' +
+            '<td class="text-muted small">' + escapeHtml(formatVersion(device.appVersion)) + '</td>' +
+            '<td>' +
+              '<div class="d-flex align-items-center justify-content-end gap-2 text-nowrap">' +
+                '<div class="form-check form-switch m-0">' +
+                  '<input class="form-check-input pb-device-active-toggle" type="checkbox" role="switch" ' +
+                    'data-device-id="' + escapeHtml(device.id) + '" ' +
+                    'aria-label="' + escapeHtml(messages.deviceActive || "Active") + '" ' +
+                    (device.isActive ? "checked" : "") + ' />' +
+                '</div>' +
+                '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(detailsUrl) + '">' +
+                  '<i class="bi bi-info-circle me-1"></i>' + escapeHtml(messages.details || "Details") +
+                '</a>' +
+              '</div>' +
+            '</td>' +
+          '</tr>'
+        );
+      }).join("");
 
-      var emptyAddBtn = document.getElementById("printBridgeEmptyAddDeviceBtn");
-      if (emptyAddBtn) {
-        emptyAddBtn.addEventListener("click", function () {
-          var nameInput = document.getElementById("printBridgeDeviceName");
-          if (nameInput) {
-            nameInput.focus();
-            nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        });
-      }
-      return;
+      html =
+        '<div class="table-responsive">' +
+          '<table class="table table-sm align-middle mb-0 wasla-print-bridge-devices-table">' +
+            '<thead><tr>' +
+              '<th>' + escapeHtml(messages.deviceName || "Device") + '</th>' +
+              '<th>' + escapeHtml(messages.status || "Status") + '</th>' +
+              '<th>' + escapeHtml(messages.lastSeen || "Last seen") + '</th>' +
+              '<th>' + escapeHtml(messages.appVersion || "Version") + '</th>' +
+              '<th class="text-end">' + escapeHtml(messages.actions || "Actions") + '</th>' +
+            '</tr></thead>' +
+            '<tbody id="printBridgeDevicesTableBody">' + rows + '</tbody>' +
+          '</table>' +
+        '</div>';
     }
 
-    var rows = devices.map(function (device) {
-      var connection = deviceStatusBadge(device);
-      var activeBadgeCls = device.isActive ? "text-bg-success" : "text-bg-secondary";
-      var activeText = device.isActive ? (messages.ordersActive || "Active") : (messages.ordersPassive || "Passive");
-      var printerHint = displayValue(device.printerName);
-      return (
-        '<tr data-device-id="' + escapeHtml(device.id) + '">' +
-          '<td>' +
-            '<div class="fw-semibold">' + escapeHtml(device.name) + '</div>' +
-            (printerHint !== (messages.emptyValue || "—")
-              ? '<div class="text-muted small">' + escapeHtml(messages.printerName || "Printer") + ': ' + escapeHtml(printerHint) + '</div>'
-              : '') +
-          '</td>' +
-          '<td class="text-muted small">' + escapeHtml(displayValue(device.machineName)) + '</td>' +
-          '<td>' +
-            '<div class="d-flex flex-wrap align-items-center gap-1">' +
-              '<span class="badge ' + connection.cls + '">' + escapeHtml(connection.text) + '</span>' +
-              '<span class="badge ' + activeBadgeCls + ' pb-device-active-badge">' + escapeHtml(activeText) + '</span>' +
-            '</div>' +
-          '</td>' +
-          '<td class="text-muted small text-nowrap">' + escapeHtml(formatLastSeen(device.lastSeenAtUtc)) + '</td>' +
-          '<td class="text-muted small">' + escapeHtml(formatVersion(device.appVersion)) + '</td>' +
-          '<td>' +
-            '<div class="d-flex flex-wrap align-items-center gap-2">' +
-              '<div class="form-check form-switch m-0">' +
-                '<input class="form-check-input pb-device-active-toggle" type="checkbox" role="switch" ' +
-                  'data-device-id="' + escapeHtml(device.id) + '" ' +
-                  'aria-label="' + escapeHtml(messages.deviceActive || "Active") + '" ' +
-                  (device.isActive ? "checked" : "") + ' />' +
-              '</div>' +
-              '<button type="button" class="btn btn-sm btn-outline-secondary pb-regenerate-token-btn" ' +
-                'data-device-id="' + escapeHtml(device.id) + '" data-device-name="' + escapeHtml(device.name) + '">' +
-                '<i class="bi bi-arrow-repeat me-1"></i>' + escapeHtml(messages.regenerateToken || "Regenerate") +
-              '</button>' +
-            '</div>' +
-          '</td>' +
-        '</tr>'
-      );
-    }).join("");
+    // Nothing changed: leave the table (and whatever has keyboard focus in it) alone.
+    if (html === lastDevicesHtml) return;
 
-    panel.innerHTML =
-      '<div class="table-responsive">' +
-        '<table class="table table-sm align-middle mb-0 oh-print-bridge-devices-table">' +
-          '<thead><tr>' +
-            '<th>' + escapeHtml(messages.deviceName || "Device") + '</th>' +
-            '<th>' + escapeHtml(messages.localAlias || messages.machineName || "Computer") + '</th>' +
-            '<th>' + escapeHtml(messages.status || "Status") + '</th>' +
-            '<th>' + escapeHtml(messages.lastSeen || "Last seen") + '</th>' +
-            '<th>' + escapeHtml(messages.appVersion || "Version") + '</th>' +
-            '<th class="text-end">' + escapeHtml(messages.actions || "Actions") + '</th>' +
-          '</tr></thead>' +
-          '<tbody id="printBridgeDevicesTableBody">' + rows + '</tbody>' +
-        '</table>' +
-      '</div>';
-
-    bindRegenerateButtons();
+    var focusKey = focusedDeviceControl(panel);
+    panel.innerHTML = html;
+    lastDevicesHtml = html;
     bindActiveToggles();
+    restoreFocus(panel, focusKey);
   }
 
   function updateQuotaUi(quota) {
@@ -352,13 +292,8 @@
     var canCreate = !!quota.canCreateActiveDevice;
     var exceeds = !!quota.activeCountExceedsLimit;
 
-    var createBtn = document.getElementById("printBridgeCreateDeviceBtn");
-    var nameInput = document.getElementById("printBridgeDeviceName");
     var exceededAlert = document.getElementById("printBridgeLimitExceededAlert");
     var reachedAlert = document.getElementById("printBridgeLimitReachedAlert");
-
-    if (createBtn) createBtn.disabled = !canCreate;
-    if (nameInput) nameInput.disabled = !canCreate;
 
     if (exceededAlert) {
       exceededAlert.classList.toggle("d-none", !exceeds);
@@ -376,101 +311,202 @@
     updateQuotaUi(state.quota);
   }
 
-  function refreshDevices() {
-    return fetch(cfg.devicesUrl || "/print-bridge/devices/list", {
-      headers: { "X-Requested-With": "XMLHttpRequest" }
+  // --- Device snapshot: the one source of device state on this page ---
+  //
+  // Every update goes through applySnapshot: the initial state, the periodic refresh, the page becoming visible again,
+  // device toggles and presence expiry. A future push channel (e.g. SignalR) only has to call
+  // window.WaslaPrintBridge.refreshDevices(). Snapshots carry the server's time, so an older one never replaces a newer
+  // one, and that time also corrects this browser's clock. Refreshing only reads: it never creates a device, token,
+  // setup session or print job.
+
+  var deviceState = null;
+  var appliedServerMs = null;
+  var serverOffsetMs = 0;
+  var connectedMs = null;
+  var recentlySeenMs = null;
+  var expiryTimer = null;
+  var devicesPollTimer = null;
+  var devicesRefreshInFlight = null;
+  var devicesRefreshAgain = false;
+  var devicesAbort = null;
+  var pendingMutations = 0;
+  var refreshAfterMutation = false;
+  var devicesStopped = false;
+
+  /** Applies a server snapshot unless a newer one is already on screen. Returns whether it was applied. */
+  function applySnapshot(data) {
+    if (!data || !Array.isArray(data.devices)) return false;
+    var serverMs = parseUtc(data.serverTimeUtc);
+    if (appliedServerMs !== null && (serverMs === null || serverMs < appliedServerMs)) return false;
+
+    if (serverMs !== null) {
+      appliedServerMs = serverMs;
+      serverOffsetMs = serverMs - Date.now();
+    }
+    if (data.connectedThresholdSeconds > 0) connectedMs = data.connectedThresholdSeconds * 1000;
+    if (data.recentlySeenThresholdSeconds > 0) recentlySeenMs = data.recentlySeenThresholdSeconds * 1000;
+
+    deviceState = {
+      devices: data.devices.map(function (d) { return Object.assign({}, d); }),
+      quota: Object.assign({}, data.quota || {})
+    };
+    renderAll(deviceState);
+    schedulePresenceExpiry();
+    return true;
+  }
+
+  function serverNow() {
+    return Date.now() + serverOffsetMs;
+  }
+
+  /**
+   * A Bridge that crashes, loses power or loses the internet sends nothing, so "connected" must also end by time. The
+   * server's own threshold and clock decide when; the page then asks the server to confirm.
+   */
+  function schedulePresenceExpiry() {
+    if (expiryTimer) {
+      clearTimeout(expiryTimer);
+      expiryTimer = null;
+    }
+    if (devicesStopped || !deviceState || connectedMs === null) return;
+
+    var next = null;
+    var now = serverNow();
+    deviceState.devices.forEach(function (d) {
+      if (d.connectionStatus !== "Connected") return;
+      var seen = parseUtc(d.lastSeenAtUtc);
+      if (seen === null) return;
+      var due = seen + connectedMs - now;
+      if (next === null || due < next) next = due;
+    });
+    if (next === null) return;
+
+    // "Connected" holds up to and including the threshold, so check just after it.
+    expiryTimer = setTimeout(expirePresence, Math.max(0, next) + 250);
+  }
+
+  function expirePresence() {
+    expiryTimer = null;
+    if (devicesStopped || !deviceState || connectedMs === null) return;
+
+    var now = serverNow();
+    var changed = false;
+    deviceState.devices.forEach(function (d) {
+      if (d.connectionStatus !== "Connected") return;
+      var seen = parseUtc(d.lastSeenAtUtc);
+      if (seen === null || now - seen <= connectedMs) return;
+      // The server calculator's next states, with its own thresholds.
+      d.connectionStatus = recentlySeenMs !== null && now - seen <= recentlySeenMs ? "RecentlySeen" : "Disconnected";
+      d.isConnected = false;
+      changed = true;
+    });
+
+    if (changed) {
+      deviceState.quota.connectedDeviceCount = deviceState.devices.filter(function (d) {
+        return d.connectionStatus === "Connected";
+      }).length;
+      renderAll(deviceState);
+      requestDevicesRefresh();
+    }
+    schedulePresenceExpiry();
+  }
+
+  /**
+   * The one device refresh. Only one request runs at a time; triggers that arrive meanwhile are folded into a single
+   * follow-up. A failed request keeps what is on screen, and the next trigger recovers.
+   */
+  function requestDevicesRefresh() {
+    if (devicesStopped) return Promise.resolve(false);
+    if (devicesRefreshInFlight) {
+      devicesRefreshAgain = true;
+      return devicesRefreshInFlight;
+    }
+
+    devicesAbort = typeof AbortController === "function" ? new AbortController() : null;
+    devicesRefreshInFlight = fetch(cfg.devicesUrl || "/print-bridge/devices/list", {
+      headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: devicesAbort ? devicesAbort.signal : undefined
     })
       .then(function (resp) {
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         return resp.json();
       })
       .then(function (data) {
-        renderAll({ devices: data.devices || [], quota: data.quota || {} });
-        return data;
+        if (devicesStopped) return false;
+        // A toggle is on its way and its own response is newer; refresh again once it has landed.
+        if (pendingMutations > 0) {
+          refreshAfterMutation = true;
+          return false;
+        }
+        return applySnapshot(data);
+      })
+      .catch(function () {
+        return false;
+      })
+      .then(function (applied) {
+        devicesRefreshInFlight = null;
+        devicesAbort = null;
+        if (devicesRefreshAgain && !devicesStopped) {
+          devicesRefreshAgain = false;
+          requestDevicesRefresh();
+        }
+        return applied;
       });
+    return devicesRefreshInFlight;
+  }
+
+  function startDevicesPolling() {
+    if (devicesPollTimer) clearInterval(devicesPollTimer);
+    devicesPollTimer = setInterval(function () {
+      // A hidden tab skips its turn; it refreshes as soon as it is shown again.
+      if (document.visibilityState === "hidden") return;
+      requestDevicesRefresh();
+    }, cfg.devicesPollIntervalMs || 15000);
+  }
+
+  function stopDevicesRefresh() {
+    devicesStopped = true;
+    if (devicesPollTimer) {
+      clearInterval(devicesPollTimer);
+      devicesPollTimer = null;
+    }
+    if (expiryTimer) {
+      clearTimeout(expiryTimer);
+      expiryTimer = null;
+    }
+    if (devicesAbort) devicesAbort.abort();
+  }
+
+  function bindDevicesRefresh() {
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") requestDevicesRefresh();
+    });
+    window.addEventListener("pagehide", stopDevicesRefresh);
+    window.addEventListener("pageshow", function (event) {
+      if (!event || !event.persisted) return;
+      devicesStopped = false;
+      startDevicesPolling();
+      requestDevicesRefresh();
+    });
+    startDevicesPolling();
   }
 
   function applyMutationResponse(data) {
-    if (data && (data.devices || data.quota)) {
-      renderAll({ devices: data.devices || [], quota: data.quota || {} });
-    } else {
-      return refreshDevices();
+    if (data && Array.isArray(data.devices)) {
+      applySnapshot(data);
+      return Promise.resolve(data);
     }
-    return Promise.resolve(data);
+    return requestDevicesRefresh();
   }
 
-  function bindCreateDevice() {
-    var btn = document.getElementById("printBridgeCreateDeviceBtn");
-    var nameInput = document.getElementById("printBridgeDeviceName");
-    if (!btn) return;
-
-    btn.addEventListener("click", function () {
-      if (btn.disabled) return;
-
-      btn.disabled = true;
-      var fields = {};
-      if (nameInput && nameInput.value) fields.deviceName = nameInput.value;
-
-      postForm(cfg.createDeviceUrl, fields)
-        .then(function (data) {
-          showToken(data.token, {
-            mode: data.tokenMode || "create",
-            title: data.tokenTitle,
-            notice: data.tokenNotice
-          });
-          if (nameInput) nameInput.value = "";
-          showMessage(data.message || messages.deviceCreatedSuccessfully, "success");
-          return applyMutationResponse(data);
-        })
-        .catch(function (e) {
-          var text = (e && e.message) || messages.tokenGenerateFailed || "Failed";
-          showMessage(text, "danger");
-          return refreshDevices();
-        })
-        .finally(function () {
-          if (lastQuota) updateQuotaUi(lastQuota);
-        });
-    });
-  }
-
-  function bindRegenerateButtons() {
-    document.querySelectorAll(".pb-regenerate-token-btn").forEach(function (btn) {
-      if (btn.getAttribute("data-bound") === "1") return;
-      btn.setAttribute("data-bound", "1");
-
-      btn.addEventListener("click", function () {
-        var deviceId = btn.getAttribute("data-device-id");
-        var deviceName = btn.getAttribute("data-device-name") || "";
-        if (!deviceId) return;
-
-        var confirmText = formatMsg(messages.confirmRegenerateToken || "Regenerate token for {0}?", deviceName);
-        if (messages.tokenRegenerateWarning) {
-          confirmText += "\n\n" + messages.tokenRegenerateWarning;
-        }
-        if (!window.confirm(confirmText)) return;
-
-        btn.disabled = true;
-        var url = (cfg.regenerateTokenUrlTemplate || "").replace("{id}", deviceId);
-
-        postForm(url, {})
-          .then(function (data) {
-            showToken(data.token, {
-              mode: data.tokenMode || "regenerate",
-              title: data.tokenTitle,
-              notice: data.tokenNotice,
-              warning: data.tokenWarning
-            });
-            if (data.message) showMessage(data.message, "success");
-            return applyMutationResponse(data);
-          })
-          .catch(function () {
-            showMessage(messages.tokenRegenerateFailed || "Failed", "danger");
-          })
-          .finally(function () {
-            btn.disabled = false;
-          });
-      });
-    });
+  function finishMutation() {
+    pendingMutations = Math.max(0, pendingMutations - 1);
+    if (pendingMutations === 0 && refreshAfterMutation) {
+      refreshAfterMutation = false;
+      requestDevicesRefresh();
+    }
   }
 
   function bindActiveToggles() {
@@ -493,12 +529,15 @@
           badge.classList.add(isActive ? "text-bg-success" : "text-bg-secondary");
         }
 
+        pendingMutations++;
         var url = (cfg.setActiveUrlTemplate || "").replace("{id}", deviceId);
         postForm(url, { isActive: isActive ? "true" : "false" })
           .then(function (data) {
+            finishMutation();
             return applyMutationResponse(data);
           })
           .catch(function (e) {
+            finishMutation();
             toggle.checked = previous;
             if (badge) {
               badge.textContent = previous ? (messages.ordersActive || "Active") : (messages.ordersPassive || "Passive");
@@ -507,11 +546,14 @@
             }
             var text = (e && e.message) || messages.deviceUpdateFailed || "Update failed";
             showMessage(text, "danger");
-            return refreshDevices();
+            return requestDevicesRefresh();
           });
       });
     });
   }
+
+  // A future push channel calls this; it is the same refresh the timer, the page and the toggles use.
+  cfg.refreshDevices = requestDevicesRefresh;
 
   function refreshPrintJobsPartial() {
     var panel = document.getElementById("printBridgeJobsPanel");
@@ -562,7 +604,7 @@
       var orderDisplay = btn.getAttribute("data-order-display") || "";
       if (!jobId || reprintInFlight[jobId]) return;
 
-      var confirmText = formatMsg(messages.confirmReprint || "Reprint receipt for {0}?", orderDisplay);
+      var confirmText = formatMessage(messages.confirmReprint || "Reprint receipt for {0}?", orderDisplay);
       if (!window.confirm(confirmText)) return;
 
       reprintInFlight[jobId] = true;
@@ -599,57 +641,11 @@
     });
   }
 
-  function bindServerUrlCopy() {
-    var btn = document.getElementById("printBridgeCopyServerUrlBtn");
-    var valueEl = document.getElementById("printBridgeServerUrlValue");
-    if (!btn || !valueEl) return;
-
-    btn.addEventListener("click", function () {
-      var text = (valueEl.textContent || "").trim();
-      if (!text) {
-        text = (cfg.serverUrl || "").trim();
-      }
-      if (!text) {
-        showMessage(messages.copyFailed || "Copy failed", "danger");
-        return;
-      }
-      copyText(text, btn, { successMessage: messages.copied || messages.tokenCopied })
-        .catch(function () {
-          showMessage(messages.copyFailed || messages.tokenCopyFailed, "danger");
-        });
-    });
-  }
-
-  function bindTokenActions() {
-    var copyTokenBtn = document.getElementById("printBridgeCopyTokenBtn");
-    if (copyTokenBtn) {
-      copyTokenBtn.addEventListener("click", function () {
-        if (!currentToken) {
-          showMessage(messages.tokenMasked || messages.tokenNotAvailableRegenerate, "danger");
-          return;
-        }
-        copyText(currentToken, copyTokenBtn, { successMessage: messages.tokenCopied })
-          .catch(function () {
-            showMessage(messages.tokenCopyFailed, "danger");
-          });
-      });
-    }
-
-    var dismissTokenBtn = document.getElementById("printBridgeDismissTokenBtn");
-    if (dismissTokenBtn) {
-      dismissTokenBtn.addEventListener("click", function () {
-        hideToken();
-      });
-    }
-  }
-
   document.addEventListener("DOMContentLoaded", function () {
-    hideToken();
     if (cfg.initialState) {
-      renderAll(cfg.initialState);
+      applySnapshot(cfg.initialState);
     }
-    bindCreateDevice();
-    bindTokenActions();
+    bindDevicesRefresh();
     bindPrintJobReprintDelegation();
     bindRefreshPrintJobs();
     startPrintJobsPolling();

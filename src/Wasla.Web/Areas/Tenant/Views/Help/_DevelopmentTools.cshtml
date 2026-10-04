@@ -1,0 +1,60 @@
+@model string
+@*
+    TEMPORARY local-testing tool. Rendered only when HelpController allows it: Development environment,
+    DevelopmentTools:EnableTenantReset, and the tenant Owner. Model: the current tenant's slug, which must be
+    typed exactly to confirm. The server checks every condition again.
+*@
+<section id="help-development-tools" class="wasla-help__group wasla-help__group--dev" aria-labelledby="help-development-tools-title" data-development-tools>
+    <h2 id="help-development-tools-title" class="wasla-help__group-title">@L["DevelopmentTools.Title"]</h2>
+
+    <article id="help-dev-tenant-reset" class="wasla-help__topic wasla-help__topic--danger" aria-labelledby="help-dev-tenant-reset-title">
+        <h3 id="help-dev-tenant-reset-title">@L["DevelopmentTools.Reset.Title"]</h3>
+        <p>@L["DevelopmentTools.Reset.Intro"]</p>
+        <p class="wasla-help__danger">@L["DevelopmentTools.Reset.Warning"]</p>
+        <p>@L["DevelopmentTools.Reset.Keeps"]</p>
+        <p>@L["DevelopmentTools.Reset.StopWorker"]</p>
+        <p>@L["DevelopmentTools.Reset.BrowserPermission"]</p>
+        <p class="wasla-help__action">
+            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#waslaTenantResetDialog">@L["DevelopmentTools.Reset.Button"]</button>
+        </p>
+    </article>
+</section>
+
+<div class="modal fade wasla-guided-setup-dialog" id="waslaTenantResetDialog" tabindex="-1"
+     aria-labelledby="waslaTenantResetTitle" aria-describedby="waslaTenantResetBody" aria-hidden="true"
+     data-guided-setup-dialog>
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post" action="/development-tools/tenant-reset" data-guided-setup-form autocomplete="off">
+            @Html.AntiForgeryToken()
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="waslaTenantResetTitle">@L["DevelopmentTools.Reset.DialogTitle"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["DevelopmentTools.Reset.Cancel"]"></button>
+            </div>
+            <div class="modal-body">
+                <p id="waslaTenantResetBody" class="wasla-help__danger">@L["DevelopmentTools.Reset.Warning"]</p>
+                <label class="form-label" for="waslaTenantResetSlug">
+                    @L["DevelopmentTools.Reset.ConfirmLabel"] <code dir="ltr" translate="no">@Model</code>
+                </label>
+                <input id="waslaTenantResetSlug" name="confirmSlug" class="form-control" type="text" dir="ltr"
+                       spellcheck="false" autocapitalize="off" autocomplete="off" required
+                       data-expected="@Model" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-guided-setup-cancel>@L["DevelopmentTools.Reset.Cancel"]</button>
+                <button type="submit" class="btn btn-danger" data-tenant-reset-submit disabled>@L["DevelopmentTools.Reset.Confirm"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    // Convenience only: the confirm button unlocks on an exact match. The server compares the slug again.
+    (function () {
+        var input = document.getElementById("waslaTenantResetSlug");
+        var submit = document.querySelector("[data-tenant-reset-submit]");
+        if (!input || !submit) return;
+        var sync = function () { submit.disabled = input.value !== input.getAttribute("data-expected"); };
+        input.addEventListener("input", sync);
+        sync();
+    })();
+</script>
+<script src="~/js/wasla-guided-setup.js" asp-append-version="true"></script>

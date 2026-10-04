@@ -6,6 +6,9 @@ public sealed class PlatformConnectionListViewModel
 {
     public List<Row> Connections { get; set; } = new();
 
+    /// <summary>Set only while Platform Connections is the user's current guided-setup section.</summary>
+    public Wasla.Web.Models.GuidedSetup.GuidedSetupSectionPanelViewModel? GuidedSetup { get; set; }
+
     public sealed class Row
     {
         public Guid Id { get; set; }

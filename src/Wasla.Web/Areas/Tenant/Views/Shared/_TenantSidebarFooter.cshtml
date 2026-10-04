@@ -6,25 +6,27 @@
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
     var currentLangLabel = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase)
         ? "English"
-        : (isRtl ? "العربية" : "Türkçe");
+        : (culture.StartsWith("ru", StringComparison.OrdinalIgnoreCase)
+            ? "Русский"
+            : (isRtl ? "العربية" : "Türkçe"));
     var userName = User?.Identity?.IsAuthenticated == true
         ? (User.FindFirstValue(ClaimTypes.Name) ?? L["Layout.User"].Value)
         : L["Layout.Guest"].Value;
 }
 
-<div class="oh-sidebar-footer-controls">
-    <div class="oh-sidebar-action-row oh-sidebar-action-row--split">
-        <div class="dropup position-static oh-sidebar-action-grow min-w-0">
+<div class="wasla-sidebar-footer-controls">
+    <div class="wasla-sidebar-action-row wasla-sidebar-action-row--split">
+        <div class="dropup position-static wasla-sidebar-action-grow min-w-0">
             <button type="button"
-                    class="oh-sidebar-action-btn dropdown-toggle oh-sidebar-lang-toggle w-100"
+                    class="wasla-sidebar-action-btn dropdown-toggle wasla-sidebar-lang-toggle w-100"
                     data-bs-toggle="dropdown"
                     data-bs-auto-close="true"
                     aria-label="@L["Layout.Language"]"
                     aria-expanded="false">
-                <i class="bi bi-translate oh-sidebar-action-icon" aria-hidden="true"></i>
-                <span class="oh-sidebar-action-label nav-text">@currentLangLabel</span>
+                <i class="bi bi-translate wasla-sidebar-action-icon" aria-hidden="true"></i>
+                <span class="wasla-sidebar-action-label nav-text">@currentLangLabel</span>
             </button>
-            <ul class="dropdown-menu oh-sidebar-dropdown-menu oh-sidebar-lang-menu w-100 mb-1">
+            <ul class="dropdown-menu wasla-sidebar-dropdown-menu wasla-sidebar-lang-menu w-100 mb-1">
                 <li>
                     <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="tr-TR" asp-route-returnUrl="@returnUrl">Türkçe</a>
                 </li>
@@ -34,20 +36,23 @@
                 <li>
                     <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ar-SA" asp-route-returnUrl="@returnUrl">العربية</a>
                 </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ru-RU" asp-route-returnUrl="@returnUrl">Русский</a>
+                </li>
             </ul>
         </div>
-        <button type="button" class="oh-sidebar-icon-btn oh-theme-toggle flex-shrink-0"
+        <button type="button" class="wasla-sidebar-icon-btn wasla-theme-toggle flex-shrink-0"
                 aria-pressed="false" aria-label="@L["Layout.Theme"]"
                 data-go-dark="@L["Layout.DarkMode"]" data-go-light="@L["Layout.LightMode"]">
-            <i class="bi bi-moon-stars oh-theme-moon" aria-hidden="true"></i>
-            <i class="bi bi-sun oh-theme-sun d-none" aria-hidden="true"></i>
+            <i class="bi bi-moon-stars wasla-theme-moon" aria-hidden="true"></i>
+            <i class="bi bi-sun wasla-theme-sun d-none" aria-hidden="true"></i>
         </button>
     </div>
     @if (User?.Identity?.IsAuthenticated == true)
     {
-        <div class="oh-sidebar-user" aria-label="@L["Layout.UserMenu"]">
-            <i class="bi bi-person-circle oh-sidebar-action-icon" aria-hidden="true"></i>
-            <span class="oh-sidebar-user-label text-truncate">@userName</span>
+        <div class="wasla-sidebar-user" aria-label="@L["Layout.UserMenu"]">
+            <i class="bi bi-person-circle wasla-sidebar-action-icon" aria-hidden="true"></i>
+            <span class="wasla-sidebar-user-label text-truncate">@userName</span>
         </div>
     }
 </div>

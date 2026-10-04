@@ -11,6 +11,7 @@ public interface IPrintBridgeJobService
         Guid customerId,
         Guid jobId,
         string lockedBy,
+        Guid? lockedByInstallationId,
         CancellationToken ct);
 
     Task<PrintJobClaimResponse> TryMarkPrintedAsync(

@@ -33,6 +33,21 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>Save settings</value>
   </data>
+  <data name="Button.SaveConnection" xml:space="preserve">
+    <value>Save connection</value>
+  </data>
+  <data name="Button.SavePrinter" xml:space="preserve">
+    <value>Save printer</value>
+  </data>
+  <data name="Button.SaveDeviceName" xml:space="preserve">
+    <value>Save device name</value>
+  </data>
+  <data name="Button.ApplyLanguage" xml:space="preserve">
+    <value>Apply language</value>
+  </data>
+  <data name="Button.SaveAdvanced" xml:space="preserve">
+    <value>Save advanced settings</value>
+  </data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>Show</value>
   </data>
@@ -84,6 +99,36 @@
   <data name="Connection.TokenInvalid" xml:space="preserve">
     <value>Print Bridge token is invalid or unauthorized. Check the token in Settings.</value>
   </data>
+  <data name="RuntimeIssue.ReconnectRequired" xml:space="preserve">
+    <value>This Print Bridge device is no longer authorized. Reconnect it from Wasla Web to continue printing.</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.Title" xml:space="preserve">
+    <value>Reconnect required</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.Detail" xml:space="preserve">
+    <value>Invalid token. Reconnect from Wasla Web.</value>
+  </data>
+  <data name="RuntimeIssue.ReconnectRequired.TokenRevoked.Detail" xml:space="preserve">
+    <value>Device token is invalid. Reconnect from the Print Bridge setup page in the Wasla Web panel.</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin" xml:space="preserve">
+    <value>This Print Bridge device is disabled in Wasla Web. Enable it there, then start polling again.</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin.Title" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="RuntimeIssue.DisabledByAdmin.Detail" xml:space="preserve">
+    <value>This device was disabled in Wasla Web. Enable it from the Web panel to continue.</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation" xml:space="preserve">
+    <value>This computer's Print Bridge identity is already linked to another device. Use reconnect for the existing device in Wasla Web.</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation.Title" xml:space="preserve">
+    <value>Installation conflict</value>
+  </data>
+  <data name="RuntimeIssue.DuplicateInstallation.Detail" xml:space="preserve">
+    <value>This computer's Print Bridge identity is already linked to another device. Use reconnect for the existing device in Wasla Web.</value>
+  </data>
   <data name="Dashboard.DeviceStatus" xml:space="preserve">
     <value>Device Status</value>
   </data>
@@ -101,6 +146,9 @@
   </data>
   <data name="Error.PrinterRequired" xml:space="preserve">
     <value>Printer name is required.</value>
+  </data>
+  <data name="Error.PrinterUnavailable" xml:space="preserve">
+    <value>Selected printer is unavailable.</value>
   </data>
   <data name="Error.TestPrintFailed" xml:space="preserve">
     <value>Test print failed.</value>
@@ -255,6 +303,9 @@
   <data name="Settings.DeviceNameManagedFromWeb" xml:space="preserve">
     <value>Managed from Wasla Web panel</value>
   </data>
+  <data name="Settings.DeviceNameLocalHelp" xml:space="preserve">
+    <value>Stored locally on this computer. It does not rename the device in Wasla Web.</value>
+  </data>
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Machine: {0}</value>
   </data>
@@ -287,6 +338,42 @@
   </data>
   <data name="Settings.AgentTokenHelp" xml:space="preserve">
     <value>Paste the device token generated from the Wasla Web panel.</value>
+  </data>
+  <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
+    <value>This field is for the device token. Do not paste a setup code or wasla-printbridge link here. Use the Print Bridge setup page in the Wasla Web panel to connect.</value>
+  </data>
+  <data name="Settings.Section.Connection" xml:space="preserve">
+    <value>Wasla connection</value>
+  </data>
+  <data name="Settings.Section.ConnectionHelp" xml:space="preserve">
+    <value>Web panel URL and device connection settings.</value>
+  </data>
+  <data name="Settings.Section.Printer" xml:space="preserve">
+    <value>Printer configuration</value>
+  </data>
+  <data name="Settings.Section.PrinterHelp" xml:space="preserve">
+    <value>Select the local Windows printer used for receipts. This does not require server credentials.</value>
+  </data>
+  <data name="Settings.Section.Device" xml:space="preserve">
+    <value>Device identity</value>
+  </data>
+  <data name="Settings.Section.DeviceHelp" xml:space="preserve">
+    <value>Manage local display information for this Print Bridge installation.</value>
+  </data>
+  <data name="Settings.Section.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings.Section.LanguageHelp" xml:space="preserve">
+    <value>Change the application language without validating connection or printer settings.</value>
+  </data>
+  <data name="Settings.SectionSaved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="Settings.Saving" xml:space="preserve">
+    <value>Saving...</value>
+  </data>
+  <data name="Settings.LanguageApplied" xml:space="preserve">
+    <value>Language applied.</value>
   </data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Test mode is enabled. Receipts will not be printed; jobs will only be logged.</value>
@@ -330,6 +417,9 @@
   <data name="ConnectionStatus.Connected" xml:space="preserve">
     <value>Connected</value>
   </data>
+  <data name="ConnectionStatus.NotConfigured" xml:space="preserve">
+    <value>Not configured</value>
+  </data>
   <data name="ConnectionStatus.Disconnected" xml:space="preserve">
     <value>Disconnected</value>
   </data>
@@ -338,6 +428,12 @@
   </data>
   <data name="ConnectionStatus.Stopped" xml:space="preserve">
     <value>Stopped</value>
+  </data>
+  <data name="ConnectionSummary.NotConnected" xml:space="preserve">
+    <value>Not connected</value>
+  </data>
+  <data name="ConnectionSummary.Disabled" xml:space="preserve">
+    <value>Disabled</value>
   </data>
   <data name="Dashboard.DeviceName" xml:space="preserve">
     <value>Device Name</value>
@@ -525,6 +621,21 @@
   <data name="Validation.AgentTokenRequired" xml:space="preserve">
     <value>Access token is required.</value>
   </data>
+  <data name="Validation.SetupCodeRequired" xml:space="preserve"><value>Setup code is required.</value></data>
+  <data name="Button.ConnectWithSetupCode" xml:space="preserve"><value>Connect with setup code</value></data>
+  <data name="Button.ResetConnection" xml:space="preserve"><value>Reset connection</value></data>
+  <data name="Button.ResetConnectionConfirm" xml:space="preserve"><value>Reset</value></data>
+  <data name="Button.ResetConnectionCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>Reset connection?</value></data>
+  <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>This clears the connection token on this computer. Server URL, device identity, language, and local history are kept. You will need to reconnect Print Bridge to continue.</value></data>
+  <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>Use this when the connection or token is no longer valid.</value></data>
+  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>Connection troubleshooting</value></data>
+  <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>Reconnect Print Bridge from the Web panel to continue.</value></data>
+  <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>Connection was reset. Reconnect this device from the Print Bridge setup page in the Wasla Web panel.</value></data>
+  <data name="Settings.SetupCode" xml:space="preserve"><value>Setup code</value></data>
+  <data name="Settings.SetupCodeHelp" xml:space="preserve"><value>Enter the one-time setup code generated in Wasla Web. This is not the permanent device token.</value></data>
+  <data name="Message.SetupCodeInvalidOrExpired" xml:space="preserve"><value>The setup code is invalid, already used, or expired.</value></data>
+  <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>Connection was reset. Reconnect this device from the Print Bridge setup page in the Wasla Web panel.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Connection could not be verified</value>
   </data>
@@ -537,10 +648,20 @@
   <data name="Validation.InvalidServerUrl" xml:space="preserve">
     <value>Invalid server URL. Enter a valid address starting with http:// or https://.</value>
   </data>
+  <data name="Validation.InvalidPollingIntervals" xml:space="preserve">
+    <value>Polling intervals are outside the allowed range.</value>
+  </data>
   <data name="Validation.PrinterRequired" xml:space="preserve">
-    <value>Printer name is required when test mode is disabled.</value>
+    <value>Select a printer before starting receipt printing.</value>
   </data>
   <data name="JobType.Receipt" xml:space="preserve">
     <value>Receipt</value>
   </data>
+  <data name="Auto.InvalidLink" xml:space="preserve"><value>The setup link is invalid or malformed.</value></data>
+  <data name="Auto.Connected" xml:space="preserve"><value>Print Bridge connected successfully.</value></data>
+  <data name="Auto.ConnectedPrinterMissing" xml:space="preserve"><value>Wasla connection completed. Select a printer before starting receipt printing.</value></data>
+  <data name="Auto.SavedUnverified" xml:space="preserve"><value>Settings saved, but the connection could not be verified.</value></data>
+  <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>The setup link is invalid or has expired.</value></data>
+  <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge on this computer is already registered as an active device. Use "Reconnect existing device" in Wasla Web instead of setting up a new device, or remove the old device record first.</value></data>
+  <data name="Auto.Failed" xml:space="preserve"><value>Automatic setup could not be completed.</value></data>
 </root>

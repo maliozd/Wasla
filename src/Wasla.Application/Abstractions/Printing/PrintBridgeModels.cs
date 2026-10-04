@@ -5,6 +5,7 @@ public sealed record PrintBridgeAuthContext(
     Guid CustomerId,
     string CustomerName,
     string DeviceName,
+    Guid? InstallationId = null,
     string? MachineName = null);
 
 public sealed record PendingPrintJobDto(

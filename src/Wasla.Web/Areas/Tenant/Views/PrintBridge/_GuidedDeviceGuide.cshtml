@@ -1,0 +1,29 @@
+@model Wasla.Web.Models.GuidedSetup.GuidedDeviceGuideViewModel
+@using Wasla.Application.GuidedSetup
+@using Wasla.Web.Models.GuidedSetup
+<link rel="stylesheet" href="~/css/wasla-guided-setup.css" asp-append-version="true" />
+@*
+    The connected Print Bridge section's device guide, on the device pages. Informational only: it never regenerates
+    a device's credentials, removes or creates a device, and has no script of its own. Its single action is the guided
+    section's Continue POST, which re-checks readiness on the server; viewing or reloading the page changes nothing.
+*@
+<section class="wasla-guided-setup-panel is-ready" aria-labelledby="waslaGuidedDeviceGuideTitle" data-guided-device-guide>
+    <p class="wasla-guided-setup-panel__eyebrow">
+        <span>@L["GuidedSetup.Panel.Eyebrow"]</span>
+        <span aria-hidden="true">·</span>
+        <span>@L["GuidedSetup.Panel.Progress", Model.SectionNumber, Model.SectionCount]</span>
+    </p>
+    <h2 id="waslaGuidedDeviceGuideTitle" class="wasla-guided-setup-panel__title">@L["GuidedSetup.DeviceGuide.Title"]</h2>
+    <p class="wasla-guided-setup-panel__body">@L[Model.ForOneDevice ? "GuidedSetup.DeviceGuide.Intro.Device" : "GuidedSetup.DeviceGuide.Intro.List"]</p>
+
+    <partial name="_PrintBridgeDeviceTopics" />
+
+    <div class="wasla-guided-setup-panel__actions">
+        <form method="post" action="/guided-setup/section-continue" data-guided-setup-form>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="section" value="@GuidedSetupSections.PrintBridge" />
+            <button type="submit" class="btn btn-primary">@L[GuidedSetupCopy.ContinueToKey(Model.NextSectionKey)]</button>
+        </form>
+    </div>
+</section>
+<script src="~/js/wasla-guided-setup.js" asp-append-version="true"></script>

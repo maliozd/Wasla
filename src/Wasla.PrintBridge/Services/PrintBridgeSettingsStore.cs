@@ -31,6 +31,26 @@ public sealed class PrintBridgeSettingsStore
         WriteDocument(PrintBridgePaths.ProgramDataConfigPath, document);
     }
 
+    public void SaveLanguage(string cultureName)
+    {
+        PrintBridgePaths.EnsureProgramDataDirectories();
+        SeedProgramDataConfigIfMissing();
+
+        var path = PrintBridgePaths.ProgramDataConfigPath;
+        var json = File.ReadAllText(path);
+        var root = JsonNode.Parse(json)?.AsObject()
+                   ?? throw new JsonException("Settings document root is invalid.");
+
+        if (root["Ui"] is not JsonObject ui)
+        {
+            ui = new JsonObject();
+            root["Ui"] = ui;
+        }
+
+        ui["Language"] = cultureName;
+        WriteJson(path, root.ToJsonString(JsonOptions));
+    }
+
     public void SeedProgramDataConfigIfMissing()
     {
         PrintBridgePaths.EnsureProgramDataDirectories();
@@ -68,7 +88,6 @@ public sealed class PrintBridgeSettingsStore
         {
             var json = File.ReadAllText(path);
             var document = JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions) ?? CreateDefaultDocument();
-            MigrateLegacyOrderHubSettings(json, document);
             NormalizeOrderHub(document.OrderHub);
             NormalizeDeviceIdentity(document);
             return document;
@@ -85,11 +104,27 @@ public sealed class PrintBridgeSettingsStore
     private static void WriteDocument(string path, AppSettingsDocument document)
     {
         var json = JsonSerializer.Serialize(document, JsonOptions);
+        WriteJson(path, json);
+    }
+
+    private static void WriteJson(string path, string json)
+    {
         var directory = Path.GetDirectoryName(path)!;
         Directory.CreateDirectory(directory);
         var tempPath = Path.Combine(directory, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
-        File.WriteAllText(tempPath, json);
-        File.Move(tempPath, path, overwrite: true);
+        try
+        {
+            File.WriteAllText(tempPath, json);
+            if (File.Exists(path))
+                File.Replace(tempPath, path, destinationBackupFileName: null);
+            else
+                File.Move(tempPath, path);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
     }
 
     private static void TryBackupCorruptedFile(string path)
@@ -107,43 +142,12 @@ public sealed class PrintBridgeSettingsStore
         }
     }
 
-    private static void MigrateLegacyOrderHubSettings(string json, AppSettingsDocument document)
-    {
-        try
-        {
-            var root = JsonNode.Parse(json);
-            var orderHub = root?["OrderHub"]?.AsObject();
-            if (orderHub is null)
-                return;
-
-            var hasServerUrl = orderHub.TryGetPropertyValue("ServerUrl", out var serverUrlNode)
-                && serverUrlNode is JsonValue serverUrlValue
-                && !string.IsNullOrWhiteSpace(serverUrlValue.GetValue<string>());
-
-            if (hasServerUrl)
-                return;
-
-            if (!orderHub.TryGetPropertyValue("BaseUrl", out var baseUrlNode)
-                || baseUrlNode is not JsonValue baseUrlValue)
-            {
-                return;
-            }
-
-            var legacyBaseUrl = baseUrlValue.GetValue<string>()?.Trim();
-            if (!string.IsNullOrWhiteSpace(legacyBaseUrl))
-                document.OrderHub.ServerUrl = legacyBaseUrl;
-        }
-        catch (JsonException)
-        {
-        }
-    }
-
     private static void NormalizeOrderHub(WaslaOptions orderHub)
     {
         if (string.IsNullOrWhiteSpace(orderHub.ServerUrl))
             orderHub.ServerUrl = WaslaOptions.DefaultServerUrl;
         else
-            orderHub.ServerUrl = orderHub.ServerUrl.Trim();
+            orderHub.ServerUrl = orderHub.ServerUrl.Trim().TrimEnd('/');
 
         orderHub.AgentToken = orderHub.AgentToken?.Trim() ?? string.Empty;
     }
@@ -153,6 +157,14 @@ public sealed class PrintBridgeSettingsStore
         var machineName = Environment.MachineName;
         document.PrintBridge.MachineName = machineName;
 
+        if (!Guid.TryParse(document.PrintBridge.InstallationId, out var installationId) ||
+            installationId == Guid.Empty)
+        {
+            installationId = Guid.NewGuid();
+        }
+
+        document.PrintBridge.InstallationId = installationId.ToString("D");
+
         if (string.IsNullOrWhiteSpace(document.PrintBridge.DisplayName)
             && !string.IsNullOrWhiteSpace(document.PrintBridge.BridgeName))
         {
@@ -160,6 +172,8 @@ public sealed class PrintBridgeSettingsStore
             if (!string.Equals(legacy, machineName, StringComparison.OrdinalIgnoreCase))
                 document.PrintBridge.DisplayName = legacy;
         }
+
+        document.PrintBridge.BridgeName = string.Empty;
     }
 
     private static AppSettingsDocument CreateDefaultDocument() =>

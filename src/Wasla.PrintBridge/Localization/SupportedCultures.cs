@@ -7,6 +7,7 @@ internal static class SupportedCultures
     public const string Turkish = "tr-TR";
     public const string English = "en-US";
     public const string Arabic = "ar-SA";
+    public const string Russian = "ru-RU";
 
     public static readonly string Default = Turkish;
 
@@ -14,7 +15,8 @@ internal static class SupportedCultures
     {
         Turkish,
         English,
-        Arabic
+        Arabic,
+        Russian
     };
 
     public static bool IsSupported(string? culture) =>
@@ -31,10 +33,6 @@ internal static class SupportedCultures
     {
         if (!string.IsNullOrWhiteSpace(userLanguage) && IsSupported(userLanguage))
             return NormalizeOrDefault(userLanguage);
-
-        var windowsLanguage = CultureInfo.InstalledUICulture.Name;
-        if (IsSupported(windowsLanguage))
-            return NormalizeOrDefault(windowsLanguage);
 
         return Default;
     }

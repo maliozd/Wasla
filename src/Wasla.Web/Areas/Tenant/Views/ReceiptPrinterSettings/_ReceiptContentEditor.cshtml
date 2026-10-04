@@ -2,238 +2,238 @@
 @using Wasla.Application.Abstractions.Printing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 
-<div class="oh-receipt-field-group">
-    <div class="oh-receipt-required-block">
-        <div class="oh-receipt-required-block-head">
-            <span class="oh-receipt-required-block-title">@L["Settings.ReceiptContent.RequiredFields"]</span>
-            <span class="oh-receipt-required-block-note">
+<div class="wasla-receipt-field-group">
+    <div class="wasla-receipt-required-block">
+        <div class="wasla-receipt-required-block-head">
+            <span class="wasla-receipt-required-block-title">@L["Settings.ReceiptContent.RequiredFields"]</span>
+            <span class="wasla-receipt-required-block-note">
                 <i class="bi bi-lock-fill" aria-hidden="true"></i>
                 <span>@L["Settings.ReceiptContent.AlwaysIncluded"]</span>
             </span>
         </div>
-        <div class="oh-receipt-required-tags" role="list" aria-label="@L["Settings.ReceiptContent.RequiredFields"]">
-            <span class="oh-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowOrderCode"]</span>
-            <span class="oh-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowProductName"]</span>
-            <span class="oh-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowQuantity"]</span>
-            <span class="oh-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowItemTotal"]</span>
-            <span class="oh-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowGrandTotal"]</span>
+        <div class="wasla-receipt-required-tags" role="list" aria-label="@L["Settings.ReceiptContent.RequiredFields"]">
+            <span class="wasla-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowOrderCode"]</span>
+            <span class="wasla-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowProductName"]</span>
+            <span class="wasla-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowQuantity"]</span>
+            <span class="wasla-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowItemTotal"]</span>
+            <span class="wasla-receipt-required-tag" role="listitem">@L["Settings.ReceiptContent.ShowGrandTotal"]</span>
         </div>
     </div>
 
-    <div class="accordion oh-receipt-content-accordion" id="receiptContentAccordion">
-        <div class="accordion-item oh-receipt-accordion-item" data-receipt-settings="showRestaurantName,showPlatformName,showReceivedTime,showPaymentMethod">
+    <div class="accordion wasla-receipt-content-accordion" id="receiptContentAccordion">
+        <div class="accordion-item wasla-receipt-accordion-item" data-receipt-settings="showRestaurantName,showPlatformName,showReceivedTime,showPaymentMethod">
             <h3 class="accordion-header" id="receiptContentHeadingOrderInfo">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#receiptContentOrderInfo" aria-expanded="true" aria-controls="receiptContentOrderInfo">
-                    <span class="oh-receipt-accordion-header-inner">
-                        <span class="oh-receipt-accordion-title-wrap">
-                            <span class="oh-receipt-accordion-title">@L["Settings.ReceiptContent.OrderInformation"]</span>
-                            <span class="oh-receipt-accordion-desc">@L["Settings.ReceiptContent.OrderInformationDescription"]</span>
+                    <span class="wasla-receipt-accordion-header-inner">
+                        <span class="wasla-receipt-accordion-title-wrap">
+                            <span class="wasla-receipt-accordion-title">@L["Settings.ReceiptContent.OrderInformation"]</span>
+                            <span class="wasla-receipt-accordion-desc">@L["Settings.ReceiptContent.OrderInformationDescription"]</span>
                         </span>
-                        <span class="badge oh-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
+                        <span class="badge wasla-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
                     </span>
                 </button>
             </h3>
             <div id="receiptContentOrderInfo" class="accordion-collapse collapse show" aria-labelledby="receiptContentHeadingOrderInfo">
                 <div class="accordion-body">
-                    <ul class="list-unstyled oh-receipt-field-list mb-0">
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowRestaurantName"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowRestaurantNameHint"]</span>
+                    <ul class="list-unstyled wasla-receipt-field-list mb-0">
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowRestaurantName"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowRestaurantNameHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showRestaurantName" id="tplShowRestaurantName" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showRestaurantName" id="tplShowRestaurantName" /></div>
                         </li>
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowPlatformName"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowPlatformNameHint"]</span>
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowPlatformName"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowPlatformNameHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showPlatformName" id="tplShowPlatformName" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showPlatformName" id="tplShowPlatformName" /></div>
                         </li>
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowReceivedTime"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowReceivedTimeHint"]</span>
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowReceivedTime"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowReceivedTimeHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showReceivedTime" id="tplShowReceivedTime" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showReceivedTime" id="tplShowReceivedTime" /></div>
                         </li>
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowPaymentMethod"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowPaymentMethodHint"]</span>
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowPaymentMethod"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowPaymentMethodHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showPaymentMethod" id="tplShowPaymentMethod" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showPaymentMethod" id="tplShowPaymentMethod" /></div>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <div class="accordion-item oh-receipt-accordion-item" data-receipt-settings="showCustomerName,showCustomerPhone,showDeliveryAddress">
+        <div class="accordion-item wasla-receipt-accordion-item" data-receipt-settings="showCustomerName,showCustomerPhone,showDeliveryAddress">
             <h3 class="accordion-header" id="receiptContentHeadingCustomer">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#receiptContentCustomer" aria-expanded="false" aria-controls="receiptContentCustomer">
-                    <span class="oh-receipt-accordion-header-inner">
-                        <span class="oh-receipt-accordion-title-wrap">
-                            <span class="oh-receipt-accordion-title">@L["Settings.ReceiptContent.CustomerDelivery"]</span>
-                            <span class="oh-receipt-accordion-desc">@L["Settings.ReceiptContent.CustomerDeliveryDescription"]</span>
+                    <span class="wasla-receipt-accordion-header-inner">
+                        <span class="wasla-receipt-accordion-title-wrap">
+                            <span class="wasla-receipt-accordion-title">@L["Settings.ReceiptContent.CustomerDelivery"]</span>
+                            <span class="wasla-receipt-accordion-desc">@L["Settings.ReceiptContent.CustomerDeliveryDescription"]</span>
                         </span>
-                        <span class="badge oh-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
+                        <span class="badge wasla-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
                     </span>
                 </button>
             </h3>
             <div id="receiptContentCustomer" class="accordion-collapse collapse" aria-labelledby="receiptContentHeadingCustomer">
                 <div class="accordion-body">
-                    <ul class="list-unstyled oh-receipt-field-list mb-0">
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowCustomerName"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowCustomerNameHint"]</span>
+                    <ul class="list-unstyled wasla-receipt-field-list mb-0">
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowCustomerName"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowCustomerNameHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showCustomerName" id="tplShowCustomerName" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showCustomerName" id="tplShowCustomerName" /></div>
                         </li>
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowCustomerPhone"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowCustomerPhoneHint"]</span>
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowCustomerPhone"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowCustomerPhoneHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showCustomerPhone" id="tplShowCustomerPhone" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showCustomerPhone" id="tplShowCustomerPhone" /></div>
                         </li>
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowDeliveryAddress"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowDeliveryAddressHint"]</span>
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowDeliveryAddress"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowDeliveryAddressHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showDeliveryAddress" id="tplShowDeliveryAddress" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showDeliveryAddress" id="tplShowDeliveryAddress" /></div>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <div class="accordion-item oh-receipt-accordion-item" data-receipt-settings="showProductNotes,showProductOptions">
+        <div class="accordion-item wasla-receipt-accordion-item" data-receipt-settings="showProductNotes,showProductOptions">
             <h3 class="accordion-header" id="receiptContentHeadingProduct">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#receiptContentProduct" aria-expanded="false" aria-controls="receiptContentProduct">
-                    <span class="oh-receipt-accordion-header-inner">
-                        <span class="oh-receipt-accordion-title-wrap">
-                            <span class="oh-receipt-accordion-title">@L["Settings.ReceiptContent.ProductDetails"]</span>
-                            <span class="oh-receipt-accordion-desc">@L["Settings.ReceiptContent.ProductDetailsDescription"]</span>
+                    <span class="wasla-receipt-accordion-header-inner">
+                        <span class="wasla-receipt-accordion-title-wrap">
+                            <span class="wasla-receipt-accordion-title">@L["Settings.ReceiptContent.ProductDetails"]</span>
+                            <span class="wasla-receipt-accordion-desc">@L["Settings.ReceiptContent.ProductDetailsDescription"]</span>
                         </span>
-                        <span class="badge oh-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
+                        <span class="badge wasla-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
                     </span>
                 </button>
             </h3>
             <div id="receiptContentProduct" class="accordion-collapse collapse" aria-labelledby="receiptContentHeadingProduct">
                 <div class="accordion-body">
-                    <ul class="list-unstyled oh-receipt-field-list mb-0">
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowProductNotes"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowProductNotesHint"]</span>
+                    <ul class="list-unstyled wasla-receipt-field-list mb-0">
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowProductNotes"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowProductNotesHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showProductNotes" id="tplShowProductNotes" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showProductNotes" id="tplShowProductNotes" /></div>
                         </li>
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowProductOptions"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowProductOptionsHint"]</span>
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowProductOptions"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowProductOptionsHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showProductOptions" id="tplShowProductOptions" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showProductOptions" id="tplShowProductOptions" /></div>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <div class="accordion-item oh-receipt-accordion-item" data-receipt-settings="showSubtotal,showDeliveryFee">
+        <div class="accordion-item wasla-receipt-accordion-item" data-receipt-settings="showSubtotal,showDeliveryFee">
             <h3 class="accordion-header" id="receiptContentHeadingAmount">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#receiptContentAmount" aria-expanded="false" aria-controls="receiptContentAmount">
-                    <span class="oh-receipt-accordion-header-inner">
-                        <span class="oh-receipt-accordion-title-wrap">
-                            <span class="oh-receipt-accordion-title">@L["Settings.ReceiptContent.AmountDetails"]</span>
-                            <span class="oh-receipt-accordion-desc">@L["Settings.ReceiptContent.AmountDetailsDescription"]</span>
+                    <span class="wasla-receipt-accordion-header-inner">
+                        <span class="wasla-receipt-accordion-title-wrap">
+                            <span class="wasla-receipt-accordion-title">@L["Settings.ReceiptContent.AmountDetails"]</span>
+                            <span class="wasla-receipt-accordion-desc">@L["Settings.ReceiptContent.AmountDetailsDescription"]</span>
                         </span>
-                        <span class="badge oh-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
+                        <span class="badge wasla-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
                     </span>
                 </button>
             </h3>
             <div id="receiptContentAmount" class="accordion-collapse collapse" aria-labelledby="receiptContentHeadingAmount">
                 <div class="accordion-body">
-                    <ul class="list-unstyled oh-receipt-field-list mb-0">
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowSubtotal"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowSubtotalHint"]</span>
+                    <ul class="list-unstyled wasla-receipt-field-list mb-0">
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowSubtotal"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowSubtotalHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showSubtotal" id="tplShowSubtotal" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showSubtotal" id="tplShowSubtotal" /></div>
                         </li>
-                        <li class="oh-receipt-field-row oh-receipt-field-row--coming-soon">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowDiscount"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ComingSoonHint"]</span>
+                        <li class="wasla-receipt-field-row wasla-receipt-field-row--coming-soon">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowDiscount"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ComingSoonHint"]</span>
                             </div>
-                            <span class="badge oh-receipt-coming-soon-badge">@L["Settings.ReceiptContent.ComingSoon"]</span>
+                            <span class="badge wasla-receipt-coming-soon-badge">@L["Settings.ReceiptContent.ComingSoon"]</span>
                         </li>
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowDeliveryFee"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowDeliveryFeeHint"]</span>
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowDeliveryFee"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowDeliveryFeeHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showDeliveryFee" id="tplShowDeliveryFee" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showDeliveryFee" id="tplShowDeliveryFee" /></div>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <div class="accordion-item oh-receipt-accordion-item oh-receipt-accordion-item--last" data-receipt-settings="showFooterMessage">
+        <div class="accordion-item wasla-receipt-accordion-item wasla-receipt-accordion-item--last" data-receipt-settings="showFooterMessage">
             <h3 class="accordion-header" id="receiptContentHeadingMessages">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#receiptContentMessages" aria-expanded="false" aria-controls="receiptContentMessages">
-                    <span class="oh-receipt-accordion-header-inner">
-                        <span class="oh-receipt-accordion-title-wrap">
-                            <span class="oh-receipt-accordion-title">@L["Settings.ReceiptContent.MessagesExtras"]</span>
-                            <span class="oh-receipt-accordion-desc">@L["Settings.ReceiptContent.MessagesExtrasDescription"]</span>
+                    <span class="wasla-receipt-accordion-header-inner">
+                        <span class="wasla-receipt-accordion-title-wrap">
+                            <span class="wasla-receipt-accordion-title">@L["Settings.ReceiptContent.MessagesExtras"]</span>
+                            <span class="wasla-receipt-accordion-desc">@L["Settings.ReceiptContent.MessagesExtrasDescription"]</span>
                         </span>
-                        <span class="badge oh-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
+                        <span class="badge wasla-receipt-accordion-enabled-badge" data-receipt-enabled-count aria-live="polite"></span>
                     </span>
                 </button>
             </h3>
             <div id="receiptContentMessages" class="accordion-collapse collapse" aria-labelledby="receiptContentHeadingMessages">
                 <div class="accordion-body">
-                    <ul class="list-unstyled oh-receipt-field-list mb-0">
-                        <li class="oh-receipt-field-row">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowFooterMessage"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowFooterMessageHint"]</span>
+                    <ul class="list-unstyled wasla-receipt-field-list mb-0">
+                        <li class="wasla-receipt-field-row">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowFooterMessage"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ShowFooterMessageHint"]</span>
                             </div>
-                            <div class="form-check form-switch m-0"><input class="form-check-input oh-receipt-template-toggle" type="checkbox" data-setting="showFooterMessage" id="tplShowFooterMessage" /></div>
+                            <div class="form-check form-switch m-0"><input class="form-check-input wasla-receipt-template-toggle" type="checkbox" data-setting="showFooterMessage" id="tplShowFooterMessage" /></div>
                         </li>
                     </ul>
-                    <div class="oh-receipt-message-fields">
+                    <div class="wasla-receipt-message-fields">
                         <div class="mb-2">
                             <label class="form-label small mb-1" for="receiptHeaderText">@L["Settings.ReceiptMessages.Header"]</label>
                             <input type="text" class="form-control form-control-sm" id="receiptHeaderText" maxlength="@ReceiptTemplateLimits.HeaderMaxLength" autocomplete="off" />
                             <div class="form-text" id="receiptHeaderTextHelp">@L["Settings.ReceiptMessages.HeaderHint"] @L["Settings.ReceiptMessages.HeaderMax", ReceiptTemplateLimits.HeaderMaxLength]</div>
                         </div>
-                        <div class="oh-receipt-message-field" id="receiptFooterFieldWrap">
+                        <div class="wasla-receipt-message-field" id="receiptFooterFieldWrap">
                             <label class="form-label small mb-1" for="receiptFooterText">@L["Settings.ReceiptMessages.Footer"]</label>
                             <textarea class="form-control form-control-sm" id="receiptFooterText" rows="2" maxlength="@ReceiptTemplateLimits.FooterMaxLength"></textarea>
                             <div class="form-text" id="receiptFooterTextHelp">@L["Settings.ReceiptMessages.FooterMax", ReceiptTemplateLimits.FooterMaxLength]</div>
                         </div>
                     </div>
-                    <ul class="list-unstyled oh-receipt-field-list oh-receipt-field-list--coming-soon mb-0">
-                        <li class="oh-receipt-field-row oh-receipt-field-row--coming-soon">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowQrCode"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ComingSoonHint"]</span>
+                    <ul class="list-unstyled wasla-receipt-field-list wasla-receipt-field-list--coming-soon mb-0">
+                        <li class="wasla-receipt-field-row wasla-receipt-field-row--coming-soon">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowQrCode"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ComingSoonHint"]</span>
                             </div>
-                            <span class="badge oh-receipt-coming-soon-badge">@L["Settings.ReceiptContent.ComingSoon"]</span>
+                            <span class="badge wasla-receipt-coming-soon-badge">@L["Settings.ReceiptContent.ComingSoon"]</span>
                         </li>
-                        <li class="oh-receipt-field-row oh-receipt-field-row--coming-soon">
-                            <div class="oh-receipt-field-row__text">
-                                <span class="oh-receipt-field-row__label">@L["Settings.ReceiptContent.ShowTaxVat"]</span>
-                                <span class="oh-receipt-field-row__hint">@L["Settings.ReceiptContent.ComingSoonHint"]</span>
+                        <li class="wasla-receipt-field-row wasla-receipt-field-row--coming-soon">
+                            <div class="wasla-receipt-field-row__text">
+                                <span class="wasla-receipt-field-row__label">@L["Settings.ReceiptContent.ShowTaxVat"]</span>
+                                <span class="wasla-receipt-field-row__hint">@L["Settings.ReceiptContent.ComingSoonHint"]</span>
                             </div>
-                            <span class="badge oh-receipt-coming-soon-badge">@L["Settings.ReceiptContent.ComingSoon"]</span>
+                            <span class="badge wasla-receipt-coming-soon-badge">@L["Settings.ReceiptContent.ComingSoon"]</span>
                         </li>
                     </ul>
                 </div>

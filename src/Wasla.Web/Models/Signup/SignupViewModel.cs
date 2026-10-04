@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
+using Wasla.Web.Validation;
 
 namespace Wasla.Web.Models.Signup;
 
@@ -77,7 +78,7 @@ public sealed class SignupViewModel
     [Display(Name = "Signup.BusinessPhone")]
     public string BusinessPhone { get; set; } = string.Empty;
 
-    [EmailAddress(ErrorMessage = "Validation.EmailInvalid")]
+    [OptionalEmailAddress]
     [Display(Name = "Signup.BusinessEmail")]
     public string? BusinessEmail { get; set; }
 
@@ -110,6 +111,8 @@ public sealed class SignupViewModel
     public IReadOnlyList<SelectListItem> PlanOptions { get; set; } = Array.Empty<SelectListItem>();
 
     public IReadOnlyList<SignupBusinessTypeOption> BusinessTypeOptions { get; set; } = Array.Empty<SignupBusinessTypeOption>();
+
+    public IReadOnlyList<SignupBusinessCategoryGroup> BusinessCategories { get; set; } = Array.Empty<SignupBusinessCategoryGroup>();
 
     public IReadOnlyList<SignupCityOption> Cities { get; set; } = Array.Empty<SignupCityOption>();
 

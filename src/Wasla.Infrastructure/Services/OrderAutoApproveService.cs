@@ -44,6 +44,17 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
             .FirstOrDefaultAsync(x => x.Id == TenantOperationalSettingsSingletonId, ct)
             .ConfigureAwait(false);
 
+        // A tenant still in Setup keeps every order but accepts nothing automatically. The decision is taken now,
+        // when the order arrives; going live later never replays it for orders that arrived during Setup.
+        if (settings?.OperationalMode == TenantOperationalMode.Setup)
+        {
+            _logger.LogDebug(
+                "Tenant is in setup mode, skipping auto-approve. CustomerId={CustomerId}, OrderId={OrderId}",
+                customerId,
+                orderId);
+            return;
+        }
+
         var autoApproveEnabled = settings?.AutoApproveNewOrders ?? false;
 
         if (!autoApproveEnabled)

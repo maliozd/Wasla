@@ -2,6 +2,23 @@
 
 public static class TenantWelcomeUrlBuilder
 {
+    public static string BuildTenantAddressUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string primaryDomain)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(primaryDomain);
+
+        var builder = new UriBuilder
+        {
+            Scheme = request.Scheme,
+            Host = primaryDomain.Trim(),
+            Port = ResolvePort(request, environment)
+        };
+
+        return builder.Uri.GetLeftPart(UriPartial.Authority);
+    }
+
     public static string BuildLoginUrl(
         HttpRequest request,
         IWebHostEnvironment environment,
@@ -39,6 +56,53 @@ public static class TenantWelcomeUrlBuilder
         builder.Query = $"token={Uri.EscapeDataString(welcomeToken)}";
 
         return builder.Uri.AbsoluteUri;
+    }
+
+    public static string BuildPasswordResetUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string primaryDomain,
+        string rawToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(primaryDomain);
+        ArgumentException.ThrowIfNullOrWhiteSpace(rawToken);
+
+        var builder = new UriBuilder
+        {
+            Scheme = request.Scheme,
+            Host = primaryDomain.Trim(),
+            Path = "/auth/reset-password",
+            Port = ResolvePort(request, environment)
+        };
+        builder.Query = $"token={Uri.EscapeDataString(rawToken)}";
+
+        return builder.Uri.AbsoluteUri;
+    }
+
+    public static string BuildCentralHomepageUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string marketingBaseDomain)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(marketingBaseDomain);
+
+        var builder = new UriBuilder
+        {
+            Scheme = request.Scheme,
+            Host = ResolveCentralHost(request, marketingBaseDomain),
+            Path = "/",
+            Port = ResolvePort(request, environment)
+        };
+
+        return builder.Uri.AbsoluteUri;
+    }
+
+    private static string ResolveCentralHost(HttpRequest request, string marketingBaseDomain)
+    {
+        if (string.Equals(request.Host.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+            return "localhost";
+
+        return marketingBaseDomain.Trim().TrimStart('.');
     }
 
     private static int ResolvePort(HttpRequest request, IWebHostEnvironment environment)

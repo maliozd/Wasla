@@ -13,6 +13,7 @@ public sealed class OrderDetailViewModel
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
     public string CustomerAddress { get; set; } = string.Empty;
+    public string? CustomerNote { get; set; }
 
     public decimal TotalAmount { get; set; }
     public decimal DeliveryFee { get; set; }
@@ -27,7 +28,12 @@ public sealed class OrderDetailViewModel
     public DateTime? AcceptedAtLocal { get; set; }
 
     public string BackUrl { get; set; } = "/orders";
-    public bool BackFromHistory { get; set; }
+
+    /// <summary>A receipt job for this order is Pending or Printing, so manual printing is blocked.</summary>
+    public bool ReceiptPrintInProgress { get; set; }
+
+    /// <summary>A previous receipt job finished as Printed or Failed, so the action becomes a reprint.</summary>
+    public bool ReceiptCanReprint { get; set; }
 
     public List<ItemRow> Items { get; set; } = new();
 

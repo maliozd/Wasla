@@ -1,0 +1,138 @@
+@model Wasla.Web.Models.Dashboard.TenantSetupPanelViewModel
+@{
+    var hideWelcome = ViewData["HideSetupWelcome"] is true;
+}
+<link rel="stylesheet" href="~/css/wasla-setup.css" asp-append-version="true" />
+<section class="wasla-setup" aria-labelledby="@(Model.IsReady ? "wasla-setup-ready-title" : "wasla-setup-heading")">
+    @if (!Model.IsReady && hideWelcome)
+    {
+        @* The guided-setup card is the welcome for now; the checklist below stays. *@
+    }
+    else if (!Model.IsReady)
+    {
+        <div class="wasla-setup-welcome" id="waslaSetupWelcome" data-storage-key="Wasla.setupWelcome.dismissed.@Model.TenantId">
+            <div class="wasla-setup-welcome__copy">
+                <h2 class="wasla-setup-welcome__title"><bdi>@Model.RestaurantName</bdi> @L["Setup.WelcomeTitleRest"]</h2>
+                <p class="wasla-setup-welcome__body mb-0">@L["Setup.WelcomeBody"]</p>
+            </div>
+            <div class="wasla-setup-welcome__actions">
+                <a class="btn btn-primary wasla-setup-action" href="#wasla-setup-checklist" data-setup-dismiss>@L["Setup.StartSetup"]</a>
+                <button type="button" class="btn btn-outline-secondary wasla-setup-action" data-setup-dismiss>@L["Setup.BrowsePanel"]</button>
+            </div>
+        </div>
+        <script>
+            (function () {
+                var welcome = document.getElementById("waslaSetupWelcome");
+                if (!welcome) return;
+                var key = welcome.getAttribute("data-storage-key");
+                function dismiss() {
+                    welcome.hidden = true;
+                    try { if (key) localStorage.setItem(key, "1"); } catch (e) { }
+                }
+                try {
+                    if (key && localStorage.getItem(key) === "1") welcome.hidden = true;
+                } catch (e) { }
+                welcome.querySelectorAll("[data-setup-dismiss]").forEach(function (el) {
+                    el.addEventListener("click", dismiss);
+                });
+            })();
+        </script>
+    }
+    else
+    {
+        <div class="wasla-setup-ready">
+            <div class="wasla-setup-ready__copy">
+                <h2 id="wasla-setup-ready-title" class="wasla-setup-ready__title">@L["Setup.ReadyTitle"]</h2>
+                <p class="wasla-setup-ready__body mb-0">@L["Setup.ReadyBody"]</p>
+            </div>
+            <div class="wasla-setup-ready__actions">
+                <a class="btn btn-primary wasla-setup-action" href="/orders/live-display" target="_blank" rel="noopener noreferrer">@L["Setup.OpenLiveScreen"]</a>
+                <form class="wasla-setup-finish-form" method="post" action="/dashboard/complete-setup">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-secondary wasla-setup-action">@L["Setup.FinishSetup"]</button>
+                </form>
+            </div>
+            @if (Model.ShowAddTeamMember)
+            {
+                <p class="wasla-setup-next mb-0">
+                    <span class="wasla-setup-next__label">@L["Setup.NextStepLabel"]</span>
+                    <span>@L["Setup.NextStepBody"]</span>
+                    <a class="btn btn-sm btn-outline-secondary wasla-setup-action" href="/settings/users">@L["Setup.AddTeamMember"]</a>
+                </p>
+            }
+        </div>
+    }
+
+    <details class="wasla-setup-card" id="wasla-setup-checklist"@Html.Raw(Model.IsReady ? "" : " open")>
+        <summary class="wasla-setup-summary">
+            <span class="wasla-setup-summary__lead">
+                <i class="bi bi-chevron-down wasla-setup-chevron" aria-hidden="true"></i>
+                @if (Model.IsReady)
+                {
+                    <span class="wasla-setup-summary__title">@L["Setup.ChecklistSummary"]</span>
+                }
+                else
+                {
+                    <h2 id="wasla-setup-heading" class="wasla-setup-summary__title">@L["Setup.Title"]</h2>
+                }
+            </span>
+            <span class="wasla-setup-progress">
+                <span class="wasla-setup-progress__count">@L["Setup.Progress", Model.RequiredCompleted, Model.RequiredTotal]</span>
+                <span class="wasla-setup-progress__track"
+                      role="progressbar"
+                      aria-valuemin="0"
+                      aria-valuemax="@Model.RequiredTotal"
+                      aria-valuenow="@Model.RequiredCompleted"
+                      aria-label="@L["Setup.ProgressLabel"]">
+                    <span class="wasla-setup-progress__fill" style="--wasla-setup-progress: @(Model.ProgressPercent)%"></span>
+                </span>
+            </span>
+        </summary>
+        <p class="wasla-setup-caption">@L["Setup.ProgressCaption"]</p>
+        <ol class="wasla-setup-steps">
+            @foreach (var step in Model.Steps)
+            {
+                <li class="wasla-setup-step@(step.IsOptional ? " wasla-setup-step--optional" : "")@(step.ShowsCompletionMark ? "" : " wasla-setup-step--action")">
+                    <span class="wasla-setup-step__status">
+                        @if (step.ShowsCompletionMark && step.IsComplete)
+                        {
+                            <i class="bi bi-check-circle-fill wasla-setup-step__icon wasla-setup-step__icon--done" aria-hidden="true"></i>
+                        }
+                        else if (step.ShowsCompletionMark)
+                        {
+                            <i class="bi bi-circle wasla-setup-step__icon" aria-hidden="true"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-display wasla-setup-step__icon" aria-hidden="true"></i>
+                        }
+                        <span class="visually-hidden">@step.StatusText</span>
+                    </span>
+                    <div class="wasla-setup-step__main">
+                        <div class="wasla-setup-step__title-row">
+                            <span class="wasla-setup-step__title">@step.Title</span>
+                            @if (step.IsOptional)
+                            {
+                                <span class="wasla-setup-badge">@L["Setup.Optional"]</span>
+                            }
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(step.Detail))
+                        {
+                            <p class="wasla-setup-step__detail mb-0">@step.Detail</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(step.Hint))
+                        {
+                            <p class="wasla-setup-step__hint mb-0">@step.Hint</p>
+                        }
+                    </div>
+                    <div class="wasla-setup-step__action">
+                        <a class="btn btn-sm @(step.IsComplete ? "btn-outline-secondary" : "btn-outline-primary") wasla-setup-action"
+                           href="@step.ActionHref"
+                           target="@(step.OpenInNewTab ? "_blank" : null)"
+                           rel="@(step.OpenInNewTab ? "noopener noreferrer" : null)">@step.ActionText</a>
+                    </div>
+                </li>
+            }
+        </ol>
+    </details>
+</section>

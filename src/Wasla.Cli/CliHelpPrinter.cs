@@ -10,7 +10,8 @@ internal static class CliHelpPrinter
         "delete-customer",
         "reset-customer-db",
         "reset-all-customer-dbs",
-        "seed-customer-admin"
+        "seed-customer-admin",
+        "update-customer-profile"
     ];
 
     private static readonly string[] MigrationCommands =
@@ -40,10 +41,16 @@ internal static class CliHelpPrinter
         "list-central-admins"
     ];
 
+    private static readonly string[] AccountCommands =
+    [
+        "reset-password"
+    ];
+
     private static readonly HashSet<string> AllCommands = new(
         CustomerCommands
             .Concat(MigrationCommands)
             .Concat(CentralAdminCommands)
+            .Concat(AccountCommands)
             .Concat(UtilityCommands),
         StringComparer.OrdinalIgnoreCase);
 
@@ -63,6 +70,7 @@ internal static class CliHelpPrinter
         Console.WriteLine("  reset-customer-db         Drop/recreate a single customer database. Requires --confirm.");
         Console.WriteLine("  reset-all-customer-dbs    Drop/recreate all active customer databases. Requires --confirm.");
         Console.WriteLine("  seed-customer-admin       Create an Owner admin user for a customer DB if missing.");
+        Console.WriteLine("  update-customer-profile   Set the restaurant phone, city or country used by the setup checklist.");
         Console.WriteLine();
 
         Console.WriteLine("Migration commands:");
@@ -78,6 +86,10 @@ internal static class CliHelpPrinter
         Console.WriteLine("  add-central-admin          Create a central admin user in CentralDb.");
         Console.WriteLine("  reset-central-admin-password Reset a central admin password in CentralDb.");
         Console.WriteLine("  list-central-admins        List central admin users (safe fields only).");
+        Console.WriteLine();
+
+        Console.WriteLine("Account commands:");
+        Console.WriteLine("  reset-password            Reset an existing central or tenant user password.");
         Console.WriteLine();
 
         Console.WriteLine("Utility commands:");
@@ -121,9 +133,26 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  add-customer --name <name> --slug <slug> --domain <domain> --admin-email <email> --admin-password <password> --admin-name <name>");
+                Console.WriteLine("               [--business-phone <phone>] [--city <city>] [--country <country>]");
+                Console.WriteLine();
+                Console.WriteLine("Also records the tenant membership. The dashboard setup checklist needs a business phone");
+                Console.WriteLine("and a city or country; without them, set them later with update-customer-profile.");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
-                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-customer --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\"");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-customer --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\" --business-phone \"+90 212 000 00 00\" --city Istanbul");
+                return;
+
+            case "update-customer-profile":
+                Console.WriteLine("update-customer-profile");
+                Console.WriteLine();
+                Console.WriteLine("Sets the restaurant contact used by the dashboard setup checklist. Creates the tenant's");
+                Console.WriteLine("membership row when missing. Omitted fields keep their value; repeating a call changes nothing.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  update-customer-profile --tenant <slug-or-id> [--business-phone <phone>] [--city <city>] [--country <country>]");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- update-customer-profile --tenant ahmet --business-phone \"+90 212 000 00 00\" --city Istanbul");
                 return;
 
             case "provision-signup-request":
@@ -252,6 +281,23 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Example:");
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- reset-central-admin-password --email admin@Wasla.com --password \"NewPassword123!\"");
+                return;
+
+            case "reset-password":
+                Console.WriteLine("reset-password");
+                Console.WriteLine();
+                Console.WriteLine("Resets the password of an existing account. Does not create users.");
+                Console.WriteLine("The new password is prompted interactively and is not accepted as --password.");
+                Console.WriteLine("--dry-run resolves the account and writes nothing.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  reset-password --scope central --email <email> [--dry-run]");
+                Console.WriteLine("  reset-password --scope tenant --tenant <slug-or-id> --email <email> [--dry-run]");
+                Console.WriteLine();
+                Console.WriteLine("Examples:");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope central --email user@example.com");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope tenant --tenant mengen --email user@example.com");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope central --email user@example.com --dry-run");
                 return;
 
             case "list-central-admins":

@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Soup",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Soup.Product.Lentil", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.ExtraBread"] },
+    { "key": "Mock.Soup.Product.Ezogelin", "minPrice": 75, "maxPrice": 115, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.ExtraLemon"] },
+    { "key": "Mock.Soup.Product.Chicken", "minPrice": 80, "maxPrice": 120, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.ExtraBread"] },
+    { "key": "Mock.Soup.Product.Tripe", "minPrice": 120, "maxPrice": 180, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.Spicy", "Mock.Modifier.Yogurt"] },
+    { "key": "Mock.Soup.Product.Tomato", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.ExtraBread", "Mock.Modifier.NotSpicy"] }
+  ]
+}

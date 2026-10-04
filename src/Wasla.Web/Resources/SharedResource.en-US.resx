@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -201,8 +201,8 @@
   <data name="Layout.Orders" xml:space="preserve">
     <value>Orders</value>
   </data>
-  <data name="Layout.OrderHistory" xml:space="preserve">
-    <value>Order History</value>
+  <data name="Layout.LiveScreen" xml:space="preserve">
+    <value>Live Screen</value>
   </data>
   <data name="Layout.PlatformConnections" xml:space="preserve">
     <value>Platform Connections</value>
@@ -270,6 +270,15 @@
   <data name="Layout.ToggleSidebar" xml:space="preserve">
     <value>Toggle menu</value>
   </data>
+  <data name="Layout.OpenNavigation" xml:space="preserve">
+    <value>Open menu</value>
+  </data>
+  <data name="Layout.CloseNavigation" xml:space="preserve">
+    <value>Close menu</value>
+  </data>
+  <data name="Layout.TenantNavigation" xml:space="preserve">
+    <value>Restaurant menu</value>
+  </data>
   <data name="Landing.Title" xml:space="preserve">
     <value>Wasla</value>
   </data>
@@ -335,6 +344,9 @@
   </data>
   <data name="Auth.LoginButton" xml:space="preserve">
     <value>Sign in</value>
+  </data>
+  <data name="Auth.RememberMe" xml:space="preserve">
+    <value>Remember me</value>
   </data>
   <data name="Auth.InvalidCredentials" xml:space="preserve">
     <value>Please check your details.</value>
@@ -446,6 +458,9 @@
   </data>
   <data name="Orders.Title" xml:space="preserve">
     <value>Orders</value>
+  </data>
+  <data name="Orders.Subtitle" xml:space="preserve">
+    <value>View and manage your orders.</value>
   </data>
   <data name="Orders.Platform" xml:space="preserve">
     <value>Platform</value>
@@ -589,10 +604,67 @@
     <value>Fullscreen</value>
   </data>
   <data name="Orders.OpenLiveDisplay" xml:space="preserve">
-    <value>Open Live Display</value>
+    <value>Open Live Screen</value>
   </data>
   <data name="Orders.LiveDisplay.Title" xml:space="preserve">
-    <value>Live Display</value>
+    <value>Live Screen</value>
+  </data>
+  <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
+    <value>Track active orders during service.</value>
+  </data>
+  <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve">
+    <value>{0} hr {1} min</value>
+  </data>
+  <data name="Orders.LiveScreen.ViewCards" xml:space="preserve">
+    <value>Cards</value>
+  </data>
+  <data name="Orders.LiveScreen.ViewList" xml:space="preserve">
+    <value>List</value>
+  </data>
+  <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
+    <value>Order details could not be loaded.</value>
+  </data>
+  <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve">
+    <value>Live orders could not be refreshed. Showing the last update.</value>
+  </data>
+  <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve">
+    <value>Your session has expired. Reload the page to continue.</value>
+  </data>
+  <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
+    <value>This total is not included in the live snapshot.</value>
+  </data>
+  <data name="Orders.Print.Action" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="Orders.Print.InQueue" xml:space="preserve">
+    <value>In print queue</value>
+  </data>
+  <data name="Orders.Print.Hint" xml:space="preserve">
+    <value>Send the receipt to Print Bridge</value>
+  </data>
+  <data name="Orders.Print.Queued" xml:space="preserve">
+    <value>Receipt sent to the print queue.</value>
+  </data>
+  <data name="Orders.Print.ReprintQueued" xml:space="preserve">
+    <value>Receipt sent to the print queue again.</value>
+  </data>
+  <data name="Orders.Print.AlreadyQueued" xml:space="preserve">
+    <value>A receipt for this order is already queued or printing.</value>
+  </data>
+  <data name="Orders.Print.ConfirmReprint" xml:space="preserve">
+    <value>Send this receipt to the printer again?</value>
+  </data>
+  <data name="Orders.Print.OrderNotFound" xml:space="preserve">
+    <value>Order not found.</value>
+  </data>
+  <data name="Orders.Print.Failed" xml:space="preserve">
+    <value>The receipt could not be queued for printing.</value>
+  </data>
+  <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
+    <value>Open order</value>
   </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Close Display</value>
@@ -608,6 +680,12 @@
   </data>
   <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
     <value>Last updated</value>
+  </data>
+  <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
+    <value>Notification Sound</value>
   </data>
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>Popup was blocked. Opening live display in this tab.</value>
@@ -713,9 +791,6 @@
   </data>
   <data name="Orders.Details.BackToOrders" xml:space="preserve">
     <value>Back to Orders</value>
-  </data>
-  <data name="Orders.Details.BackToOrderHistory" xml:space="preserve">
-    <value>Back to Order History</value>
   </data>
   <data name="Orders.Details.AcceptedAt" xml:space="preserve">
     <value>Accepted</value>
@@ -853,7 +928,7 @@
     <value>No platform connections added yet.</value>
   </data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve">
-    <value>This platform and store id is already defined.</value>
+    <value>A connection already exists for this platform.</value>
   </data>
   <data name="PlatformConnections.Back" xml:space="preserve">
     <value>Back</value>
@@ -865,7 +940,7 @@
     <value>Activate</value>
   </data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve">
-    <value>Note: Owner/Manager role is expected for managing platform connections.</value>
+    <value>Manage the ordering platforms connected to this restaurant.</value>
   </data>
   <data name="Branches.Title" xml:space="preserve">
     <value>Branches</value>
@@ -935,6 +1010,21 @@
   </data>
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
     <value>To hear new-order sounds, first preview a sound from Notification Settings.</value>
+  </data>
+  <data name="Notification.EnableSoundButton" xml:space="preserve">
+    <value>Enable notification sound</value>
+  </data>
+  <data name="Notification.SoundMayBeOffTitle" xml:space="preserve">
+    <value>Notification sound may be off</value>
+  </data>
+  <data name="Notification.SoundMayBeOffDescription" xml:space="preserve">
+    <value>Enable notification sound to hear alerts for new orders.</value>
+  </data>
+  <data name="Notification.SoundActive" xml:space="preserve">
+    <value>Notification sound is active</value>
+  </data>
+  <data name="Notification.StopSoundButton" xml:space="preserve">
+    <value>Stop sound</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Loading…</value>
@@ -1117,7 +1207,7 @@
     <value>How it works</value>
   </data>
   <data name="Landing.HowItWorksDescription" xml:space="preserve">
-    <value>From setup to daily operations in four clear steps.</value>
+    <value>Five steps from online orders to the kitchen and automatic receipt printing.</value>
   </data>
   <data name="Landing.Step1Title" xml:space="preserve">
     <value>Define platform connections</value>
@@ -1252,10 +1342,13 @@
     <value>Your operations stay in a dedicated space—secure and under your control.</value>
   </data>
   <data name="Landing.FinalCtaTitle" xml:space="preserve">
-    <value>Sign in to your restaurant panel</value>
+    <value>Connect online orders with your kitchen operations</value>
   </data>
   <data name="Landing.FinalCtaDescription" xml:space="preserve">
-    <value>Customer login works through the restaurant domain assigned to you.</value>
+    <value>Wasla links online ordering platforms with your restaurant operations. It brings orders onto one screen, simplifies the kitchen flow, and prints receipts automatically.</value>
+  </data>
+  <data name="Landing.FinalCtaButton" xml:space="preserve">
+    <value>Start for Free</value>
   </data>
   <data name="Landing.NewOrder" xml:space="preserve">
     <value>New</value>
@@ -1279,16 +1372,16 @@
     <value>A clear order view your restaurant team can use during a busy service.</value>
   </data>
   <data name="Landing.StepConnectionsTitle" xml:space="preserve">
-    <value>Define platform connections</value>
+    <value>Platforms connect to Wasla</value>
   </data>
   <data name="Landing.StepConnectionsDescription" xml:space="preserve">
-    <value>Add the delivery platforms your restaurant uses.</value>
+    <value>The food-ordering platforms you use are integrated with Wasla.</value>
   </data>
   <data name="Landing.StepTrackTitle" xml:space="preserve">
-    <value>Track orders from one screen</value>
+    <value>Orders appear on one screen</value>
   </data>
   <data name="Landing.StepTrackDescription" xml:space="preserve">
-    <value>View incoming orders in a single, easy-to-read list.</value>
+    <value>Incoming orders are listed instantly on a single management screen.</value>
   </data>
   <data name="Landing.StepNotifyTitle" xml:space="preserve">
     <value>Get notified on new orders</value>
@@ -1328,6 +1421,114 @@
   </data>
   <data name="Landing.VisualImageAlt3" xml:space="preserve">
     <value>Packaged order handoff at a service counter</value>
+  </data>
+  <data name="Landing.MetaDescription" xml:space="preserve">
+    <value>Wasla is a cloud-based online order management system for restaurant order management. It brings orders from food-ordering platforms onto one screen, with a kitchen order display and automatic receipt printing.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaTitle" xml:space="preserve">
+    <value>What is Wasla?</value>
+  </data>
+  <data name="Landing.WhatIsWaslaLead" xml:space="preserve">
+    <value>A cloud-based restaurant order management system that lets you manage orders from different food-ordering platforms on a single screen.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaProblem" xml:space="preserve">
+    <value>Restaurants working with several ordering platforms usually have to follow multiple tablets, devices, and separate workflows at the same time.</value>
+  </data>
+  <data name="Landing.WhatIsWaslaSolution" xml:space="preserve">
+    <value>Wasla brings these order flows together and makes day-to-day operations easier to manage.</value>
+  </data>
+  <data name="Landing.StepReviewTitle" xml:space="preserve">
+    <value>Staff review and manage orders</value>
+  </data>
+  <data name="Landing.StepReviewDescription" xml:space="preserve">
+    <value>Restaurant staff review, confirm, and manage each order in the daily flow.</value>
+  </data>
+  <data name="Landing.StepKitchenTitle" xml:space="preserve">
+    <value>Kitchen follows preparation</value>
+  </data>
+  <data name="Landing.StepKitchenDescription" xml:space="preserve">
+    <value>The kitchen team tracks preparation on a clear kitchen order display.</value>
+  </data>
+  <data name="Landing.StepPrintTitle" xml:space="preserve">
+    <value>Receipts print automatically</value>
+  </data>
+  <data name="Landing.StepPrintDescription" xml:space="preserve">
+    <value>Wasla Print Bridge sends the receipt to your configured printer automatically.</value>
+  </data>
+  <data name="Landing.ProblemsTitle" xml:space="preserve">
+    <value>What problem does Wasla solve?</value>
+  </data>
+  <data name="Landing.ProblemsDescription" xml:space="preserve">
+    <value>A restaurant order tracking system focused on practical challenges in daily operations.</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrders" xml:space="preserve">
+    <value>Orders collected in one place</value>
+  </data>
+  <data name="Landing.ProblemUnifiedOrdersDescription" xml:space="preserve">
+    <value>Orders from different platforms come together in a single list.</value>
+  </data>
+  <data name="Landing.ProblemFewerDevices" xml:space="preserve">
+    <value>Less device monitoring</value>
+  </data>
+  <data name="Landing.ProblemFewerDevicesDescription" xml:space="preserve">
+    <value>You need to watch fewer tablets and devices at the same time.</value>
+  </data>
+  <data name="Landing.ProblemMissedOrders" xml:space="preserve">
+    <value>Lower risk of missed orders</value>
+  </data>
+  <data name="Landing.ProblemMissedOrdersDescription" xml:space="preserve">
+    <value>With every channel on one screen, orders are less likely to be overlooked.</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordination" xml:space="preserve">
+    <value>Easier kitchen coordination</value>
+  </data>
+  <data name="Landing.ProblemKitchenCoordinationDescription" xml:space="preserve">
+    <value>Kitchen and order management move forward more clearly in the same flow.</value>
+  </data>
+  <data name="Landing.ProblemAutoPrint" xml:space="preserve">
+    <value>Automatic receipt printing</value>
+  </data>
+  <data name="Landing.ProblemAutoPrintDescription" xml:space="preserve">
+    <value>Receipts are sent to the printer automatically through Wasla Print Bridge.</value>
+  </data>
+  <data name="Landing.ProblemBusyHours" xml:space="preserve">
+    <value>More organized busy hours</value>
+  </data>
+  <data name="Landing.ProblemBusyHoursDescription" xml:space="preserve">
+    <value>During peak demand, the process stays more controlled and organized.</value>
+  </data>
+  <data name="Landing.ProblemLessSwitching" xml:space="preserve">
+    <value>Less switching between devices</value>
+  </data>
+  <data name="Landing.ProblemLessSwitchingDescription" xml:space="preserve">
+    <value>Staff spend less time moving between different screens.</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcess" xml:space="preserve">
+    <value>Easier order process monitoring</value>
+  </data>
+  <data name="Landing.ProblemMonitorProcessDescription" xml:space="preserve">
+    <value>Following the order flow from one screen becomes simpler.</value>
+  </data>
+  <data name="Landing.WhoIsItForTitle" xml:space="preserve">
+    <value>Who is it for?</value>
+  </data>
+  <data name="Landing.WhoIsItForDescription" xml:space="preserve">
+    <value>Wasla is a good fit for:</value>
+  </data>
+  <data name="Landing.AudienceDelivery" xml:space="preserve">
+    <value>Restaurants offering delivery or takeaway</value>
+  </data>
+  <data name="Landing.AudienceMultiPlatform" xml:space="preserve">
+    <value>Businesses using multiple online ordering platforms</value>
+  </data>
+  <data name="Landing.AudienceChains" xml:space="preserve">
+    <value>Restaurant chains that want centralized order management</value>
+  </data>
+  <data name="Landing.AudienceKitchenWorkflow" xml:space="preserve">
+    <value>Businesses that want to improve kitchen workflow</value>
+  </data>
+  <data name="Landing.AudienceAutoPrint" xml:space="preserve">
+    <value>Restaurants that need automatic receipt printing</value>
   </data>
   <data name="PlatformConnections.ErrorCount" xml:space="preserve">
     <value>Consecutive errors</value>
@@ -2058,9 +2259,6 @@
   <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
     <value>Platform connection status could not be changed.</value>
   </data>
-  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
-    <value>A connection with the same platform and store id already exists.</value>
-  </data>
   <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
     <value>Owner or Manager role is required to manage platform connections.</value>
   </data>
@@ -2201,9 +2399,6 @@
   </data>
   <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
     <value>This token is shown only once. Copy and save it into your Print Bridge configuration. If you lose it, regenerate the token.</value>
-  </data>
-  <data name="PrintBridge.TokenCreated" xml:space="preserve">
-    <value>Print Bridge token created</value>
   </data>
   <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
     <value>Print Bridge token regenerated</value>
@@ -2383,22 +2578,37 @@
     <value>Print Bridge setup</value>
   </data>
   <data name="PrintBridge.SetupPageSubtitle" xml:space="preserve">
-    <value>Install the Print Bridge app on your Windows computer so Wasla can print order receipts automatically.</value>
+    <value>Connect this computer to Wasla so receipts print automatically.</value>
   </data>
   <data name="PrintBridge.DownloadCardTitle" xml:space="preserve">
     <value>Print Bridge package</value>
   </data>
+  <data name="PrintBridge.PackageCardTitle" xml:space="preserve">
+    <value>Wasla Print Bridge package</value>
+  </data>
+  <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
+    <value>The Windows application package will be available here soon.</value>
+  </data>
+  <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
+    <value>Wasla.PrintBridge-win-x64.zip</value>
+  </data>
+  <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <data name="PrintBridge.PackageNotReadyStatus" xml:space="preserve">
+    <value>Not ready yet</value>
+  </data>
+  <data name="PrintBridge.PackageReadyStatus" xml:space="preserve">
+    <value>Ready to download</value>
+  </data>
+  <data name="PrintBridge.PackageDownloadUnavailable" xml:space="preserve">
+    <value>Coming soon</value>
+  </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
-    <value>Download the portable setup package for the Windows PC connected to your receipt printer.</value>
+    <value>Download the Windows application package for the Windows PC connected to your receipt printer.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
-    <value>It will be available here after the package is built.</value>
-  </data>
-  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
-    <value>Connection details</value>
-  </data>
-  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>Server address</value>
+    <value>In development environments, you can run the Print Bridge app directly.</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>Device token</value>
@@ -2422,22 +2632,22 @@
     <value>Setup steps</value>
   </data>
   <data name="PrintBridge.SetupStep1" xml:space="preserve">
-    <value>Download the Print Bridge package</value>
+    <value>Open the Print Bridge app.</value>
   </data>
   <data name="PrintBridge.SetupStep2" xml:space="preserve">
-    <value>Extract the ZIP file</value>
+    <value>Copy the Wasla Web Panel URL.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Run the Wasla Print Bridge app</value>
+    <value>Create a device token and copy it.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Enter the connection address below in the app</value>
+    <value>In Print Bridge, open Settings and paste the Wasla Web Panel URL and the device token.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Paste your device token into the app</value>
+    <value>Click "Save connection", then "Test connection".</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
-    <value>Test the connection</value>
+    <value>Select your printer and save.</value>
   </data>
   <data name="PrintBridge.SetupStep7" xml:space="preserve">
     <value>Select your printer and save</value>
@@ -2452,7 +2662,7 @@
     <value>Internet connection</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>Wasla device token</value>
+    <value>For a manual connection: a device token created on this page</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>The computer running the app must stay on</value>
@@ -2530,7 +2740,7 @@
     <value>Windows Portable Package</value>
   </data>
   <data name="PrintBridge.PackageNotPrepared" xml:space="preserve">
-    <value>The setup package is not ready yet.</value>
+    <value>The installation package is not ready yet.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>The portable package will be available here after deployment packaging is complete.</value>
@@ -2799,9 +3009,6 @@
   <data name="PrintBridge.DeviceToken" xml:space="preserve">
     <value>Device Token</value>
   </data>
-  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
-    <value>Copy Server URL</value>
-  </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
     <value>Server URL could not be determined. Open this page from your customer domain or contact your administrator.</value>
   </data>
@@ -2815,7 +3022,7 @@
     <value>Setup Instructions</value>
   </data>
   <data name="PrintBridge.Troubleshooting" xml:space="preserve">
-    <value>Troubleshooting</value>
+    <value>Can't connect?</value>
   </data>
   <data name="PrintBridge.TroubleshootingHint1" xml:space="preserve">
     <value>Make sure Print Bridge is running on the Windows computer connected to the printer.</value>
@@ -2931,7 +3138,7 @@
   <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>Phone type</value></data>
   <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>Mobile</value></data>
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Landline</value></data>
-  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Example format: +90 5__ ___ __ __</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>Example: +90 531 324 12 45</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>Business phone</value></data>
   <data name="Signup.BusinessEmail" xml:space="preserve"><value>Business email</value></data>
   <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@yourrestaurant.com</value></data>
@@ -2972,6 +3179,7 @@
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Continue to payment</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Your restaurant</value></data>
   <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Your Wasla address</value></data>
+  <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>Open {0}</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Your package</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Payment period</value></data>
   <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>After payment is complete:</value></data>
@@ -2984,6 +3192,25 @@
   <data name="Signup.GoToPanel" xml:space="preserve"><value>Go to panel</value></data>
   <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve"><value>Payment received</value></data>
   <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve"><value>Your payment was received. Your restaurant panel is being prepared.</value></data>
+  <data name="Signup.PaymentReceivedPreparingSubtitle" xml:space="preserve"><value>Your restaurant panel is being prepared.</value></data>
+  <data name="Signup.PaymentReceivedPreparingBody" xml:space="preserve"><value>Once setup is complete, you will be able to sign in from your Wasla address.</value></data>
+  <data name="Signup.PendingRegistrationDetails" xml:space="preserve"><value>Registration details</value></data>
+  <data name="Signup.PendingLabelPaymentStatus" xml:space="preserve"><value>Payment status</value></data>
+  <data name="Signup.PendingLabelProvisioningStatus" xml:space="preserve"><value>Setup status</value></data>
+  <data name="Signup.PendingLabelBusinessPhone" xml:space="preserve"><value>Business phone</value></data>
+  <data name="Signup.PendingLabelBusinessEmail" xml:space="preserve"><value>Business email</value></data>
+  <data name="Signup.PendingLabelOwnerName" xml:space="preserve"><value>Account owner</value></data>
+  <data name="Signup.PendingLabelOwnerEmail" xml:space="preserve"><value>Owner email</value></data>
+  <data name="Signup.PendingLabelOwnerPhone" xml:space="preserve"><value>Owner phone</value></data>
+  <data name="Signup.PendingLabelCreatedAt" xml:space="preserve"><value>Registration date</value></data>
+  <data name="Signup.PaymentStatusPending" xml:space="preserve"><value>Payment pending</value></data>
+  <data name="Signup.PaymentStatusPaid" xml:space="preserve"><value>Payment received</value></data>
+  <data name="Signup.PaymentStatusFailed" xml:space="preserve"><value>Payment failed</value></data>
+  <data name="Signup.PaymentStatusCancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Signup.PaymentStatusExpired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Signup.ProvisioningStatusPending" xml:space="preserve"><value>Setup pending</value></data>
+  <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve"><value>Setup in progress</value></data>
+  <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>Setup complete</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Payment summary</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Review your selected package and restaurant details. In this test environment, the payment outcome will be simulated.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Real payment integration is not active yet. Payment outcome is simulated on this screen.</value></data>
@@ -3072,4 +3299,784 @@
   <data name="TenantAddressRequired.Description" xml:space="preserve"><value>To sign in to your panel, use your restaurant's dedicated Wasla address.</value></data>
   <data name="TenantAddressRequired.Example" xml:space="preserve"><value>Example: bahce-tadi.wasla.local</value></data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve"><value>Back to signup</value></data>
+  <data name="PrintBridge.Auto.SectionTitle" xml:space="preserve"><value>Wasla Print Bridge Setup</value></data>
+  <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>Recommended</value></data>
+  <data name="PrintBridge.Auto.Intro" xml:space="preserve"><value>Connect Print Bridge to this restaurant automatically.</value></data>
+  <data name="PrintBridge.Auto.OpenButton" xml:space="preserve"><value>Open and connect Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.ReconnectOpenButton" xml:space="preserve"><value>Reconnect Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.Starting" xml:space="preserve"><value>Opening Wasla Print Bridge…</value></data>
+  <data name="PrintBridge.Auto.Waiting" xml:space="preserve"><value>Waiting for Wasla Print Bridge…</value></data>
+  <data name="PrintBridge.Auto.Connected" xml:space="preserve"><value>Print Bridge connected successfully.</value></data>
+  <data name="PrintBridge.Auto.SavedUnverified" xml:space="preserve"><value>Settings saved, but the connection could not be verified yet.</value></data>
+  <data name="PrintBridge.Auto.Failed" xml:space="preserve"><value>Setup could not be completed. Please try again or use manual setup.</value></data>
+  <data name="PrintBridge.Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge on this computer is already registered as an active device. Use "Reconnect existing device" instead of setting up a new device, or remove the old device record first.</value></data>
+  <data name="PrintBridge.Auto.Expired" xml:space="preserve"><value>This setup link expired. Generate a new one.</value></data>
+  <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Could not start setup. Please try again.</value></data>
+  <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Try opening again</value></data>
+  <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Download Wasla Print Bridge</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Connect manually</value></data>
+  <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Didn't open? Make sure Wasla Print Bridge is installed and has been run once.</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Didn't open automatically?</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Connect manually with the Web Panel URL and a device token</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Connect manually</value></data>
+  <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>If Print Bridge runs on the same computer, localhost can be used. On a different computer, use an IP address or domain.</value></data>
+  <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>The server address is unavailable right now.</value></data>
+  <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>No Print Bridge device is available. Create one first.</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirm" xml:space="preserve"><value>The current token for {0} will be replaced with a new token. Continue?</value></data>
+  <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Confirmation is required before replacing the current active device token.</value></data>
+  <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Automatic setup creates a new token for {0}; the old token will stop working.</value></data>
+  <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>The token action could not be completed.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Title" xml:space="preserve"><value>Download the Windows application package</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Requirement" xml:space="preserve"><value>Print Bridge is a Windows 10 and 11 application. You'll extract the downloaded ZIP file and run Wasla.PrintBridge.exe on the computer your receipt printer is connected to.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.File" xml:space="preserve"><value>File: {0}</value></data>
+  <data name="PrintBridge.FirstInstall.NotWindows" xml:space="preserve"><value>This doesn't look like a Windows computer. Open this page on the Windows computer your receipt printer is connected to and finish the setup there. Nothing is downloaded unless you choose to.</value></data>
+  <data name="PrintBridge.FirstInstall.DownloadStarted" xml:space="preserve"><value>Download started. When your browser has saved the ZIP file, follow step 2.</value></data>
+  <data name="PrintBridge.FirstInstall.AlreadyInstalled" xml:space="preserve"><value>Print Bridge is already installed</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Button" xml:space="preserve"><value>Download Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Missing" xml:space="preserve"><value>The Print Bridge package hasn't been published here yet, so it can't be downloaded from this page. If Print Bridge is already installed, you can continue below, or set this up later.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Title" xml:space="preserve"><value>Prepare Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Extract" xml:space="preserve"><value>Extract the downloaded ZIP file to a folder, for example C:\Wasla\PrintBridge.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Run" xml:space="preserve"><value>Run Wasla.PrintBridge.exe once and leave it open. After that, this page can open Print Bridge for you.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Runtime" xml:space="preserve"><value>This package needs the .NET 8 Desktop Runtime. If Windows asks for it, allow the installation or get it from Microsoft's website, then run Print Bridge again.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Done" xml:space="preserve"><value>I downloaded and opened Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Title" xml:space="preserve"><value>Automatic connection</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Body" xml:space="preserve"><value>Opens Print Bridge on this computer and connects it to Wasla as a new device. Your browser may ask whether to open the app.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Button" xml:space="preserve"><value>Open Print Bridge and connect</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Title" xml:space="preserve"><value>Manual connection</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>You enter the Wasla Web Panel URL and a device token in Print Bridge's Settings yourself. Use this if the app doesn't open automatically.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Choose how to connect</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Choose and test your printer</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>In Print Bridge, open Settings, choose your receipt printer under Printer configuration, click "Save printer", then "Print test receipt".</value></data>
+  <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>When Wasla verifies the connection, the guided setup panel at the top of this page shows "{0}". The device guide comes next, then order training.</value></data>
+  <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Web Panel URL and device token</value></data>
+  <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Use this if Print Bridge doesn't open from this page. Print Bridge's Settings screen asks for exactly these two values.</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlLabel" xml:space="preserve"><value>Wasla Web Panel URL</value></data>
+  <data name="PrintBridge.Manual.CopyWebPanelUrl" xml:space="preserve"><value>Copy Wasla Web Panel URL</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlCopied" xml:space="preserve"><value>Wasla Web Panel URL copied.</value></data>
+  <data name="PrintBridge.Manual.TokenIntro" xml:space="preserve"><value>The device token is created for your choice above: a new device, or the existing device you selected to reconnect.</value></data>
+  <data name="PrintBridge.Manual.TokenIntroNewDevice" xml:space="preserve"><value>The device token is created for a new device.</value></data>
+  <data name="PrintBridge.Manual.CreateNewDeviceToken" xml:space="preserve"><value>Create a device token</value></data>
+  <data name="PrintBridge.Manual.CreateReconnectToken" xml:space="preserve"><value>Create a new token for the selected device</value></data>
+  <data name="PrintBridge.Manual.TokenCreatedFor" xml:space="preserve"><value>Device token created for {0}.</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenLabel" xml:space="preserve"><value>Device token</value></data>
+  <data name="PrintBridge.Manual.ShownOnce" xml:space="preserve"><value>This token is shown only once. After you leave or reload this page it can't be shown again; if you lose it, create a new token for this device.</value></data>
+  <data name="PrintBridge.Manual.CopyDeviceToken" xml:space="preserve"><value>Copy device token</value></data>
+  <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Show token</value></data>
+  <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Hide token</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Device token copied.</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Now open Settings in Print Bridge, paste both values into the fields with the same names, then click "Save connection" and "Test connection".</value></data>
+  <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Creating or copying the token doesn't connect Print Bridge. It counts as connected only after Wasla verifies the connection from Print Bridge.</value></data>
+  <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla verified the Print Bridge connection. You can continue from the guided setup panel at the top of this page.</value></data>
+  <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla hasn't verified the connection yet. Click "Test connection" in Print Bridge, then reload this page to check again.</value></data>
+  <data name="PrintBridge.Manual.ManageDevice" xml:space="preserve"><value>Manage this device: regenerate its token or remove it</value></data>
+  <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Setup mode</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Set up a new device</value></data>
+  <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Connects this computer as a new Print Bridge device.</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeTitle" xml:space="preserve"><value>Reconnect an existing device</value></data>
+  <data name="PrintBridge.Auto.ReconnectModeHelp" xml:space="preserve"><value>Reconnects a device you set up before.</value></data>
+  <data name="PrintBridge.Auto.ReconnectDeviceLabel" xml:space="preserve"><value>Device to reconnect</value></data>
+  <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Select a device</value></data>
+  <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>Machine:</value></data>
+  <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>This creates a new connection for the selected device. The old connection will no longer work.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Create a new connection for the selected device? The old connection will no longer work.</value></data>
+  <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Reconnect creates a new token for the selected device and invalidates that device's previous token.</value></data>
+  <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Select the device to reconnect before continuing.</value></data>
+  <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Selecting a device is required to reconnect an existing device.</value></data>
+  <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>The selected device was not found for this restaurant.</value></data>
+  <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>Select a valid setup mode.</value></data>
+  <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>Set up a new device</value></data>
+  <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>Device details</value></data>
+  <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>Web name, connection status, and technical information for this Print Bridge device.</value></data>
+  <data name="PrintBridge.BackToDevices" xml:space="preserve"><value>Back to devices</value></data>
+  <data name="PrintBridge.DetailsAction" xml:space="preserve"><value>Details</value></data>
+  <data name="PrintBridge.WebDisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="PrintBridge.WebDisplayNameHelp" xml:space="preserve"><value>This name is shown only in Wasla Web; it does not change the local desktop device name.</value></data>
+  <data name="PrintBridge.DeviceTechnicalInfo" xml:space="preserve"><value>Technical information</value></data>
+  <data name="PrintBridge.DeviceState" xml:space="preserve"><value>Device state</value></data>
+  <data name="PrintBridge.Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="PrintBridge.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="PrintBridge.TokenStatus" xml:space="preserve"><value>Token status</value></data>
+  <data name="PrintBridge.TokenConfigured" xml:space="preserve"><value>Token configured</value></data>
+  <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Token missing</value></data>
+  <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Setup / reconnect</value></data>
+  <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Recent print activity</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>The raw device token and token hash are not shown on this page.</value></data>
+  <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Identity</value></data>
+  <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Device actions</value></data>
+  <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Enable device</value></data>
+  <data name="PrintBridge.DisableDevice" xml:space="preserve"><value>Disable device</value></data>
+  <data name="PrintBridge.RemoveDevice" xml:space="preserve"><value>Remove device</value></data>
+  <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>Remove this device?</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>The token for “{0}” will be revoked and its Print Bridge connection will stop. Print history will not be deleted.</value></data>
+  <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>Remove device</value></data>
+  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>Disable is temporary and reversible. Remove retires the device, revokes its token, hides it from setup/management flows, and preserves history.</value></data>
+  <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>Device removed. Print history is preserved.</value></data>
+  <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>This device has already been removed.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailed" xml:space="preserve"><value>Could not remove device.</value></data>
+  <data name="PrintBridge.DeviceRemoveBlockedByActivePrintJob" xml:space="preserve"><value>Device removal is temporarily unavailable while a print job is active.</value></data>
+  <data name="PrintBridge.DeviceRenameSucceeded" xml:space="preserve"><value>Device name saved.</value></data>
+  <data name="PrintBridge.DeviceRenameFailed" xml:space="preserve"><value>Could not save device name.</value></data>
+  <data name="PrintBridge.RenameNameRequired" xml:space="preserve"><value>Device name is required.</value></data>
+  <data name="PrintBridge.RenameNameTooLong" xml:space="preserve"><value>Device name can be at most 100 characters.</value></data>
+  <data name="PrintBridge.DeviceNotFound" xml:space="preserve"><value>Device not found.</value></data>
+  <data name="Admin.PendingRegistrations" xml:space="preserve"><value>Pending registrations</value></data>
+  <data name="Admin.PendingReg.Plan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Admin.PendingReg.PaymentStatus" xml:space="preserve"><value>Payment status</value></data>
+  <data name="Admin.PendingReg.Owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="Admin.PendingReg.OwnerEmail" xml:space="preserve"><value>Owner email</value></data>
+  <data name="Admin.PendingReg.OwnerPhone" xml:space="preserve"><value>Owner phone</value></data>
+  <data name="Admin.PendingReg.BusinessPhone" xml:space="preserve"><value>Business phone</value></data>
+  <data name="Admin.PendingReg.BusinessEmail" xml:space="preserve"><value>Business email</value></data>
+  <data name="Admin.PendingReg.Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Admin.PendingReg.OwnerInfo" xml:space="preserve"><value>Owner information</value></data>
+  <data name="Admin.PendingReg.StatusInfo" xml:space="preserve"><value>Status and timestamps</value></data>
+  <data name="Admin.PendingReg.DetailsTitle" xml:space="preserve"><value>Pending registration details</value></data>
+  <data name="Admin.PendingReg.Status.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Admin.PendingReg.Status.AwaitingPayment" xml:space="preserve"><value>Awaiting payment</value></data>
+  <data name="Admin.PendingReg.Status.PaymentSucceeded" xml:space="preserve"><value>Payment received</value></data>
+  <data name="Admin.PendingReg.Status.PaymentFailed" xml:space="preserve"><value>Payment failed</value></data>
+  <data name="Admin.PendingReg.Status.Provisioned" xml:space="preserve"><value>Provisioned</value></data>
+  <data name="Admin.PendingReg.Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.PendingReg.Status.Expired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Admin.PendingReg.FilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="Admin.PendingReg.FilterPendingPayment" xml:space="preserve"><value>Pending payment</value></data>
+  <data name="Admin.PendingReg.FilterPaymentReceived" xml:space="preserve"><value>Payment received, setup pending</value></data>
+  <data name="Admin.PendingReg.FilterProvisioned" xml:space="preserve"><value>Provisioned</value></data>
+  <data name="Admin.PendingReg.NotFound" xml:space="preserve"><value>Pending registration not found.</value></data>
+  <data name="Admin.PendingReg.NotEligible" xml:space="preserve"><value>This registration is not eligible for provisioning.</value></data>
+  <data name="Admin.PendingReg.AlreadyProvisioned" xml:space="preserve"><value>This registration is already provisioned.</value></data>
+  <data name="Admin.PendingReg.ProvisionSuccess" xml:space="preserve"><value>Provisioning completed successfully.</value></data>
+  <data name="Admin.PendingReg.ProvisionError" xml:space="preserve"><value>Provisioning failed.</value></data>
+  <data name="Admin.PendingReg.Provision" xml:space="preserve"><value>Provision</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmTitle" xml:space="preserve"><value>Start provisioning</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmMessage" xml:space="preserve"><value>Provision {0} ({1})?</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirmNote" xml:space="preserve"><value>This action cannot be undone. Please confirm before continuing.</value></data>
+  <data name="Admin.PendingReg.ProvisionConfirm" xml:space="preserve"><value>Yes, provision</value></data>
+  <data name="Admin.PendingReg.ExpiresAt" xml:space="preserve"><value>Expires at</value></data>
+  <data name="Admin.PendingReg.PaymentSucceededAt" xml:space="preserve"><value>Payment date</value></data>
+  <data name="Admin.PendingReg.PaymentFailedAt" xml:space="preserve"><value>Payment failed at</value></data>
+  <data name="Admin.PendingReg.ProvisionedAt" xml:space="preserve"><value>Provisioned at</value></data>
+  <data name="Admin.PendingReg.TenantId" xml:space="preserve"><value>Tenant ID</value></data>
+  <data name="Admin.PendingReg.TenantDomain" xml:space="preserve"><value>Panel address</value></data>
+  <data name="Admin.PendingReg.TenantLogin" xml:space="preserve"><value>Panel login</value></data>
+  <data name="Admin.RegPendingPayment" xml:space="preserve"><value>Pending payment</value></data>
+  <data name="Admin.RegPaymentReceivedSetupPending" xml:space="preserve"><value>Payment received, setup pending</value></data>
+  <data name="Admin.RegProvisioned" xml:space="preserve"><value>Provisioned</value></data>
+  <data name="Admin.ViewAll" xml:space="preserve"><value>View all</value></data>
+  <data name="Admin.Dashboard.RegistrationsNeedingAttention" xml:space="preserve"><value>Registrations needing attention</value></data>
+  <data name="Auth.ForgotPassword.Link" xml:space="preserve"><value>Forgot password?</value></data>
+  <data name="Auth.ForgotPassword.Title" xml:space="preserve"><value>Forgot password</value></data>
+  <data name="Auth.ForgotPassword.HelpText" xml:space="preserve"><value>Enter the email address associated with your account.</value></data>
+  <data name="Auth.ForgotPassword.SendResetLink" xml:space="preserve"><value>Send reset link</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationTitle" xml:space="preserve"><value>Check your email</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>A password reset link has been sent to your email address. Check your inbox and spam folder.</value></data>
+  <data name="Auth.ForgotPassword.UserNotFound" xml:space="preserve"><value>No user for this restaurant was found with this email address.</value></data>
+  <data name="Auth.ForgotPassword.UserInactive" xml:space="preserve"><value>This user account is not active. Contact your restaurant administrator.</value></data>
+  <data name="Auth.ForgotPassword.EmailDeliveryFailed" xml:space="preserve"><value>The password reset email could not be sent right now. Please try again later.</value></data>
+  <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>Too many password reset attempts. Please try again later.</value></data>
+  <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>Reset password</value></data>
+  <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>New password</value></data>
+  <data name="Auth.ResetPassword.ConfirmNewPassword" xml:space="preserve"><value>Confirm new password</value></data>
+  <data name="Auth.ResetPassword.UpdatePassword" xml:space="preserve"><value>Update password</value></data>
+  <data name="Auth.ResetPassword.Updated" xml:space="preserve"><value>Your password has been updated.</value></data>
+  <data name="Auth.ResetPassword.InvalidOrExpired" xml:space="preserve"><value>The password reset link is invalid or has expired.</value></data>
+  <data name="Auth.ReturnToLogin" xml:space="preserve"><value>Return to login</value></data>
+  <data name="Auth.AccessDenied.Title" xml:space="preserve"><value>Access denied</value></data>
+  <data name="Auth.AccessDenied.Description" xml:space="preserve"><value>You are signed in, but you do not have permission for this page or action.</value></data>
+  <data name="Auth.AccessDenied.BackToOrders" xml:space="preserve"><value>Back to orders</value></data>
+  <data name="Navigation.UserSettings" xml:space="preserve"><value>Users</value></data>
+  <data name="TenantUsers.Title" xml:space="preserve"><value>Team &amp; Permissions</value></data>
+  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Manage restaurant team roles and access status.</value></data>
+  <data name="TenantUsers.AddUser" xml:space="preserve"><value>Add user</value></data>
+  <data name="TenantUsers.CreationDeferred" xml:space="preserve"><value>Creating new users is disabled until a secure invite/password setup flow is added.</value></data>
+  <data name="TenantUsers.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="TenantUsers.DetailsTitle" xml:space="preserve"><value>User details</value></data>
+  <data name="TenantUsers.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="TenantUsers.EditTitle" xml:space="preserve"><value>Edit user</value></data>
+  <data name="TenantUsers.CreateTitle" xml:space="preserve"><value>Create user</value></data>
+  <data name="TenantUsers.CreateSubtitle" xml:space="preserve"><value>Create a new user for this restaurant.</value></data>
+  <data name="TenantUsers.CreateUser" xml:space="preserve"><value>Create user</value></data>
+  <data name="TenantUsers.BackToUsers" xml:space="preserve"><value>Back to users</value></data>
+  <data name="TenantUsers.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="TenantUsers.NameRequired" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="TenantUsers.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="TenantUsers.EmailReadOnly" xml:space="preserve"><value>Email cannot be changed from this screen.</value></data>
+  <data name="TenantUsers.EmailAlreadyExists" xml:space="preserve"><value>This email address is already in use.</value></data>
+  <data name="TenantUsers.Role" xml:space="preserve"><value>Role</value></data>
+  <data name="TenantUsers.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="TenantUsers.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="TenantUsers.Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="TenantUsers.CreatedAt" xml:space="preserve"><value>Created</value></data>
+  <data name="TenantUsers.LastLogin" xml:space="preserve"><value>Last login</value></data>
+  <data name="TenantUsers.LastLoginUnavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="TenantUsers.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="TenantUsers.ChangeRole" xml:space="preserve"><value>Change role</value></data>
+  <data name="TenantUsers.Activate" xml:space="preserve"><value>Activate</value></data>
+  <data name="TenantUsers.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="TenantUsers.PasswordSection" xml:space="preserve"><value>Password</value></data>
+  <data name="TenantUsers.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="TenantUsers.ConfirmPassword" xml:space="preserve"><value>Confirm password</value></data>
+  <data name="TenantUsers.LeavePasswordBlank" xml:space="preserve"><value>Leave blank to keep the current password.</value></data>
+  <data name="TenantUsers.Role.Owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="TenantUsers.Role.Manager" xml:space="preserve"><value>Manager</value></data>
+  <data name="TenantUsers.Role.Kitchen" xml:space="preserve"><value>Kitchen</value></data>
+  <data name="TenantUsers.Role.Cashier" xml:space="preserve"><value>Cashier</value></data>
+  <data name="TenantUsers.Role.Viewer" xml:space="preserve"><value>Viewer</value></data>
+  <data name="TenantUsers.RoleChanged" xml:space="preserve"><value>Role updated.</value></data>
+  <data name="TenantUsers.UserActivated" xml:space="preserve"><value>User activated.</value></data>
+  <data name="TenantUsers.UserDeactivated" xml:space="preserve"><value>User deactivated.</value></data>
+  <data name="TenantUsers.UserCreated" xml:space="preserve"><value>User created.</value></data>
+  <data name="TenantUsers.UserUpdated" xml:space="preserve"><value>User updated.</value></data>
+  <data name="TenantUsers.InvalidRole" xml:space="preserve"><value>Invalid role selected.</value></data>
+  <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>User not found.</value></data>
+  <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>The last Owner cannot be deactivated or demoted.</value></data>
+  <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>User could not be updated.</value></data>
+  <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>User summary</value></data>
+  <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Total</value></data>
+  <data name="TenantUsers.SummaryActive" xml:space="preserve"><value>Active</value></data>
+  <data name="TenantUsers.ListHeading" xml:space="preserve"><value>User list</value></data>
+  <data name="TenantUsers.FilterPlaceholder" xml:space="preserve"><value>Name or email</value></data>
+  <data name="TenantUsers.AllRoles" xml:space="preserve"><value>All roles</value></data>
+  <data name="TenantUsers.EmptyTitle" xml:space="preserve"><value>No users yet</value></data>
+  <data name="TenantUsers.EmptyDescription" xml:space="preserve"><value>Start by adding the first restaurant user.</value></data>
+  <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>No matching users</value></data>
+  <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>Try a different search or filter.</value></data>
+  <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>Not recorded</value></data>
+  <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Board</value></data>
+  <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>No orders</value></data>
+  <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Order</value></data>
+  <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Elapsed</value></data>
+  <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>Total</value></data>
+  <data name="Orders.LiveScreen.ItemNote" xml:space="preserve"><value>Note</value></data>
+  <data name="Orders.LiveScreen.OrderNote" xml:space="preserve"><value>Order note</value></data>
+  <data name="Orders.LiveScreen.ViewFocus" xml:space="preserve"><value>Focus</value></data>
+  <data name="Orders.LiveScreen.SelectOrder" xml:space="preserve"><value>Select an order</value></data>
+  <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Select an order from the list to see its details and actions.</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>No orders to show right now</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Orders will appear here when they arrive.</value></data>
+  <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Back to orders</value></data>
+  <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Orders</value></data>
+  <data name="Signup.BusinessSubtypeHint" xml:space="preserve"><value>Select one or more categories, then choose the matching subtypes.</value></data>
+  <data name="Signup.BusinessCategory.Restaurant" xml:space="preserve"><value>Restaurant</value></data>
+  <data name="Signup.BusinessCategory.FastFood" xml:space="preserve"><value>Fast Food</value></data>
+  <data name="Signup.BusinessCategory.Cafe" xml:space="preserve"><value>Café</value></data>
+  <data name="Signup.BusinessCategory.Bakery" xml:space="preserve"><value>Bakery &amp; Pastry</value></data>
+  <data name="Signup.BusinessCategory.Dessert" xml:space="preserve"><value>Desserts</value></data>
+  <data name="Signup.BusinessCategory.WorldCuisine" xml:space="preserve"><value>World Cuisine</value></data>
+  <data name="Signup.BusinessCategory.SpecialDiet" xml:space="preserve"><value>Special Diet</value></data>
+  <data name="Signup.BusinessCategory.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Signup.BusinessSubtype.Kebab" xml:space="preserve"><value>Kebab</value></data>
+  <data name="Signup.BusinessSubtype.HomeCooking" xml:space="preserve"><value>Home Cooking</value></data>
+  <data name="Signup.BusinessSubtype.Steakhouse" xml:space="preserve"><value>Steakhouse</value></data>
+  <data name="Signup.BusinessSubtype.Seafood" xml:space="preserve"><value>Seafood</value></data>
+  <data name="Signup.BusinessSubtype.Manti" xml:space="preserve"><value>Turkish Dumplings</value></data>
+  <data name="Signup.BusinessSubtype.Soup" xml:space="preserve"><value>Soup</value></data>
+  <data name="Signup.BusinessSubtype.Burger" xml:space="preserve"><value>Burger</value></data>
+  <data name="Signup.BusinessSubtype.Pizza" xml:space="preserve"><value>Pizza</value></data>
+  <data name="Signup.BusinessSubtype.Doner" xml:space="preserve"><value>Döner</value></data>
+  <data name="Signup.BusinessSubtype.Chicken" xml:space="preserve"><value>Chicken</value></data>
+  <data name="Signup.BusinessSubtype.CigKofte" xml:space="preserve"><value>Çiğ Köfte</value></data>
+  <data name="Signup.BusinessSubtype.SandwichToast" xml:space="preserve"><value>Sandwich / Toast</value></data>
+  <data name="Signup.BusinessSubtype.Cafe" xml:space="preserve"><value>Café</value></data>
+  <data name="Signup.BusinessSubtype.Breakfast" xml:space="preserve"><value>Breakfast</value></data>
+  <data name="Signup.BusinessSubtype.Patisserie" xml:space="preserve"><value>Patisserie</value></data>
+  <data name="Signup.BusinessSubtype.PideLahmacun" xml:space="preserve"><value>Pide / Lahmacun</value></data>
+  <data name="Signup.BusinessSubtype.BorekGozleme" xml:space="preserve"><value>Börek / Gözleme</value></data>
+  <data name="Signup.BusinessSubtype.DessertShop" xml:space="preserve"><value>Dessert Shop</value></data>
+  <data name="Signup.BusinessSubtype.IceCream" xml:space="preserve"><value>Ice Cream</value></data>
+  <data name="Signup.BusinessSubtype.WaffleCrepe" xml:space="preserve"><value>Waffle / Crêpe</value></data>
+  <data name="Signup.BusinessSubtype.Sushi" xml:space="preserve"><value>Sushi</value></data>
+  <data name="Signup.BusinessSubtype.Asian" xml:space="preserve"><value>Asian Cuisine</value></data>
+  <data name="Signup.BusinessSubtype.Italian" xml:space="preserve"><value>Pasta / Italian</value></data>
+  <data name="Signup.BusinessSubtype.WorldCuisine" xml:space="preserve"><value>World Cuisine</value></data>
+  <data name="Signup.BusinessSubtype.VeganVegetarian" xml:space="preserve"><value>Vegan / Vegetarian</value></data>
+  <data name="Signup.BusinessSubtype.Healthy" xml:space="preserve"><value>Healthy / Fit Meals</value></data>
+  <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>Select at least one business subtype.</value></data>
+  <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>Select at least one subtype for each chosen category.</value></data>
+  <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>The operation could not be completed. Try again. If it continues, give this reference code to support.</value></data>
+  <data name="Errors.ReferenceCode" xml:space="preserve"><value>Reference code</value></data>
+  <data name="Setup.Title" xml:space="preserve"><value>Get Wasla ready</value></data>
+  <data name="Setup.Progress" xml:space="preserve"><value>{0} / {1} complete</value></data>
+  <data name="Setup.ProgressLabel" xml:space="preserve"><value>Setup progress</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Progress counts required steps. A printer is optional and does not block readiness.</value></data>
+  <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla is ready</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Your order platform is connected and your operations screen is ready to use.</value></data>
+  <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Open Live Screen</value></data>
+  <data name="Setup.AddTeamMember" xml:space="preserve"><value>Add a team member</value></data>
+  <data name="Setup.FinishSetup" xml:space="preserve"><value>Finish setup</value></data>
+  <data name="Setup.GuidanceCompleted" xml:space="preserve"><value>Setup guidance is finished.</value></data>
+  <data name="Setup.GuidanceCompleteFailed" xml:space="preserve"><value>Setup could not be finished. Try again.</value></data>
+  <data name="Setup.NextStepLabel" xml:space="preserve"><value>Next step</value></data>
+  <data name="Setup.NextStepBody" xml:space="preserve"><value>Add your team and set their permissions.</value></data>
+  <data name="Setup.Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="Setup.StatusComplete" xml:space="preserve"><value>Complete</value></data>
+  <data name="Setup.StatusIncomplete" xml:space="preserve"><value>Not complete</value></data>
+  <data name="Setup.StatusUnavailable" xml:space="preserve"><value>Status unavailable</value></data>
+  <data name="Setup.WelcomeTitle" xml:space="preserve"><value>{0} is ready on Wasla.</value></data>
+  <data name="Setup.WelcomeTitleRest" xml:space="preserve"><value>is ready on Wasla.</value></data>
+  <data name="Setup.WelcomeBody" xml:space="preserve"><value>Complete a few steps to start receiving orders.</value></data>
+  <data name="Setup.StartSetup" xml:space="preserve"><value>Start setup</value></data>
+  <data name="Setup.BrowsePanel" xml:space="preserve"><value>Browse the panel</value></data>
+  <data name="Setup.ChecklistSummary" xml:space="preserve"><value>Show setup steps</value></data>
+  <data name="Setup.Restaurant.Title" xml:space="preserve"><value>Review restaurant information</value></data>
+  <data name="Setup.Restaurant.Incomplete" xml:space="preserve"><value>Business name, phone, or location is missing.</value></data>
+  <data name="Setup.Restaurant.Action" xml:space="preserve"><value>Open details</value></data>
+  <data name="Setup.Platform.Title" xml:space="preserve"><value>Connect an order platform</value></data>
+  <data name="Setup.Platform.Incomplete" xml:space="preserve"><value>Bring Yemeksepeti, Getir, or Trendyol GO orders into Wasla.</value></data>
+  <data name="Setup.Platform.Action" xml:space="preserve"><value>Connect platform</value></data>
+  <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} connected</value></data>
+  <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} platforms connected</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Set order notifications</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Notification sound is off or has not been saved yet.</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>You can test the sound from notification settings.</value></data>
+  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Set notifications</value></data>
+  <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Notification sound is on</value></data>
+  <data name="Setup.Printing.Title" xml:space="preserve"><value>Connect a receipt printer</value></data>
+  <data name="Setup.Printing.Complete" xml:space="preserve"><value>Printer connected</value></data>
+  <data name="Setup.Printing.Action" xml:space="preserve"><value>Connect printer</value></data>
+  <data name="Setup.LiveScreen.Title" xml:space="preserve"><value>Check Live Screen</value></data>
+  <data name="Setup.LiveScreen.Detail" xml:space="preserve"><value>Open the operations screen and review the new-order view.</value></data>
+  <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>Open Live Screen</value></data>
+  <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Opening is not recorded</value></data>
+  <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>More items in details</value></data>
+  <data name="Tour.Skip" xml:space="preserve"><value>Skip</value></data>
+  <data name="Tour.Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Tour.Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Tour.Finish" xml:space="preserve"><value>Got it</value></data>
+  <data name="Tour.Replay" xml:space="preserve"><value>Show this screen's tour</value></data>
+  <data name="Tour.Progress" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Tour.Close" xml:space="preserve"><value>Close tour</value></data>
+  <data name="Tour.Dashboard.Summary.Title" xml:space="preserve"><value>Today's summary</value></data>
+  <data name="Tour.Dashboard.Summary.Body" xml:space="preserve"><value>You can follow today's operational summary here.</value></data>
+  <data name="Tour.Dashboard.Recent.Title" xml:space="preserve"><value>Recent orders</value></data>
+  <data name="Tour.Dashboard.Recent.Body" xml:space="preserve"><value>You can reach your latest orders from here.</value></data>
+  <data name="Tour.Live.Orders.Title" xml:space="preserve"><value>New orders</value></data>
+  <data name="Tour.Live.Orders.Body" xml:space="preserve"><value>Orders from connected platforms appear here.</value></data>
+  <data name="Tour.Live.Actions.Title" xml:space="preserve"><value>Order actions</value></data>
+  <data name="Tour.Live.Actions.Body" xml:space="preserve"><value>You can manage the order from here.</value></data>
+  <data name="Tour.Live.Timer.Title" xml:space="preserve"><value>Waiting time</value></data>
+  <data name="Tour.Live.Timer.Body" xml:space="preserve"><value>You can see how long the order has been waiting here.</value></data>
+  <data name="Tour.Live.Views.Title" xml:space="preserve"><value>View</value></data>
+  <data name="Tour.Live.Views.Body" xml:space="preserve"><value>You can choose the view that fits your operation here.</value></data>
+  <data name="Tour.Platform.List.Title" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="Tour.Platform.List.Body" xml:space="preserve"><value>You can connect your ordering platforms to Wasla here.</value></data>
+  <data name="Tour.Platform.Connect.Title" xml:space="preserve"><value>Add a platform</value></data>
+  <data name="Tour.Platform.Connect.Body" xml:space="preserve"><value>You can add a new platform connection here.</value></data>
+  <data name="Demo.LaunchTitle" xml:space="preserve"><value>Try Wasla</value></data>
+  <data name="Demo.LaunchAction" xml:space="preserve"><value>Send a demo order</value></data>
+  <data name="Demo.Badge" xml:space="preserve"><value>Demo</value></data>
+  <data name="Demo.CustomerName" xml:space="preserve"><value>Demo customer</value></data>
+  <data name="Demo.StartTitle" xml:space="preserve"><value>Let's try Wasla</value></data>
+  <data name="Demo.StartBody" xml:space="preserve"><value>Practice the order flow without affecting your real orders.</value></data>
+  <data name="Demo.ApproveTitle" xml:space="preserve"><value>Accept the order</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>Accept the order from here.</value></data>
+  <data name="Demo.PrepareTitle" xml:space="preserve"><value>Start preparation</value></data>
+  <data name="Demo.PrepareBody" xml:space="preserve"><value>Move the accepted order into preparation.</value></data>
+  <data name="Demo.ReadyTitle" xml:space="preserve"><value>Mark it ready</value></data>
+  <data name="Demo.ReadyBody" xml:space="preserve"><value>When the order is ready, mark it here.</value></data>
+  <data name="Demo.SuccessTitle" xml:space="preserve"><value>You managed your first order</value></data>
+  <data name="Demo.SuccessBody" xml:space="preserve"><value>You have completed the training. Real delivered orders stay on the Live Screen for {0} minutes and are then removed from this operational screen only. You can find your order history on the Orders page.</value></data>
+  <data name="Demo.Sushi.Roll" xml:space="preserve"><value>Salmon roll</value></data>
+  <data name="Demo.Sushi.Edamame" xml:space="preserve"><value>Edamame</value></data>
+  <data name="Demo.Sushi.Note" xml:space="preserve"><value>Light on wasabi.</value></data>
+  <data name="Demo.Burger.Burger" xml:space="preserve"><value>Cheeseburger</value></data>
+  <data name="Demo.Burger.Fries" xml:space="preserve"><value>Fries</value></data>
+  <data name="Demo.Burger.Drink" xml:space="preserve"><value>Cola</value></data>
+  <data name="Demo.Burger.Note" xml:space="preserve"><value>No onion.</value></data>
+  <data name="Demo.Cafe.Coffee" xml:space="preserve"><value>Latte</value></data>
+  <data name="Demo.Cafe.Dessert" xml:space="preserve"><value>Cheesecake</value></data>
+  <data name="Demo.Cafe.Note" xml:space="preserve"><value>With milk.</value></data>
+  <data name="Demo.Pizza.Pizza" xml:space="preserve"><value>Mixed pizza</value></data>
+  <data name="Demo.Pizza.Drink" xml:space="preserve"><value>Ayran</value></data>
+  <data name="Demo.Pizza.Note" xml:space="preserve"><value>Thin crust.</value></data>
+  <data name="Demo.Doner.Wrap" xml:space="preserve"><value>Doner wrap</value></data>
+  <data name="Demo.Doner.Drink" xml:space="preserve"><value>Ayran</value></data>
+  <data name="Demo.Doner.Note" xml:space="preserve"><value>Not spicy.</value></data>
+  <data name="Demo.Kebab.Kebab" xml:space="preserve"><value>Adana kebab</value></data>
+  <data name="Demo.Kebab.Rice" xml:space="preserve"><value>Rice</value></data>
+  <data name="Demo.Kebab.Note" xml:space="preserve"><value>Mild spice.</value></data>
+  <data name="Demo.Dessert.Baklava" xml:space="preserve"><value>Baklava</value></data>
+  <data name="Demo.Dessert.Kunefe" xml:space="preserve"><value>Kunefe</value></data>
+  <data name="Demo.Dessert.Note" xml:space="preserve"><value>Light on syrup.</value></data>
+  <data name="Demo.Lokanta.Kofte" xml:space="preserve"><value>Grilled meatballs</value></data>
+  <data name="Demo.Lokanta.Rice" xml:space="preserve"><value>Rice</value></data>
+  <data name="Demo.Lokanta.Note" xml:space="preserve"><value>With rice.</value></data>
+  <data name="Tour.RealOrderPaused" xml:space="preserve"><value>A real order has arrived. We have paused training for now.</value></data>
+  <data name="Tour.ViewRealOrder" xml:space="preserve"><value>Show real order</value></data>
+  <data name="Tour.ContinueTraining" xml:space="preserve"><value>Continue training</value></data>
+  <data name="Demo.PickupWaitTitle" xml:space="preserve"><value>Waiting for the courier</value></data>
+  <data name="Demo.PickupWaitBody" xml:space="preserve"><value>Your order is ready. When the platform courier collects it, Wasla updates the status to On the way automatically, and the training moves to the next step on its own.</value></data>
+  <data name="Demo.DeliveryWaitTitle" xml:space="preserve"><value>Courier delivery in progress</value></data>
+  <data name="Demo.DeliveryWaitBody" xml:space="preserve"><value>The delivery status comes automatically from the platform courier. When the delivery is completed, Wasla updates the order and moves the training to the last step.</value></data>
+  <data name="Demo.ContinueLive" xml:space="preserve"><value>Continue to Live Screen</value></data>
+  <data name="Demo.SkipTraining" xml:space="preserve"><value>Skip training</value></data>
+  <data name="Demo.SkipConfirmTitle" xml:space="preserve"><value>Skip training?</value></data>
+  <data name="Demo.SkipConfirmBody" xml:space="preserve"><value>You can restart this training later with “{0}” on the Live Screen.</value></data>
+  <data name="Demo.SkipConfirmAction" xml:space="preserve"><value>Skip and continue to Live Screen</value></data>
+  <data name="Demo.SkipConfirmCancel" xml:space="preserve"><value>Continue training</value></data>
+  <data name="Demo.StartFailed" xml:space="preserve"><value>Could not start the demo order. Please try again.</value></data>
+  <data name="Demo.SelectTitle" xml:space="preserve"><value>Select the demo order</value></data>
+  <data name="Demo.SelectBody" xml:space="preserve"><value>Open the order marked DEMO to continue training.</value></data>
+  <data name="Tour.TrainingPaused" xml:space="preserve"><value>Training is paused. Continue when you are ready.</value></data>
+  <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>Let's get Wasla ready to use</value></data>
+  <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>Set up your platform connections and printer, then learn the basic order flow with a practice order. You can finish any step that isn't ready yet later.</value></data>
+  <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>This guide covers:</value></data>
+  <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>Printer setup (Wasla Print Bridge)</value></data>
+  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Order training with a practice order</value></data>
+  <data name="GuidedSetup.Start" xml:space="preserve"><value>Start guided setup</value></data>
+  <data name="GuidedSetup.Skip" xml:space="preserve"><value>Skip guided setup</value></data>
+  <data name="Orders.Automation.PendingSetup" xml:space="preserve"><value>Active once setup is complete</value></data>
+  <data name="Orders.Automation.PendingSetupDescription" xml:space="preserve"><value>Turns on automatically when guided setup is completed or skipped.</value></data>
+  <data name="Orders.DemoCountdown.PickUp" xml:space="preserve"><value>The courier will pick up the order in {0} seconds.</value></data>
+  <data name="Orders.DemoCountdown.Deliver" xml:space="preserve"><value>Delivery will be completed in {0} seconds.</value></data>
+  <data name="Orders.DemoCountdown.Leave" xml:space="preserve"><value>The practice order will leave the Live Screen in {0} seconds.</value></data>
+  <data name="Orders.DemoCountdown.Waiting" xml:space="preserve"><value>Waiting for the platform's update…</value></data>
+  <data name="Orders.DemoCountdown.Seconds" xml:space="preserve"><value>{0} s</value></data>
+  <data name="Orders.DemoCountdown.Label" xml:space="preserve"><value>Time left until the automatic step</value></data>
+  <data name="Orders.DemoCountdown.Hint" xml:space="preserve"><value>This step happens on its own; you don't need to do anything.</value></data>
+  <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>If you skip guided setup, it won't be shown again in the app. You can find how-to guides in Help and Guides.</value></data>
+  <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>Your guided setup isn't finished yet.</value></data>
+  <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>Where you left off: {0}</value></data>
+  <data name="GuidedSetup.Continue" xml:space="preserve"><value>Continue guided setup</value></data>
+  <data name="GuidedSetup.End" xml:space="preserve"><value>End guided setup</value></data>
+  <data name="GuidedSetup.EndDialog.Title" xml:space="preserve"><value>End guided setup?</value></data>
+  <data name="GuidedSetup.EndDialog.Body" xml:space="preserve"><value>Your saved progress will be discarded and guided setup won't be shown again in the app. Settings you've already made are kept. You can find how-to guides in Help and Guides.</value></data>
+  <data name="GuidedSetup.EndDialog.Confirm" xml:space="preserve"><value>Yes, end it</value></data>
+  <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>Keep going</value></data>
+  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Next: order training</value></data>
+  <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>Your guided setup progress is saved. In the next section you'll practise approving an order, starting preparation and marking it ready with a practice order.</value></data>
+  <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>Guided setup</value></data>
+  <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>Section {0} of {1}</value></data>
+  <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="GuidedSetup.Panel.Next" xml:space="preserve"><value>Next: {0}</value></data>
+  <data name="GuidedSetup.Platform.Title" xml:space="preserve"><value>Connect your ordering platforms</value></data>
+  <data name="GuidedSetup.Platform.Body" xml:space="preserve"><value>Wasla brings your Trendyol GO and Yemeksepeti orders onto one screen. Real orders only reach Wasla once at least one platform connection is active.</value></data>
+  <data name="GuidedSetup.Platform.Where" xml:space="preserve"><value>Add a connection with "{0}" and enter your store ID and the API details from the platform. You can edit, activate or turn off existing connections in the table below.</value></data>
+  <data name="GuidedSetup.Platform.Check" xml:space="preserve"><value>You'll know a connection works when its last successful sync time updates as new orders arrive.</value></data>
+  <data name="GuidedSetup.Platform.Later" xml:space="preserve"><value>If your store and API details aren't ready yet, you can finish this step later.</value></data>
+  <data name="GuidedSetup.Platform.Ready" xml:space="preserve"><value>At least one platform connection is active.</value></data>
+  <data name="GuidedSetup.Platform.NotReady" xml:space="preserve"><value>No platform connection is active yet.</value></data>
+  <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>Set up later</value></data>
+  <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>Connect your receipt printer</value></data>
+  <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge is a Windows app for the computer your printer is connected to. It prints the order receipts Wasla creates on the printer you choose.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Download the Windows application package below, extract it and run Print Bridge once; then connect with "{0}" or manually.</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Opening Print Bridge from this page connects it to this account automatically and securely. If it doesn't open, connect manually: create a device token here and paste it, with the Wasla Web Panel URL, into Print Bridge's Settings.</value></data>
+  <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>Then choose your printer in the Print Bridge settings and use "Print test receipt" to print a test receipt.</value></data>
+  <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>If your printer or computer isn't ready yet, you can finish this step later.</value></data>
+  <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>A Print Bridge device is connected.</value></data>
+  <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>No Print Bridge device is connected yet.</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>I'll set it up later</value></data>
+  <data name="GuidedSetup.PrintBridge.MeetDevice" xml:space="preserve"><value>Get to know your device</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Title" xml:space="preserve"><value>Print Bridge connected</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Body" xml:space="preserve"><value>Get to know your device to continue setup.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Title" xml:space="preserve"><value>Get to know your Print Bridge device</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.Device" xml:space="preserve"><value>Print Bridge is connected. This is where you'll manage this device later. Take a look at what each part means; you don't need to change anything now.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.List" xml:space="preserve"><value>Print Bridge is connected. This list shows each Print Bridge installation; open a device's details to manage it. Take a look at what each part means; you don't need to change anything now.</value></data>
+  <data name="GuidedSetup.Closed" xml:space="preserve"><value>Guided setup is closed. You can find how-to guides in Help and Guides.</value></data>
+  <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>The guided setup action couldn't be completed. Please try again.</value></data>
+  <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>Guided setup isn't available for your account's permissions.</value></data>
+  <data name="Help.Title" xml:space="preserve"><value>Help and Guides</value></data>
+  <data name="Help.Subtitle" xml:space="preserve"><value>Step-by-step guides for setting up Wasla and handling daily orders.</value></data>
+  <data name="Help.Contents" xml:space="preserve"><value>On this page</value></data>
+  <data name="Help.Group.Platforms" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="Help.Group.Printing" xml:space="preserve"><value>Printing</value></data>
+  <data name="Help.Group.Orders" xml:space="preserve"><value>Orders and the Live Screen</value></data>
+  <data name="Help.Group.Support" xml:space="preserve"><value>Troubleshooting and support</value></data>
+  <data name="Help.Trendyol.Title" xml:space="preserve"><value>Connecting Trendyol GO</value></data>
+  <data name="Help.Trendyol.Intro" xml:space="preserve"><value>Before you start, get your store ID and API details (API key and secret) from your Trendyol GO seller panel.</value></data>
+  <data name="Help.Trendyol.Step1" xml:space="preserve"><value>On the Platform Connections page, select "{0}" and choose Trendyol GO as the platform.</value></data>
+  <data name="Help.Trendyol.Step2" xml:space="preserve"><value>Enter the Store Id, API key and API secret. If Supplier Id is left empty, the Store Id is used.</value></data>
+  <data name="Help.Trendyol.Step3" xml:space="preserve"><value>Enter the executor email Trendyol GO uses for requests, keep the connection active and save.</value></data>
+  <data name="Help.Yemeksepeti.Title" xml:space="preserve"><value>Connecting Yemeksepeti</value></data>
+  <data name="Help.Yemeksepeti.Intro" xml:space="preserve"><value>Before you start, get your Yemeksepeti partner integration details: chain ID, vendor ID, client ID and client secret.</value></data>
+  <data name="Help.Yemeksepeti.Step1" xml:space="preserve"><value>On the Platform Connections page, select "{0}" and choose Yemeksepeti as the platform.</value></data>
+  <data name="Help.Yemeksepeti.Step2" xml:space="preserve"><value>Enter the chain ID in the Supplier Id field and the vendor ID in the Store Id field.</value></data>
+  <data name="Help.Yemeksepeti.Step3" xml:space="preserve"><value>Enter the client ID in the API key field and the client secret in the API secret field, then save.</value></data>
+  <data name="Help.PlatformManage.Title" xml:space="preserve"><value>Testing and managing connections</value></data>
+  <data name="Help.PlatformManage.Body" xml:space="preserve"><value>The Platform Connections table shows each connection's status. Use the switch to turn a connection on or off, and edit it to update store and API details. Each platform can have only one connection.</value></data>
+  <data name="Help.PlatformManage.Check" xml:space="preserve"><value>To test a connection, check the "{0}" column: it updates as new orders sync. If you see an error count or a temporary pause warning, check your API details.</value></data>
+  <data name="Help.PrintBridge.Title" xml:space="preserve"><value>Installing and connecting Print Bridge</value></data>
+  <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge is the Windows app that sends receipts to your printer. Install it on the computer the printer is connected to.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>On the Windows computer your receipt printer is connected to, open the Print Bridge setup page and download the Windows application package (ZIP).</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Extract the ZIP file to a folder.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Run Wasla.PrintBridge.exe once. If Windows asks for the .NET 8 Desktop Runtime, install it.</value></data>
+  <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>On the setup page, choose how to connect: "{0}" opens the app and connects it automatically (recommended), or connect manually by pasting a device token and the Wasla Web Panel URL into Print Bridge's Settings. Never share the device token.</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>In Print Bridge, open Settings, choose your receipt printer, click "Save printer", then "Print test receipt".</value></data>
+  <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Once Wasla verifies the connection, get to know your device: its page shows the connection, and it's where you regenerate its token or remove it. See "{0}" below.</value></data>
+  <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Managing Print Bridge devices</value></data>
+  <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Each Print Bridge installation appears as a device under Print Bridge Devices. Open a device's details to rename it, check its connection, regenerate its token or remove it.</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Title" xml:space="preserve"><value>Device name</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Body" xml:space="preserve"><value>The name Wasla shows for one Print Bridge installation, next to the computer's name. Each computer that runs Print Bridge is a separate device.</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Title" xml:space="preserve"><value>Connection and last seen</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>"Connected" means Wasla heard from this installation within the last minute. Last seen shows when it last checked in; an older time usually means the app or the computer is off.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Device token</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>The device token lets this installation sign in to Wasla and receive print jobs. Wasla doesn't keep the token itself, so it can never be shown again after it was created.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Regenerate token</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Creates a new device token for this device.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>The old token stops working immediately, so this installation can't print until it has the new one.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Enter the new token in the Print Bridge app's Settings, then save and test the connection.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>The new token is shown only once.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Remove device</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Ends this device's access to Wasla; its token stops working.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Jobs" xml:space="preserve"><value>That installation no longer receives print jobs.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.When" xml:space="preserve"><value>Use it only for an installation that is retired, lost or replaced.</value></data>
+  <data name="Help.Printer.Title" xml:space="preserve"><value>Choosing a printer</value></data>
+  <data name="Help.Printer.Body" xml:space="preserve"><value>In the Print Bridge app, open Settings, choose your receipt printer from the "Printer name" list and save.</value></data>
+  <data name="Help.Printer.Template" xml:space="preserve"><value>The receipt's content and layout are set on the "{0}" page in Wasla.</value></data>
+  <data name="Help.TestPrint.Title" xml:space="preserve"><value>Sending a test print</value></data>
+  <data name="Help.TestPrint.Body" xml:space="preserve"><value>After choosing the printer, select "Print test receipt" in the Print Bridge app. A test receipt should come out of the printer.</value></data>
+  <data name="Help.TestPrint.Check" xml:space="preserve"><value>If nothing prints, check that the printer is on, has paper and is the right printer in Windows. The Print Bridge devices page shows the device's connection status and recent print jobs.</value></data>
+  <data name="Help.LiveScreen.Title" xml:space="preserve"><value>Live Screen overview</value></data>
+  <data name="Help.LiveScreen.Body" xml:space="preserve"><value>The Live Screen is for following incoming orders in the kitchen and at the counter in real time. View orders as {0}, {1} or {2}, and get sound and browser notifications for new orders.</value></data>
+  <data name="Help.Approve.Title" xml:space="preserve"><value>Approving an order</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>When a new order arrives, check it and select "{0}"; the approval is sent to the platform. If you can't fulfil the order, use "{1}".</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>Starting preparation</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>On an approved order, select "{0}" to show your team that preparation has started.</value></data>
+  <data name="Help.Ready.Title" xml:space="preserve"><value>Marking an order ready</value></data>
+  <data name="Help.Ready.Body" xml:space="preserve"><value>When the order is ready, select "{0}". This is the restaurant's last action on the order; the platform is notified.</value></data>
+  <data name="Help.CourierPickup.Title" xml:space="preserve"><value>Courier pickup</value></data>
+  <data name="Help.CourierPickup.Body" xml:space="preserve"><value>The platform's courier collects the order. When the courier picks it up, the platform reports it and Wasla moves the order to "{0}" automatically. You don't need to do anything in Wasla.</value></data>
+  <data name="Help.Delivered.Title" xml:space="preserve"><value>Delivery completion</value></data>
+  <data name="Help.Delivered.Body" xml:space="preserve"><value>Delivery is reported by the platform too. When the courier delivers the order, Wasla moves it to "{0}" automatically.</value></data>
+  <data name="Help.DeliveredWindow.Title" xml:space="preserve"><value>How long delivered orders stay on the Live Screen</value></data>
+  <data name="Help.DeliveredWindow.Body" xml:space="preserve"><value>Delivered orders stay on the Live Screen for {0} minutes and are then removed from that screen only. The orders are not deleted.</value></data>
+  <data name="Help.OrderHistory.Title" xml:space="preserve"><value>Finding completed orders</value></data>
+  <data name="Help.OrderHistory.Body" xml:space="preserve"><value>All delivered and cancelled orders are on the "{0}" page. Filter by platform, status and date, or search by order code.</value></data>
+  <data name="Help.Troubleshooting.Title" xml:space="preserve"><value>Troubleshooting and support</value></data>
+  <data name="Help.Troubleshooting.NoOrders" xml:space="preserve"><value>Orders aren't arriving: check on Platform Connections that the connection is active and look at its last successful sync time.</value></data>
+  <data name="Help.Troubleshooting.NoPrint" xml:space="preserve"><value>Receipts aren't printing: check that the Print Bridge device shows as connected and the right printer is selected in the app, then look at recent print jobs on the Print Bridge page.</value></data>
+  <data name="Help.Troubleshooting.NoSound" xml:space="preserve"><value>The new-order sound doesn't play: check that sound is on for the Live Screen and that the browser allows audio.</value></data>
+  <data name="Help.Troubleshooting.MissingPage" xml:space="preserve"><value>If you can't see a page or button, your role may not have permission for it; ask the restaurant owner for help.</value></data>
+  <data name="Help.Troubleshooting.Support" xml:space="preserve"><value>If the problem continues, contact support. If you saw an error page, sharing its reference code helps find the problem faster.</value></data>
+  <data name="Help.NeedsPermission" xml:space="preserve"><value>You don't have permission to open this page; ask the restaurant owner if you need it.</value></data>
+  <data name="Help.Action.OpenPlatformConnections" xml:space="preserve"><value>Open platform connections</value></data>
+  <data name="Help.Action.OpenPrintBridgeSetup" xml:space="preserve"><value>Open Print Bridge setup</value></data>
+  <data name="Help.Action.OpenPrintBridgeDevices" xml:space="preserve"><value>Open Print Bridge devices</value></data>
+  <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>Open receipt and printer settings</value></data>
+  <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>Open the Live Screen</value></data>
+  <data name="Help.Action.OpenOrders" xml:space="preserve"><value>Open orders</value></data>
+  <data name="GuidedSetup.Next.Open" xml:space="preserve"><value>Open order training</value></data>
+  <data name="GuidedSetup.Training.Progress" xml:space="preserve"><value>Step {0} of {1}</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>Order training on the Live Screen</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>New orders appear here as cards and move forward as you work on them. Start a practice order to try the flow. It is marked {6} and only you can see it: it is not sent to Trendyol GO or Yemeksepeti, not printed, and not counted in your orders or reports.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>A practice order has arrived</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>The practice order marked {6} is waiting as a new order. Accept it with the {1} button on its card.</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>Start preparing</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>The order is accepted. Press {2} when the kitchen starts on it.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>Mark the order ready</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>When the order is packed, press {3}. This is the restaurant's last step.</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>The courier collects the order</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>You don't need to press anything else. The platform's courier collects the order, and its status changes to {4} automatically.</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>The order is on the way</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Body" xml:space="preserve"><value>The courier has the order. When it reaches the customer, the platform marks it {5} automatically.</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Title" xml:space="preserve"><value>The order was delivered</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Body" xml:space="preserve"><value>Completed real orders stay on the Live Screen for {0} minutes and then leave this screen. They are not deleted: you can still find them in Orders and order history. This practice order is not saved there.</value></data>
+  <data name="GuidedSetup.Training.StartPractice" xml:space="preserve"><value>Start a practice order</value></data>
+  <data name="GuidedSetup.Training.Complete" xml:space="preserve"><value>Complete training</value></data>
+  <data name="GuidedSetup.Training.ShowPractice" xml:space="preserve"><value>Show the practice order</value></data>
+  <data name="GuidedSetup.Training.Hide" xml:space="preserve"><value>Hide guide</value></data>
+  <data name="GuidedSetup.Training.Reopen" xml:space="preserve"><value>Show order training</value></data>
+  <data name="GuidedSetup.Training.Waiting" xml:space="preserve"><value>Still waiting? Courier updates come from Wasla's background service. If it is paused, the practice order stays safely at this step until the service runs again.</value></data>
+  <data name="GuidedSetup.Training.CourierNote" xml:space="preserve"><value>Once the order is ready, the restaurant doesn't update it any more: the platform's courier reports collection and delivery automatically.</value></data>
+  <data name="GuidedSetup.Training.HelpNote" xml:space="preserve"><value>How-to guides are always available in</value></data>
+  <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Order training is complete, and guided setup is finished. How-to guides stay available in Help and Guides.</value></data>
+  <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>The practice order couldn't be started. Please try again.</value></data>
+  <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>You can complete the training once the practice order has been delivered.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>A real order arrived while you were training</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>{0} real orders arrived while you were training</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>You can continue training. You can manage the order from your platform panel. Active orders will be shown on the Live Screen once training is complete.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>You can continue training. You can manage the orders from your platform panel. Active orders will be shown on the Live Screen once training is complete.</value></data>
+  <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Continue to Print Bridge</value></data>
+  <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Continue to order training</value></data>
+  <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>This step isn't finished yet. You can finish the setup or choose to set it up later.</value></data>
+  <data name="DevelopmentTools.Title" xml:space="preserve"><value>Development tools</value></data>
+  <data name="DevelopmentTools.Reset.Title" xml:space="preserve"><value>Return the test tenant to first use</value></data>
+  <data name="DevelopmentTools.Reset.Intro" xml:space="preserve"><value>Only visible in local Development. Returns this tenant to the state it had right after provisioning, so you can test guided setup again from the first Start/Skip choice.</value></data>
+  <data name="DevelopmentTools.Reset.Warning" xml:space="preserve"><value>This can't be undone. This tenant's orders, provider connections, Print Bridge devices and test configuration will be removed. Print jobs, synchronization state, notification settings, guided-setup progress and practice orders are reset too.</value></data>
+  <data name="DevelopmentTools.Reset.Keeps" xml:space="preserve"><value>Kept: the tenant, its domain and slug, all users, passwords and roles, branches, and subscription and payment records. Nothing is revoked at the platforms; only Wasla's local configuration is removed.</value></data>
+  <data name="DevelopmentTools.Reset.BrowserPermission" xml:space="preserve"><value>The browser's notification permission can't be reset by the app. When testing that scenario, reset it manually in Chrome's site settings.</value></data>
+  <data name="DevelopmentTools.Reset.Button" xml:space="preserve"><value>Reset test tenant</value></data>
+  <data name="DevelopmentTools.Reset.DialogTitle" xml:space="preserve"><value>Reset the test tenant?</value></data>
+  <data name="DevelopmentTools.Reset.ConfirmLabel" xml:space="preserve"><value>To confirm, type this tenant's slug exactly:</value></data>
+  <data name="DevelopmentTools.Reset.Confirm" xml:space="preserve"><value>Yes, reset it</value></data>
+  <data name="DevelopmentTools.Reset.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="DevelopmentTools.Reset.SlugMismatch" xml:space="preserve"><value>The slug you typed doesn't match this tenant. Nothing was changed.</value></data>
+  <data name="DevelopmentTools.Reset.Failed" xml:space="preserve"><value>The reset couldn't be completed and was rolled back. Nothing was changed.</value></data>
+  <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>The test tenant is back at first use. If you need to, reset the browser's notification permission manually in Chrome's site settings.</value></data>
+  <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Before using the reset, stop Wasla.Worker, close the Print Bridge application and make sure no Print Bridge setup is currently in progress. Otherwise a sync cycle or setup that is still running could add data again after the reset, and the mock provider keeps order numbers in memory. Start the Worker again once the reset is done.</value></data>
+  <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>The reset only partly finished: the Print Bridge devices were removed, but the rest was rolled back. Run the reset again to complete it.</value></data>
+  <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>Automation</value></data>
+  <data name="Admin.Ops.OverviewTitle" xml:space="preserve"><value>Operations overview</value></data>
+  <data name="Admin.Ops.OverviewSubtitle" xml:space="preserve"><value>Restaurant, signup and Print Bridge status from the central registry.</value></data>
+  <data name="Admin.Ops.OverviewCentralOnlyNote" xml:space="preserve"><value>This page reads only the central database. A restaurant&apos;s database, synchronization and order status are checked only on that restaurant&apos;s operations page.</value></data>
+  <data name="Admin.Ops.ReadAt" xml:space="preserve"><value>Read at</value></data>
+  <data name="Admin.Ops.Section.Tenants" xml:space="preserve"><value>Restaurants</value></data>
+  <data name="Admin.Ops.Section.Signup" xml:space="preserve"><value>Signup and provisioning</value></data>
+  <data name="Admin.Ops.Section.PrintBridgeFleet" xml:space="preserve"><value>Print Bridge devices</value></data>
+  <data name="Admin.Ops.Metric.MigrationFailed" xml:space="preserve"><value>Last migration failed</value></data>
+  <data name="Admin.Ops.Metric.MigrationNotRecorded" xml:space="preserve"><value>No migration record</value></data>
+  <data name="Admin.Ops.Metric.NeedsAttention" xml:space="preserve"><value>Needs attention</value></data>
+  <data name="Admin.Ops.Metric.OldestWaiting" xml:space="preserve"><value>Oldest: {0}</value></data>
+  <data name="Admin.Ops.Metric.ExpiredOrCancelled" xml:space="preserve"><value>Expired or cancelled</value></data>
+  <data name="Admin.Ops.Signup.ProvisioningFailuresNotTracked" xml:space="preserve"><value>Failed provisioning attempts are not recorded as a separate state. A paid registration that has not been provisioned stays in the payment-received count.</value></data>
+  <data name="Admin.Ops.PrintBridge.Online" xml:space="preserve"><value>Online</value></data>
+  <data name="Admin.Ops.PrintBridge.Stale" xml:space="preserve"><value>Stale</value></data>
+  <data name="Admin.Ops.PrintBridge.Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="Admin.Ops.PrintBridge.NeverConnected" xml:space="preserve"><value>Never connected</value></data>
+  <data name="Admin.Ops.PrintBridge.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Admin.Ops.PrintBridge.ThresholdNote" xml:space="preserve"><value>Online: last heartbeat at most 60 seconds ago. Stale: at most 5 minutes ago. Offline: older.</value></data>
+  <data name="Admin.Ops.RecentTenants" xml:space="preserve"><value>Recently added restaurants</value></data>
+  <data name="Admin.Ops.LoadError.Title" xml:space="preserve"><value>Central data could not be read</value></data>
+  <data name="Admin.Ops.LoadError.Body" xml:space="preserve"><value>The central database cannot be reached right now. Reload the page in a few minutes; if it continues, check the server logs.</value></data>
+  <data name="Admin.Ops.List.Subtitle" xml:space="preserve"><value>Restaurants in the central registry. Database health is read only on a restaurant&apos;s operations page.</value></data>
+  <data name="Admin.Ops.List.FiltersLabel" xml:space="preserve"><value>Search and filter restaurants</value></data>
+  <data name="Admin.Ops.List.SearchPlaceholder" xml:space="preserve"><value>Name, slug or domain</value></data>
+  <data name="Admin.Ops.List.MigrationRecord" xml:space="preserve"><value>Migration record</value></data>
+  <data name="Admin.Ops.List.AnyMigrationRecord" xml:space="preserve"><value>Any record</value></data>
+  <data name="Admin.Ops.List.AnyPlan" xml:space="preserve"><value>All plans</value></data>
+  <data name="Admin.Ops.List.NoPlan" xml:space="preserve"><value>No membership</value></data>
+  <data name="Admin.Ops.List.PageSize" xml:space="preserve"><value>Per page</value></data>
+  <data name="Admin.Ops.List.ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Admin.Ops.List.NoMatches" xml:space="preserve"><value>No restaurants match these filters.</value></data>
+  <data name="Admin.Ops.List.Showing" xml:space="preserve"><value>Showing {0}–{1} of {2} restaurants</value></data>
+  <data name="Admin.Ops.List.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.List.NoDevices" xml:space="preserve"><value>No devices</value></data>
+  <data name="Admin.Ops.List.DevicesOnline" xml:space="preserve"><value>{0} of {1} online</value></data>
+  <data name="Admin.Ops.List.Operations" xml:space="preserve"><value>Operations</value></data>
+  <data name="Admin.Ops.List.Pagination" xml:space="preserve"><value>Restaurant list pages</value></data>
+  <data name="Admin.Ops.List.PreviousPage" xml:space="preserve"><value>Previous page</value></data>
+  <data name="Admin.Ops.List.NextPage" xml:space="preserve"><value>Next page</value></data>
+  <data name="Admin.Ops.List.PageNumber" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="Admin.Ops.MigrationRecord.Succeeded" xml:space="preserve"><value>Succeeded</value></data>
+  <data name="Admin.Ops.MigrationRecord.Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Admin.Ops.MigrationRecord.NotRecorded" xml:space="preserve"><value>Not recorded</value></data>
+  <data name="Admin.Ops.State.Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Admin.Ops.Database.Reachable" xml:space="preserve"><value>Reachable</value></data>
+  <data name="Admin.Ops.Database.NotConfigured" xml:space="preserve"><value>Not configured</value></data>
+  <data name="Admin.Ops.Database.Unreachable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Admin.Ops.Database.TimedOut" xml:space="preserve"><value>Timed out</value></data>
+  <data name="Admin.Ops.Database.ConfigurationUnreadable" xml:space="preserve"><value>Connection details unreadable</value></data>
+  <data name="Admin.Ops.Database.Connection" xml:space="preserve"><value>Database</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelTitle" xml:space="preserve"><value>The restaurant database could not be read</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelBody" xml:space="preserve"><value>Database, migration, mode, connection and order details cannot be shown. Identity, provisioning and Print Bridge details come from the central registry and are shown on this page. Details are in the server logs.</value></data>
+  <data name="Admin.Ops.Migrations.Title" xml:space="preserve"><value>Migrations</value></data>
+  <data name="Admin.Ops.Migrations.Current" xml:space="preserve"><value>Up to date</value></data>
+  <data name="Admin.Ops.Migrations.Pending" xml:space="preserve"><value>Migrations pending</value></data>
+  <data name="Admin.Ops.Migrations.DatabaseAhead" xml:space="preserve"><value>Database newer than app</value></data>
+  <data name="Admin.Ops.Migrations.PendingCount" xml:space="preserve"><value>{0} pending</value></data>
+  <data name="Admin.Ops.Migrations.Applied" xml:space="preserve"><value>Latest applied</value></data>
+  <data name="Admin.Ops.Migrations.Expected" xml:space="preserve"><value>Expected by this app</value></data>
+  <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>This page only reads; migrations are applied with the CLI as part of the release procedure.</value></data>
+  <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>Operational mode</value></data>
+  <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>Live</value></data>
+  <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>Setup</value></data>
+  <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>Order sync</value></data>
+  <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>Auto-approve</value></data>
+  <data name="Admin.Ops.Automation.AutoReceipt" xml:space="preserve"><value>Automatic receipts</value></data>
+  <data name="Admin.Ops.Automation.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Ops.Automation.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Admin.Ops.Automation.PendingSetup" xml:space="preserve"><value>Active once setup completes</value></data>
+  <data name="Admin.Ops.GuidedSetup.Title" xml:space="preserve"><value>Guided setup</value></data>
+  <data name="Admin.Ops.GuidedSetup.Counts" xml:space="preserve"><value>In progress: {0} · Completed: {1} · Skipped: {2}</value></data>
+  <data name="Admin.Ops.Users.Title" xml:space="preserve"><value>Users</value></data>
+  <data name="Admin.Ops.Users.Counts" xml:space="preserve"><value>Active users: {0} · Active owners: {1}</value></data>
+  <data name="Admin.Ops.SectionUnavailable" xml:space="preserve"><value>This section could not be read.</value></data>
+  <data name="Admin.Ops.Section.Guidance" xml:space="preserve"><value>Next steps</value></data>
+  <data name="Admin.Ops.Section.Identity" xml:space="preserve"><value>Restaurant</value></data>
+  <data name="Admin.Ops.Section.Provisioning" xml:space="preserve"><value>Provisioning</value></data>
+  <data name="Admin.Ops.Section.Database" xml:space="preserve"><value>Database and migrations</value></data>
+  <data name="Admin.Ops.Section.OperationalMode" xml:space="preserve"><value>Operational mode and automation</value></data>
+  <data name="Admin.Ops.Section.Providers" xml:space="preserve"><value>Platform connections</value></data>
+  <data name="Admin.Ops.Section.Orders" xml:space="preserve"><value>Orders</value></data>
+  <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>Account state</value></data>
+  <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>Status summary</value></data>
+  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>opens in a new tab</value></data>
+  <data name="Admin.Ops.Membership" xml:space="preserve"><value>Membership</value></data>
+  <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>Trial</value></data>
+  <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Ops.Membership.PendingPayment" xml:space="preserve"><value>Payment pending</value></data>
+  <data name="Admin.Ops.Membership.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.Ops.Membership.None" xml:space="preserve"><value>No membership record</value></data>
+  <data name="Admin.Ops.Membership.TrialEnds" xml:space="preserve"><value>Trial ends</value></data>
+  <data name="Admin.Ops.Membership.PeriodEnds" xml:space="preserve"><value>Period ends</value></data>
+  <data name="Admin.Ops.Provisioning.Registration" xml:space="preserve"><value>Signup registration</value></data>
+  <data name="Admin.Ops.Provisioning.OpenRegistration" xml:space="preserve"><value>Open registration</value></data>
+  <data name="Admin.Ops.Provisioning.NoRegistration" xml:space="preserve"><value>No linked registration (for example, created with the CLI)</value></data>
+  <data name="Admin.Ops.Provisioning.LastMigrationRecord" xml:space="preserve"><value>Last migration record</value></data>
+  <data name="Admin.Ops.Provisioning.Note" xml:space="preserve"><value>Failure text is not shown; details are in the CLI output and server logs.</value></data>
+  <data name="Admin.Ops.ProviderMode.Process" xml:space="preserve"><value>Provider mode</value></data>
+  <data name="Admin.Ops.ProviderMode.Mock" xml:space="preserve"><value>Mock</value></data>
+  <data name="Admin.Ops.ProviderMode.Real" xml:space="preserve"><value>Real</value></data>
+  <data name="Admin.Ops.ProviderMode.NotRegistered" xml:space="preserve"><value>No client registered</value></data>
+  <data name="Admin.Ops.Providers.None" xml:space="preserve"><value>No platform connected.</value></data>
+  <data name="Admin.Ops.Providers.Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Admin.Ops.Providers.Health" xml:space="preserve"><value>Health</value></data>
+  <data name="Admin.Ops.Providers.LastSuccess" xml:space="preserve"><value>Last successful sync</value></data>
+  <data name="Admin.Ops.Providers.LastFailure" xml:space="preserve"><value>Last failed sync (7 days)</value></data>
+  <data name="Admin.Ops.Providers.Client" xml:space="preserve"><value>Client</value></data>
+  <data name="Admin.Ops.Providers.Store" xml:space="preserve"><value>Store</value></data>
+  <data name="Admin.Ops.Providers.ConsecutiveFailures" xml:space="preserve"><value>Consecutive failures: {0}</value></data>
+  <data name="Admin.Ops.Providers.PausedUntil" xml:space="preserve"><value>Paused until</value></data>
+  <data name="Admin.Ops.Providers.Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="Admin.Ops.Providers.DisabledLabel" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Admin.Ops.Providers.Note" xml:space="preserve"><value>Credentials and error text are not shown. The restaurant owner manages connections in their own panel.</value></data>
+  <data name="Admin.Ops.Connection.Healthy" xml:space="preserve"><value>Healthy</value></data>
+  <data name="Admin.Ops.Connection.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Admin.Ops.Connection.SyncOff" xml:space="preserve"><value>Sync off</value></data>
+  <data name="Admin.Ops.Connection.CircuitOpen" xml:space="preserve"><value>Paused after repeated failures</value></data>
+  <data name="Admin.Ops.Connection.Failing" xml:space="preserve"><value>Failing</value></data>
+  <data name="Admin.Ops.Connection.NeverSynced" xml:space="preserve"><value>Not synced yet</value></data>
+  <data name="Admin.Ops.Connection.Stale" xml:space="preserve"><value>Sync overdue</value></data>
+  <data name="Admin.Ops.Orders.Last24Hours" xml:space="preserve"><value>Last 24 hours</value></data>
+  <data name="Admin.Ops.Orders.Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="Admin.Ops.Orders.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Admin.Ops.Orders.Latest" xml:space="preserve"><value>Latest order</value></data>
+  <data name="Admin.Ops.PrintBridge.NoDevices" xml:space="preserve"><value>No Print Bridge device is registered.</value></data>
+  <data name="Admin.Ops.PrintBridge.LastSeen" xml:space="preserve"><value>Last seen</value></data>
+  <data name="Admin.Ops.PrintJobs.Counts" xml:space="preserve"><value>Queued print jobs: {0} · Failed in the last 24 hours: {1}</value></data>
+  <data name="Admin.Ops.PrintJobs.Unavailable" xml:space="preserve"><value>Print job counts could not be read.</value></data>
+  <data name="Admin.Ops.Guidance.ReadOnlyNote" xml:space="preserve"><value>These suggestions are based only on what was observed; this page does not repair or change anything.</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Critical" xml:space="preserve"><value>Critical</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Info" xml:space="preserve"><value>Info</value></data>
+  <data name="Admin.Ops.Guidance.Severity.AllClear" xml:space="preserve"><value>All clear</value></data>
+  <data name="Admin.Ops.Age.JustNow" xml:space="preserve"><value>just now</value></data>
+  <data name="Admin.Ops.Age.Minutes" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="Admin.Ops.Age.Hours" xml:space="preserve"><value>{0} h ago</value></data>
+  <data name="Admin.Ops.Age.Days" xml:space="preserve"><value>{0} d ago</value></data>
+  <data name="Admin.Ops.BackToTenants" xml:space="preserve"><value>Back to restaurants</value></data>
+  <data name="Admin.Ops.Guidance.TenantInactive" xml:space="preserve"><value>The restaurant is inactive: users cannot sign in and the Worker does not sync its orders. If this was not intended, confirm with the owner before activating it.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseNotConfigured" xml:space="preserve"><value>No connection details are stored for this restaurant&apos;s database. Provisioning probably did not finish; check the registration and the provisioning CLI output.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseUnreachable" xml:space="preserve"><value>The restaurant database could not be reached. Check that SQL Server is running and that the database exists, then run migration-status from the CLI.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>The restaurant database did not answer within a few seconds. Check that SQL Server is running and that this database exists and accepts the configured login, then reload this page.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>The stored connection details could not be decrypted. Check that this server uses the same ENCRYPTION_MASTER_KEY that provisioned the restaurant.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>The restaurant database could not be checked because of an unexpected error. See the server logs for this restaurant.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>The restaurant database is missing migrations this version needs. Apply them with the CLI (migrate-customer or migrate-all-customers) following the release procedure; features that use new columns may fail until then.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>The restaurant database has migrations this application version does not know. A newer version may have migrated it; check which version is deployed.</value></data>
+  <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>The last recorded migration for this restaurant failed. Run migration-status with the CLI and retry the migration for this restaurant.</value></data>
+  <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>Some sections could not be read. A pending migration is the usual cause; see the server logs.</value></data>
+  <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>The restaurant is still in Setup: orders are synchronized, but nothing is accepted or printed automatically until an owner completes or skips guided setup.</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>The restaurant has no active owner. Only an owner can manage settings, connections and devices; add an owner with the CLI (seed-customer-admin) if needed.</value></data>
+  <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>No delivery platform is connected, so no orders can arrive. The owner adds a connection under Platform connections.</value></data>
+  <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>Every platform connection is disabled, so no orders are fetched. Confirm with the owner whether this is intended.</value></data>
+  <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>Order sync is turned off in the restaurant&apos;s settings; the Worker skips it. Existing orders stay visible.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionCircuitOpen" xml:space="preserve"><value>A platform connection is paused after repeated failures. Check the platform&apos;s status and ask the owner to verify the connection&apos;s credentials.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionFailing" xml:space="preserve"><value>A platform connection&apos;s last sync attempts failed. If it continues, check the platform&apos;s status and the connection&apos;s credentials.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionStale" xml:space="preserve"><value>A platform connection has not synced successfully for more than 10 minutes. Check that the Worker is running.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionNeverSynced" xml:space="preserve"><value>A platform connection has never synced successfully. If it was added a while ago, check that the Worker is running.</value></data>
+  <data name="Admin.Ops.Guidance.NoRecentOrders" xml:space="preserve"><value>Connections are syncing, but no order has arrived in the last 7 days. Confirm with the owner that the store is open on the platforms.</value></data>
+  <data name="Admin.Ops.Guidance.NoPrintBridgeDevice" xml:space="preserve"><value>No Print Bridge device is registered; receipts can be printed only once a device is set up.</value></data>
+  <data name="Admin.Ops.Guidance.AutoReceiptWithoutDevice" xml:space="preserve"><value>Automatic receipts are active, but no Print Bridge device is registered. Receipts wait in the queue until the owner sets up a device.</value></data>
+  <data name="Admin.Ops.Guidance.PrintBridgeOffline" xml:space="preserve"><value>No active Print Bridge device is online. Ask the restaurant to check that the Print Bridge computer is on and connected.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsQueuedWithoutOnlineDevice" xml:space="preserve"><value>Print jobs are waiting while no device is online; a device picks them up when it reconnects.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>Some print jobs failed in the last 24 hours. The owner can check the printer on the Print Bridge computer.</value></data>
+  <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>The linked signup registration is not marked provisioned. Open it to review its state; do not change it by hand.</value></data>
+  <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Nothing needs attention right now.</value></data>
 </root>

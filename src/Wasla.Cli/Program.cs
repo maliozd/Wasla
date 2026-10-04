@@ -4,11 +4,31 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Cli;
 using Wasla.Infrastructure.DependencyInjection;
+using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Security;
+using Wasla.Infrastructure.Services;
+
+static bool IsCentralPasswordReset(string[] a)
+{
+    if (!string.Equals(a[0], "reset-password", StringComparison.OrdinalIgnoreCase))
+        return false;
+
+    for (var i = 1; i < a.Length; i++)
+    {
+        if (!string.Equals(a[i], "--scope", StringComparison.OrdinalIgnoreCase))
+            continue;
+
+        return i + 1 < a.Length
+            && string.Equals(a[i + 1], "central", StringComparison.OrdinalIgnoreCase);
+    }
+
+    return false;
+}
 
 static bool HasHelpFlag(string[] a) =>
     a.Any(x => string.Equals(x, "--help", StringComparison.OrdinalIgnoreCase) ||
@@ -51,7 +71,8 @@ if (string.Equals(args[0], "hash-password", StringComparison.OrdinalIgnoreCase))
 if (string.Equals(args[0], "add-central-admin", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(args[0], "reset-central-admin-password", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(args[0], "list-central-admins", StringComparison.OrdinalIgnoreCase) ||
-    string.Equals(args[0], "generate-print-bridge-token", StringComparison.OrdinalIgnoreCase))
+    string.Equals(args[0], "generate-print-bridge-token", StringComparison.OrdinalIgnoreCase) ||
+    IsCentralPasswordReset(args))
 {
     // These commands operate on CentralDb only and do not require ENCRYPTION_MASTER_KEY.
 }
@@ -73,6 +94,9 @@ builder.Services.AddDbContext<CentralDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CentralDb")));
 
 builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
+builder.Services.Configure<CustomerOnboardingOptions>(builder.Configuration.GetSection(CustomerOnboardingOptions.SectionName));
+builder.Services.AddScoped<ITenantDatabaseProvisioningOperations, SqlServerTenantDatabaseProvisioningOperations>();
+builder.Services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();
 builder.Services.AddWaslaEmail(builder.Configuration);
 
 var host = builder.Build();
@@ -118,6 +142,9 @@ var optAdminPassword = new Option<string>("--admin-password", "First admin passw
 var optAdminName = new Option<string>("--admin-name", () => "Admin", "Admin full name");
 var optSqlServer = new Option<string?>("--sql-server", "SQL Server instance; default from config CustomerDb:ServerInstance or '.'");
 var optSqlAuth = new Option<string>("--sql-auth", () => "trusted", "Trusted Windows auth, or 'sql:username:password'");
+var optBusinessPhone = new Option<string?>("--business-phone", "Restaurant business phone (required by the setup checklist)");
+var optCity = new Option<string?>("--city", "Restaurant city (the setup checklist needs a city or country)");
+var optCountry = new Option<string?>("--country", "Restaurant country (the setup checklist needs a city or country)");
 
 addCustomer.AddOption(optName);
 addCustomer.AddOption(optSlug);
@@ -127,6 +154,9 @@ addCustomer.AddOption(optAdminPassword);
 addCustomer.AddOption(optAdminName);
 addCustomer.AddOption(optSqlServer);
 addCustomer.AddOption(optSqlAuth);
+addCustomer.AddOption(optBusinessPhone);
+addCustomer.AddOption(optCity);
+addCustomer.AddOption(optCountry);
 
 addCustomer.SetHandler(async (InvocationContext context) =>
 {
@@ -140,8 +170,37 @@ addCustomer.SetHandler(async (InvocationContext context) =>
     var sqlServer = p.GetValueForOption(optSqlServer);
     var sqlAuth = p.GetValueForOption(optSqlAuth) ?? "trusted";
     var ct = context.GetCancellationToken();
+    var contact = new TenantContactUpdate(
+        p.GetValueForOption(optBusinessPhone),
+        p.GetValueForOption(optCity),
+        p.GetValueForOption(optCountry));
     context.ExitCode = await CliCommands.AddCustomerAsync(
-        host, name, slug, domain, adminEmail, adminPassword, adminName, sqlServer, sqlAuth, ct);
+        host, name, slug, domain, adminEmail, adminPassword, adminName, sqlServer, sqlAuth, contact, ct);
+});
+
+// --- update-customer-profile ---
+var updateCustomerProfile = new Command(
+    "update-customer-profile",
+    "Set the restaurant business phone, city or country used by the setup checklist (idempotent).");
+var optProfileTenant = new Option<string>("--tenant", "Customer slug or id in CentralDb") { IsRequired = true };
+var optProfilePhone = new Option<string?>("--business-phone", "Restaurant business phone");
+var optProfileCity = new Option<string?>("--city", "Restaurant city");
+var optProfileCountry = new Option<string?>("--country", "Restaurant country");
+updateCustomerProfile.AddOption(optProfileTenant);
+updateCustomerProfile.AddOption(optProfilePhone);
+updateCustomerProfile.AddOption(optProfileCity);
+updateCustomerProfile.AddOption(optProfileCountry);
+updateCustomerProfile.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.UpdateCustomerProfileAsync(
+        host,
+        p.GetValueForOption(optProfileTenant),
+        new TenantContactUpdate(
+            p.GetValueForOption(optProfilePhone),
+            p.GetValueForOption(optProfileCity),
+            p.GetValueForOption(optProfileCountry)),
+        context.GetCancellationToken());
 });
 
 // --- migrate-central ---
@@ -262,6 +321,31 @@ resetCentralAdminPassword.SetHandler(async (InvocationContext context) =>
         context.GetCancellationToken());
 });
 
+// --- reset-password ---
+var resetPassword = new Command("reset-password", "Reset an existing central or tenant user password.")
+{
+    TreatUnmatchedTokensAsErrors = true
+};
+var optResetScope = new Option<string>("--scope", "central or tenant") { IsRequired = true };
+var optResetEmail = new Option<string>("--email", "Existing user email") { IsRequired = true };
+var optResetTenant = new Option<string?>("--tenant", "Tenant slug or tenant id. Required for --scope tenant.");
+var optResetDryRun = new Option<bool>("--dry-run", "Resolve the account only; do not prompt or write");
+resetPassword.AddOption(optResetScope);
+resetPassword.AddOption(optResetEmail);
+resetPassword.AddOption(optResetTenant);
+resetPassword.AddOption(optResetDryRun);
+resetPassword.SetHandler(async (InvocationContext context) =>
+{
+    var p = context.ParseResult;
+    context.ExitCode = await CliCommands.ResetPasswordAsync(
+        host,
+        p.GetValueForOption(optResetScope),
+        p.GetValueForOption(optResetEmail),
+        p.GetValueForOption(optResetTenant),
+        p.GetValueForOption(optResetDryRun),
+        context.GetCancellationToken());
+});
+
 // --- list-central-admins ---
 var listCentralAdmins = new Command("list-central-admins", "List central admin users from CentralDb (safe fields only).");
 listCentralAdmins.SetHandler(async (InvocationContext context) =>
@@ -290,7 +374,7 @@ var createUser = new Command("create-user", "Add a user to an existing customer'
 var optCustSlug = new Option<string>("--customer-slug", "Customer slug in CentralDb") { IsRequired = true };
 var optEmail = new Option<string>("--email", "User email") { IsRequired = true };
 var optPassword = new Option<string>("--password", "Plaintext password (visible in history)") { IsRequired = true };
-var optRole = new Option<string>("--role", "Owner, Manager, or Staff") { IsRequired = true };
+var optRole = new Option<string>("--role", "Owner, Manager, Kitchen, Cashier, or Viewer") { IsRequired = true };
 var optFullName = new Option<string?>("--name", "User full name");
 
 createUser.AddOption(optCustSlug);
@@ -445,6 +529,7 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     provisionSignupRequest,
     addCentralAdmin,
     resetCentralAdminPassword,
+    resetPassword,
     listCentralAdmins,
     migrateCentral,
     seedTurkeyReferenceData,
@@ -456,6 +541,7 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     resetCustomerDb,
     resetAllCustomerDbs,
     seedCustomerAdmin,
+    updateCustomerProfile,
     listCustomers,
     encrypt,
     createUser,

@@ -1,8 +1,8 @@
 (function (global) {
   "use strict";
 
-  const opts = global.orderHubReceiptTemplateOptions || {};
-  const O = global.OrderHubOrders;
+  const opts = global.waslaReceiptTemplateOptions || {};
+  const O = global.WaslaOrders;
 
   const SUPPORTED_LANGUAGES = ["tr", "en", "ar", "ru"];
 
@@ -80,14 +80,14 @@
     const message = String(text || "").trim();
     if (!message) return;
 
-    if (global.OrderHubToast) {
+    if (global.WaslaToast) {
       const options = { key: "settings-save", durationMs: 3000 };
-      if (type === "success" && global.OrderHubToast.success) {
-        global.OrderHubToast.success(message, options);
+      if (type === "success" && global.WaslaToast.success) {
+        global.WaslaToast.success(message, options);
         return;
       }
-      if (global.OrderHubToast.error) {
-        global.OrderHubToast.error(message, options);
+      if (global.WaslaToast.error) {
+        global.WaslaToast.error(message, options);
         return;
       }
     }
@@ -124,7 +124,7 @@
   }
 
   function updateAccordionEnabledCounts(template) {
-    document.querySelectorAll(".oh-receipt-accordion-item[data-receipt-settings]").forEach(function (item) {
+    document.querySelectorAll(".wasla-receipt-accordion-item[data-receipt-settings]").forEach(function (item) {
       const raw = item.getAttribute("data-receipt-settings") || "";
       const keys = raw.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
       const enabled = keys.filter(function (key) { return !!template[key]; }).length;
@@ -137,7 +137,7 @@
 
   function readTemplateFromUi() {
     const next = Object.assign({}, currentTemplate);
-    document.querySelectorAll(".oh-receipt-template-toggle").forEach(function (el) {
+    document.querySelectorAll(".wasla-receipt-template-toggle").forEach(function (el) {
       const key = el.getAttribute("data-setting");
       if (!key || el.disabled) return;
       next[key] = !!el.checked;
@@ -187,7 +187,7 @@
     const footerWrap = document.getElementById("receiptFooterFieldWrap");
     const enabled = !!template.showFooterMessage;
     if (footerEl) footerEl.disabled = !enabled;
-    if (footerWrap) footerWrap.classList.toggle("oh-receipt-message-field--muted", !enabled);
+    if (footerWrap) footerWrap.classList.toggle("wasla-receipt-message-field--muted", !enabled);
   }
 
   function applyTemplateToUi(template) {
@@ -199,7 +199,7 @@
       merged.receiptLanguage = normalizeLanguage(template.receiptLanguage);
     }
     currentTemplate = merged;
-    document.querySelectorAll(".oh-receipt-template-toggle").forEach(function (el) {
+    document.querySelectorAll(".wasla-receipt-template-toggle").forEach(function (el) {
       const key = el.getAttribute("data-setting");
       if (!key) return;
       el.checked = !!currentTemplate[key];
@@ -311,7 +311,7 @@
 
   function previewLine(label, value) {
     if (!value) return "";
-    return "<div class=\"oh-receipt-preview-line\"><span class=\"oh-receipt-preview-label\">" + escapeHtml(label) + "</span><span>" + escapeHtml(value) + "</span></div>";
+    return "<div class=\"wasla-receipt-preview-line\"><span class=\"wasla-receipt-preview-label\">" + escapeHtml(label) + "</span><span>" + escapeHtml(value) + "</span></div>";
   }
 
   function renderPreview(template) {
@@ -322,13 +322,13 @@
     const header = resolvePreviewHeader(template);
     const lang = normalizeLanguage(template.receiptLanguage);
     const L = function (key, fallback) { return receiptLabel(lang, key, fallback); };
-    const rtlClass = lang === "ar" ? " oh-receipt-preview-paper--rtl" : "";
+    const rtlClass = lang === "ar" ? " wasla-receipt-preview-paper--rtl" : "";
 
-    let html = "<div class=\"oh-receipt-preview-paper" + rtlClass + "\"" + (lang === "ar" ? " dir=\"rtl\"" : "") + ">";
+    let html = "<div class=\"wasla-receipt-preview-paper" + rtlClass + "\"" + (lang === "ar" ? " dir=\"rtl\"" : "") + ">";
 
     if (header) {
-      html += "<div class=\"oh-receipt-preview-header\">" + escapeHtml(header) + "</div>";
-      html += "<div class=\"oh-receipt-preview-sep\"></div>";
+      html += "<div class=\"wasla-receipt-preview-header\">" + escapeHtml(header) + "</div>";
+      html += "<div class=\"wasla-receipt-preview-sep\"></div>";
     }
 
     if (template.showPlatformName) html += previewLine(L("platform", "Platform"), sample.platform);
@@ -336,26 +336,26 @@
     if (template.showReceivedTime) html += previewLine(L("received", "Received"), sample.receivedAt);
 
     const hasCustomer = template.showCustomerName || template.showCustomerPhone || template.showDeliveryAddress;
-    if (hasCustomer) html += "<div class=\"oh-receipt-preview-sep\"></div>";
+    if (hasCustomer) html += "<div class=\"wasla-receipt-preview-sep\"></div>";
     if (template.showCustomerName) html += previewLine(L("customer", "Customer"), sample.customerName);
     if (template.showCustomerPhone) html += previewLine(L("phone", "Phone"), sample.customerPhone);
     if (template.showDeliveryAddress) html += previewLine(L("address", "Address"), sample.address);
 
-    html += "<div class=\"oh-receipt-preview-sep\"></div>";
-    html += "<div class=\"oh-receipt-preview-item\">2x " + escapeHtml(sample.itemName || "Sample item") + "</div>";
+    html += "<div class=\"wasla-receipt-preview-sep\"></div>";
+    html += "<div class=\"wasla-receipt-preview-item\">2x " + escapeHtml(sample.itemName || "Sample item") + "</div>";
     html += previewLine("  " + L("line", "Line"), "120.00");
     if (template.showProductNotes) html += previewLine(L("note", "Note"), sample.itemNote);
     if (template.showProductOptions) html += previewLine("  +", sample.itemOption);
 
-    html += "<div class=\"oh-receipt-preview-sep\"></div>";
+    html += "<div class=\"wasla-receipt-preview-sep\"></div>";
     if (template.showSubtotal) html += previewLine(L("subtotal", "Subtotal"), sample.subtotal);
     if (template.showDeliveryFee) html += previewLine(L("delivery", "Delivery"), sample.deliveryFee);
     html += previewLine(L("total", "TOTAL"), sample.total);
     if (template.showPaymentMethod) html += previewLine(L("payment", "Payment"), sample.paymentMethod);
 
     if (template.showFooterMessage && template.receiptFooterText) {
-      html += "<div class=\"oh-receipt-preview-sep\"></div>";
-      html += "<div class=\"oh-receipt-preview-footer\">" + escapeHtml(template.receiptFooterText).replace(/\n/g, "<br>") + "</div>";
+      html += "<div class=\"wasla-receipt-preview-sep\"></div>";
+      html += "<div class=\"wasla-receipt-preview-footer\">" + escapeHtml(template.receiptFooterText).replace(/\n/g, "<br>") + "</div>";
     }
 
     html += "</div>";
@@ -363,7 +363,7 @@
   }
 
   function bind() {
-    document.querySelectorAll(".oh-receipt-template-toggle, #receiptHeaderText, #receiptFooterText").forEach(function (el) {
+    document.querySelectorAll(".wasla-receipt-template-toggle, #receiptHeaderText, #receiptFooterText").forEach(function (el) {
       el.addEventListener("input", function () {
         const next = readTemplateFromUi();
         syncMessageFieldsState(next);

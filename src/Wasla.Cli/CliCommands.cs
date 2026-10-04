@@ -5,8 +5,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Wasla.Application;
+using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Email;
+using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Security;
+using Wasla.Application.Abstractions.Setup;
+using Wasla.Application.Setup;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
@@ -16,6 +21,7 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.ReferenceData;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Services;
 
 namespace Wasla.Cli;
 
@@ -171,6 +177,34 @@ internal static class CliCommands
         }
     }
 
+    public static async Task<int> ResetPasswordAsync(
+        IHost host,
+        string? scope,
+        string? email,
+        string? tenantSelector,
+        bool dryRun,
+        CancellationToken ct,
+        ICliPasswordReader? passwordReader = null,
+        Func<Tenant, CancellationToken, Task<TenantDbContext>>? openTenant = null)
+    {
+        using var diScope = host.Services.CreateScope();
+        var central = diScope.ServiceProvider.GetRequiredService<CentralDbContext>();
+        openTenant ??= (tenant, token) => CliPasswordReset.OpenTenantDatabaseAsync(
+            diScope.ServiceProvider.GetRequiredService<ISecretManager>(),
+            tenant,
+            token);
+
+        return await CliPasswordReset.ExecuteAsync(
+            central,
+            scope,
+            email,
+            tenantSelector,
+            dryRun,
+            openTenant,
+            passwordReader ?? new ConsoleCliPasswordReader(),
+            ct).ConfigureAwait(false);
+    }
+
     public static async Task<int> ListCentralAdminsAsync(IHost host, CancellationToken ct)
     {
         try
@@ -243,279 +277,98 @@ internal static class CliCommands
         string sqlAuth,
         CancellationToken ct)
     {
-        var dbCreated = false;
-        Tenant? insertedCentral = null;
-        string? dbName = null;
-
         try
         {
             using var scope = host.Services.CreateScope();
-            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
-            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
-            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-
-            var registration = await central.PendingRegistrations
-                .FirstOrDefaultAsync(r => r.Id == registrationId, ct)
-                .ConfigureAwait(false);
-
-            if (registration is null)
-            {
-                WriteError($"Pending registration not found: {registrationId}");
-                return 2;
-            }
-
-            if (registration.Status == PendingRegistrationStatus.Provisioned)
-            {
-                if (registration.TenantId is { } existingTenantId)
-                {
-                    var existingTenant = await central.Tenants
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(t => t.Id == existingTenantId, ct)
-                        .ConfigureAwait(false);
-                    if (existingTenant is not null)
-                    {
-                        Console.WriteLine("Already provisioned.");
-                        Console.WriteLine($"TenantId: {existingTenant.Id}");
-                        Console.WriteLine($"Domain:   {existingTenant.PrimaryDomain}");
-                        return 0;
-                    }
-                }
-
-                if (!force)
-                {
-                    WriteError(
-                        "Registration is marked Provisioned but the tenant record is missing. Use --force to retry provisioning.");
-                    return 2;
-                }
-            }
-            else if (registration.Status == PendingRegistrationStatus.PaymentSucceeded
-                     && registration.TenantId is { } linkedTenantId)
-            {
-                var linkedTenant = await central.Tenants
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.Id == linkedTenantId, ct)
-                    .ConfigureAwait(false);
-                if (linkedTenant is not null)
-                {
-                    registration.Status = PendingRegistrationStatus.Provisioned;
-                    registration.ProvisionedAtUtc ??= DateTime.UtcNow;
-                    await central.SaveChangesAsync(ct).ConfigureAwait(false);
-                    Console.WriteLine("Already provisioned.");
-                    Console.WriteLine($"TenantId: {linkedTenant.Id}");
-                    Console.WriteLine($"Domain:   {linkedTenant.PrimaryDomain}");
-                    return 0;
-                }
-            }
-            else if (registration.Status != PendingRegistrationStatus.PaymentSucceeded)
-            {
-                WriteError("Registration must be PaymentSucceeded before provisioning.");
-                return 2;
-            }
-
-            var fieldError = ValidateProvisioningRequiredFields(registration);
-            if (fieldError is not null)
-            {
-                WriteError(fieldError);
-                return 2;
-            }
-
-            dbName = registration.DatabaseName.Trim();
-
-            var uniquenessError = await ValidateProvisioningUniquenessAsync(
-                central,
-                registration,
-                ct).ConfigureAwait(false);
-            if (uniquenessError is not null)
-            {
-                WriteError(uniquenessError);
-                return 2;
-            }
-
-            var server = string.IsNullOrWhiteSpace(sqlServer)
-                ? configuration["CustomerDb:ServerInstance"]?.Trim()
-                  ?? configuration.GetSection("OrderHub:CustomerOnboarding")["ServerInstance"]?.Trim()
-                  ?? "."
-                : sqlServer.Trim();
 
             if (dryRun)
             {
+                // Dry-run: show what would happen without modifying anything
+                var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+                var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
+                var registration = await central.PendingRegistrations
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.Id == registrationId, ct)
+                    .ConfigureAwait(false);
+
+                if (registration is null)
+                {
+                    WriteError($"Pending registration not found: {registrationId}");
+                    return 2;
+                }
+
+                var server = string.IsNullOrWhiteSpace(sqlServer)
+                    ? configuration["CustomerDb:ServerInstance"]?.Trim()
+                      ?? configuration.GetSection("OrderHub:CustomerOnboarding")["ServerInstance"]?.Trim()
+                      ?? "."
+                    : sqlServer.Trim();
+                var resolvedAuth = sqlAuth;
+
                 Console.WriteLine("(dry-run) Would provision signup request:");
                 Console.WriteLine($"  RegistrationId: {registration.Id}");
                 Console.WriteLine($"  BusinessName:   {registration.BusinessName}");
                 Console.WriteLine($"  Slug:           {registration.Slug}");
                 Console.WriteLine($"  PrimaryDomain:  {registration.PrimaryDomain}");
-                Console.WriteLine($"  DatabaseName:   {dbName}");
+                Console.WriteLine($"  DatabaseName:   {registration.DatabaseName.Trim()}");
                 Console.WriteLine($"  OwnerEmail:     {registration.OwnerEmail}");
                 Console.WriteLine($"  PlanCode:       {registration.PlanCode}");
                 Console.WriteLine($"  BillingPeriod:  {registration.BillingPeriod}");
+                Console.WriteLine($"  Status:         {registration.Status}");
                 Console.WriteLine($"  SQL Server:     {server}");
-                Console.WriteLine($"  SQL Auth:       {(sqlAuth.StartsWith("sql:", StringComparison.OrdinalIgnoreCase) ? "sql:***" : sqlAuth)}");
+                Console.WriteLine($"  SQL Auth:       {(resolvedAuth.StartsWith("sql:", StringComparison.OrdinalIgnoreCase) ? "sql:***" : resolvedAuth)}");
                 return 0;
             }
 
-            var dbAlreadyExists = await DatabaseExistsAsync(server, sqlAuth, dbName, ct).ConfigureAwait(false);
-            if (dbAlreadyExists && registration.TenantId is null && !force)
+            // Actual provisioning — delegate to the shared service
+            var provisioningService = scope.ServiceProvider.GetRequiredService<IPendingRegistrationProvisioningService>();
+
+            WriteLineStep("Provisioning signup request…");
+
+            var result = await provisioningService.ProvisionAsync(
+                registrationId,
+                force: force,
+                sqlServerOverride: string.IsNullOrWhiteSpace(sqlServer) ? null : sqlServer.Trim(),
+                sqlAuthOverride: string.Equals(sqlAuth, "trusted", StringComparison.OrdinalIgnoreCase) ? null : sqlAuth,
+                ct: ct).ConfigureAwait(false);
+
+            switch (result.Outcome)
             {
-                WriteError(
-                    $"Tenant database '{dbName}' already exists but no tenant is linked to this registration. Use --force to retry provisioning.");
-                return 2;
-            }
-
-            WriteLineStep($"Target database name: {dbName}");
-
-            await EnsureDatabaseExistsAsync(server, sqlAuth, dbName, ct).ConfigureAwait(false);
-            dbCreated = !dbAlreadyExists;
-
-            var customerConnString = BuildCustomerConnectionString(server, sqlAuth, dbName);
-            var options = new DbContextOptionsBuilder<TenantDbContext>()
-                .UseSqlServer(customerConnString)
-                .Options;
-
-            var migrationNow = DateTime.UtcNow;
-            string migrationResult;
-            try
-            {
-                await using var db = new TenantDbContext(options);
-                WriteLineStep("Applying CustomerDb migrations…");
-                await db.Database.MigrateAsync(ct).ConfigureAwait(false);
-                migrationResult = "Success";
-            }
-            catch (Exception ex)
-            {
-                migrationResult = "Failed: " + SanitizeMigrationError(ex);
-                throw;
-            }
-
-            WriteLineStep("Encrypting connection string…");
-            var (encrypted, keyVersion) = await secret.EncryptAsync(customerConnString, ct).ConfigureAwait(false);
-
-            var tenantId = registration.TenantId ?? Guid.NewGuid();
-            var now = DateTime.UtcNow;
-            var trialDays = configuration.GetSection("OrderHub:CustomerOnboarding").GetValue("TrialDays", 14);
-
-            var tenant = new Tenant
-            {
-                Id = tenantId,
-                Name = registration.BusinessName.Trim(),
-                Slug = registration.Slug.Trim(),
-                PrimaryDomain = registration.PrimaryDomain.Trim(),
-                DatabaseName = dbName,
-                EncryptedConnectionString = encrypted,
-                EncryptionKeyVersion = keyVersion,
-                SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion,
-                LastMigrationAt = migrationNow,
-                LastMigrationResult = migrationResult,
-                IsActive = true,
-                BillingPaymentStatus = TenantBillingPaymentStatus.Paid,
-                ProvisioningStatus = ProvisioningStatus.Completed,
-                SubscriptionStatus = SubscriptionStatus.Trialing,
-                CreatedAt = now,
-                UpdatedAt = now
-            };
-
-            central.Tenants.Add(tenant);
-            await central.SaveChangesAsync(ct).ConfigureAwait(false);
-            insertedCentral = tenant;
-
-            var membershipExists = await central.TenantMemberships
-                .AnyAsync(m => m.TenantId == tenantId, ct)
-                .ConfigureAwait(false);
-            if (!membershipExists)
-            {
-                central.TenantMemberships.Add(new TenantMembership
-                {
-                    Id = Guid.NewGuid(),
-                    TenantId = tenantId,
-                    PlanCode = registration.PlanCode.Trim(),
-                    BillingPeriod = registration.BillingPeriod.Trim(),
-                    Status = MembershipStatus.Trial,
-                    StartedAt = now,
-                    TrialEndsAt = now.AddDays(trialDays),
-                    OwnerEmail = registration.OwnerEmail.Trim(),
-                    BusinessPhone = registration.BusinessPhone.Trim(),
-                    City = registration.City.Trim(),
-                    Country = registration.Country.Trim(),
-                    BusinessType = registration.BusinessType,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                });
-                await central.SaveChangesAsync(ct).ConfigureAwait(false);
-            }
-
-            await using (var userDb = new TenantDbContext(options))
-            {
-                var ownerEmail = registration.OwnerEmail.Trim();
-                var ownerExists = await userDb.AppUsers
-                    .AnyAsync(u => u.Email == ownerEmail, ct)
-                    .ConfigureAwait(false);
-                if (!ownerExists)
-                {
-                    WriteLineStep("Creating owner admin user…");
-                    userDb.AppUsers.Add(new AppUser
-                    {
-                        Email = ownerEmail,
-                        PasswordHash = registration.PasswordHash,
-                        FullName = registration.OwnerFullName.Trim(),
-                        Role = UserRole.Owner,
-                        IsActive = true,
-                        CreatedAt = now,
-                        UpdatedAt = now
-                    });
-                    await userDb.SaveChangesAsync(ct).ConfigureAwait(false);
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"Owner user already exists in tenant database: {ownerEmail}");
+                case ProvisioningOutcome.Success:
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("✓ Signup request provisioned successfully");
                     Console.ResetColor();
-                }
+                    Console.WriteLine($"""
+                        RegistrationId: {registrationId}
+                        TenantId:       {result.TenantId}
+                        Name:           {result.TenantName}
+                        Domain:         {result.TenantDomain}
+                        Next steps:
+                        - Ensure DNS points {result.TenantDomain} to your server
+                        - Log in at https://{result.TenantDomain}/auth/login
+                        """);
+                    return 0;
+
+                case ProvisioningOutcome.AlreadyProvisioned:
+                    Console.WriteLine("Already provisioned.");
+                    Console.WriteLine($"TenantId: {result.TenantId}");
+                    Console.WriteLine($"Domain:   {result.TenantDomain}");
+                    return 0;
+
+                case ProvisioningOutcome.NotFound:
+                    WriteError($"Pending registration not found: {registrationId}");
+                    return 2;
+
+                case ProvisioningOutcome.NotEligible:
+                case ProvisioningOutcome.ValidationError:
+                    WriteError(result.Message ?? "Registration is not eligible for provisioning.");
+                    return 2;
+
+                case ProvisioningOutcome.Failed:
+                default:
+                    WriteError(result.Message ?? "Provisioning failed.");
+                    return 3;
             }
-
-            registration.Status = PendingRegistrationStatus.Provisioned;
-            registration.TenantId = tenantId;
-            registration.ProvisionedAtUtc = now;
-            await central.SaveChangesAsync(ct).ConfigureAwait(false);
-
-            await TrySendPanelReadyEmailAsync(scope, registration, ct).ConfigureAwait(false);
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("✓ Signup request provisioned successfully");
-            Console.ResetColor();
-            Console.WriteLine($"""
-                RegistrationId: {registration.Id}
-                TenantId:       {tenantId}
-                Name:           {tenant.Name}
-                Domain:         {tenant.PrimaryDomain}
-                Database:       {dbName}
-                Admin:          {registration.OwnerEmail}
-                Next steps:
-                - Ensure DNS points {tenant.PrimaryDomain} to your server
-                - Log in at https://{tenant.PrimaryDomain}/auth/login
-                """);
-
-            return 0;
-        }
-        catch (Exception ex) when (ex is SqlException or InvalidOperationException or DbUpdateException)
-        {
-            WriteError(ex.Message);
-            if (dbCreated || insertedCentral is not null)
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                if (insertedCentral is not null)
-                {
-                    Console.WriteLine(
-                        $"Warning: partial failure. Pending registration was not marked Provisioned. Tenant row Id={insertedCentral.Id} may exist in CentralDb.");
-                }
-                if (dbName is not null)
-                {
-                    Console.WriteLine(
-                        insertedCentral is not null
-                            ? $"If you need to retry clean, drop database [{dbName}] and delete CentralDb tenant row Id={insertedCentral.Id}."
-                            : $"Warning: database [{dbName}] was created or modified. Drop it and remove any partial CentralDb tenant row before retrying.");
-                }
-                Console.ResetColor();
-            }
-            return 3;
         }
         catch (Exception ex)
         {
@@ -534,11 +387,19 @@ internal static class CliCommands
         string adminName,
         string? sqlServer,
         string sqlAuth,
+        TenantContactUpdate contact,
         CancellationToken ct)
     {
         if (!SlugRegex.IsMatch(slug))
         {
             WriteError("Slug must match ^[a-zA-Z0-9_-]+$.");
+            return 2;
+        }
+
+        var contactError = ValidateContact(contact);
+        if (contactError is not null)
+        {
+            WriteError(contactError);
             return 2;
         }
 
@@ -611,7 +472,7 @@ internal static class CliCommands
                 DatabaseName = dbName,
                 EncryptedConnectionString = encrypted,
                 EncryptionKeyVersion = keyVersion,
-                SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion,
+                SchemaVersion = TenantDbSchemaVersions.Current,
                 LastMigrationAt = migrationNow,
                 LastMigrationResult = migrationResult,
                 IsActive = true,
@@ -622,6 +483,15 @@ internal static class CliCommands
             central.Tenants.Add(customer);
             await central.SaveChangesAsync(ct).ConfigureAwait(false);
             insertedCentral = customer;
+
+            // Paid signup creates this row too; the restaurant setup step reads the contact fields from it.
+            WriteLineStep("Recording tenant membership…");
+            await TenantMembershipRecords.EnsureAsync(
+                central,
+                customerId,
+                CliMembershipSeed(adminEmail, contact),
+                now,
+                ct).ConfigureAwait(false);
 
             await using (var userDb = new TenantDbContext(options))
             {
@@ -638,6 +508,9 @@ internal static class CliCommands
                 };
                 userDb.AppUsers.Add(appUser);
                 await userDb.SaveChangesAsync(ct).ConfigureAwait(false);
+
+                // A new restaurant starts in Setup until a user completes or skips guided setup.
+                await TenantOperationalModes.EnsureNewTenantStartsInSetupAsync(userDb, now, ct).ConfigureAwait(false);
             }
 
             Console.ForegroundColor = ConsoleColor.Green;
@@ -653,6 +526,7 @@ internal static class CliCommands
                 - Ensure DNS points {domain} to your server
                 - Log in at https://{domain}/auth/login
                 """);
+            WarnIfContactIncomplete(name, contact.BusinessPhone, contact.City, contact.Country, slug);
 
             return 0;
         }
@@ -849,7 +723,7 @@ internal static class CliCommands
                 var when = DateTime.UtcNow;
                 tracked.LastMigrationAt = when;
                 tracked.LastMigrationResult = "Success";
-                tracked.SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion;
+                tracked.SchemaVersion = TenantDbSchemaVersions.Current;
                 tracked.UpdatedAt = when;
                 await central.SaveChangesAsync(ct).ConfigureAwait(false);
             }
@@ -980,7 +854,7 @@ internal static class CliCommands
                         var when = DateTime.UtcNow;
                         tracked.LastMigrationAt = when;
                         tracked.LastMigrationResult = "Success";
-                        tracked.SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion;
+                        tracked.SchemaVersion = TenantDbSchemaVersions.Current;
                         tracked.UpdatedAt = when;
                         await central.SaveChangesAsync(ct).ConfigureAwait(false);
                     }
@@ -1174,9 +1048,9 @@ internal static class CliCommands
         }
 
         if (!Enum.TryParse<UserRole>(role, true, out var userRole) ||
-            userRole is not (UserRole.Owner or UserRole.Manager or UserRole.Staff))
+            userRole is not (UserRole.Owner or UserRole.Manager or UserRole.Kitchen or UserRole.Cashier or UserRole.Viewer))
         {
-            WriteError("Role must be one of: Owner, Manager, Staff.");
+            WriteError("Role must be one of: Owner, Manager, Kitchen, Cashier, Viewer.");
             return 2;
         }
 
@@ -1425,7 +1299,7 @@ internal static class CliCommands
                 {
                     tracked.LastMigrationAt = migrationNow;
                     tracked.LastMigrationResult = migrationResult;
-                    tracked.SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion;
+                    tracked.SchemaVersion = TenantDbSchemaVersions.Current;
                     tracked.UpdatedAt = DateTime.UtcNow;
                     await central.SaveChangesAsync(ct).ConfigureAwait(false);
                 }
@@ -1501,7 +1375,7 @@ internal static class CliCommands
                         {
                             tracked.LastMigrationAt = migrationNow;
                             tracked.LastMigrationResult = migrationResult;
-                            tracked.SchemaVersion = MigrationMetadata.CurrentCustomerDbSchemaVersion;
+                            tracked.SchemaVersion = TenantDbSchemaVersions.Current;
                             tracked.UpdatedAt = DateTime.UtcNow;
                             await central.SaveChangesAsync(ct).ConfigureAwait(false);
                         }
@@ -1543,6 +1417,123 @@ internal static class CliCommands
             return 1;
         }
     }
+
+    /// <summary>
+    /// Sets the restaurant contact the setup checklist requires, e.g. for a tenant created by
+    /// add-customer without it. Creates the tenant's membership row when missing. Repeating the
+    /// same values changes nothing; omitted fields keep their stored value.
+    /// </summary>
+    public static async Task<int> UpdateCustomerProfileAsync(
+        IHost host,
+        string? tenantSelector,
+        TenantContactUpdate contact,
+        CancellationToken ct)
+    {
+        var selector = (tenantSelector ?? string.Empty).Trim();
+        if (selector.Length == 0)
+        {
+            WriteError("Requires --tenant <slug-or-id>.");
+            return 2;
+        }
+
+        if (string.IsNullOrWhiteSpace(contact.BusinessPhone)
+            && string.IsNullOrWhiteSpace(contact.City)
+            && string.IsNullOrWhiteSpace(contact.Country))
+        {
+            WriteError("Provide at least one of --business-phone, --city or --country.");
+            return 2;
+        }
+
+        var contactError = ValidateContact(contact);
+        if (contactError is not null)
+        {
+            WriteError(contactError);
+            return 2;
+        }
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+            var tenant = Guid.TryParse(selector, out var tenantId)
+                ? await central.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tenantId, ct).ConfigureAwait(false)
+                : await central.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == selector, ct).ConfigureAwait(false);
+            if (tenant is null)
+            {
+                WriteError("Customer not found.");
+                return 2;
+            }
+
+            await TenantMembershipRecords.UpdateContactAsync(
+                central,
+                tenant.Id,
+                contact,
+                CliMembershipSeed(ownerEmail: null, new TenantContactUpdate(null, null, null)),
+                DateTime.UtcNow,
+                ct).ConfigureAwait(false);
+
+            var stored = await central.TenantMemberships
+                .AsNoTracking()
+                .Where(m => m.TenantId == tenant.Id)
+                .Select(m => new { m.BusinessPhone, m.City, m.Country })
+                .SingleAsync(ct)
+                .ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ Restaurant profile updated for {tenant.Slug}");
+            Console.ResetColor();
+            Console.WriteLine($"  Business phone: {(string.IsNullOrWhiteSpace(stored.BusinessPhone) ? "not set" : "set")}");
+            Console.WriteLine($"  City:           {stored.City ?? "not set"}");
+            Console.WriteLine($"  Country:        {stored.Country ?? "not set"}");
+            WarnIfContactIncomplete(tenant.Name, stored.BusinessPhone, stored.City, stored.Country, tenant.Slug);
+            return 0;
+        }
+        catch (Exception ex) when (ex is SqlException or DbUpdateException)
+        {
+            WriteError("Database operation failed. No profile change was saved.");
+            return 3;
+        }
+    }
+
+    /// <summary>
+    /// Membership for a tenant created by an operator rather than paid signup: no trial, default plan.
+    /// </summary>
+    internal static TenantMembershipSeed CliMembershipSeed(string? ownerEmail, TenantContactUpdate contact) => new(
+        PlanCode: WaslaPlanCodes.Starter,
+        BillingPeriod: "Monthly",
+        Status: MembershipStatus.Active,
+        TrialEndsAt: null,
+        OwnerEmail: NullIfBlank(ownerEmail),
+        BusinessPhone: NullIfBlank(contact.BusinessPhone),
+        City: NullIfBlank(contact.City),
+        Country: NullIfBlank(contact.Country),
+        BusinessType: null);
+
+    internal static string? ValidateContact(TenantContactUpdate contact)
+    {
+        if ((contact.BusinessPhone?.Trim().Length ?? 0) > TenantMembershipRecords.BusinessPhoneMaxLength)
+            return $"--business-phone must be at most {TenantMembershipRecords.BusinessPhoneMaxLength} characters.";
+        if ((contact.City?.Trim().Length ?? 0) > TenantMembershipRecords.LocationMaxLength)
+            return $"--city must be at most {TenantMembershipRecords.LocationMaxLength} characters.";
+        if ((contact.Country?.Trim().Length ?? 0) > TenantMembershipRecords.LocationMaxLength)
+            return $"--country must be at most {TenantMembershipRecords.LocationMaxLength} characters.";
+        return null;
+    }
+
+    private static void WarnIfContactIncomplete(string? name, string? phone, string? city, string? country, string slug)
+    {
+        if (TenantSetupReadiness.IsRestaurantComplete(new RestaurantProfileFacts(true, name, phone, city, country)))
+            return;
+
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("Note: the restaurant setup step stays incomplete until a business phone and a city or country are set:");
+        Console.WriteLine($"  update-customer-profile --tenant {slug} --business-phone <phone> --city <city> [--country <country>]");
+        Console.ResetColor();
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     public static async Task<int> SeedCustomerAdminAsync(
         IHost host,

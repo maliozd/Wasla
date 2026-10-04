@@ -1,0 +1,68 @@
+@model Wasla.Web.Models.TenantUsers.TenantUserCreateViewModel
+@{
+    ViewData["Title"] = L["TenantUsers.CreateTitle"];
+}
+
+<div class="wasla-user-create">
+    @await Html.PartialAsync("_WaslaPageHeader", new WaslaPageHeaderModel
+    {
+        Title = L["TenantUsers.CreateTitle"].Value,
+        Description = L["TenantUsers.CreateSubtitle"].Value
+    })
+
+    <form class="wasla-manage-form" method="post" asp-area="Tenant" asp-controller="TenantUsers" asp-action="Create">
+        @Html.AntiForgeryToken()
+        <div class="wasla-surface wasla-manage-form__surface">
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="wasla-manage-form__grid">
+                <div class="wasla-manage-form__field">
+                    <label class="form-label" asp-for="FullName">@L["TenantUsers.Name"]</label>
+                    <input class="form-control" asp-for="FullName" autocomplete="name" />
+                    <span class="text-danger small" asp-validation-for="FullName"></span>
+                </div>
+
+                <div class="wasla-manage-form__field">
+                    <label class="form-label" asp-for="Role">@L["TenantUsers.Role"]</label>
+                    <select class="form-select" asp-for="Role">
+                        @foreach (var role in Model.RoleOptions)
+                        {
+                            <option value="@role">@L[$"TenantUsers.Role.{role}"]</option>
+                        }
+                    </select>
+                    <span class="text-danger small" asp-validation-for="Role"></span>
+                </div>
+
+                <div class="wasla-manage-form__field wasla-manage-form__field--wide">
+                    <label class="form-label" asp-for="Email">@L["TenantUsers.Email"]</label>
+                    <input class="form-control" asp-for="Email" autocomplete="email" />
+                    <span class="text-danger small" asp-validation-for="Email"></span>
+                </div>
+
+                <div class="wasla-manage-form__field">
+                    <label class="form-label" asp-for="Password">@L["TenantUsers.Password"]</label>
+                    <input class="form-control" asp-for="Password" autocomplete="new-password" />
+                    <span class="text-danger small" asp-validation-for="Password"></span>
+                </div>
+
+                <div class="wasla-manage-form__field">
+                    <label class="form-label" asp-for="ConfirmPassword">@L["TenantUsers.ConfirmPassword"]</label>
+                    <input class="form-control" asp-for="ConfirmPassword" autocomplete="new-password" />
+                    <span class="text-danger small" asp-validation-for="ConfirmPassword"></span>
+                </div>
+
+                <div class="wasla-manage-form__field wasla-manage-form__field--wide">
+                    <div class="form-check form-switch wasla-manage-form__check">
+                        <input class="form-check-input" asp-for="IsActive" />
+                        <label class="form-check-label" asp-for="IsActive">@L["TenantUsers.Active"]</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wasla-manage-form__actions">
+                <button class="wasla-btn wasla-btn--primary" type="submit">@L["TenantUsers.CreateUser"]</button>
+                <a class="wasla-btn wasla-btn--quiet" href="/settings/users">@L["Common.Cancel"]</a>
+            </div>
+        </div>
+    </form>
+</div>

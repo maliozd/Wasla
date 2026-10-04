@@ -6,4 +6,5 @@ public sealed record OrderListSortHeaderModel(
     string BasePath,
     OrderFilterViewModel Filters,
     string SortBy,
-    string Title);
+    string Title,
+    bool IsNumeric = false);

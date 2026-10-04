@@ -10,7 +10,7 @@
     messages: {}
   };
 
-  const opts = Object.assign({}, defaults, global.orderHubOrdersOptions || {});
+  const opts = Object.assign({}, defaults, global.waslaOrdersOptions || {});
 
   if (!opts.messages) {
     opts.messages = {};
@@ -30,14 +30,14 @@
   function debugLog() {
     if (isDebugEnabled()) {
       const a = Array.prototype.slice.call(arguments);
-      console.debug.apply(console, ["[OrderHub Orders]"].concat(a));
+      console.debug.apply(console, ["[Wasla Orders]"].concat(a));
     }
   }
 
   function debugWarn() {
     if (isDebugEnabled()) {
       const a = Array.prototype.slice.call(arguments);
-      console.warn.apply(console, ["[OrderHub Orders]"].concat(a));
+      console.warn.apply(console, ["[Wasla Orders]"].concat(a));
     }
   }
 
@@ -53,14 +53,14 @@
     if (now - lastShown < 60000) return;
     warningState[key] = now;
 
-    if (global.OrderHubToast && typeof global.OrderHubToast.warning === "function") {
-      global.OrderHubToast.warning(String(message || ""));
+    if (global.WaslaToast && typeof global.WaslaToast.warning === "function") {
+      global.WaslaToast.warning(String(message || ""));
       return;
     }
 
     const host = document.getElementById("ordersMessageHost");
     if (!host) {
-      console.warn("[OrderHub Orders]", message);
+      console.warn("[Wasla Orders]", message);
       return;
     }
 
@@ -74,22 +74,22 @@
   }
 
   function showMessage(message, type) {
-    if (global.OrderHubToast) {
+    if (global.WaslaToast) {
       const m = String(message || "");
-      if (type === "success" && global.OrderHubToast.success) {
-        global.OrderHubToast.success(m);
+      if (type === "success" && global.WaslaToast.success) {
+        global.WaslaToast.success(m);
         return;
       }
-      if (type === "error" && global.OrderHubToast.error) {
-        global.OrderHubToast.error(m);
+      if (type === "error" && global.WaslaToast.error) {
+        global.WaslaToast.error(m);
         return;
       }
-      if (type === "warning" && global.OrderHubToast.warning) {
-        global.OrderHubToast.warning(m);
+      if (type === "warning" && global.WaslaToast.warning) {
+        global.WaslaToast.warning(m);
         return;
       }
-      if (global.OrderHubToast.info) {
-        global.OrderHubToast.info(m);
+      if (global.WaslaToast.info) {
+        global.WaslaToast.info(m);
         return;
       }
     }
@@ -107,8 +107,8 @@
 
   function showSettingsSaveSuccess(message) {
     const m = message || getMessage("orderSettingsSaved") || getMessage("settingsSaved");
-    if (global.OrderHubToast && typeof global.OrderHubToast.success === "function") {
-      global.OrderHubToast.success(m, { key: SETTINGS_SAVE_TOAST_KEY, durationMs: SETTINGS_SAVE_TOAST_DURATION_MS });
+    if (global.WaslaToast && typeof global.WaslaToast.success === "function") {
+      global.WaslaToast.success(m, { key: SETTINGS_SAVE_TOAST_KEY, durationMs: SETTINGS_SAVE_TOAST_DURATION_MS });
       return;
     }
     showMessage(m, "success");
@@ -116,14 +116,14 @@
 
   function showSettingsSaveError(message) {
     const m = message || getMessage("orderSettingsUpdateFailed") || getMessage("settingsSaveFailed");
-    if (global.OrderHubToast && typeof global.OrderHubToast.error === "function") {
-      global.OrderHubToast.error(m, { key: SETTINGS_SAVE_TOAST_KEY, durationMs: SETTINGS_SAVE_TOAST_DURATION_MS });
+    if (global.WaslaToast && typeof global.WaslaToast.error === "function") {
+      global.WaslaToast.error(m, { key: SETTINGS_SAVE_TOAST_KEY, durationMs: SETTINGS_SAVE_TOAST_DURATION_MS });
       return;
     }
     showMessage(m, "error");
   }
 
-  global.OrderHubOrders = {
+  global.WaslaOrders = {
     get opts() {
       return opts;
     },

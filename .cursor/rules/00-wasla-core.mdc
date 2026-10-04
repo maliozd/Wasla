@@ -1,0 +1,149 @@
+---
+description: Core rules for the Wasla project
+alwaysApply: true
+---
+
+# Wasla Core Rules
+
+Wasla is a focused multi-tenant SaaS for restaurant online-order operations.
+
+## Product scope
+
+Current scope:
+- One operational screen for platform orders.
+- Live kitchen display.
+- Automatic receipt creation/printing.
+- Wasla Print Bridge.
+- Tenant signup, payment, and provisioning flow.
+- Per-tenant settings and platform connections.
+
+Out of scope unless explicitly requested:
+- Full POS, full restaurant ERP, inventory/stock management, accounting, payroll, broad CRM, or unrelated restaurant management modules.
+
+Keep solutions practical, conservative, and MVP-focused.
+
+## Project structure
+
+- `Wasla.Web`: ASP.NET Core MVC/Razor public, signup, tenant, and admin web UI.
+- `Wasla.Api`: JSON endpoints, integrations, and webhooks where applicable.
+- `Wasla.Worker`: background provider synchronization.
+- `Wasla.Cli`: provisioning, maintenance, administrative tooling, and EF startup project.
+- `Wasla.Application`: use cases, commands, queries, interfaces, and results.
+- `Wasla.Infrastructure`: EF Core, DbContexts, migrations, repositories, persistence, integrations, encryption, secrets, and email.
+- `Wasla.Domain`: entities, enums, and core business concepts.
+- `Wasla.Contracts`: API request/response contracts only.
+- `Wasla.PrintBridge`: Print Bridge client for local printing.
+
+## Architecture context
+
+- Wasla uses a database-per-tenant model.
+- `CentralDb` stores tenant metadata, memberships, signup/provisioning state, and central configuration.
+- `TenantDb` stores operational restaurant data.
+- EF Core contexts are `CentralDbContext` and `TenantDbContext`.
+- Tenant resolution uses `TenantResolutionMiddleware`, claim `TenantId`, and HttpContext item `CurrentTenant`.
+- Central/public development hosts are `localhost`, `wasla.local`, and `www.wasla.local`.
+- Tenant development hosts use `{slug}.wasla.local`, for example `sushim.wasla.local`.
+- End-customer order fields such as `CustomerName`, `CustomerPhone`, and `CustomerAddress` refer to the restaurant's buyer and should not be renamed to Tenant.
+
+## Git workflow
+
+- `master` is the stable branch.
+- `dev` is the long-running active development branch.
+- Normal development and bug fixes must be performed on `dev`.
+- Do not work directly on `master`.
+- Do not create a new feature branch, task branch, or `cursor/*` branch unless the user explicitly requests it.
+- Before changing files, always run `git branch --show-current` and `git status`.
+- If the current branch is not `dev`, stop and report it unless the user explicitly requested another branch.
+- Cursor Agent conversation/session names are not the source of truth for the active Git branch.
+- The source of truth is `git branch --show-current`.
+- A Cloud or Local Agent must not assume it is on `dev` merely because the prompt says so.
+- Do not commit unless the user explicitly asks.
+- Do not push unless the user explicitly asks.
+- Do not merge `dev` into `master` unless the user explicitly asks.
+- Do not stash, discard, reset, clean, delete, or overwrite uncommitted work without explicit approval.
+- Keep unrelated changes out of the current task.
+- Use small, focused commits when the user asks for a commit.
+- Do not include generated files, temporary scripts, local configuration, certificates, secrets, or scratch files in commits.
+- Before committing, show the changed files and confirm task scope.
+- Before merging to `master`, build and test the relevant flow.
+
+## General rules
+
+- Do not add unrelated features.
+- Do not change database schema unless the user explicitly asks.
+- Do not add migrations unless explicitly requested.
+- Do not reset migrations unless explicitly requested.
+- Do not change provider behavior unless the task is explicitly about providers.
+- Do not change order lifecycle behavior unless explicitly requested.
+- Do not introduce React, Vue, or heavy frontend build tooling for MVP.
+- Prefer ASP.NET Core MVC/Razor, Bootstrap 5, jQuery/vanilla JS, and existing project conventions.
+- Preserve existing behavior unless the task explicitly asks for behavior change.
+- If a task fails, report the exact project, file/class, config key, and exception/error.
+
+## Build and test
+
+- After code changes, run `dotnet build Wasla.sln`.
+- In Linux/Cloud environments where Windows-targeted projects are part of the solution, use `dotnet build Wasla.sln -p:EnableWindowsTargeting=true`.
+- Do not claim browser/end-to-end tests passed when only static code review or ad-hoc assertions were performed.
+- Clearly distinguish build verification, automated tests, static code review, and real browser/manual testing.
+- If live testing is blocked by LocalDB, SQL Server, certificates, or platform limitations, report the blocker honestly.
+- Do not add temporary test scripts to production code.
+- Remove scratch files before presenting a final diff.
+- Do not silently fix unrelated issues discovered during testing.
+
+## Naming and legacy compatibility
+
+- New code must use `Wasla` naming.
+- Do not introduce new `OrderHub` namespaces, classes, configuration sections, directories, mutex names, ProgramData paths, download paths, or user-facing text.
+- Do not add legacy `OrderHub` migration or compatibility logic unless the user explicitly asks for a migration task.
+- Do not add methods such as `MigrateLegacyOrderHubSettings` during unrelated fixes.
+- Existing historical migration records may remain if changing them would be unsafe.
+- Internal settings should use current canonical property names.
+- For Print Bridge, use `ServerUrl`, not new `BaseUrl` aliases.
+- Do not silently create new backwards-compatibility layers.
+
+## Print Bridge
+
+- Product name: `Wasla Print Bridge`.
+- ProgramData path: `C:\ProgramData\Wasla\PrintBridge`.
+- Device authentication uses `X-PrintBridge-Token`.
+- The desktop app must not require the user to know internal API paths.
+- Manual setup requires Wasla Web Panel URL / `ServerUrl` and Device Token.
+- `ServerUrl` is a primary setup value and must not be hidden as an advanced-only value.
+- Empty `ServerUrl` and empty device token must be blocked locally before a request.
+- Trim setup values before saving.
+- Save must reconnect/ping using the newly saved values.
+- Do not hardcode production URLs or secrets.
+- Do not attempt token-based server discovery unless a central discovery service is explicitly designed.
+- Manual setup must remain available even if automatic protocol setup is added.
+- Do not expose full tokens in logs.
+- Token should be masked in UI by default.
+- Device name is managed from the Wasla Web panel/token identity; local machine name may be shown separately.
+- Preserve current polling defaults unless explicitly changed: Idle 5 seconds, Busy 1 second, Error 15 seconds, Max jobs per poll 3.
+- Print flow is Pending -> Printing -> Printed/Failed.
+- Do not print directly from Web or Worker.
+- Local Windows Print Bridge is responsible for physical printing.
+
+## Signup, payment, and provisioning
+
+- Business email may be optional.
+- Empty/whitespace optional email is valid; non-empty email must be validated.
+- Owner email remains required where the current model requires it.
+- Payment success and provisioning are separate states.
+- A known `PendingRegistration` with successful payment must not be shown as an unknown tenant.
+- Status UX: unknown slug -> tenant-not-found; awaiting payment -> pending/payment CTA; payment succeeded -> panel being prepared; provisioned -> panel ready/login.
+- Do not create a tenant DB from tenant resolution.
+- Do not provision from middleware.
+- Do not manually mark a registration as Provisioned.
+- Provisioning must remain payment-gated.
+- Post-provision email must not roll back successful provisioning if the current implementation treats email as best-effort.
+- Do not expose password hashes, tokens, or secrets in status pages.
+- Standalone signup/payment/status pages may use a minimal layout without the public header.
+- Tenant address links and central homepage links must use URL builders rather than relative-host assumptions.
+- On tenant-hosted pending pages, "Back to homepage" must point to the central/public Wasla host, not `/` on the tenant host.
+
+## Naming and language
+
+- Routes, folders, classes, methods, and code identifiers should remain English.
+- Visible UI is localized and Turkish-friendly by default.
+- Do not hardcode new user-facing strings.

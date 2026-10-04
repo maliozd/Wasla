@@ -1,5 +1,6 @@
 ﻿using System.Drawing.Drawing2D;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
@@ -27,6 +28,8 @@ public sealed partial class MainForm : Form
     private TabPage _logsTab = null!;
     private TabPage _historyTab = null!;
     private TabPage _settingsTab = null!;
+    private Panel _settingsScrollPanel = null!;
+    private TableLayoutPanel _settingsLayout = null!;
 
     private Label _titleLabel = null!;
     private Label _subtitleLabel = null!;
@@ -67,29 +70,57 @@ public sealed partial class MainForm : Form
     private Button _btnToggleToken = null!;
     private ComboBox _cmbPrinterName = null!;
     private Button _btnRefreshPrinters = null!;
-    private TextBox _txtDisplayName = null!;
-    private Label _lblDeviceNameManaged = null!;
-    private Label _lblMachineNameHint = null!;
     private CheckBox _chkDryRun = null!;
     private NumericUpDown _numIdlePoll = null!;
     private NumericUpDown _numBusyPoll = null!;
     private NumericUpDown _numErrorPoll = null!;
-    private Button _btnSaveSettings = null!;
+    private Button _btnSaveConnection = null!;
+    private Button _btnTestSettingsConnection = null!;
+    private Button _btnResetConnection = null!;
+    private Label _lblResetConnectionHelp = null!;
+    private Label _lblConnectionTroubleshootingTitle = null!;
+    private Label _lblStartReconnectHint = null!;
+    private Button _btnSavePrinter = null!;
+    private Button _btnTestSettingsPrinter = null!;
+    private Button _btnApplyLanguage = null!;
+    private Button _btnSaveAdvanced = null!;
     private ComboBox _cmbLanguage = null!;
-    private Label _lblLanguage = null!;
+    private Label _lblConnectionSectionText = null!;
+    private Label _lblPrinterSectionText = null!;
+    private Label _lblLanguageSectionText = null!;
+    private Panel _connectionGroup = null!;
+    private Panel _printerGroup = null!;
+    private Panel _languageGroup = null!;
+    private Panel _advancedGroup = null!;
+    private TableLayoutPanel _connectionFieldTable = null!;
+    private TableLayoutPanel _printerFieldTable = null!;
+    private TableLayoutPanel _languageFieldTable = null!;
+    private TableLayoutPanel _advancedFieldTable = null!;
+    private Label _lblConnectionSectionTitle = null!;
+    private Label _lblPrinterSectionTitle = null!;
+    private Label _lblLanguageSectionTitle = null!;
+    private Label _lblAdvancedSectionTitle = null!;
+    private Label _lblConnectionStatus = null!;
+    private Label _lblPrinterStatus = null!;
+    private Label _lblLanguageStatus = null!;
+    private Label _lblAdvancedStatus = null!;
     private Label _lblServerUrl = null!;
     private Label _lblAgentToken = null!;
     private Label _lblServerUrlHelp = null!;
     private Label _lblAgentTokenHelp = null!;
+    private Label _lblAgentTokenPasteGuard = null!;
     private Label _lblPrinterName = null!;
-    private Label _lblDeviceName = null!;
-    private GroupBox _advancedGroup = null!;
+    private Label _lblLanguage = null!;
     private Label _lblDryRunMode = null!;
     private Label _lblDryRunWarning = null!;
     private Label _lblIdlePoll = null!;
     private Label _lblBusyPoll = null!;
     private Label _lblErrorPoll = null!;
     private Label _settingsHint = null!;
+    private bool _suppressLanguageSelectionChanged;
+    private bool _isSavingLanguage;
+    private bool _agentTokenUserEdited;
+    private bool _syncingConnectionFields;
 
     public MainForm(ServiceProvider services, PrintBridgeRuntime runtime)
     {
@@ -103,20 +134,22 @@ public sealed partial class MainForm : Form
         _cultureService = services.GetRequiredService<PrintBridgeCultureService>();
 
         Text = PrintBridgePaths.ProductDisplayName;
-        Font = new Font("Segoe UI", 9F);
+        Font = PrintBridgeUiTheme.BodyFont;
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = PrintBridgeUiTheme.PageBackground;
+        DoubleBuffered = true;
+        SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
 
         _tabs = new TabControl
         {
             Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 9.5F),
-            Padding = new Point(8, 6)
+            Font = PrintBridgeUiTheme.BodyFont,
+            Padding = new Point(6, 4)
         };
-        _statusTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
-        _logsTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
-        _historyTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
-        _settingsTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(12) };
+        _statusTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(8) };
+        _logsTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(8) };
+        _historyTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(8) };
+        _settingsTab = new TabPage { BackColor = PrintBridgeUiTheme.PageBackground, Padding = new Padding(8) };
         _tabs.TabPages.Add(_statusTab);
         _tabs.TabPages.Add(_logsTab);
         _tabs.TabPages.Add(_historyTab);
@@ -197,7 +230,16 @@ public sealed partial class MainForm : Form
         _btnClearLogs.Text = _localizer["Button.ClearLogs"];
         _btnCopyLogs.Text = _localizer["Button.CopyLogs"];
         _btnJumpToLatest.Text = _localizer["Button.JumpToLatest"];
-        _btnSaveSettings.Text = _localizer["Button.SaveSettings"];
+        _btnSaveConnection.Text = _localizer["Button.SaveConnection"];
+        _btnTestSettingsConnection.Text = _localizer["Button.TestConnection"];
+        _btnResetConnection.Text = _localizer["Button.ResetConnection"];
+        PrintBridgeSettingsLayout.ApplyTroubleshootingActionButtonLayout(_btnResetConnection);
+        _lblConnectionTroubleshootingTitle.Text = _localizer["Settings.ConnectionTroubleshootingTitle"];
+        _lblResetConnectionHelp.Text = _localizer["Settings.ResetConnectionHelp"];
+        _btnSavePrinter.Text = _localizer["Button.SavePrinter"];
+        _btnTestSettingsPrinter.Text = _localizer["Button.TestPrinter"];
+        _btnApplyLanguage.Text = _localizer["Button.ApplyLanguage"];
+        _btnSaveAdvanced.Text = _localizer["Button.SaveAdvanced"];
         _btnRefreshPrinters.Text = _localizer["Button.Refresh"];
         _btnToggleToken.Text = _txtAgentToken.UseSystemPasswordChar
             ? _localizer["Button.ShowToken"]
@@ -207,11 +249,16 @@ public sealed partial class MainForm : Form
         _lblServerUrlHelp.Text = _localizer["Settings.ServerUrlHelp"];
         _lblAgentToken.Text = _localizer["Settings.AgentToken"];
         _lblAgentTokenHelp.Text = _localizer["Settings.AgentTokenHelp"];
+        RefreshAgentTokenPasteGuard();
         _lblPrinterName.Text = _localizer["Settings.PrinterName"];
-        _lblDeviceName.Text = _localizer["Settings.DeviceName"];
-        _lblDeviceNameManaged.Text = _localizer["Settings.DeviceNameManagedFromWeb"];
         _lblLanguage.Text = _localizer["Settings.Language"];
-        _advancedGroup.Text = $"  {_localizer["Settings.Advanced"]}  ";
+        _lblConnectionSectionTitle.Text = _localizer["Settings.Section.Connection"];
+        _lblPrinterSectionTitle.Text = _localizer["Settings.Section.Printer"];
+        _lblLanguageSectionTitle.Text = _localizer["Settings.Section.Language"];
+        _lblAdvancedSectionTitle.Text = _localizer["Settings.Advanced"];
+        _lblConnectionSectionText.Text = _localizer["Settings.Section.ConnectionHelp"];
+        _lblPrinterSectionText.Text = _localizer["Settings.Section.PrinterHelp"];
+        _lblLanguageSectionText.Text = _localizer["Settings.Section.LanguageHelp"];
         _lblDryRunMode.Text = _localizer["Settings.DryRunMode"];
         _chkDryRun.Text = _localizer["Settings.DryRunDescription"];
         if (_lblDryRunWarning != null)
@@ -221,11 +268,6 @@ public sealed partial class MainForm : Form
         _lblBusyPoll.Text = _localizer["Settings.BusyPollSeconds"];
         _lblErrorPoll.Text = _localizer["Settings.ErrorPollSeconds"];
         _settingsHint.Text = _localizer.GetString("Settings.SavedPathHint", PrintBridgePaths.ProgramDataConfigPath);
-
-        var machineName = _settingsHolder.Snapshot().Bridge.MachineName;
-        if (string.IsNullOrWhiteSpace(machineName))
-            machineName = Environment.MachineName;
-        _lblMachineNameHint.Text = _localizer.GetString("Settings.MachineNameHint", machineName);
 
         var isRtl = _cultureService.IsRightToLeft;
         _footerDeviceLabel.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
@@ -245,7 +287,7 @@ public sealed partial class MainForm : Form
         {
             Dock = DockStyle.Bottom,
             Height = 34,
-            Padding = new Padding(12, 6, 12, 6),
+            Padding = new Padding(8, 4, 8, 4),
             BackColor = PrintBridgeUiTheme.PageBackground
         };
 
@@ -259,7 +301,7 @@ public sealed partial class MainForm : Form
         footerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         footerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
 
-        var footerFont = new Font("Segoe UI", 8.25F);
+        var footerFont = PrintBridgeUiTheme.FooterFont;
         _footerDeviceLabel = new Label
         {
             Dock = DockStyle.Fill,
@@ -309,7 +351,7 @@ public sealed partial class MainForm : Form
             ColumnCount = 1,
             RowCount = 3,
             AutoSize = true,
-            Margin = new Padding(0, 0, 0, 10)
+            Margin = new Padding(0, 0, 0, 6)
         };
         header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -321,7 +363,7 @@ public sealed partial class MainForm : Form
             ForeColor = PrintBridgeUiTheme.TextTitle,
             AutoSize = true,
             Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, 0, 2)
+            Margin = new Padding(0, 0, 0, 1)
         };
         _subtitleLabel = new Label
         {
@@ -329,7 +371,7 @@ public sealed partial class MainForm : Form
             ForeColor = PrintBridgeUiTheme.TextMuted,
             AutoSize = true,
             Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, 0, 6)
+            Margin = new Padding(0, 0, 0, 4)
         };
         _headerBadge = new Label
         {
@@ -337,7 +379,7 @@ public sealed partial class MainForm : Form
             ForeColor = Color.White,
             BackColor = PrintBridgeUiTheme.Inactive,
             AutoSize = true,
-            Padding = new Padding(10, 4, 10, 4),
+            Padding = new Padding(8, 2, 8, 2),
             Dock = DockStyle.Left,
             Margin = new Padding(0, 0, 0, 0)
         };
@@ -346,51 +388,59 @@ public sealed partial class MainForm : Form
         header.Controls.Add(_headerBadge, 0, 2);
         root.Controls.Add(header, 0, 0);
 
-        var metricsRow = new TableLayoutPanel
+        var metricsHost = new Panel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 6,
-            RowCount = 1,
             AutoSize = true,
-            Margin = new Padding(0, 0, 0, 10)
+            AutoScroll = true,
+            Margin = new Padding(0, 0, 0, 6)
         };
-        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15F));
-        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15F));
-        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
-        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12F));
-        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12F));
-        metricsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 26F));
+        var metricsFlow = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            WrapContents = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = new Padding(0)
+        };
 
-        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _serverStatusValue, out _serverStatusTitle), 0, 0);
-        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _printerStatusValue, out _printerStatusTitle), 1, 0);
+        var serverStatusCard = PrintBridgeUiTheme.CreateMetricCard(
+            string.Empty,
+            out _serverStatusValue,
+            out _serverStatusTitle,
+            PrintBridgeUiTheme.MetricStatusFont);
+        metricsFlow.Controls.Add(serverStatusCard);
+        metricsFlow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(
+            string.Empty,
+            out _printerStatusValue,
+            out _printerStatusTitle,
+            PrintBridgeUiTheme.MetricStatusFont));
 
         var lastContactCard = PrintBridgeUiTheme.CreateMetricCard(
             string.Empty,
             out _lastContactValue,
             out _lastContactTitle,
-            PrintBridgeUiTheme.MetricTimestampFont,
-            valueAutoEllipsis: false);
-        metricsRow.Controls.Add(lastContactCard, 2, 0);
-
-        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _jobsTodayValue, out _jobsTodayTitle), 3, 0);
-        metricsRow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _failedTodayValue, out _failedTodayTitle), 4, 0);
+            PrintBridgeUiTheme.MetricTimestampFont);
+        metricsFlow.Controls.Add(lastContactCard);
+        metricsFlow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _jobsTodayValue, out _jobsTodayTitle));
+        metricsFlow.Controls.Add(PrintBridgeUiTheme.CreateMetricCard(string.Empty, out _failedTodayValue, out _failedTodayTitle));
 
         var lastPrintCard = PrintBridgeUiTheme.CreateMetricCard(
             string.Empty,
             out _lastPrintValue,
             out _lastPrintTitle,
-            PrintBridgeUiTheme.MetricTimestampFont,
-            valueAutoEllipsis: false);
-        metricsRow.Controls.Add(lastPrintCard, 5, 0);
-        root.Controls.Add(metricsRow, 0, 1);
+            PrintBridgeUiTheme.MetricTimestampFont);
+        metricsFlow.Controls.Add(lastPrintCard);
+        metricsHost.Controls.Add(metricsFlow);
+        root.Controls.Add(metricsHost, 0, 1);
 
         _jobsGroup = new GroupBox
         {
             Dock = DockStyle.Fill,
             Font = PrintBridgeUiTheme.SectionFont,
             ForeColor = PrintBridgeUiTheme.TextTitle,
-            Padding = new Padding(10, 20, 10, 10),
-            Margin = new Padding(0, 0, 0, 10)
+            Padding = new Padding(8, 16, 8, 8),
+            Margin = new Padding(0, 0, 0, 6)
         };
         var jobsPanel = new Panel { Dock = DockStyle.Fill, MinimumSize = new Size(0, 240) };
         _recentJobsGrid = new DataGridView
@@ -428,7 +478,7 @@ public sealed partial class MainForm : Form
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
             ForeColor = PrintBridgeUiTheme.TextMuted,
-            Font = new Font("Segoe UI", 10F)
+            Font = PrintBridgeUiTheme.SectionFont
         };
         jobsPanel.Controls.Add(_recentJobsGrid);
         jobsPanel.Controls.Add(_recentJobsEmptyLabel);
@@ -439,8 +489,18 @@ public sealed partial class MainForm : Form
         {
             Dock = DockStyle.Fill,
             AutoSize = true,
-            Padding = new Padding(0, 8, 0, 0)
+            Padding = new Padding(0, 4, 0, 0)
         };
+        var actionLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            ColumnCount = 1,
+            RowCount = 2
+        };
+        actionLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        actionLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
         var buttonPanel = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -464,7 +524,19 @@ public sealed partial class MainForm : Form
         _btnOpenLogs.Click += (_, _) => OpenLogsFolder();
         buttonPanel.Controls.Add(_btnOpenLogs);
 
-        actionBar.Controls.Add(buttonPanel);
+        _lblStartReconnectHint = new Label
+        {
+            AutoSize = true,
+            ForeColor = PrintBridgeUiTheme.TextMuted,
+            Font = PrintBridgeUiTheme.HelperFont,
+            Margin = new Padding(0, 6, 0, 0),
+            MaximumSize = new Size(900, 0),
+            Visible = false
+        };
+
+        actionLayout.Controls.Add(buttonPanel, 0, 0);
+        actionLayout.Controls.Add(_lblStartReconnectHint, 0, 1);
+        actionBar.Controls.Add(actionLayout);
         root.Controls.Add(actionBar, 0, 3);
     }
 
@@ -590,55 +662,106 @@ public sealed partial class MainForm : Form
 
     private void BuildSettingsTab()
     {
-        var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        var settingsLayout = new TableLayoutPanel
+        _settingsScrollPanel = new DoubleBufferedPanel
         {
-            Dock = DockStyle.Top,
-            ColumnCount = 2,
-            AutoSize = true,
-            Padding = new Padding(4),
-            Width = 900
+            Dock = DockStyle.Fill,
+            AutoScroll = true
         };
-        settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
-        settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
-        AddServerUrlRow(settingsLayout, 0);
-        AddTokenRow(settingsLayout, 1);
-        AddPrinterRow(settingsLayout, 2);
-        AddDeviceNameRow(settingsLayout, 3);
-        AddLanguageRow(settingsLayout, 4);
-
-        _advancedGroup = new GroupBox
+        // Fully static layout: cards stretch with the window (Dock=Top), but every
+        // form control inside has a fixed compact width, so nothing is recalculated
+        // while resizing and no Resize/Layout handlers are needed.
+        _settingsLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
             AutoSize = true,
-            Font = PrintBridgeUiTheme.SectionFont,
-            ForeColor = PrintBridgeUiTheme.TextTitle,
-            Padding = new Padding(12, 18, 12, 12),
-            Margin = new Padding(0, 8, 0, 8)
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Padding = new Padding(0, 0, SystemInformation.VerticalScrollBarWidth, 0),
+            ColumnCount = 1,
+            RowCount = 0
         };
-        var advancedLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            ColumnCount = 2,
-            AutoSize = true
-        };
-        advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
-        advancedLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        _lblDryRunMode = new Label
+        _connectionFieldTable = PrintBridgeSettingsLayout.CreateFieldTable(7);
+        _lblConnectionStatus = PrintBridgeSettingsLayout.CreateSectionStatusLabel();
+        AddServerUrlRow(_connectionFieldTable);
+        AddTokenRow(_connectionFieldTable);
+        _btnSaveConnection = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnSaveConnection.Click += async (_, _) => await SaveConnectionSettingsAsync().ConfigureAwait(true);
+        _btnTestSettingsConnection = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnTestSettingsConnection.Click += async (_, _) => await TestConnectionFromSettingsAsync().ConfigureAwait(true);
+        AddSectionActions(_connectionFieldTable, 5, _btnSaveConnection, _btnTestSettingsConnection);
+        _connectionFieldTable.Controls.Add(_lblConnectionStatus, 1, 6);
+
+        var troubleshootingRow = PrintBridgeSettingsLayout.CreateTroubleshootingRow(
+            out _lblConnectionTroubleshootingTitle,
+            out _lblResetConnectionHelp,
+            out _btnResetConnection);
+        _btnResetConnection.Click += async (_, _) => await ResetConnectionAsync().ConfigureAwait(true);
+
+        // Keep troubleshooting outside the field table so the reset button
+        // stays stacked below connection actions.
+        var connectionContent = new TableLayoutPanel
         {
             AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            ForeColor = PrintBridgeUiTheme.TextMuted
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 1,
+            RowCount = 2,
+            Dock = DockStyle.Top,
+            Margin = new Padding(0)
         };
-        advancedLayout.Controls.Add(_lblDryRunMode, 0, 0);
+        connectionContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        connectionContent.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        connectionContent.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        connectionContent.Controls.Add(_connectionFieldTable, 0, 0);
+        connectionContent.Controls.Add(troubleshootingRow, 0, 1);
+
+        _connectionGroup = PrintBridgeSettingsLayout.CreateSectionCard(
+            out _lblConnectionSectionTitle,
+            out _lblConnectionSectionText,
+            connectionContent);
+        AddSettingsSection(_settingsLayout, _connectionGroup);
+
+        _printerFieldTable = PrintBridgeSettingsLayout.CreateFieldTable(3);
+        _lblPrinterStatus = PrintBridgeSettingsLayout.CreateSectionStatusLabel();
+        AddPrinterRow(_printerFieldTable);
+        _btnSavePrinter = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnSavePrinter.Click += async (_, _) => await SavePrinterSettingsAsync().ConfigureAwait(true);
+        _btnTestSettingsPrinter = PrintBridgeUiTheme.CreateActionButton(string.Empty);
+        _btnTestSettingsPrinter.Click += async (_, _) => await TestPrinterFromSettingsAsync().ConfigureAwait(true);
+        AddSectionActions(_printerFieldTable, 1, _btnSavePrinter, _btnTestSettingsPrinter);
+        _printerFieldTable.Controls.Add(_lblPrinterStatus, 1, 2);
+        _printerGroup = PrintBridgeSettingsLayout.CreateSectionCard(
+            out _lblPrinterSectionTitle,
+            out _lblPrinterSectionText,
+            _printerFieldTable);
+        AddSettingsSection(_settingsLayout, _printerGroup);
+
+        _languageFieldTable = PrintBridgeSettingsLayout.CreateFieldTable(3);
+        _lblLanguageStatus = PrintBridgeSettingsLayout.CreateSectionStatusLabel();
+        AddLanguageRow(_languageFieldTable);
+        _btnApplyLanguage = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnApplyLanguage.Click += async (_, _) => await SaveSelectedLanguageAsync().ConfigureAwait(true);
+        AddSectionActions(_languageFieldTable, 1, _btnApplyLanguage);
+        _languageFieldTable.Controls.Add(_lblLanguageStatus, 1, 2);
+        _languageGroup = PrintBridgeSettingsLayout.CreateSectionCard(
+            out _lblLanguageSectionTitle,
+            out _lblLanguageSectionText,
+            _languageFieldTable);
+        AddSettingsSection(_settingsLayout, _languageGroup);
+
+        _advancedFieldTable = PrintBridgeSettingsLayout.CreateFieldTable(6);
+        _lblAdvancedStatus = PrintBridgeSettingsLayout.CreateSectionStatusLabel();
+
+        _lblDryRunMode = PrintBridgeSettingsLayout.CreateFieldLabel();
+        _advancedFieldTable.Controls.Add(_lblDryRunMode, 0, 0);
 
         var dryRunPanel = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.None,
+            Anchor = AnchorStyles.Left | AnchorStyles.Top,
             ColumnCount = 1,
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Margin = new Padding(0)
         };
         dryRunPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -659,30 +782,23 @@ public sealed partial class MainForm : Form
         };
         dryRunPanel.Controls.Add(_chkDryRun, 0, 0);
         dryRunPanel.Controls.Add(_lblDryRunWarning, 0, 1);
-        advancedLayout.Controls.Add(dryRunPanel, 1, 0);
+        _advancedFieldTable.Controls.Add(dryRunPanel, 1, 0);
 
-        (_numIdlePoll, _lblIdlePoll) = AddSettingsNumericRow(advancedLayout, 1, 1, 300, 5);
-        (_numBusyPoll, _lblBusyPoll) = AddSettingsNumericRow(advancedLayout, 2, 1, 60, 1);
-        (_numErrorPoll, _lblErrorPoll) = AddSettingsNumericRow(advancedLayout, 3, 1, 300, 15);
-        _advancedGroup.Controls.Add(advancedLayout);
-
-        settingsLayout.Controls.Add(_advancedGroup, 0, 5);
-        settingsLayout.SetColumnSpan(_advancedGroup, 2);
-
-        var savePanel = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            FlowDirection = FlowDirection.LeftToRight,
-            Margin = new Padding(0, 12, 0, 0)
-        };
-        _btnSaveSettings = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
-        _btnSaveSettings.Click += async (_, _) => await SaveSettingsAsync().ConfigureAwait(true);
-        savePanel.Controls.Add(_btnSaveSettings);
-        InitializeSettingsSaveUi(savePanel);
-        settingsLayout.Controls.Add(savePanel, 0, 6);
-        settingsLayout.SetColumnSpan(savePanel, 2);
-
-        scroll.Controls.Add(settingsLayout);
+        (_numIdlePoll, _lblIdlePoll) = AddSettingsNumericRow(_advancedFieldTable, 1, 1, 300, 5);
+        (_numBusyPoll, _lblBusyPoll) = AddSettingsNumericRow(_advancedFieldTable, 2, 1, 60, 1);
+        (_numErrorPoll, _lblErrorPoll) = AddSettingsNumericRow(_advancedFieldTable, 3, 1, 300, 15);
+        _btnSaveAdvanced = PrintBridgeUiTheme.CreateActionButton(string.Empty, primary: true);
+        _btnSaveAdvanced.Click += async (_, _) => await SaveAdvancedSettingsAsync().ConfigureAwait(true);
+        AddSectionActions(_advancedFieldTable, 4, _btnSaveAdvanced);
+        _advancedFieldTable.Controls.Add(_lblAdvancedStatus, 1, 5);
+        _advancedGroup = PrintBridgeSettingsLayout.CreateSectionCard(
+            out _lblAdvancedSectionTitle,
+            out var advancedDescription,
+            _advancedFieldTable);
+        advancedDescription.Visible = false;
+        advancedDescription.Margin = Padding.Empty;
+        AddSettingsSection(_settingsLayout, _advancedGroup);
+        InitializeSettingsSaveUi();
 
         _settingsHint = new Label
         {
@@ -692,145 +808,81 @@ public sealed partial class MainForm : Form
             Padding = new Padding(4, 8, 4, 4)
         };
 
-        var settingsHost = new Panel { Dock = DockStyle.Fill };
-        settingsHost.Controls.Add(scroll);
+        var settingsHost = new DoubleBufferedPanel { Dock = DockStyle.Fill };
+        _settingsScrollPanel.Controls.Add(_settingsLayout);
+        settingsHost.Controls.Add(_settingsScrollPanel);
         settingsHost.Controls.Add(_settingsHint);
         _settingsTab.Controls.Add(settingsHost);
 
         WireConnectionSettingsChangeHandlers();
     }
 
-    private void AddDeviceNameRow(TableLayoutPanel table, int row)
+    private static void AddSettingsSection(TableLayoutPanel root, Control section)
     {
-        _lblDeviceName = new Label
-        {
-            AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            ForeColor = PrintBridgeUiTheme.TextMuted
-        };
-        table.Controls.Add(_lblDeviceName, 0, row);
-
-        var fieldPanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 3,
-            AutoSize = true
-        };
-        _txtDisplayName = new TextBox
-        {
-            Dock = DockStyle.Fill,
-            MaxLength = 200,
-            ReadOnly = true,
-            BackColor = SystemColors.Control,
-            TabStop = false
-        };
-        _lblDeviceNameManaged = new Label
-        {
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            ForeColor = PrintBridgeUiTheme.TextMuted,
-            Font = new Font("Segoe UI", 8.25F),
-            Margin = new Padding(0, 4, 0, 0)
-        };
-        _lblMachineNameHint = new Label
-        {
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            ForeColor = PrintBridgeUiTheme.TextMuted,
-            Font = new Font("Segoe UI", 8.25F),
-            Margin = new Padding(0, 2, 0, 0)
-        };
-        fieldPanel.Controls.Add(_txtDisplayName, 0, 0);
-        fieldPanel.Controls.Add(_lblDeviceNameManaged, 0, 1);
-        fieldPanel.Controls.Add(_lblMachineNameHint, 0, 2);
-        table.Controls.Add(fieldPanel, 1, row);
+        var row = root.RowCount++;
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        section.Dock = DockStyle.Top;
+        section.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+        root.Controls.Add(section, 0, row);
     }
 
-    private void AddLanguageRow(TableLayoutPanel table, int row)
+    private static void AddSectionActions(TableLayoutPanel table, int row, params Button[] buttons)
     {
-        _lblLanguage = new Label
-        {
-            AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            ForeColor = PrintBridgeUiTheme.TextMuted
-        };
-        table.Controls.Add(_lblLanguage, 0, row);
+        var panel = PrintBridgeSettingsLayout.CreateActionRow(buttons);
+        table.Controls.Add(panel, 1, row);
+    }
+
+    private void AddLanguageRow(TableLayoutPanel table)
+    {
+        PrintBridgeSettingsLayout.ConfigureInputRow(table, 0);
+
+        _lblLanguage = PrintBridgeSettingsLayout.CreateFieldLabel();
+        table.Controls.Add(_lblLanguage, 0, 0);
 
         _cmbLanguage = new ComboBox
         {
-            Dock = DockStyle.Fill,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
+            DropDownStyle = ComboBoxStyle.DropDownList
         };
-        table.Controls.Add(_cmbLanguage, 1, row);
+        PrintBridgeUiTheme.StyleSettingsComboBox(_cmbLanguage);
+        PrintBridgeSettingsLayout.StyleSingleLineInput(
+            _cmbLanguage,
+            PrintBridgeSettingsLayout.LanguageComboWidth);
+        _cmbLanguage.SelectedIndexChanged += (_, _) => SetSectionStatus(_lblLanguageStatus, null);
+        table.Controls.Add(PrintBridgeSettingsLayout.CreateInputBody(_cmbLanguage), 1, 0);
     }
 
-    private void AddServerUrlRow(TableLayoutPanel table, int row)
+    private void AddServerUrlRow(TableLayoutPanel table)
     {
-        _lblServerUrl = new Label
-        {
-            AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            ForeColor = PrintBridgeUiTheme.TextMuted
-        };
-        table.Controls.Add(_lblServerUrl, 0, row);
+        PrintBridgeSettingsLayout.ConfigureInputRow(table, 0);
 
-        var fieldPanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            AutoSize = true,
-            Margin = new Padding(0)
-        };
-        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _lblServerUrl = PrintBridgeSettingsLayout.CreateFieldLabel();
+        table.Controls.Add(_lblServerUrl, 0, 0);
 
-        _txtServerUrl = new TextBox { Dock = DockStyle.Fill, Anchor = AnchorStyles.Left | AnchorStyles.Right };
-        _lblServerUrlHelp = new Label
-        {
-            AutoSize = true,
-            ForeColor = PrintBridgeUiTheme.TextMuted,
-            MaximumSize = new Size(560, 0),
-            Margin = new Padding(0, 4, 0, 0)
-        };
+        _txtServerUrl = new TextBox();
+        PrintBridgeUiTheme.StyleSettingsTextBox(_txtServerUrl);
+        PrintBridgeSettingsLayout.StyleSingleLineInput(_txtServerUrl, PrintBridgeSettingsLayout.UrlInputWidth);
+        table.Controls.Add(PrintBridgeSettingsLayout.CreateInputBody(_txtServerUrl), 1, 0);
 
-        fieldPanel.Controls.Add(_txtServerUrl, 0, 0);
-        fieldPanel.Controls.Add(_lblServerUrlHelp, 0, 1);
-        table.Controls.Add(fieldPanel, 1, row);
+        _lblServerUrlHelp = PrintBridgeSettingsLayout.CreateHelpLabel();
+        table.Controls.Add(_lblServerUrlHelp, 1, 1);
     }
 
-    private void AddTokenRow(TableLayoutPanel table, int row)
+    private void AddTokenRow(TableLayoutPanel table)
     {
-        _lblAgentToken = new Label
-        {
-            AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            ForeColor = PrintBridgeUiTheme.TextMuted
-        };
-        table.Controls.Add(_lblAgentToken, 0, row);
+        PrintBridgeSettingsLayout.ConfigureInputRow(table, 2);
 
-        var tokenPanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            AutoSize = true
-        };
-        tokenPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        tokenPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        _lblAgentToken = PrintBridgeSettingsLayout.CreateFieldLabel();
+        table.Controls.Add(_lblAgentToken, 0, 2);
+
         _txtAgentToken = new TextBox
         {
-            Dock = DockStyle.Fill,
-            UseSystemPasswordChar = true,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
+            UseSystemPasswordChar = true
         };
-        _btnToggleToken = new Button
-        {
-            AutoSize = true,
-            MinimumSize = new Size(72, 28),
-            FlatStyle = FlatStyle.Flat,
-            Margin = new Padding(8, 0, 0, 0)
-        };
+        PrintBridgeUiTheme.StyleSettingsTextBox(_txtAgentToken);
+        PrintBridgeSettingsLayout.StyleSingleLineInput(_txtAgentToken, PrintBridgeSettingsLayout.TokenInputWidth);
+
+        _btnToggleToken = new Button();
+        PrintBridgeSettingsLayout.StyleSideActionButton(_btnToggleToken);
         _btnToggleToken.Click += (_, _) =>
         {
             _txtAgentToken.UseSystemPasswordChar = !_txtAgentToken.UseSystemPasswordChar;
@@ -838,71 +890,40 @@ public sealed partial class MainForm : Form
                 ? _localizer["Button.ShowToken"]
                 : _localizer["Button.HideToken"];
         };
-        tokenPanel.Controls.Add(_txtAgentToken, 0, 0);
-        tokenPanel.Controls.Add(_btnToggleToken, 1, 0);
+        table.Controls.Add(PrintBridgeSettingsLayout.CreateInputBody(_txtAgentToken, _btnToggleToken), 1, 2);
 
-        var fieldPanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            AutoSize = true,
-            Margin = new Padding(0)
-        };
-        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        fieldPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        _lblAgentTokenHelp = new Label
-        {
-            AutoSize = true,
-            ForeColor = PrintBridgeUiTheme.TextMuted,
-            MaximumSize = new Size(560, 0),
-            Margin = new Padding(0, 4, 0, 0)
-        };
-        fieldPanel.Controls.Add(tokenPanel, 0, 0);
-        fieldPanel.Controls.Add(_lblAgentTokenHelp, 0, 1);
-        table.Controls.Add(fieldPanel, 1, row);
+        _lblAgentTokenHelp = PrintBridgeSettingsLayout.CreateHelpLabel();
+        table.Controls.Add(_lblAgentTokenHelp, 1, 3);
+
+        _lblAgentTokenPasteGuard = PrintBridgeSettingsLayout.CreateFieldInfoLabel();
+        table.Controls.Add(_lblAgentTokenPasteGuard, 1, 4);
     }
 
-    private void AddPrinterRow(TableLayoutPanel table, int row)
+    private void AddPrinterRow(TableLayoutPanel table)
     {
-        _lblPrinterName = new Label
-        {
-            AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            ForeColor = PrintBridgeUiTheme.TextMuted
-        };
-        table.Controls.Add(_lblPrinterName, 0, row);
+        PrintBridgeSettingsLayout.ConfigureInputRow(table, 0);
 
-        var printerPanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            AutoSize = true
-        };
-        printerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        printerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        _lblPrinterName = PrintBridgeSettingsLayout.CreateFieldLabel();
+        table.Controls.Add(_lblPrinterName, 0, 0);
+
         _cmbPrinterName = new ComboBox
         {
-            Dock = DockStyle.Fill,
-            DropDownStyle = ComboBoxStyle.DropDown,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
+            DropDownStyle = ComboBoxStyle.DropDown
         };
-        _btnRefreshPrinters = new Button
-        {
-            AutoSize = true,
-            MinimumSize = new Size(72, 28),
-            FlatStyle = FlatStyle.Flat,
-            Margin = new Padding(8, 0, 0, 0)
-        };
+        PrintBridgeUiTheme.StyleSettingsComboBox(_cmbPrinterName);
+        PrintBridgeSettingsLayout.StyleSingleLineInput(_cmbPrinterName, PrintBridgeSettingsLayout.PrinterComboWidth);
+
+        _btnRefreshPrinters = new Button();
+        PrintBridgeSettingsLayout.StyleSideActionButton(_btnRefreshPrinters);
         _btnRefreshPrinters.Click += (_, _) => RefreshPrinterList();
-        printerPanel.Controls.Add(_cmbPrinterName, 0, 0);
-        printerPanel.Controls.Add(_btnRefreshPrinters, 1, 0);
-        table.Controls.Add(printerPanel, 1, row);
+        table.Controls.Add(PrintBridgeSettingsLayout.CreateInputBody(_cmbPrinterName, _btnRefreshPrinters), 1, 0);
     }
 
     private void OnRuntimeStatusChanged(object? sender, EventArgs e)
     {
         QueueRefreshDashboard();
-        QueueUiAction(SyncDeviceNameFieldFromHolder);
+        QueueUiAction(SyncConnectionFieldsFromHolder);
+        QueueUiAction(() => RefreshSettingsConnectionStatus());
         QueueRefreshRecentJobs();
         QueueUiAction(() =>
         {
@@ -933,18 +954,50 @@ public sealed partial class MainForm : Form
 
     public void SelectSettingsTab() => _tabs.SelectedTab = _settingsTab;
 
-    private static (TextBox TextBox, Label Label) AddSettingsTextRow(TableLayoutPanel table, int row)
+    public void RefreshAfterAutomaticSetup()
     {
-        var label = new Label
+        QueueUiAction(() => _ = CompleteAutomaticSetupRecoveryAsync());
+    }
+
+    private async Task CompleteAutomaticSetupRecoveryAsync()
+    {
+        try
         {
-            AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            ForeColor = PrintBridgeUiTheme.TextMuted
-        };
-        table.Controls.Add(label, 0, row);
-        var textBox = new TextBox { Dock = DockStyle.Fill, Anchor = AnchorStyles.Left | AnchorStyles.Right };
-        table.Controls.Add(textBox, 1, row);
-        return (textBox, label);
+            LoadSettingsIntoForm();
+
+            var connected = false;
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                await _runtime.ValidateConnectionAsync(cts.Token).ConfigureAwait(true);
+                connected = true;
+            }
+            catch (Exception ex)
+            {
+                _settingsLogger?.LogWarning(ex, "Automatic setup connection verification failed.");
+                _runtime.RecordConnectionFailure(ex);
+            }
+
+            if (connected && PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
+                TryStartPolling();
+
+            RefreshDashboard();
+            RefreshRecentJobsFromRuntime();
+        }
+        catch (Exception ex)
+        {
+            _settingsLogger?.LogWarning(ex, "Automatic setup settings refresh could not update the open window.");
+        }
+    }
+
+    public void FocusPrinterSettingsSection()
+    {
+        SelectSettingsTab();
+        _printerGroup.Focus();
+        SetSectionStatus(
+            _lblPrinterStatus,
+            _localizer["Auto.ConnectedPrinterMissing"],
+            isError: true);
     }
 
     private static (NumericUpDown Numeric, Label Label) AddSettingsNumericRow(
@@ -954,12 +1007,7 @@ public sealed partial class MainForm : Form
         decimal max,
         decimal value)
     {
-        var label = new Label
-        {
-            AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            ForeColor = PrintBridgeUiTheme.TextMuted
-        };
+        var label = PrintBridgeSettingsLayout.CreateFieldLabel();
         table.Controls.Add(label, 0, row);
         var numeric = new NumericUpDown
         {
@@ -967,7 +1015,9 @@ public sealed partial class MainForm : Form
             Maximum = max,
             Value = value,
             Width = 110,
-            Anchor = AnchorStyles.Left
+            Anchor = AnchorStyles.Left,
+            Font = PrintBridgeUiTheme.BodyFont,
+            Margin = new Padding(0, 4, 0, 0)
         };
         table.Controls.Add(numeric, 1, row);
         return (numeric, label);
@@ -979,6 +1029,7 @@ public sealed partial class MainForm : Form
         _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Turkish, "Türkçe"));
         _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.English, "English"));
         _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Arabic, "العربية"));
+        _cmbLanguage.Items.Add(new LanguageOption(SupportedCultures.Russian, "Русский"));
     }
 
     private void SelectSavedLanguage()
@@ -988,17 +1039,96 @@ public sealed partial class MainForm : Form
             ? _cultureService.CurrentCulture.Name
             : SupportedCultures.NormalizeOrDefault(savedLanguage);
 
-        for (var i = 0; i < _cmbLanguage.Items.Count; i++)
+        _suppressLanguageSelectionChanged = true;
+        try
         {
-            if (_cmbLanguage.Items[i] is LanguageOption option &&
-                string.Equals(option.CultureName, selectedCulture, StringComparison.OrdinalIgnoreCase))
+            for (var i = 0; i < _cmbLanguage.Items.Count; i++)
             {
-                _cmbLanguage.SelectedIndex = i;
-                return;
+                if (_cmbLanguage.Items[i] is LanguageOption option &&
+                    string.Equals(option.CultureName, selectedCulture, StringComparison.OrdinalIgnoreCase))
+                {
+                    _cmbLanguage.SelectedIndex = i;
+                    return;
+                }
+            }
+
+            _cmbLanguage.SelectedIndex = 0;
+        }
+        finally
+        {
+            _suppressLanguageSelectionChanged = false;
+        }
+    }
+
+    private async Task SaveSelectedLanguageAsync()
+    {
+        if (_suppressLanguageSelectionChanged || _isSavingLanguage)
+            return;
+
+        if (_cmbLanguage.SelectedItem is not LanguageOption languageOption)
+            return;
+
+        var selectedCulture = SupportedCultures.NormalizeOrDefault(languageOption.CultureName);
+        var previousCulture = _cultureService.CurrentCulture.Name;
+        if (string.Equals(previousCulture, selectedCulture, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        _isSavingLanguage = true;
+        _cmbLanguage.Enabled = false;
+        _btnApplyLanguage.Enabled = false;
+        SetSectionStatus(_lblLanguageStatus, _localizer["Settings.Saving"]);
+        try
+        {
+            await Task.Run(() => _settingsStore.SaveLanguage(selectedCulture)).ConfigureAwait(true);
+
+            var ui = CloneUiOptions(_settingsHolder.Ui);
+            ui.Language = selectedCulture;
+            _settingsHolder.ReplaceUi(ui);
+            _cultureService.Initialize(selectedCulture);
+            ApplyStartupLocalization();
+            RefreshDashboard();
+            RefreshRuntimeIssueLabel();
+            RefreshSettingsConnectionStatus();
+            RefreshRecentJobsFromRuntime();
+            if (_tabs.SelectedTab == _historyTab)
+                RefreshPrintHistory();
+            SetSectionStatus(_lblLanguageStatus, _localizer["Settings.LanguageApplied"], isSuccess: true);
+        }
+        catch (Exception ex)
+        {
+            _cultureService.Initialize(previousCulture);
+            ResetLanguageSelection(previousCulture);
+            SetSectionStatus(_lblLanguageStatus, _localizer.GetString("Message.SettingsSaveFailed", "Language"), isError: true);
+            _settingsLogger?.LogWarning(ex, "Language setting could not be saved.");
+        }
+        finally
+        {
+            _cmbLanguage.Enabled = true;
+            _btnApplyLanguage.Enabled = true;
+            _isSavingLanguage = false;
+        }
+    }
+
+    private void ResetLanguageSelection(string cultureName)
+    {
+        _suppressLanguageSelectionChanged = true;
+        try
+        {
+            var normalized = SupportedCultures.NormalizeOrDefault(cultureName);
+            for (var i = 0; i < _cmbLanguage.Items.Count; i++)
+            {
+                if (_cmbLanguage.Items[i] is LanguageOption option &&
+                    string.Equals(option.CultureName, normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    _cmbLanguage.SelectedIndex = i;
+                    return;
+                }
             }
         }
-
-        _cmbLanguage.SelectedIndex = 0;
+        finally
+        {
+            _suppressLanguageSelectionChanged = false;
+        }
     }
 
     private sealed record LanguageOption(string CultureName, string DisplayName)
@@ -1006,35 +1136,97 @@ public sealed partial class MainForm : Form
         public override string ToString() => DisplayName;
     }
 
-    private void SyncDeviceNameFieldFromHolder()
+    private void SyncConnectionFieldsFromHolder()
     {
-        if (_txtDisplayName is null)
+        if (_txtServerUrl is null || _txtAgentToken is null)
             return;
 
-        var bridge = _settingsHolder.Snapshot().Bridge;
-        _txtDisplayName.Text = bridge.ServerDeviceNameResolved
-            ? bridge.DisplayName ?? string.Empty
-            : string.Empty;
+        var (hub, _, _) = _settingsHolder.Snapshot();
+        _syncingConnectionFields = true;
+        try
+        {
+            _txtServerUrl.Text = hub.ServerUrl ?? string.Empty;
+            if (!ShouldPreserveAgentTokenInput())
+                _txtAgentToken.Text = hub.AgentToken ?? string.Empty;
+        }
+        finally
+        {
+            _syncingConnectionFields = false;
+        }
+
+        RefreshAgentTokenPasteGuard();
+    }
+
+    private bool ShouldPreserveAgentTokenInput() =>
+        _txtAgentToken is not null
+        && PrintBridgeConnectionFieldSync.ShouldPreserveAgentTokenInput(
+            _isSavingConnection,
+            _txtAgentToken.Focused,
+            _agentTokenUserEdited);
+
+    private void ResetAgentTokenInputTracking()
+    {
+        _agentTokenUserEdited = false;
+    }
+
+    private void RefreshAgentTokenPasteGuard()
+    {
+        if (_lblAgentTokenPasteGuard is null || _txtAgentToken is null)
+            return;
+
+        // Static AutoSize layout: showing/hiding the reserved paste-guard row
+        // reflows automatically; no manual scroll-layout pass is needed.
+        var looksLikeSetupOrProtocol = PrintBridgeTokenPasteGuard.LooksLikeSetupOrProtocolValue(_txtAgentToken.Text);
+        if (looksLikeSetupOrProtocol)
+        {
+            _lblAgentTokenPasteGuard.Text = _localizer["Settings.AgentTokenPasteGuard"];
+            _lblAgentTokenPasteGuard.Visible = true;
+        }
+        else
+        {
+            _lblAgentTokenPasteGuard.Text = string.Empty;
+            _lblAgentTokenPasteGuard.Visible = false;
+        }
+    }
+
+    private void RefreshSettingsConnectionStatus(PrintBridgeRuntimeStatus? status = null)
+    {
+        if (_lblConnectionStatus is null || _isSavingConnection)
+            return;
+
+        status ??= _runtime.GetStatus();
+        if (status.LastIssue is not { IsBlockingLifecycleIssue: true } issue)
+        {
+            SetSectionStatus(_lblConnectionStatus, null);
+            return;
+        }
+
+        SetSectionStatus(_lblConnectionStatus, _localizer.GetRuntimeIssueDetail(issue), isError: true);
+        if (issue.ShouldClearToken && !ShouldPreserveAgentTokenInput())
+            SyncConnectionFieldsFromHolder();
     }
 
     private void LoadSettingsIntoForm()
     {
+        ResetAgentTokenInputTracking();
         var (hub, bridge, ui) = _settingsHolder.Snapshot();
-        _txtServerUrl.Text = hub.ServerUrl;
-        _txtAgentToken.Text = hub.AgentToken;
-        RefreshPrinterList(bridge.PrinterName);
-        _txtDisplayName.Text = bridge.ServerDeviceNameResolved
-            ? bridge.DisplayName ?? string.Empty
-            : string.Empty;
-        _lblMachineNameHint.Text = _localizer.GetString(
-            "Settings.MachineNameHint",
-            string.IsNullOrWhiteSpace(bridge.MachineName) ? Environment.MachineName : bridge.MachineName);
-        _chkDryRun.Checked = bridge.DryRun;
-        UpdateDryRunWarning();
-        _numIdlePoll.Value = Math.Clamp(bridge.IdlePollIntervalSeconds, (int)_numIdlePoll.Minimum, (int)_numIdlePoll.Maximum);
-        _numBusyPoll.Value = Math.Clamp(bridge.BusyPollIntervalSeconds, (int)_numBusyPoll.Minimum, (int)_numBusyPoll.Maximum);
-        _numErrorPoll.Value = Math.Clamp(bridge.ErrorPollIntervalSeconds, (int)_numErrorPoll.Minimum, (int)_numErrorPoll.Maximum);
-        SelectSavedLanguage();
+        _syncingConnectionFields = true;
+        try
+        {
+            _txtServerUrl.Text = hub.ServerUrl;
+            _txtAgentToken.Text = hub.AgentToken;
+            RefreshPrinterList(bridge.PrinterName);
+            _chkDryRun.Checked = bridge.DryRun;
+            UpdateDryRunWarning();
+            _numIdlePoll.Value = Math.Clamp(bridge.IdlePollIntervalSeconds, (int)_numIdlePoll.Minimum, (int)_numIdlePoll.Maximum);
+            _numBusyPoll.Value = Math.Clamp(bridge.BusyPollIntervalSeconds, (int)_numBusyPoll.Minimum, (int)_numBusyPoll.Maximum);
+            _numErrorPoll.Value = Math.Clamp(bridge.ErrorPollIntervalSeconds, (int)_numErrorPoll.Minimum, (int)_numErrorPoll.Maximum);
+            SelectSavedLanguage();
+        }
+        finally
+        {
+            _syncingConnectionFields = false;
+        }
     }
 
     private void RefreshPrinterList(string? selectedPrinter = null)
@@ -1079,6 +1271,11 @@ public sealed partial class MainForm : Form
             return;
         }
 
+        var hub = _settingsHolder.Snapshot().OrderHub;
+        var status = _runtime.GetStatus();
+        if (PrintBridgePollingGate.RequiresReconnectBeforeStart(hub.AgentToken, status.LastIssue))
+            return;
+
         try
         {
             _runtime.Start();
@@ -1093,7 +1290,6 @@ public sealed partial class MainForm : Form
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var health = await _runtime.TestConnectionAsync(cts.Token).ConfigureAwait(true);
-        SyncDeviceNameFieldFromHolder();
         var details = string.IsNullOrWhiteSpace(health.CustomerName)
             ? _localizer["Message.ConnectionSuccess"]
             : _localizer.GetString(
@@ -1166,7 +1362,8 @@ public sealed partial class MainForm : Form
             ? PrintBridgeUiTheme.Danger
             : PrintBridgeUiTheme.TextTitle;
 
-        _serverStatusValue.Text = _localizer.GetServerConnectionStatus(status.ServerConnectionStatus);
+        var serverStatusText = _localizer.GetServerConnectionStatus(status);
+        _serverStatusValue.Text = serverStatusText;
         _serverStatusValue.ForeColor = status.ServerConnectionStatus switch
         {
             BridgeServerConnectionStatus.Connected => PrintBridgeUiTheme.Success,
@@ -1191,6 +1388,12 @@ public sealed partial class MainForm : Form
 
         UpdateHeaderBadge(status);
         UpdateStartStopButton(status);
+        RefreshSettingsConnectionStatus(status);
+    }
+
+    private void RefreshRuntimeIssueLabel(PrintBridgeRuntimeStatus? status = null)
+    {
+        RefreshSettingsConnectionStatus(status);
     }
 
     private void RefreshRecentJobsFromRuntime()
@@ -1258,7 +1461,9 @@ public sealed partial class MainForm : Form
     private void UpdateHeaderBadge(PrintBridgeRuntimeStatus status)
     {
         _headerBadge.Text = _localizer.GetHeaderBadge(status);
-        if (!status.IsRunning && status.IsConnected)
+        if (status.LastIssue is { IsBlockingLifecycleIssue: true })
+            _headerBadge.BackColor = PrintBridgeUiTheme.Danger;
+        else if (!status.IsRunning && status.IsConnected)
             _headerBadge.BackColor = PrintBridgeUiTheme.Success;
         else if (status.IsRunning)
             _headerBadge.BackColor = PrintBridgeUiTheme.Info;
@@ -1268,6 +1473,9 @@ public sealed partial class MainForm : Form
 
     private void UpdateStartStopButton(PrintBridgeRuntimeStatus status)
     {
+        var hub = _settingsHolder.Snapshot().OrderHub;
+        var requiresReconnect = PrintBridgePollingGate.RequiresReconnectBeforeStart(hub.AgentToken, status.LastIssue);
+
         _btnStartStop.Text = status.IsRunning
             ? _localizer["Button.StopListening"]
             : _localizer["Button.StartListening"];
@@ -1275,6 +1483,20 @@ public sealed partial class MainForm : Form
         _btnStartStop.FlatAppearance.MouseOverBackColor = status.IsRunning
             ? Color.FromArgb(200, 45, 60)
             : PrintBridgeUiTheme.PrimaryButtonHover;
+
+        if (status.IsRunning)
+        {
+            _btnStartStop.Enabled = true;
+            _lblStartReconnectHint.Visible = false;
+            _lblStartReconnectHint.Text = string.Empty;
+            return;
+        }
+
+        _btnStartStop.Enabled = !requiresReconnect;
+        _lblStartReconnectHint.Visible = requiresReconnect;
+        _lblStartReconnectHint.Text = requiresReconnect
+            ? _localizer["Message.ReconnectFromWebToContinue"]
+            : string.Empty;
     }
 
     private void RefreshRecentJobs(IReadOnlyList<LocalPrintJobRecord> jobs, string printerName)
@@ -1378,7 +1600,10 @@ public sealed partial class MainForm : Form
     private string GetUserErrorMessage(Exception ex)
     {
         if (ex is PrintBridgeConnectionException connectionEx)
-            return _localizer.GetString(connectionEx.UserMessageKey, connectionEx.FormatArgs);
+            return _localizer.GetRuntimeIssueDetail(new(
+                connectionEx.IssueCode,
+                connectionEx.UserMessageKey,
+                connectionEx.FormatArgs));
 
         if (ex is LocalizedApplicationException localized)
         {

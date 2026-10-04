@@ -22,8 +22,17 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
         PrintBridgeClientInfo clientInfo,
         CancellationToken ct)
     {
+        var result = await AuthenticateDetailedAsync(rawToken, clientInfo, ct).ConfigureAwait(false);
+        return result.Context;
+    }
+
+    public async Task<PrintBridgeAuthResult> AuthenticateDetailedAsync(
+        string rawToken,
+        PrintBridgeClientInfo clientInfo,
+        CancellationToken ct)
+    {
         if (string.IsNullOrWhiteSpace(rawToken))
-            return null;
+            return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.MissingToken);
 
         string tokenHash;
         try
@@ -32,18 +41,36 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
         }
         catch (ArgumentException)
         {
-            return null;
+            return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.InvalidToken);
         }
 
         var device = await _centralDb.PrintBridgeDevices
             .Include(d => d.Tenant)
-            .FirstOrDefaultAsync(d => d.TokenHash == tokenHash && d.IsActive, ct)
+            .FirstOrDefaultAsync(d => d.TokenHash == tokenHash, ct)
             .ConfigureAwait(false);
 
         if (device is null)
         {
             _logger.LogWarning("Print Bridge authentication failed: device not found or inactive.");
-            return null;
+            return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.InvalidToken);
+        }
+
+        if (device.RemovedAtUtc is not null)
+        {
+            _logger.LogWarning(
+                "Print Bridge authentication failed: device removed. DeviceId={DeviceId}, TenantId={TenantId}",
+                device.Id,
+                device.TenantId);
+            return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.DeviceRemoved);
+        }
+
+        if (!device.IsActive)
+        {
+            _logger.LogWarning(
+                "Print Bridge authentication failed: device disabled. DeviceId={DeviceId}, TenantId={TenantId}",
+                device.Id,
+                device.TenantId);
+            return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.DeviceDisabled);
         }
 
         if (device.Tenant is null || !device.Tenant.IsActive)
@@ -52,10 +79,53 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
                 "Print Bridge authentication failed: tenant inactive. DeviceId={DeviceId}, TenantId={TenantId}",
                 device.Id,
                 device.TenantId);
-            return null;
+            return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.TenantInactive);
         }
 
         var now = DateTime.UtcNow;
+
+        if (clientInfo.InstallationId.HasValue)
+        {
+            var installationId = clientInfo.InstallationId.Value;
+            if (installationId == Guid.Empty)
+            {
+                _logger.LogWarning(
+                    "Print Bridge authentication failed: installation identity is empty. DeviceId={DeviceId}, TenantId={TenantId}",
+                    device.Id,
+                    device.TenantId);
+                return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.InstallationIdInvalid);
+            }
+
+            if (device.InstallationId.HasValue && device.InstallationId.Value != installationId)
+            {
+                _logger.LogWarning(
+                    "Print Bridge authentication failed: installation identity mismatch. DeviceId={DeviceId}, TenantId={TenantId}",
+                    device.Id,
+                    device.TenantId);
+                return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.InstallationIdMismatch);
+            }
+
+            if (!device.InstallationId.HasValue)
+            {
+                var activeDuplicate = await _centralDb.PrintBridgeDevices
+                    .AsNoTracking()
+                    .AnyAsync(d => d.TenantId == device.TenantId
+                        && d.Id != device.Id
+                        && d.InstallationId == installationId
+                        && d.RemovedAtUtc == null, ct)
+                    .ConfigureAwait(false);
+
+                if (activeDuplicate)
+                {
+                    _logger.LogWarning(
+                        "Print Bridge authentication failed: installation identity is already bound to another active device. TenantId={TenantId}",
+                        device.TenantId);
+                    return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.InstallationIdAlreadyBound);
+                }
+
+                device.InstallationId = installationId;
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(clientInfo.BridgeName))
         {
@@ -85,11 +155,12 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
             device.Id,
             device.TenantId);
 
-        return new PrintBridgeAuthContext(
+        return PrintBridgeAuthResult.Success(new PrintBridgeAuthContext(
             device.Id,
             device.TenantId,
             device.Tenant.Name,
             device.Name,
-            string.IsNullOrWhiteSpace(device.MachineName) ? null : device.MachineName);
+            device.InstallationId,
+            string.IsNullOrWhiteSpace(device.MachineName) ? null : device.MachineName));
     }
 }

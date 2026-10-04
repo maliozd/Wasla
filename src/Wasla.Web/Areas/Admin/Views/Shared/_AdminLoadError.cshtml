@@ -1,0 +1,9 @@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+<div class="alert alert-danger d-flex gap-2 align-items-start" role="alert">
+    <i class="bi bi-x-octagon flex-shrink-0 mt-1" aria-hidden="true"></i>
+    <div>
+        <p class="fw-semibold mb-1">@L["Admin.Ops.LoadError.Title"]</p>
+        <p class="small mb-0">@L["Admin.Ops.LoadError.Body"]</p>
+    </div>
+</div>

@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Generic",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Generic.Product.HousePlate", "minPrice": 150, "maxPrice": 240, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraBread", "Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy"] },
+    { "key": "Mock.Generic.Product.DailySoup", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.ExtraLemon", "Mock.Modifier.ExtraBread"] },
+    { "key": "Mock.Generic.Product.Bread", "minPrice": 15, "maxPrice": 30, "modifiers": ["Mock.Modifier.ExtraBread"] },
+    { "key": "Mock.Generic.Product.Ayran", "minPrice": 25, "maxPrice": 40, "modifiers": ["Mock.Modifier.Ayran"] },
+    { "key": "Mock.Generic.Product.MixedPlate", "minPrice": 200, "maxPrice": 340, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraSauce", "Mock.Modifier.Rice"] }
+  ]
+}
