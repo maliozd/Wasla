@@ -79,6 +79,10 @@ public sealed class SqlServerTenantDatabaseProvisioningOperations : ITenantDatab
                 await tenantDb.SaveChangesAsync(ct).ConfigureAwait(false);
                 ownerCreated = true;
             }
+
+            // A new restaurant starts in Setup: orders are kept, but nothing is accepted or printed automatically
+            // until a user completes or skips guided setup. A repeated run keeps whatever mode is already stored.
+            await TenantOperationalModes.EnsureNewTenantStartsInSetupAsync(tenantDb, migrationNow, ct).ConfigureAwait(false);
         }
 
         return new TenantDatabaseProvisioningWork(customerConnString, migrationNow, ownerCreated);

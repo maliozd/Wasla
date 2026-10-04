@@ -1,0 +1,13 @@
+{
+  "businessSubtype": "Sushi",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoWasabi"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Sushi.Product.CaliforniaRoll", "minPrice": 180, "maxPrice": 260, "modifiers": ["Mock.Modifier.ExtraSoySauce", "Mock.Modifier.WasabiOnTheSide", "Mock.Modifier.NoWasabi", "Mock.Modifier.ExtraGinger"] },
+    { "key": "Mock.Sushi.Product.PhiladelphiaRoll", "minPrice": 190, "maxPrice": 280, "modifiers": ["Mock.Modifier.SpicyMayo", "Mock.Modifier.NoWasabi", "Mock.Modifier.ExtraGinger"] },
+    { "key": "Mock.Sushi.Product.SalmonRoll", "minPrice": 200, "maxPrice": 300, "modifiers": ["Mock.Modifier.NoWasabi", "Mock.Modifier.ExtraSoySauce"] },
+    { "key": "Mock.Sushi.Product.ShrimpTempuraRoll", "minPrice": 210, "maxPrice": 310, "modifiers": ["Mock.Modifier.SpicyMayo", "Mock.Modifier.ExtraGinger"] },
+    { "key": "Mock.Sushi.Product.NigiriSet", "minPrice": 320, "maxPrice": 480, "modifiers": ["Mock.Modifier.WasabiOnTheSide", "Mock.Modifier.NoWasabi", "Mock.Modifier.ExtraSoySauce"] },
+    { "key": "Mock.Sushi.Product.SushiMix", "minPrice": 360, "maxPrice": 540, "modifiers": ["Mock.Modifier.ExtraSoySauce", "Mock.Modifier.ExtraGinger", "Mock.Modifier.SpicyMayo"] }
+  ]
+}

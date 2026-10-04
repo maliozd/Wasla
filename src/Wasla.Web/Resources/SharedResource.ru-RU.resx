@@ -204,9 +204,6 @@
   <data name="Layout.LiveScreen" xml:space="preserve">
     <value>Живой экран</value>
   </data>
-  <data name="Layout.OrderHistory" xml:space="preserve">
-    <value>История заказов</value>
-  </data>
   <data name="Layout.PlatformConnections" xml:space="preserve">
     <value>Соединения платформы</value>
   </data>
@@ -272,6 +269,15 @@
   </data>
   <data name="Layout.ToggleSidebar" xml:space="preserve">
     <value>Переключить меню</value>
+  </data>
+  <data name="Layout.OpenNavigation" xml:space="preserve">
+    <value>Открыть меню</value>
+  </data>
+  <data name="Layout.CloseNavigation" xml:space="preserve">
+    <value>Закрыть меню</value>
+  </data>
+  <data name="Layout.TenantNavigation" xml:space="preserve">
+    <value>Меню ресторана</value>
   </data>
   <data name="Landing.Title" xml:space="preserve">
     <value>Wasla</value>
@@ -606,6 +612,60 @@
   <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
     <value>Следите за активными заказами во время работы.</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
+    <value>{0} мин</value>
+  </data>
+  <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve">
+    <value>{0} ч {1} мин</value>
+  </data>
+  <data name="Orders.LiveScreen.ViewCards" xml:space="preserve">
+    <value>Карточки</value>
+  </data>
+  <data name="Orders.LiveScreen.ViewList" xml:space="preserve">
+    <value>Список</value>
+  </data>
+  <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
+    <value>Не удалось загрузить детали заказа.</value>
+  </data>
+  <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve">
+    <value>Не удалось обновить заказы. Показано последнее обновление.</value>
+  </data>
+  <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve">
+    <value>Сеанс истёк. Обновите страницу, чтобы продолжить.</value>
+  </data>
+  <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
+    <value>Этот итог не входит в оперативный снимок.</value>
+  </data>
+  <data name="Orders.Print.Action" xml:space="preserve">
+    <value>Печать</value>
+  </data>
+  <data name="Orders.Print.InQueue" xml:space="preserve">
+    <value>В очереди печати</value>
+  </data>
+  <data name="Orders.Print.Hint" xml:space="preserve">
+    <value>Отправить чек в Print Bridge</value>
+  </data>
+  <data name="Orders.Print.Queued" xml:space="preserve">
+    <value>Чек отправлен в очередь печати.</value>
+  </data>
+  <data name="Orders.Print.ReprintQueued" xml:space="preserve">
+    <value>Чек повторно отправлен в очередь печати.</value>
+  </data>
+  <data name="Orders.Print.AlreadyQueued" xml:space="preserve">
+    <value>Чек для этого заказа уже в очереди или печатается.</value>
+  </data>
+  <data name="Orders.Print.ConfirmReprint" xml:space="preserve">
+    <value>Отправить этот чек на печать повторно?</value>
+  </data>
+  <data name="Orders.Print.OrderNotFound" xml:space="preserve">
+    <value>Заказ не найден.</value>
+  </data>
+  <data name="Orders.Print.Failed" xml:space="preserve">
+    <value>Не удалось добавить чек в очередь печати.</value>
+  </data>
+  <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
+    <value>Открыть заказ</value>
+  </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>Закрыть дисплей</value>
   </data>
@@ -620,6 +680,12 @@
   </data>
   <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
     <value>Последнее обновление</value>
+  </data>
+  <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
+    <value>В эфире</value>
+  </data>
+  <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
+    <value>Звук уведомлений</value>
   </data>
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>Всплывающее окно было заблокировано. Открытие живого дисплея на этой вкладке.</value>
@@ -725,9 +791,6 @@
   </data>
   <data name="Orders.Details.BackToOrders" xml:space="preserve">
     <value>Вернуться к заказам</value>
-  </data>
-  <data name="Orders.Details.BackToOrderHistory" xml:space="preserve">
-    <value>Вернуться к истории заказов</value>
   </data>
   <data name="Orders.Details.AcceptedAt" xml:space="preserve">
     <value>Принял</value>
@@ -865,7 +928,7 @@
     <value>Подключения к платформе пока не добавлены.</value>
   </data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve">
-    <value>Эта платформа и идентификатор магазина уже определены.</value>
+    <value>Для этой платформы подключение уже существует.</value>
   </data>
   <data name="PlatformConnections.Back" xml:space="preserve">
     <value>Назад</value>
@@ -877,7 +940,7 @@
     <value>Активировать</value>
   </data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve">
-    <value>Примечание. Предполагается, что роль Owner/Manager будет управлять соединениями платформы.</value>
+    <value>Управляйте платформами заказов, подключёнными к этому ресторану.</value>
   </data>
   <data name="Branches.Title" xml:space="preserve">
     <value>Филиалы</value>
@@ -947,6 +1010,21 @@
   </data>
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
     <value>Чтобы услышать звуки в новом порядке, сначала просмотрите звук в настройках уведомлений.</value>
+  </data>
+  <data name="Notification.EnableSoundButton" xml:space="preserve">
+    <value>Включить звук уведомлений</value>
+  </data>
+  <data name="Notification.SoundMayBeOffTitle" xml:space="preserve">
+    <value>Звук уведомлений может быть выключен</value>
+  </data>
+  <data name="Notification.SoundMayBeOffDescription" xml:space="preserve">
+    <value>Включите звук уведомлений, чтобы слышать оповещения о новых заказах.</value>
+  </data>
+  <data name="Notification.SoundActive" xml:space="preserve">
+    <value>Звук уведомлений активен</value>
+  </data>
+  <data name="Notification.StopSoundButton" xml:space="preserve">
+    <value>Остановить звук</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>Загрузка…</value>
@@ -2181,9 +2259,6 @@
   <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
     <value>Статус подключения платформы не удалось изменить.</value>
   </data>
-  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
-    <value>Соединение с той же платформой и идентификатором магазина уже существует.</value>
-  </data>
   <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
     <value>Для управления подключениями к платформе необходима роль владельца или менеджера.</value>
   </data>
@@ -2324,9 +2399,6 @@
   </data>
   <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
     <value>Этот токен отображается только один раз. Скопируйте и сохраните его в конфигурации Print Bridge. Если вы потеряете его, восстановите токен.</value>
-  </data>
-  <data name="PrintBridge.TokenCreated" xml:space="preserve">
-    <value>Распечатать токен моста создан</value>
   </data>
   <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
     <value>Токен моста для печати восстановлен.</value>
@@ -2515,10 +2587,10 @@
     <value>Пакет Wasla Print Bridge</value>
   </data>
   <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
-    <value>Портативный пакет установки для Windows скоро появится здесь.</value>
+    <value>Пакет приложения для Windows скоро появится здесь.</value>
   </data>
   <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
-    <value>WaslaPrintBridge-portable.zip</value>
+    <value>Wasla.PrintBridge-win-x64.zip</value>
   </data>
   <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
     <value>Статус:</value>
@@ -2533,16 +2605,10 @@
     <value>Скоро</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
-    <value>Загрузите портативный пакет установки для ПК с ОС Windows, подключенного к чековому принтеру.</value>
+    <value>Скачайте пакет приложения для Windows на компьютер с Windows, подключённый к принтеру чеков.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
     <value>В среде разработки можно запустить приложение Print Bridge напрямую.</value>
-  </data>
-  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
-    <value>Детали подключения</value>
-  </data>
-  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>Адрес веб-панели</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>Токен устройства</value>
@@ -2572,13 +2638,13 @@
     <value>Скопируйте URL веб-панели Wasla.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>Создайте код настройки.</value>
+    <value>Создайте токен устройства и скопируйте его.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Введите URL и код настройки в приложении.</value>
+    <value>В Print Bridge откройте «Настройки» и вставьте Wasla Веб-панель URL и токен устройства.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Завершите подключение.</value>
+    <value>Нажмите «Сохранить подключение», затем «Тестовое соединение».</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Выберите принтер и сохраните.</value>
@@ -2596,7 +2662,7 @@
     <value>подключение к Интернету</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>Временный код настройки (вводится в настольном приложении)</value>
+    <value>Для подключения вручную: токен устройства, созданный на этой странице</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>Компьютер, на котором установлено приложение, должен оставаться включенным.</value>
@@ -2942,9 +3008,6 @@
   </data>
   <data name="PrintBridge.DeviceToken" xml:space="preserve">
     <value>Токен устройства</value>
-  </data>
-  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
-    <value>Копирующий сервер URL</value>
   </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
     <value>Сервер URL не удалось определить. Откройте эту страницу из своего клиентского домена или обратитесь к своему администратору.</value>
@@ -3735,11 +3798,11 @@
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>Не удалось начать настройку. Повторите попытку.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>Попробовать открыть снова</value></data>
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>Скачать Wasla Print Bridge</value></data>
-  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Ручная настройка</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>Подключить вручную</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>Не открылось? Убедитесь, что Wasla Print Bridge установлен и был запущен хотя бы один раз.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Не открылось автоматически? Используйте шаги ручной настройки.</value></data>
-  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Открыть ручную настройку</value></data>
-  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Ручная настройка</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>Не открылось автоматически?</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>Подключите вручную по URL веб-панели и токену устройства</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>Подключить вручную</value></data>
   <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>Если Print Bridge работает на том же компьютере, можно использовать localhost. На другом компьютере используйте IP-адрес или домен.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>Адрес сервера сейчас недоступен.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>Нет доступного устройства Print Bridge. Сначала создайте его.</value></data>
@@ -3747,6 +3810,49 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>Перед заменой токена текущего активного устройства требуется подтверждение.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>Автоматическая настройка создаст новый токен для устройства {0}; старый токен перестанет работать.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>Не удалось выполнить действие с токеном.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Title" xml:space="preserve"><value>Скачайте пакет приложения для Windows</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Requirement" xml:space="preserve"><value>Print Bridge — приложение для Windows 10 и 11. Вы распакуете скачанный ZIP-файл и запустите Wasla.PrintBridge.exe на компьютере, к которому подключён принтер чеков.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.File" xml:space="preserve"><value>Файл: {0}</value></data>
+  <data name="PrintBridge.FirstInstall.NotWindows" xml:space="preserve"><value>Похоже, это не компьютер с Windows. Откройте эту страницу на компьютере с Windows, к которому подключён принтер чеков, и завершите настройку там. Ничего не скачивается, пока вы сами этого не выберете.</value></data>
+  <data name="PrintBridge.FirstInstall.DownloadStarted" xml:space="preserve"><value>Загрузка началась. Когда браузер сохранит ZIP-файл, выполните шаг 2.</value></data>
+  <data name="PrintBridge.FirstInstall.AlreadyInstalled" xml:space="preserve"><value>Print Bridge уже установлен</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Button" xml:space="preserve"><value>Скачать Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Missing" xml:space="preserve"><value>Пакет Print Bridge здесь ещё не опубликован, поэтому скачать его с этой страницы нельзя. Если Print Bridge уже установлен, продолжите ниже или выполните настройку позже.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Title" xml:space="preserve"><value>Подготовьте Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Extract" xml:space="preserve"><value>Распакуйте скачанный ZIP-файл в папку, например C:\Wasla\PrintBridge.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Run" xml:space="preserve"><value>Запустите Wasla.PrintBridge.exe один раз и не закрывайте его. После этого эта страница сможет открывать Print Bridge за вас.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Runtime" xml:space="preserve"><value>Этому пакету нужна среда .NET 8 Desktop Runtime. Если Windows её запросит, разрешите установку или скачайте её с сайта Microsoft, затем снова запустите Print Bridge.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Done" xml:space="preserve"><value>Print Bridge скачан и открыт</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Title" xml:space="preserve"><value>Автоматическое подключение</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Body" xml:space="preserve"><value>Открывает Print Bridge на этом компьютере и подключает его к Wasla как новое устройство. Браузер может спросить, разрешить ли открыть приложение.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Button" xml:space="preserve"><value>Открыть Print Bridge и подключить</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Title" xml:space="preserve"><value>Подключение вручную</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>Вы сами вводите Wasla Веб-панель URL и токен устройства в «Настройках» Print Bridge. Используйте этот способ, если приложение не открывается автоматически.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Выберите способ подключения</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Выберите и проверьте принтер</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>В Print Bridge откройте «Настройки», выберите принтер чеков в разделе «Настройка принтера», нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
+  <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>Когда Wasla подтвердит подключение, панель пошаговой настройки вверху страницы покажет «{0}». Дальше — знакомство с устройством, затем обучение работе с заказами.</value></data>
+  <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Веб-панель URL и токен устройства</value></data>
+  <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Используйте этот способ, если Print Bridge не открывается с этой страницы. На экране «Настройки» Print Bridge нужны именно эти два значения.</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlLabel" xml:space="preserve"><value>Wasla Веб-панель URL</value></data>
+  <data name="PrintBridge.Manual.CopyWebPanelUrl" xml:space="preserve"><value>Копировать Wasla Веб-панель URL</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlCopied" xml:space="preserve"><value>Wasla Веб-панель URL скопирован.</value></data>
+  <data name="PrintBridge.Manual.TokenIntro" xml:space="preserve"><value>Токен устройства создаётся по выбору выше: для нового устройства или для существующего устройства, выбранного для повторного подключения.</value></data>
+  <data name="PrintBridge.Manual.TokenIntroNewDevice" xml:space="preserve"><value>Токен устройства создаётся для нового устройства.</value></data>
+  <data name="PrintBridge.Manual.CreateNewDeviceToken" xml:space="preserve"><value>Создать токен устройства</value></data>
+  <data name="PrintBridge.Manual.CreateReconnectToken" xml:space="preserve"><value>Создать новый токен для выбранного устройства</value></data>
+  <data name="PrintBridge.Manual.TokenCreatedFor" xml:space="preserve"><value>Токен устройства для «{0}» создан.</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenLabel" xml:space="preserve"><value>Токен устройства</value></data>
+  <data name="PrintBridge.Manual.ShownOnce" xml:space="preserve"><value>Этот токен показывается только один раз. После ухода с этой страницы или её перезагрузки его нельзя показать снова; если вы его потеряете, создайте для этого устройства новый токен.</value></data>
+  <data name="PrintBridge.Manual.CopyDeviceToken" xml:space="preserve"><value>Копировать токен устройства</value></data>
+  <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Показать токен</value></data>
+  <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Скрыть токен</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Токен устройства скопирован.</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Теперь откройте «Настройки» в Print Bridge, вставьте оба значения в поля с такими же названиями, затем нажмите «Сохранить подключение» и «Тестовое соединение».</value></data>
+  <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Создание или копирование токена не подключает Print Bridge. Подключение засчитывается только после того, как Wasla подтвердит соединение от Print Bridge.</value></data>
+  <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla подтвердил подключение Print Bridge. Продолжить можно на панели пошаговой настройки вверху этой страницы.</value></data>
+  <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla ещё не подтвердил подключение. Нажмите «Тестовое соединение» в Print Bridge, затем перезагрузите эту страницу, чтобы проверить снова.</value></data>
+  <data name="PrintBridge.Manual.ManageDevice" xml:space="preserve"><value>Управление устройством: обновить токен или удалить устройство</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Режим настройки</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Настроить новое устройство</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>Подключает этот компьютер как новое устройство Print Bridge.</value></data>
@@ -3759,18 +3865,9 @@
   <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Создать новое подключение для выбранного устройства? Старое подключение больше не будет работать.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Повторное подключение создает новый токен для выбранного устройства и делает предыдущий токен этого устройства недействительным.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Выберите устройство для повторного подключения, чтобы продолжить.</value></data>
-  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>Выберите устройство, чтобы продолжить.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Для повторного подключения существующего устройства необходимо выбрать устройство.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>Выбранное устройство не найдено для этого ресторана.</value></data>
   <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>Выберите допустимый режим настройки.</value></data>
-  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>Код настройки использует выбранный выше режим. Настоящий токен устройства создается только после обмена кода настольным приложением.</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>Одноразовый код настройки</value></data>
-  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>Используйте этот краткосрочный код вместе с адресом сервера в настольном приложении Print Bridge. Это не обычный API-токен.</value></data>
-  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>Создать новый код настройки</value></data>
-  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>Создать код повторного подключения</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>Одноразовый код настройки создан.</value></data>
-  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>Истекает: {0}</value></data>
-  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>Скопировать код настройки</value></data>
   <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>Настроить новое устройство</value></data>
   <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>Сведения об устройстве</value></data>
   <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>Веб-имя, состояние подключения и техническая информация этого устройства Print Bridge.</value></data>
@@ -3873,8 +3970,8 @@
   <data name="Auth.AccessDenied.Description" xml:space="preserve"><value>Вы вошли в систему, но у вас нет разрешения для этой страницы или действия.</value></data>
   <data name="Auth.AccessDenied.BackToOrders" xml:space="preserve"><value>Назад к заказам</value></data>
   <data name="Navigation.UserSettings" xml:space="preserve"><value>Пользователи</value></data>
-  <data name="TenantUsers.Title" xml:space="preserve"><value>Пользователи</value></data>
-  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Управляйте ролями пользователей ресторана и статусом доступа.</value></data>
+  <data name="TenantUsers.Title" xml:space="preserve"><value>Команда и права доступа</value></data>
+  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Управляйте ролями команды ресторана и статусом доступа.</value></data>
   <data name="TenantUsers.AddUser" xml:space="preserve"><value>Добавить пользователя</value></data>
   <data name="TenantUsers.CreationDeferred" xml:space="preserve"><value>Создание новых пользователей отключено до добавления безопасного приглашения/настройки пароля.</value></data>
   <data name="TenantUsers.Details" xml:space="preserve"><value>Подробнее</value></data>
@@ -3905,11 +4002,11 @@
   <data name="TenantUsers.Password" xml:space="preserve"><value>Пароль</value></data>
   <data name="TenantUsers.ConfirmPassword" xml:space="preserve"><value>Подтвердите пароль</value></data>
   <data name="TenantUsers.LeavePasswordBlank" xml:space="preserve"><value>Оставьте пустым, чтобы сохранить текущий пароль.</value></data>
-  <data name="TenantUsers.Role.Owner" xml:space="preserve"><value>Owner</value></data>
-  <data name="TenantUsers.Role.Manager" xml:space="preserve"><value>Manager</value></data>
-  <data name="TenantUsers.Role.Kitchen" xml:space="preserve"><value>Kitchen</value></data>
-  <data name="TenantUsers.Role.Cashier" xml:space="preserve"><value>Cashier</value></data>
-  <data name="TenantUsers.Role.Viewer" xml:space="preserve"><value>Viewer</value></data>
+  <data name="TenantUsers.Role.Owner" xml:space="preserve"><value>Владелец</value></data>
+  <data name="TenantUsers.Role.Manager" xml:space="preserve"><value>Менеджер</value></data>
+  <data name="TenantUsers.Role.Kitchen" xml:space="preserve"><value>Кухня</value></data>
+  <data name="TenantUsers.Role.Cashier" xml:space="preserve"><value>Кассир</value></data>
+  <data name="TenantUsers.Role.Viewer" xml:space="preserve"><value>Наблюдатель</value></data>
   <data name="TenantUsers.RoleChanged" xml:space="preserve"><value>Роль обновлена.</value></data>
   <data name="TenantUsers.UserActivated" xml:space="preserve"><value>Пользователь активирован.</value></data>
   <data name="TenantUsers.UserDeactivated" xml:space="preserve"><value>Пользователь деактивирован.</value></data>
@@ -3919,4 +4016,551 @@
   <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>Пользователь не найден.</value></data>
   <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>Последнего Owner нельзя деактивировать или понизить.</value></data>
   <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>Не удалось обновить пользователя.</value></data>
+  <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>Сводка по пользователям</value></data>
+  <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Всего</value></data>
+  <data name="TenantUsers.SummaryActive" xml:space="preserve"><value>Активные</value></data>
+  <data name="TenantUsers.ListHeading" xml:space="preserve"><value>Список пользователей</value></data>
+  <data name="TenantUsers.FilterPlaceholder" xml:space="preserve"><value>Имя или эл. почта</value></data>
+  <data name="TenantUsers.AllRoles" xml:space="preserve"><value>Все роли</value></data>
+  <data name="TenantUsers.EmptyTitle" xml:space="preserve"><value>Пока нет пользователей</value></data>
+  <data name="TenantUsers.EmptyDescription" xml:space="preserve"><value>Начните с добавления первого пользователя ресторана.</value></data>
+  <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>Нет подходящих пользователей</value></data>
+  <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>Измените поиск или фильтры и попробуйте снова.</value></data>
+  <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>Не записано</value></data>
+  <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Доска</value></data>
+  <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Завершённые</value></data>
+  <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>Нет заказов</value></data>
+  <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Заказ</value></data>
+  <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Время</value></data>
+  <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>Итого</value></data>
+  <data name="Orders.LiveScreen.ItemNote" xml:space="preserve"><value>Примечание</value></data>
+  <data name="Orders.LiveScreen.OrderNote" xml:space="preserve"><value>Примечание к заказу</value></data>
+  <data name="Orders.LiveScreen.ViewFocus" xml:space="preserve"><value>Фокус</value></data>
+  <data name="Orders.LiveScreen.SelectOrder" xml:space="preserve"><value>Выберите заказ</value></data>
+  <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Выберите заказ из списка, чтобы увидеть подробности и действия.</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Сейчас нет заказов для отображения</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Заказы появятся здесь, когда поступят.</value></data>
+  <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Назад к заказам</value></data>
+  <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Заказы</value></data>
+  <data name="Signup.BusinessSubtypeHint" xml:space="preserve"><value>Выберите одну или несколько категорий, затем отметьте подтипы.</value></data>
+  <data name="Signup.BusinessCategory.Restaurant" xml:space="preserve"><value>Ресторан</value></data>
+  <data name="Signup.BusinessCategory.FastFood" xml:space="preserve"><value>Фастфуд</value></data>
+  <data name="Signup.BusinessCategory.Cafe" xml:space="preserve"><value>Кафе</value></data>
+  <data name="Signup.BusinessCategory.Bakery" xml:space="preserve"><value>Пекарня и выпечка</value></data>
+  <data name="Signup.BusinessCategory.Dessert" xml:space="preserve"><value>Десерты</value></data>
+  <data name="Signup.BusinessCategory.WorldCuisine" xml:space="preserve"><value>Кухни мира</value></data>
+  <data name="Signup.BusinessCategory.SpecialDiet" xml:space="preserve"><value>Особое питание</value></data>
+  <data name="Signup.BusinessCategory.Other" xml:space="preserve"><value>Другое</value></data>
+  <data name="Signup.BusinessSubtype.Kebab" xml:space="preserve"><value>Кебаб</value></data>
+  <data name="Signup.BusinessSubtype.HomeCooking" xml:space="preserve"><value>Домашняя кухня</value></data>
+  <data name="Signup.BusinessSubtype.Steakhouse" xml:space="preserve"><value>Стейк-хаус</value></data>
+  <data name="Signup.BusinessSubtype.Seafood" xml:space="preserve"><value>Морепродукты</value></data>
+  <data name="Signup.BusinessSubtype.Manti" xml:space="preserve"><value>Манты</value></data>
+  <data name="Signup.BusinessSubtype.Soup" xml:space="preserve"><value>Супы</value></data>
+  <data name="Signup.BusinessSubtype.Burger" xml:space="preserve"><value>Бургер</value></data>
+  <data name="Signup.BusinessSubtype.Pizza" xml:space="preserve"><value>Пицца</value></data>
+  <data name="Signup.BusinessSubtype.Doner" xml:space="preserve"><value>Дёнер</value></data>
+  <data name="Signup.BusinessSubtype.Chicken" xml:space="preserve"><value>Курица</value></data>
+  <data name="Signup.BusinessSubtype.CigKofte" xml:space="preserve"><value>Чий кёфте</value></data>
+  <data name="Signup.BusinessSubtype.SandwichToast" xml:space="preserve"><value>Сэндвич / тост</value></data>
+  <data name="Signup.BusinessSubtype.Cafe" xml:space="preserve"><value>Кафе</value></data>
+  <data name="Signup.BusinessSubtype.Breakfast" xml:space="preserve"><value>Завтрак</value></data>
+  <data name="Signup.BusinessSubtype.Patisserie" xml:space="preserve"><value>Кондитерская</value></data>
+  <data name="Signup.BusinessSubtype.PideLahmacun" xml:space="preserve"><value>Пиде / лахмаджун</value></data>
+  <data name="Signup.BusinessSubtype.BorekGozleme" xml:space="preserve"><value>Бёрек / гёзлеме</value></data>
+  <data name="Signup.BusinessSubtype.DessertShop" xml:space="preserve"><value>Десертная</value></data>
+  <data name="Signup.BusinessSubtype.IceCream" xml:space="preserve"><value>Мороженое</value></data>
+  <data name="Signup.BusinessSubtype.WaffleCrepe" xml:space="preserve"><value>Вафля / креп</value></data>
+  <data name="Signup.BusinessSubtype.Sushi" xml:space="preserve"><value>Суши</value></data>
+  <data name="Signup.BusinessSubtype.Asian" xml:space="preserve"><value>Азиатская кухня</value></data>
+  <data name="Signup.BusinessSubtype.Italian" xml:space="preserve"><value>Паста / итальянская кухня</value></data>
+  <data name="Signup.BusinessSubtype.WorldCuisine" xml:space="preserve"><value>Кухни мира</value></data>
+  <data name="Signup.BusinessSubtype.VeganVegetarian" xml:space="preserve"><value>Веган / вегетарианское</value></data>
+  <data name="Signup.BusinessSubtype.Healthy" xml:space="preserve"><value>Здоровое / фитнес-меню</value></data>
+  <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>Другое</value></data>
+  <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>Выберите хотя бы один подтип.</value></data>
+  <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>Для каждой выбранной категории отметьте хотя бы один подтип.</value></data>
+  <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Произошла непредвиденная ошибка</value></data>
+  <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>Операция не выполнена. Повторите попытку. Если ошибка повторится, сообщите в поддержку этот код.</value></data>
+  <data name="Errors.ReferenceCode" xml:space="preserve"><value>Код обращения</value></data>
+  <data name="Setup.Title" xml:space="preserve"><value>Подготовьте Wasla к работе</value></data>
+  <data name="Setup.Progress" xml:space="preserve"><value>Выполнено {0} из {1}</value></data>
+  <data name="Setup.ProgressLabel" xml:space="preserve"><value>Ход настройки</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Прогресс считает обязательные шаги. Принтер необязателен и не мешает готовности.</value></data>
+  <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla готова</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Платформа заказов подключена, операционный экран готов к работе.</value></data>
+  <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Открыть Live Screen</value></data>
+  <data name="Setup.AddTeamMember" xml:space="preserve"><value>Добавить сотрудника</value></data>
+  <data name="Setup.FinishSetup" xml:space="preserve"><value>Завершить настройку</value></data>
+  <data name="Setup.GuidanceCompleted" xml:space="preserve"><value>Подсказка по настройке завершена.</value></data>
+  <data name="Setup.GuidanceCompleteFailed" xml:space="preserve"><value>Не удалось завершить настройку. Повторите попытку.</value></data>
+  <data name="Setup.NextStepLabel" xml:space="preserve"><value>Следующий шаг</value></data>
+  <data name="Setup.NextStepBody" xml:space="preserve"><value>Добавьте команду и назначьте права.</value></data>
+  <data name="Setup.Optional" xml:space="preserve"><value>Необязательно</value></data>
+  <data name="Setup.StatusComplete" xml:space="preserve"><value>Готово</value></data>
+  <data name="Setup.StatusIncomplete" xml:space="preserve"><value>Не готово</value></data>
+  <data name="Setup.StatusUnavailable" xml:space="preserve"><value>Статус недоступен</value></data>
+  <data name="Setup.WelcomeTitle" xml:space="preserve"><value>{0} готов к работе в Wasla.</value></data>
+  <data name="Setup.WelcomeTitleRest" xml:space="preserve"><value>готов к работе в Wasla.</value></data>
+  <data name="Setup.WelcomeBody" xml:space="preserve"><value>Выполните несколько шагов, чтобы начать принимать заказы.</value></data>
+  <data name="Setup.StartSetup" xml:space="preserve"><value>Начать настройку</value></data>
+  <data name="Setup.BrowsePanel" xml:space="preserve"><value>Открыть панель</value></data>
+  <data name="Setup.ChecklistSummary" xml:space="preserve"><value>Показать шаги настройки</value></data>
+  <data name="Setup.Restaurant.Title" xml:space="preserve"><value>Проверьте данные ресторана</value></data>
+  <data name="Setup.Restaurant.Incomplete" xml:space="preserve"><value>Не хватает названия, телефона или местоположения.</value></data>
+  <data name="Setup.Restaurant.Action" xml:space="preserve"><value>Открыть данные</value></data>
+  <data name="Setup.Platform.Title" xml:space="preserve"><value>Подключите платформу заказов</value></data>
+  <data name="Setup.Platform.Incomplete" xml:space="preserve"><value>Передавайте заказы Yemeksepeti, Getir или Trendyol GO в Wasla.</value></data>
+  <data name="Setup.Platform.Action" xml:space="preserve"><value>Подключить платформу</value></data>
+  <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} подключена</value></data>
+  <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>Подключено платформ: {0}</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Настройте уведомления о заказах</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Звук уведомлений выключен или ещё не сохранён.</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Проверить звук можно в настройках уведомлений.</value></data>
+  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Настроить уведомления</value></data>
+  <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Звук уведомлений включён</value></data>
+  <data name="Setup.Printing.Title" xml:space="preserve"><value>Подключите принтер чеков</value></data>
+  <data name="Setup.Printing.Complete" xml:space="preserve"><value>Принтер подключён</value></data>
+  <data name="Setup.Printing.Action" xml:space="preserve"><value>Подключить принтер</value></data>
+  <data name="Setup.LiveScreen.Title" xml:space="preserve"><value>Проверьте Live Screen</value></data>
+  <data name="Setup.LiveScreen.Detail" xml:space="preserve"><value>Откройте операционный экран и проверьте вид новых заказов.</value></data>
+  <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>Открыть Live Screen</value></data>
+  <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Открытие не сохраняется</value></data>
+  <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>Ещё позиции в деталях</value></data>
+  <data name="Tour.Skip" xml:space="preserve"><value>Пропустить</value></data>
+  <data name="Tour.Back" xml:space="preserve"><value>Назад</value></data>
+  <data name="Tour.Continue" xml:space="preserve"><value>Далее</value></data>
+  <data name="Tour.Finish" xml:space="preserve"><value>Понятно</value></data>
+  <data name="Tour.Replay" xml:space="preserve"><value>Показать обучение этого экрана</value></data>
+  <data name="Tour.Progress" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Tour.Close" xml:space="preserve"><value>Закрыть обучение</value></data>
+  <data name="Tour.Dashboard.Summary.Title" xml:space="preserve"><value>Сводка за день</value></data>
+  <data name="Tour.Dashboard.Summary.Body" xml:space="preserve"><value>Здесь видна операционная сводка за сегодня.</value></data>
+  <data name="Tour.Dashboard.Recent.Title" xml:space="preserve"><value>Последние заказы</value></data>
+  <data name="Tour.Dashboard.Recent.Body" xml:space="preserve"><value>Отсюда можно быстро открыть последние заказы.</value></data>
+  <data name="Tour.Live.Orders.Title" xml:space="preserve"><value>Новые заказы</value></data>
+  <data name="Tour.Live.Orders.Body" xml:space="preserve"><value>Заказы с подключённых платформ появляются здесь.</value></data>
+  <data name="Tour.Live.Actions.Title" xml:space="preserve"><value>Действия с заказом</value></data>
+  <data name="Tour.Live.Actions.Body" xml:space="preserve"><value>Здесь можно управлять заказом.</value></data>
+  <data name="Tour.Live.Timer.Title" xml:space="preserve"><value>Время ожидания</value></data>
+  <data name="Tour.Live.Timer.Body" xml:space="preserve"><value>Здесь видно, как долго заказ ожидает.</value></data>
+  <data name="Tour.Live.Views.Title" xml:space="preserve"><value>Вид</value></data>
+  <data name="Tour.Live.Views.Body" xml:space="preserve"><value>Здесь можно выбрать вид, удобный для работы.</value></data>
+  <data name="Tour.Platform.List.Title" xml:space="preserve"><value>Подключения платформ</value></data>
+  <data name="Tour.Platform.List.Body" xml:space="preserve"><value>Здесь можно подключить платформы заказов к Wasla.</value></data>
+  <data name="Tour.Platform.Connect.Title" xml:space="preserve"><value>Добавить платформу</value></data>
+  <data name="Tour.Platform.Connect.Body" xml:space="preserve"><value>Здесь можно добавить новое подключение платформы.</value></data>
+  <data name="Demo.LaunchTitle" xml:space="preserve"><value>Попробуем Wasla</value></data>
+  <data name="Demo.LaunchAction" xml:space="preserve"><value>Отправить демо-заказ</value></data>
+  <data name="Demo.Badge" xml:space="preserve"><value>Демо</value></data>
+  <data name="Demo.CustomerName" xml:space="preserve"><value>Демо-клиент</value></data>
+  <data name="Demo.StartTitle" xml:space="preserve"><value>Попробуем Wasla</value></data>
+  <data name="Demo.StartBody" xml:space="preserve"><value>Изучите обработку заказа, не затрагивая реальные заказы.</value></data>
+  <data name="Demo.ApproveTitle" xml:space="preserve"><value>Примите заказ</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>Примите заказ отсюда.</value></data>
+  <data name="Demo.PrepareTitle" xml:space="preserve"><value>Начните готовить</value></data>
+  <data name="Demo.PrepareBody" xml:space="preserve"><value>Переведите принятый заказ в приготовление.</value></data>
+  <data name="Demo.ReadyTitle" xml:space="preserve"><value>Отметьте готовым</value></data>
+  <data name="Demo.ReadyBody" xml:space="preserve"><value>Когда заказ готов, отметьте это здесь.</value></data>
+  <data name="Demo.SuccessTitle" xml:space="preserve"><value>Вы провели первый заказ</value></data>
+  <data name="Demo.SuccessBody" xml:space="preserve"><value>Вы прошли обучение. Реальные доставленные заказы видны на живом экране {0} минуты, затем исчезают только с этого рабочего экрана. Историю заказов можно найти на странице «Заказы».</value></data>
+  <data name="Demo.Sushi.Roll" xml:space="preserve"><value>Ролл с лососем</value></data>
+  <data name="Demo.Sushi.Edamame" xml:space="preserve"><value>Эдамаме</value></data>
+  <data name="Demo.Sushi.Note" xml:space="preserve"><value>Меньше васаби.</value></data>
+  <data name="Demo.Burger.Burger" xml:space="preserve"><value>Чизбургер</value></data>
+  <data name="Demo.Burger.Fries" xml:space="preserve"><value>Картофель фри</value></data>
+  <data name="Demo.Burger.Drink" xml:space="preserve"><value>Кола</value></data>
+  <data name="Demo.Burger.Note" xml:space="preserve"><value>Без лука.</value></data>
+  <data name="Demo.Cafe.Coffee" xml:space="preserve"><value>Латте</value></data>
+  <data name="Demo.Cafe.Dessert" xml:space="preserve"><value>Чизкейк</value></data>
+  <data name="Demo.Cafe.Note" xml:space="preserve"><value>С молоком.</value></data>
+  <data name="Demo.Pizza.Pizza" xml:space="preserve"><value>Пицца ассорти</value></data>
+  <data name="Demo.Pizza.Drink" xml:space="preserve"><value>Айран</value></data>
+  <data name="Demo.Pizza.Note" xml:space="preserve"><value>Тонкое тесто.</value></data>
+  <data name="Demo.Doner.Wrap" xml:space="preserve"><value>Дюрум донер</value></data>
+  <data name="Demo.Doner.Drink" xml:space="preserve"><value>Айран</value></data>
+  <data name="Demo.Doner.Note" xml:space="preserve"><value>Не острое.</value></data>
+  <data name="Demo.Kebab.Kebab" xml:space="preserve"><value>Кебаб адана</value></data>
+  <data name="Demo.Kebab.Rice" xml:space="preserve"><value>Рис</value></data>
+  <data name="Demo.Kebab.Note" xml:space="preserve"><value>Слабо острое.</value></data>
+  <data name="Demo.Dessert.Baklava" xml:space="preserve"><value>Пахлава</value></data>
+  <data name="Demo.Dessert.Kunefe" xml:space="preserve"><value>Кюнефе</value></data>
+  <data name="Demo.Dessert.Note" xml:space="preserve"><value>Меньше сиропа.</value></data>
+  <data name="Demo.Lokanta.Kofte" xml:space="preserve"><value>Кёфте на гриле</value></data>
+  <data name="Demo.Lokanta.Rice" xml:space="preserve"><value>Рис</value></data>
+  <data name="Demo.Lokanta.Note" xml:space="preserve"><value>С рисом.</value></data>
+  <data name="Tour.RealOrderPaused" xml:space="preserve"><value>Поступил реальный заказ. Мы временно приостановили обучение.</value></data>
+  <data name="Tour.ViewRealOrder" xml:space="preserve"><value>Показать реальный заказ</value></data>
+  <data name="Tour.ContinueTraining" xml:space="preserve"><value>Продолжить обучение</value></data>
+  <data name="Demo.PickupWaitTitle" xml:space="preserve"><value>Ожидаем курьера</value></data>
+  <data name="Demo.PickupWaitBody" xml:space="preserve"><value>Заказ готов. Когда курьер платформы заберёт заказ, Wasla автоматически сменит статус на «В пути», и обучение само перейдёт к следующему шагу.</value></data>
+  <data name="Demo.DeliveryWaitTitle" xml:space="preserve"><value>Курьер доставляет заказ</value></data>
+  <data name="Demo.DeliveryWaitBody" xml:space="preserve"><value>Статус доставки приходит автоматически от курьера платформы. Когда доставка завершится, Wasla обновит заказ и переведёт обучение к последнему шагу.</value></data>
+  <data name="Demo.ContinueLive" xml:space="preserve"><value>Перейти на живой экран</value></data>
+  <data name="Demo.SkipTraining" xml:space="preserve"><value>Пропустить обучение</value></data>
+  <data name="Demo.SkipConfirmTitle" xml:space="preserve"><value>Пропустить обучение?</value></data>
+  <data name="Demo.SkipConfirmBody" xml:space="preserve"><value>Вы сможете начать это обучение заново позже с помощью кнопки «{0}» на живом экране.</value></data>
+  <data name="Demo.SkipConfirmAction" xml:space="preserve"><value>Пропустить и перейти на живой экран</value></data>
+  <data name="Demo.SkipConfirmCancel" xml:space="preserve"><value>Продолжить обучение</value></data>
+  <data name="Demo.StartFailed" xml:space="preserve"><value>Не удалось начать демозаказ. Попробуйте ещё раз.</value></data>
+  <data name="Demo.SelectTitle" xml:space="preserve"><value>Выберите демозаказ</value></data>
+  <data name="Demo.SelectBody" xml:space="preserve"><value>Откройте заказ с отметкой DEMO, чтобы продолжить обучение.</value></data>
+  <data name="Tour.TrainingPaused" xml:space="preserve"><value>Обучение приостановлено. Продолжите, когда будете готовы.</value></data>
+  <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>Подготовим Wasla к работе</value></data>
+  <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>Настройте подключения к платформам и принтер, а затем освойте основной порядок работы с заказами на тренировочном заказе. Шаги, к которым вы ещё не готовы, можно завершить позже.</value></data>
+  <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>В этом руководстве:</value></data>
+  <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>Подключения к платформам</value></data>
+  <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>Настройка принтера (Wasla Print Bridge)</value></data>
+  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>Обучение работе с заказами на тренировочном заказе</value></data>
+  <data name="GuidedSetup.Start" xml:space="preserve"><value>Начать пошаговую настройку</value></data>
+  <data name="GuidedSetup.Skip" xml:space="preserve"><value>Пропустить пошаговую настройку</value></data>
+  <data name="Orders.Automation.PendingSetup" xml:space="preserve"><value>Заработает после настройки</value></data>
+  <data name="Orders.Automation.PendingSetupDescription" xml:space="preserve"><value>Включится автоматически, когда пошаговая настройка будет завершена или пропущена.</value></data>
+  <data name="Orders.DemoCountdown.PickUp" xml:space="preserve"><value>Курьер заберёт заказ через {0} сек.</value></data>
+  <data name="Orders.DemoCountdown.Deliver" xml:space="preserve"><value>Доставка завершится через {0} сек.</value></data>
+  <data name="Orders.DemoCountdown.Leave" xml:space="preserve"><value>Тренировочный заказ исчезнет с Живого экрана через {0} сек.</value></data>
+  <data name="Orders.DemoCountdown.Waiting" xml:space="preserve"><value>Ожидаем обновления от платформы…</value></data>
+  <data name="Orders.DemoCountdown.Seconds" xml:space="preserve"><value>{0} с</value></data>
+  <data name="Orders.DemoCountdown.Label" xml:space="preserve"><value>Время до автоматического шага</value></data>
+  <data name="Orders.DemoCountdown.Hint" xml:space="preserve"><value>Этот шаг выполняется сам, ничего делать не нужно.</value></data>
+  <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>Если вы пропустите пошаговую настройку, она больше не будет показываться в приложении. Инструкции всегда доступны в разделе «Помощь и руководства».</value></data>
+  <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>Пошаговая настройка не завершена.</value></data>
+  <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>Вы остановились на разделе: {0}</value></data>
+  <data name="GuidedSetup.Continue" xml:space="preserve"><value>Продолжить пошаговую настройку</value></data>
+  <data name="GuidedSetup.End" xml:space="preserve"><value>Завершить пошаговую настройку</value></data>
+  <data name="GuidedSetup.EndDialog.Title" xml:space="preserve"><value>Завершить пошаговую настройку?</value></data>
+  <data name="GuidedSetup.EndDialog.Body" xml:space="preserve"><value>Сохранённый прогресс будет сброшен, и пошаговая настройка больше не появится в приложении. Уже выполненные настройки сохранятся. Инструкции доступны в разделе «Помощь и руководства».</value></data>
+  <data name="GuidedSetup.EndDialog.Confirm" xml:space="preserve"><value>Да, завершить</value></data>
+  <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>Далее: обучение работе с заказами</value></data>
+  <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>Прогресс пошаговой настройки сохранён. В следующем разделе вы на тренировочном заказе научитесь подтверждать заказ, начинать приготовление и отмечать готовность.</value></data>
+  <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>Пошаговая настройка</value></data>
+  <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>Раздел {0} из {1}</value></data>
+  <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>Продолжить</value></data>
+  <data name="GuidedSetup.Panel.Next" xml:space="preserve"><value>Далее: {0}</value></data>
+  <data name="GuidedSetup.Platform.Title" xml:space="preserve"><value>Подключите платформы заказов</value></data>
+  <data name="GuidedSetup.Platform.Body" xml:space="preserve"><value>Wasla собирает заказы Trendyol GO и Yemeksepeti на одном экране. Реальные заказы начнут поступать только после того, как будет активно хотя бы одно подключение к платформе.</value></data>
+  <data name="GuidedSetup.Platform.Where" xml:space="preserve"><value>Добавьте подключение кнопкой «{0}» и введите ID магазина и данные API, полученные на платформе. Существующие подключения можно изменить, включить или отключить в таблице ниже.</value></data>
+  <data name="GuidedSetup.Platform.Check" xml:space="preserve"><value>Подключение работает, если время последней успешной синхронизации обновляется по мере поступления новых заказов.</value></data>
+  <data name="GuidedSetup.Platform.Later" xml:space="preserve"><value>Если данные магазина и API ещё не готовы, этот шаг можно завершить позже.</value></data>
+  <data name="GuidedSetup.Platform.Ready" xml:space="preserve"><value>Активно хотя бы одно подключение к платформе.</value></data>
+  <data name="GuidedSetup.Platform.NotReady" xml:space="preserve"><value>Активных подключений к платформам пока нет.</value></data>
+  <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>Настрою позже</value></data>
+  <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>Подключите принтер чеков</value></data>
+  <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge — приложение Windows для компьютера, к которому подключён принтер. Оно печатает чеки заказов, созданные в Wasla, на выбранном вами принтере.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>Скачайте ниже пакет приложения для Windows, распакуйте его и один раз запустите Print Bridge; затем подключите его кнопкой «{0}» или вручную.</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>Если открыть Print Bridge с этой страницы, он подключится к этой учётной записи автоматически и безопасно. Если приложение не открылось, подключите его вручную: создайте здесь токен устройства и вставьте его вместе с Wasla Веб-панель URL в «Настройки» Print Bridge.</value></data>
+  <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>Затем выберите принтер в настройках Print Bridge и нажмите «Распечатать тестовую квитанцию».</value></data>
+  <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>Если принтер или компьютер ещё не готовы, этот шаг можно завершить позже.</value></data>
+  <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>Устройство Print Bridge подключено.</value></data>
+  <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>Подключённых устройств Print Bridge пока нет.</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>Настрою позже</value></data>
+  <data name="GuidedSetup.PrintBridge.MeetDevice" xml:space="preserve"><value>Познакомьтесь с устройством</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Title" xml:space="preserve"><value>Print Bridge подключён</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Body" xml:space="preserve"><value>Познакомьтесь с устройством, чтобы продолжить настройку.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Title" xml:space="preserve"><value>Познакомьтесь с устройством Print Bridge</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.Device" xml:space="preserve"><value>Print Bridge подключён. Здесь вы будете управлять этим устройством. Посмотрите, что означает каждый раздел; сейчас ничего менять не нужно.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.List" xml:space="preserve"><value>Print Bridge подключён. В этом списке показана каждая установка Print Bridge; чтобы управлять устройством, откройте его сведения. Посмотрите, что означает каждый раздел; сейчас ничего менять не нужно.</value></data>
+  <data name="GuidedSetup.Closed" xml:space="preserve"><value>Пошаговая настройка закрыта. Инструкции доступны в разделе «Помощь и руководства».</value></data>
+  <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>Не удалось выполнить действие пошаговой настройки. Попробуйте ещё раз.</value></data>
+  <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>Пошаговая настройка недоступна для прав вашей учётной записи.</value></data>
+  <data name="Help.Title" xml:space="preserve"><value>Помощь и руководства</value></data>
+  <data name="Help.Subtitle" xml:space="preserve"><value>Пошаговые инструкции по настройке Wasla и работе с ежедневными заказами.</value></data>
+  <data name="Help.Contents" xml:space="preserve"><value>На этой странице</value></data>
+  <data name="Help.Group.Platforms" xml:space="preserve"><value>Подключения к платформам</value></data>
+  <data name="Help.Group.Printing" xml:space="preserve"><value>Печать</value></data>
+  <data name="Help.Group.Orders" xml:space="preserve"><value>Заказы и живой экран</value></data>
+  <data name="Help.Group.Support" xml:space="preserve"><value>Устранение неполадок и поддержка</value></data>
+  <data name="Help.Trendyol.Title" xml:space="preserve"><value>Подключение Trendyol GO</value></data>
+  <data name="Help.Trendyol.Intro" xml:space="preserve"><value>Прежде чем начать, получите ID магазина и данные API (ключ и секрет) в панели продавца Trendyol GO.</value></data>
+  <data name="Help.Trendyol.Step1" xml:space="preserve"><value>На странице подключений к платформам нажмите «{0}» и выберите платформу Trendyol GO.</value></data>
+  <data name="Help.Trendyol.Step2" xml:space="preserve"><value>Введите Store Id, ключ API и секрет API. Если Supplier Id не указан, используется Store Id.</value></data>
+  <data name="Help.Trendyol.Step3" xml:space="preserve"><value>Укажите email исполнителя (Executor email), который Trendyol GO использует в запросах, оставьте подключение активным и сохраните.</value></data>
+  <data name="Help.Yemeksepeti.Title" xml:space="preserve"><value>Подключение Yemeksepeti</value></data>
+  <data name="Help.Yemeksepeti.Intro" xml:space="preserve"><value>Прежде чем начать, получите данные партнёрской интеграции Yemeksepeti: ID сети, ID филиала, client ID и client secret.</value></data>
+  <data name="Help.Yemeksepeti.Step1" xml:space="preserve"><value>На странице подключений к платформам нажмите «{0}» и выберите платформу Yemeksepeti.</value></data>
+  <data name="Help.Yemeksepeti.Step2" xml:space="preserve"><value>Введите ID сети в поле Supplier Id, а ID филиала — в поле Store Id.</value></data>
+  <data name="Help.Yemeksepeti.Step3" xml:space="preserve"><value>Введите client ID в поле ключа API, а client secret — в поле секрета API, затем сохраните.</value></data>
+  <data name="Help.PlatformManage.Title" xml:space="preserve"><value>Проверка подключений и управление ими</value></data>
+  <data name="Help.PlatformManage.Body" xml:space="preserve"><value>В таблице подключений к платформам виден статус каждого подключения. Переключателем подключение включается и отключается, а при редактировании обновляются данные магазина и API. Для каждой платформы можно добавить только одно подключение.</value></data>
+  <data name="Help.PlatformManage.Check" xml:space="preserve"><value>Чтобы проверить подключение, посмотрите столбец «{0}»: время обновляется при синхронизации новых заказов. Если видите счётчик ошибок или предупреждение о временной паузе, проверьте данные API.</value></data>
+  <data name="Help.PrintBridge.Title" xml:space="preserve"><value>Установка и подключение Print Bridge</value></data>
+  <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge — приложение Windows, которое отправляет чеки на принтер. Установите его на компьютер, к которому подключён принтер.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>На компьютере с Windows, к которому подключён принтер чеков, откройте страницу настройки Print Bridge и скачайте пакет приложения для Windows (ZIP).</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Распакуйте ZIP-файл в папку.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Один раз запустите Wasla.PrintBridge.exe. Если Windows запросит .NET 8 Desktop Runtime, установите её.</value></data>
+  <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>На странице настройки выберите способ подключения: «{0}» откроет приложение и подключит его автоматически (рекомендуется), или подключите вручную, вставив токен устройства и Wasla Веб-панель URL в «Настройки» Print Bridge. Никому не сообщайте токен устройства.</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>В Print Bridge откройте «Настройки», выберите принтер чеков, нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
+  <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Когда Wasla подтвердит подключение, познакомьтесь с устройством: на его странице видно подключение, там же можно восстановить токен или удалить устройство. Подробнее — в разделе «{0}» ниже.</value></data>
+  <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Управление устройствами Print Bridge</value></data>
+  <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Каждая установка Print Bridge отображается как устройство в списке устройств Print Bridge. Откройте сведения об устройстве, чтобы переименовать его, проверить подключение, восстановить токен или удалить устройство.</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Title" xml:space="preserve"><value>Имя устройства</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Body" xml:space="preserve"><value>Имя, под которым Wasla показывает одну установку Print Bridge, рядом с именем компьютера. Каждый компьютер с Print Bridge — отдельное устройство.</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Title" xml:space="preserve"><value>Подключение и последний сеанс</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>«Подключено» означает, что Wasla получал сигнал от этой установки в течение последней минуты. «Последний раз видели» показывает, когда она в последний раз выходила на связь; более раннее время обычно означает, что приложение или компьютер выключены.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Токен устройства</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>Токен устройства позволяет этой установке входить в Wasla и получать задания печати. Wasla не хранит сам токен, поэтому после создания его нельзя показать снова.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Восстановить токен</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Создаёт новый токен для этого устройства.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Старый токен сразу перестаёт работать, и эта установка не сможет печатать, пока не получит новый.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Введите новый токен в разделе «Настройки» приложения Print Bridge, затем сохраните и проверьте подключение.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>Новый токен показывается только один раз.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Удалить устройство</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Прекращает доступ этого устройства к Wasla; его токен перестаёт работать.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Jobs" xml:space="preserve"><value>Эта установка больше не получает задания печати.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.When" xml:space="preserve"><value>Используйте только для установки, которая выведена из работы, потеряна или заменена.</value></data>
+  <data name="Help.Printer.Title" xml:space="preserve"><value>Выбор принтера</value></data>
+  <data name="Help.Printer.Body" xml:space="preserve"><value>В приложении Print Bridge откройте «Настройки», выберите принтер чеков в списке «Имя принтера» и сохраните.</value></data>
+  <data name="Help.Printer.Template" xml:space="preserve"><value>Содержание и вид чека настраиваются на странице «{0}» в Wasla.</value></data>
+  <data name="Help.TestPrint.Title" xml:space="preserve"><value>Пробная печать</value></data>
+  <data name="Help.TestPrint.Body" xml:space="preserve"><value>Выбрав принтер, нажмите «Распечатать тестовую квитанцию» в приложении Print Bridge. Принтер должен напечатать тестовый чек.</value></data>
+  <data name="Help.TestPrint.Check" xml:space="preserve"><value>Если ничего не напечаталось, проверьте, что принтер включён, в нём есть бумага и в Windows выбран нужный принтер. На странице устройств Print Bridge видны статус подключения и последние задания печати.</value></data>
+  <data name="Help.LiveScreen.Title" xml:space="preserve"><value>Обзор живого экрана</value></data>
+  <data name="Help.LiveScreen.Body" xml:space="preserve"><value>Живой экран нужен, чтобы в реальном времени следить за поступающими заказами на кухне и на кассе. Заказы можно смотреть в видах «{0}», «{1}» или «{2}» и получать звуковые и браузерные уведомления о новых заказах.</value></data>
+  <data name="Help.Approve.Title" xml:space="preserve"><value>Подтверждение заказа</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>Когда поступит новый заказ, проверьте его и нажмите «{0}» — подтверждение уйдёт на платформу. Если вы не можете выполнить заказ, нажмите «{1}».</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>Начало приготовления</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>У подтверждённого заказа нажмите «{0}», чтобы команда видела, что приготовление началось.</value></data>
+  <data name="Help.Ready.Title" xml:space="preserve"><value>Отметка о готовности заказа</value></data>
+  <data name="Help.Ready.Body" xml:space="preserve"><value>Когда заказ готов, нажмите «{0}». Это последнее действие ресторана по заказу; платформа получит уведомление.</value></data>
+  <data name="Help.CourierPickup.Title" xml:space="preserve"><value>Передача заказа курьеру</value></data>
+  <data name="Help.CourierPickup.Body" xml:space="preserve"><value>Заказ забирает курьер платформы. Когда курьер забирает заказ, платформа сообщает об этом, и Wasla автоматически переводит заказ в статус «{0}». Ничего делать в Wasla не нужно.</value></data>
+  <data name="Help.Delivered.Title" xml:space="preserve"><value>Завершение доставки</value></data>
+  <data name="Help.Delivered.Body" xml:space="preserve"><value>О доставке также сообщает платформа. Когда курьер доставит заказ, Wasla автоматически переведёт его в статус «{0}».</value></data>
+  <data name="Help.DeliveredWindow.Title" xml:space="preserve"><value>Сколько доставленные заказы остаются на живом экране</value></data>
+  <data name="Help.DeliveredWindow.Body" xml:space="preserve"><value>Доставленные заказы видны на живом экране {0} мин., после чего исчезают только с этого экрана. Сами заказы не удаляются.</value></data>
+  <data name="Help.OrderHistory.Title" xml:space="preserve"><value>Поиск завершённых заказов</value></data>
+  <data name="Help.OrderHistory.Body" xml:space="preserve"><value>Все доставленные и отменённые заказы находятся на странице «{0}». Их можно фильтровать по платформе, статусу и дате или искать по коду заказа.</value></data>
+  <data name="Help.Troubleshooting.Title" xml:space="preserve"><value>Устранение неполадок и поддержка</value></data>
+  <data name="Help.Troubleshooting.NoOrders" xml:space="preserve"><value>Заказы не поступают: проверьте на странице подключений, что подключение активно, и посмотрите время последней успешной синхронизации.</value></data>
+  <data name="Help.Troubleshooting.NoPrint" xml:space="preserve"><value>Чеки не печатаются: убедитесь, что устройство Print Bridge отображается как подключённое и в приложении выбран нужный принтер, затем посмотрите последние задания печати на странице Print Bridge.</value></data>
+  <data name="Help.Troubleshooting.NoSound" xml:space="preserve"><value>Нет звука нового заказа: проверьте, что звук на живом экране включён и браузер разрешает воспроизведение.</value></data>
+  <data name="Help.Troubleshooting.MissingPage" xml:space="preserve"><value>Если вы не видите страницу или кнопку, у вашей роли может не быть прав; обратитесь к владельцу ресторана.</value></data>
+  <data name="Help.Troubleshooting.Support" xml:space="preserve"><value>Если проблема не исчезает, обратитесь в поддержку. Если вы видели страницу ошибки, сообщите указанный на ней код — это ускорит поиск причины.</value></data>
+  <data name="Help.NeedsPermission" xml:space="preserve"><value>У вас нет прав на эту страницу; при необходимости обратитесь к владельцу ресторана.</value></data>
+  <data name="Help.Action.OpenPlatformConnections" xml:space="preserve"><value>Открыть подключения к платформам</value></data>
+  <data name="Help.Action.OpenPrintBridgeSetup" xml:space="preserve"><value>Открыть настройку Print Bridge</value></data>
+  <data name="Help.Action.OpenPrintBridgeDevices" xml:space="preserve"><value>Открыть устройства Print Bridge</value></data>
+  <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>Открыть настройки чека и принтера</value></data>
+  <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>Открыть живой экран</value></data>
+  <data name="Help.Action.OpenOrders" xml:space="preserve"><value>Открыть заказы</value></data>
+  <data name="GuidedSetup.Next.Open" xml:space="preserve"><value>Открыть обучение работе с заказами</value></data>
+  <data name="GuidedSetup.Training.Progress" xml:space="preserve"><value>Шаг {0} из {1}</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>Обучение работе с заказами на живом экране</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>Новые заказы появляются здесь в виде карточек и переходят дальше по мере работы с ними. Запустите тренировочный заказ, чтобы попробовать весь процесс. Он помечен как «{6}» и виден только вам: он не отправляется в Trendyol GO или Yemeksepeti, не печатается и не учитывается в ваших заказах и отчётах.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>Пришёл тренировочный заказ</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>Тренировочный заказ с пометкой «{6}» ждёт как новый заказ. Подтвердите его кнопкой «{1}» на карточке.</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>Начните подготовку</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>Заказ подтверждён. Нажмите «{2}», когда кухня приступит к нему.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>Отметьте готовность заказа</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>Когда заказ упакован, нажмите «{3}». Это последний шаг ресторана.</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>Курьер забирает заказ</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>Больше ничего нажимать не нужно. Курьер платформы забирает заказ, и его статус автоматически меняется на «{4}».</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>Заказ в пути</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Body" xml:space="preserve"><value>Заказ у курьера. Когда он доберётся до клиента, платформа автоматически отметит его как «{5}».</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Title" xml:space="preserve"><value>Заказ доставлен</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Body" xml:space="preserve"><value>Выполненные реальные заказы остаются на живом экране {0} мин., после чего исчезают с этого экрана. Они не удаляются: их по-прежнему можно найти на странице заказов и в истории заказов. Этот тренировочный заказ туда не сохраняется.</value></data>
+  <data name="GuidedSetup.Training.StartPractice" xml:space="preserve"><value>Запустить тренировочный заказ</value></data>
+  <data name="GuidedSetup.Training.Complete" xml:space="preserve"><value>Завершить обучение</value></data>
+  <data name="GuidedSetup.Training.ShowPractice" xml:space="preserve"><value>Показать тренировочный заказ</value></data>
+  <data name="GuidedSetup.Training.Hide" xml:space="preserve"><value>Скрыть подсказку</value></data>
+  <data name="GuidedSetup.Training.Reopen" xml:space="preserve"><value>Показать обучение</value></data>
+  <data name="GuidedSetup.Training.Waiting" xml:space="preserve"><value>Всё ещё ждёте? Обновления от курьера приходят из фоновой службы Wasla. Если она приостановлена, тренировочный заказ спокойно остаётся на этом шаге, пока служба снова не заработает.</value></data>
+  <data name="GuidedSetup.Training.CourierNote" xml:space="preserve"><value>После готовности ресторан больше не меняет статус заказа: получение и доставку курьер платформы отмечает автоматически.</value></data>
+  <data name="GuidedSetup.Training.HelpNote" xml:space="preserve"><value>Руководства всегда доступны в разделе</value></data>
+  <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Обучение работе с заказами пройдено, пошаговая настройка завершена. Руководства по-прежнему доступны в разделе «Помощь и руководства».</value></data>
+  <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>Не удалось запустить тренировочный заказ. Попробуйте ещё раз.</value></data>
+  <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>Обучение можно завершить после доставки тренировочного заказа.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Пока вы проходили обучение, пришёл реальный заказ</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Пока вы проходили обучение, пришли реальные заказы: {0}</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Вы можете продолжить обучение. Заказ можно обработать в панели платформы. Когда обучение завершится, активные заказы появятся на живом экране.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Вы можете продолжить обучение. Заказы можно обработать в панели платформы. Когда обучение завершится, активные заказы появятся на живом экране.</value></data>
+  <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Перейти к Print Bridge</value></data>
+  <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Перейти к обучению работе с заказами</value></data>
+  <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>Этот шаг ещё не завершён. Завершите настройку или выберите настройку позже.</value></data>
+  <data name="DevelopmentTools.Title" xml:space="preserve"><value>Инструменты разработки</value></data>
+  <data name="DevelopmentTools.Reset.Title" xml:space="preserve"><value>Вернуть тестового арендатора к первому запуску</value></data>
+  <data name="DevelopmentTools.Reset.Intro" xml:space="preserve"><value>Видно только в локальной среде разработки. Возвращает этого арендатора в состояние сразу после подготовки, чтобы можно было снова проверить пошаговую настройку с первого выбора «Начать/Пропустить».</value></data>
+  <data name="DevelopmentTools.Reset.Warning" xml:space="preserve"><value>Это действие нельзя отменить. Будут удалены заказы этого арендатора, подключения к платформам, устройства Print Bridge и тестовые настройки. Задания печати, состояние синхронизации, настройки уведомлений, прогресс пошаговой настройки и тренировочные заказы тоже будут сброшены.</value></data>
+  <data name="DevelopmentTools.Reset.Keeps" xml:space="preserve"><value>Сохраняются: арендатор, его домен и slug, все пользователи, пароли и роли, филиалы, записи о подписке и оплате. На платформах ничего не отзывается — удаляется только локальная конфигурация Wasla.</value></data>
+  <data name="DevelopmentTools.Reset.BrowserPermission" xml:space="preserve"><value>Разрешение браузера на уведомления приложение сбросить не может. При проверке этого сценария сбросьте его вручную в настройках сайта в Chrome.</value></data>
+  <data name="DevelopmentTools.Reset.Button" xml:space="preserve"><value>Сбросить тестового арендатора</value></data>
+  <data name="DevelopmentTools.Reset.DialogTitle" xml:space="preserve"><value>Сбросить тестового арендатора?</value></data>
+  <data name="DevelopmentTools.Reset.ConfirmLabel" xml:space="preserve"><value>Для подтверждения введите slug этого арендатора в точности:</value></data>
+  <data name="DevelopmentTools.Reset.Confirm" xml:space="preserve"><value>Да, сбросить</value></data>
+  <data name="DevelopmentTools.Reset.Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="DevelopmentTools.Reset.SlugMismatch" xml:space="preserve"><value>Введённый slug не совпадает с этим арендатором. Ничего не изменено.</value></data>
+  <data name="DevelopmentTools.Reset.Failed" xml:space="preserve"><value>Сброс не удалось завершить, и он был отменён. Ничего не изменено.</value></data>
+  <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>Тестовый арендатор возвращён к первому запуску. При необходимости сбросьте разрешение браузера на уведомления вручную в настройках сайта в Chrome.</value></data>
+  <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Перед сбросом остановите Wasla.Worker, закройте приложение Print Bridge и убедитесь, что сейчас не выполняется настройка Print Bridge. Иначе ещё идущий цикл синхронизации или настройка могут снова добавить данные после сброса, а тестовый (mock) провайдер хранит номера заказов в памяти. После завершения сброса снова запустите Worker.</value></data>
+  <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>Сброс выполнен лишь частично: устройства Print Bridge удалены, но остальные изменения отменены. Запустите сброс ещё раз, чтобы завершить его.</value></data>
+  <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>Автоматизация</value></data>
+  <data name="Admin.Ops.OverviewTitle" xml:space="preserve"><value>Обзор операций</value></data>
+  <data name="Admin.Ops.OverviewSubtitle" xml:space="preserve"><value>Состояние ресторанов, регистраций и Print Bridge по центральному реестру.</value></data>
+  <data name="Admin.Ops.OverviewCentralOnlyNote" xml:space="preserve"><value>Эта страница читает только центральную базу данных. База данных ресторана, синхронизация и заказы проверяются только на странице операций этого ресторана.</value></data>
+  <data name="Admin.Ops.ReadAt" xml:space="preserve"><value>Время чтения</value></data>
+  <data name="Admin.Ops.Section.Tenants" xml:space="preserve"><value>Рестораны</value></data>
+  <data name="Admin.Ops.Section.Signup" xml:space="preserve"><value>Регистрация и подготовка</value></data>
+  <data name="Admin.Ops.Section.PrintBridgeFleet" xml:space="preserve"><value>Устройства Print Bridge</value></data>
+  <data name="Admin.Ops.Metric.MigrationFailed" xml:space="preserve"><value>Последняя миграция не удалась</value></data>
+  <data name="Admin.Ops.Metric.MigrationNotRecorded" xml:space="preserve"><value>Нет записи о миграции</value></data>
+  <data name="Admin.Ops.Metric.NeedsAttention" xml:space="preserve"><value>Требует внимания</value></data>
+  <data name="Admin.Ops.Metric.OldestWaiting" xml:space="preserve"><value>Самая давняя: {0}</value></data>
+  <data name="Admin.Ops.Metric.ExpiredOrCancelled" xml:space="preserve"><value>Истекли или отменены</value></data>
+  <data name="Admin.Ops.Signup.ProvisioningFailuresNotTracked" xml:space="preserve"><value>Неудачные попытки подготовки не сохраняются как отдельное состояние. Оплаченная, но не подготовленная регистрация остаётся в числе полученных оплат.</value></data>
+  <data name="Admin.Ops.PrintBridge.Online" xml:space="preserve"><value>В сети</value></data>
+  <data name="Admin.Ops.PrintBridge.Stale" xml:space="preserve"><value>Сигнал устарел</value></data>
+  <data name="Admin.Ops.PrintBridge.Offline" xml:space="preserve"><value>Не в сети</value></data>
+  <data name="Admin.Ops.PrintBridge.NeverConnected" xml:space="preserve"><value>Ни разу не подключалось</value></data>
+  <data name="Admin.Ops.PrintBridge.Disabled" xml:space="preserve"><value>Отключено</value></data>
+  <data name="Admin.Ops.PrintBridge.ThresholdNote" xml:space="preserve"><value>В сети: последний сигнал не более 60 секунд назад. Сигнал устарел: не более 5 минут назад. Не в сети: давнее.</value></data>
+  <data name="Admin.Ops.RecentTenants" xml:space="preserve"><value>Недавно добавленные рестораны</value></data>
+  <data name="Admin.Ops.LoadError.Title" xml:space="preserve"><value>Не удалось прочитать центральные данные</value></data>
+  <data name="Admin.Ops.LoadError.Body" xml:space="preserve"><value>Центральная база данных сейчас недоступна. Обновите страницу через несколько минут; если проблема сохранится, проверьте журналы сервера.</value></data>
+  <data name="Admin.Ops.List.Subtitle" xml:space="preserve"><value>Рестораны в центральном реестре. Состояние базы данных читается только на странице операций ресторана.</value></data>
+  <data name="Admin.Ops.List.FiltersLabel" xml:space="preserve"><value>Поиск и фильтрация ресторанов</value></data>
+  <data name="Admin.Ops.List.SearchPlaceholder" xml:space="preserve"><value>Название, слаг или домен</value></data>
+  <data name="Admin.Ops.List.MigrationRecord" xml:space="preserve"><value>Запись о миграции</value></data>
+  <data name="Admin.Ops.List.AnyMigrationRecord" xml:space="preserve"><value>Любая запись</value></data>
+  <data name="Admin.Ops.List.AnyPlan" xml:space="preserve"><value>Все тарифы</value></data>
+  <data name="Admin.Ops.List.NoPlan" xml:space="preserve"><value>Нет подписки</value></data>
+  <data name="Admin.Ops.List.PageSize" xml:space="preserve"><value>На странице</value></data>
+  <data name="Admin.Ops.List.ClearFilters" xml:space="preserve"><value>Сбросить фильтры</value></data>
+  <data name="Admin.Ops.List.NoMatches" xml:space="preserve"><value>Нет ресторанов, соответствующих этим фильтрам.</value></data>
+  <data name="Admin.Ops.List.Showing" xml:space="preserve"><value>Показаны {0}–{1} из {2} ресторанов</value></data>
+  <data name="Admin.Ops.List.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.List.NoDevices" xml:space="preserve"><value>Нет устройств</value></data>
+  <data name="Admin.Ops.List.DevicesOnline" xml:space="preserve"><value>{0} из {1} в сети</value></data>
+  <data name="Admin.Ops.List.Operations" xml:space="preserve"><value>Операции</value></data>
+  <data name="Admin.Ops.List.Pagination" xml:space="preserve"><value>Страницы списка ресторанов</value></data>
+  <data name="Admin.Ops.List.PreviousPage" xml:space="preserve"><value>Предыдущая страница</value></data>
+  <data name="Admin.Ops.List.NextPage" xml:space="preserve"><value>Следующая страница</value></data>
+  <data name="Admin.Ops.List.PageNumber" xml:space="preserve"><value>Страница {0}</value></data>
+  <data name="Admin.Ops.MigrationRecord.Succeeded" xml:space="preserve"><value>Успешно</value></data>
+  <data name="Admin.Ops.MigrationRecord.Failed" xml:space="preserve"><value>Ошибка</value></data>
+  <data name="Admin.Ops.MigrationRecord.NotRecorded" xml:space="preserve"><value>Не записано</value></data>
+  <data name="Admin.Ops.State.Unknown" xml:space="preserve"><value>Неизвестно</value></data>
+  <data name="Admin.Ops.Database.Reachable" xml:space="preserve"><value>Доступна</value></data>
+  <data name="Admin.Ops.Database.NotConfigured" xml:space="preserve"><value>Не настроена</value></data>
+  <data name="Admin.Ops.Database.Unreachable" xml:space="preserve"><value>Недоступна</value></data>
+  <data name="Admin.Ops.Database.TimedOut" xml:space="preserve"><value>Превышено время ожидания</value></data>
+  <data name="Admin.Ops.Database.ConfigurationUnreadable" xml:space="preserve"><value>Данные подключения не читаются</value></data>
+  <data name="Admin.Ops.Database.Connection" xml:space="preserve"><value>База данных</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelTitle" xml:space="preserve"><value>Не удалось прочитать базу данных ресторана</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelBody" xml:space="preserve"><value>Сведения о базе данных, миграциях, режиме, подключениях и заказах показать нельзя. Данные о ресторане, подготовке и Print Bridge берутся из центрального реестра и показаны на этой странице. Подробности — в журналах сервера.</value></data>
+  <data name="Admin.Ops.Migrations.Title" xml:space="preserve"><value>Миграции</value></data>
+  <data name="Admin.Ops.Migrations.Current" xml:space="preserve"><value>Актуальны</value></data>
+  <data name="Admin.Ops.Migrations.Pending" xml:space="preserve"><value>Есть ожидающие миграции</value></data>
+  <data name="Admin.Ops.Migrations.DatabaseAhead" xml:space="preserve"><value>База новее приложения</value></data>
+  <data name="Admin.Ops.Migrations.PendingCount" xml:space="preserve"><value>Ожидают: {0}</value></data>
+  <data name="Admin.Ops.Migrations.Applied" xml:space="preserve"><value>Последняя применённая</value></data>
+  <data name="Admin.Ops.Migrations.Expected" xml:space="preserve"><value>Ожидается приложением</value></data>
+  <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>Эта страница только читает; миграции применяются через CLI в рамках процедуры выпуска.</value></data>
+  <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>Режим работы</value></data>
+  <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>Рабочий</value></data>
+  <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>Настройка</value></data>
+  <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>Синхронизация заказов</value></data>
+  <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>Автопринятие</value></data>
+  <data name="Admin.Ops.Automation.AutoReceipt" xml:space="preserve"><value>Автоматические чеки</value></data>
+  <data name="Admin.Ops.Automation.Active" xml:space="preserve"><value>Активно</value></data>
+  <data name="Admin.Ops.Automation.Off" xml:space="preserve"><value>Выключено</value></data>
+  <data name="Admin.Ops.Automation.PendingSetup" xml:space="preserve"><value>Включится после настройки</value></data>
+  <data name="Admin.Ops.GuidedSetup.Title" xml:space="preserve"><value>Пошаговая настройка</value></data>
+  <data name="Admin.Ops.GuidedSetup.Counts" xml:space="preserve"><value>В процессе: {0} · Завершили: {1} · Пропустили: {2}</value></data>
+  <data name="Admin.Ops.Users.Title" xml:space="preserve"><value>Пользователи</value></data>
+  <data name="Admin.Ops.Users.Counts" xml:space="preserve"><value>Активных пользователей: {0} · Активных владельцев: {1}</value></data>
+  <data name="Admin.Ops.SectionUnavailable" xml:space="preserve"><value>Этот раздел не удалось прочитать.</value></data>
+  <data name="Admin.Ops.Section.Guidance" xml:space="preserve"><value>Следующие шаги</value></data>
+  <data name="Admin.Ops.Section.Identity" xml:space="preserve"><value>Ресторан</value></data>
+  <data name="Admin.Ops.Section.Provisioning" xml:space="preserve"><value>Подготовка</value></data>
+  <data name="Admin.Ops.Section.Database" xml:space="preserve"><value>База данных и миграции</value></data>
+  <data name="Admin.Ops.Section.OperationalMode" xml:space="preserve"><value>Режим работы и автоматизация</value></data>
+  <data name="Admin.Ops.Section.Providers" xml:space="preserve"><value>Подключения к платформам</value></data>
+  <data name="Admin.Ops.Section.Orders" xml:space="preserve"><value>Заказы</value></data>
+  <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>Состояние аккаунта</value></data>
+  <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>Сводка состояния</value></data>
+  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>откроется в новой вкладке</value></data>
+  <data name="Admin.Ops.Membership" xml:space="preserve"><value>Подписка</value></data>
+  <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>Пробный период</value></data>
+  <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>Активна</value></data>
+  <data name="Admin.Ops.Membership.PendingPayment" xml:space="preserve"><value>Ожидает оплаты</value></data>
+  <data name="Admin.Ops.Membership.Cancelled" xml:space="preserve"><value>Отменена</value></data>
+  <data name="Admin.Ops.Membership.None" xml:space="preserve"><value>Нет записи о подписке</value></data>
+  <data name="Admin.Ops.Membership.TrialEnds" xml:space="preserve"><value>Пробный период до</value></data>
+  <data name="Admin.Ops.Membership.PeriodEnds" xml:space="preserve"><value>Период до</value></data>
+  <data name="Admin.Ops.Provisioning.Registration" xml:space="preserve"><value>Заявка на регистрацию</value></data>
+  <data name="Admin.Ops.Provisioning.OpenRegistration" xml:space="preserve"><value>Открыть заявку</value></data>
+  <data name="Admin.Ops.Provisioning.NoRegistration" xml:space="preserve"><value>Нет связанной заявки (например, создан через CLI)</value></data>
+  <data name="Admin.Ops.Provisioning.LastMigrationRecord" xml:space="preserve"><value>Последняя запись о миграции</value></data>
+  <data name="Admin.Ops.Provisioning.Note" xml:space="preserve"><value>Текст ошибки не показывается; подробности — в выводе CLI и журналах сервера.</value></data>
+  <data name="Admin.Ops.ProviderMode.Process" xml:space="preserve"><value>Режим провайдеров</value></data>
+  <data name="Admin.Ops.ProviderMode.Mock" xml:space="preserve"><value>Mock (тест)</value></data>
+  <data name="Admin.Ops.ProviderMode.Real" xml:space="preserve"><value>Real (боевой)</value></data>
+  <data name="Admin.Ops.ProviderMode.NotRegistered" xml:space="preserve"><value>Клиент не зарегистрирован</value></data>
+  <data name="Admin.Ops.Providers.None" xml:space="preserve"><value>Нет подключённых платформ.</value></data>
+  <data name="Admin.Ops.Providers.Platform" xml:space="preserve"><value>Платформа</value></data>
+  <data name="Admin.Ops.Providers.Health" xml:space="preserve"><value>Состояние</value></data>
+  <data name="Admin.Ops.Providers.LastSuccess" xml:space="preserve"><value>Последняя успешная синхронизация</value></data>
+  <data name="Admin.Ops.Providers.LastFailure" xml:space="preserve"><value>Последняя неудачная синхронизация (7 дней)</value></data>
+  <data name="Admin.Ops.Providers.Client" xml:space="preserve"><value>Клиент</value></data>
+  <data name="Admin.Ops.Providers.Store" xml:space="preserve"><value>Магазин</value></data>
+  <data name="Admin.Ops.Providers.ConsecutiveFailures" xml:space="preserve"><value>Ошибок подряд: {0}</value></data>
+  <data name="Admin.Ops.Providers.PausedUntil" xml:space="preserve"><value>Приостановлено до</value></data>
+  <data name="Admin.Ops.Providers.Enabled" xml:space="preserve"><value>Включено</value></data>
+  <data name="Admin.Ops.Providers.DisabledLabel" xml:space="preserve"><value>Отключено</value></data>
+  <data name="Admin.Ops.Providers.Note" xml:space="preserve"><value>Учётные данные и тексты ошибок не показываются. Подключениями управляет владелец ресторана в своей панели.</value></data>
+  <data name="Admin.Ops.Connection.Healthy" xml:space="preserve"><value>Исправно</value></data>
+  <data name="Admin.Ops.Connection.Disabled" xml:space="preserve"><value>Отключено</value></data>
+  <data name="Admin.Ops.Connection.SyncOff" xml:space="preserve"><value>Синхронизация выключена</value></data>
+  <data name="Admin.Ops.Connection.CircuitOpen" xml:space="preserve"><value>Приостановлено после повторных ошибок</value></data>
+  <data name="Admin.Ops.Connection.Failing" xml:space="preserve"><value>Ошибки</value></data>
+  <data name="Admin.Ops.Connection.NeverSynced" xml:space="preserve"><value>Ещё не синхронизировано</value></data>
+  <data name="Admin.Ops.Connection.Stale" xml:space="preserve"><value>Давно не синхронизировалось</value></data>
+  <data name="Admin.Ops.Orders.Last24Hours" xml:space="preserve"><value>За 24 часа</value></data>
+  <data name="Admin.Ops.Orders.Last7Days" xml:space="preserve"><value>За 7 дней</value></data>
+  <data name="Admin.Ops.Orders.Open" xml:space="preserve"><value>Открытые</value></data>
+  <data name="Admin.Ops.Orders.Latest" xml:space="preserve"><value>Последний заказ</value></data>
+  <data name="Admin.Ops.PrintBridge.NoDevices" xml:space="preserve"><value>Нет зарегистрированных устройств Print Bridge.</value></data>
+  <data name="Admin.Ops.PrintBridge.LastSeen" xml:space="preserve"><value>Последний сигнал</value></data>
+  <data name="Admin.Ops.PrintJobs.Counts" xml:space="preserve"><value>Заданий печати в очереди: {0} · Неудачных за 24 часа: {1}</value></data>
+  <data name="Admin.Ops.PrintJobs.Unavailable" xml:space="preserve"><value>Не удалось прочитать количество заданий печати.</value></data>
+  <data name="Admin.Ops.Guidance.ReadOnlyNote" xml:space="preserve"><value>Эти рекомендации основаны только на наблюдениях; страница ничего не исправляет и не изменяет.</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Critical" xml:space="preserve"><value>Критично</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Warning" xml:space="preserve"><value>Предупреждение</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Info" xml:space="preserve"><value>Информация</value></data>
+  <data name="Admin.Ops.Guidance.Severity.AllClear" xml:space="preserve"><value>Всё в порядке</value></data>
+  <data name="Admin.Ops.Age.JustNow" xml:space="preserve"><value>только что</value></data>
+  <data name="Admin.Ops.Age.Minutes" xml:space="preserve"><value>{0} мин назад</value></data>
+  <data name="Admin.Ops.Age.Hours" xml:space="preserve"><value>{0} ч назад</value></data>
+  <data name="Admin.Ops.Age.Days" xml:space="preserve"><value>{0} дн. назад</value></data>
+  <data name="Admin.Ops.BackToTenants" xml:space="preserve"><value>К списку ресторанов</value></data>
+  <data name="Admin.Ops.Guidance.TenantInactive" xml:space="preserve"><value>Ресторан неактивен: пользователи не могут войти, а Worker не синхронизирует его заказы. Если это не задумано, уточните у владельца перед активацией.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseNotConfigured" xml:space="preserve"><value>Для базы данных этого ресторана не сохранены данные подключения. Скорее всего, подготовка не завершилась; проверьте заявку и вывод CLI подготовки.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseUnreachable" xml:space="preserve"><value>Не удалось подключиться к базе данных ресторана. Проверьте, что SQL Server работает и база существует, затем выполните migration-status через CLI.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>База данных ресторана не ответила за несколько секунд. Проверьте, что SQL Server работает, а эта база существует и принимает настроенный вход, затем обновите страницу.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>Не удалось расшифровать сохранённые данные подключения. Проверьте, что сервер использует тот же ENCRYPTION_MASTER_KEY, с которым ресторан был подготовлен.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>Базу данных ресторана не удалось проверить из-за непредвиденной ошибки. Смотрите журналы сервера для этого ресторана.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>В базе данных ресторана нет миграций, нужных этой версии. Примените их через CLI (migrate-customer или migrate-all-customers) по процедуре выпуска; до этого функции, использующие новые столбцы, могут не работать.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>В базе данных ресторана есть миграции, неизвестные этой версии приложения. Возможно, её обновила более новая версия; проверьте, какая версия развёрнута.</value></data>
+  <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>Последняя записанная миграция для этого ресторана не удалась. Выполните migration-status через CLI и повторите миграцию для этого ресторана.</value></data>
+  <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>Некоторые разделы не удалось прочитать. Обычно причина — ожидающая миграция; смотрите журналы сервера.</value></data>
+  <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>Ресторан всё ещё в режиме настройки: заказы синхронизируются, но ничего не принимается и не печатается автоматически, пока владелец не завершит или не пропустит пошаговую настройку.</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>У ресторана нет активного владельца. Только владелец управляет настройками, подключениями и устройствами; при необходимости добавьте владельца через CLI (seed-customer-admin).</value></data>
+  <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>Не подключена ни одна платформа доставки, поэтому заказы не поступают. Владелец добавляет подключение в разделе «Подключения к платформам».</value></data>
+  <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>Все подключения к платформам отключены, поэтому заказы не загружаются. Уточните у владельца, задумано ли это.</value></data>
+  <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>Синхронизация заказов выключена в настройках ресторана; Worker его пропускает. Существующие заказы остаются видимыми.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionCircuitOpen" xml:space="preserve"><value>Подключение к платформе приостановлено после повторных ошибок. Проверьте состояние платформы и попросите владельца проверить учётные данные подключения.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionFailing" xml:space="preserve"><value>Последние попытки синхронизации подключения к платформе не удались. Если это продолжится, проверьте состояние платформы и учётные данные.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionStale" xml:space="preserve"><value>Подключение к платформе не синхронизировалось успешно более 10 минут. Проверьте, что Worker запущен.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionNeverSynced" xml:space="preserve"><value>Подключение к платформе ни разу не синхронизировалось успешно. Если оно добавлено давно, проверьте, что Worker запущен.</value></data>
+  <data name="Admin.Ops.Guidance.NoRecentOrders" xml:space="preserve"><value>Подключения синхронизируются, но за последние 7 дней не пришло ни одного заказа. Уточните у владельца, открыт ли магазин на платформах.</value></data>
+  <data name="Admin.Ops.Guidance.NoPrintBridgeDevice" xml:space="preserve"><value>Нет зарегистрированного устройства Print Bridge; чеки можно будет печатать только после его настройки.</value></data>
+  <data name="Admin.Ops.Guidance.AutoReceiptWithoutDevice" xml:space="preserve"><value>Автоматические чеки включены, но нет зарегистрированного устройства Print Bridge. Чеки ждут в очереди, пока владелец не настроит устройство.</value></data>
+  <data name="Admin.Ops.Guidance.PrintBridgeOffline" xml:space="preserve"><value>Нет ни одного активного устройства Print Bridge в сети. Попросите ресторан проверить, что компьютер с Print Bridge включён и подключён.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsQueuedWithoutOnlineDevice" xml:space="preserve"><value>Задания печати ждут, а ни одно устройство не в сети; устройство заберёт их после повторного подключения.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>За последние 24 часа часть заданий печати завершилась ошибкой. Владелец может проверить принтер на компьютере с Print Bridge.</value></data>
+  <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>Связанная заявка на регистрацию не отмечена как подготовленная. Откройте её, чтобы проверить состояние; не меняйте её вручную.</value></data>
+  <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Сейчас ничего не требует внимания.</value></data>
 </root>

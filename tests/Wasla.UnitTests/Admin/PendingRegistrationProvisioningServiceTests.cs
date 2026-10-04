@@ -220,6 +220,12 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
         Assert.Equal("starter", membership.PlanCode);
         Assert.Equal("monthly", membership.BillingPeriod);
         Assert.Equal(reg.OwnerEmail, membership.OwnerEmail);
+        Assert.Equal(MembershipStatus.Trial, membership.Status);
+        Assert.NotNull(membership.TrialEndsAt);
+        // The restaurant setup step reads these contact fields.
+        Assert.Equal("+905551112233", membership.BusinessPhone);
+        Assert.Equal("Istanbul", membership.City);
+        Assert.Equal("TR", membership.Country);
 
         Assert.Equal(1, operations.CallCount);
         Assert.Equal(1, operations.OwnerCreateAttempts);

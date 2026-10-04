@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "SandwichToast",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Toast.Product.Mixed", "minPrice": 120, "maxPrice": 180, "modifiers": ["Mock.Modifier.WithCheese", "Mock.Modifier.WithoutCheese", "Mock.Modifier.ExtraSauce", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Toast.Product.Cheese", "minPrice": 90, "maxPrice": 140, "modifiers": ["Mock.Modifier.ExtraCheese"] },
+    { "key": "Mock.Toast.Product.Sucuk", "minPrice": 110, "maxPrice": 170, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.WithCheese"] },
+    { "key": "Mock.Toast.Product.ChickenSandwich", "minPrice": 140, "maxPrice": 210, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraSauce", "Mock.Modifier.Fries"] },
+    { "key": "Mock.Toast.Product.Fries", "minPrice": 70, "maxPrice": 110, "modifiers": ["Mock.Modifier.ExtraSauce"] }
+  ]
+}

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Application.Orders;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -140,6 +141,9 @@ public sealed class OrderActionService : IOrderActionService
 
     // EN: MarkShippedAsync is the shared courier handoff / OnTheWay step despite the method name.
     // TR: MarkShippedAsync, isim Trendyol etkili olsa da burada ortak kurye teslimi / OnTheWay adımıdır.
+    // User command only: platform couriers report pickup through provider sync, so current platforms
+    // are refused before any provider call. Trendyol's manual shipped call is kept for a future
+    // restaurant-courier fulfillment mode.
     public Task<OrderActionResult> MarkOnTheWayAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
         TransitionLifecycleAsync(
             customerId,
@@ -149,8 +153,12 @@ public sealed class OrderActionService : IOrderActionService
             platformCall: static (client, connection, order, token) =>
                 client.MarkShippedAsync(connection, order.ExternalOrderId, token),
             successKey: "Orders.HandToCourierSuccess",
-            ct);
+            ct,
+            refuseUserCommand: static order => OrderDeliveryPolicy.IsReportedByPlatform(order.Platform)
+                ? OrderDeliveryPolicy.UserPickupNotAllowedKey
+                : null);
 
+    // User command only. Provider sync applies Delivered through its own merge, which this guard does not touch.
     public Task<OrderActionResult> MarkDeliveredAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
         TransitionLifecycleAsync(
             customerId,
@@ -160,7 +168,10 @@ public sealed class OrderActionService : IOrderActionService
             platformCall: static (client, connection, order, token) =>
                 client.MarkDeliveredAsync(connection, order.ExternalOrderId, token),
             successKey: "Orders.MarkDeliveredSuccess",
-            ct);
+            ct,
+            refuseUserCommand: static order => OrderDeliveryPolicy.IsReportedByPlatform(order.Platform)
+                ? OrderDeliveryPolicy.UserDeliveryNotAllowedKey
+                : null);
 
     private delegate Task LifecyclePlatformCall(
         IFoodPlatformClient client,
@@ -175,7 +186,8 @@ public sealed class OrderActionService : IOrderActionService
         OrderStatus nextStatus,
         LifecyclePlatformCall? platformCall,
         string successKey,
-        CancellationToken ct)
+        CancellationToken ct,
+        Func<Order, string?>? refuseUserCommand = null)
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct);
 
@@ -184,6 +196,10 @@ public sealed class OrderActionService : IOrderActionService
 
         if (order.InternalStatus != requiredCurrent)
             return new OrderActionResult(false, "Orders.InvalidStatusForAction");
+
+        var refusal = refuseUserCommand?.Invoke(order);
+        if (refusal is not null)
+            return new OrderActionResult(false, refusal);
 
         var connection = await db.PlatformConnections
             .AsNoTracking()

@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "PideLahmacun",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Pide.Product.Lahmacun", "minPrice": 70, "maxPrice": 120, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ParsleyOnTheSide", "Mock.Modifier.ExtraLemon", "Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy"] },
+    { "key": "Mock.Pide.Product.CheesePide", "minPrice": 180, "maxPrice": 280, "modifiers": ["Mock.Modifier.ExtraCheese", "Mock.Modifier.NotSpicy"] },
+    { "key": "Mock.Pide.Product.MincedMeatPide", "minPrice": 200, "maxPrice": 320, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy"] },
+    { "key": "Mock.Pide.Product.CubedMeatPide", "minPrice": 240, "maxPrice": 360, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Pide.Product.MixedPide", "minPrice": 220, "maxPrice": 340, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraCheese", "Mock.Modifier.Spicy"] }
+  ]
+}

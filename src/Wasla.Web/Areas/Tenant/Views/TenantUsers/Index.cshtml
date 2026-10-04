@@ -1,14 +1,21 @@
 @model Wasla.Web.Models.TenantUsers.TenantUsersViewModel
-@using Wasla.Domain.Enums
+@using System.Globalization
+@using Wasla.Web.Models.Ui
+@using Wasla.Web.Ui
 @{
     ViewData["Title"] = L["TenantUsers.Title"];
+    var hasUsers = Model.Users.Count > 0;
 }
 
-<div class="oh-tenant-users-page">
-    @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
+<div class="wasla-users" data-users-index>
+    @await Html.PartialAsync("_WaslaPageHeader", new WaslaPageHeaderModel
     {
+        Eyebrow = L["Navigation.Settings"].Value,
         Title = L["TenantUsers.Title"].Value,
-        Subtitle = L["TenantUsers.Subtitle"].Value
+        Description = L["TenantUsers.Subtitle"].Value,
+        ActionUrl = "/settings/users/create",
+        ActionText = L["TenantUsers.AddUser"].Value,
+        ActionIconClass = "bi bi-plus-lg"
     })
 
     @if (TempData["TenantUsersMessage"] is string message)
@@ -20,51 +27,164 @@
         <div class="alert alert-danger" role="alert">@error</div>
     }
 
-    <div class="d-flex justify-content-end mb-3">
-        <a class="btn btn-sm btn-primary" href="/settings/users/create">@L["TenantUsers.AddUser"]</a>
+    <div class="wasla-stat-row" aria-label="@L["TenantUsers.SummaryRegion"]">
+        <div class="wasla-stat">
+            <span class="wasla-stat__label">@L["TenantUsers.SummaryTotal"]</span>
+            <span class="wasla-stat__value">@Model.TotalCount.ToString(CultureInfo.CurrentCulture)</span>
+        </div>
+        <div class="wasla-stat">
+            <span class="wasla-stat__label">@L["TenantUsers.SummaryActive"]</span>
+            <span class="wasla-stat__value">@Model.ActiveCount.ToString(CultureInfo.CurrentCulture)</span>
+        </div>
+        @foreach (var roleCount in Model.RoleCounts)
+        {
+            <div class="wasla-stat">
+                <span class="wasla-stat__label">@L[$"TenantUsers.Role.{roleCount.Role}"]</span>
+                <span class="wasla-stat__value">@roleCount.Count.ToString(CultureInfo.CurrentCulture)</span>
+            </div>
+        }
     </div>
 
-    <div class="card oh-card">
-        <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>@L["TenantUsers.Name"]</th>
-                        <th>@L["TenantUsers.Email"]</th>
-                        <th>@L["TenantUsers.Role"]</th>
-                        <th>@L["TenantUsers.Status"]</th>
-                        <th>@L["TenantUsers.CreatedAt"]</th>
-                        <th>@L["TenantUsers.LastLogin"]</th>
-                        <th class="text-end">@L["TenantUsers.Actions"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var user in Model.Users)
-                    {
+    <section class="wasla-surface" aria-labelledby="tenant-users-list-heading">
+        <h2 id="tenant-users-list-heading" class="visually-hidden">@L["TenantUsers.ListHeading"]</h2>
+        @if (hasUsers)
+        {
+            <div class="wasla-toolbar">
+                <div class="wasla-toolbar__field">
+                    <label class="wasla-toolbar__label" for="tenantUsersSearch">@L["Common.Search"]</label>
+                    <input id="tenantUsersSearch"
+                           class="wasla-toolbar__control"
+                           type="search"
+                           autocomplete="off"
+                           data-users-filter="search"
+                           placeholder="@L["TenantUsers.FilterPlaceholder"]" />
+                </div>
+                <div class="wasla-toolbar__field wasla-toolbar__field--narrow">
+                    <label class="wasla-toolbar__label" for="tenantUsersRoleFilter">@L["TenantUsers.Role"]</label>
+                    <select id="tenantUsersRoleFilter" class="wasla-toolbar__control" data-users-filter="role">
+                        <option value="">@L["TenantUsers.AllRoles"]</option>
+                        @foreach (var role in Model.RoleOptions)
+                        {
+                            <option value="@role.ToString()">@L[$"TenantUsers.Role.{role}"]</option>
+                        }
+                    </select>
+                </div>
+                <div class="wasla-toolbar__field wasla-toolbar__field--narrow">
+                    <label class="wasla-toolbar__label" for="tenantUsersStatusFilter">@L["TenantUsers.Status"]</label>
+                    <select id="tenantUsersStatusFilter" class="wasla-toolbar__control" data-users-filter="status">
+                        <option value="">@L["Common.AllStatuses"]</option>
+                        <option value="active">@L["TenantUsers.Active"]</option>
+                        <option value="inactive">@L["TenantUsers.Inactive"]</option>
+                    </select>
+                </div>
+            </div>
+        }
+
+        @if (!hasUsers)
+        {
+            <div class="wasla-empty" data-users-empty>
+                <p class="wasla-empty__title">@L["TenantUsers.EmptyTitle"]</p>
+                <p class="wasla-empty__copy">@L["TenantUsers.EmptyDescription"]</p>
+            </div>
+        }
+        else
+        {
+            <div class="wasla-table-wrap">
+                <table class="wasla-table">
+                    <thead>
                         <tr>
-                            <td>@(string.IsNullOrWhiteSpace(user.FullName) ? "-" : user.FullName)</td>
-                            <td>@user.Email</td>
-                            <td>@L[$"TenantUsers.Role.{user.Role}"]</td>
-                            <td>
-                                <span class="badge @(user.IsActive ? "text-bg-success" : "text-bg-secondary")">
-                                    @(user.IsActive ? L["TenantUsers.Active"] : L["TenantUsers.Inactive"])
-                                </span>
-                            </td>
-                            <td>@user.CreatedAt.ToString("g")</td>
-                            <td>@(user.LastLoginAt?.ToString("g") ?? L["TenantUsers.LastLoginUnavailable"].Value)</td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary"
-                                   asp-area="Tenant"
-                                   asp-controller="TenantUsers"
-                                   asp-action="Details"
-                                   asp-route-id="@user.Id">
-                                    @L["TenantUsers.Details"]
-                                </a>
-                            </td>
+                            @* The full list is on the page, so sorting is client-side (tenant-users-index.js) and sets aria-sort. *@
+                            <th scope="col" class="wasla-table__sortable">
+                                <button type="button" class="wasla-table__sort" data-users-sort="name">
+                                    <span>@L["TenantUsers.Name"]</span>
+                                    <i class="bi bi-arrow-down-up wasla-table__sort-icon" aria-hidden="true"></i>
+                                </button>
+                            </th>
+                            <th scope="col" class="wasla-table__sortable">
+                                <button type="button" class="wasla-table__sort" data-users-sort="role">
+                                    <span>@L["TenantUsers.Role"]</span>
+                                    <i class="bi bi-arrow-down-up wasla-table__sort-icon" aria-hidden="true"></i>
+                                </button>
+                            </th>
+                            <th scope="col">@L["TenantUsers.Status"]</th>
+                            <th scope="col" class="wasla-table__sortable wasla-col--secondary">
+                                <button type="button" class="wasla-table__sort" data-users-sort="created">
+                                    <span>@L["TenantUsers.CreatedAt"]</span>
+                                    <i class="bi bi-arrow-down-up wasla-table__sort-icon" aria-hidden="true"></i>
+                                </button>
+                            </th>
+                            <th class="wasla-col--secondary" scope="col">@L["TenantUsers.LastLogin"]</th>
+                            <th scope="col">@L["TenantUsers.Actions"]</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+                    </thead>
+                    <tbody data-users-table-body>
+                        @foreach (var user in Model.Users)
+                        {
+                            var initials = UserInitials.FromDisplayName(user.FullName, user.Email);
+                            var tone = UserInitials.ToneIndex(user.Id);
+                            var roleLabel = L[$"TenantUsers.Role.{user.Role}"].Value;
+                            var statusLabel = user.IsActive ? L["TenantUsers.Active"].Value : L["TenantUsers.Inactive"].Value;
+                            var searchHaystack = $"{user.FullName} {user.Email} {roleLabel} {statusLabel}".Trim();
+                            <tr data-user-row
+                                data-sort-name="@(string.IsNullOrWhiteSpace(user.FullName) ? user.Email : user.FullName)"
+                                data-sort-role="@((int)user.Role)"
+                                data-sort-created="@user.CreatedAt.ToString("O", CultureInfo.InvariantCulture)"
+                                data-sort-email="@user.Email"
+                                data-role="@user.Role.ToString()"
+                                data-status="@(user.IsActive ? "active" : "inactive")"
+                                data-search="@searchHaystack">
+                                <td data-label="@L["TenantUsers.Name"]">
+                                    <span class="wasla-table__cell-label" aria-hidden="true">@L["TenantUsers.Name"]</span>
+                                    <div class="wasla-table__identity">
+                                        <span class="wasla-avatar wasla-avatar--@tone" aria-hidden="true">@initials</span>
+                                        <span class="wasla-table__identity-text">
+                                            <span class="wasla-table__name">@(string.IsNullOrWhiteSpace(user.FullName) ? "-" : user.FullName)</span>
+                                            <span class="wasla-table__email">@user.Email</span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td data-label="@L["TenantUsers.Role"]">
+                                    <span class="wasla-table__cell-label" aria-hidden="true">@L["TenantUsers.Role"]</span>
+                                    <span class="wasla-role wasla-role--@user.Role.ToString().ToLowerInvariant()">@roleLabel</span>
+                                </td>
+                                <td data-label="@L["TenantUsers.Status"]">
+                                    <span class="wasla-table__cell-label" aria-hidden="true">@L["TenantUsers.Status"]</span>
+                                    <span class="wasla-status @(user.IsActive ? "wasla-status--active" : "wasla-status--inactive")">
+                                        <span class="wasla-status__dot" aria-hidden="true"></span>
+                                        @statusLabel
+                                    </span>
+                                </td>
+                                <td class="wasla-nowrap wasla-col--secondary" data-label="@L["TenantUsers.CreatedAt"]">
+                                    <span class="wasla-table__cell-label" aria-hidden="true">@L["TenantUsers.CreatedAt"]</span>
+                                    @user.CreatedAt.ToString("g")
+                                </td>
+                                <td class="wasla-nowrap wasla-col--secondary" data-label="@L["TenantUsers.LastLogin"]">
+                                    <span class="wasla-table__cell-label" aria-hidden="true">@L["TenantUsers.LastLogin"]</span>
+                                    @(user.LastLoginAt?.ToString("g") ?? L["TenantUsers.LastLoginNotRecorded"].Value)
+                                </td>
+                                <td data-label="@L["TenantUsers.Actions"]">
+                                    <span class="wasla-table__cell-label" aria-hidden="true">@L["TenantUsers.Actions"]</span>
+                                    <a class="wasla-btn wasla-btn--quiet"
+                                       asp-area="Tenant"
+                                       asp-controller="TenantUsers"
+                                       asp-action="Details"
+                                       asp-route-id="@user.Id">
+                                        @L["TenantUsers.Details"]
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="wasla-empty d-none" data-users-no-results hidden>
+                <p class="wasla-empty__title">@L["TenantUsers.NoResultsTitle"]</p>
+                <p class="wasla-empty__copy">@L["TenantUsers.NoResultsDescription"]</p>
+            </div>
+        }
+    </section>
 </div>
+
+@section Scripts {
+    <script src="~/js/tenant-users-index.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,13 @@
+{
+  "businessSubtype": "DessertShop",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Dessert.Product.Baklava", "minPrice": 160, "maxPrice": 240, "modifiers": ["Mock.Modifier.SinglePortion", "Mock.Modifier.DoublePortion", "Mock.Modifier.Pistachio"] },
+    { "key": "Mock.Dessert.Product.ColdBaklava", "minPrice": 170, "maxPrice": 250, "modifiers": ["Mock.Modifier.Pistachio", "Mock.Modifier.DoublePortion"] },
+    { "key": "Mock.Dessert.Product.Kunefe", "minPrice": 180, "maxPrice": 280, "modifiers": ["Mock.Modifier.Pistachio", "Mock.Modifier.IceCreamOnTheSide"] },
+    { "key": "Mock.Dessert.Product.RicePudding", "minPrice": 80, "maxPrice": 120, "modifiers": ["Mock.Modifier.SinglePortion", "Mock.Modifier.DoublePortion"] },
+    { "key": "Mock.Dessert.Product.Profiterole", "minPrice": 120, "maxPrice": 180, "modifiers": ["Mock.Modifier.ChocolateSauce", "Mock.Modifier.DoublePortion"] },
+    { "key": "Mock.Dessert.Product.ChocolateCake", "minPrice": 140, "maxPrice": 210, "modifiers": ["Mock.Modifier.ChocolateSauce", "Mock.Modifier.IceCreamOnTheSide"] }
+  ]
+}

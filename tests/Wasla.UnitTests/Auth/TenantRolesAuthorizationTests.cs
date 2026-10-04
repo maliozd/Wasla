@@ -32,6 +32,8 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     [InlineData(UserRole.Cashier, TenantPolicies.CanManualPrint, true)]
     [InlineData(UserRole.Cashier, TenantPolicies.CanManageDeviceSecurity, false)]
     [InlineData(UserRole.Manager, TenantPolicies.CanManageOrders, true)]
+    [InlineData(UserRole.Kitchen, TenantPolicies.CanManageOrders, true)]
+    [InlineData(UserRole.Owner, TenantPolicies.CanManageOrders, true)]
     public async Task TenantRolePolicies_ApplyExpectedRoleMapping(
         UserRole role,
         string policyName,
@@ -211,6 +213,11 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         var model = Assert.IsType<TenantUsersViewModel>(view.Model);
         var row = Assert.Single(model.Users);
         Assert.Equal(owner.Email, row.Email);
+        Assert.Equal(1, model.TotalCount);
+        Assert.Equal(1, model.ActiveCount);
+        Assert.Equal(5, model.RoleCounts.Count);
+        Assert.Equal(1, model.RoleCounts.Single(x => x.Role == UserRole.Owner).Count);
+        Assert.All(model.RoleCounts.Where(x => x.Role != UserRole.Owner), x => Assert.Equal(0, x.Count));
     }
 
     [Theory]
@@ -684,7 +691,8 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         Assert.Contains("navPermissions.CanManageDeviceSecurity", layoutSource, StringComparison.Ordinal);
         Assert.Contains("navPermissions.CanManageTenantSettings", layoutSource, StringComparison.Ordinal);
         Assert.Contains("navPermissions.CanManageOrderSettings", settingsSource, StringComparison.Ordinal);
-        Assert.Contains("navPermissions.CanManageTenantUsers", settingsSource, StringComparison.Ordinal);
+        Assert.Contains("navPermissions.CanManageTenantUsers", layoutSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("navPermissions.CanManageTenantUsers", settingsSource, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -700,9 +708,19 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
             "Views",
             "Orders",
             "_OrdersTable.cshtml"));
+        var actionsSource = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "Wasla.Web",
+            "Areas",
+            "Tenant",
+            "Views",
+            "Orders",
+            "_OrderLifecycleActions.cshtml"));
 
         Assert.Contains("TenantPolicies.CanManageOrders", tableSource, StringComparison.Ordinal);
-        Assert.Contains("canManageOrders && o.Status", tableSource, StringComparison.Ordinal);
+        Assert.Contains("_OrderLifecycleActions", tableSource, StringComparison.Ordinal);
+        Assert.Contains("Model.CanManageOrders && Model.Status", actionsSource, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -100,6 +100,64 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("Branches", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.Customer.GuidedDemoSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerNameKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ItemsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NoteKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ScenarioCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_GuidedDemoSessions_UserId_Open")
+                        .HasFilter("[CompletedAtUtc] IS NULL");
+
+                    b.HasIndex("UserId", "CompletedAtUtc")
+                        .HasDatabaseName("IX_GuidedDemoSessions_UserId_CompletedAtUtc");
+
+                    b.ToTable("GuidedDemoSessions", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.IntegrationError", b =>
                 {
                     b.Property<Guid>("Id")
@@ -169,6 +227,10 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CustomerNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("CustomerPhone")
                         .IsRequired()
@@ -435,9 +497,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.HasIndex("LastSuccessfulSync")
                         .HasDatabaseName("IX_PlatformConnections_LastSuccessfulSync");
 
-                    b.HasIndex("Platform", "StoreId")
+                    b.HasIndex("Platform")
                         .IsUnique()
-                        .HasDatabaseName("IX_PlatformConnections_Platform_StoreId");
+                        .HasDatabaseName("IX_PlatformConnections_Platform");
 
                     b.ToTable("PlatformConnections", (string)null);
                 });
@@ -576,6 +638,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("OperationalMode")
+                        .HasColumnType("int");
+
                     b.Property<bool>("OrderSyncEnabled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -589,6 +654,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<string>("ReceiptTemplateSettingsJson")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("SetupGuidanceCompletedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -599,6 +667,50 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .HasDatabaseName("IX_TenantOperationalSettings_Id");
 
                     b.ToTable("TenantOperationalSettings", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserGuidedSetupState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CurrentSectionKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("CurrentStepKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("SkippedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserGuidedSetupStates_UserId");
+
+                    b.ToTable("UserGuidedSetupStates", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserNotificationSettings", b =>
@@ -656,6 +768,49 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("UserNotificationSettings", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserProductTourCompletion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TourKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "TourKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserProductTourCompletions_UserId_TourKey");
+
+                    b.ToTable("UserProductTourCompletions", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Customer.GuidedDemoSession", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.OrderItem", b =>
                 {
                     b.HasOne("Wasla.Domain.Entities.Customer.Order", "Order")
@@ -700,6 +855,17 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserGuidedSetupState", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserNotificationSettings", b =>
                 {
                     b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "AppUser")
@@ -709,6 +875,17 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserProductTourCompletion", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.Order", b =>

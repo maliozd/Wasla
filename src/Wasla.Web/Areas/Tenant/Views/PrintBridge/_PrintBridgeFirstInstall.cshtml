@@ -1,0 +1,90 @@
+@model Wasla.Web.Models.PrintBridge.PrintBridgeSetupViewModel
+@*
+    Guided first install, for a new device: download the Windows application package, prepare it, choose automatic or
+    manual connection, then test the printer and meet the device. There is no setup-type choice and no reconnect here;
+    reconnecting belongs to the ordinary setup page and the device pages.
+    Nothing happens on load. The download is a plain link the user clicks; it creates no session, device or token.
+    Later steps appear only after an explicit click (print-bridge-setup.js), and their numbers stay fixed. Only "Open
+    Print Bridge and connect" creates the short-lived setup session; the manual section opens only when chosen.
+*@
+<ol class="wasla-print-bridge-first-install" id="pbFirstInstallSteps">
+    <li value="1" class="wasla-print-bridge-first-install__step" id="pbStepDownload">
+        <h2 class="wasla-print-bridge-first-install__title" id="pbStepDownloadTitle" tabindex="-1">@L["PrintBridge.FirstInstall.Download.Title"]</h2>
+        <p class="wasla-print-bridge-first-install__text">@L["PrintBridge.FirstInstall.Download.Requirement"]</p>
+        <p class="wasla-print-bridge-first-install__notice d-none" id="pbNotWindowsNotice" role="note">
+            <i class="bi bi-pc-display me-1" aria-hidden="true"></i>@L["PrintBridge.FirstInstall.NotWindows"]
+        </p>
+        @if (Model.PackageAvailable)
+        {
+            <div class="wasla-print-bridge-first-install__actions">
+                <a class="btn btn-primary" id="pbDownloadBtn" href="@Model.PackageDownloadUrl" download="@Model.PackageFileName">
+                    <i class="bi bi-download me-1" aria-hidden="true"></i>@L["PrintBridge.FirstInstall.Download.Button"]
+                </a>
+                <button type="button" class="btn btn-link" id="pbAlreadyInstalledBtn" aria-controls="pbStepConnect">@L["PrintBridge.FirstInstall.AlreadyInstalled"]</button>
+            </div>
+            <p class="wasla-print-bridge-first-install__hint">@L["PrintBridge.FirstInstall.Download.File", Model.PackageFileName]</p>
+        }
+        else
+        {
+            @* Honest when the package is not published: no download control, but an installed app can still connect. *@
+            <p class="wasla-print-bridge-first-install__notice" id="pbPackageMissingNotice" role="note">
+                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>@L["PrintBridge.FirstInstall.Download.Missing"]
+            </p>
+            @if (Model.IsDevelopment)
+            {
+                <p class="wasla-print-bridge-first-install__hint">@L["PrintBridge.PackageNotPreparedDevHint"]</p>
+            }
+            <div class="wasla-print-bridge-first-install__actions">
+                <button type="button" class="btn btn-outline-primary" id="pbAlreadyInstalledBtn" aria-controls="pbStepConnect">@L["PrintBridge.FirstInstall.AlreadyInstalled"]</button>
+            </div>
+        }
+        <p class="wasla-print-bridge-first-install__hint" id="pbDownloadStatus" role="status" aria-live="polite"></p>
+    </li>
+
+    <li value="2" class="wasla-print-bridge-first-install__step" id="pbStepPrepare" hidden>
+        <h2 class="wasla-print-bridge-first-install__title" id="pbStepPrepareTitle" tabindex="-1">@L["PrintBridge.FirstInstall.Prepare.Title"]</h2>
+        <ol class="wasla-print-bridge-first-install__substeps">
+            <li>@L["PrintBridge.FirstInstall.Prepare.Extract"]</li>
+            <li>@L["PrintBridge.FirstInstall.Prepare.Run"]</li>
+            <li>@L["PrintBridge.FirstInstall.Prepare.Runtime"]</li>
+        </ol>
+        @* The browser cannot see the extraction or the app starting, so the user says when it is done. *@
+        <div class="wasla-print-bridge-first-install__actions">
+            <button type="button" class="btn btn-primary" id="pbPreparedBtn" aria-controls="pbStepConnect">@L["PrintBridge.FirstInstall.Prepare.Done"]</button>
+        </div>
+    </li>
+
+    <li value="3" class="wasla-print-bridge-first-install__step" id="pbStepConnect" hidden>
+        <h2 class="wasla-print-bridge-first-install__title" id="pbStepConnectTitle" tabindex="-1">@L["PrintBridge.FirstInstall.Connect.Title"]</h2>
+        <div class="wasla-print-bridge-first-install__choices">
+            <section class="wasla-print-bridge-first-install__choice wasla-print-bridge-first-install__choice--recommended" aria-labelledby="pbChoiceAutomaticTitle">
+                <h3 class="wasla-print-bridge-first-install__choice-title" id="pbChoiceAutomaticTitle">
+                    @L["PrintBridge.FirstInstall.Connect.Automatic.Title"]
+                    <span class="badge rounded-pill wasla-print-bridge-setup-badge">@L["PrintBridge.Auto.RecommendedBadge"]</span>
+                </h3>
+                <p class="wasla-print-bridge-first-install__text">@L["PrintBridge.FirstInstall.Connect.Automatic.Body"]</p>
+                <div class="wasla-print-bridge-first-install__actions">
+                    <button type="button" class="btn btn-primary" id="pbAutoOpenBtn" data-server-url="@(Model.ServerUrl ?? "")">
+                        <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i><span id="pbAutoOpenBtnText">@L["PrintBridge.FirstInstall.Connect.Automatic.Button"]</span>
+                    </button>
+                </div>
+                @await Html.PartialAsync("_PrintBridgeAutoStatus", Model)
+            </section>
+            <section class="wasla-print-bridge-first-install__choice" aria-labelledby="pbChoiceManualTitle">
+                <h3 class="wasla-print-bridge-first-install__choice-title" id="pbChoiceManualTitle">@L["PrintBridge.FirstInstall.Connect.Manual.Title"]</h3>
+                <p class="wasla-print-bridge-first-install__text">@L["PrintBridge.FirstInstall.Connect.Manual.Body"]</p>
+                <div class="wasla-print-bridge-first-install__actions">
+                    <button type="button" class="btn btn-outline-secondary" id="pbChooseManualBtn" aria-controls="pbManualSetup">
+                        <i class="bi bi-sliders me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.UseManual"]
+                    </button>
+                </div>
+            </section>
+        </div>
+    </li>
+
+    <li value="4" class="wasla-print-bridge-first-install__step" id="pbStepPrinter" hidden>
+        <h2 class="wasla-print-bridge-first-install__title" id="pbStepPrinterTitle">@L["PrintBridge.FirstInstall.Printer.Title"]</h2>
+        <p class="wasla-print-bridge-first-install__text">@L["PrintBridge.FirstInstall.Printer.Body"]</p>
+        <p class="wasla-print-bridge-first-install__text">@L["PrintBridge.FirstInstall.Continue.Body", L["GuidedSetup.PrintBridge.MeetDevice"].Value]</p>
+    </li>
+</ol>

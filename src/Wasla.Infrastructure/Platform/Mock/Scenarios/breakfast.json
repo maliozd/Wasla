@@ -1,0 +1,13 @@
+{
+  "businessSubtype": "Breakfast",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Breakfast.Product.Plate", "minPrice": 280, "maxPrice": 420, "modifiers": ["Mock.Modifier.WithCheese", "Mock.Modifier.WithoutCheese", "Mock.Modifier.ExtraBread", "Mock.Modifier.ExtraTea"] },
+    { "key": "Mock.Breakfast.Product.Menemen", "minPrice": 140, "maxPrice": 200, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.WithCheese", "Mock.Modifier.WithoutCheese"] },
+    { "key": "Mock.Breakfast.Product.Omelette", "minPrice": 130, "maxPrice": 190, "modifiers": ["Mock.Modifier.WithCheese", "Mock.Modifier.WithoutCheese", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Breakfast.Product.Toast", "minPrice": 90, "maxPrice": 140, "modifiers": ["Mock.Modifier.WithCheese", "Mock.Modifier.WithoutCheese"] },
+    { "key": "Mock.Breakfast.Product.Simit", "minPrice": 25, "maxPrice": 40, "modifiers": ["Mock.Modifier.WithCheese"] },
+    { "key": "Mock.Breakfast.Product.Tea", "minPrice": 30, "maxPrice": 50, "modifiers": ["Mock.Modifier.ExtraTea", "Mock.Modifier.NoSugar"] }
+  ]
+}

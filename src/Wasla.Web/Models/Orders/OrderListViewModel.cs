@@ -9,17 +9,17 @@ public sealed class OrderListViewModel
 
     public int TotalCount { get; set; }
 
+    /// <summary>Live Screen only: the guided-setup decision or order training, when it applies to this user.</summary>
+    public Wasla.Web.Models.GuidedSetup.GuidedTrainingViewModel? GuidedTraining { get; set; }
+
     /// <summary>Restaurant local (Turkey) calendar date used for "default live" and empty-state copy.</summary>
     public DateOnly TurkeyLocalToday { get; set; }
 
     /// <summary>When no rows, use a simple "no orders" string instead of "no matches for filters" (e.g. default today, no extra filters).</summary>
     public bool UseSimpleNoOrdersMessage { get; set; }
 
-    /// <summary>Base path for list links, e.g. /orders or /orders/history.</summary>
+    /// <summary>Base path for list and sort/pagination links.</summary>
     public string ListBasePath { get; set; } = "/orders";
-
-    /// <summary>When true, table shows read-only history actions (no live order workflow buttons).</summary>
-    public bool IsHistoryPage { get; set; }
 
     public int TotalPages => Filters.PageSize > 0
         ? Math.Max(1, (int)Math.Ceiling((double)TotalCount / Filters.PageSize))
@@ -46,6 +46,16 @@ public sealed class OrderListViewModel
 
         /// <summary>Display-only: resolved product/card image URL for compact/kitchen views.</summary>
         public string DisplayImageUrl { get; set; } = string.Empty;
+
+        /// <summary>Line items for operational Live Screen cards (Orders table ignores this).</summary>
+        public List<LineItem> LineItems { get; set; } = new();
+    }
+
+    public sealed class LineItem
+    {
+        public string ProductName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public string? Notes { get; set; }
     }
 }
 

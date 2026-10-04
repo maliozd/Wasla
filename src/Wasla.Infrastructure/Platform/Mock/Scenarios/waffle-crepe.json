@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "WaffleCrepe",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Waffle.Product.Plain", "minPrice": 110, "maxPrice": 170, "modifiers": ["Mock.Modifier.ChocolateSauce", "Mock.Modifier.IceCreamOnTheSide"] },
+    { "key": "Mock.Waffle.Product.Chocolate", "minPrice": 130, "maxPrice": 190, "modifiers": ["Mock.Modifier.ChocolateSauce", "Mock.Modifier.IceCreamOnTheSide"] },
+    { "key": "Mock.Waffle.Product.Fruit", "minPrice": 140, "maxPrice": 200, "modifiers": ["Mock.Modifier.IceCreamOnTheSide", "Mock.Modifier.NoSugar"] },
+    { "key": "Mock.Waffle.Product.Crepe", "minPrice": 100, "maxPrice": 160, "modifiers": ["Mock.Modifier.ChocolateSauce", "Mock.Modifier.SinglePortion"] },
+    { "key": "Mock.Waffle.Product.IceCreamCrepe", "minPrice": 150, "maxPrice": 220, "modifiers": ["Mock.Modifier.IceCreamOnTheSide", "Mock.Modifier.ChocolateSauce"] }
+  ]
+}

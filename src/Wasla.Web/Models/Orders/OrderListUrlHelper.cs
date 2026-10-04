@@ -54,15 +54,36 @@ public static class OrderListUrlHelper
             nextDir = sortBy == "receivedAt" ? "desc" : "asc";
         }
 
-        var arrow = string.Empty;
+        SortHeaderDirection? direction = null;
         if (string.Equals(currentBy, sortBy, StringComparison.OrdinalIgnoreCase))
         {
-            arrow = string.Equals(currentDir, "asc", StringComparison.OrdinalIgnoreCase) ? " ↑" : " ↓";
+            direction = string.Equals(currentDir, "asc", StringComparison.OrdinalIgnoreCase)
+                ? SortHeaderDirection.Ascending
+                : SortHeaderDirection.Descending;
         }
 
+        // Changing the sort keeps every filter, the search and the page size, and returns to page 1.
         var href = Build(basePath, filters, page: 1, sortBy: sortBy, sortDirection: nextDir);
-        return new SortHeaderLink(href, title, arrow);
+        return new SortHeaderLink(href, title, direction);
     }
 }
 
-public sealed record SortHeaderLink(string Href, string Title, string Arrow);
+public enum SortHeaderDirection
+{
+    Ascending,
+    Descending
+}
+
+/// <summary>A sortable column header. <see cref="Direction"/> is set only on the column the list is sorted by.</summary>
+public sealed record SortHeaderLink(string Href, string Title, SortHeaderDirection? Direction)
+{
+    public bool IsActive => Direction.HasValue;
+
+    /// <summary>The <c>aria-sort</c> value for the header cell, or null for a column the list is not sorted by.</summary>
+    public string? AriaSort => Direction switch
+    {
+        SortHeaderDirection.Ascending => "ascending",
+        SortHeaderDirection.Descending => "descending",
+        _ => null
+    };
+}

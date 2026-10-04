@@ -157,30 +157,21 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
             _central.Tenants.Add(tenant);
             await _central.SaveChangesAsync(ct).ConfigureAwait(false);
 
-            var membershipExists = await _central.TenantMemberships
-                .AnyAsync(m => m.TenantId == tenantId, ct)
-                .ConfigureAwait(false);
-            if (!membershipExists)
-            {
-                _central.TenantMemberships.Add(new TenantMembership
-                {
-                    Id = Guid.NewGuid(),
-                    TenantId = tenantId,
-                    PlanCode = registration.PlanCode.Trim(),
-                    BillingPeriod = registration.BillingPeriod.Trim(),
-                    Status = MembershipStatus.Trial,
-                    StartedAt = now,
-                    TrialEndsAt = now.AddDays(trialDays),
-                    OwnerEmail = registration.OwnerEmail.Trim(),
-                    BusinessPhone = registration.BusinessPhone.Trim(),
-                    City = registration.City.Trim(),
-                    Country = registration.Country.Trim(),
-                    BusinessType = registration.BusinessType,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                });
-                await _central.SaveChangesAsync(ct).ConfigureAwait(false);
-            }
+            await TenantMembershipRecords.EnsureAsync(
+                _central,
+                tenantId,
+                new TenantMembershipSeed(
+                    PlanCode: registration.PlanCode.Trim(),
+                    BillingPeriod: registration.BillingPeriod.Trim(),
+                    Status: MembershipStatus.Trial,
+                    TrialEndsAt: now.AddDays(trialDays),
+                    OwnerEmail: registration.OwnerEmail.Trim(),
+                    BusinessPhone: registration.BusinessPhone.Trim(),
+                    City: registration.City.Trim(),
+                    Country: registration.Country.Trim(),
+                    BusinessType: Truncate(registration.BusinessType, 100)),
+                now,
+                ct).ConfigureAwait(false);
 
             registration.Status = PendingRegistrationStatus.Provisioned;
             registration.TenantId = tenantId;
@@ -210,6 +201,14 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
                 registrationId, ex.GetType().Name);
             return ProvisioningResult.Failure("An unexpected error occurred during provisioning.");
         }
+    }
+
+    private static string? Truncate(string? value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+            return value;
+
+        return value[..maxLength];
     }
 
     private string ResolveServer(string? sqlServerOverride)

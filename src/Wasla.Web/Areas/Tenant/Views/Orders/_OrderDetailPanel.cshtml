@@ -1,0 +1,151 @@
+@model Wasla.Web.Models.Orders.OrderDetailViewModel
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Orders
+@using Wasla.Web.Models.Ui
+@using Wasla.Web.Security
+@using Wasla.Web.Ui
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IAuthorizationService AuthorizationService
+
+@{
+    var canManageOrders = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManageOrders)).Succeeded;
+    var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
+    var receivedLabel = OrderUiHelper.FormatReceivedAtUtc(Model.ReceivedAtUtc, tz, turkeyToday);
+    var elapsedLabel = OrderUiHelper.FormatElapsed(Model.ReceivedAtUtc, DateTime.UtcNow, L);
+    var phoneTel = OrderUiHelper.PhoneTelHref(Model.CustomerPhone);
+    string InvariantAmount(decimal amount) => amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+}
+
+<div class="wasla-live-detail" data-order-id="@Model.Id" data-order-status="@Model.Status">
+    <header class="wasla-live-detail__head">
+        <h3 class="wasla-live-detail__code">@Model.ExternalOrderCode</h3>
+        <div class="wasla-live-detail__meta">
+            @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
+            @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
+            <span class="wasla-live-detail__elapsed" data-elapsed>@elapsedLabel</span>
+        </div>
+        <p class="wasla-live-detail__received" data-received>@L["Orders.Details.Received"] @receivedLabel</p>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))
+    {
+        <div class="wasla-live-detail-order-note">
+            <span class="wasla-live-detail-order-note__label">@L["Orders.LiveScreen.OrderNote"]</span>
+            <p class="wasla-live-detail-order-note__text">@Model.CustomerNote</p>
+        </div>
+    }
+
+    <div class="wasla-live-detail__body">
+        <section class="wasla-live-detail__products" aria-labelledby="live-detail-items-@Model.Id">
+            <h4 class="wasla-live-detail__section" id="live-detail-items-@Model.Id">@L["Orders.Details.Items"]</h4>
+            @if (Model.Items.Count == 0)
+            {
+                <p class="wasla-live-detail__empty">@L["Orders.Details.NoItemsFound"]</p>
+            }
+            else
+            {
+                <ul class="wasla-live-detail__items">
+                    @foreach (var i in Model.Items)
+                    {
+                        <li class="wasla-live-detail__item">
+                            <span class="wasla-live-detail__product">@i.ProductName</span>
+                            <span class="wasla-live-detail__qty">@i.Quantity</span>
+                            <span class="wasla-live-detail__amount" data-money="@InvariantAmount(i.TotalPrice)">@OrderUiHelper.FormatAmount(i.TotalPrice)</span>
+                            @if (i.Options.Count > 0)
+                            {
+                                <ul class="wasla-live-detail__options">
+                                    @foreach (var o in i.Options)
+                                    {
+                                        <li>
+                                            @o.Name
+                                            @if (o.Price > 0)
+                                            {
+                                                <span class="wasla-live-detail__surcharge" data-money="@InvariantAmount(o.Price)" data-money-wrap="surcharge">(+@OrderUiHelper.FormatAmount(o.Price))</span>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(i.Notes))
+                            {
+                                <p class="wasla-live-detail__note">@i.Notes</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+
+            <dl class="wasla-live-detail__totals">
+                @if (Model.DeliveryFee != 0)
+                {
+                    <div>
+                        <dt>@L["Orders.Details.DeliveryFee"]</dt>
+                        <dd data-money="@InvariantAmount(Model.DeliveryFee)">@OrderUiHelper.FormatAmount(Model.DeliveryFee)</dd>
+                    </div>
+                }
+                @if (Model.ServiceFee != 0)
+                {
+                    <div>
+                        <dt>@L["Orders.Details.ServiceFee"]</dt>
+                        <dd data-money="@InvariantAmount(Model.ServiceFee)">@OrderUiHelper.FormatAmount(Model.ServiceFee)</dd>
+                    </div>
+                }
+                <div class="wasla-live-detail__grand">
+                    <dt>@L["Orders.Details.Total"]</dt>
+                    <dd data-money="@InvariantAmount(Model.TotalAmount)">@OrderUiHelper.FormatAmount(Model.TotalAmount)</dd>
+                </div>
+            </dl>
+        </section>
+
+        <aside class="wasla-live-detail__facts" aria-labelledby="live-detail-customer-@Model.Id">
+            <h4 class="wasla-live-detail__section" id="live-detail-customer-@Model.Id">@L["Orders.Details.Customer"]</h4>
+            <p class="wasla-live-detail__customer">@OrderUiHelper.DisplayOrDash(Model.CustomerName)</p>
+            <dl class="wasla-live-detail__fact-list">
+                <div>
+                    <dt>@L["Orders.Details.Phone"]</dt>
+                    <dd dir="ltr">
+                        @if (phoneTel is not null)
+                        {
+                            <a href="@phoneTel">@Model.CustomerPhone</a>
+                        }
+                        else
+                        {
+                            @OrderUiHelper.DisplayOrDash(Model.CustomerPhone)
+                        }
+                    </dd>
+                </div>
+                <div>
+                    <dt>@L["Orders.Details.Address"]</dt>
+                    <dd>@OrderUiHelper.DisplayOrDash(Model.CustomerAddress)</dd>
+                </div>
+                <div>
+                    <dt>@L["Orders.Details.PaymentMethod"]</dt>
+                    <dd>@OrderUiHelper.PaymentMethodLabel(Model.PaymentMethod, L)</dd>
+                </div>
+            </dl>
+        </aside>
+    </div>
+
+    <div class="wasla-live-detail__actions">
+        @* Lifecycle stays primary; printing is a secondary action next to it. *@
+        @await Html.PartialAsync("_OrderLifecycleActions", new OrderLifecycleActionsModel
+        {
+            OrderId = Model.Id,
+            Status = Model.Status,
+            CanManageOrders = canManageOrders,
+            ButtonSizeClass = "btn-sm"
+        })
+        @await Html.PartialAsync("_OrderPrintAction", new OrderPrintActionModel
+        {
+            OrderId = Model.Id,
+            InProgress = Model.ReceiptPrintInProgress,
+            CanReprint = Model.ReceiptCanReprint,
+            ButtonSizeClass = "btn-sm"
+        })
+        <a class="btn btn-sm wasla-live-detail__open" href="/orders/details/@Model.Id" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+            <span>@L["Orders.Details.OpenFullOrder"]</span>
+        </a>
+    </div>
+</div>

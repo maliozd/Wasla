@@ -1,0 +1,245 @@
+/* Wasla custom toast system — load AFTER wasla-theme.css */
+
+.wasla-toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+/* Higher specificity to avoid being overridden by generic .card styles, etc. */
+body.wasla-tenant.wasla-app .wasla-toast {
+  position: relative;
+  overflow: hidden;
+  width: min(430px, calc(100vw - 2rem));
+  min-height: 64px;
+
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+
+  padding: 1rem 1rem;
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, 0.42)
+    ) !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow:
+    0 22px 60px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+
+  color: #0f172a;
+  pointer-events: auto;
+  transform: translateX(24px);
+  opacity: 0;
+  animation: waslaToastIn 0.22s ease-out forwards;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 255, 255, 0.75),
+      transparent 36%
+    );
+  opacity: 0.85;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast.is-leaving {
+  animation: waslaToastOut 0.18s ease-in forwards;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast::before {
+  content: "";
+  width: 6px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: var(--toast-accent);
+  position: relative;
+  z-index: 1;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast--success { --toast-accent: #10b981; }
+body.wasla-tenant.wasla-app .wasla-toast--error { --toast-accent: #ef4444; }
+body.wasla-tenant.wasla-app .wasla-toast--warning { --toast-accent: #f59e0b; }
+body.wasla-tenant.wasla-app .wasla-toast--info { --toast-accent: #3b82f6; }
+
+/* Orders-specific success styling (scoped by toast key) */
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-approve-success"] {
+  --toast-accent: #22c55e; /* fresh green */
+
+  /* Slightly larger + more premium glass */
+  width: min(540px, calc(100vw - 2rem));
+  min-width: 400px;
+  min-height: 74px;
+  padding: 16px 20px;
+  border-radius: 13px;
+
+  background: rgba(236, 253, 245, 0.78) !important;
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  box-shadow:
+    0 16px 36px rgba(22, 163, 74, 0.10),
+    0 4px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+
+  color: #14532d;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-reject-success"] {
+  --toast-accent: #fb7185; /* soft rose */
+
+  /* Slightly larger + more premium glass */
+  width: min(540px, calc(100vw - 2rem));
+  min-width: 400px;
+  min-height: 74px;
+  padding: 16px 20px;
+  border-radius: 13px;
+
+  background: rgba(255, 241, 242, 0.80) !important;
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  box-shadow:
+    0 16px 36px rgba(225, 29, 72, 0.10),
+    0 4px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+
+  color: #881337;
+}
+
+/* Remove the generic "shine" layer for these variants to avoid a gradienty look */
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-approve-success"]::after,
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-reject-success"]::after {
+  background: none !important;
+  opacity: 0 !important;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-approve-success"] .wasla-toast__message,
+body.wasla-tenant.wasla-app .wasla-toast[data-key="order-reject-success"] .wasla-toast__message {
+  font-size: 0.99rem;
+  line-height: 1.45;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast[data-key="order-approve-success"] {
+  --toast-accent: #34d399;
+  background: rgba(6, 78, 59, 0.46) !important;
+  border: 1px solid rgba(52, 211, 153, 0.20);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.34),
+    0 6px 14px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  color: #ecfdf5;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast[data-key="order-reject-success"] {
+  --toast-accent: #fb7185;
+  background: rgba(136, 19, 55, 0.46) !important;
+  border: 1px solid rgba(251, 113, 133, 0.20);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.34),
+    0 6px 14px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  color: #fff1f2;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast__message,
+body.wasla-tenant.wasla-app .wasla-toast__close {
+  position: relative;
+  z-index: 1;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast__message {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast__close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  opacity: 0.72;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.16s ease;
+}
+
+body.wasla-tenant.wasla-app .wasla-toast__close:hover {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.12);
+  transform: scale(1.04);
+}
+
+@keyframes waslaToastIn {
+  from {
+    transform: translateX(24px) translateY(-4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes waslaToastOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast {
+  background: var(--color-surface-elevated, #1c2028) !important;
+  color: var(--color-text, #f3f4f6);
+  border-color: var(--color-border-strong, rgba(255, 255, 255, 0.14));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast::after {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 255, 255, 0.14),
+      transparent 36%
+    );
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast__close {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app .wasla-toast__close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+

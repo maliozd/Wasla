@@ -1,0 +1,33 @@
+@* Shared print action. Rendered from the current server PrintJob snapshot (queued / reprint / print).
+   Phase 2B5 does not live-update after queue. SignalR follow-up: docs/orders-printjob-status-signalr.md *@
+@model Wasla.Web.Models.Orders.OrderPrintActionModel
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Security
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IAuthorizationService AuthorizationService
+
+@{
+    var canManualPrint = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManualPrint)).Succeeded;
+}
+
+@if (canManualPrint)
+{
+    var mode = Model.InProgress ? "queued" : (Model.CanReprint ? "reprint" : "print");
+    var label = Model.InProgress
+        ? L["Orders.Print.InQueue"].Value
+        : (Model.CanReprint ? L["PrintBridge.Reprint"].Value : L["Orders.Print.Action"].Value);
+
+    <button type="button"
+            class="btn btn-outline-secondary @Model.ButtonSizeClass wasla-order-print-btn"
+            data-order-print="@Model.OrderId"
+            data-print-mode="@mode"
+            data-label-print="@L["Orders.Print.Action"].Value"
+            data-label-reprint="@L["PrintBridge.Reprint"].Value"
+            data-label-queued="@L["Orders.Print.InQueue"].Value"
+            data-confirm-reprint="@L["Orders.Print.ConfirmReprint"].Value"
+            disabled="@(Model.InProgress ? "disabled" : null)"
+            title="@L["Orders.Print.Hint"]">
+        <i class="bi bi-printer me-1" aria-hidden="true"></i><span data-print-label>@label</span>
+    </button>
+}

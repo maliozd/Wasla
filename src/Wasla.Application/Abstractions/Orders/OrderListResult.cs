@@ -9,6 +9,11 @@ public sealed class OrderListResult
     public required int Page { get; init; }
     public required int PageSize { get; init; }
 
+    public sealed record LineItem(
+        string ProductName,
+        int Quantity,
+        string? Notes);
+
     public sealed record Row(
         Guid Id,
         FoodPlatform Platform,
@@ -21,6 +26,6 @@ public sealed class OrderListResult
         DateTime CreatedAtPlatformUtc,
         DateTime ReceivedAtUtc,
         int ItemCount,
-        string? FirstProductName);
+        string? FirstProductName,
+        IReadOnlyList<LineItem> LineItems);
 }
-

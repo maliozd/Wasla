@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "WorldCuisine",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.World.Product.Falafel", "minPrice": 140, "maxPrice": 220, "modifiers": ["Mock.Modifier.Yogurt", "Mock.Modifier.NoOnion", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.World.Product.Tacos", "minPrice": 160, "maxPrice": 240, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.ExtraSauce", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.World.Product.Curry", "minPrice": 190, "maxPrice": 290, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy"] },
+    { "key": "Mock.World.Product.Burrito", "minPrice": 180, "maxPrice": 270, "modifiers": ["Mock.Modifier.ExtraSauce", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.World.Product.Hummus", "minPrice": 80, "maxPrice": 130, "modifiers": ["Mock.Modifier.ExtraBread", "Mock.Modifier.ExtraLemon"] }
+  ]
+}

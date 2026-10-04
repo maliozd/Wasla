@@ -3,8 +3,10 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Wasla.Application.Abstractions.Orders.Services;
+using Wasla.Application.Demos;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Platform;
+using Wasla.Infrastructure.Services;
 using Wasla.Worker.Console;
 
 namespace Wasla.Worker.Jobs;
@@ -19,17 +21,20 @@ public sealed class OrderSyncWorker : BackgroundService
     private readonly ILogger<OrderSyncWorker> _logger;
     private readonly IConfiguration _config;
     private readonly IHostEnvironment _env;
+    private readonly GuidedDemoSchedule _demoSchedule;
 
     public OrderSyncWorker(
         IServiceScopeFactory scopeFactory,
         ILogger<OrderSyncWorker> logger,
         IConfiguration config,
-        IHostEnvironment env)
+        IHostEnvironment env,
+        GuidedDemoSchedule demoSchedule)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _config = config;
         _env = env;
+        _demoSchedule = demoSchedule;
     }
 
     public override Task StartAsync(CancellationToken cancellationToken)
@@ -108,7 +113,7 @@ public sealed class OrderSyncWorker : BackgroundService
         }
         else
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Order sync cycle started. StartedAtUtc={StartedAtUtc}, IntervalSeconds={IntervalSeconds}, ActiveCustomers={CustomerCount}",
                 cycleStartUtc,
                 CycleIntervalSeconds,
@@ -161,6 +166,15 @@ public sealed class OrderSyncWorker : BackgroundService
         ConcurrentBag<OrderSyncCustomerResult> results,
         CancellationToken ct)
     {
+        using var activity = new Activity("Wasla.OrderSync");
+        activity.SetTag("tenant.id", customer.Id.ToString("D"));
+        activity.Start();
+        using var logScope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["TraceId"] = activity.TraceId.ToString(),
+            ["TenantId"] = customer.Id.ToString("D")
+        });
+
         using var scope = _scopeFactory.CreateScope();
         var syncer = scope.ServiceProvider.GetRequiredService<IOrderSyncService>();
 
@@ -195,6 +209,39 @@ public sealed class OrderSyncWorker : BackgroundService
             if (_env.IsDevelopment())
                 WorkerConsole.WriteError($"Sync failed for {customer.Name} ({customer.Slug})");
         }
+
+        await DeliverGuidedDemosAsync(scope, customer, ct);
+    }
+
+    /// <summary>
+    /// Plays the platform courier for guided demos in this cycle. Runs even when the tenant's
+    /// sync is disabled or has no connection yet (onboarding tenants), and only touches demo sessions.
+    /// It also hands the tenant's next demo deadline to <see cref="GuidedDemoScheduler"/>, which moves the practice
+    /// order on time between cycles (and this first cycle catches up overdue stages after a restart). The cycle's own
+    /// timing does not change.
+    /// </summary>
+    private async Task DeliverGuidedDemosAsync(IServiceScope scope, ActiveCustomer customer, CancellationToken ct)
+    {
+        try
+        {
+            var simulator = scope.ServiceProvider.GetRequiredService<IGuidedDemoDeliverySimulator>();
+            var result = await simulator.AdvanceDueAndPlanAsync(customer.Id, ct);
+            _demoSchedule.Plan(customer.Id, result.NextCheckAtUtc);
+            if (result.Advanced > 0)
+                _logger.LogDebug("Guided demo courier simulated for {CustomerSlug}. Advanced={Advanced}", customer.Slug, result.Advanced);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // A training convenience must never disturb order synchronization.
+            _logger.LogWarning(
+                "Guided demo delivery simulation failed for {CustomerSlug}: {ExceptionType}",
+                customer.Slug,
+                ex.GetType().Name);
+        }
     }
 
     private void LogCycleTotals(
@@ -220,12 +267,15 @@ public sealed class OrderSyncWorker : BackgroundService
                 totals.FetchedCount,
                 totals.InsertedCount,
                 totals.UpdatedCount,
+                totals.UnchangedCount,
                 totals.FailedConnections,
                 elapsedMs);
         }
         else
         {
-            _logger.LogInformation(
+            var level = totals.FailedConnections > 0 ? LogLevel.Warning : LogLevel.Debug;
+            _logger.Log(
+                level,
                 "Order sync cycle completed in {ElapsedMs} ms. Customers={CustomerCount}, Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnectionCount}",
                 elapsedMs,
                 totals.CustomerCount,

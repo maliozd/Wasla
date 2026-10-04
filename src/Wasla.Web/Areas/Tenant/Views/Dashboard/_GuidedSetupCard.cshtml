@@ -1,0 +1,73 @@
+@model Wasla.Web.Models.GuidedSetup.GuidedSetupDashboardViewModel
+@using Wasla.Web.Models.GuidedSetup
+@{
+    var kindClass = Model.Kind switch
+    {
+        GuidedSetupCardKind.FirstUse => "first-use",
+        GuidedSetupCardKind.Resume => "resume",
+        _ => "next"
+    };
+    var canEnd = Model.Kind != GuidedSetupCardKind.FirstUse;
+}
+<link rel="stylesheet" href="~/css/wasla-guided-setup.css" asp-append-version="true" />
+<section class="wasla-guided-setup-card wasla-guided-setup-card--@kindClass" aria-labelledby="waslaGuidedSetupTitle" data-guided-setup-card="@kindClass">
+    <div class="wasla-guided-setup-card__icon" aria-hidden="true">
+        <i class="bi @(Model.Kind == GuidedSetupCardKind.FirstUse ? "bi-signpost-split" : "bi-signpost")"></i>
+    </div>
+    <div class="wasla-guided-setup-card__main">
+        @if (Model.Kind == GuidedSetupCardKind.FirstUse)
+        {
+            <h2 id="waslaGuidedSetupTitle" class="wasla-guided-setup-card__title">@L["GuidedSetup.FirstUse.Title"]</h2>
+            <p class="wasla-guided-setup-card__body">@L["GuidedSetup.FirstUse.Body"]</p>
+            <p class="wasla-guided-setup-card__label" id="waslaGuidedSetupSectionsLabel">@L["GuidedSetup.SectionsLabel"]</p>
+            <ol class="wasla-guided-setup-card__sections" aria-labelledby="waslaGuidedSetupSectionsLabel">
+                @foreach (var section in Model.Sections)
+                {
+                    <li>@L[GuidedSetupCopy.SectionNameKey(section)]</li>
+                }
+            </ol>
+            <div class="wasla-guided-setup-card__actions">
+                <form method="post" action="/guided-setup/start" data-guided-setup-form>
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">@L["GuidedSetup.Start"]</button>
+                </form>
+                <form method="post" action="/guided-setup/skip" data-guided-setup-form>
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-secondary" aria-describedby="waslaGuidedSetupSkipNote">@L["GuidedSetup.Skip"]</button>
+                </form>
+            </div>
+            <p class="wasla-guided-setup-card__note" id="waslaGuidedSetupSkipNote">@L["GuidedSetup.FirstUse.SkipConsequence"]</p>
+        }
+        else if (Model.Kind == GuidedSetupCardKind.Resume)
+        {
+            <h2 id="waslaGuidedSetupTitle" class="wasla-guided-setup-card__title">@L["GuidedSetup.Resume.Title"]</h2>
+            <p class="wasla-guided-setup-card__body">@L["GuidedSetup.Resume.Current", L[GuidedSetupCopy.SectionNameKey(Model.CurrentSectionKey)].Value]</p>
+            <div class="wasla-guided-setup-card__actions">
+                <form method="post" action="/guided-setup/continue" data-guided-setup-form>
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">@L["GuidedSetup.Continue"]</button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#waslaGuidedSetupEndDialog">@L["GuidedSetup.End"]</button>
+            </div>
+        }
+        else
+        {
+            @* Order training continues on the Live Screen; the page there starts the practice order. *@
+            <h2 id="waslaGuidedSetupTitle" class="wasla-guided-setup-card__title">@L["GuidedSetup.Next.Title"]</h2>
+            <p class="wasla-guided-setup-card__body">@L["GuidedSetup.Next.Body"]</p>
+            <div class="wasla-guided-setup-card__actions" data-guided-setup-next-actions>
+                <form method="post" action="/guided-setup/continue" data-guided-setup-form>
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">@L["GuidedSetup.Next.Open"]</button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#waslaGuidedSetupEndDialog">@L["GuidedSetup.End"]</button>
+            </div>
+        }
+    </div>
+</section>
+
+@if (canEnd)
+{
+    @await Html.PartialAsync("_GuidedSetupEndDialog", (string?)null)
+}
+<script src="~/js/wasla-guided-setup.js" asp-append-version="true"></script>

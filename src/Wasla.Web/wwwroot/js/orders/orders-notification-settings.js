@@ -1,8 +1,8 @@
-﻿// Notification settings modal: load, save, status UI (OrderHubOrders + O.audio).
+﻿// Notification settings modal: load, save, status UI (WaslaOrders + O.audio).
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
+  const O = global.WaslaOrders;
   if (!O || !O.audio) {
     return;
   }
@@ -67,7 +67,7 @@
     const hidden = document.getElementById("NewOrderHighlightColor");
     if (hidden) hidden.value = String(value || "");
 
-    const swatches = document.querySelectorAll(".oh-color-swatch[data-highlight-color]");
+    const swatches = document.querySelectorAll(".wasla-color-swatch[data-highlight-color]");
     swatches.forEach(function (b) {
       const c = (b.getAttribute("data-highlight-color") || "").toLowerCase();
       b.classList.toggle("active", c && String(value).toLowerCase() === c);
@@ -87,7 +87,7 @@
 
     if (color && String(color).startsWith("#")) {
       preview.classList.add("highlight-color-custom");
-      preview.style.setProperty("--new-order-highlight-bg", hexToRgba(color, 0.18));
+      preview.style.setProperty("--new-order-highlight-bg", hexToRgba(color, 0.45));
       preview.style.setProperty("--new-order-highlight-border", String(color));
     } else {
       preview.classList.add("highlight-color-" + (color || "yellow"));
@@ -151,23 +151,20 @@
     warn.classList.add("d-none");
     warn.textContent = "";
 
+    const audioState = O.audio.getAudioState ? O.audio.getAudioState() : "unknown";
     if (!state.newOrderSoundEnabled) {
       badge.className = "badge text-bg-secondary";
       badge.textContent = O.getMessage("notificationsOff");
       help.textContent = O.getMessage("notificationsOffHelp");
-      return;
-    }
-
-    if (!O.audio.isSoundUnlocked()) {
+    } else if (audioState === "blocked") {
       badge.className = "badge text-bg-warning";
       badge.textContent = O.getMessage("waitingForAudio");
       help.textContent = O.getMessage("waitingForAudioHelp");
-      return;
+    } else {
+      badge.className = "badge text-bg-success";
+      badge.textContent = O.getMessage("notificationsOn");
+      help.textContent = O.getMessage("notificationsOnHelp");
     }
-
-    badge.className = "badge text-bg-success";
-    badge.textContent = O.getMessage("notificationsOn");
-    help.textContent = O.getMessage("notificationsOnHelp");
   }
 
   function showModalWarning(text) {
@@ -225,8 +222,8 @@
 
       if (!resp.ok) {
         const base = O.getMessage("notificationSettingsLoadFailed");
-        if (global.OrderHubToast) {
-          global.OrderHubToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-load" });
+        if (global.WaslaToast) {
+          global.WaslaToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-load" });
         } else {
           O.showOrdersWarning("notification-settings-failed", base + " (HTTP " + resp.status + ")");
         }
@@ -251,9 +248,12 @@
       }
 
       O.state.notificationSettings = mergeDefaultNotificationState(json);
+      if (O.audio && typeof O.audio.syncSoundEnableUi === "function") {
+        O.audio.syncSoundEnableUi();
+      }
     } catch (error) {
-      if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
+      if (global.WaslaToast) {
+        global.WaslaToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
       } else {
         O.showOrdersWarning("notification-settings-exception", O.getMessage("notificationSettingsLoadException"));
       }
@@ -289,26 +289,33 @@
       });
     }
 
+    const stopPreviewBtn = document.getElementById("notificationPreviewStopSound");
+    if (stopPreviewBtn) {
+      on(stopPreviewBtn, "click", function () {
+        if (O.audio && typeof O.audio.stopTestPreview === "function") {
+          O.audio.stopTestPreview();
+        }
+      });
+    }
+
     const testSelectedBtn = document.getElementById("testSelectedSoundBtn");
     if (testSelectedBtn) {
       on(testSelectedBtn, "click", async function () {
         const st = getModalState();
-        await O.audio.maybeRequestBrowserNotificationPermission(st);
         if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
           O.audio.stopCurrentPreviewSound();
         }
         const opt = soundSel && soundSel.options[soundSel.selectedIndex];
         const url = opt && opt.getAttribute("data-sound-url");
-        await O.audio.playSoundNow(st, url || null);
-        try {
-          localStorage.setItem("Wasla.soundUnlocked", "true");
-        } catch (e) { /* ignore */ }
+        const playback = O.audio.playSoundNow(st, url || null, "test");
+        await O.audio.maybeRequestBrowserNotificationPermission(st);
+        await playback;
         updateNotificationStatusUi(getModalState());
       });
     }
 
     // Highlight swatches + custom color
-    document.querySelectorAll(".oh-color-swatch[data-highlight-color]").forEach(function (btn) {
+    document.querySelectorAll(".wasla-color-swatch[data-highlight-color]").forEach(function (btn) {
       on(btn, "click", function (e) {
         e.preventDefault();
         const c = btn.getAttribute("data-highlight-color") || "yellow";
@@ -346,7 +353,9 @@
     const modalEl = document.getElementById("notificationSettingsModal");
     if (modalEl) {
       on(modalEl, "hidden.bs.modal", function () {
-        if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
+        if (O.audio && typeof O.audio.stopTestPreview === "function") {
+          O.audio.stopTestPreview();
+        } else if (O.audio && typeof O.audio.stopCurrentPreviewSound === "function") {
           O.audio.stopCurrentPreviewSound();
         }
         if (notificationSettingsBindingsAbort) {
@@ -389,14 +398,14 @@
         try { data = await resp.json(); } catch (e1) { data = null; }
         if (data && data.success) {
           await loadNotificationSettings();
-          if (global.OrderHubToast) {
-            global.OrderHubToast.success(O.getMessage("settingsSaved"), { key: "notification-settings-save" });
+          if (global.WaslaToast) {
+            global.WaslaToast.success(O.getMessage("settingsSaved"), { key: "notification-settings-save" });
           }
           setTimeout(function () { hideNotificationSettingsModal(); }, 200);
           return;
         }
-        if (global.OrderHubToast) {
-          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
+        if (global.WaslaToast) {
+          global.WaslaToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
         }
         return;
       }
@@ -407,8 +416,8 @@
           body.innerHTML = html;
           wireNotificationModalContent();
         }
-        if (global.OrderHubToast) {
-          global.OrderHubToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
+        if (global.WaslaToast) {
+          global.WaslaToast.error(O.getMessage("settingsSaveFailed"), { key: "notification-settings-save" });
         }
         O.debugWarn("Notification settings save failed", resp.status);
         return;
@@ -420,8 +429,8 @@
         wireNotificationModalContent();
       }
     } catch (error) {
-      if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsSaveException"), { key: "notification-settings-save-ex" });
+      if (global.WaslaToast) {
+        global.WaslaToast.error(O.getMessage("notificationSettingsSaveException"), { key: "notification-settings-save-ex" });
       } else {
         O.showOrdersWarning("notification-settings-save-exception", O.getMessage("notificationSettingsSaveException"));
       }
@@ -433,12 +442,16 @@
   }
 
   async function openNotificationSettingsModal() {
+    if (!O.state.notificationSettings) {
+      await loadNotificationSettings();
+    }
+
     var resp;
     try {
       resp = await fetch(O.opts.notificationSettingsUrl, { headers: { "X-Requested-With": "fetch" } });
     } catch (error) {
-      if (global.OrderHubToast) {
-        global.OrderHubToast.error(O.getMessage("notificationSettingsModalOpenFailed"), { key: "notification-settings-open" });
+      if (global.WaslaToast) {
+        global.WaslaToast.error(O.getMessage("notificationSettingsModalOpenFailed"), { key: "notification-settings-open" });
       } else {
         O.showOrdersWarning("notification-settings-modal-failed", O.getMessage("notificationSettingsModalOpenFailed"));
       }
@@ -449,8 +462,8 @@
     O.debugLog("Notification settings modal response", { status: resp.status });
     if (!resp.ok) {
       const base = O.getMessage("notificationSettingsModalOpenFailed");
-      if (global.OrderHubToast) {
-        global.OrderHubToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-open" });
+      if (global.WaslaToast) {
+        global.WaslaToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-open" });
       } else {
         O.showOrdersWarning("notification-settings-modal-http", base + " (HTTP " + resp.status + ")");
       }

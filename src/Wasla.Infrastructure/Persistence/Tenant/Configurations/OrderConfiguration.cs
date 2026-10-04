@@ -19,6 +19,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.CustomerName).HasMaxLength(200);
         builder.Property(o => o.CustomerPhone).HasMaxLength(50);
         builder.Property(o => o.CustomerAddress).HasMaxLength(1000);
+        builder.Property(o => o.CustomerNote).HasMaxLength(2000);
 
         builder.Property(o => o.TotalAmount).HasPrecision(18, 2);
         builder.Property(o => o.DeliveryFee).HasPrecision(18, 2);

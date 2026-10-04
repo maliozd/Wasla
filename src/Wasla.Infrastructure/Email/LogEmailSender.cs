@@ -5,8 +5,6 @@ namespace Wasla.Infrastructure.Email;
 
 public sealed class LogEmailSender : IEmailSender
 {
-    private const int BodyPreviewLength = 240;
-
     private readonly ILogger<LogEmailSender> _logger;
 
     public LogEmailSender(ILogger<LogEmailSender> logger)
@@ -19,40 +17,12 @@ public sealed class LogEmailSender : IEmailSender
         _ = ct;
         ArgumentNullException.ThrowIfNull(message);
 
-        var recipient = string.IsNullOrWhiteSpace(message.ToName)
-            ? message.ToEmail
-            : $"{message.ToName} <{message.ToEmail}>";
-
-        if (message.IsSensitive)
-        {
-            _logger.LogInformation(
-                "Email (Log provider): RecipientDomain={RecipientDomain} Subject={Subject} BodyPreviewSuppressed=true",
-                GetDomain(message.ToEmail),
-                message.Subject);
-        }
-        else
-        {
-            var preview = BuildBodyPreview(message.TextBody);
-            _logger.LogInformation(
-                "Email (Log provider): To={Recipient} Subject={Subject} Preview={Preview}",
-                recipient,
-                message.Subject,
-                preview);
-        }
+        _logger.LogInformation(
+            "Email logged (not sent). RecipientDomain={RecipientDomain} Subject={Subject}",
+            GetDomain(message.ToEmail),
+            message.Subject);
 
         return Task.CompletedTask;
-    }
-
-    private static string BuildBodyPreview(string textBody)
-    {
-        if (string.IsNullOrWhiteSpace(textBody))
-            return "(empty body)";
-
-        var normalized = textBody.Replace('\r', ' ').Replace('\n', ' ').Trim();
-        if (normalized.Length <= BodyPreviewLength)
-            return normalized;
-
-        return normalized[..BodyPreviewLength] + "…";
     }
 
     private static string GetDomain(string email)

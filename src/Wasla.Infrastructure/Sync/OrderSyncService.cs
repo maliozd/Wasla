@@ -1,16 +1,21 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Platform.Mock;
 using Polly;
 using Polly.Retry;
 using Polly.Timeout;
@@ -25,6 +30,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly IOrderAutoApproveService _autoApprove;
     private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly ILogger<OrderSyncService> _logger;
+    private readonly ITenantBusinessSubtypeReader? _businessSubtypeReader;
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
         new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
@@ -48,7 +54,8 @@ public sealed class OrderSyncService : IOrderSyncService
         IOrderStatusMapper statusMapper,
         IOrderAutoApproveService autoApprove,
         IOrderReceiptCreationService receiptCreation,
-        ILogger<OrderSyncService> logger)
+        ILogger<OrderSyncService> logger,
+        ITenantBusinessSubtypeReader? businessSubtypeReader = null)
     {
         _customerDbFactory = customerDbFactory;
         _platformClients = platformClients;
@@ -56,6 +63,7 @@ public sealed class OrderSyncService : IOrderSyncService
         _autoApprove = autoApprove;
         _receiptCreation = receiptCreation;
         _logger = logger;
+        _businessSubtypeReader = businessSubtypeReader;
     }
 
     public async Task SyncCustomerAsync(Guid customerId, CancellationToken ct)
@@ -138,16 +146,24 @@ public sealed class OrderSyncService : IOrderSyncService
         var failedConnections = 0;
         var connectionResults = new List<OrderSyncConnectionResult>(dueConnections.Count);
 
-        foreach (var connection in dueConnections)
+        var mockGenerationScope = await BeginMockGenerationScopeAsync(customerId, db, ct).ConfigureAwait(false);
+        try
         {
-            var result = await SyncConnectionAsync(customerId, db, connection, ct).ConfigureAwait(false);
-            connectionResults.Add(result);
-            fetched += result.FetchedCount;
-            inserted += result.InsertedCount;
-            updated += result.UpdatedCount;
-            skipped += result.SkippedCount;
-            unchanged += result.UnchangedCount;
-            if (result.IsFailed) failedConnections++;
+            foreach (var connection in dueConnections)
+            {
+                var result = await SyncConnectionAsync(customerId, db, connection, ct).ConfigureAwait(false);
+                connectionResults.Add(result);
+                fetched += result.FetchedCount;
+                inserted += result.InsertedCount;
+                updated += result.UpdatedCount;
+                skipped += result.SkippedCount;
+                unchanged += result.UnchangedCount;
+                if (result.IsFailed) failedConnections++;
+            }
+        }
+        finally
+        {
+            mockGenerationScope?.Dispose();
         }
 
         swCustomer.Stop();
@@ -200,6 +216,53 @@ public sealed class OrderSyncService : IOrderSyncService
             .ConfigureAwait(false);
 
         return row?.OrderSyncEnabled ?? true;
+    }
+
+    private async Task<IDisposable?> BeginMockGenerationScopeAsync(
+        Guid customerId,
+        TenantDbContext db,
+        CancellationToken ct)
+    {
+        if (_businessSubtypeReader is null)
+            return null;
+
+        var codes = await _businessSubtypeReader.GetSubtypeCodesAsync(customerId, ct).ConfigureAwait(false);
+        if (codes is null)
+            return null;
+
+        var culture = await ReadReceiptLanguageAsync(db, ct).ConfigureAwait(false);
+        return MockOrderGenerationContext.Begin(codes, culture);
+    }
+
+    private static async Task<string> ReadReceiptLanguageAsync(TenantDbContext db, CancellationToken ct)
+    {
+        var json = await db.TenantOperationalSettings.AsNoTracking()
+            .Where(x => x.Id == TenantOperationalSettingsSingletonId)
+            .Select(x => x.ReceiptTemplateSettingsJson)
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(json))
+            return ReceiptLanguageCodes.Turkish;
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                if (property.Name.Equals("ReceiptLanguage", StringComparison.OrdinalIgnoreCase)
+                    && property.Value.ValueKind == JsonValueKind.String)
+                {
+                    return ReceiptLanguageCodes.Normalize(property.Value.GetString());
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            return ReceiptLanguageCodes.Turkish;
+        }
+
+        return ReceiptLanguageCodes.Turkish;
     }
 
     private async Task<OrderSyncConnectionResult> SyncConnectionAsync(
@@ -344,6 +407,10 @@ public sealed class OrderSyncService : IOrderSyncService
                 IsFailed: false)
             { ElapsedMs = swConn.ElapsedMilliseconds };
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             connection.ConsecutiveFailures++;
@@ -459,6 +526,12 @@ public sealed class OrderSyncService : IOrderSyncService
             return new OrderUpsertResult(true, false, false, false, order.ExternalOrderId);
         }
 
+        // Read child rows before any transaction. An unchanged order must not open the
+        // mutation transaction, delete children, or call SaveChanges for the order.
+        var persistedItems = await LoadPersistedItemSnapshotsAsync(db, existing.Id, ct).ConfigureAwait(false);
+        if (IsSemanticallyUnchanged(existing, persistedItems, external, newStatus))
+            return new OrderUpsertResult(false, false, false, true, existing.ExternalOrderId);
+
         var oldStatus = existing.InternalStatus;
         var oldTotal = existing.TotalAmount;
         var oldPlatformStatus = existing.PlatformStatus;
@@ -483,6 +556,7 @@ public sealed class OrderSyncService : IOrderSyncService
         existing.ExternalOrderCode = external.ExternalOrderCode;
         existing.CustomerPhone = external.CustomerPhone;
         existing.CustomerAddress = external.CustomerAddress;
+        existing.CustomerNote = NormalizeCustomerNote(external.CustomerNote);
         existing.UpdatedAt = nowUtc;
 
         ApplyStatusTransitionTimestamps(
@@ -581,6 +655,16 @@ public sealed class OrderSyncService : IOrderSyncService
         }
     }
 
+    private static string? NormalizeCustomerNote(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var trimmed = value.Trim();
+        const int maxLength = 2000;
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
+
     private static bool ShouldCreateReceiptForAcceptedProviderStatus(OrderStatus? oldStatus, OrderStatus newStatus)
     {
         if (newStatus != OrderStatus.Accepted)
@@ -609,7 +693,8 @@ public sealed class OrderSyncService : IOrderSyncService
             RawPayloadJson = external.RawPayloadJson,
             ExternalOrderCode = external.ExternalOrderCode,
             CustomerPhone = external.CustomerPhone,
-            CustomerAddress = external.CustomerAddress
+            CustomerAddress = external.CustomerAddress,
+            CustomerNote = NormalizeCustomerNote(external.CustomerNote)
         };
 
         // Initial milestone timestamps based on initial status
@@ -694,12 +779,268 @@ public sealed class OrderSyncService : IOrderSyncService
         }
     }
 
-    private static string SanitizeErrorMessage(Exception ex)
+    private static readonly Regex CredentialFragment = new(
+        @"(?i)\b(password|pwd|secret|token)\s*=\s*[^;,\s]+",
+        RegexOptions.Compiled);
+
+    internal static string SanitizeErrorMessage(Exception ex)
     {
-        // Keep message short and avoid leaking sensitive details.
         var msg = ex.Message ?? "Unknown error";
         msg = msg.Replace("\r", " ").Replace("\n", " ").Trim();
+
+        var bodyIndex = msg.IndexOf("Body:", StringComparison.OrdinalIgnoreCase);
+        if (bodyIndex >= 0)
+            msg = msg[..bodyIndex].Trim().TrimEnd('.', ':', '-', ' ');
+
+        msg = CredentialFragment.Replace(msg, "$1=[redacted]");
+        if (string.IsNullOrWhiteSpace(msg))
+            msg = ex.GetType().Name;
+
         return msg.Length <= 500 ? msg : msg[..500];
     }
+
+    /// <summary>
+    /// Compares the persisted order with the provider payload using the values Wasla
+    /// actually stores. Equality is decided before any mutation.
+    /// </summary>
+    /// <remarks>
+    /// RawPayloadJson is a diagnostic copy of the last provider body. Nothing in the
+    /// application reads it after save, and provider JSON is not canonical: property
+    /// order and non-domain metadata change between overlapping polls. A raw-payload-only
+    /// difference does not rewrite the order. When any synchronized field changes, the
+    /// existing update path still stores the latest payload.
+    /// Subtotal and ExternalItemId are not persisted, so they are not compared.
+    /// Money columns are decimal(18,2); values are compared at that scale.
+    /// Item and modifier order is not stored, so collections are compared as multisets.
+    /// InternalStatus is compared after <see cref="MergeInternalStatusForSync"/>, so a
+    /// stale provider status cannot look like a change when the merge keeps operator state.
+    /// </remarks>
+    private static bool IsSemanticallyUnchanged(
+        Order existing,
+        IReadOnlyList<PersistedOrderItemSnapshot> persistedItems,
+        ExternalOrderDto external,
+        OrderStatus mappedStatus)
+    {
+        var mergedStatus = MergeInternalStatusForSync(existing.InternalStatus, mappedStatus);
+        if (existing.InternalStatus != mergedStatus)
+            return false;
+
+        if (!SameStoredText(existing.PlatformStatus, external.ExternalStatus))
+            return false;
+
+        if (!SameStoredText(existing.ExternalOrderCode, external.ExternalOrderCode))
+            return false;
+
+        if (!SameStoredText(existing.CustomerName, external.CustomerName))
+            return false;
+
+        if (!SameStoredText(existing.CustomerPhone, external.CustomerPhone))
+            return false;
+
+        if (!SameStoredText(existing.CustomerAddress, external.CustomerAddress))
+            return false;
+
+        if (!string.Equals(
+                NormalizeCustomerNote(existing.CustomerNote),
+                NormalizeCustomerNote(external.CustomerNote),
+                StringComparison.Ordinal))
+            return false;
+
+        if (!MoneyEquals(existing.TotalAmount, external.Total))
+            return false;
+
+        if (!MoneyEquals(existing.DeliveryFee, external.DeliveryFee))
+            return false;
+
+        if (!MoneyEquals(existing.ServiceFee, external.ServiceFee))
+            return false;
+
+        if (existing.PaymentMethod != external.PaymentMethod)
+            return false;
+
+        if (existing.PaymentStatus != external.PaymentStatus)
+            return false;
+
+        if (existing.CreatedAtPlatform != external.OrderedAtUtc)
+            return false;
+
+        return ItemsSemanticallyEqual(persistedItems, external.Items);
+    }
+
+    private static async Task<IReadOnlyList<PersistedOrderItemSnapshot>> LoadPersistedItemSnapshotsAsync(
+        TenantDbContext db,
+        Guid orderId,
+        CancellationToken ct)
+    {
+        var rows = await db.OrderItems
+            .AsNoTracking()
+            .Where(i => i.OrderId == orderId)
+            .Select(i => new
+            {
+                i.Id,
+                i.ProductName,
+                i.Quantity,
+                i.UnitPrice,
+                i.TotalPrice,
+                i.Notes
+            })
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        if (rows.Count == 0)
+            return [];
+
+        var itemIds = rows.Select(r => r.Id).ToArray();
+        var optionRows = await db.OrderItemOptions
+            .AsNoTracking()
+            .Where(o => itemIds.Contains(o.OrderItemId))
+            .Select(o => new
+            {
+                o.OrderItemId,
+                o.Name,
+                o.Price
+            })
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        var optionsByItem = optionRows.ToLookup(o => o.OrderItemId);
+        return rows
+            .Select(r => new PersistedOrderItemSnapshot(
+                r.ProductName,
+                r.Quantity,
+                r.UnitPrice,
+                r.TotalPrice,
+                r.Notes,
+                optionsByItem[r.Id]
+                    .Select(o => new PersistedOptionSnapshot(o.Name, o.Price))
+                    .ToArray()))
+            .ToList();
+    }
+
+    private static bool ItemsSemanticallyEqual(
+        IReadOnlyList<PersistedOrderItemSnapshot> persistedItems,
+        IReadOnlyCollection<ExternalOrderItemDto>? incomingItems)
+    {
+        var incoming = incomingItems ?? [];
+        if (persistedItems.Count != incoming.Count)
+            return false;
+
+        var left = persistedItems.Select(ToComparableItem).ToList();
+        var right = incoming.Select(ToComparableItem).ToList();
+        left.Sort(CompareItems);
+        right.Sort(CompareItems);
+
+        for (var i = 0; i < left.Count; i++)
+        {
+            if (CompareItems(left[i], right[i]) != 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    private static ComparableItem ToComparableItem(PersistedOrderItemSnapshot item) =>
+        new(
+            item.ProductName ?? string.Empty,
+            item.Quantity,
+            NormalizeMoney(item.UnitPrice),
+            NormalizeMoney(item.TotalPrice),
+            NormalizeItemNote(item.Notes),
+            NormalizeOptions(item.Options.Select(o => (o.Name, o.Price))));
+
+    private static ComparableItem ToComparableItem(ExternalOrderItemDto item) =>
+        new(
+            item.ProductName ?? string.Empty,
+            item.Quantity,
+            NormalizeMoney(item.UnitPrice),
+            NormalizeMoney(item.TotalPrice),
+            NormalizeItemNote(item.Notes),
+            NormalizeOptions((item.Options ?? []).Select(o => (o.Name, o.Price))));
+
+    private static ComparableOption[] NormalizeOptions(IEnumerable<(string Name, decimal Price)> options) =>
+        options
+            .Select(o => new ComparableOption(o.Name ?? string.Empty, NormalizeMoney(o.Price)))
+            .OrderBy(o => o.Name, StringComparer.Ordinal)
+            .ThenBy(o => o.Price)
+            .ToArray();
+
+    private static int CompareItems(ComparableItem left, ComparableItem right)
+    {
+        var comparison = string.CompareOrdinal(left.ProductName, right.ProductName);
+        if (comparison != 0)
+            return comparison;
+
+        comparison = left.Quantity.CompareTo(right.Quantity);
+        if (comparison != 0)
+            return comparison;
+
+        comparison = left.UnitPrice.CompareTo(right.UnitPrice);
+        if (comparison != 0)
+            return comparison;
+
+        comparison = left.TotalPrice.CompareTo(right.TotalPrice);
+        if (comparison != 0)
+            return comparison;
+
+        comparison = string.CompareOrdinal(left.Notes, right.Notes);
+        if (comparison != 0)
+            return comparison;
+
+        comparison = left.Options.Length.CompareTo(right.Options.Length);
+        if (comparison != 0)
+            return comparison;
+
+        for (var i = 0; i < left.Options.Length; i++)
+        {
+            comparison = string.CompareOrdinal(left.Options[i].Name, right.Options[i].Name);
+            if (comparison != 0)
+                return comparison;
+
+            comparison = left.Options[i].Price.CompareTo(right.Options[i].Price);
+            if (comparison != 0)
+                return comparison;
+        }
+
+        return 0;
+    }
+
+    private static bool SameStoredText(string? left, string? right) =>
+        string.Equals(left ?? string.Empty, right ?? string.Empty, StringComparison.Ordinal);
+
+    private static bool MoneyEquals(decimal left, decimal right) =>
+        NormalizeMoney(left) == NormalizeMoney(right);
+
+    private static decimal NormalizeMoney(decimal value) =>
+        decimal.Round(value, MoneyScale, MidpointRounding.AwayFromZero);
+
+    private static string? NormalizeItemNote(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return value.Trim();
+    }
+
+    private const int MoneyScale = 2;
+
+    private sealed record PersistedOrderItemSnapshot(
+        string ProductName,
+        int Quantity,
+        decimal UnitPrice,
+        decimal TotalPrice,
+        string? Notes,
+        PersistedOptionSnapshot[] Options);
+
+    private readonly record struct PersistedOptionSnapshot(string Name, decimal Price);
+
+    private readonly record struct ComparableOption(string Name, decimal Price);
+
+    private sealed record ComparableItem(
+        string ProductName,
+        int Quantity,
+        decimal UnitPrice,
+        decimal TotalPrice,
+        string? Notes,
+        ComparableOption[] Options);
 }
 

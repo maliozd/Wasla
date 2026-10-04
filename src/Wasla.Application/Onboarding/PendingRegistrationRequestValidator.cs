@@ -19,7 +19,7 @@ public sealed class PendingRegistrationRequestValidator : AbstractValidator<Pend
 
         RuleFor(x => x.BusinessTypeCodes)
             .NotEmpty()
-            .WithMessage("Validation.BusinessTypeRequired");
+            .WithMessage("Validation.BusinessSubtypeRequired");
 
         RuleFor(x => x.BusinessTypeCodes)
             .MustAsync(async (codes, ct) =>

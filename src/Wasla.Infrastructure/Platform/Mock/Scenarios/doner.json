@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Doner",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor", "Mock.OrderNote.SauceOnTheSide"],
+  "products": [
+    { "key": "Mock.Doner.Product.ChickenWrap", "minPrice": 160, "maxPrice": 240, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.NoTomato", "Mock.Modifier.ExtraSauce", "Mock.Modifier.Spicy", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.Doner.Product.BeefWrap", "minPrice": 180, "maxPrice": 270, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraSauce", "Mock.Modifier.Spicy", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.Doner.Product.ChickenPlate", "minPrice": 220, "maxPrice": 340, "modifiers": ["Mock.Modifier.Fries", "Mock.Modifier.Ayran", "Mock.Modifier.NoOnion", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Doner.Product.BeefPlate", "minPrice": 250, "maxPrice": 380, "modifiers": ["Mock.Modifier.Fries", "Mock.Modifier.Ayran", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Doner.Product.Menu", "minPrice": 240, "maxPrice": 360, "modifiers": ["Mock.Modifier.Fries", "Mock.Modifier.Ayran", "Mock.Modifier.Cola", "Mock.Modifier.Spicy"] }
+  ]
+}

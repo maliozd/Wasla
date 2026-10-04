@@ -1,0 +1,13 @@
+{
+  "businessSubtype": "Kebab",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.NotTooSpicy", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.Kebab.Product.Adana", "minPrice": 280, "maxPrice": 420, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy", "Mock.Modifier.Bulgur", "Mock.Modifier.Rice", "Mock.Modifier.NoOnion", "Mock.Modifier.ExtraLavash"] },
+    { "key": "Mock.Kebab.Product.Urfa", "minPrice": 280, "maxPrice": 420, "modifiers": ["Mock.Modifier.NotSpicy", "Mock.Modifier.Rice", "Mock.Modifier.Bulgur", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Kebab.Product.ChickenShish", "minPrice": 260, "maxPrice": 380, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Bulgur", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Kebab.Product.BeefShish", "minPrice": 320, "maxPrice": 480, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.ExtraLavash", "Mock.Modifier.NoOnion"] },
+    { "key": "Mock.Kebab.Product.MixedGrill", "minPrice": 420, "maxPrice": 680, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.Rice", "Mock.Modifier.ExtraLavash"] },
+    { "key": "Mock.Kebab.Product.Kofte", "minPrice": 240, "maxPrice": 360, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy", "Mock.Modifier.NoOnion", "Mock.Modifier.Rice"] }
+  ]
+}

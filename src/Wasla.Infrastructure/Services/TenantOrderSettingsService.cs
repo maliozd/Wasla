@@ -103,5 +103,5 @@ public sealed class TenantOrderSettingsService : ITenantOrderSettingsService
         new(AutoApproveNewOrders: false, AutoPrintReceiptOnAutoApprove: false, ReceiptPrintCopyCount: 1);
 
     private static TenantOrderSettingsResult Map(TenantOperationalSettings row) =>
-        new(row.AutoApproveNewOrders, row.AutoPrintReceiptOnAutoApprove, row.ReceiptPrintCopyCount);
+        new(row.AutoApproveNewOrders, row.AutoPrintReceiptOnAutoApprove, row.ReceiptPrintCopyCount, row.OperationalMode);
 }

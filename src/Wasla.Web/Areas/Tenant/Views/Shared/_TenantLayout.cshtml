@@ -79,11 +79,13 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/css/adminlte.min.css" crossorigin="anonymous" />
 
-    <link rel="stylesheet" href="~/css/orderhub-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/wasla-theme.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
-    <link rel="stylesheet" href="~/css/orderhub-toast.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/wasla-foundation.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/wasla-toast.css" asp-append-version="true" />
 
     @if (isRtl)
 
@@ -95,31 +97,36 @@
 
 </head>
 
-<body class="layout-fixed sidebar-expand-lg oh-app oh-tenant" data-bs-theme="light">
+<body class="wasla-app wasla-tenant wasla-tenant-shell" data-bs-theme="light">
 
     <div class="app-wrapper">
 
-        <aside class="app-sidebar" id="app-sidebar-tenant" role="navigation" aria-label="Tenant">
+        <aside class="app-sidebar" id="app-sidebar-tenant" data-wasla-nav="sidebar" role="navigation" aria-label="@L["Layout.TenantNavigation"]">
 
-            <nav class="sidebar-menu oh-sidebar-shell">
+            <nav class="sidebar-menu wasla-sidebar-shell">
 
-                <div class="oh-sidebar-brand-area">
-                    <div class="oh-sidebar-brand-row">
-                        <a class="oh-sidebar-brand text-decoration-none min-w-0" href="@brandUrl">
+                <div class="wasla-sidebar-brand-area">
+                    <div class="wasla-sidebar-brand-row">
+                        <a class="wasla-sidebar-brand text-decoration-none min-w-0" href="@brandUrl">
+                            <span class="wasla-sidebar-brand-mark" aria-hidden="true">W</span>
                             <span class="brand-text">Wasla</span>
                         </a>
-                        <button type="button" id="tenantSidebarToggle" class="oh-sidebar-collapse-btn flex-shrink-0"
+                        <button type="button" id="tenantSidebarToggle" class="wasla-sidebar-collapse-btn flex-shrink-0"
                                 data-title-collapse="@L["Layout.CollapseSidebar"]" data-title-expand="@L["Layout.ExpandSidebar"]"
                                 data-label-toggle="@L["Layout.ToggleSidebar"]" title="@L["Layout.CollapseSidebar"]" aria-expanded="true" aria-controls="app-sidebar-tenant">
                             <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
                         </button>
+                        <button type="button" id="tenantNavClose" class="wasla-tenant-nav-close flex-shrink-0"
+                                data-wasla-nav="close" aria-label="@L["Layout.CloseNavigation"]">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
                     </div>
-                    <div class="oh-sidebar-tenant-name text-truncate" title="@customerName">@customerName</div>
+                    <div class="wasla-sidebar-tenant-name text-truncate" title="@customerName">@customerName</div>
                 </div>
 
 
 
-                <ul class="nav flex-column oh-sidebar-nav-main">
+                <ul class="nav flex-column wasla-sidebar-nav-main">
 
                     @if (navPermissions.CanViewReports)
                     {
@@ -145,23 +152,15 @@
                         </a>
 
                     </li>
-
-                    <li class="nav-item">
-
-                        <a class="nav-link @Active("/orders/history")" asp-area="Tenant" asp-controller="Orders" asp-action="History">
-
-                            <i class="bi bi-clock-history me-2"></i><span class="nav-text">@L["Layout.OrderHistory"]</span>
-
-                        </a>
-
-                    </li>
                     }
 
                     @if (navPermissions.CanViewLiveScreen)
                     {
                     <li class="nav-item">
 
-                        <a class="nav-link @Active("/orders/live-display")" asp-area="Tenant" asp-controller="Orders" asp-action="LiveDisplay">
+                        @* Live Screen is an operational display: open it in its own tab instead of replacing the panel. *@
+                        <a class="nav-link @Active("/orders/live-display")" asp-area="Tenant" asp-controller="Orders" asp-action="LiveDisplay"
+                           target="_blank" rel="noopener noreferrer">
 
                             <i class="bi bi-display me-2"></i><span class="nav-text">@L["Layout.LiveScreen"]</span>
 
@@ -172,22 +171,22 @@
 
                     @if (navPermissions.CanViewAnyPrintBridgeLink)
                     {
-                    <li class="nav-item oh-sidebar-nav-group @(printBridgeSection ? "oh-sidebar-nav-group--open" : "")">
+                    <li class="nav-item wasla-sidebar-nav-group @(printBridgeSection ? "wasla-sidebar-nav-group--open" : "")">
 
-                        <a class="nav-link oh-sidebar-nav-group__head @(printBridgeSection ? "active" : "")"
+                        <a class="nav-link wasla-sidebar-nav-group__head @(printBridgeSection ? "wasla-sidebar-nav-parent--current" : "")"
                            href="@(navPermissions.CanManagePrintBridgeDevices ? "/print-bridge/devices" : "/print-bridge/setup")">
 
                             <i class="bi bi-printer me-2"></i><span class="nav-text">@L["PrintBridge.Title"]</span>
 
                         </a>
 
-                        <ul class="oh-sidebar-nav-sub nav flex-column">
+                        <ul class="wasla-sidebar-nav-sub nav flex-column">
 
                             @if (navPermissions.CanManagePrintBridgeDevices)
                             {
                             <li class="nav-item">
 
-                                <a class="nav-link oh-sidebar-nav-sub__link @(printBridgeDevicesActive ? "active" : "")"
+                                <a class="nav-link wasla-sidebar-nav-sub__link @(printBridgeDevicesActive ? "active" : "")"
                                    href="/print-bridge/devices">
 
                                     <span class="nav-text">@L["PrintBridge.NavDevices"]</span>
@@ -201,7 +200,7 @@
                             {
                             <li class="nav-item">
 
-                                <a class="nav-link oh-sidebar-nav-sub__link @(printBridgeSetupActive ? "active" : "")"
+                                <a class="nav-link wasla-sidebar-nav-sub__link @(printBridgeSetupActive ? "active" : "")"
                                    href="/print-bridge/setup">
 
                                     <span class="nav-text">@L["PrintBridge.NavSetup"]</span>
@@ -239,11 +238,33 @@
                     </li>
                     }
 
+                    @if (navPermissions.CanManageTenantUsers)
+                    {
+                    <li class="nav-item">
+
+                        <a class="nav-link @Active("/settings/users")" asp-area="Tenant" asp-controller="TenantUsers" asp-action="Index">
+
+                            <i class="bi bi-people me-2"></i><span class="nav-text">@L["Navigation.UserSettings"]</span>
+
+                        </a>
+
+                    </li>
+                    }
+
+                    @if (navPermissions.CanViewOrders)
+                    {
+                    <li class="nav-item">
+                        <a class="nav-link @Active("/help")" asp-area="Tenant" asp-controller="Help" asp-action="Index">
+                            <i class="bi bi-question-circle me-2" aria-hidden="true"></i><span class="nav-text">@L["Help.Title"]</span>
+                        </a>
+                    </li>
+                    }
+
                 </ul>
 
 
 
-                <div class="oh-sidebar-bottom">
+                <div class="wasla-sidebar-bottom">
                     @await Html.PartialAsync("_TenantSidebarFooter")
                     @await Html.PartialAsync("_TenantSettingsNav")
                 </div>
@@ -254,11 +275,22 @@
 
 
 
-        <main class="app-main oh-content" role="main">
+        <main class="app-main wasla-content" id="tenant-main" role="main">
 
             <div class="app-content">
 
                 <div class="container-fluid py-3">
+
+                    <div class="wasla-tenant-nav-bar">
+                        <button type="button" id="tenantNavOpen" class="wasla-tenant-nav-trigger"
+                                data-wasla-nav="trigger"
+                                aria-controls="app-sidebar-tenant"
+                                aria-expanded="false"
+                                aria-label="@L["Layout.OpenNavigation"]">
+                            <i class="bi bi-list" aria-hidden="true"></i>
+                            <span class="wasla-tenant-nav-trigger__text">@L["Layout.OpenNavigation"]</span>
+                        </button>
+                    </div>
 
                     @RenderBody()
 
@@ -270,15 +302,13 @@
 
     </div>
 
-
+    <div id="tenantNavBackdrop" class="wasla-tenant-nav-backdrop" data-wasla-nav="backdrop" hidden></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
 
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/js/adminlte.min.js" crossorigin="anonymous"></script>
-
-    <script src="~/js/orderhub-toast.js" asp-append-version="true"></script>
+    <script src="~/js/wasla-toast.js" asp-append-version="true"></script>
 
     <partial name="~/Views/Shared/_Notifications.cshtml" />
 

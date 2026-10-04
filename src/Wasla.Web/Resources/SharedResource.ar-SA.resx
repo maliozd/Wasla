@@ -204,9 +204,6 @@
   <data name="Layout.LiveScreen" xml:space="preserve">
     <value>الشاشة المباشرة</value>
   </data>
-  <data name="Layout.OrderHistory" xml:space="preserve">
-    <value>سجل الطلبات</value>
-  </data>
   <data name="Layout.PlatformConnections" xml:space="preserve">
     <value>اتصالات المنصات</value>
   </data>
@@ -256,7 +253,7 @@
     <value>السمة</value>
   </data>
   <data name="Layout.CentralAdmin" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Layout.Customers" xml:space="preserve">
     <value>المطاعم</value>
@@ -272,6 +269,15 @@
   </data>
   <data name="Layout.ToggleSidebar" xml:space="preserve">
     <value>تبديل القائمة</value>
+  </data>
+  <data name="Layout.OpenNavigation" xml:space="preserve">
+    <value>فتح القائمة</value>
+  </data>
+  <data name="Layout.CloseNavigation" xml:space="preserve">
+    <value>إغلاق القائمة</value>
+  </data>
+  <data name="Layout.TenantNavigation" xml:space="preserve">
+    <value>قائمة المطعم</value>
   </data>
   <data name="Landing.Title" xml:space="preserve">
     <value>Wasla</value>
@@ -606,6 +612,60 @@
   <data name="Orders.LiveDisplay.Subtitle" xml:space="preserve">
     <value>تابع الطلبات النشطة أثناء التشغيل.</value>
   </data>
+  <data name="Orders.LiveScreen.ElapsedMinutes" xml:space="preserve">
+    <value>{0} د</value>
+  </data>
+  <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve">
+    <value>{0} س {1} د</value>
+  </data>
+  <data name="Orders.LiveScreen.ViewCards" xml:space="preserve">
+    <value>بطاقات</value>
+  </data>
+  <data name="Orders.LiveScreen.ViewList" xml:space="preserve">
+    <value>قائمة</value>
+  </data>
+  <data name="Orders.LiveScreen.DetailLoadFailed" xml:space="preserve">
+    <value>تعذر تحميل تفاصيل الطلب.</value>
+  </data>
+  <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve">
+    <value>تعذر تحديث الطلبات المباشرة. يتم عرض آخر تحديث.</value>
+  </data>
+  <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve">
+    <value>انتهت الجلسة. أعد تحميل الصفحة للمتابعة.</value>
+  </data>
+  <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
+    <value>هذا الإجمالي غير موجود في لقطة الشاشة المباشرة.</value>
+  </data>
+  <data name="Orders.Print.Action" xml:space="preserve">
+    <value>طباعة</value>
+  </data>
+  <data name="Orders.Print.InQueue" xml:space="preserve">
+    <value>في قائمة الطباعة</value>
+  </data>
+  <data name="Orders.Print.Hint" xml:space="preserve">
+    <value>إرسال الإيصال إلى Print Bridge</value>
+  </data>
+  <data name="Orders.Print.Queued" xml:space="preserve">
+    <value>تم إرسال الإيصال إلى قائمة الطباعة.</value>
+  </data>
+  <data name="Orders.Print.ReprintQueued" xml:space="preserve">
+    <value>تم إرسال الإيصال إلى قائمة الطباعة مرة أخرى.</value>
+  </data>
+  <data name="Orders.Print.AlreadyQueued" xml:space="preserve">
+    <value>يوجد إيصال لهذا الطلب في قائمة الطباعة أو قيد الطباعة بالفعل.</value>
+  </data>
+  <data name="Orders.Print.ConfirmReprint" xml:space="preserve">
+    <value>هل تريد إرسال هذا الإيصال إلى الطابعة مرة أخرى؟</value>
+  </data>
+  <data name="Orders.Print.OrderNotFound" xml:space="preserve">
+    <value>لم يتم العثور على الطلب.</value>
+  </data>
+  <data name="Orders.Print.Failed" xml:space="preserve">
+    <value>تعذر إضافة الإيصال إلى قائمة الطباعة.</value>
+  </data>
+  <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
+    <value>فتح الطلب</value>
+  </data>
   <data name="Orders.LiveDisplay.CloseDisplay" xml:space="preserve">
     <value>إغلاق العرض</value>
   </data>
@@ -620,6 +680,12 @@
   </data>
   <data name="Orders.LiveDisplay.LastUpdated" xml:space="preserve">
     <value>آخر تحديث</value>
+  </data>
+  <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
+    <value>مباشر</value>
+  </data>
+  <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
+    <value>صوت الإشعارات</value>
   </data>
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>تم حظر النافذة المنبثقة. يتم فتح العرض المباشر في هذا التبويب.</value>
@@ -725,9 +791,6 @@
   </data>
   <data name="Orders.Details.BackToOrders" xml:space="preserve">
     <value>العودة إلى الطلبات</value>
-  </data>
-  <data name="Orders.Details.BackToOrderHistory" xml:space="preserve">
-    <value>العودة إلى سجل الطلبات</value>
   </data>
   <data name="Orders.Details.AcceptedAt" xml:space="preserve">
     <value>تمت الموافقة</value>
@@ -865,7 +928,7 @@
     <value>لم تتم إضافة اتصالات منصات بعد.</value>
   </data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve">
-    <value>تم تعريف هذه المنصة ومعرّف المتجر مسبقًا.</value>
+    <value>يوجد اتصال بالفعل لهذه المنصة.</value>
   </data>
   <data name="PlatformConnections.Back" xml:space="preserve">
     <value>رجوع</value>
@@ -877,7 +940,7 @@
     <value>تفعيل</value>
   </data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve">
-    <value>ملاحظة: يلزم دور Owner/Manager لإدارة اتصالات المنصات.</value>
+    <value>أدِر منصات الطلب المتصلة بهذا المطعم.</value>
   </data>
   <data name="Branches.Title" xml:space="preserve">
     <value>الفروع</value>
@@ -947,6 +1010,21 @@
   </data>
   <data name="Notification.SoundUnlockHint" xml:space="preserve">
     <value>لسماع صوت الطلب الجديد، قم أولاً بمعاينة صوت من إعدادات الإشعارات.</value>
+  </data>
+  <data name="Notification.EnableSoundButton" xml:space="preserve">
+    <value>تفعيل صوت الإشعارات</value>
+  </data>
+  <data name="Notification.SoundMayBeOffTitle" xml:space="preserve">
+    <value>قد يكون صوت الإشعارات متوقفاً</value>
+  </data>
+  <data name="Notification.SoundMayBeOffDescription" xml:space="preserve">
+    <value>فعّل صوت الإشعارات لسماع تنبيهات الطلبات الجديدة.</value>
+  </data>
+  <data name="Notification.SoundActive" xml:space="preserve">
+    <value>صوت الإشعارات مفعّل</value>
+  </data>
+  <data name="Notification.StopSoundButton" xml:space="preserve">
+    <value>إيقاف الصوت</value>
   </data>
   <data name="Notification.Loading" xml:space="preserve">
     <value>جاري التحميل…</value>
@@ -1462,7 +1540,7 @@
     <value>آخر مزامنة ناجحة (UTC)</value>
   </data>
   <data name="Admin.LoginTitle" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Admin.LoginSubtitle" xml:space="preserve">
     <value>سجّل الدخول بحساب الإدارة المركزية</value>
@@ -1552,7 +1630,7 @@
     <value>الموقع العام</value>
   </data>
   <data name="Admin.CentralAdmin" xml:space="preserve">
-    <value>Wasla Yönetim Paneli</value>
+    <value>لوحة إدارة Wasla</value>
   </data>
   <data name="Admin.CustomerNotFound" xml:space="preserve">
     <value>المطعم غير موجود.</value>
@@ -2181,9 +2259,6 @@
   <data name="PlatformConnections.ToggleFailed" xml:space="preserve">
     <value>تعذر تغيير حالة اتصال المنصة.</value>
   </data>
-  <data name="PlatformConnections.DuplicatePlatformStore" xml:space="preserve">
-    <value>يوجد اتصال آخر بنفس المنصة ومعرّف المتجر.</value>
-  </data>
   <data name="PlatformConnections.ManagePermissionRequired" xml:space="preserve">
     <value>يلزم دور Owner أو Manager لإدارة اتصالات المنصة.</value>
   </data>
@@ -2324,9 +2399,6 @@
   </data>
   <data name="PrintBridge.TokenShownOnce" xml:space="preserve">
     <value>يُعرض هذا الرمز مرة واحدة فقط. انسخه واحفظه في إعدادات Print Bridge. إذا فقدته، أعد توليد الرمز.</value>
-  </data>
-  <data name="PrintBridge.TokenCreated" xml:space="preserve">
-    <value>تم إنشاء رمز Print Bridge</value>
   </data>
   <data name="PrintBridge.TokenRegenerated" xml:space="preserve">
     <value>تم إعادة توليد رمز Print Bridge</value>
@@ -2515,10 +2587,10 @@
     <value>حزمة Wasla Print Bridge</value>
   </data>
   <data name="PrintBridge.PackageComingSoon" xml:space="preserve">
-    <value>ستتوفر حزمة التثبيت المحمولة لنظام Windows هنا قريبًا.</value>
+    <value>ستتوفر حزمة تطبيق Windows هنا قريبًا.</value>
   </data>
   <data name="PrintBridge.PackagePlaceholderFileName" xml:space="preserve">
-    <value>WaslaPrintBridge-portable.zip</value>
+    <value>Wasla.PrintBridge-win-x64.zip</value>
   </data>
   <data name="PrintBridge.PackageStatusLabel" xml:space="preserve">
     <value>الحالة:</value>
@@ -2533,16 +2605,10 @@
     <value>قريبًا</value>
   </data>
   <data name="PrintBridge.DownloadCardText" xml:space="preserve">
-    <value>حمّل حزمة التثبيت المحمولة لجهاز Windows المتصل بطابعة الفواتير.</value>
+    <value>نزّل حزمة تطبيق Windows لجهاز Windows المتصل بطابعة الإيصالات.</value>
   </data>
   <data name="PrintBridge.PackageNotPreparedDevHint" xml:space="preserve">
     <value>في بيئات التطوير، يمكنك تشغيل تطبيق Print Bridge مباشرة.</value>
-  </data>
-  <data name="PrintBridge.ConnectionInfoTitle" xml:space="preserve">
-    <value>معلومات الاتصال</value>
-  </data>
-  <data name="PrintBridge.ServerUrlLabel" xml:space="preserve">
-    <value>عنوان لوحة الويب</value>
   </data>
   <data name="PrintBridge.DeviceTokenLabel" xml:space="preserve">
     <value>رمز الجهاز</value>
@@ -2572,13 +2638,13 @@
     <value>انسخ عنوان Wasla Web Panel.</value>
   </data>
   <data name="PrintBridge.SetupStep3" xml:space="preserve">
-    <value>أنشئ رمز الإعداد.</value>
+    <value>أنشئ رمز الجهاز وانسخه.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>أدخل العنوان ورمز الإعداد في التطبيق.</value>
+    <value>في Print Bridge افتح الإعدادات والصق رابط لوحة Wasla Web ورمز الجهاز.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>أكمل الاتصال.</value>
+    <value>انقر على "حفظ الاتصال" ثم على "اختبار الاتصال".</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>اختر الطابعة واحفظ الإعدادات.</value>
@@ -2596,7 +2662,7 @@
     <value>اتصال بالإنترنت</value>
   </data>
   <data name="PrintBridge.Requirement4" xml:space="preserve">
-    <value>رمز إعداد مؤقت (يُدخل في تطبيق سطح المكتب)</value>
+    <value>للاتصال اليدوي: رمز جهاز يُنشأ في هذه الصفحة</value>
   </data>
   <data name="PrintBridge.Requirement5" xml:space="preserve">
     <value>يجب أن يبقى الجهاز الذي يشغّل التطبيق قيد التشغيل</value>
@@ -2943,9 +3009,6 @@
   <data name="PrintBridge.DeviceToken" xml:space="preserve">
     <value>رمز الجهاز</value>
   </data>
-  <data name="PrintBridge.CopyServerUrl" xml:space="preserve">
-    <value>نسخ عنوان الخادم</value>
-  </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
     <value>تعذر تحديد عنوان الخادم. افتح هذه الصفحة من نطاق العميل أو تواصل مع المسؤول.</value>
   </data>
@@ -3251,11 +3314,11 @@
   <data name="PrintBridge.Auto.SessionError" xml:space="preserve"><value>تعذّر بدء الإعداد. حاول مرة أخرى.</value></data>
   <data name="PrintBridge.Auto.TryAgain" xml:space="preserve"><value>حاول الفتح مرة أخرى</value></data>
   <data name="PrintBridge.Auto.Download" xml:space="preserve"><value>تنزيل Wasla Print Bridge</value></data>
-  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>استخدم الإعداد اليدوي</value></data>
+  <data name="PrintBridge.Auto.UseManual" xml:space="preserve"><value>الاتصال يدويًا</value></data>
   <data name="PrintBridge.Auto.NotOpening" xml:space="preserve"><value>لم يُفتح؟ تأكد من تثبيت Wasla Print Bridge وتشغيله مرة واحدة على الأقل.</value></data>
-  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>ألم يُفتح تلقائيًا؟ استخدم خطوات الإعداد اليدوي.</value></data>
-  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>فتح الإعداد اليدوي</value></data>
-  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>الإعداد اليدوي</value></data>
+  <data name="PrintBridge.Auto.InstalledHint" xml:space="preserve"><value>ألم يُفتح تلقائيًا؟</value></data>
+  <data name="PrintBridge.Auto.OpenManualSetup" xml:space="preserve"><value>اتصل يدويًا برابط لوحة الويب ورمز الجهاز</value></data>
+  <data name="PrintBridge.Auto.ManualSectionTitle" xml:space="preserve"><value>الاتصال يدويًا</value></data>
   <data name="PrintBridge.Auto.NetworkHelp" xml:space="preserve"><value>إذا كان Print Bridge يعمل على نفس الجهاز، يمكن استخدام localhost. على جهاز مختلف، استخدم عنوان IP أو نطاقًا.</value></data>
   <data name="PrintBridge.Auto.ServerUrlUnavailable" xml:space="preserve"><value>عنوان الخادم غير متاح حاليًا.</value></data>
   <data name="PrintBridge.Auto.DeviceUnavailable" xml:space="preserve"><value>لا يوجد جهاز Print Bridge متاح. أنشئ واحدًا أولًا.</value></data>
@@ -3263,6 +3326,49 @@
   <data name="PrintBridge.Auto.ReplaceTokenConfirmationRequired" xml:space="preserve"><value>يلزم التأكيد قبل استبدال رمز الجهاز النشط الحالي.</value></data>
   <data name="PrintBridge.Auto.TokenRotationNotice" xml:space="preserve"><value>ينشئ الإعداد التلقائي رمزًا جديدًا للجهاز {0}؛ سيتوقف الرمز القديم عن العمل.</value></data>
   <data name="PrintBridge.Auto.ManualTokenFailed" xml:space="preserve"><value>تعذّر إكمال إجراء الرمز.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Title" xml:space="preserve"><value>نزّل حزمة تطبيق Windows</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Requirement" xml:space="preserve"><value>Print Bridge تطبيق لنظامي Windows 10 و11. ستستخرج ملف ZIP الذي تم تنزيله وتشغّل Wasla.PrintBridge.exe على الحاسوب المتصل بطابعة الإيصالات.</value></data>
+  <data name="PrintBridge.FirstInstall.Download.File" xml:space="preserve"><value>الملف: {0}</value></data>
+  <data name="PrintBridge.FirstInstall.NotWindows" xml:space="preserve"><value>يبدو أن هذا ليس حاسوبًا بنظام Windows. افتح هذه الصفحة على حاسوب Windows المتصل بطابعة الإيصالات وأكمل الإعداد هناك. لن يُنزَّل أي شيء ما لم تختر ذلك.</value></data>
+  <data name="PrintBridge.FirstInstall.DownloadStarted" xml:space="preserve"><value>بدأ التنزيل. عندما يحفظ المتصفح ملف ZIP، اتبع الخطوة 2.</value></data>
+  <data name="PrintBridge.FirstInstall.AlreadyInstalled" xml:space="preserve"><value>Print Bridge مثبّت بالفعل</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Button" xml:space="preserve"><value>تنزيل Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Download.Missing" xml:space="preserve"><value>لم تُنشر حزمة Print Bridge هنا بعد، لذا لا يمكن تنزيلها من هذه الصفحة. إذا كان Print Bridge مثبّتًا بالفعل يمكنك المتابعة أدناه، أو إكمال هذه الخطوة لاحقًا.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Title" xml:space="preserve"><value>جهّز Print Bridge</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Extract" xml:space="preserve"><value>استخرج ملف ZIP الذي تم تنزيله إلى مجلد، مثل C:\Wasla\PrintBridge.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Run" xml:space="preserve"><value>شغّل Wasla.PrintBridge.exe مرة واحدة واتركه مفتوحًا. بعد ذلك يمكن لهذه الصفحة فتح Print Bridge لك.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Runtime" xml:space="preserve"><value>تحتاج هذه الحزمة إلى .NET 8 Desktop Runtime. إذا طلبه Windows فاسمح بتثبيته أو نزّله من موقع Microsoft، ثم شغّل Print Bridge مرة أخرى.</value></data>
+  <data name="PrintBridge.FirstInstall.Prepare.Done" xml:space="preserve"><value>نزّلت Print Bridge وفتحته</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Title" xml:space="preserve"><value>الاتصال التلقائي</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Body" xml:space="preserve"><value>يفتح Print Bridge على هذا الحاسوب ويربطه بـ Wasla كجهاز جديد. قد يسألك المتصفح عمّا إذا كنت تريد فتح التطبيق.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Automatic.Button" xml:space="preserve"><value>افتح Print Bridge واتصل</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Title" xml:space="preserve"><value>الاتصال اليدوي</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>تُدخل بنفسك رابط لوحة Wasla Web ورمز جهاز في الإعدادات في Print Bridge. استخدم هذا إذا لم يُفتح التطبيق تلقائيًا.</value></data>
+  <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>اختر طريقة الاتصال</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>اختر طابعتك واختبرها</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>في Print Bridge افتح الإعدادات، واختر طابعة الإيصالات في إعداد الطابعة، ثم انقر على "حفظ الطابعة" وبعدها "طباعة إيصال تجريبي".</value></data>
+  <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>عندما يتحقق Wasla من الاتصال، تعرض لوحة الإعداد الموجّه أعلى هذه الصفحة "{0}". يلي ذلك دليل الجهاز ثم التدريب على الطلبات.</value></data>
+  <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>رابط لوحة Wasla Web ورمز الجهاز</value></data>
+  <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>استخدم هذا إذا لم يُفتح Print Bridge من هذه الصفحة. تطلب شاشة الإعدادات في Print Bridge هاتين القيمتين تحديدًا.</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlLabel" xml:space="preserve"><value>رابط لوحة Wasla Web</value></data>
+  <data name="PrintBridge.Manual.CopyWebPanelUrl" xml:space="preserve"><value>نسخ رابط لوحة Wasla Web</value></data>
+  <data name="PrintBridge.Manual.WebPanelUrlCopied" xml:space="preserve"><value>تم نسخ رابط لوحة Wasla Web.</value></data>
+  <data name="PrintBridge.Manual.TokenIntro" xml:space="preserve"><value>يُنشأ رمز الجهاز حسب اختيارك أعلاه: جهاز جديد، أو الجهاز الحالي الذي اخترته لإعادة الاتصال.</value></data>
+  <data name="PrintBridge.Manual.TokenIntroNewDevice" xml:space="preserve"><value>يُنشأ رمز الجهاز لجهاز جديد.</value></data>
+  <data name="PrintBridge.Manual.CreateNewDeviceToken" xml:space="preserve"><value>إنشاء رمز الجهاز</value></data>
+  <data name="PrintBridge.Manual.CreateReconnectToken" xml:space="preserve"><value>إنشاء رمز جديد للجهاز المحدد</value></data>
+  <data name="PrintBridge.Manual.TokenCreatedFor" xml:space="preserve"><value>تم إنشاء رمز الجهاز لـ {0}.</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenLabel" xml:space="preserve"><value>رمز الجهاز</value></data>
+  <data name="PrintBridge.Manual.ShownOnce" xml:space="preserve"><value>يُعرض هذا الرمز مرة واحدة فقط. بعد مغادرة هذه الصفحة أو إعادة تحميلها لا يمكن عرضه مرة أخرى؛ إذا فقدته فأنشئ رمزًا جديدًا لهذا الجهاز.</value></data>
+  <data name="PrintBridge.Manual.CopyDeviceToken" xml:space="preserve"><value>نسخ رمز الجهاز</value></data>
+  <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>إظهار الرمز</value></data>
+  <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>إخفاء الرمز</value></data>
+  <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>تم نسخ رمز الجهاز.</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>افتح الآن الإعدادات في Print Bridge، والصق القيمتين في الحقلين اللذين يحملان الاسم نفسه، ثم انقر على "حفظ الاتصال" وبعده "اختبار الاتصال".</value></data>
+  <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>إنشاء الرمز أو نسخه لا يربط Print Bridge. لا يُعدّ متصلًا إلا بعد أن يتحقق Wasla من الاتصال القادم من Print Bridge.</value></data>
+  <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>تحقق Wasla من اتصال Print Bridge. يمكنك المتابعة من لوحة الإعداد الموجّه أعلى هذه الصفحة.</value></data>
+  <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>لم يتحقق Wasla من الاتصال بعد. انقر على "اختبار الاتصال" في Print Bridge، ثم أعد تحميل هذه الصفحة للتحقق مرة أخرى.</value></data>
+  <data name="PrintBridge.Manual.ManageDevice" xml:space="preserve"><value>إدارة هذا الجهاز: تجديد رمزه أو إزالته</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>وضع الإعداد</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>إعداد جهاز جديد</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeHelp" xml:space="preserve"><value>يربط هذا الجهاز كجهاز Print Bridge جديد.</value></data>
@@ -3275,18 +3381,9 @@
   <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>هل تريد إنشاء اتصال جديد للجهاز المحدد؟ لن يعمل الاتصال القديم بعد الآن.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>إعادة التوصيل تنشئ رمزًا جديدًا للجهاز المحدد وتلغي الرمز السابق لذلك الجهاز.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>اختر الجهاز لإعادة التوصيل قبل المتابعة.</value></data>
-  <data name="PrintBridge.Auto.SelectDevice" xml:space="preserve"><value>اختر جهازًا للمتابعة.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>اختيار الجهاز مطلوب لإعادة توصيل جهاز موجود.</value></data>
   <data name="PrintBridge.Auto.SelectedDeviceInvalid" xml:space="preserve"><value>لم يتم العثور على الجهاز المحدد لهذا المطعم.</value></data>
   <data name="PrintBridge.Auto.SetupModeRequired" xml:space="preserve"><value>اختر وضع إعداد صالحًا.</value></data>
-  <data name="PrintBridge.Auto.ManualTokenModeHelp" xml:space="preserve"><value>يستخدم رمز الإعداد وضع الإعداد المحدد أعلاه. لا يتم إنشاء رمز الجهاز الحقيقي إلا عندما يستبدل تطبيق سطح المكتب هذا الرمز.</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCode" xml:space="preserve"><value>رمز إعداد لمرة واحدة</value></data>
-  <data name="PrintBridge.Auto.SetupCodeHelp" xml:space="preserve"><value>استخدم هذا الرمز قصير الصلاحية مع عنوان الخادم في تطبيق Print Bridge على سطح المكتب. إنه ليس رمز API عاديًا.</value></data>
-  <data name="PrintBridge.Auto.GenerateNewDeviceSetupCode" xml:space="preserve"><value>إنشاء رمز إعداد جديد</value></data>
-  <data name="PrintBridge.Auto.GenerateReconnectSetupCode" xml:space="preserve"><value>إنشاء رمز إعداد لإعادة التوصيل</value></data>
-  <data name="PrintBridge.Auto.OneTimeSetupCodeCreated" xml:space="preserve"><value>تم إنشاء رمز إعداد لمرة واحدة.</value></data>
-  <data name="PrintBridge.Auto.SetupCodeExpires" xml:space="preserve"><value>ينتهي في: {0}</value></data>
-  <data name="PrintBridge.Auto.CopySetupCode" xml:space="preserve"><value>نسخ رمز الإعداد</value></data>
   <data name="PrintBridge.SetupNewDeviceAction" xml:space="preserve"><value>إعداد جهاز جديد</value></data>
   <data name="PrintBridge.DeviceDetailsTitle" xml:space="preserve"><value>تفاصيل الجهاز</value></data>
   <data name="PrintBridge.DeviceDetailsSubtitle" xml:space="preserve"><value>اسم الويب وحالة الاتصال والمعلومات التقنية لجهاز Print Bridge هذا.</value></data>
@@ -3389,8 +3486,8 @@
   <data name="Auth.AccessDenied.Description" xml:space="preserve"><value>أنت مسجل الدخول، لكن ليس لديك إذن لهذه الصفحة أو العملية.</value></data>
   <data name="Auth.AccessDenied.BackToOrders" xml:space="preserve"><value>العودة إلى الطلبات</value></data>
   <data name="Navigation.UserSettings" xml:space="preserve"><value>المستخدمون</value></data>
-  <data name="TenantUsers.Title" xml:space="preserve"><value>المستخدمون</value></data>
-  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>إدارة أدوار مستخدمي المطعم وحالة الوصول.</value></data>
+  <data name="TenantUsers.Title" xml:space="preserve"><value>الفريق والصلاحيات</value></data>
+  <data name="TenantUsers.Subtitle" xml:space="preserve"><value>أدر أدوار فريق المطعم وحالة الوصول.</value></data>
   <data name="TenantUsers.AddUser" xml:space="preserve"><value>إضافة مستخدم</value></data>
   <data name="TenantUsers.CreationDeferred" xml:space="preserve"><value>تم تعطيل إنشاء مستخدمين جدد حتى تتم إضافة تدفق دعوة/إعداد كلمة مرور آمن.</value></data>
   <data name="TenantUsers.Details" xml:space="preserve"><value>التفاصيل</value></data>
@@ -3421,11 +3518,11 @@
   <data name="TenantUsers.Password" xml:space="preserve"><value>كلمة المرور</value></data>
   <data name="TenantUsers.ConfirmPassword" xml:space="preserve"><value>تأكيد كلمة المرور</value></data>
   <data name="TenantUsers.LeavePasswordBlank" xml:space="preserve"><value>اتركه فارغًا للاحتفاظ بكلمة المرور الحالية.</value></data>
-  <data name="TenantUsers.Role.Owner" xml:space="preserve"><value>Owner</value></data>
-  <data name="TenantUsers.Role.Manager" xml:space="preserve"><value>Manager</value></data>
-  <data name="TenantUsers.Role.Kitchen" xml:space="preserve"><value>Kitchen</value></data>
-  <data name="TenantUsers.Role.Cashier" xml:space="preserve"><value>Cashier</value></data>
-  <data name="TenantUsers.Role.Viewer" xml:space="preserve"><value>Viewer</value></data>
+  <data name="TenantUsers.Role.Owner" xml:space="preserve"><value>المالك</value></data>
+  <data name="TenantUsers.Role.Manager" xml:space="preserve"><value>المدير</value></data>
+  <data name="TenantUsers.Role.Kitchen" xml:space="preserve"><value>المطبخ</value></data>
+  <data name="TenantUsers.Role.Cashier" xml:space="preserve"><value>الكاشير</value></data>
+  <data name="TenantUsers.Role.Viewer" xml:space="preserve"><value>العارض</value></data>
   <data name="TenantUsers.RoleChanged" xml:space="preserve"><value>تم تحديث الدور.</value></data>
   <data name="TenantUsers.UserActivated" xml:space="preserve"><value>تم تفعيل المستخدم.</value></data>
   <data name="TenantUsers.UserDeactivated" xml:space="preserve"><value>تم تعطيل المستخدم.</value></data>
@@ -3435,4 +3532,551 @@
   <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>لم يتم العثور على المستخدم.</value></data>
   <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>لا يمكن تعطيل آخر Owner أو خفض دوره.</value></data>
   <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>تعذر تحديث المستخدم.</value></data>
+  <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>ملخص المستخدمين</value></data>
+  <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>الإجمالي</value></data>
+  <data name="TenantUsers.SummaryActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="TenantUsers.ListHeading" xml:space="preserve"><value>قائمة المستخدمين</value></data>
+  <data name="TenantUsers.FilterPlaceholder" xml:space="preserve"><value>الاسم أو البريد</value></data>
+  <data name="TenantUsers.AllRoles" xml:space="preserve"><value>كل الأدوار</value></data>
+  <data name="TenantUsers.EmptyTitle" xml:space="preserve"><value>لا يوجد مستخدمون بعد</value></data>
+  <data name="TenantUsers.EmptyDescription" xml:space="preserve"><value>ابدأ بإضافة أول مستخدم للمطعم.</value></data>
+  <data name="TenantUsers.NoResultsTitle" xml:space="preserve"><value>لا يوجد مستخدمون مطابقون</value></data>
+  <data name="TenantUsers.NoResultsDescription" xml:space="preserve"><value>جرّب بحثًا أو عوامل تصفية مختلفة.</value></data>
+  <data name="TenantUsers.LastLoginNotRecorded" xml:space="preserve"><value>غير مسجّل</value></data>
+  <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>اللوحة</value></data>
+  <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>المكتملة</value></data>
+  <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>لا توجد طلبات</value></data>
+  <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>الطلب</value></data>
+  <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>المدة</value></data>
+  <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>الإجمالي</value></data>
+  <data name="Orders.LiveScreen.ItemNote" xml:space="preserve"><value>ملاحظة</value></data>
+  <data name="Orders.LiveScreen.OrderNote" xml:space="preserve"><value>ملاحظة الطلب</value></data>
+  <data name="Orders.LiveScreen.ViewFocus" xml:space="preserve"><value>التركيز</value></data>
+  <data name="Orders.LiveScreen.SelectOrder" xml:space="preserve"><value>اختر طلبًا</value></data>
+  <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>اختر طلبًا من القائمة لعرض التفاصيل والإجراءات.</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>لا توجد طلبات للعرض الآن</value></data>
+  <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>ستظهر الطلبات هنا عند وصولها.</value></data>
+  <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>العودة إلى الطلبات</value></data>
+  <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>إعادة المحاولة</value></data>
+  <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>الطلبات</value></data>
+  <data name="Signup.BusinessSubtypeHint" xml:space="preserve"><value>اختر فئة واحدة أو أكثر، ثم حدّد الأنواع الفرعية المناسبة.</value></data>
+  <data name="Signup.BusinessCategory.Restaurant" xml:space="preserve"><value>مطعم</value></data>
+  <data name="Signup.BusinessCategory.FastFood" xml:space="preserve"><value>وجبات سريعة</value></data>
+  <data name="Signup.BusinessCategory.Cafe" xml:space="preserve"><value>مقهى</value></data>
+  <data name="Signup.BusinessCategory.Bakery" xml:space="preserve"><value>مخبوزات ومعجنات</value></data>
+  <data name="Signup.BusinessCategory.Dessert" xml:space="preserve"><value>حلويات</value></data>
+  <data name="Signup.BusinessCategory.WorldCuisine" xml:space="preserve"><value>مطابخ عالمية</value></data>
+  <data name="Signup.BusinessCategory.SpecialDiet" xml:space="preserve"><value>أنظمة غذائية خاصة</value></data>
+  <data name="Signup.BusinessCategory.Other" xml:space="preserve"><value>أخرى</value></data>
+  <data name="Signup.BusinessSubtype.Kebab" xml:space="preserve"><value>كباب</value></data>
+  <data name="Signup.BusinessSubtype.HomeCooking" xml:space="preserve"><value>أكلات منزلية</value></data>
+  <data name="Signup.BusinessSubtype.Steakhouse" xml:space="preserve"><value>مطعم لحوم</value></data>
+  <data name="Signup.BusinessSubtype.Seafood" xml:space="preserve"><value>مأكولات بحرية</value></data>
+  <data name="Signup.BusinessSubtype.Manti" xml:space="preserve"><value>مانتي</value></data>
+  <data name="Signup.BusinessSubtype.Soup" xml:space="preserve"><value>شوربات</value></data>
+  <data name="Signup.BusinessSubtype.Burger" xml:space="preserve"><value>برغر</value></data>
+  <data name="Signup.BusinessSubtype.Pizza" xml:space="preserve"><value>بيتزا</value></data>
+  <data name="Signup.BusinessSubtype.Doner" xml:space="preserve"><value>دونر</value></data>
+  <data name="Signup.BusinessSubtype.Chicken" xml:space="preserve"><value>دجاج</value></data>
+  <data name="Signup.BusinessSubtype.CigKofte" xml:space="preserve"><value>تشي كفتة</value></data>
+  <data name="Signup.BusinessSubtype.SandwichToast" xml:space="preserve"><value>ساندويتش / توست</value></data>
+  <data name="Signup.BusinessSubtype.Cafe" xml:space="preserve"><value>مقهى</value></data>
+  <data name="Signup.BusinessSubtype.Breakfast" xml:space="preserve"><value>إفطار</value></data>
+  <data name="Signup.BusinessSubtype.Patisserie" xml:space="preserve"><value>حلويات ومخبوزات</value></data>
+  <data name="Signup.BusinessSubtype.PideLahmacun" xml:space="preserve"><value>بيدا / لحم بعجين</value></data>
+  <data name="Signup.BusinessSubtype.BorekGozleme" xml:space="preserve"><value>بورك / غوزلمة</value></data>
+  <data name="Signup.BusinessSubtype.DessertShop" xml:space="preserve"><value>محل حلويات</value></data>
+  <data name="Signup.BusinessSubtype.IceCream" xml:space="preserve"><value>آيس كريم</value></data>
+  <data name="Signup.BusinessSubtype.WaffleCrepe" xml:space="preserve"><value>وافل / كريب</value></data>
+  <data name="Signup.BusinessSubtype.Sushi" xml:space="preserve"><value>سوشي</value></data>
+  <data name="Signup.BusinessSubtype.Asian" xml:space="preserve"><value>مطبخ آسيوي</value></data>
+  <data name="Signup.BusinessSubtype.Italian" xml:space="preserve"><value>باستا / إيطالي</value></data>
+  <data name="Signup.BusinessSubtype.WorldCuisine" xml:space="preserve"><value>مطابخ عالمية</value></data>
+  <data name="Signup.BusinessSubtype.VeganVegetarian" xml:space="preserve"><value>نباتي</value></data>
+  <data name="Signup.BusinessSubtype.Healthy" xml:space="preserve"><value>وجبات صحية</value></data>
+  <data name="Signup.BusinessSubtype.Other" xml:space="preserve"><value>أخرى</value></data>
+  <data name="Validation.BusinessSubtypeRequired" xml:space="preserve"><value>اختر نوعًا فرعيًا واحدًا على الأقل.</value></data>
+  <data name="Validation.BusinessCategorySubtypeRequired" xml:space="preserve"><value>حدّد نوعًا فرعيًا واحدًا على الأقل لكل فئة مختارة.</value></data>
+  <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>حدث خطأ غير متوقع</value></data>
+  <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>تعذر إكمال العملية. أعد المحاولة. إذا استمرت المشكلة، أرسل رمز المرجع إلى الدعم.</value></data>
+  <data name="Errors.ReferenceCode" xml:space="preserve"><value>رمز المرجع</value></data>
+  <data name="Setup.Title" xml:space="preserve"><value>جهّز Wasla للاستخدام</value></data>
+  <data name="Setup.Progress" xml:space="preserve"><value>اكتمل {0} / {1}</value></data>
+  <data name="Setup.ProgressLabel" xml:space="preserve"><value>تقدم الإعداد</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>يحتسب التقدم الخطوات المطلوبة. الطابعة اختيارية ولا تمنع الجاهزية.</value></data>
+  <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla جاهزة</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>منصة الطلبات متصلة وشاشة العمليات جاهزة للاستخدام.</value></data>
+  <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>افتح Live Screen</value></data>
+  <data name="Setup.AddTeamMember" xml:space="preserve"><value>أضف عضو فريق</value></data>
+  <data name="Setup.FinishSetup" xml:space="preserve"><value>إنهاء الإعداد</value></data>
+  <data name="Setup.GuidanceCompleted" xml:space="preserve"><value>تم إنهاء إرشاد الإعداد.</value></data>
+  <data name="Setup.GuidanceCompleteFailed" xml:space="preserve"><value>تعذر إنهاء الإعداد. أعد المحاولة.</value></data>
+  <data name="Setup.NextStepLabel" xml:space="preserve"><value>الخطوة التالية</value></data>
+  <data name="Setup.NextStepBody" xml:space="preserve"><value>أضف فريقك وحدد صلاحياتهم.</value></data>
+  <data name="Setup.Optional" xml:space="preserve"><value>اختياري</value></data>
+  <data name="Setup.StatusComplete" xml:space="preserve"><value>مكتمل</value></data>
+  <data name="Setup.StatusIncomplete" xml:space="preserve"><value>غير مكتمل</value></data>
+  <data name="Setup.StatusUnavailable" xml:space="preserve"><value>تعذر معرفة الحالة</value></data>
+  <data name="Setup.WelcomeTitle" xml:space="preserve"><value>{0} جاهز على Wasla.</value></data>
+  <data name="Setup.WelcomeTitleRest" xml:space="preserve"><value>جاهز على Wasla.</value></data>
+  <data name="Setup.WelcomeBody" xml:space="preserve"><value>أكمل بضع خطوات لبدء استلام الطلبات.</value></data>
+  <data name="Setup.StartSetup" xml:space="preserve"><value>ابدأ الإعداد</value></data>
+  <data name="Setup.BrowsePanel" xml:space="preserve"><value>تصفح اللوحة</value></data>
+  <data name="Setup.ChecklistSummary" xml:space="preserve"><value>إظهار خطوات الإعداد</value></data>
+  <data name="Setup.Restaurant.Title" xml:space="preserve"><value>راجع معلومات المطعم</value></data>
+  <data name="Setup.Restaurant.Incomplete" xml:space="preserve"><value>اسم النشاط أو الهاتف أو الموقع ناقص.</value></data>
+  <data name="Setup.Restaurant.Action" xml:space="preserve"><value>فتح البيانات</value></data>
+  <data name="Setup.Platform.Title" xml:space="preserve"><value>اربط منصة الطلبات</value></data>
+  <data name="Setup.Platform.Incomplete" xml:space="preserve"><value>انقل طلبات Yemeksepeti أو Getir أو Trendyol GO إلى Wasla.</value></data>
+  <data name="Setup.Platform.Action" xml:space="preserve"><value>ربط المنصة</value></data>
+  <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} متصلة</value></data>
+  <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} منصات متصلة</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>اضبط إشعارات الطلبات</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>صوت الإشعار متوقف أو لم يُحفظ بعد.</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>يمكنك تجربة الصوت من إعدادات الإشعارات.</value></data>
+  <data name="Setup.Notifications.Action" xml:space="preserve"><value>ضبط الإشعارات</value></data>
+  <data name="Setup.Notifications.Complete" xml:space="preserve"><value>صوت الإشعار مفعّل</value></data>
+  <data name="Setup.Printing.Title" xml:space="preserve"><value>اربط طابعة الإيصالات</value></data>
+  <data name="Setup.Printing.Complete" xml:space="preserve"><value>الطابعة متصلة</value></data>
+  <data name="Setup.Printing.Action" xml:space="preserve"><value>ربط الطابعة</value></data>
+  <data name="Setup.LiveScreen.Title" xml:space="preserve"><value>راجع Live Screen</value></data>
+  <data name="Setup.LiveScreen.Detail" xml:space="preserve"><value>افتح شاشة العمليات وراجع عرض الطلبات الجديدة.</value></data>
+  <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>افتح Live Screen</value></data>
+  <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>لا يُحفظ سجل الفتح</value></data>
+  <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>المزيد من العناصر في التفاصيل</value></data>
+  <data name="Tour.Skip" xml:space="preserve"><value>تخطي</value></data>
+  <data name="Tour.Back" xml:space="preserve"><value>رجوع</value></data>
+  <data name="Tour.Continue" xml:space="preserve"><value>متابعة</value></data>
+  <data name="Tour.Finish" xml:space="preserve"><value>فهمت</value></data>
+  <data name="Tour.Replay" xml:space="preserve"><value>اعرض تدريب هذه الشاشة</value></data>
+  <data name="Tour.Progress" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Tour.Close" xml:space="preserve"><value>إغلاق التدريب</value></data>
+  <data name="Tour.Dashboard.Summary.Title" xml:space="preserve"><value>ملخص اليوم</value></data>
+  <data name="Tour.Dashboard.Summary.Body" xml:space="preserve"><value>يمكنكم متابعة ملخص التشغيل اليومي هنا.</value></data>
+  <data name="Tour.Dashboard.Recent.Title" xml:space="preserve"><value>أحدث الطلبات</value></data>
+  <data name="Tour.Dashboard.Recent.Body" xml:space="preserve"><value>يمكنكم الوصول إلى أحدث الطلبات من هنا.</value></data>
+  <data name="Tour.Live.Orders.Title" xml:space="preserve"><value>الطلبات الجديدة</value></data>
+  <data name="Tour.Live.Orders.Body" xml:space="preserve"><value>تظهر هنا الطلبات القادمة من المنصات المتصلة.</value></data>
+  <data name="Tour.Live.Actions.Title" xml:space="preserve"><value>إجراءات الطلب</value></data>
+  <data name="Tour.Live.Actions.Body" xml:space="preserve"><value>يمكنكم إدارة إجراءات الطلب من هنا.</value></data>
+  <data name="Tour.Live.Timer.Title" xml:space="preserve"><value>مدة الانتظار</value></data>
+  <data name="Tour.Live.Timer.Body" xml:space="preserve"><value>يمكنكم متابعة مدة انتظار الطلب من هنا.</value></data>
+  <data name="Tour.Live.Views.Title" xml:space="preserve"><value>العرض</value></data>
+  <data name="Tour.Live.Views.Body" xml:space="preserve"><value>يمكنكم اختيار العرض المناسب لعملكم من هنا.</value></data>
+  <data name="Tour.Platform.List.Title" xml:space="preserve"><value>اتصالات المنصات</value></data>
+  <data name="Tour.Platform.List.Body" xml:space="preserve"><value>يمكنكم ربط منصات الطلب بـ Wasla من هنا.</value></data>
+  <data name="Tour.Platform.Connect.Title" xml:space="preserve"><value>إضافة منصة</value></data>
+  <data name="Tour.Platform.Connect.Body" xml:space="preserve"><value>يمكنكم إضافة اتصال منصة جديد من هنا.</value></data>
+  <data name="Demo.LaunchTitle" xml:space="preserve"><value>لنجرب Wasla</value></data>
+  <data name="Demo.LaunchAction" xml:space="preserve"><value>إرسال طلب تجريبي</value></data>
+  <data name="Demo.Badge" xml:space="preserve"><value>تجريبي</value></data>
+  <data name="Demo.CustomerName" xml:space="preserve"><value>عميل تجريبي</value></data>
+  <data name="Demo.StartTitle" xml:space="preserve"><value>لنجرب وصلة</value></data>
+  <data name="Demo.StartBody" xml:space="preserve"><value>جرّب سير الطلب دون التأثير على طلباتك الحقيقية.</value></data>
+  <data name="Demo.ApproveTitle" xml:space="preserve"><value>اقبلوا الطلب</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>اقبلوا الطلب من هنا.</value></data>
+  <data name="Demo.PrepareTitle" xml:space="preserve"><value>ابدأوا التحضير</value></data>
+  <data name="Demo.PrepareBody" xml:space="preserve"><value>انقلوا الطلب المقبول إلى التحضير.</value></data>
+  <data name="Demo.ReadyTitle" xml:space="preserve"><value>علّموه جاهزًا</value></data>
+  <data name="Demo.ReadyBody" xml:space="preserve"><value>عندما يجهز الطلب، علّموه من هنا.</value></data>
+  <data name="Demo.SuccessTitle" xml:space="preserve"><value>أدرتم أول طلب</value></data>
+  <data name="Demo.SuccessBody" xml:space="preserve"><value>لقد أكملتم التدريب. تبقى الطلبات الحقيقية المسلَّمة على الشاشة المباشرة لمدة {0} دقائق، ثم تُزال من هذه الشاشة التشغيلية فقط. يمكنكم الوصول إلى سجل طلباتكم من صفحة الطلبات.</value></data>
+  <data name="Demo.Sushi.Roll" xml:space="preserve"><value>سوشي السلمون</value></data>
+  <data name="Demo.Sushi.Edamame" xml:space="preserve"><value>إدامامي</value></data>
+  <data name="Demo.Sushi.Note" xml:space="preserve"><value>واسابي قليل.</value></data>
+  <data name="Demo.Burger.Burger" xml:space="preserve"><value>تشيز برغر</value></data>
+  <data name="Demo.Burger.Fries" xml:space="preserve"><value>بطاطس مقلية</value></data>
+  <data name="Demo.Burger.Drink" xml:space="preserve"><value>كولا</value></data>
+  <data name="Demo.Burger.Note" xml:space="preserve"><value>بدون بصل.</value></data>
+  <data name="Demo.Cafe.Coffee" xml:space="preserve"><value>لاتيه</value></data>
+  <data name="Demo.Cafe.Dessert" xml:space="preserve"><value>تشيز كيك</value></data>
+  <data name="Demo.Cafe.Note" xml:space="preserve"><value>مع الحليب.</value></data>
+  <data name="Demo.Pizza.Pizza" xml:space="preserve"><value>بيتزا مشكلة</value></data>
+  <data name="Demo.Pizza.Drink" xml:space="preserve"><value>عيران</value></data>
+  <data name="Demo.Pizza.Note" xml:space="preserve"><value>عجينة رقيقة.</value></data>
+  <data name="Demo.Doner.Wrap" xml:space="preserve"><value>لفة دونر</value></data>
+  <data name="Demo.Doner.Drink" xml:space="preserve"><value>عيران</value></data>
+  <data name="Demo.Doner.Note" xml:space="preserve"><value>بدون حر.</value></data>
+  <data name="Demo.Kebab.Kebab" xml:space="preserve"><value>كباب أضنة</value></data>
+  <data name="Demo.Kebab.Rice" xml:space="preserve"><value>أرز</value></data>
+  <data name="Demo.Kebab.Note" xml:space="preserve"><value>حار قليل.</value></data>
+  <data name="Demo.Dessert.Baklava" xml:space="preserve"><value>بقلاوة</value></data>
+  <data name="Demo.Dessert.Kunefe" xml:space="preserve"><value>كنافة</value></data>
+  <data name="Demo.Dessert.Note" xml:space="preserve"><value>قطر قليل.</value></data>
+  <data name="Demo.Lokanta.Kofte" xml:space="preserve"><value>كفتة مشوية</value></data>
+  <data name="Demo.Lokanta.Rice" xml:space="preserve"><value>أرز</value></data>
+  <data name="Demo.Lokanta.Note" xml:space="preserve"><value>مع الأرز.</value></data>
+  <data name="Tour.RealOrderPaused" xml:space="preserve"><value>وصل طلب حقيقي. أوقفنا التدريب مؤقتًا.</value></data>
+  <data name="Tour.ViewRealOrder" xml:space="preserve"><value>عرض الطلب الحقيقي</value></data>
+  <data name="Tour.ContinueTraining" xml:space="preserve"><value>متابعة التدريب</value></data>
+  <data name="Demo.PickupWaitTitle" xml:space="preserve"><value>بانتظار المندوب</value></data>
+  <data name="Demo.PickupWaitBody" xml:space="preserve"><value>طلبكم جاهز. عندما يستلم مندوب المنصة الطلب، يحدّث Wasla الحالة تلقائيًا إلى «في الطريق»، وينتقل التدريب إلى الخطوة التالية تلقائيًا.</value></data>
+  <data name="Demo.DeliveryWaitTitle" xml:space="preserve"><value>توصيل المندوب قيد التنفيذ</value></data>
+  <data name="Demo.DeliveryWaitBody" xml:space="preserve"><value>تصل حالة التوصيل تلقائيًا من مندوب المنصة. عند اكتمال التوصيل، يحدّث Wasla الطلب وينقل التدريب إلى الخطوة الأخيرة.</value></data>
+  <data name="Demo.ContinueLive" xml:space="preserve"><value>الانتقال إلى الشاشة المباشرة</value></data>
+  <data name="Demo.SkipTraining" xml:space="preserve"><value>تخطي التدريب</value></data>
+  <data name="Demo.SkipConfirmTitle" xml:space="preserve"><value>هل تريدون تخطي التدريب؟</value></data>
+  <data name="Demo.SkipConfirmBody" xml:space="preserve"><value>يمكنكم إعادة بدء هذا التدريب لاحقًا من «{0}» على الشاشة المباشرة.</value></data>
+  <data name="Demo.SkipConfirmAction" xml:space="preserve"><value>التخطي والانتقال إلى الشاشة المباشرة</value></data>
+  <data name="Demo.SkipConfirmCancel" xml:space="preserve"><value>متابعة التدريب</value></data>
+  <data name="Demo.StartFailed" xml:space="preserve"><value>تعذّر بدء الطلب التجريبي. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Demo.SelectTitle" xml:space="preserve"><value>اختر الطلب التجريبي</value></data>
+  <data name="Demo.SelectBody" xml:space="preserve"><value>افتح الطلب المميز بشارة التجربة لمتابعة التدريب.</value></data>
+  <data name="Tour.TrainingPaused" xml:space="preserve"><value>تم إيقاف التدريب مؤقتًا. تابع عندما تكون جاهزًا.</value></data>
+  <data name="GuidedSetup.FirstUse.Title" xml:space="preserve"><value>لنجهّز Wasla للاستخدام</value></data>
+  <data name="GuidedSetup.FirstUse.Body" xml:space="preserve"><value>يمكنك إعداد اتصالات المنصات والطابعة، ثم تعلّم سير الطلبات الأساسي بطلب تجريبي. يمكنك إكمال أي خطوة غير جاهزة لاحقًا.</value></data>
+  <data name="GuidedSetup.SectionsLabel" xml:space="preserve"><value>يشمل هذا الدليل:</value></data>
+  <data name="GuidedSetup.Section.PlatformConnections" xml:space="preserve"><value>اتصالات المنصات</value></data>
+  <data name="GuidedSetup.Section.PrintBridge" xml:space="preserve"><value>إعداد الطابعة (Wasla Print Bridge)</value></data>
+  <data name="GuidedSetup.Section.LiveScreenDemo" xml:space="preserve"><value>التدريب على الطلبات بطلب تجريبي</value></data>
+  <data name="GuidedSetup.Start" xml:space="preserve"><value>ابدأ الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.Skip" xml:space="preserve"><value>تخطَّ الإعداد الموجّه</value></data>
+  <data name="Orders.Automation.PendingSetup" xml:space="preserve"><value>تعمل بعد اكتمال الإعداد</value></data>
+  <data name="Orders.Automation.PendingSetupDescription" xml:space="preserve"><value>تعمل تلقائيًا عند إكمال الإعداد الموجّه أو تخطيه.</value></data>
+  <data name="Orders.DemoCountdown.PickUp" xml:space="preserve"><value>سيستلم المندوب الطلب خلال {0} ثانية.</value></data>
+  <data name="Orders.DemoCountdown.Deliver" xml:space="preserve"><value>سيكتمل التوصيل خلال {0} ثانية.</value></data>
+  <data name="Orders.DemoCountdown.Leave" xml:space="preserve"><value>سيُزال الطلب التجريبي من الشاشة المباشرة خلال {0} ثانية.</value></data>
+  <data name="Orders.DemoCountdown.Waiting" xml:space="preserve"><value>بانتظار تحديث المنصة…</value></data>
+  <data name="Orders.DemoCountdown.Seconds" xml:space="preserve"><value>{0} ث</value></data>
+  <data name="Orders.DemoCountdown.Label" xml:space="preserve"><value>الوقت المتبقي حتى الخطوة التلقائية</value></data>
+  <data name="Orders.DemoCountdown.Hint" xml:space="preserve"><value>تتم هذه الخطوة تلقائيًا؛ لا تحتاج إلى فعل أي شيء.</value></data>
+  <data name="GuidedSetup.FirstUse.SkipConsequence" xml:space="preserve"><value>إذا تخطّيت الإعداد الموجّه فلن يظهر مرة أخرى في التطبيق. يمكنك الوصول إلى شروحات الاستخدام من قسم المساعدة والأدلة.</value></data>
+  <data name="GuidedSetup.Resume.Title" xml:space="preserve"><value>لم يكتمل الإعداد الموجّه بعد.</value></data>
+  <data name="GuidedSetup.Resume.Current" xml:space="preserve"><value>توقفت عند: {0}</value></data>
+  <data name="GuidedSetup.Continue" xml:space="preserve"><value>متابعة الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.End" xml:space="preserve"><value>إنهاء الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.EndDialog.Title" xml:space="preserve"><value>هل تريد إنهاء الإعداد الموجّه؟</value></data>
+  <data name="GuidedSetup.EndDialog.Body" xml:space="preserve"><value>سيتم تجاهل تقدّمك المحفوظ ولن يظهر الإعداد الموجّه مرة أخرى في التطبيق. تبقى الإعدادات التي أجريتها محفوظة. يمكنك الوصول إلى شروحات الاستخدام من قسم المساعدة والأدلة.</value></data>
+  <data name="GuidedSetup.EndDialog.Confirm" xml:space="preserve"><value>نعم، إنهاء</value></data>
+  <data name="GuidedSetup.EndDialog.Cancel" xml:space="preserve"><value>تراجع</value></data>
+  <data name="GuidedSetup.Next.Title" xml:space="preserve"><value>التالي: التدريب على الطلبات</value></data>
+  <data name="GuidedSetup.Next.Body" xml:space="preserve"><value>تم حفظ تقدّمك في الإعداد الموجّه. في القسم التالي ستتدرّب على قبول الطلب وبدء تحضيره ووضع علامة جاهز عليه باستخدام طلب تجريبي.</value></data>
+  <data name="GuidedSetup.Panel.Eyebrow" xml:space="preserve"><value>الإعداد الموجّه</value></data>
+  <data name="GuidedSetup.Panel.Progress" xml:space="preserve"><value>القسم {0} من {1}</value></data>
+  <data name="GuidedSetup.Panel.Continue" xml:space="preserve"><value>متابعة</value></data>
+  <data name="GuidedSetup.Panel.Next" xml:space="preserve"><value>التالي: {0}</value></data>
+  <data name="GuidedSetup.Platform.Title" xml:space="preserve"><value>اربط منصات الطلبات</value></data>
+  <data name="GuidedSetup.Platform.Body" xml:space="preserve"><value>يجمع Wasla طلبات Trendyol GO وYemeksepeti في شاشة واحدة. لا تصل الطلبات الحقيقية إلى Wasla إلا بعد تفعيل اتصال منصة واحد على الأقل.</value></data>
+  <data name="GuidedSetup.Platform.Where" xml:space="preserve"><value>أضف اتصالًا عبر "{0}" وأدخل معرّف المتجر وبيانات API من المنصة. يمكنك تعديل الاتصالات الحالية أو تفعيلها أو إيقافها من الجدول أدناه.</value></data>
+  <data name="GuidedSetup.Platform.Check" xml:space="preserve"><value>ستعرف أن الاتصال يعمل عندما يتحدّث وقت آخر مزامنة ناجحة مع وصول طلبات جديدة.</value></data>
+  <data name="GuidedSetup.Platform.Later" xml:space="preserve"><value>إذا لم تكن بيانات المتجر وAPI جاهزة بعد، يمكنك إكمال هذه الخطوة لاحقًا.</value></data>
+  <data name="GuidedSetup.Platform.Ready" xml:space="preserve"><value>لديك اتصال منصة نشط واحد على الأقل.</value></data>
+  <data name="GuidedSetup.Platform.NotReady" xml:space="preserve"><value>لا يوجد اتصال منصة نشط بعد.</value></data>
+  <data name="GuidedSetup.Platform.SetUpLater" xml:space="preserve"><value>سأعدّه لاحقًا</value></data>
+  <data name="GuidedSetup.PrintBridge.Title" xml:space="preserve"><value>اربط طابعة الإيصالات</value></data>
+  <data name="GuidedSetup.PrintBridge.Body" xml:space="preserve"><value>Wasla Print Bridge تطبيق Windows يُثبَّت على الحاسوب المتصل بالطابعة. يطبع إيصالات الطلبات التي ينشئها Wasla على الطابعة التي تختارها.</value></data>
+  <data name="GuidedSetup.PrintBridge.Install" xml:space="preserve"><value>نزّل حزمة تطبيق Windows أدناه واستخرجها وشغّل Print Bridge مرة واحدة؛ ثم اتصل عبر "{0}" أو يدويًا.</value></data>
+  <data name="GuidedSetup.PrintBridge.Secure" xml:space="preserve"><value>عند فتح Print Bridge من هذه الصفحة يتصل بهذا الحساب تلقائيًا وبأمان. إذا لم يُفتح فاتصل يدويًا: أنشئ رمز جهاز هنا والصقه مع رابط لوحة Wasla Web في إعدادات Print Bridge.</value></data>
+  <data name="GuidedSetup.PrintBridge.Printer" xml:space="preserve"><value>بعد ذلك اختر طابعتك من إعدادات Print Bridge واستخدم "طباعة إيصال تجريبي" لطباعة إيصال تجريبي.</value></data>
+  <data name="GuidedSetup.PrintBridge.Later" xml:space="preserve"><value>إذا لم تكن الطابعة أو الحاسوب جاهزين بعد، يمكنك إكمال هذه الخطوة لاحقًا.</value></data>
+  <data name="GuidedSetup.PrintBridge.Ready" xml:space="preserve"><value>يوجد جهاز Print Bridge متصل.</value></data>
+  <data name="GuidedSetup.PrintBridge.NotReady" xml:space="preserve"><value>لا يوجد جهاز Print Bridge متصل بعد.</value></data>
+  <data name="GuidedSetup.PrintBridge.SetUpLater" xml:space="preserve"><value>سأعدّه لاحقًا</value></data>
+  <data name="GuidedSetup.PrintBridge.MeetDevice" xml:space="preserve"><value>تعرّف على جهازك</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Title" xml:space="preserve"><value>تم توصيل Print Bridge</value></data>
+  <data name="GuidedSetup.PrintBridge.Dock.Body" xml:space="preserve"><value>تعرّف على جهازك لمتابعة الإعداد.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Title" xml:space="preserve"><value>تعرّف على جهاز Print Bridge الخاص بك</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.Device" xml:space="preserve"><value>تم توصيل Print Bridge. ستدير هذا الجهاز من هنا لاحقًا. ألقِ نظرة على معنى كل جزء؛ لا تحتاج إلى تغيير أي شيء الآن.</value></data>
+  <data name="GuidedSetup.DeviceGuide.Intro.List" xml:space="preserve"><value>تم توصيل Print Bridge. تعرض هذه القائمة كل تثبيت لـ Print Bridge؛ افتح تفاصيل الجهاز لإدارته. ألقِ نظرة على معنى كل جزء؛ لا تحتاج إلى تغيير أي شيء الآن.</value></data>
+  <data name="GuidedSetup.Closed" xml:space="preserve"><value>تم إغلاق الإعداد الموجّه. يمكنك الوصول إلى شروحات الاستخدام من قسم المساعدة والأدلة.</value></data>
+  <data name="GuidedSetup.ActionFailed" xml:space="preserve"><value>تعذّر إكمال إجراء الإعداد الموجّه. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="GuidedSetup.Unavailable" xml:space="preserve"><value>الإعداد الموجّه غير متاح لصلاحيات حسابك.</value></data>
+  <data name="Help.Title" xml:space="preserve"><value>المساعدة والأدلة</value></data>
+  <data name="Help.Subtitle" xml:space="preserve"><value>شروحات خطوة بخطوة لإعداد Wasla وإدارة الطلبات اليومية.</value></data>
+  <data name="Help.Contents" xml:space="preserve"><value>في هذه الصفحة</value></data>
+  <data name="Help.Group.Platforms" xml:space="preserve"><value>اتصالات المنصات</value></data>
+  <data name="Help.Group.Printing" xml:space="preserve"><value>الطباعة</value></data>
+  <data name="Help.Group.Orders" xml:space="preserve"><value>الطلبات والشاشة المباشرة</value></data>
+  <data name="Help.Group.Support" xml:space="preserve"><value>حل المشكلات والدعم</value></data>
+  <data name="Help.Trendyol.Title" xml:space="preserve"><value>ربط Trendyol GO</value></data>
+  <data name="Help.Trendyol.Intro" xml:space="preserve"><value>قبل البدء، احصل على معرّف المتجر وبيانات API (المفتاح والمفتاح السري) من لوحة البائع في Trendyol GO.</value></data>
+  <data name="Help.Trendyol.Step1" xml:space="preserve"><value>في صفحة اتصالات المنصات اضغط "{0}" واختر Trendyol GO منصةً.</value></data>
+  <data name="Help.Trendyol.Step2" xml:space="preserve"><value>أدخل معرّف المتجر (Store Id) ومفتاح API والمفتاح السري. إذا تُرك معرّف المورّد (Supplier Id) فارغًا فسيُستخدم معرّف المتجر.</value></data>
+  <data name="Help.Trendyol.Step3" xml:space="preserve"><value>أدخل البريد الإلكتروني للمستخدم المنفّذ (Executor email) الذي يستخدمه Trendyol GO في الطلبات، وأبقِ الاتصال نشطًا ثم احفظه.</value></data>
+  <data name="Help.Yemeksepeti.Title" xml:space="preserve"><value>ربط Yemeksepeti</value></data>
+  <data name="Help.Yemeksepeti.Intro" xml:space="preserve"><value>قبل البدء، احصل على بيانات تكامل شريك Yemeksepeti: معرّف السلسلة ومعرّف الفرع ومعرّف العميل والمفتاح السري للعميل.</value></data>
+  <data name="Help.Yemeksepeti.Step1" xml:space="preserve"><value>في صفحة اتصالات المنصات اضغط "{0}" واختر Yemeksepeti منصةً.</value></data>
+  <data name="Help.Yemeksepeti.Step2" xml:space="preserve"><value>أدخل معرّف السلسلة في حقل Supplier Id ومعرّف الفرع في حقل Store Id.</value></data>
+  <data name="Help.Yemeksepeti.Step3" xml:space="preserve"><value>أدخل معرّف العميل في حقل مفتاح API والمفتاح السري للعميل في حقل المفتاح السري، ثم احفظ.</value></data>
+  <data name="Help.PlatformManage.Title" xml:space="preserve"><value>اختبار الاتصالات وإدارتها</value></data>
+  <data name="Help.PlatformManage.Body" xml:space="preserve"><value>يعرض جدول اتصالات المنصات حالة كل اتصال. استخدم المفتاح لتشغيل الاتصال أو إيقافه، وعدّله لتحديث بيانات المتجر وAPI. لكل منصة اتصال واحد فقط.</value></data>
+  <data name="Help.PlatformManage.Check" xml:space="preserve"><value>لاختبار الاتصال، راجع عمود "{0}": يتحدّث هذا الوقت مع مزامنة الطلبات الجديدة. إذا ظهر عدد أخطاء أو تحذير إيقاف مؤقت فتحقّق من بيانات API.</value></data>
+  <data name="Help.PrintBridge.Title" xml:space="preserve"><value>تثبيت Print Bridge وربطه</value></data>
+  <data name="Help.PrintBridge.Intro" xml:space="preserve"><value>Wasla Print Bridge هو تطبيق Windows الذي يرسل الإيصالات إلى الطابعة. ثبّته على الحاسوب المتصل بالطابعة.</value></data>
+  <data name="Help.PrintBridge.Step1" xml:space="preserve"><value>على حاسوب Windows المتصل بطابعة الإيصالات، افتح صفحة إعداد Print Bridge ونزّل حزمة تطبيق Windows بصيغة ZIP.</value></data>
+  <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>استخرج ملف ZIP إلى مجلد.</value></data>
+  <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>شغّل Wasla.PrintBridge.exe مرة واحدة. إذا طلب Windows تثبيت .NET 8 Desktop Runtime فثبّته.</value></data>
+  <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>في صفحة الإعداد اختر طريقة الاتصال: "{0}" يفتح التطبيق ويربطه تلقائيًا (موصى به)، أو اتصل يدويًا بلصق رمز جهاز ورابط لوحة Wasla Web في الإعدادات في Print Bridge. لا تشارك رمز الجهاز مع أحد.</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>في Print Bridge افتح الإعدادات، واختر طابعة الإيصالات، ثم انقر على "حفظ الطابعة" وبعدها "طباعة إيصال تجريبي".</value></data>
+  <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>بعد أن يتحقق Wasla من الاتصال، تعرّف على جهازك: تعرض صفحته الاتصال، ومنها تُعيد توليد رمزه أو تزيله. راجع "{0}" أدناه.</value></data>
+  <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>إدارة أجهزة Print Bridge</value></data>
+  <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>يظهر كل تثبيت لـ Print Bridge كجهاز في قائمة أجهزة Print Bridge. افتح تفاصيل الجهاز لإعادة تسميته أو التحقق من اتصاله أو إعادة توليد رمزه أو إزالته.</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Title" xml:space="preserve"><value>اسم الجهاز</value></data>
+  <data name="Help.PrintBridgeDevices.Name.Body" xml:space="preserve"><value>الاسم الذي يعرضه Wasla لتثبيت واحد من Print Bridge، بجانب اسم الحاسوب. كل حاسوب يعمل عليه Print Bridge هو جهاز منفصل.</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Title" xml:space="preserve"><value>الاتصال وآخر ظهور</value></data>
+  <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>تعني "متصل" أن Wasla تلقّى إشارة من هذا التثبيت خلال الدقيقة الأخيرة. ويُظهر آخر ظهور آخر مرة اتصل فيها؛ والوقت الأقدم يعني عادةً أن التطبيق أو الحاسوب مُطفأ.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>رمز الجهاز</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>يتيح رمز الجهاز لهذا التثبيت تسجيل الدخول إلى Wasla واستلام مهام الطباعة. لا يحتفظ Wasla بالرمز نفسه، لذلك لا يمكن عرضه مرة أخرى بعد إنشائه.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>إعادة توليد الرمز</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>يُنشئ رمز جهاز جديدًا لهذا الجهاز.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>يتوقف الرمز القديم عن العمل فورًا، فلا يستطيع هذا التثبيت الطباعة حتى يحصل على الرمز الجديد.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>أدخل الرمز الجديد في الإعدادات في تطبيق Print Bridge، ثم احفظ الاتصال واختبره.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>يُعرض الرمز الجديد مرة واحدة فقط.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>إزالة الجهاز</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>يُنهي وصول هذا الجهاز إلى Wasla ويتوقف رمزه عن العمل.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.Jobs" xml:space="preserve"><value>لا يستلم ذلك التثبيت مهام طباعة بعد ذلك.</value></data>
+  <data name="Help.PrintBridgeDevices.Remove.When" xml:space="preserve"><value>استخدمها فقط لتثبيت أُحيل إلى التقاعد أو فُقد أو استُبدل.</value></data>
+  <data name="Help.Printer.Title" xml:space="preserve"><value>اختيار الطابعة</value></data>
+  <data name="Help.Printer.Body" xml:space="preserve"><value>في تطبيق Print Bridge افتح الإعدادات، واختر طابعة الإيصالات من قائمة "اسم الطابعة"، ثم احفظ.</value></data>
+  <data name="Help.Printer.Template" xml:space="preserve"><value>يُضبط محتوى الإيصال وشكله من صفحة "{0}" في Wasla.</value></data>
+  <data name="Help.TestPrint.Title" xml:space="preserve"><value>طباعة إيصال تجريبي</value></data>
+  <data name="Help.TestPrint.Body" xml:space="preserve"><value>بعد اختيار الطابعة اضغط "طباعة إيصال تجريبي" في تطبيق Print Bridge. يجب أن يخرج إيصال تجريبي من الطابعة.</value></data>
+  <data name="Help.TestPrint.Check" xml:space="preserve"><value>إذا لم تتم الطباعة فتحقّق من أن الطابعة قيد التشغيل وبها ورق وأنها الطابعة الصحيحة في Windows. تعرض صفحة أجهزة Print Bridge حالة اتصال الجهاز وآخر مهام الطباعة.</value></data>
+  <data name="Help.LiveScreen.Title" xml:space="preserve"><value>نظرة عامة على الشاشة المباشرة</value></data>
+  <data name="Help.LiveScreen.Body" xml:space="preserve"><value>الشاشة المباشرة مخصّصة لمتابعة الطلبات الواردة في المطبخ وعند الكاشير لحظة بلحظة. اعرض الطلبات بطريقة {0} أو {1} أو {2}، واحصل على تنبيهات صوتية وتنبيهات المتصفح للطلبات الجديدة.</value></data>
+  <data name="Help.Approve.Title" xml:space="preserve"><value>قبول الطلب</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>عند وصول طلب جديد راجعه واضغط "{0}"؛ يُرسَل القبول إلى المنصة. إذا لم تتمكن من تلبية الطلب فاستخدم "{1}".</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>بدء التحضير</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>في الطلب المقبول اضغط "{0}" لإظهار بدء التحضير لفريقك.</value></data>
+  <data name="Help.Ready.Title" xml:space="preserve"><value>وضع علامة جاهز على الطلب</value></data>
+  <data name="Help.Ready.Body" xml:space="preserve"><value>عندما يصبح الطلب جاهزًا اضغط "{0}". هذا آخر إجراء يقوم به المطعم على الطلب، ويتم إبلاغ المنصة.</value></data>
+  <data name="Help.CourierPickup.Title" xml:space="preserve"><value>استلام المندوب للطلب</value></data>
+  <data name="Help.CourierPickup.Body" xml:space="preserve"><value>يستلم مندوب المنصة الطلب. عند استلامه تُبلغ المنصة بذلك وينقل Wasla الطلب تلقائيًا إلى حالة "{0}". لا حاجة لأي إجراء منك في Wasla.</value></data>
+  <data name="Help.Delivered.Title" xml:space="preserve"><value>اكتمال التسليم</value></data>
+  <data name="Help.Delivered.Body" xml:space="preserve"><value>تُبلغ المنصة عن التسليم أيضًا. عندما يسلّم المندوب الطلب ينقله Wasla تلقائيًا إلى حالة "{0}".</value></data>
+  <data name="Help.DeliveredWindow.Title" xml:space="preserve"><value>مدة بقاء الطلبات المسلَّمة على الشاشة المباشرة</value></data>
+  <data name="Help.DeliveredWindow.Body" xml:space="preserve"><value>يبقى الطلب المكتمل ظاهرًا مؤقتًا قبل انتقاله إلى سجل الطلبات. المدة بالدقائق: {0}.</value></data>
+  <data name="Help.OrderHistory.Title" xml:space="preserve"><value>العثور على الطلبات المكتملة</value></data>
+  <data name="Help.OrderHistory.Body" xml:space="preserve"><value>جميع الطلبات المسلَّمة والملغاة موجودة في صفحة "{0}". يمكنك التصفية حسب المنصة والحالة والتاريخ أو البحث برمز الطلب.</value></data>
+  <data name="Help.Troubleshooting.Title" xml:space="preserve"><value>حل المشكلات والدعم</value></data>
+  <data name="Help.Troubleshooting.NoOrders" xml:space="preserve"><value>الطلبات لا تصل: تحقّق في اتصالات المنصات من أن الاتصال نشط وراجع وقت آخر مزامنة ناجحة.</value></data>
+  <data name="Help.Troubleshooting.NoPrint" xml:space="preserve"><value>الإيصالات لا تُطبع: تحقّق من أن جهاز Print Bridge يظهر متصلًا وأن الطابعة الصحيحة مختارة في التطبيق، ثم راجع آخر مهام الطباعة في صفحة Print Bridge.</value></data>
+  <data name="Help.Troubleshooting.NoSound" xml:space="preserve"><value>صوت الطلب الجديد لا يعمل: تحقّق من تفعيل الصوت في الشاشة المباشرة ومن سماح المتصفح بتشغيل الصوت.</value></data>
+  <data name="Help.Troubleshooting.MissingPage" xml:space="preserve"><value>إذا لم تظهر لك صفحة أو زر فقد لا يملك دورك صلاحية ذلك؛ اطلب المساعدة من مالك المطعم.</value></data>
+  <data name="Help.Troubleshooting.Support" xml:space="preserve"><value>إذا استمرت المشكلة فتواصل مع الدعم. إذا ظهرت لك صفحة خطأ فإن مشاركة رمز المرجع الموجود عليها يساعد على إيجاد المشكلة أسرع.</value></data>
+  <data name="Help.NeedsPermission" xml:space="preserve"><value>ليست لديك صلاحية فتح هذه الصفحة؛ اطلب المساعدة من مالك المطعم إذا احتجت إليها.</value></data>
+  <data name="Help.Action.OpenPlatformConnections" xml:space="preserve"><value>فتح اتصالات المنصات</value></data>
+  <data name="Help.Action.OpenPrintBridgeSetup" xml:space="preserve"><value>فتح إعداد Print Bridge</value></data>
+  <data name="Help.Action.OpenPrintBridgeDevices" xml:space="preserve"><value>فتح أجهزة Print Bridge</value></data>
+  <data name="Help.Action.OpenReceiptPrinterSettings" xml:space="preserve"><value>فتح إعدادات الإيصال والطابعة</value></data>
+  <data name="Help.Action.OpenLiveScreen" xml:space="preserve"><value>فتح الشاشة المباشرة</value></data>
+  <data name="Help.Action.OpenOrders" xml:space="preserve"><value>فتح الطلبات</value></data>
+  <data name="GuidedSetup.Next.Open" xml:space="preserve"><value>افتح التدريب على الطلبات</value></data>
+  <data name="GuidedSetup.Training.Progress" xml:space="preserve"><value>الخطوة {0} من {1}</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>التدريب على الطلبات في الشاشة المباشرة</value></data>
+  <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>تظهر الطلبات الجديدة هنا على شكل بطاقات، وتنتقل إلى المرحلة التالية كلما تقدّمت في العمل عليها. ابدأ طلبًا تجريبيًا لتجربة سير العمل. يحمل الطلب التجريبي علامة «{6}» ولا يراه أحد غيرك: لا يُرسل إلى Trendyol GO أو Yemeksepeti، ولا يُطبع، ولا يُحتسب ضمن طلباتك أو تقاريرك.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>وصل طلب تجريبي</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>الطلب التجريبي الذي يحمل علامة «{6}» ينتظر بوصفه طلبًا جديدًا. اقبله بالضغط على زر «{1}» في بطاقته.</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>ابدأ التحضير</value></data>
+  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>تم قبول الطلب. اضغط «{2}» عندما يبدأ المطبخ العمل عليه.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>ضع علامة جاهز على الطلب</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>عندما يُغلَّف الطلب، اضغط «{3}». هذه آخر خطوة يقوم بها المطعم.</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>المندوب يستلم الطلب</value></data>
+  <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>لا تحتاج إلى الضغط على أي زر آخر. يستلم مندوب المنصة الطلب، وتتغير حالته تلقائيًا إلى «{4}».</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>الطلب في الطريق</value></data>
+  <data name="GuidedSetup.Training.Step.OnTheWay.Body" xml:space="preserve"><value>الطلب مع المندوب الآن. عندما يصل إلى العميل، تضع المنصة عليه علامة «{5}» تلقائيًا.</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Title" xml:space="preserve"><value>تم تسليم الطلب</value></data>
+  <data name="GuidedSetup.Training.Step.Delivered.Body" xml:space="preserve"><value>يبقى الطلب الحقيقي المكتمل ظاهرًا مؤقتًا في الشاشة المباشرة ثم يختفي منها. المدة بالدقائق: {0}. لا يُحذف الطلب، بل يبقى في صفحة الطلبات وسجل الطلبات. أما هذا الطلب التجريبي فلا يُحفظ هناك.</value></data>
+  <data name="GuidedSetup.Training.StartPractice" xml:space="preserve"><value>ابدأ طلبًا تجريبيًا</value></data>
+  <data name="GuidedSetup.Training.Complete" xml:space="preserve"><value>أكمل التدريب</value></data>
+  <data name="GuidedSetup.Training.ShowPractice" xml:space="preserve"><value>اعرض الطلب التجريبي</value></data>
+  <data name="GuidedSetup.Training.Hide" xml:space="preserve"><value>إخفاء الدليل</value></data>
+  <data name="GuidedSetup.Training.Reopen" xml:space="preserve"><value>اعرض التدريب على الطلبات</value></data>
+  <data name="GuidedSetup.Training.Waiting" xml:space="preserve"><value>ما زلت تنتظر؟ تصل تحديثات المندوب من خدمة Wasla التي تعمل في الخلفية. إذا كانت الخدمة متوقفة، يبقى الطلب التجريبي بأمان في هذه الخطوة حتى تعمل من جديد.</value></data>
+  <data name="GuidedSetup.Training.CourierNote" xml:space="preserve"><value>بعد أن يصبح الطلب جاهزًا لا يحدّثه المطعم بعد ذلك: مندوب المنصة يُبلغ عن الاستلام والتسليم تلقائيًا.</value></data>
+  <data name="GuidedSetup.Training.HelpNote" xml:space="preserve"><value>أدلة الاستخدام متاحة دائمًا في</value></data>
+  <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>اكتمل التدريب على الطلبات وانتهى الإعداد الموجّه. تبقى أدلة الاستخدام متاحة في المساعدة والأدلة.</value></data>
+  <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>تعذّر بدء الطلب التجريبي. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>يمكنك إكمال التدريب بعد تسليم الطلب التجريبي.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>وصل طلب حقيقي أثناء تدريبك</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>وصلت طلبات حقيقية أثناء تدريبك، وعددها: {0}</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>يمكنك متابعة التدريب. يمكنك إدارة الطلب من لوحة المنصة الخاصة بك. ستظهر الطلبات النشطة على الشاشة المباشرة عند اكتمال التدريب.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>يمكنك متابعة التدريب. يمكنك إدارة الطلبات من لوحة المنصة الخاصة بك. ستظهر الطلبات النشطة على الشاشة المباشرة عند اكتمال التدريب.</value></data>
+  <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>المتابعة إلى Print Bridge</value></data>
+  <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>المتابعة إلى التدريب على الطلبات</value></data>
+  <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>لم تكتمل هذه الخطوة بعد. يمكنك إكمال الإعداد أو اختيار إعداده لاحقًا.</value></data>
+  <data name="DevelopmentTools.Title" xml:space="preserve"><value>أدوات التطوير</value></data>
+  <data name="DevelopmentTools.Reset.Title" xml:space="preserve"><value>إعادة المستأجر التجريبي إلى حالة الاستخدام الأول</value></data>
+  <data name="DevelopmentTools.Reset.Intro" xml:space="preserve"><value>يظهر فقط في بيئة التطوير المحلية. يعيد هذا المستأجر إلى حالته بعد التهيئة مباشرة، لتتمكن من اختبار الإعداد الموجّه من جديد بدءًا من اختيار البدء أو التخطي الأول.</value></data>
+  <data name="DevelopmentTools.Reset.Warning" xml:space="preserve"><value>لا يمكن التراجع عن هذا الإجراء. ستُحذف طلبات هذا المستأجر واتصالات المنصات وأجهزة Print Bridge وإعدادات الاختبار. كما تُعاد تهيئة مهام الطباعة وحالة المزامنة وإعدادات الإشعارات وتقدّم الإعداد الموجّه والطلبات التجريبية.</value></data>
+  <data name="DevelopmentTools.Reset.Keeps" xml:space="preserve"><value>يبقى كما هو: المستأجر ونطاقه والمعرّف المختصر (slug)، وجميع المستخدمين وكلمات المرور والأدوار، والفروع، وسجلات الاشتراك والدفع. لا يُلغى أي شيء لدى المنصات؛ تُحذف إعدادات Wasla المحلية فقط.</value></data>
+  <data name="DevelopmentTools.Reset.BrowserPermission" xml:space="preserve"><value>لا يمكن للتطبيق إعادة تعيين إذن الإشعارات في المتصفح. عند اختبار هذا السيناريو، أعد تعيينه يدويًا من إعدادات الموقع في Chrome.</value></data>
+  <data name="DevelopmentTools.Reset.Button" xml:space="preserve"><value>إعادة تعيين المستأجر التجريبي</value></data>
+  <data name="DevelopmentTools.Reset.DialogTitle" xml:space="preserve"><value>هل تريد إعادة تعيين المستأجر التجريبي؟</value></data>
+  <data name="DevelopmentTools.Reset.ConfirmLabel" xml:space="preserve"><value>للتأكيد، اكتب المعرّف المختصر (slug) لهذا المستأجر كما هو تمامًا:</value></data>
+  <data name="DevelopmentTools.Reset.Confirm" xml:space="preserve"><value>نعم، أعد التعيين</value></data>
+  <data name="DevelopmentTools.Reset.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="DevelopmentTools.Reset.SlugMismatch" xml:space="preserve"><value>المعرّف المختصر الذي كتبته لا يطابق هذا المستأجر. لم يتغير شيء.</value></data>
+  <data name="DevelopmentTools.Reset.Failed" xml:space="preserve"><value>تعذّر إكمال إعادة التعيين وتم التراجع عنها. لم يتغير شيء.</value></data>
+  <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>عاد المستأجر التجريبي إلى حالة الاستخدام الأول. إذا لزم الأمر، أعد تعيين إذن الإشعارات في المتصفح يدويًا من إعدادات الموقع في Chrome.</value></data>
+  <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>قبل استخدام إعادة التعيين، أوقف Wasla.Worker، وأغلق تطبيق Print Bridge، وتأكد من عدم وجود عملية إعداد لـ Print Bridge قيد التشغيل حاليًا. وإلا فقد تضيف دورة مزامنة أو عملية إعداد لا تزال قيد التشغيل بيانات من جديد بعد إعادة التعيين، كما يحتفظ المزوّد التجريبي (mock) بأرقام الطلبات في الذاكرة. شغّل Worker من جديد بعد انتهاء إعادة التعيين.</value></data>
+  <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>لم تكتمل إعادة التعيين: أُزيلت أجهزة Print Bridge، لكن تم التراجع عن بقية البيانات. شغّل إعادة التعيين مرة أخرى لإكمالها.</value></data>
+  <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>الأتمتة</value></data>
+  <data name="Admin.Ops.OverviewTitle" xml:space="preserve"><value>نظرة عامة على العمليات</value></data>
+  <data name="Admin.Ops.OverviewSubtitle" xml:space="preserve"><value>حالة المطاعم والتسجيلات وPrint Bridge من السجل المركزي.</value></data>
+  <data name="Admin.Ops.OverviewCentralOnlyNote" xml:space="preserve"><value>تقرأ هذه الصفحة قاعدة البيانات المركزية فقط. يتم فحص قاعدة بيانات المطعم والمزامنة وحالة الطلبات فقط في صفحة عمليات ذلك المطعم.</value></data>
+  <data name="Admin.Ops.ReadAt" xml:space="preserve"><value>وقت القراءة</value></data>
+  <data name="Admin.Ops.Section.Tenants" xml:space="preserve"><value>المطاعم</value></data>
+  <data name="Admin.Ops.Section.Signup" xml:space="preserve"><value>التسجيل والتجهيز</value></data>
+  <data name="Admin.Ops.Section.PrintBridgeFleet" xml:space="preserve"><value>أجهزة Print Bridge</value></data>
+  <data name="Admin.Ops.Metric.MigrationFailed" xml:space="preserve"><value>فشل آخر ترحيل</value></data>
+  <data name="Admin.Ops.Metric.MigrationNotRecorded" xml:space="preserve"><value>لا يوجد سجل ترحيل</value></data>
+  <data name="Admin.Ops.Metric.NeedsAttention" xml:space="preserve"><value>يحتاج إلى متابعة</value></data>
+  <data name="Admin.Ops.Metric.OldestWaiting" xml:space="preserve"><value>الأقدم: {0}</value></data>
+  <data name="Admin.Ops.Metric.ExpiredOrCancelled" xml:space="preserve"><value>منتهية أو ملغاة</value></data>
+  <data name="Admin.Ops.Signup.ProvisioningFailuresNotTracked" xml:space="preserve"><value>لا تُسجَّل محاولات التجهيز الفاشلة كحالة منفصلة. يبقى التسجيل المدفوع غير المجهَّز ضمن عدد المدفوعات المستلمة.</value></data>
+  <data name="Admin.Ops.PrintBridge.Online" xml:space="preserve"><value>متصل</value></data>
+  <data name="Admin.Ops.PrintBridge.Stale" xml:space="preserve"><value>متأخر</value></data>
+  <data name="Admin.Ops.PrintBridge.Offline" xml:space="preserve"><value>غير متصل</value></data>
+  <data name="Admin.Ops.PrintBridge.NeverConnected" xml:space="preserve"><value>لم يتصل أبدًا</value></data>
+  <data name="Admin.Ops.PrintBridge.Disabled" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Ops.PrintBridge.ThresholdNote" xml:space="preserve"><value>متصل: آخر إشارة قبل 60 ثانية كحد أقصى. متأخر: قبل 5 دقائق كحد أقصى. غير متصل: أقدم من ذلك.</value></data>
+  <data name="Admin.Ops.RecentTenants" xml:space="preserve"><value>المطاعم المضافة مؤخرًا</value></data>
+  <data name="Admin.Ops.LoadError.Title" xml:space="preserve"><value>تعذّرت قراءة البيانات المركزية</value></data>
+  <data name="Admin.Ops.LoadError.Body" xml:space="preserve"><value>لا يمكن الوصول إلى قاعدة البيانات المركزية حاليًا. أعد تحميل الصفحة بعد بضع دقائق، وإذا استمرت المشكلة فراجع سجلات الخادم.</value></data>
+  <data name="Admin.Ops.List.Subtitle" xml:space="preserve"><value>المطاعم في السجل المركزي. تُقرأ حالة قاعدة البيانات فقط في صفحة عمليات المطعم.</value></data>
+  <data name="Admin.Ops.List.FiltersLabel" xml:space="preserve"><value>البحث عن المطاعم وتصفيتها</value></data>
+  <data name="Admin.Ops.List.SearchPlaceholder" xml:space="preserve"><value>الاسم أو المعرّف المختصر أو النطاق</value></data>
+  <data name="Admin.Ops.List.MigrationRecord" xml:space="preserve"><value>سجل الترحيل</value></data>
+  <data name="Admin.Ops.List.AnyMigrationRecord" xml:space="preserve"><value>أي سجل</value></data>
+  <data name="Admin.Ops.List.AnyPlan" xml:space="preserve"><value>كل الخطط</value></data>
+  <data name="Admin.Ops.List.NoPlan" xml:space="preserve"><value>بلا عضوية</value></data>
+  <data name="Admin.Ops.List.PageSize" xml:space="preserve"><value>لكل صفحة</value></data>
+  <data name="Admin.Ops.List.ClearFilters" xml:space="preserve"><value>مسح عوامل التصفية</value></data>
+  <data name="Admin.Ops.List.NoMatches" xml:space="preserve"><value>لا توجد مطاعم تطابق عوامل التصفية هذه.</value></data>
+  <data name="Admin.Ops.List.Showing" xml:space="preserve"><value>عرض {0}–{1} من أصل {2} مطعمًا</value></data>
+  <data name="Admin.Ops.List.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.List.NoDevices" xml:space="preserve"><value>لا توجد أجهزة</value></data>
+  <data name="Admin.Ops.List.DevicesOnline" xml:space="preserve"><value>{0} من {1} متصل</value></data>
+  <data name="Admin.Ops.List.Operations" xml:space="preserve"><value>العمليات</value></data>
+  <data name="Admin.Ops.List.Pagination" xml:space="preserve"><value>صفحات قائمة المطاعم</value></data>
+  <data name="Admin.Ops.List.PreviousPage" xml:space="preserve"><value>الصفحة السابقة</value></data>
+  <data name="Admin.Ops.List.NextPage" xml:space="preserve"><value>الصفحة التالية</value></data>
+  <data name="Admin.Ops.List.PageNumber" xml:space="preserve"><value>الصفحة {0}</value></data>
+  <data name="Admin.Ops.MigrationRecord.Succeeded" xml:space="preserve"><value>ناجح</value></data>
+  <data name="Admin.Ops.MigrationRecord.Failed" xml:space="preserve"><value>فشل</value></data>
+  <data name="Admin.Ops.MigrationRecord.NotRecorded" xml:space="preserve"><value>غير مسجّل</value></data>
+  <data name="Admin.Ops.State.Unknown" xml:space="preserve"><value>غير معروف</value></data>
+  <data name="Admin.Ops.Database.Reachable" xml:space="preserve"><value>متاحة</value></data>
+  <data name="Admin.Ops.Database.NotConfigured" xml:space="preserve"><value>غير مُهيّأة</value></data>
+  <data name="Admin.Ops.Database.Unreachable" xml:space="preserve"><value>غير متاحة</value></data>
+  <data name="Admin.Ops.Database.TimedOut" xml:space="preserve"><value>انتهت المهلة</value></data>
+  <data name="Admin.Ops.Database.ConfigurationUnreadable" xml:space="preserve"><value>تعذّرت قراءة بيانات الاتصال</value></data>
+  <data name="Admin.Ops.Database.Connection" xml:space="preserve"><value>قاعدة البيانات</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelTitle" xml:space="preserve"><value>تعذّرت قراءة قاعدة بيانات المطعم</value></data>
+  <data name="Admin.Ops.Database.UnavailablePanelBody" xml:space="preserve"><value>لا يمكن عرض تفاصيل قاعدة البيانات والترحيل والوضع والاتصالات والطلبات. تأتي بيانات الهوية والتجهيز وPrint Bridge من السجل المركزي وهي معروضة في هذه الصفحة. توجد التفاصيل في سجلات الخادم.</value></data>
+  <data name="Admin.Ops.Migrations.Title" xml:space="preserve"><value>عمليات الترحيل</value></data>
+  <data name="Admin.Ops.Migrations.Current" xml:space="preserve"><value>محدّثة</value></data>
+  <data name="Admin.Ops.Migrations.Pending" xml:space="preserve"><value>توجد عمليات ترحيل معلّقة</value></data>
+  <data name="Admin.Ops.Migrations.DatabaseAhead" xml:space="preserve"><value>قاعدة البيانات أحدث من التطبيق</value></data>
+  <data name="Admin.Ops.Migrations.PendingCount" xml:space="preserve"><value>{0} معلّقة</value></data>
+  <data name="Admin.Ops.Migrations.Applied" xml:space="preserve"><value>آخر ترحيل مطبّق</value></data>
+  <data name="Admin.Ops.Migrations.Expected" xml:space="preserve"><value>المتوقع من هذا التطبيق</value></data>
+  <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>هذه الصفحة للقراءة فقط؛ تُطبَّق عمليات الترحيل عبر CLI ضمن إجراءات الإصدار.</value></data>
+  <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>وضع التشغيل</value></data>
+  <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>مباشر</value></data>
+  <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>الإعداد</value></data>
+  <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>مزامنة الطلبات</value></data>
+  <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>القبول التلقائي</value></data>
+  <data name="Admin.Ops.Automation.AutoReceipt" xml:space="preserve"><value>الإيصالات التلقائية</value></data>
+  <data name="Admin.Ops.Automation.Active" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Ops.Automation.Off" xml:space="preserve"><value>متوقف</value></data>
+  <data name="Admin.Ops.Automation.PendingSetup" xml:space="preserve"><value>يُفعَّل بعد اكتمال الإعداد</value></data>
+  <data name="Admin.Ops.GuidedSetup.Title" xml:space="preserve"><value>الإعداد الموجَّه</value></data>
+  <data name="Admin.Ops.GuidedSetup.Counts" xml:space="preserve"><value>قيد التنفيذ: {0} · مكتمل: {1} · تم التخطي: {2}</value></data>
+  <data name="Admin.Ops.Users.Title" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="Admin.Ops.Users.Counts" xml:space="preserve"><value>المستخدمون النشطون: {0} · المالكون النشطون: {1}</value></data>
+  <data name="Admin.Ops.SectionUnavailable" xml:space="preserve"><value>تعذّرت قراءة هذا القسم.</value></data>
+  <data name="Admin.Ops.Section.Guidance" xml:space="preserve"><value>الخطوات التالية</value></data>
+  <data name="Admin.Ops.Section.Identity" xml:space="preserve"><value>المطعم</value></data>
+  <data name="Admin.Ops.Section.Provisioning" xml:space="preserve"><value>التجهيز</value></data>
+  <data name="Admin.Ops.Section.Database" xml:space="preserve"><value>قاعدة البيانات والترحيل</value></data>
+  <data name="Admin.Ops.Section.OperationalMode" xml:space="preserve"><value>وضع التشغيل والأتمتة</value></data>
+  <data name="Admin.Ops.Section.Providers" xml:space="preserve"><value>اتصالات المنصات</value></data>
+  <data name="Admin.Ops.Section.Orders" xml:space="preserve"><value>الطلبات</value></data>
+  <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>حالة الحساب</value></data>
+  <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>ملخص الحالة</value></data>
+  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>يُفتح في علامة تبويب جديدة</value></data>
+  <data name="Admin.Ops.Membership" xml:space="preserve"><value>العضوية</value></data>
+  <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>تجربة</value></data>
+  <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>نشطة</value></data>
+  <data name="Admin.Ops.Membership.PendingPayment" xml:space="preserve"><value>بانتظار الدفع</value></data>
+  <data name="Admin.Ops.Membership.Cancelled" xml:space="preserve"><value>ملغاة</value></data>
+  <data name="Admin.Ops.Membership.None" xml:space="preserve"><value>لا يوجد سجل عضوية</value></data>
+  <data name="Admin.Ops.Membership.TrialEnds" xml:space="preserve"><value>تنتهي التجربة</value></data>
+  <data name="Admin.Ops.Membership.PeriodEnds" xml:space="preserve"><value>تنتهي الفترة</value></data>
+  <data name="Admin.Ops.Provisioning.Registration" xml:space="preserve"><value>طلب التسجيل</value></data>
+  <data name="Admin.Ops.Provisioning.OpenRegistration" xml:space="preserve"><value>فتح الطلب</value></data>
+  <data name="Admin.Ops.Provisioning.NoRegistration" xml:space="preserve"><value>لا يوجد طلب مرتبط (مثلًا أُنشئ عبر CLI)</value></data>
+  <data name="Admin.Ops.Provisioning.LastMigrationRecord" xml:space="preserve"><value>آخر سجل ترحيل</value></data>
+  <data name="Admin.Ops.Provisioning.Note" xml:space="preserve"><value>لا يُعرض نص الخطأ؛ التفاصيل في مخرجات CLI وسجلات الخادم.</value></data>
+  <data name="Admin.Ops.ProviderMode.Process" xml:space="preserve"><value>وضع المزوّد</value></data>
+  <data name="Admin.Ops.ProviderMode.Mock" xml:space="preserve"><value>Mock (تجريبي)</value></data>
+  <data name="Admin.Ops.ProviderMode.Real" xml:space="preserve"><value>Real (حقيقي)</value></data>
+  <data name="Admin.Ops.ProviderMode.NotRegistered" xml:space="preserve"><value>لا يوجد عميل مسجّل</value></data>
+  <data name="Admin.Ops.Providers.None" xml:space="preserve"><value>لا توجد منصة متصلة.</value></data>
+  <data name="Admin.Ops.Providers.Platform" xml:space="preserve"><value>المنصة</value></data>
+  <data name="Admin.Ops.Providers.Health" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Ops.Providers.LastSuccess" xml:space="preserve"><value>آخر مزامنة ناجحة</value></data>
+  <data name="Admin.Ops.Providers.LastFailure" xml:space="preserve"><value>آخر مزامنة فاشلة (7 أيام)</value></data>
+  <data name="Admin.Ops.Providers.Client" xml:space="preserve"><value>العميل</value></data>
+  <data name="Admin.Ops.Providers.Store" xml:space="preserve"><value>المتجر</value></data>
+  <data name="Admin.Ops.Providers.ConsecutiveFailures" xml:space="preserve"><value>إخفاقات متتالية: {0}</value></data>
+  <data name="Admin.Ops.Providers.PausedUntil" xml:space="preserve"><value>متوقف مؤقتًا حتى</value></data>
+  <data name="Admin.Ops.Providers.Enabled" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Ops.Providers.DisabledLabel" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Ops.Providers.Note" xml:space="preserve"><value>لا تُعرض بيانات الاعتماد ونصوص الأخطاء. يدير مالك المطعم الاتصالات من لوحته.</value></data>
+  <data name="Admin.Ops.Connection.Healthy" xml:space="preserve"><value>سليم</value></data>
+  <data name="Admin.Ops.Connection.Disabled" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Ops.Connection.SyncOff" xml:space="preserve"><value>المزامنة متوقفة</value></data>
+  <data name="Admin.Ops.Connection.CircuitOpen" xml:space="preserve"><value>متوقف بعد إخفاقات متكررة</value></data>
+  <data name="Admin.Ops.Connection.Failing" xml:space="preserve"><value>يفشل</value></data>
+  <data name="Admin.Ops.Connection.NeverSynced" xml:space="preserve"><value>لم تتم المزامنة بعد</value></data>
+  <data name="Admin.Ops.Connection.Stale" xml:space="preserve"><value>المزامنة متأخرة</value></data>
+  <data name="Admin.Ops.Orders.Last24Hours" xml:space="preserve"><value>آخر 24 ساعة</value></data>
+  <data name="Admin.Ops.Orders.Last7Days" xml:space="preserve"><value>آخر 7 أيام</value></data>
+  <data name="Admin.Ops.Orders.Open" xml:space="preserve"><value>مفتوحة</value></data>
+  <data name="Admin.Ops.Orders.Latest" xml:space="preserve"><value>آخر طلب</value></data>
+  <data name="Admin.Ops.PrintBridge.NoDevices" xml:space="preserve"><value>لا يوجد جهاز Print Bridge مسجّل.</value></data>
+  <data name="Admin.Ops.PrintBridge.LastSeen" xml:space="preserve"><value>آخر ظهور</value></data>
+  <data name="Admin.Ops.PrintJobs.Counts" xml:space="preserve"><value>مهام الطباعة في الانتظار: {0} · الفاشلة خلال 24 ساعة: {1}</value></data>
+  <data name="Admin.Ops.PrintJobs.Unavailable" xml:space="preserve"><value>تعذّرت قراءة أعداد مهام الطباعة.</value></data>
+  <data name="Admin.Ops.Guidance.ReadOnlyNote" xml:space="preserve"><value>تستند هذه الاقتراحات إلى الملاحظة فقط؛ لا تُصلح هذه الصفحة أي شيء ولا تغيّره.</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Critical" xml:space="preserve"><value>حرج</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Warning" xml:space="preserve"><value>تحذير</value></data>
+  <data name="Admin.Ops.Guidance.Severity.Info" xml:space="preserve"><value>معلومة</value></data>
+  <data name="Admin.Ops.Guidance.Severity.AllClear" xml:space="preserve"><value>لا مشكلات</value></data>
+  <data name="Admin.Ops.Age.JustNow" xml:space="preserve"><value>الآن</value></data>
+  <data name="Admin.Ops.Age.Minutes" xml:space="preserve"><value>قبل {0} دقيقة</value></data>
+  <data name="Admin.Ops.Age.Hours" xml:space="preserve"><value>قبل {0} ساعة</value></data>
+  <data name="Admin.Ops.Age.Days" xml:space="preserve"><value>قبل {0} يوم</value></data>
+  <data name="Admin.Ops.BackToTenants" xml:space="preserve"><value>العودة إلى المطاعم</value></data>
+  <data name="Admin.Ops.Guidance.TenantInactive" xml:space="preserve"><value>المطعم غير نشط: لا يمكن للمستخدمين تسجيل الدخول ولا يزامن Worker طلباته. إذا لم يكن ذلك مقصودًا، فتأكد مع المالك قبل تفعيله.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseNotConfigured" xml:space="preserve"><value>لا توجد بيانات اتصال مخزنة لقاعدة بيانات هذا المطعم. على الأرجح لم يكتمل التجهيز؛ راجع طلب التسجيل ومخرجات CLI الخاصة بالتجهيز.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseUnreachable" xml:space="preserve"><value>تعذّر الوصول إلى قاعدة بيانات المطعم. تحقق من تشغيل SQL Server ومن وجود قاعدة البيانات، ثم شغّل migration-status من CLI.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>لم تستجب قاعدة بيانات المطعم خلال بضع ثوانٍ. تحقق من تشغيل SQL Server ومن وجود قاعدة البيانات هذه وقبولها لبيانات الدخول المهيأة، ثم أعد تحميل هذه الصفحة.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>تعذّر فك تشفير بيانات الاتصال المخزنة. تحقق من أن هذا الخادم يستخدم ENCRYPTION_MASTER_KEY نفسه الذي جُهّز به المطعم.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>تعذّر فحص قاعدة بيانات المطعم بسبب خطأ غير متوقع. راجع سجلات الخادم الخاصة بهذا المطعم.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>تنقص قاعدة بيانات المطعم عمليات ترحيل يحتاجها هذا الإصدار. طبّقها عبر CLI ‏(migrate-customer أو migrate-all-customers) وفق إجراءات الإصدار؛ قد تفشل الميزات التي تستخدم أعمدة جديدة حتى ذلك الحين.</value></data>
+  <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>تحتوي قاعدة بيانات المطعم على عمليات ترحيل لا يعرفها هذا الإصدار من التطبيق. ربما رحّلها إصدار أحدث؛ تحقق من الإصدار المنشور.</value></data>
+  <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>فشل آخر ترحيل مسجّل لهذا المطعم. شغّل migration-status عبر CLI وأعد محاولة الترحيل لهذا المطعم.</value></data>
+  <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>تعذّرت قراءة بعض الأقسام. السبب المعتاد هو ترحيل معلّق؛ راجع سجلات الخادم.</value></data>
+  <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>لا يزال المطعم في وضع الإعداد: تتم مزامنة الطلبات، لكن لا يُقبل أو يُطبع أي شيء تلقائيًا حتى يكمل المالك الإعداد الموجَّه أو يتخطاه.</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>لا يوجد مالك نشط للمطعم. المالك وحده يمكنه إدارة الإعدادات والاتصالات والأجهزة؛ أضف مالكًا عبر CLI ‏(seed-customer-admin) عند الحاجة.</value></data>
+  <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>لا توجد منصة توصيل متصلة، لذلك لا يمكن وصول طلبات. يضيف المالك اتصالًا من قسم اتصالات المنصات.</value></data>
+  <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>جميع اتصالات المنصات معطّلة، لذلك لا يتم جلب أي طلبات. تأكد مع المالك مما إذا كان ذلك مقصودًا.</value></data>
+  <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>مزامنة الطلبات متوقفة في إعدادات المطعم؛ يتخطاه Worker. تبقى الطلبات الحالية ظاهرة.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionCircuitOpen" xml:space="preserve"><value>تم إيقاف اتصال منصة مؤقتًا بعد إخفاقات متكررة. تحقق من حالة المنصة واطلب من المالك التحقق من بيانات اعتماد الاتصال.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionFailing" xml:space="preserve"><value>فشلت آخر محاولات مزامنة لاتصال منصة. إذا استمر ذلك، فتحقق من حالة المنصة وبيانات اعتماد الاتصال.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionStale" xml:space="preserve"><value>لم تنجح مزامنة اتصال منصة منذ أكثر من 10 دقائق. تحقق من أن Worker يعمل.</value></data>
+  <data name="Admin.Ops.Guidance.ConnectionNeverSynced" xml:space="preserve"><value>لم تنجح مزامنة اتصال منصة أبدًا. إذا أُضيف منذ مدة، فتحقق من أن Worker يعمل.</value></data>
+  <data name="Admin.Ops.Guidance.NoRecentOrders" xml:space="preserve"><value>تتم مزامنة الاتصالات، لكن لم يصل أي طلب خلال آخر 7 أيام. تأكد مع المالك أن المتجر مفتوح على المنصات.</value></data>
+  <data name="Admin.Ops.Guidance.NoPrintBridgeDevice" xml:space="preserve"><value>لا يوجد جهاز Print Bridge مسجّل؛ لا يمكن طباعة الإيصالات إلا بعد إعداد جهاز.</value></data>
+  <data name="Admin.Ops.Guidance.AutoReceiptWithoutDevice" xml:space="preserve"><value>الإيصالات التلقائية مفعّلة، لكن لا يوجد جهاز Print Bridge مسجّل. تنتظر الإيصالات في قائمة الانتظار حتى يعدّ المالك جهازًا.</value></data>
+  <data name="Admin.Ops.Guidance.PrintBridgeOffline" xml:space="preserve"><value>لا يوجد جهاز Print Bridge نشط متصل. اطلب من المطعم التحقق من أن حاسوب Print Bridge يعمل ومتصل.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsQueuedWithoutOnlineDevice" xml:space="preserve"><value>توجد مهام طباعة في الانتظار ولا يوجد جهاز متصل؛ يستلمها الجهاز عند إعادة اتصاله.</value></data>
+  <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>فشلت بعض مهام الطباعة خلال آخر 24 ساعة. يمكن للمالك فحص الطابعة على حاسوب Print Bridge.</value></data>
+  <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>طلب التسجيل المرتبط غير معلَّم كمجهَّز. افتحه لمراجعة حالته؛ ولا تغيّره يدويًا.</value></data>
+  <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>لا شيء يحتاج إلى متابعة حاليًا.</value></data>
 </root>

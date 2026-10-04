@@ -39,6 +39,27 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
     }
 
     [Fact]
+    public async Task OrderNote_IsPersistedSeparatelyFromItemNotes()
+    {
+        await SeedTenantAsync(_tenantId, autoPrintOnAccepted: false);
+        var noted = NotedOrder("note-order-1", "  Zili çalmayın, arayın.  ", "No onions");
+        var blank = NotedOrder("note-order-2", "   ", "Extra sauce");
+        var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, noted, blank);
+        var sync = CreateSyncService(client);
+
+        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+
+        await using var db = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
+        var orders = await db.Orders.Include(o => o.Items).ToListAsync(TestContext.Current.CancellationToken);
+        var withNote = Assert.Single(orders, o => o.ExternalOrderId == "note-order-1");
+        Assert.Equal("Zili çalmayın, arayın.", withNote.CustomerNote);
+        Assert.Equal("No onions", Assert.Single(withNote.Items).Notes);
+        var withoutNote = Assert.Single(orders, o => o.ExternalOrderId == "note-order-2");
+        Assert.Null(withoutNote.CustomerNote);
+        Assert.Equal("Extra sauce", Assert.Single(withoutNote.Items).Notes);
+    }
+
+    [Fact]
     public async Task ProviderNewOrder_DoesNotCreatePrintJob()
     {
         await SeedTenantAsync(_tenantId, autoPrintOnAccepted: true);
@@ -207,6 +228,17 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
 
     private static ExternalOrderDto NewOrder(string externalOrderId) =>
         Order(externalOrderId, "Created");
+
+    private static ExternalOrderDto NotedOrder(string externalOrderId, string? customerNote, string? itemNote)
+    {
+        var order = Order(externalOrderId, "Created");
+        var item = Assert.Single(order.Items) with { Notes = itemNote };
+        return order with
+        {
+            CustomerNote = customerNote,
+            Items = new[] { item }
+        };
+    }
 
     private static ExternalOrderDto Order(string externalOrderId, string externalStatus)
     {
@@ -384,7 +416,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             {
                 builder.ToTable("PlatformConnections");
                 builder.HasKey(x => x.Id);
-                builder.HasIndex(x => new { x.Platform, x.StoreId }).IsUnique();
+                builder.HasIndex(x => x.Platform).IsUnique();
             });
 
             modelBuilder.Entity<Order>(builder =>

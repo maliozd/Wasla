@@ -8,7 +8,10 @@ using Microsoft.Extensions.Logging;
 using Wasla.Application;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Email;
+using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Security;
+using Wasla.Application.Abstractions.Setup;
+using Wasla.Application.Setup;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
@@ -18,6 +21,7 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.ReferenceData;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Services;
 
 namespace Wasla.Cli;
 
@@ -171,6 +175,34 @@ internal static class CliCommands
             WriteError(ex.Message);
             return 1;
         }
+    }
+
+    public static async Task<int> ResetPasswordAsync(
+        IHost host,
+        string? scope,
+        string? email,
+        string? tenantSelector,
+        bool dryRun,
+        CancellationToken ct,
+        ICliPasswordReader? passwordReader = null,
+        Func<Tenant, CancellationToken, Task<TenantDbContext>>? openTenant = null)
+    {
+        using var diScope = host.Services.CreateScope();
+        var central = diScope.ServiceProvider.GetRequiredService<CentralDbContext>();
+        openTenant ??= (tenant, token) => CliPasswordReset.OpenTenantDatabaseAsync(
+            diScope.ServiceProvider.GetRequiredService<ISecretManager>(),
+            tenant,
+            token);
+
+        return await CliPasswordReset.ExecuteAsync(
+            central,
+            scope,
+            email,
+            tenantSelector,
+            dryRun,
+            openTenant,
+            passwordReader ?? new ConsoleCliPasswordReader(),
+            ct).ConfigureAwait(false);
     }
 
     public static async Task<int> ListCentralAdminsAsync(IHost host, CancellationToken ct)
@@ -355,11 +387,19 @@ internal static class CliCommands
         string adminName,
         string? sqlServer,
         string sqlAuth,
+        TenantContactUpdate contact,
         CancellationToken ct)
     {
         if (!SlugRegex.IsMatch(slug))
         {
             WriteError("Slug must match ^[a-zA-Z0-9_-]+$.");
+            return 2;
+        }
+
+        var contactError = ValidateContact(contact);
+        if (contactError is not null)
+        {
+            WriteError(contactError);
             return 2;
         }
 
@@ -444,6 +484,15 @@ internal static class CliCommands
             await central.SaveChangesAsync(ct).ConfigureAwait(false);
             insertedCentral = customer;
 
+            // Paid signup creates this row too; the restaurant setup step reads the contact fields from it.
+            WriteLineStep("Recording tenant membership…");
+            await TenantMembershipRecords.EnsureAsync(
+                central,
+                customerId,
+                CliMembershipSeed(adminEmail, contact),
+                now,
+                ct).ConfigureAwait(false);
+
             await using (var userDb = new TenantDbContext(options))
             {
                 WriteLineStep("Creating admin user…");
@@ -459,6 +508,9 @@ internal static class CliCommands
                 };
                 userDb.AppUsers.Add(appUser);
                 await userDb.SaveChangesAsync(ct).ConfigureAwait(false);
+
+                // A new restaurant starts in Setup until a user completes or skips guided setup.
+                await TenantOperationalModes.EnsureNewTenantStartsInSetupAsync(userDb, now, ct).ConfigureAwait(false);
             }
 
             Console.ForegroundColor = ConsoleColor.Green;
@@ -474,6 +526,7 @@ internal static class CliCommands
                 - Ensure DNS points {domain} to your server
                 - Log in at https://{domain}/auth/login
                 """);
+            WarnIfContactIncomplete(name, contact.BusinessPhone, contact.City, contact.Country, slug);
 
             return 0;
         }
@@ -1364,6 +1417,123 @@ internal static class CliCommands
             return 1;
         }
     }
+
+    /// <summary>
+    /// Sets the restaurant contact the setup checklist requires, e.g. for a tenant created by
+    /// add-customer without it. Creates the tenant's membership row when missing. Repeating the
+    /// same values changes nothing; omitted fields keep their stored value.
+    /// </summary>
+    public static async Task<int> UpdateCustomerProfileAsync(
+        IHost host,
+        string? tenantSelector,
+        TenantContactUpdate contact,
+        CancellationToken ct)
+    {
+        var selector = (tenantSelector ?? string.Empty).Trim();
+        if (selector.Length == 0)
+        {
+            WriteError("Requires --tenant <slug-or-id>.");
+            return 2;
+        }
+
+        if (string.IsNullOrWhiteSpace(contact.BusinessPhone)
+            && string.IsNullOrWhiteSpace(contact.City)
+            && string.IsNullOrWhiteSpace(contact.Country))
+        {
+            WriteError("Provide at least one of --business-phone, --city or --country.");
+            return 2;
+        }
+
+        var contactError = ValidateContact(contact);
+        if (contactError is not null)
+        {
+            WriteError(contactError);
+            return 2;
+        }
+
+        try
+        {
+            using var scope = host.Services.CreateScope();
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+
+            var tenant = Guid.TryParse(selector, out var tenantId)
+                ? await central.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tenantId, ct).ConfigureAwait(false)
+                : await central.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == selector, ct).ConfigureAwait(false);
+            if (tenant is null)
+            {
+                WriteError("Customer not found.");
+                return 2;
+            }
+
+            await TenantMembershipRecords.UpdateContactAsync(
+                central,
+                tenant.Id,
+                contact,
+                CliMembershipSeed(ownerEmail: null, new TenantContactUpdate(null, null, null)),
+                DateTime.UtcNow,
+                ct).ConfigureAwait(false);
+
+            var stored = await central.TenantMemberships
+                .AsNoTracking()
+                .Where(m => m.TenantId == tenant.Id)
+                .Select(m => new { m.BusinessPhone, m.City, m.Country })
+                .SingleAsync(ct)
+                .ConfigureAwait(false);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✓ Restaurant profile updated for {tenant.Slug}");
+            Console.ResetColor();
+            Console.WriteLine($"  Business phone: {(string.IsNullOrWhiteSpace(stored.BusinessPhone) ? "not set" : "set")}");
+            Console.WriteLine($"  City:           {stored.City ?? "not set"}");
+            Console.WriteLine($"  Country:        {stored.Country ?? "not set"}");
+            WarnIfContactIncomplete(tenant.Name, stored.BusinessPhone, stored.City, stored.Country, tenant.Slug);
+            return 0;
+        }
+        catch (Exception ex) when (ex is SqlException or DbUpdateException)
+        {
+            WriteError("Database operation failed. No profile change was saved.");
+            return 3;
+        }
+    }
+
+    /// <summary>
+    /// Membership for a tenant created by an operator rather than paid signup: no trial, default plan.
+    /// </summary>
+    internal static TenantMembershipSeed CliMembershipSeed(string? ownerEmail, TenantContactUpdate contact) => new(
+        PlanCode: WaslaPlanCodes.Starter,
+        BillingPeriod: "Monthly",
+        Status: MembershipStatus.Active,
+        TrialEndsAt: null,
+        OwnerEmail: NullIfBlank(ownerEmail),
+        BusinessPhone: NullIfBlank(contact.BusinessPhone),
+        City: NullIfBlank(contact.City),
+        Country: NullIfBlank(contact.Country),
+        BusinessType: null);
+
+    internal static string? ValidateContact(TenantContactUpdate contact)
+    {
+        if ((contact.BusinessPhone?.Trim().Length ?? 0) > TenantMembershipRecords.BusinessPhoneMaxLength)
+            return $"--business-phone must be at most {TenantMembershipRecords.BusinessPhoneMaxLength} characters.";
+        if ((contact.City?.Trim().Length ?? 0) > TenantMembershipRecords.LocationMaxLength)
+            return $"--city must be at most {TenantMembershipRecords.LocationMaxLength} characters.";
+        if ((contact.Country?.Trim().Length ?? 0) > TenantMembershipRecords.LocationMaxLength)
+            return $"--country must be at most {TenantMembershipRecords.LocationMaxLength} characters.";
+        return null;
+    }
+
+    private static void WarnIfContactIncomplete(string? name, string? phone, string? city, string? country, string slug)
+    {
+        if (TenantSetupReadiness.IsRestaurantComplete(new RestaurantProfileFacts(true, name, phone, city, country)))
+            return;
+
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("Note: the restaurant setup step stays incomplete until a business phone and a city or country are set:");
+        Console.WriteLine($"  update-customer-profile --tenant {slug} --business-phone <phone> --city <city> [--country <country>]");
+        Console.ResetColor();
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     public static async Task<int> SeedCustomerAdminAsync(
         IHost host,

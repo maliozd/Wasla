@@ -62,7 +62,7 @@ else
 
     <p class="small text-muted mb-3">@L["Signup.PendingCheckoutNote"]</p>
 
-    <div class="text-start mx-auto mb-4 oh-signup-pending-next-steps" style="max-width: 28rem;">
+    <div class="text-start mx-auto mb-4 wasla-signup-pending-next-steps" style="max-width: 28rem;">
         <p class="small text-muted mb-2">@L["Signup.PendingNextStepsTitle"]</p>
         <ul class="small text-muted mb-0 ps-3">
             <li>@L["Signup.PendingNextStep1"]</li>
@@ -71,7 +71,10 @@ else
         </ul>
     </div>
 
-    <p class="small text-muted mb-4 opacity-75">@L["Signup.PendingTestNote"]</p>
+    @if (Model.ShowPaymentSimulatorNote)
+    {
+        <p class="small text-muted mb-4 opacity-75">@L["Signup.PendingTestNote"]</p>
+    }
 
     @if (Model.ShowCheckoutAction)
     {

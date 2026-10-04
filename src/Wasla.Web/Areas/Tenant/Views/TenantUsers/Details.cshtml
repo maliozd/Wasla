@@ -3,7 +3,7 @@
     ViewData["Title"] = L["TenantUsers.DetailsTitle"];
 }
 
-<div class="oh-tenant-user-details-page">
+<div class="wasla-tenant-user-details-page">
     @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
     {
         Title = L["TenantUsers.DetailsTitle"].Value,
@@ -19,7 +19,7 @@
         <div class="alert alert-danger" role="alert">@error</div>
     }
 
-    <div class="card oh-card mb-3">
+    <div class="card wasla-card mb-3">
         <div class="card-body">
             <dl class="row mb-0">
                 <dt class="col-sm-3">@L["TenantUsers.Name"]</dt>

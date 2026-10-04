@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Wasla.Application.GuidedSetup;
 using Wasla.Domain.Entities.Customer;
 
 namespace Wasla.Infrastructure.Persistence.Tenant.Configurations;
@@ -62,6 +63,93 @@ public class PasswordResetTokenConfiguration : IEntityTypeConfiguration<Password
     }
 }
 
+public static class GuidedDemoSessionIndexes
+{
+    public const string UserOpen = "IX_GuidedDemoSessions_UserId_Open";
+}
+
+public class GuidedDemoSessionConfiguration : IEntityTypeConfiguration<GuidedDemoSession>
+{
+    public void Configure(EntityTypeBuilder<GuidedDemoSession> builder)
+    {
+        builder.ToTable("GuidedDemoSessions");
+        builder.HasKey(session => session.Id);
+        builder.Property(session => session.UserId).IsRequired();
+        builder.Property(session => session.ScenarioCode).IsRequired().HasMaxLength(64);
+        builder.Property(session => session.CustomerNameKey).IsRequired().HasMaxLength(128);
+        builder.Property(session => session.NoteKey).HasMaxLength(128);
+        builder.Property(session => session.ItemsJson).IsRequired();
+        builder.Property(session => session.ReceivedAtUtc).IsRequired();
+        builder.Property(session => session.ExpiresAtUtc).IsRequired();
+
+        builder.HasOne(session => session.User)
+            .WithMany()
+            .HasForeignKey(session => session.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        builder.HasIndex(session => new { session.UserId, session.CompletedAtUtc })
+            .HasDatabaseName("IX_GuidedDemoSessions_UserId_CompletedAtUtc");
+
+        // At most one open demo per user; concurrent starts are resolved by the database.
+        builder.HasIndex(session => session.UserId)
+            .IsUnique()
+            .HasFilter("[CompletedAtUtc] IS NULL")
+            .HasDatabaseName(GuidedDemoSessionIndexes.UserOpen);
+    }
+}
+
+public class UserProductTourCompletionConfiguration : IEntityTypeConfiguration<UserProductTourCompletion>
+{
+    public void Configure(EntityTypeBuilder<UserProductTourCompletion> builder)
+    {
+        builder.ToTable("UserProductTourCompletions");
+        builder.HasKey(completion => completion.Id);
+        builder.Property(completion => completion.UserId).IsRequired();
+        builder.Property(completion => completion.TourKey).IsRequired().HasMaxLength(64);
+        builder.Property(completion => completion.CompletedAtUtc).IsRequired();
+
+        builder.HasOne(completion => completion.User)
+            .WithMany()
+            .HasForeignKey(completion => completion.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        builder.HasIndex(completion => new { completion.UserId, completion.TourKey })
+            .IsUnique()
+            .HasDatabaseName("IX_UserProductTourCompletions_UserId_TourKey");
+    }
+}
+
+public static class UserGuidedSetupStateIndexes
+{
+    public const string User = "IX_UserGuidedSetupStates_UserId";
+}
+
+public class UserGuidedSetupStateConfiguration : IEntityTypeConfiguration<UserGuidedSetupState>
+{
+    public void Configure(EntityTypeBuilder<UserGuidedSetupState> builder)
+    {
+        builder.ToTable("UserGuidedSetupStates");
+        builder.HasKey(state => state.Id);
+        builder.Property(state => state.UserId).IsRequired();
+        builder.Property(state => state.Status).IsRequired();
+        builder.Property(state => state.CurrentSectionKey).HasMaxLength(GuidedSetupSections.MaxKeyLength);
+        builder.Property(state => state.CurrentStepKey).HasMaxLength(GuidedSetupSections.MaxKeyLength);
+
+        builder.HasOne(state => state.User)
+            .WithMany()
+            .HasForeignKey(state => state.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        // One row per user in this tenant database; concurrent first writes are resolved by the database.
+        builder.HasIndex(state => state.UserId)
+            .IsUnique()
+            .HasDatabaseName(UserGuidedSetupStateIndexes.User);
+    }
+}
+
 public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<UserNotificationSettings>
 {
     public void Configure(EntityTypeBuilder<UserNotificationSettings> builder)
@@ -117,6 +205,13 @@ public class TenantOperationalSettingsConfiguration : IEntityTypeConfiguration<T
         builder.Property(x => x.ReceiptTemplateSettingsJson)
             .HasColumnType("nvarchar(max)");
 
+        builder.Property(x => x.SetupGuidanceCompletedAtUtc);
+
+        // Stored as int. No database default is configured: EF always writes the value, and the migration that
+        // added the column filled existing rows with 0 (Live).
+        builder.Property(x => x.OperationalMode)
+            .IsRequired();
+
         // Single-row table pattern (enforced by always updating a known row id in the service).
         builder.HasIndex(x => x.Id)
             .IsUnique()
@@ -166,11 +261,10 @@ public class PlatformConnectionConfiguration : IEntityTypeConfiguration<Platform
         builder.Property(p => p.EncryptedApiKey).HasMaxLength(2000);
         builder.Property(p => p.EncryptedApiSecret).HasMaxLength(2000);
 
-        // One row per external store: duplicate Platform + StoreId is blocked.
-        // Same platform with a different StoreId is allowed (multiple stores).
-        builder.HasIndex(p => new { p.Platform, p.StoreId })
+        // One connection per platform. StoreId is provider configuration, not identity.
+        builder.HasIndex(p => p.Platform)
             .IsUnique()
-            .HasDatabaseName("IX_PlatformConnections_Platform_StoreId");
+            .HasDatabaseName("IX_PlatformConnections_Platform");
 
         builder.HasIndex(p => p.IsActive).HasDatabaseName("IX_PlatformConnections_IsActive");
         builder.HasIndex(p => p.LastSuccessfulSync).HasDatabaseName("IX_PlatformConnections_LastSuccessfulSync");

@@ -1,0 +1,13 @@
+{
+  "businessSubtype": "Pizza",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.NoOnion"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Pizza.Product.Margherita", "minPrice": 220, "maxPrice": 360, "modifiers": ["Mock.Modifier.Small", "Mock.Modifier.Medium", "Mock.Modifier.Large", "Mock.Modifier.ThinCrust", "Mock.Modifier.ClassicCrust", "Mock.Modifier.ExtraCheese"] },
+    { "key": "Mock.Pizza.Product.Mixed", "minPrice": 280, "maxPrice": 460, "modifiers": ["Mock.Modifier.Medium", "Mock.Modifier.Large", "Mock.Modifier.NoMushrooms", "Mock.Modifier.NoOlives", "Mock.Modifier.ExtraCheese"] },
+    { "key": "Mock.Pizza.Product.Sucuk", "minPrice": 270, "maxPrice": 440, "modifiers": ["Mock.Modifier.Medium", "Mock.Modifier.Large", "Mock.Modifier.Spicy", "Mock.Modifier.ExtraCheese"] },
+    { "key": "Mock.Pizza.Product.Mushroom", "minPrice": 250, "maxPrice": 420, "modifiers": ["Mock.Modifier.NoMushrooms", "Mock.Modifier.ThinCrust", "Mock.Modifier.ExtraCheese"] },
+    { "key": "Mock.Pizza.Product.FourCheese", "minPrice": 300, "maxPrice": 480, "modifiers": ["Mock.Modifier.Large", "Mock.Modifier.ThinCrust", "Mock.Modifier.ExtraCheese"] },
+    { "key": "Mock.Pizza.Product.Chicken", "minPrice": 280, "maxPrice": 450, "modifiers": ["Mock.Modifier.Medium", "Mock.Modifier.Large", "Mock.Modifier.Spicy", "Mock.Modifier.NoOnion"] }
+  ]
+}

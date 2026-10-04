@@ -1,9 +1,10 @@
-// Orders page bootstrap: filters, debug badge, notification button, init.
+// Orders management page bootstrap: filters and debug badge.
+// Orders is a search/history page: no live polling, sound, highlight, or browser notifications.
 (function (global) {
   "use strict";
 
-  const O = global.OrderHubOrders;
-  if (!O || !O.audio || !O.notificationSettings || !O.table || typeof O.table.initPolling !== "function") {
+  const O = global.WaslaOrders;
+  if (!O || !O.table) {
     return;
   }
 
@@ -49,18 +50,17 @@
     O.debugLog("Orders debug mode enabled");
   }
 
-  async function initOrdersPage() {
+  function initOrdersPage() {
     initFilters();
-    O.table.captureKnownOrderIdsFromContainer();
-    await O.notificationSettings.load();
-    O.table.initPolling();
     initDebugBadge();
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    initOrdersPage().catch(function (error) {
+    try {
+      initOrdersPage();
+    } catch (error) {
       O.showOrdersWarning("orders-init-failed", O.getMessage("pageInitFailed"));
       O.debugWarn("initOrdersPage failed", error);
-    });
+    }
   });
 })(window);

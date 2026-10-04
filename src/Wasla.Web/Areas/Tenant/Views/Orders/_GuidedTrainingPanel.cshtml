@@ -1,0 +1,127 @@
+@model Wasla.Web.Models.GuidedSetup.GuidedTrainingViewModel
+@using System.Text.Json
+@using Wasla.Application.GuidedSetup
+@using Wasla.Web.Areas.Tenant.Controllers
+@using Wasla.Web.Models.GuidedSetup
+@*
+    Order training on the Live Screen, shown only while the Owner is in its order-training section. It sits in the
+    page flow above the orders, so it never covers an order or its action, and it only points at the practice order
+    the Owner starts. The first-use Start or Skip decision is on the Dashboard, never here.
+*@
+@{
+    string StepsFor(params string[] keys) => string.Join(' ', keys);
+    bool HiddenFor(string whenSteps) => !whenSteps.Split(' ').Contains(Model.StepKey);
+
+    var practiceSteps = StepsFor(
+        GuidedTrainingSteps.PracticeNew, GuidedTrainingSteps.PracticeAccepted, GuidedTrainingSteps.PracticePreparing,
+        GuidedTrainingSteps.PracticeReady, GuidedTrainingSteps.PracticeOnTheWay, GuidedTrainingSteps.PracticeDelivered);
+    var courierSteps = StepsFor(GuidedTrainingSteps.PracticeReady, GuidedTrainingSteps.PracticeOnTheWay);
+    var stepKey = GuidedSetupCopy.TrainingStepKey(Model.StepKey);
+    // Step copy names the real buttons and statuses: {0} delivered minutes, {1} Approve, {2} Start preparing,
+    // {3} Mark ready, {4} On the way, {5} Delivered, {6} the Demo badge.
+    object[] stepArgs =
+    [
+        Model.DeliveredWindowMinutes, L["Orders.Approve"].Value, L["Orders.StartPreparing"].Value, L["Orders.MarkReady"].Value,
+        L["OrderStatus.OnTheWay"].Value, L["OrderStatus.Delivered"].Value, L["Demo.Badge"].Value
+    ];
+
+    var config = new
+    {
+        step = Model.StepKey,
+        steps = GuidedTrainingSteps.All,
+        copy = GuidedTrainingSteps.All.ToDictionary(
+            key => key,
+            key =>
+            {
+                var prefix = GuidedSetupCopy.TrainingStepKey(key);
+                return new
+                {
+                    title = L[prefix + ".Title"].Value,
+                    body = L[prefix + ".Body", stepArgs].Value,
+                    progress = L["GuidedSetup.Training.Progress", GuidedTrainingSteps.IndexOf(key) + 1, GuidedTrainingViewModel.StepCount].Value,
+                    action = GuidedSetupCopy.TrainingStepAction(key)
+                };
+            }),
+        // Real orders that arrive during this Owner's training are only counted: singular and plural copy;
+        // the count from the Live Screen snapshot is filled in by the page.
+        realOrders = new
+        {
+            titleOne = L["GuidedSetup.Training.RealOrders.TitleOne"].Value,
+            titleMany = L["GuidedSetup.Training.RealOrders.TitleMany"].Value,
+            bodyOne = L["GuidedSetup.Training.RealOrders.BodyOne"].Value,
+            bodyMany = L["GuidedSetup.Training.RealOrders.BodyMany"].Value
+        }
+    };
+}
+<link rel="stylesheet" href="~/css/wasla-guided-setup.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/wasla-guided-training.css" asp-append-version="true" />
+<section class="wasla-guided-training" id="waslaGuidedTraining" aria-labelledby="waslaGuidedTrainingTitle"
+         data-guided-training data-step="@Model.StepKey">
+    <div class="wasla-guided-training__panel" data-training-panel>
+        <div class="wasla-guided-training__icon" aria-hidden="true"><i class="bi bi-mortarboard"></i></div>
+        <div class="wasla-guided-training__main">
+            <p class="wasla-guided-training__eyebrow">
+                <span>@L["GuidedSetup.Section.LiveScreenDemo"]</span>
+                <span class="wasla-guided-training__progress" data-training-progress>@L["GuidedSetup.Training.Progress", Model.StepNumber, GuidedTrainingViewModel.StepCount]</span>
+            </p>
+            <h2 id="waslaGuidedTrainingTitle" class="wasla-guided-training__title" data-training-title>@L[stepKey + ".Title"]</h2>
+            <p class="wasla-guided-training__body" data-training-body>@L[stepKey + ".Body", stepArgs]</p>
+            <p class="wasla-guided-training__waiting" data-training-waiting hidden>@L["GuidedSetup.Training.Waiting"]</p>
+
+            <div class="wasla-guided-training__actions" data-training-actions>
+                <div class="wasla-guided-training__slot"
+                     data-training-when="@GuidedTrainingSteps.Intro" hidden="@HiddenFor(GuidedTrainingSteps.Intro)">
+                    <form method="post" action="/guided-setup/training/practice" data-guided-setup-form>
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-primary">@L["GuidedSetup.Training.StartPractice"]</button>
+                    </form>
+                </div>
+                <div class="wasla-guided-training__slot"
+                     data-training-when="@GuidedTrainingSteps.PracticeDelivered" hidden="@HiddenFor(GuidedTrainingSteps.PracticeDelivered)">
+                    <form method="post" action="/guided-setup/training/complete" data-guided-setup-form>
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-primary">@L["GuidedSetup.Training.Complete"]</button>
+                    </form>
+                </div>
+                <button type="button" class="btn btn-outline-primary" data-training-show-practice
+                        data-training-needs-practice
+                        data-training-when="@practiceSteps" hidden="@HiddenFor(practiceSteps)">@L["GuidedSetup.Training.ShowPractice"]</button>
+                <button type="button" class="btn btn-outline-secondary" data-training-hide
+                        aria-keyshortcuts="Escape">@L["GuidedSetup.Training.Hide"]</button>
+                @* The only permanent exit, behind a confirmation. *@
+                <button type="button" class="btn btn-link wasla-guided-training__end" data-bs-toggle="modal"
+                        data-bs-target="#waslaGuidedSetupEndDialog">@L["GuidedSetup.End"]</button>
+            </div>
+            @*
+                Real orders that arrived while the tenant is still in setup: only their number, in one polite status line
+                below the training actions. It is updated in place (never a toast), never takes focus, and is empty and
+                hidden while there are none. The live region itself stays in the page so each new count is announced.
+            *@
+            <div class="wasla-guided-training__real-orders" role="status" aria-live="polite" aria-atomic="true" data-training-real-orders>
+                <div class="wasla-guided-training__real-orders-box" data-training-real-orders-box hidden>
+                    <i class="bi bi-info-circle wasla-guided-training__real-orders-icon" aria-hidden="true"></i>
+                    <div class="wasla-guided-training__real-orders-copy">
+                        <p class="wasla-guided-training__real-orders-title" data-training-real-orders-title></p>
+                        <p class="wasla-guided-training__real-orders-body" data-training-real-orders-body></p>
+                    </div>
+                </div>
+            </div>
+            <p class="wasla-guided-training__note"
+               data-training-when="@courierSteps" hidden="@HiddenFor(courierSteps)">@L["GuidedSetup.Training.CourierNote"]</p>
+            <p class="wasla-guided-training__note">
+                @L["GuidedSetup.Training.HelpNote"]
+                <a href="/help" target="_blank" rel="noopener">@L["Help.Title"]</a>
+            </p>
+        </div>
+    </div>
+    <button type="button" class="btn btn-outline-primary btn-sm wasla-guided-training__reopen" data-training-reopen hidden>
+        <i class="bi bi-mortarboard" aria-hidden="true"></i>
+        <span>@L["GuidedSetup.Training.Reopen"]</span>
+    </button>
+    @* Announces changes the Worker makes (courier pickup, delivery) once each, not on every poll. *@
+    <p class="visually-hidden" role="status" aria-live="polite" data-training-announce></p>
+</section>
+@await Html.PartialAsync("_GuidedSetupEndDialog", GuidedSetupController.LiveScreenOrigin)
+<script type="application/json" id="waslaGuidedTrainingConfig">@Html.Raw(JsonSerializer.Serialize(config))</script>
+<script src="~/js/wasla-guided-training.js" asp-append-version="true"></script>
+<script src="~/js/wasla-guided-setup.js" asp-append-version="true"></script>

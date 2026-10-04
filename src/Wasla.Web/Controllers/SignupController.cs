@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -8,9 +9,11 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
+using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Web.Models.Signup;
+using Wasla.Web.Security;
 
 namespace Wasla.Web.Controllers;
 
@@ -25,6 +28,7 @@ public sealed class SignupController : Controller
     private readonly CustomerOnboardingOptions _options;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
+    private readonly SignupRegistrationOwnership _ownership;
 
     public SignupController(
         IPendingRegistrationService pendingRegistrations,
@@ -33,7 +37,8 @@ public sealed class SignupController : Controller
         IValidator<PendingRegistrationRequest> signupValidator,
         IOptions<CustomerOnboardingOptions> options,
         IStringLocalizer<SharedResource> localizer,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IDataProtectionProvider dataProtection)
     {
         _pendingRegistrations = pendingRegistrations;
         _referenceData = referenceData;
@@ -42,6 +47,7 @@ public sealed class SignupController : Controller
         _options = options.Value;
         _localizer = localizer;
         _environment = environment;
+        _ownership = new SignupRegistrationOwnership(dataProtection, environment);
     }
 
     [HttpGet("")]
@@ -73,9 +79,19 @@ public sealed class SignupController : Controller
             return View(model);
         }
 
-        if (model.SelectedBusinessTypeCodes.Count == 0)
+        var selectedSubtypes = model.SelectedBusinessTypeCodes
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Select(code => code.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        model.SelectedBusinessTypeCodes = selectedSubtypes;
+        if (selectedSubtypes.Count == 0 || selectedSubtypes.Any(code => !BusinessSubtypeCatalog.IsSubtypeCode(code)))
         {
-            ModelState.AddModelError(nameof(model.SelectedBusinessTypeCodes), _localizer["Validation.BusinessTypeRequired"].Value);
+            ModelState.AddModelError(
+                nameof(model.SelectedBusinessTypeCodes),
+                _localizer[selectedSubtypes.Count == 0
+                    ? "Validation.BusinessSubtypeRequired"
+                    : "Validation.BusinessTypeInvalid"].Value);
             return View(model);
         }
 
@@ -132,7 +148,14 @@ public sealed class SignupController : Controller
             return View(model);
         }
 
-        return RedirectToAction(nameof(Pending), new { id = result.RegistrationId });
+        var registrationId = result.RegistrationId!.Value;
+        // The only place ownership proof is issued: this browser just submitted this registration.
+        _ownership.Grant(
+            HttpContext,
+            registrationId,
+            DateTimeOffset.UtcNow.AddDays(Math.Max(1, _options.PendingRegistrationExpiryDays)));
+
+        return RedirectToAction(nameof(Pending), new { id = registrationId });
     }
 
     [HttpGet("districts")]
@@ -171,6 +194,9 @@ public sealed class SignupController : Controller
         }));
     }
 
+    // The same URL shows the applicant's details to their browser and only the status to anyone else,
+    // so no cache may store a response for reuse.
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [HttpGet("pending/{id:guid}")]
     public async Task<IActionResult> Pending(Guid id, CancellationToken ct)
     {
@@ -181,12 +207,15 @@ public sealed class SignupController : Controller
         var plan = _planCatalog.FindByCode(summary.PlanCode);
         var planDisplay = plan is not null ? _localizer[plan.DisplayNameKey].Value : summary.PlanCode;
 
+        // Anyone can open this page with the ID (the pending-tenant redirect reveals it), so only the
+        // browser that submitted the signup sees its private details and the checkout action.
         return View(SignupPendingViewModelMapper.FromSummary(
             summary,
             planDisplay,
             Request,
             _environment,
             _options.MarketingBaseDomain,
+            includePrivateDetails: _ownership.IsOwner(Request, id),
             showCheckoutAction: summary.Status is PendingRegistrationStatus.AwaitingPayment
                 or PendingRegistrationStatus.Draft));
     }
@@ -216,6 +245,17 @@ public sealed class SignupController : Controller
         model.PlanOptions = BuildPlanOptions(model.PlanCode);
         model.IsContactSalesPlan = _planCatalog.FindByCode(model.PlanCode)?.IsContactSales ?? false;
         model.BusinessTypeOptions = await _referenceData.GetActiveBusinessTypesAsync(ct);
+        model.BusinessCategories = BusinessSubtypeCatalog.Categories
+            .Select(category => new SignupBusinessCategoryGroup(
+                category.ToString(),
+                _localizer[BusinessSubtypeCatalog.ResourceKey(category)].Value,
+                BusinessSubtypeCatalog.SubtypesOf(category)
+                    .Select(subtype => new SignupBusinessSubtypeOption(
+                        subtype.Code,
+                        _localizer[BusinessSubtypeCatalog.ResourceKey(subtype.Subtype)].Value,
+                        model.SelectedBusinessTypeCodes.Contains(subtype.Code, StringComparer.OrdinalIgnoreCase)))
+                    .ToArray()))
+            .ToArray();
 
         var cities = await _referenceData.GetActiveCitiesAsync(model.Country, ct);
         model.Cities = cities;

@@ -52,10 +52,12 @@
         plans = planSummaries,
         selectedPlanTitle = L["Signup.SelectedPlanTitle"].Value,
         selectedPlanIncludes = L["Signup.SelectedPlanIncludes"].Value,
-        yearlyAdvantageNote = L["Signup.YearlyAdvantageNote"].Value
+        yearlyAdvantageNote = L["Signup.YearlyAdvantageNote"].Value,
+        businessSubtypeRequiredText = L["Validation.BusinessSubtypeRequired"].Value,
+        businessCategorySubtypeRequiredText = L["Validation.BusinessCategorySubtypeRequired"].Value
     };
 }
-<div class="oh-signup-page py-4 py-md-5">
+<div class="wasla-signup-page py-4 py-md-5">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-xl-9">
@@ -64,15 +66,15 @@
                     <p class="text-secondary mb-0">@L["Signup.Subtitle"]</p>
                 </div>
 
-                <div class="card border-0 shadow-sm oh-signup-card">
+                <div class="card border-0 shadow-sm wasla-signup-card">
                     <div class="card-body p-4 p-md-5">
                         <form asp-action="Index" method="post" novalidate id="signupForm">
                             @Html.AntiForgeryToken()
                             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-                            <section class="oh-signup-section mb-4">
-                                <div class="oh-signup-step-label mb-3">
-                                    <span class="oh-signup-step-num">1</span>
+                            <section class="wasla-signup-section mb-4">
+                                <div class="wasla-signup-step-label mb-3">
+                                    <span class="wasla-signup-step-num">1</span>
                                     <span class="fw-semibold">@L["Signup.StepPlan"]</span>
                                 </div>
                                 <div class="row g-3">
@@ -101,7 +103,7 @@
                                     </div>
                                 </div>
 
-                                <div id="signupPlanSummary" class="oh-signup-plan-summary mt-3" aria-live="polite">
+                                <div id="signupPlanSummary" class="wasla-signup-plan-summary mt-3" aria-live="polite">
                                     <div class="small text-muted mb-1">@L["Signup.SelectedPlanTitle"]</div>
                                     <div class="fw-semibold" id="signupPlanSummaryName"></div>
                                     <div class="text-secondary small" id="signupPlanSummaryDescription"></div>
@@ -120,9 +122,9 @@
                             </div>
 
                             <div id="signupSelfServiceSections" class="@(Model.IsContactSalesPlan ? "d-none" : "")">
-                            <section class="oh-signup-section mb-4">
-                                <div class="oh-signup-step-label mb-3">
-                                    <span class="oh-signup-step-num">2</span>
+                            <section class="wasla-signup-section mb-4">
+                                <div class="wasla-signup-step-label mb-3">
+                                    <span class="wasla-signup-step-num">2</span>
                                     <span class="fw-semibold">@L["Signup.StepBusiness"]</span>
                                 </div>
                                 <div class="row g-3">
@@ -133,22 +135,41 @@
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label">@L["Signup.BusinessType"]</label>
-                                        <div class="oh-signup-business-types border rounded p-3 bg-body-tertiary">
-                                            @foreach (var option in Model.BusinessTypeOptions)
+                                        <p class="form-text mt-0">@L["Signup.BusinessSubtypeHint"]</p>
+                                        <div class="wasla-signup-business-types border rounded p-3 bg-body-tertiary" id="signupBusinessTypes">
+                                            @foreach (var category in Model.BusinessCategories)
                                             {
-                                                var checkboxId = $"businessType-{option.Code}";
-                                                var isChecked = Model.SelectedBusinessTypeCodes.Contains(option.Code, StringComparer.OrdinalIgnoreCase);
-                                                <div class="form-check">
-                                                    <input class="form-check-input"
-                                                           type="checkbox"
-                                                           name="SelectedBusinessTypeCodes"
-                                                           value="@option.Code"
-                                                           id="@checkboxId"
-                                                           @(isChecked ? "checked" : null) />
-                                                    <label class="form-check-label" for="@checkboxId">@option.DisplayName</label>
+                                                var categoryId = $"businessCategory-{category.CategoryCode}";
+                                                var categorySelected = category.Subtypes.Any(subtype => subtype.Selected);
+                                                <div class="wasla-signup-business-category">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input"
+                                                               type="checkbox"
+                                                               id="@categoryId"
+                                                               data-category-toggle="@category.CategoryCode"
+                                                               @(categorySelected ? "checked" : null) />
+                                                        <label class="form-check-label fw-semibold" for="@categoryId">@category.Label</label>
+                                                    </div>
+                                                    <div class="wasla-signup-business-subtypes" data-category-panel="@category.CategoryCode">
+                                                        @foreach (var subtype in category.Subtypes)
+                                                        {
+                                                            var subtypeId = $"businessType-{subtype.Code}";
+                                                            <div class="form-check">
+                                                                <input class="form-check-input"
+                                                                       type="checkbox"
+                                                                       name="SelectedBusinessTypeCodes"
+                                                                       value="@subtype.Code"
+                                                                       id="@subtypeId"
+                                                                       data-category="@category.CategoryCode"
+                                                                       @(subtype.Selected ? "checked" : null) />
+                                                                <label class="form-check-label" for="@subtypeId">@subtype.Label</label>
+                                                            </div>
+                                                        }
+                                                    </div>
                                                 </div>
                                             }
                                         </div>
+                                        <div class="text-danger small d-none" id="signupBusinessTypeClientError" role="alert"></div>
                                         <span asp-validation-for="SelectedBusinessTypeCodes" class="text-danger small"></span>
                                     </div>
                                     <div class="col-12">
@@ -166,9 +187,9 @@
                                 </div>
                             </section>
 
-                            <section class="oh-signup-section mb-4">
-                                <div class="oh-signup-step-label mb-3">
-                                    <span class="oh-signup-step-num">3</span>
+                            <section class="wasla-signup-section mb-4">
+                                <div class="wasla-signup-step-label mb-3">
+                                    <span class="wasla-signup-step-num">3</span>
                                     <span class="fw-semibold">@L["Signup.StepAddress"]</span>
                                 </div>
                                 <div class="row g-3">
@@ -231,9 +252,9 @@
                                 </div>
                             </section>
 
-                            <section class="oh-signup-section mb-4">
-                                <div class="oh-signup-step-label mb-3">
-                                    <span class="oh-signup-step-num">4</span>
+                            <section class="wasla-signup-section mb-4">
+                                <div class="wasla-signup-step-label mb-3">
+                                    <span class="wasla-signup-step-num">4</span>
                                     <span class="fw-semibold">@L["Signup.StepContact"]</span>
                                 </div>
                                 <div class="row g-3">
@@ -251,7 +272,7 @@
                                             <span class="input-group-text" id="signupPhonePrefix">+90</span>
                                             <input asp-for="BusinessPhone" class="form-control" id="signupBusinessPhone" autocomplete="tel" inputmode="tel" aria-describedby="signupPhoneHint" />
                                         </div>
-                                        <div id="signupPhoneHint" class="form-text oh-signup-phone-hint"></div>
+                                        <div id="signupPhoneHint" class="form-text wasla-signup-phone-hint"></div>
                                         <span asp-validation-for="BusinessPhone" class="text-danger small"></span>
                                     </div>
                                     <div class="col-12">
@@ -263,9 +284,9 @@
                                 </div>
                             </section>
 
-                            <section class="oh-signup-section">
-                                <div class="oh-signup-step-label mb-3">
-                                    <span class="oh-signup-step-num">5</span>
+                            <section class="wasla-signup-section">
+                                <div class="wasla-signup-step-label mb-3">
+                                    <span class="wasla-signup-step-num">5</span>
                                     <span class="fw-semibold">@L["Signup.StepOwner"]</span>
                                 </div>
                                 <div class="row g-3">
@@ -332,5 +353,6 @@
     <partial name="_ValidationScriptsPartial" />
     <script type="application/json" id="signupFormConfig">@Html.Raw(JsonSerializer.Serialize(signupConfig))</script>
     <script src="~/js/signup/signup-phone-format.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-business-types.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-form.js" asp-append-version="true"></script>
 }

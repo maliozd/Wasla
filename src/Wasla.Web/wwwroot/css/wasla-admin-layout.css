@@ -1,0 +1,61 @@
+/*
+ * Central Admin layout corrections for AdminLTE 4 (loaded only by _AdminLayout, after adminlte.min.css).
+ *
+ * 1. Accessible, RTL-safe off-screen content.
+ *    AdminLTE's accessibility module appends <div id="live-region" class="live-region" role="status"
+ *    aria-live="polite"> to <body> and styles it with `left: -10000px`. In a right-to-left document that offset
+ *    lies in the scrollable direction, so every Arabic Admin page gained ~10,000px of horizontal overflow and opened
+ *    scrolled away from the content. The element stays in the accessibility tree; it is only clipped in place with
+ *    the standard visually-hidden technique instead of being pushed off-screen.
+ *
+ * 2. Off-canvas sidebar in RTL.
+ *    Below the lg breakpoint AdminLTE hides the fixed sidebar with a negative margin-left. In RTL the sidebar sits
+ *    at the right edge, so that margin does not move it out of view and it covered the content. RTL uses the
+ *    matching right margin instead. LTR is unchanged.
+ */
+
+.live-region:not(.live-region-visible) {
+    position: absolute;
+    top: 0;
+    left: auto;
+    right: auto;
+    inset-inline-start: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* AdminLTE names unlabeled navigation landmarks with the same off-screen offset. */
+nav[role=navigation]:not([aria-label]):not([aria-labelledby])::before {
+    left: auto;
+    right: auto;
+    inset-inline-start: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+[dir="rtl"] .sidebar-collapse:not(.sidebar-mini) .app-sidebar {
+    margin-left: 0;
+    margin-right: calc(var(--lte-sidebar-width) * -1);
+}
+
+@media (max-width: 991.98px) {
+    [dir="rtl"] .sidebar-expand-lg .app-sidebar {
+        margin-left: 0;
+        margin-right: calc(var(--lte-sidebar-width) * -1);
+    }
+
+    [dir="rtl"] .sidebar-expand-lg.sidebar-open .app-sidebar {
+        margin-right: 0;
+    }
+}

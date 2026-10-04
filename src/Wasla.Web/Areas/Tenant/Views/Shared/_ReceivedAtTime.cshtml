@@ -1,0 +1,8 @@
+﻿@model Wasla.Web.Models.Ui.ReceivedAtTimeModel
+@using System.Globalization
+@{
+    // Today's orders show the time only. Older orders show date and time, which may wrap only between the two.
+    var showDate = DateOnly.FromDateTime(Model.Local) != Model.Today;
+}
+<time datetime="@Model.Utc.ToString("O", CultureInfo.InvariantCulture)" title="@Model.Local.ToString("g", CultureInfo.CurrentCulture)">@if (showDate)
+{<span class="wasla-nowrap">@Model.Local.ToString("d", CultureInfo.CurrentCulture)</span><text> </text>}<span class="wasla-nowrap">@Model.Local.ToString("t", CultureInfo.CurrentCulture)</span></time>

@@ -120,6 +120,27 @@ public sealed class TenantResolutionMiddlewareTests
         Assert.Equal("HASAN-USTANIN-YERI.wasla.local", pendingRegistrations.LastLookupHost);
     }
 
+    [Theory]
+    [InlineData("/health/live")]
+    [InlineData("/health/ready")]
+    [InlineData("/error")]
+    public async Task InvokeAsync_DiagnosticPaths_SkipTenantResolution(string path)
+    {
+        var called = false;
+        var middleware = new TenantResolutionMiddleware(_ =>
+        {
+            called = true;
+            return Task.CompletedTask;
+        });
+        var context = CreateContext("sushim.wasla.local");
+        context.Request.Path = path;
+
+        await InvokeAsync(middleware, context, new ThrowingTenantResolver(), new FakePendingRegistrationService());
+
+        Assert.True(called);
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+    }
+
     private static DefaultHttpContext CreateContext(string host)
     {
         var context = new DefaultHttpContext();
@@ -162,6 +183,12 @@ public sealed class TenantResolutionMiddlewareTests
                 ? DateTime.UtcNow
                 : null,
             status == PendingRegistrationStatus.Provisioned ? DateTime.UtcNow : null);
+
+    private sealed class ThrowingTenantResolver : ITenantResolver
+    {
+        public Task<ResolvedTenantDto?> ResolveByHostAsync(string host, CancellationToken ct) =>
+            throw new InvalidOperationException("Tenant resolution should not run.");
+    }
 
     private sealed class FakeTenantResolver(ResolvedTenantDto? tenant) : ITenantResolver
     {

@@ -1,0 +1,114 @@
+@model Wasla.Web.Models.GuidedSetup.GuidedSetupSectionPanelViewModel
+@using Wasla.Application.GuidedSetup
+@using Wasla.Web.GuidedSetup
+@using Wasla.Web.Models.GuidedSetup
+@{
+    var isPlatform = Model.SectionKey == GuidedSetupSections.PlatformConnections;
+    var prefix = isPlatform ? "GuidedSetup.Platform" : "GuidedSetup.PrintBridge";
+    var ready = Model.IsReady;
+}
+<link rel="stylesheet" href="~/css/wasla-guided-setup.css" asp-append-version="true" />
+@*
+    A page-level guide for the user's current guided-setup section. It never collects credentials or creates
+    devices; the page's own controls do the real work. Both states are rendered: readiness comes from the same
+    fact the operational checklist uses. When the Print Bridge page's automatic flow reports success,
+    wasla-guided-setup.js re-reads that fact (GET, read-only, a few bounded checks) and shows the connected state
+    without a reload. When the page starts a manual connection, it keeps re-reading that fact (bounded) until the
+    device has really connected. It never moves on by itself: deferring and continuing are separate, explicit POSTs.
+*@
+<section class="wasla-guided-setup-panel@(ready ? " is-ready" : "")" aria-labelledby="waslaGuidedSetupPanelTitle"
+         data-guided-setup-panel="@Model.SectionKey"
+         data-guided-setup-state="@(ready ? "ready" : "not-ready")"
+         data-guided-setup-refresh-on="@(isPlatform ? null : "wasla:print-bridge-setup-completed")"
+         data-guided-setup-watch-on="@(isPlatform ? null : "wasla:print-bridge-manual-setup-started")"
+         data-guided-setup-status-url="/guided-setup/section-status?section=@Model.SectionKey">
+    <p class="wasla-guided-setup-panel__eyebrow">
+        <span>@L["GuidedSetup.Panel.Eyebrow"]</span>
+        <span aria-hidden="true">·</span>
+        <span>@L["GuidedSetup.Panel.Progress", Model.SectionNumber, Model.SectionCount]</span>
+    </p>
+    <h2 id="waslaGuidedSetupPanelTitle" class="wasla-guided-setup-panel__title">@L[prefix + ".Title"]</h2>
+    <p class="wasla-guided-setup-panel__body">@L[prefix + ".Body"]</p>
+    <ul class="wasla-guided-setup-panel__points">
+        @if (isPlatform)
+        {
+            <li>@L["GuidedSetup.Platform.Where", L["PlatformConnections.Create"].Value]</li>
+            <li>@L["GuidedSetup.Platform.Check"]</li>
+        }
+        else
+        {
+            <li>@L["GuidedSetup.PrintBridge.Install", L["PrintBridge.FirstInstall.Connect.Automatic.Button"].Value]</li>
+            <li>@L["GuidedSetup.PrintBridge.Secure"]</li>
+            <li>@L["GuidedSetup.PrintBridge.Printer"]</li>
+        }
+        <li data-guided-setup-when="not-ready" hidden="@ready">@L[prefix + ".Later"]</li>
+    </ul>
+
+    <p class="wasla-guided-setup-panel__status" role="status">
+        <span class="wasla-guided-setup-panel__status-item" data-guided-setup-when="not-ready" hidden="@ready">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <span>@L[prefix + ".NotReady"]</span>
+        </span>
+        <span class="wasla-guided-setup-panel__status-item wasla-guided-setup-panel__status-item--ready" data-guided-setup-when="ready" hidden="@(!ready)">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            <span>@L[prefix + ".Ready"]</span>
+        </span>
+    </p>
+
+    <div class="wasla-guided-setup-panel__actions">
+        <div class="wasla-guided-setup-panel__state" data-guided-setup-when="not-ready" hidden="@ready">
+            @* Print Bridge has no action here: its first-install steps right below the panel are the way in. *@
+            @if (isPlatform)
+            {
+                <a class="btn btn-primary" href="/platform-connections/create">@L["PlatformConnections.Create"]</a>
+            }
+            @* Deferring: moves on without marking anything as set up. *@
+            <form method="post" action="/guided-setup/advance" data-guided-setup-form>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="section" value="@Model.SectionKey" />
+                <button type="submit" class="btn btn-outline-secondary">@L[prefix + ".SetUpLater"]</button>
+            </form>
+        </div>
+        <div class="wasla-guided-setup-panel__state" data-guided-setup-when="ready" hidden="@(!ready)">
+            @if (isPlatform)
+            {
+                @* Continuing after a successful setup: the server re-checks readiness before moving on. *@
+                <form method="post" action="/guided-setup/section-continue" data-guided-setup-form>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="section" value="@Model.SectionKey" />
+                    <button type="submit" class="btn btn-primary">@L[GuidedSetupCopy.ContinueToKey(Model.NextSectionKey)]</button>
+                </form>
+            }
+            else
+            {
+                @* A connected Print Bridge first shows its device guide, which holds the section's Continue. A plain
+                   GET: the server picks the page, and nothing moves on. *@
+                <a class="btn btn-primary" href="@GuidedSetupCoordinator.DeviceGuideEntryUrl" data-guided-setup-continue>@L["GuidedSetup.PrintBridge.MeetDevice"]</a>
+            }
+        </div>
+    </div>
+
+    @if (Model.NextSectionKey is not null)
+    {
+        <p class="wasla-guided-setup-panel__next">@L["GuidedSetup.Panel.Next", L[GuidedSetupCopy.SectionNameKey(Model.NextSectionKey)].Value]</p>
+    }
+
+    @if (!isPlatform)
+    {
+        @* The same connected state, fixed to the viewport, for a user who is far down the page (following the
+           manual connection steps). It is one more "ready" part of this panel, so it shows only when the server has
+           confirmed the device: on load, or when the panel's read-only re-check confirms it. Its link is the same
+           device-guide GET as the one above (shared data-guided-setup-continue); no close button, no timer, no
+           scrolling or navigation of its own. The panel's status line above is the one polite announcement. *@
+        <aside class="wasla-guided-setup-dock" data-guided-setup-when="ready" data-guided-setup-dock hidden="@(!ready)"
+               aria-labelledby="waslaGuidedSetupDockTitle">
+            <i class="bi bi-check-circle-fill wasla-guided-setup-dock__icon" aria-hidden="true"></i>
+            <div class="wasla-guided-setup-dock__text">
+                <p id="waslaGuidedSetupDockTitle" class="wasla-guided-setup-dock__title">@L["GuidedSetup.PrintBridge.Dock.Title"]</p>
+                <p class="wasla-guided-setup-dock__body">@L["GuidedSetup.PrintBridge.Dock.Body"]</p>
+            </div>
+            <a class="btn btn-primary wasla-guided-setup-dock__action" href="@GuidedSetupCoordinator.DeviceGuideEntryUrl" data-guided-setup-continue>@L["GuidedSetup.PrintBridge.MeetDevice"]</a>
+        </aside>
+    }
+</section>
+<script src="~/js/wasla-guided-setup.js" asp-append-version="true"></script>

@@ -7,7 +7,9 @@ using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Orders;
 using Wasla.Application.Time;
 using Wasla.Domain.Enums;
+using Wasla.Application.GuidedSetup;
 using Wasla.Web.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.PrintBridge;
 using Wasla.Web.PrintBridge;
 using Wasla.Web.Routing;
@@ -30,6 +32,8 @@ public sealed class PrintBridgeController : BaseController
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly IStringLocalizer<Wasla.Web.SharedResource> _localizer;
+    private readonly IGuidedSetupCoordinator _guidedSetup;
+    private readonly IAuthorizationService _authorization;
 
     public PrintBridgeController(
         ICurrentTenantService currentTenant,
@@ -38,7 +42,9 @@ public sealed class PrintBridgeController : BaseController
         IPrintJobHistoryService printJobHistory,
         IWebHostEnvironment environment,
         IConfiguration configuration,
-        IStringLocalizer<Wasla.Web.SharedResource> localizer)
+        IStringLocalizer<Wasla.Web.SharedResource> localizer,
+        IGuidedSetupCoordinator guidedSetup,
+        IAuthorizationService authorization)
     {
         _currentTenant = currentTenant;
         _devices = devices;
@@ -47,6 +53,8 @@ public sealed class PrintBridgeController : BaseController
         _environment = environment;
         _configuration = configuration;
         _localizer = localizer;
+        _guidedSetup = guidedSetup;
+        _authorization = authorization;
     }
 
     [HttpGet("")]
@@ -66,7 +74,12 @@ public sealed class PrintBridgeController : BaseController
             .GetRecentReceiptJobsAsync(tenant.Id, PrintJobHistoryLimits.Default, ct)
             .ConfigureAwait(false);
 
-        return View(BuildPageViewModel(deviceRows, quota, printJobs));
+        var model = BuildPageViewModel(deviceRows, quota, printJobs);
+        model.DeviceSnapshot = BuildDeviceSnapshot(deviceRows, quota);
+        model.GuidedDeviceGuide = await _guidedSetup
+            .GetDeviceGuideAsync(tenant.Id, CurrentUserId, User, ct)
+            .ConfigureAwait(false);
+        return View(model);
     }
 
     [HttpGet("devices/{id:guid}")]
@@ -79,7 +92,12 @@ public sealed class PrintBridgeController : BaseController
         var device = await _devices.GetDeviceDetailsAsync(tenant.Id, id, ct).ConfigureAwait(false);
         if (device is null) return NotFound();
 
-        return View("DeviceDetails", MapDeviceDetails(device));
+        var model = MapDeviceDetails(device);
+        var guide = await _guidedSetup
+            .GetDeviceGuideAsync(tenant.Id, CurrentUserId, User, ct)
+            .ConfigureAwait(false);
+        model.GuidedDeviceGuide = guide is null ? null : guide with { ForOneDevice = true };
+        return View("DeviceDetails", model);
     }
 
     [ValidateAntiForgeryToken]
@@ -141,9 +159,19 @@ public sealed class PrintBridgeController : BaseController
         var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
         var packageFileName = PrintBridgePackagePaths.GetPackageFileName(_configuration);
         var packageAvailable = System.IO.File.Exists(packagePath);
+        var guidedSetup = await _guidedSetup
+            .GetSectionPanelAsync(tenant.Id, CurrentUserId, User, GuidedSetupSections.PrintBridge, ct)
+            .ConfigureAwait(false);
+        // The device pages need their own policy; link to them only for users they will let in.
+        var canManageDevices = (await _authorization
+            .AuthorizeAsync(User, TenantPolicies.CanManagePrintBridgeDevices)
+            .ConfigureAwait(false)).Succeeded;
 
         return View(new PrintBridgeSetupViewModel
         {
+            GuidedSetup = guidedSetup,
+            IsGuidedFirstInstall = guidedSetup is not null,
+            CanManageDevices = canManageDevices,
             PackageDownloadUrl = Url.Action(nameof(DownloadPackage), "PrintBridge", new { area = AreaNames.Tenant })
                 ?? "/print-bridge/download/package",
             DevicesUrl = Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices",
@@ -249,6 +277,54 @@ public sealed class PrintBridgeController : BaseController
         }
     }
 
+    /// <summary>
+    /// Manual connection for a new device, for when the app does not open automatically: creates the device with
+    /// the existing device service and returns its raw token once, in this response body only. Only the token's
+    /// hash is stored, so it can never be shown again; replacing it later uses the device's regenerate action.
+    /// Creating a token does not connect Print Bridge: readiness still comes from the device's own heartbeat.
+    /// </summary>
+    [ValidateAntiForgeryToken]
+    [HttpPost("setup/manual-device")]
+    [Authorize(Policy = TenantPolicies.CanManageDeviceSecurity)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
+    public async Task<IActionResult> CreateManualDevice(CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        // The token is useless without the Web Panel URL the app needs next to it.
+        if (string.IsNullOrWhiteSpace(ResolveCustomerWebBaseUrl()))
+            return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.ServerUrlUnavailable"].Value });
+
+        try
+        {
+            // An empty name gets the same default as a device created by the automatic setup.
+            var created = await _devices.CreateDeviceAsync(tenant.Id, string.Empty, ct).ConfigureAwait(false);
+
+            return Ok(new
+            {
+                success = true,
+                deviceId = created.DeviceId,
+                deviceName = created.DeviceName,
+                token = created.RawToken,
+                detailsUrl = Url.Action(nameof(DeviceDetails), "PrintBridge", new { area = AreaNames.Tenant, id = created.DeviceId })
+                    ?? $"/print-bridge/devices/{created.DeviceId}"
+            });
+        }
+        catch (PrintBridgeDeviceLimitReachedException)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = _localizer["PrintBridge.DeviceLimitReached", PrintBridgeDeviceLimits.AllowedActiveDeviceCount].Value
+            });
+        }
+        catch (InvalidOperationException)
+        {
+            return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.ManualTokenFailed"].Value });
+        }
+    }
+
     [HttpGet("setup/session/{sessionId:guid}/status")]
     [Authorize(Policy = TenantPolicies.CanManageDeviceSecurity)]
     public async Task<IActionResult> SetupSessionStatus(Guid sessionId, CancellationToken ct)
@@ -281,8 +357,13 @@ public sealed class PrintBridgeController : BaseController
     public IActionResult DownloadRedirect() =>
         RedirectToActionPermanent(nameof(Setup));
 
+    /// <summary>
+    /// The Devices page's read-only device snapshot (the page refreshes it periodically). Same contract as the page's
+    /// initial state; it only reads the current tenant's manageable devices.
+    /// </summary>
     [HttpGet("devices/list")]
     [Authorize(Policy = TenantPolicies.CanManagePrintBridgeDevices)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
     public async Task<IActionResult> ListDevices(CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -291,11 +372,7 @@ public sealed class PrintBridgeController : BaseController
         var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
         var quota = await _devices.GetDeviceQuotaAsync(tenant.Id, ct).ConfigureAwait(false);
 
-        return Ok(new
-        {
-            devices = deviceRows.Select(MapDeviceJson),
-            quota = MapQuotaJson(quota, deviceRows)
-        });
+        return Ok(BuildDeviceSnapshot(deviceRows, quota));
     }
 
     [ValidateAntiForgeryToken]
@@ -349,13 +426,18 @@ public sealed class PrintBridgeController : BaseController
 
             var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
             var quota = await _devices.GetDeviceQuotaAsync(tenant.Id, ct).ConfigureAwait(false);
+            // The Devices page applies this exactly like a refreshed snapshot.
+            var snapshot = BuildDeviceSnapshot(deviceRows, quota);
 
             return Ok(new
             {
                 success = true,
                 isActive,
-                devices = deviceRows.Select(MapDeviceJson),
-                quota = MapQuotaJson(quota, deviceRows)
+                devices = snapshot.Devices,
+                quota = snapshot.Quota,
+                serverTimeUtc = snapshot.ServerTimeUtc,
+                connectedThresholdSeconds = snapshot.ConnectedThresholdSeconds,
+                recentlySeenThresholdSeconds = snapshot.RecentlySeenThresholdSeconds
             });
         }
         catch (PrintBridgeDeviceLimitReachedException)
@@ -568,6 +650,16 @@ public sealed class PrintBridgeController : BaseController
             PrintJobsUrl = (Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices")
                 + "#recent-print-activity"
         };
+
+    /// <summary>The Devices page's device snapshot, from the current tenant's device list and quota.</summary>
+    private PrintBridgeDeviceSnapshot BuildDeviceSnapshot(
+        IReadOnlyList<PrintBridgeDeviceSummaryDto> deviceRows,
+        PrintBridgeDeviceQuotaDto quota) =>
+        PrintBridgeDeviceSnapshot.Create(
+            deviceRows,
+            quota,
+            DateTime.UtcNow,
+            id => Url.Action(nameof(DeviceDetails), "PrintBridge", new { area = AreaNames.Tenant, id }) ?? $"/print-bridge/devices/{id}");
 
     private static object MapDeviceJson(PrintBridgeDeviceSummaryDto d) =>
         new

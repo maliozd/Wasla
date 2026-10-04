@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "IceCream",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.LeaveAtDoor"],
+  "products": [
+    { "key": "Mock.IceCream.Product.Cone", "minPrice": 50, "maxPrice": 90, "modifiers": ["Mock.Modifier.SinglePortion", "Mock.Modifier.DoublePortion", "Mock.Modifier.Pistachio"] },
+    { "key": "Mock.IceCream.Product.Cup", "minPrice": 55, "maxPrice": 95, "modifiers": ["Mock.Modifier.DoublePortion", "Mock.Modifier.ChocolateSauce"] },
+    { "key": "Mock.IceCream.Product.Pistachio", "minPrice": 70, "maxPrice": 120, "modifiers": ["Mock.Modifier.Pistachio", "Mock.Modifier.DoublePortion"] },
+    { "key": "Mock.IceCream.Product.Chocolate", "minPrice": 60, "maxPrice": 110, "modifiers": ["Mock.Modifier.ChocolateSauce", "Mock.Modifier.DoublePortion"] },
+    { "key": "Mock.IceCream.Product.Mixed", "minPrice": 80, "maxPrice": 140, "modifiers": ["Mock.Modifier.Pistachio", "Mock.Modifier.ChocolateSauce"] }
+  ]
+}

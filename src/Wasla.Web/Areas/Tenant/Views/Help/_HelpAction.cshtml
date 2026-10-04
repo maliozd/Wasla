@@ -1,0 +1,10 @@
+@model (bool Allowed, string Href, string LabelKey)
+@* An action link only when the user's policies allow the target page; otherwise a short, readable note. *@
+@if (Model.Allowed)
+{
+    <p class="wasla-help__action"><a class="btn btn-sm btn-outline-primary" href="@Model.Href">@L[Model.LabelKey]</a></p>
+}
+else
+{
+    <p class="wasla-help__permission">@L["Help.NeedsPermission"]</p>
+}

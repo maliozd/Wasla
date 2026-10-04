@@ -1,11 +1,16 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Dashboard;
+using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Web.Controllers;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.Dashboard;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
+using Wasla.Web.Ui;
 
 namespace Wasla.Web.Areas.Tenant.Controllers;
 
@@ -16,11 +21,28 @@ public sealed class DashboardController : BaseController
 {
     private readonly ICurrentTenantService _currentTenant;
     private readonly IDashboardService _dashboard;
+    private readonly ITenantSetupStatusService _setup;
+    private readonly IAuthorizationService _authorization;
+    private readonly IGuidedSetupCoordinator _guidedSetup;
+    private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly ILogger<DashboardController> _logger;
 
-    public DashboardController(ICurrentTenantService currentTenant, IDashboardService dashboard)
+    public DashboardController(
+        ICurrentTenantService currentTenant,
+        IDashboardService dashboard,
+        ITenantSetupStatusService setup,
+        IAuthorizationService authorization,
+        IGuidedSetupCoordinator guidedSetup,
+        IStringLocalizer<SharedResource> localizer,
+        ILogger<DashboardController> logger)
     {
         _currentTenant = currentTenant;
         _dashboard = dashboard;
+        _setup = setup;
+        _authorization = authorization;
+        _guidedSetup = guidedSetup;
+        _localizer = localizer;
+        _logger = logger;
     }
 
     [HttpGet("")]
@@ -53,7 +75,63 @@ public sealed class DashboardController : BaseController
                 .ToList()
         };
 
+        vm.Setup = await TryLoadSetupAsync(tenant.Id, tenant.Name, ct);
+
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("UserId");
+        if (Guid.TryParse(userIdValue, out var userId))
+        {
+            // Fails closed inside the coordinator: a read error hides guidance, never the Dashboard.
+            vm.GuidedSetup = await _guidedSetup.GetDashboardCardAsync(tenant.Id, userId, User, ct);
+        }
+
         return View("Index", vm);
+    }
+
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = TenantPolicies.CanManageTenantSettings)]
+    [HttpPost("complete-setup")]
+    public async Task<IActionResult> CompleteSetup(CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null)
+            return NotFound();
+
+        var completed = await _setup.CompleteGuidanceAsync(tenant.Id, ct);
+        TempData[completed ? "Success" : "Error"] = completed
+            ? _localizer["Setup.GuidanceCompleted"].Value
+            : _localizer["Setup.GuidanceCompleteFailed"].Value;
+
+        return Redirect("/dashboard");
+    }
+
+    private async Task<TenantSetupPanelViewModel?> TryLoadSetupAsync(
+        Guid tenantId,
+        string restaurantName,
+        CancellationToken ct)
+    {
+        var allowed = await _authorization.AuthorizeAsync(User, resource: null, TenantPolicies.CanManageTenantSettings);
+        if (!allowed.Succeeded)
+            return null;
+
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("UserId");
+        if (!Guid.TryParse(userIdValue, out var userId))
+            return null;
+
+        try
+        {
+            var status = await _setup.GetAsync(tenantId, userId, ct);
+            if (status.IsSetupGuidanceCompleted)
+                return null;
+
+            return TenantSetupPanelMapper.Map(status, restaurantName, tenantId, _localizer);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(
+                "Tenant setup panel failed: {ExceptionType}",
+                ex.GetType().Name);
+            return null;
+        }
     }
 }
 

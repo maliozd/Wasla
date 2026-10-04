@@ -13,7 +13,7 @@ public sealed class EmailMessage
     public required string TextBody { get; init; }
 
     /// <summary>
-    /// Sensitive messages may contain one-time URLs or tokens. Development log senders must not preview their body.
+    /// Marks messages that contain one-time URLs or tokens. Log output must not include the address or body.
     /// </summary>
     public bool IsSensitive { get; init; }
 }

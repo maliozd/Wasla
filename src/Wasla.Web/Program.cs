@@ -10,9 +10,12 @@ using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Security;
 using Wasla.Web;
+using Wasla.Web.DevelopmentTools;
+using Wasla.Web.GuidedSetup;
 using Wasla.Web.Localization;
 using Wasla.Web.Middleware;
 using Wasla.Web.Security;
+using Wasla.Infrastructure.Diagnostics;
 using Wasla.Web.Tenant;
 
 // Web needs encryption master key to decrypt CustomerDb connection strings
@@ -111,6 +114,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
 builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
+builder.Services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -163,8 +167,15 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+// Temporary Development tools: off unless Development and explicitly enabled (appsettings.Development.json).
+var developmentToolsSection = builder.Configuration.GetSection(DevelopmentToolsOptions.SectionName);
+builder.Services.Configure<DevelopmentToolsOptions>(developmentToolsSection);
+var tenantResetAvailable = DevelopmentToolsAvailability.IsTenantResetAvailable(
+    builder.Environment,
+    developmentToolsSection.Get<DevelopmentToolsOptions>());
+
 builder.Services
-    .AddControllersWithViews()
+    .AddControllersWithViews(options => options.Conventions.Add(new DevelopmentToolsConvention(tenantResetAvailable)))
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
     .AddDataAnnotationsLocalization(options =>
     {
@@ -173,6 +184,7 @@ builder.Services
 
 builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
+builder.Services.AddWaslaHealthChecks();
 
 var app = builder.Build();
 
@@ -181,9 +193,11 @@ app.Logger.LogInformation(
     app.Environment.EnvironmentName,
     authCookieSecurePolicy);
 
+app.UseMiddleware<RequestDiagnosticsMiddleware>();
+app.UseWaslaExceptionHandling(app.Environment);
+
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/auth/login");
     app.UseHsts();
 }
 
@@ -214,5 +228,6 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapWaslaHealthChecks();
 
 app.Run();

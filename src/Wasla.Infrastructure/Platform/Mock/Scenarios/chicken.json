@@ -1,0 +1,12 @@
+{
+  "businessSubtype": "Chicken",
+  "itemNotes": ["Mock.ItemNote.NotTooSpicy", "Mock.ItemNote.SauceOnTheSide"],
+  "orderNotes": ["Mock.OrderNote.DoNotRingBell", "Mock.OrderNote.NotTooSpicy"],
+  "products": [
+    { "key": "Mock.Chicken.Product.Bucket", "minPrice": 280, "maxPrice": 420, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.NotSpicy", "Mock.Modifier.Fries", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.Chicken.Product.Wings", "minPrice": 160, "maxPrice": 240, "modifiers": ["Mock.Modifier.Spicy", "Mock.Modifier.ExtraSauce"] },
+    { "key": "Mock.Chicken.Product.Wrap", "minPrice": 150, "maxPrice": 230, "modifiers": ["Mock.Modifier.NoOnion", "Mock.Modifier.ExtraSauce", "Mock.Modifier.Ayran"] },
+    { "key": "Mock.Chicken.Product.Plate", "minPrice": 220, "maxPrice": 340, "modifiers": ["Mock.Modifier.Rice", "Mock.Modifier.Fries", "Mock.Modifier.Spicy"] },
+    { "key": "Mock.Chicken.Product.Fries", "minPrice": 80, "maxPrice": 120, "modifiers": ["Mock.Modifier.ExtraSauce"] }
+  ]
+}

@@ -1,0 +1,215 @@
+@model Wasla.Web.Models.Help.HelpPageViewModel
+@{
+    ViewData["Title"] = L["Help.Title"];
+
+    // Contents and section order in one place; ids are stable anchors.
+    var groups = new (string Id, string TitleKey, (string Id, string TitleKey)[] Topics)[]
+    {
+        ("help-platforms", "Help.Group.Platforms", new[]
+        {
+            ("help-trendyol", "Help.Trendyol.Title"),
+            ("help-yemeksepeti", "Help.Yemeksepeti.Title"),
+            ("help-platform-manage", "Help.PlatformManage.Title")
+        }),
+        ("help-printing", "Help.Group.Printing", new[]
+        {
+            ("help-print-bridge", "Help.PrintBridge.Title"),
+            ("help-print-bridge-devices", "Help.PrintBridgeDevices.Title"),
+            ("help-printer", "Help.Printer.Title"),
+            ("help-test-print", "Help.TestPrint.Title")
+        }),
+        ("help-orders", "Help.Group.Orders", new[]
+        {
+            ("help-live-screen", "Help.LiveScreen.Title"),
+            ("help-approve", "Help.Approve.Title"),
+            ("help-prepare", "Help.Prepare.Title"),
+            ("help-ready", "Help.Ready.Title"),
+            ("help-courier-pickup", "Help.CourierPickup.Title"),
+            ("help-delivered", "Help.Delivered.Title"),
+            ("help-delivered-window", "Help.DeliveredWindow.Title"),
+            ("help-order-history", "Help.OrderHistory.Title")
+        }),
+        ("help-support", "Help.Group.Support", new[]
+        {
+            ("help-troubleshooting", "Help.Troubleshooting.Title")
+        })
+    };
+}
+<link rel="stylesheet" href="~/css/wasla-help.css" asp-append-version="true" />
+
+<div class="wasla-help">
+    <header class="wasla-customer-page-header mb-4">
+        <div class="wasla-customer-page-header__main">
+            <h1 class="wasla-customer-page-header__title h4 mb-1">@L["Help.Title"]</h1>
+            <p class="wasla-customer-page-header__subtitle text-muted small mb-0">@L["Help.Subtitle"]</p>
+        </div>
+    </header>
+
+    <div class="wasla-help__layout">
+        <nav class="wasla-help__contents" aria-labelledby="waslaHelpContentsTitle">
+            <h2 id="waslaHelpContentsTitle" class="wasla-help__contents-title">@L["Help.Contents"]</h2>
+            <ul class="wasla-help__contents-list">
+                @foreach (var group in groups)
+                {
+                    <li>
+                        <a href="#@group.Id" class="wasla-help__contents-group">@L[group.TitleKey]</a>
+                        <ul>
+                            @foreach (var topic in group.Topics)
+                            {
+                                <li><a href="#@topic.Id">@L[topic.TitleKey]</a></li>
+                            }
+                        </ul>
+                    </li>
+                }
+                @if (Model.ShowDevelopmentTools)
+                {
+                    <li>
+                        <a href="#help-development-tools" class="wasla-help__contents-group">@L["DevelopmentTools.Title"]</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <div class="wasla-help__content">
+            <section id="help-platforms" class="wasla-help__group" aria-labelledby="help-platforms-title">
+                <h2 id="help-platforms-title" class="wasla-help__group-title">@L["Help.Group.Platforms"]</h2>
+
+                <article id="help-trendyol" class="wasla-help__topic" aria-labelledby="help-trendyol-title">
+                    <h3 id="help-trendyol-title">@L["Help.Trendyol.Title"]</h3>
+                    <p>@L["Help.Trendyol.Intro"]</p>
+                    <ol>
+                        <li>@L["Help.Trendyol.Step1", L["PlatformConnections.Create"].Value]</li>
+                        <li>@L["Help.Trendyol.Step2"]</li>
+                        <li>@L["Help.Trendyol.Step3"]</li>
+                    </ol>
+                    <partial name="_HelpAction" model="@(Model.CanOpenPlatformConnections, "/platform-connections/create", "PlatformConnections.Create")" />
+                </article>
+
+                <article id="help-yemeksepeti" class="wasla-help__topic" aria-labelledby="help-yemeksepeti-title">
+                    <h3 id="help-yemeksepeti-title">@L["Help.Yemeksepeti.Title"]</h3>
+                    <p>@L["Help.Yemeksepeti.Intro"]</p>
+                    <ol>
+                        <li>@L["Help.Yemeksepeti.Step1", L["PlatformConnections.Create"].Value]</li>
+                        <li>@L["Help.Yemeksepeti.Step2"]</li>
+                        <li>@L["Help.Yemeksepeti.Step3"]</li>
+                    </ol>
+                    <partial name="_HelpAction" model="@(Model.CanOpenPlatformConnections, "/platform-connections/create", "PlatformConnections.Create")" />
+                </article>
+
+                <article id="help-platform-manage" class="wasla-help__topic" aria-labelledby="help-platform-manage-title">
+                    <h3 id="help-platform-manage-title">@L["Help.PlatformManage.Title"]</h3>
+                    <p>@L["Help.PlatformManage.Body"]</p>
+                    <p>@L["Help.PlatformManage.Check", L["PlatformConnections.LastSuccessfulSync"].Value]</p>
+                    <partial name="_HelpAction" model="@(Model.CanOpenPlatformConnections, "/platform-connections", "Help.Action.OpenPlatformConnections")" />
+                </article>
+            </section>
+
+            <section id="help-printing" class="wasla-help__group" aria-labelledby="help-printing-title">
+                <h2 id="help-printing-title" class="wasla-help__group-title">@L["Help.Group.Printing"]</h2>
+
+                <article id="help-print-bridge" class="wasla-help__topic" aria-labelledby="help-print-bridge-title">
+                    <h3 id="help-print-bridge-title">@L["Help.PrintBridge.Title"]</h3>
+                    <p>@L["Help.PrintBridge.Intro"]</p>
+                    @* Same order as the guided first install: download the ZIP, extract it, run Print Bridge once,
+                       choose automatic or manual connection, test the printer, then get to know the device. *@
+                    <ol>
+                        <li>@L["Help.PrintBridge.Step1"]</li>
+                        <li>@L["Help.PrintBridge.Step2"]</li>
+                        <li>@L["Help.PrintBridge.Step3"]</li>
+                        <li>@L["Help.PrintBridge.Step4", L["PrintBridge.FirstInstall.Connect.Automatic.Button"].Value]</li>
+                        <li>@L["Help.PrintBridge.Step5"]</li>
+                        <li>@L["Help.PrintBridge.Step6", L["Help.PrintBridgeDevices.Title"].Value]</li>
+                    </ol>
+                    <partial name="_HelpAction" model="@(Model.CanOpenPrintBridgeSetup, "/print-bridge/setup", "Help.Action.OpenPrintBridgeSetup")" />
+                </article>
+
+                <article id="help-print-bridge-devices" class="wasla-help__topic" aria-labelledby="help-print-bridge-devices-title">
+                    <h3 id="help-print-bridge-devices-title">@L["Help.PrintBridgeDevices.Title"]</h3>
+                    <p>@L["Help.PrintBridgeDevices.Intro"]</p>
+                    <partial name="_PrintBridgeDeviceTopics" />
+                    <partial name="_HelpAction" model="@(Model.CanOpenPrintBridgeDevices, "/print-bridge/devices", "Help.Action.OpenPrintBridgeDevices")" />
+                </article>
+
+                <article id="help-printer" class="wasla-help__topic" aria-labelledby="help-printer-title">
+                    <h3 id="help-printer-title">@L["Help.Printer.Title"]</h3>
+                    <p>@L["Help.Printer.Body"]</p>
+                    <p>@L["Help.Printer.Template", L["PrintBridge.ReceiptPrinterSettings"].Value]</p>
+                    <partial name="_HelpAction" model="@(Model.CanOpenReceiptPrinterSettings, "/settings/receipt-printer", "Help.Action.OpenReceiptPrinterSettings")" />
+                </article>
+
+                <article id="help-test-print" class="wasla-help__topic" aria-labelledby="help-test-print-title">
+                    <h3 id="help-test-print-title">@L["Help.TestPrint.Title"]</h3>
+                    <p>@L["Help.TestPrint.Body"]</p>
+                    <p>@L["Help.TestPrint.Check"]</p>
+                    <partial name="_HelpAction" model="@(Model.CanOpenPrintBridgeDevices, "/print-bridge/devices", "Help.Action.OpenPrintBridgeDevices")" />
+                </article>
+            </section>
+
+            <section id="help-orders" class="wasla-help__group" aria-labelledby="help-orders-title">
+                <h2 id="help-orders-title" class="wasla-help__group-title">@L["Help.Group.Orders"]</h2>
+
+                <article id="help-live-screen" class="wasla-help__topic" aria-labelledby="help-live-screen-title">
+                    <h3 id="help-live-screen-title">@L["Help.LiveScreen.Title"]</h3>
+                    <p>@L["Help.LiveScreen.Body", L["Orders.LiveScreen.ViewBoard"].Value, L["Orders.LiveScreen.ViewList"].Value, L["Orders.LiveScreen.ViewFocus"].Value]</p>
+                    <partial name="_HelpAction" model="@(Model.CanOpenLiveScreen, "/orders/live-display", "Help.Action.OpenLiveScreen")" />
+                </article>
+
+                <article id="help-approve" class="wasla-help__topic" aria-labelledby="help-approve-title">
+                    <h3 id="help-approve-title">@L["Help.Approve.Title"]</h3>
+                    <p>@L["Help.Approve.Body", L["Orders.Approve"].Value, L["Orders.Reject"].Value]</p>
+                </article>
+
+                <article id="help-prepare" class="wasla-help__topic" aria-labelledby="help-prepare-title">
+                    <h3 id="help-prepare-title">@L["Help.Prepare.Title"]</h3>
+                    <p>@L["Help.Prepare.Body", L["Orders.StartPreparing"].Value]</p>
+                </article>
+
+                <article id="help-ready" class="wasla-help__topic" aria-labelledby="help-ready-title">
+                    <h3 id="help-ready-title">@L["Help.Ready.Title"]</h3>
+                    <p>@L["Help.Ready.Body", L["Orders.MarkReady"].Value]</p>
+                </article>
+
+                <article id="help-courier-pickup" class="wasla-help__topic" aria-labelledby="help-courier-pickup-title">
+                    <h3 id="help-courier-pickup-title">@L["Help.CourierPickup.Title"]</h3>
+                    <p>@L["Help.CourierPickup.Body", L["OrderStatus.OnTheWay"].Value]</p>
+                </article>
+
+                <article id="help-delivered" class="wasla-help__topic" aria-labelledby="help-delivered-title">
+                    <h3 id="help-delivered-title">@L["Help.Delivered.Title"]</h3>
+                    <p>@L["Help.Delivered.Body", L["OrderStatus.Delivered"].Value]</p>
+                </article>
+
+                <article id="help-delivered-window" class="wasla-help__topic" aria-labelledby="help-delivered-window-title">
+                    <h3 id="help-delivered-window-title">@L["Help.DeliveredWindow.Title"]</h3>
+                    <p>@L["Help.DeliveredWindow.Body", Model.DeliveredWindowMinutes]</p>
+                </article>
+
+                <article id="help-order-history" class="wasla-help__topic" aria-labelledby="help-order-history-title">
+                    <h3 id="help-order-history-title">@L["Help.OrderHistory.Title"]</h3>
+                    <p>@L["Help.OrderHistory.Body", L["Layout.Orders"].Value]</p>
+                    <partial name="_HelpAction" model="@(Model.CanOpenOrders, "/orders", "Help.Action.OpenOrders")" />
+                </article>
+            </section>
+
+            <section id="help-support" class="wasla-help__group" aria-labelledby="help-support-title">
+                <h2 id="help-support-title" class="wasla-help__group-title">@L["Help.Group.Support"]</h2>
+
+                <article id="help-troubleshooting" class="wasla-help__topic" aria-labelledby="help-troubleshooting-title">
+                    <h3 id="help-troubleshooting-title">@L["Help.Troubleshooting.Title"]</h3>
+                    <ul>
+                        <li>@L["Help.Troubleshooting.NoOrders"]</li>
+                        <li>@L["Help.Troubleshooting.NoPrint"]</li>
+                        <li>@L["Help.Troubleshooting.NoSound"]</li>
+                        <li>@L["Help.Troubleshooting.MissingPage"]</li>
+                        <li>@L["Help.Troubleshooting.Support"]</li>
+                    </ul>
+                </article>
+            </section>
+
+            @if (Model.ShowDevelopmentTools)
+            {
+                @await Html.PartialAsync("_DevelopmentTools", Model.DevelopmentTenantResetSlug)
+            }
+        </div>
+    </div>
+</div>

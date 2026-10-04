@@ -42,6 +42,12 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
         string? tenantDisplayName,
         CancellationToken ct)
     {
+        // Read template settings on a separate connection before taking the serializable lock.
+        // Holding that lock while opening a second tenant context can deadlock concurrent first-prints.
+        var template = await _templateSettings
+            .GetAsync(customerId, tenantDisplayName, null, ct)
+            .ConfigureAwait(false);
+
         await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
 
         await using var tx = await db.Database
@@ -88,9 +94,6 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
         var safeCopyCount = Math.Clamp(copyCount, 1, 3);
         var nowUtc = DateTime.UtcNow;
-        var template = await _templateSettings
-            .GetAsync(customerId, tenantDisplayName, null, ct)
-            .ConfigureAwait(false);
 
         var job = new PrintJob
         {

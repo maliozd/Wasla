@@ -1,0 +1,200 @@
+using System.Diagnostics;
+using System.Net.Http.Json;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+
+namespace Wasla.UnitTests.Admin;
+
+/// <summary>
+/// A minimal Chrome DevTools Protocol driver for layout checks that need a real rendering engine. It launches an
+/// installed Chromium browser (Edge or Chrome, or the one named by <c>WASLA_TEST_BROWSER</c>) headless with a
+/// throw-away profile, and is disposed with its whole process tree. No package dependency.
+/// </summary>
+internal sealed class HeadlessChromium : IAsyncDisposable
+{
+    public const string BrowserVariable = "WASLA_TEST_BROWSER";
+
+    private readonly Process _process;
+    private readonly string _profile;
+    private readonly ClientWebSocket _socket;
+    private int _nextId;
+
+    private HeadlessChromium(Process process, string profile, ClientWebSocket socket)
+    {
+        _process = process;
+        _profile = profile;
+        _socket = socket;
+    }
+
+    public static string? FindExecutable()
+    {
+        var configured = Environment.GetEnvironmentVariable(BrowserVariable);
+        if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured))
+            return configured;
+
+        var roots = new[]
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
+        };
+        var relative = new[]
+        {
+            Path.Combine("Microsoft", "Edge", "Application", "msedge.exe"),
+            Path.Combine("Google", "Chrome", "Application", "chrome.exe")
+        };
+        return roots
+            .Where(root => !string.IsNullOrEmpty(root))
+            .SelectMany(root => relative.Select(path => Path.Combine(root, path)))
+            .FirstOrDefault(File.Exists);
+    }
+
+    public static async Task<HeadlessChromium> StartAsync(string executable, CancellationToken ct)
+    {
+        var profile = Directory.CreateTempSubdirectory("wasla-headless-").FullName;
+        var start = new ProcessStartInfo(executable)
+        {
+            UseShellExecute = false,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        };
+        foreach (var argument in new[]
+                 {
+                     "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                     "--disable-extensions", "--disable-background-networking", "--remote-debugging-port=0",
+                     $"--user-data-dir={profile}", "about:blank"
+                 })
+            start.ArgumentList.Add(argument);
+
+        var process = Process.Start(start) ?? throw new InvalidOperationException("The browser did not start.");
+        process.BeginErrorReadLine();
+        process.BeginOutputReadLine();
+
+        var portFile = Path.Combine(profile, "DevToolsActivePort");
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (!File.Exists(portFile) || new FileInfo(portFile).Length == 0)
+        {
+            if (DateTime.UtcNow > deadline)
+                throw new TimeoutException("The browser did not open a DevTools port.");
+            await Task.Delay(100, ct);
+        }
+
+        var port = int.Parse((await File.ReadAllLinesAsync(portFile, ct))[0], System.Globalization.CultureInfo.InvariantCulture);
+        using var http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{port}") };
+        string? pageSocket = null;
+        while (pageSocket is null)
+        {
+            var targets = await http.GetFromJsonAsync<JsonElement>("/json/list", ct);
+            pageSocket = targets.EnumerateArray()
+                .Where(t => t.GetProperty("type").GetString() == "page")
+                .Select(t => t.GetProperty("webSocketDebuggerUrl").GetString())
+                .FirstOrDefault();
+            if (pageSocket is null)
+            {
+                if (DateTime.UtcNow > deadline)
+                    throw new TimeoutException("The browser exposed no page target.");
+                await Task.Delay(100, ct);
+            }
+        }
+
+        var socket = new ClientWebSocket();
+        await socket.ConnectAsync(new Uri(pageSocket), ct);
+        return new HeadlessChromium(process, profile, socket);
+    }
+
+    public Task SetCookieAsync(Uri origin, string name, string value, CancellationToken ct) =>
+        SendAsync("Network.setCookie", new { name, value, url = origin.GetLeftPart(UriPartial.Authority) + "/" }, ct);
+
+    public Task SetViewportAsync(int width, int height, bool mobile, CancellationToken ct) =>
+        SendAsync("Emulation.setDeviceMetricsOverride", new { width, height, deviceScaleFactor = 1, mobile }, ct);
+
+    /// <summary>Navigates and waits until the new document has finished loading.</summary>
+    public async Task NavigateAsync(Uri url, CancellationToken ct)
+    {
+        await SendAsync("Page.navigate", new { url = url.ToString() }, ct);
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (await EvaluateAsync<bool>(
+                   $"location.href === {JsonSerializer.Serialize(url.ToString())} && document.readyState === 'complete'", ct) is false)
+        {
+            if (DateTime.UtcNow > deadline)
+                throw new TimeoutException($"{url} did not finish loading.");
+            await Task.Delay(100, ct);
+        }
+    }
+
+    /// <summary>Polls a boolean expression until it is true or the time runs out.</summary>
+    public async Task<bool> WaitForAsync(string expression, TimeSpan timeout, CancellationToken ct)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            if (await EvaluateAsync<bool>(expression, ct))
+                return true;
+            await Task.Delay(100, ct);
+        }
+
+        return false;
+    }
+
+    public async Task<T> EvaluateAsync<T>(string expression, CancellationToken ct)
+    {
+        var response = await SendAsync("Runtime.evaluate", new { expression, returnByValue = true, awaitPromise = true }, ct);
+        var result = response.GetProperty("result");
+        if (result.TryGetProperty("exceptionDetails", out var error))
+            throw new InvalidOperationException("Script failed: " + error);
+        return result.GetProperty("result").GetProperty("value").Deserialize<T>()!;
+    }
+
+    private async Task<JsonElement> SendAsync(string method, object parameters, CancellationToken ct)
+    {
+        var id = Interlocked.Increment(ref _nextId);
+        var payload = JsonSerializer.SerializeToUtf8Bytes(new { id, method, @params = parameters });
+        await _socket.SendAsync(payload, WebSocketMessageType.Text, endOfMessage: true, ct);
+
+        var buffer = new byte[64 * 1024];
+        while (true)
+        {
+            using var message = new MemoryStream();
+            WebSocketReceiveResult received;
+            do
+            {
+                received = await _socket.ReceiveAsync(buffer, ct);
+                message.Write(buffer, 0, received.Count);
+            }
+            while (!received.EndOfMessage);
+
+            using var document = JsonDocument.Parse(Encoding.UTF8.GetString(message.ToArray()));
+            // Events (no id) and other responses are skipped; only this command's reply is returned.
+            if (document.RootElement.TryGetProperty("id", out var replyId) && replyId.GetInt32() == id)
+            {
+                if (document.RootElement.TryGetProperty("error", out var error))
+                    throw new InvalidOperationException($"{method} failed: {error}");
+                return document.RootElement.Clone();
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { _socket.Dispose(); } catch (WebSocketException) { }
+        try
+        {
+            if (!_process.HasExited)
+                _process.Kill(entireProcessTree: true);
+            await _process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or TimeoutException) { }
+        finally
+        {
+            _process.Dispose();
+        }
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            try { Directory.Delete(_profile, recursive: true); break; }
+            catch (IOException) { await Task.Delay(200); }
+            catch (UnauthorizedAccessException) { await Task.Delay(200); }
+        }
+    }
+}

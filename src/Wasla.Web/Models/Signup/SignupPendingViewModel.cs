@@ -41,4 +41,16 @@ public sealed class SignupPendingViewModel
     public string? PanelLoginUrl { get; set; }
 
     public bool ShowCheckoutAction { get; set; }
+
+    /// <summary>
+    /// True only for the browser that proved it submitted this signup. Otherwise the business, plan,
+    /// contact, and owner fields are left empty and only the public status is shown.
+    /// </summary>
+    public bool ShowPrivateDetails { get; set; }
+
+    /// <summary>
+    /// True only in Development, where checkout offers the payment simulator. Elsewhere the page must not
+    /// suggest that payment can be simulated.
+    /// </summary>
+    public bool ShowPaymentSimulatorNote { get; set; }
 }
