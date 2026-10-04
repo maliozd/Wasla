@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -19,37 +20,13 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
   </ItemGroup>
 
+  <!-- The engine (Wasla.PrintBridge.Core) and the desktop host (Wasla.PrintBridge) are referenced as
+       real assemblies so tests exercise the shipped code rather than linked copies of its source. -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\Wasla.Application\Wasla.Application.csproj" />
     <ProjectReference Include="..\..\src\Wasla.Infrastructure\Wasla.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <!-- Pure protocol-parsing logic from the desktop app, compiled here for unit testing
-       (no WinForms/Windows dependency, so no project reference to the WinExe is needed). -->
-  <ItemGroup>
-    <Compile Include="..\..\src\Wasla.PrintBridge\Setup\PrintBridgeProtocolUri.cs" Link="Setup\PrintBridgeProtocolUri.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeSetupHttpClientFactory.cs" Link="Services\PrintBridgeSetupHttpClientFactory.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeSettingsValidator.cs" Link="Services\PrintBridgeSettingsValidator.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeConnectionException.cs" Link="Services\PrintBridgeConnectionException.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeRuntimeCredentialFallback.cs" Link="Services\PrintBridgeRuntimeCredentialFallback.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgeConnectionReset.cs" Link="Services\PrintBridgeConnectionReset.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Services\PrintBridgePollingGate.cs" Link="Services\PrintBridgePollingGate.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\UI\PrintBridgeConnectionFieldSync.cs" Link="UI\PrintBridgeConnectionFieldSync.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\UI\PrintBridgeTokenPasteGuard.cs" Link="UI\PrintBridgeTokenPasteGuard.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\UI\PrintBridgeWindowSize.cs" Link="UI\PrintBridgeWindowSize.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Localization\SupportedCultures.cs" Link="Localization\SupportedCultures.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Options\WaslaOptions.cs" Link="Options\WaslaOptions.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Options\PrintBridgeOptions.cs" Link="Options\PrintBridgeOptions.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Options\UiOptions.cs" Link="Options\UiOptions.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Models\PrintBridgeRuntimeStatus.cs" Link="Models\PrintBridgeRuntimeStatus.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Models\PrintBridgeRuntimeIssue.cs" Link="Models\PrintBridgeRuntimeIssue.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Models\BridgeServerConnectionStatus.cs" Link="Models\BridgeServerConnectionStatus.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Models\PrinterHealthStatus.cs" Link="Models\PrinterHealthStatus.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Models\TrayIconState.cs" Link="Models\TrayIconState.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Models\LocalPrintJobRecord.cs" Link="Models\LocalPrintJobRecord.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Models\LocalPrintJobStatus.cs" Link="Models\LocalPrintJobStatus.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Printing\IReceiptPrinter.cs" Link="Printing\IReceiptPrinter.cs" />
-    <Compile Include="..\..\src\Wasla.PrintBridge\Printing\WindowsReceiptPrinter.cs" Link="Printing\WindowsReceiptPrinter.cs" />
+    <ProjectReference Include="..\..\src\Wasla.PrintBridge.Core\Wasla.PrintBridge.Core.csproj" />
+    <ProjectReference Include="..\..\src\Wasla.PrintBridge\Wasla.PrintBridge.csproj" />
   </ItemGroup>
 
 </Project>

@@ -27,7 +27,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Wasla.Application\Wasla.Application.csproj" />
+		<ProjectReference Include="..\Wasla.PrintBridge.Core\Wasla.PrintBridge.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Wasla.PrintBridge.Tests" />
 	</ItemGroup>
 
 	<ItemGroup>

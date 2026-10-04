@@ -72,8 +72,8 @@ public sealed class PrintBridgeSettingsConnectionUiTests
     public void AutomaticProtocolSetup_InfrastructureStillExists()
     {
         var root = FindRepositoryRoot();
-        var coordinator = Path.Combine(root, "src", "Wasla.PrintBridge", "Setup", "PrintBridgeAutoSetupCoordinator.cs");
-        var protocol = Path.Combine(root, "src", "Wasla.PrintBridge", "Setup", "PrintBridgeProtocolUri.cs");
+        var coordinator = Path.Combine(root, "src", "Wasla.PrintBridge.Core", "Setup", "PrintBridgeAutoSetupCoordinator.cs");
+        var protocol = Path.Combine(root, "src", "Wasla.PrintBridge.Core", "Setup", "PrintBridgeProtocolUri.cs");
         var tray = File.ReadAllText(Path.Combine(root, "src", "Wasla.PrintBridge", "UI", "TrayApplicationContext.cs"));
 
         Assert.True(File.Exists(coordinator));
