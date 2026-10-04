@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.Checkout;
@@ -281,20 +283,17 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new CheckoutSimulationResult(CheckoutSimulationOutcome.InvalidState, registration.Id);
 
         if (IsExpired(registration))
-        {
-            registration.Status = PendingRegistrationStatus.Expired;
-            await _central.SaveChangesAsync(ct);
-            return new CheckoutSimulationResult(CheckoutSimulationOutcome.AlreadyExpired, registration.Id);
-        }
+            return await MarkExpiredAsync(registration, ct);
 
         var reference = GenerateSimulatedPaymentReference();
         var now = DateTime.UtcNow;
-        registration.Status = PendingRegistrationStatus.PaymentSucceeded;
-        registration.PaymentSucceededAtUtc = now;
-        registration.PaymentFailedAtUtc = null;
-        registration.SimulatedPaymentReference = reference;
-
-        await _central.SaveChangesAsync(ct);
+        var applied = await TryChangeStatusAsync(registration, setters => setters
+            .SetProperty(p => p.Status, PendingRegistrationStatus.PaymentSucceeded)
+            .SetProperty(p => p.PaymentSucceededAtUtc, now)
+            .SetProperty(p => p.PaymentFailedAtUtc, (DateTime?)null)
+            .SetProperty(p => p.SimulatedPaymentReference, reference), ct);
+        if (!applied)
+            return await OutcomeAfterConcurrentChangeAsync(registration.Id, ct);
 
         _logger.LogInformation(
             "Simulated payment success. RegistrationId={RegistrationId} Reference={Reference}",
@@ -320,16 +319,14 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new CheckoutSimulationResult(CheckoutSimulationOutcome.InvalidState, registration.Id);
 
         if (IsExpired(registration))
-        {
-            registration.Status = PendingRegistrationStatus.Expired;
-            await _central.SaveChangesAsync(ct);
-            return new CheckoutSimulationResult(CheckoutSimulationOutcome.AlreadyExpired, registration.Id);
-        }
+            return await MarkExpiredAsync(registration, ct);
 
-        registration.Status = PendingRegistrationStatus.PaymentFailed;
-        registration.PaymentFailedAtUtc = DateTime.UtcNow;
-
-        await _central.SaveChangesAsync(ct);
+        var now = DateTime.UtcNow;
+        var applied = await TryChangeStatusAsync(registration, setters => setters
+            .SetProperty(p => p.Status, PendingRegistrationStatus.PaymentFailed)
+            .SetProperty(p => p.PaymentFailedAtUtc, now), ct);
+        if (!applied)
+            return await OutcomeAfterConcurrentChangeAsync(registration.Id, ct);
 
         _logger.LogInformation("Simulated payment failure. RegistrationId={RegistrationId}", registration.Id);
 
@@ -356,12 +353,60 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         if (registration.Status is not (PendingRegistrationStatus.AwaitingPayment or PendingRegistrationStatus.PaymentFailed))
             return new CheckoutSimulationResult(CheckoutSimulationOutcome.InvalidState, registration.Id);
 
-        registration.Status = PendingRegistrationStatus.Cancelled;
-        await _central.SaveChangesAsync(ct);
+        var applied = await TryChangeStatusAsync(registration, setters => setters
+            .SetProperty(p => p.Status, PendingRegistrationStatus.Cancelled), ct);
+        if (!applied)
+            return await OutcomeAfterConcurrentChangeAsync(registration.Id, ct);
 
         _logger.LogInformation("Pending registration cancelled. RegistrationId={RegistrationId}", registration.Id);
 
         return new CheckoutSimulationResult(CheckoutSimulationOutcome.Applied, registration.Id);
+    }
+
+    /// <summary>
+    /// Applies a status change only if the stored status is still the one this request read. A second
+    /// request (another tab, a double submit) may change the registration in between, and that change
+    /// must not be overwritten; for example a paid registration must never become cancelled or failed.
+    /// </summary>
+    private async Task<bool> TryChangeStatusAsync(
+        PendingRegistration registration,
+        Expression<Func<SetPropertyCalls<PendingRegistration>, SetPropertyCalls<PendingRegistration>>> setters,
+        CancellationToken ct)
+    {
+        var id = registration.Id;
+        var observedStatus = registration.Status;
+        var updated = await _central.PendingRegistrations
+            .Where(p => p.Id == id && p.Status == observedStatus)
+            .ExecuteUpdateAsync(setters, ct);
+        return updated == 1;
+    }
+
+    private async Task<CheckoutSimulationResult> MarkExpiredAsync(PendingRegistration registration, CancellationToken ct)
+    {
+        var applied = await TryChangeStatusAsync(registration, setters => setters
+            .SetProperty(p => p.Status, PendingRegistrationStatus.Expired), ct);
+        return applied
+            ? new CheckoutSimulationResult(CheckoutSimulationOutcome.AlreadyExpired, registration.Id)
+            : await OutcomeAfterConcurrentChangeAsync(registration.Id, ct);
+    }
+
+    /// <summary>Reports the status another request just stored instead of applying this one.</summary>
+    private async Task<CheckoutSimulationResult> OutcomeAfterConcurrentChangeAsync(Guid registrationId, CancellationToken ct)
+    {
+        var status = await _central.PendingRegistrations
+            .AsNoTracking()
+            .Where(p => p.Id == registrationId)
+            .Select(p => (PendingRegistrationStatus?)p.Status)
+            .FirstOrDefaultAsync(ct);
+
+        return status switch
+        {
+            null => new CheckoutSimulationResult(CheckoutSimulationOutcome.NotFound, null),
+            PendingRegistrationStatus.PaymentFailed => new CheckoutSimulationResult(
+                CheckoutSimulationOutcome.AlreadyPaymentFailed, registrationId),
+            _ => MapTerminalOutcome(status.Value, registrationId)
+                ?? new CheckoutSimulationResult(CheckoutSimulationOutcome.InvalidState, registrationId)
+        };
     }
 
     private static CheckoutSimulationResult? MapTerminalOutcome(PendingRegistrationStatus status, Guid registrationId) =>

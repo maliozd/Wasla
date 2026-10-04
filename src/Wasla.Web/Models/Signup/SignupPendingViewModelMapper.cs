@@ -6,20 +6,24 @@ namespace Wasla.Web.Models.Signup;
 
 public static class SignupPendingViewModelMapper
 {
+    /// <summary>
+    /// Maps a registration for the status pages. Without <paramref name="includePrivateDetails"/> the
+    /// model carries only the status and the tenant address, which the visitor already knows.
+    /// </summary>
     public static SignupPendingViewModel FromSummary(
         PendingRegistrationSummary summary,
         string planDisplayName,
         HttpRequest request,
         IWebHostEnvironment environment,
         string marketingBaseDomain,
+        bool includePrivateDetails,
         bool showCheckoutAction = false)
     {
         var hasPrimaryDomain = !string.IsNullOrWhiteSpace(summary.PrimaryDomain);
 
-        return new SignupPendingViewModel
+        var model = new SignupPendingViewModel
         {
             RegistrationId = summary.Id,
-            BusinessName = summary.BusinessName,
             PrimaryDomain = summary.PrimaryDomain,
             CentralHomepageUrl = TenantWelcomeUrlBuilder.BuildCentralHomepageUrl(
                 request,
@@ -31,22 +35,30 @@ public static class SignupPendingViewModelMapper
                     environment,
                     summary.PrimaryDomain)
                 : null,
-            PlanCode = summary.PlanCode,
-            PlanDisplayName = planDisplayName,
-            BillingPeriod = summary.BillingPeriod,
             Status = summary.Status,
-            BusinessPhone = summary.BusinessPhone,
-            BusinessEmail = summary.BusinessEmail,
-            OwnerFullName = summary.OwnerFullName,
-            OwnerEmail = summary.OwnerEmail,
-            OwnerPhone = summary.OwnerPhone,
-            CreatedAtUtc = summary.CreatedAtUtc,
-            PaymentSucceededAtUtc = summary.PaymentSucceededAtUtc,
-            ProvisionedAtUtc = summary.ProvisionedAtUtc,
             PanelLoginUrl = summary.Status == PendingRegistrationStatus.Provisioned && hasPrimaryDomain
                 ? TenantWelcomeUrlBuilder.BuildLoginUrl(request, environment, summary.PrimaryDomain)
-                : null,
-            ShowCheckoutAction = showCheckoutAction
+                : null
         };
+
+        if (!includePrivateDetails)
+            return model;
+
+        model.ShowPrivateDetails = true;
+        model.ShowCheckoutAction = showCheckoutAction;
+        model.ShowPaymentSimulatorNote = showCheckoutAction && environment.IsDevelopment();
+        model.BusinessName = summary.BusinessName;
+        model.PlanCode = summary.PlanCode;
+        model.PlanDisplayName = planDisplayName;
+        model.BillingPeriod = summary.BillingPeriod;
+        model.BusinessPhone = summary.BusinessPhone;
+        model.BusinessEmail = summary.BusinessEmail;
+        model.OwnerFullName = summary.OwnerFullName;
+        model.OwnerEmail = summary.OwnerEmail;
+        model.OwnerPhone = summary.OwnerPhone;
+        model.CreatedAtUtc = summary.CreatedAtUtc;
+        model.PaymentSucceededAtUtc = summary.PaymentSucceededAtUtc;
+        model.ProvisionedAtUtc = summary.ProvisionedAtUtc;
+        return model;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -10,6 +11,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Web.Models.Checkout;
 using Wasla.Web.Models.Signup;
+using Wasla.Web.Security;
 
 namespace Wasla.Web.Controllers;
 
@@ -22,24 +24,36 @@ public sealed class CheckoutController : Controller
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
     private readonly CustomerOnboardingOptions _onboardingOptions;
+    private readonly SignupRegistrationOwnership _ownership;
 
     public CheckoutController(
         IPendingRegistrationService pendingRegistrations,
         IWaslaPlanCatalog planCatalog,
         IStringLocalizer<SharedResource> localizer,
         IWebHostEnvironment environment,
-        IOptions<CustomerOnboardingOptions> onboardingOptions)
+        IOptions<CustomerOnboardingOptions> onboardingOptions,
+        IDataProtectionProvider dataProtection)
     {
         _pendingRegistrations = pendingRegistrations;
         _planCatalog = planCatalog;
         _localizer = localizer;
         _environment = environment;
         _onboardingOptions = onboardingOptions.Value;
+        _ownership = new SignupRegistrationOwnership(dataProtection, environment);
     }
 
+    // A registration ID is not secret (the pending-tenant redirect reveals it). Private pages and every
+    // registration change require the ownership proof issued by the signup submission; anyone else is
+    // sent to the public status page or gets 404.
+
+    // Private pages: no cache may keep the applicant's details for another request.
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [HttpGet("review/{id:guid}")]
     public async Task<IActionResult> Review(Guid id, CancellationToken ct)
     {
+        if (!IsOwner(id))
+            return RedirectToPublicStatus(id);
+
         var details = await _pendingRegistrations.GetCheckoutDetailsAsync(id, ct);
         if (details is null)
             return NotFound();
@@ -51,6 +65,9 @@ public sealed class CheckoutController : Controller
     [HttpPost("simulate-success/{id:guid}")]
     public async Task<IActionResult> SimulateSuccess(Guid id, CancellationToken ct)
     {
+        if (!IsPaymentSimulatorAvailable || !IsOwner(id))
+            return NotFound();
+
         var result = await _pendingRegistrations.SimulatePaymentSuccessAsync(id, ct);
         return HandleSimulationResult(result, nameof(Success));
     }
@@ -59,21 +76,32 @@ public sealed class CheckoutController : Controller
     [HttpPost("simulate-failed/{id:guid}")]
     public async Task<IActionResult> SimulateFailed(Guid id, CancellationToken ct)
     {
+        if (!IsPaymentSimulatorAvailable || !IsOwner(id))
+            return NotFound();
+
         var result = await _pendingRegistrations.SimulatePaymentFailedAsync(id, ct);
         return HandleSimulationResult(result, nameof(Failed));
     }
 
+    // Cancelling releases the slug, so without ownership proof it must not change anything.
     [ValidateAntiForgeryToken]
     [HttpPost("cancel/{id:guid}")]
     public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
     {
+        if (!IsOwner(id))
+            return NotFound();
+
         var result = await _pendingRegistrations.CancelRegistrationAsync(id, ct);
         return HandleSimulationResult(result, nameof(Cancelled));
     }
 
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [HttpGet("success/{id:guid}")]
     public async Task<IActionResult> Success(Guid id, CancellationToken ct)
     {
+        if (!IsOwner(id))
+            return RedirectToPublicStatus(id);
+
         var summary = await _pendingRegistrations.GetSummaryAsync(id, ct);
         if (summary is null)
             return NotFound();
@@ -91,7 +119,8 @@ public sealed class CheckoutController : Controller
             planDisplay,
             Request,
             _environment,
-            _onboardingOptions.MarketingBaseDomain));
+            _onboardingOptions.MarketingBaseDomain,
+            includePrivateDetails: true));
     }
 
     [HttpGet("failed/{id:guid}")]
@@ -104,12 +133,8 @@ public sealed class CheckoutController : Controller
         if (details.Status != PendingRegistrationStatus.PaymentFailed)
             return RedirectToAction(nameof(Review), new { id });
 
-        return View(new CheckoutResultViewModel
-        {
-            RegistrationId = details.Id,
-            BusinessName = details.BusinessName,
-            PrimaryDomain = details.PrimaryDomain
-        });
+        // Public page: it carries only the ID and shows generic text.
+        return View(new CheckoutResultViewModel { RegistrationId = details.Id });
     }
 
     [HttpGet("cancelled/{id:guid}")]
@@ -122,13 +147,18 @@ public sealed class CheckoutController : Controller
         if (details.Status != PendingRegistrationStatus.Cancelled)
             return RedirectToAction(nameof(Review), new { id });
 
-        return View(new CheckoutResultViewModel
-        {
-            RegistrationId = details.Id,
-            BusinessName = details.BusinessName,
-            PrimaryDomain = details.PrimaryDomain
-        });
+        // Public page: it carries only the ID and shows generic text.
+        return View(new CheckoutResultViewModel { RegistrationId = details.Id });
     }
+
+    // The payment simulator is a local-development tool. Anywhere else it would let an anonymous
+    // request mark a registration as paid, which makes it eligible for provisioning.
+    private bool IsPaymentSimulatorAvailable => _environment.IsDevelopment();
+
+    private bool IsOwner(Guid registrationId) => _ownership.IsOwner(Request, registrationId);
+
+    private RedirectToActionResult RedirectToPublicStatus(Guid registrationId) =>
+        RedirectToAction(nameof(SignupController.Pending), "Signup", new { id = registrationId });
 
     private IActionResult HandleSimulationResult(CheckoutSimulationResult result, string targetAction)
     {
@@ -161,9 +191,10 @@ public sealed class CheckoutController : Controller
             ? _localizer[plan.DisplayNameKey].Value
             : _localizer["Checkout.UnknownPlanLabel"].Value;
 
-        var canSimulate = details.Status is PendingRegistrationStatus.AwaitingPayment
+        // Only the proven applicant reaches this view; the service re-applies the status rules on submit.
+        var canCancel = details.Status is PendingRegistrationStatus.AwaitingPayment
             or PendingRegistrationStatus.PaymentFailed;
-        var canCancel = canSimulate;
+        var canSimulate = canCancel && IsPaymentSimulatorAvailable;
 
         string? statusNoticeKey = details.Status switch
         {
