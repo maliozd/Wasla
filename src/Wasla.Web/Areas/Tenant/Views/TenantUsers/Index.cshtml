@@ -93,10 +93,26 @@
                 <table class="wasla-table">
                     <thead>
                         <tr>
-                            <th scope="col">@L["TenantUsers.Name"]</th>
-                            <th scope="col">@L["TenantUsers.Role"]</th>
+                            @* The full list is on the page, so sorting is client-side (tenant-users-index.js) and sets aria-sort. *@
+                            <th scope="col" class="wasla-table__sortable">
+                                <button type="button" class="wasla-table__sort" data-users-sort="name">
+                                    <span>@L["TenantUsers.Name"]</span>
+                                    <i class="bi bi-arrow-down-up wasla-table__sort-icon" aria-hidden="true"></i>
+                                </button>
+                            </th>
+                            <th scope="col" class="wasla-table__sortable">
+                                <button type="button" class="wasla-table__sort" data-users-sort="role">
+                                    <span>@L["TenantUsers.Role"]</span>
+                                    <i class="bi bi-arrow-down-up wasla-table__sort-icon" aria-hidden="true"></i>
+                                </button>
+                            </th>
                             <th scope="col">@L["TenantUsers.Status"]</th>
-                            <th class="wasla-col--secondary" scope="col">@L["TenantUsers.CreatedAt"]</th>
+                            <th scope="col" class="wasla-table__sortable wasla-col--secondary">
+                                <button type="button" class="wasla-table__sort" data-users-sort="created">
+                                    <span>@L["TenantUsers.CreatedAt"]</span>
+                                    <i class="bi bi-arrow-down-up wasla-table__sort-icon" aria-hidden="true"></i>
+                                </button>
+                            </th>
                             <th class="wasla-col--secondary" scope="col">@L["TenantUsers.LastLogin"]</th>
                             <th scope="col">@L["TenantUsers.Actions"]</th>
                         </tr>
@@ -110,6 +126,10 @@
                             var statusLabel = user.IsActive ? L["TenantUsers.Active"].Value : L["TenantUsers.Inactive"].Value;
                             var searchHaystack = $"{user.FullName} {user.Email} {roleLabel} {statusLabel}".Trim();
                             <tr data-user-row
+                                data-sort-name="@(string.IsNullOrWhiteSpace(user.FullName) ? user.Email : user.FullName)"
+                                data-sort-role="@((int)user.Role)"
+                                data-sort-created="@user.CreatedAt.ToString("O", CultureInfo.InvariantCulture)"
+                                data-sort-email="@user.Email"
                                 data-role="@user.Role.ToString()"
                                 data-status="@(user.IsActive ? "active" : "inactive")"
                                 data-search="@searchHaystack">

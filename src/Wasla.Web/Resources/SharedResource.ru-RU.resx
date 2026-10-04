@@ -4395,4 +4395,5 @@
   <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>Тестовый арендатор возвращён к первому запуску. При необходимости сбросьте разрешение браузера на уведомления вручную в настройках сайта в Chrome.</value></data>
   <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>Перед сбросом остановите Wasla.Worker, закройте приложение Print Bridge и убедитесь, что сейчас не выполняется настройка Print Bridge. Иначе ещё идущий цикл синхронизации или настройка могут снова добавить данные после сброса, а тестовый (mock) провайдер хранит номера заказов в памяти. После завершения сброса снова запустите Worker.</value></data>
   <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>Сброс выполнен лишь частично: устройства Print Bridge удалены, но остальные изменения отменены. Запустите сброс ещё раз, чтобы завершить его.</value></data>
+  <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>Автоматизация</value></data>
 </root>

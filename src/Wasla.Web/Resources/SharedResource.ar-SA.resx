@@ -3911,4 +3911,5 @@
   <data name="DevelopmentTools.Reset.Succeeded" xml:space="preserve"><value>عاد المستأجر التجريبي إلى حالة الاستخدام الأول. إذا لزم الأمر، أعد تعيين إذن الإشعارات في المتصفح يدويًا من إعدادات الموقع في Chrome.</value></data>
   <data name="DevelopmentTools.Reset.StopWorker" xml:space="preserve"><value>قبل استخدام إعادة التعيين، أوقف Wasla.Worker، وأغلق تطبيق Print Bridge، وتأكد من عدم وجود عملية إعداد لـ Print Bridge قيد التشغيل حاليًا. وإلا فقد تضيف دورة مزامنة أو عملية إعداد لا تزال قيد التشغيل بيانات من جديد بعد إعادة التعيين، كما يحتفظ المزوّد التجريبي (mock) بأرقام الطلبات في الذاكرة. شغّل Worker من جديد بعد انتهاء إعادة التعيين.</value></data>
   <data name="DevelopmentTools.Reset.Partial" xml:space="preserve"><value>لم تكتمل إعادة التعيين: أُزيلت أجهزة Print Bridge، لكن تم التراجع عن بقية البيانات. شغّل إعادة التعيين مرة أخرى لإكمالها.</value></data>
+  <data name="Orders.LiveSettings.AutomationGroup" xml:space="preserve"><value>الأتمتة</value></data>
 </root>
