@@ -629,6 +629,8 @@
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>Ссылка настройки недействительна или её срок истёк.</value></data>
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge на этом компьютере уже зарегистрирован как активное устройство. Используйте в Wasla Web вариант "Повторно подключить существующее устройство" вместо настройки нового устройства или сначала удалите старую запись устройства.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Не удалось завершить автоматическую настройку.</value></data>
+  <data name="Auto.PrintingInProgress" xml:space="preserve"><value>Задание печати чека ещё выполняется. Подключение не изменено; чек завершается через сохранённое подключение. Откройте ссылку настройки ещё раз, когда печать закончится.</value></data>
+  <data name="Settings.Connection.PrintingInProgress" xml:space="preserve"><value>Задание печати чека ещё выполняется. Подключение не изменено. Повторите попытку, когда печать закончится.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>Подключение</value>
   </data>

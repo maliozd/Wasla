@@ -76,6 +76,7 @@ public static class PrintBridgeAppServices
 
         services.AddSingleton<PrintBridgeDeviceMetadataSync>();
         services.AddSingleton<PrintBridgeRuntime>();
+        services.AddSingleton<IPrintBridgeConnectionGuard>(sp => sp.GetRequiredService<PrintBridgeRuntime>());
         services.AddSingleton<Wasla.PrintBridge.Setup.PrintBridgeAutoSetupCoordinator>();
 
         var provider = services.BuildServiceProvider();

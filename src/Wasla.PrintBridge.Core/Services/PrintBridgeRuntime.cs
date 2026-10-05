@@ -6,7 +6,7 @@ using Wasla.PrintBridge.Printing;
 
 namespace Wasla.PrintBridge.Services;
 
-public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
+public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrintBridgeConnectionGuard
 {
     private const int MaxRecentJobs = 50;
 
@@ -29,10 +29,10 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     private DateTime? _lastPollUtc;
     private PrintBridgeRuntimeIssue? _lastIssue;
 
-    // Guarded by _sync: jobs between their claim request and their last report, and whether the loop must leave new
-    // jobs pending because a connection change is stopping it.
+    // Guarded by _sync: jobs between their claim request and their last report, and connection changes in progress;
+    // while any change is in progress the loop leaves new jobs pending.
     private int _jobsInProgress;
-    private bool _holdNewJobs;
+    private int _connectionChanges;
 
     public PrintBridgeRuntime(
         WaslaPrintBridgeClient client,
@@ -234,29 +234,53 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         bool startListening,
         CancellationToken abandon)
     {
-        lock (_sync)
-        {
-            if (_jobsInProgress > 0)
-                return PrintBridgeConnectionChange.PrintingInProgress;
+        var change = TryBeginConnectionChange();
+        if (change is null)
+            return PrintBridgeConnectionChange.PrintingInProgress;
 
-            _holdNewJobs = true;
-        }
-
-        bool wasRunning;
         try
         {
-            if (WhileJobsAreHeldForTests is { } whileHeld)
-                await whileHeld().ConfigureAwait(false);
-
-            wasRunning = IsRunning;
-            if (wasRunning)
-                await StopAsync().ConfigureAwait(false);
+            return await ApplyVerifiedConnectionCoreAsync(verified, health, startListening, abandon, change).ConfigureAwait(false);
         }
         finally
         {
-            lock (_sync)
-                _holdNewJobs = false;
+            change.Dispose();
         }
+    }
+
+    /// <inheritdoc />
+    public IDisposable? TryBeginConnectionChange()
+    {
+        lock (_sync)
+        {
+            if (_jobsInProgress > 0)
+                return null;
+
+            _connectionChanges++;
+        }
+
+        return new ConnectionChangeLease(this);
+    }
+
+    private void EndConnectionChange()
+    {
+        lock (_sync)
+            _connectionChanges--;
+    }
+
+    private async Task<PrintBridgeConnectionChange> ApplyVerifiedConnectionCoreAsync(
+        WaslaOptions verified,
+        WaslaPrintBridgeClient.PrintBridgeHealthResult health,
+        bool startListening,
+        CancellationToken abandon,
+        IDisposable change)
+    {
+        if (WhileJobsAreHeldForTests is { } whileHeld)
+            await whileHeld().ConfigureAwait(false);
+
+        var wasRunning = IsRunning;
+        if (wasRunning)
+            await StopAsync().ConfigureAwait(false);
 
         if (abandon.IsCancellationRequested)
             return PrintBridgeConnectionChange.Abandoned;
@@ -287,6 +311,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "Print Bridge connection settings could not be saved; the previous connection is kept.");
+            change.Dispose();
             if (wasRunning)
                 TryStartListening();
             return PrintBridgeConnectionChange.SaveFailed;
@@ -295,6 +320,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         _holder.Replace(connection, updatedBridge, ui);
         _logger.LogInformation("Print Bridge connection settings saved after verification. TokenChanged={TokenChanged}", tokenChanged);
         RecordVerifiedContact(health);
+        change.Dispose();
 
         if ((wasRunning || startListening) && !abandon.IsCancellationRequested)
             TryStartListening();
@@ -456,7 +482,9 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var (_, bridge, _) = _holder.Snapshot();
+            var (hub, bridge, _) = _holder.Snapshot();
+            // One connection for the whole cycle: its poll, and every request of the jobs it claims (WAS-58).
+            var connection = new WaslaOptions { ServerUrl = hub.ServerUrl, AgentToken = hub.AgentToken };
             var waitSeconds = Math.Max(1, bridge.IdlePollIntervalSeconds);
             var hadJobs = false;
             var hadError = false;
@@ -468,16 +496,18 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
 
             try
             {
-                var health = await _client.TestHealthAsync(stoppingToken).ConfigureAwait(false);
-                _deviceMetadataSync.ApplyFromHealth(health);
-
-                lock (_sync)
+                var health = await _client.TestHealthAsync(connection, stoppingToken).ConfigureAwait(false);
+                if (IsSavedConnection(connection))
                 {
-                    _lastSuccessfulContactUtc = DateTime.UtcNow;
-                    _lastIssue = null;
+                    _deviceMetadataSync.ApplyFromHealth(health);
+                    lock (_sync)
+                    {
+                        _lastSuccessfulContactUtc = DateTime.UtcNow;
+                        _lastIssue = null;
+                    }
                 }
 
-                var jobs = await _client.GetPendingJobsAsync(stoppingToken).ConfigureAwait(false);
+                var jobs = await _client.GetPendingJobsAsync(stoppingToken, connection).ConfigureAwait(false);
                 _logger.LogInformation("Polling result: pending job count={Count}", jobs.Count);
 
                 if (jobs.Count > 0)
@@ -485,15 +515,17 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
                     hadJobs = true;
                     foreach (var job in jobs)
                     {
-                        // Stop or a connection change ends the loop: leave the job pending for the next start.
-                        if (!TryBeginJob(loop))
+                        // Stop, a connection change in progress, or a connection that changed since this poll: leave
+                        // the job pending on the server that offered it.
+                        if (!TryBeginJob(loop, connection))
                             break;
 
                         try
                         {
                             RegisterJobReceived(job);
-                            // A job that is about to be claimed runs to its end without the loop's cancellation.
-                            await ProcessJobAsync(job).ConfigureAwait(false);
+                            // A job that is about to be claimed runs to its end without the loop's cancellation, and
+                            // every one of its requests uses this cycle's connection.
+                            await ProcessJobAsync(job, connection).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -505,6 +537,12 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
                 break;
+            }
+            catch (Exception ex) when (!IsSavedConnection(connection))
+            {
+                // The connection was replaced during this cycle; a failure of the old one says nothing about the new.
+                hadError = true;
+                _logger.LogWarning(ex, "Print Bridge request to a replaced connection failed; the saved connection is not affected.");
             }
             catch (Exception ex)
             {
@@ -541,16 +579,28 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         _logger.LogInformation("Wasla Print Bridge background loop stopped.");
     }
 
-    private bool TryBeginJob(PollingLoop loop)
+    /// <summary>
+    /// The one place a job becomes active. Under the same lock as <see cref="TryBeginConnectionChange"/>, so a job and a
+    /// connection change can never both proceed: the job starts only when no change is in progress and the saved
+    /// connection is still the one that offered it.
+    /// </summary>
+    private bool TryBeginJob(PollingLoop loop, WaslaOptions connection)
     {
         lock (_sync)
         {
-            if (_holdNewJobs || loop.StopRequested)
+            if (_connectionChanges > 0 || loop.StopRequested || !IsSavedConnection(connection))
                 return false;
 
             _jobsInProgress++;
             return true;
         }
+    }
+
+    private bool IsSavedConnection(WaslaOptions connection)
+    {
+        var saved = _holder.OrderHub;
+        return string.Equals(saved.ServerUrl, connection.ServerUrl, StringComparison.Ordinal)
+            && string.Equals(saved.AgentToken, connection.AgentToken, StringComparison.Ordinal);
     }
 
     private void EndJob()
@@ -581,8 +631,10 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     /// its own limits: the HTTP client timeout, the spooler call and a fixed number of printed-report attempts. A job is
     /// reported failed only when its receipt was not printed. Once printed, it stays printed: mark-printed is repeated
     /// after a server or network failure (the server ignores a repeat), and mark-failed is never sent for it.
+    /// Every request uses <paramref name="connection"/>, the connection that offered the job, so no report ever goes to a
+    /// server or token the job was not claimed from (WAS-58).
     /// </summary>
-    private async Task ProcessJobAsync(WaslaPrintBridgeClient.PendingPrintJobDto job)
+    private async Task ProcessJobAsync(WaslaPrintBridgeClient.PendingPrintJobDto job, WaslaOptions connection)
     {
         var ct = CancellationToken.None;
         _logger.LogInformation("Job claim attempted. JobId={JobId}, OrderId={OrderId}", job.Id, job.OrderId);
@@ -590,7 +642,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         WaslaPrintBridgeClient.PrintJobActionResult claim;
         try
         {
-            claim = await _client.MarkPrintingAsync(job.Id, ct).ConfigureAwait(false);
+            claim = await _client.MarkPrintingAsync(job.Id, ct, connection).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -659,7 +711,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
 
             try
             {
-                var failed = await _client.MarkFailedAsync(job.Id, ex.Message, ct).ConfigureAwait(false);
+                var failed = await _client.MarkFailedAsync(job.Id, ex.Message, ct, connection).ConfigureAwait(false);
                 _logger.LogInformation(
                     "mark-failed result. JobId={JobId}, Success={Success}, Skipped={Skipped}, Result={Result}",
                     job.Id,
@@ -676,7 +728,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
             return;
         }
 
-        var printed = await ReportPrintedAsync(job.Id).ConfigureAwait(false);
+        var printed = await ReportPrintedAsync(job.Id, connection).ConfigureAwait(false);
         if (!printed.Success && !printed.Skipped)
             UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, $"mark-printed: {printed.Result}");
 
@@ -693,14 +745,14 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     /// every attempt fails, the exception reaches the polling loop, which records the connection problem; the job stays
     /// printed and is never reported failed.
     /// </summary>
-    private async Task<WaslaPrintBridgeClient.PrintJobActionResult> ReportPrintedAsync(Guid jobId)
+    private async Task<WaslaPrintBridgeClient.PrintJobActionResult> ReportPrintedAsync(Guid jobId, WaslaOptions connection)
     {
         var delays = PrintedReportRetryDelays;
         for (var attempt = 0; ; attempt++)
         {
             try
             {
-                return await _client.MarkPrintedAsync(jobId, CancellationToken.None).ConfigureAwait(false);
+                return await _client.MarkPrintedAsync(jobId, CancellationToken.None, connection).ConfigureAwait(false);
             }
             catch (PrintBridgeConnectionException ex) when (attempt < delays.Count && IsTransient(ex))
             {
@@ -920,6 +972,18 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         }
         catch (ObjectDisposedException)
         {
+        }
+    }
+
+    /// <summary>Ends a connection change once; disposing it again does nothing.</summary>
+    private sealed class ConnectionChangeLease(PrintBridgeRuntime runtime) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                runtime.EndConnectionChange();
         }
     }
 

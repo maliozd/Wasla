@@ -65,6 +65,11 @@ public sealed partial class MainForm
             return;
         }
 
+        // Refused while a print job is being completed; from here until polling restarts no job is claimed.
+        var change = TryBeginConnectionChange();
+        if (change is null)
+            return;
+
         var wasRunning = _runtime.IsRunning;
         var previous = CaptureSnapshot();
         var bridge = ClonePrintBridgeOptions(previous.Bridge);
@@ -92,6 +97,7 @@ public sealed partial class MainForm
             if (!TryPersistSettings(orderHub, bridge, ui))
             {
                 _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
+                change.Dispose();
                 if (wasRunning)
                     TryStartPolling();
                 return;
@@ -115,6 +121,7 @@ public sealed partial class MainForm
                 SetSectionStatus(_lblConnectionStatus, GetUserErrorMessage(ex), isError: true);
             }
 
+            change.Dispose();
             if (wasRunning)
                 TryStartPolling();
 
@@ -130,12 +137,14 @@ public sealed partial class MainForm
             _settingsHolder.Replace(previous.OrderHub, previous.Bridge, previous.Ui);
             _settingsLogger.LogWarning(ex, "Connection settings save/reconnect failed.");
             SetSectionStatus(_lblConnectionStatus, _localizer.GetString("Message.SettingsSaveFailed", ex.Message), isError: true);
+            change.Dispose();
             if (wasRunning)
                 TryStartPolling();
             RefreshDashboard();
         }
         finally
         {
+            change.Dispose();
             _isSavingConnection = false;
             SetConnectionFieldsEnabled(true);
             _btnSaveConnection.Enabled = true;
@@ -161,6 +170,11 @@ public sealed partial class MainForm
             return;
         }
 
+        // The test puts the typed connection in place for a moment, so no job may be active or start meanwhile.
+        var change = TryBeginConnectionChange();
+        if (change is null)
+            return;
+
         _isSavingConnection = true;
         SetConnectionFieldsEnabled(false);
         _btnSaveConnection.Enabled = false;
@@ -185,6 +199,7 @@ public sealed partial class MainForm
             RefreshDashboard();
             if (PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
             {
+                change.Dispose();
                 TryStartPolling();
                 SetSectionStatus(_lblConnectionStatus, _localizer["Message.ConnectionSuccess"], isSuccess: true);
             }
@@ -226,6 +241,7 @@ public sealed partial class MainForm
         }
         finally
         {
+            change.Dispose();
             _isSavingConnection = false;
             SetConnectionFieldsEnabled(true);
             _btnSaveConnection.Enabled = true;
@@ -366,6 +382,22 @@ public sealed partial class MainForm
                 MessageBoxIcon.Error);
             return false;
         }
+    }
+
+    /// <summary>
+    /// Asks the engine whether the connection may change now (<see cref="IPrintBridgeConnectionGuard"/>). While a print
+    /// job is being completed it may not: nothing is changed and the section says so.
+    /// </summary>
+    private IDisposable? TryBeginConnectionChange()
+    {
+        var change = _runtime.TryBeginConnectionChange();
+        if (change is null)
+        {
+            _settingsLogger.LogInformation("Connection settings were not changed because a print job is still being completed.");
+            SetSectionStatus(_lblConnectionStatus, _localizer["Settings.Connection.PrintingInProgress"], isError: true);
+        }
+
+        return change;
     }
 
     private void TryStartPolling()

@@ -629,6 +629,8 @@
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>رابط الإعداد غير صالح أو منتهي الصلاحية.</value></data>
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge على هذا الكمبيوتر مسجل بالفعل كجهاز نشط. استخدم خيار "إعادة توصيل جهاز موجود" في Wasla Web بدل إعداد جهاز جديد، أو أزل سجل الجهاز القديم أولًا.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد التلقائي.</value></data>
+  <data name="Auto.PrintingInProgress" xml:space="preserve"><value>لا تزال مهمة طباعة إيصال قيد الإكمال. لم يتم تغيير الاتصال؛ ستكتمل طباعة الإيصال عبر الاتصال المحفوظ. افتح رابط الإعداد مرة أخرى بعد انتهاء الطباعة.</value></data>
+  <data name="Settings.Connection.PrintingInProgress" xml:space="preserve"><value>لا تزال مهمة طباعة إيصال قيد الإكمال. لم يتم تغيير الاتصال. حاول مرة أخرى بعد انتهاء الطباعة.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>جارٍ الاتصال</value>
   </data>

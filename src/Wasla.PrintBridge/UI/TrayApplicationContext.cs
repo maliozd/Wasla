@@ -567,40 +567,28 @@ public sealed class TrayApplicationContext : ApplicationContext
             cts.CancelAfter(TimeSpan.FromSeconds(60));
             var outcome = await _autoSetup.ApplyAsync(request!, cts.Token).ConfigureAwait(true);
 
-            var (messageKey, icon) = outcome switch
-            {
-                Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected =>
-                    ("Auto.Connected", MessageBoxIcon.Information),
-                Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing =>
-                    ("Auto.ConnectedPrinterMissing", MessageBoxIcon.Information),
-                Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.SavedButUnverified =>
-                    ("Auto.SavedUnverified", MessageBoxIcon.Warning),
-                Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.InvalidOrExpired =>
-                    ("Auto.InvalidOrExpired", MessageBoxIcon.Warning),
-                _ => ("Auto.Failed", MessageBoxIcon.Warning)
-            };
+            var result = DescribeAutoSetupOutcome(outcome);
 
             UpdateTrayMenu();
 
             if (shell is null)
             {
-                _mainForm.RefreshAfterAutomaticSetup();
+                // A refused link changed nothing, so the open window keeps what is on screen.
+                if (outcome != Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.PrintingInProgress)
+                    _mainForm.RefreshAfterAutomaticSetup();
 
                 if (outcome == Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing)
                     _mainForm.FocusPrinterSettingsSection();
 
                 MessageBox.Show(
-                    _localizer[messageKey],
+                    _localizer[result.MessageKey],
                     PrintBridgePaths.ProductDisplayName,
                     MessageBoxButtons.OK,
-                    icon);
+                    result.Icon);
                 return;
             }
 
-            var saved = outcome is Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected
-                or Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing
-                or Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.SavedButUnverified;
-            if (saved)
+            if (result.Saved)
             {
                 // Same recovery as the classic window: verify the saved connection and resume listening.
                 using var verify = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
@@ -611,13 +599,11 @@ public sealed class TrayApplicationContext : ApplicationContext
             if (_lifetime.IsCancellationRequested)
                 return;
 
-            var connected = outcome is Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected
-                or Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing;
             ReportSetupResult(
                 shell,
-                connected ? ShellOperationOutcome.Succeeded : ShellOperationOutcome.Failed,
-                _localizer[messageKey],
-                icon,
+                result.Connected ? ShellOperationOutcome.Succeeded : ShellOperationOutcome.Failed,
+                _localizer[result.MessageKey],
+                result.Icon,
                 outcome == Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing ? "printer" : null);
         }
         catch (Exception ex)
@@ -636,6 +622,29 @@ public sealed class TrayApplicationContext : ApplicationContext
             Interlocked.Exchange(ref _autoSetupRunning, 0);
         }
     }
+
+    /// <summary>How a setup-link outcome is shown, and whether a connection was saved.</summary>
+    internal readonly record struct AutoSetupResultView(string MessageKey, MessageBoxIcon Icon, bool Saved, bool Connected);
+
+    /// <summary>
+    /// Maps a setup-link outcome for both windows. A link refused while a print job is still being completed changed
+    /// nothing: it is reported as not applied, and the saved connection is neither reloaded nor re-verified.
+    /// </summary>
+    internal static AutoSetupResultView DescribeAutoSetupOutcome(Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome outcome) =>
+        outcome switch
+        {
+            Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected =>
+                new("Auto.Connected", MessageBoxIcon.Information, Saved: true, Connected: true),
+            Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing =>
+                new("Auto.ConnectedPrinterMissing", MessageBoxIcon.Information, Saved: true, Connected: true),
+            Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.SavedButUnverified =>
+                new("Auto.SavedUnverified", MessageBoxIcon.Warning, Saved: true, Connected: false),
+            Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.InvalidOrExpired =>
+                new("Auto.InvalidOrExpired", MessageBoxIcon.Warning, Saved: false, Connected: false),
+            Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.PrintingInProgress =>
+                new("Auto.PrintingInProgress", MessageBoxIcon.Warning, Saved: false, Connected: false),
+            _ => new("Auto.Failed", MessageBoxIcon.Warning, Saved: false, Connected: false)
+        };
 
     /// <summary>
     /// Shows a setup-link result in the WebView2 app when it is the window in use (and still running), otherwise in a

@@ -4,8 +4,20 @@ namespace Wasla.PrintBridge.Services;
 
 public sealed class PrintBridgeSetupHttpClientFactory
 {
+    private readonly HttpMessageHandler? _testHandler;
+
+    public PrintBridgeSetupHttpClientFactory()
+    {
+    }
+
+    /// <summary>Test-only: every setup request goes to <paramref name="testHandler"/> instead of the network.</summary>
+    internal PrintBridgeSetupHttpClientFactory(HttpMessageHandler testHandler) => _testHandler = testHandler;
+
     public HttpClient Create(Uri serverUri)
     {
+        if (_testHandler is not null)
+            return new HttpClient(_testHandler, disposeHandler: false) { Timeout = TimeSpan.FromSeconds(30) };
+
         return new HttpClient(CreateHandler(serverUri), disposeHandler: true)
         {
             Timeout = TimeSpan.FromSeconds(30)

@@ -59,12 +59,16 @@ public sealed class WaslaPrintBridgeClient
             payload?.MachineName);
     }
 
-    public async Task<IReadOnlyList<PendingPrintJobDto>> GetPendingJobsAsync(CancellationToken ct)
+    /// <summary>
+    /// <paramref name="connection"/> replaces the saved server URL and token, so a polling cycle and the jobs it claims
+    /// stay on one connection even if the saved one changes meanwhile.
+    /// </summary>
+    public async Task<IReadOnlyList<PendingPrintJobDto>> GetPendingJobsAsync(CancellationToken ct, WaslaOptions? connection = null)
     {
         var (_, bridge, _) = _holder.Snapshot();
         var max = Math.Clamp(bridge.MaxJobsPerPoll, 1, 10);
         var path = $"api/print-bridge/jobs/pending?max={max}";
-        using var response = await SendAsync(HttpMethod.Get, path, ct).ConfigureAwait(false);
+        using var response = await SendAsync(HttpMethod.Get, path, ct, connection).ConfigureAwait(false);
 
         var payload = await response.Content.ReadFromJsonAsync<PendingPrintJobsResponse>(JsonOptions, ct)
             .ConfigureAwait(false);
@@ -72,17 +76,17 @@ public sealed class WaslaPrintBridgeClient
         return payload?.Jobs ?? [];
     }
 
-    public async Task<PrintJobActionResult> MarkPrintingAsync(Guid jobId, CancellationToken ct)
+    public async Task<PrintJobActionResult> MarkPrintingAsync(Guid jobId, CancellationToken ct, WaslaOptions? connection = null)
     {
         var path = $"api/print-bridge/jobs/{jobId:D}/mark-printing";
-        using var response = await SendAsync(HttpMethod.Post, path, ct).ConfigureAwait(false);
+        using var response = await SendAsync(HttpMethod.Post, path, ct, connection).ConfigureAwait(false);
         return await ReadActionResultAsync(response, ct).ConfigureAwait(false);
     }
 
-    public async Task<PrintJobActionResult> MarkPrintedAsync(Guid jobId, CancellationToken ct)
+    public async Task<PrintJobActionResult> MarkPrintedAsync(Guid jobId, CancellationToken ct, WaslaOptions? connection = null)
     {
         var path = $"api/print-bridge/jobs/{jobId:D}/mark-printed";
-        using var response = await SendAsync(HttpMethod.Post, path, ct).ConfigureAwait(false);
+        using var response = await SendAsync(HttpMethod.Post, path, ct, connection).ConfigureAwait(false);
         return await ReadActionResultAsync(response, ct).ConfigureAwait(false);
     }
 
@@ -99,12 +103,12 @@ public sealed class WaslaPrintBridgeClient
             payload?.NewPrintJobId);
     }
 
-    public async Task<PrintJobActionResult> MarkFailedAsync(Guid jobId, string errorMessage, CancellationToken ct)
+    public async Task<PrintJobActionResult> MarkFailedAsync(Guid jobId, string errorMessage, CancellationToken ct, WaslaOptions? connection = null)
     {
         var path = $"api/print-bridge/jobs/{jobId:D}/mark-failed";
-        using var request = CreateRequest(HttpMethod.Post, BuildAbsoluteUrl(path));
+        using var request = CreateRequest(HttpMethod.Post, BuildAbsoluteUrl(path, connection), connection);
         request.Content = JsonContent.Create(new { errorMessage });
-        using var response = await SendPreparedAsync(path, request, ct).ConfigureAwait(false);
+        using var response = await SendPreparedAsync(path, request, ct, connection).ConfigureAwait(false);
         return await ReadActionResultAsync(response, ct).ConfigureAwait(false);
     }
 
