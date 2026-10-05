@@ -4,8 +4,9 @@ using System.Xml.Linq;
 namespace Wasla.UnitTests.Admin;
 
 /// <summary>
-/// Contracts for the shared central Admin layout: the RTL-safe AdminLTE corrections and the Admin title strings.
-/// The real-browser measurements are in <see cref="AdminRtlLayoutBrowserTests"/>.
+/// Contracts for the shared central Admin layout: the RTL-safe AdminLTE corrections, the phone navigation drawer, the
+/// detail definition lists and the Admin title strings. The real-browser measurements are in
+/// <see cref="AdminRtlLayoutBrowserTests"/> and <see cref="AdminMobileNavigationBrowserTests"/>.
 /// </summary>
 public sealed partial class AdminLayoutContractTests
 {
@@ -59,6 +60,70 @@ public sealed partial class AdminLayoutContractTests
     }
 
     [Fact]
+    public void PhoneNavigation_UsesAdminLtesToggle_WithAnAccessibleNameAndState()
+    {
+        var layout = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Shared", "_AdminLayout.cshtml");
+
+        var toggle = Element(layout, "id=\"waslaAdminNavToggle\"");
+        foreach (var attribute in new[]
+                 {
+                     "type=\"button\"", "d-lg-none", "data-lte-toggle=\"sidebar\"", "aria-controls=\"waslaAdminSidebar\"",
+                     "aria-expanded=\"false\"", "aria-label=\"@L[\"Layout.OpenNavigation\"]\""
+                 })
+            Assert.Contains(attribute, toggle, StringComparison.Ordinal);
+        Assert.True(layout.IndexOf("id=\"waslaAdminNavToggle\"", StringComparison.Ordinal) < layout.IndexOf("wasla-admin-header-brand", StringComparison.Ordinal),
+            "The toggle comes first in the bar, before the compact logo.");
+
+        var close = Element(layout, "data-wasla-admin-nav-close");
+        Assert.Contains("data-lte-toggle=\"sidebar\"", close, StringComparison.Ordinal);
+        Assert.Contains("d-lg-none", close, StringComparison.Ordinal);
+        Assert.Contains("aria-label=\"@L[\"Layout.CloseNavigation\"]\"", close, StringComparison.Ordinal);
+        Assert.Contains("<aside id=\"waslaAdminSidebar\" class=\"app-sidebar\"", layout, StringComparison.Ordinal);
+
+        var adminLte = layout.IndexOf("adminlte.min.js", StringComparison.Ordinal);
+        var nav = layout.IndexOf("~/js/wasla-admin-nav.js", StringComparison.Ordinal);
+        Assert.True(adminLte >= 0 && nav > adminLte, "wasla-admin-nav.js must load after adminlte.min.js.");
+
+        foreach (var culture in new[] { "", ".tr-TR", ".en-US", ".ar-SA", ".ru-RU" })
+        {
+            var resources = Load(culture);
+            Assert.False(string.IsNullOrWhiteSpace(resources.GetValueOrDefault("Layout.OpenNavigation")), $"Layout.OpenNavigation missing in '{culture}'");
+            Assert.False(string.IsNullOrWhiteSpace(resources.GetValueOrDefault("Layout.CloseNavigation")), $"Layout.CloseNavigation missing in '{culture}'");
+        }
+    }
+
+    [Fact]
+    public void PhoneNavigationScript_FollowsAdminLtesState_InsteadOfKeepingItsOwn()
+    {
+        var script = Regex.Replace(Read("src", "Wasla.Web", "wwwroot", "js", "wasla-admin-nav.js"), @"/\*[\s\S]*?\*/|//[^\n]*", string.Empty);
+
+        // AdminLTE's [data-lte-toggle] handler is the only toggle handler; this script never toggles on a click itself.
+        Assert.DoesNotContain("toggle.addEventListener", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("classList.add", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("classList.remove", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("classList.toggle", script, StringComparison.Ordinal);
+        Assert.Contains("new window.adminlte.PushMenu(sidebar, {}).collapse()", script, StringComparison.Ordinal);
+        Assert.Contains("new MutationObserver(", script, StringComparison.Ordinal);
+        // Initialises once even if the script is included twice.
+        Assert.Contains("data-wasla-admin-nav", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AdminDetailDefinitionLists_UseLogicalMargins_AndWrapLongValues()
+    {
+        var css = Css();
+
+        // Every rule block that styles these dd elements: the start margin is removed logically, never physically.
+        var ddRules = Regex.Matches(css, @"(?m)^\.app-main dl\.row > dd \{[^}]*\}").Select(m => m.Value).ToArray();
+        Assert.NotEmpty(ddRules);
+        Assert.Contains(ddRules, rule => rule.Contains("margin-inline-start: 0;", StringComparison.Ordinal));
+        Assert.All(ddRules, rule => Assert.DoesNotMatch(@"margin-(left|right)\s*:", rule));
+        var both = Rule(css, ".app-main dl.row > dt,\n.app-main dl.row > dd");
+        Assert.Contains("overflow-wrap: anywhere;", both, StringComparison.Ordinal);
+        Assert.Contains("min-width: 0;", both, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AdminTitles_AreArabicInArabic_AndNotTheTurkishText()
     {
         var arabic = Load(".ar-SA");
@@ -84,6 +149,16 @@ public sealed partial class AdminLayoutContractTests
         Assert.True(start >= 0, $"No rule for {selector}");
         var end = css.IndexOf('}', start);
         return css[start..end];
+    }
+
+    /// <summary>The opening tag of the first element whose attributes contain <paramref name="marker"/>.</summary>
+    private static string Element(string markup, string marker)
+    {
+        var at = markup.IndexOf(marker, StringComparison.Ordinal);
+        Assert.True(at >= 0, $"No element with {marker}");
+        var start = markup.LastIndexOf('<', at);
+        var end = markup.IndexOf('>', at);
+        return markup[start..(end + 1)];
     }
 
     private static string Read(params string[] segments) =>

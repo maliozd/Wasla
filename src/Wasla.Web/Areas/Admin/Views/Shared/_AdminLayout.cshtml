@@ -52,6 +52,13 @@
     <div class="app-wrapper">
         <nav id="waslaAppHeader" class="app-header navbar navbar-expand border-bottom">
             <div class="container-fluid d-flex flex-wrap align-items-center gap-2">
+                @* Below lg the sidebar is off-canvas: this opens it. AdminLTE's PushMenu owns the open state
+                   ([data-lte-toggle]); wasla-admin-nav.js keeps aria-expanded, focus and Escape in step with it. *@
+                <button type="button" id="waslaAdminNavToggle" class="btn btn-outline-secondary btn-sm wasla-admin-nav-toggle d-lg-none"
+                        data-lte-toggle="sidebar" aria-controls="waslaAdminSidebar" aria-expanded="false"
+                        aria-label="@L["Layout.OpenNavigation"]">
+                    <i class="bi bi-list" aria-hidden="true"></i>
+                </button>
                 @* The brand lives in the sidebar. Below lg the sidebar is off-canvas, so the logo stays here only then. *@
                 <a class="wasla-admin-header-brand d-lg-none text-decoration-none" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
                     @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--admin" })
@@ -91,8 +98,10 @@
             </div>
         </nav>
 
-        <aside class="app-sidebar" role="navigation" aria-label="Admin">
+        <aside id="waslaAdminSidebar" class="app-sidebar" role="navigation" aria-label="Admin">
             <div class="wasla-admin-sidebar-brand">
+                <button type="button" class="btn-close wasla-admin-nav-close d-lg-none" data-lte-toggle="sidebar"
+                        data-wasla-admin-nav-close aria-controls="waslaAdminSidebar" aria-label="@L["Layout.CloseNavigation"]"></button>
                 <a class="wasla-admin-sidebar-brand__link text-decoration-none" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
                     @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--admin-sidebar" })
                     <span class="wasla-admin-sidebar-brand__label text-muted">@L["Admin.BrandSubtitle"]</span>
@@ -137,6 +146,7 @@
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/js/adminlte.min.js" crossorigin="anonymous"></script>
+    <script src="~/js/wasla-admin-nav.js" asp-append-version="true"></script>
     <script src="~/js/wasla-toast.js" asp-append-version="true"></script>
     <partial name="~/Views/Shared/_Notifications.cshtml" />
     <script src="~/js/theme-mode.js" asp-append-version="true"></script>

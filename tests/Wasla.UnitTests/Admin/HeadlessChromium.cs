@@ -109,6 +109,38 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     public Task SetViewportAsync(int width, int height, bool mobile, CancellationToken ct) =>
         SendAsync("Emulation.setDeviceMetricsOverride", new { width, height, deviceScaleFactor = 1, mobile }, ct);
 
+    /// <summary>Presses and releases one key as real keyboard input (Escape, Tab, Enter or a space), with optional Shift.</summary>
+    public async Task PressKeyAsync(string key, bool shift, CancellationToken ct)
+    {
+        var (code, keyCode, text) = key switch
+        {
+            "Escape" => ("Escape", 27, (string?)null),
+            "Tab" => ("Tab", 9, null),
+            "Enter" => ("Enter", 13, "\r"),
+            " " => ("Space", 32, " "),
+            _ => throw new ArgumentOutOfRangeException(nameof(key), key, "Unsupported key.")
+        };
+        var modifiers = shift ? 8 : 0;
+        // CDP rejects a null text field, so keys without text (Escape, Tab) send a rawKeyDown without it.
+        object down = text is null
+            ? new { type = "rawKeyDown", key, code, windowsVirtualKeyCode = keyCode, nativeVirtualKeyCode = keyCode, modifiers }
+            : new { type = "keyDown", key, code, windowsVirtualKeyCode = keyCode, nativeVirtualKeyCode = keyCode, modifiers, text };
+        await SendAsync("Input.dispatchKeyEvent", down, ct);
+        await SendAsync("Input.dispatchKeyEvent", new { type = "keyUp", key, code, windowsVirtualKeyCode = keyCode, nativeVirtualKeyCode = keyCode, modifiers }, ct);
+    }
+
+    /// <summary>A real left mouse click at a viewport point: whatever element is on top there receives it.</summary>
+    public async Task ClickAtAsync(double x, double y, CancellationToken ct)
+    {
+        await SendAsync("Input.dispatchMouseEvent", new { type = "mouseMoved", x, y }, ct);
+        await SendAsync("Input.dispatchMouseEvent", new { type = "mousePressed", x, y, button = "left", buttons = 1, clickCount = 1 }, ct);
+        await SendAsync("Input.dispatchMouseEvent", new { type = "mouseReleased", x, y, button = "left", buttons = 0, clickCount = 1 }, ct);
+    }
+
+    /// <summary>A real mouse-wheel scroll at a viewport point.</summary>
+    public Task WheelAsync(double x, double y, double deltaY, CancellationToken ct) =>
+        SendAsync("Input.dispatchMouseEvent", new { type = "mouseWheel", x, y, deltaX = 0, deltaY }, ct);
+
     /// <summary>Navigates and waits until the new document has finished loading.</summary>
     public async Task NavigateAsync(Uri url, CancellationToken ct)
     {

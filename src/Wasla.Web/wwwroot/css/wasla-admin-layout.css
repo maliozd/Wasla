@@ -15,6 +15,16 @@
  *
  * 3. Brand block at the top of the sidebar: the Wasla logo with "Central Management" under it, centred.
  *    The top bar keeps only its controls; below lg, where the sidebar is off-canvas, it shows the logo instead.
+ *
+ * 4. Mobile navigation drawer (below lg). AdminLTE's PushMenu owns the state (body.sidebar-open); the top bar's
+ *    toggle opens it from the inline-start side (left in LTR, right in RTL, see 2), the close button sits at the
+ *    drawer's inline-end corner, the backdrop covers the whole viewport, and the page behind does not scroll.
+ *    wasla-admin-nav.js adds focus handling, inert and Escape.
+ *
+ * 5. Definition lists on Admin detail pages (tenant details, pending registration details). The browser's default
+ *    `dd` start margin (40px) is only cancelled by Bootstrap's physical `margin-left: 0`, so in RTL it remained on
+ *    the right and pushed every value past the card edge, where it was clipped. Logical properties remove it in both
+ *    directions, and long names, domains and identifiers wrap instead of overflowing.
  */
 
 .live-region:not(.live-region-visible) {
@@ -84,4 +94,49 @@ nav[role=navigation]:not([aria-label]):not([aria-labelledby])::before {
     font-size: 0.8125rem;
     font-weight: 500;
     line-height: 1.3;
+}
+
+/* 4. Mobile navigation drawer */
+.wasla-admin-sidebar-brand {
+    position: relative;
+}
+
+.wasla-admin-nav-close {
+    position: absolute;
+    inset-block-start: 0.75rem;
+    inset-inline-end: 0.75rem;
+}
+
+@media (max-width: 991.98px) {
+    .wasla-admin-nav-toggle {
+        flex-shrink: 0;
+        line-height: 1;
+    }
+
+    .wasla-admin-nav-toggle .bi {
+        font-size: 1.25rem;
+    }
+
+    /* The backdrop covers the viewport, not only the document box it was appended to. */
+    .sidebar-expand-lg.sidebar-open .sidebar-overlay {
+        position: fixed;
+    }
+
+    /* The page behind an open drawer does not scroll. site.css makes <html> the scrolling element
+       (overflow-x: hidden on html and body), so the lock applies to it as well as to body. */
+    html:has(> body.sidebar-expand-lg.sidebar-open),
+    body.sidebar-expand-lg.sidebar-open {
+        overflow: hidden;
+    }
+}
+
+/* 5. Definition lists on Admin detail pages */
+.app-main dl.row > dt,
+.app-main dl.row > dd {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.app-main dl.row > dd {
+    margin-inline-start: 0;
 }
