@@ -4,6 +4,7 @@ using Microsoft.Web.WebView2.Core;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
+using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.WebShell;
 using static Wasla.PrintBridge.Tests.WebShell.WebShellTestSupport;
 
@@ -23,6 +24,7 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), "wasla-pb-webview-tests", Guid.NewGuid().ToString("N"));
     private readonly IDisposable _rootScope;
     private readonly CultureScope _cultureScope = new();
+    private Thread? _uiThread;
 
     public ShellWebViewRuntimeTests()
     {
@@ -32,6 +34,10 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
 
     public void Dispose()
     {
+        // Anything the window still saves while closing must land in the temporary root, never in the real settings.
+        if (_uiThread is { } thread && !thread.Join(TimeSpan.FromMinutes(2)))
+            throw new InvalidOperationException("The WebView2 test UI thread did not finish; the test root is kept to protect the real settings.");
+
         _rootScope.Dispose();
         _cultureScope.Dispose();
         for (var attempt = 0; attempt < 10 && Directory.Exists(_root); attempt++)
@@ -130,19 +136,19 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
             var sentBefore = form.BridgeForTests.SentSnapshotCount;
 
             await EvalAsync(core, """
-                chrome.webview.postMessage('{"version":2,"type":"classicWindow.open","payload":{"tab":"settings"}}');
-                chrome.webview.postMessage('{"version":2,"type":"host.exec","payload":{"method":"Exit"}}');
-                chrome.webview.postMessage({ version: 2, type: 'classicWindow.open' });
+                chrome.webview.postMessage('{"version":3,"type":"classicWindow.open","payload":{"tab":"settings"}}');
+                chrome.webview.postMessage('{"version":3,"type":"host.exec","payload":{"method":"Exit"}}');
+                chrome.webview.postMessage({ version: 3, type: 'classicWindow.open' });
                 chrome.webview.postMessage('x'.repeat(5000));
                 'sent'
                 """);
             await EvalAsync(core, "new Promise(r => setTimeout(() => r('waited'), 500))");
             Assert.Equal(0, classicRequests);
 
-            await EvalAsync(core, """chrome.webview.postMessage('{"version":2,"type":"classicWindow.open","payload":{}}'); 'sent'""");
+            await EvalAsync(core, """chrome.webview.postMessage('{"version":3,"type":"classicWindow.open","payload":{}}'); 'sent'""");
             await WaitUntilAsync(() => Task.FromResult(classicRequests == 1));
 
-            await EvalAsync(core, """chrome.webview.postMessage('{"version":2,"type":"ui.ready","payload":{}}'); 'sent'""");
+            await EvalAsync(core, """chrome.webview.postMessage('{"version":3,"type":"ui.ready","payload":{}}'); 'sent'""");
             await WaitUntilAsync(() => Task.FromResult(form.BridgeForTests.SentSnapshotCount > sentBefore));
             Assert.Equal("0", await EvalAsync(core, "String(localStorage.length + sessionStorage.length + document.cookie.length)"));
         });
@@ -275,22 +281,166 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
         });
 
     [Fact]
-    public Task ConnectionSetup_OpensTheNativeWindow_AndThePageHasNoCredentialFields() =>
-        RunShellAsync(async (form, core, _) =>
+    public Task ConnectionSetup_OpensTheNativeDialog_NotTheClassicWindow_AndThePageNeverSeesTheSecrets() =>
+        RunShellAsync(async (form, core, source) =>
         {
-            var setupRequests = 0;
-            form.ConnectionSetupRequested += (_, _) => setupRequests++;
+            var localizer = new PrintBridgeLocalizer(CurrentCultureService!);
+            var classicRequests = 0;
+            form.ClassicWindowRequested += (_, _) => classicRequests++;
+            // The real engine records the verified contact and raises StatusChanged; the fake does the same.
+            source.OnApplied = () => source.Set(Status(displayName: "Kasa 9"));
+            source.Set(Status(BridgeServerConnectionStatus.Error, new PrintBridgeRuntimeIssue(PrintBridgeRuntimeIssueCode.ServerUnreachable), isRunning: false));
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('connection').dataset.state") == "offline");
 
             await EvalAsync(core, "document.getElementById('tab-settings').click(); document.getElementById('settings-open-setup').click(); 'opened'");
-            await WaitUntilAsync(() => Task.FromResult(setupRequests == 1));
+            var dialog = await WaitForOpenFormAsync<ShellConnectionDialog>();
 
+            // The page shows host busy state while the dialog is open, and has no credential fields of its own.
+            await WaitUntilAsync(async () => await EvalAsync(core, "String(document.getElementById('settings-open-setup').getAttribute('aria-busy'))") == "true");
             Assert.Equal("0", await EvalAsync(core, "String(document.querySelectorAll('input[type=\"password\"], input[type=\"url\"], textarea, form').length)"));
+            Assert.Same(form, dialog.Owner);
+            Assert.Equal(string.Empty, dialog.PartsForTests.Token.Text);
+            Assert.True(dialog.PartsForTests.Token.UseSystemPasswordChar);
+
+            dialog.PartsForTests.ServerUrl.Text = "https://print-bridge.test";
+            dialog.PartsForTests.Token.Text = NewTypedToken;
+            await dialog.ConnectAsync();
+
+            // The result and the fresh state arrive without a reload.
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('toast-text').textContent") == localizer["Shell.Setup.Connected"]);
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('connection').dataset.state") == "online");
+            Assert.Equal("Kasa 9", await EvalAsync(core, "document.getElementById('device-name').textContent"));
+            Assert.Equal(0, classicRequests);
+            Assert.Equal(("https://print-bridge.test", NewTypedToken, false), source.AppliedConnection);
+
             var html = await EvalAsync(core, "document.documentElement.outerHTML");
-            Assert.DoesNotContain(SentinelToken, html, StringComparison.Ordinal);
-            Assert.DoesNotContain("SENTINEL", html, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain(SentinelServerUrl, html, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain(Environment.MachineName, html, StringComparison.OrdinalIgnoreCase);
+            foreach (var secret in new[] { SentinelToken, "SENTINEL", SentinelServerUrl, NewTypedToken, "https://print-bridge.test", Environment.MachineName })
+                Assert.DoesNotContain(secret, html, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal("0", await EvalAsync(core, "String(localStorage.length + sessionStorage.length + document.cookie.length)"));
         });
+
+    [Fact]
+    public Task ConnectionSetup_Cancelled_ChangesNothing_AndSaysSo() =>
+        RunShellAsync(async (_, core, source) =>
+        {
+            var localizer = new PrintBridgeLocalizer(CurrentCultureService!);
+
+            await EvalAsync(core, "document.getElementById('tab-settings').click(); document.getElementById('settings-open-setup').click(); 'opened'");
+            var dialog = await WaitForOpenFormAsync<ShellConnectionDialog>();
+            dialog.PartsForTests.Token.Text = NewTypedToken;
+            dialog.PartsForTests.Cancel.PerformClick();
+
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('toast-text').textContent") == localizer["Shell.Setup.Cancelled"]);
+            Assert.Equal(0, source.CheckConnectionCalls + source.ApplyConnectionCalls);
+            await WaitUntilAsync(async () => await EvalAsync(core, "String(document.getElementById('settings-open-setup').getAttribute('aria-busy'))") == "null");
+        });
+
+    [Fact]
+    public Task NotConfigured_OffersConnect_InTheOverviewAndSettings() =>
+        RunShellAsync(async (_, core, source) =>
+        {
+            var localizer = new PrintBridgeLocalizer(CurrentCultureService!);
+            source.Set(Status(BridgeServerConnectionStatus.NotConfigured, isRunning: false));
+
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('connection').dataset.state") == "notConfigured");
+            Assert.Equal(localizer["Shell.Action.Connect"], await EvalAsync(core, "document.querySelector('#hero-actions [data-hero]').textContent"));
+            Assert.Equal("connection.openSetup", await EvalAsync(core, "document.querySelector('#hero-actions [data-hero]').getAttribute('data-command')"));
+            Assert.Equal(localizer["Shell.Action.Connect"], await EvalAsync(core, "document.getElementById('settings-open-setup').textContent"));
+            Assert.Equal(localizer["Shell.Detail.NotConfigured"], await EvalAsync(core, "document.getElementById('connection-detail').textContent"));
+        }, savedToken: string.Empty);
+
+    [Fact]
+    public Task OperationalSettings_ShowSavedValues_ValidateInput_AndSaveThroughTheHost() =>
+        RunShellAsync(async (_, core, _) =>
+        {
+            var localizer = new PrintBridgeLocalizer(CurrentCultureService!);
+            var settings = CurrentSettings!;
+            await EvalAsync(core, "document.getElementById('tab-settings').click(); 'opened'");
+
+            Assert.Equal("""["5","1","15",false]""", await EvalAsync(core,
+                "JSON.stringify(['ops-idle', 'ops-busy', 'ops-error'].map(id => document.getElementById(id).value).concat([document.getElementById('ops-test-mode').checked]))"));
+            Assert.Equal(localizer.GetString("Shell.Settings.Range", 1, 60), await EvalAsync(core, "document.getElementById('ops-busy-range').textContent"));
+            Assert.Equal("true", await EvalAsync(core, "document.getElementById('ops-unsaved').hidden.toString()"));
+
+            await SetInputAsync(core, "ops-idle", "0");
+            Assert.Equal("""["true","false","true","ops-idle-range ops-invalid"]""", await EvalAsync(core,
+                "JSON.stringify([document.getElementById('ops-idle').getAttribute('aria-invalid'), String(document.getElementById('ops-invalid').hidden), " +
+                "document.getElementById('ops-save').getAttribute('aria-disabled'), document.getElementById('ops-idle').getAttribute('aria-describedby')])"));
+
+            await SetInputAsync(core, "ops-idle", "30");
+            Assert.Equal("""["false","true","false","false"]""", await EvalAsync(core,
+                "JSON.stringify([document.getElementById('ops-idle').getAttribute('aria-invalid'), String(document.getElementById('ops-invalid').hidden), " +
+                "String(document.getElementById('ops-unsaved').hidden), document.getElementById('ops-save').getAttribute('aria-disabled')])"));
+
+            await EvalAsync(core, "document.getElementById('ops-save').click(); 'saved'");
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('toast-text').textContent") == localizer["Shell.Op.SettingsSaved"]);
+            await WaitUntilAsync(async () => await EvalAsync(core, "String(document.getElementById('ops-unsaved').hidden)") == "true");
+            Assert.Equal(30, settings.Bridge.IdlePollIntervalSeconds);
+            Assert.Equal(30, new PrintBridgeSettingsStore().Load().PrintBridge.IdlePollIntervalSeconds);
+            Assert.Equal("30", await EvalAsync(core, "document.getElementById('ops-idle').value"));
+        });
+
+    [Fact]
+    public Task TurningTestModeOn_AsksInANativeDialog_ThatThePageCannotAnswer() =>
+        RunShellAsync(async (form, core, _) =>
+        {
+            var localizer = new PrintBridgeLocalizer(CurrentCultureService!);
+            var settings = CurrentSettings!;
+            await EvalAsync(core, "document.getElementById('tab-settings').click(); 'opened'");
+
+            await EvalAsync(core, "(() => { const t = document.getElementById('ops-test-mode'); t.checked = true; t.dispatchEvent(new Event('change')); document.getElementById('ops-save').click(); return 'asked'; })()");
+            var declined = await WaitForOpenFormAsync<ShellConfirmDialog>();
+            Assert.Same(form, declined.Owner);
+            Assert.Equal(localizer["Shell.TestMode.ConfirmTitle"], declined.Text);
+            Assert.Same(declined.Cancel, declined.CancelButton);
+            declined.Cancel.PerformClick();
+
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('toast-text').textContent") == localizer["Shell.Op.TestModeCancelled"]);
+            Assert.False(settings.Bridge.DryRun);
+            // The unsaved choice stays visible until the user saves or discards it.
+            Assert.Equal("false", await EvalAsync(core, "String(document.getElementById('ops-unsaved').hidden)"));
+
+            await EvalAsync(core, "document.getElementById('ops-save').click(); 'asked again'");
+            var confirmed = await WaitForOpenFormAsync<ShellConfirmDialog>();
+            confirmed.Confirm.PerformClick();
+
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('toast-text').textContent") == localizer["Shell.Op.SettingsSaved"]);
+            Assert.True(settings.Bridge.DryRun);
+            Assert.True(new PrintBridgeSettingsStore().Load().PrintBridge.DryRun);
+        });
+
+    [Theory]
+    [InlineData("history")]
+    [InlineData("settings")]
+    public Task TrayTabRequests_OpenTheMatchingTab_InTheSameWindow(string tab) =>
+        RunShellAsync(async (form, core, _) =>
+        {
+            form.Hide();
+            form.ShowShell(tab);
+
+            await WaitUntilAsync(async () => await EvalAsync(core, $"document.getElementById('tab-{tab}').getAttribute('aria-selected')") == "true");
+            Assert.Equal($"tab-{tab}", await EvalAsync(core, "document.activeElement.id"));
+            Assert.Equal("false", await EvalAsync(core, $"String(document.getElementById('panel-{tab}').hidden)"));
+            Assert.True(form.Visible);
+            Assert.Single(System.Windows.Forms.Application.OpenForms.OfType<PrintBridgeShellForm>());
+        });
+
+    private const string NewTypedToken = "typed-in-the-dialog-not-a-real-credential";
+
+    private static async Task<T> WaitForOpenFormAsync<T>()
+        where T : Form
+    {
+        T? found = null;
+        await WaitUntilAsync(() =>
+        {
+            found = System.Windows.Forms.Application.OpenForms.OfType<T>().FirstOrDefault(f => f.Visible);
+            return Task.FromResult(found is not null);
+        });
+        return found!;
+    }
+
+    private static Task<string?> SetInputAsync(CoreWebView2 core, string id, string value) =>
+        EvalAsync(core, $"(() => {{ const i = document.getElementById('{id}'); i.value = '{value}'; i.dispatchEvent(new Event('input')); return 'set'; }})()");
 
     private static string TabStateScript(string selected, string previous) =>
         $"JSON.stringify([document.activeElement.id, document.getElementById('tab-{selected}').getAttribute('aria-selected'), " +
@@ -350,7 +500,11 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
     [ThreadStatic]
     private static PrintBridgeCultureService? CurrentCultureService;
 
-    private Task RunShellAsync(Func<PrintBridgeShellForm, CoreWebView2, FakeStatusSource, Task> body)
+    /// <summary>The in-memory settings of the window under test; operational settings are saved under the test root.</summary>
+    [ThreadStatic]
+    private static PrintBridgeSettingsHolder? CurrentSettings;
+
+    private Task RunShellAsync(Func<PrintBridgeShellForm, CoreWebView2, FakeStatusSource, Task> body, string savedToken = SentinelToken)
     {
         if (!new WebView2RuntimeProbe().Probe().IsAvailable)
             Assert.Skip("No usable WebView2 Runtime is installed on this machine.");
@@ -369,12 +523,18 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                     culture.Initialize(SupportedCultures.Turkish);
                     CurrentCultureService = culture;
                     var source = new FakeStatusSource();
+                    var settings = ShellTestRig.NewSettings(savedToken);
+                    CurrentSettings = settings;
+                    var store = new PrintBridgeSettingsStore();
+                    var localizer = new PrintBridgeLocalizer(culture);
                     using var form = new PrintBridgeShellForm(
                         source,
-                        ShellTestRig.NewSettings(SentinelToken),
+                        settings,
                         new FakePrinterCatalog(),
                         new FakePrinterSettings(),
-                        new PrintBridgeLocalizer(culture),
+                        new ShellOperationalSettings(store, settings),
+                        new ShellConnectionSetup(source, settings, localizer, NullLogger.Instance, CancellationToken.None),
+                        localizer,
                         culture,
                         new FakeLanguageSwitcher(culture),
                         "154.0.4258.53",
@@ -409,6 +569,7 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.IsBackground = true;
+        _uiThread = thread;
         thread.Start();
 
         return completion.Task.WaitAsync(Timeout + Timeout);

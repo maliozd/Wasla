@@ -639,10 +639,10 @@
     <value>Dinleme durduruldu. Yeni yazdırma işleri alınmıyor.</value>
   </data>
   <data name="Shell.Detail.NotConfigured" xml:space="preserve">
-    <value>Bu cihaz henüz Wasla'ya bağlanmadı. Klasik penceredeki Ayarlar bölümünden bağlayın.</value>
+    <value>Bu cihaz henüz Wasla'ya bağlı değil. Kurmak için Wasla'ya bağlan'ı seçin.</value>
   </data>
   <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
-    <value>Beklenmeyen bir hata oluştu. Ayrıntılar için klasik penceredeki Loglar sekmesine bakın.</value>
+    <value>Beklenmeyen bir hata oluştu. Ayrıntılar log dosyasında: Ayarlar → Tanılama → Log klasörünü aç.</value>
   </data>
   <data name="Shell.LastJob.Title" xml:space="preserve">
     <value>Son yazdırma işi</value>
@@ -688,9 +688,6 @@
   </data>
   <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
     <value>Tanılamayı göster</value>
-  </data>
-  <data name="Shell.Action.OpenSetup" xml:space="preserve">
-    <value>Bağlantı ayarlarını aç</value>
   </data>
   <data name="Shell.Action.Working" xml:space="preserve">
     <value>İşleniyor…</value>
@@ -756,7 +753,7 @@
     <value>Wasla bağlantısı</value>
   </data>
   <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
-    <value>Sunucu adresi ve cihaz anahtarı güvenlik nedeniyle yalnızca yerel kurulum penceresinde girilir; bu ekran onları görmez.</value>
+    <value>Panel adresi ve cihaz tokenı güvenli bir yerel pencerede girilir ve kaydedilmeden önce denetlenir. Bu ekran onları görmez; kaydedilen token bir daha gösterilmez.</value>
   </data>
   <data name="Shell.Settings.Appearance" xml:space="preserve">
     <value>Dil ve görünüm</value>
@@ -772,9 +769,6 @@
   </data>
   <data name="Shell.Settings.TestModeOff" xml:space="preserve">
     <value>Kapalı</value>
-  </data>
-  <data name="Shell.Settings.AdvancedHelp" xml:space="preserve">
-    <value>Test modu ve kontrol aralıkları klasik penceredeki Gelişmiş bölümünden değiştirilir.</value>
   </data>
   <data name="Shell.Diagnostics.Title" xml:space="preserve">
     <value>Tanılama</value>
@@ -801,7 +795,7 @@
     <value>Klasik pencere</value>
   </data>
   <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
-    <value>Klasik pencere yedek olarak kullanılabilir; gelişmiş ayarlar ve loglar oradadır.</value>
+    <value>Acil durum yedeği: yalnızca bu pencere düzgün çalışmazsa eski klasik pencereyi açın. Klasik pencere en az bir sürüm daha kullanılabilir kalacak.</value>
   </data>
   <data name="Shell.Toast.Dismiss" xml:space="preserve">
     <value>Kapat</value>
@@ -838,5 +832,110 @@
   </data>
   <data name="Shell.Op.LogsOpened" xml:space="preserve">
     <value>Log klasörü açıldı.</value>
+  </data>
+  <data name="Shell.Action.Connect" xml:space="preserve">
+    <value>Wasla'ya bağlan</value>
+  </data>
+  <data name="Shell.Action.ChangeConnection" xml:space="preserve">
+    <value>Bağlantıyı değiştir</value>
+  </data>
+  <data name="Shell.Settings.Printing" xml:space="preserve">
+    <value>Yazdırma davranışı</value>
+  </data>
+  <data name="Shell.Settings.PrintingHelp" xml:space="preserve">
+    <value>Kaydedilen değerler sunucunun bir sonraki denetiminden itibaren kullanılır; yeniden başlatma gerekmez. Süren bir bekleme önce tamamlanır.</value>
+  </data>
+  <data name="Shell.Settings.TestModeHelp" xml:space="preserve">
+    <value>Açıkken yeni fiş işleri kâğıda basılmaz ama Wasla'ya basıldı olarak bildirilir. Yalnızca deneme için kullanın; açmadan önce onay istenir.</value>
+  </data>
+  <data name="Shell.Settings.IdlePoll" xml:space="preserve">
+    <value>Boştayken denetim aralığı</value>
+  </data>
+  <data name="Shell.Settings.BusyPoll" xml:space="preserve">
+    <value>İş gelince denetim aralığı</value>
+  </data>
+  <data name="Shell.Settings.ErrorPoll" xml:space="preserve">
+    <value>Bağlantı hatasından sonra bekleme</value>
+  </data>
+  <data name="Shell.Settings.Unsaved" xml:space="preserve">
+    <value>Kaydedilmemiş değişiklikler var.</value>
+  </data>
+  <data name="Shell.Settings.Invalid" xml:space="preserve">
+    <value>Her süreyi izin verilen aralıkta tam sayı olarak girin.</value>
+  </data>
+  <data name="Shell.Settings.Discard" xml:space="preserve">
+    <value>Değişiklikleri geri al</value>
+  </data>
+  <data name="Shell.Settings.Range" xml:space="preserve">
+    <value>{0}–{1} sn</value>
+  </data>
+  <data name="Shell.Op.SettingsSaved" xml:space="preserve">
+    <value>Ayarlar kaydedildi. Bir sonraki denetimden itibaren geçerli; yeniden başlatma gerekmez.</value>
+  </data>
+  <data name="Shell.Op.TestModeCancelled" xml:space="preserve">
+    <value>Test modu açılmadı; ayarlar değiştirilmedi.</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmTitle" xml:space="preserve">
+    <value>Test modu açılsın mı?</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmMessage" xml:space="preserve">
+    <value>Test modunda yeni fiş işleri kâğıda basılmaz ama Wasla'ya basıldı olarak bildirilir. Açık kaldığı sürece mutfak ve kasa fişleri çıkmaz.</value>
+  </data>
+  <data name="Shell.TestMode.Confirm" xml:space="preserve">
+    <value>Test modunu aç</value>
+  </data>
+  <data name="Shell.Setup.Title.First" xml:space="preserve">
+    <value>Wasla'ya bağlan</value>
+  </data>
+  <data name="Shell.Setup.Title.Reconnect" xml:space="preserve">
+    <value>Wasla'ya yeniden bağlan</value>
+  </data>
+  <data name="Shell.Setup.Title.Change" xml:space="preserve">
+    <value>Wasla bağlantısını değiştir</value>
+  </data>
+  <data name="Shell.Setup.Intro.First" xml:space="preserve">
+    <value>Wasla Web panelinde Print Bridge kurulum sayfasını açın. Orada gösterilen panel adresini ve bu bilgisayar için oluşturulan cihaz tokenını aşağıya yapıştırın.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Reconnect" xml:space="preserve">
+    <value>Bu cihazın tokenı artık geçerli değil. Wasla Web'de cihazı yeniden bağlayın ve yeni cihaz tokenını yapıştırın.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Change" xml:space="preserve">
+    <value>Panel adresini veya cihaz tokenını değiştirin. Hiçbir şey kaydedilmeden önce bağlantı denetlenir.</value>
+  </data>
+  <data name="Shell.Setup.TokenKeepHint" xml:space="preserve">
+    <value>Bu bilgisayarda kayıtlı bir token var ve gösterilemez. Korumak için boş bırakın ya da yeni tokenı yapıştırın.</value>
+  </data>
+  <data name="Shell.Setup.Connect" xml:space="preserve">
+    <value>Bağlan ve kaydet</value>
+  </data>
+  <data name="Shell.Setup.Checking" xml:space="preserve">
+    <value>Bağlantı denetleniyor…</value>
+  </data>
+  <data name="Shell.Setup.Saving" xml:space="preserve">
+    <value>Bağlantı doğrulandı, kaydediliyor…</value>
+  </data>
+  <data name="Shell.Setup.Connected" xml:space="preserve">
+    <value>Bağlantı doğrulandı ve kaydedildi.</value>
+  </data>
+  <data name="Shell.Setup.ConnectedChoosePrinter" xml:space="preserve">
+    <value>Bağlantı doğrulandı ve kaydedildi. Fiş yazdırmaya başlamak için bir yazıcı seçin.</value>
+  </data>
+  <data name="Shell.Setup.Cancelled" xml:space="preserve">
+    <value>Bağlantı ayarları değiştirilmedi.</value>
+  </data>
+  <data name="Shell.Setup.SaveFailed" xml:space="preserve">
+    <value>Bağlantı doğrulandı ama ayarlar kaydedilemedi; önceki bağlantı kullanılmaya devam ediyor. Ayrıntılar log dosyasında.</value>
+  </data>
+  <data name="Shell.Setup.TokenRejected" xml:space="preserve">
+    <value>Sunucu bu cihaz tokenını kabul etmedi. Wasla Web'deki Print Bridge kurulum sayfasından yeni bir token kopyalayın.</value>
+  </data>
+  <data name="Shell.Setup.TimedOut" xml:space="preserve">
+    <value>Sunucu zamanında yanıt vermedi. Adresi ve ağ bağlantısını kontrol edip tekrar deneyin.</value>
+  </data>
+  <data name="Shell.Setup.TokenTooLong" xml:space="preserve">
+    <value>Bu değer bir cihaz tokenı için fazla uzun. Tokenı Wasla Web'den yeniden kopyalayın.</value>
+  </data>
+  <data name="Tray.OpenClassicFallback" xml:space="preserve">
+    <value>Klasik pencereyi aç (yedek)</value>
   </data>
 </root>

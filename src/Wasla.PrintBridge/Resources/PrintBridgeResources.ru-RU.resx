@@ -639,10 +639,10 @@
     <value>Прослушивание остановлено. Новые задания печати не принимаются.</value>
   </data>
   <data name="Shell.Detail.NotConfigured" xml:space="preserve">
-    <value>Это устройство ещё не подключено к Wasla. Подключите его в разделе «Настройки» классического окна.</value>
+    <value>Это устройство ещё не подключено к Wasla. Выберите «Подключить к Wasla», чтобы настроить его.</value>
   </data>
   <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
-    <value>Произошла непредвиденная ошибка. Подробности — на вкладке «Журналы» классического окна.</value>
+    <value>Произошла непредвиденная ошибка. Подробности в журнале: «Настройки» → «Диагностика» → «Открыть папку журналов».</value>
   </data>
   <data name="Shell.LastJob.Title" xml:space="preserve">
     <value>Последнее задание печати</value>
@@ -688,9 +688,6 @@
   </data>
   <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
     <value>Показать диагностику</value>
-  </data>
-  <data name="Shell.Action.OpenSetup" xml:space="preserve">
-    <value>Открыть настройку подключения</value>
   </data>
   <data name="Shell.Action.Working" xml:space="preserve">
     <value>Выполняется…</value>
@@ -756,7 +753,7 @@
     <value>Подключение к Wasla</value>
   </data>
   <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
-    <value>В целях безопасности адрес сервера и токен устройства вводятся только в локальном окне настройки; этот экран их не видит.</value>
+    <value>Адрес панели и токен устройства вводятся в защищённом локальном окне и проверяются перед сохранением. Этот экран их не видит, а сохранённый токен больше не показывается.</value>
   </data>
   <data name="Shell.Settings.Appearance" xml:space="preserve">
     <value>Язык и оформление</value>
@@ -772,9 +769,6 @@
   </data>
   <data name="Shell.Settings.TestModeOff" xml:space="preserve">
     <value>Выключен</value>
-  </data>
-  <data name="Shell.Settings.AdvancedHelp" xml:space="preserve">
-    <value>Тестовый режим и интервалы опроса меняются в разделе «Дополнительно» классического окна.</value>
   </data>
   <data name="Shell.Diagnostics.Title" xml:space="preserve">
     <value>Диагностика</value>
@@ -801,7 +795,7 @@
     <value>Классическое окно</value>
   </data>
   <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
-    <value>Классическое окно остаётся резервным вариантом, включая дополнительные настройки и журналы.</value>
+    <value>Аварийный вариант: открывайте старое классическое окно, только если это окно не работает. Оно останется доступным как минимум ещё один выпуск.</value>
   </data>
   <data name="Shell.Toast.Dismiss" xml:space="preserve">
     <value>Закрыть</value>
@@ -838,5 +832,110 @@
   </data>
   <data name="Shell.Op.LogsOpened" xml:space="preserve">
     <value>Папка журналов открыта.</value>
+  </data>
+  <data name="Shell.Action.Connect" xml:space="preserve">
+    <value>Подключить к Wasla</value>
+  </data>
+  <data name="Shell.Action.ChangeConnection" xml:space="preserve">
+    <value>Изменить подключение</value>
+  </data>
+  <data name="Shell.Settings.Printing" xml:space="preserve">
+    <value>Параметры печати</value>
+  </data>
+  <data name="Shell.Settings.PrintingHelp" xml:space="preserve">
+    <value>Сохранённые значения применяются со следующей проверки сервера; перезапуск не нужен. Уже начавшееся ожидание сначала завершится.</value>
+  </data>
+  <data name="Shell.Settings.TestModeHelp" xml:space="preserve">
+    <value>Пока режим включён, новые чеки не печатаются на бумаге, но в Wasla отмечаются как напечатанные. Используйте его только для проверки; перед включением потребуется подтверждение.</value>
+  </data>
+  <data name="Shell.Settings.IdlePoll" xml:space="preserve">
+    <value>Интервал проверки в простое</value>
+  </data>
+  <data name="Shell.Settings.BusyPoll" xml:space="preserve">
+    <value>Интервал проверки после получения заданий</value>
+  </data>
+  <data name="Shell.Settings.ErrorPoll" xml:space="preserve">
+    <value>Ожидание после ошибки подключения</value>
+  </data>
+  <data name="Shell.Settings.Unsaved" xml:space="preserve">
+    <value>Есть несохранённые изменения.</value>
+  </data>
+  <data name="Shell.Settings.Invalid" xml:space="preserve">
+    <value>Введите каждый интервал целым числом в допустимом диапазоне.</value>
+  </data>
+  <data name="Shell.Settings.Discard" xml:space="preserve">
+    <value>Отменить изменения</value>
+  </data>
+  <data name="Shell.Settings.Range" xml:space="preserve">
+    <value>{0}–{1} с</value>
+  </data>
+  <data name="Shell.Op.SettingsSaved" xml:space="preserve">
+    <value>Настройки сохранены. Они применяются со следующей проверки; перезапуск не нужен.</value>
+  </data>
+  <data name="Shell.Op.TestModeCancelled" xml:space="preserve">
+    <value>Тестовый режим не включён; настройки не изменены.</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmTitle" xml:space="preserve">
+    <value>Включить тестовый режим?</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmMessage" xml:space="preserve">
+    <value>В тестовом режиме новые чеки не печатаются на бумаге, но в Wasla отмечаются как напечатанные. Пока режим включён, чеки для кухни и кассы не выходят.</value>
+  </data>
+  <data name="Shell.TestMode.Confirm" xml:space="preserve">
+    <value>Включить тестовый режим</value>
+  </data>
+  <data name="Shell.Setup.Title.First" xml:space="preserve">
+    <value>Подключение к Wasla</value>
+  </data>
+  <data name="Shell.Setup.Title.Reconnect" xml:space="preserve">
+    <value>Повторное подключение к Wasla</value>
+  </data>
+  <data name="Shell.Setup.Title.Change" xml:space="preserve">
+    <value>Изменение подключения к Wasla</value>
+  </data>
+  <data name="Shell.Setup.Intro.First" xml:space="preserve">
+    <value>Откройте страницу настройки Print Bridge в веб-панели Wasla. Вставьте ниже адрес панели и токен устройства, созданный для этого компьютера.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Reconnect" xml:space="preserve">
+    <value>Токен этого устройства больше не действует. Переподключите устройство в Wasla Web и вставьте новый токен устройства.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Change" xml:space="preserve">
+    <value>Измените адрес панели или токен устройства. Подключение проверяется до того, как что-либо будет сохранено.</value>
+  </data>
+  <data name="Shell.Setup.TokenKeepHint" xml:space="preserve">
+    <value>На этом компьютере сохранён токен, и показать его нельзя. Оставьте поле пустым, чтобы сохранить его, или вставьте новый токен.</value>
+  </data>
+  <data name="Shell.Setup.Connect" xml:space="preserve">
+    <value>Подключить и сохранить</value>
+  </data>
+  <data name="Shell.Setup.Checking" xml:space="preserve">
+    <value>Проверка подключения…</value>
+  </data>
+  <data name="Shell.Setup.Saving" xml:space="preserve">
+    <value>Подключение проверено. Сохранение…</value>
+  </data>
+  <data name="Shell.Setup.Connected" xml:space="preserve">
+    <value>Подключение проверено и сохранено.</value>
+  </data>
+  <data name="Shell.Setup.ConnectedChoosePrinter" xml:space="preserve">
+    <value>Подключение проверено и сохранено. Выберите принтер, чтобы начать печать чеков.</value>
+  </data>
+  <data name="Shell.Setup.Cancelled" xml:space="preserve">
+    <value>Настройки подключения не изменены.</value>
+  </data>
+  <data name="Shell.Setup.SaveFailed" xml:space="preserve">
+    <value>Подключение проверено, но настройки сохранить не удалось; используется прежнее подключение. Подробности в журнале.</value>
+  </data>
+  <data name="Shell.Setup.TokenRejected" xml:space="preserve">
+    <value>Сервер не принял этот токен устройства. Скопируйте новый токен со страницы настройки Print Bridge в Wasla Web.</value>
+  </data>
+  <data name="Shell.Setup.TimedOut" xml:space="preserve">
+    <value>Сервер не ответил вовремя. Проверьте адрес и сеть и повторите попытку.</value>
+  </data>
+  <data name="Shell.Setup.TokenTooLong" xml:space="preserve">
+    <value>Это значение слишком длинное для токена устройства. Скопируйте токен из Wasla Web ещё раз.</value>
+  </data>
+  <data name="Tray.OpenClassicFallback" xml:space="preserve">
+    <value>Открыть классическое окно (резерв)</value>
   </data>
 </root>

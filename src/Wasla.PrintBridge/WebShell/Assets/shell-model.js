@@ -1,5 +1,5 @@
 /*
- * Wasla Print Bridge desktop app: message contract (version 2) and pure view helpers.
+ * Wasla Print Bridge desktop app: message contract (version 3) and pure view helpers.
  * No DOM access here, so the same file runs in WebView2 and under `node --test`.
  * The page only renders host messages; it never derives or simulates connection, engine or print state,
  * and it never treats a command as successful until the host answers.
@@ -15,10 +15,11 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = 2;
+  var VERSION = 3;
   var SNAPSHOT_UPDATED = 'snapshot.updated';
   var OPERATION_RESULT = 'operation.result';
   var HISTORY_RESULT = 'history.result';
+  var UI_NAVIGATE = 'ui.navigate';
 
   // Mirrors ShellMessageContract.Commands on the host: command -> allowed payload fields.
   var COMMANDS = {
@@ -29,16 +30,20 @@
     'engine.start': ['requestId'],
     'engine.stop': ['requestId'],
     'connection.test': ['requestId'],
-    'connection.openSetup': [],
+    'connection.openSetup': ['requestId'],
     'connection.reset': ['requestId'],
     'printers.refresh': ['requestId'],
     'printer.save': ['requestId', 'name'],
     'printer.testPrint': ['requestId'],
     'history.query': ['requestId', 'range', 'page', 'search'],
     'history.reprint': ['requestId', 'itemRef'],
-    'logs.openFolder': ['requestId']
+    'logs.openFolder': ['requestId'],
+    'settings.save': ['requestId', 'testMode', 'idlePollSeconds', 'busyPollSeconds', 'errorPollSeconds']
   };
   var OPTIONAL_FIELDS = { search: true };
+  // The host's envelope for seconds fields (ShellMessageContract.MinSecondsField/MaxSecondsField); the real ranges
+  // arrive in every snapshot and are enforced again by the host.
+  var SECONDS_ENVELOPE = { min: 0, max: 86400 };
 
   var CONNECTION_STATES = ['online', 'connecting', 'offline', 'error', 'notConfigured', 'stopped'];
   var ENGINE_STATES = ['running', 'stopped'];
@@ -47,8 +52,11 @@
   var OUTCOMES = ['succeeded', 'failed', 'busy', 'duplicate', 'rejected', 'cancelled'];
   var HISTORY_RANGES = ['today', 'last7Days', 'last30Days'];
   var ACTION_FLAGS = ['start', 'stop', 'testPrint', 'checkConnection', 'reconnect', 'configurePrinter', 'resetConnection'];
-  var BUSY_FLAGS = ['engine', 'connectionTest', 'connectionReset', 'printersRefresh', 'printerSave', 'testPrint', 'reprint'];
+  var BUSY_FLAGS = ['engine', 'connectionTest', 'connectionReset', 'printersRefresh', 'printerSave', 'testPrint', 'reprint',
+    'connectionSetup', 'settingsSave'];
   var TABS = ['overview', 'printer', 'history', 'settings'];
+  var OPERATIONAL_FIELDS = ['idle', 'busy', 'error'];
+  var WHOLE_NUMBER = /^\d{1,6}$/;
 
   var REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9-]{7,63}$/;
   var ITEM_REF = /^h[0-9a-f]{16}$/;
@@ -113,6 +121,23 @@
       && isString(value.testModeLabel);
   }
 
+  function isSecondsSetting(value) {
+    return isObject(value)
+      && isCount(value.value)
+      && isCount(value.min)
+      && isCount(value.max)
+      && value.min <= value.max
+      && isString(value.rangeLabel);
+  }
+
+  function isOperational(value) {
+    return isObject(value)
+      && typeof value.testMode === 'boolean'
+      && isSecondsSetting(value.idlePoll)
+      && isSecondsSetting(value.busyPoll)
+      && isSecondsSetting(value.errorPoll);
+  }
+
   function isSnapshot(value) {
     return isObject(value)
       && isString(value.culture)
@@ -141,6 +166,7 @@
       && isFlagMap(value.busy, BUSY_FLAGS)
       && isDiagnostics(value.diagnostics)
       && typeof value.dryRun === 'boolean'
+      && isOperational(value.operational)
       && isLanguageList(value.languages)
       && isStringMap(value.strings);
   }
@@ -184,10 +210,15 @@
       && h.items.every(isHistoryItem);
   }
 
+  function isNavigate(value) {
+    return isObject(value) && TABS.indexOf(value.tab) >= 0;
+  }
+
   var VALIDATORS = {};
   VALIDATORS[SNAPSHOT_UPDATED] = { kind: 'snapshot', check: isSnapshot };
   VALIDATORS[OPERATION_RESULT] = { kind: 'operation', check: isOperationResult };
   VALIDATORS[HISTORY_RESULT] = { kind: 'history', check: isHistoryResult };
+  VALIDATORS[UI_NAVIGATE] = { kind: 'navigate', check: isNavigate };
 
   /**
    * Validates a host message. Returns { kind, sequence, payload } for a newer, well-formed message,
@@ -223,6 +254,12 @@
         return isString(value) && value.length <= 64 && !CONTROL.test(value);
       case 'itemRef':
         return isString(value) && ITEM_REF.test(value);
+      case 'testMode':
+        return typeof value === 'boolean';
+      case 'idlePollSeconds':
+      case 'busyPollSeconds':
+      case 'errorPollSeconds':
+        return Number.isSafeInteger(value) && value >= SECONDS_ENVELOPE.min && value <= SECONDS_ENVELOPE.max;
       default:
         return false;
     }
@@ -266,12 +303,15 @@
 
   /**
    * The context actions next to the connection state, most relevant first. Every error state offers a next step.
-   * Returns ids from: reconnect, configurePrinter, checkConnection, start, showDiagnostics.
+   * Returns ids from: connect, reconnect, configurePrinter, checkConnection, start, showDiagnostics.
    */
   function heroActions(snapshot) {
     var state = snapshot.connection.state;
     var failing = state === 'error' || state === 'offline';
     if (flag(snapshot, 'actions', 'reconnect')) {
+      if (state === 'notConfigured') {
+        return ['connect'];
+      }
       return failing ? ['reconnect', 'showDiagnostics'] : ['reconnect'];
     }
     if (flag(snapshot, 'actions', 'configurePrinter')) {
@@ -294,6 +334,55 @@
       labelKey: running ? 'Button.StopListening' : 'Button.StartListening',
       enabled: running ? flag(snapshot, 'actions', 'stop') : flag(snapshot, 'actions', 'start'),
       busy: flag(snapshot, 'busy', 'engine')
+    };
+  }
+
+  /** The label of the button that opens the native connection dialog, matching what the dialog will do. */
+  function setupLabelKey(snapshot) {
+    if (snapshot.connection.state === 'notConfigured') {
+      return 'Shell.Action.Connect';
+    }
+    return flag(snapshot, 'actions', 'reconnect') ? 'Shell.Action.Reconnect' : 'Shell.Action.ChangeConnection';
+  }
+
+  /** The saved operational values in the form's shape (inputs hold text). */
+  function savedOperational(snapshot) {
+    var o = snapshot.operational;
+    return {
+      testMode: o.testMode,
+      idle: String(o.idlePoll.value),
+      busy: String(o.busyPoll.value),
+      error: String(o.errorPoll.value)
+    };
+  }
+
+  function sameOperational(a, b) {
+    return a.testMode === b.testMode && a.idle === b.idle && a.busy === b.busy && a.error === b.error;
+  }
+
+  /**
+   * The draft fields that are not whole numbers inside the ranges the host sent. The host checks again with the
+   * same validator, so this only gives immediate feedback.
+   */
+  function invalidOperationalFields(draft, operational) {
+    var limits = { idle: operational.idlePoll, busy: operational.busyPoll, error: operational.errorPoll };
+    return OPERATIONAL_FIELDS.filter(function (name) {
+      var text = String(draft[name]).trim();
+      if (!WHOLE_NUMBER.test(text)) {
+        return true;
+      }
+      var value = Number(text);
+      return value < limits[name].min || value > limits[name].max;
+    });
+  }
+
+  /** The settings.save payload for a valid draft. */
+  function operationalPayload(draft) {
+    return {
+      testMode: draft.testMode === true,
+      idlePollSeconds: Number(String(draft.idle).trim()),
+      busyPollSeconds: Number(String(draft.busy).trim()),
+      errorPollSeconds: Number(String(draft.error).trim())
     };
   }
 
@@ -390,6 +479,11 @@
     newRequestId: newRequestId,
     heroActions: heroActions,
     engineToggle: engineToggle,
+    setupLabelKey: setupLabelKey,
+    savedOperational: savedOperational,
+    sameOperational: sameOperational,
+    invalidOperationalFields: invalidOperationalFields,
+    operationalPayload: operationalPayload,
     shouldAnnounce: shouldAnnounce,
     announcement: announcement,
     historyChanged: historyChanged,

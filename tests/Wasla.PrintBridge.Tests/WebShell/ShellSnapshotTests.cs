@@ -111,7 +111,8 @@ public sealed class ShellSnapshotTests : IDisposable
             typeof(ShellSnapshot), typeof(ShellConnectionView), typeof(ShellDeviceView), typeof(ShellPrinterView),
             typeof(ShellActivityView), typeof(ShellJobView), typeof(ShellLanguageOption), typeof(ShellHostMessage<ShellSnapshot>),
             typeof(ShellEngineView), typeof(ShellActionsView), typeof(ShellBusyState), typeof(ShellDiagnosticsView),
-            typeof(ShellHistoryPage), typeof(ShellHistoryItem), typeof(ShellHistoryResult), typeof(ShellOperationResultView)
+            typeof(ShellHistoryPage), typeof(ShellHistoryItem), typeof(ShellHistoryResult), typeof(ShellOperationResultView),
+            typeof(ShellOperationalView), typeof(ShellSecondsSetting), typeof(ShellNavigateView)
         };
 
         foreach (var property in types.SelectMany(t => t.GetProperties()))
@@ -129,7 +130,7 @@ public sealed class ShellSnapshotTests : IDisposable
         var root = JsonNode.Parse(ShellMessageSerializer.SerializeSnapshotMessage(snapshot, 3))!.AsObject();
 
         Assert.Equal(["version", "type", "sequence", "payload"], root.Select(p => p.Key));
-        Assert.Equal(2, root["version"]!.GetValue<int>());
+        Assert.Equal(ShellMessageContract.Version, root["version"]!.GetValue<int>());
         Assert.Equal("snapshot.updated", root["type"]!.GetValue<string>());
         Assert.Equal(3, root["sequence"]!.GetValue<long>());
     }

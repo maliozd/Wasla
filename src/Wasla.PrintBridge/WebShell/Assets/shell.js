@@ -18,12 +18,15 @@
     'engine.start': 'engine',
     'engine.stop': 'engine',
     'connection.test': 'connectionTest',
+    'connection.openSetup': 'connectionSetup',
     'connection.reset': 'connectionReset',
     'printers.refresh': 'printersRefresh',
     'printer.save': 'printerSave',
     'printer.testPrint': 'testPrint',
-    'history.reprint': 'reprint'
+    'history.reprint': 'reprint',
+    'settings.save': 'settingsSave'
   };
+  var OPS_INPUTS = { idle: 'ops-idle', busy: 'ops-busy', error: 'ops-error' };
 
   var lastSequence = 0;
   var current = null;
@@ -31,6 +34,7 @@
   var languageRequestPending = false;
   var pending = {};           // busy group -> request id awaiting the host's answer
   var printerDraft = null;     // the user's unsaved printer choice
+  var opsDraft = null;         // the user's unsaved operational settings; null shows the saved values
   var history = { range: 'today', page: 0, search: '', requestId: null, result: null, confirming: null };
   var toastTimer = null;
   var searchTimer = null;
@@ -134,7 +138,8 @@
   }
 
   var HERO_ACTIONS = {
-    reconnect: { labelKey: 'Shell.Action.Reconnect', primary: true, run: function () { send('connection.openSetup'); } },
+    connect: { labelKey: 'Shell.Action.Connect', primary: true, command: 'connection.openSetup', busy: 'connectionSetup' },
+    reconnect: { labelKey: 'Shell.Action.Reconnect', primary: true, command: 'connection.openSetup', busy: 'connectionSetup' },
     configurePrinter: { labelKey: 'Shell.Action.ConfigurePrinter', primary: true, run: function () { activateTab('printer', true); byId('printer-select').focus(); } },
     checkConnection: { labelKey: 'Button.TestConnection', primary: true, command: 'connection.test', busy: 'connectionTest' },
     start: { labelKey: 'Button.StartListening', primary: true, command: 'engine.start', busy: 'engine' },
@@ -235,7 +240,10 @@
 
   function renderSettings(snapshot) {
     var d = snapshot.diagnostics;
-    setText(byId('settings-test-mode'), d.testModeLabel);
+    setText(byId('settings-connection-state'), snapshot.connection.label);
+    byId('settings-open-setup').setAttribute('data-i18n', model.setupLabelKey(snapshot));
+    setText(byId('settings-open-setup'), model.text(snapshot, model.setupLabelKey(snapshot)));
+    renderOperational(snapshot);
     setText(byId('diag-app-version'), d.appVersion);
     setText(byId('diag-webview2'), d.webView2Version);
     setText(byId('diag-engine'), d.engineLabel);
@@ -243,6 +251,72 @@
     setText(byId('diag-last-error'), d.lastIssue || model.text(snapshot, 'Shell.Diagnostics.None'));
     setText(byId('diag-printer'), d.printerName + ' · ' + d.printerLabel);
     setText(byId('diag-test-mode'), d.testModeLabel);
+  }
+
+  // ---- operational settings ------------------------------------------------------------------------------
+
+  function readOpsForm() {
+    return {
+      testMode: byId('ops-test-mode').checked,
+      idle: byId(OPS_INPUTS.idle).value,
+      busy: byId(OPS_INPUTS.busy).value,
+      error: byId(OPS_INPUTS.error).value
+    };
+  }
+
+  /**
+   * Shows the saved values (what the engine uses) unless the user is editing. A draft is dropped as soon as the
+   * host reports exactly those values as saved, so the form never claims a value the host did not confirm.
+   */
+  function renderOperational(snapshot) {
+    var o = snapshot.operational;
+    var saved = model.savedOperational(snapshot);
+    if (opsDraft !== null && model.sameOperational(opsDraft, saved)) {
+      opsDraft = null;
+    }
+    var shown = opsDraft !== null ? opsDraft : saved;
+    var limits = { idle: o.idlePoll, busy: o.busyPoll, error: o.errorPoll };
+    Object.keys(OPS_INPUTS).forEach(function (name) {
+      var input = byId(OPS_INPUTS[name]);
+      input.setAttribute('min', String(limits[name].min));
+      input.setAttribute('max', String(limits[name].max));
+      setText(byId(OPS_INPUTS[name] + '-range'), limits[name].rangeLabel);
+      if (input.value !== shown[name]) {
+        input.value = shown[name];
+      }
+    });
+    byId('ops-test-mode').checked = shown.testMode;
+    renderOpsState();
+  }
+
+  function renderOpsState() {
+    if (!current) {
+      return;
+    }
+    var draft = opsDraft !== null ? opsDraft : model.savedOperational(current);
+    var invalid = model.invalidOperationalFields(draft, current.operational);
+    Object.keys(OPS_INPUTS).forEach(function (name) {
+      var input = byId(OPS_INPUTS[name]);
+      var bad = invalid.indexOf(name) >= 0;
+      input.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      // The error text is part of the description only while it applies.
+      input.setAttribute('aria-describedby', OPS_INPUTS[name] + '-range' + (bad ? ' ops-invalid' : ''));
+    });
+    var dirty = opsDraft !== null;
+    byId('ops-invalid').hidden = invalid.length === 0;
+    byId('ops-unsaved').hidden = !dirty;
+    byId('ops-save').setAttribute('data-enabled', dirty && invalid.length === 0 ? 'true' : 'false');
+    byId('ops-discard').setAttribute('data-enabled', dirty ? 'true' : 'false');
+  }
+
+  function onOpsEdited() {
+    if (!current) {
+      return;
+    }
+    var draft = readOpsForm();
+    opsDraft = model.sameOperational(draft, model.savedOperational(current)) ? null : draft;
+    renderOpsState();
+    renderButtons();
   }
 
   /** Applies enabled/busy state to every command button from host truth plus this page's own pending requests. */
@@ -260,7 +334,7 @@
     var saveEnabled = byId('printer-select').value !== '' && byId('printer-select').value !== (current.printer.name || '');
     byId('printer-save').setAttribute('data-enabled', saveEnabled ? 'true' : 'false');
 
-    var buttons = document.querySelectorAll('button[data-command], #printer-save');
+    var buttons = document.querySelectorAll('button[data-command], #printer-save, #ops-save, #ops-discard');
     for (var i = 0; i < buttons.length; i += 1) {
       var button = buttons[i];
       var action = button.getAttribute('data-action');
@@ -548,8 +622,28 @@
       printerDraft = event.target.value;
       renderButtons();
     });
-    byId('settings-open-setup').addEventListener('click', function () { send('connection.openSetup'); });
     byId('open-classic').addEventListener('click', function () { send('classicWindow.open'); });
+
+    ['ops-test-mode', OPS_INPUTS.idle, OPS_INPUTS.busy, OPS_INPUTS.error].forEach(function (id) {
+      byId(id).addEventListener('input', onOpsEdited);
+      byId(id).addEventListener('change', onOpsEdited);
+    });
+    byId('ops-save').addEventListener('click', function (event) {
+      if (event.currentTarget.getAttribute('aria-disabled') === 'true' || opsDraft === null) {
+        return;
+      }
+      // Turning test mode on is confirmed by the host in a native dialog; the page cannot confirm it.
+      sendTracked('settings.save', model.operationalPayload(opsDraft));
+    });
+    byId('ops-discard').addEventListener('click', function (event) {
+      if (event.currentTarget.getAttribute('aria-disabled') === 'true') {
+        return;
+      }
+      opsDraft = null;
+      renderOperational(current);
+      renderButtons();
+      byId('ops-test-mode').focus();
+    });
     byId('toast-close').addEventListener('click', function () { byId('toast').hidden = true; });
 
     ['language', 'settings-language'].forEach(function (id) {
@@ -612,6 +706,9 @@
       history.result = message.payload;
       history.page = message.payload.history.page;
       renderHistory(history.result);
+    } else if (message.kind === 'navigate') {
+      // The tray's Print history and Settings, or the Printer tab after connecting without a printer.
+      activateTab(message.payload.tab, true);
     }
   });
 

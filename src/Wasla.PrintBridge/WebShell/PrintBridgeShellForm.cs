@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -12,23 +11,24 @@ namespace Wasla.PrintBridge.WebShell;
 /// Window hosting the WebView2 Print Bridge app. It applies <see cref="ShellSecurityProfile"/>, maps only the
 /// packaged asset folder to the synthetic shell origin, denies every navigation, popup, permission,
 /// download and external request outside that origin, and forwards page messages to <see cref="ShellBridge"/>.
-/// It also owns the privileged native actions the page may request (<see cref="IShellNativeActions"/>).
+/// It also owns the privileged native actions the page may request (<see cref="IShellNativeActions"/>): the
+/// connection dialog and the confirmations are host windows in the app's design, never page content.
 /// Closing the window hides it to the tray, like the classic window.
 /// </summary>
 internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActions
 {
     private const int RefreshIntervalMilliseconds = 2000;
-    private static readonly Color LightCanvas = Color.FromArgb(0xF7, 0xF4, 0xEE);
-    private static readonly Color DarkCanvas = Color.FromArgb(0x1B, 0x18, 0x16);
 
     private readonly WebView2 _webView;
     private readonly ShellBridge _bridge;
+    private readonly ShellConnectionSetup _connectionSetup;
     private readonly PrintBridgeLocalizer _localizer;
     private readonly PrintBridgeCultureService _cultureService;
     private readonly ShellSecurityProfile _profile;
     private readonly ILogger _logger;
     private readonly System.Windows.Forms.Timer _refreshTimer;
     private bool _useDarkPalette;
+    private Form? _openDialog;
 
     private CoreWebView2Environment? _environment;
     private Task? _initialization;
@@ -39,19 +39,22 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         PrintBridgeSettingsHolder settings,
         IPrinterCatalog printers,
         IShellPrinterSettings printerSettings,
+        IShellOperationalSettings operationalSettings,
+        ShellConnectionSetup connectionSetup,
         PrintBridgeLocalizer localizer,
         PrintBridgeCultureService cultureService,
         IShellLanguageSwitcher languageSwitcher,
         string? webView2Version,
         ILogger logger)
     {
+        _connectionSetup = connectionSetup;
         _localizer = localizer;
         _cultureService = cultureService;
         _logger = logger;
         _profile = ShellSecurityProfile.ForCurrentBuild;
-        _useDarkPalette = IsWindowsAppDarkModeEnabled();
+        _useDarkPalette = ShellWindowTheme.IsWindowsAppDarkModeEnabled();
 
-        var canvas = _useDarkPalette ? DarkCanvas : LightCanvas;
+        var canvas = ShellPalette.For(_useDarkPalette).Canvas;
         Text = _localizer["Common.AppTitle"];
         AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.CenterScreen;
@@ -69,7 +72,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         Controls.Add(_webView);
 
         var history = new ShellHistory(engine, localizer, cultureService);
-        var operations = new ShellOperations(engine, printers, printerSettings, this, history, settings, localizer, logger);
+        var operations = new ShellOperations(engine, printers, printerSettings, operationalSettings, this, history, settings, localizer, logger);
         _bridge = new ShellBridge(
             engine,
             new ShellSnapshotFactory(localizer, cultureService, settings, printers, () => operations.Busy, webView2Version),
@@ -93,9 +96,6 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
 
     public event EventHandler? ClassicWindowRequested;
 
-    /// <summary>The page asked for the trusted native connection setup (server URL and token are entered there).</summary>
-    public event EventHandler? ConnectionSetupRequested;
-
     /// <summary>
     /// True while the page can receive messages. A window hidden to the tray still receives them, so the result
     /// of an operation that finishes after the window was closed is never lost.
@@ -110,16 +110,34 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
 
     internal Task? InitializationForTests => _initialization;
 
-    public void ShowShell()
+    /// <summary>
+    /// For tests: startup fails before any browser process is launched, through the same path as a broken runtime.
+    /// (A real broken profile makes the browser show a blocking error dialog on the desktop.)
+    /// </summary>
+    internal bool FailStartupForTests { get; set; }
+
+    /// <summary>
+    /// Shows this window (there is only ever one) and brings it forward. <paramref name="tab"/> selects one of
+    /// <see cref="ShellMessageContract.Tabs"/>; while the page is still loading the request waits for it.
+    /// An open dialog of this window keeps the focus.
+    /// </summary>
+    public void ShowShell(string? tab = null)
     {
         Show();
         if (WindowState == FormWindowState.Minimized)
             WindowState = FormWindowState.Normal;
         Activate();
+        _openDialog?.Activate();
 
         _initialization ??= InitializeAsync();
         _bridge.Resend();
+        if (tab is not null)
+            _bridge.Navigate(tab);
     }
+
+    /// <summary>Shows the result of an automatic setup (setup link) in the page.</summary>
+    public void ShowConnectionResult(ShellOperationOutcome outcome, string message, string? navigateTo = null) =>
+        _bridge.NotifyConnectionResult(outcome, message, navigateTo);
 
     public void Post(Action action)
     {
@@ -144,15 +162,32 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
 
     public void OpenClassicWindow() => ClassicWindowRequested?.Invoke(this, EventArgs.Empty);
 
-    public void OpenConnectionSetup() => ConnectionSetupRequested?.Invoke(this, EventArgs.Empty);
+    public Task<ShellConnectionSetupResult> RunConnectionSetupAsync() =>
+        ShowModalAsync(
+            () =>
+            {
+                using var dialog = new ShellConnectionDialog(_connectionSetup, _localizer, _cultureService.IsRightToLeft, _useDarkPalette);
+                return RunDialog(dialog, () => dialog.Result) ?? _connectionSetup.Cancelled();
+            },
+            whenUnavailable: _connectionSetup.Cancelled());
 
-    public bool ConfirmConnectionReset() =>
-        Wasla.PrintBridge.UI.PrintBridgeConfirmDialog.Confirm(
-            this,
-            _localizer["Message.ResetConnectionConfirmTitle"],
-            _localizer["Message.ResetConnectionConfirm"],
-            _localizer["Button.ResetConnectionConfirm"],
-            _localizer["Button.ResetConnectionCancel"]);
+    public Task<bool> ConfirmConnectionResetAsync() =>
+        ShowModalAsync(
+            () => Confirm(
+                _localizer["Message.ResetConnectionConfirmTitle"],
+                _localizer["Message.ResetConnectionConfirm"],
+                _localizer["Button.ResetConnectionConfirm"],
+                _localizer["Button.ResetConnectionCancel"]),
+            whenUnavailable: false);
+
+    public Task<bool> ConfirmEnableTestModeAsync() =>
+        ShowModalAsync(
+            () => Confirm(
+                _localizer["Shell.TestMode.ConfirmTitle"],
+                _localizer["Shell.TestMode.ConfirmMessage"],
+                _localizer["Shell.TestMode.Confirm"],
+                _localizer["Shell.Action.Cancel"]),
+            whenUnavailable: false);
 
     public bool OpenLogFolder() => ShellLogFolder.TryOpen();
 
@@ -160,6 +195,68 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     {
         base.OnHandleCreated(e);
         ApplyTitleBarTheme();
+    }
+
+    /// <summary>
+    /// Runs a modal dialog from a posted callback, never inside the WebView2 message handler that asked for it,
+    /// and completes with <paramref name="whenUnavailable"/> when the window is gone before or while it runs.
+    /// </summary>
+    private Task<T> ShowModalAsync<T>(Func<T> show, T whenUnavailable)
+    {
+        var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (IsDisposed || !IsHandleCreated)
+        {
+            completion.SetResult(whenUnavailable);
+            return completion.Task;
+        }
+
+        try
+        {
+            BeginInvoke(() =>
+            {
+                try
+                {
+                    completion.TrySetResult(IsDisposed ? whenUnavailable : show());
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Print Bridge shell dialog could not be shown.");
+                    completion.TrySetResult(whenUnavailable);
+                }
+            });
+        }
+        catch (InvalidOperationException)
+        {
+            completion.TrySetResult(whenUnavailable);
+        }
+
+        return completion.Task;
+    }
+
+    private TResult RunDialog<TResult>(Form dialog, Func<TResult> result)
+    {
+        // A dialog needs its owner on screen; the page may have asked while the window was being hidden.
+        if (!Visible)
+            ShowShell();
+
+        _openDialog = dialog;
+        try
+        {
+            dialog.ShowDialog(this);
+            return result();
+        }
+        finally
+        {
+            _openDialog = null;
+        }
+    }
+
+    private bool Confirm(string title, string message, string confirmText, string cancelText)
+    {
+        if (!Visible)
+            ShowShell();
+
+        return ShellConfirmDialog.Ask(this, title, message, confirmText, cancelText, _cultureService.IsRightToLeft, _useDarkPalette);
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -178,6 +275,8 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     {
         if (disposing)
         {
+            // An open connection dialog closes as cancelled; nothing it held is saved.
+            _openDialog?.Close();
             SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
             _cultureService.CultureChanged -= OnCultureChanged;
             _refreshTimer.Stop();
@@ -193,6 +292,9 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     {
         try
         {
+            if (FailStartupForTests)
+                throw new InvalidOperationException("Simulated WebView2 startup failure.");
+
             var options = new CoreWebView2EnvironmentOptions
             {
                 AllowSingleSignOnUsingOSPrimaryAccount = false,
@@ -355,12 +457,12 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
 
         Post(() =>
         {
-            var dark = IsWindowsAppDarkModeEnabled();
+            var dark = ShellWindowTheme.IsWindowsAppDarkModeEnabled();
             if (dark == _useDarkPalette)
                 return;
 
             _useDarkPalette = dark;
-            var canvas = dark ? DarkCanvas : LightCanvas;
+            var canvas = ShellPalette.For(dark).Canvas;
             BackColor = canvas;
             _webView.DefaultBackgroundColor = canvas;
             ApplyTitleBarTheme();
@@ -370,7 +472,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     private void ApplyTitleBarTheme()
     {
         if (IsHandleCreated)
-            TrySetDarkTitleBar(Handle, _useDarkPalette);
+            ShellWindowTheme.TrySetDarkTitleBar(Handle, _useDarkPalette);
     }
 
     private void RaiseUnavailable()
@@ -383,33 +485,4 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         Hide();
         ShellUnavailable?.Invoke(this, EventArgs.Empty);
     }
-
-    private static bool IsWindowsAppDarkModeEnabled()
-    {
-        try
-        {
-            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-            return key?.GetValue("AppsUseLightTheme") is int value && value == 0;
-        }
-        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
-        {
-            return false;
-        }
-    }
-
-    private static void TrySetDarkTitleBar(IntPtr handle, bool dark)
-    {
-        const int DwmwaUseImmersiveDarkMode = 20;
-        var enabled = dark ? 1 : 0;
-        try
-        {
-            _ = DwmSetWindowAttribute(handle, DwmwaUseImmersiveDarkMode, ref enabled, sizeof(int));
-        }
-        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
-        {
-        }
-    }
-
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 }

@@ -78,7 +78,7 @@ internal static class WebShellTestSupport
         };
 
     public static string Command(string type, string payload = "{}") =>
-        $$"""{"version":2,"type":"{{type}}","payload":{{payload}}}""";
+        $$"""{"version":{{ShellMessageContract.Version}},"type":"{{type}}","payload":{{payload}}}""";
 
     /// <summary>A command carrying a fresh request id, plus any extra payload fields (already JSON-encoded).</summary>
     public static string Tracked(string type, string extraFields = "", string? requestId = null) =>
@@ -286,24 +286,67 @@ internal sealed class FakeNativeActions : IShellNativeActions
     public int ClassicWindowRequests { get; private set; }
     public int ConnectionSetupRequests { get; private set; }
     public int ResetConfirmations { get; private set; }
+    public int TestModeConfirmations { get; private set; }
     public int LogFolderRequests { get; private set; }
     public bool ConfirmReset { get; set; } = true;
+    public bool ConfirmTestMode { get; set; } = true;
     public bool LogFolderExists { get; set; } = true;
+
+    /// <summary>What the connection dialog reports when it closes.</summary>
+    public ShellConnectionSetupResult SetupResult { get; set; } =
+        new(ShellConnectionSetupOutcome.Connected, "Connection verified and saved.");
+
+    /// <summary>When set, the connection dialog stays open until this gate completes.</summary>
+    public TaskCompletionSource? SetupGate { get; set; }
 
     public void OpenClassicWindow() => ClassicWindowRequests++;
 
-    public void OpenConnectionSetup() => ConnectionSetupRequests++;
+    public async Task<ShellConnectionSetupResult> RunConnectionSetupAsync()
+    {
+        ConnectionSetupRequests++;
+        if (SetupGate is { } gate)
+            await gate.Task;
+        return SetupResult;
+    }
 
-    public bool ConfirmConnectionReset()
+    public Task<bool> ConfirmConnectionResetAsync()
     {
         ResetConfirmations++;
-        return ConfirmReset;
+        return Task.FromResult(ConfirmReset);
+    }
+
+    public Task<bool> ConfirmEnableTestModeAsync()
+    {
+        TestModeConfirmations++;
+        return Task.FromResult(ConfirmTestMode);
     }
 
     public bool OpenLogFolder()
     {
         LogFolderRequests++;
         return LogFolderExists;
+    }
+}
+
+internal sealed class FakeOperationalSettings : IShellOperationalSettings
+{
+    public List<ShellOperationalSettingsChange> Saved { get; } = [];
+
+    /// <summary>Behaves like the real validator unless overridden: the classic ranges decide.</summary>
+    public bool TrySave(ShellOperationalSettingsChange change, out string? errorKey)
+    {
+        var probe = new Wasla.PrintBridge.Options.PrintBridgeOptions
+        {
+            DryRun = change.TestMode,
+            IdlePollIntervalSeconds = change.IdlePollSeconds,
+            BusyPollIntervalSeconds = change.BusyPollSeconds,
+            ErrorPollIntervalSeconds = change.ErrorPollSeconds
+        };
+        if (!PrintBridgeSettingsValidator.TryValidateAdvancedBehaviorSettings(probe, out errorKey))
+            return false;
+
+        Saved.Add(change);
+        return true;
     }
 }
 
@@ -365,6 +408,7 @@ internal sealed class ShellTestRig : IDisposable
             Engine,
             Catalog,
             PrinterSettings,
+            OperationalSettings,
             Native,
             History,
             Settings,
@@ -391,6 +435,7 @@ internal sealed class ShellTestRig : IDisposable
     public FakeNativeActions Native { get; } = new();
     public FakePrinterCatalog Catalog { get; } = new();
     public FakePrinterSettings PrinterSettings { get; } = new();
+    public FakeOperationalSettings OperationalSettings { get; } = new();
     public FakeLanguageSwitcher Languages { get; }
     public ShellHistory History { get; }
     public ShellOperations Operations { get; }
@@ -409,7 +454,7 @@ internal sealed class ShellTestRig : IDisposable
 
     /// <summary>Messages of one host message type, parsed.</summary>
     public IReadOnlyList<System.Text.Json.JsonElement> Messages(string type) =>
-        Host.Sent
+        Host.SentSoFar()
             .Select(s => System.Text.Json.JsonDocument.Parse(s).RootElement)
             .Where(m => m.GetProperty("type").GetString() == type)
             .ToArray();
@@ -459,6 +504,13 @@ internal sealed class FakeShellHost : IShellHost
     {
         lock (_sync)
             Sent.Add(json);
+    }
+
+    /// <summary>A copy taken under the lock: operation results are sent from other threads while a test reads.</summary>
+    public string[] SentSoFar()
+    {
+        lock (_sync)
+            return Sent.ToArray();
     }
 }
 

@@ -677,10 +677,10 @@
     <value>Listening is stopped. New print jobs are not being received.</value>
   </data>
   <data name="Shell.Detail.NotConfigured" xml:space="preserve">
-    <value>This device is not connected to Wasla yet. Connect it from Settings in the classic window.</value>
+    <value>This device is not connected to Wasla yet. Select Connect to Wasla to set it up.</value>
   </data>
   <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
-    <value>An unexpected error occurred. See the Logs tab in the classic window for details.</value>
+    <value>An unexpected error occurred. Details are in the log file: Settings → Diagnostics → Open logs folder.</value>
   </data>
   <data name="Shell.LastJob.Title" xml:space="preserve">
     <value>Latest print job</value>
@@ -726,9 +726,6 @@
   </data>
   <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
     <value>Show diagnostics</value>
-  </data>
-  <data name="Shell.Action.OpenSetup" xml:space="preserve">
-    <value>Open connection setup</value>
   </data>
   <data name="Shell.Action.Working" xml:space="preserve">
     <value>Working…</value>
@@ -794,7 +791,7 @@
     <value>Wasla connection</value>
   </data>
   <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
-    <value>For security, the server address and device token are entered only in the local setup window; this screen never sees them.</value>
+    <value>The panel address and device token are entered in a secure local window and checked before they are saved. This screen never sees them, and a saved token is never shown again.</value>
   </data>
   <data name="Shell.Settings.Appearance" xml:space="preserve">
     <value>Language and appearance</value>
@@ -810,9 +807,6 @@
   </data>
   <data name="Shell.Settings.TestModeOff" xml:space="preserve">
     <value>Off</value>
-  </data>
-  <data name="Shell.Settings.AdvancedHelp" xml:space="preserve">
-    <value>Test mode and polling intervals are changed in the Advanced section of the classic window.</value>
   </data>
   <data name="Shell.Diagnostics.Title" xml:space="preserve">
     <value>Diagnostics</value>
@@ -839,7 +833,7 @@
     <value>Classic window</value>
   </data>
   <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
-    <value>The classic window remains available as a fallback, including advanced settings and logs.</value>
+    <value>Emergency fallback: open the old classic window only if this window does not work. It stays available for at least one more release.</value>
   </data>
   <data name="Shell.Toast.Dismiss" xml:space="preserve">
     <value>Dismiss</value>
@@ -876,5 +870,110 @@
   </data>
   <data name="Shell.Op.LogsOpened" xml:space="preserve">
     <value>Logs folder opened.</value>
+  </data>
+  <data name="Shell.Action.Connect" xml:space="preserve">
+    <value>Connect to Wasla</value>
+  </data>
+  <data name="Shell.Action.ChangeConnection" xml:space="preserve">
+    <value>Change connection</value>
+  </data>
+  <data name="Shell.Settings.Printing" xml:space="preserve">
+    <value>Printing behavior</value>
+  </data>
+  <data name="Shell.Settings.PrintingHelp" xml:space="preserve">
+    <value>Saved values are used from the next check with the server; no restart is needed. A wait already in progress finishes first.</value>
+  </data>
+  <data name="Shell.Settings.TestModeHelp" xml:space="preserve">
+    <value>While on, new receipt jobs are not printed on paper but are reported to Wasla as printed. Use it only for trials; turning it on asks for confirmation.</value>
+  </data>
+  <data name="Shell.Settings.IdlePoll" xml:space="preserve">
+    <value>Check interval when idle</value>
+  </data>
+  <data name="Shell.Settings.BusyPoll" xml:space="preserve">
+    <value>Check interval after jobs arrive</value>
+  </data>
+  <data name="Shell.Settings.ErrorPoll" xml:space="preserve">
+    <value>Wait after a connection error</value>
+  </data>
+  <data name="Shell.Settings.Unsaved" xml:space="preserve">
+    <value>You have unsaved changes.</value>
+  </data>
+  <data name="Shell.Settings.Invalid" xml:space="preserve">
+    <value>Enter each interval as a whole number within its allowed range.</value>
+  </data>
+  <data name="Shell.Settings.Discard" xml:space="preserve">
+    <value>Discard changes</value>
+  </data>
+  <data name="Shell.Settings.Range" xml:space="preserve">
+    <value>{0}–{1} s</value>
+  </data>
+  <data name="Shell.Op.SettingsSaved" xml:space="preserve">
+    <value>Settings saved. They apply from the next check; no restart is needed.</value>
+  </data>
+  <data name="Shell.Op.TestModeCancelled" xml:space="preserve">
+    <value>Test mode was not turned on; the settings were not changed.</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmTitle" xml:space="preserve">
+    <value>Turn on test mode?</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmMessage" xml:space="preserve">
+    <value>In test mode, new receipt jobs are not printed on paper but are reported to Wasla as printed. No kitchen or counter receipts come out while it is on.</value>
+  </data>
+  <data name="Shell.TestMode.Confirm" xml:space="preserve">
+    <value>Turn on test mode</value>
+  </data>
+  <data name="Shell.Setup.Title.First" xml:space="preserve">
+    <value>Connect to Wasla</value>
+  </data>
+  <data name="Shell.Setup.Title.Reconnect" xml:space="preserve">
+    <value>Reconnect to Wasla</value>
+  </data>
+  <data name="Shell.Setup.Title.Change" xml:space="preserve">
+    <value>Change the Wasla connection</value>
+  </data>
+  <data name="Shell.Setup.Intro.First" xml:space="preserve">
+    <value>In the Wasla Web panel, open the Print Bridge setup page. Paste the panel address and the device token created for this computer below.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Reconnect" xml:space="preserve">
+    <value>This device's token is no longer valid. Reconnect the device in Wasla Web and paste the new device token.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Change" xml:space="preserve">
+    <value>Change the panel address or the device token. The connection is checked before anything is saved.</value>
+  </data>
+  <data name="Shell.Setup.TokenKeepHint" xml:space="preserve">
+    <value>A token is saved on this computer and cannot be shown. Leave this empty to keep it, or paste a new token.</value>
+  </data>
+  <data name="Shell.Setup.Connect" xml:space="preserve">
+    <value>Connect and save</value>
+  </data>
+  <data name="Shell.Setup.Checking" xml:space="preserve">
+    <value>Checking the connection…</value>
+  </data>
+  <data name="Shell.Setup.Saving" xml:space="preserve">
+    <value>Connection verified. Saving…</value>
+  </data>
+  <data name="Shell.Setup.Connected" xml:space="preserve">
+    <value>Connection verified and saved.</value>
+  </data>
+  <data name="Shell.Setup.ConnectedChoosePrinter" xml:space="preserve">
+    <value>Connection verified and saved. Choose a printer to start printing receipts.</value>
+  </data>
+  <data name="Shell.Setup.Cancelled" xml:space="preserve">
+    <value>The connection settings were not changed.</value>
+  </data>
+  <data name="Shell.Setup.SaveFailed" xml:space="preserve">
+    <value>The connection was verified, but the settings could not be saved; the previous connection is still in use. Details are in the log file.</value>
+  </data>
+  <data name="Shell.Setup.TokenRejected" xml:space="preserve">
+    <value>The server did not accept this device token. Copy a new token from the Print Bridge setup page in Wasla Web.</value>
+  </data>
+  <data name="Shell.Setup.TimedOut" xml:space="preserve">
+    <value>The server did not answer in time. Check the address and the network, then try again.</value>
+  </data>
+  <data name="Shell.Setup.TokenTooLong" xml:space="preserve">
+    <value>This value is too long for a device token. Copy the token from Wasla Web again.</value>
+  </data>
+  <data name="Tray.OpenClassicFallback" xml:space="preserve">
+    <value>Open classic window (fallback)</value>
   </data>
 </root>

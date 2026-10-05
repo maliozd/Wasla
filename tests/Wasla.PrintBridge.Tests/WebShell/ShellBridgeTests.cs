@@ -52,7 +52,7 @@ public sealed class ShellBridgeTests : IDisposable
 
         Assert.Equal(ShellMessageOutcome.Accepted, outcome);
         var message = JsonDocument.Parse(Assert.Single(_host.Sent)).RootElement;
-        Assert.Equal(2, message.GetProperty("version").GetInt32());
+        Assert.Equal(ShellMessageContract.Version, message.GetProperty("version").GetInt32());
         Assert.Equal("snapshot.updated", message.GetProperty("type").GetString());
         Assert.Equal(1, message.GetProperty("sequence").GetInt64());
         Assert.Equal("online", message.GetProperty("payload").GetProperty("connection").GetProperty("state").GetString());
@@ -142,8 +142,8 @@ public sealed class ShellBridgeTests : IDisposable
 
     [Theory]
     [InlineData("not json")]
-    [InlineData("""{"version":2,"type":"host.exec","payload":{"method":"Exit"}}""")]
-    [InlineData("""{"version":2,"type":"ui.ready","payload":{},"extra":1}""")]
+    [InlineData("""{"version":3,"type":"host.exec","payload":{"method":"Exit"}}""")]
+    [InlineData("""{"version":3,"type":"ui.ready","payload":{},"extra":1}""")]
     public void MalformedOrUnknownMessages_AreRejectedWithoutEffect(string raw)
     {
         Assert.Equal(ShellMessageOutcome.Rejected, _bridge.HandleWebMessage(ShellDocument, raw));
