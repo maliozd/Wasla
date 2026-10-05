@@ -97,7 +97,10 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
         using var harness = CreateHarness(api, dryRun: false);
 
         harness.Runtime.Start();
+        // JobFinished fires when mark-printed arrives; stopping before the runtime has read the response would
+        // cancel that request. The next poll proves the job is completely handled.
         await api.JobFinished.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await api.PolledAfterJobFinished.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         await harness.Runtime.StopAsync();
 
         var print = Assert.Single(harness.Printer.Calls);
@@ -209,6 +212,41 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
         Assert.Equal("Kasa 1", status.DisplayName);
         Assert.True(status.ServerDeviceNameResolved);
         Assert.NotNull(status.LastSuccessfulContactUtc);
+    }
+
+    [Fact]
+    public async Task TestPrint_InTestMode_NeverReachesThePrinter()
+    {
+        using var harness = CreateHarness(new FakeWaslaApi(), dryRun: true);
+
+        var error = await Assert.ThrowsAsync<LocalizedApplicationException>(
+            () => harness.Runtime.TestPrinterAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal("Error.DryRunEnabled", error.ResourceKey);
+        Assert.Empty(harness.Printer.Calls);
+    }
+
+    [Fact]
+    public async Task TestPrint_InArabic_StampsTheGregorianDate()
+    {
+        var original = System.Globalization.CultureInfo.CurrentCulture;
+        var arabic = System.Globalization.CultureInfo.GetCultureInfo("ar-SA");
+        using var harness = CreateHarness(new FakeWaslaApi(), dryRun: false);
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture = arabic;
+            await harness.Runtime.TestPrinterAsync(TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = original;
+        }
+
+        var print = Assert.Single(harness.Printer.Calls);
+        Assert.Equal(harness.PrinterName, print.PrinterName);
+        Assert.Equal(1, print.CopyCount);
+        Assert.Contains(DateTime.Now.Year.ToString(System.Globalization.CultureInfo.InvariantCulture), print.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain(DateTime.Now.ToString("yyyy", arabic), print.Text, StringComparison.Ordinal);
     }
 
     private Harness CreateHarness(FakeWaslaApi api, bool dryRun)
@@ -323,6 +361,9 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
 
         public TaskCompletionSource JobFinished { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        /// <summary>The first pending-jobs poll after a job finished: the runtime is done with that job.</summary>
+        public TaskCompletionSource PolledAfterJobFinished { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public int MaxConcurrentHealthRequests => Volatile.Read(ref _maxHealthInFlight);
 
         public void ReleaseHealthRequests() => _releaseHealth.TrySetResult();
@@ -355,6 +396,8 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
 
             if (path == "api/print-bridge/jobs/pending")
             {
+                if (JobFinished.Task.IsCompleted)
+                    PolledAfterJobFinished.TrySetResult();
                 var jobs = new List<object>();
                 while (_pendingJobs.TryDequeue(out var job))
                     jobs.Add(job);

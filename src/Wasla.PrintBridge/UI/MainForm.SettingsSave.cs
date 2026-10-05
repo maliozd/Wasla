@@ -446,7 +446,7 @@ public sealed partial class MainForm
             AgentToken = source.AgentToken
         };
 
-    private static PrintBridgeOptions ClonePrintBridgeOptions(PrintBridgeOptions source) =>
+    internal static PrintBridgeOptions ClonePrintBridgeOptions(PrintBridgeOptions source) =>
         new()
         {
             PrinterMode = source.PrinterMode,

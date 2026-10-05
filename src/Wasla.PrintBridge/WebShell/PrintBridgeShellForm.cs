@@ -9,14 +9,17 @@ using Wasla.PrintBridge.Services;
 namespace Wasla.PrintBridge.WebShell;
 
 /// <summary>
-/// Window hosting the WebView2 status shell. It applies <see cref="ShellSecurityProfile"/>, maps only the
+/// Window hosting the WebView2 Print Bridge app. It applies <see cref="ShellSecurityProfile"/>, maps only the
 /// packaged asset folder to the synthetic shell origin, denies every navigation, popup, permission,
 /// download and external request outside that origin, and forwards page messages to <see cref="ShellBridge"/>.
+/// It also owns the privileged native actions the page may request (<see cref="IShellNativeActions"/>).
 /// Closing the window hides it to the tray, like the classic window.
 /// </summary>
-internal sealed class PrintBridgeShellForm : Form, IShellHost
+internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActions
 {
     private const int RefreshIntervalMilliseconds = 2000;
+    private static readonly Color LightCanvas = Color.FromArgb(0xF7, 0xF4, 0xEE);
+    private static readonly Color DarkCanvas = Color.FromArgb(0x1B, 0x18, 0x16);
 
     private readonly WebView2 _webView;
     private readonly ShellBridge _bridge;
@@ -25,17 +28,21 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost
     private readonly ShellSecurityProfile _profile;
     private readonly ILogger _logger;
     private readonly System.Windows.Forms.Timer _refreshTimer;
-    private readonly bool _useDarkPalette;
+    private bool _useDarkPalette;
 
     private CoreWebView2Environment? _environment;
     private Task? _initialization;
     private bool _unavailableRaised;
 
     public PrintBridgeShellForm(
-        IPrintBridgeStatusSource statusSource,
+        IPrintBridgeEngine engine,
+        PrintBridgeSettingsHolder settings,
+        IPrinterCatalog printers,
+        IShellPrinterSettings printerSettings,
         PrintBridgeLocalizer localizer,
         PrintBridgeCultureService cultureService,
         IShellLanguageSwitcher languageSwitcher,
+        string? webView2Version,
         ILogger logger)
     {
         _localizer = localizer;
@@ -44,11 +51,11 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost
         _profile = ShellSecurityProfile.ForCurrentBuild;
         _useDarkPalette = IsWindowsAppDarkModeEnabled();
 
-        var canvas = _useDarkPalette ? Color.FromArgb(0x1B, 0x18, 0x16) : Color.FromArgb(0xF7, 0xF4, 0xEE);
+        var canvas = _useDarkPalette ? DarkCanvas : LightCanvas;
         Text = _localizer["Common.AppTitle"];
         AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(760, 680);
+        ClientSize = new Size(760, 580);
         MinimumSize = new Size(420, 420);
         BackColor = canvas;
         ShowInTaskbar = true;
@@ -61,18 +68,24 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost
         };
         Controls.Add(_webView);
 
+        var history = new ShellHistory(engine, localizer, cultureService);
+        var operations = new ShellOperations(engine, printers, printerSettings, this, history, settings, localizer, logger);
         _bridge = new ShellBridge(
-            statusSource,
-            new ShellSnapshotFactory(localizer, cultureService),
+            engine,
+            new ShellSnapshotFactory(localizer, cultureService, settings, printers, () => operations.Busy, webView2Version),
             this,
             languageSwitcher,
             cultureService,
+            operations,
+            history,
+            this,
             logger);
 
         _refreshTimer = new System.Windows.Forms.Timer { Interval = RefreshIntervalMilliseconds };
         _refreshTimer.Tick += (_, _) => _bridge.Refresh();
 
         _cultureService.CultureChanged += OnCultureChanged;
+        SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
 
     /// <summary>Raised once when the shell cannot run; the tray then falls back to the classic window.</summary>
@@ -80,8 +93,15 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost
 
     public event EventHandler? ClassicWindowRequested;
 
+    /// <summary>The page asked for the trusted native connection setup (server URL and token are entered there).</summary>
+    public event EventHandler? ConnectionSetupRequested;
+
+    /// <summary>
+    /// True while the page can receive messages. A window hidden to the tray still receives them, so the result
+    /// of an operation that finishes after the window was closed is never lost.
+    /// </summary>
     public bool IsAvailable =>
-        !IsDisposed && Visible && _webView.CoreWebView2 is not null && !_unavailableRaised;
+        !IsDisposed && _webView.CoreWebView2 is not null && !_unavailableRaised;
 
     /// <summary>For the real-runtime integration tests only.</summary>
     internal CoreWebView2? CoreWebView2ForTests => _webView.CoreWebView2;
@@ -124,11 +144,22 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost
 
     public void OpenClassicWindow() => ClassicWindowRequested?.Invoke(this, EventArgs.Empty);
 
+    public void OpenConnectionSetup() => ConnectionSetupRequested?.Invoke(this, EventArgs.Empty);
+
+    public bool ConfirmConnectionReset() =>
+        Wasla.PrintBridge.UI.PrintBridgeConfirmDialog.Confirm(
+            this,
+            _localizer["Message.ResetConnectionConfirmTitle"],
+            _localizer["Message.ResetConnectionConfirm"],
+            _localizer["Button.ResetConnectionConfirm"],
+            _localizer["Button.ResetConnectionCancel"]);
+
+    public bool OpenLogFolder() => ShellLogFolder.TryOpen();
+
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        if (_useDarkPalette)
-            TryUseDarkTitleBar(Handle);
+        ApplyTitleBarTheme();
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -147,6 +178,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost
     {
         if (disposing)
         {
+            SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
             _cultureService.CultureChanged -= OnCultureChanged;
             _refreshTimer.Stop();
             _refreshTimer.Dispose();
@@ -312,6 +344,35 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost
     private void OnCultureChanged(object? sender, EventArgs e) =>
         Post(() => Text = _localizer["Common.AppTitle"]);
 
+    /// <summary>
+    /// The app follows the Windows app theme (there is no separate Print Bridge theme setting). The page updates
+    /// through <c>prefers-color-scheme</c>; this keeps the title bar and the pre-paint background in step.
+    /// </summary>
+    private void OnUserPreferenceChanged(object? sender, UserPreferenceChangedEventArgs e)
+    {
+        if (e.Category is not (UserPreferenceCategory.General or UserPreferenceCategory.Color or UserPreferenceCategory.VisualStyle))
+            return;
+
+        Post(() =>
+        {
+            var dark = IsWindowsAppDarkModeEnabled();
+            if (dark == _useDarkPalette)
+                return;
+
+            _useDarkPalette = dark;
+            var canvas = dark ? DarkCanvas : LightCanvas;
+            BackColor = canvas;
+            _webView.DefaultBackgroundColor = canvas;
+            ApplyTitleBarTheme();
+        });
+    }
+
+    private void ApplyTitleBarTheme()
+    {
+        if (IsHandleCreated)
+            TrySetDarkTitleBar(Handle, _useDarkPalette);
+    }
+
     private void RaiseUnavailable()
     {
         if (_unavailableRaised)
@@ -336,10 +397,10 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost
         }
     }
 
-    private static void TryUseDarkTitleBar(IntPtr handle)
+    private static void TrySetDarkTitleBar(IntPtr handle, bool dark)
     {
         const int DwmwaUseImmersiveDarkMode = 20;
-        var enabled = 1;
+        var enabled = dark ? 1 : 0;
         try
         {
             _ = DwmSetWindowAttribute(handle, DwmwaUseImmersiveDarkMode, ref enabled, sizeof(int));

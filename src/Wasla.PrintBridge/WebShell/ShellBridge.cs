@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Localization;
+using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Services;
 
 namespace Wasla.PrintBridge.WebShell;
@@ -15,8 +16,6 @@ public interface IShellHost
 
     /// <summary>Sends one serialized host message to the page. Called on the UI thread only.</summary>
     void PostWebMessageAsJson(string json);
-
-    void OpenClassicWindow();
 }
 
 public interface IShellLanguageSwitcher
@@ -33,9 +32,10 @@ public enum ShellMessageOutcome
 }
 
 /// <summary>
-/// Connects the status page to the running engine. It reads engine state through
-/// <see cref="IPrintBridgeStatusSource"/> only, so it cannot start, stop or duplicate the polling loop,
-/// claim jobs or print. Page commands are limited to <see cref="ShellCommandType"/>.
+/// Connects the page to the running engine. It reads engine state through <see cref="IPrintBridgeStatusSource"/>
+/// and changes it only through <see cref="ShellOperations"/>, whose commands are allowlisted, single-flight and
+/// de-duplicated. Page commands are limited to <see cref="ShellCommandType"/>; nothing from the page selects a
+/// method, a path or a URL.
 /// </summary>
 public sealed class ShellBridge : IDisposable
 {
@@ -44,6 +44,9 @@ public sealed class ShellBridge : IDisposable
     private readonly IShellHost _host;
     private readonly IShellLanguageSwitcher _languageSwitcher;
     private readonly PrintBridgeCultureService _cultureService;
+    private readonly ShellOperations _operations;
+    private readonly ShellHistory _history;
+    private readonly IShellNativeActions _native;
     private readonly ILogger _logger;
 
     private int _pushQueued;
@@ -51,6 +54,7 @@ public sealed class ShellBridge : IDisposable
     private bool _languageChangeInFlight;
     private bool _disposed;
     private long _sequence;
+    private long _snapshotCount;
     private string? _lastPayloadJson;
 
     public ShellBridge(
@@ -59,6 +63,9 @@ public sealed class ShellBridge : IDisposable
         IShellHost host,
         IShellLanguageSwitcher languageSwitcher,
         PrintBridgeCultureService cultureService,
+        ShellOperations operations,
+        ShellHistory history,
+        IShellNativeActions native,
         ILogger logger)
     {
         _statusSource = statusSource;
@@ -66,14 +73,18 @@ public sealed class ShellBridge : IDisposable
         _host = host;
         _languageSwitcher = languageSwitcher;
         _cultureService = cultureService;
+        _operations = operations;
+        _history = history;
+        _native = native;
         _logger = logger;
 
-        _statusSource.StatusChanged += OnEngineStateChanged;
-        _cultureService.CultureChanged += OnEngineStateChanged;
+        _statusSource.StatusChanged += OnStateChanged;
+        _cultureService.CultureChanged += OnStateChanged;
+        _operations.StateChanged += OnStateChanged;
     }
 
     /// <summary>Number of snapshots sent to the page so far.</summary>
-    public long SentSnapshotCount => Interlocked.Read(ref _sequence);
+    public long SentSnapshotCount => Interlocked.Read(ref _snapshotCount);
 
     /// <summary>
     /// Handles one message from the page. Must be called on the UI thread with the WebView2-reported
@@ -97,6 +108,8 @@ public sealed class ShellBridge : IDisposable
                 // Repeated ready/request messages (for example after a reload) only resend the current state.
                 _pageReady = true;
                 PushSnapshot(force: true);
+                if (command.Type == ShellCommandType.UiReady)
+                    _ = _operations.EnsurePrintersDiscoveredAsync();
                 break;
 
             case ShellCommandType.LanguageChange:
@@ -104,7 +117,19 @@ public sealed class ShellBridge : IDisposable
                 break;
 
             case ShellCommandType.ClassicWindowOpen:
-                _host.OpenClassicWindow();
+                _native.OpenClassicWindow();
+                break;
+
+            case ShellCommandType.ConnectionOpenSetup:
+                _native.OpenConnectionSetup();
+                break;
+
+            case ShellCommandType.HistoryQuery:
+                SendHistory(command);
+                break;
+
+            default:
+                _ = RunOperationAsync(command);
                 break;
         }
 
@@ -123,11 +148,12 @@ public sealed class ShellBridge : IDisposable
             return;
 
         _disposed = true;
-        _statusSource.StatusChanged -= OnEngineStateChanged;
-        _cultureService.CultureChanged -= OnEngineStateChanged;
+        _statusSource.StatusChanged -= OnStateChanged;
+        _cultureService.CultureChanged -= OnStateChanged;
+        _operations.StateChanged -= OnStateChanged;
     }
 
-    private void OnEngineStateChanged(object? sender, EventArgs e)
+    private void OnStateChanged(object? sender, EventArgs e)
     {
         // Raised from engine threads, possibly many times per poll. Coalesce into one queued UI update.
         if (_disposed || Interlocked.Exchange(ref _pushQueued, 1) == 1)
@@ -151,8 +177,63 @@ public sealed class ShellBridge : IDisposable
             return;
 
         _lastPayloadJson = payloadJson;
-        var sequence = Interlocked.Increment(ref _sequence);
-        _host.PostWebMessageAsJson(ShellMessageSerializer.SerializeSnapshotMessage(snapshot, sequence));
+        Interlocked.Increment(ref _snapshotCount);
+        _host.PostWebMessageAsJson(ShellMessageSerializer.SerializeSnapshotMessage(snapshot, NextSequence()));
+    }
+
+    private void SendHistory(ShellCommand command)
+    {
+        if (!_host.IsAvailable)
+            return;
+
+        try
+        {
+            var page = _history.Query(
+                command.HistoryRange ?? PrintHistoryDateFilter.Today,
+                command.HistoryPage ?? 0,
+                command.HistorySearch);
+            _host.PostWebMessageAsJson(ShellMessageSerializer.SerializeHistoryResult(
+                new ShellHistoryResult(command.RequestId!, page),
+                NextSequence()));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Print Bridge shell could not read the local print history.");
+            SendResult(new ShellOperationResult(
+                ShellMessageContract.HistoryQuery,
+                command.RequestId,
+                ShellOperationOutcome.Failed,
+                _operations.Describe(ex)));
+        }
+    }
+
+    private async Task RunOperationAsync(ShellCommand command)
+    {
+        ShellOperationResult result;
+        try
+        {
+            result = await _operations.ExecuteAsync(command).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Print Bridge shell operation could not complete.");
+            return;
+        }
+
+        // A repeated request id is the same click delivered twice; the first one is answered already.
+        if (result.Outcome == ShellOperationOutcome.Duplicate)
+            return;
+
+        SendResult(result);
+        PushSnapshot(force: true);
+    }
+
+    private void SendResult(ShellOperationResult result)
+    {
+        if (_disposed || !_host.IsAvailable)
+            return;
+
+        _host.PostWebMessageAsJson(ShellMessageSerializer.SerializeOperationResult(result, NextSequence()));
     }
 
     private async Task ChangeLanguageAsync(string culture)
@@ -179,6 +260,8 @@ public sealed class ShellBridge : IDisposable
         // Always answer with host truth: the new language, or the unchanged one if saving failed.
         PushSnapshot(force: true);
     }
+
+    private long NextSequence() => Interlocked.Increment(ref _sequence);
 
     private ShellMessageOutcome Reject(ShellMessageRejection reason, string? raw)
     {

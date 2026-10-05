@@ -56,6 +56,8 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private readonly IWebView2RuntimeProbe _webViewRuntimeProbe = new WebView2RuntimeProbe();
 
+    private readonly IPrinterCatalog _printerCatalog = new WindowsPrinterCatalog();
+
     private PrintBridgeShellForm? _shellForm;
 
     private bool _shellFailedThisSession;
@@ -260,17 +262,26 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (_shellForm is { IsDisposed: false })
             return _shellForm;
 
+        var store = _services.GetRequiredService<PrintBridgeSettingsStore>();
+        var holder = _services.GetRequiredService<PrintBridgeSettingsHolder>();
+        var loggers = _services.GetRequiredService<ILoggerFactory>();
         _shellForm = new PrintBridgeShellForm(
             _runtime,
+            holder,
+            _printerCatalog,
+            new ShellPrinterSettings(store, holder),
             _localizer,
             _cultureService,
-            new PrintBridgeLanguageService(
-                _services.GetRequiredService<PrintBridgeSettingsStore>(),
-                _services.GetRequiredService<PrintBridgeSettingsHolder>(),
-                _cultureService,
-                _services.GetRequiredService<ILoggerFactory>().CreateLogger<PrintBridgeLanguageService>()),
-            _services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Shell"));
+            new PrintBridgeLanguageService(store, holder, _cultureService, loggers.CreateLogger<PrintBridgeLanguageService>()),
+            _webViewRuntimeProbe.Probe().Version,
+            loggers.CreateLogger("Wasla.PrintBridge.Shell"));
         _shellForm.ClassicWindowRequested += (_, _) => ShowMainWindow();
+        _shellForm.ConnectionSetupRequested += (_, _) =>
+        {
+            // Reconnect uses the existing native setup: the token never passes through the WebView2 page.
+            ShowMainWindow();
+            _mainForm.FocusConnectionSettingsSection();
+        };
         _shellForm.ShellUnavailable += OnShellUnavailable;
         return _shellForm;
     }

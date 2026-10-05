@@ -92,9 +92,10 @@ public sealed partial class ShellLocalizationTests
     public void PageLabels_UseOnlyKeysTheHostSends()
     {
         var html = File.ReadAllText(Path.Combine(AssetsDirectory(), "index.html"));
-        var script = File.ReadAllText(Path.Combine(AssetsDirectory(), "shell.js"));
+        var scripts = File.ReadAllText(Path.Combine(AssetsDirectory(), "shell.js"))
+                      + File.ReadAllText(Path.Combine(AssetsDirectory(), "shell-model.js"));
         var pageKeys = DataI18nRegex().Matches(html).Select(m => m.Groups[1].Value)
-            .Concat(TextLookupRegex().Matches(script).Select(m => m.Groups[1].Value))
+            .Concat(ResourceKeyLiteralRegex().Matches(scripts).Select(m => m.Groups[1].Value))
             .Distinct()
             .ToArray();
 
@@ -109,9 +110,10 @@ public sealed partial class ShellLocalizationTests
         var html = File.ReadAllText(Path.Combine(AssetsDirectory(), "index.html"));
         var body = html[html.IndexOf("<body>", StringComparison.Ordinal)..];
 
-        // Every text node in the body is empty: all visible text comes from host snapshots.
+        // Every text node in the body is empty: all visible text comes from host snapshots. The only literals
+        // are the brand mark letter and the toast close glyph, which has a localized accessible name.
         var visibleText = TextNodeRegex().Matches(body).Select(m => m.Groups[1].Value.Trim()).Where(t => t.Length > 0).ToArray();
-        Assert.Equal(["W"], visibleText);
+        Assert.Equal(["W", "×"], visibleText);
     }
 
     private static IEnumerable<KeyValuePair<string, string>> LoadKeys(string file)
@@ -128,11 +130,12 @@ public sealed partial class ShellLocalizationTests
     [GeneratedRegex(@"\{\d+(?:[,:][^}]*)?\}")]
     private static partial Regex PlaceholderRegex();
 
-    [GeneratedRegex("data-i18n=\"([^\"]+)\"")]
+    [GeneratedRegex("data-i18n(?:-label|-placeholder)?=\"([^\"]+)\"")]
     private static partial Regex DataI18nRegex();
 
-    [GeneratedRegex(@"model\.text\(snapshot, '([^']+)'\)")]
-    private static partial Regex TextLookupRegex();
+    /// <summary>Resource keys referenced from script, e.g. <c>'Button.StartListening'</c> (no spaces, dotted).</summary>
+    [GeneratedRegex(@"'([A-Z][A-Za-z]+(?:\.[A-Za-z]+)+)'")]
+    private static partial Regex ResourceKeyLiteralRegex();
 
     [GeneratedRegex(@">([^<]*)<")]
     private static partial Regex TextNodeRegex();

@@ -691,9 +691,6 @@
   <data name="Shell.OpenClassicWindow" xml:space="preserve">
     <value>Open classic window</value>
   </data>
-  <data name="Shell.Preview.Notice" xml:space="preserve">
-    <value>Preview: this view shows status only. Settings and print history remain in the classic window.</value>
-  </data>
   <data name="Shell.Fallback.Title" xml:space="preserve">
     <value>Classic window opened</value>
   </data>
@@ -702,5 +699,182 @@
   </data>
   <data name="Shell.Fallback.StartFailed" xml:space="preserve">
     <value>The new view could not start. The classic window is used instead.</value>
+  </data>
+  <data name="Shell.Nav.Label" xml:space="preserve">
+    <value>Sections</value>
+  </data>
+  <data name="Shell.Tab.Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Shell.Tab.Printer" xml:space="preserve">
+    <value>Printer</value>
+  </data>
+  <data name="Shell.Tile.Printer" xml:space="preserve">
+    <value>Printer</value>
+  </data>
+  <data name="Shell.Tile.Engine" xml:space="preserve">
+    <value>Listening</value>
+  </data>
+  <data name="Shell.Overview.Actions" xml:space="preserve">
+    <value>Quick actions</value>
+  </data>
+  <data name="Shell.Action.Reconnect" xml:space="preserve">
+    <value>Reconnect</value>
+  </data>
+  <data name="Shell.Action.ConfigurePrinter" xml:space="preserve">
+    <value>Choose printer</value>
+  </data>
+  <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
+    <value>Show diagnostics</value>
+  </data>
+  <data name="Shell.Action.OpenSetup" xml:space="preserve">
+    <value>Open connection setup</value>
+  </data>
+  <data name="Shell.Action.Working" xml:space="preserve">
+    <value>Working…</value>
+  </data>
+  <data name="Shell.Action.Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="Shell.Action.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Shell.Printer.Title" xml:space="preserve">
+    <value>Receipt printer</value>
+  </data>
+  <data name="Shell.Printer.Help" xml:space="preserve">
+    <value>Choose and save the Windows printer that receives receipts. A job that is already printing is not interrupted when you save.</value>
+  </data>
+  <data name="Shell.Printer.Placeholder" xml:space="preserve">
+    <value>Choose a printer</value>
+  </data>
+  <data name="Shell.Printer.NoneInstalled" xml:space="preserve">
+    <value>No printer is installed on this computer. Add the printer in Windows, then select Refresh.</value>
+  </data>
+  <data name="Shell.Printer.SavedNotInstalled" xml:space="preserve">
+    <value>The saved printer is not installed on this computer. Choose another printer or add it to Windows again.</value>
+  </data>
+  <data name="Shell.Printer.TestHelp" xml:space="preserve">
+    <value>The test receipt goes to the saved printer. Windows accepting the job does not guarantee that paper was printed.</value>
+  </data>
+  <data name="Shell.Printer.NotInstalled" xml:space="preserve">
+    <value>The selected printer is not installed on this computer.</value>
+  </data>
+  <data name="Shell.History.Range" xml:space="preserve">
+    <value>Time range</value>
+  </data>
+  <data name="Shell.History.ConfirmReprint" xml:space="preserve">
+    <value>Reprint this receipt?</value>
+  </data>
+  <data name="Shell.History.Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Shell.History.Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Shell.History.Loading" xml:space="preserve">
+    <value>Loading history…</value>
+  </data>
+  <data name="Shell.History.Error.Printer" xml:space="preserve">
+    <value>The printer could not be reached.</value>
+  </data>
+  <data name="Shell.History.Error.Server" xml:space="preserve">
+    <value>The server did not confirm the job.</value>
+  </data>
+  <data name="Shell.History.Error.Generic" xml:space="preserve">
+    <value>Could not print. Details are in the log file.</value>
+  </data>
+  <data name="Shell.History.Skipped" xml:space="preserve">
+    <value>The job was handled elsewhere or was no longer waiting.</value>
+  </data>
+  <data name="Shell.History.DryRun" xml:space="preserve">
+    <value>Test mode: not printed on paper.</value>
+  </data>
+  <data name="Shell.Settings.Connection" xml:space="preserve">
+    <value>Wasla connection</value>
+  </data>
+  <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
+    <value>For security, the server address and device token are entered only in the local setup window; this screen never sees them.</value>
+  </data>
+  <data name="Shell.Settings.Appearance" xml:space="preserve">
+    <value>Language and appearance</value>
+  </data>
+  <data name="Shell.Settings.ThemeFollowsWindows" xml:space="preserve">
+    <value>Light or dark appearance follows the Windows app theme.</value>
+  </data>
+  <data name="Shell.Settings.TestMode" xml:space="preserve">
+    <value>Test mode</value>
+  </data>
+  <data name="Shell.Settings.TestModeOn" xml:space="preserve">
+    <value>On — receipts are not printed</value>
+  </data>
+  <data name="Shell.Settings.TestModeOff" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="Shell.Settings.AdvancedHelp" xml:space="preserve">
+    <value>Test mode and polling intervals are changed in the Advanced section of the classic window.</value>
+  </data>
+  <data name="Shell.Diagnostics.Title" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
+  <data name="Shell.Diagnostics.AppVersion" xml:space="preserve">
+    <value>App version</value>
+  </data>
+  <data name="Shell.Diagnostics.WebView2" xml:space="preserve">
+    <value>WebView2 Runtime</value>
+  </data>
+  <data name="Shell.Diagnostics.Engine" xml:space="preserve">
+    <value>Listening status</value>
+  </data>
+  <data name="Shell.Diagnostics.LastError" xml:space="preserve">
+    <value>Last error</value>
+  </data>
+  <data name="Shell.Diagnostics.None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Shell.Diagnostics.Unavailable" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Shell.Diagnostics.Fallback" xml:space="preserve">
+    <value>Classic window</value>
+  </data>
+  <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
+    <value>The classic window remains available as a fallback, including advanced settings and logs.</value>
+  </data>
+  <data name="Shell.Toast.Dismiss" xml:space="preserve">
+    <value>Dismiss</value>
+  </data>
+  <data name="Shell.Device.Unknown" xml:space="preserve">
+    <value>Device name not received yet</value>
+  </data>
+  <data name="Shell.Op.Started" xml:space="preserve">
+    <value>Listening started.</value>
+  </data>
+  <data name="Shell.Op.Stopped" xml:space="preserve">
+    <value>Listening stopped.</value>
+  </data>
+  <data name="Shell.Op.Busy" xml:space="preserve">
+    <value>This operation is already running.</value>
+  </data>
+  <data name="Shell.Op.Failed" xml:space="preserve">
+    <value>The operation could not be completed. Details are in the log file.</value>
+  </data>
+  <data name="Shell.Op.TimedOut" xml:space="preserve">
+    <value>The operation timed out. Try again.</value>
+  </data>
+  <data name="Shell.Op.PrintersRefreshed" xml:space="preserve">
+    <value>Printer list refreshed.</value>
+  </data>
+  <data name="Shell.Op.PrinterSaved" xml:space="preserve">
+    <value>Printer saved.</value>
+  </data>
+  <data name="Shell.Op.ResetDone" xml:space="preserve">
+    <value>Connection reset. Reconnect this device from Wasla Web.</value>
+  </data>
+  <data name="Shell.Op.ResetCancelled" xml:space="preserve">
+    <value>The connection was not reset.</value>
+  </data>
+  <data name="Shell.Op.LogsOpened" xml:space="preserve">
+    <value>Logs folder opened.</value>
   </data>
 </root>

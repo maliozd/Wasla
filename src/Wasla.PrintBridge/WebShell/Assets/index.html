@@ -16,85 +16,200 @@
     <header class="pb-header">
       <div class="pb-brand">
         <span class="pb-brand-mark" aria-hidden="true">W</span>
-        <div class="pb-brand-text">
-          <h1 class="pb-title" data-i18n="Common.AppTitle"></h1>
-          <p class="pb-subtitle" data-i18n="Common.Subtitle"></p>
-        </div>
+        <h1 class="pb-title" data-i18n="Common.AppTitle"></h1>
       </div>
-      <label class="pb-language" for="language">
-        <span class="pb-language-label" data-i18n="Settings.Language"></span>
-        <select class="pb-select" id="language"></select>
-      </label>
+      <p class="pb-pill" id="status-pill" data-state="connecting">
+        <span class="pb-dot" aria-hidden="true"></span>
+        <span id="status-pill-label"></span>
+      </p>
+      <select class="pb-select pb-language" id="language" data-i18n-label="Settings.Language"></select>
     </header>
 
-    <main class="pb-main">
-      <p class="pb-notice" data-i18n="Shell.Preview.Notice"></p>
+    <nav class="pb-tabs" role="tablist" id="tabs" data-i18n-label="Shell.Nav.Label">
+      <button type="button" class="pb-tab" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" data-i18n="Shell.Tab.Overview"></button>
+      <button type="button" class="pb-tab" role="tab" id="tab-printer" aria-controls="panel-printer" aria-selected="false" tabindex="-1" data-i18n="Shell.Tab.Printer"></button>
+      <button type="button" class="pb-tab" role="tab" id="tab-history" aria-controls="panel-history" aria-selected="false" tabindex="-1" data-i18n="Tab.PrintHistory"></button>
+      <button type="button" class="pb-tab" role="tab" id="tab-settings" aria-controls="panel-settings" aria-selected="false" tabindex="-1" data-i18n="Tab.Settings"></button>
+    </nav>
 
-      <section class="pb-hero" id="connection" data-state="connecting" aria-labelledby="connection-title">
-        <span class="pb-dot" aria-hidden="true"></span>
-        <div class="pb-hero-text">
-          <h2 class="pb-eyebrow" id="connection-title" data-i18n="Dashboard.ServerStatus"></h2>
-          <p class="pb-hero-label" id="connection-label"></p>
-          <p class="pb-hero-detail" id="connection-detail"></p>
+    <main class="pb-main">
+      <!-- Overview -->
+      <section class="pb-panel" role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="-1">
+        <div class="pb-hero" id="connection" data-state="connecting">
+          <span class="pb-dot pb-dot--hero" aria-hidden="true"></span>
+          <div class="pb-hero-text">
+            <h2 class="pb-eyebrow" data-i18n="Dashboard.ServerStatus"></h2>
+            <p class="pb-hero-label" id="connection-label"></p>
+            <p class="pb-hero-detail" id="connection-detail"></p>
+          </div>
+          <div class="pb-hero-actions" id="hero-actions"></div>
+        </div>
+
+        <p class="pb-notice pb-notice--info" id="dry-run" data-i18n="Settings.DryRunEnabledWarning" hidden></p>
+
+        <div class="pb-tiles">
+          <section class="pb-tile" id="tile-printer" data-state="" aria-labelledby="tile-printer-title">
+            <h3 class="pb-tile-title" id="tile-printer-title" data-i18n="Shell.Tile.Printer"></h3>
+            <p class="pb-tile-value" id="printer-name"></p>
+            <p class="pb-tile-meta"><span class="pb-badge" id="printer-state"></span></p>
+          </section>
+          <section class="pb-tile" id="tile-engine" data-state="" aria-labelledby="tile-engine-title">
+            <h3 class="pb-tile-title" id="tile-engine-title" data-i18n="Shell.Tile.Engine"></h3>
+            <p class="pb-tile-value" id="engine-label"></p>
+            <p class="pb-tile-meta" id="device-name"></p>
+          </section>
+          <section class="pb-tile" aria-labelledby="tile-contact-title">
+            <h3 class="pb-tile-title" id="tile-contact-title" data-i18n="Dashboard.LastContact"></h3>
+            <p class="pb-tile-value pb-number" id="last-contact"></p>
+          </section>
+          <section class="pb-tile pb-job" id="last-job" data-status="" aria-labelledby="tile-job-title">
+            <h3 class="pb-tile-title" id="tile-job-title" data-i18n="Shell.LastJob.Title"></h3>
+            <p class="pb-tile-empty" id="last-job-empty" data-i18n="RecentJobs.Empty"></p>
+            <div class="pb-job-line" id="last-job-row" hidden>
+              <span class="pb-tile-value" id="last-job-order"></span>
+              <span class="pb-badge" id="last-job-status"></span>
+            </div>
+            <p class="pb-tile-meta pb-number" id="last-job-time"></p>
+          </section>
+          <section class="pb-tile pb-tile--wide" aria-labelledby="tile-today-title">
+            <h3 class="pb-tile-title" id="tile-today-title" data-i18n="Shell.Today.Title"></h3>
+            <dl class="pb-stats">
+              <div class="pb-stat"><dt data-i18n="Dashboard.JobsToday"></dt><dd class="pb-number" id="jobs-today"></dd></div>
+              <div class="pb-stat" id="failed-stat"><dt data-i18n="Dashboard.FailedToday"></dt><dd class="pb-number" id="failed-today"></dd></div>
+              <div class="pb-stat"><dt data-i18n="Dashboard.LastPrint"></dt><dd class="pb-number" id="last-print"></dd></div>
+            </dl>
+          </section>
         </div>
       </section>
 
-      <p class="pb-dry-run" id="dry-run" data-i18n="Settings.DryRunEnabledWarning" hidden></p>
-
-      <div class="pb-grid">
-        <section class="pb-card" aria-labelledby="device-title">
-          <h2 class="pb-card-title" id="device-title" data-i18n="Dashboard.DeviceName"></h2>
-          <p class="pb-value" id="device-name"></p>
-        </section>
-
-        <section class="pb-card" id="printer" data-state="" aria-labelledby="printer-title">
-          <h2 class="pb-card-title" id="printer-title" data-i18n="Dashboard.PrinterStatus"></h2>
-          <p class="pb-value" id="printer-name"></p>
-          <p><span class="pb-badge" id="printer-state"></span></p>
-        </section>
-
-        <section class="pb-card" aria-labelledby="contact-title">
-          <h2 class="pb-card-title" id="contact-title" data-i18n="Dashboard.LastContact"></h2>
-          <p class="pb-value pb-number" id="last-contact"></p>
-        </section>
-
-        <section class="pb-card" aria-labelledby="today-title">
-          <h2 class="pb-card-title" id="today-title" data-i18n="Shell.Today.Title"></h2>
-          <dl class="pb-stats">
-            <div class="pb-stat">
-              <dt data-i18n="Dashboard.JobsToday"></dt>
-              <dd class="pb-number" id="jobs-today"></dd>
+      <!-- Printer -->
+      <section class="pb-panel" role="tabpanel" id="panel-printer" aria-labelledby="tab-printer" tabindex="-1" hidden>
+        <div class="pb-card">
+          <h2 class="pb-card-title" data-i18n="Shell.Printer.Title"></h2>
+          <p class="pb-help" data-i18n="Shell.Printer.Help"></p>
+          <div class="pb-field">
+            <label class="pb-label" for="printer-select" data-i18n="Settings.PrinterName"></label>
+            <div class="pb-field-row">
+              <select class="pb-select pb-grow" id="printer-select"></select>
+              <button type="button" class="pb-button" id="printers-refresh" data-command="printers.refresh" data-busy="printersRefresh" data-i18n="Button.Refresh"></button>
             </div>
-            <div class="pb-stat" id="failed-stat">
-              <dt data-i18n="Dashboard.FailedToday"></dt>
-              <dd class="pb-number" id="failed-today"></dd>
-            </div>
-            <div class="pb-stat">
-              <dt data-i18n="Dashboard.LastPrint"></dt>
-              <dd class="pb-number" id="last-print"></dd>
-            </div>
+            <p class="pb-help pb-help--warning" id="printer-none" data-i18n="Shell.Printer.NoneInstalled" hidden></p>
+            <p class="pb-help pb-help--warning" id="printer-missing" data-i18n="Shell.Printer.SavedNotInstalled" hidden></p>
+          </div>
+          <dl class="pb-facts">
+            <div><dt data-i18n="Dashboard.PrinterStatus"></dt><dd><span class="pb-badge" id="printer-panel-state"></span></dd></div>
           </dl>
-        </section>
-      </div>
+          <p class="pb-notice pb-notice--info" id="printer-dry-run" data-i18n="Settings.DryRunEnabledWarning" hidden></p>
+          <div class="pb-card-actions">
+            <button type="button" class="pb-button pb-button--primary" id="printer-save" data-busy="printerSave" data-i18n="Button.SavePrinter"></button>
+            <button type="button" class="pb-button" id="printer-test" data-command="printer.testPrint" data-busy="testPrint" data-action="testPrint" data-i18n="Button.TestPrinter"></button>
+          </div>
+          <p class="pb-help" data-i18n="Shell.Printer.TestHelp"></p>
+        </div>
+      </section>
 
-      <section class="pb-card pb-job" id="last-job" data-status="" aria-labelledby="last-job-title">
-        <h2 class="pb-card-title" id="last-job-title" data-i18n="Shell.LastJob.Title"></h2>
-        <p class="pb-empty" id="last-job-empty" data-i18n="RecentJobs.Empty"></p>
-        <div class="pb-job-row" id="last-job-row" hidden>
-          <span class="pb-job-order" id="last-job-order"></span>
-          <span class="pb-job-type" id="last-job-type"></span>
-          <span class="pb-job-time pb-number" id="last-job-time"></span>
-          <span class="pb-badge" id="last-job-status"></span>
+      <!-- History -->
+      <section class="pb-panel" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="-1" hidden>
+        <div class="pb-toolbar">
+          <label class="pb-visually-hidden" for="history-range" data-i18n="Shell.History.Range"></label>
+          <select class="pb-select" id="history-range">
+            <option value="today" data-i18n="PrintHistory.Filter.Today"></option>
+            <option value="last7Days" data-i18n="PrintHistory.Filter.Last7Days"></option>
+            <option value="last30Days" data-i18n="PrintHistory.Filter.Last30Days"></option>
+          </select>
+          <label class="pb-visually-hidden" for="history-search" data-i18n="PrintHistory.Search"></label>
+          <input class="pb-input pb-grow" id="history-search" type="search" maxlength="64" autocomplete="off" spellcheck="false" data-i18n-placeholder="PrintHistory.SearchPlaceholder">
+          <button type="button" class="pb-button" id="history-refresh" data-i18n="Button.Refresh"></button>
+        </div>
+        <div class="pb-table-wrap" id="history-wrap" aria-busy="false">
+          <table class="pb-table" id="history-table" hidden>
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="PrintHistory.Column.Time"></th>
+                <th scope="col" data-i18n="PrintHistory.Column.Order"></th>
+                <th scope="col" class="pb-col-optional" data-i18n="PrintHistory.Column.Platform"></th>
+                <th scope="col" class="pb-col-optional" data-i18n="PrintHistory.Column.Printer"></th>
+                <th scope="col" data-i18n="PrintHistory.Column.Status"></th>
+              </tr>
+            </thead>
+            <tbody id="history-rows"></tbody>
+          </table>
+          <p class="pb-empty" id="history-empty" hidden></p>
+          <p class="pb-empty" id="history-loading" data-i18n="Shell.History.Loading" hidden></p>
+        </div>
+        <div class="pb-pager">
+          <button type="button" class="pb-button" id="history-previous" data-i18n="Shell.History.Previous"></button>
+          <span class="pb-number" id="history-page"></span>
+          <button type="button" class="pb-button" id="history-next" data-i18n="Shell.History.Next"></button>
+        </div>
+      </section>
+
+      <!-- Settings & diagnostics -->
+      <section class="pb-panel" role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" tabindex="-1" hidden>
+        <div class="pb-card">
+          <h2 class="pb-card-title" data-i18n="Shell.Settings.Connection"></h2>
+          <p class="pb-help" data-i18n="Shell.Settings.ConnectionHelp"></p>
+          <div class="pb-card-actions">
+            <button type="button" class="pb-button" id="settings-test-connection" data-command="connection.test" data-busy="connectionTest" data-action="checkConnection" data-i18n="Button.TestConnection"></button>
+            <button type="button" class="pb-button" id="settings-open-setup" data-i18n="Shell.Action.OpenSetup"></button>
+            <button type="button" class="pb-button pb-button--danger" id="settings-reset" data-command="connection.reset" data-busy="connectionReset" data-action="resetConnection" data-i18n="Button.ResetConnection"></button>
+          </div>
+          <p class="pb-help" data-i18n="Settings.ResetConnectionHelp"></p>
+        </div>
+
+        <div class="pb-card">
+          <h2 class="pb-card-title" data-i18n="Shell.Settings.Appearance"></h2>
+          <div class="pb-field">
+            <label class="pb-label" for="settings-language" data-i18n="Settings.Language"></label>
+            <select class="pb-select" id="settings-language"></select>
+          </div>
+          <p class="pb-help" data-i18n="Shell.Settings.ThemeFollowsWindows"></p>
+          <dl class="pb-facts">
+            <div><dt data-i18n="Shell.Settings.TestMode"></dt><dd id="settings-test-mode"></dd></div>
+          </dl>
+          <p class="pb-help" data-i18n="Shell.Settings.AdvancedHelp"></p>
+        </div>
+
+        <div class="pb-card">
+          <h2 class="pb-card-title" id="diagnostics-title" data-i18n="Shell.Diagnostics.Title"></h2>
+          <dl class="pb-facts" aria-labelledby="diagnostics-title">
+            <div><dt data-i18n="Shell.Diagnostics.AppVersion"></dt><dd class="pb-number" id="diag-app-version"></dd></div>
+            <div><dt data-i18n="Shell.Diagnostics.WebView2"></dt><dd class="pb-number" id="diag-webview2"></dd></div>
+            <div><dt data-i18n="Shell.Diagnostics.Engine"></dt><dd id="diag-engine"></dd></div>
+            <div><dt data-i18n="Dashboard.LastContact"></dt><dd class="pb-number" id="diag-last-contact"></dd></div>
+            <div><dt data-i18n="Shell.Diagnostics.LastError"></dt><dd id="diag-last-error"></dd></div>
+            <div><dt data-i18n="Shell.Tile.Printer"></dt><dd id="diag-printer"></dd></div>
+            <div><dt data-i18n="Shell.Settings.TestMode"></dt><dd id="diag-test-mode"></dd></div>
+          </dl>
+          <div class="pb-card-actions">
+            <button type="button" class="pb-button" id="diag-open-logs" data-command="logs.openFolder" data-i18n="Button.OpenLogsFolder"></button>
+          </div>
+        </div>
+
+        <div class="pb-card">
+          <h2 class="pb-card-title" data-i18n="Shell.Diagnostics.Fallback"></h2>
+          <p class="pb-help" data-i18n="Shell.Diagnostics.FallbackHelp"></p>
+          <div class="pb-card-actions">
+            <button type="button" class="pb-button" id="open-classic" data-i18n="Shell.OpenClassicWindow"></button>
+          </div>
         </div>
       </section>
     </main>
 
-    <footer class="pb-footer">
-      <button type="button" class="pb-button" id="open-classic" data-i18n="Shell.OpenClassicWindow"></button>
-      <span class="pb-version" id="version"></span>
+    <!-- Stable action area: always visible below the content, never scrolled away -->
+    <footer class="pb-actionbar" id="actionbar" data-i18n-label="Shell.Overview.Actions">
+      <button type="button" class="pb-button pb-button--primary" id="action-engine" data-command="engine.start" data-busy="engine" aria-disabled="true"></button>
+      <button type="button" class="pb-button" id="action-test-print" data-command="printer.testPrint" data-busy="testPrint" data-action="testPrint" data-i18n="Button.TestPrinter"></button>
+      <button type="button" class="pb-button" id="action-check-connection" data-command="connection.test" data-busy="connectionTest" data-action="checkConnection" data-i18n="Button.TestConnection"></button>
     </footer>
 
+    <div class="pb-toast" id="toast" hidden>
+      <p class="pb-toast-text" id="toast-text"></p>
+      <button type="button" class="pb-toast-close" id="toast-close" data-i18n-label="Shell.Toast.Dismiss">×</button>
+    </div>
     <div class="pb-visually-hidden" id="announcer" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div class="pb-visually-hidden" id="alert" role="alert" aria-atomic="true"></div>
+    <span id="busy-hint" hidden data-i18n="Shell.Action.Working"></span>
   </div>
 </body>
 </html>

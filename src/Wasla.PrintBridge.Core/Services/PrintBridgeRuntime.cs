@@ -6,7 +6,7 @@ using Wasla.PrintBridge.Printing;
 
 namespace Wasla.PrintBridge.Services;
 
-public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource
+public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
 {
     private const int MaxRecentJobs = 50;
 
@@ -265,7 +265,8 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource
         if (!PrintBridgeSettingsValidator.TryValidatePrinterAvailability(bridge, out var errorKey))
             throw new LocalizedApplicationException(errorKey!);
 
-        var receipt = $"Wasla Print Bridge{Environment.NewLine}Test print{Environment.NewLine}{DateTime.Now:G}";
+        var printedAt = DateTime.Now.ToString("G", Wasla.Application.Printing.GregorianCulture.For(System.Globalization.CultureInfo.CurrentCulture));
+        var receipt = $"Wasla Print Bridge{Environment.NewLine}Test print{Environment.NewLine}{printedAt}";
         await _printer.PrintAsync(bridge.PrinterName, receipt, 1, ct).ConfigureAwait(false);
     }
 

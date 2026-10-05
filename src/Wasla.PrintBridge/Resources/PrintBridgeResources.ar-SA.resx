@@ -653,9 +653,6 @@
   <data name="Shell.OpenClassicWindow" xml:space="preserve">
     <value>فتح النافذة الكلاسيكية</value>
   </data>
-  <data name="Shell.Preview.Notice" xml:space="preserve">
-    <value>معاينة: يعرض هذا العرض الحالة فقط. تبقى الإعدادات وسجل الطباعة في النافذة الكلاسيكية.</value>
-  </data>
   <data name="Shell.Fallback.Title" xml:space="preserve">
     <value>تم فتح النافذة الكلاسيكية</value>
   </data>
@@ -664,5 +661,182 @@
   </data>
   <data name="Shell.Fallback.StartFailed" xml:space="preserve">
     <value>تعذر تشغيل العرض الجديد. يتم استخدام النافذة الكلاسيكية بدلاً منه.</value>
+  </data>
+  <data name="Shell.Nav.Label" xml:space="preserve">
+    <value>الأقسام</value>
+  </data>
+  <data name="Shell.Tab.Overview" xml:space="preserve">
+    <value>نظرة عامة</value>
+  </data>
+  <data name="Shell.Tab.Printer" xml:space="preserve">
+    <value>الطابعة</value>
+  </data>
+  <data name="Shell.Tile.Printer" xml:space="preserve">
+    <value>الطابعة</value>
+  </data>
+  <data name="Shell.Tile.Engine" xml:space="preserve">
+    <value>الاستماع</value>
+  </data>
+  <data name="Shell.Overview.Actions" xml:space="preserve">
+    <value>إجراءات سريعة</value>
+  </data>
+  <data name="Shell.Action.Reconnect" xml:space="preserve">
+    <value>إعادة الاتصال</value>
+  </data>
+  <data name="Shell.Action.ConfigurePrinter" xml:space="preserve">
+    <value>اختر طابعة</value>
+  </data>
+  <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
+    <value>عرض التشخيص</value>
+  </data>
+  <data name="Shell.Action.OpenSetup" xml:space="preserve">
+    <value>فتح إعداد الاتصال</value>
+  </data>
+  <data name="Shell.Action.Working" xml:space="preserve">
+    <value>جارٍ التنفيذ…</value>
+  </data>
+  <data name="Shell.Action.Confirm" xml:space="preserve">
+    <value>تأكيد</value>
+  </data>
+  <data name="Shell.Action.Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="Shell.Printer.Title" xml:space="preserve">
+    <value>طابعة الإيصالات</value>
+  </data>
+  <data name="Shell.Printer.Help" xml:space="preserve">
+    <value>اختر طابعة Windows التي تستقبل الإيصالات واحفظها. لا تتم مقاطعة المهمة الجاري طباعتها عند الحفظ.</value>
+  </data>
+  <data name="Shell.Printer.Placeholder" xml:space="preserve">
+    <value>اختر طابعة</value>
+  </data>
+  <data name="Shell.Printer.NoneInstalled" xml:space="preserve">
+    <value>لا توجد طابعة مثبتة على هذا الكمبيوتر. أضف الطابعة في Windows ثم اختر تحديث.</value>
+  </data>
+  <data name="Shell.Printer.SavedNotInstalled" xml:space="preserve">
+    <value>الطابعة المحفوظة غير مثبتة على هذا الكمبيوتر. اختر طابعة أخرى أو أضفها إلى Windows مرة أخرى.</value>
+  </data>
+  <data name="Shell.Printer.TestHelp" xml:space="preserve">
+    <value>يُرسل إيصال الاختبار إلى الطابعة المحفوظة. قبول Windows للمهمة لا يضمن طباعة الورق.</value>
+  </data>
+  <data name="Shell.Printer.NotInstalled" xml:space="preserve">
+    <value>الطابعة المحددة غير مثبتة على هذا الكمبيوتر.</value>
+  </data>
+  <data name="Shell.History.Range" xml:space="preserve">
+    <value>النطاق الزمني</value>
+  </data>
+  <data name="Shell.History.ConfirmReprint" xml:space="preserve">
+    <value>إعادة طباعة هذا الإيصال؟</value>
+  </data>
+  <data name="Shell.History.Previous" xml:space="preserve">
+    <value>السابق</value>
+  </data>
+  <data name="Shell.History.Next" xml:space="preserve">
+    <value>التالي</value>
+  </data>
+  <data name="Shell.History.Loading" xml:space="preserve">
+    <value>جارٍ تحميل السجل…</value>
+  </data>
+  <data name="Shell.History.Error.Printer" xml:space="preserve">
+    <value>تعذر الوصول إلى الطابعة.</value>
+  </data>
+  <data name="Shell.History.Error.Server" xml:space="preserve">
+    <value>لم يؤكد الخادم المهمة.</value>
+  </data>
+  <data name="Shell.History.Error.Generic" xml:space="preserve">
+    <value>تعذرت الطباعة. التفاصيل في ملف السجل.</value>
+  </data>
+  <data name="Shell.History.Skipped" xml:space="preserve">
+    <value>تمت معالجة المهمة في مكان آخر أو لم تعد قيد الانتظار.</value>
+  </data>
+  <data name="Shell.History.DryRun" xml:space="preserve">
+    <value>وضع الاختبار: لم تتم الطباعة على الورق.</value>
+  </data>
+  <data name="Shell.Settings.Connection" xml:space="preserve">
+    <value>اتصال Wasla</value>
+  </data>
+  <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
+    <value>لأسباب أمنية، يُدخل عنوان الخادم ومفتاح الجهاز في نافذة الإعداد المحلية فقط؛ ولا تطّلع هذه الشاشة عليهما.</value>
+  </data>
+  <data name="Shell.Settings.Appearance" xml:space="preserve">
+    <value>اللغة والمظهر</value>
+  </data>
+  <data name="Shell.Settings.ThemeFollowsWindows" xml:space="preserve">
+    <value>يتبع المظهر الفاتح أو الداكن سمة تطبيقات Windows.</value>
+  </data>
+  <data name="Shell.Settings.TestMode" xml:space="preserve">
+    <value>وضع الاختبار</value>
+  </data>
+  <data name="Shell.Settings.TestModeOn" xml:space="preserve">
+    <value>مفعّل — لا تُطبع الإيصالات</value>
+  </data>
+  <data name="Shell.Settings.TestModeOff" xml:space="preserve">
+    <value>متوقف</value>
+  </data>
+  <data name="Shell.Settings.AdvancedHelp" xml:space="preserve">
+    <value>يتم تغيير وضع الاختبار وفترات الفحص من قسم الإعدادات المتقدمة في النافذة الكلاسيكية.</value>
+  </data>
+  <data name="Shell.Diagnostics.Title" xml:space="preserve">
+    <value>التشخيص</value>
+  </data>
+  <data name="Shell.Diagnostics.AppVersion" xml:space="preserve">
+    <value>إصدار التطبيق</value>
+  </data>
+  <data name="Shell.Diagnostics.WebView2" xml:space="preserve">
+    <value>بيئة تشغيل WebView2</value>
+  </data>
+  <data name="Shell.Diagnostics.Engine" xml:space="preserve">
+    <value>حالة الاستماع</value>
+  </data>
+  <data name="Shell.Diagnostics.LastError" xml:space="preserve">
+    <value>آخر خطأ</value>
+  </data>
+  <data name="Shell.Diagnostics.None" xml:space="preserve">
+    <value>لا يوجد</value>
+  </data>
+  <data name="Shell.Diagnostics.Unavailable" xml:space="preserve">
+    <value>غير معروف</value>
+  </data>
+  <data name="Shell.Diagnostics.Fallback" xml:space="preserve">
+    <value>النافذة الكلاسيكية</value>
+  </data>
+  <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
+    <value>تبقى النافذة الكلاسيكية متاحة كبديل، بما في ذلك الإعدادات المتقدمة والسجلات.</value>
+  </data>
+  <data name="Shell.Toast.Dismiss" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="Shell.Device.Unknown" xml:space="preserve">
+    <value>لم يتم استلام اسم الجهاز بعد</value>
+  </data>
+  <data name="Shell.Op.Started" xml:space="preserve">
+    <value>بدأ الاستماع.</value>
+  </data>
+  <data name="Shell.Op.Stopped" xml:space="preserve">
+    <value>توقف الاستماع.</value>
+  </data>
+  <data name="Shell.Op.Busy" xml:space="preserve">
+    <value>هذه العملية قيد التنفيذ بالفعل.</value>
+  </data>
+  <data name="Shell.Op.Failed" xml:space="preserve">
+    <value>تعذر إكمال العملية. التفاصيل في ملف السجل.</value>
+  </data>
+  <data name="Shell.Op.TimedOut" xml:space="preserve">
+    <value>انتهت مهلة العملية. حاول مرة أخرى.</value>
+  </data>
+  <data name="Shell.Op.PrintersRefreshed" xml:space="preserve">
+    <value>تم تحديث قائمة الطابعات.</value>
+  </data>
+  <data name="Shell.Op.PrinterSaved" xml:space="preserve">
+    <value>تم حفظ الطابعة.</value>
+  </data>
+  <data name="Shell.Op.ResetDone" xml:space="preserve">
+    <value>تمت إعادة تعيين الاتصال. أعد ربط هذا الجهاز من Wasla Web.</value>
+  </data>
+  <data name="Shell.Op.ResetCancelled" xml:space="preserve">
+    <value>لم تتم إعادة تعيين الاتصال.</value>
+  </data>
+  <data name="Shell.Op.LogsOpened" xml:space="preserve">
+    <value>تم فتح مجلد السجلات.</value>
   </data>
 </root>

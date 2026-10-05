@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "type": "snapshot.updated",
   "sequence": 1,
   "payload": {
@@ -10,18 +10,26 @@
       "label": "Çevrimiçi",
       "detail": "Wasla'ya bağlı. Yeni fiş işleri bekleniyor."
     },
+    "engine": {
+      "state": "running",
+      "label": "Çalışıyor"
+    },
     "device": {
       "name": "Kasa 1"
     },
     "printer": {
       "name": "POS-58",
       "state": "ready",
-      "label": "Hazır"
+      "label": "Hazır",
+      "installed": [
+        "Microsoft Print to PDF",
+        "POS-58"
+      ]
     },
     "activity": {
       "lastContact": "04.10.2026 20:20",
       "lastPrint": "04.10.2026 20:23",
-      "jobsToday": 1,
+      "jobsToday": 0,
       "failedToday": 0
     },
     "lastJob": {
@@ -31,32 +39,132 @@
       "typeLabel": "Fiş",
       "time": "04.10.2026 20:23"
     },
-    "dryRun": true,
-    "versionLabel": "Sürüm: v1.0.0",
+    "actions": {
+      "start": false,
+      "stop": true,
+      "testPrint": true,
+      "checkConnection": true,
+      "reconnect": false,
+      "configurePrinter": false,
+      "resetConnection": true
+    },
+    "busy": {
+      "engine": false,
+      "connectionTest": false,
+      "connectionReset": false,
+      "printersRefresh": false,
+      "printerSave": false,
+      "testPrint": false,
+      "reprint": false
+    },
+    "diagnostics": {
+      "appVersion": "v1.0.0",
+      "webView2Version": "154.0.4258.53",
+      "engineLabel": "Çalışıyor",
+      "lastContact": "04.10.2026 20:20",
+      "lastIssue": null,
+      "printerName": "POS-58",
+      "printerLabel": "Hazır",
+      "testModeLabel": "Kapalı"
+    },
+    "dryRun": false,
     "languages": [
-      { "culture": "tr-TR", "nativeName": "Türkçe" },
-      { "culture": "en-US", "nativeName": "English" },
-      { "culture": "ar-SA", "nativeName": "العربية" },
-      { "culture": "ru-RU", "nativeName": "Русский" }
+      {
+        "culture": "tr-TR",
+        "nativeName": "Türkçe"
+      },
+      {
+        "culture": "en-US",
+        "nativeName": "English"
+      },
+      {
+        "culture": "ar-SA",
+        "nativeName": "العربية"
+      },
+      {
+        "culture": "ru-RU",
+        "nativeName": "Русский"
+      }
     ],
     "strings": {
       "Common.AppTitle": "Wasla Print Bridge",
-      "Common.Subtitle": "Fiş yazdırma köprüsü",
       "Common.Dash": "-",
+      "Settings.Language": "Dil",
+      "Shell.Nav.Label": "Bölümler",
+      "Shell.Tab.Overview": "Genel bakış",
+      "Shell.Tab.Printer": "Yazıcı",
+      "Tab.PrintHistory": "Yazdırma Geçmişi",
+      "Tab.Settings": "Ayarlar",
       "Dashboard.ServerStatus": "Sunucu Bağlantısı",
-      "Dashboard.DeviceName": "Cihaz Adı",
-      "Dashboard.PrinterStatus": "Yazıcı Durumu",
       "Dashboard.LastContact": "Son İletişim",
       "Dashboard.LastPrint": "Son Yazdırma",
       "Dashboard.JobsToday": "Bugünkü İşler",
       "Dashboard.FailedToday": "Bugün Başarısız",
-      "Settings.Language": "Dil",
-      "Settings.DryRunEnabledWarning": "Test modu açık. Fişler yazdırılmaz; işler yalnızca loglanır.",
-      "RecentJobs.Empty": "Bu oturumda henüz yazdırma işi işlenmedi.",
+      "Dashboard.PrinterStatus": "Yazıcı Durumu",
+      "Shell.Tile.Printer": "Yazıcı",
+      "Shell.Tile.Engine": "Dinleme",
       "Shell.LastJob.Title": "Son yazdırma işi",
       "Shell.Today.Title": "Bugün",
+      "Shell.Overview.Actions": "Hızlı işlemler",
+      "RecentJobs.Empty": "Bu oturumda henüz yazdırma işi işlenmedi.",
+      "Settings.DryRunEnabledWarning": "Test modu açık. Fişler yazdırılmaz; işler yalnızca loglanır.",
+      "Button.StartListening": "Başlat",
+      "Button.StopListening": "Durdur",
+      "Button.TestPrinter": "Yazıcıyı test et",
+      "Button.TestConnection": "Bağlantıyı test et",
+      "Button.Refresh": "Yenile",
+      "Button.SavePrinter": "Yazıcıyı kaydet",
+      "Button.OpenLogsFolder": "Log klasörünü aç",
+      "Button.ResetConnection": "Bağlantıyı sıfırla",
+      "Reprint.Button": "Yeniden yazdır",
+      "Shell.Action.Reconnect": "Yeniden bağlan",
+      "Shell.Action.ConfigurePrinter": "Yazıcı seç",
+      "Shell.Action.ShowDiagnostics": "Tanılamayı göster",
+      "Shell.Action.OpenSetup": "Bağlantı ayarlarını aç",
+      "Shell.Action.Working": "İşleniyor…",
+      "Shell.Action.Confirm": "Onayla",
+      "Shell.Action.Cancel": "Vazgeç",
+      "Shell.Printer.Title": "Fiş yazıcısı",
+      "Shell.Printer.Help": "Fişlerin gönderileceği Windows yazıcısını seçip kaydedin. Yazdırılmakta olan bir iş, kaydettiğiniz anda kesilmez.",
+      "Shell.Printer.Placeholder": "Yazıcı seçin",
+      "Shell.Printer.NoneInstalled": "Bu bilgisayarda yüklü yazıcı bulunamadı. Yazıcıyı Windows'a ekleyip Yenile'ye basın.",
+      "Shell.Printer.SavedNotInstalled": "Kayıtlı yazıcı bu bilgisayarda bulunamadı. Başka bir yazıcı seçin veya yazıcıyı Windows'a yeniden ekleyin.",
+      "Shell.Printer.TestHelp": "Test fişi kayıtlı yazıcıya gönderilir. Windows'un işi kabul etmesi kağıdın basıldığını garanti etmez.",
+      "Settings.PrinterName": "Yazıcı adı",
+      "Shell.History.Range": "Zaman aralığı",
+      "PrintHistory.Filter.Today": "Bugün",
+      "PrintHistory.Filter.Last7Days": "Son 7 Gün",
+      "PrintHistory.Filter.Last30Days": "Son 30 Gün",
+      "PrintHistory.Search": "Sipariş ara",
+      "PrintHistory.SearchPlaceholder": "Sipariş numarası...",
+      "PrintHistory.Column.Time": "Tarih/Saat",
+      "PrintHistory.Column.Order": "Sipariş No",
+      "PrintHistory.Column.Platform": "Platform",
+      "PrintHistory.Column.Printer": "Yazıcı",
+      "PrintHistory.Column.Status": "Durum",
+      "PrintHistory.Empty": "Kayıtlı yazdırma geçmişi yok.",
+      "PrintHistory.EmptyFiltered": "Seçili filtreye veya aramaya uygun kayıt bulunamadı.",
+      "Shell.History.ConfirmReprint": "Yeniden yazdırılsın mı?",
+      "Shell.History.Previous": "Önceki",
+      "Shell.History.Next": "Sonraki",
+      "Shell.History.Loading": "Geçmiş yükleniyor…",
+      "Shell.Settings.Connection": "Wasla bağlantısı",
+      "Shell.Settings.ConnectionHelp": "Sunucu adresi ve cihaz anahtarı güvenlik nedeniyle yalnızca yerel kurulum penceresinde girilir; bu ekran onları görmez.",
+      "Settings.ResetConnectionHelp": "Yanlış bağlantı veya geçersiz token durumunda tekrar bağlanmak için kullanın.",
+      "Shell.Settings.Appearance": "Dil ve görünüm",
+      "Shell.Settings.ThemeFollowsWindows": "Açık veya koyu görünüm Windows uygulama temasını izler.",
+      "Shell.Settings.TestMode": "Test modu",
+      "Shell.Settings.AdvancedHelp": "Test modu ve kontrol aralıkları klasik penceredeki Gelişmiş bölümünden değiştirilir.",
+      "Shell.Diagnostics.Title": "Tanılama",
+      "Shell.Diagnostics.AppVersion": "Uygulama sürümü",
+      "Shell.Diagnostics.WebView2": "WebView2 çalışma zamanı",
+      "Shell.Diagnostics.Engine": "Dinleme durumu",
+      "Shell.Diagnostics.LastError": "Son hata",
+      "Shell.Diagnostics.None": "Yok",
+      "Shell.Diagnostics.Fallback": "Klasik pencere",
+      "Shell.Diagnostics.FallbackHelp": "Klasik pencere yedek olarak kullanılabilir; gelişmiş ayarlar ve loglar oradadır.",
       "Shell.OpenClassicWindow": "Klasik pencereyi aç",
-      "Shell.Preview.Notice": "Önizleme: Bu görünüm yalnızca durumu gösterir. Ayarlar ve yazdırma geçmişi klasik pencerede kalır."
+      "Shell.Toast.Dismiss": "Kapat"
     }
   }
 }

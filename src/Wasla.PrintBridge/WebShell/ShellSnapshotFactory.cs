@@ -1,11 +1,12 @@
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
+using Wasla.PrintBridge.Services;
 
 namespace Wasla.PrintBridge.WebShell;
 
 /// <summary>
-/// Projects the engine's <see cref="PrintBridgeRuntimeStatus"/> into the page model, using the existing
-/// Print Bridge resources and date formats so the shell and the classic window say the same thing.
+/// Projects engine, settings and host operation state into the page model, using the existing Print Bridge
+/// resources and date formats so the shell and the classic window say the same thing.
 /// </summary>
 public sealed class ShellSnapshotFactory
 {
@@ -13,22 +14,83 @@ public sealed class ShellSnapshotFactory
     public static readonly IReadOnlyList<string> StringKeys =
     [
         "Common.AppTitle",
-        "Common.Subtitle",
         "Common.Dash",
+        "Settings.Language",
+        "Shell.Nav.Label",
+        "Shell.Tab.Overview",
+        "Shell.Tab.Printer",
+        "Tab.PrintHistory",
+        "Tab.Settings",
         "Dashboard.ServerStatus",
-        "Dashboard.DeviceName",
-        "Dashboard.PrinterStatus",
         "Dashboard.LastContact",
         "Dashboard.LastPrint",
         "Dashboard.JobsToday",
         "Dashboard.FailedToday",
-        "Settings.Language",
-        "Settings.DryRunEnabledWarning",
-        "RecentJobs.Empty",
+        "Dashboard.PrinterStatus",
+        "Shell.Tile.Printer",
+        "Shell.Tile.Engine",
         "Shell.LastJob.Title",
         "Shell.Today.Title",
+        "Shell.Overview.Actions",
+        "RecentJobs.Empty",
+        "Settings.DryRunEnabledWarning",
+        "Button.StartListening",
+        "Button.StopListening",
+        "Button.TestPrinter",
+        "Button.TestConnection",
+        "Button.Refresh",
+        "Button.SavePrinter",
+        "Button.OpenLogsFolder",
+        "Button.ResetConnection",
+        "Reprint.Button",
+        "Shell.Action.Reconnect",
+        "Shell.Action.ConfigurePrinter",
+        "Shell.Action.ShowDiagnostics",
+        "Shell.Action.OpenSetup",
+        "Shell.Action.Working",
+        "Shell.Action.Confirm",
+        "Shell.Action.Cancel",
+        "Shell.Printer.Title",
+        "Shell.Printer.Help",
+        "Shell.Printer.Placeholder",
+        "Shell.Printer.NoneInstalled",
+        "Shell.Printer.SavedNotInstalled",
+        "Shell.Printer.TestHelp",
+        "Settings.PrinterName",
+        "Shell.History.Range",
+        "PrintHistory.Filter.Today",
+        "PrintHistory.Filter.Last7Days",
+        "PrintHistory.Filter.Last30Days",
+        "PrintHistory.Search",
+        "PrintHistory.SearchPlaceholder",
+        "PrintHistory.Column.Time",
+        "PrintHistory.Column.Order",
+        "PrintHistory.Column.Platform",
+        "PrintHistory.Column.Printer",
+        "PrintHistory.Column.Status",
+        "PrintHistory.Empty",
+        "PrintHistory.EmptyFiltered",
+        "Shell.History.ConfirmReprint",
+        "Shell.History.Previous",
+        "Shell.History.Next",
+        "Shell.History.Loading",
+        "Shell.Settings.Connection",
+        "Shell.Settings.ConnectionHelp",
+        "Settings.ResetConnectionHelp",
+        "Shell.Settings.Appearance",
+        "Shell.Settings.ThemeFollowsWindows",
+        "Shell.Settings.TestMode",
+        "Shell.Settings.AdvancedHelp",
+        "Shell.Diagnostics.Title",
+        "Shell.Diagnostics.AppVersion",
+        "Shell.Diagnostics.WebView2",
+        "Shell.Diagnostics.Engine",
+        "Shell.Diagnostics.LastError",
+        "Shell.Diagnostics.None",
+        "Shell.Diagnostics.Fallback",
+        "Shell.Diagnostics.FallbackHelp",
         "Shell.OpenClassicWindow",
-        "Shell.Preview.Notice"
+        "Shell.Toast.Dismiss"
     ];
 
     /// <summary>Resource keys this projection may emit as labels or details, in addition to <see cref="StringKeys"/>.</summary>
@@ -36,6 +98,8 @@ public sealed class ShellSnapshotFactory
     [
         "Status.Online",
         "Status.Offline",
+        "Status.Running",
+        "Status.Stopped",
         "Shell.Connection.Connecting",
         "ConnectionStatus.Error",
         "ConnectionStatus.NotConfigured",
@@ -45,39 +109,78 @@ public sealed class ShellSnapshotFactory
         "Shell.Detail.Stopped",
         "Shell.Detail.NotConfigured",
         "Shell.Detail.UnexpectedError",
-        "Footer.Version"
+        "Shell.Settings.TestModeOn",
+        "Shell.Settings.TestModeOff",
+        "Shell.Diagnostics.Unavailable",
+        "Shell.Device.Unknown"
     ];
 
     private readonly PrintBridgeLocalizer _localizer;
     private readonly PrintBridgeCultureService _cultureService;
+    private readonly PrintBridgeSettingsHolder? _settings;
+    private readonly IPrinterCatalog? _printers;
+    private readonly Func<ShellBusyState> _busy;
+    private readonly string? _webView2Version;
 
-    public ShellSnapshotFactory(PrintBridgeLocalizer localizer, PrintBridgeCultureService cultureService)
+    public ShellSnapshotFactory(
+        PrintBridgeLocalizer localizer,
+        PrintBridgeCultureService cultureService,
+        PrintBridgeSettingsHolder? settings = null,
+        IPrinterCatalog? printers = null,
+        Func<ShellBusyState>? busy = null,
+        string? webView2Version = null)
     {
         _localizer = localizer;
         _cultureService = cultureService;
+        _settings = settings;
+        _printers = printers;
+        _busy = busy ?? (() => ShellBusyState.Idle);
+        _webView2Version = webView2Version;
     }
 
     public ShellSnapshot Create(PrintBridgeRuntimeStatus status)
     {
         var culture = _cultureService.CurrentCulture;
+        var connection = CreateConnection(status);
+        var engine = new ShellEngineView(
+            status.IsRunning ? "running" : "stopped",
+            _localizer[status.IsRunning ? "Status.Running" : "Status.Stopped"]);
+        var printerName = string.IsNullOrWhiteSpace(status.PrinterName) ? null : status.PrinterName.Trim();
+        var printerLabel = _localizer.GetPrinterHealthStatus(status.PrinterHealthStatus);
+        var lastContact = FormatUtc(status.LastSuccessfulContactUtc);
 
         return new ShellSnapshot(
             Culture: culture.Name,
             Direction: _cultureService.IsRightToLeft ? "rtl" : "ltr",
-            Connection: CreateConnection(status),
-            Device: new ShellDeviceView(_localizer.GetFooterDeviceName(status)),
+            Connection: connection,
+            Engine: engine,
+            // The server-assigned device name only; the Windows machine name is never sent to the page.
+            Device: new ShellDeviceView(string.IsNullOrWhiteSpace(status.DisplayName)
+                ? _localizer["Shell.Device.Unknown"]
+                : status.DisplayName.Trim()),
             Printer: new ShellPrinterView(
-                string.IsNullOrWhiteSpace(status.PrinterName) ? null : status.PrinterName.Trim(),
+                printerName,
                 ToPrinterState(status.PrinterHealthStatus),
-                _localizer.GetPrinterHealthStatus(status.PrinterHealthStatus)),
+                printerLabel,
+                _printers?.Installed ?? Array.Empty<string>()),
             Activity: new ShellActivityView(
-                FormatUtc(status.LastSuccessfulContactUtc),
+                lastContact,
                 FormatUtc(status.LastPrintTimeUtc),
                 status.JobsTodayCount,
                 status.FailedTodayCount),
             LastJob: CreateLastJob(status.RecentJobs),
+            Actions: CreateActions(status, connection.State),
+            Busy: _busy(),
+            Diagnostics: new ShellDiagnosticsView(
+                AppVersion: status.AppVersion,
+                WebView2Version: string.IsNullOrWhiteSpace(_webView2Version) ? _localizer["Shell.Diagnostics.Unavailable"] : _webView2Version,
+                EngineLabel: engine.Label,
+                LastContact: lastContact,
+                LastIssue: status.LastIssue is null ? null : DescribeIssue(status.LastIssue),
+                PrinterName: printerName ?? _localizer["Common.Dash"],
+                PrinterLabel: printerLabel,
+                TestModeLabel: _localizer[status.DryRun ? "Shell.Settings.TestModeOn" : "Shell.Settings.TestModeOff"]),
             DryRun: status.DryRun,
-            VersionLabel: _localizer.GetString("Footer.Version", status.AppVersion),
             Languages: SupportedCultures.All
                 .Select(c => new ShellLanguageOption(c, SupportedCultures.GetNativeName(c)))
                 .ToArray(),
@@ -103,6 +206,29 @@ public sealed class ShellSnapshotFactory
                 => ShellConnectionStates.Offline,
             _ => ShellConnectionStates.Error
         };
+    }
+
+    /// <summary>
+    /// The actions the page may offer. Start is withheld while a reconnect is required (the same gate as the
+    /// classic window); test print needs a ready printer outside test mode.
+    /// </summary>
+    internal ShellActionsView CreateActions(PrintBridgeRuntimeStatus status, string connectionState)
+    {
+        var token = _settings?.OrderHub.AgentToken;
+        var hasToken = !string.IsNullOrWhiteSpace(token);
+        var requiresReconnect = PrintBridgePollingGate.RequiresReconnectBeforeStart(token, status.LastIssue)
+                                || status.LastIssue?.Code == PrintBridgeRuntimeIssueCode.DuplicateInstallation
+                                || connectionState == ShellConnectionStates.NotConfigured;
+        var configured = connectionState != ShellConnectionStates.NotConfigured;
+
+        return new ShellActionsView(
+            Start: !status.IsRunning && !requiresReconnect,
+            Stop: status.IsRunning,
+            TestPrint: status.PrinterHealthStatus == PrinterHealthStatus.Ready,
+            CheckConnection: configured && !requiresReconnect,
+            Reconnect: requiresReconnect,
+            ConfigurePrinter: status.PrinterHealthStatus is PrinterHealthStatus.NotConfigured or PrinterHealthStatus.NotFound,
+            ResetConnection: hasToken);
     }
 
     private ShellConnectionView CreateConnection(PrintBridgeRuntimeStatus status)
@@ -146,14 +272,7 @@ public sealed class ShellSnapshotFactory
             return null;
 
         return new ShellJobView(
-            Status: job.Status switch
-            {
-                LocalPrintJobStatus.Received => "pending",
-                LocalPrintJobStatus.Printing => "printing",
-                LocalPrintJobStatus.Printed => "printed",
-                LocalPrintJobStatus.Failed => "failed",
-                _ => "skipped"
-            },
+            Status: ShellHistory.ToStatus(job.Status),
             StatusLabel: _localizer.GetJobStatusBadge(job.Status),
             Order: string.IsNullOrWhiteSpace(job.OrderDisplay) ? job.ShortJobId : job.OrderDisplay.Trim(),
             TypeLabel: _localizer.GetJobType(job.JobType),
