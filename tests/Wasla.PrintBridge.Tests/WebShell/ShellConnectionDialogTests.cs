@@ -183,6 +183,37 @@ public sealed class ShellConnectionDialogTests : IDisposable
         });
 
     [Fact]
+    public Task PrintingInProgress_SavesNothing_KeepsTheInputForAnotherTry_AndTheRetryConnects() =>
+        RunDialogAsync(string.Empty, async (dialog, engine, localizer) =>
+        {
+            engine.ApplyResult = PrintBridgeConnectionChange.PrintingInProgress;
+            var (url, token, _, _, _, status) = dialog.PartsForTests;
+            url.Text = "https://print-bridge.test";
+            token.Text = "typed-in-this-dialog";
+
+            await dialog.ConnectAsync();
+
+            // Not connected and not saved: the dialog stays open with the input and announces why.
+            Assert.True(dialog.Visible);
+            Assert.Null(dialog.Result);
+            Assert.Null(engine.AppliedConnection);
+            Assert.Equal(localizer["Shell.Setup.PrintingInProgress"], status.Text);
+            Assert.Equal(AccessibleRole.Alert, status.AccessibleRole);
+            Assert.Equal("https://print-bridge.test", url.Text);
+            Assert.Equal("typed-in-this-dialog", token.Text);
+            Assert.False(token.ReadOnly);
+
+            // Once the receipt is done, the same input connects.
+            engine.ApplyResult = PrintBridgeConnectionChange.AppliedListening;
+            await dialog.ConnectAsync();
+
+            Assert.False(dialog.Visible);
+            Assert.Equal(ShellConnectionSetupOutcome.Connected, dialog.Result!.Outcome);
+            Assert.Equal(("https://print-bridge.test", "typed-in-this-dialog", true), engine.AppliedConnection);
+            Assert.Equal(2, engine.ApplyConnectionCalls);
+        });
+
+    [Fact]
     public Task TabOrder_FollowsTheVisibleOrder() =>
         RunDialogAsync(SentinelToken, async (dialog, _, _) =>
         {

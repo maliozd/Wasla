@@ -248,9 +248,13 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
             await gate.Task;
         if (abandon.IsCancellationRequested)
             return PrintBridgeConnectionChange.Abandoned;
-        AppliedConnection = (verified.ServerUrl, verified.AgentToken, startListening);
+        // Like the engine, only an applied result changes the connection; a refused or failed one leaves it as it was.
         if (ApplyResult is PrintBridgeConnectionChange.AppliedListening or PrintBridgeConnectionChange.AppliedNotListening)
+        {
+            AppliedConnection = (verified.ServerUrl, verified.AgentToken, startListening);
             OnApplied?.Invoke();
+        }
+
         return ApplyResult;
     }
 

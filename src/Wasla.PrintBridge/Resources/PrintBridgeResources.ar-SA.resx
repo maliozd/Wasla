@@ -926,6 +926,9 @@
   <data name="Shell.Setup.SaveFailed" xml:space="preserve">
     <value>تم التحقق من الاتصال لكن تعذر حفظ الإعدادات؛ لا يزال الاتصال السابق قيد الاستخدام. التفاصيل في ملف السجل.</value>
   </data>
+  <data name="Shell.Setup.PrintingInProgress" xml:space="preserve">
+    <value>تتم طباعة إيصال الآن. لم يتم حفظ الاتصال الجديد؛ ستكتمل طباعة الإيصال عبر الاتصال المحفوظ. اختر «الاتصال والحفظ» مرة أخرى بعد انتهاء الطباعة.</value>
+  </data>
   <data name="Shell.Setup.TokenRejected" xml:space="preserve">
     <value>لم يقبل الخادم رمز الجهاز هذا. انسخ رمزًا جديدًا من صفحة إعداد Print Bridge في Wasla Web.</value>
   </data>

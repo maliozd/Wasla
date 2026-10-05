@@ -926,6 +926,9 @@
   <data name="Shell.Setup.SaveFailed" xml:space="preserve">
     <value>Bağlantı doğrulandı ama ayarlar kaydedilemedi; önceki bağlantı kullanılmaya devam ediyor. Ayrıntılar log dosyasında.</value>
   </data>
+  <data name="Shell.Setup.PrintingInProgress" xml:space="preserve">
+    <value>Şu anda bir fiş yazdırılıyor. Yeni bağlantı kaydedilmedi; fiş kayıtlı bağlantıyla tamamlanıyor. Yazdırma bitince Bağlan ve kaydet'e yeniden basın.</value>
+  </data>
   <data name="Shell.Setup.TokenRejected" xml:space="preserve">
     <value>Sunucu bu cihaz tokenını kabul etmedi. Wasla Web'deki Print Bridge kurulum sayfasından yeni bir token kopyalayın.</value>
   </data>

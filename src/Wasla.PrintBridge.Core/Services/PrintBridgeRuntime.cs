@@ -29,6 +29,11 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     private DateTime? _lastPollUtc;
     private PrintBridgeRuntimeIssue? _lastIssue;
 
+    // Guarded by _sync: the job between its claim request and its last report, and whether the loop must leave new
+    // jobs pending because a connection change is stopping it.
+    private Guid? _jobInProgress;
+    private bool _holdNewJobs;
+
     public PrintBridgeRuntime(
         WaslaPrintBridgeClient client,
         ReceiptFormatter formatter,
@@ -52,6 +57,9 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     }
 
     public event EventHandler? StatusChanged;
+
+    /// <summary>Test-only: awaited during a connection change while new jobs are held, just before listening stops.</summary>
+    internal Func<Task>? WhileJobsAreHeldForTests { get; set; }
 
     public bool IsRunning
     {
@@ -197,6 +205,12 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     /// the status is connected at once. Listening resumes when it was running before, or when
     /// <paramref name="startListening"/> asks for it and printing is ready. Once <paramref name="abandon"/> is cancelled
     /// (the app is closing) nothing is written and listening is not restarted.
+    /// <para>
+    /// Stopping cancels the polling loop, and cancelling a job between its claim and its last report is the known Stop
+    /// race (WAS-56): a printed job could be reported failed, and its remaining reports would use the new connection.
+    /// So while a job is in progress the change is refused with <see cref="PrintBridgeConnectionChange.PrintingInProgress"/>
+    /// before anything is stopped or written, and from that check until the loop has stopped no new job is claimed.
+    /// </para>
     /// </summary>
     public async Task<PrintBridgeConnectionChange> ApplyVerifiedConnectionAsync(
         WaslaOptions verified,
@@ -204,9 +218,29 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         bool startListening,
         CancellationToken abandon)
     {
-        var wasRunning = IsRunning;
-        if (wasRunning)
-            await StopAsync().ConfigureAwait(false);
+        lock (_sync)
+        {
+            if (_jobInProgress is not null)
+                return PrintBridgeConnectionChange.PrintingInProgress;
+
+            _holdNewJobs = true;
+        }
+
+        bool wasRunning;
+        try
+        {
+            if (WhileJobsAreHeldForTests is { } whileHeld)
+                await whileHeld().ConfigureAwait(false);
+
+            wasRunning = IsRunning;
+            if (wasRunning)
+                await StopAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            lock (_sync)
+                _holdNewJobs = false;
+        }
 
         if (abandon.IsCancellationRequested)
             return PrintBridgeConnectionChange.Abandoned;
@@ -409,8 +443,19 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
                     hadJobs = true;
                     foreach (var job in jobs)
                     {
-                        RegisterJobReceived(job);
-                        await ProcessJobAsync(job, stoppingToken).ConfigureAwait(false);
+                        // A connection change is stopping the loop: leave the job pending for the next poll.
+                        if (!TryBeginJob(job.Id))
+                            break;
+
+                        try
+                        {
+                            RegisterJobReceived(job);
+                            await ProcessJobAsync(job, stoppingToken).ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            EndJob();
+                        }
                     }
                 }
             }
@@ -451,6 +496,24 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         }
 
         _logger.LogInformation("Wasla Print Bridge background loop stopped.");
+    }
+
+    private bool TryBeginJob(Guid jobId)
+    {
+        lock (_sync)
+        {
+            if (_holdNewJobs)
+                return false;
+
+            _jobInProgress = jobId;
+            return true;
+        }
+    }
+
+    private void EndJob()
+    {
+        lock (_sync)
+            _jobInProgress = null;
     }
 
     private void RegisterJobReceived(WaslaPrintBridgeClient.PendingPrintJobDto job)

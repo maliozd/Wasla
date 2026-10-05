@@ -926,6 +926,9 @@
   <data name="Shell.Setup.SaveFailed" xml:space="preserve">
     <value>Подключение проверено, но настройки сохранить не удалось; используется прежнее подключение. Подробности в журнале.</value>
   </data>
+  <data name="Shell.Setup.PrintingInProgress" xml:space="preserve">
+    <value>Сейчас печатается чек. Новое подключение не сохранено; чек завершается через сохранённое подключение. Нажмите «Подключить и сохранить» ещё раз, когда печать закончится.</value>
+  </data>
   <data name="Shell.Setup.TokenRejected" xml:space="preserve">
     <value>Сервер не принял этот токен устройства. Скопируйте новый токен со страницы настройки Print Bridge в Wasla Web.</value>
   </data>

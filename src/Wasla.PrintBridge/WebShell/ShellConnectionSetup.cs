@@ -45,6 +45,9 @@ public enum ShellConnectionSetupOutcome
     /// <summary>Verified, but the settings file could not be written. Nothing changed.</summary>
     SaveFailed,
 
+    /// <summary>Verified, but a receipt was being printed, so nothing was saved; the user can retry when it is done.</summary>
+    PrintingInProgress,
+
     /// <summary>Closed or abandoned before anything was saved.</summary>
     Cancelled
 }
@@ -213,6 +216,8 @@ public sealed class ShellConnectionSetup
             PrintBridgeConnectionChange.SaveFailed =>
                 new ShellConnectionSetupResult(ShellConnectionSetupOutcome.SaveFailed, _localizer["Shell.Setup.SaveFailed"]),
             PrintBridgeConnectionChange.Abandoned => Cancelled(),
+            PrintBridgeConnectionChange.PrintingInProgress =>
+                new ShellConnectionSetupResult(ShellConnectionSetupOutcome.PrintingInProgress, _localizer["Shell.Setup.PrintingInProgress"]),
             PrintBridgeConnectionChange.AppliedNotListening when !CanPrint() =>
                 new ShellConnectionSetupResult(ShellConnectionSetupOutcome.ConnectedChoosePrinter, _localizer["Shell.Setup.ConnectedChoosePrinter"]),
             _ => new ShellConnectionSetupResult(ShellConnectionSetupOutcome.Connected, _localizer["Shell.Setup.Connected"])

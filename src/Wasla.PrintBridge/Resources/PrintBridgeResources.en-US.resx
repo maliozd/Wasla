@@ -964,6 +964,9 @@
   <data name="Shell.Setup.SaveFailed" xml:space="preserve">
     <value>The connection was verified, but the settings could not be saved; the previous connection is still in use. Details are in the log file.</value>
   </data>
+  <data name="Shell.Setup.PrintingInProgress" xml:space="preserve">
+    <value>A receipt is being printed right now. The new connection was not saved; the receipt finishes on the saved connection. Select Connect and save again when printing has finished.</value>
+  </data>
   <data name="Shell.Setup.TokenRejected" xml:space="preserve">
     <value>The server did not accept this device token. Copy a new token from the Print Bridge setup page in Wasla Web.</value>
   </data>

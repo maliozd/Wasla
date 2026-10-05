@@ -276,6 +276,146 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.Equal(before.PrinterName, harness.Store.Load().PrintBridge.PrinterName);
     }
 
+    public enum ActiveJobPhase
+    {
+        /// <summary>The claim (mark-printing) was sent and is not answered yet.</summary>
+        Claiming,
+
+        /// <summary>Claimed; the printer is printing the receipt.</summary>
+        Printing,
+
+        /// <summary>Printed; the printed report (mark-printed) is in flight.</summary>
+        ReportingPrinted
+    }
+
+    [Theory]
+    [InlineData(ActiveJobPhase.Claiming)]
+    [InlineData(ActiveJobPhase.Printing)]
+    [InlineData(ActiveJobPhase.ReportingPrinted)]
+    public async Task ANewConnectionWhileAJobIsInProgress_IsRefusedWithoutSaving_AndTheJobFinishesOnceOnTheSavedConnection(ActiveJobPhase phase)
+    {
+        var printerName = FirstInstalledPrinterOrSkip();
+        var hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var api = new FakeApi(SavedToken, NewToken)
+        {
+            ClaimGate = phase == ActiveJobPhase.Claiming ? hold : null,
+            PrintedReportGate = phase == ActiveJobPhase.ReportingPrinted ? hold : null
+        };
+        // Test mode is off so the job goes to the printer, which is a recording fake.
+        var receipts = new GatedPrinter { Gate = phase == ActiveJobPhase.Printing ? hold : null };
+        var jobId = Guid.NewGuid();
+        api.EnqueueJob(jobId);
+        using var harness = Create(api, token: SavedToken, printer: printerName, fastPolling: true, dryRun: false, receiptPrinter: receipts);
+        var fileBefore = File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath);
+        harness.Runtime.Start();
+
+        var inPhase = phase switch
+        {
+            ActiveJobPhase.Claiming => api.ClaimReceived.Task,
+            ActiveJobPhase.Printing => receipts.Started.Task,
+            _ => api.PrintedReportReceived.Task
+        };
+        await inPhase.WaitAsync(Wait, TestContext.Current.CancellationToken);
+
+        var refused = await harness.Setup.ConnectAsync(NewUrl, NewToken, TestContext.Current.CancellationToken);
+
+        // Verified, then refused before anything was stopped, written or switched; nothing reports it as saved.
+        Assert.Equal(ShellConnectionSetupOutcome.PrintingInProgress, refused.Outcome);
+        Assert.False(refused.IsConnected);
+        Assert.Equal(_localizer["Shell.Setup.PrintingInProgress"], refused.Message);
+        Assert.Equal(fileBefore, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
+        Assert.Equal((SavedUrl, SavedToken, printerName), (harness.Holder.OrderHub.ServerUrl, harness.Holder.OrderHub.AgentToken, harness.Holder.Bridge.PrinterName));
+        Assert.True(harness.Runtime.IsRunning);
+
+        hold.SetResult();
+        await api.PolledAfterJobReported.Task.WaitAsync(Wait, TestContext.Current.CancellationToken);
+
+        // Claimed, printed and reported printed exactly once, all on the saved connection; never reported failed.
+        Assert.Equal(new[] { ("mark-printing", SavedToken), ("mark-printed", SavedToken) }, api.JobReports(jobId));
+        Assert.Equal(1, receipts.Calls);
+        Assert.Equal(LocalPrintJobStatus.Printed, Assert.Single(harness.Runtime.GetStatus().RecentJobs).Status);
+
+        // Idle again: the same change now succeeds, keeps the printer, and only the new connection is used afterwards.
+        var retried = await harness.Setup.ConnectAsync(NewUrl, NewToken, TestContext.Current.CancellationToken);
+        var changedAt = api.Requests.Count;
+        await WaitUntilAsync(() => api.Requests.Skip(changedAt).Any(r => r.Path == "api/print-bridge/jobs/pending"));
+        await harness.Runtime.StopAsync();
+
+        Assert.Equal(ShellConnectionSetupOutcome.Connected, retried.Outcome);
+        var saved = harness.Store.Load();
+        Assert.Equal((NewUrl, NewToken, printerName), (saved.OrderHub.ServerUrl, saved.OrderHub.AgentToken, saved.PrintBridge.PrinterName));
+        Assert.All(api.Requests.Skip(changedAt), r => Assert.Equal(("new.print-bridge.test", NewToken), (r.Host, r.Token)));
+        Assert.Equal(new[] { ("mark-printing", SavedToken), ("mark-printed", SavedToken) }, api.JobReports(jobId));
+        Assert.Equal(1, receipts.Calls);
+    }
+
+    [Fact]
+    public async Task ANewConnectionWhileAPollIsInFlight_StopsBeforeAnyClaim_AndTheJobRunsOnceOnTheNewConnection()
+    {
+        var printerName = FirstInstalledPrinterOrSkip();
+        // The saved connection's pending poll is never answered, so the job is still pending when the connection changes.
+        var api = new FakeApi(SavedToken, NewToken)
+        {
+            PendingPollGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously),
+            PendingPollGateToken = SavedToken
+        };
+        var receipts = new GatedPrinter();
+        var jobId = Guid.NewGuid();
+        api.EnqueueJob(jobId);
+        using var harness = Create(api, token: SavedToken, printer: printerName, fastPolling: true, dryRun: false, receiptPrinter: receipts);
+        harness.Runtime.Start();
+        await api.HeldPendingPoll.Task.WaitAsync(Wait, TestContext.Current.CancellationToken);
+
+        var result = await harness.Setup.ConnectAsync(NewUrl, NewToken, TestContext.Current.CancellationToken);
+        await api.PolledAfterJobReported.Task.WaitAsync(Wait, TestContext.Current.CancellationToken);
+        await harness.Runtime.StopAsync();
+
+        Assert.Equal(ShellConnectionSetupOutcome.Connected, result.Outcome);
+        // Nothing was claimed with the saved token; the job ran once, entirely on the new connection.
+        Assert.Equal(new[] { ("mark-printing", NewToken), ("mark-printed", NewToken) }, api.JobReports(jobId));
+        Assert.Equal(1, receipts.Calls);
+        Assert.Equal(LocalPrintJobStatus.Printed, Assert.Single(harness.Runtime.GetStatus().RecentJobs).Status);
+    }
+
+    [Fact]
+    public async Task AJobOfferedAfterTheChangeWasAccepted_IsLeftPending_AndRunsOnceOnTheNewConnection()
+    {
+        var printerName = FirstInstalledPrinterOrSkip();
+        var pendingAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var api = new FakeApi(SavedToken, NewToken) { PendingPollGate = pendingAnswer, PendingPollGateToken = SavedToken };
+        var receipts = new GatedPrinter();
+        var jobId = Guid.NewGuid();
+        api.EnqueueJob(jobId);
+        using var harness = Create(api, token: SavedToken, printer: printerName, fastPolling: true, dryRun: false, receiptPrinter: receipts);
+        harness.Runtime.Start();
+        await api.HeldPendingPoll.Task.WaitAsync(Wait, TestContext.Current.CancellationToken);
+
+        // No job is in progress, so the change is accepted. Before listening stops, the saved connection's poll is
+        // answered with the job: the loop must leave it pending instead of claiming it on the way out.
+        harness.Runtime.WhileJobsAreHeldForTests = async () =>
+        {
+            var tookTheJob = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            void OnStatusChanged(object? sender, EventArgs e) =>
+                tookTheJob.TrySetResult(harness.Runtime.GetStatus().RecentJobs.Count > 0);
+
+            harness.Runtime.StatusChanged += OnStatusChanged;
+            pendingAnswer.SetResult();
+            var took = await tookTheJob.Task.WaitAsync(Wait);
+            harness.Runtime.StatusChanged -= OnStatusChanged;
+            if (took)
+                await api.ClaimReceived.Task.WaitAsync(Wait);
+        };
+
+        var result = await harness.Setup.ConnectAsync(NewUrl, NewToken, TestContext.Current.CancellationToken);
+        await api.PolledAfterJobReported.Task.WaitAsync(Wait, TestContext.Current.CancellationToken);
+        await harness.Runtime.StopAsync();
+
+        Assert.Equal(ShellConnectionSetupOutcome.Connected, result.Outcome);
+        Assert.Equal(new[] { ("mark-printing", NewToken), ("mark-printed", NewToken) }, api.JobReports(jobId));
+        Assert.Equal(1, receipts.Calls);
+        Assert.Equal(LocalPrintJobStatus.Printed, Assert.Single(harness.Runtime.GetStatus().RecentJobs).Status);
+    }
+
     [Fact]
     public async Task NoTokenEverReachesALogLine_OrAResultMessage()
     {
@@ -307,14 +447,16 @@ public sealed class ShellConnectionSetupTests : IDisposable
         bool fastPolling = false,
         TimeSpan? timeout = null,
         CancellationTokenSource? lifetime = null,
-        RecordingLogs? logs = null)
+        RecordingLogs? logs = null,
+        bool dryRun = true,
+        IReceiptPrinter? receiptPrinter = null)
     {
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
         document.OrderHub.ServerUrl = SavedUrl;
         document.OrderHub.AgentToken = token;
         document.PrintBridge.PrinterName = printer;
-        document.PrintBridge.DryRun = true;
+        document.PrintBridge.DryRun = dryRun;
         document.PrintBridge.DisplayName = displayName;
         document.PrintBridge.ServerDeviceNameResolved = displayName.Length > 0;
         if (fastPolling)
@@ -339,7 +481,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
         var runtime = new PrintBridgeRuntime(
             client,
             new ReceiptFormatter(),
-            new NoPrinter(),
+            receiptPrinter ?? new NoPrinter(),
             holder,
             store,
             new PrintBridgeDeviceMetadataSync(store, holder, loggers.CreateLogger<PrintBridgeDeviceMetadataSync>()),
@@ -398,9 +540,37 @@ public sealed class ShellConnectionSetupTests : IDisposable
             throw new InvalidOperationException("These tests never print.");
     }
 
-    /// <summary>A Wasla API that accepts only the given device tokens, records every request and can be offline or slow.</summary>
+    /// <summary>Counts each print the engine sends instead of printing, and can hold one until opened.</summary>
+    private sealed class GatedPrinter : IReceiptPrinter
+    {
+        private int _calls;
+
+        public TaskCompletionSource? Gate { get; init; }
+
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int Calls => Volatile.Read(ref _calls);
+
+        public async Task PrintAsync(string printerName, string text, int copyCount, CancellationToken ct)
+        {
+            Interlocked.Increment(ref _calls);
+            Started.TrySetResult();
+            if (Gate is { } gate)
+                await gate.Task.WaitAsync(ct);
+        }
+    }
+
+    /// <summary>
+    /// A Wasla API that accepts only the given device tokens, records every request and can be offline or slow. Like the
+    /// server, it offers a print job in every pending poll until the job is claimed. It can hold a claim, a printed
+    /// report or a pending poll after recording it.
+    /// </summary>
     private sealed class FakeApi(params string[] acceptedTokens) : HttpMessageHandler
     {
+        private readonly ConcurrentQueue<(Guid Id, object Job)> _jobs = new();
+        private readonly ConcurrentDictionary<Guid, bool> _claimed = new();
+        private int _jobReported;
+
         public ConcurrentQueue<(string Host, string Token, string Path)> Requests { get; } = new();
 
         public TaskCompletionSource FirstRequest { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -410,6 +580,44 @@ public sealed class ShellConnectionSetupTests : IDisposable
         public bool Offline { get; init; }
 
         public string DeviceName { get; init; } = string.Empty;
+
+        /// <summary>Holds every claim (mark-printing) until opened; the caller's cancellation still ends the wait.</summary>
+        public TaskCompletionSource? ClaimGate { get; init; }
+
+        /// <summary>Holds every printed report (mark-printed) until opened.</summary>
+        public TaskCompletionSource? PrintedReportGate { get; init; }
+
+        /// <summary>Holds pending polls sent with <see cref="PendingPollGateToken"/> until opened; cancellation ends the wait.</summary>
+        public TaskCompletionSource? PendingPollGate { get; init; }
+
+        public string? PendingPollGateToken { get; init; }
+
+        public TaskCompletionSource ClaimReceived { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource PrintedReportReceived { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource HeldPendingPoll { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>The first pending poll after a job was reported printed or failed: the engine has finished that job.</summary>
+        public TaskCompletionSource PolledAfterJobReported { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public void EnqueueJob(Guid jobId) =>
+            _jobs.Enqueue((jobId, new
+            {
+                id = jobId,
+                orderId = Guid.NewGuid(),
+                type = "Receipt",
+                copyCount = 1,
+                payloadJson = """{"platform":"Getir","externalOrderCode":"QA-2001"}""",
+                createdAtUtc = DateTime.UtcNow
+            }));
+
+        /// <summary>The job's reports in the order received (mark-printing, mark-printed, mark-failed) with the token used.</summary>
+        public (string Report, string Token)[] JobReports(Guid jobId) =>
+            Requests
+                .Where(r => r.Path.Contains(jobId.ToString("D"), StringComparison.Ordinal))
+                .Select(r => (r.Path[(r.Path.LastIndexOf('/') + 1)..], r.Token))
+                .ToArray();
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -425,12 +633,47 @@ public sealed class ShellConnectionSetupTests : IDisposable
             if (!acceptedTokens.Contains(token, StringComparer.Ordinal))
                 return Json(HttpStatusCode.Unauthorized, new { error = "device_auth_invalid" });
 
-            return path switch
+            if (path == "api/print-bridge/health")
+                return Json(HttpStatusCode.OK, new { success = true, customerName = "QA", deviceName = DeviceName, serverTimeUtc = DateTime.UtcNow });
+
+            if (path == "api/print-bridge/jobs/pending")
             {
-                "api/print-bridge/health" => Json(HttpStatusCode.OK, new { success = true, customerName = "QA", deviceName = DeviceName, serverTimeUtc = DateTime.UtcNow }),
-                "api/print-bridge/jobs/pending" => Json(HttpStatusCode.OK, new { jobs = Array.Empty<object>() }),
-                _ => new HttpResponseMessage(HttpStatusCode.NotFound)
-            };
+                if (PendingPollGate is { } pollGate && string.Equals(token, PendingPollGateToken, StringComparison.Ordinal))
+                {
+                    HeldPendingPoll.TrySetResult();
+                    await pollGate.Task.WaitAsync(cancellationToken);
+                }
+
+                if (Volatile.Read(ref _jobReported) == 1)
+                    PolledAfterJobReported.TrySetResult();
+                var jobs = _jobs.Where(j => !_claimed.ContainsKey(j.Id)).Select(j => j.Job).ToArray();
+                return Json(HttpStatusCode.OK, new { jobs });
+            }
+
+            if (path.EndsWith("/mark-printing", StringComparison.Ordinal))
+            {
+                // Claimed when the request arrives, as on the server, even if the answer never reaches the client.
+                _claimed.TryAdd(Guid.Parse(path.Split('/')[^2]), true);
+                ClaimReceived.TrySetResult();
+                if (ClaimGate is { } claimGate)
+                    await claimGate.Task.WaitAsync(cancellationToken);
+                return Json(HttpStatusCode.OK, new { success = true, skipped = false, result = "claimed" });
+            }
+
+            if (path.EndsWith("/mark-printed", StringComparison.Ordinal) || path.EndsWith("/mark-failed", StringComparison.Ordinal))
+            {
+                if (path.EndsWith("/mark-printed", StringComparison.Ordinal))
+                {
+                    PrintedReportReceived.TrySetResult();
+                    if (PrintedReportGate is { } reportGate)
+                        await reportGate.Task.WaitAsync(cancellationToken);
+                }
+
+                Volatile.Write(ref _jobReported, 1);
+                return Json(HttpStatusCode.OK, new { success = true, skipped = false, result = "ok" });
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
         }
 
         private static HttpResponseMessage Json(HttpStatusCode status, object body) =>

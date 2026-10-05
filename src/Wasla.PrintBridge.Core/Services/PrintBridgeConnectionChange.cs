@@ -16,5 +16,11 @@ public enum PrintBridgeConnectionChange
     SaveFailed,
 
     /// <summary>Abandoned before anything was written, because the app is closing.</summary>
-    Abandoned
+    Abandoned,
+
+    /// <summary>
+    /// Refused because a print job is being claimed, printed or reported. Nothing was stopped or written and the job
+    /// finishes on the saved connection; the change can be retried once the engine is idle.
+    /// </summary>
+    PrintingInProgress
 }
