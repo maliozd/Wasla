@@ -56,6 +56,8 @@ public sealed class ShellBridge : IDisposable
     private long _sequence;
     private long _snapshotCount;
     private string? _lastPayloadJson;
+    private string? _pendingTab;
+    private readonly Queue<ShellOperationResult> _pendingNotices = new();
 
     public ShellBridge(
         IPrintBridgeStatusSource statusSource,
@@ -109,7 +111,10 @@ public sealed class ShellBridge : IDisposable
                 _pageReady = true;
                 PushSnapshot(force: true);
                 if (command.Type == ShellCommandType.UiReady)
+                {
+                    FlushPending();
                     _ = _operations.EnsurePrintersDiscoveredAsync();
+                }
                 break;
 
             case ShellCommandType.LanguageChange:
@@ -118,10 +123,6 @@ public sealed class ShellBridge : IDisposable
 
             case ShellCommandType.ClassicWindowOpen:
                 _native.OpenClassicWindow();
-                break;
-
-            case ShellCommandType.ConnectionOpenSetup:
-                _native.OpenConnectionSetup();
                 break;
 
             case ShellCommandType.HistoryQuery:
@@ -141,6 +142,32 @@ public sealed class ShellBridge : IDisposable
 
     /// <summary>Resends the full state, for example when a hidden window is shown again.</summary>
     public void Resend() => PushSnapshot(force: true);
+
+    /// <summary>
+    /// Asks the page to show <paramref name="tab"/> (tray Print history and Settings). Kept until the page is ready
+    /// when the window is still loading. Unknown tab names are ignored. UI thread only.
+    /// </summary>
+    public void Navigate(string tab)
+    {
+        if (_disposed || !ShellMessageContract.Tabs.Contains(tab))
+            return;
+
+        _pendingTab = tab;
+        FlushPending();
+    }
+
+    /// <summary>
+    /// Shows the result of a connection change the page did not ask for (a setup link), as an operation result
+    /// without a request id. Kept until the page is ready. UI thread only.
+    /// </summary>
+    public void NotifyConnectionResult(ShellOperationOutcome outcome, string message, string? navigateTo = null)
+    {
+        if (_disposed)
+            return;
+
+        _pendingNotices.Enqueue(new ShellOperationResult(ShellMessageContract.ConnectionOpenSetup, null, outcome, message, navigateTo));
+        FlushPending();
+    }
 
     public void Dispose()
     {
@@ -226,6 +253,8 @@ public sealed class ShellBridge : IDisposable
 
         SendResult(result);
         PushSnapshot(force: true);
+        if (result.NavigateTo is { } tab)
+            Navigate(tab);
     }
 
     private void SendResult(ShellOperationResult result)
@@ -234,6 +263,26 @@ public sealed class ShellBridge : IDisposable
             return;
 
         _host.PostWebMessageAsJson(ShellMessageSerializer.SerializeOperationResult(result, NextSequence()));
+    }
+
+    /// <summary>Delivers host-initiated notices and the requested tab once the page can render them.</summary>
+    private void FlushPending()
+    {
+        if (_disposed || !_pageReady || !_host.IsAvailable)
+            return;
+
+        while (_pendingNotices.TryDequeue(out var notice))
+        {
+            SendResult(notice);
+            if (notice.NavigateTo is { } next)
+                _pendingTab = next;
+        }
+
+        if (_pendingTab is { } tab)
+        {
+            _pendingTab = null;
+            _host.PostWebMessageAsJson(ShellMessageSerializer.SerializeNavigate(tab, NextSequence()));
+        }
     }
 
     private async Task ChangeLanguageAsync(string culture)

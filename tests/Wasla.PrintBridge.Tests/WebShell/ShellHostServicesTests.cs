@@ -12,26 +12,9 @@ public sealed class ShellHostServicesTests : IDisposable
 {
     private const string FakeToken = "test-token-not-a-real-credential";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "wasla-pb-shell-host-tests", Guid.NewGuid().ToString("N"));
-    private readonly IDisposable _rootScope;
+    private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-shell-host-tests");
 
-    public ShellHostServicesTests()
-    {
-        Directory.CreateDirectory(_root);
-        _rootScope = PrintBridgePaths.UseRootForTests(_root);
-    }
-
-    public void Dispose()
-    {
-        _rootScope.Dispose();
-        try
-        {
-            Directory.Delete(_root, recursive: true);
-        }
-        catch (IOException)
-        {
-        }
-    }
+    public void Dispose() => _dataRoot.Dispose();
 
     [Fact]
     public void SavingAPrinter_PersistsOnlyThePrinterAndKeepsEveryOtherSetting()
@@ -148,7 +131,7 @@ public sealed class ShellHostServicesTests : IDisposable
     public void LogFolder_IsTheKnownProgramDataFolder_AndTakesNoPath()
     {
         Assert.Equal(PrintBridgePaths.ProgramDataLogDirectory, ShellLogFolder.Path);
-        Assert.StartsWith(_root, ShellLogFolder.Path, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(_dataRoot.Path, ShellLogFolder.Path, StringComparison.OrdinalIgnoreCase);
 
         var methods = typeof(ShellLogFolder).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
         Assert.All(methods.Where(m => !m.IsSpecialName), m => Assert.Empty(m.GetParameters()));
@@ -158,11 +141,83 @@ public sealed class ShellHostServicesTests : IDisposable
     [Fact]
     public void NativeActions_TakeNothingFromThePage()
     {
-        // No path, URL, token or file name can travel from the renderer into a privileged action.
+        // No path, URL, token or file name can travel from the renderer into a privileged action, and the
+        // connection dialog returns only a result with a localized message.
         Assert.All(typeof(IShellNativeActions).GetMethods(), m => Assert.Empty(m.GetParameters()));
         Assert.Equal(
-            ["ConfirmConnectionReset", "OpenClassicWindow", "OpenConnectionSetup", "OpenLogFolder"],
+            ["ConfirmConnectionResetAsync", "ConfirmEnableTestModeAsync", "OpenClassicWindow", "OpenLogFolder", "RunConnectionSetupAsync"],
             typeof(IShellNativeActions).GetMethods().Select(m => m.Name).Order());
+        Assert.Equal(
+            ["Field", "IsConnected", "Message", "Outcome"],
+            typeof(ShellConnectionSetupResult).GetProperties().Select(p => p.Name).Where(n => n != "EqualityContract").Order());
+    }
+
+    [Fact]
+    public void SavingOperationalSettings_ChangesOnlyTestModeAndThePollIntervals()
+    {
+        var (store, holder) = Configured();
+        var before = holder.Bridge;
+
+        Assert.True(new ShellOperationalSettings(store, holder).TrySave(new ShellOperationalSettingsChange(false, 30, 3, 60), out var errorKey));
+
+        Assert.Null(errorKey);
+        var saved = store.Load();
+        Assert.False(saved.PrintBridge.DryRun);
+        Assert.Equal(30, saved.PrintBridge.IdlePollIntervalSeconds);
+        Assert.Equal(3, saved.PrintBridge.BusyPollIntervalSeconds);
+        Assert.Equal(60, saved.PrintBridge.ErrorPollIntervalSeconds);
+        Assert.Equal(3, saved.PrintBridge.MaxJobsPerPoll);
+        Assert.Equal("POS-58", saved.PrintBridge.PrinterName);
+        Assert.Equal(FakeToken, saved.OrderHub.AgentToken);
+        Assert.Equal("http://print-bridge.test", saved.OrderHub.ServerUrl);
+        Assert.Equal(before.InstallationId, saved.PrintBridge.InstallationId);
+        Assert.Equal("Kasa 1", saved.PrintBridge.DisplayName);
+        Assert.Equal("ar-SA", saved.Ui.Language);
+
+        // The engine reads these for every poll and job: the in-memory settings are the saved ones at once.
+        Assert.Equal(30, holder.Bridge.IdlePollIntervalSeconds);
+        Assert.False(holder.Bridge.DryRun);
+        Assert.NotSame(before, holder.Bridge);
+    }
+
+    [Theory]
+    [InlineData(0, 1, 15)]
+    [InlineData(301, 1, 15)]
+    [InlineData(5, 0, 15)]
+    [InlineData(5, 61, 15)]
+    [InlineData(5, 1, 0)]
+    [InlineData(5, 1, 301)]
+    public void OutOfRangeOperationalSettings_AreRejected_AndNothingIsWritten(int idle, int busy, int error)
+    {
+        var (store, holder) = Configured();
+        var fileBefore = File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath);
+        var bridgeBefore = holder.Bridge;
+
+        Assert.False(new ShellOperationalSettings(store, holder).TrySave(new ShellOperationalSettingsChange(false, idle, busy, error), out var errorKey));
+
+        Assert.Equal("Validation.InvalidPollingIntervals", errorKey);
+        Assert.Equal(fileBefore, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
+        Assert.Same(bridgeBefore, holder.Bridge);
+    }
+
+    [Fact]
+    public void OperationalSettings_ThatCannotBeWritten_LeaveTheEngineOnTheOldValues()
+    {
+        var (store, holder) = Configured();
+        var bridgeBefore = holder.Bridge;
+        File.SetAttributes(PrintBridgePaths.ProgramDataConfigPath, FileAttributes.ReadOnly);
+        try
+        {
+            Assert.ThrowsAny<Exception>(() =>
+                new ShellOperationalSettings(store, holder).TrySave(new ShellOperationalSettingsChange(false, 30, 3, 60), out _));
+        }
+        finally
+        {
+            File.SetAttributes(PrintBridgePaths.ProgramDataConfigPath, FileAttributes.Normal);
+        }
+
+        Assert.Same(bridgeBefore, holder.Bridge);
+        Assert.Equal(7, store.Load().PrintBridge.IdlePollIntervalSeconds);
     }
 
     private static (PrintBridgeSettingsStore Store, PrintBridgeSettingsHolder Holder) Configured(int idlePoll = 7)

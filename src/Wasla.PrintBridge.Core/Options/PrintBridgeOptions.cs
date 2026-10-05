@@ -32,4 +32,10 @@ public sealed class PrintBridgeOptions
 
     /// <summary>Legacy setting migrated to <see cref="DisplayName"/> on load; not used as a separate alias.</summary>
     public string BridgeName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// A separate copy to change and then publish with <see cref="Services.PrintBridgeSettingsHolder.Replace"/>,
+    /// so code that captured the current object never sees a half-applied change. Every property is a value.
+    /// </summary>
+    public PrintBridgeOptions Clone() => (PrintBridgeOptions)MemberwiseClone();
 }

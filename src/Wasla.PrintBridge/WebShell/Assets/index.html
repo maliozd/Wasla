@@ -149,12 +149,55 @@
         <div class="pb-card">
           <h2 class="pb-card-title" data-i18n="Shell.Settings.Connection"></h2>
           <p class="pb-help" data-i18n="Shell.Settings.ConnectionHelp"></p>
+          <dl class="pb-facts">
+            <div><dt data-i18n="Dashboard.ServerStatus"></dt><dd id="settings-connection-state"></dd></div>
+          </dl>
           <div class="pb-card-actions">
+            <!-- Opens the native connection window; the label (connect, reconnect or change) follows host state. -->
+            <button type="button" class="pb-button pb-button--primary" id="settings-open-setup" data-command="connection.openSetup" data-busy="connectionSetup" data-i18n="Shell.Action.ChangeConnection"></button>
             <button type="button" class="pb-button" id="settings-test-connection" data-command="connection.test" data-busy="connectionTest" data-action="checkConnection" data-i18n="Button.TestConnection"></button>
-            <button type="button" class="pb-button" id="settings-open-setup" data-i18n="Shell.Action.OpenSetup"></button>
             <button type="button" class="pb-button pb-button--danger" id="settings-reset" data-command="connection.reset" data-busy="connectionReset" data-action="resetConnection" data-i18n="Button.ResetConnection"></button>
           </div>
           <p class="pb-help" data-i18n="Settings.ResetConnectionHelp"></p>
+        </div>
+
+        <div class="pb-card">
+          <h2 class="pb-card-title" id="ops-title" data-i18n="Shell.Settings.Printing"></h2>
+          <p class="pb-help" data-i18n="Shell.Settings.PrintingHelp"></p>
+          <div class="pb-switch-row">
+            <input class="pb-switch" id="ops-test-mode" type="checkbox" role="switch" aria-describedby="ops-test-mode-help">
+            <label class="pb-label" for="ops-test-mode" data-i18n="Shell.Settings.TestMode"></label>
+          </div>
+          <p class="pb-help pb-help--warning" id="ops-test-mode-help" data-i18n="Shell.Settings.TestModeHelp"></p>
+          <div class="pb-number-grid">
+            <div class="pb-field">
+              <label class="pb-label" for="ops-idle" data-i18n="Shell.Settings.IdlePoll"></label>
+              <div class="pb-field-row">
+                <input class="pb-input pb-input--number" id="ops-idle" type="number" inputmode="numeric" step="1" autocomplete="off" aria-describedby="ops-idle-range">
+                <span class="pb-help pb-number" id="ops-idle-range"></span>
+              </div>
+            </div>
+            <div class="pb-field">
+              <label class="pb-label" for="ops-busy" data-i18n="Shell.Settings.BusyPoll"></label>
+              <div class="pb-field-row">
+                <input class="pb-input pb-input--number" id="ops-busy" type="number" inputmode="numeric" step="1" autocomplete="off" aria-describedby="ops-busy-range">
+                <span class="pb-help pb-number" id="ops-busy-range"></span>
+              </div>
+            </div>
+            <div class="pb-field">
+              <label class="pb-label" for="ops-error" data-i18n="Shell.Settings.ErrorPoll"></label>
+              <div class="pb-field-row">
+                <input class="pb-input pb-input--number" id="ops-error" type="number" inputmode="numeric" step="1" autocomplete="off" aria-describedby="ops-error-range">
+                <span class="pb-help pb-number" id="ops-error-range"></span>
+              </div>
+            </div>
+          </div>
+          <p class="pb-help pb-help--error" id="ops-invalid" data-i18n="Shell.Settings.Invalid" hidden></p>
+          <p class="pb-help" id="ops-unsaved" data-i18n="Shell.Settings.Unsaved" hidden></p>
+          <div class="pb-card-actions">
+            <button type="button" class="pb-button pb-button--primary" id="ops-save" data-busy="settingsSave" data-i18n="Button.SaveSettings"></button>
+            <button type="button" class="pb-button" id="ops-discard" data-i18n="Shell.Settings.Discard"></button>
+          </div>
         </div>
 
         <div class="pb-card">
@@ -164,10 +207,6 @@
             <select class="pb-select" id="settings-language"></select>
           </div>
           <p class="pb-help" data-i18n="Shell.Settings.ThemeFollowsWindows"></p>
-          <dl class="pb-facts">
-            <div><dt data-i18n="Shell.Settings.TestMode"></dt><dd id="settings-test-mode"></dd></div>
-          </dl>
-          <p class="pb-help" data-i18n="Shell.Settings.AdvancedHelp"></p>
         </div>
 
         <div class="pb-card">

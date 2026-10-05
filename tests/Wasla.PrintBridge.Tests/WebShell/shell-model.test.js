@@ -26,7 +26,7 @@ function snapshot(overrides) {
 
 function operationMessage(payload, sequence) {
   return {
-    version: 2,
+    version: 3,
     type: 'operation.result',
     sequence: sequence || 2,
     payload: Object.assign({ requestId: REQUEST_ID, operation: 'printer.testPrint', outcome: 'succeeded', message: 'Test çıktısı gönderildi.' }, payload)
@@ -35,7 +35,7 @@ function operationMessage(payload, sequence) {
 
 function historyMessage(history, sequence) {
   return {
-    version: 2,
+    version: 3,
     type: 'history.result',
     sequence: sequence || 3,
     payload: {
@@ -99,8 +99,9 @@ test('rejects other versions, types and envelopes', () => {
     'snapshot.updated',
     [],
     message((m) => { m.version = 1; }),
-    message((m) => { m.version = 3; }),
-    message((m) => { m.version = '2'; }),
+    message((m) => { m.version = 2; }),
+    message((m) => { m.version = 4; }),
+    message((m) => { m.version = '3'; }),
     message((m) => { m.type = 'snapshot.request'; }),
     message((m) => { m.type = 'eval'; }),
     message((m) => { m.sequence = '2'; }),
@@ -134,6 +135,13 @@ test('rejects snapshots the page cannot render truthfully', () => {
     (p) => { p.diagnostics.lastIssue = 42; },
     (p) => { delete p.diagnostics.webView2Version; },
     (p) => { p.dryRun = 'false'; },
+    (p) => { delete p.operational; },
+    (p) => { p.operational.testMode = 'false'; },
+    (p) => { p.operational.idlePoll.value = '5'; },
+    (p) => { p.operational.busyPoll.min = 70; },
+    (p) => { delete p.operational.errorPoll.rangeLabel; },
+    (p) => { delete p.busy.connectionSetup; },
+    (p) => { p.busy.settingsSave = 'no'; },
     (p) => { p.languages = []; },
     (p) => { p.strings['Common.AppTitle'] = { html: '<b>x</b>' }; },
     (p) => { p.strings = null; }
@@ -172,26 +180,87 @@ test('accepts every connection state the host can send and an empty last job', (
 });
 
 test('creates only allowlisted, versioned commands with their allowed fields', () => {
-  assert.deepEqual(JSON.parse(model.createCommand('ui.ready')), { version: 2, type: 'ui.ready', payload: {} });
-  assert.deepEqual(JSON.parse(model.createCommand('classicWindow.open', { tab: 'settings' })), { version: 2, type: 'classicWindow.open', payload: {} });
+  assert.deepEqual(JSON.parse(model.createCommand('ui.ready')), { version: 3, type: 'ui.ready', payload: {} });
+  assert.deepEqual(JSON.parse(model.createCommand('classicWindow.open', { tab: 'settings' })), { version: 3, type: 'classicWindow.open', payload: {} });
   assert.deepEqual(
     JSON.parse(model.createCommand('language.change', { culture: 'ar-SA', extra: 'ignored' })),
-    { version: 2, type: 'language.change', payload: { culture: 'ar-SA' } });
+    { version: 3, type: 'language.change', payload: { culture: 'ar-SA' } });
   assert.deepEqual(
     JSON.parse(model.createCommand('printer.save', { requestId: REQUEST_ID, name: 'POS-58', path: 'C:\\x' })),
-    { version: 2, type: 'printer.save', payload: { requestId: REQUEST_ID, name: 'POS-58' } });
+    { version: 3, type: 'printer.save', payload: { requestId: REQUEST_ID, name: 'POS-58' } });
   assert.deepEqual(
     JSON.parse(model.createCommand('history.query', { requestId: REQUEST_ID, range: 'last7Days', page: 2, search: '' })),
-    { version: 2, type: 'history.query', payload: { requestId: REQUEST_ID, range: 'last7Days', page: 2 } });
+    { version: 3, type: 'history.query', payload: { requestId: REQUEST_ID, range: 'last7Days', page: 2 } });
   assert.deepEqual(
     JSON.parse(model.createCommand('history.reprint', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', jobId: 'x' })),
-    { version: 2, type: 'history.reprint', payload: { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef' } });
+    { version: 3, type: 'history.reprint', payload: { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef' } });
   assert.deepEqual(model.COMMANDS, [
     'ui.ready', 'snapshot.request', 'language.change', 'classicWindow.open',
     'engine.start', 'engine.stop', 'connection.test', 'connection.openSetup', 'connection.reset',
     'printers.refresh', 'printer.save', 'printer.testPrint', 'history.query', 'history.reprint',
-    'logs.openFolder'
+    'logs.openFolder', 'settings.save'
   ]);
+  assert.deepEqual(
+    JSON.parse(model.createCommand('connection.openSetup', { requestId: REQUEST_ID, serverUrl: 'https://x.test' })),
+    { version: 3, type: 'connection.openSetup', payload: { requestId: REQUEST_ID } });
+  assert.deepEqual(
+    JSON.parse(model.createCommand('settings.save', {
+      requestId: REQUEST_ID, testMode: false, idlePollSeconds: 5, busyPollSeconds: 1, errorPollSeconds: 15, maxJobsPerPoll: 10
+    })),
+    { version: 3, type: 'settings.save', payload: { requestId: REQUEST_ID, testMode: false, idlePollSeconds: 5, busyPollSeconds: 1, errorPollSeconds: 15 } });
+});
+
+test('settings.save carries only typed whole numbers and a boolean', () => {
+  const valid = { requestId: REQUEST_ID, testMode: true, idlePollSeconds: 5, busyPollSeconds: 1, errorPollSeconds: 15 };
+  const cases = [
+    [{ testMode: 'true' }, /invalid testMode/],
+    [{ testMode: 1 }, /invalid testMode/],
+    [{ idlePollSeconds: '5' }, /invalid idlePollSeconds/],
+    [{ idlePollSeconds: 1.5 }, /invalid idlePollSeconds/],
+    [{ busyPollSeconds: -1 }, /invalid busyPollSeconds/],
+    [{ errorPollSeconds: 86401 }, /invalid errorPollSeconds/],
+    [{ errorPollSeconds: undefined }, /requires errorPollSeconds/]
+  ];
+  for (const [change, expected] of cases) {
+    assert.throws(() => model.createCommand('settings.save', Object.assign({}, valid, change)), expected, JSON.stringify(change));
+  }
+  assert.throws(() => model.createCommand('connection.openSetup'), /requires requestId/);
+});
+
+test('accepts tab requests from the host only for known tabs', () => {
+  const navigate = (tab, sequence) => ({ version: 3, type: 'ui.navigate', sequence: sequence || 4, payload: { tab } });
+
+  assert.deepEqual(model.readHostMessage(navigate('history'), 1), { kind: 'navigate', sequence: 4, payload: { tab: 'history' } });
+  for (const tab of ['overview', 'printer', 'settings']) {
+    assert.notEqual(model.readHostMessage(navigate(tab), 1), null, tab);
+  }
+  for (const tab of ['classic', 'Settings', '', '../history', null, 3]) {
+    assert.equal(model.readHostMessage(navigate(tab), 1), null, String(tab));
+  }
+  assert.equal(model.readHostMessage(navigate('history', 2), 2), null);
+  assert.notEqual(model.readHostMessage(operationMessage({ requestId: null, operation: 'connection.openSetup' }), 1), null);
+});
+
+test('the connection button says what the native dialog will do', () => {
+  assert.equal(model.setupLabelKey(snapshot()), 'Shell.Action.ChangeConnection');
+  assert.equal(model.setupLabelKey(snapshot((p) => { p.connection.state = 'notConfigured'; p.actions.reconnect = true; })), 'Shell.Action.Connect');
+  assert.equal(model.setupLabelKey(snapshot((p) => { p.connection.state = 'error'; p.actions.reconnect = true; })), 'Shell.Action.Reconnect');
+});
+
+test('operational drafts are checked against the ranges the host sent', () => {
+  const s = snapshot();
+  const saved = model.savedOperational(s);
+
+  assert.deepEqual(saved, { testMode: false, idle: '5', busy: '1', error: '15' });
+  assert.equal(model.sameOperational(saved, { testMode: false, idle: '5', busy: '1', error: '15' }), true);
+  assert.equal(model.sameOperational(saved, Object.assign({}, saved, { testMode: true })), false);
+  assert.deepEqual(model.invalidOperationalFields(saved, s.operational), []);
+  assert.deepEqual(model.invalidOperationalFields({ testMode: false, idle: '0', busy: '61', error: '300' }, s.operational), ['idle', 'busy']);
+  assert.deepEqual(model.invalidOperationalFields({ testMode: false, idle: '', busy: '1.5', error: '1e2' }, s.operational), ['idle', 'busy', 'error']);
+  assert.deepEqual(model.invalidOperationalFields({ testMode: false, idle: ' 30 ', busy: '60', error: '1' }, s.operational), []);
+  assert.deepEqual(
+    model.operationalPayload({ testMode: true, idle: ' 30 ', busy: '2', error: '45' }),
+    { testMode: true, idlePollSeconds: 30, busyPollSeconds: 2, errorPollSeconds: 45 });
 });
 
 test('refuses commands or fields outside the contract', () => {
@@ -228,7 +297,7 @@ test('hero actions always offer a next step for errors', () => {
   assert.deepEqual(model.heroActions(snapshot()), []);
   assert.deepEqual(model.heroActions(snapshot((p) => { p.engine.state = 'stopped'; p.connection.state = 'stopped'; p.actions.start = true; })), ['start']);
   assert.deepEqual(model.heroActions(snapshot((p) => { p.connection.state = 'error'; p.actions.reconnect = true; })), ['reconnect', 'showDiagnostics']);
-  assert.deepEqual(model.heroActions(snapshot((p) => { p.connection.state = 'notConfigured'; p.actions.reconnect = true; })), ['reconnect']);
+  assert.deepEqual(model.heroActions(snapshot((p) => { p.connection.state = 'notConfigured'; p.actions.reconnect = true; })), ['connect']);
   assert.deepEqual(model.heroActions(snapshot((p) => { p.actions.configurePrinter = true; })), ['configurePrinter']);
   assert.deepEqual(model.heroActions(snapshot((p) => { p.connection.state = 'offline'; })), ['checkConnection', 'showDiagnostics']);
   assert.deepEqual(model.heroActions(snapshot((p) => { p.connection.state = 'error'; p.actions.checkConnection = false; })), ['showDiagnostics']);

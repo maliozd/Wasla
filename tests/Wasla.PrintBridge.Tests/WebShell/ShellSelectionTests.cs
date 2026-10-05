@@ -91,26 +91,9 @@ public sealed class ShellSelectionTests
 [Collection(PrintBridgeDataRootCollection.Name)]
 public sealed class ShellSwitchPersistenceTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "wasla-pb-shell-tests", Guid.NewGuid().ToString("N"));
-    private readonly IDisposable _scope;
+    private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-shell-tests");
 
-    public ShellSwitchPersistenceTests()
-    {
-        Directory.CreateDirectory(_root);
-        _scope = PrintBridgePaths.UseRootForTests(_root);
-    }
-
-    public void Dispose()
-    {
-        _scope.Dispose();
-        try
-        {
-            Directory.Delete(_root, recursive: true);
-        }
-        catch (IOException)
-        {
-        }
-    }
+    public void Dispose() => _dataRoot.Dispose();
 
     [Fact]
     public void ExistingConfigurations_AreSavedWithoutAShellKey()
@@ -140,7 +123,7 @@ public sealed class ShellSwitchPersistenceTests : IDisposable
     [Fact]
     public void ShellWebViewProfile_StaysInsideTheRedirectedDataRoot()
     {
-        Assert.StartsWith(_root, ShellPaths.UserDataDirectory, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(_dataRoot.Path, ShellPaths.UserDataDirectory, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(Path.Combine(AppContext.BaseDirectory, "shell-ui"), ShellPaths.AssetDirectory);
     }
 }

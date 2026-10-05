@@ -244,6 +244,7 @@ public sealed class ShellOperationsTests : IDisposable
             _rig.Engine,
             _rig.Catalog,
             _rig.PrinterSettings,
+            _rig.OperationalSettings,
             _rig.Native,
             _rig.History,
             _rig.Settings,
@@ -381,11 +382,117 @@ public sealed class ShellOperationsTests : IDisposable
         Assert.Equal(1, _rig.Native.LogFolderRequests);
     }
 
+    [Fact]
+    public async Task SettingsSave_StoresTheTypedValues_AndSaysNoRestartIsNeeded()
+    {
+        var result = await _rig.Operations.ExecuteAsync(Parse(Tracked("settings.save", SettingsFields(false, 10, 2, 30))));
+
+        Assert.Equal(ShellOperationOutcome.Succeeded, result.Outcome);
+        Assert.Equal(_localizer["Shell.Op.SettingsSaved"], result.Message);
+        Assert.Equal([new ShellOperationalSettingsChange(false, 10, 2, 30)], _rig.OperationalSettings.Saved);
+        Assert.Equal(0, _rig.Native.TestModeConfirmations);
+        Assert.False(_rig.Operations.Busy.SettingsSave);
+    }
+
+    [Theory]
+    [InlineData(0, 1, 15)]
+    [InlineData(301, 1, 15)]
+    [InlineData(5, 61, 15)]
+    [InlineData(5, 1, 0)]
+    public async Task SettingsSave_OutOfRange_IsRejectedWithTheValidatorMessage_AndNothingIsSaved(int idle, int busy, int error)
+    {
+        var result = await _rig.Operations.ExecuteAsync(Parse(Tracked("settings.save", SettingsFields(false, idle, busy, error))));
+
+        Assert.Equal(ShellOperationOutcome.Rejected, result.Outcome);
+        Assert.Equal(_localizer["Validation.InvalidPollingIntervals"], result.Message);
+        Assert.Empty(_rig.OperationalSettings.Saved);
+    }
+
+    [Fact]
+    public async Task TurningTestModeOn_NeedsTheNativeConfirmation()
+    {
+        _rig.Native.ConfirmTestMode = false;
+
+        var declined = await _rig.Operations.ExecuteAsync(Parse(Tracked("settings.save", SettingsFields(true, 5, 1, 15))));
+
+        Assert.Equal(ShellOperationOutcome.Cancelled, declined.Outcome);
+        Assert.Equal(_localizer["Shell.Op.TestModeCancelled"], declined.Message);
+        Assert.Empty(_rig.OperationalSettings.Saved);
+
+        _rig.Native.ConfirmTestMode = true;
+        var confirmed = await _rig.Operations.ExecuteAsync(Parse(Tracked("settings.save", SettingsFields(true, 5, 1, 15))));
+
+        Assert.Equal(ShellOperationOutcome.Succeeded, confirmed.Outcome);
+        Assert.Equal(2, _rig.Native.TestModeConfirmations);
+        Assert.Equal([new ShellOperationalSettingsChange(true, 5, 1, 15)], _rig.OperationalSettings.Saved);
+    }
+
+    [Fact]
+    public async Task TurningTestModeOff_OrKeepingItOn_NeedsNoConfirmation()
+    {
+        var off = await _rig.Operations.ExecuteAsync(Parse(Tracked("settings.save", SettingsFields(false, 5, 1, 15))));
+        _rig.Settings.Replace(_rig.Settings.OrderHub, new Wasla.PrintBridge.Options.PrintBridgeOptions { PrinterName = "POS-58", DryRun = true });
+        var stillOn = await _rig.Operations.ExecuteAsync(Parse(Tracked("settings.save", SettingsFields(true, 7, 1, 15))));
+
+        Assert.Equal(ShellOperationOutcome.Succeeded, off.Outcome);
+        Assert.Equal(ShellOperationOutcome.Succeeded, stillOn.Outcome);
+        Assert.Equal(0, _rig.Native.TestModeConfirmations);
+    }
+
+    [Theory]
+    [InlineData(ShellConnectionSetupOutcome.Connected, ShellOperationOutcome.Succeeded, null)]
+    [InlineData(ShellConnectionSetupOutcome.ConnectedChoosePrinter, ShellOperationOutcome.Succeeded, "printer")]
+    [InlineData(ShellConnectionSetupOutcome.Cancelled, ShellOperationOutcome.Cancelled, null)]
+    [InlineData(ShellConnectionSetupOutcome.SaveFailed, ShellOperationOutcome.Failed, null)]
+    public async Task ConnectionSetup_ReportsOnlyTheDialogsLocalizedMessage(
+        ShellConnectionSetupOutcome dialog,
+        ShellOperationOutcome expected,
+        string? navigateTo)
+    {
+        _rig.Native.SetupResult = new ShellConnectionSetupResult(dialog, "dialog message");
+        var requestId = NewRequestId();
+
+        var result = await _rig.Operations.ExecuteAsync(Parse(Tracked("connection.openSetup", requestId: requestId)));
+
+        Assert.Equal(new ShellOperationResult("connection.openSetup", requestId, expected, "dialog message", navigateTo), result);
+        Assert.Equal(1, _rig.Native.ConnectionSetupRequests);
+        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
+    }
+
+    [Fact]
+    public async Task ConnectionSetup_AndEngineCommands_NeverRunAtTheSameTime()
+    {
+        _rig.Native.SetupGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var setup = _rig.Operations.ExecuteAsync(Parse(Tracked("connection.openSetup")));
+
+        var stop = await _rig.Operations.ExecuteAsync(Parse(Tracked("engine.stop")));
+        var test = await _rig.Operations.ExecuteAsync(Parse(Tracked("connection.test")));
+        var reset = await _rig.Operations.ExecuteAsync(Parse(Tracked("connection.reset")));
+        var print = await _rig.Operations.ExecuteAsync(Parse(Tracked("printer.testPrint")));
+
+        Assert.Equal(ShellOperationOutcome.Busy, stop.Outcome);
+        Assert.Equal(ShellOperationOutcome.Busy, test.Outcome);
+        Assert.Equal(ShellOperationOutcome.Busy, reset.Outcome);
+        Assert.Equal(0, _rig.Engine.StopCalls + _rig.Engine.TestConnectionCalls + _rig.Engine.ResetCalls);
+        // Printing does not touch the connection and stays available.
+        Assert.Equal(ShellOperationOutcome.Succeeded, print.Outcome);
+
+        _rig.Native.SetupGate.SetResult();
+        await setup.WaitAsync(Wait, TestContext.Current.CancellationToken);
+
+        _rig.Engine.StopGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stopping = _rig.Operations.ExecuteAsync(Parse(Tracked("engine.stop")));
+        var blocked = await _rig.Operations.ExecuteAsync(Parse(Tracked("connection.openSetup")));
+        Assert.Equal(ShellOperationOutcome.Busy, blocked.Outcome);
+        Assert.Equal(1, _rig.Native.ConnectionSetupRequests);
+        _rig.Engine.StopGate.SetResult();
+        await stopping.WaitAsync(Wait, TestContext.Current.CancellationToken);
+    }
+
     [Theory]
     [InlineData(ShellCommandType.UiReady)]
     [InlineData(ShellCommandType.LanguageChange)]
     [InlineData(ShellCommandType.ClassicWindowOpen)]
-    [InlineData(ShellCommandType.ConnectionOpenSetup)]
     [InlineData(ShellCommandType.HistoryQuery)]
     public async Task NonOperations_AreNeverExecuted(ShellCommandType type)
     {
@@ -412,6 +519,9 @@ public sealed class ShellOperationsTests : IDisposable
         foreach (var leak in new[] { "secret-host", SentinelToken, SentinelServerUrl, "api/print-bridge", "ProgramData", "Exception", "Token=" })
             Assert.DoesNotContain(leak, message, StringComparison.OrdinalIgnoreCase);
     }
+
+    private static string SettingsFields(bool testMode, int idle, int busy, int error) =>
+        $"\"testMode\":{(testMode ? "true" : "false")},\"idlePollSeconds\":{idle},\"busyPollSeconds\":{busy},\"errorPollSeconds\":{error}";
 
     private static ShellCommand Parse(string raw)
     {

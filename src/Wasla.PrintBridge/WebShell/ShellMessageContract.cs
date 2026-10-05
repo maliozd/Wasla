@@ -6,14 +6,15 @@ using Wasla.PrintBridge.Models;
 namespace Wasla.PrintBridge.WebShell;
 
 /// <summary>
-/// Version 2 of the message contract between the WebView2 page and the desktop host (WAS-54).
-/// Every message is a JSON object <c>{ "version": 2, "type": "...", "payload": { ... } }</c>.
+/// Version 3 of the message contract between the WebView2 page and the desktop host (WAS-57; version 2 was
+/// WAS-54). Every message is a JSON object <c>{ "version": 3, "type": "...", "payload": { ... } }</c>.
 /// The page may only send the commands in <see cref="CommandTypes"/>; the host only sends
-/// <see cref="SnapshotUpdated"/>, <see cref="OperationResult"/> and <see cref="HistoryResult"/>.
+/// <see cref="SnapshotUpdated"/>, <see cref="OperationResult"/>, <see cref="HistoryResult"/> and
+/// <see cref="UiNavigate"/>.
 /// </summary>
 public static partial class ShellMessageContract
 {
-    public const int Version = 2;
+    public const int Version = 3;
 
     /// <summary>Upper bound for one inbound message, in UTF-16 characters, checked before parsing.</summary>
     public const int MaxInboundMessageLength = 1024;
@@ -21,6 +22,14 @@ public static partial class ShellMessageContract
     public const int MaxPrinterNameLength = 256;
     public const int MaxHistorySearchLength = 64;
     public const int MaxHistoryPage = 1000;
+
+    /// <summary>
+    /// Envelope bounds for the poll-interval fields of <see cref="SettingsSave"/>. The page may send any whole
+    /// number in this envelope; the host then applies the real ranges of <c>PrintBridgeSettingsValidator</c> and
+    /// answers with a localized message, so an out-of-range value is explained instead of silently dropped.
+    /// </summary>
+    public const int MinSecondsField = 0;
+    public const int MaxSecondsField = 86400;
 
     public const string UiReady = "ui.ready";
     public const string SnapshotRequest = "snapshot.request";
@@ -37,10 +46,17 @@ public static partial class ShellMessageContract
     public const string HistoryQuery = "history.query";
     public const string HistoryReprint = "history.reprint";
     public const string LogsOpenFolder = "logs.openFolder";
+    public const string SettingsSave = "settings.save";
 
     public const string SnapshotUpdated = "snapshot.updated";
     public const string OperationResult = "operation.result";
     public const string HistoryResult = "history.result";
+
+    /// <summary>Host to page: show one of <see cref="Tabs"/> (tray Print history and Settings).</summary>
+    public const string UiNavigate = "ui.navigate";
+
+    /// <summary>The page's tabs, in order. <see cref="UiNavigate"/> names one of them.</summary>
+    public static readonly IReadOnlyList<string> Tabs = ["overview", "printer", "history", "settings"];
 
     internal enum FieldKind
     {
@@ -50,7 +66,11 @@ public static partial class ShellMessageContract
         HistoryRange,
         HistoryPage,
         HistorySearch,
-        HistoryItemRef
+        HistoryItemRef,
+        TestMode,
+        IdlePollSeconds,
+        BusyPollSeconds,
+        ErrorPollSeconds
     }
 
     internal sealed record Field(string Name, FieldKind Kind, bool Required);
@@ -70,7 +90,7 @@ public static partial class ShellMessageContract
             [EngineStart] = new(ShellCommandType.EngineStart, [RequestIdField]),
             [EngineStop] = new(ShellCommandType.EngineStop, [RequestIdField]),
             [ConnectionTest] = new(ShellCommandType.ConnectionTest, [RequestIdField]),
-            [ConnectionOpenSetup] = new(ShellCommandType.ConnectionOpenSetup, []),
+            [ConnectionOpenSetup] = new(ShellCommandType.ConnectionOpenSetup, [RequestIdField]),
             [ConnectionReset] = new(ShellCommandType.ConnectionReset, [RequestIdField]),
             [PrintersRefresh] = new(ShellCommandType.PrintersRefresh, [RequestIdField]),
             [PrinterSave] = new(ShellCommandType.PrinterSave, [RequestIdField, new("name", FieldKind.PrinterName, Required: true)]),
@@ -83,7 +103,16 @@ public static partial class ShellMessageContract
                 new("search", FieldKind.HistorySearch, Required: false)
             ]),
             [HistoryReprint] = new(ShellCommandType.HistoryReprint, [RequestIdField, new("itemRef", FieldKind.HistoryItemRef, Required: true)]),
-            [LogsOpenFolder] = new(ShellCommandType.LogsOpenFolder, [RequestIdField])
+            [LogsOpenFolder] = new(ShellCommandType.LogsOpenFolder, [RequestIdField]),
+            // Exactly the operational settings the classic Advanced section edits; no other setting can be named.
+            [SettingsSave] = new(ShellCommandType.SettingsSave,
+            [
+                RequestIdField,
+                new("testMode", FieldKind.TestMode, Required: true),
+                new("idlePollSeconds", FieldKind.IdlePollSeconds, Required: true),
+                new("busyPollSeconds", FieldKind.BusyPollSeconds, Required: true),
+                new("errorPollSeconds", FieldKind.ErrorPollSeconds, Required: true)
+            ])
         };
 
     public static readonly IReadOnlyList<string> CommandTypes = Commands.Keys.ToArray();
@@ -120,7 +149,8 @@ public enum ShellCommandType
     PrinterTestPrint,
     HistoryQuery,
     HistoryReprint,
-    LogsOpenFolder
+    LogsOpenFolder,
+    SettingsSave
 }
 
 /// <summary>A validated command from the page. Only the fields its type allows are ever set.</summary>
@@ -132,7 +162,11 @@ public sealed record ShellCommand(
     PrintHistoryDateFilter? HistoryRange = null,
     int? HistoryPage = null,
     string? HistorySearch = null,
-    string? HistoryItemRef = null);
+    string? HistoryItemRef = null,
+    bool? TestMode = null,
+    int? IdlePollSeconds = null,
+    int? BusyPollSeconds = null,
+    int? ErrorPollSeconds = null);
 
 public enum ShellMessageRejection
 {
@@ -327,9 +361,42 @@ public static class ShellMessageParser
                 command = command with { HistoryItemRef = itemRef };
                 return true;
 
+            case ShellMessageContract.FieldKind.TestMode:
+                if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                    return false;
+                command = command with { TestMode = value.GetBoolean() };
+                return true;
+
+            case ShellMessageContract.FieldKind.IdlePollSeconds:
+                if (!TrySeconds(value, out var idle))
+                    return false;
+                command = command with { IdlePollSeconds = idle };
+                return true;
+
+            case ShellMessageContract.FieldKind.BusyPollSeconds:
+                if (!TrySeconds(value, out var busy))
+                    return false;
+                command = command with { BusyPollSeconds = busy };
+                return true;
+
+            case ShellMessageContract.FieldKind.ErrorPollSeconds:
+                if (!TrySeconds(value, out var error))
+                    return false;
+                command = command with { ErrorPollSeconds = error };
+                return true;
+
             default:
                 return false;
         }
+    }
+
+    /// <summary>A whole JSON number (no fraction, exponent or string) inside the contract envelope.</summary>
+    private static bool TrySeconds(JsonElement value, out int seconds)
+    {
+        seconds = 0;
+        return value.ValueKind == JsonValueKind.Number
+               && value.TryGetInt32(out seconds)
+               && seconds is >= ShellMessageContract.MinSecondsField and <= ShellMessageContract.MaxSecondsField;
     }
 
     private static bool TryString(JsonElement value, out string text)

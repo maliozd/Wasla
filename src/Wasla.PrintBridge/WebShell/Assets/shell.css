@@ -647,6 +647,72 @@ dd {
   font-weight: 600;
 }
 
+.pb-help--error {
+  color: var(--wasla-danger);
+  font-weight: 600;
+}
+
+/* Operational settings: a switch for test mode and whole-number fields for the poll intervals. */
+
+.pb-switch-row {
+  display: flex;
+  align-items: center;
+  gap: var(--wasla-space-2);
+}
+
+.pb-switch {
+  position: relative;
+  flex-shrink: 0;
+  inline-size: 2.4rem;
+  block-size: 1.35rem;
+  margin: 0;
+  border: 1px solid var(--wasla-border-strong);
+  border-radius: 999px;
+  background: var(--wasla-surface-muted);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color var(--wasla-transition), border-color var(--wasla-transition);
+}
+
+.pb-switch::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0.15rem;
+  inset-inline-start: 0.15rem;
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+  border-radius: 50%;
+  background: var(--wasla-text-secondary);
+  transition: inset-inline-start var(--wasla-transition);
+}
+
+/* Test mode stops paper printing, so "on" uses the warning colour; the knob position also shows the state. */
+.pb-switch:checked {
+  border-color: var(--wasla-warning);
+  background: var(--wasla-warning-soft);
+}
+
+.pb-switch:checked::before {
+  inset-inline-start: calc(100% - 1.1rem);
+  background: var(--wasla-warning);
+}
+
+.pb-number-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--wasla-space-2) var(--wasla-space-4);
+}
+
+.pb-input--number {
+  inline-size: 6.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pb-input[aria-invalid="true"] {
+  border-color: var(--wasla-danger);
+  box-shadow: 0 0 0 1px var(--wasla-danger);
+}
+
 .pb-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
@@ -843,5 +909,19 @@ tr[data-status="skipped"] .pb-row-detail {
 
   .pb-badge {
     border: 1px solid CanvasText;
+  }
+
+  .pb-switch {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background: Canvas;
+  }
+
+  .pb-switch::before {
+    background: CanvasText;
+  }
+
+  .pb-switch:checked::before {
+    background: Highlight;
   }
 }

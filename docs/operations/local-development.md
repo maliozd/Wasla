@@ -133,7 +133,7 @@ Protected API calls need a cookie the API process can unprotect. The repository 
 
 Separate Windows desktop app. Point `ServerUrl` at the reachable Wasla host that serves `/api/print-bridge` (often tenant Web URL). Token from tenant Print Bridge UI or `generate-print-bridge-token`.
 
-To run a Debug build next to an installed client, set `WASLA_PRINTBRIDGE_DATA_ROOT` to an empty scratch folder outside the repository and enable `DryRun` in that folder's `appsettings.json`. The instance then uses only that folder and leaves the protocol handler and setup pipe of the installed client alone. Set `Ui.Shell` to `WebView2` there to try the WebView2 status shell (needs the WebView2 Runtime); in Debug builds F12 opens its DevTools.
+To run a Debug build without touching an installed client's settings, set `WASLA_PRINTBRIDGE_DATA_ROOT` to an empty scratch folder outside the repository and enable `DryRun` in that folder's `appsettings.json`. The instance then uses only that folder and leaves the protocol handler and setup pipe of the installed client alone. Only one Print Bridge runs at a time (a machine-wide single-instance lock), so exit the installed client from its tray icon first. Set `Ui.Shell` to `WebView2` there to try the WebView2 desktop app (needs the WebView2 Runtime); in Debug builds F12 opens its DevTools.
 
 Details: [../integrations/print-bridge.md](../integrations/print-bridge.md).
 

@@ -54,9 +54,16 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private readonly ToolStripMenuItem _exitMenuItem;
 
-    private readonly IWebView2RuntimeProbe _webViewRuntimeProbe = new WebView2RuntimeProbe();
+    private readonly ToolStripMenuItem _classicFallbackMenuItem;
+
+    private readonly ToolStripSeparator _classicFallbackSeparator;
+
+    private readonly IWebView2RuntimeProbe _webViewRuntimeProbe;
 
     private readonly IPrinterCatalog _printerCatalog = new WindowsPrinterCatalog();
+
+    /// <summary>Cancelled on Exit, so a connection change still in progress is abandoned instead of half-applied.</summary>
+    private readonly CancellationTokenSource _lifetime = new();
 
     private PrintBridgeShellForm? _shellForm;
 
@@ -64,13 +71,24 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private bool _shellFallbackNotified;
 
+    /// <summary>The classic tab to select if the WebView2 app fails while opening a requested tab.</summary>
+    private Action? _classicTabForFallback;
+
 
 
     public TrayApplicationContext(ServiceProvider services)
+        : this(services, new WebView2RuntimeProbe())
+    {
+    }
+
+    /// <summary>For tests: a runtime probe that can report the WebView2 Runtime as missing.</summary>
+    internal TrayApplicationContext(ServiceProvider services, IWebView2RuntimeProbe webViewRuntimeProbe)
 
     {
 
         _services = services;
+
+        _webViewRuntimeProbe = webViewRuntimeProbe;
 
         _runtime = services.GetRequiredService<PrintBridgeRuntime>();
 
@@ -100,6 +118,11 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _exitMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ExitApplication());
 
+        // Emergency fallback while the WebView2 app is the normal window; hidden when the classic window is the default.
+        _classicFallbackMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ShowMainWindow());
+
+        _classicFallbackSeparator = new ToolStripSeparator();
+
 
 
         _trayMenu = new ContextMenuStrip();
@@ -116,9 +139,17 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _trayMenu.Items.Add(_settingsMenuItem);
 
+        _trayMenu.Items.Add(_classicFallbackSeparator);
+
+        _trayMenu.Items.Add(_classicFallbackMenuItem);
+
         _trayMenu.Items.Add(new ToolStripSeparator());
 
         _trayMenu.Items.Add(_exitMenuItem);
+
+        _trayMenu.Opening += (_, _) => UpdateClassicFallbackMenuItem();
+
+        UpdateClassicFallbackMenuItem();
 
 
 
@@ -170,6 +201,8 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _exitMenuItem.Text = _localizer["Tray.Exit"];
 
+        _classicFallbackMenuItem.Text = _localizer["Tray.OpenClassicFallback"];
+
         _trayMenu.RightToLeft = _cultureService.IsRightToLeft ? RightToLeft.Yes : RightToLeft.No;
 
     }
@@ -212,6 +245,10 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     {
 
+        // The WebView2 app may have changed settings while this window was hidden.
+        if (!_mainForm.Visible)
+            _mainForm.ReloadSettings();
+
         _mainForm.Show();
 
         if (_mainForm.WindowState == FormWindowState.Minimized)
@@ -226,22 +263,31 @@ public sealed class TrayApplicationContext : ApplicationContext
 
 
 
-    /// <summary>
-    /// Tray "Open" and double-click. Opens the WebView2 status shell only when <c>Ui.Shell</c> is
-    /// <c>WebView2</c> and the runtime is usable; otherwise, and for every other entry point (history,
-    /// settings, automatic setup), the classic window opens as before.
-    /// </summary>
-    private void ShowPrimaryWindow()
-    {
-        var holder = _services.GetRequiredService<PrintBridgeSettingsHolder>();
-        var decision = _shellFailedThisSession
-            ? new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable)
-            : ShellSelection.Decide(holder.Ui.Shell, _webViewRuntimeProbe);
+    /// <summary>Tray "Open" and double-click.</summary>
+    private void ShowPrimaryWindow() => ShowAppWindow(tab: null, classicTab: null);
 
+    /// <summary>
+    /// Every tray entry point goes through here. When <c>Ui.Shell</c> is <c>WebView2</c> and the runtime is usable,
+    /// the one WebView2 window is shown (or brought forward) on <paramref name="tab"/>. Otherwise, or when the app
+    /// fails while opening, the classic window opens on the matching tab, as before.
+    /// </summary>
+    private void ShowAppWindow(string? tab, Action? classicTab)
+    {
+        if (TryShowShell(tab, classicTab))
+            return;
+
+        ShowMainWindow();
+        classicTab?.Invoke();
+    }
+
+    private bool TryShowShell(string? tab, Action? classicTab)
+    {
+        var decision = DecideShell();
         if (decision.Mode == PrintBridgeShellMode.WebView2)
         {
-            GetOrCreateShellForm().ShowShell();
-            return;
+            _classicTabForFallback = classicTab;
+            GetOrCreateShellForm().ShowShell(tab);
+            return true;
         }
 
         if (decision.FallbackReason is ShellFallbackReason.RuntimeUnavailable or ShellFallbackReason.UnrecognizedSetting)
@@ -254,7 +300,23 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (decision.FallbackReason == ShellFallbackReason.RuntimeUnavailable)
             NotifyShellFallback("Shell.Fallback.RuntimeMissing");
 
-        ShowMainWindow();
+        return false;
+    }
+
+    private ShellDecision DecideShell() =>
+        _shellFailedThisSession
+            ? new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable)
+            : ShellSelection.Decide(_services.GetRequiredService<PrintBridgeSettingsHolder>().Ui.Shell, _webViewRuntimeProbe);
+
+    /// <summary>
+    /// The tray's classic-window entry is an emergency fallback, offered only while the WebView2 app is the window
+    /// "Open" shows. Without <c>Ui.Shell = WebView2</c> the runtime is not probed at all.
+    /// </summary>
+    private void UpdateClassicFallbackMenuItem()
+    {
+        var offered = DecideShell().Mode == PrintBridgeShellMode.WebView2;
+        _classicFallbackMenuItem.Visible = offered;
+        _classicFallbackSeparator.Visible = offered;
     }
 
     private PrintBridgeShellForm GetOrCreateShellForm()
@@ -265,24 +327,22 @@ public sealed class TrayApplicationContext : ApplicationContext
         var store = _services.GetRequiredService<PrintBridgeSettingsStore>();
         var holder = _services.GetRequiredService<PrintBridgeSettingsHolder>();
         var loggers = _services.GetRequiredService<ILoggerFactory>();
+        var logger = loggers.CreateLogger("Wasla.PrintBridge.Shell");
         _shellForm = new PrintBridgeShellForm(
             _runtime,
             holder,
             _printerCatalog,
             new ShellPrinterSettings(store, holder),
+            new ShellOperationalSettings(store, holder),
+            new ShellConnectionSetup(_runtime, holder, _localizer, logger, _lifetime.Token),
             _localizer,
             _cultureService,
             new PrintBridgeLanguageService(store, holder, _cultureService, loggers.CreateLogger<PrintBridgeLanguageService>()),
             _webViewRuntimeProbe.Probe().Version,
-            loggers.CreateLogger("Wasla.PrintBridge.Shell"));
+            logger);
         _shellForm.ClassicWindowRequested += (_, _) => ShowMainWindow();
-        _shellForm.ConnectionSetupRequested += (_, _) =>
-        {
-            // Reconnect uses the existing native setup: the token never passes through the WebView2 page.
-            ShowMainWindow();
-            _mainForm.FocusConnectionSettingsSection();
-        };
         _shellForm.ShellUnavailable += OnShellUnavailable;
+        ShellFormCreatedForTests?.Invoke(_shellForm);
         return _shellForm;
     }
 
@@ -299,6 +359,8 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         NotifyShellFallback("Shell.Fallback.StartFailed");
         ShowMainWindow();
+        _classicTabForFallback?.Invoke();
+        _classicTabForFallback = null;
     }
 
     private void NotifyShellFallback(string messageKey)
@@ -307,6 +369,11 @@ public sealed class TrayApplicationContext : ApplicationContext
             return;
 
         _shellFallbackNotified = true;
+        FallbackNoticeForTests = messageKey;
+        // A balloon needs a visible tray icon; tests hide it so nothing appears on the desktop.
+        if (!_trayIcon.Visible)
+            return;
+
         _trayIcon.ShowBalloonTip(
             5000,
             _localizer["Shell.Fallback.Title"],
@@ -316,27 +383,9 @@ public sealed class TrayApplicationContext : ApplicationContext
 
 
 
-    private void ShowPrintHistory()
+    private void ShowPrintHistory() => ShowAppWindow("history", _mainForm.SelectPrintHistoryTab);
 
-    {
-
-        ShowMainWindow();
-
-        _mainForm.SelectPrintHistoryTab();
-
-    }
-
-
-
-    private void ShowSettings()
-
-    {
-
-        ShowMainWindow();
-
-        _mainForm.SelectSettingsTab();
-
-    }
+    private void ShowSettings() => ShowAppWindow("settings", _mainForm.SelectSettingsTab);
 
 
 
@@ -500,21 +549,22 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (Interlocked.Exchange(ref _autoSetupRunning, 1) == 1)
             return;
 
+        // With the WebView2 app, a setup link is handled in its window and the result is shown there; the classic
+        // window keeps its own flow and message boxes.
+        var shell = TryShowShell(tab: null, classicTab: null) ? _shellForm : null;
         try
         {
-            ShowMainWindow();
+            if (shell is null)
+                ShowMainWindow();
 
             if (!Wasla.PrintBridge.Setup.PrintBridgeProtocolUri.TryParseSetup(uri, out var request, out _))
             {
-                MessageBox.Show(
-                    _localizer["Auto.InvalidLink"],
-                    PrintBridgePaths.ProductDisplayName,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                ReportSetupResult(shell, ShellOperationOutcome.Failed, _localizer["Auto.InvalidLink"], MessageBoxIcon.Warning);
                 return;
             }
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+            cts.CancelAfter(TimeSpan.FromSeconds(60));
             var outcome = await _autoSetup.ApplyAsync(request!, cts.Token).ConfigureAwait(true);
 
             var (messageKey, icon) = outcome switch
@@ -531,24 +581,55 @@ public sealed class TrayApplicationContext : ApplicationContext
             };
 
             UpdateTrayMenu();
-            _mainForm.RefreshAfterAutomaticSetup();
 
-            if (outcome == Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing)
-                _mainForm.FocusPrinterSettingsSection();
+            if (shell is null)
+            {
+                _mainForm.RefreshAfterAutomaticSetup();
 
-            MessageBox.Show(
+                if (outcome == Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing)
+                    _mainForm.FocusPrinterSettingsSection();
+
+                MessageBox.Show(
+                    _localizer[messageKey],
+                    PrintBridgePaths.ProductDisplayName,
+                    MessageBoxButtons.OK,
+                    icon);
+                return;
+            }
+
+            var saved = outcome is Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected
+                or Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing
+                or Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.SavedButUnverified;
+            if (saved)
+            {
+                // Same recovery as the classic window: verify the saved connection and resume listening.
+                using var verify = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+                verify.CancelAfter(TimeSpan.FromSeconds(30));
+                await _runtime.VerifyAndResumeAsync(verify.Token).ConfigureAwait(true);
+            }
+
+            if (_lifetime.IsCancellationRequested)
+                return;
+
+            var connected = outcome is Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected
+                or Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing;
+            ReportSetupResult(
+                shell,
+                connected ? ShellOperationOutcome.Succeeded : ShellOperationOutcome.Failed,
                 _localizer[messageKey],
-                PrintBridgePaths.ProductDisplayName,
-                MessageBoxButtons.OK,
-                icon);
+                icon,
+                outcome == Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing ? "printer" : null);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
-                GetUserErrorMessage(ex),
-                PrintBridgePaths.ProductDisplayName,
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
+            if (_lifetime.IsCancellationRequested)
+                return;
+
+            // The page shows only localized text; anything else becomes the generic setup failure.
+            var message = shell is null || ex is LocalizedApplicationException or PrintBridgeConnectionException
+                ? GetUserErrorMessage(ex)
+                : _localizer["Auto.Failed"];
+            ReportSetupResult(shell, ShellOperationOutcome.Failed, message, MessageBoxIcon.Warning);
         }
         finally
         {
@@ -556,9 +637,50 @@ public sealed class TrayApplicationContext : ApplicationContext
         }
     }
 
+    /// <summary>
+    /// Shows a setup-link result in the WebView2 app when it is the window in use (and still running), otherwise in a
+    /// message box as before.
+    /// </summary>
+    private void ReportSetupResult(
+        PrintBridgeShellForm? shell,
+        ShellOperationOutcome outcome,
+        string message,
+        MessageBoxIcon icon,
+        string? navigateTo = null)
+    {
+        if (shell is { IsDisposed: false } && ReferenceEquals(shell, _shellForm))
+        {
+            shell.ShowShell();
+            shell.ShowConnectionResult(outcome, message, navigateTo);
+            return;
+        }
+
+        MessageBox.Show(message, PrintBridgePaths.ProductDisplayName, MessageBoxButtons.OK, icon);
+    }
+
+    /// <summary>For tests: the tray menu as the user sees it, and the windows it opens.</summary>
+    internal ContextMenuStrip TrayMenuForTests => _trayMenu;
+
+    internal PrintBridgeShellForm? ShellFormForTests => _shellForm;
+
+    /// <summary>For tests: runs once for a new WebView2 window, before it is first shown (to keep it off-screen).</summary>
+    internal Action<PrintBridgeShellForm>? ShellFormCreatedForTests { get; set; }
+
+    internal MainForm ClassicWindowForTests => _mainForm;
+
+    internal NotifyIcon TrayIconForTests => _trayIcon;
+
+    /// <summary>For tests: the resource key of the fallback notice, once one was raised this session.</summary>
+    internal string? FallbackNoticeForTests { get; private set; }
+
+    internal void ExitForTests() => ExitApplication();
+
     private void ExitApplication()
 
     {
+
+        // First, so a connection change or setup link still running stops before it writes anything.
+        _lifetime.Cancel();
 
         _trayIcon.Visible = false;
 

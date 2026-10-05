@@ -639,10 +639,10 @@
     <value>الاستماع متوقف. لا يتم استلام مهام طباعة جديدة.</value>
   </data>
   <data name="Shell.Detail.NotConfigured" xml:space="preserve">
-    <value>لم يتم ربط هذا الجهاز بـ Wasla بعد. اربطه من الإعدادات في النافذة الكلاسيكية.</value>
+    <value>هذا الجهاز غير متصل بـ Wasla بعد. اختر «الاتصال بـ Wasla» لإعداده.</value>
   </data>
   <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
-    <value>حدث خطأ غير متوقع. راجع علامة التبويب السجلات في النافذة الكلاسيكية لمعرفة التفاصيل.</value>
+    <value>حدث خطأ غير متوقع. التفاصيل في ملف السجل: الإعدادات ← التشخيص ← فتح مجلد السجلات.</value>
   </data>
   <data name="Shell.LastJob.Title" xml:space="preserve">
     <value>آخر مهمة طباعة</value>
@@ -688,9 +688,6 @@
   </data>
   <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
     <value>عرض التشخيص</value>
-  </data>
-  <data name="Shell.Action.OpenSetup" xml:space="preserve">
-    <value>فتح إعداد الاتصال</value>
   </data>
   <data name="Shell.Action.Working" xml:space="preserve">
     <value>جارٍ التنفيذ…</value>
@@ -756,7 +753,7 @@
     <value>اتصال Wasla</value>
   </data>
   <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
-    <value>لأسباب أمنية، يُدخل عنوان الخادم ومفتاح الجهاز في نافذة الإعداد المحلية فقط؛ ولا تطّلع هذه الشاشة عليهما.</value>
+    <value>يُدخل عنوان اللوحة ورمز الجهاز في نافذة محلية آمنة ويُفحصان قبل الحفظ. لا تطّلع هذه الشاشة عليهما، ولا يُعرض الرمز المحفوظ مرة أخرى.</value>
   </data>
   <data name="Shell.Settings.Appearance" xml:space="preserve">
     <value>اللغة والمظهر</value>
@@ -772,9 +769,6 @@
   </data>
   <data name="Shell.Settings.TestModeOff" xml:space="preserve">
     <value>متوقف</value>
-  </data>
-  <data name="Shell.Settings.AdvancedHelp" xml:space="preserve">
-    <value>يتم تغيير وضع الاختبار وفترات الفحص من قسم الإعدادات المتقدمة في النافذة الكلاسيكية.</value>
   </data>
   <data name="Shell.Diagnostics.Title" xml:space="preserve">
     <value>التشخيص</value>
@@ -801,7 +795,7 @@
     <value>النافذة الكلاسيكية</value>
   </data>
   <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
-    <value>تبقى النافذة الكلاسيكية متاحة كبديل، بما في ذلك الإعدادات المتقدمة والسجلات.</value>
+    <value>بديل للطوارئ: افتح النافذة الكلاسيكية القديمة فقط إذا لم تعمل هذه النافذة. ستبقى متاحة لإصدار واحد آخر على الأقل.</value>
   </data>
   <data name="Shell.Toast.Dismiss" xml:space="preserve">
     <value>إغلاق</value>
@@ -838,5 +832,113 @@
   </data>
   <data name="Shell.Op.LogsOpened" xml:space="preserve">
     <value>تم فتح مجلد السجلات.</value>
+  </data>
+  <data name="Shell.Action.Connect" xml:space="preserve">
+    <value>الاتصال بـ Wasla</value>
+  </data>
+  <data name="Shell.Action.ChangeConnection" xml:space="preserve">
+    <value>تغيير الاتصال</value>
+  </data>
+  <data name="Shell.Settings.Printing" xml:space="preserve">
+    <value>سلوك الطباعة</value>
+  </data>
+  <data name="Shell.Settings.PrintingHelp" xml:space="preserve">
+    <value>تُستخدم القيم المحفوظة بدءًا من الفحص التالي للخادم، ولا حاجة إلى إعادة التشغيل. يكتمل أي انتظار جارٍ أولًا.</value>
+  </data>
+  <data name="Shell.Settings.TestModeHelp" xml:space="preserve">
+    <value>عند تفعيله لا تُطبع مهام الإيصالات الجديدة على الورق، لكن يُبلَّغ Wasla بأنها طُبعت. استخدمه للتجربة فقط؛ يُطلب تأكيد قبل تفعيله.</value>
+  </data>
+  <data name="Shell.Settings.IdlePoll" xml:space="preserve">
+    <value>فترة الفحص في وضع الخمول</value>
+  </data>
+  <data name="Shell.Settings.BusyPoll" xml:space="preserve">
+    <value>فترة الفحص بعد وصول المهام</value>
+  </data>
+  <data name="Shell.Settings.ErrorPoll" xml:space="preserve">
+    <value>الانتظار بعد خطأ في الاتصال</value>
+  </data>
+  <data name="Shell.Settings.Unsaved" xml:space="preserve">
+    <value>لديك تغييرات غير محفوظة.</value>
+  </data>
+  <data name="Shell.Settings.Invalid" xml:space="preserve">
+    <value>أدخل كل فترة كعدد صحيح ضمن النطاق المسموح به.</value>
+  </data>
+  <data name="Shell.Settings.Discard" xml:space="preserve">
+    <value>تجاهل التغييرات</value>
+  </data>
+  <data name="Shell.Settings.Range" xml:space="preserve">
+    <value>{0}–{1} ث</value>
+  </data>
+  <data name="Shell.Op.SettingsSaved" xml:space="preserve">
+    <value>تم حفظ الإعدادات. تُطبَّق بدءًا من الفحص التالي، ولا حاجة إلى إعادة التشغيل.</value>
+  </data>
+  <data name="Shell.Op.TestModeCancelled" xml:space="preserve">
+    <value>لم يتم تفعيل وضع الاختبار؛ لم تتغير الإعدادات.</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmTitle" xml:space="preserve">
+    <value>هل تريد تفعيل وضع الاختبار؟</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmMessage" xml:space="preserve">
+    <value>في وضع الاختبار لا تُطبع مهام الإيصالات الجديدة على الورق، لكن يُبلَّغ Wasla بأنها طُبعت. لن تخرج إيصالات المطبخ أو الكاشير طوال تفعيله.</value>
+  </data>
+  <data name="Shell.TestMode.Confirm" xml:space="preserve">
+    <value>تفعيل وضع الاختبار</value>
+  </data>
+  <data name="Shell.Setup.Title.First" xml:space="preserve">
+    <value>الاتصال بـ Wasla</value>
+  </data>
+  <data name="Shell.Setup.Title.Reconnect" xml:space="preserve">
+    <value>إعادة الاتصال بـ Wasla</value>
+  </data>
+  <data name="Shell.Setup.Title.Change" xml:space="preserve">
+    <value>تغيير اتصال Wasla</value>
+  </data>
+  <data name="Shell.Setup.Intro.First" xml:space="preserve">
+    <value>افتح صفحة إعداد Print Bridge في لوحة Wasla Web. الصق أدناه عنوان اللوحة ورمز الجهاز الذي أُنشئ لهذا الكمبيوتر.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Reconnect" xml:space="preserve">
+    <value>لم يعد رمز هذا الجهاز صالحًا. أعد ربط الجهاز في Wasla Web والصق رمز الجهاز الجديد.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Change" xml:space="preserve">
+    <value>غيّر عنوان اللوحة أو رمز الجهاز. يُفحص الاتصال قبل حفظ أي شيء.</value>
+  </data>
+  <data name="Shell.Setup.TokenKeepHint" xml:space="preserve">
+    <value>يوجد رمز محفوظ على هذا الكمبيوتر ولا يمكن عرضه. اترك الحقل فارغًا للاحتفاظ به، أو الصق رمزًا جديدًا.</value>
+  </data>
+  <data name="Shell.Setup.Connect" xml:space="preserve">
+    <value>الاتصال والحفظ</value>
+  </data>
+  <data name="Shell.Setup.Checking" xml:space="preserve">
+    <value>جارٍ فحص الاتصال…</value>
+  </data>
+  <data name="Shell.Setup.Saving" xml:space="preserve">
+    <value>تم التحقق من الاتصال. جارٍ الحفظ…</value>
+  </data>
+  <data name="Shell.Setup.Connected" xml:space="preserve">
+    <value>تم التحقق من الاتصال وحفظه.</value>
+  </data>
+  <data name="Shell.Setup.ConnectedChoosePrinter" xml:space="preserve">
+    <value>تم التحقق من الاتصال وحفظه. اختر طابعة لبدء طباعة الإيصالات.</value>
+  </data>
+  <data name="Shell.Setup.Cancelled" xml:space="preserve">
+    <value>لم تتغير إعدادات الاتصال.</value>
+  </data>
+  <data name="Shell.Setup.SaveFailed" xml:space="preserve">
+    <value>تم التحقق من الاتصال لكن تعذر حفظ الإعدادات؛ لا يزال الاتصال السابق قيد الاستخدام. التفاصيل في ملف السجل.</value>
+  </data>
+  <data name="Shell.Setup.PrintingInProgress" xml:space="preserve">
+    <value>تتم طباعة إيصال الآن. لم يتم حفظ الاتصال الجديد؛ ستكتمل طباعة الإيصال عبر الاتصال المحفوظ. اختر «الاتصال والحفظ» مرة أخرى بعد انتهاء الطباعة.</value>
+  </data>
+  <data name="Shell.Setup.TokenRejected" xml:space="preserve">
+    <value>لم يقبل الخادم رمز الجهاز هذا. انسخ رمزًا جديدًا من صفحة إعداد Print Bridge في Wasla Web.</value>
+  </data>
+  <data name="Shell.Setup.TimedOut" xml:space="preserve">
+    <value>لم يستجب الخادم في الوقت المحدد. تحقق من العنوان والشبكة ثم حاول مرة أخرى.</value>
+  </data>
+  <data name="Shell.Setup.TokenTooLong" xml:space="preserve">
+    <value>هذه القيمة أطول من أن تكون رمز جهاز. انسخ الرمز من Wasla Web مرة أخرى.</value>
+  </data>
+  <data name="Tray.OpenClassicFallback" xml:space="preserve">
+    <value>فتح النافذة الكلاسيكية (احتياطي)</value>
   </data>
 </root>

@@ -972,6 +972,9 @@ public sealed partial class MainForm : Form
 
     public void SelectSettingsTab() => _tabs.SelectedTab = _settingsTab;
 
+    /// <summary>For tests: the selected tab's title.</summary>
+    internal string? SelectedTabTitleForTests => _tabs.SelectedTab?.Text;
+
     public void RefreshAfterAutomaticSetup()
     {
         QueueUiAction(() => _ = CompleteAutomaticSetupRecoveryAsync());
@@ -983,21 +986,8 @@ public sealed partial class MainForm : Form
         {
             LoadSettingsIntoForm();
 
-            var connected = false;
-            try
-            {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                await _runtime.ValidateConnectionAsync(cts.Token).ConfigureAwait(true);
-                connected = true;
-            }
-            catch (Exception ex)
-            {
-                _settingsLogger?.LogWarning(ex, "Automatic setup connection verification failed.");
-                _runtime.RecordConnectionFailure(ex);
-            }
-
-            if (connected && PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
-                TryStartPolling();
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            await _runtime.VerifyAndResumeAsync(cts.Token).ConfigureAwait(true);
 
             RefreshDashboard();
             RefreshRecentJobsFromRuntime();
@@ -1009,14 +999,15 @@ public sealed partial class MainForm : Form
     }
 
     /// <summary>
-    /// The trusted native connection setup used by the WebView2 shell's reconnect action. The server URL and
-    /// device token are only ever entered here, never in the WebView2 page.
+    /// Reloads every settings field from the saved settings. The WebView2 app can change the connection, printer,
+    /// test mode and poll intervals while this window is hidden; without a reload, a later save here would write
+    /// those older values back.
     /// </summary>
-    public void FocusConnectionSettingsSection()
+    public void ReloadSettings()
     {
-        SelectSettingsTab();
-        _connectionGroup.Focus();
-        _txtServerUrl.Focus();
+        LoadSettingsIntoForm();
+        RefreshDashboard();
+        RefreshSettingsConnectionStatus();
     }
 
     public void FocusPrinterSettingsSection()

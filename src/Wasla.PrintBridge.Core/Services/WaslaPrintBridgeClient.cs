@@ -35,10 +35,20 @@ public sealed class WaslaPrintBridgeClient
         _appVersion = appVersion;
     }
 
-    public async Task<PrintBridgeHealthResult> TestHealthAsync(CancellationToken ct)
+    public Task<PrintBridgeHealthResult> TestHealthAsync(CancellationToken ct) => ReadHealthAsync(connection: null, ct);
+
+    /// <summary>
+    /// Calls the health endpoint with an explicit server URL and token instead of the saved ones, so a new
+    /// connection can be verified before anything is saved. The saved settings are neither read for the
+    /// address and token nor changed.
+    /// </summary>
+    public Task<PrintBridgeHealthResult> TestHealthAsync(WaslaOptions connection, CancellationToken ct) =>
+        ReadHealthAsync(connection, ct);
+
+    private async Task<PrintBridgeHealthResult> ReadHealthAsync(WaslaOptions? connection, CancellationToken ct)
     {
         const string path = "api/print-bridge/health";
-        using var response = await SendAsync(HttpMethod.Get, path, ct).ConfigureAwait(false);
+        using var response = await SendAsync(HttpMethod.Get, path, ct, connection).ConfigureAwait(false);
         var payload = await response.Content.ReadFromJsonAsync<PrintBridgeHealthResponse>(JsonOptions, ct)
             .ConfigureAwait(false);
 
@@ -232,18 +242,23 @@ public sealed class WaslaPrintBridgeClient
         }
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePath, CancellationToken ct)
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpMethod method,
+        string relativePath,
+        CancellationToken ct,
+        WaslaOptions? connection = null)
     {
-        using var request = CreateRequest(method, BuildAbsoluteUrl(relativePath));
-        return await SendPreparedAsync(relativePath, request, ct).ConfigureAwait(false);
+        using var request = CreateRequest(method, BuildAbsoluteUrl(relativePath, connection), connection);
+        return await SendPreparedAsync(relativePath, request, ct, connection).ConfigureAwait(false);
     }
 
     private async Task<HttpResponseMessage> SendPreparedAsync(
         string relativePath,
         HttpRequestMessage request,
-        CancellationToken ct)
+        CancellationToken ct,
+        WaslaOptions? connection = null)
     {
-        var (hub, _, _) = _holder.Snapshot();
+        var hub = connection ?? _holder.Snapshot().OrderHub;
         var serverUrl = hub.ServerUrl.TrimEnd('/');
 
         HttpResponseMessage response;
@@ -299,15 +314,20 @@ public sealed class WaslaPrintBridgeClient
             serverErrorCode);
     }
 
-    private string BuildAbsoluteUrl(string relativeUrl)
+    private string BuildAbsoluteUrl(string relativeUrl, WaslaOptions? connection = null)
     {
-        var (hub, _, _) = _holder.Snapshot();
+        var hub = connection ?? _holder.Snapshot().OrderHub;
         return $"{hub.ServerUrl.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
     }
 
-    private HttpRequestMessage CreateRequest(HttpMethod method, string url)
+    /// <summary>
+    /// Builds a request with the device headers. <paramref name="connection"/> replaces only the saved server URL
+    /// and token; the installation id, machine name and printer always come from the saved settings.
+    /// </summary>
+    private HttpRequestMessage CreateRequest(HttpMethod method, string url, WaslaOptions? connection = null)
     {
-        var (hub, bridge, _) = _holder.Snapshot();
+        var (savedHub, bridge, _) = _holder.Snapshot();
+        var hub = connection ?? savedHub;
         var request = new HttpRequestMessage(method, url);
         request.Headers.TryAddWithoutValidation("X-PrintBridge-Token", hub.AgentToken);
         var machineName = string.IsNullOrWhiteSpace(bridge.MachineName)

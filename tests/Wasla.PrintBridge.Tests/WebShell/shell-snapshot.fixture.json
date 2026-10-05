@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "type": "snapshot.updated",
   "sequence": 1,
   "payload": {
@@ -55,7 +55,9 @@
       "printersRefresh": false,
       "printerSave": false,
       "testPrint": false,
-      "reprint": false
+      "reprint": false,
+      "connectionSetup": false,
+      "settingsSave": false
     },
     "diagnostics": {
       "appVersion": "v1.0.0",
@@ -68,6 +70,27 @@
       "testModeLabel": "Kapalı"
     },
     "dryRun": false,
+    "operational": {
+      "testMode": false,
+      "idlePoll": {
+        "value": 5,
+        "min": 1,
+        "max": 300,
+        "rangeLabel": "1–300 sn"
+      },
+      "busyPoll": {
+        "value": 1,
+        "min": 1,
+        "max": 60,
+        "rangeLabel": "1–60 sn"
+      },
+      "errorPoll": {
+        "value": 15,
+        "min": 1,
+        "max": 300,
+        "rangeLabel": "1–300 sn"
+      }
+    },
     "languages": [
       {
         "culture": "tr-TR",
@@ -117,10 +140,11 @@
       "Button.OpenLogsFolder": "Log klasörünü aç",
       "Button.ResetConnection": "Bağlantıyı sıfırla",
       "Reprint.Button": "Yeniden yazdır",
+      "Shell.Action.Connect": "Wasla'ya bağlan",
+      "Shell.Action.ChangeConnection": "Bağlantıyı değiştir",
       "Shell.Action.Reconnect": "Yeniden bağlan",
       "Shell.Action.ConfigurePrinter": "Yazıcı seç",
       "Shell.Action.ShowDiagnostics": "Tanılamayı göster",
-      "Shell.Action.OpenSetup": "Bağlantı ayarlarını aç",
       "Shell.Action.Working": "İşleniyor…",
       "Shell.Action.Confirm": "Onayla",
       "Shell.Action.Cancel": "Vazgeç",
@@ -149,12 +173,21 @@
       "Shell.History.Next": "Sonraki",
       "Shell.History.Loading": "Geçmiş yükleniyor…",
       "Shell.Settings.Connection": "Wasla bağlantısı",
-      "Shell.Settings.ConnectionHelp": "Sunucu adresi ve cihaz anahtarı güvenlik nedeniyle yalnızca yerel kurulum penceresinde girilir; bu ekran onları görmez.",
+      "Shell.Settings.ConnectionHelp": "Panel adresi ve cihaz tokenı güvenli bir yerel pencerede girilir ve kaydedilmeden önce denetlenir. Bu ekran onları görmez; kaydedilen token bir daha gösterilmez.",
       "Settings.ResetConnectionHelp": "Yanlış bağlantı veya geçersiz token durumunda tekrar bağlanmak için kullanın.",
       "Shell.Settings.Appearance": "Dil ve görünüm",
       "Shell.Settings.ThemeFollowsWindows": "Açık veya koyu görünüm Windows uygulama temasını izler.",
+      "Shell.Settings.Printing": "Yazdırma davranışı",
+      "Shell.Settings.PrintingHelp": "Kaydedilen değerler sunucunun bir sonraki denetiminden itibaren kullanılır; yeniden başlatma gerekmez. Süren bir bekleme önce tamamlanır.",
       "Shell.Settings.TestMode": "Test modu",
-      "Shell.Settings.AdvancedHelp": "Test modu ve kontrol aralıkları klasik penceredeki Gelişmiş bölümünden değiştirilir.",
+      "Shell.Settings.TestModeHelp": "Açıkken yeni fiş işleri kâğıda basılmaz ama Wasla'ya basıldı olarak bildirilir. Yalnızca deneme için kullanın; açmadan önce onay istenir.",
+      "Shell.Settings.IdlePoll": "Boştayken denetim aralığı",
+      "Shell.Settings.BusyPoll": "İş gelince denetim aralığı",
+      "Shell.Settings.ErrorPoll": "Bağlantı hatasından sonra bekleme",
+      "Shell.Settings.Unsaved": "Kaydedilmemiş değişiklikler var.",
+      "Shell.Settings.Invalid": "Her süreyi izin verilen aralıkta tam sayı olarak girin.",
+      "Shell.Settings.Discard": "Değişiklikleri geri al",
+      "Button.SaveSettings": "Ayarları kaydet",
       "Shell.Diagnostics.Title": "Tanılama",
       "Shell.Diagnostics.AppVersion": "Uygulama sürümü",
       "Shell.Diagnostics.WebView2": "WebView2 çalışma zamanı",
@@ -162,7 +195,7 @@
       "Shell.Diagnostics.LastError": "Son hata",
       "Shell.Diagnostics.None": "Yok",
       "Shell.Diagnostics.Fallback": "Klasik pencere",
-      "Shell.Diagnostics.FallbackHelp": "Klasik pencere yedek olarak kullanılabilir; gelişmiş ayarlar ve loglar oradadır.",
+      "Shell.Diagnostics.FallbackHelp": "Acil durum yedeği: yalnızca bu pencere düzgün çalışmazsa eski klasik pencereyi açın. Klasik pencere en az bir sürüm daha kullanılabilir kalacak.",
       "Shell.OpenClassicWindow": "Klasik pencereyi aç",
       "Shell.Toast.Dismiss": "Kapat"
     }

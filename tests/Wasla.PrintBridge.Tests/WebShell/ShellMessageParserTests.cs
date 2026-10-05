@@ -21,7 +21,7 @@ public sealed class ShellMessageParserTests
     [Fact]
     public void AcceptsCommandWithoutPayload()
     {
-        Assert.True(ShellMessageParser.TryParse("""{"version":2,"type":"ui.ready"}""", out var command, out _));
+        Assert.True(ShellMessageParser.TryParse("""{"version":3,"type":"ui.ready"}""", out var command, out _));
         Assert.Equal(ShellCommandType.UiReady, command!.Type);
     }
 
@@ -48,7 +48,7 @@ public sealed class ShellMessageParserTests
                 "ui.ready", "snapshot.request", "language.change", "classicWindow.open",
                 "engine.start", "engine.stop", "connection.test", "connection.openSetup", "connection.reset",
                 "printers.refresh", "printer.save", "printer.testPrint", "history.query", "history.reprint",
-                "logs.openFolder"
+                "logs.openFolder", "settings.save"
             ],
             ShellMessageContract.CommandTypes);
         Assert.Equal(ShellMessageContract.CommandTypes.Count, Enum.GetValues<ShellCommandType>().Length);
@@ -58,6 +58,7 @@ public sealed class ShellMessageParserTests
     [InlineData("engine.start", ShellCommandType.EngineStart)]
     [InlineData("engine.stop", ShellCommandType.EngineStop)]
     [InlineData("connection.test", ShellCommandType.ConnectionTest)]
+    [InlineData("connection.openSetup", ShellCommandType.ConnectionOpenSetup)]
     [InlineData("connection.reset", ShellCommandType.ConnectionReset)]
     [InlineData("printers.refresh", ShellCommandType.PrintersRefresh)]
     [InlineData("printer.testPrint", ShellCommandType.PrinterTestPrint)]
@@ -71,11 +72,21 @@ public sealed class ShellMessageParserTests
         Assert.Equal(new ShellCommand(expected, requestId), command);
     }
 
-    [Fact]
-    public void AcceptsConnectionSetupWithoutAnyPayload()
+    [Theory]
+    [InlineData(false, 5, 1, 15)]
+    [InlineData(true, 300, 60, 300)]
+    // Out-of-range but whole numbers inside the envelope reach the host, which answers with a localized message.
+    [InlineData(false, 0, 0, 86400)]
+    public void AcceptsOperationalSettingsAsExactlyFourTypedFields(bool testMode, int idle, int busy, int error)
     {
-        Assert.True(ShellMessageParser.TryParse(Command("connection.openSetup"), out var command, out _));
-        Assert.Equal(new ShellCommand(ShellCommandType.ConnectionOpenSetup), command);
+        const string requestId = "a1b2c3d4-0000-4000-8000-000000000001";
+        var fields = $"\"testMode\":{(testMode ? "true" : "false")},\"idlePollSeconds\":{idle},\"busyPollSeconds\":{busy},\"errorPollSeconds\":{error}";
+
+        Assert.True(ShellMessageParser.TryParse(Tracked("settings.save", fields, requestId), out var command, out _));
+
+        Assert.Equal(
+            new ShellCommand(ShellCommandType.SettingsSave, requestId, TestMode: testMode, IdlePollSeconds: idle, BusyPollSeconds: busy, ErrorPollSeconds: error),
+            command);
     }
 
     [Theory]
@@ -136,7 +147,10 @@ public sealed class ShellMessageParserTests
     [InlineData("engine.start", """{"requestId":42}""")]
     [InlineData("engine.start", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","requestId":"a1b2c3d4-0000-4000-8000-000000000002"}""")]
     [InlineData("engine.stop", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","force":true}""")]
-    [InlineData("connection.openSetup", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001"}""")]
+    // The connection dialog takes nothing from the page but a request id: no address, no credential.
+    [InlineData("connection.openSetup", "{}")]
+    [InlineData("connection.openSetup", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","serverUrl":"https://evil.example"}""")]
+    [InlineData("connection.openSetup", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","token":"x"}""")]
     [InlineData("connection.openSetup", """{"serverUrl":"https://evil.example","token":"x"}""")]
     [InlineData("connection.reset", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","token":""}""")]
     [InlineData("logs.openFolder", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","path":"C:\\Windows"}""")]
@@ -166,6 +180,18 @@ public sealed class ShellMessageParserTests
     [InlineData("history.reprint", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","itemRef":"h0123456789abcde"}""")]
     [InlineData("history.reprint", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","itemRef":"h0123456789abcdef\n"}""")]
     [InlineData("history.reprint", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","itemRef":"h0123456789abcdef","copies":3}""")]
+    // Operational settings: exactly four typed fields; no other setting can be named or written.
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":5,"busyPollSeconds":1}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":"false","idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":0,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":"5","busyPollSeconds":1,"errorPollSeconds":15}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":5.5,"busyPollSeconds":1,"errorPollSeconds":15}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":-1,"busyPollSeconds":1,"errorPollSeconds":15}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":86401,"busyPollSeconds":1,"errorPollSeconds":15}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15,"maxJobsPerPoll":10}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15,"serverUrl":"https://evil.example"}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","key":"OrderHub:AgentToken","value":"x"}""")]
+    [InlineData("settings.save", """{"testMode":false,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15}""")]
     public void RejectsInvalidCommandPayloads(string type, string payload)
     {
         Assert.False(ShellMessageParser.TryParse(Command(type, payload), out var command, out var rejection));
@@ -191,21 +217,23 @@ public sealed class ShellMessageParserTests
     }
 
     [Theory]
-    [InlineData("""{"version":2,"type":42}""", ShellMessageRejection.UnknownType)]
-    [InlineData("""{"version":2}""", ShellMessageRejection.UnknownType)]
+    [InlineData("""{"version":3,"type":42}""", ShellMessageRejection.UnknownType)]
+    [InlineData("""{"version":3}""", ShellMessageRejection.UnknownType)]
     [InlineData("""{"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
-    [InlineData("""{"version":3,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
+    // Version 2 (WAS-54) is no longer accepted: its connection.openSetup had no request id and no settings.save.
+    [InlineData("""{"version":2,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
+    [InlineData("""{"version":4,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
     [InlineData("""{"version":1,"type":"ui.ready","payload":{}}""", ShellMessageRejection.UnsupportedVersion)]
     [InlineData("""{"version":"1","type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
     [InlineData("""{"version":1.5,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
-    [InlineData("""{"version":2,"type":"ui.ready","method":"Exit"}""", ShellMessageRejection.UnexpectedProperty)]
-    [InlineData("""{"version":2,"type":"ui.ready","Type":"x"}""", ShellMessageRejection.UnexpectedProperty)]
-    [InlineData("""{"version":2,"type":"ui.ready","type":"classicWindow.open"}""", ShellMessageRejection.DuplicateProperty)]
-    [InlineData("""{"version":2,"version":2,"type":"ui.ready"}""", ShellMessageRejection.DuplicateProperty)]
-    [InlineData("""{"version":2,"type":"ui.ready","payload":[]}""", ShellMessageRejection.InvalidPayload)]
-    [InlineData("""{"version":2,"type":"ui.ready","payload":"x"}""", ShellMessageRejection.InvalidPayload)]
-    [InlineData("""{"version":2,"type":"ui.ready","payload":{"force":true}}""", ShellMessageRejection.InvalidPayload)]
-    [InlineData("""{"version":2,"type":"classicWindow.open","payload":{"tab":"settings"}}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":3,"type":"ui.ready","method":"Exit"}""", ShellMessageRejection.UnexpectedProperty)]
+    [InlineData("""{"version":3,"type":"ui.ready","Type":"x"}""", ShellMessageRejection.UnexpectedProperty)]
+    [InlineData("""{"version":3,"type":"ui.ready","type":"classicWindow.open"}""", ShellMessageRejection.DuplicateProperty)]
+    [InlineData("""{"version":3,"version":3,"type":"ui.ready"}""", ShellMessageRejection.DuplicateProperty)]
+    [InlineData("""{"version":3,"type":"ui.ready","payload":[]}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":3,"type":"ui.ready","payload":"x"}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":3,"type":"ui.ready","payload":{"force":true}}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":3,"type":"classicWindow.open","payload":{"tab":"settings"}}""", ShellMessageRejection.InvalidPayload)]
     public void RejectsMalformedEnvelopes(string raw, ShellMessageRejection expected)
     {
         Assert.False(ShellMessageParser.TryParse(raw, out var command, out var rejection));
@@ -234,16 +262,16 @@ public sealed class ShellMessageParserTests
     [Fact]
     public void RejectsLanguageChangeWithoutPayload()
     {
-        Assert.False(ShellMessageParser.TryParse("""{"version":2,"type":"language.change"}""", out _, out var rejection));
+        Assert.False(ShellMessageParser.TryParse("""{"version":3,"type":"language.change"}""", out _, out var rejection));
         Assert.Equal(ShellMessageRejection.InvalidPayload, rejection);
     }
 
     [Theory]
     [InlineData("not json")]
     [InlineData("{")]
-    [InlineData("""{"version":2,"type":"ui.ready",}""")]
+    [InlineData("""{"version":3,"type":"ui.ready",}""")]
     [InlineData("""{"version":1 /* c */,"type":"ui.ready"}""")]
-    [InlineData("""{"version":2,"type":"ui.ready"} trailing""")]
+    [InlineData("""{"version":3,"type":"ui.ready"} trailing""")]
     [InlineData("""{'version':1,'type':'ui.ready'}""")]
     public void RejectsMalformedJson(string raw)
     {
@@ -254,7 +282,7 @@ public sealed class ShellMessageParserTests
     [Fact]
     public void RejectsDeeplyNestedPayloadsAsMalformed()
     {
-        var raw = """{"version":2,"type":"ui.ready","payload":{"a":{"b":{"c":{"d":1}}}}}""";
+        var raw = """{"version":3,"type":"ui.ready","payload":{"a":{"b":{"c":{"d":1}}}}}""";
 
         Assert.False(ShellMessageParser.TryParse(raw, out _, out var rejection));
         Assert.Equal(ShellMessageRejection.MalformedJson, rejection);

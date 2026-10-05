@@ -1,4 +1,5 @@
 using Wasla.PrintBridge.Models;
+using Wasla.PrintBridge.Options;
 
 namespace Wasla.PrintBridge.Services;
 
@@ -16,6 +17,16 @@ public interface IPrintBridgeEngine : IPrintBridgeStatusSource
     Task StopAsync();
 
     Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> TestConnectionAsync(CancellationToken ct);
+
+    /// <summary>Checks an unsaved server URL and token without changing settings or engine state.</summary>
+    Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> CheckConnectionAsync(WaslaOptions candidate, CancellationToken ct);
+
+    /// <summary>Saves a connection that <see cref="CheckConnectionAsync"/> verified and makes it the active one.</summary>
+    Task<PrintBridgeConnectionChange> ApplyVerifiedConnectionAsync(
+        WaslaOptions verified,
+        WaslaPrintBridgeClient.PrintBridgeHealthResult health,
+        bool startListening,
+        CancellationToken abandon);
 
     Task ResetConnectionForReconnectAsync();
 

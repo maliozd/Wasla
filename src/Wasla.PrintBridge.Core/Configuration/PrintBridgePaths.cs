@@ -19,8 +19,11 @@ public static class PrintBridgePaths
 
     private static string? _testRootOverride;
 
+    private static string? _testDefaultRoot;
+
     public static string ProgramDataRoot =>
         Volatile.Read(ref _testRootOverride)
+        ?? Volatile.Read(ref _testDefaultRoot)
         ?? DevelopmentDataRoot
         ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Wasla", "PrintBridge");
 
@@ -30,8 +33,9 @@ public static class PrintBridgePaths
     /// </summary>
     public static bool IsIsolatedDevelopmentRoot => DevelopmentDataRoot is not null;
 
-    /// <summary>True while <see cref="UseRootForTests"/> is active.</summary>
-    internal static bool HasTestRootOverride => Volatile.Read(ref _testRootOverride) is not null;
+    /// <summary>True in a test run: a <see cref="UseRootForTests"/> scope is active, or <see cref="UseDefaultRootForTests"/> was called.</summary>
+    internal static bool IsRedirectedForTests =>
+        Volatile.Read(ref _testRootOverride) is not null || Volatile.Read(ref _testDefaultRoot) is not null;
 
     public static string ProgramDataConfigPath =>
         Path.Combine(ProgramDataRoot, "appsettings.json");
@@ -59,6 +63,22 @@ public static class PrintBridgePaths
 
         var previous = Interlocked.Exchange(ref _testRootOverride, root);
         return new RootScope(previous);
+    }
+
+    /// <summary>
+    /// Test-only, once per test process: the location used whenever no <see cref="UseRootForTests"/> scope is
+    /// active, in place of ProgramData or a development root. A write that runs after its test released the root
+    /// (a shutdown save, a background callback) lands here, where the test run detects it, instead of in the
+    /// machine's real settings, token or history. It is never released.
+    /// </summary>
+    internal static void UseDefaultRootForTests(string root)
+    {
+        if (!Path.IsPathFullyQualified(root))
+            throw new ArgumentException("Test root must be an absolute path.", nameof(root));
+
+        var existing = Interlocked.CompareExchange(ref _testDefaultRoot, root, null);
+        if (existing is not null && !string.Equals(existing, root, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The test default root is already set for this process.");
     }
 
     private static string? ResolveDevelopmentDataRoot()

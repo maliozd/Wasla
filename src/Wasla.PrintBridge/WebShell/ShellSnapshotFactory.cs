@@ -1,5 +1,6 @@
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
+using Wasla.PrintBridge.Options;
 using Wasla.PrintBridge.Services;
 
 namespace Wasla.PrintBridge.WebShell;
@@ -43,10 +44,11 @@ public sealed class ShellSnapshotFactory
         "Button.OpenLogsFolder",
         "Button.ResetConnection",
         "Reprint.Button",
+        "Shell.Action.Connect",
+        "Shell.Action.ChangeConnection",
         "Shell.Action.Reconnect",
         "Shell.Action.ConfigurePrinter",
         "Shell.Action.ShowDiagnostics",
-        "Shell.Action.OpenSetup",
         "Shell.Action.Working",
         "Shell.Action.Confirm",
         "Shell.Action.Cancel",
@@ -79,8 +81,17 @@ public sealed class ShellSnapshotFactory
         "Settings.ResetConnectionHelp",
         "Shell.Settings.Appearance",
         "Shell.Settings.ThemeFollowsWindows",
+        "Shell.Settings.Printing",
+        "Shell.Settings.PrintingHelp",
         "Shell.Settings.TestMode",
-        "Shell.Settings.AdvancedHelp",
+        "Shell.Settings.TestModeHelp",
+        "Shell.Settings.IdlePoll",
+        "Shell.Settings.BusyPoll",
+        "Shell.Settings.ErrorPoll",
+        "Shell.Settings.Unsaved",
+        "Shell.Settings.Invalid",
+        "Shell.Settings.Discard",
+        "Button.SaveSettings",
         "Shell.Diagnostics.Title",
         "Shell.Diagnostics.AppVersion",
         "Shell.Diagnostics.WebView2",
@@ -111,6 +122,7 @@ public sealed class ShellSnapshotFactory
         "Shell.Detail.UnexpectedError",
         "Shell.Settings.TestModeOn",
         "Shell.Settings.TestModeOff",
+        "Shell.Settings.Range",
         "Shell.Diagnostics.Unavailable",
         "Shell.Device.Unknown"
     ];
@@ -181,6 +193,7 @@ public sealed class ShellSnapshotFactory
                 PrinterLabel: printerLabel,
                 TestModeLabel: _localizer[status.DryRun ? "Shell.Settings.TestModeOn" : "Shell.Settings.TestModeOff"]),
             DryRun: status.DryRun,
+            Operational: CreateOperational(status),
             Languages: SupportedCultures.All
                 .Select(c => new ShellLanguageOption(c, SupportedCultures.GetNativeName(c)))
                 .ToArray(),
@@ -278,6 +291,29 @@ public sealed class ShellSnapshotFactory
             TypeLabel: _localizer.GetJobType(job.JobType),
             Time: FormatUtc(job.DisplayTimeUtc) ?? _localizer["Common.Dash"]);
     }
+
+    /// <summary>The saved values the engine uses, with the validator's ranges. No other setting is exposed.</summary>
+    private ShellOperationalView CreateOperational(PrintBridgeRuntimeStatus status)
+    {
+        var bridge = _settings?.Bridge ?? new PrintBridgeOptions { DryRun = status.DryRun };
+        return new ShellOperationalView(
+            bridge.DryRun,
+            Seconds(
+                bridge.IdlePollIntervalSeconds,
+                PrintBridgeSettingsValidator.MinIdlePollIntervalSeconds,
+                PrintBridgeSettingsValidator.MaxIdlePollIntervalSeconds),
+            Seconds(
+                bridge.BusyPollIntervalSeconds,
+                PrintBridgeSettingsValidator.MinBusyPollIntervalSeconds,
+                PrintBridgeSettingsValidator.MaxBusyPollIntervalSeconds),
+            Seconds(
+                bridge.ErrorPollIntervalSeconds,
+                PrintBridgeSettingsValidator.MinErrorPollIntervalSeconds,
+                PrintBridgeSettingsValidator.MaxErrorPollIntervalSeconds));
+    }
+
+    private ShellSecondsSetting Seconds(int value, int min, int max) =>
+        new(value, min, max, _localizer.GetString("Shell.Settings.Range", min, max));
 
     private static string ToPrinterState(PrinterHealthStatus status) => status switch
     {

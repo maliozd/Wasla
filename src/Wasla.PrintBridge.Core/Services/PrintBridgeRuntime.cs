@@ -29,6 +29,11 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     private DateTime? _lastPollUtc;
     private PrintBridgeRuntimeIssue? _lastIssue;
 
+    // Guarded by _sync: the job between its claim request and its last report, and whether the loop must leave new
+    // jobs pending because a connection change is stopping it.
+    private Guid? _jobInProgress;
+    private bool _holdNewJobs;
+
     public PrintBridgeRuntime(
         WaslaPrintBridgeClient client,
         ReceiptFormatter formatter,
@@ -52,6 +57,9 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     }
 
     public event EventHandler? StatusChanged;
+
+    /// <summary>Test-only: awaited during a connection change while new jobs are held, just before listening stops.</summary>
+    internal Func<Task>? WhileJobsAreHeldForTests { get; set; }
 
     public bool IsRunning
     {
@@ -179,15 +187,140 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     public async Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> ValidateConnectionAsync(CancellationToken ct)
     {
         var health = await _client.TestHealthAsync(ct).ConfigureAwait(false);
-        _deviceMetadataSync.ApplyFromHealth(health);
+        RecordVerifiedContact(health);
+        return health;
+    }
+
+    /// <summary>
+    /// Checks a server URL and device token that are not saved yet. Neither the settings nor the engine state
+    /// change, so a rejected candidate never clears the saved token or marks the saved connection as failed.
+    /// </summary>
+    public Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> CheckConnectionAsync(WaslaOptions candidate, CancellationToken ct) =>
+        _client.TestHealthAsync(candidate, ct);
+
+    /// <summary>
+    /// Makes a connection verified with <see cref="CheckConnectionAsync"/> the saved one. Listening stops while the
+    /// settings change. The settings file is written before the in-memory settings are replaced, so a failed write
+    /// changes nothing. A token change clears the server-assigned device name, and the verified contact is recorded so
+    /// the status is connected at once. Listening resumes when it was running before, or when
+    /// <paramref name="startListening"/> asks for it and printing is ready. Once <paramref name="abandon"/> is cancelled
+    /// (the app is closing) nothing is written and listening is not restarted.
+    /// <para>
+    /// Stopping cancels the polling loop, and cancelling a job between its claim and its last report is the known Stop
+    /// race (WAS-56): a printed job could be reported failed, and its remaining reports would use the new connection.
+    /// So while a job is in progress the change is refused with <see cref="PrintBridgeConnectionChange.PrintingInProgress"/>
+    /// before anything is stopped or written, and from that check until the loop has stopped no new job is claimed.
+    /// </para>
+    /// </summary>
+    public async Task<PrintBridgeConnectionChange> ApplyVerifiedConnectionAsync(
+        WaslaOptions verified,
+        WaslaPrintBridgeClient.PrintBridgeHealthResult health,
+        bool startListening,
+        CancellationToken abandon)
+    {
         lock (_sync)
         {
-            _lastSuccessfulContactUtc = DateTime.UtcNow;
-            _lastIssue = null;
+            if (_jobInProgress is not null)
+                return PrintBridgeConnectionChange.PrintingInProgress;
+
+            _holdNewJobs = true;
         }
 
-        RaiseStatusChanged();
-        return health;
+        bool wasRunning;
+        try
+        {
+            if (WhileJobsAreHeldForTests is { } whileHeld)
+                await whileHeld().ConfigureAwait(false);
+
+            wasRunning = IsRunning;
+            if (wasRunning)
+                await StopAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            lock (_sync)
+                _holdNewJobs = false;
+        }
+
+        if (abandon.IsCancellationRequested)
+            return PrintBridgeConnectionChange.Abandoned;
+
+        var (hub, bridge, ui) = _holder.Snapshot();
+        var connection = new WaslaOptions
+        {
+            ServerUrl = verified.ServerUrl,
+            AgentToken = verified.AgentToken
+        };
+        var updatedBridge = bridge.Clone();
+        var tokenChanged = !string.Equals(hub.AgentToken?.Trim(), connection.AgentToken, StringComparison.Ordinal);
+        if (tokenChanged)
+        {
+            updatedBridge.DisplayName = string.Empty;
+            updatedBridge.ServerDeviceNameResolved = false;
+        }
+
+        try
+        {
+            _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
+            {
+                OrderHub = connection,
+                PrintBridge = updatedBridge,
+                Ui = ui
+            });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Print Bridge connection settings could not be saved; the previous connection is kept.");
+            if (wasRunning)
+                TryStartListening();
+            return PrintBridgeConnectionChange.SaveFailed;
+        }
+
+        _holder.Replace(connection, updatedBridge, ui);
+        _logger.LogInformation("Print Bridge connection settings saved after verification. TokenChanged={TokenChanged}", tokenChanged);
+        RecordVerifiedContact(health);
+
+        if ((wasRunning || startListening) && !abandon.IsCancellationRequested)
+            TryStartListening();
+
+        return IsRunning
+            ? PrintBridgeConnectionChange.AppliedListening
+            : PrintBridgeConnectionChange.AppliedNotListening;
+    }
+
+    /// <summary>
+    /// For settings saved outside the engine (automatic setup from a setup link): verifies the saved connection,
+    /// records a failure so the status shows it, and resumes listening when the connection is usable.
+    /// Returns whether the connection was verified.
+    /// </summary>
+    public async Task<bool> VerifyAndResumeAsync(CancellationToken ct)
+    {
+        try
+        {
+            await ValidateConnectionAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Print Bridge connection verification after setup failed.");
+            RecordConnectionFailure(ex);
+            return false;
+        }
+
+        if (PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(GetStatus()))
+        {
+            try
+            {
+                if (!IsRunning)
+                    Start();
+            }
+            catch (Exception ex)
+            {
+                RecordConnectionFailure(ex);
+                _logger.LogWarning(ex, "Print Bridge polling could not be started after setup.");
+            }
+        }
+
+        return true;
     }
 
     public void RecordConnectionFailure(Exception ex, bool applyCredentialFailureFallback = true)
@@ -310,8 +443,19 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
                     hadJobs = true;
                     foreach (var job in jobs)
                     {
-                        RegisterJobReceived(job);
-                        await ProcessJobAsync(job, stoppingToken).ConfigureAwait(false);
+                        // A connection change is stopping the loop: leave the job pending for the next poll.
+                        if (!TryBeginJob(job.Id))
+                            break;
+
+                        try
+                        {
+                            RegisterJobReceived(job);
+                            await ProcessJobAsync(job, stoppingToken).ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            EndJob();
+                        }
                     }
                 }
             }
@@ -352,6 +496,24 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         }
 
         _logger.LogInformation("Wasla Print Bridge background loop stopped.");
+    }
+
+    private bool TryBeginJob(Guid jobId)
+    {
+        lock (_sync)
+        {
+            if (_holdNewJobs)
+                return false;
+
+            _jobInProgress = jobId;
+            return true;
+        }
+    }
+
+    private void EndJob()
+    {
+        lock (_sync)
+            _jobInProgress = null;
     }
 
     private void RegisterJobReceived(WaslaPrintBridgeClient.PendingPrintJobDto job)
@@ -589,6 +751,31 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     private static DateTime ToLocalDate(DateTime utc) => utc.ToLocalTime().Date;
 
     private void RaiseStatusChanged() => StatusChanged?.Invoke(this, EventArgs.Empty);
+
+    private void RecordVerifiedContact(WaslaPrintBridgeClient.PrintBridgeHealthResult health)
+    {
+        _deviceMetadataSync.ApplyFromHealth(health);
+        lock (_sync)
+        {
+            _lastSuccessfulContactUtc = DateTime.UtcNow;
+            _lastIssue = null;
+        }
+
+        RaiseStatusChanged();
+    }
+
+    /// <summary>Starts listening when printing is ready; a missing or unavailable printer only leaves it stopped.</summary>
+    private void TryStartListening()
+    {
+        try
+        {
+            Start();
+        }
+        catch (LocalizedApplicationException ex)
+        {
+            _logger.LogInformation("Print Bridge listening was not started. Reason={Reason}", ex.ResourceKey);
+        }
+    }
 
     private PrintBridgeRuntimeIssue ApplyFailure(Exception ex, bool applyCredentialFailureFallback)
     {

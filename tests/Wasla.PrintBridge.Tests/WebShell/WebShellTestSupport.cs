@@ -78,7 +78,7 @@ internal static class WebShellTestSupport
         };
 
     public static string Command(string type, string payload = "{}") =>
-        $$"""{"version":2,"type":"{{type}}","payload":{{payload}}}""";
+        $$"""{"version":{{ShellMessageContract.Version}},"type":"{{type}}","payload":{{payload}}}""";
 
     /// <summary>A command carrying a fresh request id, plus any extra payload fields (already JSON-encoded).</summary>
     public static string Tracked(string type, string extraFields = "", string? requestId = null) =>
@@ -199,6 +199,65 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
         return Task.CompletedTask;
     }
 
+    private int _checkConnectionCalls;
+    private int _applyConnectionCalls;
+
+    public int CheckConnectionCalls => Volatile.Read(ref _checkConnectionCalls);
+    public int ApplyConnectionCalls => Volatile.Read(ref _applyConnectionCalls);
+
+    /// <summary>Server URL and token of every candidate the setup asked the fake server to check.</summary>
+    public List<(string ServerUrl, string Token)> CheckedConnections { get; } = [];
+
+    public Exception? CheckConnectionFailure { get; set; }
+
+    /// <summary>When set, the candidate check waits for this gate (or the caller's cancellation).</summary>
+    public TaskCompletionSource? CheckConnectionGate { get; set; }
+
+    /// <summary>When set, applying waits for this gate, like a Stop that waits for a print job.</summary>
+    public TaskCompletionSource? ApplyGate { get; set; }
+
+    public PrintBridgeConnectionChange ApplyResult { get; set; } = PrintBridgeConnectionChange.AppliedListening;
+
+    public (string ServerUrl, string Token, bool StartListening)? AppliedConnection { get; private set; }
+
+    /// <summary>Runs after a successful apply, like the real engine recording the verified contact.</summary>
+    public Action? OnApplied { get; set; }
+
+    public async Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> CheckConnectionAsync(
+        Wasla.PrintBridge.Options.WaslaOptions candidate,
+        CancellationToken ct)
+    {
+        Interlocked.Increment(ref _checkConnectionCalls);
+        lock (CheckedConnections)
+            CheckedConnections.Add((candidate.ServerUrl, candidate.AgentToken));
+        if (CheckConnectionGate is { } gate)
+            await gate.Task.WaitAsync(ct);
+        if (CheckConnectionFailure is not null)
+            throw CheckConnectionFailure;
+        return new WaslaPrintBridgeClient.PrintBridgeHealthResult("QA", "Kasa 1", DateTime.UtcNow);
+    }
+
+    public async Task<PrintBridgeConnectionChange> ApplyVerifiedConnectionAsync(
+        Wasla.PrintBridge.Options.WaslaOptions verified,
+        WaslaPrintBridgeClient.PrintBridgeHealthResult health,
+        bool startListening,
+        CancellationToken abandon)
+    {
+        Interlocked.Increment(ref _applyConnectionCalls);
+        if (ApplyGate is { } gate)
+            await gate.Task;
+        if (abandon.IsCancellationRequested)
+            return PrintBridgeConnectionChange.Abandoned;
+        // Like the engine, only an applied result changes the connection; a refused or failed one leaves it as it was.
+        if (ApplyResult is PrintBridgeConnectionChange.AppliedListening or PrintBridgeConnectionChange.AppliedNotListening)
+        {
+            AppliedConnection = (verified.ServerUrl, verified.AgentToken, startListening);
+            OnApplied?.Invoke();
+        }
+
+        return ApplyResult;
+    }
+
     public async Task TestPrinterAsync(CancellationToken ct)
     {
         Interlocked.Increment(ref _testPrintCalls);
@@ -231,24 +290,67 @@ internal sealed class FakeNativeActions : IShellNativeActions
     public int ClassicWindowRequests { get; private set; }
     public int ConnectionSetupRequests { get; private set; }
     public int ResetConfirmations { get; private set; }
+    public int TestModeConfirmations { get; private set; }
     public int LogFolderRequests { get; private set; }
     public bool ConfirmReset { get; set; } = true;
+    public bool ConfirmTestMode { get; set; } = true;
     public bool LogFolderExists { get; set; } = true;
+
+    /// <summary>What the connection dialog reports when it closes.</summary>
+    public ShellConnectionSetupResult SetupResult { get; set; } =
+        new(ShellConnectionSetupOutcome.Connected, "Connection verified and saved.");
+
+    /// <summary>When set, the connection dialog stays open until this gate completes.</summary>
+    public TaskCompletionSource? SetupGate { get; set; }
 
     public void OpenClassicWindow() => ClassicWindowRequests++;
 
-    public void OpenConnectionSetup() => ConnectionSetupRequests++;
+    public async Task<ShellConnectionSetupResult> RunConnectionSetupAsync()
+    {
+        ConnectionSetupRequests++;
+        if (SetupGate is { } gate)
+            await gate.Task;
+        return SetupResult;
+    }
 
-    public bool ConfirmConnectionReset()
+    public Task<bool> ConfirmConnectionResetAsync()
     {
         ResetConfirmations++;
-        return ConfirmReset;
+        return Task.FromResult(ConfirmReset);
+    }
+
+    public Task<bool> ConfirmEnableTestModeAsync()
+    {
+        TestModeConfirmations++;
+        return Task.FromResult(ConfirmTestMode);
     }
 
     public bool OpenLogFolder()
     {
         LogFolderRequests++;
         return LogFolderExists;
+    }
+}
+
+internal sealed class FakeOperationalSettings : IShellOperationalSettings
+{
+    public List<ShellOperationalSettingsChange> Saved { get; } = [];
+
+    /// <summary>Behaves like the real validator unless overridden: the classic ranges decide.</summary>
+    public bool TrySave(ShellOperationalSettingsChange change, out string? errorKey)
+    {
+        var probe = new Wasla.PrintBridge.Options.PrintBridgeOptions
+        {
+            DryRun = change.TestMode,
+            IdlePollIntervalSeconds = change.IdlePollSeconds,
+            BusyPollIntervalSeconds = change.BusyPollSeconds,
+            ErrorPollIntervalSeconds = change.ErrorPollSeconds
+        };
+        if (!PrintBridgeSettingsValidator.TryValidateAdvancedBehaviorSettings(probe, out errorKey))
+            return false;
+
+        Saved.Add(change);
+        return true;
     }
 }
 
@@ -310,6 +412,7 @@ internal sealed class ShellTestRig : IDisposable
             Engine,
             Catalog,
             PrinterSettings,
+            OperationalSettings,
             Native,
             History,
             Settings,
@@ -336,6 +439,7 @@ internal sealed class ShellTestRig : IDisposable
     public FakeNativeActions Native { get; } = new();
     public FakePrinterCatalog Catalog { get; } = new();
     public FakePrinterSettings PrinterSettings { get; } = new();
+    public FakeOperationalSettings OperationalSettings { get; } = new();
     public FakeLanguageSwitcher Languages { get; }
     public ShellHistory History { get; }
     public ShellOperations Operations { get; }
@@ -354,7 +458,7 @@ internal sealed class ShellTestRig : IDisposable
 
     /// <summary>Messages of one host message type, parsed.</summary>
     public IReadOnlyList<System.Text.Json.JsonElement> Messages(string type) =>
-        Host.Sent
+        Host.SentSoFar()
             .Select(s => System.Text.Json.JsonDocument.Parse(s).RootElement)
             .Where(m => m.GetProperty("type").GetString() == type)
             .ToArray();
@@ -404,6 +508,13 @@ internal sealed class FakeShellHost : IShellHost
     {
         lock (_sync)
             Sent.Add(json);
+    }
+
+    /// <summary>A copy taken under the lock: operation results are sent from other threads while a test reads.</summary>
+    public string[] SentSoFar()
+    {
+        lock (_sync)
+            return Sent.ToArray();
     }
 }
 

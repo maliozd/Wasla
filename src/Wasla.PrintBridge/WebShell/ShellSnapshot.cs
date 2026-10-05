@@ -21,8 +21,22 @@ public sealed record ShellSnapshot(
     ShellBusyState Busy,
     ShellDiagnosticsView Diagnostics,
     bool DryRun,
+    ShellOperationalView Operational,
     IReadOnlyList<ShellLanguageOption> Languages,
     IReadOnlyDictionary<string, string> Strings);
+
+/// <summary>
+/// The saved operational settings, which are also the values the engine uses (it reads them for every poll and job),
+/// with the ranges the host accepts. The page edits a copy and saves it with <c>settings.save</c>.
+/// </summary>
+public sealed record ShellOperationalView(
+    bool TestMode,
+    ShellSecondsSetting IdlePoll,
+    ShellSecondsSetting BusyPoll,
+    ShellSecondsSetting ErrorPoll);
+
+/// <param name="RangeLabel">The allowed range, localized and formatted by the host (for example "1–300 s").</param>
+public sealed record ShellSecondsSetting(int Value, int Min, int Max, string RangeLabel);
 
 /// <param name="State">One of <see cref="ShellConnectionStates"/>.</param>
 public sealed record ShellConnectionView(string State, string Label, string Detail);
@@ -87,6 +101,9 @@ public sealed record ShellHistoryResult(string RequestId, ShellHistoryPage Histo
 /// <summary>Reply to a state-changing command.</summary>
 public sealed record ShellOperationResultView(string? RequestId, string Operation, string Outcome, string Message);
 
+/// <summary>Asks the page to show one of <see cref="ShellMessageContract.Tabs"/>.</summary>
+public sealed record ShellNavigateView(string Tab);
+
 public static class ShellMessageSerializer
 {
     public static readonly JsonSerializerOptions Options = new()
@@ -115,6 +132,9 @@ public static class ShellMessageSerializer
 
     public static string SerializeHistoryResult(ShellHistoryResult result, long sequence) =>
         Serialize(ShellMessageContract.HistoryResult, sequence, result);
+
+    public static string SerializeNavigate(string tab, long sequence) =>
+        Serialize(ShellMessageContract.UiNavigate, sequence, new ShellNavigateView(tab));
 
     private static string Serialize<TPayload>(string type, long sequence, TPayload payload) =>
         JsonSerializer.Serialize(new ShellHostMessage<TPayload>(ShellMessageContract.Version, type, sequence, payload), Options);

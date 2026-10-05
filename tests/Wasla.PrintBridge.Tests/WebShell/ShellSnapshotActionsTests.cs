@@ -1,5 +1,6 @@
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
+using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.WebShell;
 using static Wasla.PrintBridge.Tests.WebShell.WebShellTestSupport;
 
@@ -153,11 +154,37 @@ public sealed class ShellSnapshotActionsTests : IDisposable
     [Fact]
     public void BusyFlags_AreTheHostOperationState()
     {
-        var busy = new ShellBusyState(Engine: false, ConnectionTest: true, ConnectionReset: false, PrintersRefresh: false, PrinterSave: false, TestPrint: true, Reprint: false);
+        var busy = new ShellBusyState(
+            Engine: false, ConnectionTest: true, ConnectionReset: false, PrintersRefresh: false, PrinterSave: false,
+            TestPrint: true, Reprint: false, ConnectionSetup: true, SettingsSave: false);
         var factory = new ShellSnapshotFactory(_localizer, _rig.Culture, _rig.Settings, _rig.Catalog, () => busy, "154.0.4258.53");
 
         Assert.Same(busy, factory.Create(Status()).Busy);
         Assert.Equal(ShellBusyState.Idle, _rig.Factory.Create(Status()).Busy);
+    }
+
+    [Fact]
+    public void Operational_ShowsTheSavedValuesTheEngineUses_WithTheValidatorRanges()
+    {
+        _rig.Settings.Replace(
+            _rig.Settings.OrderHub,
+            new Wasla.PrintBridge.Options.PrintBridgeOptions
+            {
+                PrinterName = "POS-58",
+                DryRun = true,
+                IdlePollIntervalSeconds = 9,
+                BusyPollIntervalSeconds = 2,
+                ErrorPollIntervalSeconds = 40
+            });
+
+        var operational = _rig.Factory.Create(Status(dryRun: true)).Operational;
+
+        Assert.True(operational.TestMode);
+        Assert.Equal(new ShellSecondsSetting(9, 1, 300, _localizer.GetString("Shell.Settings.Range", 1, 300)), operational.IdlePoll);
+        Assert.Equal(new ShellSecondsSetting(2, 1, 60, _localizer.GetString("Shell.Settings.Range", 1, 60)), operational.BusyPoll);
+        Assert.Equal(new ShellSecondsSetting(40, 1, 300, _localizer.GetString("Shell.Settings.Range", 1, 300)), operational.ErrorPoll);
+        Assert.Equal(PrintBridgeSettingsValidator.MaxIdlePollIntervalSeconds, operational.IdlePoll.Max);
+        Assert.Equal(PrintBridgeSettingsValidator.MaxBusyPollIntervalSeconds, operational.BusyPoll.Max);
     }
 
     [Fact]
