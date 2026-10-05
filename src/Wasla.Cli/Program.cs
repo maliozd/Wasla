@@ -71,6 +71,8 @@ if (string.Equals(args[0], "hash-password", StringComparison.OrdinalIgnoreCase))
 if (string.Equals(args[0], "add-central-admin", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(args[0], "reset-central-admin-password", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(args[0], "list-central-admins", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(args[0], "disable-central-admin", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(args[0], "enable-central-admin", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(args[0], "generate-print-bridge-token", StringComparison.OrdinalIgnoreCase) ||
     IsCentralPasswordReset(args))
 {
@@ -353,6 +355,36 @@ listCentralAdmins.SetHandler(async (InvocationContext context) =>
     context.ExitCode = await CliCommands.ListCentralAdminsAsync(host, context.GetCancellationToken());
 });
 
+// --- disable-central-admin / enable-central-admin ---
+Command CentralAdminStatusCommand(string name, string description, bool enable)
+{
+    var command = new Command(name, description) { TreatUnmatchedTokensAsErrors = true };
+    var optEmail = new Option<string>("--email", "Central admin email") { IsRequired = true };
+    var optDryRun = new Option<bool>("--dry-run", "Resolve the account and show the change only; do not write");
+    command.AddOption(optEmail);
+    command.AddOption(optDryRun);
+    command.SetHandler(async (InvocationContext context) =>
+    {
+        var p = context.ParseResult;
+        context.ExitCode = await CliCommands.SetCentralAdminEnabledAsync(
+            host,
+            p.GetValueForOption(optEmail),
+            enable,
+            p.GetValueForOption(optDryRun),
+            context.GetCancellationToken());
+    });
+    return command;
+}
+
+var disableCentralAdmin = CentralAdminStatusCommand(
+    "disable-central-admin",
+    "Disable a central admin and sign out all of their existing sessions.",
+    enable: false);
+var enableCentralAdmin = CentralAdminStatusCommand(
+    "enable-central-admin",
+    "Enable a disabled central admin. Sessions from before the disable stay signed out.",
+    enable: true);
+
 // --- encrypt ---
 var encrypt = new Command("encrypt", "Encrypt a plaintext string with the current master key.")
 {
@@ -531,6 +563,8 @@ var root = new RootCommand("orderhub — operational CLI for customer onboarding
     resetCentralAdminPassword,
     resetPassword,
     listCentralAdmins,
+    disableCentralAdmin,
+    enableCentralAdmin,
     migrateCentral,
     seedTurkeyReferenceData,
     seedAddressReferenceData,

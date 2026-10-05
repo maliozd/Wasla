@@ -22,6 +22,7 @@ public sealed class CliResetPasswordTests
         await using var central = await CreateCentralAsync();
         var user = await SeedCentralUserAsync(central, "mehmet@example.com", "Mehmet Admin");
         var originalHash = user.PasswordHash;
+        var originalStamp = user.SecurityStamp;
         var reader = new ThrowingPasswordReader();
 
         var (code, output) = await CaptureAsync(() => CliPasswordReset.ExecuteAsync(
@@ -41,7 +42,40 @@ public sealed class CliResetPasswordTests
         Assert.DoesNotContain("mehmet@", output, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Mehmet Admin", output);
         Assert.DoesNotContain("Password updated successfully.", output);
-        Assert.Equal(originalHash, (await ReloadCentralAsync(central, user.Id)).PasswordHash);
+        var stored = await ReloadCentralAsync(central, user.Id);
+        Assert.Equal(originalHash, stored.PasswordHash);
+        Assert.Equal(originalStamp, stored.SecurityStamp);
+    }
+
+    [Fact]
+    public async Task LegacyResetCentralAdminPasswordCommand_RotatesTheSecurityStamp()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        CentralAdminUser user;
+        await using (var seed = CreateCentral(connection))
+        {
+            await seed.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+            user = await SeedCentralUserAsync(seed, "mehmet@example.com", "Mehmet Admin");
+        }
+
+        using var host = new HostBuilder()
+            .ConfigureServices(services => services.AddDbContext<CentralDbContext>(options => options.UseSqlite(connection)))
+            .Build();
+
+        var (code, output) = await CaptureAsync(() => CliCommands.ResetCentralAdminPasswordAsync(
+            host,
+            "mehmet@example.com",
+            NewPassword,
+            TestContext.Current.CancellationToken));
+
+        await using var check = CreateCentral(connection);
+        var updated = await check.CentralAdminUsers.AsNoTracking().SingleAsync(x => x.Id == user.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(0, code);
+        Assert.DoesNotContain(NewPassword, output);
+        Assert.True(BCrypt.Net.BCrypt.Verify(NewPassword, updated.PasswordHash));
+        Assert.NotEqual(user.SecurityStamp, updated.SecurityStamp);
+        Assert.NotEqual(Guid.Empty, updated.SecurityStamp);
     }
 
     [Fact]
@@ -118,7 +152,9 @@ public sealed class CliResetPasswordTests
         var other = await SeedCentralUserAsync(central, "other@example.com", "Other Admin");
         var createdAt = user.CreatedAt;
         var lastLogin = user.LastLoginAt;
+        var originalStamp = user.SecurityStamp;
         var otherHash = other.PasswordHash;
+        var otherStamp = other.SecurityStamp;
         await using var promptOutput = new StringWriter();
         var reader = new ScriptedPasswordReader(NewPassword, NewPassword) { Output = promptOutput };
 
@@ -151,7 +187,12 @@ public sealed class CliResetPasswordTests
         Assert.Equal(createdAt, updated.CreatedAt);
         Assert.Equal(lastLogin, updated.LastLoginAt);
         Assert.True(updated.UpdatedAt > createdAt);
-        Assert.Equal(otherHash, (await ReloadCentralAsync(central, other.Id)).PasswordHash);
+        // The reset revokes the admin's existing sessions and no one else's.
+        Assert.NotEqual(originalStamp, updated.SecurityStamp);
+        Assert.NotEqual(Guid.Empty, updated.SecurityStamp);
+        var reloadedOther = await ReloadCentralAsync(central, other.Id);
+        Assert.Equal(otherHash, reloadedOther.PasswordHash);
+        Assert.Equal(otherStamp, reloadedOther.SecurityStamp);
         Assert.Equal("starter", updatedMembership.PlanCode);
         Assert.Equal(MembershipStatus.Active, updatedMembership.Status);
         Assert.Equal("mehmet@example.com", updatedMembership.OwnerEmail);
@@ -163,6 +204,7 @@ public sealed class CliResetPasswordTests
         await using var central = await CreateCentralAsync();
         var user = await SeedCentralUserAsync(central, "mehmet@example.com", "Mehmet Admin");
         var originalHash = user.PasswordHash;
+        var originalStamp = user.SecurityStamp;
         var updatedAt = user.UpdatedAt;
 
         var (code, output) = await CaptureAsync(() => CliPasswordReset.ExecuteAsync(
@@ -182,6 +224,7 @@ public sealed class CliResetPasswordTests
         Assert.DoesNotContain("Different123!", output);
         Assert.Equal(originalHash, stored.PasswordHash);
         Assert.Equal(updatedAt, stored.UpdatedAt);
+        Assert.Equal(originalStamp, stored.SecurityStamp);
         Assert.True(BCrypt.Net.BCrypt.Verify(OldPassword, stored.PasswordHash));
     }
 

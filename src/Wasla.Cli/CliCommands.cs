@@ -205,6 +205,20 @@ internal static class CliCommands
             ct).ConfigureAwait(false);
     }
 
+    public static async Task<int> SetCentralAdminEnabledAsync(
+        IHost host,
+        string? email,
+        bool enable,
+        bool dryRun,
+        CancellationToken ct,
+        TextWriter? output = null)
+    {
+        using var diScope = host.Services.CreateScope();
+        var central = diScope.ServiceProvider.GetRequiredService<CentralDbContext>();
+        return await CliCentralAdminStatus.ExecuteAsync(central, email, enable, dryRun, output ?? Console.Out, ct)
+            .ConfigureAwait(false);
+    }
+
     public static async Task<int> ListCentralAdminsAsync(IHost host, CancellationToken ct)
     {
         try

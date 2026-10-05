@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Admin;
+using Wasla.Application.Security;
 using Wasla.Web.Areas.Admin.Models;
 using Wasla.Web.Security;
 using AdminAuthController = Wasla.Web.Areas.Admin.Controllers.AuthController;
@@ -52,6 +53,31 @@ public sealed class CentralAdminAuthCookieTests
         Assert.Equal(AuthSchemes.CentralAdmin, authentication.SignInScheme);
         Assert.True(authentication.SignInProperties?.IsPersistent);
         Assert.NotNull(authentication.SignInProperties?.ExpiresUtc);
+        Assert.Equal(
+            SuccessfulCentralAdminAuthService.IssuedStamp.ToString(),
+            authentication.SignInPrincipal?.FindFirstValue(WaslaAuthContracts.CentralAdminSecurityStampClaim));
+    }
+
+    [Fact]
+    public void Program_RevalidatesCentralAdminSessionsOnly()
+    {
+        var programSource = File.ReadAllText(Path.Combine(FindSolutionRoot(), "src", "Wasla.Web", "Program.cs"));
+        var tenantScheme = Section(programSource, ".AddCookie(AuthSchemes.Tenant,", ".AddCookie(AuthSchemes.CentralAdmin,");
+        var adminScheme = Section(programSource, ".AddCookie(AuthSchemes.CentralAdmin,", "});");
+
+        Assert.Contains("options.EventsType = typeof(CentralAdminCookieEvents);", adminScheme, StringComparison.Ordinal);
+        Assert.DoesNotContain("EventsType", tenantScheme, StringComparison.Ordinal);
+        Assert.DoesNotContain("Events =", tenantScheme, StringComparison.Ordinal);
+        Assert.Contains("builder.Services.AddScoped<CentralAdminCookieEvents>();", programSource, StringComparison.Ordinal);
+    }
+
+    private static string Section(string source, string start, string end)
+    {
+        var from = source.IndexOf(start, StringComparison.Ordinal);
+        Assert.True(from >= 0, $"'{start}' not found.");
+        var to = source.IndexOf(end, from + start.Length, StringComparison.Ordinal);
+        Assert.True(to > from, $"'{end}' not found after '{start}'.");
+        return source[from..to];
     }
 
     [Fact]
@@ -107,19 +133,23 @@ public sealed class CentralAdminAuthCookieTests
 
     private sealed class SuccessfulCentralAdminAuthService : ICentralAdminAuthService
     {
+        public static readonly Guid IssuedStamp = Guid.NewGuid();
+
         public Task<CentralAdminLoginResult> ValidateAsync(string email, string password, CancellationToken ct) =>
             Task.FromResult(new CentralAdminLoginResult(
                 true,
                 Guid.NewGuid(),
                 email,
                 "Central Admin",
-                null));
+                null,
+                IssuedStamp));
     }
 
     private sealed class CapturingAuthenticationService : IAuthenticationService
     {
         public string? SignInScheme { get; private set; }
         public AuthenticationProperties? SignInProperties { get; private set; }
+        public ClaimsPrincipal? SignInPrincipal { get; private set; }
         public List<string> SignOutSchemes { get; } = [];
 
         public Task<AuthenticateResult> AuthenticateAsync(HttpContext context, string? scheme) =>
@@ -139,6 +169,7 @@ public sealed class CentralAdminAuthCookieTests
         {
             SignInScheme = scheme;
             SignInProperties = properties;
+            SignInPrincipal = principal;
             return Task.CompletedTask;
         }
 

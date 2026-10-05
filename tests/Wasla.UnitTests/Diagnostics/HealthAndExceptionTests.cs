@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Web.Controllers;
 using Wasla.Web.Middleware;
 using Wasla.Web.Models;
+using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Diagnostics;
 
@@ -113,6 +115,29 @@ public sealed class HealthAndExceptionTests
         var view = Assert.IsType<ViewResult>(result);
         var model = Assert.IsType<ErrorPageViewModel>(view.Model);
         Assert.Equal("trace-from-request", model.TraceId);
+        Assert.Equal("no-store", http.Response.Headers["Cache-Control"].ToString());
+    }
+
+    [Theory]
+    [InlineData(true, StatusCodes.Status503ServiceUnavailable)]
+    [InlineData(false, StatusCodes.Status500InternalServerError)]
+    public void ErrorPage_Sets503_OnlyForAnUnavailableCentralAdminSessionCheck(bool sessionCheckUnavailable, int expected)
+    {
+        var http = new DefaultHttpContext();
+        http.Features.Set<IExceptionHandlerFeature>(new ExceptionHandlerFeature
+        {
+            Error = sessionCheckUnavailable
+                ? new CentralAdminSessionUnavailableException()
+                : new InvalidOperationException("unexpected"),
+            Path = "/admin"
+        });
+        var controller = new ErrorController
+        {
+            ControllerContext = new ControllerContext { HttpContext = http }
+        };
+
+        Assert.IsType<ViewResult>(controller.Index());
+        Assert.Equal(expected, http.Response.StatusCode);
         Assert.Equal("no-store", http.Response.Headers["Cache-Control"].ToString());
     }
 }

@@ -353,7 +353,7 @@ public sealed class AuthRememberMeTests
     private sealed class SuccessfulCentralAdminAuthService : ICentralAdminAuthService
     {
         public Task<CentralAdminLoginResult> ValidateAsync(string email, string password, CancellationToken ct) =>
-            Task.FromResult(new CentralAdminLoginResult(true, Guid.NewGuid(), email, "Central Admin", null));
+            Task.FromResult(new CentralAdminLoginResult(true, Guid.NewGuid(), email, "Central Admin", null, Guid.NewGuid()));
     }
 
     private sealed class FakeCurrentTenantService(ResolvedTenantDto? tenant) : ICurrentTenantService

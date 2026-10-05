@@ -53,4 +53,38 @@ public class CentralDbContext : DbContext
         modelBuilder.ApplyConfiguration(new StreetConfiguration());
         modelBuilder.ApplyConfiguration(new PendingRegistrationBusinessTypeConfiguration());
     }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        RotateCentralAdminSecurityStamps();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        RotateCentralAdminSecurityStamps();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    /// <summary>
+    /// A password change or an activation change saved through SaveChanges revokes every session issued before it,
+    /// whichever service saves it. Re-enabling therefore cannot revive a cookie revoked by the deactivation. A save that
+    /// sets the stamp itself keeps it. ExecuteUpdate and raw SQL never pass through here and must set the stamp themselves.
+    /// </summary>
+    private void RotateCentralAdminSecurityStamps()
+    {
+        foreach (var entry in ChangeTracker.Entries<CentralAdminUser>())
+        {
+            if (entry.State != EntityState.Modified)
+                continue;
+
+            // Update() on a detached entity marks every property modified: that is treated as a credential change, and
+            // its unchanged stamp is not treated as one the caller chose.
+            var credentialsChanged = entry.Property(x => x.PasswordHash).IsModified || entry.Property(x => x.IsActive).IsModified;
+            var stamp = entry.Property(x => x.SecurityStamp);
+            var stampSetByCaller = stamp.IsModified && stamp.CurrentValue != stamp.OriginalValue;
+            if (credentialsChanged && !stampSetByCaller)
+                stamp.CurrentValue = Guid.NewGuid();
+        }
+    }
 }

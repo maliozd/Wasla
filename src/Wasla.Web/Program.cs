@@ -110,8 +110,11 @@ builder.Services.AddAuthentication(options =>
     options.AccessDeniedPath = "/admin/login";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+    // Every Central Admin request is revalidated against the account in CentralDb.
+    options.EventsType = typeof(CentralAdminCookieEvents);
 });
 
+builder.Services.AddScoped<CentralAdminCookieEvents>();
 builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
 builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
 builder.Services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();

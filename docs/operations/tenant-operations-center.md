@@ -19,7 +19,7 @@ The existing activate/deactivate posts on the detail page predate this feature a
 ## Data access boundaries
 
 - **No fan-out.** The overview and the list never open a tenant database. A tenant whose database is down does not affect them.
-- **Query budget (CentralDb).** Overview: four aggregate queries plus the attention list (five). List: count, page and per-page device counts (three), plus one existence check only when a filtered result is empty. Detail: four.
+- **Query budget (CentralDb).** Overview: four aggregate queries plus the attention list (five). List: count, page and per-page device counts (three), plus one existence check only when a filtered result is empty. Detail: four. Each request also makes the one `CentralAdminUsers` read of Central Admin session revalidation.
 - **Selected-tenant reads only.** The detail page opens exactly one tenant database, resolved through `ITenantDbContextFactory` by the id of the CentralDb row just read. Nothing from the request (database name, connection string, sort field) reaches a query unvalidated.
 - **Tenant read budget.** One explicit connection open, then thirteen read-only commands in total: the migration history (existence check and read), settings, guided setup, users, connections, recent sync failures, four order counts and two print-job counts. No tracking, no writes.
 - **Timeouts.** The whole tenant read is bounded at 5 seconds (`TenantOperationalHealthOptions.Timeout`), with the same command timeout and a hard stop even if the driver ignores cancellation. The probe connection disables SqlClient connection retries and uses a connect timeout one second under the deadline, set on that context only; the stored connection string and normal application connections are unchanged.
@@ -53,6 +53,13 @@ Print Bridge presence uses the canonical `PrintBridgeConnectionStatusCalculator`
 
 The pages use the existing central-admin attribute `[Authorize(AuthenticationSchemes = AuthSchemes.CentralAdmin)]`. Anonymous requests and tenant sessions (even with a forged role claim) are redirected to `/admin/login`. Unknown ids, registration ids and malformed ids return 404.
 
+The Central Admin session is revalidated against CentralDb on every request. A deactivated, deleted or password-changed admin is signed out on their next request. See [Central admin session revalidation](../architecture/authentication.md#central-admin-session-revalidation).
+
+Both CentralDb failure cases answer HTTP 503 and keep the session cookie:
+
+- The localized load-error panel inside the Admin layout covers a failure of the pages' own CentralDb reads.
+- If CentralDb cannot be read at all, the request already fails during session revalidation. The global error page then answers, with no Admin content.
+
 ## Troubleshooting
 
 | Observation | Next step |
@@ -65,10 +72,6 @@ The pages use the existing central-admin attribute `[Authorize(AuthenticationSch
 | Print Bridge offline with queued jobs | The restaurant checks the Print Bridge computer; jobs are picked up on reconnect |
 
 The page only reads. It never migrates, repairs, retries, provisions or changes payment, provider or device state.
-
-## Security follow-up (high priority, not implemented)
-
-**Production security requirement:** Central Admin authorization is scheme-only. Any valid `.Wasla.CentralAdminAuth` cookie is accepted; the account is not re-checked against CentralDb. A central admin who is deactivated (or whose password is reset) keeps access until the cookie expires (8 hours sliding; 1 day with remember-me). Future work must add active-admin revalidation (for example cookie validation against `CentralAdminUsers.IsActive` with a security stamp) or a named policy backed by the CentralDb account state, with tests that deactivate an admin during an active session and expect the next request to be rejected. See also [../architecture/authentication.md](../architecture/authentication.md#current-limitation).
 
 ## Source map
 

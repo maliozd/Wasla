@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Admin;
+using Wasla.Application.Security;
 using Wasla.Web.Areas.Admin.Models;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -62,6 +63,7 @@ public sealed class AuthController : Controller
             new(ClaimTypes.Email, result.Email!),
             new(ClaimTypes.Name, result.DisplayName ?? "Central Admin"),
             new(ClaimTypes.Role, "CentralAdmin"),
+            new(WaslaAuthContracts.CentralAdminSecurityStampClaim, result.SecurityStamp!.Value.ToString()),
         };
 
         var identity = new ClaimsIdentity(claims, AuthSchemes.CentralAdmin);

@@ -104,6 +104,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantPasswordResetService, TenantPasswordResetService>();
         services.AddScoped<ITenantUserRoleService, TenantUserRoleService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
+        services.AddScoped<ICentralAdminSessionValidator, CentralAdminSessionValidator>();
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
         services.AddScoped<ICentralAdminTenantOperationsService, CentralAdminTenantOperationsService>();
         services.AddOptions<TenantOperationalHealthOptions>();

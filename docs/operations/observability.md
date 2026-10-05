@@ -88,6 +88,8 @@ Do not invent exporters or scrape endpoints that are not in source.
 
 Outside Development, Web uses `UseExceptionHandler("/error")` (`WaslaExceptionHandlingExtensions`). Development keeps the developer exception page.
 
+`/error` answers 500, except for `CentralAdminSessionUnavailableException` (a Central Admin session could not be validated because CentralDb is unavailable), which answers 503. See [Central admin session revalidation](../architecture/authentication.md#central-admin-session-revalidation).
+
 ## Related docs
 
 - [deployment.md](deployment.md)

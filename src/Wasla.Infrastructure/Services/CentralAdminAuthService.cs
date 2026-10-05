@@ -42,9 +42,12 @@ public sealed class CentralAdminAuthService : ICentralAdminAuthService
             var now = DateTime.UtcNow;
             user.LastLoginAt = now;
             user.UpdatedAt = now;
+            // A row inserted outside EF can carry the column's empty default. Sessions are never issued with it.
+            if (user.SecurityStamp == Guid.Empty)
+                user.SecurityStamp = Guid.NewGuid();
             await _db.SaveChangesAsync(ct).ConfigureAwait(false);
 
-            return new CentralAdminLoginResult(true, user.Id, user.Email, user.DisplayName, null);
+            return new CentralAdminLoginResult(true, user.Id, user.Email, user.DisplayName, null, user.SecurityStamp);
         }
         catch (Exception ex)
         {

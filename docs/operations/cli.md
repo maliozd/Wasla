@@ -39,6 +39,8 @@ Most commands call `AesSecretManager.ValidateMasterKeyOrThrow()` before the host
 - `add-central-admin`
 - `reset-central-admin-password`
 - `list-central-admins`
+- `disable-central-admin`
+- `enable-central-admin`
 - `generate-print-bridge-token`
 - `reset-password` when `--scope central`
 
@@ -100,16 +102,33 @@ Details: [migrations.md](migrations.md).
 | Command | Purpose |
 |---------|---------|
 | `add-central-admin` | Create central admin in CentralDb (`--email`, `--password`, `--display-name`) |
-| `reset-central-admin-password` | Reset central admin password |
+| `reset-central-admin-password` | Reset central admin password; signs out that admin's existing sessions |
 | `list-central-admins` | List central admins (safe fields) |
+| `disable-central-admin` | Disable a central admin (`--email`, `--dry-run`); signs out all of their existing sessions |
+| `enable-central-admin` | Enable a disabled central admin (`--email`, `--dry-run`); sessions issued before the disable stay signed out |
 
-**This is the supported setup method.** Do not use `CentralAdmin__Email` / `CentralAdmin__PasswordHash` environment variables as the setup path — they are obsolete relative to current CentralDb authentication.
+**These are the supported account-management commands.** Do not use `CentralAdmin__Email` / `CentralAdmin__PasswordHash` environment variables as the setup path — they are obsolete relative to current CentralDb authentication.
+
+A password reset (either reset command) and a disable or enable that actually changes the status give the admin a new `SecurityStamp` in the same UPDATE as the change. Every session issued before it is rejected on its next request. See [Central admin session revalidation](../architecture/authentication.md#central-admin-session-revalidation).
+
+`disable-central-admin` and `enable-central-admin`:
+
+- Resolve the account like `reset-password --scope central`: trimmed, case-insensitive email; no match or more than one match exits `2` without changes.
+- Print the account by masked email (`m***@example.com`) and its current status. They never print the full email, display name, password hash or stamp.
+- `--dry-run` shows what would change and writes nothing.
+- Rotate the stamp only on a real transition (enabled to disabled, or disabled to enabled). An account already in the requested state is left untouched: no write and no new stamp (exit `0`). Repeating a command is therefore safe, but `enable-central-admin` on an account that is already enabled revokes no session.
+- Are reversible and do not delete data, so they do not take `--confirm` (see [destructive confirmation](#destructive-confirmation-and-production-block)).
+- Exit `3` on a database failure, without SQL details. Check the account with `list-central-admins` and rerun.
+
+**Direct SQL and EF bulk updates bypass these safeguards.** The stamp rotation runs only in `CentralDbContext.SaveChanges`. SQL against `CentralAdminUsers` and EF `ExecuteUpdate` / `ExecuteSqlRaw` do not rotate it. Re-enabling a row that way revives every cookie issued before the disable, and a password change that way revokes nothing. Any such `UPDATE` that changes `IsActive` or `PasswordHash` must set `SecurityStamp = NEWID()` in the same statement.
+
+If that was missed: for an account that is still disabled, re-enable it with `enable-central-admin`; the transition rotates the stamp. For an account that was already re-enabled, or whose password was changed that way, `enable-central-admin` does nothing. Rotate the stamp explicitly instead. See [Writes that bypass the rotation](../architecture/authentication.md#writes-that-bypass-the-rotation).
 
 ### Password reset
 
 | Command | Purpose |
 |---------|---------|
-| `reset-password` | Reset central or tenant user password (`--scope central|tenant`, `--dry-run`) |
+| `reset-password` | Reset central or tenant user password (`--scope central|tenant`, `--dry-run`). Central scope signs out that admin's existing sessions; tenant scope does not revoke tenant sessions |
 
 ### Print Bridge
 

@@ -38,7 +38,9 @@ internal static class CliHelpPrinter
     [
         "add-central-admin",
         "reset-central-admin-password",
-        "list-central-admins"
+        "list-central-admins",
+        "disable-central-admin",
+        "enable-central-admin"
     ];
 
     private static readonly string[] AccountCommands =
@@ -86,6 +88,8 @@ internal static class CliHelpPrinter
         Console.WriteLine("  add-central-admin          Create a central admin user in CentralDb.");
         Console.WriteLine("  reset-central-admin-password Reset a central admin password in CentralDb.");
         Console.WriteLine("  list-central-admins        List central admin users (safe fields only).");
+        Console.WriteLine("  disable-central-admin      Disable a central admin and sign out their sessions.");
+        Console.WriteLine("  enable-central-admin       Enable a disabled central admin (old sessions stay signed out).");
         Console.WriteLine();
 
         Console.WriteLine("Account commands:");
@@ -306,6 +310,24 @@ internal static class CliHelpPrinter
                 Console.WriteLine("Lists central admin users (safe output only).");
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  list-central-admins");
+                return;
+
+            case "disable-central-admin":
+            case "enable-central-admin":
+                Console.WriteLine(command.ToLowerInvariant());
+                Console.WriteLine();
+                Console.WriteLine("Disables or enables an existing central admin account (CentralDb only).");
+                Console.WriteLine("A status change gives the account a new security stamp: disabling signs out every existing session,");
+                Console.WriteLine("and enabling a disabled account does not restore any session issued before the disable.");
+                Console.WriteLine("An account already in the requested state is not changed and gets no new stamp, so enabling an");
+                Console.WriteLine("already enabled account signs out nothing. --dry-run resolves the account and writes nothing.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  disable-central-admin --email <email> [--dry-run]");
+                Console.WriteLine("  enable-central-admin --email <email> [--dry-run]");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- disable-central-admin --email admin@example.com --dry-run");
                 return;
 
             default:
