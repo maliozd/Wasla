@@ -28,27 +28,14 @@ public sealed class ShellConnectionSetupTests : IDisposable
     private const string MissingPrinter = "Printer-That-Is-Not-Installed";
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(10);
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "wasla-pb-setup-tests", Guid.NewGuid().ToString("N"));
-    private readonly IDisposable _rootScope;
+    // Each test disposes its engine (which waits for the polling loop) before this root is released.
+    private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-setup-tests");
     // Not initialized: the default Turkish culture without changing the process-wide thread cultures.
     private readonly PrintBridgeLocalizer _localizer = new(new PrintBridgeCultureService());
 
-    public ShellConnectionSetupTests()
-    {
-        Directory.CreateDirectory(_root);
-        _rootScope = PrintBridgePaths.UseRootForTests(_root);
-    }
-
     public void Dispose()
     {
-        _rootScope.Dispose();
-        try
-        {
-            Directory.Delete(_root, recursive: true);
-        }
-        catch (IOException)
-        {
-        }
+        _dataRoot.Dispose();
     }
 
     [Fact]

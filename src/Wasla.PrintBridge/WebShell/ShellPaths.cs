@@ -14,7 +14,7 @@ public static class ShellPaths
     /// An isolated Debug instance (and a test run) keeps it inside its own data root.
     /// </summary>
     public static string UserDataDirectory =>
-        PrintBridgePaths.IsIsolatedDevelopmentRoot || PrintBridgePaths.HasTestRootOverride
+        PrintBridgePaths.IsIsolatedDevelopmentRoot || PrintBridgePaths.IsRedirectedForTests
             ? Path.Combine(PrintBridgePaths.ProgramDataRoot, "webview2-profile")
             : Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

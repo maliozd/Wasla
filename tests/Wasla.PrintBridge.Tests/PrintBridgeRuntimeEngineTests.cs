@@ -28,27 +28,10 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
     private const string ServerUrl = "http://print-bridge.test";
     private const string FakeToken = "test-token-not-a-real-credential";
 
-    private readonly string _root;
-    private readonly IDisposable _rootScope;
+    // Each test disposes its engine (which waits for the polling loop) before this root is released.
+    private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-engine-tests");
 
-    public PrintBridgeRuntimeEngineTests()
-    {
-        _root = Path.Combine(Path.GetTempPath(), "wasla-pb-engine-tests", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_root);
-        _rootScope = PrintBridgePaths.UseRootForTests(_root);
-    }
-
-    public void Dispose()
-    {
-        _rootScope.Dispose();
-        try
-        {
-            Directory.Delete(_root, recursive: true);
-        }
-        catch (IOException)
-        {
-        }
-    }
+    public void Dispose() => _dataRoot.Dispose();
 
     [Fact]
     public void PollingDefaults_AreUnchanged()
@@ -64,9 +47,9 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
     [Fact]
     public void Paths_AreRedirectedToTheIsolatedTestRoot()
     {
-        Assert.StartsWith(_root, PrintBridgePaths.ProgramDataConfigPath, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(_root, PrintBridgePaths.ProgramDataHistoryPath, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(_root, PrintBridgePaths.ProgramDataLogDirectory, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(_dataRoot.Path, PrintBridgePaths.ProgramDataConfigPath, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(_dataRoot.Path, PrintBridgePaths.ProgramDataHistoryPath, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(_dataRoot.Path, PrintBridgePaths.ProgramDataLogDirectory, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -173,7 +156,7 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
 
         Assert.Empty(harness.Printer.Calls);
         Assert.Contains($"api/print-bridge/jobs/{jobId:D}/mark-printed", api.JobActionPaths(jobId));
-        Assert.True(File.Exists(Path.Combine(_root, "logs", "test-receipts", $"receipt-{jobId:N}.txt")));
+        Assert.True(File.Exists(Path.Combine(_dataRoot.Path, "logs", "test-receipts", $"receipt-{jobId:N}.txt")));
     }
 
     [Fact]

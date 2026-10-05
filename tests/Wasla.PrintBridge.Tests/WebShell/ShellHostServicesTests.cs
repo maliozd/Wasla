@@ -12,26 +12,9 @@ public sealed class ShellHostServicesTests : IDisposable
 {
     private const string FakeToken = "test-token-not-a-real-credential";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "wasla-pb-shell-host-tests", Guid.NewGuid().ToString("N"));
-    private readonly IDisposable _rootScope;
+    private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-shell-host-tests");
 
-    public ShellHostServicesTests()
-    {
-        Directory.CreateDirectory(_root);
-        _rootScope = PrintBridgePaths.UseRootForTests(_root);
-    }
-
-    public void Dispose()
-    {
-        _rootScope.Dispose();
-        try
-        {
-            Directory.Delete(_root, recursive: true);
-        }
-        catch (IOException)
-        {
-        }
-    }
+    public void Dispose() => _dataRoot.Dispose();
 
     [Fact]
     public void SavingAPrinter_PersistsOnlyThePrinterAndKeepsEveryOtherSetting()
@@ -148,7 +131,7 @@ public sealed class ShellHostServicesTests : IDisposable
     public void LogFolder_IsTheKnownProgramDataFolder_AndTakesNoPath()
     {
         Assert.Equal(PrintBridgePaths.ProgramDataLogDirectory, ShellLogFolder.Path);
-        Assert.StartsWith(_root, ShellLogFolder.Path, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(_dataRoot.Path, ShellLogFolder.Path, StringComparison.OrdinalIgnoreCase);
 
         var methods = typeof(ShellLogFolder).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
         Assert.All(methods.Where(m => !m.IsSpecialName), m => Assert.Empty(m.GetParameters()));

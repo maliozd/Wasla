@@ -1,8 +1,5 @@
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
-using Wasla.PrintBridge.Configuration;
-using Wasla.PrintBridge.Localization;
-using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.UI;
 using Wasla.PrintBridge.WebShell;
 
@@ -18,44 +15,24 @@ namespace Wasla.PrintBridge.Tests.WebShell;
 [Trait("Category", "WebView2Runtime")]
 public sealed class ShellTrayRoutingTests : IDisposable
 {
-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(45);
+    private static readonly TimeSpan Timeout = TrayTestHost.Timeout;
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "wasla-pb-tray-tests", Guid.NewGuid().ToString("N"));
-    private readonly IDisposable _rootScope;
+    // The tray application saves settings (window layout) when it exits; the data root waits for its thread.
+    private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-tray-tests");
     private readonly CultureScope _cultureScope = new();
-    private Thread? _uiThread;
+    private readonly TrayTestHost _host;
 
-    public ShellTrayRoutingTests()
-    {
-        Directory.CreateDirectory(_root);
-        _rootScope = PrintBridgePaths.UseRootForTests(_root);
-    }
+    public ShellTrayRoutingTests() => _host = new TrayTestHost(_dataRoot);
 
     public void Dispose()
     {
-        // The tray application saves settings (window layout) when it exits. The redirect to the temporary root
-        // must outlive that thread, or the save would reach the machine's real settings file.
-        if (_uiThread is { } thread && !thread.Join(TimeSpan.FromMinutes(2)))
-            throw new InvalidOperationException("The tray test UI thread did not finish; the test root is kept to protect the real settings.");
-
-        _rootScope.Dispose();
+        _dataRoot.Dispose();
         _cultureScope.Dispose();
-        for (var attempt = 0; attempt < 10 && Directory.Exists(_root); attempt++)
-        {
-            try
-            {
-                Directory.Delete(_root, recursive: true);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                Thread.Sleep(300);
-            }
-        }
     }
 
     [Fact]
     public Task TrayHistoryAndSettings_OpenTheWebView2Tabs_InOneWindow_AndNeverTheClassicWindow() =>
-        RunTrayAsync(ShellSelection.WebView2Value, available: true, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WebView2Value, available: true, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.PrintHistory"]);
             var shell = await WaitForAsync(() => tray.ShellFormForTests is { Visible: true } form ? form : null);
@@ -85,7 +62,7 @@ public sealed class ShellTrayRoutingTests : IDisposable
 
     [Fact]
     public Task MissingWebView2Runtime_TrayHistoryOpensTheClassicHistoryTab() =>
-        RunTrayAsync(ShellSelection.WebView2Value, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WebView2Value, available: false, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.PrintHistory"]);
 
@@ -100,7 +77,7 @@ public sealed class ShellTrayRoutingTests : IDisposable
 
     [Fact]
     public Task WebView2StartupFailure_FallsBackToTheClassicTabThatWasAskedFor() =>
-        RunTrayAsync(ShellSelection.WebView2Value, available: true, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WebView2Value, available: true, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.Settings"]);
 
@@ -119,7 +96,7 @@ public sealed class ShellTrayRoutingTests : IDisposable
 
     [Fact]
     public Task ClassicDefault_KeepsEveryTrayEntryOnTheClassicWindow() =>
-        RunTrayAsync(shell: null, available: true, async (tray, localizer) =>
+        _host.RunAsync(shell: null, available: true, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.Settings"]);
 
@@ -130,85 +107,6 @@ public sealed class ShellTrayRoutingTests : IDisposable
             Assert.False(Item(tray, localizer["Tray.OpenClassicFallback"]).Available);
             await Task.CompletedTask;
         });
-
-    private Task RunTrayAsync(
-        string? shell,
-        bool available,
-        Func<TrayApplicationContext, PrintBridgeLocalizer, Task> body,
-        bool failShellStartup = false)
-    {
-        if (available && !new WebView2RuntimeProbe().Probe().IsAvailable)
-            Assert.Skip("No usable WebView2 Runtime is installed on this machine.");
-
-        var store = new PrintBridgeSettingsStore();
-        var document = store.Load();
-        document.OrderHub.AgentToken = string.Empty;
-        document.PrintBridge.DryRun = true;
-        document.Ui.Language = SupportedCultures.Turkish;
-        document.Ui.Shell = shell;
-        // The classic window restores its saved position; keep it off-screen.
-        document.Ui.WindowLeft = -32000;
-        document.Ui.WindowTop = -32000;
-        store.Save(document);
-
-        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var thread = new Thread(() =>
-        {
-            var context = new WindowsFormsSynchronizationContext();
-            SynchronizationContext.SetSynchronizationContext(context);
-            var loop = new ApplicationContext();
-            context.Post(async _ =>
-            {
-                TrayApplicationContext? tray = null;
-                Exception? failure = null;
-                try
-                {
-                    var services = PrintBridgeAppServices.Build();
-                    tray = new TrayApplicationContext(services, new FixedProbe(available));
-                    // No icon or balloon on the desktop; the menu is driven directly.
-                    tray.TrayIconForTests.Visible = false;
-                    // Both windows open off-screen; the tests check what opens, not where.
-                    tray.ShellFormCreatedForTests = form =>
-                    {
-                        form.StartPosition = FormStartPosition.Manual;
-                        form.Location = new Point(-32000, -32000);
-                        form.ShowInTaskbar = false;
-                        form.FailStartupForTests = failShellStartup;
-                    };
-                    tray.ClassicWindowForTests.StartPosition = FormStartPosition.Manual;
-                    tray.ClassicWindowForTests.Location = new Point(-32000, -32000);
-                    var localizer = new PrintBridgeLocalizer(new PrintBridgeCultureService());
-                    await body(tray, localizer);
-                }
-                catch (Exception ex)
-                {
-                    failure = ex;
-                }
-
-                // Exit (which writes settings) before the test is reported done, while the temporary root is active.
-                try
-                {
-                    tray?.ExitForTests();
-                }
-                catch (Exception ex)
-                {
-                    failure ??= ex;
-                }
-
-                loop.ExitThread();
-                if (failure is null)
-                    completion.TrySetResult();
-                else
-                    completion.TrySetException(failure);
-            }, null);
-            System.Windows.Forms.Application.Run(loop);
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.IsBackground = true;
-        _uiThread = thread;
-        thread.Start();
-        return completion.Task.WaitAsync(Timeout + Timeout);
-    }
 
     private static ToolStripMenuItem Item(TrayApplicationContext tray, string text) =>
         tray.TrayMenuForTests.Items.OfType<ToolStripMenuItem>().Single(i => i.Text == text);
@@ -250,11 +148,5 @@ public sealed class ShellTrayRoutingTests : IDisposable
                 throw new TimeoutException("Condition was not reached in time.");
             await Task.Delay(50);
         }
-    }
-
-    private sealed class FixedProbe(bool available) : IWebView2RuntimeProbe
-    {
-        public WebView2RuntimeAvailability Probe() =>
-            available ? new WebView2RuntimeProbe().Probe() : new WebView2RuntimeAvailability(false, null);
     }
 }

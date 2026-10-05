@@ -21,37 +21,14 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(45);
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "wasla-pb-webview-tests", Guid.NewGuid().ToString("N"));
-    private readonly IDisposable _rootScope;
+    // Anything the window still saves while closing lands here; the data root waits for the UI thread.
+    private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-webview-tests");
     private readonly CultureScope _cultureScope = new();
-    private Thread? _uiThread;
-
-    public ShellWebViewRuntimeTests()
-    {
-        Directory.CreateDirectory(_root);
-        _rootScope = PrintBridgePaths.UseRootForTests(_root);
-    }
 
     public void Dispose()
     {
-        // Anything the window still saves while closing must land in the temporary root, never in the real settings.
-        if (_uiThread is { } thread && !thread.Join(TimeSpan.FromMinutes(2)))
-            throw new InvalidOperationException("The WebView2 test UI thread did not finish; the test root is kept to protect the real settings.");
-
-        _rootScope.Dispose();
+        _dataRoot.Dispose();
         _cultureScope.Dispose();
-        for (var attempt = 0; attempt < 10 && Directory.Exists(_root); attempt++)
-        {
-            try
-            {
-                Directory.Delete(_root, recursive: true);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                // The WebView2 browser process releases its profile shortly after the window closes.
-                Thread.Sleep(300);
-            }
-        }
     }
 
     [Fact]
@@ -75,7 +52,7 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
             Assert.False(settings.AreDevToolsEnabled);
 #endif
             Assert.Equal(ShellNavigationPolicy.StartUri.AbsoluteUri, core.Source);
-            Assert.StartsWith(_root, ShellPaths.UserDataDirectory, StringComparison.OrdinalIgnoreCase);
+            Assert.StartsWith(_dataRoot.Path, ShellPaths.UserDataDirectory, StringComparison.OrdinalIgnoreCase);
             await Task.CompletedTask;
         });
 
@@ -517,6 +494,7 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
             var loop = new ApplicationContext();
             context.Post(async _ =>
             {
+                Exception? failure = null;
                 try
                 {
                     var culture = new PrintBridgeCultureService();
@@ -554,22 +532,25 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                     await WaitUntilAsync(() => Task.FromResult(form.BridgeForTests.SentSnapshotCount >= 1));
 
                     await body(form, core, source);
-                    completion.TrySetResult();
                 }
                 catch (Exception ex)
                 {
-                    completion.TrySetException(ex);
+                    failure = ex;
                 }
-                finally
-                {
-                    loop.ExitThread();
-                }
+
+                // The window is already disposed here, so whatever it writes while closing is saved before the test
+                // is reported done; the data root also waits for this thread.
+                loop.ExitThread();
+                if (failure is null)
+                    completion.TrySetResult();
+                else
+                    completion.TrySetException(failure);
             }, null);
             System.Windows.Forms.Application.Run(loop);
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.IsBackground = true;
-        _uiThread = thread;
+        _dataRoot.Track(thread);
         thread.Start();
 
         return completion.Task.WaitAsync(Timeout + Timeout);
