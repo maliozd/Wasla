@@ -13,7 +13,7 @@ Source of the commands below: `Wasla.sln`, `tests/Wasla.UnitTests`, `tests/Wasla
 | Unit and source-contract tests | `tests/Wasla.UnitTests` | Application, infrastructure, Web contracts, orders, auth, sync, signup |
 | Print Bridge tests | `tests/Wasla.PrintBridge.Tests` | Desktop client settings, polling, setup, the Core engine against a fake API (`PrintBridgeRuntimeEngineTests`), Gregorian operational dates (`PrintBridgeGregorianCalendarTests`), and the WebView2 app (`WebShell/`): message contract, host operations (single-flight, request-id idempotency, sanitized errors), history projection, printer persistence, security policy, accessibility markup and localization |
 | Print Bridge WebView2 runtime tests | `tests/Wasla.PrintBridge.Tests/WebShell/ShellWebViewRuntimeTests.cs` (trait `Category=WebView2Runtime`) | Real WebView2 control: applied settings, host-to-page rendering, blocked popups, navigation, remote requests, permissions and invalid messages, keyboard tabs in both reading directions, start/stop, single-flight test print, reprint confirmation, light/dark, minimum window and 200 % reflow, native-only connection setup. Skipped when no WebView2 Runtime is installed; needs an interactive Windows session |
-| Node tests | `tests/Wasla.UnitTests/**/*.test.js`, `tests/Wasla.PrintBridge.Tests/WebShell/*.test.js` | Live Screen coordinator, audio, notifications, signup business types, Print Bridge app message model and view helpers. Not compiled by the csproj |
+| Node tests | Every tracked `*.test.js` file, under `tests/Wasla.UnitTests/` and `tests/Wasla.PrintBridge.Tests/WebShell/` | Browser-side Web scripts and the Print Bridge app message model and view helpers. Not compiled by the csproj |
 | Browser smoke | Manual | Flows with no automated browser runner in this repo |
 
 CI (`.github/workflows/ci.yml`) builds `Wasla.sln` in Release on `windows-latest` and runs **only** `Wasla.UnitTests`. It does not run Print Bridge tests or Node tests.
@@ -26,26 +26,18 @@ From the repository root, with the .NET 8 SDK:
 dotnet build Wasla.sln
 dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj
 dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj
-node --test tests/Wasla.UnitTests/Orders/*.test.js tests/Wasla.UnitTests/Signup/*.test.js
-node --test tests/Wasla.PrintBridge.Tests/WebShell/shell-model.test.js
+node --test (git ls-files '*.test.js')
 ```
+
+In a POSIX shell, the last command is `node --test $(git ls-files '*.test.js')`.
 
 Print Bridge tests reference the shipped `Wasla.PrintBridge.Core` and `Wasla.PrintBridge` assemblies. Engine and WebView2 tests redirect every Print Bridge path to a temporary folder (`PrintBridgePaths.UseRootForTests`), so they never read or write `C:\ProgramData\Wasla\PrintBridge`, and they print only to a recording fake. To leave out the real-runtime tests, filter with `--filter "Category!=WebView2Runtime"`.
 
 Focused runs use `dotnet test <project> --filter <FullyQualifiedName>` (or a trait/name filter the runner accepts). Prefer a focused filter before the full project when the change is narrow.
 
-Node files present today:
+The Node command asks Git for every tracked `*.test.js` file, so a new test file is included as soon as it is committed or staged; there is no list to keep up to date. `git ls-files '*.test.js'` shows which files that is. `tests/Wasla.PrintBridge.Tests/WebShell/shell-model.test.js` shares `shell-snapshot.fixture.json` with the C# serializer test.
 
-- `tests/Wasla.UnitTests/Orders/live-screen-coordinator.test.js`
-- `tests/Wasla.UnitTests/Orders/live-screen-view-transition.test.js`
-- `tests/Wasla.UnitTests/Orders/live-screen-audio-permission.test.js`
-- `tests/Wasla.UnitTests/Orders/notification-audio-status-label.test.js`
-- `tests/Wasla.UnitTests/Orders/notification-preview-stop.test.js`
-- `tests/Wasla.UnitTests/Orders/notification-sound-preview.test.js`
-- `tests/Wasla.UnitTests/Signup/signup-business-types.test.js`
-- `tests/Wasla.PrintBridge.Tests/WebShell/shell-model.test.js` (shares `shell-snapshot.fixture.json` with the C# serializer test)
-
-Run the files that match the change. `node --test` on one file is a focused frontend check, not the whole suite.
+For a focused check, run the files that match the change, for example `node --test tests/Wasla.UnitTests/Signup/signup-business-types.test.js`. That is not the whole Node suite.
 
 ## What to run
 
@@ -84,7 +76,7 @@ Say which of these you actually ran:
 - Focused tests
 - Full `Wasla.UnitTests`
 - `Wasla.PrintBridge.Tests`
-- Node tests (name the files)
+- Node tests (all tracked files, or name the files you ran)
 - Browser smoke
 - `dotnet build`
 
