@@ -123,6 +123,28 @@ Choosing dark mode does not restyle the tenant shell: the body, cards and tables
 
 ---
 
+## Logo
+
+The approved Wasla logo is the orange (`#E87342`) lowercase "wasla" wordmark. It has no separate symbol.
+
+| File | Role |
+| --- | --- |
+| `docs/brand/wasla-logo-source.svg` | The approved master, unchanged: a 612 × 792 page with a white background. Not served. |
+| `src/Wasla.Web/wwwroot/images/brand/wasla-logo.svg` | The canonical production asset, derived from the master by two changes only: the `viewBox` is cropped to the wordmark (`213.9 255.4 184.3 68.1`, aspect ratio about 2.71) and the two white background rectangles are removed so it sits on any surface. The glyph paths, transforms and colour are byte-identical. |
+
+Rules:
+
+- Web renders the logo only through the `_WaslaLogo` partial (`WaslaLogoModel`: a placement class, and `Decorative` for an empty alt). Do not inline the SVG, embed it as Base64, redraw it in CSS or replace it with a font.
+- Set only the height (`.wasla-logo--sidebar`, `--admin-sidebar`, `--admin`, `--auth`, `--header`, `--status`, `--illustration`); the width follows the aspect ratio. The collapsed tenant rail shrinks the full logo to the rail width rather than widening the rail.
+- Alt text is `Brand.LogoAlt` ("Wasla"). Use `Decorative = true` where the logo is inside content already hidden from or named for assistive technology. Plain-text mentions of Wasla stay text.
+- One colour works on the light and dark surfaces in use (Central Admin dark mode, the Print Bridge app); there are no logo variants.
+- The Live Screen empty state shows the logo as a decorative CSS background of the same file.
+- Wasla Print Bridge ships the same file, linked from Wasla.Web at build time rather than copied; see [../integrations/print-bridge.md](../integrations/print-bridge.md).
+- `favicon.ico` is still the ASP.NET template icon. The wordmark is not legible at favicon size and has no symbol to extract, so a dedicated Wasla icon has to be designed separately.
+- Email templates show "Wasla" as text: SVG images are not reliably displayed by mail clients.
+
+---
+
 ## Typography
 
 - System / local font stacks. Do not add a font CDN.
@@ -157,3 +179,5 @@ Choosing dark mode does not restyle the tenant shell: the body, cards and tables
 | Foundation tokens | `src/Wasla.Web/wwwroot/css/wasla-foundation.css` |
 | Theme / components | `src/Wasla.Web/wwwroot/css/wasla-theme.css` |
 | RTL helpers | `src/Wasla.Web/wwwroot/css/rtl.css` |
+| Logo (canonical asset, partial) | `src/Wasla.Web/wwwroot/images/brand/wasla-logo.svg`, `Views/Shared/_WaslaLogo.cshtml` |
+| Logo master | `docs/brand/wasla-logo-source.svg` |

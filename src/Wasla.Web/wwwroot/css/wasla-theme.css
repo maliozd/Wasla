@@ -469,12 +469,6 @@ body.wasla-tenant.wasla-app .wasla-sidebar-brand-row {
   gap: 0.5rem;
 }
 
-body.wasla-tenant.wasla-app .wasla-sidebar-brand .brand-text {
-  font-size: 1.3125rem;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
 body.wasla-tenant.wasla-app .wasla-sidebar-tenant-name {
   margin-top: 0.3rem;
   font-size: 0.8125rem;
@@ -681,7 +675,6 @@ body.wasla-tenant.wasla-app .wasla-sidebar-user-label {
 }
 
 /* Collapsed sidebar */
-body.wasla-tenant.wasla-app.sidebar-collapsed .brand-text,
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-tenant-name,
 body.wasla-tenant.wasla-app.sidebar-collapsed .customer-text,
 body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-text,
@@ -698,10 +691,6 @@ body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand-area {
 
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand-row {
   justify-content: center;
-}
-
-body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand .brand-text {
-  display: none;
 }
 
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-btn {
@@ -2214,20 +2203,13 @@ body.wasla-orders-live-display.wasla-orders-view-kitchen .wasla-live-display-car
   border-radius: .75rem;
 }
 
+/* Decorative (aria-hidden) canonical logo; the aspect ratio matches the SVG viewBox. */
 .wasla-live-empty__mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 5.5rem;
-  height: 5.5rem;
+  width: 8rem;
+  max-width: 100%;
+  aspect-ratio: 184.3 / 68.1;
   margin: 0 0 1rem;
-  border-radius: 1.15rem;
-  background: var(--color-accent);
-  color: var(--color-accent-text, #fff);
-  font-size: 2.35rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: .02em;
+  background: url("../images/brand/wasla-logo.svg") center / contain no-repeat;
 }
 
 .wasla-live-empty__title {

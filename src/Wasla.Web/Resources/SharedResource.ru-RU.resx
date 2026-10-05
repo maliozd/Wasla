@@ -282,6 +282,9 @@
   <data name="Landing.Title" xml:space="preserve">
     <value>Wasla</value>
   </data>
+  <data name="Brand.LogoAlt" xml:space="preserve">
+    <value>Wasla</value>
+  </data>
   <data name="Landing.Subtitle" xml:space="preserve">
     <value>Мультиплатформенное управление заказами</value>
   </data>

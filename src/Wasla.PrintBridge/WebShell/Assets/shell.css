@@ -150,25 +150,28 @@ dd {
   margin-inline-end: auto;
 }
 
-.pb-brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
-  flex-shrink: 0;
-  border-radius: 0.45rem;
-  background: var(--wasla-accent);
-  color: var(--wasla-accent-text);
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
+/* Title: the canonical Wasla logo (wasla-logo.svg, the same file as Wasla Web) followed by the product name.
+   The heading's accessible name is the full app title, so the decorative logo is not announced twice. */
 .pb-title {
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: var(--wasla-space-2);
+  min-inline-size: 0;
   font-size: 1rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.pb-brand-logo {
+  display: block;
+  inline-size: auto;
+  block-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.pb-title-text {
+  overflow: hidden;
+  min-inline-size: 0;
   text-overflow: ellipsis;
 }
 
@@ -875,7 +878,8 @@ tr[data-status="skipped"] .pb-row-detail {
     --pb-gutter: var(--wasla-space-3);
   }
 
-  .pb-title {
+  /* The logo stays; the heading keeps the full app title as its accessible name. */
+  .pb-title-text {
     display: none;
   }
 

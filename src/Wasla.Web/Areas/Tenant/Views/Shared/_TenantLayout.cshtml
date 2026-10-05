@@ -108,8 +108,7 @@
                 <div class="wasla-sidebar-brand-area">
                     <div class="wasla-sidebar-brand-row">
                         <a class="wasla-sidebar-brand text-decoration-none min-w-0" href="@brandUrl">
-                            <span class="wasla-sidebar-brand-mark" aria-hidden="true">W</span>
-                            <span class="brand-text">Wasla</span>
+                            @await Html.PartialAsync("_WaslaLogo", new WaslaLogoModel { CssClass = "wasla-logo--sidebar" })
                         </a>
                         <button type="button" id="tenantSidebarToggle" class="wasla-sidebar-collapse-btn flex-shrink-0"
                                 data-title-collapse="@L["Layout.CollapseSidebar"]" data-title-expand="@L["Layout.ExpandSidebar"]"

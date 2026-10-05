@@ -1493,7 +1493,6 @@ function attachBrowser(O, global, api) {
     const mark = document.createElement("div");
     mark.className = "wasla-live-empty__mark";
     mark.setAttribute("aria-hidden", "true");
-    mark.textContent = "W";
     const title = document.createElement("h2");
     title.className = "wasla-live-empty__title";
     const description = document.createElement("p");

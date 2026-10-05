@@ -188,6 +188,24 @@ body {
   background: linear-gradient(180deg, rgba(255,107,53,.10), rgba(255,138,91,.06));
 }
 
+/* Canonical Wasla logo (images/brand/wasla-logo.svg via _WaslaLogo): fixed height, width follows the aspect ratio.
+   landing.css carries the same base rule for the public pages. */
+.wasla-logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 2rem;
+}
+
+.wasla-logo--admin {
+  height: 1.75rem;
+}
+
+.wasla-logo--auth {
+  height: 2.75rem;
+  margin-inline: auto;
+}
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem var(--color-surface, #fff), 0 0 0 0.25rem var(--color-input-focus-ring, rgba(255, 107, 53, 0.25));
 }

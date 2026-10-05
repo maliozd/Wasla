@@ -15,6 +15,7 @@ public sealed class ShellSnapshotFactory
     public static readonly IReadOnlyList<string> StringKeys =
     [
         "Common.AppTitle",
+        "Common.ProductShortName",
         "Common.Dash",
         "Settings.Language",
         "Shell.Nav.Label",

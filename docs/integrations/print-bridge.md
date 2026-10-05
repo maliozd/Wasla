@@ -155,7 +155,7 @@ The modern desktop UI. WAS-53 added the secure shell and a status view, WAS-54 t
 
 | Area | Contents |
 |------|----------|
-| Header | Product name, compact connection status (text and dot), language picker |
+| Header | Wasla logo and "Print Bridge" (the heading is named "Wasla Print Bridge"; below 36rem only the logo shows), compact connection status (text and dot), language picker |
 | Overview | Connection state with a localized explanation and the next step for every problem (connect, reconnect, choose printer, check connection, start, show diagnostics); test-mode notice; printer and its state; listening state and device name; last contact; latest print job; today's jobs, failures and last print time |
 | Printer | Installed Windows printers (listed by the host, refresh), save, printer state, test print, test-mode notice |
 | History | Today / last 7 days / last 30 days, order search, pages of 20 rows, status labels, failure category (printer, server or other), reprint of printed rows after an inline confirmation |
@@ -164,9 +164,18 @@ The modern desktop UI. WAS-53 added the secure shell and a status view, WAS-54 t
 
 Test print is single-flight and refused in test mode with the engine's localized message. Saving a printer accepts only a name the host listed from Windows, uses the classic window's validator and settings store, and replaces the options object, so a job that is already printing keeps the printer it was claimed for.
 
+### Logo
+
+Print Bridge shows the canonical Wasla logo owned by Wasla.Web (`src/Wasla.Web/wwwroot/images/brand/wasla-logo.svg`; see [../frontend/design-system.md](../frontend/design-system.md#logo)). The project links that file instead of keeping a copy, so both apps always ship the same bytes:
+
+- `shell-ui/wasla-logo.svg` (copied on build and publish) for the WebView2 page header. It is served from the shell origin, which the page's `img-src 'self'` allows.
+- An embedded resource for the native windows: `WaslaLogo` (`UI/WaslaLogo.cs`) fills the SVG's vector paths with GDI+, so it stays sharp at every DPI and keeps its aspect ratio. It is used in the classic window header (logo and "Print Bridge") and as the brand mark of the connection and confirmation dialogs. If the drawing surface is mirrored by a right-to-left layout, it flips back, so the wordmark is never shown back to front.
+
+`WaslaLogoTests` check that both shipped copies equal the Web asset, that the geometry and colour are read exactly, and the mirrored case. The tray icons (status dots drawn at runtime) and the executable have no Wasla logo; there is no dedicated icon artwork yet.
+
 ### Connection dialog
 
-The server URL and device token are entered in a host-owned native dialog (`ShellConnectionDialog`) drawn in the app's palette (light or dark from the Windows app theme, the same orange accent, rounded border-first controls, the brand mark) and owned by the app window, so it reads as part of the app and not as the classic window. The logic is in `ShellConnectionSetup`; it reuses `PrintBridgeSettingsValidator`, the setup-link paste guard, the API client and the settings store.
+The server URL and device token are entered in a host-owned native dialog (`ShellConnectionDialog`) drawn in the app's palette (light or dark from the Windows app theme, the same orange accent, rounded border-first controls, the Wasla logo) and owned by the app window, so it reads as part of the app and not as the classic window. The logic is in `ShellConnectionSetup`; it reuses `PrintBridgeSettingsValidator`, the setup-link paste guard, the API client and the settings store.
 
 - The title and introduction follow why it opens: **first setup** (no token), **reconnect** (the token was rejected or reset) or **change** (a token is saved). The address field is prefilled with the saved address (not the built-in `localhost` default); the token field always starts empty and masked.
 - **Show** reveals only what was typed in this dialog. The saved token is never loaded into it and cannot be shown again. In change mode an empty token keeps the saved one, which the dialog says without showing it.

@@ -43,11 +43,32 @@
   z-index: 1020;
 }
 
-.wasla-logo-mark {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, var(--wasla-landing-primary), #ff8a5b);
+/* Canonical Wasla logo (images/brand/wasla-logo.svg via _WaslaLogo): fixed height, width follows the aspect ratio.
+   site.css carries the same base rule for the tenant and admin pages. */
+.wasla-logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 2rem;
   flex-shrink: 0;
+}
+
+.wasla-logo--header {
+  height: 2.25rem;
+}
+
+.wasla-logo--auth {
+  height: 2.75rem;
+  margin-inline: auto;
+}
+
+.wasla-logo--status {
+  height: 2.25rem;
+  margin-inline: auto;
+}
+
+.wasla-logo--illustration {
+  height: 1.25rem;
 }
 
 /* Hero */

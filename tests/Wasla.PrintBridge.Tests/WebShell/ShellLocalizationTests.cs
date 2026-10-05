@@ -110,10 +110,10 @@ public sealed partial class ShellLocalizationTests
         var html = File.ReadAllText(Path.Combine(AssetsDirectory(), "index.html"));
         var body = html[html.IndexOf("<body>", StringComparison.Ordinal)..];
 
-        // Every text node in the body is empty: all visible text comes from host snapshots. The only literals
-        // are the brand mark letter and the toast close glyph, which has a localized accessible name.
+        // Every text node in the body is empty: all visible text comes from host snapshots. The only literal
+        // is the toast close glyph, which has a localized accessible name. The brand is the logo image.
         var visibleText = TextNodeRegex().Matches(body).Select(m => m.Groups[1].Value.Trim()).Where(t => t.Length > 0).ToArray();
-        Assert.Equal(["W", "×"], visibleText);
+        Assert.Equal(["×"], visibleText);
     }
 
     private static IEnumerable<KeyValuePair<string, string>> LoadKeys(string file)

@@ -104,32 +104,34 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand {
   min-width: 0;
 }
 
-body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.7rem;
-  height: 1.7rem;
+/* Canonical logo (images/brand/wasla-logo.svg): fixed height, width follows the aspect ratio. */
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-logo--sidebar {
+  display: block;
+  width: auto;
+  height: 2rem;
+  max-width: 100%;
   flex-shrink: 0;
-  border-radius: 0.45rem;
-  background: var(--wasla-accent);
-  color: var(--wasla-accent-text);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1;
 }
 
-body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand .brand-text {
-  color: var(--wasla-text) !important;
-  font-size: 1.2rem;
-  font-weight: 700;
+/* Brand block: the logo centred with the tenant name centred under it. The collapse toggle keeps its
+   place at the end of the logo row, taken out of the flow so it does not push the logo off centre. */
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-row {
+  position: relative;
+  justify-content: center;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-collapse-btn {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: 0;
+  transform: translateY(-50%);
 }
 
 body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-tenant-name {
-  margin-top: 0.45rem;
-  padding-inline-start: 0.1rem;
+  margin-top: 0.55rem;
+  text-align: center;
   color: var(--wasla-text-muted) !important;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
@@ -265,12 +267,27 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.ac
   border-inline-start: 0 !important;
 }
 
-body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-mark {
-  margin-inline: auto;
+/* Collapsed rail: the full logo shrinks to the rail width instead of widening the sidebar. */
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-area {
+  padding-inline: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand {
+  justify-content: center;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-logo--sidebar {
+  width: 100%;
+  height: auto;
 }
 
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-row {
   flex-direction: column;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-collapse-btn {
+  position: static;
+  transform: none;
 }
 
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-link.active,
@@ -292,7 +309,6 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-
   display: none;
 }
 
-body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .brand-text,
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-tenant-name,
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-text,
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-label,
@@ -408,9 +424,15 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
     font-weight: 650;
   }
 
+  /* Room for the close button at the end, mirrored at the start so the logo and name stay centred. */
   body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-area {
     position: relative;
-    padding-inline-end: 4.25rem;
+    padding-inline: 4.25rem;
+  }
+
+  /* The collapse toggle is hidden here; the close button is placed against the brand area, not the row. */
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-row {
+    position: static;
   }
 
   body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-close {
@@ -511,13 +533,19 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
 
   body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-row {
     flex-direction: row;
+    justify-content: center;
   }
 
-  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-mark {
-    margin-inline: 0;
+  /* The drawer is always full width: keep the expanded, centred brand block and the close button's room. */
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-area {
+    padding-inline: 4.25rem;
   }
 
-  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .brand-text,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-logo--sidebar {
+    width: auto;
+    height: 2rem;
+  }
+
   body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-tenant-name,
   body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-text,
   body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-label,

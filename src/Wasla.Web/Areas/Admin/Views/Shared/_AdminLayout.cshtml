@@ -52,14 +52,9 @@
     <div class="app-wrapper">
         <nav id="waslaAppHeader" class="app-header navbar navbar-expand border-bottom">
             <div class="container-fluid d-flex flex-wrap align-items-center gap-2">
-                <a class="navbar-brand text-decoration-none wasla-sidebar-brand mb-0 d-flex align-items-center gap-2" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
-                    <span class="wasla-logo-mark rounded-2 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;background:linear-gradient(135deg,#ff6b35,#ff8a5b);">
-                        <i class="bi bi-basket2-fill text-white small"></i>
-                    </span>
-                    <span>
-                        <span class="d-block fw-bold lh-sm">Wasla</span>
-                        <span class="d-block small text-muted fw-normal lh-sm">@L["Admin.BrandSubtitle"]</span>
-                    </span>
+                @* The brand lives in the sidebar. Below lg the sidebar is off-canvas, so the logo stays here only then. *@
+                <a class="wasla-admin-header-brand d-lg-none text-decoration-none" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                    @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--admin" })
                 </a>
                 <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
                     <div class="dropdown">
@@ -97,6 +92,12 @@
         </nav>
 
         <aside class="app-sidebar" role="navigation" aria-label="Admin">
+            <div class="wasla-admin-sidebar-brand">
+                <a class="wasla-admin-sidebar-brand__link text-decoration-none" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                    @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--admin-sidebar" })
+                    <span class="wasla-admin-sidebar-brand__label text-muted">@L["Admin.BrandSubtitle"]</span>
+                </a>
+            </div>
             <nav class="sidebar-menu p-3">
                 <ul class="nav flex-column">
                     <li class="nav-item">

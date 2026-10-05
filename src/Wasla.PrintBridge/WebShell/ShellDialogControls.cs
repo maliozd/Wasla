@@ -1,4 +1,5 @@
 using System.Drawing.Drawing2D;
+using Wasla.PrintBridge.UI;
 
 namespace Wasla.PrintBridge.WebShell;
 
@@ -231,18 +232,6 @@ internal static class ShellDialogPaint
         return path;
     }
 
-    /// <summary>The app's brand mark: the letter W on the accent colour, as in the page header.</summary>
-    public static Label BrandMark(ShellPalette palette) => new()
-    {
-        Text = "W",
-        AutoSize = false,
-        Size = new Size(28, 28),
-        TextAlign = ContentAlignment.MiddleCenter,
-        BackColor = palette.Accent,
-        ForeColor = palette.AccentText,
-        Font = ShellWindowTheme.StrongFont(10F),
-        Margin = new Padding(0, 0, 10, 0),
-        AccessibleRole = AccessibleRole.Graphic,
-        AccessibleName = "Wasla"
-    };
+    /// <summary>The app's brand mark: the canonical Wasla logo, as in the page header.</summary>
+    public static WaslaLogo BrandMark() => new(24) { Margin = new Padding(0, 0, 10, 0) };
 }

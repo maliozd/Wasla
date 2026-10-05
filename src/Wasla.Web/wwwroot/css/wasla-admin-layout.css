@@ -12,6 +12,9 @@
  *    Below the lg breakpoint AdminLTE hides the fixed sidebar with a negative margin-left. In RTL the sidebar sits
  *    at the right edge, so that margin does not move it out of view and it covered the content. RTL uses the
  *    matching right margin instead. LTR is unchanged.
+ *
+ * 3. Brand block at the top of the sidebar: the Wasla logo with "Central Management" under it, centred.
+ *    The top bar keeps only its controls; below lg, where the sidebar is off-canvas, it shows the logo instead.
  */
 
 .live-region:not(.live-region-visible) {
@@ -58,4 +61,27 @@ nav[role=navigation]:not([aria-label]):not([aria-labelledby])::before {
     [dir="rtl"] .sidebar-expand-lg.sidebar-open .app-sidebar {
         margin-right: 0;
     }
+}
+
+.wasla-admin-sidebar-brand {
+    padding: 1.25rem 1rem 1rem;
+    border-bottom: 1px solid var(--wasla-border);
+}
+
+.wasla-admin-sidebar-brand__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    text-align: center;
+}
+
+.wasla-logo--admin-sidebar {
+    height: 2rem;
+}
+
+.wasla-admin-sidebar-brand__label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.3;
 }

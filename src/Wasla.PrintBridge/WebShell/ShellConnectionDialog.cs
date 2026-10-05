@@ -78,11 +78,13 @@ internal sealed class ShellConnectionDialog : Form
             WrapContents = false,
             Margin = new Padding(0, 0, 0, 10)
         };
-        header.Controls.Add(ShellDialogPaint.BrandMark(_palette));
+        var brandMark = ShellDialogPaint.BrandMark();
+        header.Controls.Add(brandMark);
         header.Controls.Add(new Label
         {
             Text = _localizer[TitleKey(_mode)],
             AutoSize = true,
+            MaximumSize = new Size(ContentWidth - brandMark.Width - brandMark.Margin.Horizontal, 0),
             Font = ShellWindowTheme.StrongFont(13F),
             ForeColor = _palette.Text,
             Margin = new Padding(0, 2, 0, 0)

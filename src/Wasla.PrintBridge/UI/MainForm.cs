@@ -204,7 +204,7 @@ public sealed partial class MainForm : Form
         _historyTab.Text = _localizer["Tab.PrintHistory"];
         _settingsTab.Text = _localizer["Tab.Settings"];
 
-        _titleLabel.Text = _localizer["Common.AppTitle"];
+        _titleLabel.Text = _localizer["Common.ProductShortName"];
         _subtitleLabel.Text = _localizer["Common.Subtitle"];
 
         _lastPrintTitle.Text = _localizer["Dashboard.LastPrint"];
@@ -362,9 +362,7 @@ public sealed partial class MainForm : Form
         {
             Font = PrintBridgeUiTheme.TitleFont,
             ForeColor = PrintBridgeUiTheme.TextTitle,
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, 0, 1)
+            AutoSize = true
         };
         _subtitleLabel = new Label
         {
@@ -384,7 +382,18 @@ public sealed partial class MainForm : Form
             Dock = DockStyle.Left,
             Margin = new Padding(0, 0, 0, 0)
         };
-        header.Controls.Add(_titleLabel, 0, 0);
+        // Title: the canonical Wasla logo followed by the product name (the window title keeps the full app title).
+        var titleRow = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            WrapContents = false,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 0, 1)
+        };
+        _titleLabel.Margin = new Padding(0, 2, 0, 0);
+        titleRow.Controls.Add(new WaslaLogo(26) { Margin = new Padding(0, 0, 8, 0) });
+        titleRow.Controls.Add(_titleLabel);
+        header.Controls.Add(titleRow, 0, 0);
         header.Controls.Add(_subtitleLabel, 0, 1);
         header.Controls.Add(_headerBadge, 0, 2);
         root.Controls.Add(header, 0, 0);

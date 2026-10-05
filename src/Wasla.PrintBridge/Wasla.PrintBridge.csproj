@@ -60,4 +60,14 @@
 		</None>
 	</ItemGroup>
 
+	<!-- The canonical Wasla logo is owned by Wasla.Web and linked here, not copied, so both apps ship the same file:
+	     shell-ui/wasla-logo.svg for the WebView2 page, and an embedded copy for the native windows (WaslaLogo). -->
+	<ItemGroup>
+		<None Include="..\Wasla.Web\wwwroot\images\brand\wasla-logo.svg" Link="shell-ui\wasla-logo.svg">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</None>
+		<EmbeddedResource Include="..\Wasla.Web\wwwroot\images\brand\wasla-logo.svg" Link="Brand\wasla-logo.svg" LogicalName="Wasla.PrintBridge.Brand.wasla-logo.svg" />
+	</ItemGroup>
+
 </Project>

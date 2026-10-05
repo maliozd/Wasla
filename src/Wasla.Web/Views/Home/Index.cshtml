@@ -29,15 +29,7 @@
 <body class="wasla-landing">
 <header class="wasla-landing-header border-bottom">
     <div class="container py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="d-flex align-items-center gap-2">
-            <div class="wasla-logo-mark rounded-3 d-flex align-items-center justify-content-center" aria-hidden="true">
-                <i class="bi bi-basket2-fill text-white"></i>
-            </div>
-            <div>
-                <div class="fw-bold text-dark">@L["Landing.Title"]</div>
-                <div class="small text-muted">@L["Landing.Subtitle"]</div>
-            </div>
-        </div>
+        @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--header" })
         <div class="d-flex flex-wrap align-items-center gap-2">
             <div class="dropdown">
                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" type="button" aria-label="@L["Common.Language"]">
@@ -86,7 +78,7 @@
                 <div class="col-lg-6">
                     <div class="wasla-hero-illu rounded-4 border bg-white p-3 p-md-4 shadow" aria-hidden="true">
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                            <span class="fw-semibold text-dark">Wasla</span>
+                            @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--illustration", Decorative = true })
                             <span class="badge rounded-pill wasla-badge-live">@L["Landing.Live"]</span>
                         </div>
                         <div class="wasla-illu-board">

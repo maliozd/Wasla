@@ -44,12 +44,13 @@ internal sealed class ShellConfirmDialog : Form
         };
 
         var header = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 10) };
-        header.Controls.Add(ShellDialogPaint.BrandMark(palette));
+        var brandMark = ShellDialogPaint.BrandMark();
+        header.Controls.Add(brandMark);
         header.Controls.Add(new Label
         {
             Text = title,
             AutoSize = true,
-            MaximumSize = new Size(ContentWidth - 40, 0),
+            MaximumSize = new Size(ContentWidth - brandMark.Width - brandMark.Margin.Horizontal, 0),
             Font = ShellWindowTheme.StrongFont(13F),
             ForeColor = palette.Text,
             Margin = new Padding(0, 2, 0, 0)
