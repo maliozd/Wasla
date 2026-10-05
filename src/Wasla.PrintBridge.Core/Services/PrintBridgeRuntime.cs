@@ -179,15 +179,114 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     public async Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> ValidateConnectionAsync(CancellationToken ct)
     {
         var health = await _client.TestHealthAsync(ct).ConfigureAwait(false);
-        _deviceMetadataSync.ApplyFromHealth(health);
-        lock (_sync)
+        RecordVerifiedContact(health);
+        return health;
+    }
+
+    /// <summary>
+    /// Checks a server URL and device token that are not saved yet. Neither the settings nor the engine state
+    /// change, so a rejected candidate never clears the saved token or marks the saved connection as failed.
+    /// </summary>
+    public Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> CheckConnectionAsync(WaslaOptions candidate, CancellationToken ct) =>
+        _client.TestHealthAsync(candidate, ct);
+
+    /// <summary>
+    /// Makes a connection verified with <see cref="CheckConnectionAsync"/> the saved one. Listening stops while the
+    /// settings change. The settings file is written before the in-memory settings are replaced, so a failed write
+    /// changes nothing. A token change clears the server-assigned device name, and the verified contact is recorded so
+    /// the status is connected at once. Listening resumes when it was running before, or when
+    /// <paramref name="startListening"/> asks for it and printing is ready. Once <paramref name="abandon"/> is cancelled
+    /// (the app is closing) nothing is written and listening is not restarted.
+    /// </summary>
+    public async Task<PrintBridgeConnectionChange> ApplyVerifiedConnectionAsync(
+        WaslaOptions verified,
+        WaslaPrintBridgeClient.PrintBridgeHealthResult health,
+        bool startListening,
+        CancellationToken abandon)
+    {
+        var wasRunning = IsRunning;
+        if (wasRunning)
+            await StopAsync().ConfigureAwait(false);
+
+        if (abandon.IsCancellationRequested)
+            return PrintBridgeConnectionChange.Abandoned;
+
+        var (hub, bridge, ui) = _holder.Snapshot();
+        var connection = new WaslaOptions
         {
-            _lastSuccessfulContactUtc = DateTime.UtcNow;
-            _lastIssue = null;
+            ServerUrl = verified.ServerUrl,
+            AgentToken = verified.AgentToken
+        };
+        var updatedBridge = bridge.Clone();
+        var tokenChanged = !string.Equals(hub.AgentToken?.Trim(), connection.AgentToken, StringComparison.Ordinal);
+        if (tokenChanged)
+        {
+            updatedBridge.DisplayName = string.Empty;
+            updatedBridge.ServerDeviceNameResolved = false;
         }
 
-        RaiseStatusChanged();
-        return health;
+        try
+        {
+            _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
+            {
+                OrderHub = connection,
+                PrintBridge = updatedBridge,
+                Ui = ui
+            });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Print Bridge connection settings could not be saved; the previous connection is kept.");
+            if (wasRunning)
+                TryStartListening();
+            return PrintBridgeConnectionChange.SaveFailed;
+        }
+
+        _holder.Replace(connection, updatedBridge, ui);
+        _logger.LogInformation("Print Bridge connection settings saved after verification. TokenChanged={TokenChanged}", tokenChanged);
+        RecordVerifiedContact(health);
+
+        if ((wasRunning || startListening) && !abandon.IsCancellationRequested)
+            TryStartListening();
+
+        return IsRunning
+            ? PrintBridgeConnectionChange.AppliedListening
+            : PrintBridgeConnectionChange.AppliedNotListening;
+    }
+
+    /// <summary>
+    /// For settings saved outside the engine (automatic setup from a setup link): verifies the saved connection,
+    /// records a failure so the status shows it, and resumes listening when the connection is usable.
+    /// Returns whether the connection was verified.
+    /// </summary>
+    public async Task<bool> VerifyAndResumeAsync(CancellationToken ct)
+    {
+        try
+        {
+            await ValidateConnectionAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Print Bridge connection verification after setup failed.");
+            RecordConnectionFailure(ex);
+            return false;
+        }
+
+        if (PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(GetStatus()))
+        {
+            try
+            {
+                if (!IsRunning)
+                    Start();
+            }
+            catch (Exception ex)
+            {
+                RecordConnectionFailure(ex);
+                _logger.LogWarning(ex, "Print Bridge polling could not be started after setup.");
+            }
+        }
+
+        return true;
     }
 
     public void RecordConnectionFailure(Exception ex, bool applyCredentialFailureFallback = true)
@@ -589,6 +688,31 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     private static DateTime ToLocalDate(DateTime utc) => utc.ToLocalTime().Date;
 
     private void RaiseStatusChanged() => StatusChanged?.Invoke(this, EventArgs.Empty);
+
+    private void RecordVerifiedContact(WaslaPrintBridgeClient.PrintBridgeHealthResult health)
+    {
+        _deviceMetadataSync.ApplyFromHealth(health);
+        lock (_sync)
+        {
+            _lastSuccessfulContactUtc = DateTime.UtcNow;
+            _lastIssue = null;
+        }
+
+        RaiseStatusChanged();
+    }
+
+    /// <summary>Starts listening when printing is ready; a missing or unavailable printer only leaves it stopped.</summary>
+    private void TryStartListening()
+    {
+        try
+        {
+            Start();
+        }
+        catch (LocalizedApplicationException ex)
+        {
+            _logger.LogInformation("Print Bridge listening was not started. Reason={Reason}", ex.ResourceKey);
+        }
+    }
 
     private PrintBridgeRuntimeIssue ApplyFailure(Exception ex, bool applyCredentialFailureFallback)
     {

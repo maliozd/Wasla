@@ -23,10 +23,12 @@ public sealed class UiOptions
     public string? WindowState { get; set; }
 
     /// <summary>
-    /// Desktop shell used for the main status window: unset or <c>WinForms</c> keeps the classic window;
-    /// <c>WebView2</c> opts in to the WebView2 status shell, which is incomplete until WAS-54. Not written
-    /// to settings unless it was set, so existing configurations are saved unchanged.
+    /// Desktop UI: unset or <c>WinForms</c> keeps the classic window; <c>WebView2</c> opts in to the WebView2
+    /// app. Not written to settings unless it was set, so existing configurations are saved unchanged.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Shell { get; set; }
+
+    /// <summary>A separate copy to change and then publish; every property is a value.</summary>
+    public UiOptions Clone() => (UiOptions)MemberwiseClone();
 }

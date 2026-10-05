@@ -983,21 +983,8 @@ public sealed partial class MainForm : Form
         {
             LoadSettingsIntoForm();
 
-            var connected = false;
-            try
-            {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                await _runtime.ValidateConnectionAsync(cts.Token).ConfigureAwait(true);
-                connected = true;
-            }
-            catch (Exception ex)
-            {
-                _settingsLogger?.LogWarning(ex, "Automatic setup connection verification failed.");
-                _runtime.RecordConnectionFailure(ex);
-            }
-
-            if (connected && PrintBridgeRuntimeStatus.ShouldReportConnectionSuccess(_runtime.GetStatus()))
-                TryStartPolling();
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            await _runtime.VerifyAndResumeAsync(cts.Token).ConfigureAwait(true);
 
             RefreshDashboard();
             RefreshRecentJobsFromRuntime();

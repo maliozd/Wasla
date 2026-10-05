@@ -199,6 +199,61 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
         return Task.CompletedTask;
     }
 
+    private int _checkConnectionCalls;
+    private int _applyConnectionCalls;
+
+    public int CheckConnectionCalls => Volatile.Read(ref _checkConnectionCalls);
+    public int ApplyConnectionCalls => Volatile.Read(ref _applyConnectionCalls);
+
+    /// <summary>Server URL and token of every candidate the setup asked the fake server to check.</summary>
+    public List<(string ServerUrl, string Token)> CheckedConnections { get; } = [];
+
+    public Exception? CheckConnectionFailure { get; set; }
+
+    /// <summary>When set, the candidate check waits for this gate (or the caller's cancellation).</summary>
+    public TaskCompletionSource? CheckConnectionGate { get; set; }
+
+    /// <summary>When set, applying waits for this gate, like a Stop that waits for a print job.</summary>
+    public TaskCompletionSource? ApplyGate { get; set; }
+
+    public PrintBridgeConnectionChange ApplyResult { get; set; } = PrintBridgeConnectionChange.AppliedListening;
+
+    public (string ServerUrl, string Token, bool StartListening)? AppliedConnection { get; private set; }
+
+    /// <summary>Runs after a successful apply, like the real engine recording the verified contact.</summary>
+    public Action? OnApplied { get; set; }
+
+    public async Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> CheckConnectionAsync(
+        Wasla.PrintBridge.Options.WaslaOptions candidate,
+        CancellationToken ct)
+    {
+        Interlocked.Increment(ref _checkConnectionCalls);
+        lock (CheckedConnections)
+            CheckedConnections.Add((candidate.ServerUrl, candidate.AgentToken));
+        if (CheckConnectionGate is { } gate)
+            await gate.Task.WaitAsync(ct);
+        if (CheckConnectionFailure is not null)
+            throw CheckConnectionFailure;
+        return new WaslaPrintBridgeClient.PrintBridgeHealthResult("QA", "Kasa 1", DateTime.UtcNow);
+    }
+
+    public async Task<PrintBridgeConnectionChange> ApplyVerifiedConnectionAsync(
+        Wasla.PrintBridge.Options.WaslaOptions verified,
+        WaslaPrintBridgeClient.PrintBridgeHealthResult health,
+        bool startListening,
+        CancellationToken abandon)
+    {
+        Interlocked.Increment(ref _applyConnectionCalls);
+        if (ApplyGate is { } gate)
+            await gate.Task;
+        if (abandon.IsCancellationRequested)
+            return PrintBridgeConnectionChange.Abandoned;
+        AppliedConnection = (verified.ServerUrl, verified.AgentToken, startListening);
+        if (ApplyResult is PrintBridgeConnectionChange.AppliedListening or PrintBridgeConnectionChange.AppliedNotListening)
+            OnApplied?.Invoke();
+        return ApplyResult;
+    }
+
     public async Task TestPrinterAsync(CancellationToken ct)
     {
         Interlocked.Increment(ref _testPrintCalls);
