@@ -22,8 +22,8 @@ internal enum TrayExit
 /// <summary>
 /// The real tray application (services, engine, classic window, WebView2 window) on its own STA message-loop thread,
 /// with a private data root that tracks the thread, so teardown waits for the application to exit before the root is
-/// released. The tray icon is hidden and both windows open off-screen. No device token is configured, so nothing
-/// contacts a server.
+/// released. The tray icon is hidden and both windows open off-screen. No device token is configured unless a test
+/// points the engine at a local fake server with a fake token, so by default nothing contacts a server.
 /// </summary>
 internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
 {
@@ -37,7 +37,8 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
         bool available,
         Func<TrayApplicationContext, PrintBridgeLocalizer, Task> body,
         bool failShellStartup = false,
-        TrayExit exit = TrayExit.BeforeTheTestEnds)
+        TrayExit exit = TrayExit.BeforeTheTestEnds,
+        Action<PrintBridgeSettingsStore.AppSettingsDocument>? configure = null)
     {
         if (available && !new WebView2RuntimeProbe().Probe().IsAvailable)
             Assert.Skip("No usable WebView2 Runtime is installed on this machine.");
@@ -51,6 +52,8 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
         // The classic window restores its saved position; keep it off-screen.
         document.Ui.WindowLeft = -32000;
         document.Ui.WindowTop = -32000;
+        // A test that needs a listening engine points it at a local fake server with a fake token here.
+        configure?.Invoke(document);
         store.Save(document);
 
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -98,7 +101,9 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                 // Exiting writes settings; normally it finishes before the test is reported done.
                 try
                 {
-                    tray?.ExitForTests();
+                    // Exit is queued on this thread and awaited, as from the tray menu; every request joins one shutdown.
+                    if (tray is not null)
+                        await tray.ExitForTests().WaitAsync(Timeout);
                 }
                 catch (Exception ex)
                 {

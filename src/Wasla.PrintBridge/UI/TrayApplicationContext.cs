@@ -65,6 +65,24 @@ public sealed class TrayApplicationContext : ApplicationContext
     /// <summary>Cancelled on Exit, so a connection change still in progress is abandoned instead of half-applied.</summary>
     private readonly CancellationTokenSource _lifetime = new();
 
+    /// <summary>The UI thread's context; tray updates raised on engine threads are queued here.</summary>
+    private readonly SynchronizationContext _uiContext;
+
+    private readonly int _uiThreadId;
+
+    private readonly ILogger _logger;
+
+    /// <summary>
+    /// 0 while running, 1 from the first Exit request on (WAS-59). Set once, atomically, before anything is disposed;
+    /// every entry point checks it, so nothing new starts once the application is shutting down.
+    /// </summary>
+    private int _shutdownRequested;
+
+    /// <summary>Completes when the one shutdown sequence has finished. Every Exit request returns it.</summary>
+    private readonly TaskCompletionSource _shutdownCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    private readonly List<string> _shutdownSteps = [];
+
     private PrintBridgeShellForm? _shellForm;
 
     private bool _shellFailedThisSession;
@@ -104,6 +122,14 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _mainForm.FormClosing += OnMainFormClosing;
 
+        // Creating the window installed the Windows Forms context on this thread, the UI thread.
+        _uiContext = SynchronizationContext.Current
+            ?? throw new InvalidOperationException("The tray application must be created on the UI thread.");
+
+        _uiThreadId = Environment.CurrentManagedThreadId;
+
+        _logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Tray");
+
 
 
         _connectionMenuItem = new ToolStripMenuItem { Enabled = false };
@@ -116,7 +142,7 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _settingsMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ShowSettings());
 
-        _exitMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ExitApplication());
+        _exitMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => _ = ExitAsync());
 
         // Emergency fallback while the WebView2 app is the normal window; hidden when the classic window is the default.
         _classicFallbackMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ShowMainWindow());
@@ -171,9 +197,9 @@ public sealed class TrayApplicationContext : ApplicationContext
 
 
 
-        _runtime.StatusChanged += (_, _) => UpdateTrayMenu();
+        _runtime.StatusChanged += OnRuntimeStatusChanged;
 
-        _cultureService.CultureChanged += (_, _) => UpdateTrayMenu();
+        _cultureService.CultureChanged += OnCultureChanged;
 
         ApplyTrayLocalization();
 
@@ -245,6 +271,9 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     {
 
+        if (IsShuttingDown)
+            return;
+
         // The WebView2 app may have changed settings while this window was hidden.
         if (!_mainForm.Visible)
             _mainForm.ReloadSettings();
@@ -273,6 +302,9 @@ public sealed class TrayApplicationContext : ApplicationContext
     /// </summary>
     private void ShowAppWindow(string? tab, Action? classicTab)
     {
+        if (IsShuttingDown)
+            return;
+
         if (TryShowShell(tab, classicTab))
             return;
 
@@ -348,6 +380,9 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private void OnShellUnavailable(object? sender, EventArgs e)
     {
+        if (IsShuttingDown)
+            return;
+
         _shellFailedThisSession = true;
         if (sender is PrintBridgeShellForm failed)
         {
@@ -415,6 +450,9 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     {
 
+        if (IsShuttingDown)
+            return;
+
         try
 
         {
@@ -455,52 +493,56 @@ public sealed class TrayApplicationContext : ApplicationContext
 
 
 
+    private void OnRuntimeStatusChanged(object? sender, EventArgs e) => UpdateTrayMenu();
+
+    private void OnCultureChanged(object? sender, EventArgs e) => UpdateTrayMenu();
+
+    /// <summary>
+    /// Brings the tray icon, tooltip and menu up to date. Raised on engine threads too, so the update always runs on the
+    /// UI thread (never on the caller's), and only while the application is not shutting down.
+    /// </summary>
     private void UpdateTrayMenu()
-
     {
+        if (IsShuttingDown)
+            return;
 
-        void Apply()
-
+        if (Environment.CurrentManagedThreadId == _uiThreadId)
         {
-
-            ApplyTrayLocalization();
-
-
-
-            var status = _runtime.GetStatus();
-
-            _connectionMenuItem.Text = _localizer.GetTrayConnectionLabel(status);
-
-            _trayIcon.Text = _localizer.GetTrayTooltip(
-
-                status.TrayIconState,
-
-                PrintBridgePaths.ProductDisplayName);
-
-
-
-            var nextIcon = TrayIconFactory.Create(status.TrayIconState);
-
-            var previousIcon = _trayIcon.Icon;
-
-            _trayIcon.Icon = nextIcon;
-
-            if (previousIcon is not null)
-
-                previousIcon.Dispose();
-
+            ApplyTrayStatus();
+            return;
         }
 
+        try
+        {
+            _uiContext.Post(_ => ApplyTrayStatus(), null);
+        }
+        catch (InvalidOperationException) when (IsShuttingDown)
+        {
+            // The UI thread ended between the check and the call; there is no tray left to update.
+        }
+    }
 
+    private void ApplyTrayStatus()
+    {
+        // Queued before shutdown began and delivered after it: the tray may already be gone.
+        if (IsShuttingDown)
+        {
+            TrayUpdateIgnoredForTests?.Invoke();
+            return;
+        }
 
-        if (_mainForm.IsHandleCreated && _mainForm.InvokeRequired)
+        ApplyTrayLocalization();
 
-            _mainForm.BeginInvoke(Apply);
+        var status = _runtime.GetStatus();
+        _connectionMenuItem.Text = _localizer.GetTrayConnectionLabel(status);
+        _trayIcon.Text = _localizer.GetTrayTooltip(
+            status.TrayIconState,
+            PrintBridgePaths.ProductDisplayName);
 
-        else
-
-            Apply();
-
+        var nextIcon = TrayIconFactory.Create(status.TrayIconState);
+        var previousIcon = _trayIcon.Icon;
+        _trayIcon.Icon = nextIcon;
+        previousIcon?.Dispose();
     }
 
 
@@ -536,6 +578,10 @@ public sealed class TrayApplicationContext : ApplicationContext
     /// </summary>
     public void HandleSetupUri(string uri)
     {
+        // A link forwarded while the application is exiting is dropped; it can be opened again after a restart.
+        if (IsShuttingDown)
+            return;
+
         void Dispatch() => _ = RunAutoSetupAsync(uri);
 
         if (_mainForm.IsHandleCreated && _mainForm.InvokeRequired)
@@ -546,7 +592,8 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private async Task RunAutoSetupAsync(string uri)
     {
-        if (Interlocked.Exchange(ref _autoSetupRunning, 1) == 1)
+        // Checked again here: a link queued to the UI thread before Exit may arrive after it.
+        if (IsShuttingDown || Interlocked.Exchange(ref _autoSetupRunning, 1) == 1)
             return;
 
         // With the WebView2 app, a setup link is handled in its window and the result is shown there; the classic
@@ -566,6 +613,8 @@ public sealed class TrayApplicationContext : ApplicationContext
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
             cts.CancelAfter(TimeSpan.FromSeconds(60));
             var outcome = await _autoSetup.ApplyAsync(request!, cts.Token).ConfigureAwait(true);
+            if (IsShuttingDown)
+                return;
 
             var result = DescribeAutoSetupOutcome(outcome);
 
@@ -588,7 +637,7 @@ public sealed class TrayApplicationContext : ApplicationContext
                 return;
             }
 
-            if (result.Saved)
+            if (result.Saved && !IsShuttingDown)
             {
                 // Same recovery as the classic window: verify the saved connection and resume listening.
                 using var verify = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
@@ -682,33 +731,141 @@ public sealed class TrayApplicationContext : ApplicationContext
     /// <summary>For tests: the resource key of the fallback notice, once one was raised this session.</summary>
     internal string? FallbackNoticeForTests { get; private set; }
 
-    internal void ExitForTests() => ExitApplication();
+    internal Task ExitForTests() => ExitAsync();
 
-    private void ExitApplication()
+    internal PrintBridgeRuntime RuntimeForTests => _runtime;
 
+    /// <summary>For tests: the shutdown steps in the order they ran.</summary>
+    internal IReadOnlyList<string> ShutdownStepsForTests
     {
+        get
+        {
+            lock (_shutdownSteps)
+                return [.. _shutdownSteps];
+        }
+    }
 
-        // First, so a connection change or setup link still running stops before it writes anything.
-        _lifetime.Cancel();
+    /// <summary>For tests: raised when a tray update queued before shutdown is delivered after it began.</summary>
+    internal Action? TrayUpdateIgnoredForTests { get; set; }
 
-        _trayIcon.Visible = false;
+    private bool IsShuttingDown => Volatile.Read(ref _shutdownRequested) != 0;
 
-        _trayIcon.Icon?.Dispose();
+    /// <summary>
+    /// Exits the application (tray Exit). The first request enters the shutting-down state at once, so no window,
+    /// setup link, tray update or printer test starts from then on, and queues the one shutdown sequence on the UI
+    /// thread. Queued rather than run inside the caller (for example the Exit item's own click), so nothing the sequence
+    /// disposes is still in use further up the stack. Every later or concurrent request, from any thread, returns the
+    /// same task.
+    /// </summary>
+    internal Task ExitAsync()
+    {
+        if (Interlocked.CompareExchange(ref _shutdownRequested, 1, 0) != 0)
+            return _shutdownCompleted.Task;
 
-        _trayIcon.Dispose();
+        _logger.LogInformation("Print Bridge exit requested.");
+        _uiContext.Post(_ => _ = RunShutdownAsync(), null);
+        return _shutdownCompleted.Task;
+    }
 
+    private async Task RunShutdownAsync()
+    {
+        try
+        {
+            await ShutdownAsync().ConfigureAwait(true);
+            _shutdownCompleted.TrySetResult();
+        }
+        catch (Exception ex)
+        {
+            // Not expected: the steps are ordered so that none meets a disposed component. The failure is logged and
+            // reported to whoever waits for the exit; the application still exits (see ShutdownAsync).
+            _logger.LogError(ex, "Print Bridge shutdown did not complete cleanly.");
+            _shutdownCompleted.TrySetException(ex);
+        }
+    }
+
+    /// <summary>
+    /// The one shutdown sequence (WAS-59), on the UI thread. Engine first, then what shows the engine, then the services:
+    /// <list type="number">
+    /// <item>Nothing new starts: a connection change or setup link still running is abandoned before it writes anything,
+    /// the tray and the classic window stop following the engine, and the icon and windows disappear at once. A tray
+    /// update queued earlier finds the shutting-down state and does nothing.</item>
+    /// <item>The engine stops, awaited so the UI thread is never blocked. A claimed job is not cancelled: Stop waits for it
+    /// up to its limit (<see cref="PrintBridgeRuntime.StopAsync"/>, WAS-56); a job that takes longer finishes in the
+    /// background only while the process still runs.</item>
+    /// <item>The app window (WebView2), the classic window and the tray icon are disposed; nothing raises events for them
+    /// any more.</item>
+    /// <item>The services are disposed and the message loop ends, so the process exits.</item>
+    /// </list>
+    /// </summary>
+    private async Task ShutdownAsync()
+    {
+        RecordShutdownStep("shutdown-started");
+        try
+        {
+            _lifetime.Cancel();
+            _runtime.StatusChanged -= OnRuntimeStatusChanged;
+            _cultureService.CultureChanged -= OnCultureChanged;
+            _mainForm.DetachFromEngine();
+            _trayIcon.Visible = false;
+            _shellForm?.Hide();
+            _mainForm.Hide();
+
+            await _runtime.StopAsync().ConfigureAwait(true);
+            RecordShutdownStep("runtime-stopped");
+
+            DisposeShellWindow();
+            DisposeClassicWindow();
+            DisposeTrayIcon();
+
+            // An operation that was already running when Exit began could have started listening again meanwhile; with
+            // every window gone nothing can any more. Normally this returns at once.
+            await _runtime.StopAsync().ConfigureAwait(true);
+
+            _logger.LogInformation("Print Bridge shutdown complete; the application exits.");
+            _services.Dispose();
+            RecordShutdownStep("services-disposed");
+        }
+        finally
+        {
+            // Always, so the process ends even if a step above failed.
+            ExitThread();
+            RecordShutdownStep("thread-exited");
+        }
+    }
+
+    private void DisposeShellWindow()
+    {
+        if (_shellForm is not { } shell)
+            return;
+
+        _shellForm = null;
+        shell.ShellUnavailable -= OnShellUnavailable;
+        shell.Dispose();
+        RecordShutdownStep("app-window-disposed");
+    }
+
+    private void DisposeClassicWindow()
+    {
         _mainForm.FormClosing -= OnMainFormClosing;
-
+        // Closing saves the window layout when the window was created, as before.
         _mainForm.Close();
+        _mainForm.Dispose();
+        RecordShutdownStep("classic-window-disposed");
+    }
 
-        _shellForm?.Dispose();
+    private void DisposeTrayIcon()
+    {
+        var icon = _trayIcon.Icon;
+        _trayIcon.Dispose();
+        icon?.Dispose();
+        _trayMenu.Dispose();
+        RecordShutdownStep("tray-icon-disposed");
+    }
 
-        _runtime.Dispose();
-
-        _services.Dispose();
-
-        ExitThread();
-
+    private void RecordShutdownStep(string step)
+    {
+        lock (_shutdownSteps)
+            _shutdownSteps.Add(step);
     }
 
 }

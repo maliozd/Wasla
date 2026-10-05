@@ -668,6 +668,9 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
         UpdateRecentJob(job.Id, LocalPrintJobStatus.Printing, statusNote: null);
         _logger.LogInformation("Job claim succeeded. JobId={JobId}", job.Id);
 
+        // Only the print itself (or, in test mode, writing the receipt) decides whether the job failed. Updating the status
+        // afterwards is outside, so nothing that happens after the receipt was printed can report it failed (WAS-56, WAS-59).
+        string printedNote;
         try
         {
             var (_, bridge, _) = _holder.Snapshot();
@@ -684,7 +687,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
                 _logger.LogInformation("DryRun receipt saved. Path={ReceiptPath}", receiptPath);
 
                 _logger.LogInformation("DryRun: no physical print was sent. JobId={JobId}", job.Id);
-                UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: "Dry run");
+                printedNote = "Dry run";
             }
             else
             {
@@ -700,7 +703,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
                     bridge.PrinterName,
                     receipt.Length,
                     job.CopyCount);
-                UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: "Windows accepted the print job");
+                printedNote = "Windows accepted the print job";
             }
         }
         catch (Exception ex)
@@ -727,6 +730,8 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
 
             return;
         }
+
+        UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: printedNote);
 
         var printed = await ReportPrintedAsync(job.Id, connection).ConfigureAwait(false);
         if (!printed.Success && !printed.Skipped)

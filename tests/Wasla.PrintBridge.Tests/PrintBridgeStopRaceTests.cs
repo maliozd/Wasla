@@ -297,6 +297,31 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
         Assert.DoesNotContain("mark-failed", server.Attempted(jobId));
     }
 
+    [Fact]
+    public async Task AStatusObserverThatFailsAfterThePrint_NeverTurnsThePrintedReceiptIntoAFailure()
+    {
+        // WAS-59: an exiting tray's status handler once threw at exactly this point. Whatever an observer does after the
+        // receipt was printed, the job is never reported failed.
+        var server = new FakePrintServer();
+        var jobId = server.AddJob(copies: 1);
+        var printer = new RecordingPrinter();
+        using var bridge = Bridge.Create(server, printer);
+        var failed = 0;
+        bridge.Runtime.StatusChanged += (_, _) =>
+        {
+            if (printer.Copies > 0 && Interlocked.Exchange(ref failed, 1) == 0)
+                throw new InvalidOperationException("A status observer failed after the print.");
+        };
+
+        await bridge.StartAndSettleAsync(server);
+        await bridge.Runtime.StopAsync().WaitAsync(Wait, Ct);
+
+        Assert.Equal(1, failed);
+        Assert.Equal(1, printer.Copies);
+        Assert.DoesNotContain("mark-failed", server.Attempted(jobId));
+        Assert.Equal(LocalPrintJobStatus.Printed, bridge.History.FindByJobId(jobId)?.Status);
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>Printed exactly once with every copy, confirmed on the server and locally, and never reported failed.</summary>

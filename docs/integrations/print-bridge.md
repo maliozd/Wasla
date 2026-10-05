@@ -134,6 +134,19 @@ Connection changes and active jobs (WAS-58):
 - **One connection per job.** Each polling cycle takes one copy of the URL and token. Its health check, its poll, and every request of the jobs it claims (`mark-printing`, `mark-printed` and its retries, `mark-failed`) use that copy, never the current settings. A job offered by a poll whose connection has changed since is not claimed and stays pending on the server that offered it. A failure of a replaced connection is logged but not recorded as a problem of the new one. This also covers **Reset connection**, which is not refused (it does not move to another server): a job already claimed still finishes with the token that claimed it.
 - **Not covered.** Editing `appsettings.json` by hand while Print Bridge runs is outside this guard. The running engine does not reload that file.
 
+Exiting the app (`TrayApplicationContext`, WAS-59):
+
+- **One shutdown.** The tray's **Exit** enters a shutting-down state at once. From then on no window, tray update, printer test or setup link starts; a setup link forwarded during shutdown is dropped and can be opened after a restart. A second or concurrent Exit joins the shutdown already running. The app window has no exit command of its own, and closing either window only hides it to the tray.
+- **Order:**
+  1. A connection change or setup link still in progress is abandoned before it writes anything. The tray and the classic window stop following the engine, and the tray icon and windows disappear. A tray update queued just before Exit does nothing when it arrives.
+  2. The engine stops. This is awaited, so the UI thread is never blocked.
+  3. The app window (WebView2), the classic window and the tray icon are disposed. Closing the classic window still saves its layout, as before.
+  4. The services are disposed, the message loop ends and the process exits.
+- **With an active print job:** the job is not cancelled (WAS-56). Exit waits for it for up to 10 seconds. A job that finishes in that time is printed and reported once, and Exit then completes. Only the print itself decides `mark-failed`: a status update after the receipt was printed can no longer turn it into a failure. Before WAS-59, the tray's status handler threw on the already disposed tray icon at exactly that point. Measured with test mode and a fake API: without a job the process ended about 0.5–0.7 seconds after Exit; with a job, when the job finished.
+- **After the 10-second limit:** the process exits anyway. The log line "stopped listening while a print job is still finishing; it completes in the background" still appears, but on Exit the process ends, so the job does **not** complete. Its remaining requests are not sent and the server keeps it in Printing (see Known gaps). WAS-59 does not change this limit and does not add a durable acknowledgement.
+- **Windows sign-out or shutdown** is not routed through this sequence; Windows ends the process, as before.
+- **Confirming the exit:** the tray icon is gone, and the log has "Print Bridge exit requested." followed by "Print Bridge shutdown complete; the application exits.". Task Manager (Details) shows no `Wasla.PrintBridge.exe`.
+
 Typical client routes (relative to `ServerUrl`):
 
 - `GET api/print-bridge/health`
@@ -341,7 +354,7 @@ See [../operations/cli.md](../operations/cli.md):
 - The WebView2 app is opt-in and has not yet been verified with a physical receipt printer; WAS-54 and WAS-57 verification used test mode, a fake API and a recording or missing printer. The live log viewer stays only in the classic window on purpose (see the parity table).
 - Engine and client log lines include the server URL, the Windows machine name and printer names (for example the startup "Effective config" line and request warnings). Tokens are never logged.
 - A setup link opened while a print job is being completed is refused, not queued (WAS-58, see Job flow). The user has to open it again after printing has finished. Hand edits to `appsettings.json` while Print Bridge runs are not guarded.
-- The server has no claim lease. A printed job whose `mark-printed` never arrives stays in Printing, for example after every retry failed, after Stop returned and the app was closed before the job finished, or after a crash or power loss between the print and the report. It is never printed again automatically, but it blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.
+- The server has no claim lease. A printed job whose `mark-printed` never arrives stays in Printing, for example after every retry failed, after Exit (or Stop followed by Exit) gave up waiting at its 10-second limit, or after a crash or power loss between the print and the report. It is never printed again automatically, but it blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.
 - Every WebView2 host honors the `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` environment variable (for example a remote-debugging port). This is platform behavior the shell does not override; anyone who can set the user's environment can already inspect the process.
 - Sample / download packaging may still mention older folder names in places; prefer `ServerUrl` and Wasla ProgramData paths above.
 - The device details page still formats times on the server with `ToLocalTime()` (the server's zone, not `Europe/Istanbul`) and does not refresh itself. The token regeneration response still returns device times without a UTC marker.

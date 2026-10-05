@@ -176,7 +176,7 @@ public sealed partial class MainForm : Form
 
         _runtime.StatusChanged += OnRuntimeStatusChanged;
         _cultureService.CultureChanged += OnCultureChangedElsewhere;
-        _uiLogBuffer.Changed += (_, _) => QueueRefreshLogs();
+        _uiLogBuffer.Changed += OnUiLogChanged;
         _tabs.SelectedIndexChanged += (_, _) =>
         {
             if (_tabs.SelectedTab == _logsTab)
@@ -965,6 +965,19 @@ public sealed partial class MainForm : Form
 
     private void QueueRefreshLogs() => QueueUiAction(RefreshLogs);
 
+    private void OnUiLogChanged(object? sender, EventArgs e) => QueueRefreshLogs();
+
+    /// <summary>
+    /// Stops following the engine, the language and the log (WAS-59). Called when the window closes and by the tray's
+    /// shutdown before this window is disposed, so no engine or log thread queues work for it afterwards. Safe to repeat.
+    /// </summary>
+    internal void DetachFromEngine()
+    {
+        _runtime.StatusChanged -= OnRuntimeStatusChanged;
+        _cultureService.CultureChanged -= OnCultureChangedElsewhere;
+        _uiLogBuffer.Changed -= OnUiLogChanged;
+    }
+
     private void QueueUiAction(Action action)
     {
         if (IsDisposed)
@@ -974,7 +987,16 @@ public sealed partial class MainForm : Form
             CreateHandle();
 
         if (InvokeRequired)
-            BeginInvoke(action);
+        {
+            try
+            {
+                BeginInvoke(action);
+            }
+            catch (InvalidOperationException) when (IsDisposed || !IsHandleCreated)
+            {
+                // The window was closed between the check and the call; there is nothing left to update.
+            }
+        }
         else
             action();
     }
@@ -1658,7 +1680,7 @@ public sealed partial class MainForm : Form
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         PersistWindowLayout();
-        _cultureService.CultureChanged -= OnCultureChangedElsewhere;
+        DetachFromEngine();
         _dashboardTimer.Stop();
         _dashboardTimer.Dispose();
         _jobsRefreshTimer.Stop();
