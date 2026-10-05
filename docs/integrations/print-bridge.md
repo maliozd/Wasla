@@ -118,6 +118,15 @@ Basic statuses: **Pending → Printing → Printed / Failed** (Cancelled only pe
 
 Do not create a second active receipt job while one is Pending or Printing for the same print semantics. First prints and reprints use the shared job pipeline.
 
+Server contract (`PrintBridgeJobService`): a poll offers only Pending jobs, and each report is a conditional transition (`mark-printing` Pending → Printing, `mark-printed` and `mark-failed` Printing → Printed or Failed). A report for a job in another state is answered `skipped` and changes nothing, so the first final report wins and repeating `mark-printed` is safe. There is no claim lease or requeue: a job left in Printing is never offered again and blocks a manual print of that order until it is resolved.
+
+Stop and the engine (`PrintBridgeRuntime`, WAS-56):
+
+- **Before a claim:** Stop (and a terminal connection issue or a connection change) ends polls and waits at once, and no new job is claimed afterwards. A job not yet claimed stays Pending and is printed after the next start.
+- **After a claim:** the job is not cancelled. It is printed and reported to its end, bounded by its own limits (the 30-second HTTP timeout, the spooler call, three `mark-printed` attempts). Stop waits for it for up to 10 seconds. If the job takes longer, Stop returns and the job finishes in the background; the next start polls only after it has finished, so two loops never process jobs at once.
+- **Failures:** `mark-failed` is sent only when the receipt was not printed (printer, driver or receipt error). Once printed, the job stays Printed locally and is never reported failed. After a server or network failure, `mark-printed` is repeated (after 1 and 3 seconds). If every attempt fails, the loop records the connection problem and the server keeps the job in Printing, which needs attention in Wasla but never leads to a second automatic print.
+- Cancelling a job between its claim and its last report used to report printed receipts as failed (`mark-printing → print → mark-printed → Stop → mark-failed`), which invited a duplicate reprint.
+
 Typical client routes (relative to `ServerUrl`):
 
 - `GET api/print-bridge/health`
@@ -180,7 +189,7 @@ The server URL and device token are entered in a host-owned native dialog (`Shel
 - The title and introduction follow why it opens: **first setup** (no token), **reconnect** (the token was rejected or reset) or **change** (a token is saved). The address field is prefilled with the saved address (not the built-in `localhost` default); the token field always starts empty and masked.
 - **Show** reveals only what was typed in this dialog. The saved token is never loaded into it and cannot be shown again. In change mode an empty token keeps the saved one, which the dialog says without showing it.
 - **Connect and save** validates locally first (empty or malformed URL, query or fragment, empty token, a pasted setup link). It then checks the candidate with `IPrintBridgeEngine.CheckConnectionAsync`, which calls the health endpoint with the candidate URL and token and changes neither the settings nor the engine state, so a rejected candidate never clears the saved token. Only after the check succeeds does `ApplyVerifiedConnectionAsync` stop listening, write the settings file (before the in-memory settings change, so a failed write changes nothing), clear the server-assigned device name when the token changed, record the verified contact and resume listening (always for first setup and reconnect; for a change only if it was listening). "Connected" is shown only after this.
-- While a print job is in progress (from its claim, `mark-printing`, until its last report, `mark-printed` or `mark-failed`), the verified connection is not applied. Stopping then would cancel the job mid-report, which is the Stop race tracked in WAS-56. `ApplyVerifiedConnectionAsync` returns `PrintingInProgress` before anything is stopped or written, so the saved connection and printer stay as they were and the job finishes once on the saved connection. The dialog says that nothing was saved and keeps the input for another try. From that check until listening has stopped, the engine leaves new jobs pending; they are claimed after the change.
+- While a print job is in progress (from its claim, `mark-printing`, until its last report, `mark-printed` or `mark-failed`), the verified connection is not applied, so the job's remaining reports never go to the new connection. `ApplyVerifiedConnectionAsync` returns `PrintingInProgress` before anything is stopped or written, so the saved connection and printer stay as they were and the job finishes once on the saved connection. The dialog says that nothing was saved and keeps the input for another try. From that check until listening has stopped, the engine leaves new jobs pending; they are claimed after the change.
 - Failures keep the typed input while the dialog stays open and show a localized, actionable message in an alert region, mark the field, describe it to assistive technology and move focus there: token rejected (token field), server unreachable, certificate error or wrong address (address field), timeout after 30 seconds, disabled device or installation conflict.
 - **Cancel**, Escape and the close button leave the saved settings byte-for-byte unchanged and cancel a check in progress. Once saving has begun the dialog stays open until it finishes. Repeated clicks do nothing while it works. Exiting the app from the tray abandons a change that has not been written yet.
 - The page receives only the localized result (`operation.result` for `connection.openSetup`) and the refreshed snapshot, without a restart or reload. When the bridge is connected but no usable printer is chosen, the page is sent to the Printer tab.
@@ -246,7 +255,7 @@ The key is written back only when it was set.
 The classic window stays the default. Switch it (missing `Ui.Shell` means `WebView2`, `WinForms` stays an explicit opt-out) only when all of these hold:
 
 1. WAS-55 delivers and updates the WebView2 Runtime with the installer and Windows Service, so the fallback is rare.
-2. WAS-56 fixes the job acknowledgement race when listening stops. The app's connection dialog already refuses a change while a job is in progress. Stop, Reset and the classic window's connection save still stop listening mid-job.
+2. WAS-56 fixes the job acknowledgement race when listening stops: Stop, Reset and the classic window's connection save no longer cancel a claimed job, and app exit waits up to 10 seconds for it (see Job flow).
 3. A test print and a real order receipt have been verified on a physical receipt printer with the app (WAS-54 and WAS-57 verified with test mode and fakes only).
 4. The classic window remains reachable as the labelled emergency fallback for at least one release.
 
@@ -310,7 +319,6 @@ Rules:
 ### Future work
 
 - **WAS-55:** Windows Service, installer, WebView2 Runtime delivery and automatic update, then the default-switch decision above.
-- **WAS-56:** the job acknowledgement race when listening stops.
 
 ## CLI helpers
 
@@ -325,7 +333,8 @@ See [../operations/cli.md](../operations/cli.md):
 - Config section still named `OrderHub` while product is Wasla.
 - The WebView2 app is opt-in and has not yet been verified with a physical receipt printer; WAS-54 and WAS-57 verification used test mode, a fake API and a recording or missing printer. The live log viewer stays only in the classic window on purpose (see the parity table).
 - Engine and client log lines include the server URL, the Windows machine name and printer names (for example the startup "Effective config" line and request warnings). Tokens are never logged.
-- A setup link (`PrintBridgeAutoSetupCoordinator`, both windows) replaces the saved connection in place without stopping listening. A job in progress at that moment sends its remaining reports with the new connection. The connection dialog does not have this gap; Stop and Reset are covered by WAS-56.
+- A setup link (`PrintBridgeAutoSetupCoordinator`, both windows) replaces the saved connection in place without stopping listening. A job in progress at that moment sends its remaining reports with the new connection. The connection dialog does not have this gap.
+- The server has no claim lease. A printed job whose `mark-printed` never arrives stays in Printing, for example after every retry failed, after Stop returned and the app was closed before the job finished, or after a crash or power loss between the print and the report. It is never printed again automatically, but it blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.
 - Every WebView2 host honors the `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` environment variable (for example a remote-debugging port). This is platform behavior the shell does not override; anyone who can set the user's environment can already inspect the process.
 - Sample / download packaging may still mention older folder names in places; prefer `ServerUrl` and Wasla ProgramData paths above.
 - The device details page still formats times on the server with `ToLocalTime()` (the server's zone, not `Europe/Istanbul`) and does not refresh itself. The token regeneration response still returns device times without a UTC marker.

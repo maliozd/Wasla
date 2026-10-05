@@ -22,16 +22,16 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     private readonly object _sync = new();
     private readonly List<LocalPrintJobRecord> _recentJobs = [];
 
-    private CancellationTokenSource? _cts;
-    private Task? _loopTask;
+    private PollingLoop? _loop;
+    private Task _lastLoopTask = Task.CompletedTask;
     private bool _isRunning;
     private DateTime? _lastSuccessfulContactUtc;
     private DateTime? _lastPollUtc;
     private PrintBridgeRuntimeIssue? _lastIssue;
 
-    // Guarded by _sync: the job between its claim request and its last report, and whether the loop must leave new
+    // Guarded by _sync: jobs between their claim request and their last report, and whether the loop must leave new
     // jobs pending because a connection change is stopping it.
-    private Guid? _jobInProgress;
+    private int _jobsInProgress;
     private bool _holdNewJobs;
 
     public PrintBridgeRuntime(
@@ -60,6 +60,15 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
 
     /// <summary>Test-only: awaited during a connection change while new jobs are held, just before listening stops.</summary>
     internal Func<Task>? WhileJobsAreHeldForTests { get; set; }
+
+    /// <summary>
+    /// How long <see cref="StopAsync"/> waits for a print job that was already claimed. Such a job is not cancelled; if it
+    /// takes longer, Stop returns and the job finishes in the background.
+    /// </summary>
+    internal TimeSpan StopGracePeriod { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>Waits before repeating mark-printed after a server or network failure; one attempt more than delays.</summary>
+    internal IReadOnlyList<TimeSpan> PrintedReportRetryDelays { get; set; } = [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3)];
 
     public bool IsRunning
     {
@@ -133,19 +142,26 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
             if (!PrintBridgeSettingsValidator.TryValidatePrinterAvailability(bridge, out errorKey))
                 throw new LocalizedApplicationException(errorKey!);
 
-            _cts = new CancellationTokenSource();
+            var loop = new PollingLoop();
+            var previous = _lastLoopTask;
+            loop.Task = Task.Run(() => RunAfterAsync(previous, loop));
+            _loop = loop;
+            _lastLoopTask = loop.Task;
             _isRunning = true;
-            _loopTask = Task.Run(() => RunLoopAsync(_cts.Token));
         }
 
         _logger.LogInformation("Print Bridge polling started.");
         RaiseStatusChanged();
     }
 
+    /// <summary>
+    /// Stops listening. Polls and waits end at once and no new job is claimed. A job that was already claimed is not
+    /// cancelled, because cancelling it between its claim and its last report can report a printed receipt as failed
+    /// (WAS-56): it finishes printing and reporting, and Stop waits for it up to <see cref="StopGracePeriod"/>.
+    /// </summary>
     public async Task StopAsync()
     {
-        Task? loopTask;
-        CancellationTokenSource? cts;
+        PollingLoop? loop;
 
         lock (_sync)
         {
@@ -153,23 +169,23 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
                 return;
 
             _isRunning = false;
-            cts = _cts;
-            loopTask = _loopTask;
-            _cts = null;
-            _loopTask = null;
+            loop = _loop;
+            _loop = null;
+            if (loop is not null)
+                loop.StopRequested = true;
         }
 
-        if (cts is not null)
-        {
-            await cts.CancelAsync().ConfigureAwait(false);
-            cts.Dispose();
-        }
-
-        if (loopTask is not null)
+        if (loop is not null)
         {
             try
             {
-                await loopTask.ConfigureAwait(false);
+                await loop.Cancellation.CancelAsync().ConfigureAwait(false);
+                await loop.Task.WaitAsync(StopGracePeriod).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning(
+                    "Print Bridge stopped listening while a print job is still finishing; it completes in the background.");
             }
             catch (OperationCanceledException)
             {
@@ -220,7 +236,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     {
         lock (_sync)
         {
-            if (_jobInProgress is not null)
+            if (_jobsInProgress > 0)
                 return PrintBridgeConnectionChange.PrintingInProgress;
 
             _holdNewJobs = true;
@@ -408,8 +424,34 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         StopAsync().GetAwaiter().GetResult();
     }
 
-    private async Task RunLoopAsync(CancellationToken stoppingToken)
+    /// <summary>
+    /// Runs a loop once the previous one has ended. A loop stopped while it finishes a claimed job may still be running,
+    /// and two loops must never process jobs at the same time.
+    /// </summary>
+    private async Task RunAfterAsync(Task previous, PollingLoop loop)
     {
+        try
+        {
+            await previous.ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Its own Stop already logged how it ended.
+        }
+
+        try
+        {
+            await RunLoopAsync(loop).ConfigureAwait(false);
+        }
+        finally
+        {
+            loop.Cancellation.Dispose();
+        }
+    }
+
+    private async Task RunLoopAsync(PollingLoop loop)
+    {
+        var stoppingToken = loop.Cancellation.Token;
         _logger.LogInformation("Wasla Print Bridge background loop started.");
 
         while (!stoppingToken.IsCancellationRequested)
@@ -443,14 +485,15 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
                     hadJobs = true;
                     foreach (var job in jobs)
                     {
-                        // A connection change is stopping the loop: leave the job pending for the next poll.
-                        if (!TryBeginJob(job.Id))
+                        // Stop or a connection change ends the loop: leave the job pending for the next start.
+                        if (!TryBeginJob(loop))
                             break;
 
                         try
                         {
                             RegisterJobReceived(job);
-                            await ProcessJobAsync(job, stoppingToken).ConfigureAwait(false);
+                            // A job that is about to be claimed runs to its end without the loop's cancellation.
+                            await ProcessJobAsync(job).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -498,14 +541,14 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         _logger.LogInformation("Wasla Print Bridge background loop stopped.");
     }
 
-    private bool TryBeginJob(Guid jobId)
+    private bool TryBeginJob(PollingLoop loop)
     {
         lock (_sync)
         {
-            if (_holdNewJobs)
+            if (_holdNewJobs || loop.StopRequested)
                 return false;
 
-            _jobInProgress = jobId;
+            _jobsInProgress++;
             return true;
         }
     }
@@ -513,7 +556,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
     private void EndJob()
     {
         lock (_sync)
-            _jobInProgress = null;
+            _jobsInProgress--;
     }
 
     private void RegisterJobReceived(WaslaPrintBridgeClient.PendingPrintJobDto job)
@@ -533,8 +576,15 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         });
     }
 
-    private async Task ProcessJobAsync(WaslaPrintBridgeClient.PendingPrintJobDto job, CancellationToken ct)
+    /// <summary>
+    /// Claims, prints and reports one job. Stop does not cancel it (see <see cref="StopAsync"/>); each step is bounded by
+    /// its own limits: the HTTP client timeout, the spooler call and a fixed number of printed-report attempts. A job is
+    /// reported failed only when its receipt was not printed. Once printed, it stays printed: mark-printed is repeated
+    /// after a server or network failure (the server ignores a repeat), and mark-failed is never sent for it.
+    /// </summary>
+    private async Task ProcessJobAsync(WaslaPrintBridgeClient.PendingPrintJobDto job)
     {
+        var ct = CancellationToken.None;
         _logger.LogInformation("Job claim attempted. JobId={JobId}, OrderId={OrderId}", job.Id, job.OrderId);
 
         WaslaPrintBridgeClient.PrintJobActionResult claim;
@@ -600,20 +650,10 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
                     job.CopyCount);
                 UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: "Windows accepted the print job");
             }
-
-            var printed = await _client.MarkPrintedAsync(job.Id, ct).ConfigureAwait(false);
-            if (!printed.Success && !printed.Skipped)
-                UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, $"mark-printed: {printed.Result}");
-
-            _logger.LogInformation(
-                "mark-printed result. JobId={JobId}, Success={Success}, Skipped={Skipped}, Result={Result}",
-                job.Id,
-                printed.Success,
-                printed.Skipped,
-                printed.Result);
         }
         catch (Exception ex)
         {
+            // The receipt was not printed: this is a real failure, reported once.
             _logger.LogWarning(ex, "Print failed. JobId={JobId}", job.Id);
             UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, ex.Message);
 
@@ -632,8 +672,51 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
                 _logger.LogWarning(markEx, "Failed to mark job as failed. JobId={JobId}", job.Id);
                 throw;
             }
+
+            return;
+        }
+
+        var printed = await ReportPrintedAsync(job.Id).ConfigureAwait(false);
+        if (!printed.Success && !printed.Skipped)
+            UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, $"mark-printed: {printed.Result}");
+
+        _logger.LogInformation(
+            "mark-printed result. JobId={JobId}, Success={Success}, Skipped={Skipped}, Result={Result}",
+            job.Id,
+            printed.Success,
+            printed.Skipped,
+            printed.Result);
+    }
+
+    /// <summary>
+    /// Sends mark-printed, repeating it after a server or network failure (<see cref="PrintedReportRetryDelays"/>). If
+    /// every attempt fails, the exception reaches the polling loop, which records the connection problem; the job stays
+    /// printed and is never reported failed.
+    /// </summary>
+    private async Task<WaslaPrintBridgeClient.PrintJobActionResult> ReportPrintedAsync(Guid jobId)
+    {
+        var delays = PrintedReportRetryDelays;
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await _client.MarkPrintedAsync(jobId, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (PrintBridgeConnectionException ex) when (attempt < delays.Count && IsTransient(ex))
+            {
+                _logger.LogWarning(
+                    ex,
+                    "mark-printed failed; the printed job is reported again. JobId={JobId}, Attempt={Attempt}",
+                    jobId,
+                    attempt + 1);
+                await Task.Delay(delays[attempt]).ConfigureAwait(false);
+            }
         }
     }
+
+    /// <summary>The server could not be reached, timed out or failed (5xx); rejected credentials are not transient.</summary>
+    private static bool IsTransient(PrintBridgeConnectionException ex) =>
+        ex.IssueCode == PrintBridgeRuntimeIssueCode.ServerUnreachable || ex.StatusCode >= 500;
 
     private void UpsertRecentJob(LocalPrintJobRecord record)
     {
@@ -818,24 +901,38 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine
         }
     }
 
+    /// <summary>Ends listening after a terminal issue. As with Stop, a job already claimed is not cancelled.</summary>
     private void SuspendPollingAfterTerminalIssue()
     {
-        CancellationTokenSource? cts;
+        PollingLoop? loop;
         lock (_sync)
         {
             _isRunning = false;
-            cts = _cts;
-            _cts = null;
-            _loopTask = null;
+            loop = _loop;
+            _loop = null;
+            if (loop is not null)
+                loop.StopRequested = true;
         }
 
         try
         {
-            cts?.Cancel();
+            loop?.Cancellation.Cancel();
         }
         catch (ObjectDisposedException)
         {
         }
+    }
+
+    /// <summary>One run of the polling loop.</summary>
+    private sealed class PollingLoop
+    {
+        /// <summary>Ends the loop's waits and polls; never passed to a claimed job.</summary>
+        public CancellationTokenSource Cancellation { get; } = new();
+
+        public Task Task { get; set; } = Task.CompletedTask;
+
+        /// <summary>Guarded by the runtime's lock. Once set, the loop claims no new job.</summary>
+        public bool StopRequested { get; set; }
     }
 
     private static PrintBridgeRuntimeIssue ToRuntimeIssue(Exception ex) =>
