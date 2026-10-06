@@ -153,15 +153,18 @@ The recovery workload cap bounds how much history one connection recovers per cy
 Current pass (phase 1) of a connection:
 
 1. A connection that has never completed a sync uses `[now − 1 hour, now]` and moves the checkpoint to now. Connecting a store does not import older history.
-2. When `[checkpoint − 5 minutes, now]` fits one window, that window is fetched and the checkpoint moves to now. A checkpoint later than now counts as now. A client without a maximum window (Yemeksepeti and the mock clients) always takes this path with a single fetch.
+2. When `[checkpoint − 5 minutes, now]` fits one window (the checkpoint is at most 55 minutes old, so it already lies inside the window ending now), that window is fetched and the checkpoint moves to now. A checkpoint later than now counts as now. A client without a maximum window (Yemeksepeti and the mock clients) always takes this path with a single fetch.
 3. Otherwise the history is behind (an outage). The **hot window** `[now − 1 hour, now]` is fetched and persisted first, so new and recently changed orders keep arriving. The checkpoint does **not** move: the gap before the hot window is still unprocessed. The connection reports `BackfillPending`.
-4. If the hot window fails, the connection does no history recovery this cycle.
+4. If the hot window fails, the connection does no history recovery this cycle, and the checkpoint does not move.
 
-Backfill turn (phase 2), for a connection that is active, has its circuit closed, succeeded on its last attempt (`ConsecutiveFailures = 0`) and is still behind:
+The current pass stores its `now` as `LastSyncAttempt`, and a window that covers everything since the checkpoint ends at that same instant. A windowed connection is therefore **behind** exactly while `LastSuccessfulSync < LastSyncAttempt` (`OrderSyncService.IsHistoryBehind`).
+
+Backfill turn (phase 2), for a connection that is active, has its circuit closed, succeeded on its last attempt (`ConsecutiveFailures = 0`) and is behind:
 
 1. The oldest missing window `[checkpoint − 5 minutes, checkpoint + 55 minutes]` (at most one hour, never past now) is fetched, every order is upserted, and the checkpoint moves to its end and is saved.
 2. Each turn re-reads the 5-minute overlap, so the checkpoint advances 55 minutes per turn. Windows move strictly oldest first and never skip time.
-3. When the remaining gap fits one window, backfill stops ("Order history recovered") and the next current pass covers the rest up to now. Backfill never jumps the checkpoint to the hot window: the part that history shares with the hot window is fetched again and absorbed by idempotent upserts.
+3. Turns continue until the connection is no longer behind. The last turn is `[checkpoint − 5 minutes, now]`: it reaches the hot window's end (or later), so the checkpoint becomes current **in the same cycle** ("Order history recovered"), and the next current pass is an ordinary one-window pass. The checkpoint never jumps to the hot window's end on the strength of the hot window alone: the last turn fetches the part history shares with the hot window again, and idempotent upserts absorb it.
+4. If the budget or the 12-round cap ends recovery first, or a turn fails, the checkpoint stays at the end of the last completed historical window and the connection stays behind. The next cycle continues from there.
 
 With the defaults, one cycle recovers at most 12 × 55 minutes = 11 hours of history per connection, if the 30-second budget and the request limiter allow. Recovery time therefore depends on pages per window, the request limiter, the 12-window cap, the 30-second phase budget and the Worker schedule (see [Capacity model](#capacity-model)).
 

@@ -17,7 +17,7 @@ public sealed class OrderFetchWindowPlannerTests
         Assert.Equal(Now, plan.Window.EndUtc);
         Assert.True(plan.AdvancesCheckpoint);
         Assert.Equal(TimeSpan.FromHours(1), OrderFetchWindowPlanner.InitialLookback);
-        Assert.False(OrderFetchWindowPlanner.HasHistoryGap(null, Now, Hour));
+        Assert.True(OrderFetchWindowPlanner.PlanCurrent(null, Now, Hour).AdvancesCheckpoint);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class OrderFetchWindowPlannerTests
 
         Assert.True(plan.AdvancesCheckpoint);
         Assert.Equal(Now - Hour, plan.Window.StartUtc);
-        Assert.False(OrderFetchWindowPlanner.HasHistoryGap(checkpoint, Now, Hour));
+        Assert.True(OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, Hour).AdvancesCheckpoint);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class OrderFetchWindowPlannerTests
         Assert.Equal(Now - Hour, plan.Window.StartUtc);
         Assert.Equal(Now, plan.Window.EndUtc);
         Assert.False(plan.AdvancesCheckpoint);
-        Assert.True(OrderFetchWindowPlanner.HasHistoryGap(checkpoint, Now, Hour));
+        Assert.False(OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, Hour).AdvancesCheckpoint);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class OrderFetchWindowPlannerTests
         Assert.Equal(checkpoint - Overlap, plan.Window.StartUtc);
         Assert.Equal(Now, plan.Window.EndUtc);
         Assert.True(plan.AdvancesCheckpoint);
-        Assert.False(OrderFetchWindowPlanner.HasHistoryGap(checkpoint, Now, maxWindow: null));
+        Assert.True(OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, maxWindow: null).AdvancesCheckpoint);
     }
 
     [Fact]

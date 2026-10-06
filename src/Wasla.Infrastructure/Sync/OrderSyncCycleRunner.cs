@@ -61,17 +61,17 @@ public sealed class OrderSyncCycleRunner
     {
         var options = new ParallelOptions { MaxDegreeOfParallelism = _maxParallelTenants, CancellationToken = ct };
 
-        var current = new ConcurrentBag<OrderSyncCustomerResult>();
+        var current = new ConcurrentQueue<OrderSyncCustomerResult>();
         await Parallel.ForEachAsync(tenantIds, options, async (tenantId, innerCt) =>
         {
             if (await syncCurrentAsync(tenantId, innerCt).ConfigureAwait(false) is { } result)
-                current.Add(result);
+                current.Enqueue(result);
         }).ConfigureAwait(false);
 
         var behind = current.Where(r => r.BackfillPending).Select(r => r.CustomerId).ToHashSet();
         var pending = Rotate(tenantIds.Where(behind.Contains).ToList());
 
-        var backfill = new ConcurrentBag<OrderSyncCustomerResult>();
+        var backfill = new ConcurrentQueue<OrderSyncCustomerResult>();
         var deadline = _time.GetUtcNow() + _backfillBudget;
         for (var round = 0; round < OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle && pending.Count > 0; round++)
         {
@@ -87,7 +87,7 @@ public sealed class OrderSyncCycleRunner
                 if (await backfillAsync(tenantId, innerCt).ConfigureAwait(false) is not { } result)
                     return;
 
-                backfill.Add(result);
+                backfill.Enqueue(result);
                 if (result.BackfillPending)
                     stillPending[tenantId] = true;
             }).ConfigureAwait(false);

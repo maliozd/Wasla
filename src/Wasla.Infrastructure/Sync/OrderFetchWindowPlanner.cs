@@ -49,10 +49,6 @@ internal static class OrderFetchWindowPlanner
         return new CurrentWindowPlan(new OrderFetchWindow(startUtc, nowUtc), AdvancesCheckpoint: true);
     }
 
-    /// <summary>True while the interval since the checkpoint is longer than one window, so backfill is needed.</summary>
-    internal static bool HasHistoryGap(DateTime? checkpointUtc, DateTime nowUtc, TimeSpan? maxWindow) =>
-        checkpointUtc is not null && !PlanCurrent(checkpointUtc, nowUtc, maxWindow).AdvancesCheckpoint;
-
     /// <summary>
     /// The next backfill windows, oldest first, from <see cref="CheckpointOverlap"/> before the checkpoint up to now.
     /// Each window is at most <paramref name="maxWindow"/> long and starts at the previous one's end.

@@ -142,18 +142,15 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         Assert.Equal(Noon - Hour, _api.Requests[0].StartUtc);
         Assert.Equal(Noon, _api.Requests[0].EndUtc);
         var backfill = _api.Requests.Skip(1).ToList();
-        Assert.Equal(6, backfill.Count);
+        // Six turns reach 11:30; the seventh, [11:25, 12:00], reaches the boundary of the hot window, so history is
+        // complete up to now and the checkpoint is current at the end of this cycle.
+        Assert.Equal(7, backfill.Count);
         Assert.Equal(lastGoodSync - Overlap, backfill[0].StartUtc);
         AssertBackfillChain(backfill);
-        Assert.Equal(lastGoodSync + 6 * TurnStep, backfill[^1].EndUtc);
-
-        // History is complete up to 11:30; the hot window already covered the rest, and the next current pass
-        // (one window again) moves the checkpoint to now.
-        Assert.Equal(lastGoodSync + 6 * TurnStep, await CheckpointAsync());
+        Assert.Equal(Noon, backfill[^1].EndUtc);
+        Assert.Equal(Noon, await CheckpointAsync());
         Assert.Contains(_syncLog.Entries, e =>
             e.Level == LogLevel.Information && e.Message.Contains("Order history recovered", StringComparison.Ordinal));
-        await RunAsync();
-        Assert.Equal(Noon, await CheckpointAsync());
 
         var after = await OrdersAsync();
         Assert.Equal(4, after.Count);
@@ -194,8 +191,8 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         Assert.Equal(Noon - Hour, _api.Requests[0].StartUtc);
         Assert.Equal(afterFirst - Overlap, _api.Requests[1].StartUtc);
         AssertBackfillChain(_api.Requests.Skip(1).ToList());
+        Assert.Equal(Noon, _api.Requests[^1].EndUtc);
         Assert.Equal(["early", "late"], await OrderIdsAsync());
-        await RunAsync();
         Assert.Equal(Noon, await CheckpointAsync());
     }
 
@@ -229,7 +226,8 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
 
         await RunCycleAsync(_tenant);
 
-        Assert.Equal(3, _api.Requests.Count);
+        // The hot window, then history up to it: [-2h05, -1h05], [-1h10, -0h10] and the last turn [-0h15, now].
+        Assert.Equal(4, _api.Requests.Count);
         Assert.Equal(2, _api.Requests.Count(r => r.Contains(checkpoint + TurnStep - TimeSpan.FromMinutes(2))));
         Assert.Equal(2, _api.Requests.Count(r => r.Contains(Noon.AddMinutes(-30))));
 
@@ -527,6 +525,121 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         Assert.True(firstBackfillA > currentB);
         Assert.Equal(1 + 1 + OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle, _api.Requests.Count);
         Assert.Equal(Noon, await CheckpointAsync(other));
+    }
+
+    // ---- Checkpoint convergence: after recovery the checkpoint reaches the current boundary in the same cycle. ----
+
+    [Theory]
+    [InlineData(30)]
+    [InlineData(55)]
+    public async Task CheckpointInsideTheCurrentWindow_IsCoveredByIt_AndBecomesCurrent_WithoutBackfill(int minutesBehind)
+    {
+        var checkpoint = Noon.AddMinutes(-minutesBehind);
+        await SeedConnectionAsync(_tenant, checkpoint);
+
+        var cycle = await RunCycleAsync(_tenant);
+
+        var request = Assert.Single(_api.Requests);
+        Assert.Equal(checkpoint - Overlap, request.StartUtc);
+        Assert.Equal(Noon, request.EndUtc);
+        Assert.False(cycle.Current.Single().BackfillPending);
+        Assert.Empty(cycle.Backfill);
+        Assert.Equal(Noon, await CheckpointAsync());
+        Assert.DoesNotContain(_syncLog.Entries, e => e.Message.Contains("Order history is behind", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task TwoHoursBehind_BackfillReachesTheHotBoundary_AndTheCheckpointBecomesCurrentInTheSameCycle()
+    {
+        var checkpoint = Noon.AddHours(-2);
+        await SeedConnectionAsync(_tenant, checkpoint);
+        _api.Put("in-history", "Delivered", checkpoint.AddMinutes(20));
+        _api.Put("in-hot-window", "Created", Noon.AddMinutes(-20));
+
+        var cycle = await RunCycleAsync(_tenant);
+
+        Assert.Equal(Noon - Hour, _api.Requests[0].StartUtc);
+        Assert.Equal(Noon, _api.Requests[0].EndUtc);
+        var backfill = _api.Requests.Skip(1).ToList();
+        Assert.Equal(checkpoint - Overlap, backfill[0].StartUtc);
+        AssertBackfillChain(backfill);
+        Assert.Equal(Noon, backfill[^1].EndUtc);
+        Assert.False(cycle.Backfill[^1].BackfillPending);
+        Assert.Equal(Noon, await CheckpointAsync());
+        Assert.Equal(["in-history", "in-hot-window"], await OrderIdsAsync());
+        Assert.Contains(_syncLog.Entries, e =>
+            e.Level == LogLevel.Information && e.Message.Contains("Order history recovered", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task BackfillBudgetEndingBeforeTheHotBoundary_KeepsTheLastCompletedHistoricalWindow()
+    {
+        var checkpoint = Noon.AddHours(-5);
+        await SeedConnectionAsync(_tenant, checkpoint);
+        // Each historical request takes 20 seconds of the 30-second phase budget.
+        _api.Respond = r =>
+        {
+            if (r.StartUtc != Noon - Hour)
+                _clock.Now = _clock.Now.AddSeconds(20);
+            return null;
+        };
+
+        var cycle = await RunCycleAsync(_tenant);
+
+        Assert.Equal(2, cycle.Backfill.Count);
+        Assert.True(cycle.Backfill[^1].BackfillPending);
+        Assert.Equal(checkpoint + 2 * TurnStep, await CheckpointAsync());
+    }
+
+    [Fact]
+    public async Task BackfillFailingBeforeTheHotBoundary_KeepsTheLastCompletedWindow_AndTheHotOrders()
+    {
+        var checkpoint = Noon.AddHours(-2);
+        await SeedConnectionAsync(_tenant, checkpoint);
+        _api.Put("in-hot-window", "Created", Noon.AddMinutes(-20));
+        _api.Respond = r => r.StartUtc == checkpoint + TurnStep - Overlap ? Json("<html>gateway</html>") : null;
+
+        var cycle = await RunCycleAsync(_tenant);
+
+        Assert.Equal(1, cycle.Backfill[^1].FailedConnections);
+        Assert.Equal(checkpoint + TurnStep, await CheckpointAsync());
+        Assert.Equal(["in-hot-window"], await OrderIdsAsync());
+    }
+
+    [Fact]
+    public async Task FollowingCycle_DoesNotRecoverACompletedGapAgain()
+    {
+        await SeedConnectionAsync(_tenant, Noon.AddHours(-2));
+        await RunCycleAsync(_tenant);
+        Assert.Equal(Noon, await CheckpointAsync());
+        _api.Requests.Clear();
+        var behindLogs = _syncLog.Entries.Count(e => e.Message.Contains("Order history is behind", StringComparison.Ordinal));
+
+        _clock.Now = Noon.AddSeconds(30);
+        var next = await RunCycleAsync(_tenant);
+
+        var request = Assert.Single(_api.Requests);
+        Assert.Equal(Noon - Overlap, request.StartUtc);
+        Assert.Equal(Noon.AddSeconds(30), request.EndUtc);
+        Assert.Empty(next.Backfill);
+        Assert.Equal(behindLogs, _syncLog.Entries.Count(e => e.Message.Contains("Order history is behind", StringComparison.Ordinal)));
+        Assert.Equal(Noon.AddSeconds(30), await CheckpointAsync());
+    }
+
+    [Fact]
+    public async Task DisplayedLastSuccessfulSync_IsTheCurrentBoundaryAfterFullRecovery()
+    {
+        await SeedConnectionAsync(_tenant, Noon.AddHours(-6));
+        var connections = new Wasla.Infrastructure.Services.PlatformConnectionService(
+            _tenants,
+            new PassthroughSecrets(),
+            new Wasla.Application.PlatformConnections.CreatePlatformConnectionCommandValidator());
+
+        await RunCycleAsync(_tenant);
+
+        var shown = Assert.Single(await connections.GetListAsync(_tenant, Ct)).LastSuccessfulSyncUtc;
+        Assert.NotNull(shown);
+        Assert.Equal(Noon, DateTime.SpecifyKind(shown.Value, DateTimeKind.Utc));
     }
 
     [Fact]

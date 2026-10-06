@@ -111,7 +111,8 @@ public sealed class OrderSyncService : IOrderSyncService
             return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0) { WasSyncDisabled = true };
         }
 
-        var now = DateTime.UtcNow;
+        // Same clock as LastSyncAttempt and the fetch windows, so "behind" (checkpoint older than the last attempt) is exact.
+        var now = _time.GetUtcNow().UtcDateTime;
         // Load all connections so we can log *why* a connection was skipped.
         var allConnections = await db.PlatformConnections.ToListAsync(ct).ConfigureAwait(false);
         var activeConnections = allConnections.Where(c => c.IsActive).ToList();
@@ -185,9 +186,10 @@ public sealed class OrderSyncService : IOrderSyncService
     }
 
     /// <summary>
-    /// One backfill turn: for every active connection whose current pass last succeeded and whose checkpoint is behind
-    /// by more than one window, fetches the oldest missing window and moves the checkpoint to its end. Connections
-    /// without a history gap, with an open circuit, or whose last attempt failed are left alone.
+    /// One backfill turn: for every active connection whose last attempt succeeded and whose order history is still
+    /// behind (see <see cref="IsHistoryBehind"/>), fetches the oldest missing window and moves the checkpoint to its end.
+    /// The last turn reaches now, so the checkpoint ends at or after the hot window the current pass fetched, in the
+    /// same cycle. Connections that are current, have an open circuit, or whose last attempt failed are left alone.
     /// </summary>
     public async Task<OrderSyncCustomerResult> BackfillCustomerAsync(Guid customerId, CancellationToken ct)
     {
@@ -204,8 +206,8 @@ public sealed class OrderSyncService : IOrderSyncService
             .ConfigureAwait(false);
 
         var behind = connections
-            .Where(c => c.CircuitOpenUntil == null || c.CircuitOpenUntil <= DateTime.UtcNow)
-            .Where(c => OrderFetchWindowPlanner.HasHistoryGap(c.LastSuccessfulSync, now, ClientFor(c)?.MaxFetchWindow))
+            .Where(c => c.CircuitOpenUntil == null || c.CircuitOpenUntil <= now)
+            .Where(c => IsHistoryBehind(c, ClientFor(c)))
             .ToList();
 
         var connectionResults = new List<OrderSyncConnectionResult>(behind.Count);
@@ -221,6 +223,18 @@ public sealed class OrderSyncService : IOrderSyncService
 
     private IFoodPlatformClient? ClientFor(PlatformConnection connection) =>
         _platformClients.FirstOrDefault(c => c.Platform == connection.Platform);
+
+    /// <summary>
+    /// A windowed connection's history is behind while its checkpoint is older than its last current-pass attempt.
+    /// A current pass that covers everything since the checkpoint moves it to that attempt's instant (the window ends
+    /// at the same <c>now</c> stored as <c>LastSyncAttempt</c>); only a hot window fetched ahead of a gap leaves it
+    /// older. Backfill keeps going until it has caught up, so it never stops just short of the hot window.
+    /// </summary>
+    private static bool IsHistoryBehind(PlatformConnection connection, IFoodPlatformClient? client) =>
+        client?.MaxFetchWindow is not null
+        && connection.LastSuccessfulSync is { } checkpoint
+        && connection.LastSyncAttempt is { } attempt
+        && OrderFetchWindowPlanner.AsUtc(checkpoint) < OrderFetchWindowPlanner.AsUtc(attempt);
 
     private OrderSyncCustomerResult Summarize(
         Guid customerId,
@@ -339,10 +353,12 @@ public sealed class OrderSyncService : IOrderSyncService
         CancellationToken ct)
     {
         var swConn = Stopwatch.StartNew();
+        // The current pass plans its window to end at exactly the instant it stores as LastSyncAttempt.
+        var nowUtc = _time.GetUtcNow().UtcDateTime;
         if (pass == OrderSyncPass.Current)
         {
             // Saved before any provider call, so no unsaved tenant change is held while the request limiter waits.
-            connection.LastSyncAttempt = DateTime.UtcNow;
+            connection.LastSyncAttempt = nowUtc;
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
         }
 
@@ -409,7 +425,6 @@ public sealed class OrderSyncService : IOrderSyncService
             // fetched and persisted. It moves to a window's end only after every page of that window is fetched and
             // every order in it is upserted, and only for a window that starts at the checkpoint, so it never skips
             // data. A hot window fetched ahead of a history gap leaves it where it is.
-            var nowUtc = _time.GetUtcNow().UtcDateTime;
             IReadOnlyList<OrderFetchWindow> windows;
             bool advancesCheckpoint;
             if (pass == OrderSyncPass.Current)
@@ -500,7 +515,7 @@ public sealed class OrderSyncService : IOrderSyncService
             connection.ConsecutiveFailures = 0;
             connection.CircuitOpenUntil = null;
 
-            var backfillPending = OrderFetchWindowPlanner.HasHistoryGap(connection.LastSuccessfulSync, nowUtc, client.MaxFetchWindow);
+            var backfillPending = IsHistoryBehind(connection, client);
             if (pass == OrderSyncPass.Backfill && !backfillPending)
             {
                 _logger.LogInformation(
@@ -555,7 +570,7 @@ public sealed class OrderSyncService : IOrderSyncService
             connection.ConsecutiveFailures++;
             if (connection.ConsecutiveFailures >= 5)
             {
-                connection.CircuitOpenUntil = DateTime.UtcNow.AddMinutes(5);
+                connection.CircuitOpenUntil = _time.GetUtcNow().UtcDateTime.AddMinutes(5);
             }
 
             syncLog.Status = SyncStatus.Failed;
