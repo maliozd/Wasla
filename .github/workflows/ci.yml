@@ -10,35 +10,141 @@ on:
       - dev
       - master
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
+    name: Release build, .NET and Print Bridge tests (Windows)
     runs-on: windows-latest
+    timeout-minutes: 60
 
     env:
       DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
+
+      # The Admin and theme browser tests and the Print Bridge runtime tests skip themselves when their
+      # prerequisite is missing. The browser is chosen here explicitly; a skip of any kind fails the
+      # "Require every test to run and pass" step below.
+      - name: Provide headless browser and report test prerequisites
+        shell: pwsh
+        run: |
+          $edge = @(
+            (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'),
+            (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe')
+          ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          if (-not $edge) {
+            Write-Host '::error::Microsoft Edge is not installed on the runner; the headless-browser tests cannot run.'
+            exit 1
+          }
+          Write-Host "Headless browser: $edge ($((Get-Item -LiteralPath $edge).VersionInfo.ProductVersion))"
+          "WASLA_TEST_BROWSER=$edge" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+          $webView2 = 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+          $runtime = (Get-ItemProperty -LiteralPath $webView2 -ErrorAction SilentlyContinue).pv
+          if ($runtime) { Write-Host "WebView2 Runtime: $runtime" } else { Write-Host '::warning::No machine-wide WebView2 Runtime registration found; the WebView2 runtime tests will skip and fail the run.' }
+
+          $printers = @(Get-Printer -ErrorAction SilentlyContinue)
+          Write-Host "Installed printers (enumerated only; tests print to a recording fake): $($printers.Count)"
+          if ($printers.Count -eq 0) { Write-Host '::warning::No printer is installed; the Print Bridge runtime tests will skip and fail the run.' }
 
       - name: Restore solution
         run: dotnet restore Wasla.sln
 
-      - name: Restore unit tests
-        run: dotnet restore tests/Wasla.UnitTests/Wasla.UnitTests.csproj
-
       - name: Build solution
+        id: build
         run: dotnet build Wasla.sln --configuration Release --no-restore
 
-      - name: Run unit tests
+      - name: Run Wasla.UnitTests
         run: >
           dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj
           --configuration Release
-          --no-restore
+          --no-build
           --verbosity normal
-          --logger "trx;LogFileName=test-results.trx"
+          --logger "trx;LogFileName=Wasla.UnitTests.trx"
+          --results-directory artifacts/test-results
+          --blame-hang-timeout 15m
+          --blame-hang-dump-type none
+
+      # Runs after a unit-test failure too, so one run reports both suites.
+      - name: Run Wasla.PrintBridge.Tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: >
+          dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --logger "trx;LogFileName=Wasla.PrintBridge.Tests.trx"
+          --results-directory artifacts/test-results
+          --blame-hang-timeout 15m
+          --blame-hang-dump-type none
+
+      - name: Require every test to run and pass
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: pwsh
+        run: >
+          ./scripts/ci/assert-test-results.ps1 -Path
+          artifacts/test-results/Wasla.UnitTests.trx,
+          artifacts/test-results/Wasla.PrintBridge.Tests.trx
+
+      - name: Upload .NET test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dotnet-test-results
+          path: artifacts/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  javascript-tests:
+    name: JavaScript tests (Node.js)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Run every tracked *.test.js file
+        shell: bash
+        run: |
+          mapfile -t files < <(git ls-files '*.test.js')
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::No tracked *.test.js files were found."
+            exit 1
+          fi
+          echo "Node.js $(node --version); ${#files[@]} test files:"
+          printf '  %s\n' "${files[@]}"
+          mkdir -p artifacts/test-results
+          node --test \
+            --test-reporter=spec --test-reporter-destination=stdout \
+            --test-reporter=junit --test-reporter-destination=artifacts/test-results/javascript-tests.xml \
+            "${files[@]}"
+
+      - name: Require every test to run and pass
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./scripts/ci/assert-test-results.ps1 -Path artifacts/test-results/javascript-tests.xml
+
+      - name: Upload JavaScript test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: javascript-test-results
+          path: artifacts/test-results/
+          if-no-files-found: warn
+          retention-days: 14

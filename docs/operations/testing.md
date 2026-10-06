@@ -4,7 +4,7 @@
 
 This document says which checks exist and how to report them. It does not list every test method.
 
-Source of the commands below: `Wasla.sln`, `tests/Wasla.UnitTests`, `tests/Wasla.PrintBridge.Tests`, and `.github/workflows/ci.yml`. There is no repository `package.json` and no npm test script.
+Source of the commands below: `Wasla.sln`, `tests/Wasla.UnitTests`, `tests/Wasla.PrintBridge.Tests`, `.github/workflows/ci.yml`, and `scripts/ci/assert-test-results.ps1`. There is no repository `package.json` and no npm test script.
 
 ## Layers
 
@@ -13,10 +13,38 @@ Source of the commands below: `Wasla.sln`, `tests/Wasla.UnitTests`, `tests/Wasla
 | Unit and source-contract tests | `tests/Wasla.UnitTests` | Application, infrastructure, Web contracts, orders, auth, sync, signup |
 | Print Bridge tests | `tests/Wasla.PrintBridge.Tests` | Desktop client settings, polling, setup, the Core engine against a fake API (`PrintBridgeRuntimeEngineTests`), Stop while a job is claimed, printed or reported, against a fake server that follows the job contract, including printer and server failures and a restart (`PrintBridgeStopRaceTests`), connection changes while a job is active against two fake servers with their own fake tokens: a setup link opened before the claim, during the claim, printing, a delayed or retried `mark-printed` and after Stop returned, several jobs draining, the classic window's lease and Reset, with every report checked for its server and token, settings compared byte for byte and no secret in the logs (`PrintBridgeSetupLinkGuardTests`), the refusal's window mapping and its text in every culture (`PrintBridgeSetupLinkRefusalUiTests`), Gregorian operational dates (`PrintBridgeGregorianCalendarTests`), and the WebView2 app (`WebShell/`): message contract, host operations (single-flight, request-id idempotency, sanitized errors), history projection, printer and operational-settings persistence, the connection setup against the real engine and a fake API (`ShellConnectionSetupTests`: check before save, cancel and failure without writes, refusal while a print job is being claimed, printed or reported, no tokens in logs), the native connection dialog on a Windows Forms message loop (`ShellConnectionDialogTests`: masking, Escape and Enter, accessible errors, tab order, right-to-left), security policy, accessibility markup and localization. The test-isolation guards (`TestIsolationGuardTests`, and `TrayShutdownIsolationTests` with the real tray application: an exit save that runs after its test ended, a failing test), and exiting the real tray application while it listens to a local fake API with a fake token (`TrayExitTests`, `TrayShutdownLifecycleTests`: listening, stopped, the classic window open, the shutdown order with each component disposed once, repeated and concurrent Exit requests, a tray update queued before Exit, a setup link during shutdown, an active job within and beyond the stop limit, settings and history afterwards) need no WebView2 Runtime |
 | Print Bridge WebView2 runtime tests | `ShellWebViewRuntimeTests.cs`, `ShellTrayRoutingTests.cs` and two tests in `TrayShutdownLifecycleTests.cs` in `tests/Wasla.PrintBridge.Tests/WebShell/` (trait `Category=WebView2Runtime`) | Real WebView2 control: applied settings, host-to-page rendering, blocked popups, navigation, remote requests, permissions and invalid messages, keyboard tabs in both reading directions, start/stop, single-flight test print, reprint confirmation, light/dark, minimum window and 200 % reflow, the native connection dialog and immediate status refresh, operational settings and the native test-mode confirmation, tab requests. The real tray application: Print history and Settings open the app tabs in one window, the classic fallback entry, and the classic window when the runtime is missing or the app fails to start. Exit with the app window open or closed to the tray (`TrayShutdownLifecycleTests`). Windows stay off-screen and the tray icon stays hidden; a startup failure is simulated before any browser process starts. Skipped when no WebView2 Runtime is installed; needs an interactive Windows session |
+| Headless-browser tests | `AdminRtlLayoutBrowserTests`, `AdminMobileNavigationBrowserTests` and `ThemePreferenceBrowserTests` in `tests/Wasla.UnitTests/` (driver: `Admin/HeadlessChromium.cs`) | The real Admin and tenant layouts served in-process and rendered by a headless Chromium browser over the DevTools protocol: RTL overflow, mobile navigation, theme preference. The browser is the one named by `WASLA_TEST_BROWSER`, otherwise an installed Edge or Chrome. The pages load Bootstrap, Bootstrap Icons and AdminLTE from `cdn.jsdelivr.net`, so these tests need internet access. Skipped when no browser is found or the CDN does not load |
 | Node tests | Every tracked `*.test.js` file, under `tests/Wasla.UnitTests/` and `tests/Wasla.PrintBridge.Tests/WebShell/` | Browser-side Web scripts and the Print Bridge app message model and view helpers. Not compiled by the csproj |
-| Browser smoke | Manual | Flows with no automated browser runner in this repo |
+| Browser smoke | Manual | Flows the headless-browser tests do not cover |
 
-CI (`.github/workflows/ci.yml`) builds `Wasla.sln` in Release on `windows-latest` and runs **only** `Wasla.UnitTests`. It does not run Print Bridge tests or Node tests.
+Some Print Bridge tests also skip when no Windows printer is installed. They only enumerate the installed printers, because the runtime refuses to start without one; output always goes to a recording fake.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on pushes to `dev` and `master` and on pull requests into them. It has two jobs that run in parallel. Each must pass.
+
+| Job | Runner | What it runs |
+| --- | --- | --- |
+| `build-and-test` | `windows-latest`, .NET 8 SDK (`8.0.x`) | Restore and Release build of `Wasla.sln`; the full `Wasla.UnitTests` project, including the headless-browser tests; the full `Wasla.PrintBridge.Tests` project, including the `Category=WebView2Runtime` tests. No test filter |
+| `javascript-tests` | `ubuntu-latest`, Node.js `24.21.0` (pinned in the workflow) | `node --test` over every file `git ls-files '*.test.js'` lists. The job fails when that list is empty |
+
+Prerequisites on the Windows runner:
+
+- The headless browser is the runner image's Microsoft Edge. The workflow sets `WASLA_TEST_BROWSER` to it and fails before the build if Edge is missing.
+- The WebView2 runtime tests use the image's WebView2 Runtime and the runner's interactive desktop session. Windows stay off-screen.
+- The Print Bridge runtime tests need at least one installed printer on the runner. Nothing is sent to it.
+- The headless-browser tests need `cdn.jsdelivr.net`. Tests make no other network calls in CI, the workflow uses no repository secrets, and every test server is in-process with fake tokens and data.
+
+The workflow logs the browser version, the WebView2 Runtime version and the number of installed printers before the build.
+
+How failures surface:
+
+- A build error or a failing test fails its step and the job. The Print Bridge tests still run after a unit-test failure, so one run reports both projects.
+- `scripts/ci/assert-test-results.ps1` then reads every result file. It fails the job when a file is missing, has no tests, or reports a failed or **skipped** test. A missing browser, an unreachable CDN, a missing WebView2 Runtime or a missing printer therefore fails CI instead of passing as a skip. The script adds an error annotation per failed or skipped test (first 20) and a totals table to the job summary.
+- A test that hangs for 15 minutes is stopped by `--blame-hang-timeout`. The run then fails with the hanging test's name and no memory dump. Each job also has a time limit.
+- Results are kept for 14 days as the `dotnet-test-results` (TRX files) and `javascript-test-results` (JUnit XML) artifacts. They contain test names, messages and output from fake data only.
+
+CI does not cover browser smoke of real screens, SQL Server, real platform providers, real printers or physical output, or the Print Bridge installer and update delivery. Those stay manual.
 
 ## Commands
 
@@ -85,4 +113,4 @@ Say which of these you actually ran:
 - Browser smoke
 - `dotnet build`
 
-Also report warnings, failures, and failures that come from unrelated dirty files. “All tests passed” is only accurate when the full projects you name were run and passed. A focused filter is not the full suite. CI’s unit-test job is not Print Bridge or Node coverage.
+Also report warnings, failures, and failures that come from unrelated dirty files. “All tests passed” is only accurate when the full projects you name were run and passed. A focused filter is not the full suite. A green CI run covers the suites listed under [Continuous integration](#continuous-integration) and nothing else.
