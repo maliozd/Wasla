@@ -50,57 +50,84 @@ internal sealed class HeadlessChromium : IAsyncDisposable
             .FirstOrDefault(File.Exists);
     }
 
-    public static async Task<HeadlessChromium> StartAsync(string executable, CancellationToken ct)
+    /// <summary>How long the browser may take to write a usable DevTools port file and expose a page target.</summary>
+    internal static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(30);
+
+    public static Task<HeadlessChromium> StartAsync(string executable, CancellationToken ct) =>
+        StartAsync(executable, StartupTimeout, Process.Start, ct);
+
+    /// <summary>
+    /// Starts the browser through <paramref name="launch"/> (tests substitute another process). When startup fails or
+    /// is cancelled, the process tree is killed and the profile deleted before the exception propagates.
+    /// </summary>
+    internal static async Task<HeadlessChromium> StartAsync(
+        string executable, TimeSpan timeout, Func<ProcessStartInfo, Process?> launch, CancellationToken ct)
     {
         var profile = Directory.CreateTempSubdirectory("wasla-headless-").FullName;
-        var start = new ProcessStartInfo(executable)
+        Process? process = null;
+        ClientWebSocket? socket = null;
+        try
         {
-            UseShellExecute = false,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true
-        };
-        foreach (var argument in new[]
-                 {
-                     "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
-                     "--disable-extensions", "--disable-background-networking", "--remote-debugging-port=0",
-                     $"--user-data-dir={profile}", "about:blank"
-                 })
-            start.ArgumentList.Add(argument);
-
-        var process = Process.Start(start) ?? throw new InvalidOperationException("The browser did not start.");
-        process.BeginErrorReadLine();
-        process.BeginOutputReadLine();
-
-        var portFile = Path.Combine(profile, "DevToolsActivePort");
-        var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (!File.Exists(portFile) || new FileInfo(portFile).Length == 0)
-        {
-            if (DateTime.UtcNow > deadline)
-                throw new TimeoutException("The browser did not open a DevTools port.");
-            await Task.Delay(100, ct);
-        }
-
-        var port = int.Parse((await File.ReadAllLinesAsync(portFile, ct))[0], System.Globalization.CultureInfo.InvariantCulture);
-        using var http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{port}") };
-        string? pageSocket = null;
-        while (pageSocket is null)
-        {
-            var targets = await http.GetFromJsonAsync<JsonElement>("/json/list", ct);
-            pageSocket = targets.EnumerateArray()
-                .Where(t => t.GetProperty("type").GetString() == "page")
-                .Select(t => t.GetProperty("webSocketDebuggerUrl").GetString())
-                .FirstOrDefault();
-            if (pageSocket is null)
+            var start = new ProcessStartInfo(executable)
             {
-                if (DateTime.UtcNow > deadline)
-                    throw new TimeoutException("The browser exposed no page target.");
-                await Task.Delay(100, ct);
-            }
-        }
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true
+            };
+            foreach (var argument in new[]
+                     {
+                         "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                         "--disable-extensions", "--disable-background-networking", "--remote-debugging-port=0",
+                         $"--user-data-dir={profile}", "about:blank"
+                     })
+                start.ArgumentList.Add(argument);
 
-        var socket = new ClientWebSocket();
-        await socket.ConnectAsync(new Uri(pageSocket), ct);
-        return new HeadlessChromium(process, profile, socket);
+            var browser = launch(start) ?? throw new InvalidOperationException("The browser did not start.");
+            process = browser;
+            browser.BeginErrorReadLine();
+            browser.BeginOutputReadLine();
+
+            // Edge may still hold the file open while writing it, so a non-empty file is not yet a readable one.
+            var startup = Stopwatch.StartNew();
+            var endpoint = await DevToolsActivePort.WaitAsync(
+                token => DevToolsActivePort.ReadAsync(Path.Combine(profile, DevToolsActivePort.FileName), token),
+                () => DescribeExit(browser), () => startup.Elapsed, Task.Delay, timeout, ct);
+
+            using var http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{endpoint.Port}") };
+            string? pageSocket = null;
+            while (pageSocket is null)
+            {
+                var targets = await http.GetFromJsonAsync<JsonElement>("/json/list", ct);
+                pageSocket = targets.EnumerateArray()
+                    .Where(t => t.GetProperty("type").GetString() == "page")
+                    .Select(t => t.GetProperty("webSocketDebuggerUrl").GetString())
+                    .FirstOrDefault();
+                if (pageSocket is null)
+                {
+                    if (startup.Elapsed > timeout)
+                        throw new TimeoutException("The browser exposed no page target.");
+                    await Task.Delay(100, ct);
+                }
+            }
+
+            socket = new ClientWebSocket();
+            await socket.ConnectAsync(new Uri(pageSocket), ct);
+            return new HeadlessChromium(browser, profile, socket);
+        }
+        catch
+        {
+            socket?.Dispose();
+            await CleanUpAsync(process, profile);
+            throw;
+        }
+    }
+
+    private static string? DescribeExit(Process process)
+    {
+        if (!process.HasExited)
+            return null;
+        try { return $"exited with code {process.ExitCode}"; }
+        catch (InvalidOperationException) { return "exited"; }
     }
 
     public Task SetCookieAsync(Uri origin, string name, string value, CancellationToken ct) =>
@@ -221,21 +248,30 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         try { _socket.Dispose(); } catch (WebSocketException) { }
-        try
+        await CleanUpAsync(_process, _profile);
+    }
+
+    /// <summary>Kills the browser's whole process tree, if it started, and deletes its throw-away profile.</summary>
+    private static async Task CleanUpAsync(Process? process, string profile)
+    {
+        if (process is not null)
         {
-            if (!_process.HasExited)
-                _process.Kill(entireProcessTree: true);
-            await _process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or TimeoutException) { }
-        finally
-        {
-            _process.Dispose();
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or TimeoutException) { }
+            finally
+            {
+                process.Dispose();
+            }
         }
 
         for (var attempt = 0; attempt < 5; attempt++)
         {
-            try { Directory.Delete(_profile, recursive: true); break; }
+            try { Directory.Delete(profile, recursive: true); break; }
             catch (IOException) { await Task.Delay(200); }
             catch (UnauthorizedAccessException) { await Task.Delay(200); }
         }
