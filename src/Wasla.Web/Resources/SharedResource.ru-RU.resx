@@ -967,7 +967,7 @@
     <value>Включено</value>
   </data>
   <data name="Notification.Disabled" xml:space="preserve">
-    <value>Неполноценный</value>
+    <value>Выключено</value>
   </data>
   <data name="Notification.WaitingForBrowserAudio" xml:space="preserve">
     <value>Ожидание разрешения на воспроизведение звука в браузере</value>

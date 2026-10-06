@@ -1962,6 +1962,9 @@
   <data name="Settings.ReceiptContent.RequiredFields" xml:space="preserve">
     <value>Zorunlu Alanlar</value>
   </data>
+  <data name="Settings.ReceiptContent.RequiredFieldsDescription" xml:space="preserve">
+    <value>Fişlerde her zaman yer alır.</value>
+  </data>
   <data name="Settings.ReceiptContent.AlwaysIncluded" xml:space="preserve">
     <value>Bu alanlar fişte her zaman yazdırılır.</value>
   </data>

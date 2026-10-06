@@ -1636,4 +1636,5 @@
   <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>Son 24 saatte bazı yazdırma işleri başarısız oldu. Sahip, Print Bridge bilgisayarındaki yazıcıyı kontrol edebilir.</value></data>
   <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>Bağlı kayıt başvurusu oluşturuldu olarak işaretli değil. Durumunu incelemek için açın; elle değiştirmeyin.</value></data>
   <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Şu anda dikkat gerektiren bir şey yok.</value></data>
+  <data name="Settings.ReceiptContent.RequiredFieldsDescription" xml:space="preserve"><value>Fişlerde her zaman yer alır.</value></data>
 </root>
