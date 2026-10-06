@@ -115,6 +115,50 @@ public sealed class ShellDefaultSelectionTests : IDisposable
             Assert.Empty(System.Windows.Forms.Application.OpenForms.OfType<ShellConnectionDialog>());
         });
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ASetupLink_TakesOverFromAnOpenConnectionDialog_AndOnlyItsResultIsShown(bool openedByThePage)
+    {
+        // The usual onboarding: Print Bridge starts without a token (the first-run dialog opens), then the user opens the
+        // setup link from Wasla Web. The page's own Connect button is the same situation.
+        using var server = new TrayFakeServer();
+        await _host.RunAsync(shell: null, available: true, async (tray, localizer) =>
+        {
+            if (openedByThePage)
+                Click(tray, localizer["Tray.Settings"]);
+            else
+                tray.ShowSetupIfNotConnected();
+
+            var shell = await WaitForAsync(() => tray.ShellFormForTests is { Visible: true } form ? form : null);
+            await shell.InitializationForTests!.WaitAsync(Timeout);
+            var core = shell.CoreWebView2ForTests!;
+            await WaitUntilAsync(() => Task.FromResult(shell.BridgeForTests.SentSnapshotCount > 0));
+            if (openedByThePage)
+            {
+                var connect = "{\"version\":3,\"type\":\"connection.openSetup\",\"payload\":{\"requestId\":\"" + Guid.NewGuid().ToString("D") + "\"}}";
+                await core.ExecuteScriptAsync("chrome.webview.postMessage('" + connect + "')");
+            }
+
+            await WaitForAsync(() => System.Windows.Forms.Application.OpenForms.OfType<ShellConnectionDialog>().FirstOrDefault());
+            // Every message the page shows from here on.
+            await core.ExecuteScriptAsync("""
+                window.__toasts = [];
+                new MutationObserver(function () { window.__toasts.push(document.getElementById('toast-text').textContent); })
+                  .observe(document.getElementById('toast-text'), { childList: true, characterData: true, subtree: true });
+                """);
+
+            tray.HandleSetupUri($"wasla-printbridge://setup?server={Uri.EscapeDataString(server.Url)}&code=setupcodenotarealcredential01");
+
+            var connected = new[] { localizer["Auto.Connected"], localizer["Auto.ConnectedPrinterMissing"] };
+            await WaitUntilAsync(async () => connected.Contains(await EvalAsync(core, "document.getElementById('toast-text').textContent")));
+            Assert.Empty(System.Windows.Forms.Application.OpenForms.OfType<ShellConnectionDialog>());
+            Assert.Equal(server.Url, new Wasla.PrintBridge.Services.PrintBridgeSettingsStore().Load().OrderHub.ServerUrl);
+            var shown = await EvalAsync(core, "JSON.stringify(window.__toasts)");
+            Assert.DoesNotContain(localizer["Shell.Setup.Cancelled"], shown, StringComparison.Ordinal);
+        });
+    }
+
     [Fact]
     public Task AFirstRunWithTheWinFormsRollback_OpensTheClassicSettings() =>
         _host.RunAsync(ShellSelection.WinFormsValue, available: true, async (tray, localizer) =>

@@ -231,6 +231,13 @@ public sealed class ShellConnectionSetup
     public ShellConnectionSetupResult Cancelled() =>
         new(ShellConnectionSetupOutcome.Cancelled, _localizer["Shell.Setup.Cancelled"]);
 
+    /// <summary>
+    /// The dialog was closed because a setup link took over. Nothing was saved by the dialog, and it reports no message:
+    /// the link reports the outcome, so the page never says "not changed" after the link changed the connection.
+    /// </summary>
+    public ShellConnectionSetupResult Superseded() =>
+        new(ShellConnectionSetupOutcome.Cancelled, string.Empty);
+
     private ShellConnectionSetupResult Invalid(string key, ShellConnectionSetupField field) =>
         new(ShellConnectionSetupOutcome.Invalid, _localizer[key], field);
 

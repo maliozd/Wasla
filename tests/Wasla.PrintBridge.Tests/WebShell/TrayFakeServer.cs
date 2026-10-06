@@ -10,7 +10,8 @@ namespace Wasla.PrintBridge.Tests.WebShell;
 /// A local stand-in for the Wasla device API, for the real tray application (which builds its own HTTP client) to listen
 /// to. It accepts only <see cref="Token"/> (a fake value), follows the job contract of <c>PrintBridgeJobService</c>
 /// (conditional transitions, a repeat answered <c>skipped</c>) and records every request by path. The answer to the
-/// claim can be held with <see cref="HoldClaimAnswer"/>, so a job is deterministically active while the test acts.
+/// claim can be held with <see cref="HoldClaimAnswer"/>, so a job is deterministically active while the test acts. A setup
+/// link pointing here exchanges its code for this server's address and the same fake token.
 /// </summary>
 internal sealed class TrayFakeServer : IDisposable
 {
@@ -112,6 +113,27 @@ internal sealed class TrayFakeServer : IDisposable
         Requests.Enqueue($"{context.Request.HttpMethod} {path}");
         try
         {
+            // A setup link: the one-time code is exchanged for this server's address and fake token.
+            if (path == "api/print-bridge/setup/exchange")
+            {
+                Write(context, HttpStatusCode.OK, new
+                {
+                    sessionId = Guid.NewGuid(),
+                    serverUrl = Url,
+                    deviceToken = Token,
+                    deviceName = "QA Kasa",
+                    installationId = Guid.NewGuid(),
+                    completionCredential = "completion-not-a-real-credential"
+                });
+                return;
+            }
+
+            if (path == "api/print-bridge/setup/complete")
+            {
+                Write(context, HttpStatusCode.OK, new { success = true });
+                return;
+            }
+
             if (context.Request.Headers["X-PrintBridge-Token"] != Token)
             {
                 Write(context, HttpStatusCode.Unauthorized, new { error = "device_auth_invalid" });

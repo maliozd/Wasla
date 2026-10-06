@@ -288,6 +288,10 @@ public sealed class ShellBridge : IDisposable
             return;
 
         PushSnapshot(force: true);
+        // No message: the dialog was closed for a setup link, which reports the outcome itself.
+        if (string.IsNullOrEmpty(result.Message))
+            return;
+
         NotifyConnectionResult(result.Outcome, result.Message, result.NavigateTo);
     }
 

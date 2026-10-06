@@ -29,6 +29,8 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     private readonly System.Windows.Forms.Timer _refreshTimer;
     private bool _useDarkPalette;
     private Form? _openDialog;
+    private ShellConnectionDialog? _connectionDialog;
+    private bool _connectionDialogSuperseded;
 
     private CoreWebView2Environment? _environment;
     private Task? _initialization;
@@ -170,9 +172,37 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
             () =>
             {
                 using var dialog = new ShellConnectionDialog(_connectionSetup, _localizer, _cultureService.IsRightToLeft, _useDarkPalette);
-                return RunDialog(dialog, () => dialog.Result) ?? _connectionSetup.Cancelled();
+                _connectionDialog = dialog;
+                _connectionDialogSuperseded = false;
+                try
+                {
+                    var result = RunDialog(dialog, () => dialog.Result) ?? _connectionSetup.Cancelled();
+                    // Closed for a setup link: the link reports the outcome, so this dialog reports nothing.
+                    return _connectionDialogSuperseded && result.Outcome == ShellConnectionSetupOutcome.Cancelled
+                        ? _connectionSetup.Superseded()
+                        : result;
+                }
+                finally
+                {
+                    _connectionDialog = null;
+                }
             },
             whenUnavailable: _connectionSetup.Cancelled());
+
+    /// <summary>
+    /// A setup link takes over from an open connection dialog (the first-run dialog, or one the page opened): the dialog
+    /// closes without saving and reports nothing, so only the link's result is shown and the dialog cannot replace the
+    /// connection the link sets up. A dialog that is already saving cannot be closed; it finishes and reports as usual.
+    /// UI thread only.
+    /// </summary>
+    public void CloseConnectionDialogForSetupLink()
+    {
+        if (_connectionDialog is not { IsDisposed: false } dialog)
+            return;
+
+        _connectionDialogSuperseded = true;
+        dialog.Close();
+    }
 
     public Task<bool> ConfirmConnectionResetAsync() =>
         ShowModalAsync(

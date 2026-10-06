@@ -608,6 +608,9 @@ public sealed class TrayApplicationContext : ApplicationContext
         // With the WebView2 app, a setup link is handled in its window and the result is shown there; the classic
         // window keeps its own flow and message boxes.
         var shell = TryShowShell(tab: null, classicTab: null) ? _shellForm : null;
+        // The link takes over from an open connection dialog (for example the one opened on first run), so the user
+        // is not left with a stale "first setup" dialog that reports "not changed" or replaces what the link set up.
+        shell?.CloseConnectionDialogForSetupLink();
         try
         {
             if (shell is null)
