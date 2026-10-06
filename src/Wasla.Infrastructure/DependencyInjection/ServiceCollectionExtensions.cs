@@ -89,6 +89,9 @@ public static class ServiceCollectionExtensions
 
             services.AddSingleton<IFoodPlatformClient, MockGetirYemekFoodPlatformClient>();
 
+            // One limiter per process: every Trendyol GO client instance (typed clients are transient) and every
+            // tenant share its request budget.
+            services.AddSingleton<TrendyolRequestRateLimiter>();
             services.AddHttpClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>((sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<TrendyolGoOptions>>().Value;

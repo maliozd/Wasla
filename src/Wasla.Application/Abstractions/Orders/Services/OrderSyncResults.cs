@@ -41,6 +41,9 @@ public sealed record OrderSyncCustomerResult(
 
     /// <summary>True when the sync was skipped because the tenant has disabled order sync.</summary>
     public bool WasSyncDisabled { get; init; }
+
+    /// <summary>True when at least one connection's order history is still behind and needs backfill turns.</summary>
+    public bool BackfillPending { get; init; }
 }
 
 public sealed record OrderSyncConnectionResult(
@@ -56,6 +59,9 @@ public sealed record OrderSyncConnectionResult(
     bool IsFailed)
 {
     public long ElapsedMs { get; init; }
+
+    /// <summary>True when the connection succeeded but its checkpoint is still more than one window behind.</summary>
+    public bool BackfillPending { get; init; }
 }
 
 public sealed record OrderUpsertResult(

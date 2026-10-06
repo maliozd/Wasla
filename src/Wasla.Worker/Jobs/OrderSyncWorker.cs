@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Wasla.Application.Abstractions.Orders.Services;
@@ -7,6 +6,7 @@ using Wasla.Application.Demos;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Platform;
 using Wasla.Infrastructure.Services;
+using Wasla.Infrastructure.Sync;
 using Wasla.Worker.Console;
 
 namespace Wasla.Worker.Jobs;
@@ -22,19 +22,22 @@ public sealed class OrderSyncWorker : BackgroundService
     private readonly IConfiguration _config;
     private readonly IHostEnvironment _env;
     private readonly GuidedDemoSchedule _demoSchedule;
+    private readonly OrderSyncCycleRunner _cycleRunner;
 
     public OrderSyncWorker(
         IServiceScopeFactory scopeFactory,
         ILogger<OrderSyncWorker> logger,
         IConfiguration config,
         IHostEnvironment env,
-        GuidedDemoSchedule demoSchedule)
+        GuidedDemoSchedule demoSchedule,
+        TimeProvider time)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _config = config;
         _env = env;
         _demoSchedule = demoSchedule;
+        _cycleRunner = new OrderSyncCycleRunner(time, MaxParallelCustomers);
     }
 
     public override Task StartAsync(CancellationToken cancellationToken)
@@ -120,11 +123,17 @@ public sealed class OrderSyncWorker : BackgroundService
                 customers.Count);
         }
 
-        var results = await SyncCustomersInParallelAsync(customers, stoppingToken);
+        // Phase 1: every tenant's current window. Phase 2: bounded, round-robin history recovery.
+        var byId = customers.ToDictionary(c => c.Id);
+        var cycle = await _cycleRunner.RunAsync(
+            customers.Select(c => c.Id).ToList(),
+            (tenantId, ct) => SyncSingleCustomerAsync(byId[tenantId], ct),
+            (tenantId, ct) => BackfillSingleCustomerAsync(byId[tenantId], ct),
+            stoppingToken);
 
         swCycle.Stop();
 
-        LogCycleTotals(swCycle.ElapsedMilliseconds, customers.Count, results);
+        LogCycleTotals(swCycle.ElapsedMilliseconds, customers.Count, cycle.Current.Concat(cycle.Backfill).ToList());
 
         var remaining = TimeSpan.FromSeconds(CycleIntervalSeconds) - swCycle.Elapsed;
         if (remaining > TimeSpan.Zero)
@@ -143,29 +152,9 @@ public sealed class OrderSyncWorker : BackgroundService
             .ToListAsync(ct);
     }
 
-    private async Task<ConcurrentBag<OrderSyncCustomerResult>> SyncCustomersInParallelAsync(
-        IReadOnlyList<ActiveCustomer> customers,
-        CancellationToken stoppingToken)
+    private async Task<OrderSyncCustomerResult?> SyncSingleCustomerAsync(ActiveCustomer customer, CancellationToken ct)
     {
-        var results = new ConcurrentBag<OrderSyncCustomerResult>();
-
-        await Parallel.ForEachAsync(
-            customers,
-            new ParallelOptions
-            {
-                MaxDegreeOfParallelism = MaxParallelCustomers,
-                CancellationToken = stoppingToken
-            },
-            (customer, innerCt) => SyncSingleCustomerAsync(customer, results, innerCt));
-
-        return results;
-    }
-
-    private async ValueTask SyncSingleCustomerAsync(
-        ActiveCustomer customer,
-        ConcurrentBag<OrderSyncCustomerResult> results,
-        CancellationToken ct)
-    {
+        OrderSyncCustomerResult? result = null;
         using var activity = new Activity("Wasla.OrderSync");
         activity.SetTag("tenant.id", customer.Id.ToString("D"));
         activity.Start();
@@ -187,7 +176,7 @@ public sealed class OrderSyncWorker : BackgroundService
                 customer.Name);
 
             var r = await syncer.SyncCustomerWithResultAsync(customer.Id, ct);
-            results.Add(r);
+            result = r;
 
             if (_env.IsDevelopment())
                 WorkerConsole.WriteCustomerResult(customer.Name, r.WasSyncDisabled, r.Connections);
@@ -211,6 +200,43 @@ public sealed class OrderSyncWorker : BackgroundService
         }
 
         await DeliverGuidedDemosAsync(scope, customer, ct);
+        return result;
+    }
+
+    /// <summary>One history-recovery turn for a tenant whose current pass reported a backlog.</summary>
+    private async Task<OrderSyncCustomerResult?> BackfillSingleCustomerAsync(ActiveCustomer customer, CancellationToken ct)
+    {
+        using var activity = new Activity("Wasla.OrderSync.Backfill");
+        activity.SetTag("tenant.id", customer.Id.ToString("D"));
+        activity.Start();
+        using var logScope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["TraceId"] = activity.TraceId.ToString(),
+            ["TenantId"] = customer.Id.ToString("D")
+        });
+
+        using var scope = _scopeFactory.CreateScope();
+        var syncer = scope.ServiceProvider.GetRequiredService<IOrderSyncService>();
+
+        try
+        {
+            return await syncer.BackfillCustomerAsync(customer.Id, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // One customer's failure must not stop the others in the same cycle.
+            _logger.LogError(
+                ex,
+                "Order history recovery failed for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
+                customer.Id,
+                customer.Slug,
+                customer.Name);
+            return null;
+        }
     }
 
     /// <summary>

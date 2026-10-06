@@ -6,30 +6,56 @@ public sealed class OrderFetchWindowPlannerTests
 {
     private static readonly DateTime Now = new(2026, 10, 6, 12, 0, 0, DateTimeKind.Utc);
     private static readonly TimeSpan Hour = TimeSpan.FromHours(1);
+    private static readonly TimeSpan Overlap = OrderFetchWindowPlanner.CheckpointOverlap;
 
     [Fact]
-    public void WithoutCheckpoint_LooksBackTheInitialLookbackOnly()
+    public void WithoutCheckpoint_LooksBackTheInitialLookbackOnly_AndAdvances()
     {
-        var plan = OrderFetchWindowPlanner.Plan(null, Now, Hour);
+        var plan = OrderFetchWindowPlanner.PlanCurrent(null, Now, Hour);
 
-        var window = Assert.Single(plan.Windows);
-        Assert.Equal(Now - OrderFetchWindowPlanner.InitialLookback, window.StartUtc);
-        Assert.Equal(Now, window.EndUtc);
+        Assert.Equal(Now - OrderFetchWindowPlanner.InitialLookback, plan.Window.StartUtc);
+        Assert.Equal(Now, plan.Window.EndUtc);
+        Assert.True(plan.AdvancesCheckpoint);
         Assert.Equal(TimeSpan.FromHours(1), OrderFetchWindowPlanner.InitialLookback);
-        Assert.False(plan.HasMore);
+        Assert.False(OrderFetchWindowPlanner.HasHistoryGap(null, Now, Hour));
     }
 
     [Fact]
-    public void WithCheckpoint_StartsTheOverlapBeforeIt_AndEndsNow()
+    public void RecentCheckpoint_CoversEverythingSinceTheOverlap_AndAdvances()
     {
         var checkpoint = Now.AddSeconds(-30);
 
-        var plan = OrderFetchWindowPlanner.Plan(checkpoint, Now, Hour);
+        var plan = OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, Hour);
 
-        var window = Assert.Single(plan.Windows);
-        Assert.Equal(checkpoint - OrderFetchWindowPlanner.CheckpointOverlap, window.StartUtc);
-        Assert.Equal(Now, window.EndUtc);
-        Assert.Equal(TimeSpan.FromMinutes(5), OrderFetchWindowPlanner.CheckpointOverlap);
+        Assert.Equal(checkpoint - Overlap, plan.Window.StartUtc);
+        Assert.Equal(Now, plan.Window.EndUtc);
+        Assert.True(plan.AdvancesCheckpoint);
+        Assert.Equal(TimeSpan.FromMinutes(5), Overlap);
+    }
+
+    [Fact]
+    public void CheckpointExactlyOneWindowBack_StillFitsOneWindow()
+    {
+        var checkpoint = Now - Hour + Overlap;
+
+        var plan = OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, Hour);
+
+        Assert.True(plan.AdvancesCheckpoint);
+        Assert.Equal(Now - Hour, plan.Window.StartUtc);
+        Assert.False(OrderFetchWindowPlanner.HasHistoryGap(checkpoint, Now, Hour));
+    }
+
+    [Fact]
+    public void OldCheckpoint_FetchesTheHotWindowFirst_WithoutAdvancing()
+    {
+        var checkpoint = Now.AddHours(-6);
+
+        var plan = OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, Hour);
+
+        Assert.Equal(Now - Hour, plan.Window.StartUtc);
+        Assert.Equal(Now, plan.Window.EndUtc);
+        Assert.False(plan.AdvancesCheckpoint);
+        Assert.True(OrderFetchWindowPlanner.HasHistoryGap(checkpoint, Now, Hour));
     }
 
     [Fact]
@@ -37,53 +63,64 @@ public sealed class OrderFetchWindowPlannerTests
     {
         var stored = DateTime.SpecifyKind(Now.AddMinutes(-2), DateTimeKind.Unspecified);
 
-        var window = Assert.Single(OrderFetchWindowPlanner.Plan(stored, Now, Hour).Windows);
+        var plan = OrderFetchWindowPlanner.PlanCurrent(stored, Now, Hour);
 
-        Assert.Equal(DateTimeKind.Utc, window.StartUtc.Kind);
-        Assert.Equal(Now.AddMinutes(-7), window.StartUtc);
+        Assert.Equal(DateTimeKind.Utc, plan.Window.StartUtc.Kind);
+        Assert.Equal(Now.AddMinutes(-7), plan.Window.StartUtc);
     }
 
     [Fact]
     public void CheckpointAheadOfTheClock_DoesNotSkipTheCurrentInterval()
     {
-        var plan = OrderFetchWindowPlanner.Plan(Now.AddHours(3), Now, Hour);
+        var plan = OrderFetchWindowPlanner.PlanCurrent(Now.AddHours(3), Now, Hour);
 
-        var window = Assert.Single(plan.Windows);
-        Assert.Equal(Now - OrderFetchWindowPlanner.CheckpointOverlap, window.StartUtc);
-        Assert.Equal(Now, window.EndUtc);
+        Assert.Equal(Now - Overlap, plan.Window.StartUtc);
+        Assert.Equal(Now, plan.Window.EndUtc);
+        Assert.True(plan.AdvancesCheckpoint);
     }
 
     [Fact]
-    public void OutageLongerThanOneWindow_IsSplitIntoConsecutiveWindowsWithoutGaps()
+    public void ClientWithoutMaximumWindow_GetsOneWindowForTheWholeInterval_AndNeverBackfills()
+    {
+        var checkpoint = Now.AddDays(-3);
+
+        var plan = OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, maxWindow: null);
+
+        Assert.Equal(checkpoint - Overlap, plan.Window.StartUtc);
+        Assert.Equal(Now, plan.Window.EndUtc);
+        Assert.True(plan.AdvancesCheckpoint);
+        Assert.False(OrderFetchWindowPlanner.HasHistoryGap(checkpoint, Now, maxWindow: null));
+    }
+
+    [Fact]
+    public void Backfill_StartsAtTheCheckpointMinusTheOverlap_OldestFirst_WithoutGaps()
     {
         var checkpoint = Now.AddHours(-5);
 
-        var plan = OrderFetchWindowPlanner.Plan(checkpoint, Now, Hour);
+        var windows = OrderFetchWindowPlanner.PlanBackfill(checkpoint, Now, Hour, maxWindows: 10);
 
-        Assert.Equal(6, plan.Windows.Count);
-        Assert.False(plan.HasMore);
-        Assert.Equal(checkpoint - OrderFetchWindowPlanner.CheckpointOverlap, plan.Windows[0].StartUtc);
-        Assert.Equal(Now, plan.Windows[^1].EndUtc);
-        for (var i = 0; i < plan.Windows.Count; i++)
+        Assert.Equal(6, windows.Count);
+        Assert.Equal(checkpoint - Overlap, windows[0].StartUtc);
+        Assert.Equal(Now, windows[^1].EndUtc);
+        for (var i = 0; i < windows.Count; i++)
         {
-            Assert.True(plan.Windows[i].EndUtc - plan.Windows[i].StartUtc <= Hour);
-            Assert.True(plan.Windows[i].EndUtc > plan.Windows[i].StartUtc);
+            Assert.True(windows[i].EndUtc > windows[i].StartUtc);
+            Assert.True(windows[i].EndUtc - windows[i].StartUtc <= Hour);
             if (i > 0)
-                Assert.Equal(plan.Windows[i - 1].EndUtc, plan.Windows[i].StartUtc);
+                Assert.Equal(windows[i - 1].EndUtc, windows[i].StartUtc);
         }
     }
 
     [Fact]
-    public void OutageLongerThanOneRun_StopsAtTheRunBudget_AndReportsMore()
+    public void Backfill_StopsAtTheRequestedNumberOfWindows()
     {
         var checkpoint = Now.AddDays(-3);
 
-        var plan = OrderFetchWindowPlanner.Plan(checkpoint, Now, Hour);
+        var windows = OrderFetchWindowPlanner.PlanBackfill(checkpoint, Now, Hour, maxWindows: 1);
 
-        Assert.Equal(OrderFetchWindowPlanner.MaxWindowsPerRun, plan.Windows.Count);
-        Assert.True(plan.HasMore);
-        Assert.Equal(checkpoint - OrderFetchWindowPlanner.CheckpointOverlap, plan.Windows[0].StartUtc);
-        Assert.Equal(plan.Windows[0].StartUtc + Hour * OrderFetchWindowPlanner.MaxWindowsPerRun, plan.Windows[^1].EndUtc);
+        var window = Assert.Single(windows);
+        Assert.Equal(checkpoint - Overlap, window.StartUtc);
+        Assert.Equal(checkpoint - Overlap + Hour, window.EndUtc);
     }
 
     [Fact]
@@ -91,23 +128,17 @@ public sealed class OrderFetchWindowPlannerTests
     {
         var checkpoint = Now.AddHours(-30).AddMinutes(-17);
 
-        var first = OrderFetchWindowPlanner.Plan(checkpoint, Now, Hour);
-        var second = OrderFetchWindowPlanner.Plan(checkpoint, Now, Hour);
-
-        Assert.Equal(first.Windows, second.Windows);
-        Assert.Equal(first.HasMore, second.HasMore);
+        Assert.Equal(
+            OrderFetchWindowPlanner.PlanBackfill(checkpoint, Now, Hour, 12),
+            OrderFetchWindowPlanner.PlanBackfill(checkpoint, Now, Hour, 12));
+        Assert.Equal(
+            OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, Hour),
+            OrderFetchWindowPlanner.PlanCurrent(checkpoint, Now, Hour));
     }
 
     [Fact]
-    public void ClientWithoutMaximumWindow_GetsOneWindowForTheWholeInterval()
+    public void RecoveryWorkloadCap_IsTwelveWindowsPerCycle()
     {
-        var checkpoint = Now.AddDays(-3);
-
-        var plan = OrderFetchWindowPlanner.Plan(checkpoint, Now, maxWindow: null);
-
-        var window = Assert.Single(plan.Windows);
-        Assert.Equal(checkpoint - OrderFetchWindowPlanner.CheckpointOverlap, window.StartUtc);
-        Assert.Equal(Now, window.EndUtc);
-        Assert.False(plan.HasMore);
+        Assert.Equal(12, OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle);
     }
 }

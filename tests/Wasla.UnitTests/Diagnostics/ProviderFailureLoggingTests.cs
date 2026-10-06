@@ -33,7 +33,9 @@ public sealed class ProviderFailureLoggingTests
             new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
-            logger);
+            logger,
+            new Wasla.UnitTests.Platform.LimiterClock().Limiter(),
+            TimeProvider.System);
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
             client.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None));

@@ -112,10 +112,12 @@ Details and numbers: [../orders/synchronization.md](../orders/synchronization.md
 
 | Provider | Window | Statuses requested | Page size | Page cap |
 |----------|--------|--------------------|-----------|----------|
-| Trendyol GO | From the checkpoint (`LastSuccessfulSync`) − 5 minutes to now, in windows of at most 1 hour, at most 12 per run; 1 hour back when there is no checkpoint | All documented `packageStatuses`, including `Cancelled`, `UnSupplied` and `Delivered` | 50 | 20 pages per window (≤ 1000 packages) |
+| Trendyol GO | From the checkpoint (`LastSuccessfulSync`) − 5 minutes to now when that fits 1 hour. After an outage: the hot window `[now − 1 hour, now]` first, then history oldest first in 1-hour windows, at most 12 per connection per Worker cycle. 1 hour back when there is no checkpoint | All documented `packageStatuses`, including `Cancelled`, `UnSupplied` and `Delivered` | 50 | 20 pages per window (≤ 1000 packages) |
 | Yemeksepeti | Last 1 hour (not checkpointed) | Provider default | default 20 | 50 pages (≤ 1000 at default size) |
 
-Malformed pagination or “more pages at cap” fails that connection’s sync, and the checkpoint does not move past the failed window. Outage recovery, failure rules and the Trendyol GO request contract: [../orders/synchronization.md](../orders/synchronization.md#checkpoint-and-outage-recovery).
+Malformed pagination, “more pages at cap” or a persistent HTTP 429 fails that connection’s sync, and the checkpoint does not move past the failed window. Outage recovery, failure rules and the Trendyol GO request contract: [../orders/synchronization.md](../orders/synchronization.md#checkpoint-and-outage-recovery).
+
+Trendyol GO package requests share one process-wide limit of 40 requests per rolling 10 seconds across all tenants (`TrendyolRequestRateLimiter`, a singleton). A 429 is retried on the same page after `Retry-After` (at most 60 seconds, 10 seconds without one), at most twice. See [Trendyol GO request limiter](../orders/synchronization.md#trendyol-go-request-limiter), [HTTP 429](../orders/synchronization.md#http-429) and [Capacity model](../orders/synchronization.md#capacity-model).
 
 ## Webhooks
 
@@ -135,6 +137,7 @@ When Mock clients generate orders:
 - Worker Real-mode startup log disagrees with DI for Yemeksepeti.
 - Yemeksepeti polling is not checkpointed: a change older than one hour at the next successful run can be missed.
 - Trendyol GO date-range limits, retention and the scope of the request limit are undocumented and not yet verified against the Stage API.
+- The Trendyol GO request limiter is per Worker process; several Workers would need a distributed limiter.
 
 ## Related docs
 

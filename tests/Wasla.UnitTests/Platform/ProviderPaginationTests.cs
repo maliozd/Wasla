@@ -340,7 +340,9 @@ public sealed class TrendyolPaginationTests
             new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
-            logger ?? NullLogger<TrendyolGoFoodPlatformClient>.Instance);
+            logger ?? NullLogger<TrendyolGoFoodPlatformClient>.Instance,
+            new LimiterClock().Limiter(),
+            TimeProvider.System);
     }
 
     private static PlatformConnection Connection() => new()

@@ -20,15 +20,17 @@ Several behaviors below (pagination caps, unchanged short circuit, quieter Worke
 ```text
 OrderSyncWorker (Wasla.Worker)
   → load active tenants from CentralDb
-  → Parallel.ForEachAsync (max 5 tenants)
+  → OrderSyncCycleRunner
+      Phase 1, every tenant (max 5 at a time):
       → IOrderSyncService.SyncCustomerWithResultAsync
           → skip if tenant Order Sync disabled
-          → for each due PlatformConnection
-              → plan fetch windows from the checkpoint (LastSuccessfulSync)
-              → for each window, oldest first
-                  → IFoodPlatformClient.FetchOrdersAsync (every page)
-                  → upsert by Platform + ExternalOrderId (idempotency key)
-                  → move the checkpoint to the window end
+          → for each due PlatformConnection: the current window, ending now
+              → IFoodPlatformClient.FetchOrdersAsync (every page; each Trendyol GO request waits for the shared limiter)
+              → upsert by Platform + ExternalOrderId (idempotency key)
+              → move the checkpoint to now, unless the window was a hot window ahead of a history gap
+      Phase 2, tenants whose history is behind, round-robin, ≤ 12 rounds, ≤ 30 s:
+      → IOrderSyncService.BackfillCustomerAsync: the oldest missing window per behind connection
+          → fetch every page, upsert, move the checkpoint to the window end
 ```
 
 Each tenant has at most one connection per platform. `StoreId` is provider configuration for that location. `Platform + ExternalOrderId` above is order idempotency, not connection identity. See [../architecture/tenancy.md](../architecture/tenancy.md).
@@ -38,7 +40,9 @@ Primary sources:
 - `src/Wasla.Worker/Jobs/OrderSyncWorker.cs`
 - `src/Wasla.Infrastructure/Sync/OrderSyncService.cs`
 - `src/Wasla.Infrastructure/Sync/OrderFetchWindowPlanner.cs`
+- `src/Wasla.Infrastructure/Sync/OrderSyncCycleRunner.cs`
 - `src/Wasla.Infrastructure/Platform/TrendyolGo/TrendyolGoFoodPlatformClient.cs`
+- `src/Wasla.Infrastructure/Platform/TrendyolGo/TrendyolRequestRateLimiter.cs`
 - `src/Wasla.Infrastructure/Platform/Yemeksepeti/YemeksepetiFoodPlatformClient.cs`
 
 ## Webhooks and polling
@@ -60,12 +64,15 @@ For Trendyol GO this is described in [Checkpoint and outage recovery](#checkpoin
 | Cycle interval | 15 seconds | `OrderSyncWorker.CycleIntervalSeconds` |
 | Catastrophic cycle backoff | 30 seconds | `OrderSyncWorker.CatastrophicFailureBackoffSeconds` |
 | Max parallel tenants | 5 | `OrderSyncWorker.MaxParallelCustomers` |
+| History recovery per cycle | at most 12 rounds of one window per behind connection | `OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle` |
+| History recovery time budget | 30 seconds (no new round or turn starts after it) | `OrderSyncCycleRunner.BackfillBudget` |
 
 Behavior:
 
 - The Worker process stays running. Web does not start or stop Worker OS processes.
 - Each cycle loads **active** tenants from CentralDb (`IsActive`).
-- Tenants sync in parallel up to five at a time. One tenant’s exception does not stop the others.
+- `OrderSyncCycleRunner` runs the cycle in two phases. Phase 1 is every tenant's current pass, up to five tenants at a time, so every eligible tenant gets its current-window check before any history recovery starts. Phase 2 is history recovery ([Current window first, then history](#current-window-first-then-history)) for tenants whose current pass reported a history gap: round-robin, one window per behind connection per turn, at most 12 rounds and only within the 30-second budget, starting from a different tenant each cycle. A tenant whose turn fails stops for this cycle. One tenant’s exception does not stop the others.
+- The next cycle starts after both phases, as before (15 seconds after the previous start, or at once if the cycle took longer).
 - Development uses `WorkerConsole` for cycle/customer summaries. Non-Development logs cycle start at Debug and cycle completion at Debug (Warning if any connection failed).
 - Per-tenant sync starts a `Activity("Wasla.OrderSync")` and scopes `TraceId` / `TenantId` into logs.
 - After each tenant's sync, the cycle also reads that tenant's open guided-demo practice orders (`IGuidedDemoDeliverySimulator.AdvanceDueAndPlanAsync`: one small read, plus an update only when a stage is due) and hands the next practice deadline to `GuidedDemoScheduler`. That second hosted service in the Worker moves a practice order at its deadline between cycles. It touches only `GuidedDemoSessions` and changes none of the constants above: provider calls, webhooks and real orders keep this cycle's cadence. See [../product/onboarding.md](../product/onboarding.md#practice-order-countdown).
@@ -101,14 +108,16 @@ Skipped connections (inactive, circuit open, or not due) are logged; they do not
 
 ## Fetch resilience and circuit breaker
 
-Each fetch window uses a Polly pipeline in `OrderSyncService` (a retry fetches the whole window again from page 0):
+Each fetch window uses a Polly pipeline in `OrderSyncService` (a retry fetches the whole window again from page 0, and every request of it takes a new limiter permit):
 
 | Setting | Value |
 |---------|-------|
 | Max retry attempts | 3 |
 | Retry delay | 2 seconds, exponential, with jitter |
-| Handled exceptions | `HttpRequestException`, `TimeoutException`, `TimeoutRejectedException` |
-| Fetch timeout | 15 seconds |
+| Handled exceptions | `HttpRequestException` except HTTP 429, `TimeoutException`, `TimeoutRejectedException` |
+| Whole-fetch timeout | 15 seconds for clients without a fetch window (Yemeksepeti, mocks). None for Trendyol GO: it may queue for the shared request limiter, and each of its HTTP requests keeps the `HttpClient` timeout (`Platform:TrendyolGo:RequestTimeout`, default 15 seconds) |
+
+HTTP 429 is not retried by Polly: the Trendyol GO client has already retried that page (see [HTTP 429](#http-429)).
 
 On failure (after the pipeline / upsert path throws):
 
@@ -118,7 +127,7 @@ On failure (after the pipeline / upsert path throws):
 - The checkpoint stays at the end of the last window that completed (see [Failure and checkpoint rules](#failure-and-checkpoint-rules))
 - The failure is logged; other connections and tenants continue
 
-On success, consecutive failures and circuit open state are cleared, and the checkpoint is at the end of the last window of the run.
+On success, consecutive failures and circuit open state are cleared. The checkpoint is at the end of the last completed window that started at it (a hot window ahead of a history gap does not move it).
 
 ### Host cancellation
 
@@ -128,31 +137,85 @@ If `OperationCanceledException` is thrown because the Worker cancellation token 
 
 Source: `OrderFetchWindowPlanner` and `OrderSyncService.SyncConnectionAsync`.
 
-The checkpoint is the existing `PlatformConnection.LastSuccessfulSync` column. Everything the provider reports as modified before the checkpoint has been fetched and persisted. It is the end of the last completed fetch window, which is the moment the run planned its windows, not the moment the run finished. The tenant Platform connections page and the Central Admin tenant view show this value as the last successful sync. No schema change was needed.
+The checkpoint is the existing `PlatformConnection.LastSuccessfulSync` column. Everything the provider reports as modified before the checkpoint has been fetched and persisted. It is the end of the last completed fetch window that started at the checkpoint, which is the moment that window was planned, not the moment the run finished. It is saved as soon as each window completes. The tenant Platform connections page and the Central Admin tenant view show this value as the last successful sync, so after an outage it shows how far history has been recovered. No schema change was needed.
 
 | Setting | Value | Source |
 |---------|-------|--------|
 | Overlap before the checkpoint | 5 minutes | `OrderFetchWindowPlanner.CheckpointOverlap` |
 | Lookback without a checkpoint | 1 hour | `OrderFetchWindowPlanner.InitialLookback` |
 | Window length (Trendyol GO) | 1 hour | `TrendyolGoFoodPlatformClient.FetchWindowLength` |
-| Windows per run | 12 | `OrderFetchWindowPlanner.MaxWindowsPerRun` |
+| Recovery workload cap | 12 windows per connection per Worker cycle | `OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle` |
 
-Each run of a connection:
+The recovery workload cap bounds how much history one connection recovers per cycle. It is **not** rate-limit protection: each window can take up to 20 page requests, so 12 windows can be 240 requests. The request rate is governed only by the [request limiter](#trendyol-go-request-limiter).
 
-1. The interval is `[checkpoint − 5 minutes, now]`. A checkpoint later than now counts as now. A connection that has never completed a sync uses `[now − 1 hour, now]`, so connecting a store does not import older history.
-2. A client with a maximum window (Trendyol GO) gets consecutive windows of at most one hour, oldest first. Each window starts at the instant the previous one ended, so no instant is left between two windows. A client without one (Yemeksepeti and the mock clients) gets a single fetch per run and ignores the window.
-3. For each window: every page is fetched, every order is upserted, and only then does the checkpoint move to the window end.
-4. A run fetches at most 12 windows (12 hours). After a longer outage the run logs `MoreRunsNeeded=True` and the next due run continues from the advanced checkpoint. No older interval is skipped. New orders placed after the outage appear once recovery reaches them.
+### Current window first, then history
+
+Current pass (phase 1) of a connection:
+
+1. A connection that has never completed a sync uses `[now − 1 hour, now]` and moves the checkpoint to now. Connecting a store does not import older history.
+2. When `[checkpoint − 5 minutes, now]` fits one window, that window is fetched and the checkpoint moves to now. A checkpoint later than now counts as now. A client without a maximum window (Yemeksepeti and the mock clients) always takes this path with a single fetch.
+3. Otherwise the history is behind (an outage). The **hot window** `[now − 1 hour, now]` is fetched and persisted first, so new and recently changed orders keep arriving. The checkpoint does **not** move: the gap before the hot window is still unprocessed. The connection reports `BackfillPending`.
+4. If the hot window fails, the connection does no history recovery this cycle.
+
+Backfill turn (phase 2), for a connection that is active, has its circuit closed, succeeded on its last attempt (`ConsecutiveFailures = 0`) and is still behind:
+
+1. The oldest missing window `[checkpoint − 5 minutes, checkpoint + 55 minutes]` (at most one hour, never past now) is fetched, every order is upserted, and the checkpoint moves to its end and is saved.
+2. Each turn re-reads the 5-minute overlap, so the checkpoint advances 55 minutes per turn. Windows move strictly oldest first and never skip time.
+3. When the remaining gap fits one window, backfill stops ("Order history recovered") and the next current pass covers the rest up to now. Backfill never jumps the checkpoint to the hot window: the part that history shares with the hot window is fetched again and absorbed by idempotent upserts.
+
+With the defaults, one cycle recovers at most 12 × 55 minutes = 11 hours of history per connection, if the 30-second budget and the request limiter allow. Recovery time therefore depends on pages per window, the request limiter, the 12-window cap, the 30-second phase budget and the Worker schedule (see [Capacity model](#capacity-model)).
 
 The overlap covers clock skew between Wasla and Trendyol GO, a provider that indexes a change a little late, and the boundary instant, because the documentation does not say whether the date bounds are inclusive. Results that the overlap fetches again are idempotent (see [Overlap and repeated results](#overlap-and-repeated-results)).
 
 ### Failure and checkpoint rules
 
-- A window fails when a page fails after retries, a response is malformed (invalid JSON or pagination metadata), the page cap is reached while more pages remain, a repeated package conflicts, or an order cannot be persisted. The checkpoint does not move past it, and later windows of that run are not fetched.
-- Orders of earlier windows in the same run stay stored, and the checkpoint stays at the end of the last completed window. The next run starts 5 minutes before it.
-- Orders of the failing window that were saved before the failure are fetched again by the next run and update idempotently.
-- Host cancellation records no failure and leaves the checkpoint at the last value already saved, which is never past unprocessed data.
+- A window fails when a page fails after retries, a response is malformed (invalid JSON or pagination metadata), the page cap is reached while more pages remain, HTTP 429 persists after the client's retries, a repeated package conflicts, or an order cannot be persisted. The checkpoint does not move past it, and that connection's recovery stops for this cycle.
+- Earlier completed windows stay stored, and their checkpoint is already saved. The next attempt starts 5 minutes before it.
+- Orders of a successful hot window stay stored even if a later historical window fails.
+- Orders of the failing window that were saved before the failure are fetched again by the next attempt and update idempotently.
+- Host cancellation, including while waiting for the request limiter or a 429 delay, records no failure and leaves the checkpoint at the last value already saved, which is never past unprocessed data.
 - A connection's checkpoint, credentials and orders live in its tenant database. One tenant's failure or recovery does not change another tenant's window.
+- No tenant change is held unsaved while a request waits: the attempt time is saved before the first provider call, a window is fetched completely (and throttled) before anything from it is written, and no transaction is open during a provider call.
+
+### Trendyol GO request limiter
+
+Source: `TrendyolRequestRateLimiter`, registered as a **singleton** in Real mode. Every Trendyol GO client instance (typed HTTP clients are transient) and every tenant in the Worker process share one budget. The client cannot be built without it.
+
+- **Budget:** at most **40 requests in any rolling 10 seconds** (`DefaultPermitLimit`, `DefaultWindow`).
+- **Algorithm:** a rolling log of grant times. A request starts at once while fewer than 40 started in the last 10 seconds, so a low-volume request never waits. Otherwise it waits asynchronously until the oldest grant leaves the window. Waiters are served one at a time, in arrival order.
+- **What counts:** every HTTP attempt to the packages endpoint takes one permit before it is sent. That includes every page of a window, every 429 retry and every page of a Polly whole-window retry. Order actions (accept, invoice, reject) and Yemeksepeti are not limited by it.
+- **Waiting:** `Task.Delay` on the injected `TimeProvider`, cancelled by the Worker's stopping token. No thread is blocked and no database transaction is open while waiting.
+- **Scope:** one process. Several Worker instances would each have their own 40, which could exceed a global quota. They need a distributed limiter (see [Known gaps](#known-gaps)).
+
+### HTTP 429
+
+When a page request answers 429 Too Many Requests, the Trendyol GO client:
+
+1. Reads `Retry-After` as seconds or as an HTTP date, whichever .NET parsed. The wait is that value, at least 0 and at most **60 seconds** (`MaxThrottleDelay`). Without a usable header it waits **10 seconds** (`DefaultThrottleDelay`).
+2. Pauses **every** Trendyol GO request in the process until then (`TrendyolRequestRateLimiter.Defer`), because the quota may be shared.
+3. Takes a new permit and retries the **same page** of the same window.
+4. Gives up after **2 retries** (3 attempts per page, `MaxThrottledRetries`). The window then fails with HTTP 429: the checkpoint does not move and nothing of the window is recorded as successful. Polly does not retry a 429 again.
+
+The warning `Provider throttled the request; retrying the same page` carries the page, attempt, delay and its source (`retry-after` or `fallback`), never the response body or headers.
+
+### Capacity model
+
+Assumptions until Trendyol GO confirms the scope of its limit in writing:
+
+- The Authorization page documents 50 requests per 10 seconds to the same endpoint. It does not say whether that is per supplier, per integrator or per source IP.
+- The Worker therefore shares one conservative budget of 40 per 10 seconds (4 requests per second) across all Trendyol GO tenants in the process.
+- Stage load testing cannot settle the scope: it needs written provider confirmation.
+
+| Tenants (one Trendyol GO connection, one page per current window) | Requests per pass | Quota time for one pass |
+|---|---|---|
+| 20 | 20 | Immediate (within the first 40) |
+| 300 | 300 | The 300th request starts after 70 seconds (40 at once, then 40 every 10 seconds); about 75 seconds at a steady 4 per second, plus response times |
+
+- With 20 tenants the current pass of every tenant fits one burst, and phase 2 can use the rest of each 10-second window for history recovery.
+- With 300 tenants a complete polling pass takes over a minute of quota alone. If the quota is global, polling cannot be the primary real-time path for 300 tenants.
+- **Webhooks are the intended primary real-time path.** Polling is the reconciliation, outage-recovery and webhook safety net.
+- More Worker instances do not increase a global external quota. They need a distributed limiter, and tenant leases so two Workers do not poll the same tenant.
+- Recovery duration depends on pages per window, the request limiter, the 12-window cap, the 30-second phase budget and the Worker schedule.
 
 ### Trendyol GO request
 
@@ -171,7 +234,7 @@ Source: `TrendyolGoFoodPlatformClient`. Official reference: "Sipariş Paketlerin
 
 `DefaultOrderStatusMapper` maps the terminal statuses: `Delivered` → Delivered, `Cancelled` → Cancelled, `UnSupplied` (seller cancellation or rejection) → Cancelled.
 
-The documentation does not state a maximum date range, how far back packages can be queried, whether the bounds are inclusive, or the sort order. Its "Servis Limitleri" page says limits will be published later. The one-hour window is therefore the span this client has always queried, not a documented limit. The Authorization page documents at most 50 requests to the same endpoint in 10 seconds (HTTP 429 above that); 12 windows per run keep one connection's catch-up well below it. These points are part of the Stage validation and are not yet proven against the real API.
+The documentation does not state a maximum date range, how far back packages can be queried, whether the bounds are inclusive, or the sort order. Its "Servis Limitleri" page says limits will be published later. The one-hour window is therefore the span this client has always queried, not a documented limit. The Authorization page documents at most 50 requests to the same endpoint in 10 seconds (HTTP 429 above that); the [request limiter](#trendyol-go-request-limiter) keeps the whole process at 40. These points are part of the Stage validation and are not yet proven against the real API.
 
 ### Pagination hard cap
 
@@ -266,7 +329,7 @@ This is **not** first-page-only fetch, and **not** always-rewrite-on-every-sync.
 
 ### Overlap and repeated results
 
-The checkpoint overlap, the shared instant between two windows, a retried window and a run that follows a failure all return packages Wasla has already stored. None of them creates a second order or repeats a side effect:
+The checkpoint overlap, the hot window and the history windows that cover the same time, a retried window and an attempt that follows a failure all return packages Wasla has already stored. None of them creates a second order or repeats a side effect:
 
 - The upsert finds the existing row by `IdempotencyKey`. No second `Order` row is inserted.
 - A repeated result with no change takes the unchanged short circuit: nothing is written.
@@ -285,8 +348,10 @@ Safe diagnostics for polling and recovery. These fields may be logged: tenant an
 
 | Level | Message | Fields |
 |-------|---------|--------|
-| Information | `Recovering platform orders after a sync gap` (more than one window, or more runs needed) | `CustomerId`, `ConnectionId`, `Platform`, `CheckpointUtc`, `Windows`, `FromUtc`, `ThroughUtc`, `MoreRunsNeeded` |
-| Error | `Platform connection sync failed` | Adds `WindowStartUtc`, `WindowEndUtc` (the failing window; empty when the failure was outside a window) and `CheckpointUtc` (the next run starts five minutes before it) |
+| Information | `Order history is behind; fetching the current window first` (each current pass while a gap remains) | `CustomerId`, `ConnectionId`, `Platform`, `CheckpointUtc`, `CurrentWindowStartUtc`, `CurrentWindowEndUtc` |
+| Information | `Order history recovered` (a backfill turn closed the gap) | `CustomerId`, `ConnectionId`, `Platform`, `CheckpointUtc` |
+| Warning | `Provider throttled the request; retrying the same page` (client, HTTP 429) | `StatusCode`, `Page`, `Attempt`, `RetryDelayMs`, `RetryDelaySource` |
+| Error | `Platform connection sync failed` | Adds `Pass` (`Current` or `Backfill`), `WindowStartUtc`, `WindowEndUtc` (the failing window; empty when the failure was outside a window) and `CheckpointUtc` (the next run starts five minutes before it) |
 | Warning | `Provider pagination failed` (client) | `Reason`, `PagesFetched`, `OrdersFetched`, `ReportedTotalPages` |
 | Debug | `Provider returned {OrderCount} orders` and `Provider fetch completed` | Window boundaries, pages, counts, elapsed time |
 
@@ -299,7 +364,9 @@ See also [../operations/observability.md](../operations/observability.md#order-s
 - Getir has no real fetch client yet.
 - Webhooks are not implemented for any platform; polling is the only ingestion path (see [Webhooks and polling](#webhooks-and-polling)).
 - Yemeksepeti polling is not checkpointed and still uses a fixed one-hour lookback.
-- Trendyol GO's maximum date range, retention, bound inclusivity, sort order and the scope of its 50-requests-per-10-seconds limit are undocumented and not yet verified against the Stage API.
+- Trendyol GO's maximum date range, retention, bound inclusivity, sort order and the scope of its 50-requests-per-10-seconds limit are undocumented and not yet verified against the Stage API. The scope needs written confirmation from Trendyol GO.
+- The request limiter and the cycle scheduling are per Worker process. Running several Worker instances needs a distributed request limiter and tenant leases; neither exists. For 300+ tenants, webhooks (not polling) must carry real-time orders.
+- A historical window that always fails (for example more than 1,000 packages in one hour, beyond the page cap) is retried every cycle and stops recovery for that connection until it is handled. The Error log names the window.
 - No OpenTelemetry exporter or metrics for sync throughput (see [../operations/observability.md](../operations/observability.md)).
 
 ## Related docs

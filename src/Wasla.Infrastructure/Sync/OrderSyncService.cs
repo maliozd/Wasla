@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Orders;
@@ -24,6 +25,12 @@ namespace Wasla.Infrastructure.Sync;
 
 public sealed class OrderSyncService : IOrderSyncService
 {
+    /// <summary>
+    /// Backfill windows per connection in one <see cref="BackfillCustomerAsync"/> turn. One window per turn lets the
+    /// cycle interleave tenants round-robin (<see cref="OrderSyncCycleRunner"/>).
+    /// </summary>
+    internal const int BackfillWindowsPerTurn = 1;
+
     private readonly ITenantDbContextFactory _customerDbFactory;
     private readonly IEnumerable<IFoodPlatformClient> _platformClients;
     private readonly IOrderStatusMapper _statusMapper;
@@ -35,19 +42,35 @@ public sealed class OrderSyncService : IOrderSyncService
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
         new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
-            .AddRetry(new RetryStrategyOptions<IReadOnlyCollection<ExternalOrderDto>>
-            {
-                MaxRetryAttempts = 3,
-                Delay = TimeSpan.FromSeconds(2),
-                BackoffType = DelayBackoffType.Exponential,
-                UseJitter = true,
-                ShouldHandle = new PredicateBuilder<IReadOnlyCollection<ExternalOrderDto>>()
-                    .Handle<HttpRequestException>()
-                    .Handle<TimeoutException>()
-                    .Handle<TimeoutRejectedException>()
-            })
+            .AddRetry(FetchRetry())
             .AddTimeout(TimeSpan.FromSeconds(15))
             .Build();
+
+    /// <summary>
+    /// For clients that fetch by window (<see cref="IFoodPlatformClient.MaxFetchWindow"/>, Trendyol GO). They may wait
+    /// for the process-wide request limiter, so a whole-fetch timeout would count queueing as a provider timeout. Each
+    /// HTTP request keeps its own HttpClient timeout, and the page cap bounds the requests per window.
+    /// </summary>
+    private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _windowedFetchPipeline =
+        new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
+            .AddRetry(FetchRetry())
+            .Build();
+
+    /// <summary>
+    /// Retries transient fetch failures. A 429 is not retried here: the client already retried that page after the
+    /// provider's delay, and repeating the whole window would multiply requests against an exhausted quota.
+    /// </summary>
+    private static RetryStrategyOptions<IReadOnlyCollection<ExternalOrderDto>> FetchRetry() => new()
+    {
+        MaxRetryAttempts = 3,
+        Delay = TimeSpan.FromSeconds(2),
+        BackoffType = DelayBackoffType.Exponential,
+        UseJitter = true,
+        ShouldHandle = new PredicateBuilder<IReadOnlyCollection<ExternalOrderDto>>()
+            .Handle<HttpRequestException>(ex => ex.StatusCode != HttpStatusCode.TooManyRequests)
+            .Handle<TimeoutException>()
+            .Handle<TimeoutRejectedException>()
+    };
 
     public OrderSyncService(
         ITenantDbContextFactory customerDbFactory,
@@ -141,12 +164,6 @@ public sealed class OrderSyncService : IOrderSyncService
             }
         }
 
-        var fetched = 0;
-        var inserted = 0;
-        var updated = 0;
-        var skipped = 0;
-        var unchanged = 0;
-        var failedConnections = 0;
         var connectionResults = new List<OrderSyncConnectionResult>(dueConnections.Count);
 
         var mockGenerationScope = await BeginMockGenerationScopeAsync(customerId, db, ct).ConfigureAwait(false);
@@ -154,14 +171,8 @@ public sealed class OrderSyncService : IOrderSyncService
         {
             foreach (var connection in dueConnections)
             {
-                var result = await SyncConnectionAsync(customerId, db, connection, ct).ConfigureAwait(false);
+                var result = await SyncConnectionAsync(customerId, db, connection, OrderSyncPass.Current, ct).ConfigureAwait(false);
                 connectionResults.Add(result);
-                fetched += result.FetchedCount;
-                inserted += result.InsertedCount;
-                updated += result.UpdatedCount;
-                skipped += result.SkippedCount;
-                unchanged += result.UnchangedCount;
-                if (result.IsFailed) failedConnections++;
             }
         }
         finally
@@ -170,41 +181,93 @@ public sealed class OrderSyncService : IOrderSyncService
         }
 
         swCustomer.Stop();
-        _logger.LogDebug(
-            "Completed sync for customer {CustomerId}. Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnections}, ElapsedMs={ElapsedMs}",
-            customerId,
-            dueConnections.Count,
-            fetched,
-            inserted,
-            updated,
-            skipped,
-            unchanged,
-            failedConnections,
-            swCustomer.ElapsedMilliseconds);
+        return Summarize(customerId, connectionResults, swCustomer.ElapsedMilliseconds, "sync");
+    }
 
-        var summaries = connectionResults
-            .Select(r => new OrderSyncConnectionSummary(
-                r.Platform.ToString(),
-                r.StoreId,
-                r.FetchedCount,
-                r.InsertedCount,
-                r.UpdatedCount,
-                r.SkippedCount,
-                r.UnchangedCount,
-                r.IsFailed,
-                r.ElapsedMs))
+    /// <summary>
+    /// One backfill turn: for every active connection whose current pass last succeeded and whose checkpoint is behind
+    /// by more than one window, fetches the oldest missing window and moves the checkpoint to its end. Connections
+    /// without a history gap, with an open circuit, or whose last attempt failed are left alone.
+    /// </summary>
+    public async Task<OrderSyncCustomerResult> BackfillCustomerAsync(Guid customerId, CancellationToken ct)
+    {
+        var swCustomer = Stopwatch.StartNew();
+        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+
+        if (!await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false))
+            return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0) { WasSyncDisabled = true };
+
+        var now = _time.GetUtcNow().UtcDateTime;
+        var connections = await db.PlatformConnections
+            .Where(c => c.IsActive && c.ConsecutiveFailures == 0)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        var behind = connections
+            .Where(c => c.CircuitOpenUntil == null || c.CircuitOpenUntil <= DateTime.UtcNow)
+            .Where(c => OrderFetchWindowPlanner.HasHistoryGap(c.LastSuccessfulSync, now, ClientFor(c)?.MaxFetchWindow))
             .ToList();
 
-        return new OrderSyncCustomerResult(
+        var connectionResults = new List<OrderSyncConnectionResult>(behind.Count);
+        foreach (var connection in behind)
+        {
+            var result = await SyncConnectionAsync(customerId, db, connection, OrderSyncPass.Backfill, ct).ConfigureAwait(false);
+            connectionResults.Add(result);
+        }
+
+        swCustomer.Stop();
+        return Summarize(customerId, connectionResults, swCustomer.ElapsedMilliseconds, "backfill");
+    }
+
+    private IFoodPlatformClient? ClientFor(PlatformConnection connection) =>
+        _platformClients.FirstOrDefault(c => c.Platform == connection.Platform);
+
+    private OrderSyncCustomerResult Summarize(
+        Guid customerId,
+        IReadOnlyList<OrderSyncConnectionResult> connectionResults,
+        long elapsedMs,
+        string pass)
+    {
+        var result = new OrderSyncCustomerResult(
             customerId,
-            dueConnections.Count,
-            fetched,
-            inserted,
-            updated,
-            skipped,
-            unchanged,
-            failedConnections)
-        { Connections = summaries };
+            connectionResults.Count,
+            connectionResults.Sum(r => r.FetchedCount),
+            connectionResults.Sum(r => r.InsertedCount),
+            connectionResults.Sum(r => r.UpdatedCount),
+            connectionResults.Sum(r => r.SkippedCount),
+            connectionResults.Sum(r => r.UnchangedCount),
+            connectionResults.Count(r => r.IsFailed))
+        {
+            Connections = connectionResults
+                .Select(r => new OrderSyncConnectionSummary(
+                    r.Platform.ToString(),
+                    r.StoreId,
+                    r.FetchedCount,
+                    r.InsertedCount,
+                    r.UpdatedCount,
+                    r.SkippedCount,
+                    r.UnchangedCount,
+                    r.IsFailed,
+                    r.ElapsedMs))
+                .ToList(),
+            BackfillPending = connectionResults.Any(r => r.BackfillPending)
+        };
+
+        _logger.LogDebug(
+            "Completed {Pass} for customer {CustomerId}. Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnections}, BackfillPending={BackfillPending}, ElapsedMs={ElapsedMs}",
+            pass,
+            customerId,
+            result.ConnectionCount,
+            result.FetchedCount,
+            result.InsertedCount,
+            result.UpdatedCount,
+            result.SkippedCount,
+            result.UnchangedCount,
+            result.FailedConnections,
+            result.BackfillPending,
+            elapsedMs);
+
+        return result;
     }
 
     private static readonly Guid TenantOperationalSettingsSingletonId =
@@ -272,10 +335,16 @@ public sealed class OrderSyncService : IOrderSyncService
         Guid customerId,
         TenantDbContext db,
         PlatformConnection connection,
+        OrderSyncPass pass,
         CancellationToken ct)
     {
         var swConn = Stopwatch.StartNew();
-        connection.LastSyncAttempt = DateTime.UtcNow;
+        if (pass == OrderSyncPass.Current)
+        {
+            // Saved before any provider call, so no unsaved tenant change is held while the request limiter waits.
+            connection.LastSyncAttempt = DateTime.UtcNow;
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
 
         var syncLog = new SyncLog
         {
@@ -337,27 +406,40 @@ public sealed class OrderSyncService : IOrderSyncService
             }
 
             // LastSuccessfulSync is the checkpoint: everything the provider reports as modified before it has been
-            // fetched and persisted. Windows run oldest first. The checkpoint moves to a window's end only after every
-            // page of that window is fetched and every order in it is upserted, so a failure never skips data.
-            var plan = OrderFetchWindowPlanner.Plan(
-                connection.LastSuccessfulSync,
-                _time.GetUtcNow().UtcDateTime,
-                client.MaxFetchWindow);
-
-            if (plan.Windows.Count > 1 || plan.HasMore)
+            // fetched and persisted. It moves to a window's end only after every page of that window is fetched and
+            // every order in it is upserted, and only for a window that starts at the checkpoint, so it never skips
+            // data. A hot window fetched ahead of a history gap leaves it where it is.
+            var nowUtc = _time.GetUtcNow().UtcDateTime;
+            IReadOnlyList<OrderFetchWindow> windows;
+            bool advancesCheckpoint;
+            if (pass == OrderSyncPass.Current)
             {
-                _logger.LogInformation(
-                    "Recovering platform orders after a sync gap. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, CheckpointUtc={CheckpointUtc:O}, Windows={WindowCount}, FromUtc={FromUtc:O}, ThroughUtc={ThroughUtc:O}, MoreRunsNeeded={MoreRunsNeeded}",
-                    customerId,
-                    connection.Id,
-                    connection.Platform,
-                    connection.LastSuccessfulSync,
-                    plan.Windows.Count,
-                    plan.Windows[0].StartUtc,
-                    plan.Windows[^1].EndUtc,
-                    plan.HasMore);
+                var current = OrderFetchWindowPlanner.PlanCurrent(connection.LastSuccessfulSync, nowUtc, client.MaxFetchWindow);
+                windows = [current.Window];
+                advancesCheckpoint = current.AdvancesCheckpoint;
+                if (!advancesCheckpoint)
+                {
+                    _logger.LogInformation(
+                        "Order history is behind; fetching the current window first. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, CheckpointUtc={CheckpointUtc:O}, CurrentWindowStartUtc={CurrentWindowStartUtc:O}, CurrentWindowEndUtc={CurrentWindowEndUtc:O}",
+                        customerId,
+                        connection.Id,
+                        connection.Platform,
+                        connection.LastSuccessfulSync,
+                        current.Window.StartUtc,
+                        current.Window.EndUtc);
+                }
+            }
+            else
+            {
+                windows = OrderFetchWindowPlanner.PlanBackfill(
+                    connection.LastSuccessfulSync!.Value,
+                    nowUtc,
+                    client.MaxFetchWindow!.Value,
+                    BackfillWindowsPerTurn);
+                advancesCheckpoint = true;
             }
 
+            var fetchPipeline = client.MaxFetchWindow is null ? _fetchPipeline : _windowedFetchPipeline;
             var connFetched = 0;
             var connInserted = 0;
             var connUpdated = 0;
@@ -365,13 +447,14 @@ public sealed class OrderSyncService : IOrderSyncService
             var connUnchanged = 0;
             var swUpsert = new Stopwatch();
 
-            foreach (var window in plan.Windows)
+            foreach (var window in windows)
             {
                 ct.ThrowIfCancellationRequested();
                 failedWindow = window;
 
+                // The whole window is fetched (and throttled) before anything from it is applied to the tenant database.
                 var swFetch = Stopwatch.StartNew();
-                var externalOrders = await _fetchPipeline.ExecuteAsync(
+                var externalOrders = await fetchPipeline.ExecuteAsync(
                         async token => await client.FetchOrdersAsync(connection, window, token).ConfigureAwait(false),
                         ct)
                     .ConfigureAwait(false);
@@ -381,8 +464,9 @@ public sealed class OrderSyncService : IOrderSyncService
                 syncLog.OrdersFetched = connFetched;
 
                 _logger.LogDebug(
-                    "Provider returned {OrderCount} orders. Platform={Platform}, StoreId={StoreId}, ConnectionId={ConnectionId}, CustomerId={CustomerId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, FetchElapsedMs={FetchElapsedMs}, SampleExternalOrderIds={SampleExternalOrderIds}",
+                    "Provider returned {OrderCount} orders. Pass={Pass}, Platform={Platform}, StoreId={StoreId}, ConnectionId={ConnectionId}, CustomerId={CustomerId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, FetchElapsedMs={FetchElapsedMs}, SampleExternalOrderIds={SampleExternalOrderIds}",
                     externalOrders.Count,
+                    pass,
                     connection.Platform,
                     connection.StoreId,
                     connection.Id,
@@ -404,12 +488,28 @@ public sealed class OrderSyncService : IOrderSyncService
                 }
                 swUpsert.Stop();
 
-                connection.LastSuccessfulSync = window.EndUtc;
+                if (advancesCheckpoint)
+                {
+                    // Saved at once: a completed window is never re-fetched because a later wait or failure lost it.
+                    connection.LastSuccessfulSync = window.EndUtc;
+                    await db.SaveChangesAsync(ct).ConfigureAwait(false);
+                }
             }
 
             failedWindow = null;
             connection.ConsecutiveFailures = 0;
             connection.CircuitOpenUntil = null;
+
+            var backfillPending = OrderFetchWindowPlanner.HasHistoryGap(connection.LastSuccessfulSync, nowUtc, client.MaxFetchWindow);
+            if (pass == OrderSyncPass.Backfill && !backfillPending)
+            {
+                _logger.LogInformation(
+                    "Order history recovered. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, CheckpointUtc={CheckpointUtc:O}",
+                    customerId,
+                    connection.Id,
+                    connection.Platform,
+                    connection.LastSuccessfulSync);
+            }
 
             syncLog.Status = SyncStatus.Success;
             syncLog.FinishedAt = DateTime.UtcNow;
@@ -419,7 +519,8 @@ public sealed class OrderSyncService : IOrderSyncService
 
             swConn.Stop();
             _logger.LogDebug(
-                "Completed platform sync. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, UpsertElapsedMs={UpsertElapsedMs}, ElapsedMs={ElapsedMs}",
+                "Completed platform sync. Pass={Pass}, CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, UpsertElapsedMs={UpsertElapsedMs}, ElapsedMs={ElapsedMs}",
+                pass,
                 customerId,
                 connection.Id,
                 connection.Platform,
@@ -443,7 +544,7 @@ public sealed class OrderSyncService : IOrderSyncService
                 connSkipped,
                 connUnchanged,
                 IsFailed: false)
-            { ElapsedMs = swConn.ElapsedMilliseconds };
+            { ElapsedMs = swConn.ElapsedMilliseconds, BackfillPending = backfillPending };
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -477,7 +578,8 @@ public sealed class OrderSyncService : IOrderSyncService
             swConn.Stop();
             _logger.LogError(
                 ex,
-                "Platform connection sync failed. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, CheckpointUtc={CheckpointUtc:O}, ElapsedMs={ElapsedMs}",
+                "Platform connection sync failed. Pass={Pass}, CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, CheckpointUtc={CheckpointUtc:O}, ElapsedMs={ElapsedMs}",
+                pass,
                 customerId,
                 connection.Id,
                 connection.Platform,
@@ -1085,3 +1187,12 @@ public sealed class OrderSyncService : IOrderSyncService
         ComparableOption[] Options);
 }
 
+/// <summary>Which part of a connection's work a sync call does.</summary>
+internal enum OrderSyncPass
+{
+    /// <summary>The window ending now (all of the gap when it fits one window, otherwise the hot window).</summary>
+    Current,
+
+    /// <summary>The oldest missing window after a history gap.</summary>
+    Backfill
+}

@@ -81,8 +81,9 @@ Trendyol GO polling resumes from a per-connection checkpoint, `PlatformConnectio
 | Observation | Meaning |
 |-------------|---------|
 | `LastSuccessfulSync` within about one sync interval of now | Current. |
-| Information `Recovering platform orders after a sync gap` with `MoreRunsNeeded=True`, `SyncLogs` rows with `Success`, checkpoint moving forward by up to 12 hours per run | Catching up after an outage. Orders after the gap appear when recovery reaches them. |
-| Error `Platform connection sync failed`, `SyncLogs` rows with `Failed`, checkpoint not moving | Stuck on one window. `WindowStartUtc` / `WindowEndUtc` name the window, `IntegrationErrors.ErrorType` the exception type, and `CheckpointUtc` the point the next run resumes from (minus the five-minute overlap). After five consecutive failures the circuit opens for five minutes. |
+| Information `Order history is behind; fetching the current window first`, `SyncLogs` rows with `Success`, checkpoint moving forward by up to 11 hours per cycle, then `Order history recovered` | Catching up after an outage. New orders keep arriving through the current (hot) window; older changes appear as history recovery reaches them. |
+| Error `Platform connection sync failed`, `SyncLogs` rows with `Failed`, checkpoint not moving | Stuck on one window. `Pass` says whether it was the current window or history, `WindowStartUtc` / `WindowEndUtc` name the window, `IntegrationErrors.ErrorType` the exception type, and `CheckpointUtc` the point the next attempt resumes from (minus the five-minute overlap). After five consecutive failures the circuit opens for five minutes. |
+| Warning `Provider throttled the request; retrying the same page` | Trendyol GO answered HTTP 429. All Trendyol GO polling in the Worker pauses for `RetryDelayMs`. Frequent 429s mean the shared 40-per-10-seconds budget is above the provider's real limit for this traffic (see [../orders/synchronization.md](../orders/synchronization.md#capacity-model)). |
 
 These logs and rows carry ids, time boundaries, counts and exception types only. They contain no credentials, `Authorization` header, executor e-mail, customer details or provider payloads. Do not add those when diagnosing; ask for the window boundaries and connection id instead.
 

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
@@ -38,6 +39,17 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     /// </summary>
     internal const string PackageStatusesFilter = "Created,Picking,Invoiced,Cancelled,UnSupplied,Shipped,Delivered";
 
+    /// <summary>
+    /// Retries of the same page after HTTP 429. A page gets at most three attempts; the third 429 fails the window.
+    /// </summary>
+    internal const int MaxThrottledRetries = 2;
+
+    /// <summary>Wait after a 429 without a usable <c>Retry-After</c>.</summary>
+    internal static readonly TimeSpan DefaultThrottleDelay = TimeSpan.FromSeconds(10);
+
+    /// <summary>Longest wait honoured from <c>Retry-After</c>; a longer value is shortened to this.</summary>
+    internal static readonly TimeSpan MaxThrottleDelay = TimeSpan.FromSeconds(60);
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -49,20 +61,31 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     private readonly IOrderStatusMapper _statusMapper;
     private readonly IOptions<TrendyolGoOptions> _options;
     private readonly ILogger<TrendyolGoFoodPlatformClient> _logger;
+    private readonly TrendyolRequestRateLimiter _requestLimiter;
+    private readonly TimeProvider _time;
 
+    /// <param name="requestLimiter">
+    /// The process-wide singleton. Required: a client with its own limiter would have its own budget.
+    /// </param>
     public TrendyolGoFoodPlatformClient(
         HttpClient httpClient,
         ISecretManager secretManager,
         IOrderStatusMapper statusMapper,
         IOptions<TrendyolGoOptions> options,
-        ILogger<TrendyolGoFoodPlatformClient> logger)
+        ILogger<TrendyolGoFoodPlatformClient> logger,
+        TrendyolRequestRateLimiter requestLimiter,
+        TimeProvider time)
     {
         _httpClient = httpClient;
         _secretManager = secretManager;
         _statusMapper = statusMapper;
         _options = options;
         _logger = logger;
+        _requestLimiter = requestLimiter;
+        _time = time;
     }
+
+    internal TrendyolRequestRateLimiter RequestLimiter => _requestLimiter;
 
     public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
 
@@ -172,17 +195,58 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         query.Add($"packageModificationEndDate={endMs}");
 
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages?{string.Join("&", query)}";
-        using var req = await BuildRequestAsync(HttpMethod.Get, path, connection, supplierId, ct);
-        var sw = Stopwatch.StartNew();
-        using var resp = await _httpClient.SendAsync(req, ct);
-        sw.Stop();
 
-        if (!resp.IsSuccessStatusCode)
-            throw ProviderFailure("TrendyolGo", "FetchOrders", resp, sw.ElapsedMilliseconds, externalOrderId: null);
+        // Every attempt, including a 429 retry, takes a permit first. A 429 retries this same page.
+        for (var attempt = 0; ; attempt++)
+        {
+            await _requestLimiter.AcquireAsync(ct);
 
-        await using var stream = await resp.Content.ReadAsStreamAsync(ct);
-        return await JsonSerializer.DeserializeAsync<TrendyolGoPackagesResponse>(stream, JsonOptions, ct)
-            ?? new TrendyolGoPackagesResponse();
+            using var req = await BuildRequestAsync(HttpMethod.Get, path, connection, supplierId, ct);
+            var sw = Stopwatch.StartNew();
+            using var resp = await _httpClient.SendAsync(req, ct);
+            sw.Stop();
+
+            if (resp.StatusCode == HttpStatusCode.TooManyRequests && attempt < MaxThrottledRetries)
+            {
+                var (delay, source) = ThrottleDelay(resp.Headers.RetryAfter);
+                _logger.LogWarning(
+                    "Provider throttled the request; retrying the same page. Provider={Provider} Operation={Operation} StatusCode={StatusCode} Page={Page} Attempt={Attempt} RetryDelayMs={RetryDelayMs} RetryDelaySource={RetryDelaySource}",
+                    "TrendyolGo",
+                    "FetchOrders",
+                    (int)resp.StatusCode,
+                    pageIndex,
+                    attempt + 1,
+                    (long)delay.TotalMilliseconds,
+                    source);
+                _requestLimiter.Defer(delay);
+                continue;
+            }
+
+            if (!resp.IsSuccessStatusCode)
+                throw ProviderFailure("TrendyolGo", "FetchOrders", resp, sw.ElapsedMilliseconds, externalOrderId: null);
+
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+            return await JsonSerializer.DeserializeAsync<TrendyolGoPackagesResponse>(stream, JsonOptions, ct)
+                ?? new TrendyolGoPackagesResponse();
+        }
+    }
+
+    /// <summary>
+    /// <c>Retry-After</c> as seconds or as an HTTP date, kept between zero and <see cref="MaxThrottleDelay"/>;
+    /// <see cref="DefaultThrottleDelay"/> when the header is missing or cannot be parsed.
+    /// </summary>
+    private (TimeSpan Delay, string Source) ThrottleDelay(RetryConditionHeaderValue? retryAfter)
+    {
+        TimeSpan? requested = retryAfter?.Delta;
+        if (requested is null && retryAfter?.Date is { } date)
+            requested = date - _time.GetUtcNow();
+
+        if (requested is not { } value)
+            return (DefaultThrottleDelay, "fallback");
+
+        if (value < TimeSpan.Zero)
+            value = TimeSpan.Zero;
+        return (value > MaxThrottleDelay ? MaxThrottleDelay : value, "retry-after");
     }
 
     private void AddPackages(

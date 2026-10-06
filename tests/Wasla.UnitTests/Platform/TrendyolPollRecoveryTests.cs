@@ -17,17 +17,21 @@ using Wasla.UnitTests.Setup;
 namespace Wasla.UnitTests.Platform;
 
 /// <summary>
-/// The real Trendyol GO client and <see cref="OrderSyncService"/> against an in-process fake of the packages endpoint
-/// and a per-tenant SQLite database with the production tenant model. The fake answers like the documented API: it
-/// returns only packages whose status is in <c>packageStatuses</c> and whose modification time is within
-/// [<c>packageModificationStartDate</c>, <c>packageModificationEndDate</c>] (both ends inclusive), paged by
-/// <c>size</c>. Credentials, customers and payloads are fake. This proves Wasla's request and checkpoint logic, not the
-/// real provider's behaviour.
+/// The real Trendyol GO client, <see cref="OrderSyncService"/> and <see cref="OrderSyncCycleRunner"/> against an
+/// in-process fake of the packages endpoint and a per-tenant SQLite database with the production tenant model. The fake
+/// answers like the documented API: it returns only packages whose status is in <c>packageStatuses</c> and whose
+/// modification time is within [<c>packageModificationStartDate</c>, <c>packageModificationEndDate</c>] (both ends
+/// inclusive), paged by <c>size</c>. Credentials, customers and payloads are fake, and the request limiter runs on a
+/// fake clock. This proves Wasla's request, checkpoint and scheduling logic, not the real provider's behaviour.
 /// </summary>
 public sealed class TrendyolPollRecoveryTests : IDisposable
 {
     private static readonly DateTime Noon = new(2026, 10, 6, 12, 0, 0, DateTimeKind.Utc);
     private static readonly TimeSpan Overlap = OrderFetchWindowPlanner.CheckpointOverlap;
+    private static readonly TimeSpan Hour = TimeSpan.FromHours(1);
+
+    /// <summary>A backfill turn moves the checkpoint one window minus the overlap it re-reads: 55 minutes.</summary>
+    private static readonly TimeSpan TurnStep = Hour - Overlap;
 
     private const string ApiKey = "fake-api-key-a";
     private const string ApiSecret = "fake-api-secret-a";
@@ -35,12 +39,19 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
 
     private readonly OperationalModeTestDatabases _tenants = new();
     private readonly OperationalModeTestClock _clock = new() { Now = Noon };
+    private readonly LimiterClock _limiterClock = new();
     private readonly FakeTrendyolApi _api = new();
     private readonly RecordingSideEffects _effects = new();
     private readonly CollectingLogger<OrderSyncService> _syncLog = new();
     private readonly CollectingLogger<TrendyolGoFoodPlatformClient> _clientLog = new();
     private readonly CollectingLogger<DefaultOrderStatusMapper> _mapperLog = new();
     private readonly Guid _tenant = Guid.NewGuid();
+    private TrendyolRequestRateLimiter _limiter;
+
+    public TrendyolPollRecoveryTests()
+    {
+        _limiter = _limiterClock.Limiter();
+    }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -54,8 +65,9 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         var result = await RunAsync();
 
         Assert.Equal(0, result.FailedConnections);
+        Assert.False(result.BackfillPending);
         var request = Assert.Single(_api.Requests);
-        Assert.Equal(Noon.AddHours(-1), request.StartUtc);
+        Assert.Equal(Noon - Hour, request.StartUtc);
         Assert.Equal(Noon, request.EndUtc);
         Assert.Equal(["recent"], await OrderIdsAsync());
         Assert.Equal(Noon, await CheckpointAsync());
@@ -80,7 +92,28 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
     }
 
     [Fact]
-    public async Task OutageLongerThanOneHour_RecoversDeliveredCancelledAndUnSupplied_InConsecutiveWindows()
+    public async Task CurrentPassAfterAnOutage_FetchesTheHotWindowOnly_AndDoesNotJumpTheCheckpoint()
+    {
+        var checkpoint = Noon.AddHours(-6);
+        await SeedConnectionAsync(_tenant, checkpoint);
+        _api.Put("new-after-outage", "Created", Noon.AddMinutes(-10));
+        _api.Put("during-outage", "Delivered", Noon.AddHours(-4));
+
+        var result = await RunAsync();
+
+        Assert.Equal(0, result.FailedConnections);
+        Assert.True(result.BackfillPending);
+        var request = Assert.Single(_api.Requests);
+        Assert.Equal(Noon - Hour, request.StartUtc);
+        Assert.Equal(Noon, request.EndUtc);
+        Assert.Equal(["new-after-outage"], await OrderIdsAsync());
+        Assert.Equal(checkpoint, await CheckpointAsync());
+        Assert.Contains(_syncLog.Entries, e =>
+            e.Level == LogLevel.Information && e.Message.Contains("Order history is behind", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task OutageLongerThanOneHour_HotWindowFirst_ThenDeliveredCancelledAndUnSuppliedOldestFirst()
     {
         var lastGoodSync = Noon.AddHours(-6);
         _clock.Now = lastGoodSync;
@@ -103,13 +136,24 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         _api.Requests.Clear();
         _clock.Now = Noon;
 
-        var result = await RunAsync();
+        var cycle = await RunCycleAsync(_tenant);
 
-        Assert.Equal(0, result.FailedConnections);
-        Assert.Equal(7, _api.Requests.Count);
-        Assert.Equal(lastGoodSync - Overlap, _api.Requests[0].StartUtc);
-        Assert.Equal(Noon, _api.Requests[^1].EndUtc);
-        AssertConsecutiveWindows(_api.Requests);
+        Assert.Equal(0, cycle.Current.Single().FailedConnections);
+        Assert.Equal(Noon - Hour, _api.Requests[0].StartUtc);
+        Assert.Equal(Noon, _api.Requests[0].EndUtc);
+        var backfill = _api.Requests.Skip(1).ToList();
+        Assert.Equal(6, backfill.Count);
+        Assert.Equal(lastGoodSync - Overlap, backfill[0].StartUtc);
+        AssertBackfillChain(backfill);
+        Assert.Equal(lastGoodSync + 6 * TurnStep, backfill[^1].EndUtc);
+
+        // History is complete up to 11:30; the hot window already covered the rest, and the next current pass
+        // (one window again) moves the checkpoint to now.
+        Assert.Equal(lastGoodSync + 6 * TurnStep, await CheckpointAsync());
+        Assert.Contains(_syncLog.Entries, e =>
+            e.Level == LogLevel.Information && e.Message.Contains("Order history recovered", StringComparison.Ordinal));
+        await RunAsync();
+        Assert.Equal(Noon, await CheckpointAsync());
 
         var after = await OrdersAsync();
         Assert.Equal(4, after.Count);
@@ -125,39 +169,33 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         Assert.Equal(OrderStatus.New, after["arrived-during-outage"].InternalStatus);
         Assert.Equal(before["delivered"].Id, after["delivered"].Id);
         Assert.Equal(before["delivered"].CreatedAt, after["delivered"].CreatedAt);
-        Assert.Equal(Noon, await CheckpointAsync());
-        Assert.Contains(_syncLog.Entries, e =>
-            e.Level == LogLevel.Information && e.Message.Contains("Recovering platform orders after a sync gap", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task OutageLongerThanOneRun_AdvancesWindowByWindow_AndFinishesOnTheNextRun()
+    public async Task OutageLongerThanOneCycle_RecoversTwelveWindowsPerCycle_AndFinishesOnTheNext()
     {
-        var checkpoint = Noon.AddHours(-(OrderFetchWindowPlanner.MaxWindowsPerRun + 8));
+        var checkpoint = Noon.AddHours(-20);
         await SeedConnectionAsync(_tenant, checkpoint);
         _api.Put("early", "Delivered", checkpoint.AddHours(2));
         _api.Put("late", "Created", Noon.AddHours(-2));
 
-        var first = await RunAsync();
+        var first = await RunCycleAsync(_tenant);
 
-        Assert.Equal(0, first.FailedConnections);
-        Assert.Equal(OrderFetchWindowPlanner.MaxWindowsPerRun, _api.Requests.Count);
-        AssertConsecutiveWindows(_api.Requests);
-        var firstRunEnd = checkpoint - Overlap + TimeSpan.FromHours(OrderFetchWindowPlanner.MaxWindowsPerRun);
-        Assert.Equal(firstRunEnd, _api.Requests[^1].EndUtc);
-        Assert.Equal(firstRunEnd, await CheckpointAsync());
+        Assert.True(first.Current.Single().BackfillPending);
+        Assert.Equal(1 + OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle, _api.Requests.Count);
+        AssertBackfillChain(_api.Requests.Skip(1).ToList());
+        var afterFirst = checkpoint + OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle * TurnStep;
+        Assert.Equal(afterFirst, await CheckpointAsync());
         Assert.Equal(["early"], await OrderIdsAsync());
-        Assert.Contains(_syncLog.Entries, e =>
-            e.Level == LogLevel.Information && e.Message.Contains("MoreRunsNeeded=True", StringComparison.Ordinal));
 
         _api.Requests.Clear();
-        var second = await RunAsync();
+        await RunCycleAsync(_tenant);
 
-        Assert.Equal(0, second.FailedConnections);
-        Assert.Equal(firstRunEnd - Overlap, _api.Requests[0].StartUtc);
-        Assert.Equal(Noon, _api.Requests[^1].EndUtc);
-        AssertConsecutiveWindows(_api.Requests);
+        Assert.Equal(Noon - Hour, _api.Requests[0].StartUtc);
+        Assert.Equal(afterFirst - Overlap, _api.Requests[1].StartUtc);
+        AssertBackfillChain(_api.Requests.Skip(1).ToList());
         Assert.Equal(["early", "late"], await OrderIdsAsync());
+        await RunAsync();
         Assert.Equal(Noon, await CheckpointAsync());
     }
 
@@ -179,36 +217,41 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
     }
 
     [Fact]
-    public async Task RepeatedAndOverlappingResults_StoreOneOrder_AndRunSideEffectsOnce()
+    public async Task HotAndHistoricalWindowsOverlapping_StoreOneOrderAndItem_AndRunSideEffectsOnce()
     {
         var checkpoint = Noon.AddHours(-2);
         await SeedConnectionAsync(_tenant, checkpoint);
-        var sharedBoundary = checkpoint - Overlap + TimeSpan.FromHours(1);
-        _api.Put("on-boundary", "Picking", sharedBoundary);
+        // In both backfill windows (their five-minute overlap), in the hot window and the second backfill window,
+        // and in the hot window only.
+        _api.Put("in-backfill-overlap", "Picking", checkpoint + TurnStep - TimeSpan.FromMinutes(2));
+        _api.Put("in-hot-and-history", "Picking", Noon.AddMinutes(-30));
         _api.Put("new-order", "Created", Noon.AddMinutes(-3));
 
-        var first = await RunAsync();
+        await RunCycleAsync(_tenant);
 
-        Assert.Equal(2, _api.Requests.Count(r => r.Contains(sharedBoundary)));
-        Assert.Equal(2, first.InsertedCount);
-        Assert.Equal(1, first.UnchangedCount);
+        Assert.Equal(3, _api.Requests.Count);
+        Assert.Equal(2, _api.Requests.Count(r => r.Contains(checkpoint + TurnStep - TimeSpan.FromMinutes(2))));
+        Assert.Equal(2, _api.Requests.Count(r => r.Contains(Noon.AddMinutes(-30))));
 
         _clock.Now = Noon.AddMinutes(1);
         var second = await RunAsync();
         _clock.Now = Noon.AddMinutes(2);
         var third = await RunAsync();
-
-        Assert.Equal((0, 0, 1), (second.InsertedCount, second.UpdatedCount, second.UnchangedCount));
-        Assert.Equal((0, 0, 1), (third.InsertedCount, third.UpdatedCount, third.UnchangedCount));
+        Assert.Equal((0, 0), (second.InsertedCount, second.UpdatedCount));
+        Assert.Equal((0, 0), (third.InsertedCount, third.UpdatedCount));
 
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
-        Assert.Equal(1, await db.Orders.CountAsync(o => o.ExternalOrderId == "on-boundary", Ct));
-        Assert.Equal(1, await db.Orders.CountAsync(o => o.ExternalOrderId == "new-order", Ct));
+        foreach (var id in new[] { "in-backfill-overlap", "in-hot-and-history", "new-order" })
+        {
+            Assert.Equal(1, await db.Orders.CountAsync(o => o.ExternalOrderId == id, Ct));
+            Assert.Equal(1, await db.OrderItems.CountAsync(i => i.Order!.ExternalOrderId == id, Ct));
+        }
+
         var orders = await OrdersAsync();
+        Assert.Equal(orders.Values.Select(o => o.Id).Order(), _effects.AutoApproved.Order());
         Assert.Equal(
-            new[] { orders["new-order"].Id, orders["on-boundary"].Id }.Order(),
-            _effects.AutoApproved.Order());
-        Assert.Equal([orders["on-boundary"].Id], _effects.Receipts);
+            new[] { orders["in-backfill-overlap"].Id, orders["in-hot-and-history"].Id }.Order(),
+            _effects.Receipts.Order());
     }
 
     [Fact]
@@ -240,86 +283,101 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
     }
 
     [Fact]
-    public async Task FailedPage_KeepsTheCheckpointAtTheLastCompleteWindow_AndTheNextRunResumesThere()
+    public async Task HotWindowFailure_SkipsBackfillForThatConnection()
     {
         var checkpoint = Noon.AddHours(-3);
         await SeedConnectionAsync(_tenant, checkpoint);
-        var firstWindowEnd = checkpoint - Overlap + TimeSpan.FromHours(1);
+        _api.Put("history", "Created", checkpoint.AddMinutes(10));
+        _api.Respond = r => r.StartUtc == Noon - Hour ? Json("<html>gateway</html>") : null;
+
+        var cycle = await RunCycleAsync(_tenant);
+
+        Assert.Equal(1, cycle.Current.Single().FailedConnections);
+        Assert.Empty(cycle.Backfill);
+        Assert.Single(_api.Requests);
+        Assert.Equal(checkpoint, await CheckpointAsync());
+        Assert.Empty(await OrderIdsAsync());
+    }
+
+    [Fact]
+    public async Task FailedHistoricalPage_KeepsTheLastCompletedCheckpoint_AndTheHotOrders()
+    {
+        var checkpoint = Noon.AddHours(-3);
+        await SeedConnectionAsync(_tenant, checkpoint);
+        var firstTurnEnd = checkpoint + TurnStep;
+        var secondTurnStart = firstTurnEnd - Overlap;
         _api.Put("first-window", "Delivered", checkpoint.AddMinutes(10));
         for (var i = 0; i < 60; i++)
-            _api.Put($"second-window-{i:D2}", "Created", firstWindowEnd.AddMinutes(10).AddSeconds(i));
-        _api.Put("third-window", "Created", Noon.AddMinutes(-30));
-        _api.Respond = r => r.StartUtc == firstWindowEnd && r.Page == 1
+            _api.Put($"second-window-{i:D2}", "Created", checkpoint.AddHours(1).AddSeconds(i));
+        _api.Put("hot-order", "Created", Noon.AddMinutes(-30));
+        _api.Respond = r => r.StartUtc == secondTurnStart && r.Page == 1
             ? new HttpResponseMessage(HttpStatusCode.BadGateway) { Content = new StringContent(FakeTrendyolApi.SensitiveBody) }
             : null;
 
-        var failed = await RunAsync();
+        var failed = await RunCycleAsync(_tenant);
 
-        Assert.Equal(1, failed.FailedConnections);
-        Assert.Equal(firstWindowEnd, await CheckpointAsync());
-        Assert.DoesNotContain(_api.Requests, r => r.StartUtc > firstWindowEnd);
-        Assert.Equal(["first-window"], await OrderIdsAsync());
-        await AssertSingleFailedSyncAsync("HttpRequestException", "ProviderRequestException");
+        Assert.Equal(1, failed.Backfill.Sum(r => r.FailedConnections));
+        Assert.Equal(firstTurnEnd, await CheckpointAsync());
+        AssertNoBackfillAfter(secondTurnStart);
+        Assert.Equal(["first-window", "hot-order"], await OrderIdsAsync());
+        await AssertSingleFailedSyncAsync("ProviderRequestException");
 
         _api.Respond = null;
         _api.Requests.Clear();
-        var recovered = await RunAsync();
+        await RunCycleAsync(_tenant);
 
-        Assert.Equal(0, recovered.FailedConnections);
-        Assert.Equal(firstWindowEnd - Overlap, _api.Requests[0].StartUtc);
+        Assert.Equal(secondTurnStart, _api.Requests[1].StartUtc);
         Assert.Equal(62, (await OrderIdsAsync()).Length);
+        await RunAsync();
         Assert.Equal(Noon, await CheckpointAsync());
     }
 
     [Theory]
     [InlineData("<html>gateway</html>", "JsonException")]
     [InlineData("""{"page":0,"size":50,"totalPages":-1,"totalCount":0,"content":[]}""", "InvalidOperationException")]
-    public async Task MalformedResponse_KeepsTheCheckpointAtTheLastCompleteWindow(string body, string errorType)
+    public async Task MalformedHistoricalResponse_KeepsTheLastCompletedCheckpoint(string body, string errorType)
     {
         var checkpoint = Noon.AddHours(-2);
         await SeedConnectionAsync(_tenant, checkpoint);
-        var firstWindowEnd = checkpoint - Overlap + TimeSpan.FromHours(1);
+        var secondTurnStart = checkpoint + TurnStep - Overlap;
         _api.Put("first-window", "Created", checkpoint);
-        _api.Put("second-window", "Created", firstWindowEnd.AddMinutes(1));
-        _api.Respond = r => r.StartUtc == firstWindowEnd ? Json(body) : null;
+        _api.Put("second-window", "Created", checkpoint.AddMinutes(57));
+        _api.Respond = r => r.StartUtc == secondTurnStart ? Json(body) : null;
 
-        var result = await RunAsync();
+        await RunCycleAsync(_tenant);
 
-        Assert.Equal(1, result.FailedConnections);
-        Assert.Equal(firstWindowEnd, await CheckpointAsync());
+        Assert.Equal(checkpoint + TurnStep, await CheckpointAsync());
         Assert.Equal(["first-window"], await OrderIdsAsync());
-        Assert.DoesNotContain(_api.Requests, r => r.StartUtc > firstWindowEnd);
+        AssertNoBackfillAfter(secondTurnStart);
         await AssertSingleFailedSyncAsync(errorType);
     }
 
     [Fact]
-    public async Task PersistenceFailure_KeepsTheCheckpointAtTheLastCompleteWindow()
+    public async Task PersistenceFailureInHistory_KeepsTheLastCompletedCheckpoint()
     {
-        var checkpoint = Noon.AddHours(-2);
+        var checkpoint = Noon.AddHours(-3);
         _clock.Now = checkpoint;
         await SeedConnectionAsync(_tenant, checkpoint: null);
         _api.Put("existing", "Picking", checkpoint.AddMinutes(-30));
         await RunAsync();
         Assert.Equal(checkpoint, await CheckpointAsync());
 
-        var firstWindowEnd = checkpoint - Overlap + TimeSpan.FromHours(1);
         _api.Put("existing", "Shipped", checkpoint.AddMinutes(20));
-        _api.Put("new-in-second-window", "Created", firstWindowEnd.AddMinutes(20));
+        _api.Put("new-in-second-window", "Created", checkpoint.AddMinutes(80));
         _api.Requests.Clear();
         _clock.Now = Noon;
         _tenants.FailNextStatementContaining = "INSERT INTO \"Orders\"";
 
-        var failed = await RunAsync();
+        await RunCycleAsync(_tenant);
 
-        Assert.Equal(1, failed.FailedConnections);
-        Assert.Equal(firstWindowEnd, await CheckpointAsync());
+        Assert.Equal(checkpoint + TurnStep, await CheckpointAsync());
         Assert.Equal(OrderStatus.OnTheWay, (await OrdersAsync())["existing"].InternalStatus);
-        Assert.DoesNotContain(_api.Requests, r => r.StartUtc > firstWindowEnd);
+        AssertNoBackfillAfter(checkpoint + TurnStep - Overlap);
         await AssertSingleFailedSyncAsync("DbUpdateException");
 
-        var recovered = await RunAsync();
+        await RunCycleAsync(_tenant);
+        await RunAsync();
 
-        Assert.Equal(0, recovered.FailedConnections);
         Assert.Equal(["existing", "new-in-second-window"], await OrderIdsAsync());
         Assert.Equal(Noon, await CheckpointAsync());
     }
@@ -350,29 +408,76 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
     }
 
     [Fact]
-    public async Task HostCancellationDuringRecovery_KeepsTheCheckpoint_AndRecordsNoFailure()
+    public async Task ThrottledUntilRetriesRunOut_FailsTheWindow_WithoutAWholeWindowRetry_AndKeepsTheCheckpoint()
+    {
+        var checkpoint = Noon.AddMinutes(-10);
+        await SeedConnectionAsync(_tenant, checkpoint);
+        _api.Put("waiting", "Created", Noon.AddMinutes(-1));
+        _api.Respond = _ => new HttpResponseMessage(HttpStatusCode.TooManyRequests) { Content = new StringContent(FakeTrendyolApi.SensitiveBody) };
+
+        var result = await RunAsync();
+
+        Assert.Equal(1, result.FailedConnections);
+        Assert.Equal(1 + TrendyolGoFoodPlatformClient.MaxThrottledRetries, _api.Requests.Count);
+        Assert.All(_api.Requests, r => Assert.Equal(0, r.Page));
+        Assert.Equal(checkpoint, await CheckpointAsync());
+        Assert.Empty(await OrderIdsAsync());
+        await AssertSingleFailedSyncAsync("ProviderRequestException");
+        await using var db = await _tenants.CreateAsync(_tenant, Ct);
+        Assert.DoesNotContain(await db.SyncLogs.ToListAsync(Ct), s => s.Status == SyncStatus.Success);
+    }
+
+    [Fact]
+    public async Task HostCancellationDuringBackfill_KeepsCompletedWindows_AndRecordsNoFailure()
     {
         var checkpoint = Noon.AddHours(-3);
         await SeedConnectionAsync(_tenant, checkpoint);
-        var firstWindowEnd = checkpoint - Overlap + TimeSpan.FromHours(1);
+        var secondTurnStart = checkpoint + TurnStep - Overlap;
         _api.Put("first-window", "Created", checkpoint);
         using var cts = new CancellationTokenSource();
         _api.Respond = r =>
         {
-            if (r.StartUtc == firstWindowEnd)
+            if (r.StartUtc == secondTurnStart)
                 cts.Cancel();
             return null;
         };
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            Sync().SyncCustomerWithResultAsync(_tenant, cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => RunCycleAsync(cts.Token, _tenant));
 
+        Assert.Equal(checkpoint + TurnStep, await CheckpointAsync());
+        Assert.Equal(["first-window"], await OrderIdsAsync());
+        AssertNoBackfillAfter(secondTurnStart);
+        await using var db = await _tenants.CreateAsync(_tenant, Ct);
+        Assert.DoesNotContain(await db.SyncLogs.ToListAsync(Ct), s => s.Status == SyncStatus.Failed);
+        Assert.Empty(await db.IntegrationErrors.ToListAsync(Ct));
+        Assert.Equal(0, (await db.PlatformConnections.SingleAsync(Ct)).ConsecutiveFailures);
+    }
+
+    [Fact]
+    public async Task HostCancellationWhileWaitingForThePermit_StopsPromptly_AndRecordsNoFailure()
+    {
+        var checkpoint = Noon.AddMinutes(-10);
+        await SeedConnectionAsync(_tenant, checkpoint);
+        using var cts = new CancellationTokenSource();
+        _limiter = new TrendyolRequestRateLimiter(
+            _limiterClock,
+            async (_, ct) =>
+            {
+                await cts.CancelAsync();
+                await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            },
+            permitLimit: 1,
+            TrendyolRequestRateLimiter.DefaultWindow);
+        await _limiter.AcquireAsync(Ct);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            Sync().SyncCustomerWithResultAsync(_tenant, cts.Token).WaitAsync(TimeSpan.FromSeconds(10), Ct));
+
+        Assert.Empty(_api.Requests);
         Assert.Equal(checkpoint, await CheckpointAsync());
-        Assert.DoesNotContain(_api.Requests, r => r.StartUtc > firstWindowEnd);
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
         Assert.Empty(await db.SyncLogs.ToListAsync(Ct));
         Assert.Empty(await db.IntegrationErrors.ToListAsync(Ct));
-        Assert.Equal(0, (await db.PlatformConnections.SingleAsync(Ct)).ConsecutiveFailures);
     }
 
     [Fact]
@@ -383,16 +488,15 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         var checkpointB = Noon.AddMinutes(-10);
         await SeedConnectionAsync(_tenant, checkpointA, "supplier-a", ApiKey, ApiSecret, ExecutorEmail);
         await SeedConnectionAsync(other, checkpointB, "supplier-b", "fake-api-key-b", "fake-api-secret-b", "executor-b@example.invalid");
-        var secondWindowEndA = checkpointA - Overlap + TimeSpan.FromHours(2);
-        _api.Put("a-order", "Delivered", Noon.AddHours(-2), "supplier-a");
+        var secondTurnStartA = checkpointA + TurnStep - Overlap;
+        _api.Put("a-order", "Delivered", checkpointA.AddMinutes(30), "supplier-a");
         _api.Put("b-order", "Created", Noon.AddMinutes(-2), "supplier-b");
-        _api.Respond = r => r.SupplierId == "supplier-a" && r.StartUtc == secondWindowEndA ? Json("not json") : null;
+        _api.Respond = r => r.SupplierId == "supplier-a" && r.StartUtc == secondTurnStartA ? Json("not json") : null;
 
-        var resultA = await RunAsync(_tenant);
-        var resultB = await RunAsync(other);
+        var cycle = await RunCycleAsync(_tenant, other);
 
-        Assert.Equal(1, resultA.FailedConnections);
-        Assert.Equal(0, resultB.FailedConnections);
+        Assert.Equal(1, cycle.Backfill.Where(r => r.CustomerId == _tenant).Sum(r => r.FailedConnections));
+        Assert.Equal(0, cycle.Current.Single(r => r.CustomerId == other).FailedConnections);
         var requestB = Assert.Single(_api.Requests, r => r.SupplierId == "supplier-b");
         Assert.Equal(checkpointB - Overlap, requestB.StartUtc);
         Assert.Equal(BasicAuth("fake-api-key-b", "fake-api-secret-b"), requestB.Authorization);
@@ -403,7 +507,25 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         Assert.All(requestsA, r => Assert.Equal(ExecutorEmail, r.ExecutorUser));
         Assert.Equal(["a-order"], await OrderIdsAsync(_tenant));
         Assert.Equal(["b-order"], await OrderIdsAsync(other));
-        Assert.Equal(secondWindowEndA, await CheckpointAsync(_tenant));
+        Assert.Equal(checkpointA + TurnStep, await CheckpointAsync(_tenant));
+        Assert.Equal(Noon, await CheckpointAsync(other));
+    }
+
+    [Fact]
+    public async Task TenantWithALargeBackfill_DoesNotDelayAnotherTenantsCurrentWindow()
+    {
+        var other = Guid.NewGuid();
+        await SeedConnectionAsync(_tenant, Noon.AddHours(-48), "supplier-a");
+        await SeedConnectionAsync(other, Noon.AddMinutes(-10), "supplier-b", "fake-api-key-b", "fake-api-secret-b");
+
+        await RunCycleAsync(_tenant, other);
+
+        var suppliers = _api.Requests.Select(r => r.SupplierId).ToList();
+        var currentB = suppliers.IndexOf("supplier-b");
+        var firstBackfillA = suppliers.FindIndex(1 + suppliers.IndexOf("supplier-a"), s => s == "supplier-a");
+        Assert.True(currentB >= 0);
+        Assert.True(firstBackfillA > currentB);
+        Assert.Equal(1 + 1 + OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle, _api.Requests.Count);
         Assert.Equal(Noon, await CheckpointAsync(other));
     }
 
@@ -412,16 +534,27 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
     {
         var checkpoint = Noon.AddHours(-2);
         await SeedConnectionAsync(_tenant, checkpoint);
-        var firstWindowEnd = checkpoint - Overlap + TimeSpan.FromHours(1);
+        var secondTurnStart = checkpoint + TurnStep - Overlap;
         _api.Put("logged-1", "Picking", checkpoint.AddMinutes(1));
         _api.Put("logged-2", "UnSupplied", checkpoint.AddMinutes(2));
-        _api.Respond = r => r.StartUtc == firstWindowEnd ? Json(FakeTrendyolApi.TruncatedSensitiveBody) : null;
+        _api.Put("logged-hot", "Created", Noon.AddMinutes(-5));
+        var throttledOnce = false;
+        _api.Respond = r =>
+        {
+            if (r.StartUtc == Noon - Hour && !throttledOnce)
+            {
+                throttledOnce = true;
+                return new HttpResponseMessage(HttpStatusCode.TooManyRequests) { Content = new StringContent(FakeTrendyolApi.SensitiveBody) };
+            }
 
-        var result = await RunAsync();
+            return r.StartUtc == secondTurnStart ? Json(FakeTrendyolApi.TruncatedSensitiveBody) : null;
+        };
 
-        Assert.Equal(1, result.FailedConnections);
+        await RunCycleAsync(_tenant);
+
         var entries = _syncLog.Entries.Concat(_clientLog.Entries).Concat(_mapperLog.Entries).ToList();
         Assert.Contains(entries, e => e.Level == LogLevel.Error && e.Message.Contains("WindowStartUtc=", StringComparison.Ordinal));
+        Assert.Contains(entries, e => e.Level == LogLevel.Warning && e.Message.Contains("throttled", StringComparison.Ordinal));
         string[] forbidden =
         [
             ApiKey,
@@ -464,7 +597,9 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
             new PassthroughSecrets(),
             mapper,
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
-            _clientLog);
+            _clientLog,
+            _limiter,
+            _clock);
 
         return new OrderSyncService(
             _tenants,
@@ -477,8 +612,19 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
             time: _clock);
     }
 
+    /// <summary>The current pass only, as one tenant's phase 1.</summary>
     private Task<OrderSyncCustomerResult> RunAsync(Guid? tenant = null) =>
         Sync().SyncCustomerWithResultAsync(tenant ?? _tenant, Ct);
+
+    /// <summary>One Worker cycle: every tenant's current pass, then round-robin backfill turns.</summary>
+    private Task<OrderSyncCycleResult> RunCycleAsync(params Guid[] tenants) => RunCycleAsync(Ct, tenants);
+
+    private Task<OrderSyncCycleResult> RunCycleAsync(CancellationToken ct, params Guid[] tenants) =>
+        new OrderSyncCycleRunner(_clock, maxParallelTenants: 1, OrderSyncCycleRunner.BackfillBudget).RunAsync(
+            tenants,
+            async (id, token) => await Sync().SyncCustomerWithResultAsync(id, token),
+            async (id, token) => await Sync().BackfillCustomerAsync(id, token),
+            ct);
 
     private async Task SeedConnectionAsync(
         Guid tenant,
@@ -542,15 +688,27 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         Assert.Equal(1, (await db.PlatformConnections.SingleAsync(Ct)).ConsecutiveFailures);
     }
 
-    private static void AssertConsecutiveWindows(IReadOnlyList<ApiRequest> requests)
+    /// <summary>
+    /// No backfill window after the one that stopped the run was requested. The hot window (fetched first, ending now)
+    /// is not a backfill window.
+    /// </summary>
+    private void AssertNoBackfillAfter(DateTime lastAttemptedStart) =>
+        Assert.DoesNotContain(_api.Requests, r => r.StartUtc > lastAttemptedStart && r.StartUtc != _clock.UtcNow - Hour);
+
+    /// <summary>
+    /// Backfill windows (first page of each) start at the previous window's end minus the overlap they re-read, are at
+    /// most one hour long, and move forward.
+    /// </summary>
+    private static void AssertBackfillChain(IReadOnlyList<ApiRequest> requests)
     {
         var windows = requests.Where(r => r.Page == 0).ToList();
+        Assert.NotEmpty(windows);
         for (var i = 0; i < windows.Count; i++)
         {
             Assert.True(windows[i].EndMs > windows[i].StartMs);
             Assert.True(windows[i].EndUtc - windows[i].StartUtc <= TrendyolGoFoodPlatformClient.FetchWindowLength);
             if (i > 0)
-                Assert.Equal(windows[i - 1].EndMs, windows[i].StartMs);
+                Assert.Equal(windows[i - 1].EndUtc - Overlap, windows[i].StartUtc);
         }
     }
 
