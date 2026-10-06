@@ -20,9 +20,23 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     internal const int FetchPageSize = 50;
 
     /// <summary>
-    /// Defensive cap. Twenty pages cover 1,000 packages in the one-hour fetch window.
+    /// Defensive cap per fetch window. Twenty pages cover 1,000 packages modified within one window.
     /// </summary>
     internal const int MaxFetchPages = 20;
+
+    /// <summary>
+    /// Longest modification-time window one fetch requests. The official "Sipariş Paketlerini Çekme" documentation
+    /// gives no maximum range, so a longer interval is split into consecutive windows of the one-hour span this
+    /// client has always queried (see <c>OrderFetchWindowPlanner</c>).
+    /// </summary>
+    internal static readonly TimeSpan FetchWindowLength = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// Every <c>packageStatuses</c> value the official documentation lists, with its casing and in its order. The
+    /// terminal statuses (Cancelled, UnSupplied, Delivered) are required: without them a cancellation or a delivery
+    /// reported by Trendyol GO never reaches Wasla.
+    /// </summary>
+    internal const string PackageStatusesFilter = "Created,Picking,Invoiced,Cancelled,UnSupplied,Shipped,Delivered";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -52,6 +66,8 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
 
+    public TimeSpan? MaxFetchWindow => FetchWindowLength;
+
     private static string? ResolveSupplierId(PlatformConnection connection)
     {
         if (!string.IsNullOrWhiteSpace(connection.SupplierId)) return connection.SupplierId.Trim();
@@ -59,13 +75,20 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         return null;
     }
 
-    public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct)
+    public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
+        PlatformConnection connection,
+        OrderFetchWindow window,
+        CancellationToken ct)
     {
         var supplierId = ResolveSupplierId(connection);
         if (string.IsNullOrWhiteSpace(supplierId))
             throw new InvalidOperationException("SupplierId could not be resolved (SupplierId and StoreId are empty)");
 
-        var sinceMs = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeMilliseconds();
+        if (window.EndUtc < window.StartUtc || window.EndUtc - window.StartUtc > FetchWindowLength)
+            throw new ArgumentOutOfRangeException(nameof(window), "The fetch window must be ordered and at most FetchWindowLength long.");
+
+        var startMs = ToUnixMilliseconds(window.StartUtc);
+        var endMs = ToUnixMilliseconds(window.EndUtc);
         var collected = new List<ExternalOrderDto>();
         var seenPackages = new Dictionary<string, string>(StringComparer.Ordinal);
         int? previousTotalPages = null;
@@ -75,7 +98,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         for (var pageIndex = 0; pageIndex < MaxFetchPages; pageIndex++)
         {
             ct.ThrowIfCancellationRequested();
-            var page = await FetchPackagePageAsync(connection, supplierId, sinceMs, pageIndex, ct);
+            var page = await FetchPackagePageAsync(connection, supplierId, startMs, endMs, pageIndex, ct);
             pagesFetched++;
 
             if (page.TotalPages is < 0 || page.TotalCount is < 0 || page.Page is < 0)
@@ -115,9 +138,11 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
         swAll.Stop();
         _logger.LogDebug(
-            "Provider fetch completed. Provider={Provider} Operation={Operation} PagesFetched={PagesFetched} OrdersFetched={OrdersFetched} ElapsedMs={ElapsedMs}",
+            "Provider fetch completed. Provider={Provider} Operation={Operation} WindowStartUtc={WindowStartUtc:O} WindowEndUtc={WindowEndUtc:O} PagesFetched={PagesFetched} OrdersFetched={OrdersFetched} ElapsedMs={ElapsedMs}",
             "TrendyolGo",
             "FetchOrders",
+            window.StartUtc,
+            window.EndUtc,
             pagesFetched,
             collected.Count,
             swAll.ElapsedMilliseconds);
@@ -128,13 +153,14 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     private async Task<TrendyolGoPackagesResponse> FetchPackagePageAsync(
         PlatformConnection connection,
         string supplierId,
-        long sinceMs,
+        long startMs,
+        long endMs,
         int pageIndex,
         CancellationToken ct)
     {
         var query = new List<string>
         {
-            "packageStatuses=Created,Picking,Invoiced,Shipped",
+            $"packageStatuses={PackageStatusesFilter}",
             $"size={FetchPageSize}",
             $"page={pageIndex}"
         };
@@ -142,7 +168,8 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         if (!string.IsNullOrWhiteSpace(connection.StoreId))
             query.Add($"storeId={Uri.EscapeDataString(connection.StoreId)}");
 
-        query.Add($"packageModificationStartDate={sinceMs}");
+        query.Add($"packageModificationStartDate={startMs}");
+        query.Add($"packageModificationEndDate={endMs}");
 
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages?{string.Join("&", query)}";
         using var req = await BuildRequestAsync(HttpMethod.Get, path, connection, supplierId, ct);
@@ -197,6 +224,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             collected.Add(dto);
         }
     }
+
+    private static long ToUnixMilliseconds(DateTime utc) =>
+        new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
 
     private static string PackageSignature(ExternalOrderDto dto) =>
         string.Join('\u001f', dto.ExternalStatus, dto.Total.ToString(System.Globalization.CultureInfo.InvariantCulture), dto.CustomerNote, dto.Items.Count);

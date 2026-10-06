@@ -74,6 +74,18 @@ When the Worker stopping token cancels work, `OrderSyncService` rethrows `Operat
 
 Trendyol GO / Yemeksepeti real clients log provider failures with provider name, operation, status code, and elapsed ms. They do **not** log response bodies.
 
+### Order sync recovery diagnostics
+
+Trendyol GO polling resumes from a per-connection checkpoint, `PlatformConnections.LastSuccessfulSync` in the tenant database (see [../orders/synchronization.md](../orders/synchronization.md#checkpoint-and-outage-recovery)). To tell whether a connection is current, catching up or stuck:
+
+| Observation | Meaning |
+|-------------|---------|
+| `LastSuccessfulSync` within about one sync interval of now | Current. |
+| Information `Recovering platform orders after a sync gap` with `MoreRunsNeeded=True`, `SyncLogs` rows with `Success`, checkpoint moving forward by up to 12 hours per run | Catching up after an outage. Orders after the gap appear when recovery reaches them. |
+| Error `Platform connection sync failed`, `SyncLogs` rows with `Failed`, checkpoint not moving | Stuck on one window. `WindowStartUtc` / `WindowEndUtc` name the window, `IntegrationErrors.ErrorType` the exception type, and `CheckpointUtc` the point the next run resumes from (minus the five-minute overlap). After five consecutive failures the circuit opens for five minutes. |
+
+These logs and rows carry ids, time boundaries, counts and exception types only. They contain no credentials, `Authorization` header, executor e-mail, customer details or provider payloads. Do not add those when diagnosing; ask for the window boundaries and connection id instead.
+
 ## Explicit gaps
 
 These are **not** implemented:

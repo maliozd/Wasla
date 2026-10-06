@@ -283,9 +283,11 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         }
 
         public FoodPlatform Platform { get; }
+        public TimeSpan? MaxFetchWindow => null;
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
             PlatformConnection connection,
+            OrderFetchWindow window,
             CancellationToken ct) =>
             Task.FromResult(_orders);
 

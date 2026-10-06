@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Security;
+using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
@@ -35,7 +36,7 @@ public sealed class ProviderFailureLoggingTests
             logger);
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(Connection(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None));
 
         AssertSafe(ex, logger.Entries);
         Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
@@ -52,7 +53,7 @@ public sealed class ProviderFailureLoggingTests
         });
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            failing.FetchOrdersAsync(Connection(), CancellationToken.None));
+            failing.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None));
         AssertSafe(ex, failureLogger.Entries);
 
         var successLogger = new CollectingLogger<YemeksepetiFoodPlatformClient>();
@@ -73,7 +74,7 @@ public sealed class ProviderFailureLoggingTests
             };
         });
 
-        var orders = await succeeding.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var orders = await succeeding.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None);
         Assert.Empty(orders);
         Assert.Contains(successLogger.Entries, entry =>
             entry.Level == LogLevel.Debug && entry.Message.Contains("fetch completed", StringComparison.OrdinalIgnoreCase));
@@ -130,6 +131,12 @@ public sealed class ProviderFailureLoggingTests
                 TokenPath = "/v2/oauth/token"
             }),
             logger);
+    }
+
+    private static OrderFetchWindow LastHour()
+    {
+        var now = DateTime.UtcNow;
+        return new OrderFetchWindow(now.AddHours(-1), now);
     }
 
     private static PlatformConnection Connection() => new()

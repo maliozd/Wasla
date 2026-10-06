@@ -764,10 +764,11 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
         public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public TimeSpan? MaxFetchWindow => null;
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult(_orders);
 
         public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>

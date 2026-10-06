@@ -64,6 +64,11 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
 
     public FoodPlatform Platform => FoodPlatform.Yemeksepeti;
 
+    /// <summary>
+    /// Not checkpointed yet: every fetch still asks for the last hour and ignores the sync window.
+    /// </summary>
+    public TimeSpan? MaxFetchWindow => null;
+
     // ── Credential resolution ─────────────────────────────────────────────────
 
     /// <summary>
@@ -90,7 +95,7 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     // ── Fetch orders ──────────────────────────────────────────────────────────
 
     public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
-        PlatformConnection connection, CancellationToken ct)
+        PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
     {
         var (chainId, vendorId) = ResolveIds(connection);
 
@@ -115,7 +120,7 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
             throw new InvalidOperationException("Yemeksepeti DefaultPageSize must be positive.");
 
         var now = DateTimeOffset.UtcNow;
-        // TODO: Use sync window from connection's LastSuccessfulSync if available; for now use a safe 1-hour lookback.
+        // TODO: Honor the checkpointed OrderFetchWindow (set MaxFetchWindow) once the Partner API range limits are confirmed; for now use a safe 1-hour lookback.
         var startTime = now.AddHours(-1).ToUnixTimeMilliseconds();
         var endTime = now.ToUnixTimeMilliseconds();
 

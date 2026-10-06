@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Security;
+using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
@@ -19,6 +20,72 @@ public sealed class TrendyolPaginationTests
     private const string SensitiveBody =
         "{\"customerName\":\"Ali Veli\",\"phone\":\"5551112233\",\"address\":\"Secret Street 5\"}";
 
+    // 2026-10-06T09:00:00Z .. 10:00:00Z, which the API receives as epoch milliseconds.
+    private static readonly OrderFetchWindow Window = new(
+        new DateTime(2026, 10, 6, 9, 0, 0, DateTimeKind.Utc),
+        new DateTime(2026, 10, 6, 10, 0, 0, DateTimeKind.Utc));
+
+    [Fact]
+    public async Task Request_UsesTheDocumentedPackagesQuery_WithEveryStatusAndTheWindowInMilliseconds()
+    {
+        var requests = new List<Uri>();
+        var client = Create(request =>
+        {
+            requests.Add(request.RequestUri!);
+            return Json(Page(0, 1, Package("only")));
+        });
+
+        await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
+
+        var uri = Assert.Single(requests);
+        Assert.Equal("/integrator/order/meal/suppliers/supplier-1/packages", uri.AbsolutePath);
+        Assert.Equal(
+            "?packageStatuses=Created,Picking,Invoiced,Cancelled,UnSupplied,Shipped,Delivered"
+            + "&size=50&page=0&storeId=store-1"
+            + "&packageModificationStartDate=1791277200000&packageModificationEndDate=1791280800000",
+            uri.Query);
+
+        var statuses = QueryValue(uri, "packageStatuses").Split(',');
+        Assert.Contains("Delivered", statuses);
+        Assert.Contains("Cancelled", statuses);
+        Assert.Contains("UnSupplied", statuses);
+        Assert.Equal(
+            ["Created", "Picking", "Invoiced", "Cancelled", "UnSupplied", "Shipped", "Delivered"],
+            statuses);
+    }
+
+    [Theory]
+    [InlineData("Delivered")]
+    [InlineData("Cancelled")]
+    [InlineData("UnSupplied")]
+    public async Task TerminalPackages_AreReturnedWithTheirProviderStatus(string status)
+    {
+        var client = Create(_ => Json(Page(0, 1, Package("terminal", status))));
+
+        var orders = await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
+
+        Assert.Equal(status, Assert.Single(orders).ExternalStatus);
+    }
+
+    [Fact]
+    public async Task WindowLongerThanTheFetchWindow_IsRefusedBeforeAnyRequest()
+    {
+        var requests = 0;
+        var client = Create(_ =>
+        {
+            requests++;
+            return Json(Page(0, 1));
+        });
+        var tooLong = new OrderFetchWindow(Window.StartUtc, Window.StartUtc + TrendyolGoFoodPlatformClient.FetchWindowLength + TimeSpan.FromMilliseconds(1));
+        var reversed = new OrderFetchWindow(Window.EndUtc, Window.StartUtc);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            client.FetchOrdersAsync(Connection(), tooLong, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            client.FetchOrdersAsync(Connection(), reversed, CancellationToken.None));
+        Assert.Equal(0, requests);
+    }
+
     [Fact]
     public async Task OnePage_FetchesPageZeroOnce()
     {
@@ -30,7 +97,7 @@ public sealed class TrendyolPaginationTests
             return Json(Page(0, 1, Package("only")));
         });
 
-        var orders = await client.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
 
         Assert.Equal([0], pages);
         Assert.Equal(["only"], orders.Select(o => o.ExternalOrderId).ToArray());
@@ -54,7 +121,7 @@ public sealed class TrendyolPaginationTests
             return Json(Page(page, 3, Package(id)));
         });
 
-        var orders = await client.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
 
         Assert.Equal([0, 1, 2], pages);
         Assert.Equal(["a", "b", "c"], orders.Select(o => o.ExternalOrderId).ToArray());
@@ -78,7 +145,7 @@ public sealed class TrendyolPaginationTests
             return Json(PageWithoutTotal([Package("tail")]));
         });
 
-        var orders = await client.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
 
         Assert.Equal([0, 1], pages);
         Assert.Equal(TrendyolGoFoodPlatformClient.FetchPageSize + 1, orders.Count);
@@ -99,7 +166,7 @@ public sealed class TrendyolPaginationTests
         });
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            client.FetchOrdersAsync(Connection(), cts.Token));
+            client.FetchOrdersAsync(Connection(), Window, cts.Token));
         Assert.Equal([0], pages);
     }
 
@@ -122,7 +189,7 @@ public sealed class TrendyolPaginationTests
         }, logger);
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(Connection(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection(), Window, CancellationToken.None));
 
         Assert.Equal([0, 1], pages);
         Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
@@ -144,7 +211,7 @@ public sealed class TrendyolPaginationTests
         }, logger);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.FetchOrdersAsync(Connection(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection(), Window, CancellationToken.None));
 
         Assert.Equal(TrendyolGoFoodPlatformClient.MaxFetchPages, pages.Count);
         Assert.Equal(Enumerable.Range(0, TrendyolGoFoodPlatformClient.MaxFetchPages), pages);
@@ -165,7 +232,7 @@ public sealed class TrendyolPaginationTests
         });
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.FetchOrdersAsync(Connection(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection(), Window, CancellationToken.None));
 
         Assert.Equal([0, 1], pages);
         Assert.Contains("did not advance", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -185,7 +252,7 @@ public sealed class TrendyolPaginationTests
         });
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.FetchOrdersAsync(Connection(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection(), Window, CancellationToken.None));
 
         Assert.Equal([0, 1], pages);
         Assert.Contains("empty page", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -200,7 +267,7 @@ public sealed class TrendyolPaginationTests
             return Json(Page(page, 2, Package("same", "Created", 10)));
         });
 
-        var orders = await client.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
 
         Assert.Equal(["same"], orders.Select(o => o.ExternalOrderId).ToArray());
     }
@@ -216,7 +283,7 @@ public sealed class TrendyolPaginationTests
         });
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.FetchOrdersAsync(Connection(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection(), Window, CancellationToken.None));
 
         Assert.Contains("conflicting duplicate", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("PagesFetched=2", ex.Message, StringComparison.Ordinal);
@@ -224,11 +291,19 @@ public sealed class TrendyolPaginationTests
 
     private static void AssertWindow(HttpRequestMessage request)
     {
-        var query = request.RequestUri?.Query ?? string.Empty;
-        Assert.Contains("size=50", query, StringComparison.Ordinal);
-        Assert.Contains("packageStatuses=Created,Picking,Invoiced,Shipped", query, StringComparison.Ordinal);
-        Assert.Contains("packageModificationStartDate=", query, StringComparison.Ordinal);
-        Assert.Contains("storeId=store-1", query, StringComparison.Ordinal);
+        var uri = request.RequestUri!;
+        Assert.Equal("50", QueryValue(uri, "size"));
+        Assert.Equal("Created,Picking,Invoiced,Cancelled,UnSupplied,Shipped,Delivered", QueryValue(uri, "packageStatuses"));
+        Assert.Equal("1791277200000", QueryValue(uri, "packageModificationStartDate"));
+        Assert.Equal("1791280800000", QueryValue(uri, "packageModificationEndDate"));
+        Assert.Equal("store-1", QueryValue(uri, "storeId"));
+    }
+
+    private static string QueryValue(Uri uri, string name)
+    {
+        var match = Regex.Match(uri.Query, $@"(?:^\?|&){Regex.Escape(name)}=([^&]*)");
+        Assert.True(match.Success, $"{name} is missing from {uri.Query}");
+        return match.Groups[1].Value;
     }
 
     private static int ReadPage(HttpRequestMessage request)
@@ -300,6 +375,9 @@ public sealed class YemeksepetiPaginationTests
     private const string SensitiveBody =
         "{\"customerName\":\"Ali Veli\",\"phone\":\"5551112233\",\"client_secret\":\"super-secret\"}";
 
+    // The Yemeksepeti client is not checkpointed yet and ignores the window.
+    private static readonly OrderFetchWindow Window = new(DateTime.UtcNow.AddHours(-1), DateTime.UtcNow);
+
     [Fact]
     public async Task OnePage_FetchesPageZeroOnce()
     {
@@ -314,7 +392,7 @@ public sealed class YemeksepetiPaginationTests
             return Json(Page(0, 1, Order("only")));
         });
 
-        var orders = await client.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
 
         Assert.Equal([0], ordersPages);
         Assert.Equal(["only"], orders.Select(o => o.ExternalOrderId).ToArray());
@@ -347,7 +425,7 @@ public sealed class YemeksepetiPaginationTests
             return Json(Page(page, 3, Order(id)));
         });
 
-        var orders = await client.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
 
         Assert.Equal(1, tokenRequests);
         Assert.Equal([0, 1, 2], ordersPages);
@@ -371,7 +449,7 @@ public sealed class YemeksepetiPaginationTests
         });
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            client.FetchOrdersAsync(Connection(), cts.Token));
+            client.FetchOrdersAsync(Connection(), Window, cts.Token));
         Assert.Equal([0], ordersPages);
     }
 
@@ -397,7 +475,7 @@ public sealed class YemeksepetiPaginationTests
         }, logger);
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(Connection(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection(), Window, CancellationToken.None));
 
         Assert.Equal([0, 1], ordersPages);
         Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
@@ -430,7 +508,7 @@ public sealed class YemeksepetiPaginationTests
         }, logger);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.FetchOrdersAsync(Connection(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection(), Window, CancellationToken.None));
 
         Assert.Equal(YemeksepetiFoodPlatformClient.MaxFetchPages, ordersPages.Count);
         Assert.Equal(0, ordersPages[0]);
@@ -455,7 +533,7 @@ public sealed class YemeksepetiPaginationTests
             return Json("""{"data":[{"id":"only","code":"only","status":"RECEIVED","total_price":10}]}""");
         }, pageSize: 2);
 
-        var orders = await client.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
 
         Assert.Equal([0], ordersPages);
         Assert.Equal(["only"], orders.Select(o => o.ExternalOrderId).ToArray());
@@ -472,7 +550,7 @@ public sealed class YemeksepetiPaginationTests
             var page = ReadPage(request);
             return Json(Page(page, 2, Order("same", "RECEIVED")));
         });
-        var once = await identical.FetchOrdersAsync(Connection(), CancellationToken.None);
+        var once = await identical.FetchOrdersAsync(Connection(), Window, CancellationToken.None);
         Assert.Equal(["same"], once.Select(o => o.ExternalOrderId).ToArray());
 
         var conflicting = Create(request =>
@@ -484,7 +562,7 @@ public sealed class YemeksepetiPaginationTests
             return Json(Page(page, 2, Order("same", page == 0 ? "RECEIVED" : "CANCELLED")));
         });
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            conflicting.FetchOrdersAsync(Connection(), CancellationToken.None));
+            conflicting.FetchOrdersAsync(Connection(), Window, CancellationToken.None));
         Assert.Contains("conflicting duplicate", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("PagesFetched=2", ex.Message, StringComparison.Ordinal);
     }

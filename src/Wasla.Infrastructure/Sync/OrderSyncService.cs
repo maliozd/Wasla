@@ -31,6 +31,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly IOrderReceiptCreationService _receiptCreation;
     private readonly ILogger<OrderSyncService> _logger;
     private readonly ITenantBusinessSubtypeReader? _businessSubtypeReader;
+    private readonly TimeProvider _time;
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
         new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
@@ -55,7 +56,8 @@ public sealed class OrderSyncService : IOrderSyncService
         IOrderAutoApproveService autoApprove,
         IOrderReceiptCreationService receiptCreation,
         ILogger<OrderSyncService> logger,
-        ITenantBusinessSubtypeReader? businessSubtypeReader = null)
+        ITenantBusinessSubtypeReader? businessSubtypeReader = null,
+        TimeProvider? time = null)
     {
         _customerDbFactory = customerDbFactory;
         _platformClients = platformClients;
@@ -64,6 +66,7 @@ public sealed class OrderSyncService : IOrderSyncService
         _receiptCreation = receiptCreation;
         _logger = logger;
         _businessSubtypeReader = businessSubtypeReader;
+        _time = time ?? TimeProvider.System;
     }
 
     public async Task SyncCustomerAsync(Guid customerId, CancellationToken ct)
@@ -280,6 +283,7 @@ public sealed class OrderSyncService : IOrderSyncService
             StartedAt = DateTime.UtcNow,
             Status = SyncStatus.Running
         };
+        OrderFetchWindow? failedWindow = null;
 
         try
         {
@@ -332,46 +336,80 @@ public sealed class OrderSyncService : IOrderSyncService
                 }
             }
 
-            var swFetch = Stopwatch.StartNew();
-            var externalOrders = await _fetchPipeline.ExecuteAsync(
-                    async token => await client.FetchOrdersAsync(connection, token).ConfigureAwait(false),
-                    ct)
-                .ConfigureAwait(false);
-            swFetch.Stop();
+            // LastSuccessfulSync is the checkpoint: everything the provider reports as modified before it has been
+            // fetched and persisted. Windows run oldest first. The checkpoint moves to a window's end only after every
+            // page of that window is fetched and every order in it is upserted, so a failure never skips data.
+            var plan = OrderFetchWindowPlanner.Plan(
+                connection.LastSuccessfulSync,
+                _time.GetUtcNow().UtcDateTime,
+                client.MaxFetchWindow);
 
-            syncLog.OrdersFetched = externalOrders.Count;
+            if (plan.Windows.Count > 1 || plan.HasMore)
+            {
+                _logger.LogInformation(
+                    "Recovering platform orders after a sync gap. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, CheckpointUtc={CheckpointUtc:O}, Windows={WindowCount}, FromUtc={FromUtc:O}, ThroughUtc={ThroughUtc:O}, MoreRunsNeeded={MoreRunsNeeded}",
+                    customerId,
+                    connection.Id,
+                    connection.Platform,
+                    connection.LastSuccessfulSync,
+                    plan.Windows.Count,
+                    plan.Windows[0].StartUtc,
+                    plan.Windows[^1].EndUtc,
+                    plan.HasMore);
+            }
 
-            _logger.LogDebug(
-                "Provider returned {OrderCount} orders. Platform={Platform}, StoreId={StoreId}, ConnectionId={ConnectionId}, CustomerId={CustomerId}, FetchElapsedMs={FetchElapsedMs}, SampleExternalOrderIds={SampleExternalOrderIds}",
-                externalOrders.Count,
-                connection.Platform,
-                connection.StoreId,
-                connection.Id,
-                customerId,
-                swFetch.ElapsedMilliseconds,
-                externalOrders.Select(x => x.ExternalOrderId).Where(x => !string.IsNullOrWhiteSpace(x)).Take(10).ToArray());
-
+            var connFetched = 0;
             var connInserted = 0;
             var connUpdated = 0;
             var connSkipped = 0;
             var connUnchanged = 0;
+            var swUpsert = new Stopwatch();
 
-            var swUpsert = Stopwatch.StartNew();
-            foreach (var external in externalOrders)
+            foreach (var window in plan.Windows)
             {
-                var r = await UpsertOrderAsync(customerId, db, external, ct).ConfigureAwait(false);
+                ct.ThrowIfCancellationRequested();
+                failedWindow = window;
 
+                var swFetch = Stopwatch.StartNew();
+                var externalOrders = await _fetchPipeline.ExecuteAsync(
+                        async token => await client.FetchOrdersAsync(connection, window, token).ConfigureAwait(false),
+                        ct)
+                    .ConfigureAwait(false);
+                swFetch.Stop();
 
-                if (r.Inserted) { syncLog.OrdersInserted++; connInserted++; }
-                if (r.Updated) { syncLog.OrdersUpdated++; connUpdated++; }
-                if (r.Skipped) { connSkipped++; }
-                if (r.Unchanged) { connUnchanged++; }
+                connFetched += externalOrders.Count;
+                syncLog.OrdersFetched = connFetched;
+
+                _logger.LogDebug(
+                    "Provider returned {OrderCount} orders. Platform={Platform}, StoreId={StoreId}, ConnectionId={ConnectionId}, CustomerId={CustomerId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, FetchElapsedMs={FetchElapsedMs}, SampleExternalOrderIds={SampleExternalOrderIds}",
+                    externalOrders.Count,
+                    connection.Platform,
+                    connection.StoreId,
+                    connection.Id,
+                    customerId,
+                    window.StartUtc,
+                    window.EndUtc,
+                    swFetch.ElapsedMilliseconds,
+                    externalOrders.Select(x => x.ExternalOrderId).Where(x => !string.IsNullOrWhiteSpace(x)).Take(10).ToArray());
+
+                swUpsert.Start();
+                foreach (var external in externalOrders)
+                {
+                    var r = await UpsertOrderAsync(customerId, db, external, ct).ConfigureAwait(false);
+
+                    if (r.Inserted) { syncLog.OrdersInserted++; connInserted++; }
+                    if (r.Updated) { syncLog.OrdersUpdated++; connUpdated++; }
+                    if (r.Skipped) { connSkipped++; }
+                    if (r.Unchanged) { connUnchanged++; }
+                }
+                swUpsert.Stop();
+
+                connection.LastSuccessfulSync = window.EndUtc;
             }
-            swUpsert.Stop();
 
+            failedWindow = null;
             connection.ConsecutiveFailures = 0;
             connection.CircuitOpenUntil = null;
-            connection.LastSuccessfulSync = DateTime.UtcNow;
 
             syncLog.Status = SyncStatus.Success;
             syncLog.FinishedAt = DateTime.UtcNow;
@@ -386,7 +424,7 @@ public sealed class OrderSyncService : IOrderSyncService
                 connection.Id,
                 connection.Platform,
                 connection.StoreId,
-                externalOrders.Count,
+                connFetched,
                 connInserted,
                 connUpdated,
                 connSkipped,
@@ -399,7 +437,7 @@ public sealed class OrderSyncService : IOrderSyncService
                 connection.Id,
                 connection.Platform,
                 connection.StoreId,
-                externalOrders.Count,
+                connFetched,
                 connInserted,
                 connUpdated,
                 connSkipped,
@@ -439,11 +477,14 @@ public sealed class OrderSyncService : IOrderSyncService
             swConn.Stop();
             _logger.LogError(
                 ex,
-                "Platform connection sync failed. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, ElapsedMs={ElapsedMs}",
+                "Platform connection sync failed. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, CheckpointUtc={CheckpointUtc:O}, ElapsedMs={ElapsedMs}",
                 customerId,
                 connection.Id,
                 connection.Platform,
                 connection.StoreId,
+                failedWindow?.StartUtc,
+                failedWindow?.EndUtc,
+                connection.LastSuccessfulSync,
                 swConn.ElapsedMilliseconds);
 
             return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, syncLog.OrdersFetched, syncLog.OrdersInserted, syncLog.OrdersUpdated, 0, 0, IsFailed: true)

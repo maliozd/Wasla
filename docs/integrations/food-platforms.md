@@ -62,7 +62,8 @@ Source: `src/Wasla.Application/Abstractions/Platform/IFoodPlatformClient.cs`.
 
 Capabilities on the interface:
 
-- `FetchOrdersAsync` — used by Worker sync
+- `FetchOrdersAsync(connection, window, ct)` — used by Worker sync; returns every page of one fetch or throws
+- `MaxFetchWindow` — the longest window the client requests in one fetch (Trendyol GO: 1 hour), or null when the client ignores the window (Yemeksepeti, mock clients)
 - Lifecycle: `AcceptOrderAsync`, `MarkInvoicedAsync`, `MarkShippedAsync`, `MarkDeliveredAsync`, `RejectOrderAsync`
 
 Yemeksepeti’s real client documents that lifecycle fulfillment endpoints are **not yet implemented** for the partner API path. Do not assume Real mode means accept/reject/deliver against Yemeksepeti works end-to-end.
@@ -109,12 +110,16 @@ Per-tenant API keys live encrypted in TenantDb after UI setup.
 
 Details and numbers: [../orders/synchronization.md](../orders/synchronization.md).
 
-| Provider | Window | Page size | Page cap |
-|----------|--------|-----------|----------|
-| Trendyol GO | 1 hour | 50 | 20 pages (≤ 1000 packages) |
-| Yemeksepeti | 1 hour | default 20 | 50 pages (≤ 1000 at default size) |
+| Provider | Window | Statuses requested | Page size | Page cap |
+|----------|--------|--------------------|-----------|----------|
+| Trendyol GO | From the checkpoint (`LastSuccessfulSync`) − 5 minutes to now, in windows of at most 1 hour, at most 12 per run; 1 hour back when there is no checkpoint | All documented `packageStatuses`, including `Cancelled`, `UnSupplied` and `Delivered` | 50 | 20 pages per window (≤ 1000 packages) |
+| Yemeksepeti | Last 1 hour (not checkpointed) | Provider default | default 20 | 50 pages (≤ 1000 at default size) |
 
-Malformed pagination or “more pages at cap” fails that connection’s sync.
+Malformed pagination or “more pages at cap” fails that connection’s sync, and the checkpoint does not move past the failed window. Outage recovery, failure rules and the Trendyol GO request contract: [../orders/synchronization.md](../orders/synchronization.md#checkpoint-and-outage-recovery).
+
+## Webhooks
+
+For Trendyol GO the target is webhook first, with polling as the safety net (WAS-17). No webhook is implemented for any platform yet; polling is the only ingestion path. See [../orders/synchronization.md](../orders/synchronization.md#webhooks-and-polling).
 
 ## Mock order behavior (product rules)
 
@@ -128,6 +133,8 @@ When Mock clients generate orders:
 - Getir: Real mode still mock.
 - Yemeksepeti lifecycle APIs: not implemented on the real client.
 - Worker Real-mode startup log disagrees with DI for Yemeksepeti.
+- Yemeksepeti polling is not checkpointed: a change older than one hour at the next successful run can be missed.
+- Trendyol GO date-range limits, retention and the scope of the request limit are undocumented and not yet verified against the Stage API.
 
 ## Related docs
 

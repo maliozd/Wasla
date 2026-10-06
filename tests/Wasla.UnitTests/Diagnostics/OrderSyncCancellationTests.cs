@@ -91,8 +91,9 @@ public sealed class OrderSyncCancellationTests : IDisposable
     private sealed class ThrowingClient(Action throwNow) : IFoodPlatformClient
     {
         public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public TimeSpan? MaxFetchWindow => null;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct)
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
         {
             throwNow();
             return Task.FromResult<IReadOnlyCollection<ExternalOrderDto>>([]);

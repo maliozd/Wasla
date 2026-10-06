@@ -505,7 +505,8 @@ public sealed class TenantOperationalHealthReaderTests : IDisposable
     private sealed class FakeRealClient(FoodPlatform platform) : IFoodPlatformClient
     {
         public FoodPlatform Platform => platform;
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct) => throw new NotSupportedException();
+        public TimeSpan? MaxFetchWindow => null;
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) => throw new NotSupportedException();
         public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
         public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
         public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();

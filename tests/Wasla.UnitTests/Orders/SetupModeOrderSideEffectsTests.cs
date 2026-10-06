@@ -273,8 +273,9 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         public IReadOnlyCollection<ExternalOrderDto> Orders { get; set; } = [];
 
         public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public TimeSpan? MaxFetchWindow => null;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult(Orders);
 
         public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>

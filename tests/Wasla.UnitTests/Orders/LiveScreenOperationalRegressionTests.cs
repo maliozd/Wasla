@@ -378,11 +378,13 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     private sealed class RecordingPlatformClient : IFoodPlatformClient
     {
         public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public TimeSpan? MaxFetchWindow => null;
         public List<string> Calls { get; } = new();
         public Exception? Failure { get; set; }
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
             PlatformConnection connection,
+            OrderFetchWindow window,
             CancellationToken ct) =>
             Task.FromResult<IReadOnlyCollection<ExternalOrderDto>>([]);
 
