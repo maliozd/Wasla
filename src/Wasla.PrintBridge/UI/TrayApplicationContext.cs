@@ -54,10 +54,6 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private readonly ToolStripMenuItem _exitMenuItem;
 
-    private readonly ToolStripMenuItem _classicFallbackMenuItem;
-
-    private readonly ToolStripSeparator _classicFallbackSeparator;
-
     private readonly IWebView2RuntimeProbe _webViewRuntimeProbe;
 
     private readonly IPrinterCatalog _printerCatalog = new WindowsPrinterCatalog();
@@ -88,6 +84,8 @@ public sealed class TrayApplicationContext : ApplicationContext
     private bool _shellFailedThisSession;
 
     private bool _shellFallbackNotified;
+
+    private bool _ignoredShellSettingLogged;
 
     /// <summary>The classic tab to select if the WebView2 app fails while opening a requested tab.</summary>
     private Action? _classicTabForFallback;
@@ -144,11 +142,6 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _exitMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => _ = ExitAsync());
 
-        // Emergency fallback while the WebView2 app is the normal window; hidden when the classic window is the default.
-        _classicFallbackMenuItem = new ToolStripMenuItem(string.Empty, null, (_, _) => ShowMainWindow());
-
-        _classicFallbackSeparator = new ToolStripSeparator();
-
 
 
         _trayMenu = new ContextMenuStrip();
@@ -165,17 +158,9 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _trayMenu.Items.Add(_settingsMenuItem);
 
-        _trayMenu.Items.Add(_classicFallbackSeparator);
-
-        _trayMenu.Items.Add(_classicFallbackMenuItem);
-
         _trayMenu.Items.Add(new ToolStripSeparator());
 
         _trayMenu.Items.Add(_exitMenuItem);
-
-        _trayMenu.Opening += (_, _) => UpdateClassicFallbackMenuItem();
-
-        UpdateClassicFallbackMenuItem();
 
 
 
@@ -226,8 +211,6 @@ public sealed class TrayApplicationContext : ApplicationContext
         _settingsMenuItem.Text = _localizer["Tray.Settings"];
 
         _exitMenuItem.Text = _localizer["Tray.Exit"];
-
-        _classicFallbackMenuItem.Text = _localizer["Tray.OpenClassicFallback"];
 
         _trayMenu.RightToLeft = _cultureService.IsRightToLeft ? RightToLeft.Yes : RightToLeft.No;
 
@@ -296,9 +279,9 @@ public sealed class TrayApplicationContext : ApplicationContext
     private void ShowPrimaryWindow() => ShowAppWindow(tab: null, classicTab: null);
 
     /// <summary>
-    /// Every tray entry point goes through here. When <c>Ui.Shell</c> is <c>WebView2</c> and the runtime is usable,
-    /// the one WebView2 window is shown (or brought forward) on <paramref name="tab"/>. Otherwise, or when the app
-    /// fails while opening, the classic window opens on the matching tab, as before.
+    /// Every tray entry point goes through here. By default the one WebView2 window is shown (or brought forward) on
+    /// <paramref name="tab"/>. The classic window opens on the matching tab only for the explicit <c>WinForms</c>
+    /// rollback, when the WebView2 Runtime is unusable, or once the app has failed this session.
     /// </summary>
     private void ShowAppWindow(string? tab, Action? classicTab)
     {
@@ -322,33 +305,29 @@ public sealed class TrayApplicationContext : ApplicationContext
             return true;
         }
 
-        if (decision.FallbackReason is ShellFallbackReason.RuntimeUnavailable or ShellFallbackReason.UnrecognizedSetting)
-        {
-            _services.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("Wasla.PrintBridge.Shell")
-                .LogWarning("WebView2 shell not used; opening the classic window. Reason={Reason}", decision.FallbackReason);
-        }
-
         if (decision.FallbackReason == ShellFallbackReason.RuntimeUnavailable)
+        {
+            _logger.LogWarning("WebView2 Runtime missing or too old; opening the classic window as the fallback.");
             NotifyShellFallback("Shell.Fallback.RuntimeMissing");
+        }
 
         return false;
     }
 
-    private ShellDecision DecideShell() =>
-        _shellFailedThisSession
-            ? new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable)
-            : ShellSelection.Decide(_services.GetRequiredService<PrintBridgeSettingsHolder>().Ui.Shell, _webViewRuntimeProbe);
-
-    /// <summary>
-    /// The tray's classic-window entry is an emergency fallback, offered only while the WebView2 app is the window
-    /// "Open" shows. Without <c>Ui.Shell = WebView2</c> the runtime is not probed at all.
-    /// </summary>
-    private void UpdateClassicFallbackMenuItem()
+    private ShellDecision DecideShell()
     {
-        var offered = DecideShell().Mode == PrintBridgeShellMode.WebView2;
-        _classicFallbackMenuItem.Visible = offered;
-        _classicFallbackSeparator.Visible = offered;
+        if (_shellFailedThisSession)
+            return new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable);
+
+        var decision = ShellSelection.Decide(_services.GetRequiredService<PrintBridgeSettingsHolder>().Ui.Shell, _webViewRuntimeProbe);
+        // Once per session; the value itself is not logged.
+        if (decision.IgnoredSetting && !_ignoredShellSettingLogged)
+        {
+            _ignoredShellSettingLogged = true;
+            _logger.LogWarning("Unrecognized Ui.Shell value ignored; the WebView2 app is used. Use WebView2 or WinForms.");
+        }
+
+        return decision;
     }
 
     private PrintBridgeShellForm GetOrCreateShellForm()
@@ -372,7 +351,7 @@ public sealed class TrayApplicationContext : ApplicationContext
             new PrintBridgeLanguageService(store, holder, _cultureService, loggers.CreateLogger<PrintBridgeLanguageService>()),
             _webViewRuntimeProbe.Probe().Version,
             logger);
-        _shellForm.ClassicWindowRequested += (_, _) => ShowMainWindow();
+        // The app no longer offers the classic window; it opens only for the WinForms rollback or when the app fails.
         _shellForm.ShellUnavailable += OnShellUnavailable;
         ShellFormCreatedForTests?.Invoke(_shellForm);
         return _shellForm;
@@ -392,6 +371,9 @@ public sealed class TrayApplicationContext : ApplicationContext
             failed.BeginInvoke(failed.Dispose);
         }
 
+        // The engine and the tray are not affected: listening and printing go on while the notice and the classic
+        // window are shown.
+        _logger.LogWarning("The WebView2 app failed; opening the classic window as the fallback for this session.");
         NotifyShellFallback("Shell.Fallback.StartFailed");
         ShowMainWindow();
         _classicTabForFallback?.Invoke();
@@ -421,6 +403,33 @@ public sealed class TrayApplicationContext : ApplicationContext
     private void ShowPrintHistory() => ShowAppWindow("history", _mainForm.SelectPrintHistoryTab);
 
     private void ShowSettings() => ShowAppWindow("settings", _mainForm.SelectSettingsTab);
+
+    /// <summary>
+    /// First run, or no usable device token (for example after the token was reset or rejected): opens the connection
+    /// setup instead of leaving the user to find the tray icon. The WebView2 app opens on its Settings tab and starts the
+    /// connection dialog; with the classic window (WinForms rollback or fallback) that window opens on Settings. With a
+    /// valid connection nothing opens and the start stays in the tray. Called once after startup, unless a setup link
+    /// was passed on the command line, which then does the setup.
+    /// </summary>
+    public void ShowSetupIfNotConnected()
+    {
+        if (IsShuttingDown)
+            return;
+
+        var connection = _services.GetRequiredService<PrintBridgeSettingsHolder>().OrderHub;
+        if (PrintBridgeSettingsValidator.TryValidateConnectionSettings(connection, out _))
+            return;
+
+        _logger.LogInformation("No usable connection is configured; opening the connection setup.");
+        if (TryShowShell("settings", _mainForm.SelectSettingsTab))
+        {
+            _shellForm?.StartConnectionSetup();
+            return;
+        }
+
+        ShowMainWindow();
+        _mainForm.SelectSettingsTab();
+    }
 
 
 

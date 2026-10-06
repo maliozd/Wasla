@@ -27,7 +27,7 @@ Wasla Print Bridge is a **separate Windows process** (`Wasla.PrintBridge`).
 Print Bridge is **Windows-only**. It has no macOS or Linux build.
 
 ```text
-WebView2 desktop app (packaged HTML/CSS/JS, opt-in)    Classic WinForms window (default)
+WebView2 desktop app (packaged HTML/CSS/JS, default)   Classic WinForms window (rollback, fallback)
         │ narrow, versioned web-message contract                │
         ▼                                                       ▼
 Wasla.PrintBridge (WinExe): tray, windows, localization resources, composition root,
@@ -180,7 +180,7 @@ Controllers exist on both **Web** (`PrintBridgeApiController`, setup APIs) and *
 
 ## WebView2 desktop app (WAS-53, WAS-54, WAS-57)
 
-The modern desktop UI. WAS-53 added the secure shell and a status view, WAS-54 the daily-use features, and WAS-57 made it the complete normal UI: connection setup, operational settings and tray navigation no longer open the classic window. The page renders host state and sends allowlisted commands; polling, claiming, printing, retries, history, settings and the device token stay in `Wasla.PrintBridge.Core`, and privileged desktop actions stay in the host.
+The desktop UI, and the shipped default. WAS-53 added the secure shell and a status view, WAS-54 the daily-use features, and WAS-57 made it the complete normal UI: connection setup, operational settings and tray navigation no longer open the classic window. A missing or empty `Ui.Shell` now selects it (see Selecting the window). The page renders host state and sends allowlisted commands; polling, claiming, printing, retries, history, settings and the device token stay in `Wasla.PrintBridge.Core`, and privileged desktop actions stay in the host.
 
 | Area | Contents |
 |------|----------|
@@ -188,7 +188,7 @@ The modern desktop UI. WAS-53 added the secure shell and a status view, WAS-54 t
 | Overview | Connection state with a localized explanation and the next step for every problem (connect, reconnect, choose printer, check connection, start, show diagnostics); test-mode notice; printer and its state; listening state and device name; last contact; latest print job; today's jobs, failures and last print time |
 | Printer | Installed Windows printers (listed by the host, refresh), save, printer state, test print, test-mode notice |
 | History | Today / last 7 days / last 30 days, order search, pages of 20 rows, status labels, failure category (printer, server or other), reprint of printed rows after an inline confirmation |
-| Settings | Wasla connection (state; **Connect**, **Reconnect** or **Change connection** opens the native connection dialog; check; reset with a native confirmation), printing behavior (test mode and the three poll intervals), language, theme note, diagnostics (app version, WebView2 Runtime version, listening state, last contact, last error category, printer, test mode, open log folder) and the classic window as an emergency fallback |
+| Settings | Wasla connection (state; **Connect**, **Reconnect** or **Change connection** opens the native connection dialog; check; reset with a native confirmation), printing behavior (test mode and the three poll intervals), language, theme note, diagnostics (app version, WebView2 Runtime version, listening state, last contact, last error category, printer, test mode, open log folder) |
 | Action bar | Start or Stop, Test print, Check connection; always visible below the scrolling content |
 
 Test print is single-flight and refused in test mode with the engine's localized message. Saving a printer accepts only a name the host listed from Windows, uses the classic window's validator and settings store, and replaces the options object, so a job that is already printing keeps the printer it was claimed for.
@@ -223,14 +223,18 @@ Turning test mode **on** needs a native confirmation, because in test mode new r
 
 ### Navigation and tray
 
-| Entry point | `Ui.Shell = WebView2` | Classic default |
-|-------------|----------------------|-----------------|
+| Entry point | Default (`Ui.Shell` missing, empty, `WebView2` or unrecognized) | `Ui.Shell = WinForms` (rollback) |
+|-------------|------------------------------------------------------------------|----------------------------------|
+| Start with a valid connection | Nothing opens; the tray icon only | Same |
+| Start without a usable device token (first run, after a reset or a rejected token) | The app window opens on Settings and the native connection dialog starts; closing it changes nothing | Classic window on Settings |
+| Start with a setup link (`wasla-printbridge://setup` on the command line) | The link is applied in the app window; no connection dialog opens | Classic window with message boxes |
 | Tray Open, double-click | The app window (one instance), brought forward | Classic window |
 | Tray Print history / Settings | The app window on the History / Settings tab | Classic window on that tab |
 | Tray Printer test | Native message box with the result (no window) | Same |
-| Tray **Open classic window (fallback)** | Classic window; shown only while the app window is in use | Not shown |
-| Setup link (`wasla-printbridge://setup`) | Applied in the app window; result shown there, Printer tab when a printer is missing | Classic window with message boxes, as before |
-| WebView2 Runtime missing, or the app fails to start | Classic window on the requested tab, with one balloon notice per session | — |
+| Setup link while running | Applied in the app window; result shown there, Printer tab when a printer is missing | Classic window with message boxes |
+| WebView2 Runtime missing or too old, or the app fails (startup, page load, browser process exit) | Classic window on the requested tab, with one balloon notice per session; listening and printing go on | — |
+
+The app window no longer offers the classic window: the tray entry "Open classic window (fallback)" and the page's Diagnostics button are gone. The classic window opens only for the `WinForms` rollback or as the failure fallback above. Closing the app window hides it to the tray; listening and printing go on, and the app has no Exit command (use the tray).
 
 The classic window reloads every setting before it is shown, so a later save there cannot write back values the app changed while it was hidden.
 
@@ -252,38 +256,30 @@ The classic window reloads every setting before it is shown, so a later save the
 | Idle, busy and error poll intervals | Settings → Advanced | Settings → Printing behavior | `ShellOperationalSettings` |
 | Print history, search, reprint | History tab | History tab | `ShellHistory`, `IPrintBridgeEngine` |
 | Open the log folder | Status tab, Logs tab | Settings → Diagnostics | `ShellLogFolder` |
-| Live log viewer, copy, clear | Logs tab | **Not in the app on purpose**: log lines contain the server URL, machine name, printer names and file paths. Open the log folder, or the classic fallback | `UiLogBuffer` |
+| Live log viewer, copy, clear | Logs tab | **Not in the app on purpose**: log lines contain the server URL, machine name, printer names and file paths. Open the log folder | `UiLogBuffer` |
 | App version | Footer | Diagnostics | — |
 | Machine name, settings file path | Footer, Settings hint | **Not shown** (secret boundary) | — |
 | Setup link | Classic window | App window | `PrintBridgeAutoSetupCoordinator`, `PrintBridgeRuntime.VerifyAndResumeAsync` |
 | Max jobs per poll, `Ui.Shell`, start with Windows, minimize to tray | No UI | No UI (settings file only; the last two have no effect today) | — |
 
-### Enabling (explicit switch)
+### Selecting the window
 
-The classic WinForms window remains the default. Set `Ui.Shell` in `C:\ProgramData\Wasla\PrintBridge\appsettings.json`:
+The WebView2 app is the shipped default. The package's `appsettings.json` has no `Ui` section, and `ShellSelection.Decide` reads `Ui.Shell` in `C:\ProgramData\Wasla\PrintBridge\appsettings.json`:
 
-| `Ui.Shell` | Tray entries open |
-|------------|-------------------|
-| missing, empty or `WinForms` | Classic window (WebView2 is never loaded) |
-| `WebView2` | WebView2 desktop app, if the runtime is usable (see the navigation table) |
-| anything else | Classic window, with a warning in the log |
+| `Ui.Shell` | Window |
+|------------|--------|
+| missing or empty | WebView2 app, if the runtime is usable |
+| `WebView2` | Same |
+| `WinForms` | Classic window: the explicit rollback for support, kept temporarily. WebView2 is not loaded |
+| anything else | Ignored, with one warning per session in the log (without the value); the WebView2 app is used, so a typo never switches to the rollback |
 
-The key is written back only when it was set.
+When the runtime is missing or too old, every entry falls back to the classic window (see Runtime dependency and fallback). The key is written back only when it was set.
 
-### Default-switch decision (after WAS-55 and WAS-56)
-
-The classic window stays the default. Switch it (missing `Ui.Shell` means `WebView2`, `WinForms` stays an explicit opt-out) only when all of these hold:
-
-1. WAS-55 delivers and updates the WebView2 Runtime with the installer and Windows Service, so the fallback is rare.
-2. WAS-56 fixes the job acknowledgement race when listening stops: Stop, Reset and the classic window's connection save no longer cancel a claimed job, and app exit waits up to 10 seconds for it (see Job flow).
-3. A test print and a real order receipt have been verified on a physical receipt printer with the app (WAS-54 and WAS-57 verified with test mode and fakes only).
-4. The classic window remains reachable as the labelled emergency fallback for at least one release.
-
-The tray's Print history and Settings entries open the matching app tabs since WAS-57.
+Before this change the classic window was the default and `WebView2` was opt-in. The default changed before WAS-55 (Windows Service, installer and runtime delivery) and before a physical-printer check of the app, so the classic window stays in the build as the rollback and failure fallback until that is done. Removing it is a separate step.
 
 ### Runtime dependency and fallback
 
-The shell needs the Microsoft Edge WebView2 Runtime (Evergreen), version 120.0.2210.55 or newer (`WebView2RuntimeProbe`). WAS-53 only detects it. When it is missing or too old, or the shell fails to start (runtime error, page failed to load, browser process exit), the tray opens the classic window on the requested tab and shows one balloon notice per session. Shipping or installing the runtime belongs to WAS-55.
+The shell needs the Microsoft Edge WebView2 Runtime (Evergreen), version 120.0.2210.55 or newer (`WebView2RuntimeProbe`). WAS-53 only detects it. When it is missing or too old, or the app fails (runtime error at startup, page failed to load, browser process exit), the tray opens the classic window on the requested tab and shows one balloon notice per session; after a failure the classic window is used for the rest of the session. The engine and the tray are not affected: listening and printing go on while the notice and the classic window are shown. Shipping or installing the runtime belongs to WAS-55.
 
 ### Security model
 
@@ -351,7 +347,7 @@ See [../operations/cli.md](../operations/cli.md):
 ## Known gaps / debt
 
 - Config section still named `OrderHub` while product is Wasla.
-- The WebView2 app is opt-in and has not yet been verified with a physical receipt printer; WAS-54 and WAS-57 verification used test mode, a fake API and a recording or missing printer. The live log viewer stays only in the classic window on purpose (see the parity table).
+- The WebView2 app is the default but has not yet been verified with a physical receipt printer; WAS-54, WAS-57 and the default switch were verified with test mode, a fake API and a recording or missing printer. Until that check and WAS-55 are done, the classic window stays as the `WinForms` rollback and the failure fallback. The live log viewer stays only in the classic window on purpose (see the parity table).
 - Engine and client log lines include the server URL, the Windows machine name and printer names (for example the startup "Effective config" line and request warnings). Tokens are never logged.
 - A setup link opened while a print job is being completed is refused, not queued (WAS-58, see Job flow). The user has to open it again after printing has finished. Hand edits to `appsettings.json` while Print Bridge runs are not guarded.
 - The server has no claim lease. A printed job whose `mark-printed` never arrives stays in Printing, for example after every retry failed, after Exit (or Stop followed by Exit) gave up waiting at its 10-second limit, or after a crash or power loss between the print and the report. It is never printed again automatically, but it blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.

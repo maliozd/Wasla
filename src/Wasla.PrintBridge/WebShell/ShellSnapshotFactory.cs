@@ -99,9 +99,6 @@ public sealed class ShellSnapshotFactory
         "Shell.Diagnostics.Engine",
         "Shell.Diagnostics.LastError",
         "Shell.Diagnostics.None",
-        "Shell.Diagnostics.Fallback",
-        "Shell.Diagnostics.FallbackHelp",
-        "Shell.OpenClassicWindow",
         "Shell.Toast.Dismiss"
     ];
 

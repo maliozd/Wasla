@@ -7,8 +7,8 @@ namespace Wasla.PrintBridge.Tests.WebShell;
 
 /// <summary>
 /// The real tray application (services, engine, classic window, WebView2 window) on a temporary data root, driven
-/// through its tray menu. With <c>Ui.Shell = WebView2</c> every normal entry opens the one WebView2 window on the
-/// matching tab; the classic window opens only from its explicit fallback entry or when WebView2 cannot run.
+/// through its tray menu. By default every normal entry opens the one WebView2 window on the matching tab; the classic
+/// window opens only for the explicit <c>WinForms</c> rollback or when WebView2 cannot run.
 /// No device token is configured, so nothing contacts a server.
 /// </summary>
 [Collection(PrintBridgeDataRootCollection.Name)]
@@ -52,12 +52,11 @@ public sealed class ShellTrayRoutingTests : IDisposable
             Assert.Single(System.Windows.Forms.Application.OpenForms.OfType<PrintBridgeShellForm>());
             Assert.False(tray.ClassicWindowForTests.Visible);
 
-            // The classic window is still one deliberate click away, as a labelled fallback.
-            var fallback = Item(tray, localizer["Tray.OpenClassicFallback"]);
+            // The classic window is no longer offered while the app works: no tray entry and no page button.
             OpenMenu(tray);
-            Assert.True(fallback.Available);
-            fallback.PerformClick();
-            Assert.True(tray.ClassicWindowForTests.Visible);
+            Assert.DoesNotContain(tray.TrayMenuForTests.Items.OfType<ToolStripMenuItem>(), i => i.Text == localizer["Tray.OpenClassicFallback"]);
+            Assert.Equal("null", await core.ExecuteScriptAsync("document.getElementById('open-classic')"));
+            Assert.False(tray.ClassicWindowForTests.Visible);
         });
 
     [Fact]
@@ -70,8 +69,6 @@ public sealed class ShellTrayRoutingTests : IDisposable
             Assert.True(tray.ClassicWindowForTests.Visible);
             Assert.Equal(localizer["Tab.PrintHistory"], tray.ClassicWindowForTests.SelectedTabTitleForTests);
             Assert.Equal("Shell.Fallback.RuntimeMissing", tray.FallbackNoticeForTests);
-            OpenMenu(tray);
-            Assert.False(Item(tray, localizer["Tray.OpenClassicFallback"]).Available);
             await Task.CompletedTask;
         });
 
@@ -95,16 +92,15 @@ public sealed class ShellTrayRoutingTests : IDisposable
         }, failShellStartup: true);
 
     [Fact]
-    public Task ClassicDefault_KeepsEveryTrayEntryOnTheClassicWindow() =>
-        _host.RunAsync(shell: null, available: true, async (tray, localizer) =>
+    public Task TheWinFormsRollback_KeepsEveryTrayEntryOnTheClassicWindow() =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: true, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.Settings"]);
 
             Assert.Null(tray.ShellFormForTests);
             Assert.True(tray.ClassicWindowForTests.Visible);
             Assert.Equal(localizer["Tab.Settings"], tray.ClassicWindowForTests.SelectedTabTitleForTests);
-            OpenMenu(tray);
-            Assert.False(Item(tray, localizer["Tray.OpenClassicFallback"]).Available);
+            Assert.Null(tray.FallbackNoticeForTests);
             await Task.CompletedTask;
         });
 

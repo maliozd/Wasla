@@ -12,23 +12,10 @@ public sealed class ShellSelectionTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    [InlineData("WinForms")]
-    [InlineData("winforms")]
-    public void ClassicWindow_IsTheDefault_AndWebView2IsNeverProbed(string? configured)
-    {
-        var probe = new FakeProbe(available: true);
-
-        var decision = ShellSelection.Decide(configured, probe);
-
-        Assert.Equal(new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.NotRequested), decision);
-        Assert.Equal(0, probe.Calls);
-    }
-
-    [Theory]
     [InlineData("WebView2")]
     [InlineData("webview2")]
     [InlineData(" WebView2 ")]
-    public void WebView2Shell_IsUsedOnlyWhenRequestedAndAvailable(string configured)
+    public void TheWebView2App_IsTheDefault_WhenTheRuntimeIsUsable(string? configured)
     {
         var probe = new FakeProbe(available: true);
 
@@ -38,10 +25,27 @@ public sealed class ShellSelectionTests
         Assert.Equal(1, probe.Calls);
     }
 
-    [Fact]
-    public void MissingRuntime_FallsBackToTheClassicWindow()
+    [Theory]
+    [InlineData("WinForms")]
+    [InlineData("winforms")]
+    [InlineData(" WinForms ")]
+    public void TheExplicitWinFormsSetting_IsTheRollback_AndWebView2IsNeverProbed(string configured)
     {
-        var decision = ShellSelection.Decide("WebView2", new FakeProbe(available: false));
+        var probe = new FakeProbe(available: true);
+
+        var decision = ShellSelection.Decide(configured, probe);
+
+        Assert.Equal(new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.ExplicitWinForms), decision);
+        Assert.Equal(0, probe.Calls);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("WebView2")]
+    public void AMissingOrTooOldRuntime_FallsBackToTheClassicWindow(string? configured)
+    {
+        var decision = ShellSelection.Decide(configured, new FakeProbe(available: false));
 
         Assert.Equal(new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable), decision);
     }
@@ -50,14 +54,15 @@ public sealed class ShellSelectionTests
     [InlineData("Edge")]
     [InlineData("WebView")]
     [InlineData("true")]
-    public void UnrecognizedValues_FallBackToTheClassicWindowWithoutProbing(string configured)
+    public void UnrecognizedValues_AreIgnored_AndTheDefaultIsUsed(string configured)
     {
-        var probe = new FakeProbe(available: true);
-
-        var decision = ShellSelection.Decide(configured, probe);
-
-        Assert.Equal(new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.UnrecognizedSetting), decision);
-        Assert.Equal(0, probe.Calls);
+        // A typo must not switch to the rollback: the value is reported as ignored and the WebView2 app is used.
+        Assert.Equal(
+            new ShellDecision(PrintBridgeShellMode.WebView2, ShellFallbackReason.None, IgnoredSetting: true),
+            ShellSelection.Decide(configured, new FakeProbe(available: true)));
+        Assert.Equal(
+            new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable, IgnoredSetting: true),
+            ShellSelection.Decide(configured, new FakeProbe(available: false)));
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.UI;
+using Wasla.PrintBridge.WebShell;
 
 namespace Wasla.PrintBridge.Tests.WebShell;
 
@@ -30,7 +31,7 @@ public sealed class TrayExitTests : IDisposable
 
     [Fact]
     public Task ExitWhileListening_EndsTheApplication_WithoutAnException() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var exited = ThreadExited(tray);
@@ -44,7 +45,7 @@ public sealed class TrayExitTests : IDisposable
 
     [Fact]
     public Task ExitWhileStopped_EndsTheApplication_WithoutAnException() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             var exited = ThreadExited(tray);
 
@@ -57,7 +58,7 @@ public sealed class TrayExitTests : IDisposable
 
     [Fact]
     public Task ExitFromTheClassicWindowMode_WithTheWindowOpen_EndsTheApplication() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.Open"]);
             Assert.True(tray.ClassicWindowForTests.Visible);
@@ -72,7 +73,7 @@ public sealed class TrayExitTests : IDisposable
 
     [Fact]
     public Task ExitClickedAgain_AfterTheApplicationEnded_DoesNothing() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var exits = 0;

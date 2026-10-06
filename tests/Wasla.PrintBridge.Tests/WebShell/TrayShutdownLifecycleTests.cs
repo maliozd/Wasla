@@ -44,7 +44,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task Exit_StopsTheEngineFirst_ThenDisposesEachComponentOnce_ThenEndsTheThread() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var iconDisposals = 0;
@@ -63,7 +63,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task RepeatedAndConcurrentExitRequests_JoinTheOneShutdown() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var threadExits = 0;
@@ -95,7 +95,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task ATrayUpdateQueuedBeforeExit_AndDeliveredAfterItBegan_DoesNothing() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             var ignored = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             tray.TrayUpdateIgnoredForTests = () => ignored.TrySetResult();
@@ -115,7 +115,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task ExitWhileAJobIsBeingClaimed_WaitsForIt_AndItIsReportedPrintedOnce() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             var claim = new TrayGate();
             _server.HoldClaimAnswer = claim;
@@ -144,7 +144,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task ExitAfterTheStopLimit_EndsTheApplication_AndTheJobIsNeverReportedFailed() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             tray.RuntimeForTests.StopGracePeriod = TimeSpan.FromMilliseconds(200);
             var claim = new TrayGate();
@@ -167,7 +167,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task ASetupLinkArrivingAfterExitBegan_IsDropped() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var exit = tray.ExitForTests();
@@ -188,7 +188,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
     {
         Guid jobId = default;
         JsonNode? before = null;
-        return _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        return _host.RunAsync(ShellSelection.WinFormsValue, available: false, async (tray, localizer) =>
         {
             jobId = _server.AddJob();
             await _server.JobFinished(jobId).WaitAsync(Timeout);

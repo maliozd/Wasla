@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.WebShell;
 
 namespace Wasla.PrintBridge.Tests.WebShell;
 
@@ -49,7 +50,7 @@ public sealed class TrayShutdownIsolationTests : IDisposable
     [Fact]
     public async Task AnExitSaveThatRunsAfterTheTestEnds_StaysInTheIsolatedRoot()
     {
-        await _host.RunAsync(shell: null, available: false, (tray, _) =>
+        await _host.RunAsync(ShellSelection.WinFormsValue, available: false, (tray, _) =>
         {
             tray.ClassicWindowForTests.Location = new Point(MovedLeft, MovedLeft);
             return Task.CompletedTask;
@@ -64,7 +65,7 @@ public sealed class TrayShutdownIsolationTests : IDisposable
     public async Task AFailingTest_StillExitsTheTrayInsideTheIsolatedRoot_BeforeTheFailureIsReported()
     {
         var failure = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _host.RunAsync(shell: null, available: false, (tray, _) =>
+            _host.RunAsync(ShellSelection.WinFormsValue, available: false, (tray, _) =>
             {
                 tray.ClassicWindowForTests.Location = new Point(MovedLeft, MovedLeft);
                 throw new InvalidOperationException("Deliberate failure inside the test body.");

@@ -4,22 +4,29 @@ namespace Wasla.PrintBridge.WebShell;
 
 public enum PrintBridgeShellMode
 {
-    /// <summary>The classic WinForms window. Default until WAS-54 proves feature parity.</summary>
+    /// <summary>
+    /// The classic WinForms window: only the explicit <c>Ui.Shell = "WinForms"</c> rollback, or a fallback when the
+    /// WebView2 app cannot run.
+    /// </summary>
     WinForms,
 
-    /// <summary>The WebView2 status shell. Opt-in through <c>Ui.Shell = "WebView2"</c>.</summary>
+    /// <summary>The WebView2 app, the default.</summary>
     WebView2
 }
 
 public enum ShellFallbackReason
 {
     None,
-    NotRequested,
-    UnrecognizedSetting,
+
+    /// <summary><c>Ui.Shell = "WinForms"</c>: the explicit rollback to the classic window.</summary>
+    ExplicitWinForms,
+
+    /// <summary>The WebView2 Runtime is missing or older than the supported minimum.</summary>
     RuntimeUnavailable
 }
 
-public sealed record ShellDecision(PrintBridgeShellMode Mode, ShellFallbackReason FallbackReason);
+/// <param name="IgnoredSetting">An unrecognized <c>Ui.Shell</c> value was ignored and the default was used.</param>
+public sealed record ShellDecision(PrintBridgeShellMode Mode, ShellFallbackReason FallbackReason, bool IgnoredSetting = false);
 
 public sealed record WebView2RuntimeAvailability(bool IsAvailable, string? Version);
 
@@ -34,21 +41,21 @@ public static class ShellSelection
     public const string WebView2Value = "WebView2";
 
     /// <summary>
-    /// Chooses the window opened from the tray. The WebView2 runtime is probed only when the WebView2
-    /// shell was explicitly requested, so the default configuration never loads WebView2 at all.
+    /// Chooses the window opened from the tray and for a setup link. The WebView2 app is the default: a missing or
+    /// empty <c>Ui.Shell</c> selects it, and so does an unrecognized value (ignored, so a typo never switches to the
+    /// rollback). Only <c>WinForms</c> selects the classic window explicitly, and then the runtime is not probed at
+    /// all. When the runtime is missing or too old, the classic window is the fallback.
     /// </summary>
     public static ShellDecision Decide(string? configuredShell, IWebView2RuntimeProbe runtimeProbe)
     {
         var value = configuredShell?.Trim();
-        if (string.IsNullOrEmpty(value) || string.Equals(value, WinFormsValue, StringComparison.OrdinalIgnoreCase))
-            return new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.NotRequested);
+        if (string.Equals(value, WinFormsValue, StringComparison.OrdinalIgnoreCase))
+            return new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.ExplicitWinForms);
 
-        if (!string.Equals(value, WebView2Value, StringComparison.OrdinalIgnoreCase))
-            return new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.UnrecognizedSetting);
-
+        var ignored = !string.IsNullOrEmpty(value) && !string.Equals(value, WebView2Value, StringComparison.OrdinalIgnoreCase);
         return runtimeProbe.Probe().IsAvailable
-            ? new ShellDecision(PrintBridgeShellMode.WebView2, ShellFallbackReason.None)
-            : new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable);
+            ? new ShellDecision(PrintBridgeShellMode.WebView2, ShellFallbackReason.None, ignored)
+            : new ShellDecision(PrintBridgeShellMode.WinForms, ShellFallbackReason.RuntimeUnavailable, ignored);
     }
 }
 

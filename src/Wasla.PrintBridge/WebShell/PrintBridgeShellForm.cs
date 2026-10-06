@@ -135,6 +135,9 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
             _bridge.Navigate(tab);
     }
 
+    /// <summary>Starts the native connection dialog from the host (first run without a usable token).</summary>
+    public void StartConnectionSetup() => _bridge.StartConnectionSetup();
+
     /// <summary>Shows the result of an automatic setup (setup link) in the page.</summary>
     public void ShowConnectionResult(ShellOperationOutcome outcome, string message, string? navigateTo = null) =>
         _bridge.NotifyConnectionResult(outcome, message, navigateTo);

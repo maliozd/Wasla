@@ -169,6 +169,19 @@ public sealed class ShellBridge : IDisposable
         FlushPending();
     }
 
+    /// <summary>
+    /// Starts the native connection dialog without a page request (first run without a usable token). It goes through
+    /// the same single-flight operation as the page's Connect button, so the page shows it as busy; the result is shown
+    /// like a setup-link result once the page is ready. UI thread only.
+    /// </summary>
+    public void StartConnectionSetup()
+    {
+        if (_disposed)
+            return;
+
+        _ = RunHostConnectionSetupAsync();
+    }
+
     public void Dispose()
     {
         if (_disposed)
@@ -255,6 +268,27 @@ public sealed class ShellBridge : IDisposable
         PushSnapshot(force: true);
         if (result.NavigateTo is { } tab)
             Navigate(tab);
+    }
+
+    private async Task RunHostConnectionSetupAsync()
+    {
+        ShellOperationResult result;
+        try
+        {
+            result = await _operations.ExecuteAsync(new ShellCommand(ShellCommandType.ConnectionOpenSetup)).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Print Bridge shell connection setup could not complete.");
+            return;
+        }
+
+        // Busy: the page's own Connect is already running the dialog and reports its result.
+        if (result.Outcome == ShellOperationOutcome.Busy)
+            return;
+
+        PushSnapshot(force: true);
+        NotifyConnectionResult(result.Outcome, result.Message, result.NavigateTo);
     }
 
     private void SendResult(ShellOperationResult result)

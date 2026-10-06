@@ -72,18 +72,19 @@ internal static class Program
         if (!isolated)
             channel.StartListening();
 
-        // Process a setup URI supplied on this launch once the message loop is running.
-        if (!string.IsNullOrWhiteSpace(setupUri))
+        // Once the message loop is running: a setup URI supplied on this launch is processed; without one, a first run
+        // (or a start without a usable token) opens the connection setup. A configured start stays in the tray.
+        var startupTimer = new System.Windows.Forms.Timer { Interval = 250 };
+        startupTimer.Tick += (_, _) =>
         {
-            var startupTimer = new System.Windows.Forms.Timer { Interval = 250 };
-            startupTimer.Tick += (_, _) =>
-            {
-                startupTimer.Stop();
-                startupTimer.Dispose();
+            startupTimer.Stop();
+            startupTimer.Dispose();
+            if (!string.IsNullOrWhiteSpace(setupUri))
                 context.HandleSetupUri(setupUri!);
-            };
-            startupTimer.Start();
-        }
+            else
+                context.ShowSetupIfNotConnected();
+        };
+        startupTimer.Start();
 
         System.Windows.Forms.Application.Run(context);
     }
