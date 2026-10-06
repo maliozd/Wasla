@@ -325,6 +325,7 @@ public sealed class AuthRememberMeTests
         var controller = new TenantAuthController(
             new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.wasla.local")),
             authValidation ?? new FakeAuthValidationService(),
+            new NoopLoginRecorder(),
             new FakeSignupCompletionTokenService(),
             new FakeTenantPasswordResetService(),
             new TestWebHostEnvironment("Development"),
@@ -359,6 +360,11 @@ public sealed class AuthRememberMeTests
     private sealed class FakeCurrentTenantService(ResolvedTenantDto? tenant) : ICurrentTenantService
     {
         public ResolvedTenantDto? CurrentTenant { get; } = tenant;
+    }
+
+    private sealed class NoopLoginRecorder : ITenantLoginRecorder
+    {
+        public Task RecordSuccessfulLoginAsync(Guid tenantId, Guid userId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class FakeAuthValidationService : IAuthValidationService

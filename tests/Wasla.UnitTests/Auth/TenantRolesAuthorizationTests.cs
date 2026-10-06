@@ -7,6 +7,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Entities.Customer;
@@ -333,6 +334,33 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         var model = Assert.IsType<TenantUserDetailsViewModel>(view.Model);
         Assert.Equal(user.Email, model.Email);
         Assert.Equal(UserRole.Owner, model.Role);
+    }
+
+    [Fact]
+    public async Task UsersListAndDetails_ShowTheSameRecordedLastLogin()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var loggedIn = await SeedUserAsync(_tenantId, UserRole.Owner, email: "owner@example.test");
+        var never = await SeedUserAsync(_tenantId, UserRole.Viewer, email: "viewer@example.test");
+        var loginTime = new DateTimeOffset(2026, 10, 6, 9, 15, 30, TimeSpan.Zero);
+        var recorder = new TenantLoginRecorder(
+            _db,
+            new FixedTimeProvider(loginTime),
+            NullLogger<TenantLoginRecorder>.Instance);
+        await recorder.RecordSuccessfulLoginAsync(_tenantId, loggedIn.Id, ct);
+        var controller = CreateTenantUsersController();
+
+        var list = Assert.IsType<TenantUsersViewModel>(Assert.IsType<ViewResult>(await controller.Index(ct)).Model);
+        var loggedInDetails = Assert.IsType<TenantUserDetailsViewModel>(
+            Assert.IsType<ViewResult>(await controller.Details(loggedIn.Id, ct)).Model);
+        var neverDetails = Assert.IsType<TenantUserDetailsViewModel>(
+            Assert.IsType<ViewResult>(await controller.Details(never.Id, ct)).Model);
+
+        var loggedInRow = list.Users.Single(u => u.Id == loggedIn.Id);
+        Assert.Equal(loginTime.UtcDateTime.Ticks, loggedInRow.LastLoginAt?.Ticks);
+        Assert.Equal(loggedInRow.LastLoginAt, loggedInDetails.LastLoginAt);
+        Assert.Null(list.Users.Single(u => u.Id == never.Id).LastLoginAt);
+        Assert.Null(neverDetails.LastLoginAt);
     }
 
     [Fact]
@@ -976,6 +1004,11 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
     private sealed class FixedCurrentTenantService : ICurrentTenantService
     {
         public FixedCurrentTenantService(Guid tenantId)
@@ -1046,7 +1079,8 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
                     BranchId TEXT NULL,
                     IsActive INTEGER NOT NULL,
                     CreatedAt TEXT NOT NULL,
-                    UpdatedAt TEXT NOT NULL
+                    UpdatedAt TEXT NOT NULL,
+                    LastLoginAt TEXT NULL
                 );
                 CREATE UNIQUE INDEX IX_AppUsers_Email ON AppUsers (Email);
                 """;

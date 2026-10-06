@@ -80,7 +80,8 @@ public sealed class WaslaVisualFoundationTests
         Assert.Contains("TenantUsers.Role.{user.Role}", index, StringComparison.Ordinal);
         Assert.Contains("TenantUsers.Active", index, StringComparison.Ordinal);
         Assert.Contains("TenantUsers.Inactive", index, StringComparison.Ordinal);
-        Assert.Contains("TenantUsers.LastLoginNotRecorded", index, StringComparison.Ordinal);
+        // The "Not recorded" empty state lives in the _LastLogin partial shared with the details page.
+        Assert.Contains("<partial name=\"_LastLogin\"", index, StringComparison.Ordinal);
         Assert.Contains("data-users-filter", index, StringComparison.Ordinal);
         Assert.Contains("TenantUsers.EmptyTitle", index, StringComparison.Ordinal);
         Assert.Contains("TenantUsers.NoResultsTitle", index, StringComparison.Ordinal);

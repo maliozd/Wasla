@@ -22,6 +22,7 @@ public sealed class AuthController : Controller
 
     private readonly ICurrentTenantService _currentTenant;
     private readonly IAuthValidationService _authValidation;
+    private readonly ITenantLoginRecorder _loginRecorder;
     private readonly ISignupCompletionTokenService _signupCompletionTokens;
     private readonly ITenantPasswordResetService _passwordReset;
     private readonly IWebHostEnvironment _environment;
@@ -30,6 +31,7 @@ public sealed class AuthController : Controller
     public AuthController(
         ICurrentTenantService currentTenant,
         IAuthValidationService authValidation,
+        ITenantLoginRecorder loginRecorder,
         ISignupCompletionTokenService signupCompletionTokens,
         ITenantPasswordResetService passwordReset,
         IWebHostEnvironment environment,
@@ -37,6 +39,7 @@ public sealed class AuthController : Controller
     {
         _currentTenant = currentTenant;
         _authValidation = authValidation;
+        _loginRecorder = loginRecorder;
         _signupCompletionTokens = signupCompletionTokens;
         _passwordReset = passwordReset;
         _environment = environment;
@@ -94,6 +97,10 @@ public sealed class AuthController : Controller
 
         ExpireTenantAuthCookies();
         await SignInSessionAsync(session, model.RememberMe, ct);
+
+        // A login is a password sign-in that established the session. Credential checks alone
+        // (/api/auth/validate), the signup welcome link and cookie authentication do not record one.
+        await _loginRecorder.RecordSuccessfulLoginAsync(tenant.Id, session.UserId, ct);
 
         if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             return Redirect(model.ReturnUrl);

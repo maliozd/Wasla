@@ -27,4 +27,9 @@ public class AppUser : BaseEntity
     public Guid? BranchId { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// UTC time of the most recent successful password login. Null means no login has been recorded.
+    /// </summary>
+    public DateTime? LastLoginAt { get; set; }
 }

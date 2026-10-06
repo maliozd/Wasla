@@ -42,6 +42,8 @@ For every release that contains a CentralDb or TenantDb migration:
 
 Never start the new Web or Worker against partially migrated tenants. The application does not check this itself; the release procedure must enforce it.
 
+Example: `AddAppUserLastLoginAt` (WAS-46) adds the nullable `AppUsers.LastLoginAt` column. Tenant login reads only the columns it needs, and a failed last-login write is logged without blocking the login, so a tenant that missed the migration can still sign in. That is a safety margin, not a reason to change the order: the Users page, user management and password reset read full `AppUsers` rows and fail on that tenant until `migrate-all-customers` has run.
+
 ## Required secrets and keys
 
 | Item | Used by | Notes |

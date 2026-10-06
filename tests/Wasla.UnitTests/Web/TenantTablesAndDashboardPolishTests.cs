@@ -178,23 +178,37 @@ public sealed class TenantTablesAndDashboardPolishTests
             dashboard.IndexOf("</header>", StringComparison.Ordinal) < dashboard.IndexOf("_GuidedSetupCard", StringComparison.Ordinal));
     }
 
-    // Last login is not sortable: tenant users' LastLoginAt is never recorded (the list always shows
-    // "not recorded"), so only name, role and created date sort.
+    // Last login sorts on the stored UTC value (ISO 8601 in data-sort-last-login, empty when never recorded),
+    // not on the culture-formatted cell text. Status and actions do not sort.
     [Fact]
-    public void UsersTable_SortsNameRoleAndCreatedWithButtons_NotStatusLastLoginOrActions()
+    public void UsersTable_SortsNameRoleCreatedAndLastLoginWithButtons_NotStatusOrActions()
     {
         var index = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "TenantUsers", "Index.cshtml");
+        var details = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "TenantUsers", "Details.cshtml");
+        var lastLogin = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "TenantUsers", "_LastLogin.cshtml");
         var js = Read("src", "Wasla.Web", "wwwroot", "js", "tenant-users-index.js");
 
-        foreach (var key in new[] { "name", "role", "created" })
+        foreach (var key in new[] { "name", "role", "created", "last-login" })
             Assert.Contains($"<button type=\"button\" class=\"wasla-table__sort\" data-users-sort=\"{key}\">", index);
-        Assert.Equal(3, Regex.Matches(index, "data-users-sort=").Count);
-        Assert.Equal(3, Regex.Matches(index, "class=\"wasla-table__sortable").Count);
+        Assert.Equal(4, Regex.Matches(index, "data-users-sort=").Count);
+        Assert.Equal(4, Regex.Matches(index, "class=\"wasla-table__sortable").Count);
         Assert.Contains("<th scope=\"col\">@L[\"TenantUsers.Status\"]</th>", index);
-        Assert.Contains("<th class=\"wasla-col--secondary\" scope=\"col\">@L[\"TenantUsers.LastLogin\"]</th>", index);
         Assert.Contains("<th scope=\"col\">@L[\"TenantUsers.Actions\"]</th>", index);
         Assert.Contains("data-sort-role=\"@((int)user.Role)\"", index);
         Assert.Contains("data-sort-email=\"@user.Email\"", index);
+        Assert.Contains("data-sort-last-login=\"@(user.LastLoginAt is { } lastLoginAt ? UtcTimestampPresentation.ToIso(lastLoginAt) : string.Empty)\"", index);
+        Assert.Contains("lastLogin: row.getAttribute(\"data-sort-last-login\")", js);
+
+        // List and details render the same partial: <time datetime> with the UTC value, or "Not recorded".
+        Assert.Contains("<partial name=\"_LastLogin\" model=\"user.LastLoginAt\" />", index);
+        Assert.Contains("<partial name=\"_LastLogin\" model=\"Model.LastLoginAt\" />", details);
+        Assert.Contains("<time datetime=\"@UtcTimestampPresentation.ToIso(lastLoginAt)\">@UtcTimestampPresentation.ToDisplay(lastLoginAt)</time>", lastLogin);
+        Assert.Contains("@L[\"TenantUsers.LastLoginNotRecorded\"]", lastLogin);
+        foreach (var view in new[] { index, details })
+        {
+            Assert.DoesNotContain("LastLoginAt?.ToString", view);
+            Assert.DoesNotContain("TenantUsers.LastLoginUnavailable", view);
+        }
         Assert.Contains("header.setAttribute(\"aria-sort\"", js);
         Assert.Contains("header.removeAttribute(\"aria-sort\")", js);
         Assert.Contains("body.appendChild(entry.row)", js);

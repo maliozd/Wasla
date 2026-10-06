@@ -141,7 +141,8 @@ public sealed class SmtpFailureClassifierTests
                     BranchId TEXT NULL,
                     IsActive INTEGER NOT NULL,
                     CreatedAt TEXT NOT NULL,
-                    UpdatedAt TEXT NOT NULL
+                    UpdatedAt TEXT NOT NULL,
+                    LastLoginAt TEXT NULL
                 );
 
                 CREATE TABLE PasswordResetTokens (

@@ -414,7 +414,8 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
                     BranchId TEXT NULL,
                     IsActive INTEGER NOT NULL,
                     CreatedAt TEXT NOT NULL,
-                    UpdatedAt TEXT NOT NULL
+                    UpdatedAt TEXT NOT NULL,
+                    LastLoginAt TEXT NULL
                 );
 
                 CREATE UNIQUE INDEX IX_AppUsers_Email ON AppUsers (Email);

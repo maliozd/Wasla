@@ -143,6 +143,7 @@ internal sealed class ThemeWebHost : IAsyncDisposable
 
         // The tenant sign-in page is only rendered (GET); none of its services is called.
         services.AddSingleton(Unused<IAuthValidationService>.Create());
+        services.AddSingleton(Unused<ITenantLoginRecorder>.Create());
         services.AddSingleton(Unused<ISignupCompletionTokenService>.Create());
         services.AddSingleton(Unused<ITenantPasswordResetService>.Create());
 

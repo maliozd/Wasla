@@ -100,6 +100,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantResolver, TenantResolver>();
 
         services.AddScoped<IAuthValidationService, AuthValidationService>();
+        services.AddScoped<ITenantLoginRecorder, TenantLoginRecorder>();
         services.AddScoped<IPasswordPolicy, DefaultPasswordPolicy>();
         services.AddScoped<ITenantPasswordResetService, TenantPasswordResetService>();
         services.AddScoped<ITenantUserRoleService, TenantUserRoleService>();

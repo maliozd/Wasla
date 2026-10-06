@@ -33,7 +33,7 @@ public sealed class TenantUserRoleService : ITenantUserRoleService
                 u.Role,
                 u.IsActive,
                 u.CreatedAt,
-                null))
+                u.LastLoginAt))
             .ToListAsync(ct)
             .ConfigureAwait(false);
     }
@@ -55,7 +55,7 @@ public sealed class TenantUserRoleService : ITenantUserRoleService
                 u.Role,
                 u.IsActive,
                 u.CreatedAt,
-                null))
+                u.LastLoginAt))
             .SingleOrDefaultAsync(ct)
             .ConfigureAwait(false);
     }

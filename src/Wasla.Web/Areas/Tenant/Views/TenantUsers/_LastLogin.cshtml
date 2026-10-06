@@ -1,0 +1,10 @@
+@model DateTime?
+@* Shared by the users list and the user details page so both show the same value and the same empty state. *@
+@if (Model is { } lastLoginAt)
+{
+    <time datetime="@UtcTimestampPresentation.ToIso(lastLoginAt)">@UtcTimestampPresentation.ToDisplay(lastLoginAt)</time>
+}
+else
+{
+    @L["TenantUsers.LastLoginNotRecorded"]
+}

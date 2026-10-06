@@ -22,8 +22,13 @@ public sealed class AuthValidationService : IAuthValidationService
         await using var db = await _dbFactory.CreateAsync(customerId, ct);
 
         var emailNorm = email.Trim();
+        // Only the columns authentication needs, so a login still reads a tenant database that has not
+        // received a later AppUsers column yet. Migrations must still run before a new Web version starts.
+        // This is a credential check only; the Web login records LastLoginAt after sign-in (ITenantLoginRecorder).
         var user = await db.AppUsers.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email == emailNorm && u.IsActive, ct);
+            .Where(u => u.Email == emailNorm && u.IsActive)
+            .Select(u => new { u.Id, u.Email, u.FullName, u.Role, u.PasswordHash })
+            .FirstOrDefaultAsync(ct);
 
         // Timing-attack resistance: always verify against a real hash
         var dummyHash = BCrypt.Net.BCrypt.HashPassword("dummy-password");

@@ -58,6 +58,7 @@ Controllers select schemes explicitly (for example `[Authorize(AuthenticationSch
 - Routes under `/auth`
 - Validates credentials via `IAuthValidationService` against the resolved tenant
 - Signs in with scheme `WaslaTenant`
+- After `SignInAsync` succeeds, `ITenantLoginRecorder` (`TenantLoginRecorder`) stores the UTC time in `AppUsers.LastLoginAt` for that user in that tenant database. It uses one conditional `UPDATE` that only moves the value forward, so a slower concurrent login cannot overwrite a newer time, and it does not change `UpdatedAt`. If that database write fails, the login still succeeds and a warning with only the tenant id, user id and exception type is logged; cancellation and non-database errors are not swallowed. Failed or cancelled logins, the signup welcome link (`/auth/welcome`) and requests authenticated by an existing cookie do not record a login. `AuthValidationService` only checks credentials and reads only the columns it needs
 - Claims include `TenantId` (value from `AuthSessionResult.CustomerId`), `UserId`, email, role (`ClaimTypes.Role` and `"Role"`), name
 - Logout: `SignOutAsync(WaslaTenant)` and expires active + legacy tenant cookies
 
@@ -102,7 +103,7 @@ Current API behavior:
 - Registers **tenant** cookie scheme only (`WaslaTenant` / `.Wasla.TenantAuth`) via `AddWaslaApiTenantAuthentication`
 - Default authorization policy requires authenticated user **and** `TenantId` claim matching `ICurrentTenantService.CurrentTenant`
 - Challenge/access-denied redirects become HTTP 401/403 (no MVC login redirect)
-- `POST /api/auth/validate`: credentials check only (`AllowAnonymous`); returns `200`/`401`/`404`; **does not** `SignInAsync`
+- `POST /api/auth/validate`: credentials check only (`AllowAnonymous`); returns `200`/`401`/`404`; **does not** `SignInAsync` and does not record `LastLoginAt`, because no session is established
 - `GET /api/auth/me`: requires authorization; returns current user DTO from claims
 - Middleware expires legacy `orderhub_auth` if present; that cookie is **not** an authentication scheme
 

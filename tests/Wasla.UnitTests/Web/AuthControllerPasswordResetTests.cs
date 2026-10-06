@@ -310,6 +310,7 @@ public sealed class AuthControllerPasswordResetTests
         var controller = new AuthController(
             new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.wasla.local")),
             authValidation ?? new FakeAuthValidationService(),
+            new NoopLoginRecorder(),
             new FakeSignupCompletionTokenService(),
             service ?? new FakeTenantPasswordResetService(),
             new TestWebHostEnvironment(environmentName),
@@ -377,6 +378,11 @@ public sealed class AuthControllerPasswordResetTests
             LastResetRawToken = rawToken;
             return Task.FromResult(ResetResult);
         }
+    }
+
+    private sealed class NoopLoginRecorder : ITenantLoginRecorder
+    {
+        public Task RecordSuccessfulLoginAsync(Guid tenantId, Guid userId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class FakeAuthValidationService : IAuthValidationService
