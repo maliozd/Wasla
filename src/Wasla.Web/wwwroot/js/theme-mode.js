@@ -1,30 +1,9 @@
 ﻿(function () {
   "use strict";
 
-  const STORAGE_KEY = "Wasla.theme";
-  const DEFAULT_THEME = "light";
-
-  function getStoredTheme() {
-    try {
-      return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME;
-    } catch {
-      return DEFAULT_THEME;
-    }
-  }
-
-  function setStoredTheme(value) {
-    try {
-      localStorage.setItem(STORAGE_KEY, value);
-    } catch { /* no-op */ }
-  }
-
-  function applyTheme(name) {
-    const t = name === "dark" ? "dark" : "light";
-    document.documentElement.setAttribute("data-bs-theme", t);
-    document.body && document.body.setAttribute("data-bs-theme", t);
-    setStoredTheme(t);
-    updateToggles();
-  }
+  // The theme itself is resolved, applied and stored by theme-preference.js (loaded in <head>).
+  // This script only reflects it on the toggle buttons and turns a click into an explicit choice.
+  const theme = window.WaslaTheme || null;
 
   function setTopbarVar() {
     const el = document.getElementById("waslaAppHeader");
@@ -42,7 +21,8 @@
   }
 
   function updateToggles() {
-    const t = getStoredTheme();
+    if (!theme) return;
+    const t = theme.current().theme;
     document.querySelectorAll(".wasla-theme-toggle").forEach(function (btn) {
       btn.setAttribute("aria-pressed", t === "dark" ? "true" : "false");
       if (t === "dark") {
@@ -67,25 +47,26 @@
   function bindToggles() {
     document.addEventListener("click", function (e) {
       const btn = e.target.closest(".wasla-theme-toggle");
-      if (!btn) return;
+      if (!btn || !theme) return;
       e.preventDefault();
-      const next = getStoredTheme() === "dark" ? "light" : "dark";
-      applyTheme(next);
+      theme.toggle();
     });
   }
 
   window.addEventListener("resize", setTopbarVar);
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
-      applyTheme(getStoredTheme());
+      updateToggles();
       setTopbarVar();
       requestAnimationFrame(setTopbarVar);
     });
   } else {
-    applyTheme(getStoredTheme());
+    updateToggles();
     setTopbarVar();
     requestAnimationFrame(setTopbarVar);
   }
 
+  // A system-theme change or another tab can change the theme too.
+  if (theme) theme.subscribe(updateToggles);
   bindToggles();
 })();

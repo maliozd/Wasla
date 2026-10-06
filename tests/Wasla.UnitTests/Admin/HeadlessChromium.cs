@@ -109,6 +109,17 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     public Task SetViewportAsync(int width, int height, bool mobile, CancellationToken ct) =>
         SendAsync("Emulation.setDeviceMetricsOverride", new { width, height, deviceScaleFactor = 1, mobile }, ct);
 
+    /// <summary>Emulates the operating-system color scheme ("light" or "dark"); open pages receive the change event.</summary>
+    public Task SetSystemColorSchemeAsync(string scheme, CancellationToken ct) =>
+        SendAsync("Emulation.setEmulatedMedia", new { features = new[] { new { name = "prefers-color-scheme", value = scheme } } }, ct);
+
+    /// <summary>Runs a script in every new document before any of the page's own scripts.</summary>
+    public async Task AddScriptBeforePageScriptsAsync(string source, CancellationToken ct)
+    {
+        await SendAsync("Page.enable", new { }, ct);
+        await SendAsync("Page.addScriptToEvaluateOnNewDocument", new { source }, ct);
+    }
+
     /// <summary>Presses and releases one key as real keyboard input (Escape, Tab, Enter or a space), with optional Shift.</summary>
     public async Task PressKeyAsync(string key, bool shift, CancellationToken ct)
     {

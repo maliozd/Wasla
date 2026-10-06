@@ -41,7 +41,7 @@
 
 <!DOCTYPE html>
 
-<html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")">
+<html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")" data-wasla-theme-scope="tenant">
 
 <head>
 
@@ -51,23 +51,8 @@
 
     <title>@ViewData["Title"] - Wasla</title>
 
-    <script>
-
-        (function () {
-
-            try {
-
-                var t = localStorage.getItem("Wasla.theme");
-
-                if (t !== "dark" && t !== "light") t = "light";
-
-                document.documentElement.setAttribute("data-bs-theme", t);
-
-            } catch (e) { }
-
-        })();
-
-    </script>
+    @* Before any stylesheet: the first frame is painted in the resolved theme. *@
+    <script src="~/js/theme-preference.js" asp-append-version="true"></script>
 
     <!-- TODO: replace CDN links with local AdminLTE assets (wwwroot/theme/adminlte/) before production. -->
 
@@ -97,7 +82,7 @@
 
 </head>
 
-<body class="wasla-app wasla-tenant wasla-tenant-shell" data-bs-theme="light">
+<body class="wasla-app wasla-tenant wasla-tenant-shell">
 
     <div class="app-wrapper">
 

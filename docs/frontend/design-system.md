@@ -119,7 +119,7 @@ Sorting rules:
 
 ### Known limitation: dark mode in the tenant shell
 
-Choosing dark mode does not restyle the tenant shell: the body, cards and tables stay light on every tenant page (for example Branches). This predates the dashboard and table work, which does not fix it; the foundation tokens on `body.wasla-tenant-shell` have no dark values yet.
+Choosing dark mode does not restyle the tenant shell: the body, cards and tables stay light on every tenant page (for example Branches). This predates the dashboard and table work, which does not fix it; the foundation tokens on `body.wasla-tenant-shell` have no dark values yet. The Live Screen (`_OrdersDisplayLayout`, which does not load the foundation) does render dark. The preference itself is described in [architecture.md](architecture.md#theme).
 
 ---
 
