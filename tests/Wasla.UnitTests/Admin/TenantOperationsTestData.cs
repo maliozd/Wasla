@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Wasla.Domain.Entities.Central;
@@ -226,9 +225,9 @@ internal sealed class CentralTestDatabase : IDisposable
         return registration;
     }
 
+    // Pooling=False: closing a connection closes the file, so there is no pool to clear (see OwnedSqlitePools).
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
         try { File.Delete(_path); } catch (IOException) { }
     }
 }
@@ -304,9 +303,9 @@ internal sealed class RecordingTenantDbFactory : ITenantDbContextFactory, IDispo
     private DbContextOptions<TenantDbContext> Options(string connectionString) =>
         new DbContextOptionsBuilder<TenantDbContext>().UseSqlite(connectionString).AddInterceptors(Counter).Options;
 
+    // Pooling=False: closing a connection closes the file, so there is no pool to clear (see OwnedSqlitePools).
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
         try { Directory.Delete(_directory, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 }

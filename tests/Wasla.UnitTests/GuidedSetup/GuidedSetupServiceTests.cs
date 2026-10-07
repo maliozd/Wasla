@@ -10,6 +10,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Persistence.Tenant.Configurations;
 using Wasla.Infrastructure.Services;
+using Wasla.UnitTests.Setup;
 
 namespace Wasla.UnitTests.GuidedSetup;
 
@@ -565,12 +566,13 @@ public sealed class GuidedSetupServiceTests : IDisposable
     /// One SQLite file per tenant, a new connection per context, so parallel requests really race
     /// on the database like separate web requests do.
     /// </summary>
-    private sealed class TenantDatabases : ITenantDbContextFactory, IDisposable
+    internal sealed class TenantDatabases : ITenantDbContextFactory, IDisposable
     {
         private readonly string _directory = Directory.CreateDirectory(
             Path.Combine(Path.GetTempPath(), "wasla-guided-setup-" + Guid.NewGuid().ToString("N"))).FullName;
         private readonly HashSet<Guid> _created = new();
         private readonly object _gate = new();
+        private readonly OwnedSqlitePools _pools = new();
 
         private List<string>? _recorded;
 
@@ -608,11 +610,11 @@ public sealed class GuidedSetupServiceTests : IDisposable
 
         public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct, bool withHooks)
         {
-            var connectionString = new SqliteConnectionStringBuilder
+            var connectionString = _pools.Own(new SqliteConnectionStringBuilder
             {
                 DataSource = Path.Combine(_directory, customerId.ToString("N") + ".db"),
                 DefaultTimeout = 30
-            }.ToString();
+            }.ToString());
 
             lock (_gate)
             {
@@ -630,15 +632,8 @@ public sealed class GuidedSetupServiceTests : IDisposable
 
         public void Dispose()
         {
-            SqliteConnection.ClearAllPools();
-            try
-            {
-                Directory.Delete(_directory, recursive: true);
-            }
-            catch (IOException)
-            {
-                // A late pooled handle; the temp folder is harmless.
-            }
+            _pools.Clear();
+            Directory.Delete(_directory, recursive: true);
         }
 
         private Func<Task>? TakeHook()
