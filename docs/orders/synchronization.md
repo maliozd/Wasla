@@ -121,9 +121,12 @@ HTTP 429 is not retried by Polly: the Trendyol GO client has already retried tha
 
 On failure (after the pipeline / upsert path throws):
 
-- `ConsecutiveFailures` increments
-- When `ConsecutiveFailures >= 5`, `CircuitOpenUntil` is set to **UTC now + 5 minutes**
-- A `SyncLog` with `Failed` status and an `IntegrationError` row are persisted
+- Everything the failed attempt left unsaved in the tenant pass's change tracker is discarded first: an order graph whose insert failed, an update's scalar changes and new items after its transaction rolled back, an unsaved checkpoint or counter change. Order, item and option entities are detached; the connection returns to its stored values. A failed order is therefore never stored by the failure report or by a later connection in the same pass, and its new-order side effects (auto-approve, receipt) run once, when a later attempt inserts it.
+- The failure report is saved through a **new context for the same tenant**, which can write only these rows:
+  - `ConsecutiveFailures` increments
+  - When `ConsecutiveFailures >= 5`, `CircuitOpenUntil` is set to **UTC now + 5 minutes**
+  - A `SyncLog` with `Failed` status and an `IntegrationError` row are persisted (sanitized exception message and type; no payloads, credentials or customer data)
+- If saving the report itself fails, that exception reaches the Worker's per-tenant handler; the failed order changes were already discarded and are not stored.
 - The checkpoint stays at the end of the last window that completed (see [Failure and checkpoint rules](#failure-and-checkpoint-rules))
 - The failure is logged; other connections and tenants continue
 
@@ -175,7 +178,7 @@ The overlap covers clock skew between Wasla and Trendyol GO, a provider that ind
 - A window fails when a page fails after retries, a response is malformed (invalid JSON or pagination metadata), the page cap is reached while more pages remain, HTTP 429 persists after the client's retries, a repeated package conflicts, or an order cannot be persisted. The checkpoint does not move past it, and that connection's recovery stops for this cycle.
 - Earlier completed windows stay stored, and their checkpoint is already saved. The next attempt starts 5 minutes before it.
 - Orders of a successful hot window stay stored even if a later historical window fails.
-- Orders of the failing window that were saved before the failure are fetched again by the next attempt and update idempotently.
+- Orders of the failing window that were saved before the failure are fetched again by the next attempt and update idempotently. The order whose save failed is not stored at all (an update stays at its previous state), so the next attempt inserts or updates it normally.
 - Host cancellation, including while waiting for the request limiter or a 429 delay, records no failure and leaves the checkpoint at the last value already saved, which is never past unprocessed data.
 - A connection's checkpoint, credentials and orders live in its tenant database. One tenant's failure or recovery does not change another tenant's window.
 - No tenant change is held unsaved while a request waits: the attempt time is saved before the first provider call, a window is fetched completely (and throttled) before anything from it is written, and no transaction is open during a provider call.

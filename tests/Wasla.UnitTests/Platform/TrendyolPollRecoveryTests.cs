@@ -372,11 +372,15 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         Assert.Equal(OrderStatus.OnTheWay, (await OrdersAsync())["existing"].InternalStatus);
         AssertNoBackfillAfter(checkpoint + TurnStep - Overlap);
         await AssertSingleFailedSyncAsync("DbUpdateException");
+        // The failure report does not store the order whose insert failed (WAS-72).
+        Assert.Equal(["existing"], await OrderIdsAsync());
 
         await RunCycleAsync(_tenant);
         await RunAsync();
 
         Assert.Equal(["existing", "new-in-second-window"], await OrderIdsAsync());
+        var recovered = (await OrdersAsync())["new-in-second-window"].Id;
+        Assert.Single(_effects.AutoApproved, id => id == recovered);
         Assert.Equal(Noon, await CheckpointAsync());
     }
 

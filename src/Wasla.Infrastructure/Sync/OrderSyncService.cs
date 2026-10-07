@@ -567,28 +567,16 @@ public sealed class OrderSyncService : IOrderSyncService
         }
         catch (Exception ex)
         {
-            connection.ConsecutiveFailures++;
-            if (connection.ConsecutiveFailures >= 5)
-            {
-                connection.CircuitOpenUntil = _time.GetUtcNow().UtcDateTime.AddMinutes(5);
-            }
+            // A failed save leaves its changes tracked (an order graph still Added, an update's scalars and new items
+            // after its transaction rolled back, an unsaved checkpoint). Drop them before anything else is saved, so
+            // neither the failure report nor a later connection of this pass can write them.
+            DiscardUnsavedChanges(db);
 
             syncLog.Status = SyncStatus.Failed;
             syncLog.FinishedAt = DateTime.UtcNow;
             syncLog.ErrorMessage = SanitizeErrorMessage(ex);
 
-            db.SyncLogs.Add(syncLog);
-
-            db.IntegrationErrors.Add(new IntegrationError
-            {
-                Platform = connection.Platform,
-                PlatformConnectionId = connection.Id,
-                ErrorType = ex.GetType().Name,
-                ErrorMessage = syncLog.ErrorMessage ?? "Unknown error",
-                IsResolved = false
-            });
-
-            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            await RecordFailureAsync(customerId, db, connection, syncLog, ex, ct).ConfigureAwait(false);
 
             swConn.Stop();
             _logger.LogError(
@@ -607,6 +595,70 @@ public sealed class OrderSyncService : IOrderSyncService
             return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, syncLog.OrdersFetched, syncLog.OrdersInserted, syncLog.OrdersUpdated, 0, 0, IsFailed: true)
                 { ElapsedMs = swConn.ElapsedMilliseconds };
         }
+    }
+
+    /// <summary>
+    /// Forgets what a failed attempt left in the change tracker. Every completed step of a sync is saved at once, so
+    /// nothing pending belongs to a completed step: order, item and option entities are detached (parent and children
+    /// together, so a detached item cannot be found again through a tracked order), and a connection goes back to its
+    /// stored values.
+    /// </summary>
+    private static void DiscardUnsavedChanges(TenantDbContext db)
+    {
+        foreach (var entry in db.ChangeTracker.Entries().ToList())
+        {
+            if (entry.Entity is PlatformConnection)
+            {
+                entry.CurrentValues.SetValues(entry.OriginalValues);
+                entry.State = EntityState.Unchanged;
+            }
+            else
+            {
+                entry.State = EntityState.Detached;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Saves the failure report through a new context of the same tenant, so it can write only the
+    /// <see cref="SyncLog"/>, the <see cref="IntegrationError"/> and the connection's failure counters.
+    /// </summary>
+    private async Task RecordFailureAsync(
+        Guid customerId,
+        TenantDbContext db,
+        PlatformConnection connection,
+        SyncLog syncLog,
+        Exception ex,
+        CancellationToken ct)
+    {
+        await using var report = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        var stored = await report.PlatformConnections
+            .SingleAsync(c => c.Id == connection.Id, ct)
+            .ConfigureAwait(false);
+
+        stored.ConsecutiveFailures++;
+        if (stored.ConsecutiveFailures >= 5)
+        {
+            stored.CircuitOpenUntil = _time.GetUtcNow().UtcDateTime.AddMinutes(5);
+        }
+
+        report.SyncLogs.Add(syncLog);
+        report.IntegrationErrors.Add(new IntegrationError
+        {
+            Platform = connection.Platform,
+            PlatformConnectionId = connection.Id,
+            ErrorType = ex.GetType().Name,
+            ErrorMessage = syncLog.ErrorMessage ?? "Unknown error",
+            IsResolved = false
+        });
+
+        await report.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        // The pass keeps tracking this connection: make its copy match what was stored, with nothing pending.
+        var entry = db.Entry(connection);
+        entry.CurrentValues.SetValues(stored);
+        entry.OriginalValues.SetValues(stored);
+        entry.State = EntityState.Unchanged;
     }
 
     private async Task<OrderUpsertResult> UpsertOrderAsync(

@@ -30,6 +30,16 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
         set => _failure.SqlStart = value;
     }
 
+    /// <summary>
+    /// The exception the failing statement throws instead of the default database error. It is created after the
+    /// failure is used up, so it may set <see cref="FailNextStatementContaining"/> again.
+    /// </summary>
+    public Func<Exception>? FailWith
+    {
+        get => _failure.FailWith;
+        set => _failure.FailWith = value;
+    }
+
     /** Every SQL statement run against any tenant database so far (reads and writes). */
     public int StatementCount => _failure.Count;
 
@@ -112,6 +122,8 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
 
         public int Count => Volatile.Read(ref _count);
 
+        public Func<Exception>? FailWith { get; set; }
+
         public string? SqlStart
         {
             get => Volatile.Read(ref _sqlStart);
@@ -139,7 +151,7 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
             if (start is null || !command.CommandText.Contains(start, StringComparison.Ordinal))
                 return;
             if (Interlocked.CompareExchange(ref _sqlStart, null, start) == start)
-                throw new InvalidOperationException("simulated tenant database failure");
+                throw FailWith?.Invoke() ?? new InvalidOperationException("simulated tenant database failure");
         }
     }
 
