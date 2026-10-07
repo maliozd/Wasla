@@ -13,7 +13,7 @@ It owns:
 
 It does not own order lifecycle transitions after sync (see [lifecycle.md](lifecycle.md)), Print Bridge printing, or tenancy/connection-string resolution (see [../architecture/tenancy.md](../architecture/tenancy.md)).
 
-Several behaviors below (pagination caps, unchanged short circuit, quieter Worker cycle logs, host-cancellation handling) are **currently uncommitted in the working tree** on branch `orders/live-screen-phase2b3-browser-notifications`. Treat them as current source behavior, not as historical committed state.
+This document describes committed source, not uncommitted working-tree changes. Pagination caps, the unchanged-order short circuit, quieter Worker cycle logs and host-cancellation handling are committed on `dev`.
 
 ## Architecture overview
 
@@ -260,7 +260,7 @@ Rules for both clients:
 
 ### Yemeksepeti
 
-Source: `YemeksepetiFoodPlatformClient` (currently uncommitted changes in working tree).
+Source: `YemeksepetiFoodPlatformClient`.
 
 | Setting | Value |
 |---------|-------|
@@ -313,7 +313,7 @@ Rules:
 
 ### Unchanged-order short circuit
 
-Currently uncommitted in the working tree (`OrderSyncService.IsSemanticallyUnchanged`).
+Source: `OrderSyncService.IsSemanticallyUnchanged`.
 
 Before opening a mutation transaction:
 
