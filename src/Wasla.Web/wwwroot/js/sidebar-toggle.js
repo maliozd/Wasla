@@ -8,14 +8,39 @@
   var SHELL_DESKTOP_CLASS = "wasla-shell-desktop";
   var SHELL_MOBILE_CLASS = "wasla-shell-mobile";
 
+  // The collapsed preference is the only storage this script touches. Browsers can block localStorage (privacy
+  // settings, sandboxed frames): reading the property, getItem and setItem may then throw. A failure means "no stored
+  // preference" (the expanded default) and never stops initialization or the navigation's event binding.
+  var pageChoice = null; // the user's choice on this page; it still applies when it could not be saved
+
+  function preferenceStorage() {
+    try {
+      return window.localStorage || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function isCollapsed() {
-    return localStorage.getItem(STORAGE_KEY) === "true";
+    if (pageChoice !== null) {
+      return pageChoice;
+    }
+    try {
+      var storage = preferenceStorage();
+      return !!storage && storage.getItem(STORAGE_KEY) === "true";
+    } catch (e) {
+      return false;
+    }
   }
 
   function setCollapsed(v) {
+    pageChoice = !!v;
     try {
-      localStorage.setItem(STORAGE_KEY, v ? "true" : "false");
-    } catch (e) { /* no-op */ }
+      var storage = preferenceStorage();
+      if (storage) {
+        storage.setItem(STORAGE_KEY, v ? "true" : "false");
+      }
+    } catch (e) { /* storage blocked or full: the state still applies to this page */ }
   }
 
   function apply(collapsed) {
