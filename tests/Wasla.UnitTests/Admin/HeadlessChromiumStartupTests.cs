@@ -285,16 +285,18 @@ public sealed class HeadlessChromiumStartupTests
         }
     }
 
-    [Fact]
-    public async Task Start_WhenTheBrowserExitsFirst_FailsWithoutWaitingForTheTimeout_AndDeletesTheProfile()
+    [Theory]
+    [InlineData(3)]
+    [InlineData(0)] // A clean exit is still a failure: the driver keeps the started process from handing off (WAS-83).
+    public async Task Start_WhenTheBrowserExitsFirst_FailsWithoutWaitingForTheTimeout_AndDeletesTheProfile(int exitCode)
     {
-        var standIn = new StandInBrowser(exitCode: 3);
+        var standIn = new StandInBrowser(exitCode);
         var startup = Stopwatch.StartNew();
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() => HeadlessChromium.StartAsync(
             "browser.exe", Timeout, standIn.Launch, TestContext.Current.CancellationToken));
 
-        Assert.StartsWith("The browser exited with code 3 after ", error.Message);
+        Assert.StartsWith($"The browser exited with code {exitCode} after ", error.Message);
         Assert.EndsWith(" before its DevTools port was usable; DevToolsActivePort was absent.", error.Message);
         Assert.True(startup.Elapsed < TimeSpan.FromSeconds(15), $"Startup took {startup.Elapsed}.");
         standIn.AssertCleanedUp();

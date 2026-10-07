@@ -50,6 +50,13 @@ internal sealed class HeadlessChromium : IAsyncDisposable
             .FirstOrDefault(File.Exists);
     }
 
+    /// <summary>
+    /// The Windows application-compatibility layer. Edge started with it relaunches itself without it (adding
+    /// <c>--edge-skip-compat-layer-relaunch</c>) and the started process exits with code 0, so the browser is never
+    /// the process the driver started. Some shells set it for every process they run.
+    /// </summary>
+    internal const string CompatibilityLayerVariable = "__COMPAT_LAYER";
+
     /// <summary>How long the browser may take to write a usable DevTools port file and expose a page target.</summary>
     internal static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(30);
 
@@ -81,6 +88,9 @@ internal sealed class HeadlessChromium : IAsyncDisposable
                          $"--user-data-dir={profile}", "about:blank"
                      })
                 start.ArgumentList.Add(argument);
+            // The relaunched copy would be outside the started process tree: startup would fail when the started
+            // process exits, and the copy would outlive cleanup. Without the layer, the started process is the browser.
+            start.Environment.Remove(CompatibilityLayerVariable);
 
             var browser = launch(start) ?? throw new InvalidOperationException("The browser did not start.");
             process = browser;
