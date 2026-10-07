@@ -1865,9 +1865,11 @@ body.wasla-tenant.wasla-app .table thead th {
   border-color: transparent;
 }
 
+/* The Trendyol GO wordmark has black lettering, so its badge keeps a light plate in dark mode
+   (as the Getir wordmark keeps its own purple plate). */
 [data-bs-theme="dark"] .platform-badge--trendyol {
-  background: rgba(247, 124, 0, .16);
-  border-color: rgba(247, 124, 0, .28);
+  background: #f4efe8;
+  border-color: rgba(247, 124, 0, .45);
 }
 
 .wasla-orders-actions {
@@ -4477,24 +4479,60 @@ body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-nav-sub {
   color: #c4b5fd;
 }
 
-/* Links */
-[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.nav-link):not(.dropdown-item) {
+/* Links (Wasla buttons rendered as links keep their own colors) */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.wasla-btn):not(.nav-link):not(.dropdown-item) {
   color: color-mix(in srgb, var(--color-accent) 88%, #fff);
 }
 
-[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.wasla-btn):not(.nav-link):not(.dropdown-item):hover {
   color: var(--color-accent-hover);
 }
 
 /* Live Display */
 [data-bs-theme="dark"] body.wasla-orders-live-display {
   background: var(--color-bg);
+  /* Muted text (counts, notes, hints, received times) at least 4.5:1 on the Live Screen surfaces. The aliases are
+     repeated here because they resolve on <html>; Central Admin keeps the shared value. */
+  --color-text-muted: #8b939f;
+  --wasla-muted: #8b939f;
+  --bs-secondary-color: #8b939f;
+  /* The order-training panel uses foundation token names, which the Live Screen (no foundation) does not define:
+     their dark values, as on the tenant shell. In light mode the panel keeps its light fallbacks. */
+  --wasla-accent: #f26b3a;
+  --wasla-accent-soft: rgba(242, 107, 58, 0.14);
+  --wasla-accent-strong: #f26b3a;
+  --wasla-focus: rgba(242, 107, 58, 0.45);
+  --wasla-shadow-sm: none;
+  --wasla-text-secondary: #aeb4c0;
+  --wasla-success: #86efac;
+  --wasla-warning: #fcd34d;
+  --wasla-warning-soft: rgba(245, 158, 11, 0.14);
+  --wasla-info: #93c5fd;
+}
+
+[data-bs-theme="dark"] .wasla-live-list-row__received {
+  color: var(--color-text-muted);
+}
+
+/* Column and group counts sit on status-tinted headers. */
+[data-bs-theme="dark"] .wasla-live-board__count,
+[data-bs-theme="dark"] .wasla-live-group__count,
+[data-bs-theme="dark"] .wasla-live-focus__count {
+  color: var(--color-text-secondary);
 }
 
 [data-bs-theme="dark"] body.wasla-orders-live-display .wasla-live-display-header,
 [data-bs-theme="dark"] body.wasla-orders-live-display .wasla-fs-header {
   background: color-mix(in srgb, var(--color-bg) 94%, transparent);
   border-bottom-color: var(--color-border);
+}
+
+/* Reject on cards, list rows and the detail panel: the light rules use a fixed dark red. */
+[data-bs-theme="dark"] .wasla-live-board .wasla-orders-actions .btn-outline-danger,
+[data-bs-theme="dark"] .wasla-live-groups .wasla-orders-actions .btn-outline-danger,
+[data-bs-theme="dark"] .wasla-live-detail__actions .btn-outline-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 [data-bs-theme="dark"] body.wasla-orders-live-display .wasla-live-display-kbd {
@@ -4952,6 +4990,10 @@ body.wasla-orders-live-display .wasla-live-board .btn.wasla-live-screen-card__de
     color: #146c43;
     font-size: .75rem;
     line-height: 1.3;
+}
+[data-bs-theme="dark"] .wasla-live-display-sound-active {
+    background: var(--color-success-soft);
+    color: #9ed9b4;
 }
 .wasla-live-board :focus-visible { outline: 3px solid var(--bs-primary, #0d6efd); outline-offset: 3px; }
 /* Board cards: one block size on desktop and tablet for every status (New, Preparing, Ready, OnTheWay, Delivered),
@@ -5679,6 +5721,12 @@ body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__d
     background: transparent;
     border-color: transparent;
     box-shadow: none;
+}
+/* The black Trendyol GO wordmark keeps its light plate in dark mode here too. */
+[data-bs-theme="dark"] .wasla-live-list-row__headline .platform-badge--trendyol {
+    padding: .1rem .4rem;
+    background: #f4efe8;
+    border-color: rgba(247, 124, 0, .45);
 }
 @media (max-width: 1199.98px) {
     .wasla-live-screen-host--list .wasla-live-screen-card {

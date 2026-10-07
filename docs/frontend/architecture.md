@@ -115,7 +115,7 @@ Open pages of the app follow a choice made in another tab (the `storage` event),
 
 **Central Admin** keeps its existing precedence under its existing key: its stored choice, otherwise light. It does not follow the system theme. Like the tenant app, it now follows a choice made in another Admin tab and no longer writes the key when a page loads, only when the toggle is used.
 
-Not themed: every page that does not use one of the three layouts above has no theme script and no dark styles, so it stays light. That includes the tenant sign-in, forgot-password and reset-password pages, the Central Admin sign-in page, the error page, the public landing, tenant-not-found and tenant-address-required pages, and the signup and status layouts. In the tenant shell, dark mode still leaves most surfaces light: see [design-system.md](design-system.md#known-limitation-dark-mode-in-the-tenant-shell).
+Not themed: every page that does not use one of the three layouts above has no theme script and no dark styles, so it stays light. That includes the tenant sign-in, forgot-password and reset-password pages, the Central Admin sign-in page, the error page, the public landing, tenant-not-found and tenant-address-required pages, and the signup and status layouts. How the tenant app and the Live Screen are painted in dark mode, and what stays light on purpose, is in [design-system.md](design-system.md#dark-mode-in-the-tenant-app).
 
 ---
 

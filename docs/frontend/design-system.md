@@ -46,19 +46,19 @@ Character labels from design language: warm, reliable, fast, operational, restau
 
 ## Tokens (foundation = token source)
 
-`wasla-foundation.css` on `body.wasla-tenant-shell` (selected):
+`wasla-foundation.css` on `body.wasla-tenant-shell` (selected), with the dark value set on `[data-bs-theme="dark"] body.wasla-tenant-shell` (see [Dark mode](#dark-mode-in-the-tenant-app)):
 
-| Token | Value | Role |
-| --- | --- | --- |
-| `--wasla-accent` | `#E87342` | Wasla Orange |
-| `--wasla-accent-hover` | `#B94F2A` | Action Orange |
-| `--wasla-accent-soft` | `#FBE9DF` | Soft orange surface |
-| `--wasla-canvas` | `#F7F4EE` | Application canvas |
-| `--wasla-surface` | `#FFFEFA` | Main surface |
-| `--wasla-surface-muted` | `#F4F0E9` | Nested / quiet surface |
-| `--wasla-border` / `--wasla-border-strong` | `#E3DDD3` / `#D3CABD` | Borders |
-| `--wasla-text` / `--wasla-text-secondary` | `#28231F` / `#746D66` | Ink / muted |
-| Status family vars | success / warning / danger / info soft pairs | Semantic, not decorative |
+| Token | Light | Dark | Role |
+| --- | --- | --- | --- |
+| `--wasla-accent` | `#E87342` | `#f26b3a` | Wasla Orange |
+| `--wasla-accent-hover` | `#B94F2A` | `#e35f2e` | Action Orange |
+| `--wasla-accent-soft` | `#FBE9DF` | orange at 14 % | Soft orange surface |
+| `--wasla-canvas` | `#F7F4EE` | `#0f1115` | Application canvas |
+| `--wasla-surface` | `#FFFEFA` | `#171a21` | Main surface |
+| `--wasla-surface-muted` | `#F4F0E9` | `#141820` | Nested / quiet surface |
+| `--wasla-border` / `--wasla-border-strong` | `#E3DDD3` / `#D3CABD` | white at 8 % / 14 % | Borders |
+| `--wasla-text` / `--wasla-text-secondary` / `--wasla-text-muted` | `#28231F` / `#746D66` / `#746D66` | `#f3f4f6` / `#aeb4c0` / `#8b939f` | Ink / secondary / muted |
+| Status family vars | success / warning / danger / info soft pairs | light status text on 14 % tints | Semantic, not decorative |
 | `--wasla-radius-sm/md/lg` | `0.4rem` / `0.65rem` / `0.9rem` | Radius scale |
 | `--wasla-space-1` … `6` | `0.25rem` … `1.5rem` | Spacing (aligns with 4/8/12/16/24/32 intent) |
 | `--wasla-shadow-sm/md` | subtle warm shadows | Elevation when needed |
@@ -117,9 +117,26 @@ Sorting rules:
 | Branches (`Branches/Index.cshtml`) | Small operational list | Not sortable: one location per tenant today. |
 | Print Bridge devices (rendered by `print-bridge-page.js`) | Small operational list | Not sortable: few devices, re-rendered on poll. |
 
-### Known limitation: dark mode in the tenant shell
+### Dark mode in the tenant app
 
-Choosing dark mode does not restyle the tenant shell: the body, cards and tables stay light on every tenant page (for example Branches). This predates the dashboard and table work, which does not fix it; the foundation tokens on `body.wasla-tenant-shell` have no dark values yet. The Live Screen (`_OrdersDisplayLayout`, which does not load the foundation) does render dark. The preference itself is described in [architecture.md](architecture.md#theme).
+The preference (keys, precedence, early application, cross-tab sync, tenant/Admin isolation) is described in [architecture.md](architecture.md#theme). This section covers how dark mode is painted.
+
+**Coverage.** Every page on `_TenantLayout` renders dark: Dashboard, Orders and an order's details, Platform Connections (list, create, edit), Users (list, create, details), Order, Receipt & Printer and Account settings with the notification settings modal, Branches, Print Bridge devices and setup, and Help. So does the Live Screen (`_OrdersDisplayLayout`): Board, List, Focus, the detail modal and the settings menu. Guided setup is covered for a tenant still in Setup: the setup checklist and the guided setup cards on the Dashboard, a section panel, and the Live Screen order-training panel with its practice order. Shared parts are covered with them: the sidebar, the mobile drawer, the sidebar menus, dropdowns, modals, alerts, forms and validation messages, tables and pagination, badges and focus rings, at phone and desktop widths, LTR and RTL.
+
+**How it works.**
+
+- The light token block on `body.wasla-tenant-shell` also re-declares the shared `--color-*` and `--bs-*` aliases from the `--wasla-*` tokens. Those body-level declarations win over the dark values `wasla-theme.css` sets on `[data-bs-theme="dark"]`, which is why the shell used to stay light. `[data-bs-theme="dark"] body.wasla-tenant-shell` now redefines the `--wasla-*` tokens, so every alias and every token-driven rule (including the existing dark component rules in `wasla-theme.css`) resolves dark.
+- The dark values are the existing dark palette of `wasla-theme.css`, which the Live Screen already used, so the panel and the Live Screen match and no third palette is added. Two values differ, for contrast: muted text is `#8b939f` (the dark sidebar muted value; `#737b89` is only 4.1:1 on a surface), and the hover orange is a darker step, `#e35f2e` (white on the theme's `#ff7d4f` is 2.5:1).
+- Local overrides exist only where a fixed colour prevented theming: the Users avatars and role pills; the Bootstrap utilities `.text-danger` (Bootstrap's `#dc3545` is 3.9:1 on a dark surface), `.text-bg-light`, `.btn-light` and `.table-light`; the dark link colour, which no longer recolours Wasla buttons rendered as links; on the Live Screen, Reject, the "sound is active" pill, muted text (on the Live Screen body only), the column counts and the Trendyol GO plate in List; and the text of the notification highlight preview. The Live Screen does not load the foundation, so its dark body also defines the foundation token names the order-training panel uses (`--wasla-accent`, `--wasla-text-secondary`, …); in light mode the panel keeps its light fallbacks. `--wasla-accent-strong` has a dark value only; light mode uses the component fallback.
+- Light on purpose in dark mode: the receipt paper preview, the Trendyol GO logo plate (its wordmark has black lettering) and the highlight colour swatches.
+- Known contrast exceptions, in both themes and not introduced by dark mode (they do **not** meet WCAG AA for normal-size text):
+  - White text on the Wasla orange of primary buttons is about 3.0:1 (the brand pairing; a hovered button is 3.5:1 in dark mode).
+  - Recently completed Live Screen orders are deliberately dimmed and may fall below AA for normal-size text.
+  - Disabled options are dimmed, and an unchecked switch's knob is faint.
+
+**Not themed (light only).** Pages that do not use `_TenantLayout`, `_OrdersDisplayLayout` or `_AdminLayout` have no theme script and stay light; see [architecture.md](architecture.md#theme) for the list (sign-in and password pages, the error page, public, signup and status pages). Central Admin keeps its own dark mode, unchanged: the tenant dark tokens are scoped to `body.wasla-tenant-shell` and the Live Screen body.
+
+**Verification.** `TenantDarkModeBrowserTests` checks in a real browser that no visible surface is light and that visible text keeps WCAG AA contrast on the pages and states above, except the known contrast exceptions listed in How it works, which the test exempts; that light mode keeps its surfaces, and that a theme choice restyles open pages, also with storage unavailable. `TenantDarkThemeContractTests` keeps every literal colour token of the shell paired with a dark value. See [../operations/testing.md](../operations/testing.md).
 
 ---
 

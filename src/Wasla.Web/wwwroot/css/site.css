@@ -107,6 +107,12 @@ body {
 [data-bs-theme="dark"] .order-highlight-preview {
   background: var(--color-surface-muted, rgba(255, 255, 255, 0.04));
   border-color: var(--color-border, rgba(255, 255, 255, 0.08));
+  /* The preview stands for an order row: row text, not the muted hint text around it, on the highlight tint. */
+  color: var(--color-text);
+}
+
+[data-bs-theme="dark"] body.wasla-app .order-highlight-preview .text-muted {
+  color: var(--color-text-secondary) !important;
 }
 
 [data-bs-theme="dark"] .order-highlight-preview.highlight-color-yellow { --new-order-highlight-bg: rgba(245, 158, 11, 0.14); --new-order-highlight-border: rgba(245, 158, 11, 0.28); }
