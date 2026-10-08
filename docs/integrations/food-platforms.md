@@ -13,7 +13,7 @@ It owns:
 
 It does not own Worker cycle timing or upsert details (see [../orders/synchronization.md](../orders/synchronization.md)), Print Bridge, or tenancy.
 
-Pagination and unchanged-upsert behavior referenced here reflect **currently uncommitted** working-tree changes unless noted otherwise.
+The pagination caps and the unchanged-order short circuit referenced here are committed on `dev` (commit `642c6ca`). The [Yemeksepeti OAuth tokens](#yemeksepeti-oauth-tokens) section describes the WAS-88 token-isolation change (commit `9b12f99`). That change is not part of `dev` until the commit is merged, so check that your branch contains it before relying on that section.
 
 ## Provider mode
 

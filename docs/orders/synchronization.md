@@ -269,7 +269,7 @@ Source: `YemeksepetiFoodPlatformClient`.
 Rules:
 
 - Not checkpointed: the client ignores the planned window and always asks for the last hour. A change older than one hour at the time of the next successful run can still be missed.
-- OAuth token is acquired **once** (or reused from the in-memory cache) before the paginated fetch loop; the same bearer token is used for every page in that fetch. A cached token is bound to the platform connection and its exact credentials, and a 401/403 discards it; see [Yemeksepeti OAuth tokens](../integrations/food-platforms.md#yemeksepeti-oauth-tokens).
+- OAuth token is acquired **once** (or reused from the in-memory cache) before the paginated fetch loop; the same bearer token is used for every page in that fetch. With the WAS-88 change (commit `9b12f99`), a cached token is bound to the platform connection and its exact credentials, and a 401/403 discards it; see [Yemeksepeti OAuth tokens](../integrations/food-platforms.md#yemeksepeti-oauth-tokens).
 - Same malformed-pagination and page-cap failure rules as Trendyol GO.
 - `DefaultPageSize` must be positive or fetch throws before paging.
 
