@@ -475,8 +475,8 @@ public sealed class TenantLastLoginTests : IDisposable
         };
         await using var db = await _tenants.CreateAsync(tenantId, Ct);
         await db.Database.ExecuteSqlInterpolatedAsync($"""
-            INSERT INTO AppUsers (Id, Email, PasswordHash, FullName, Role, BranchId, IsActive, CreatedAt, UpdatedAt)
-            VALUES ({user.Id}, {user.Email}, {user.PasswordHash}, {user.FullName}, {(int)user.Role}, NULL, 1, {user.CreatedAt}, {user.UpdatedAt})
+            INSERT INTO AppUsers (Id, Email, PasswordHash, FullName, Role, BranchId, IsActive, SecurityStamp, CreatedAt, UpdatedAt)
+            VALUES ({user.Id}, {user.Email}, {user.PasswordHash}, {user.FullName}, {(int)user.Role}, NULL, 1, {user.SecurityStamp}, {user.CreatedAt}, {user.UpdatedAt})
             """, Ct);
         return user;
     }
@@ -636,6 +636,7 @@ public sealed class TenantLastLoginTests : IDisposable
                         Role INTEGER NOT NULL,
                         BranchId TEXT NULL,
                         IsActive INTEGER NOT NULL,
+                        SecurityStamp TEXT NOT NULL,
                         CreatedAt TEXT NOT NULL,
                         UpdatedAt TEXT NOT NULL{(_oldSchema.Contains(customerId) ? "" : ",\n    LastLoginAt TEXT NULL")}
                     );

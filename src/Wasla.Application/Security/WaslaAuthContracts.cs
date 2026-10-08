@@ -11,6 +11,12 @@ public static class WaslaAuthContracts
     public const string CentralAdminCookieName = ".Wasla.CentralAdminAuth";
 
     /// <summary>
+    /// The tenant user's security stamp at sign-in. A tenant session whose stamp no longer matches the user's row in
+    /// the tenant database is rejected.
+    /// </summary>
+    public const string TenantSecurityStampClaim = "Wasla.TenantSecurityStamp";
+
+    /// <summary>
     /// Pre-Wasla tenant cookie. It is expired when seen and is not an authentication scheme.
     /// </summary>
     public const string LegacyTenantCookieName = "orderhub_auth";

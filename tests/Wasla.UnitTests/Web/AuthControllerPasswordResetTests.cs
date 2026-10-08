@@ -224,7 +224,7 @@ public sealed class AuthControllerPasswordResetTests
         var userId = Guid.NewGuid();
         var authValidation = new FakeAuthValidationService
         {
-            Result = new AuthSessionResult(tenant.Id, userId, "owner@example.test", "Owner User", UserRole.Owner)
+            Result = new AuthSessionResult(tenant.Id, userId, "owner@example.test", "Owner User", UserRole.Owner, Guid.NewGuid())
         };
         var auth = new CapturingAuthenticationService();
         var controller = CreateController(tenant: tenant, authValidation: authValidation, authenticationService: auth);
@@ -254,7 +254,7 @@ public sealed class AuthControllerPasswordResetTests
         var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
         var authValidation = new FakeAuthValidationService
         {
-            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner User", UserRole.Owner)
+            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner User", UserRole.Owner, Guid.NewGuid())
         };
         var controller = CreateController(tenant: tenant, authValidation: authValidation);
 
@@ -390,6 +390,9 @@ public sealed class AuthControllerPasswordResetTests
         public AuthSessionResult? Result { get; set; }
 
         public Task<AuthSessionResult?> ValidateAsync(Guid customerId, string email, string password, CancellationToken ct) =>
+            Task.FromResult(Result);
+
+        public Task<AuthSessionResult?> GetActiveSessionAsync(Guid customerId, Guid userId, CancellationToken ct) =>
             Task.FromResult(Result);
     }
 

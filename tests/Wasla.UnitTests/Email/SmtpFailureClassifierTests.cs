@@ -140,6 +140,7 @@ public sealed class SmtpFailureClassifierTests
                     Role INTEGER NOT NULL,
                     BranchId TEXT NULL,
                     IsActive INTEGER NOT NULL,
+                    SecurityStamp TEXT NOT NULL,
                     CreatedAt TEXT NOT NULL,
                     UpdatedAt TEXT NOT NULL,
                     LastLoginAt TEXT NULL

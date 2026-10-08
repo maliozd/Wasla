@@ -2,7 +2,7 @@
 
 ## Purpose and scope
 
-This document records the **server-side** tenant authorization matrix currently registered in Wasla.Web. It owns role → policy mappings and last-owner protection. It does not redefine cookie schemes (see [authentication.md](../architecture/authentication.md)).
+This document records the **server-side** tenant authorization matrix currently registered in Wasla.Web. It owns role → policy mappings and the user-management rules (acting Owner, own account, last Owner). It does not redefine cookie schemes (see [authentication.md](../architecture/authentication.md)).
 
 UI may hide buttons; **hiding UI is not authorization**. Controllers and services enforce policies/handlers.
 
@@ -25,11 +25,12 @@ Assignable roles for create/update (`TenantUserRoleService` / `TenantUsersContro
 
 1. Policies are named in `src/Wasla.Web/Security/TenantPolicies.cs`
 2. Web `Program.cs` maps each policy to allowed `UserRole` values via `AddTenantRolePolicy` / `TenantRoleRequirement`
-3. `TenantRoleAuthorizationHandler` succeeds only when:
+3. Before any policy runs, the tenant session is revalidated against the user's row in the tenant database: it must belong to this tenant, and the user must exist, be active, and still have the cookie's role and security stamp. Otherwise the request is anonymous. See [authentication.md](../architecture/authentication.md#tenant-session-revalidation)
+4. `TenantRoleAuthorizationHandler` succeeds only when:
    - `ICurrentTenantService.CurrentTenant` is present
    - Claim `TenantId` parses and equals that tenant’s id
    - Role claim (`ClaimTypes.Role` or `"Role"`) is one of the policy’s allowed roles
-4. Navigation visibility mirrors the same policies through `TenantNavigationAuthorizationService` (still via `IAuthorizationService`, not a second rule set)
+5. Navigation visibility mirrors the same policies through `TenantNavigationAuthorizationService` (still via `IAuthorizationService`, not a second rule set)
 
 ## Policy matrix (current Web registration)
 
@@ -76,19 +77,21 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 
 Central admin uses scheme `WaslaCentralAdmin` and is outside this tenant role matrix.
 
-## Last-owner protection
+## User management rules: acting Owner, own account, last Owner
 
 **Source:** `src/Wasla.Infrastructure/Services/TenantUserRoleService.cs`
 
-**Outcomes:** `TenantUserRoleUpdateOutcome.LastOwnerWouldBeRemoved` in `ITenantUserRoleService`
+**Outcomes:** `TenantUserRoleUpdateOutcome` in `ITenantUserRoleService`
 
-Current implementation blocks operations that would leave the tenant with no other **active** Owner when:
+Every create, edit, activate, deactivate, role change and removal is made on behalf of the signed-in user (`TenantUserActor`: user id and security stamp from the validated session) and runs in one serializable transaction that, before writing:
 
-- Demoting the last active Owner to a non-Owner role
-- Deactivating the last active Owner
-- Removing the last active Owner
+1. Re-reads the acting user: they must still exist, be active, be an Owner (the `CanManageTenantUsers` role) and have the session's security stamp. Otherwise nothing is written (`ActorNotAuthorized`; `TenantUsersController` answers with Forbid). This closes the gap between the request's session check and the write, for example an Owner demoted by another Owner while their own request is in flight.
+2. Refuses a change to the acting user's own role or active state, and removing themselves (`SelfChangeNotAllowed`, localized as `TenantUsers.SelfChangeBlocked`). Another Owner must make that change. An Owner may still change their own name and password; a new password ends their current session.
+3. Keeps the last-Owner checks: demoting, deactivating or removing the last active Owner is blocked (`LastOwnerWouldBeRemoved`, localized “last owner blocked”). Because every change is made by an active Owner who cannot change themselves, that Owner always remains; the explicit checks stay as a second guard.
 
-Controllers surface this as a localized “last owner blocked” style failure (`TenantUsersController`).
+A change to a user's role, active state or password replaces that user's security stamp, which ends their existing sessions on their next request.
+
+Concurrency: on SQL Server, the serializable transaction's read locks keep two Owners who change each other at the same time from both succeeding. One waits for the other and then fails step 1, or is chosen as the deadlock victim and fails without writing (the generic error page). The automated tests run on SQLite, which serializes the two transactions; they show the re-check, not SQL Server locking.
 
 ## API note
 

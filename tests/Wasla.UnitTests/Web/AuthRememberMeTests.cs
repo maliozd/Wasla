@@ -173,7 +173,7 @@ public sealed class AuthRememberMeTests
         var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
         var authValidation = new FakeAuthValidationService
         {
-            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner", UserRole.Owner)
+            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner", UserRole.Owner, Guid.NewGuid())
         };
         var authentication = new CapturingAuthenticationService();
         var controller = CreateTenantController(tenant, authValidation, authentication);
@@ -372,6 +372,9 @@ public sealed class AuthRememberMeTests
         public AuthSessionResult? Result { get; set; }
 
         public Task<AuthSessionResult?> ValidateAsync(Guid customerId, string email, string password, CancellationToken ct) =>
+            Task.FromResult(Result);
+
+        public Task<AuthSessionResult?> GetActiveSessionAsync(Guid customerId, Guid userId, CancellationToken ct) =>
             Task.FromResult(Result);
     }
 

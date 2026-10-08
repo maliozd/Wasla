@@ -119,13 +119,18 @@ public sealed class AuthController : Controller
         }
 
         var payload = _signupCompletionTokens.ValidateAndConsume(token);
-        if (payload is null || payload.CustomerId != tenant.Id)
+        // The session is built from the user's current row (role, active state, security stamp), not from the
+        // values the link was issued with.
+        var session = payload is null || payload.CustomerId != tenant.Id
+            ? null
+            : await _authValidation.GetActiveSessionAsync(tenant.Id, payload.UserId, ct);
+        if (session is null)
         {
             TempData["AuthMessage"] = _localizer["Auth.WelcomeInvalid"].Value;
             return Redirect("/auth/login");
         }
 
-        await SignInSessionAsync(payload, rememberMe: false, ct);
+        await SignInSessionAsync(session, rememberMe: false, ct);
         return Redirect("/dashboard");
     }
 
@@ -240,26 +245,16 @@ public sealed class AuthController : Controller
 
     private async Task SignInSessionAsync(AuthSessionResult session, bool rememberMe, CancellationToken ct)
     {
-        await SignInSessionAsync(new SignupCompletionPayload(
+        _ = ct;
+        // Tenant, user, role and security stamp are revalidated on every request (TenantCookieEvents).
+        var claims = new List<Claim>(TenantSessionClaims.Create(
             session.CustomerId,
             session.UserId,
-            session.Email,
-            session.FullName,
-            session.Role), rememberMe, ct);
-    }
-
-    private async Task SignInSessionAsync(SignupCompletionPayload session, bool rememberMe, CancellationToken ct)
-    {
-        _ = ct;
-        var claims = new List<Claim>
+            session.Role,
+            session.SecurityStamp))
         {
-            new("TenantId", session.CustomerId.ToString()),
-            new("UserId", session.UserId.ToString()),
             new("Email", session.Email),
-            new("Role", session.Role.ToString()),
-            new(ClaimTypes.NameIdentifier, session.UserId.ToString()),
             new(ClaimTypes.Email, session.Email),
-            new(ClaimTypes.Role, session.Role.ToString()),
             new(ClaimTypes.Name, session.FullName),
         };
 

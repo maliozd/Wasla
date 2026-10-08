@@ -44,6 +44,8 @@ Never start the new Web or Worker against partially migrated tenants. The applic
 
 Example: `AddAppUserLastLoginAt` (WAS-46) adds the nullable `AppUsers.LastLoginAt` column. Tenant login reads only the columns it needs, and a failed last-login write is logged without blocking the login, so a tenant that missed the migration can still sign in. That is a safety margin, not a reason to change the order: the Users page, user management and password reset read full `AppUsers` rows and fail on that tenant until `migrate-all-customers` has run.
 
+Example without that margin: `AddAppUserSecurityStamp` (WAS-89) adds `AppUsers.SecurityStamp` and gives every existing user a new value. Tenant login and the check every tenant request makes against its session read that column, so on a tenant that missed the migration no one can sign in and every signed-in request fails closed with the error page until `migrate-all-customers` has run. Sessions issued before the release carry no stamp, so every tenant user signs in again once. See [../architecture/authentication.md](../architecture/authentication.md#tenant-session-revalidation).
+
 ## Required secrets and keys
 
 | Item | Used by | Notes |

@@ -184,6 +184,8 @@ public sealed class TenantPasswordResetService : ITenantPasswordResetService
             }
 
             token.User.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            // Ends every existing session of this user (see TenantSessionValidator).
+            token.User.SecurityStamp = Guid.NewGuid();
             token.UsedAtUtc = now;
 
             await InvalidateActiveTokensAsync(db, token.UserId, now, token.Id, ct).ConfigureAwait(false);

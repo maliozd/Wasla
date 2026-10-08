@@ -10,8 +10,22 @@ public enum TenantUserRoleUpdateOutcome
     LastOwnerWouldBeRemoved,
     InvalidRole,
     DuplicateEmail,
-    InvalidPassword
+    InvalidPassword,
+
+    /// <summary>The acting user may not change their own role or active state, or remove themselves.</summary>
+    SelfChangeNotAllowed,
+
+    /// <summary>
+    /// The acting user is no longer an active Owner with the session's security stamp when the change is written
+    /// (for example, demoted or deactivated by another request in the meantime). Nothing was changed.
+    /// </summary>
+    ActorNotAuthorized
 }
+
+/// <summary>
+/// The signed-in user making a user-management change, as identified by their validated tenant session.
+/// </summary>
+public sealed record TenantUserActor(Guid UserId, Guid SecurityStamp);
 
 public sealed record TenantUserRoleUpdateResult(TenantUserRoleUpdateOutcome Outcome)
 {
@@ -23,6 +37,12 @@ public sealed record TenantUserRoleUpdateResult(TenantUserRoleUpdateOutcome Outc
 
     public static TenantUserRoleUpdateResult LastOwnerWouldBeRemoved() =>
         new(TenantUserRoleUpdateOutcome.LastOwnerWouldBeRemoved);
+
+    public static TenantUserRoleUpdateResult SelfChangeNotAllowed() =>
+        new(TenantUserRoleUpdateOutcome.SelfChangeNotAllowed);
+
+    public static TenantUserRoleUpdateResult ActorNotAuthorized() =>
+        new(TenantUserRoleUpdateOutcome.ActorNotAuthorized);
 }
 
 public sealed record TenantUserMutationResult(TenantUserRoleUpdateOutcome Outcome, Guid? UserId = null)
@@ -49,8 +69,20 @@ public sealed record TenantUserMutationResult(TenantUserRoleUpdateOutcome Outcom
         {
             PasswordErrors = errors
         };
+
+    public static TenantUserMutationResult SelfChangeNotAllowed(Guid userId) =>
+        new(TenantUserRoleUpdateOutcome.SelfChangeNotAllowed, userId);
+
+    public static TenantUserMutationResult ActorNotAuthorized() => new(TenantUserRoleUpdateOutcome.ActorNotAuthorized);
 }
 
+/// <summary>
+/// Tenant user management. Every change is made on behalf of an <see cref="TenantUserActor"/> and, in the same
+/// serializable transaction as the write, re-checks that the actor is still an active Owner with the session's security
+/// stamp (the server-side form of the <c>CanManageTenantUsers</c> policy), that the actor is not changing their own role
+/// or active state, and that the tenant keeps an active Owner. A change to a user's role, active state or password
+/// replaces that user's security stamp, which ends their existing sessions.
+/// </summary>
 public interface ITenantUserRoleService
 {
     Task<IReadOnlyList<TenantUserSummaryDto>> ListUsersAsync(
@@ -64,29 +96,34 @@ public interface ITenantUserRoleService
 
     Task<TenantUserMutationResult> CreateUserAsync(
         Guid tenantId,
+        TenantUserActor actor,
         TenantUserCreateCommand command,
         CancellationToken ct);
 
     Task<TenantUserMutationResult> UpdateUserAsync(
         Guid tenantId,
+        TenantUserActor actor,
         Guid userId,
         TenantUserUpdateCommand command,
         CancellationToken ct);
 
     Task<TenantUserRoleUpdateResult> ChangeRoleAsync(
         Guid tenantId,
+        TenantUserActor actor,
         Guid userId,
         UserRole role,
         CancellationToken ct);
 
     Task<TenantUserRoleUpdateResult> SetActiveAsync(
         Guid tenantId,
+        TenantUserActor actor,
         Guid userId,
         bool isActive,
         CancellationToken ct);
 
     Task<TenantUserRoleUpdateResult> RemoveAsync(
         Guid tenantId,
+        TenantUserActor actor,
         Guid userId,
         CancellationToken ct);
 }

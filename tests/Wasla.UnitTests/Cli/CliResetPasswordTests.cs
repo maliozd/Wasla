@@ -252,6 +252,8 @@ public sealed class CliResetPasswordTests
         var otherUserId = await SeedTenantUserAsync(otherConnection, "mehmet@example.com", "Mehmet Usta", UserRole.Owner, null);
         var onlyOtherId = await SeedTenantUserAsync(otherConnection, "only-other@example.com", "Başka Kullanıcı", UserRole.Viewer, null);
         var createdAt = (await ReadTenantUserAsync(mengenConnection, mengenUserId)).CreatedAt;
+        var stampBefore = (await ReadTenantUserAsync(mengenConnection, mengenUserId)).SecurityStamp;
+        var otherStampBefore = (await ReadTenantUserAsync(otherConnection, otherUserId)).SecurityStamp;
         var opened = new List<Guid>();
 
         var (code, output) = await CaptureAsync(() => CliPasswordReset.ExecuteAsync(
@@ -289,6 +291,10 @@ public sealed class CliResetPasswordTests
         Assert.Equal(branchId, updated.BranchId);
         Assert.True(updated.IsActive);
         Assert.Equal(createdAt, updated.CreatedAt);
+        // A new stamp ends that user's existing Web sessions; the same email in another tenant keeps its own (WAS-89).
+        Assert.NotEqual(stampBefore, updated.SecurityStamp);
+        Assert.NotEqual(Guid.Empty, updated.SecurityStamp);
+        Assert.Equal(otherStampBefore, other.SecurityStamp);
         Assert.True(BCrypt.Net.BCrypt.Verify(OldPassword, other.PasswordHash));
         Assert.False(BCrypt.Net.BCrypt.Verify(NewPassword, other.PasswordHash));
         Assert.Equal(UserRole.Owner, other.Role);
@@ -498,6 +504,7 @@ public sealed class CliResetPasswordTests
                 Role INTEGER NOT NULL,
                 BranchId TEXT NULL,
                 IsActive INTEGER NOT NULL,
+                SecurityStamp TEXT NOT NULL,
                 CreatedAt TEXT NOT NULL,
                 UpdatedAt TEXT NOT NULL,
                 LastLoginAt TEXT NULL

@@ -85,19 +85,9 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = AuthSchemes.Tenant;
     options.DefaultAuthenticateScheme = AuthSchemes.Tenant;
     options.DefaultChallengeScheme = AuthSchemes.Tenant;
-}).AddCookie(AuthSchemes.Tenant, options =>
-{
-    options.Cookie.Name = TenantAuthCookieNames.Active;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.Path = "/";
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = authCookieSecurePolicy;
-    options.LoginPath = "/auth/login";
-    options.LogoutPath = "/auth/logout";
-    options.AccessDeniedPath = "/auth/access-denied";
-    options.ExpireTimeSpan = TimeSpan.FromDays(7);
-    options.SlidingExpiration = true;
 })
+// Tenant cookie scheme; every tenant request is revalidated against the user in the tenant database.
+.AddWaslaTenantCookie(authCookieSecurePolicy)
 .AddCookie(AuthSchemes.CentralAdmin, options =>
 {
     options.Cookie.Name = CentralAdminAuthCookieNames.Active;

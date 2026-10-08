@@ -3534,6 +3534,7 @@
   <data name="TenantUsers.InvalidRole" xml:space="preserve"><value>Invalid role selected.</value></data>
   <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>User not found.</value></data>
   <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>The last Owner cannot be deactivated or demoted.</value></data>
+  <data name="TenantUsers.SelfChangeBlocked" xml:space="preserve"><value>You cannot change your own role or active status. Another Owner can do this.</value></data>
   <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>User could not be updated.</value></data>
   <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>User summary</value></data>
   <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Total</value></data>

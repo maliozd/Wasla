@@ -4018,6 +4018,7 @@
   <data name="TenantUsers.InvalidRole" xml:space="preserve"><value>Выбрана недопустимая роль.</value></data>
   <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>Пользователь не найден.</value></data>
   <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>Последнего Owner нельзя деактивировать или понизить.</value></data>
+  <data name="TenantUsers.SelfChangeBlocked" xml:space="preserve"><value>Нельзя изменить собственную роль или статус активности. Это может сделать другой Owner.</value></data>
   <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>Не удалось обновить пользователя.</value></data>
   <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>Сводка по пользователям</value></data>
   <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Всего</value></data>

@@ -29,6 +29,12 @@ public class AppUser : BaseEntity
     public bool IsActive { get; set; } = true;
 
     /// <summary>
+    /// Replaced whenever the user's role, active state or password changes. A tenant session carries the value it was
+    /// issued with and is rejected once the two differ. Never log or return this value.
+    /// </summary>
+    public Guid SecurityStamp { get; set; } = Guid.NewGuid();
+
+    /// <summary>
     /// UTC time of the most recent successful password login. Null means no login has been recorded.
     /// </summary>
     public DateTime? LastLoginAt { get; set; }

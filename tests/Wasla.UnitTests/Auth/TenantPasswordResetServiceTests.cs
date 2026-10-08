@@ -190,6 +190,8 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
         var updatedUser = await db.AppUsers.SingleAsync(u => u.Id == user.Id, TestContext.Current.CancellationToken);
         Assert.False(BCrypt.Net.BCrypt.Verify(oldPassword, updatedUser.PasswordHash));
         Assert.True(BCrypt.Net.BCrypt.Verify(newPassword, updatedUser.PasswordHash));
+        // A new stamp ends the user's existing sessions (WAS-89).
+        Assert.NotEqual(user.SecurityStamp, updatedUser.SecurityStamp);
         Assert.NotNull(await db.PasswordResetTokens.Where(t => t.Id == token.Id).Select(t => t.UsedAtUtc).SingleAsync(TestContext.Current.CancellationToken));
         Assert.NotNull(await db.PasswordResetTokens.Where(t => t.Id == otherActive.Id).Select(t => t.UsedAtUtc).SingleAsync(TestContext.Current.CancellationToken));
     }
@@ -413,6 +415,7 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
                     Role INTEGER NOT NULL,
                     BranchId TEXT NULL,
                     IsActive INTEGER NOT NULL,
+                    SecurityStamp TEXT NOT NULL,
                     CreatedAt TEXT NOT NULL,
                     UpdatedAt TEXT NOT NULL,
                     LastLoginAt TEXT NULL

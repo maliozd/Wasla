@@ -99,8 +99,12 @@ public sealed class TenantUsersController : BaseController
         if (!ModelState.IsValid)
             return View(model);
 
+        if (!TryGetActor(out var actor))
+            return Forbid();
+
         var result = await _users.CreateUserAsync(
             tenant.Id,
+            actor,
             new TenantUserCreateCommand(
                 model.Email,
                 model.FullName,
@@ -108,6 +112,9 @@ public sealed class TenantUsersController : BaseController
                 model.IsActive,
                 model.Password),
             ct).ConfigureAwait(false);
+
+        if (result.Outcome == TenantUserRoleUpdateOutcome.ActorNotAuthorized)
+            return Forbid();
 
         if (!result.Succeeded)
         {
@@ -174,8 +181,12 @@ public sealed class TenantUsersController : BaseController
         if (!ModelState.IsValid)
             return View(model);
 
+        if (!TryGetActor(out var actor))
+            return Forbid();
+
         var result = await _users.UpdateUserAsync(
             tenant.Id,
+            actor,
             id,
             new TenantUserUpdateCommand(
                 model.FullName,
@@ -183,6 +194,9 @@ public sealed class TenantUsersController : BaseController
                 model.IsActive,
                 string.IsNullOrWhiteSpace(model.NewPassword) ? null : model.NewPassword),
             ct).ConfigureAwait(false);
+
+        if (result.Outcome == TenantUserRoleUpdateOutcome.ActorNotAuthorized)
+            return Forbid();
 
         if (!result.Succeeded)
         {
@@ -202,7 +216,10 @@ public sealed class TenantUsersController : BaseController
         if (tenant is null)
             return NotFound();
 
-        var result = await _users.SetActiveAsync(tenant.Id, id, isActive: true, ct).ConfigureAwait(false);
+        if (!TryGetActor(out var actor))
+            return Forbid();
+
+        var result = await _users.SetActiveAsync(tenant.Id, actor, id, isActive: true, ct).ConfigureAwait(false);
         return HandleUpdateResult(result, "TenantUsers.UserActivated", id);
     }
 
@@ -214,12 +231,32 @@ public sealed class TenantUsersController : BaseController
         if (tenant is null)
             return NotFound();
 
-        var result = await _users.SetActiveAsync(tenant.Id, id, isActive: false, ct).ConfigureAwait(false);
+        if (!TryGetActor(out var actor))
+            return Forbid();
+
+        var result = await _users.SetActiveAsync(tenant.Id, actor, id, isActive: false, ct).ConfigureAwait(false);
         return HandleUpdateResult(result, "TenantUsers.UserDeactivated", id);
+    }
+
+    /// <summary>
+    /// The signed-in Owner, from the session that was validated for this request. The service re-checks it in the same
+    /// transaction as the change.
+    /// </summary>
+    private bool TryGetActor(out TenantUserActor actor)
+    {
+        actor = null!;
+        if (!TenantSessionClaims.TryRead(User, out var session))
+            return false;
+
+        actor = session.ToActor();
+        return true;
     }
 
     private IActionResult HandleUpdateResult(TenantUserRoleUpdateResult result, string successKey, Guid id)
     {
+        if (result.Outcome == TenantUserRoleUpdateOutcome.ActorNotAuthorized)
+            return Forbid();
+
         TempData[result.Succeeded ? "TenantUsersMessage" : "TenantUsersError"] =
             _localizer[MessageKey(result, successKey)].Value;
 
@@ -235,6 +272,7 @@ public sealed class TenantUsersController : BaseController
             TenantUserRoleUpdateOutcome.UserNotFound => "TenantUsers.UserNotFound",
             TenantUserRoleUpdateOutcome.LastOwnerWouldBeRemoved => "TenantUsers.LastOwnerBlocked",
             TenantUserRoleUpdateOutcome.InvalidRole => "TenantUsers.InvalidRole",
+            TenantUserRoleUpdateOutcome.SelfChangeNotAllowed => "TenantUsers.SelfChangeBlocked",
             _ => "TenantUsers.UpdateFailed"
         };
 
@@ -253,6 +291,9 @@ public sealed class TenantUsersController : BaseController
                 break;
             case TenantUserRoleUpdateOutcome.DuplicateEmail:
                 ModelState.AddModelError("Email", _localizer["TenantUsers.EmailAlreadyExists"].Value);
+                break;
+            case TenantUserRoleUpdateOutcome.SelfChangeNotAllowed:
+                ModelState.AddModelError(string.Empty, _localizer["TenantUsers.SelfChangeBlocked"].Value);
                 break;
             case TenantUserRoleUpdateOutcome.InvalidPassword:
                 foreach (var error in result.PasswordErrors)

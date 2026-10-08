@@ -212,6 +212,8 @@ internal static class CliPasswordReset
 
         var now = DateTime.UtcNow;
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+        // Ends every existing Web session of this user.
+        user.SecurityStamp = Guid.NewGuid();
         user.UpdatedAt = now;
 
         var activeTokens = await db.PasswordResetTokens

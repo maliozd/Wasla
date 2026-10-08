@@ -3534,6 +3534,7 @@
   <data name="TenantUsers.InvalidRole" xml:space="preserve"><value>تم اختيار دور غير صالح.</value></data>
   <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>لم يتم العثور على المستخدم.</value></data>
   <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>لا يمكن تعطيل آخر Owner أو خفض دوره.</value></data>
+  <data name="TenantUsers.SelfChangeBlocked" xml:space="preserve"><value>لا يمكنك تغيير دورك أو حالة تفعيل حسابك. يمكن لـ Owner آخر القيام بذلك.</value></data>
   <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>تعذر تحديث المستخدم.</value></data>
   <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>ملخص المستخدمين</value></data>
   <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>الإجمالي</value></data>

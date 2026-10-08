@@ -109,7 +109,7 @@ Details: [migrations.md](migrations.md).
 
 | Command | Purpose |
 |---------|---------|
-| `reset-password` | Reset central or tenant user password (`--scope central|tenant`, `--dry-run`) |
+| `reset-password` | Reset central or tenant user password (`--scope central|tenant`, `--dry-run`). Tenant scope also ends that user's existing Web sessions |
 
 ### Print Bridge
 
