@@ -57,7 +57,7 @@ public sealed class OrderSyncWorker : BackgroundService
         else
         {
             _logger.LogWarning(
-                "Real provider mode active. TrendyolYemek uses Trendyol GO HTTP client; Yemeksepeti and GetirYemek still use mock clients.");
+                "Real provider mode active. TrendyolYemek uses Trendyol GO HTTP client; Yemeksepeti uses the Yemeksepeti Partner API HTTP client; GetirYemek still uses a mock client.");
         }
 
         if (_env.IsDevelopment())

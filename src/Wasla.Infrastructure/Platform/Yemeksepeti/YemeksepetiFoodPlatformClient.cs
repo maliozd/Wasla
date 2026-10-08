@@ -1,7 +1,12 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
@@ -40,24 +45,41 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     private readonly IOrderStatusMapper _statusMapper;
     private readonly YemeksepetiOptions _options;
     private readonly ILogger<YemeksepetiFoodPlatformClient> _logger;
+    private readonly TimeProvider _time;
 
-    // Token cache keyed on clientId (masked in logs). Tokens are valid for ~2 hours;
-    // we refresh 5 minutes early to avoid expiry during a request.
-    private readonly ConcurrentDictionary<string, CachedToken> _tokenCache = new();
+    /// <summary>
+    /// Upper bound on cached tokens. Entries whose token has expired are pruned whenever a token is acquired; past
+    /// this bound a new token is used for its own fetch only and is not cached.
+    /// </summary>
+    internal const int MaxCachedTokens = 4096;
+
+    // Tokens are valid for ~2 hours; we refresh 5 minutes early to avoid expiry during a request.
+    private static readonly TimeSpan TokenRefreshMargin = TimeSpan.FromMinutes(5);
+
+    // This client is a process-wide singleton shared by every tenant, so a cached token is bound to the platform
+    // connection, the token endpoint and the exact credentials that obtained it (see TokenCacheKey). The key is an
+    // HMAC under a random per-instance key: it holds no credential text and is useless outside this process.
+    private readonly ConcurrentDictionary<string, TokenSlot> _tokenCache = new(StringComparer.Ordinal);
+    private readonly byte[] _tokenCacheKeySecret = RandomNumberGenerator.GetBytes(32);
 
     public YemeksepetiFoodPlatformClient(
         IHttpClientFactory httpClientFactory,
         ISecretManager secretManager,
         IOrderStatusMapper statusMapper,
         IOptions<YemeksepetiOptions> options,
-        ILogger<YemeksepetiFoodPlatformClient> logger)
+        ILogger<YemeksepetiFoodPlatformClient> logger,
+        TimeProvider? time = null)
     {
         _httpClient = httpClientFactory.CreateClient(YemeksepetiHttpClientName);
         _secretManager = secretManager;
         _statusMapper = statusMapper;
         _options = options.Value;
         _logger = logger;
+        _time = time ?? TimeProvider.System;
     }
+
+    /// <summary>Number of cached token entries, for tests of the cache bound.</summary>
+    internal int CachedTokenCount => _tokenCache.Count;
 
     /// <summary>Named HttpClient key used during DI registration.</summary>
     public const string YemeksepetiHttpClientName = "Yemeksepeti";
@@ -108,8 +130,22 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
             throw new InvalidOperationException(
                 $"Yemeksepeti credentials (clientId/clientSecret) are missing for PlatformConnection {connection.Id}.");
 
-        var token = await GetOrRefreshTokenAsync(clientId, clientSecret, ct);
-        return await FetchOrdersWithTokenAsync(chainId, vendorId, token, ct);
+        var cacheKey = TokenCacheKey(connection.Id, clientId, clientSecret);
+        var token = await GetOrRefreshTokenAsync(connection.Id, cacheKey, clientId, clientSecret, ct);
+        try
+        {
+            return await FetchOrdersWithTokenAsync(chainId, vendorId, token.AccessToken, ct);
+        }
+        catch (ProviderRequestException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            // A rejected token is not reused: the next attempt (including a sync retry) asks for a new one.
+            EvictToken(cacheKey, token);
+            _logger.LogInformation(
+                "Yemeksepeti token rejected; cached token discarded. ConnectionId={ConnectionId} StatusCode={StatusCode}",
+                connection.Id,
+                (int)ex.StatusCode);
+            throw;
+        }
     }
 
     private async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersWithTokenAsync(
@@ -284,16 +320,99 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
 
     // ── Token handling ────────────────────────────────────────────────────────
 
-    private async Task<string> GetOrRefreshTokenAsync(
-        string clientId, string clientSecret, CancellationToken ct)
+    /// <summary>
+    /// Isolation key of a cached token: HMAC-SHA256 over the platform connection id, the token endpoint, the client id
+    /// and the client secret, each length-prefixed so no two different tuples encode the same input.
+    /// A token is therefore reused only by the connection that obtained it, and only while it presents the same
+    /// credentials to the same endpoint. Another connection, a rotated secret or the same client id with another
+    /// secret gets its own entry and its own token request.
+    /// </summary>
+    private string TokenCacheKey(Guid connectionId, string clientId, string clientSecret)
     {
-        // Refresh 5 minutes before expiry to avoid race at boundary.
-        if (_tokenCache.TryGetValue(clientId, out var cached) &&
-            cached.ExpiresAt > DateTimeOffset.UtcNow.AddMinutes(5))
-        {
-            return cached.AccessToken;
-        }
+        using var hmac = IncrementalHash.CreateHMAC(HashAlgorithmName.SHA256, _tokenCacheKeySecret);
+        AppendField(hmac, connectionId.ToString("N"));
+        AppendField(hmac, _httpClient.BaseAddress?.AbsoluteUri ?? string.Empty);
+        AppendField(hmac, _options.TokenPath);
+        AppendField(hmac, clientId);
+        AppendField(hmac, clientSecret);
+        return Convert.ToHexString(hmac.GetHashAndReset());
+    }
 
+    private static void AppendField(IncrementalHash hash, string value)
+    {
+        var bytes = Encoding.UTF8.GetBytes(value);
+        Span<byte> length = stackalloc byte[sizeof(int)];
+        BinaryPrimitives.WriteInt32BigEndian(length, bytes.Length);
+        hash.AppendData(length);
+        hash.AppendData(bytes);
+    }
+
+    private async Task<CachedToken> GetOrRefreshTokenAsync(
+        Guid connectionId, string cacheKey, string clientId, string clientSecret, CancellationToken ct)
+    {
+        var slot = _tokenCache.GetOrAdd(cacheKey, static _ => new TokenSlot());
+        if (TryGetReusable(slot, out var cached))
+            return cached;
+
+        // One token request per key at a time: concurrent fetches of the same connection wait for it instead of
+        // each asking the provider. Different keys never wait for each other.
+        await slot.Gate.WaitAsync(ct);
+        try
+        {
+            if (TryGetReusable(slot, out cached))
+                return cached;
+
+            var token = await RequestTokenAsync(connectionId, clientId, clientSecret, ct);
+            slot.Token = token;
+            PruneTokenCache();
+            if (_tokenCache.Count > MaxCachedTokens && _tokenCache.TryRemove(new KeyValuePair<string, TokenSlot>(cacheKey, slot)))
+            {
+                _logger.LogWarning(
+                    "Yemeksepeti token cache is full; the token is used for this fetch only. ConnectionId={ConnectionId} MaxCachedTokens={MaxCachedTokens}",
+                    connectionId,
+                    MaxCachedTokens);
+            }
+
+            return token;
+        }
+        finally
+        {
+            slot.Gate.Release();
+        }
+    }
+
+    // Refresh 5 minutes before expiry to avoid race at boundary.
+    private bool TryGetReusable(TokenSlot slot, [NotNullWhen(true)] out CachedToken? token)
+    {
+        token = slot.Token;
+        return token is not null && token.ExpiresAt > _time.GetUtcNow() + TokenRefreshMargin;
+    }
+
+    // Removes entries whose token can no longer be used (expired or never obtained) and that no caller is refreshing.
+    private void PruneTokenCache()
+    {
+        var now = _time.GetUtcNow();
+        foreach (var entry in _tokenCache)
+        {
+            var slot = entry.Value;
+            if (slot.Token is { } token && token.ExpiresAt > now)
+                continue;
+            if (slot.Gate.CurrentCount == 0)
+                continue;
+
+            _tokenCache.TryRemove(entry);
+        }
+    }
+
+    private void EvictToken(string cacheKey, CachedToken token)
+    {
+        if (_tokenCache.TryGetValue(cacheKey, out var slot))
+            slot.Invalidate(token);
+    }
+
+    private async Task<CachedToken> RequestTokenAsync(
+        Guid connectionId, string clientId, string clientSecret, CancellationToken ct)
+    {
         var form = new Dictionary<string, string>
         {
             ["grant_type"]    = "client_credentials",
@@ -313,12 +432,12 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
         if (!resp.IsSuccessStatusCode)
         {
             _logger.LogWarning(
-                "Provider request failed. Provider={Provider} Operation={Operation} StatusCode={StatusCode} ElapsedMs={ElapsedMs} MaskedClientId={MaskedClientId}",
+                "Provider request failed. Provider={Provider} Operation={Operation} StatusCode={StatusCode} ElapsedMs={ElapsedMs} ConnectionId={ConnectionId}",
                 "Yemeksepeti",
                 "Token",
                 (int)resp.StatusCode,
                 sw.ElapsedMilliseconds,
-                MaskClientId(clientId));
+                connectionId);
             throw new ProviderRequestException("Yemeksepeti", "Token", (int)resp.StatusCode);
         }
 
@@ -330,15 +449,13 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
                 "Yemeksepeti token response did not contain a valid access_token.");
 
         var expirySeconds = tokenResp.ExpiresIn > 0 ? tokenResp.ExpiresIn : 7200;
-        var expiresAt = DateTimeOffset.UtcNow.AddSeconds(expirySeconds);
-        var newToken = new CachedToken(tokenResp.AccessToken!, expiresAt);
-        _tokenCache[clientId] = newToken;
+        var expiresAt = _time.GetUtcNow().AddSeconds(expirySeconds);
 
         _logger.LogInformation(
-            "Yemeksepeti token refreshed. MaskedClientId={MaskedClientId} ExpiresAt={ExpiresAt}",
-            MaskClientId(clientId), expiresAt);
+            "Yemeksepeti token refreshed. ConnectionId={ConnectionId} ExpiresAt={ExpiresAt}",
+            connectionId, expiresAt);
 
-        return newToken.AccessToken;
+        return new CachedToken(tokenResp.AccessToken!, expiresAt);
     }
 
     // ── Lifecycle stubs (not yet implemented) ─────────────────────────────────
@@ -459,12 +576,6 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static string MaskClientId(string clientId)
-    {
-        if (clientId.Length <= 4) return "***";
-        return clientId[..4] + new string('*', Math.Min(clientId.Length - 4, 8));
-    }
-
     private ProviderRequestException LogProviderFailure(string provider, string operation, int statusCode, long elapsedMs)
     {
         _logger.LogWarning(
@@ -479,6 +590,22 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     // ── Token cache entry ─────────────────────────────────────────────────────
 
     private sealed record CachedToken(string AccessToken, DateTimeOffset ExpiresAt);
+
+    private sealed class TokenSlot
+    {
+        private CachedToken? _token;
+
+        public SemaphoreSlim Gate { get; } = new(1, 1);
+
+        public CachedToken? Token
+        {
+            get => Volatile.Read(ref _token);
+            set => Volatile.Write(ref _token, value);
+        }
+
+        // Clears only the token that was rejected, never one a concurrent refresh has already replaced it with.
+        public void Invalidate(CachedToken rejected) => Interlocked.CompareExchange(ref _token, null, rejected);
+    }
 
     // ── Provider DTOs ─────────────────────────────────────────────────────────
     // Tolerant/nullable: do not fail if optional fields are missing.

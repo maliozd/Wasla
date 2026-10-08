@@ -54,8 +54,6 @@ No `HttpClient` is registered against tgoapis.com or Yemeksepeti partner hosts i
 | Yemeksepeti | `YemeksepetiFoodPlatformClient` | Real HTTP (OAuth2 client_credentials + Partner Picking orders API) |
 | GetirYemek | `MockGetirYemekFoodPlatformClient` | Still mock; real client not implemented |
 
-**Mismatch:** `OrderSyncWorker.StartAsync` logs that Yemeksepeti still uses mock clients in Real mode. That log is wrong relative to DI. Prefer this table.
-
 ## `IFoodPlatformClient`
 
 Source: `src/Wasla.Application/Abstractions/Platform/IFoodPlatformClient.cs`.
@@ -94,6 +92,26 @@ Implications:
 | Getir | Mock credentials / connection shape only until a real client exists |
 
 Never log decrypted secrets.
+
+### Yemeksepeti OAuth tokens
+
+Source: `YemeksepetiFoodPlatformClient` (WAS-88). In Real mode one client instance (a singleton) serves every tenant in a process, so its in-memory token cache is shared across tenants. A cached token is reused only when all of these match the request that obtained it:
+
+- The `PlatformConnection` id.
+- The token endpoint (`Platform:Yemeksepeti:BaseUrl` and `TokenPath`).
+- The decrypted client id **and** client secret.
+
+The cache key is an HMAC-SHA256 of those fields under a random key generated per client instance. It contains no credential text and means nothing outside the process. Consequences:
+
+- Another connection never receives a cached token, even with the same client id or identical credentials. Each connection asks the provider for its own token.
+- A changed secret (rotation or a typo) triggers a new token request. If the provider rejects the secret, that connection's fetch fails. It never falls back to an older token.
+- A 401 or 403 from the orders endpoint discards that connection's cached token. The next attempt, including the sync retry, requests a new one. Other failures keep the token.
+- Concurrent fetches of one connection share one token request. Different connections never wait for each other, and a failed token request affects only its own connection.
+- A token is reused until 5 minutes before it expires (`expires_in`; 7200 seconds when missing). Entries whose token has expired are pruned whenever a token is acquired, so a rotated credential or a removed connection leaves an entry only until its token expires. At most 4,096 entries are kept (`MaxCachedTokens`). Past that, a new token is used for its own fetch only and a warning is logged.
+- The Worker does not fetch an inactive or deleted connection, so its cached token is never sent and is pruned after it expires.
+- Token logs carry only the connection id, status code and expiry. Client ids, secrets and tokens are not logged.
+
+The real provider's token scope (chain, vendor or integrator), token lifetime, behavior after a secret rotation, and token-endpoint limits are not confirmed yet (WAS-70). These rules are verified against a fake provider only.
 
 ## Application-level provider options
 
@@ -134,7 +152,6 @@ When Mock clients generate orders:
 
 - Getir: Real mode still mock.
 - Yemeksepeti lifecycle APIs: not implemented on the real client.
-- Worker Real-mode startup log disagrees with DI for Yemeksepeti.
 - Yemeksepeti polling is not checkpointed: a change older than one hour at the next successful run can be missed.
 - Trendyol GO date-range limits, retention and the scope of the request limit are undocumented and not yet verified against the Stage API.
 - The Trendyol GO request limiter is per Worker process; several Workers would need a distributed limiter.

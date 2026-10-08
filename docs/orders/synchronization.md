@@ -269,7 +269,7 @@ Source: `YemeksepetiFoodPlatformClient`.
 Rules:
 
 - Not checkpointed: the client ignores the planned window and always asks for the last hour. A change older than one hour at the time of the next successful run can still be missed.
-- OAuth token is acquired **once** (or reused from the in-memory cache) before the paginated fetch loop; the same bearer token is used for every page in that fetch.
+- OAuth token is acquired **once** (or reused from the in-memory cache) before the paginated fetch loop; the same bearer token is used for every page in that fetch. A cached token is bound to the platform connection and its exact credentials, and a 401/403 discards it; see [Yemeksepeti OAuth tokens](../integrations/food-platforms.md#yemeksepeti-oauth-tokens).
 - Same malformed-pagination and page-cap failure rules as Trendyol GO.
 - `DefaultPageSize` must be positive or fetch throws before paging.
 
@@ -365,7 +365,6 @@ See also [../operations/observability.md](../operations/observability.md#order-s
 
 ## Known gaps
 
-- Worker startup log in Real mode still claims Yemeksepeti uses mock clients; DI registers the real Yemeksepeti HTTP client. Trust DI (`ServiceCollectionExtensions`), not that startup sentence, until the log is corrected.
 - Yemeksepeti partner endpoint path still carries a TODO to confirm against official Partner API docs.
 - Getir has no real fetch client yet.
 - Webhooks are not implemented for any platform; polling is the only ingestion path (see [Webhooks and polling](#webhooks-and-polling)).
