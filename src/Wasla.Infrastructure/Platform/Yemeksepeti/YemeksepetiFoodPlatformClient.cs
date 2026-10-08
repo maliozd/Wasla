@@ -48,8 +48,10 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     private readonly TimeProvider _time;
 
     /// <summary>
-    /// Upper bound on cached tokens. Entries whose token has expired are pruned whenever a token is acquired; past
-    /// this bound a new token is used for its own fetch only and is not cached.
+    /// Upper bound on cached tokens. Once no acquisition is in progress, the cache holds only entries with a token and
+    /// at most this many. While acquisitions run, each one adds at most one entry on top. A failed or cancelled
+    /// acquisition leaves no entry. Expired entries are pruned whenever a token is acquired. Past this bound a new
+    /// token is used for its own fetch only and is not cached.
     /// </summary>
     internal const int MaxCachedTokens = 4096;
 
@@ -350,35 +352,83 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     private async Task<CachedToken> GetOrRefreshTokenAsync(
         Guid connectionId, string cacheKey, string clientId, string clientSecret, CancellationToken ct)
     {
-        var slot = _tokenCache.GetOrAdd(cacheKey, static _ => new TokenSlot());
-        if (TryGetReusable(slot, out var cached))
-            return cached;
-
-        // One token request per key at a time: concurrent fetches of the same connection wait for it instead of
-        // each asking the provider. Different keys never wait for each other.
-        await slot.Gate.WaitAsync(ct);
+        var slot = EnterSlot(cacheKey);
         try
         {
-            if (TryGetReusable(slot, out cached))
+            if (TryGetReusable(slot, out var cached))
                 return cached;
 
-            var token = await RequestTokenAsync(connectionId, clientId, clientSecret, ct);
-            slot.Token = token;
-            PruneTokenCache();
-            if (_tokenCache.Count > MaxCachedTokens && _tokenCache.TryRemove(new KeyValuePair<string, TokenSlot>(cacheKey, slot)))
+            // One token request per key at a time: concurrent fetches of the same connection wait for it instead of
+            // each asking the provider. Different keys never wait for each other. A wait cancelled here never
+            // acquired the gate, so it must not release it.
+            await slot.Gate.WaitAsync(ct);
+            try
             {
-                _logger.LogWarning(
-                    "Yemeksepeti token cache is full; the token is used for this fetch only. ConnectionId={ConnectionId} MaxCachedTokens={MaxCachedTokens}",
-                    connectionId,
-                    MaxCachedTokens);
-            }
+                if (TryGetReusable(slot, out cached))
+                    return cached;
 
-            return token;
+                var token = await RequestTokenAsync(connectionId, clientId, clientSecret, ct);
+                slot.Token = token;
+                PruneTokenCache();
+                if (_tokenCache.Count > MaxCachedTokens)
+                {
+                    // Not kept: the slot is retired when its last user leaves, unless a later owner caches a token.
+                    slot.Invalidate(token);
+                    _logger.LogWarning(
+                        "Yemeksepeti token cache is full; the token is used for this fetch only. ConnectionId={ConnectionId} MaxCachedTokens={MaxCachedTokens}",
+                        connectionId,
+                        MaxCachedTokens);
+                }
+
+                return token;
+            }
+            finally
+            {
+                slot.Gate.Release();
+            }
         }
         finally
         {
-            slot.Gate.Release();
+            // A failed or cancelled acquisition leaves the slot without a token; the last user to leave removes it.
+            ExitSlot(cacheKey, slot);
         }
+    }
+
+    // Registers the caller as a user of the key's slot. A retired slot has already been removed from the cache under
+    // its lock, so looking again returns the slot that replaced it or creates one.
+    private TokenSlot EnterSlot(string cacheKey)
+    {
+        while (true)
+        {
+            var slot = _tokenCache.GetOrAdd(cacheKey, static _ => new TokenSlot());
+            lock (slot.Sync)
+            {
+                if (!slot.Retired)
+                {
+                    slot.Users++;
+                    return slot;
+                }
+            }
+        }
+    }
+
+    private void ExitSlot(string cacheKey, TokenSlot slot)
+    {
+        lock (slot.Sync)
+        {
+            slot.Users--;
+            if (slot.Users == 0 && slot.Token is null)
+                RetireLocked(cacheKey, slot);
+        }
+    }
+
+    // Caller holds slot.Sync and has seen that the slot has no users. Only a user writes a token, and no caller can
+    // become a user of a retired slot, so a retired slot never holds a token again. The removal compares the slot
+    // instance, so a replacement slot registered under the same key is never removed.
+    private void RetireLocked(string cacheKey, TokenSlot slot)
+    {
+        slot.Retired = true;
+        _tokenCache.TryRemove(new KeyValuePair<string, TokenSlot>(cacheKey, slot));
     }
 
     // Refresh 5 minutes before expiry to avoid race at boundary.
@@ -388,26 +438,32 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
         return token is not null && token.ExpiresAt > _time.GetUtcNow() + TokenRefreshMargin;
     }
 
-    // Removes entries whose token can no longer be used (expired or never obtained) and that no caller is refreshing.
+    // Removes entries whose token can no longer be used (expired or never obtained) and that no caller is using.
     private void PruneTokenCache()
     {
         var now = _time.GetUtcNow();
         foreach (var entry in _tokenCache)
         {
             var slot = entry.Value;
-            if (slot.Token is { } token && token.ExpiresAt > now)
-                continue;
-            if (slot.Gate.CurrentCount == 0)
-                continue;
-
-            _tokenCache.TryRemove(entry);
+            lock (slot.Sync)
+            {
+                if (slot.Users == 0 && (slot.Token is not { } token || token.ExpiresAt <= now))
+                    RetireLocked(entry.Key, slot);
+            }
         }
     }
 
     private void EvictToken(string cacheKey, CachedToken token)
     {
-        if (_tokenCache.TryGetValue(cacheKey, out var slot))
+        if (!_tokenCache.TryGetValue(cacheKey, out var slot))
+            return;
+
+        lock (slot.Sync)
+        {
             slot.Invalidate(token);
+            if (slot.Users == 0 && slot.Token is null)
+                RetireLocked(cacheKey, slot);
+        }
     }
 
     private async Task<CachedToken> RequestTokenAsync(
@@ -596,6 +652,15 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
         private CachedToken? _token;
 
         public SemaphoreSlim Gate { get; } = new(1, 1);
+
+        /// <summary>Guards <see cref="Users"/> and <see cref="Retired"/> and every removal of this slot.</summary>
+        public object Sync { get; } = new();
+
+        /// <summary>Callers between <c>EnterSlot</c> and <c>ExitSlot</c>, waiting or requesting included.</summary>
+        public int Users { get; set; }
+
+        /// <summary>Removed from the cache; never used again.</summary>
+        public bool Retired { get; set; }
 
         public CachedToken? Token
         {

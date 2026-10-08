@@ -345,6 +345,281 @@ public sealed class YemeksepetiTokenIsolationTests
         }
     }
 
+    // ── Failed and cancelled acquisitions (WAS-88 review) ───────────────────────────────────────────────────────
+    // A token acquisition registers a cache entry before it asks the provider. These tests prove that a failed or
+    // cancelled acquisition does not leave that entry behind, so callers cannot grow the cache without bound.
+
+    [Fact]
+    public async Task ThousandsOfFailingCredentials_LeaveNoCacheEntries()
+    {
+        var provider = new FakeProvider();
+        var client = Create(provider);
+        const int attempts = YemeksepetiFoodPlatformClient.MaxCachedTokens + 1000;
+
+        for (var i = 0; i < attempts; i++)
+        {
+            var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
+                client.FetchOrdersAsync(Connection($"client-{i}", $"wrong-secret-{i}"), Window, CancellationToken.None));
+            Assert.Equal("Token", ex.Operation);
+        }
+
+        Assert.Equal(attempts, provider.TokenRequests);
+        Assert.Equal(0, client.CachedTokenCount);
+    }
+
+    [Fact]
+    public async Task PreCancelledFetch_LeavesNoCacheEntry_AndMakesNoRequest()
+    {
+        var provider = new FakeProvider();
+        provider.Register(SharedClientId, "secret-of-tenant-a", "tenant-a");
+        var client = Create(provider);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-a"), Window, cts.Token));
+
+        Assert.Equal(0, provider.TokenRequests);
+        Assert.Equal(0, client.CachedTokenCount);
+    }
+
+    [Fact]
+    public async Task WaiterCancelledBehindAnInFlightRequest_DoesNotDisturbTheOwnersToken()
+    {
+        var provider = new FakeProvider { HoldTokenResponses = true };
+        provider.Register(SharedClientId, "secret-of-tenant-a", "tenant-a");
+        var client = Create(provider);
+        var connection = Connection(SharedClientId, "secret-of-tenant-a");
+        using var waiterCts = new CancellationTokenSource();
+
+        var owner = client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        var waiter = client.FetchOrdersAsync(connection, Window, waiterCts.Token);
+        waiterCts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiter);
+
+        provider.ReleaseTokenResponses();
+        var ownerOrders = await owner.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        var laterOrders = await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+
+        Assert.Equal(["tenant-a-order"], ownerOrders.Select(o => o.ExternalOrderId).ToArray());
+        Assert.Equal(["tenant-a-order"], laterOrders.Select(o => o.ExternalOrderId).ToArray());
+        Assert.Equal(1, provider.TokenRequests);
+        Assert.Single(provider.OrderBearers.Distinct());
+        Assert.Equal(1, client.CachedTokenCount);
+    }
+
+    [Fact]
+    public async Task WaiterCancelledWhileTheOwnerFails_LeavesNoCacheEntry()
+    {
+        var provider = new FakeProvider { HoldTokenResponses = true };
+        var client = Create(provider);
+        var connection = Connection(SharedClientId, "wrong-secret");
+        using var waiterCts = new CancellationTokenSource();
+
+        var owner = client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        var waiter = client.FetchOrdersAsync(connection, Window, waiterCts.Token);
+        waiterCts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiter);
+
+        provider.ReleaseTokenResponses();
+        await Assert.ThrowsAsync<ProviderRequestException>(() => owner.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+
+        Assert.Equal(1, provider.TokenRequests);
+        Assert.Equal(0, client.CachedTokenCount);
+    }
+
+    [Fact]
+    public async Task OwnerCancelledDuringItsTokenRequest_LeavesNoCacheEntry_AndAWaiterStillGetsAToken()
+    {
+        var provider = new FakeProvider { HoldTokenResponses = true };
+        provider.Register(SharedClientId, "secret-of-tenant-a", "tenant-a");
+        var client = Create(provider);
+        var connection = Connection(SharedClientId, "secret-of-tenant-a");
+        using var ownerCts = new CancellationTokenSource();
+
+        var owner = client.FetchOrdersAsync(connection, Window, ownerCts.Token);
+        await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        var waiter = client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        ownerCts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => owner);
+
+        provider.ReleaseTokenResponses();
+        var waiterOrders = await waiter.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.Equal(["tenant-a-order"], waiterOrders.Select(o => o.ExternalOrderId).ToArray());
+        Assert.Equal(2, provider.TokenRequests);
+        Assert.Equal(1, client.CachedTokenCount);
+    }
+
+    [Fact]
+    public async Task MixedSuccessesAndFailures_StayWithinTheBound()
+    {
+        var provider = new FakeProvider();
+        provider.Register(SharedClientId, "same-secret", "shared-principal");
+        var client = Create(provider);
+        const int rounds = YemeksepetiFoodPlatformClient.MaxCachedTokens + 50;
+
+        for (var i = 0; i < rounds; i++)
+        {
+            var orders = await client.FetchOrdersAsync(Connection(SharedClientId, "same-secret"), Window, CancellationToken.None);
+            Assert.Equal(["shared-principal-order"], orders.Select(o => o.ExternalOrderId).ToArray());
+            await Assert.ThrowsAsync<ProviderRequestException>(() =>
+                client.FetchOrdersAsync(Connection($"client-{i}", "wrong-secret"), Window, CancellationToken.None));
+        }
+
+        Assert.Equal(2 * rounds, provider.TokenRequests);
+        Assert.Equal(YemeksepetiFoodPlatformClient.MaxCachedTokens, client.CachedTokenCount);
+    }
+
+    [Fact]
+    public async Task ConcurrentFailingCredentials_LeaveNoCacheEntries()
+    {
+        var provider = new FakeProvider { HoldTokenResponses = true };
+        var client = Create(provider);
+        using var cancelled = new CancellationTokenSource();
+
+        var failing = Enumerable.Range(0, 200)
+            .Select(i => client.FetchOrdersAsync(Connection($"client-{i}", "wrong-secret"), Window, CancellationToken.None))
+            .ToArray();
+        var cancelling = Enumerable.Range(0, 50)
+            .Select(i => client.FetchOrdersAsync(Connection($"cancel-{i}", "wrong-secret"), Window, cancelled.Token))
+            .ToArray();
+        await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        // Every acquisition is in flight at once: at most one entry each.
+        Assert.InRange(client.CachedTokenCount, 1, failing.Length + cancelling.Length);
+
+        cancelled.Cancel();
+        provider.ReleaseTokenResponses();
+        foreach (var fetch in failing)
+            await Assert.ThrowsAsync<ProviderRequestException>(() => fetch.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        foreach (var fetch in cancelling)
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fetch.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+
+        Assert.Equal(0, client.CachedTokenCount);
+    }
+
+    [Fact]
+    public async Task ParallelSuccessFailureAndCancellation_OnTheSameKeys_LeaveOneTokenPerValidConnectionOnly()
+    {
+        const int rounds = 40;
+        var provider = new FakeProvider();
+        var client = Create(provider);
+        var valid = new List<(string Principal, PlatformConnection Connection)>();
+
+        for (var round = 0; round < rounds; round++)
+        {
+            var connections = Enumerable.Range(0, 4)
+                .Select(i =>
+                {
+                    var principal = $"tenant-{round}-{i}";
+                    var isValid = i % 2 == 0;
+                    if (isValid)
+                        provider.Register(SharedClientId, $"secret-{round}-{i}", principal);
+                    return (Principal: principal, IsValid: isValid, Connection: Connection(SharedClientId, $"secret-{round}-{i}"));
+                })
+                .ToArray();
+            valid.AddRange(connections.Where(c => c.IsValid).Select(c => (c.Principal, c.Connection)));
+
+            var fetches = connections
+                .SelectMany(c => Enumerable.Range(0, 9).Select(n => (c.Principal, c.IsValid, Cancel: n % 3 == 0, c.Connection)))
+                .Select(f => (f.Principal, f.IsValid, f.Cancel, Task: Task.Run(async () =>
+                {
+                    using var cts = new CancellationTokenSource();
+                    if (f.Cancel)
+                        cts.CancelAfter(TimeSpan.FromTicks(Random.Shared.Next(0, 2000)));
+                    return await client.FetchOrdersAsync(f.Connection, Window, cts.Token);
+                }, TestContext.Current.CancellationToken)))
+                .ToArray();
+
+            foreach (var f in fetches)
+            {
+                try
+                {
+                    var orders = await f.Task;
+                    Assert.True(f.IsValid);
+                    Assert.Equal([$"{f.Principal}-order"], orders.Select(o => o.ExternalOrderId).ToArray());
+                }
+                catch (OperationCanceledException) when (f.Cancel)
+                {
+                }
+                catch (ProviderRequestException ex) when (!f.IsValid)
+                {
+                    Assert.Equal("Token", ex.Operation);
+                }
+            }
+        }
+
+        // Only the valid connections keep an entry: no failed or cancelled acquisition left one behind.
+        Assert.Equal(valid.Count, client.CachedTokenCount);
+        var before = provider.TokenRequests;
+        foreach (var (principal, connection) in valid)
+        {
+            var orders = await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+            Assert.Equal([$"{principal}-order"], orders.Select(o => o.ExternalOrderId).ToArray());
+        }
+
+        Assert.Equal(before, provider.TokenRequests);
+    }
+
+    [Fact]
+    public async Task StaleRejection_DoesNotRemoveANewerReplacementToken()
+    {
+        var clock = new LimiterClock();
+        var provider = new FakeProvider();
+        provider.Register(SharedClientId, "secret-of-tenant-a", "tenant-a");
+        var client = Create(provider, time: clock);
+        var connection = Connection(SharedClientId, "secret-of-tenant-a");
+
+        // Fetch 1 sends the first token to the orders endpoint and is held there.
+        var (ordersStarted, releaseOrders) = provider.HoldNextOrdersResponse();
+        var stale = client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await ordersStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        var firstToken = Assert.Single(provider.OrderBearers);
+
+        // Meanwhile the first token reaches its refresh margin and fetch 2 replaces it.
+        clock.Now += TimeSpan.FromMinutes(116);
+        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        var replacement = provider.OrderBearers.Last();
+        Assert.NotEqual(firstToken, replacement);
+
+        // The provider now rejects the first token; the held fetch 1 receives that late 401.
+        provider.RevokeToken(firstToken, HttpStatusCode.Unauthorized);
+        releaseOrders();
+        await Assert.ThrowsAsync<ProviderRequestException>(() => stale.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+
+        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+
+        Assert.Equal(2, provider.TokenRequests);
+        Assert.Equal(replacement, provider.OrderBearers.Last());
+        Assert.Equal(1, client.CachedTokenCount);
+    }
+
+    [Fact]
+    public async Task OneConnectionsFailure_NeverRemovesAnotherConnectionsToken()
+    {
+        var provider = new FakeProvider();
+        provider.Register(SharedClientId, "secret-of-tenant-a", "tenant-a");
+        var client = Create(provider);
+        var tenantA = Connection(SharedClientId, "secret-of-tenant-a");
+
+        await client.FetchOrdersAsync(tenantA, Window, CancellationToken.None);
+        for (var i = 0; i < 20; i++)
+        {
+            await Assert.ThrowsAsync<ProviderRequestException>(() =>
+                client.FetchOrdersAsync(Connection(SharedClientId, $"wrong-secret-{i}"), Window, CancellationToken.None));
+        }
+
+        var again = await client.FetchOrdersAsync(tenantA, Window, CancellationToken.None);
+
+        Assert.Equal(["tenant-a-order"], again.Select(o => o.ExternalOrderId).ToArray());
+        Assert.Equal(21, provider.TokenRequests);
+        Assert.Single(provider.OrderBearers.Distinct());
+        Assert.Equal(1, client.CachedTokenCount);
+    }
+
     private static YemeksepetiFoodPlatformClient Create(
         FakeProvider provider,
         ILogger<YemeksepetiFoodPlatformClient>? logger = null,
@@ -420,13 +695,43 @@ public sealed class YemeksepetiTokenIsolationTests
                 _revoked[token] = status;
         }
 
+        public void RevokeToken(string token, HttpStatusCode status) => _revoked[token] = status;
+
+        /// <summary>
+        /// Holds the next orders request until released. The response is decided after the release, so a revocation
+        /// made while it is held applies to it.
+        /// </summary>
+        public (Task Started, Action Release) HoldNextOrdersResponse()
+        {
+            var hold = new OrdersHold();
+            Volatile.Write(ref _ordersHold, hold);
+            return (hold.Started.Task, () => hold.Released.TrySetResult());
+        }
+
+        private OrdersHold? _ordersHold;
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var path = request.RequestUri?.AbsolutePath ?? string.Empty;
-            return path.EndsWith("/oauth/token", StringComparison.Ordinal)
-                ? await TokenAsync(request, cancellationToken)
-                : Orders(request);
+            if (path.EndsWith("/oauth/token", StringComparison.Ordinal))
+                return await TokenAsync(request, cancellationToken);
+
+            OrderBearers.Enqueue(request.Headers.Authorization?.Parameter ?? string.Empty);
+            if (Interlocked.Exchange(ref _ordersHold, null) is { } hold)
+            {
+                hold.Started.TrySetResult();
+                await hold.Released.Task.WaitAsync(cancellationToken);
+            }
+
+            return Orders(request);
+        }
+
+        private sealed class OrdersHold
+        {
+            public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            public TaskCompletionSource Released { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         private async Task<HttpResponseMessage> TokenAsync(HttpRequestMessage request, CancellationToken ct)
@@ -460,7 +765,6 @@ public sealed class YemeksepetiTokenIsolationTests
         private HttpResponseMessage Orders(HttpRequestMessage request)
         {
             var bearer = request.Headers.Authorization?.Parameter ?? string.Empty;
-            OrderBearers.Enqueue(bearer);
 
             if (NextOrdersStatus is { } forced)
             {

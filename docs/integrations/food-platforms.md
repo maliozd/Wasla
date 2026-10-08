@@ -13,7 +13,7 @@ It owns:
 
 It does not own Worker cycle timing or upsert details (see [../orders/synchronization.md](../orders/synchronization.md)), Print Bridge, or tenancy.
 
-The pagination caps and the unchanged-order short circuit referenced here are committed on `dev` (commit `642c6ca`). The [Yemeksepeti OAuth tokens](#yemeksepeti-oauth-tokens) section describes the WAS-88 token-isolation change (commit `9b12f99`). That change is not part of `dev` until the commit is merged, so check that your branch contains it before relying on that section.
+This document describes committed source, not uncommitted working-tree changes.
 
 ## Provider mode
 
@@ -107,9 +107,18 @@ The cache key is an HMAC-SHA256 of those fields under a random key generated per
 - A changed secret (rotation or a typo) triggers a new token request. If the provider rejects the secret, that connection's fetch fails. It never falls back to an older token.
 - A 401 or 403 from the orders endpoint discards that connection's cached token. The next attempt, including the sync retry, requests a new one. Other failures keep the token.
 - Concurrent fetches of one connection share one token request. Different connections never wait for each other, and a failed token request affects only its own connection.
-- A token is reused until 5 minutes before it expires (`expires_in`; 7200 seconds when missing). Entries whose token has expired are pruned whenever a token is acquired, so a rotated credential or a removed connection leaves an entry only until its token expires. At most 4,096 entries are kept (`MaxCachedTokens`). Past that, a new token is used for its own fetch only and a warning is logged.
-- The Worker does not fetch an inactive or deleted connection, so its cached token is never sent and is pruned after it expires.
+- A token is reused until 5 minutes before it expires (`expires_in`; 7200 seconds when missing).
 - Token logs carry only the connection id, status code and expiry. Client ids, secrets and tokens are not logged.
+
+Cache size (`MaxCachedTokens` = 4,096):
+
+- A token request registers an entry before it is sent. A failed or cancelled request removes that entry when its last waiting fetch finishes, so wrong or changing credentials do not leave entries behind.
+- When no token request is in progress, every entry holds a token and there are at most 4,096 entries.
+- While token requests are in progress, each adds at most one entry on top of that (concurrent fetches of one connection share one). The Worker syncs at most five tenants at a time.
+- Past 4,096, a new token is used for its own fetch only and a warning is logged. Further fetches of that connection then request a token each time until older entries are pruned.
+- An entry whose token was discarded after a 401 or 403 is removed as soon as no fetch is using it. An entry whose token has expired is removed the next time any connection acquires a token. A rotated credential or a connection that is no longer synced therefore keeps its entry until its token has expired and another token has been acquired.
+
+Inactive connections: the Worker does not sync an inactive connection (`IsActive` false), so its cached token is not sent. There is no operator action that deletes a platform connection; connections are deactivated instead. The temporary Development reset tool deletes a tenant's connections, and after that they are never loaded, so their tokens are not sent either. A connection's entry ends when its token expires and is pruned.
 
 The real provider's token scope (chain, vendor or integrator), token lifetime, behavior after a secret rotation, and token-endpoint limits are not confirmed yet (WAS-70). These rules are verified against a fake provider only.
 
