@@ -127,7 +127,7 @@ Do **not** assume a Web browser login cookie authenticates the API. Local Web is
 
 `POST /api/auth/validate` checks email and password and returns success or failure. It does not call `SignInAsync` and does not create a browser login. There is no API login endpoint that issues `.Wasla.TenantAuth`.
 
-Protected API calls need a cookie the API process can unprotect. The repository does not define a local developer flow that creates that cookie. Unit tests issue one inside a test host (`ApiTenantAuthenticationTests`). Treat the missing local login path as a developer-experience gap. Do not invent an API login route. Details: [../architecture/authentication.md](../architecture/authentication.md).
+Protected API calls need a cookie the API process can unprotect. The cookie must also pass the same per-request session check as on Web: a current, active user whose role and security stamp still match. The repository does not define a local developer flow that creates that cookie. The tests run Web and API in-process with one shared key ring and sign in through the real Web login (`ApiTenantSessionTests`). Treat the missing local login path as a developer-experience gap. Do not invent an API login route. Details: [../architecture/authentication.md](../architecture/authentication.md#when-a-web-session-reaches-the-api).
 
 ## Print Bridge (local)
 
