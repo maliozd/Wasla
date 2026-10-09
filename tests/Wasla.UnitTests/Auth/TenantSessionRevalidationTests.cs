@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Domain.Entities.Customer;
+using Wasla.Application.Security;
 using Wasla.Domain.Enums;
 using Wasla.Web.Security;
 

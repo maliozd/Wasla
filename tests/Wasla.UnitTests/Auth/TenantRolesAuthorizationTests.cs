@@ -11,11 +11,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Entities.Customer;
+using Wasla.Application.Security;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
 using Wasla.Web.Areas.Tenant.Controllers;
 using Wasla.Web.Models.TenantUsers;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Auth;

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Security;
 using Wasla.Contracts.Enums;
 using Wasla.Contracts.PlatformConnections;
 using FoodPlatformDomain = Wasla.Domain.Enums.FoodPlatform;
@@ -10,9 +11,10 @@ using ContractPlatformConnectionDto = Wasla.Contracts.PlatformConnections.Platfo
 
 namespace Wasla.Api.Controllers;
 
+// Platform connection settings, as on Web (PlatformConnectionsController, CanManageTenantSettings).
 [ApiController]
 [Route("api/platform-connections")]
-[Authorize]
+[Authorize(Policy = WaslaTenantPolicies.CanManageTenantSettings)]
 public sealed class PlatformConnectionsController : ControllerBase
 {
     private readonly ICurrentTenantService _currentTenant;

@@ -34,7 +34,8 @@ public sealed class AuthController : ControllerBase
         return session is null ? Unauthorized() : Ok();
     }
 
-    [Authorize]
+    // Any current tenant user: the session has been revalidated, and the role must be an assignable one.
+    [Authorize(Policy = WaslaTenantPolicies.AuthenticatedTenantUser)]
     [HttpGet("me")]
     public ActionResult<CurrentUserDto> Me()
     {

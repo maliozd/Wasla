@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Web;

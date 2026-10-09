@@ -16,6 +16,7 @@ using Wasla.UnitTests.Setup;
 using Wasla.Web.Areas.Tenant.Controllers;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.GuidedSetup;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 using static Wasla.UnitTests.GuidedSetup.GuidedSetupCoordinatorTests;
 
@@ -274,23 +275,14 @@ public sealed class GuidedSetupOwnerOnlyTests : IDisposable
         return options;
     }
 
-    /// <summary>The role policies exactly as Web Program.cs registers them.</summary>
+    /// <summary>The role policies exactly as Web Program.cs registers them (the shared tenant policy table).</summary>
     private static void Register(AuthorizationOptions options)
     {
         var program = File.ReadAllText(Path.Combine(Root(), "src", "Wasla.Web", "Program.cs"));
-        var registrations = Regex.Matches(program, @"options\.AddTenantRolePolicy\(TenantPolicies\.(\w+),\s*((?:UserRole\.\w+(?:,\s*)?)+)\);");
-        Assert.True(registrations.Count >= 11, "the Program.cs policy table was not found");
-        foreach (Match registration in registrations)
-        {
-            var roles = Regex.Matches(registration.Groups[2].Value, @"UserRole\.(\w+)").Select(m => Enum.Parse<UserRole>(m.Groups[1].Value)).ToArray();
-            options.AddPolicy(registration.Groups[1].Value, policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.Requirements.Add(new TenantRoleRequirement(roles));
-            });
-        }
+        Assert.Contains("options.AddWaslaTenantRolePolicies()", program, StringComparison.Ordinal);
+        options.AddWaslaTenantRolePolicies();
 
-        Assert.Contains(registrations, r => r.Groups[1].Value == TenantPolicies.TenantOwner && r.Groups[2].Value.Trim() == "UserRole.Owner");
+        Assert.Equal([UserRole.Owner], Wasla.Application.Security.WaslaTenantPolicies.AllowedRoles[TenantPolicies.TenantOwner]);
     }
 
     private ClaimsPrincipal Principal(Guid tenantId, UserRole role) =>

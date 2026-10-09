@@ -11,6 +11,7 @@ using Wasla.Application.GuidedSetup;
 using Wasla.Domain.Enums;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.GuidedSetup;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.GuidedSetup;

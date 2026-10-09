@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
-using Wasla.Api.Middleware;
+using Wasla.Api;
 using Wasla.Api.Security;
 using Wasla.Api.Tenant;
 using Wasla.Application.Abstractions.Orders.Services;
@@ -106,16 +106,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<TenantResolutionMiddleware>();
-app.UseMiddleware<PrintBridgeAuthMiddleware>();
-app.UseMiddleware<ExpireLegacyTenantAuthCookieMiddleware>();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-app.MapGet("/", () => Results.Ok("Wasla API"));
-app.MapWaslaHealthChecks();
+// Tenant resolution → Print Bridge device auth → tenant cookie (revalidated per request) → role policies.
+app.UseWaslaApiRequestPipeline();
+app.MapWaslaApiEndpoints();
 
 app.Run();
 

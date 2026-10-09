@@ -21,6 +21,7 @@ using Wasla.Web;
 using Wasla.Web.Areas.Tenant.Controllers;
 using Wasla.Web.DevelopmentTools;
 using Wasla.Web.Models.Help;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 using static Wasla.UnitTests.GuidedSetup.GuidedSetupCoordinatorTests;
 
@@ -133,7 +134,8 @@ public sealed partial class DevelopmentToolsWebTests
 
         Assert.Contains("DevelopmentToolsAvailability.IsTenantResetAvailable(\n    builder.Environment,", program.Replace("\r\n", "\n"), StringComparison.Ordinal);
         Assert.Contains("options.Conventions.Add(new DevelopmentToolsConvention(tenantResetAvailable))", program, StringComparison.Ordinal);
-        Assert.Contains("AddTenantRolePolicy(TenantPolicies.TenantOwner, UserRole.Owner)", program, StringComparison.Ordinal);
+        Assert.Contains("options.AddWaslaTenantRolePolicies()", program, StringComparison.Ordinal);
+        Assert.Equal([UserRole.Owner], Wasla.Application.Security.WaslaTenantPolicies.AllowedRoles[TenantPolicies.TenantOwner]);
     }
 
     // Controller -------------------------------------------------------------------------------
@@ -366,7 +368,7 @@ public sealed partial class DevelopmentToolsWebTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        // Mirrors Program.cs: AddTenantRolePolicy(TenantPolicies.TenantOwner, UserRole.Owner).
+        // Mirrors the shared registration Program.cs uses: TenantOwner admits Owner only.
         services.AddAuthorization(options => options.AddPolicy(TenantPolicies.TenantOwner, policy =>
         {
             policy.RequireAuthenticatedUser();

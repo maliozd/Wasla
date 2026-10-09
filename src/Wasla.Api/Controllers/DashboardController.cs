@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Security;
 using Wasla.Contracts.Dashboard;
 using Wasla.Contracts.Enums;
 using Wasla.Contracts.Orders;
@@ -10,9 +11,10 @@ using Wasla.Infrastructure.Persistence.Tenant;
 
 namespace Wasla.Api.Controllers;
 
+// Reports, as on Web (DashboardController, CanViewReports).
 [ApiController]
 [Route("api/dashboard")]
-[Authorize]
+[Authorize(Policy = WaslaTenantPolicies.CanViewReports)]
 public sealed class DashboardController : ControllerBase
 {
     private readonly ICurrentTenantService _currentTenant;
