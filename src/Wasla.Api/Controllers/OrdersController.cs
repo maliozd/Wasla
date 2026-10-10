@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Orders;
+using Wasla.Application.Security;
 using Wasla.Contracts.Enums;
 using Wasla.Contracts.Orders;
 using FoodPlatformDomain = Wasla.Domain.Enums.FoodPlatform;
@@ -11,9 +12,10 @@ using ContractOrderDetailDto = Wasla.Contracts.Orders.OrderDetailDto;
 
 namespace Wasla.Api.Controllers;
 
+// Order list and details (read only), as on Web (OrdersController, CanViewOrders).
 [ApiController]
 [Route("api/orders")]
-[Authorize]
+[Authorize(Policy = WaslaTenantPolicies.CanViewOrders)]
 public sealed class OrdersController : ControllerBase
 {
     private readonly ICurrentTenantService _currentTenant;

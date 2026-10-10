@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Domain.Entities.Customer;
+using Wasla.Application.Security;
 using Wasla.Domain.Enums;
 using Wasla.Web.Security;
 
@@ -233,6 +234,22 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
         }
 
         using var client = ForgedClient(claims, DateTimeOffset.UtcNow);
+        var openedBefore = _host.Tenants.Opened.Count;
+
+        var response = await client.GetAsync("/settings/users");
+
+        AssertRedirectsToLogin(response);
+        Assert.Null(client.AuthCookie);
+        Assert.Equal(openedBefore, _host.Tenants.Opened.Count);
+    }
+
+    public static TheoryData<string> AmbiguousSessions => AmbiguousSessionClaims.Defects;
+
+    [Theory]
+    [MemberData(nameof(AmbiguousSessions))]
+    public async Task CookieWithAmbiguousOrNonCanonicalClaims_IsRejectedAndSignedOut(string defect)
+    {
+        using var client = ForgedClient(AmbiguousSessionClaims.Apply(OwnerClaims(_attacker), defect, _host.BetaId), DateTimeOffset.UtcNow);
         var openedBefore = _host.Tenants.Opened.Count;
 
         var response = await client.GetAsync("/settings/users");

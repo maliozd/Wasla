@@ -26,6 +26,7 @@ using Wasla.Infrastructure.Services;
 using Wasla.UnitTests.Admin;
 using Wasla.Web;
 using Wasla.Web.GuidedSetup;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 using CurrentTenantService = Wasla.Web.Tenant.CurrentTenantService;
 

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
-using Wasla.Domain.Enums;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Security;
@@ -106,25 +105,8 @@ builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler
 builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
 builder.Services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddTenantRolePolicy(TenantPolicies.TenantOwner, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.TenantManagerOrOwner, UserRole.Owner, UserRole.Manager);
-    options.AddTenantRolePolicy(TenantPolicies.CanManageTenantUsers, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.CanManageTenantSettings, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.CanManagePrintBridgeDevices, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.CanManageDeviceSecurity, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.CanViewOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
-    options.AddTenantRolePolicy(TenantPolicies.CanManageOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier);
-    options.AddTenantRolePolicy(TenantPolicies.CanManualPrint, UserRole.Owner, UserRole.Manager, UserRole.Cashier);
-    options.AddTenantRolePolicy(TenantPolicies.CanViewLiveScreen, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
-    options.AddTenantRolePolicy(TenantPolicies.CanViewReports, UserRole.Owner, UserRole.Manager, UserRole.Viewer);
-    options.AddPolicy("ManagePlatformConnections", policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.Requirements.Add(new TenantRoleRequirement(UserRole.Owner));
-    });
-});
+// Tenant role policies, shared with Wasla.Api (WaslaTenantPolicies.AllowedRoles).
+builder.Services.AddAuthorization(options => options.AddWaslaTenantRolePolicies());
 
 // Rate limit automatic Print Bridge setup code exchange attempts (per client IP).
 builder.Services.AddRateLimiter(options =>

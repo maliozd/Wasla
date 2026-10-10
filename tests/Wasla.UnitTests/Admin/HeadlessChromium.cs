@@ -143,6 +143,13 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     public Task SetCookieAsync(Uri origin, string name, string value, CancellationToken ct) =>
         SendAsync("Network.setCookie", new { name, value, url = origin.GetLeftPart(UriPartial.Authority) + "/" }, ct);
 
+    /// <summary>
+    /// Slows the page's main thread by <paramref name="rate"/> (1 = no slowdown), as a loaded machine would, so a page is
+    /// painted while it is still being parsed. Applies to this browser's page until it is closed.
+    /// </summary>
+    public Task SetCpuThrottlingAsync(double rate, CancellationToken ct) =>
+        SendAsync("Emulation.setCPUThrottlingRate", new { rate }, ct);
+
     public Task SetViewportAsync(int width, int height, bool mobile, CancellationToken ct) =>
         SendAsync("Emulation.setDeviceMetricsOverride", new { width, height, deviceScaleFactor = 1, mobile }, ct);
 

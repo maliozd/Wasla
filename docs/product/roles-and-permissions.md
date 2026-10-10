@@ -17,24 +17,24 @@ UI may hide buttons; **hiding UI is not authorization**. Controllers and service
 | Kitchen | 3 | Active |
 | Cashier | 4 | Active |
 | Viewer | 5 | Active |
-| Staff | 100 | `[Obsolete]` — not assignable in current tenant user APIs; not included in any policy below |
+| Staff | 100 | `[Obsolete]` — not assignable in current tenant user APIs; not included in any policy below; not a session role: a stored Staff user's session is rejected on the request after login (Web redirects to `/auth/login`, the API answers 401) |
 
 Assignable roles for create/update (`TenantUserRoleService` / `TenantUsersController`): Owner, Manager, Kitchen, Cashier, Viewer only.
 
 ## How enforcement works
 
-1. Policies are named in `src/Wasla.Web/Security/TenantPolicies.cs`
-2. Web `Program.cs` maps each policy to allowed `UserRole` values via `AddTenantRolePolicy` / `TenantRoleRequirement`
-3. Before any policy runs, the tenant session is revalidated against the user's row in the tenant database: it must belong to this tenant, and the user must exist, be active, and still have the cookie's role and security stamp. Otherwise the request is anonymous. See [authentication.md](../architecture/authentication.md#tenant-session-revalidation)
+1. Policies and the roles each admits are defined once, for Web and API, in `WaslaTenantPolicies` (`src/Wasla.Application/Security/WaslaTenantPolicies.cs`). Web's `TenantPolicies` (`src/Wasla.Web/Security/TenantPolicies.cs`) only aliases those names
+2. Web `Program.cs` and the API's `AddWaslaApiTenantAuthentication` both register every policy from that table with `AddWaslaTenantRolePolicies` (`src/Wasla.Infrastructure/Security/TenantRoleRequirement.cs`) as a `TenantRoleRequirement`
+3. Before any policy runs, the tenant session is revalidated against the user's row in the tenant database, by Web and API alike: it must belong to this tenant, and the user must exist, be active, and still have the cookie's role and security stamp. Otherwise the request is anonymous. See [authentication.md](../architecture/authentication.md#tenant-session-revalidation)
 4. `TenantRoleAuthorizationHandler` succeeds only when:
    - `ICurrentTenantService.CurrentTenant` is present
-   - Claim `TenantId` parses and equals that tenant’s id
-   - Role claim (`ClaimTypes.Role` or `"Role"`) is one of the policy’s allowed roles
+   - Claim `TenantId` occurs once, parses and equals that tenant’s id
+   - Role claim (`ClaimTypes.Role` or `"Role"`, each at most once and equal when both are present) is exactly the name of one of the policy’s allowed roles (`Owner`, not `owner`, `1` or `Owner, Manager`)
 5. Navigation visibility mirrors the same policies through `TenantNavigationAuthorizationService` (still via `IAuthorizationService`, not a second rule set)
 
-## Policy matrix (current Web registration)
+## Policy matrix (Web and API registration)
 
-**Source of truth:** `src/Wasla.Web/Program.cs` authorization block.
+**Source of truth:** `WaslaTenantPolicies.AllowedRoles` (`src/Wasla.Application/Security/WaslaTenantPolicies.cs`), registered by Web `Program.cs` and by Wasla.Api.
 
 | Policy | Owner | Manager | Kitchen | Cashier | Viewer |
 |--------|:-----:|:-------:|:-------:|:-------:|:------:|
@@ -50,6 +50,7 @@ Assignable roles for create/update (`TenantUserRoleService` / `TenantUsersContro
 | `CanViewLiveScreen` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `CanViewReports` | ✓ | ✓ | | | ✓ |
 | `ManagePlatformConnections` (named policy) | ✓ | | | | |
+| `AuthenticatedTenantUser` (any assignable role; used by the API's `/api/auth/me`) | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 Obsolete `Staff` is not listed in any of these policies.
 
@@ -93,9 +94,32 @@ A change to a user's role, active state or password replaces that user's securit
 
 Concurrency: on SQL Server, the serializable transaction's read locks keep two Owners who change each other at the same time from both succeeding. One waits for the other and then fails step 1, or is chosen as the deadlock victim and fails without writing (the generic error page). The automated tests run on SQLite, which serializes the two transactions; they show the re-check, not SQL Server locking.
 
-## API note
+## API endpoints
 
-Wasla.Api’s default tenant authorization currently enforces authenticated tenant-scheme identity and matching `TenantId` claim (`ApiTenantClaimRequirement`). It does **not** re-host the full Web role policy matrix documented above. Do not assume API endpoints inherit every Web policy unless the endpoint code adds equivalent checks.
+Wasla.Api uses the same policies as Web, registered from the same table, after the same session revalidation (WAS-94). Each endpoint applies the policy of the Web screen for the same operation:
+
+| Endpoint | Access | Owner | Manager | Kitchen | Cashier | Viewer | Web equivalent |
+|----------|--------|:-----:|:-------:|:-------:|:-------:|:------:|----------------|
+| `GET /api/auth/me` | `AuthenticatedTenantUser` | ✓ | ✓ | ✓ | ✓ | ✓ | (own identity) |
+| `GET /api/orders`, `GET /api/orders/{id}` | `CanViewOrders` | ✓ | ✓ | ✓ | ✓ | ✓ | `OrdersController` |
+| `GET /api/dashboard/summary`, `GET /api/dashboard/today` | `CanViewReports` | ✓ | ✓ | | | ✓ | `DashboardController` |
+| `GET /api/branches`, `POST /api/branches` | `CanManageTenantSettings` | ✓ | | | | | `BranchesController` |
+| `GET /api/platform-connections`, `POST /api/platform-connections`, `PATCH /api/platform-connections/{id}/active` | `CanManageTenantSettings` | ✓ | | | | | `PlatformConnectionsController` |
+| `POST /api/auth/validate` | Anonymous: credential check for API clients, issues no session | | | | | | |
+| `/api/print-bridge/*` | Anonymous to the cookie scheme: authenticated by the `X-PrintBridge-Token` device token (`PrintBridgeAuthMiddleware`) | | | | | | Print Bridge device API |
+| `GET /`, `/health/live`, `/health/ready` | Anonymous: service banner and probes | | | | | | |
+
+- A stored obsolete `Staff` user's session is rejected as a session: `401` everywhere, and the cookie is deleted.
+- A request with no session, or a rejected one, gets `401`. A current session without the role gets `403`.
+- `POST /api/branches` uses `IBranchService` and `CreateBranchCommandValidator` like Web, so an address is required.
+- The API's default and fallback policies admit only a current Owner, so an endpoint added without a named policy is Owner-only.
+- `ApiAuthorizationContractTests` reads every endpoint the API maps and fails when:
+  - an endpoint has no decision above;
+  - an `[Authorize]` names no policy;
+  - an endpoint admits other roles than its Web policy.
+- Limitation: the test names each endpoint's Web policy by hand (for example `CanManageTenantSettings` for branches); it does not read the paired Web controller's `[Authorize]`. If a Web screen moved to another policy, the API endpoint and this test would keep the old one until both are updated together.
+
+The API has no endpoints for notification settings, product tours, operational mode, order lifecycle actions, receipt printers, users or account settings; those exist only on Web.
 
 ## Related docs
 

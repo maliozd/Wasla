@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Security;
 using Wasla.Web.Models.Auth;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;

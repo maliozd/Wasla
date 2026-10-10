@@ -30,6 +30,7 @@ using Wasla.UnitTests.Admin;
 using Wasla.Web;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Middleware;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 using CurrentTenantService = Wasla.Web.Tenant.CurrentTenantService;
 
@@ -38,7 +39,7 @@ namespace Wasla.UnitTests.Auth;
 /// <summary>
 /// Serves the tenant application in-process for tenant session tests: the real <see cref="TenantResolutionMiddleware"/>
 /// resolving two tenant hosts (<c>alpha.wasla.local</c>, <c>beta.wasla.local</c>) from a SQLite CentralDb, the real tenant
-/// cookie scheme, the tenant role policies read from Web Program.cs, the real tenant AuthController and
+/// cookie scheme, the tenant role policies Web Program.cs registers, the real tenant AuthController and
 /// TenantUsersController with their compiled views, and the real Infrastructure services over one SQLite database per
 /// tenant. Requests carry a tenant host in the Host header. Users, passwords and data are fake.
 /// </summary>
@@ -83,7 +84,14 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
 
     public IServiceProvider Services => _app.Services;
 
-    public static async Task<TenantSessionWebHost> StartAsync()
+    public CentralTestDatabase Central => _central;
+
+    /// <summary>
+    /// Starts the host. With <paramref name="sharedDataProtectionKeys"/>, Data Protection uses application name
+    /// <c>Wasla</c> and that key folder, as Web and Api do when an operator points both at one key ring; otherwise the
+    /// keys are ephemeral and private to this host.
+    /// </summary>
+    public static async Task<TenantSessionWebHost> StartAsync(DirectoryInfo? sharedDataProtectionKeys = null)
     {
         var central = new CentralTestDatabase();
         var tenants = new RecordingTenantDbFactory();
@@ -124,7 +132,10 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
             options.SupportedUICultures = supported;
             options.RequestCultureProviders = new List<IRequestCultureProvider> { new CookieRequestCultureProvider() };
         });
-        services.AddDataProtection().UseEphemeralDataProtectionProvider();
+        if (sharedDataProtectionKeys is null)
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
+        else
+            services.AddDataProtection().SetApplicationName("Wasla").PersistKeysToFileSystem(sharedDataProtectionKeys);
         services.AddAntiforgery();
 
         services.AddAuthentication(options =>
@@ -141,7 +152,8 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
         services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
         services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
-        services.AddAuthorization(ProgramPolicies.Register);
+        // The tenant role policies Web Program.cs registers (the shared table, also used by Wasla.Api).
+        services.AddAuthorization(options => options.AddWaslaTenantRolePolicies());
         services.AddControllersWithViews()
             .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
             .AddDataAnnotationsLocalization(options =>
@@ -230,30 +242,6 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         _central.Dispose();
         try { Directory.Delete(_contentRoot, recursive: true); } catch (IOException) { }
     }
-
-    /// <summary>The tenant role policies exactly as Web Program.cs registers them, read from that file.</summary>
-    private static class ProgramPolicies
-    {
-        public static void Register(AuthorizationOptions options)
-        {
-            var program = File.ReadAllText(TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "Program.cs"));
-            var registrations = Regex.Matches(program, @"options\.AddTenantRolePolicy\(TenantPolicies\.(\w+),\s*((?:UserRole\.\w+(?:,\s*)?)+)\);");
-            if (registrations.Count < 11)
-                throw new InvalidOperationException("The Program.cs tenant policy table was not found.");
-
-            foreach (Match registration in registrations)
-            {
-                var roles = Regex.Matches(registration.Groups[2].Value, @"UserRole\.(\w+)")
-                    .Select(m => Enum.Parse<UserRole>(m.Groups[1].Value))
-                    .ToArray();
-                options.AddPolicy(registration.Groups[1].Value, policy =>
-                {
-                    policy.RequireAuthenticatedUser();
-                    policy.Requirements.Add(new TenantRoleRequirement(roles));
-                });
-            }
-        }
-    }
 }
 
 /// <summary>
@@ -291,10 +279,16 @@ internal sealed class TenantSessionClient : IDisposable
     public Task<HttpResponseMessage> PostFormAsync(string path, IEnumerable<KeyValuePair<string, string>> form) =>
         SendAsync(HttpMethod.Post, path, new FormUrlEncodedContent(form));
 
-    public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, HttpContent? content)
+    public async Task<HttpResponseMessage> SendAsync(
+        HttpMethod method,
+        string path,
+        HttpContent? content,
+        IEnumerable<KeyValuePair<string, string>>? headers = null)
     {
         using var request = new HttpRequestMessage(method, path) { Content = content };
         request.Headers.Host = Host;
+        foreach (var header in headers ?? [])
+            request.Headers.Add(header.Key, header.Value);
         if (Cookies.Count > 0)
             request.Headers.Add("Cookie", string.Join("; ", Cookies.Select(c => $"{c.Key}={c.Value}")));
 

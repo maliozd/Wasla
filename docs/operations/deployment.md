@@ -69,7 +69,14 @@ Web persists keys only when `DataProtection:KeyPath` is set.
 
 ### Auth nuance for deployers
 
-API uses cookie authentication with its own scheme registration. Do **not** assume a Web login session cookie automatically authorizes API requests across hosts. Plan API access separately from Web sessions.
+API registers the same tenant cookie scheme as Web. Do **not** assume a Web login session cookie automatically authorizes API requests across hosts: the cookie is host-only, and by default the two processes have different Data Protection keys. Plan API access separately from Web sessions.
+
+Sharing the key ring, by pointing both `DataProtection__KeyPath` values at one folder, is allowed. When the keys are shared, any Web tenant cookie is readable by the API. Since WAS-94 the API revalidates such a session exactly as Web does (current user, active state, security stamp, role and the tenant from the host) and applies the same role policies; see [../architecture/authentication.md](../architecture/authentication.md#when-a-web-session-reaches-the-api).
+
+Two consequences for a release or a rollback:
+
+- **Never run a pre-WAS-94 API with keys shared with Web.** That API accepts a deactivated, demoted or password-reset user's old Web cookie and has no role checks on its writes. Rolling the API back to such a build restores that exposure. If the API must be rolled back, give it its own key folder first.
+- **The API now reads `AppUsers.SecurityStamp` on every cookie-authenticated request.** Against a tenant database that misses the `AddAppUserSecurityStamp` migration, those requests fail closed with 503. Requests without a tenant cookie, and Print Bridge device requests, are not affected. The [release order](#release-order-migrate-every-database-first) already covers this.
 
 Central admins are created with CLI `add-central-admin`, not `CentralAdmin__Email` / `CentralAdmin__PasswordHash`.
 

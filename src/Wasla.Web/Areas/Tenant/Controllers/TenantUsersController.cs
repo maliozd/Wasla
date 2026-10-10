@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Security;
 using Wasla.Domain.Enums;
 using Wasla.Web.Controllers;
 using Wasla.Web.Models.TenantUsers;
