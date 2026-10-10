@@ -17,7 +17,7 @@ UI may hide buttons; **hiding UI is not authorization**. Controllers and service
 | Kitchen | 3 | Active |
 | Cashier | 4 | Active |
 | Viewer | 5 | Active |
-| Staff | 100 | `[Obsolete]` — not assignable in current tenant user APIs; not included in any policy below |
+| Staff | 100 | `[Obsolete]` — not assignable in current tenant user APIs; not included in any policy below; not a session role: a stored Staff user's session is rejected on the request after login (Web redirects to `/auth/login`, the API answers 401) |
 
 Assignable roles for create/update (`TenantUserRoleService` / `TenantUsersController`): Owner, Manager, Kitchen, Cashier, Viewer only.
 
@@ -28,8 +28,8 @@ Assignable roles for create/update (`TenantUserRoleService` / `TenantUsersContro
 3. Before any policy runs, the tenant session is revalidated against the user's row in the tenant database, by Web and API alike: it must belong to this tenant, and the user must exist, be active, and still have the cookie's role and security stamp. Otherwise the request is anonymous. See [authentication.md](../architecture/authentication.md#tenant-session-revalidation)
 4. `TenantRoleAuthorizationHandler` succeeds only when:
    - `ICurrentTenantService.CurrentTenant` is present
-   - Claim `TenantId` parses and equals that tenant’s id
-   - Role claim (`ClaimTypes.Role` or `"Role"`) is one of the policy’s allowed roles
+   - Claim `TenantId` occurs once, parses and equals that tenant’s id
+   - Role claim (`ClaimTypes.Role` or `"Role"`, each at most once and equal when both are present) is exactly the name of one of the policy’s allowed roles (`Owner`, not `owner`, `1` or `Owner, Manager`)
 5. Navigation visibility mirrors the same policies through `TenantNavigationAuthorizationService` (still via `IAuthorizationService`, not a second rule set)
 
 ## Policy matrix (Web and API registration)
@@ -109,7 +109,7 @@ Wasla.Api uses the same policies as Web, registered from the same table, after t
 | `/api/print-bridge/*` | Anonymous to the cookie scheme: authenticated by the `X-PrintBridge-Token` device token (`PrintBridgeAuthMiddleware`) | | | | | | Print Bridge device API |
 | `GET /`, `/health/live`, `/health/ready` | Anonymous: service banner and probes | | | | | | |
 
-- Obsolete `Staff` gets `403` everywhere.
+- A stored obsolete `Staff` user's session is rejected as a session: `401` everywhere, and the cookie is deleted.
 - A request with no session, or a rejected one, gets `401`. A current session without the role gets `403`.
 - `POST /api/branches` uses `IBranchService` and `CreateBranchCommandValidator` like Web, so an address is required.
 - The API's default and fallback policies admit only a current Owner, so an endpoint added without a named policy is Owner-only.
@@ -117,6 +117,7 @@ Wasla.Api uses the same policies as Web, registered from the same table, after t
   - an endpoint has no decision above;
   - an `[Authorize]` names no policy;
   - an endpoint admits other roles than its Web policy.
+- Limitation: the test names each endpoint's Web policy by hand (for example `CanManageTenantSettings` for branches); it does not read the paired Web controller's `[Authorize]`. If a Web screen moved to another policy, the API endpoint and this test would keep the old one until both are updated together.
 
 The API has no endpoints for notification settings, product tours, operational mode, order lifecycle actions, receipt printers, users or account settings; those exist only on Web.
 

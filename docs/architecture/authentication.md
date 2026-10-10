@@ -73,6 +73,7 @@ Every request that presents `.Wasla.TenantAuth` to Wasla.Web or Wasla.Api is che
 |-----------|--------|
 | Cookie `TenantId` differs from the resolved tenant | Rejected and signed out on that host. No database is opened |
 | `TenantId`, user id, role or stamp claim missing, malformed or empty (including cookies issued before stamps existed) | Rejected and signed out. No database is opened |
+| A security claim repeated (even with an identical value), the two role claims or the two user id claims disagreeing, a role that is not exactly the name the login writes for an assignable role (for example lower case, padded, numeric, comma-combined, or obsolete `Staff`), or an id or stamp not in the issued lowercase GUID form | Rejected and signed out. No database is opened |
 | User no longer exists | Rejected and signed out |
 | User inactive | Rejected and signed out |
 | Stored security stamp differs from the cookie's | Rejected and signed out |
@@ -219,7 +220,7 @@ Tenant policies are role-gated through `TenantRoleRequirement` / `TenantRoleAuth
 
 - Requires resolved `CurrentTenant`
 - Requires claim `TenantId` matching that tenant
-- Parses role from `ClaimTypes.Role` or `"Role"` (`TenantSessionClaims`, the same reader the validator uses)
+- Parses role from `ClaimTypes.Role` or `"Role"` (`TenantSessionClaims`, the same strict reader the validator uses): each at most once, equal when both are present, and exactly the issued name of an assignable role
 
 Full Owner / Manager / Kitchen / Cashier / Viewer matrix: [roles-and-permissions.md](../product/roles-and-permissions.md).
 
