@@ -22,6 +22,7 @@ using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Sync;
 using ApiCurrentTenantService = Wasla.Api.Tenant.CurrentTenantService;
 
@@ -53,7 +54,13 @@ internal sealed class TenantSessionApiHost : IAsyncDisposable
 
     public IServiceProvider Services => _app.Services;
 
-    public static async Task<TenantSessionApiHost> StartAsync(TenantSessionWebHost web, DirectoryInfo sharedDataProtectionKeys)
+    /// <param name="configuration">Extra configuration, for example rate limits or trusted proxies.</param>
+    /// <param name="configureServices">Runs after the application's registrations, to wrap or replace a service.</param>
+    public static async Task<TenantSessionApiHost> StartAsync(
+        TenantSessionWebHost web,
+        DirectoryInfo sharedDataProtectionKeys,
+        IReadOnlyDictionary<string, string?>? configuration = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         var contentRoot = Directory.CreateTempSubdirectory("wasla-api-host-").FullName;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -73,6 +80,8 @@ internal sealed class TenantSessionApiHost : IAsyncDisposable
             // Never opened: CentralDbContext is replaced by SQLite below.
             ["ConnectionStrings:CentralDb"] = "Server=(none);Database=WaslaApiSessionTests"
         });
+        if (configuration is not null)
+            builder.Configuration.AddInMemoryCollection(configuration);
 
         // Wasla.Api Program.cs service registrations (Serilog and Swagger left out).
         var services = builder.Services;
@@ -85,6 +94,8 @@ internal sealed class TenantSessionApiHost : IAsyncDisposable
         services.AddWaslaHealthChecks();
         services.Configure<RequestDiagnosticsOptions>(options => options.LogRequestCompletion = false);
         services.AddWaslaApiTenantAuthentication(CookieSecurePolicy.Always);
+        services.AddWaslaApiAuthenticationRateLimiting(builder.Configuration);
+        services.AddWaslaTrustedProxies(builder.Configuration);
         services.AddControllers();
 
         // The same databases as the Web host, and a fake secret manager instead of the master key.
@@ -95,10 +106,12 @@ internal sealed class TenantSessionApiHost : IAsyncDisposable
         services.AddSingleton<ITenantDbContextFactory>(web.Tenants);
         services.RemoveAll<ISecretManager>();
         services.AddSingleton<ISecretManager, FakeSecretManager>();
+        configureServices?.Invoke(services);
 
         var app = builder.Build();
 
         // Wasla.Api Program.cs pipeline: the same extensions, in the same order.
+        app.UseWaslaTrustedProxies();
         app.UseMiddleware<RequestDiagnosticsMiddleware>();
         app.UseWaslaApiRequestPipeline();
         app.MapWaslaApiEndpoints();

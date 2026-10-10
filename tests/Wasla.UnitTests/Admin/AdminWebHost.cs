@@ -123,6 +123,10 @@ internal sealed class AdminWebHost : IAsyncDisposable
         services.AddSingleton<ITenantDbContextFactory>(tenants);
         services.Configure<TenantOperationalHealthOptions>(options => options.Timeout = healthTimeout ?? TimeSpan.FromSeconds(10));
         services.AddSingleton<ITenantOperationalHealthReader, TenantOperationalHealthReader>();
+        // The Central Admin login limit Program.cs registers. The layout tests sign in once per culture and width from
+        // one loopback address, so the limit is raised here; the limit itself is covered by WebLoginRateLimitTests.
+        builder.Configuration["AuthenticationRateLimiting:CentralAdminLogin:PermitLimit"] = "1000";
+        services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
 
         var app = builder.Build();
         app.UseStaticFiles();
