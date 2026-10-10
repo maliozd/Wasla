@@ -37,7 +37,7 @@ public sealed class ProviderCookieIsolationTests
     public async Task TrendyolGo_CookieSetForOneConnection_IsNeverSentForAnother(params string[] tenants)
     {
         await using var server = await FakeProviderServer.StartAsync();
-        await using var services = ProductionServices(server);
+        await using var services = ProductionServices(server.BaseAddress);
 
         foreach (var tenant in tenants)
         {
@@ -55,7 +55,7 @@ public sealed class ProviderCookieIsolationTests
     public async Task TrendyolGo_CredentialHeaders_StayWithTheirOwnConnection()
     {
         await using var server = await FakeProviderServer.StartAsync();
-        await using var services = ProductionServices(server);
+        await using var services = ProductionServices(server.BaseAddress);
 
         foreach (var tenant in new[] { "a", "b", "a" })
         {
@@ -79,7 +79,7 @@ public sealed class ProviderCookieIsolationTests
     {
         await using var server = await FakeProviderServer.StartAsync();
         server.FailingTags.Add("supplier-a");
-        await using var services = ProductionServices(server);
+        await using var services = ProductionServices(server.BaseAddress);
 
         await using (var scopeA = services.CreateAsyncScope())
         {
@@ -99,7 +99,7 @@ public sealed class ProviderCookieIsolationTests
     public async Task TrendyolGo_LifecycleResponseCookies_AreNotSentWithAnotherConnectionsFetch()
     {
         await using var server = await FakeProviderServer.StartAsync();
-        await using var services = ProductionServices(server);
+        await using var services = ProductionServices(server.BaseAddress);
 
         // The Web operator path: an accept for tenant A, then a Worker fetch for tenant B.
         await using (var scopeA = services.CreateAsyncScope())
@@ -117,7 +117,7 @@ public sealed class ProviderCookieIsolationTests
     {
         const int tenantCount = 6;
         await using var server = await FakeProviderServer.StartAsync();
-        await using var services = ProductionServices(server);
+        await using var services = ProductionServices(server.BaseAddress);
         var tenants = Enumerable.Range(0, tenantCount).Select(i => $"t{i}").ToArray();
 
         // Two waves. In each, the fake provider holds every response until all tenants' requests have arrived, so the
@@ -141,7 +141,7 @@ public sealed class ProviderCookieIsolationTests
     public async Task Yemeksepeti_CookieSetForOneConnection_IsNeverSentForAnother_AndTokensStayIsolated()
     {
         await using var server = await FakeProviderServer.StartAsync();
-        await using var services = ProductionServices(server);
+        await using var services = ProductionServices(server.BaseAddress);
 
         foreach (var tenant in new[] { "a", "b", "c", "a" })
         {
@@ -165,7 +165,7 @@ public sealed class ProviderCookieIsolationTests
     {
         const int tenantCount = 4;
         await using var server = await FakeProviderServer.StartAsync();
-        await using var services = ProductionServices(server);
+        await using var services = ProductionServices(server.BaseAddress);
         var tenants = Enumerable.Range(0, tenantCount).Select(i => $"t{i}").ToArray();
 
         // First wave: the token requests overlap. Second wave: the tokens are cached and the orders requests overlap.
@@ -188,7 +188,7 @@ public sealed class ProviderCookieIsolationTests
     }
 
     [Fact]
-    public void RealMode_EveryProviderPrimaryHandler_HasCookiesDisabled()
+    public void RealMode_EveryProviderPrimaryHandler_HasCookiesAndRedirectsDisabled()
     {
         var observed = new ConcurrentDictionary<string, HttpMessageHandler>();
         var configuration = RealModeConfiguration(new Uri("http://127.0.0.1:9/"));
@@ -210,6 +210,7 @@ public sealed class ProviderCookieIsolationTests
         {
             var primary = Assert.IsType<HttpClientHandler>(handler);
             Assert.False(primary.UseCookies, $"Provider client '{name}' stores and replays cookies.");
+            Assert.False(primary.AllowAutoRedirect, $"Provider client '{name}' follows redirects (see ProviderRedirectTests).");
         }
     }
 
@@ -229,17 +230,17 @@ public sealed class ProviderCookieIsolationTests
     private static YemeksepetiFoodPlatformClient Yemeksepeti(AsyncServiceScope scope) =>
         scope.ServiceProvider.GetServices<IFoodPlatformClient>().OfType<YemeksepetiFoodPlatformClient>().Single();
 
-    private static ServiceProvider ProductionServices(FakeProviderServer server)
+    internal static ServiceProvider ProductionServices(Uri baseAddress)
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddWaslaInfrastructure(RealModeConfiguration(server.BaseAddress));
+        services.AddWaslaInfrastructure(RealModeConfiguration(baseAddress));
         services.AddSingleton<ISecretManager, PassthroughSecrets>();
         return services.BuildServiceProvider();
     }
 
     // Both providers point at the local fake provider; nothing is sent anywhere else.
-    private static IConfiguration RealModeConfiguration(Uri baseAddress) =>
+    internal static IConfiguration RealModeConfiguration(Uri baseAddress) =>
         new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -252,7 +253,7 @@ public sealed class ProviderCookieIsolationTests
             .Build();
 
     // PassthroughSecrets returns the stored value as the decrypted one, so these fields hold the fake credentials.
-    private static PlatformConnection TrendyolConnection(string tenant) => new()
+    internal static PlatformConnection TrendyolConnection(string tenant) => new()
     {
         Id = Guid.NewGuid(),
         Platform = FoodPlatform.TrendyolYemek,
@@ -267,7 +268,7 @@ public sealed class ProviderCookieIsolationTests
     private static readonly ConcurrentDictionary<string, Guid> YemeksepetiConnectionIds = new(StringComparer.Ordinal);
 
     // One stable connection id per tenant name, so a repeated fetch of a tenant may reuse its cached token.
-    private static PlatformConnection YemeksepetiConnection(string tenant) => new()
+    internal static PlatformConnection YemeksepetiConnection(string tenant) => new()
     {
         Id = YemeksepetiConnectionIds.GetOrAdd(tenant, _ => Guid.NewGuid()),
         Platform = FoodPlatform.Yemeksepeti,
