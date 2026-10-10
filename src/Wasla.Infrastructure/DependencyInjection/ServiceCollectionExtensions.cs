@@ -79,12 +79,13 @@ public static class ServiceCollectionExtensions
             //   Yemeksepeti → real YemeksepetiFoodPlatformClient (OAuth2 + Partner Picking API)
             //   GetirYemek  → still mock (real client not yet implemented)
             //   TrendyolYemek → real TrendyolGoFoodPlatformClient (Basic auth + Trendyol GO API)
-            services.AddHttpClient(YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName, (sp, client) =>
+            // Each real provider has its own named HttpClient (see ProviderHttpClientRegistration).
+            services.AddProviderHttpClient(YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName, (sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<YemeksepetiOptions>>().Value;
                 client.BaseAddress = new Uri(opts.BaseUrl);
                 client.Timeout = opts.RequestTimeout;
-            }).ConfigureProviderPrimaryHandler();
+            });
             services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
 
             services.AddSingleton<IFoodPlatformClient, MockGetirYemekFoodPlatformClient>();
@@ -92,12 +93,12 @@ public static class ServiceCollectionExtensions
             // One limiter per process: every Trendyol GO client instance (typed clients are transient) and every
             // tenant share its request budget.
             services.AddSingleton<TrendyolRequestRateLimiter>();
-            services.AddHttpClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>((sp, client) =>
+            services.AddProviderHttpClient(TrendyolGoFoodPlatformClient.TrendyolGoHttpClientName, (sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<TrendyolGoOptions>>().Value;
                 client.BaseAddress = new Uri(opts.BaseUrl);
                 client.Timeout = opts.RequestTimeout;
-            }).ConfigureProviderPrimaryHandler();
+            }).AddTypedClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>();
         }
 
         services.AddScoped<ITenantResolver, TenantResolver>();
@@ -148,27 +149,5 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
-
-    /// <summary>
-    /// Provider handlers are pooled by <see cref="IHttpClientFactory"/> and shared by every tenant (the Yemeksepeti
-    /// client is a singleton), so they must hold no connection state. They never store or send cookies: a cookie set
-    /// by one connection's response would otherwise go out with every later request to that host, whichever tenant
-    /// sent it (WAS-95). Credentials are set on each request instead.
-    /// They never follow redirects either: a followed redirect re-sends the request to whatever URL the response
-    /// names, including the Yemeksepeti token request's client secret on a 307 or 308. A 3xx response reaches the
-    /// client, which fails it like any other unsuccessful status.
-    /// </summary>
-    private static IHttpClientBuilder ConfigureProviderPrimaryHandler(this IHttpClientBuilder builder) =>
-        builder.ConfigurePrimaryHttpMessageHandler(static (handler, _) =>
-        {
-            if (handler is not HttpClientHandler primary)
-            {
-                throw new InvalidOperationException(
-                    $"Provider HTTP clients expect an {nameof(HttpClientHandler)} primary handler, not {handler.GetType().Name}.");
-            }
-
-            primary.UseCookies = false;
-            primary.AllowAutoRedirect = false;
-        });
 }
 

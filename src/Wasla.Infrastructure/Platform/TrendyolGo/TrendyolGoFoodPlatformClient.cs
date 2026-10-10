@@ -87,6 +87,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     internal TrendyolRequestRateLimiter RequestLimiter => _requestLimiter;
 
+    /// <summary>Named HttpClient key used during DI registration.</summary>
+    public const string TrendyolGoHttpClientName = "TrendyolGo";
+
     public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
 
     public TimeSpan? MaxFetchWindow => FetchWindowLength;
