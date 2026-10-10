@@ -51,7 +51,7 @@ public sealed class ProviderRedirectTests
             request.Path.StartsWith("/moved/", StringComparison.Ordinal)
             || (request.Path == "/v2/oauth/token" && request.Body.Contains("client_id=client-b", StringComparison.Ordinal))
                 ? null
-                : (status, new Uri(targetBase, request.Path.TrimStart('/')));
+                : (status, new Uri(targetBase, request.Path.TrimStart('/')).AbsoluteUri);
         await using var services = ProductionServices(provider.BaseAddress);
         await using var scope = services.CreateAsyncScope();
         var clients = scope.ServiceProvider.GetServices<IFoodPlatformClient>().ToArray();
@@ -94,6 +94,104 @@ public sealed class ProviderRedirectTests
         Assert.All(provider.Requests, r => Assert.Null(r.Cookie));
     }
 
+    public static TheoryData<int, string> RedirectsWithoutUsableLocation()
+    {
+        var data = new TheoryData<int, string>();
+        foreach (var status in new[] { 301, 302, 303, 307, 308 })
+        {
+            data.Add(status, "missing");
+            data.Add(status, "malformed");
+        }
+
+        return data;
+    }
+
+    /// <summary>WAS-97: a 3xx with no <c>Location</c>, or one that is not a URI, fails the same way and sends nothing more.</summary>
+    [Theory]
+    [MemberData(nameof(RedirectsWithoutUsableLocation))]
+    public async Task EveryProviderRequest_FailsOnARedirectWithoutUsableLocation_AndSendsNoFollowUpRequest(int status, string location)
+    {
+        await using var provider = await LocalOrigin.StartAsync();
+        provider.Redirect = request =>
+            request.Path == "/v2/oauth/token" && request.Body.Contains("client_id=client-b", StringComparison.Ordinal)
+                ? null
+                : (status, location == "missing" ? null : "http://[not-a-uri/moved");
+        await using var services = ProductionServices(provider.BaseAddress);
+        await using var scope = services.CreateAsyncScope();
+        var clients = scope.ServiceProvider.GetServices<IFoodPlatformClient>().ToArray();
+        var trendyol = clients.OfType<TrendyolGoFoodPlatformClient>().Single();
+        var yemeksepeti = clients.OfType<YemeksepetiFoodPlatformClient>().Single();
+
+        var outcomes = new[]
+        {
+            await Outcome("TrendyolGo FetchOrders", () => trendyol.FetchOrdersAsync(TrendyolConnection("a"), Window, CancellationToken.None)),
+            await Outcome("TrendyolGo RejectOrder", () => trendyol.RejectOrderAsync(TrendyolConnection("a"), "package-1", ["item-1"], 1, CancellationToken.None)),
+            await Outcome("Yemeksepeti Token", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("a"), Window, CancellationToken.None)),
+            await Outcome("Yemeksepeti FetchOrders", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("b"), Window, CancellationToken.None))
+        };
+
+        Assert.Equal(
+            [
+                $"TrendyolGo FetchOrders: {status}",
+                $"TrendyolGo RejectOrder: {status}",
+                $"Yemeksepeti Token: {status}",
+                $"Yemeksepeti FetchOrders: {status}"
+            ],
+            outcomes);
+        Assert.Equal(
+            [
+                "GET /integrator/order/meal/suppliers/supplier-a/packages",
+                "PUT /integrator/order/meal/suppliers/supplier-a/packages/unsupplied",
+                "POST /v2/oauth/token",
+                "POST /v2/oauth/token",
+                "GET /v2/chains/chain-b/vendors/vendor-b/orders"
+            ],
+            provider.Requests.Select(r => $"{r.Method} {r.Path}"));
+    }
+
+    /// <summary>
+    /// WAS-97 (WAS-88): a redirected token response is a failed token request. Nothing the redirect target could issue
+    /// is cached, so the next fetch asks the provider's own token endpoint again.
+    /// </summary>
+    [Theory]
+    [InlineData(301)]
+    [InlineData(302)]
+    [InlineData(303)]
+    [InlineData(307)]
+    [InlineData(308)]
+    public async Task RedirectedYemeksepetiTokenResponse_NeverEntersTheTokenCache(int status)
+    {
+        await using var target = await LocalOrigin.StartAsync();
+        await using var provider = await LocalOrigin.StartAsync();
+        var redirectToken = true;
+        provider.Redirect = request =>
+            redirectToken && request.Path == "/v2/oauth/token"
+                ? (status, new Uri(target.BaseAddress, "v2/oauth/token").AbsoluteUri)
+                : null;
+        await using var services = ProductionServices(provider.BaseAddress);
+        var yemeksepeti = services.GetServices<IFoodPlatformClient>().OfType<YemeksepetiFoodPlatformClient>().Single();
+        var connection = YemeksepetiConnection($"token-redirect-{status}");
+
+        var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
+            yemeksepeti.FetchOrdersAsync(connection, Window, CancellationToken.None));
+        Assert.Equal(status, (int?)ex.StatusCode);
+        Assert.Equal(0, yemeksepeti.CachedTokenCount);
+
+        redirectToken = false;
+        await yemeksepeti.FetchOrdersAsync(connection, Window, CancellationToken.None);
+
+        Assert.Empty(target.Requests);
+        Assert.Equal(
+            [
+                "POST /v2/oauth/token",
+                "POST /v2/oauth/token",
+                $"GET /v2/chains/chain-token-redirect-{status}/vendors/vendor-token-redirect-{status}/orders"
+            ],
+            provider.Requests.Select(r => $"{r.Method} {r.Path}"));
+        Assert.Contains("Authorization: Bearer token-from-local-origin", provider.Requests[^1].Headers, StringComparison.Ordinal);
+        Assert.Equal(1, yemeksepeti.CachedTokenCount);
+    }
+
     private static async Task<string> Outcome(string operation, Func<Task> call)
     {
         try
@@ -127,7 +225,8 @@ public sealed class ProviderRedirectTests
 
         public IReadOnlyList<ReceivedRequest> Requests => _requests.ToArray();
 
-        public Func<ReceivedRequest, (int Status, Uri Location)?> Redirect { get; set; } = _ => null;
+        /// <summary>A redirect status and <c>Location</c> value (null sends no <c>Location</c>), or null to answer normally.</summary>
+        public Func<ReceivedRequest, (int Status, string? Location)?> Redirect { get; set; } = _ => null;
 
         public static async Task<LocalOrigin> StartAsync()
         {
@@ -156,7 +255,8 @@ public sealed class ProviderRedirectTests
             if (Redirect(received) is { } redirect)
             {
                 context.Response.Headers.Append("Set-Cookie", "wasla_fake_redirect=seeded; Path=/");
-                context.Response.Headers.Location = redirect.Location.AbsoluteUri;
+                if (redirect.Location is not null)
+                    context.Response.Headers.Location = redirect.Location;
                 context.Response.StatusCode = redirect.Status;
                 return;
             }

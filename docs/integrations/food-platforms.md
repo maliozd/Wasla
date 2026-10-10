@@ -54,17 +54,90 @@ No `HttpClient` is registered against tgoapis.com or Yemeksepeti partner hosts i
 | Yemeksepeti | `YemeksepetiFoodPlatformClient` | Real HTTP (OAuth2 client_credentials + Partner Picking orders API) |
 | GetirYemek | `MockGetirYemekFoodPlatformClient` | Still mock; real client not implemented |
 
-### Provider HTTP handlers
+### Provider HTTP clients
 
-Source: `ConfigureProviderPrimaryHandler` in `ServiceCollectionExtensions` (WAS-95). It configures the primary handler of both real provider clients: the Yemeksepeti named client and the Trendyol GO typed client.
+Source: `ProviderHttpClientRegistration.AddProviderHttpClient` (`src/Wasla.Infrastructure/Platform/`), called from `ServiceCollectionExtensions` in Real mode (WAS-95, WAS-97). Web, Api and Worker get provider clients only through `AddWaslaInfrastructure`. None of them registers, configures or builds an `HttpClient` itself.
 
-`IHttpClientFactory` pools handlers, and every tenant shares them. The Yemeksepeti client is a singleton that keeps one `HttpClient`, and Trendyol GO typed clients resolved in different scopes reuse the same pooled handler. A pooled handler therefore holds no tenant or connection state:
+#### One named client per provider
+
+| Provider | Client name | How the client gets it |
+|----------|-------------|------------------------|
+| Yemeksepeti | `Yemeksepeti` (`YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName`) | The singleton calls `IHttpClientFactory.CreateClient` with the name |
+| Trendyol GO | `TrendyolGo` (`TrendyolGoFoodPlatformClient.TrendyolGoHttpClientName`) | Typed client on `IFoodPlatformClient` (`AddTypedClient`), transient |
+
+Until WAS-97 the Trendyol GO typed client was named after its interface, `IFoodPlatformClient`. A second `AddHttpClient<IFoodPlatformClient, X>()` would then have shared its name, configuration and handler pool, and the last base address would have won. Trendyol GO credentials would have gone to the other provider's host. Each provider now has its own:
+
+- Base address and timeout (`Platform:<Provider>:BaseUrl` and `RequestTimeout`), set only by its own registration.
+- Handler pool. The factory pools handlers per client name.
+- Factory log categories: `System.Net.Http.HttpClient.<name>.LogicalHandler` and `.ClientHandler`. The Trendyol GO categories were `System.Net.Http.HttpClient.IFoodPlatformClient.*` before WAS-97. The clients' own logs keep their class categories.
+- Credentials and headers, set on each request by its client (see below).
+- Rate limit and retries. `TrendyolRequestRateLimiter` (a singleton) and the 429 retry belong to the Trendyol GO client only. The Worker's fetch retry runs per connection, above the clients.
+
+`AddProviderHttpClient` enforces this at registration and startup:
+
+- **Duplicate name.** Registering a provider client name twice throws.
+- **Foreign configuration.** Another registration that configures a provider client (a second `AddHttpClient("<name>", ...)`, or `ConfigureHttpClientDefaults(b => b.ConfigureHttpClient(...))`) fails options validation. The hosts fail at startup (`ValidateOnStart`); without a host, the failure comes when the client is first created. The base address is never silently replaced.
+
+**Adding a provider.** A future real provider (for example Getir) must register through `AddProviderHttpClient` with its own constant name:
+
+1. Configure its base address and timeout in that one call.
+2. Use `AddTypedClient<IFoodPlatformClient, TImplementation>()` or `CreateClient(name)`.
+3. Do not call `AddHttpClient<IFoodPlatformClient, X>()` or `ConfigureHttpClient` for it, and do not put credentials in `DefaultRequestHeaders`.
+
+#### Primary handler
+
+`IHttpClientFactory` pools handlers, and every tenant shares them. The Yemeksepeti client is a singleton that keeps one `HttpClient`, and Trendyol GO typed clients resolved in different scopes reuse the same pooled handler. A pooled handler therefore holds no tenant or connection state.
+
+**Explicit handler.** Each provider's primary handler is an explicitly constructed `SocketsHttpHandler`, so the handler type does not depend on the factory default. On .NET 8 that default is `HttpClientHandler`, which uses a `SocketsHttpHandler` internally. On .NET 9 and later the default is `SocketsHttpHandler`, and the WAS-95 helper accepted only `HttpClientHandler`. Except for the two settings below, the defaults are the same ones the .NET 8 `HttpClientHandler` uses:
+
+- The system proxy.
+- Standard certificate validation, with no revocation check.
+- No decompression and no connection limit.
+- Pooled connections that live as long as the handler.
+
+The factory replaces the Trendyol GO handler every two minutes (the default handler lifetime). The Yemeksepeti singleton keeps the handler it got at startup, and with it its pooled connections, for the life of the process. That predates WAS-97.
+
+**Settings.**
 
 - **No cookies** (`UseCookies = false`). A `Set-Cookie` in a provider response is ignored, and no `Cookie` header is sent. Turn cookies on for a provider only if it requires them, and then only with a handler and cookie store owned by one connection.
-- **No redirects** (`AllowAutoRedirect = false`). A 3xx response fails the request like any other non-2xx status (`ProviderRequestException`). The Worker's fetch retry treats it like any other HTTP failure and calls the original endpoint again. Do not follow redirects manually or add an allowlist without a verified provider requirement. A followed 307 or 308 re-sends the request body, which for the Yemeksepeti token request holds the client secret.
+- **No redirects** (`AllowAutoRedirect = false`). A 3xx response fails the request like any other non-2xx status (`ProviderRequestException`), with or without a `Location` header. The Worker's fetch retry treats it like any other HTTP failure and calls the original endpoint again. A redirected Yemeksepeti token response is a failed token request and never enters the token cache. Do not follow redirects manually or add an allowlist without a verified provider requirement. A followed 307 or 308 re-sends the request body, which for the Yemeksepeti token request holds the client secret.
 - **Credentials per request.** Trendyol GO Basic credentials and `x-executor-user`, and the Yemeksepeti bearer token and token form, are set on each request. Do not put tenant credentials in `DefaultRequestHeaders` or in the client configuration.
 
-Handler pooling and lifetime are the factory defaults. A new real provider client (for example Getir) must use the same helper. `ProviderCookieIsolationTests` checks the primary handler of every provider client the factory builds in Real mode.
+**Guard.** `ProviderPrimaryHandlerGuard` is an `IHttpMessageHandlerBuilderFilter` inserted first in the filter list, so it runs after every other handler configuration and filter. It sets both settings again on whatever primary handler it finds. A later `ConfigurePrimaryHttpMessageHandler(...)` for a provider name, or a later filter that replaces the primary handler, therefore cannot turn cookies or redirects back on. A primary handler that is neither `SocketsHttpHandler` nor `HttpClientHandler` fails that client when it is created, with a message that names the client and the handler type.
+
+#### Logging
+
+- **Header values.** The factory's request logging redacts every header value of a provider client (`HttpClientFactoryOptions.ShouldRedactHeaderValue`, applied as a post-configuration so a later `RedactLoggedHeaders` cannot narrow it). At Trace, request and response headers appear as `Authorization: *`, `x-executor-user: *`, `Set-Cookie: *` and so on. This covers Basic credentials, bearer tokens, cookies, `x-executor-user`, `x-agentname`, the supplier id in `User-Agent`, and any header a provider adds later.
+- **Redaction does not depend on log level.** Web, Api and Worker ship with `System.Net.Http.HttpClient` at Warning, and the redaction also holds when an operator lowers it to Trace.
+- **Request URIs.** At Information the factory logs the method, request URI and status, and the client logs status codes and durations. Request URIs include supplier, store, chain and vendor ids and the query string. They carry no credentials; the token request's credentials are in its form body.
+- **Bodies.** The factory does not log request or response bodies, and the provider clients do not log or throw response bodies or credentials (`ProviderFailureLoggingTests`). There is therefore no body redaction, because no body is logged.
+- **Custom loggers.** A custom `IHttpClientLogger` added for a provider client must honour the same rule.
+
+#### Tests that protect the contract
+
+All of these resolve clients from the production Real-mode registration (`AddWaslaInfrastructure`) and call loopback fake providers with synthetic credentials.
+
+- `ProviderCookieIsolationTests` (WAS-95): no cookie replay across connections, scopes or concurrent requests. Every provider primary handler is a `SocketsHttpHandler` with cookies and redirects off.
+- `ProviderRedirectTests` (WAS-95, WAS-97):
+  - 301, 302, 303, 307 and 308, both cross-origin and same-origin, fail every operation, and the redirect target receives nothing.
+  - A missing or malformed `Location` fails the same way, with no follow-up request.
+  - A redirected token response is never cached.
+- `ProviderHttpClientRegistrationTests` (WAS-97):
+  - Each provider has its own name, origin, handler pool and credentials, across sequential, scoped and overlapping calls.
+  - Another provider on `IFoodPlatformClient`, registered either way, cannot take over Trendyol GO or Yemeksepeti configuration.
+  - Duplicate names and foreign configuration fail.
+  - Later handler overrides (named, `ConfigureHttpClientDefaults`, a later filter) cannot re-enable cookies or redirects, and an unsupported handler type fails.
+  - The Web, Api and Worker sources do not compose HTTP clients themselves. This is a source check, because starting the real hosts in a test needs their master key, Data Protection folder and log files.
+- `ProviderHttpLoggingTests` (WAS-97): with every category at Trace, no canary credential, token, cookie, provider header value or body appears in any log message, structured property, exception or scope.
+
+#### Framework upgrades
+
+After changing the target framework or the `Microsoft.Extensions.Http` version:
+
+1. Run the four test classes above on the new framework.
+2. Check that the factory still applies filters with the first registered filter outermost, which the guard relies on.
+3. Check that `HttpClientFactoryOptions.HttpClientActions` and `ShouldRedactHeaderValue` still behave as described here.
+4. Check whether the new framework logs headers, URIs (including query strings) or bodies differently, and update the Logging section to match.
 
 Whether either real provider sets cookies or sends redirects is not confirmed (WAS-70). These rules are verified against a fake provider only.
 
