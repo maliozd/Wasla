@@ -280,6 +280,31 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
         Assert.Equal(openedBefore, _web.Tenants.Opened.Count);
     }
 
+    public static TheoryData<string> AmbiguousSessions => AmbiguousSessionClaims.Defects;
+
+    /// <summary>
+    /// A repeated or non-canonical security claim is rejected rather than resolved to one copy (WAS-94 review R-2). Before,
+    /// a TenantId pair [alpha, beta], a stamp pair [current, other], Role=Viewer beside ClaimTypes.Role=Owner, and the
+    /// roles "owner", " Owner " and "1" all reached 200.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(AmbiguousSessions))]
+    public async Task CookieWithAmbiguousOrNonCanonicalClaims_IsRejectedByApiWithoutOpeningADatabase(string defect)
+    {
+        using var client = _api.Client(TenantSessionWebHost.AlphaHost);
+        client.Cookies[TenantAuthCookieNames.Active] = _api.ProtectTenantCookie(
+            AmbiguousSessionClaims.Apply(SessionClaims(_owner, UserRole.Owner), defect, _web.BetaId),
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddDays(7));
+        var openedBefore = _web.Tenants.Opened.Count;
+
+        var response = await client.GetAsync("/api/auth/me");
+
+        AssertUnauthorized(response);
+        AssertSessionDeleted(client);
+        Assert.Equal(openedBefore, _web.Tenants.Opened.Count);
+    }
+
     [Fact]
     public async Task ForgedCookieWithCurrentClaims_IsAcceptedByApi()
     {
@@ -427,11 +452,32 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
 
     public static TheoryData<UserRole> Roles =>
     [
-        UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer,
-#pragma warning disable CS0618 // Obsolete Staff: a stored role that no Web policy admits.
-        UserRole.Staff
-#pragma warning restore CS0618
+        UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer
     ];
+
+    /// <summary>
+    /// Obsolete Staff is not a session role (WAS-94 review R-2): a stored Staff user can still pass the Web login form,
+    /// but the session it gets is rejected on the next request, by the API with 401 and a deleted cookie, before any
+    /// database is opened. It used to authenticate and receive 403.
+    /// </summary>
+    [Fact]
+    public async Task ObsoleteStaffSession_IsRejectedAsASession()
+    {
+#pragma warning disable CS0618 // Obsolete Staff: still a stored role value.
+        var staff = _web.SeedUser(_web.AlphaId, "staff@alpha.test", UserRole.Staff);
+#pragma warning restore CS0618
+        using var web = await WebLoginAsync(staff);
+        var openedBefore = _web.Tenants.Opened.Count;
+
+        foreach (var path in new[] { "/api/auth/me", "/api/orders", "/api/branches" })
+        {
+            using var api = ToApi(web);
+            AssertUnauthorized(await api.GetAsync(path));
+            AssertSessionDeleted(api);
+        }
+
+        Assert.Equal(openedBefore, _web.Tenants.Opened.Count);
+    }
 
     /// <summary>
     /// Every Api endpoint with a session that passed the Web login for each role. The expected answer follows the Web
@@ -450,9 +496,6 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
         using var api = ToApi(web);
 
         var isOwner = role == UserRole.Owner;
-#pragma warning disable CS0618
-        var assignable = role != UserRole.Staff;
-#pragma warning restore CS0618
         var reports = role is UserRole.Owner or UserRole.Manager or UserRole.Viewer;
         var failures = new List<string>();
         async Task Expect(string name, Task<HttpResponseMessage> call, HttpStatusCode allowed, bool isAllowed)
@@ -473,9 +516,9 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
                 failures.Add($"{name}: expected {(isAllowed ? "admitted" : "403")}, got {(int)actual}");
         }
 
-        await Expect("GET /api/auth/me", api.GetAsync("/api/auth/me"), HttpStatusCode.OK, assignable);
-        await Expect("GET /api/orders", api.GetAsync("/api/orders"), HttpStatusCode.OK, assignable);
-        await Expect("GET /api/orders/{id}", api.GetAsync($"/api/orders/{order.Id}"), HttpStatusCode.OK, assignable);
+        await Expect("GET /api/auth/me", api.GetAsync("/api/auth/me"), HttpStatusCode.OK, isAllowed: true);
+        await Expect("GET /api/orders", api.GetAsync("/api/orders"), HttpStatusCode.OK, isAllowed: true);
+        await Expect("GET /api/orders/{id}", api.GetAsync($"/api/orders/{order.Id}"), HttpStatusCode.OK, isAllowed: true);
         await ExpectAdmitted("GET /api/dashboard/summary", api.GetAsync("/api/dashboard/summary"), reports);
         await ExpectAdmitted("GET /api/dashboard/today", api.GetAsync("/api/dashboard/today"), reports);
         await Expect("GET /api/branches", api.GetAsync("/api/branches"), HttpStatusCode.OK, isOwner);

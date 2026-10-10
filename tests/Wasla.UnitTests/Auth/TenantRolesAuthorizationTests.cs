@@ -61,10 +61,16 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         Assert.False(result.Succeeded);
     }
 
+    // Sessions carry the exact role name the login writes (UserRole.ToString()); nothing else names a role (WAS-94 R-2).
+    // "Owner, Manager" used to parse as Owner|Manager = Kitchen, and "1" as Owner.
     [Theory]
     [InlineData("owner")]
     [InlineData("OwNeR")]
-    public async Task TenantRolePolicy_AcceptsRoleClaimCasingVariants(string roleClaim)
+    [InlineData(" Owner ")]
+    [InlineData("1")]
+    [InlineData("Owner, Manager")]
+    [InlineData("Staff")]
+    public async Task TenantRolePolicy_RejectsNonCanonicalRoleClaims(string roleClaim)
     {
         var service = BuildAuthorizationService(_tenantId);
 
@@ -73,7 +79,31 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
             null,
             TenantPolicies.CanManageDeviceSecurity);
 
-        Assert.True(result.Succeeded);
+        Assert.False(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task TenantRolePolicy_RejectsRepeatedOrConflictingRoleAndTenantClaims()
+    {
+        var service = BuildAuthorizationService(_tenantId);
+        ClaimsPrincipal With(params Claim[] claims) => new(new ClaimsIdentity(claims, authenticationType: "Tenant"));
+        var tenant = new Claim("TenantId", _tenantId.ToString());
+        var owner = new Claim(ClaimTypes.Role, UserRole.Owner.ToString());
+
+        foreach (var principal in new[]
+                 {
+                     With(tenant, owner, new Claim(ClaimTypes.Role, UserRole.Owner.ToString())),
+                     With(tenant, owner, new Claim("Role", UserRole.Viewer.ToString())),
+                     With(tenant, new Claim("TenantId", _otherTenantId.ToString()), owner),
+                     With(tenant, new Claim("TenantId", _tenantId.ToString()), owner)
+                 })
+        {
+            Assert.False((await service.AuthorizeAsync(principal, null, TenantPolicies.CanManageDeviceSecurity)).Succeeded);
+        }
+
+        // The same claims without the repeat are an Owner of this tenant.
+        Assert.True((await service.AuthorizeAsync(With(tenant, owner, new Claim("Role", UserRole.Owner.ToString())), null,
+            TenantPolicies.CanManageDeviceSecurity)).Succeeded);
     }
 
     [Fact]
