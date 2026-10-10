@@ -105,7 +105,7 @@ Wasla.Api uses the same policies as Web, registered from the same table, after t
 | `GET /api/dashboard/summary`, `GET /api/dashboard/today` | `CanViewReports` | ✓ | ✓ | | | ✓ | `DashboardController` |
 | `GET /api/branches`, `POST /api/branches` | `CanManageTenantSettings` | ✓ | | | | | `BranchesController` |
 | `GET /api/platform-connections`, `POST /api/platform-connections`, `PATCH /api/platform-connections/{id}/active` | `CanManageTenantSettings` | ✓ | | | | | `PlatformConnectionsController` |
-| `POST /api/auth/validate` | Anonymous: credential check for API clients, issues no session | | | | | | |
+| `POST /api/auth/validate` | Anonymous: credential check for API clients, issues no session; rate limited per tenant and client network ([authentication.md](../architecture/authentication.md#credential-rate-limiting)) | | | | | | |
 | `/api/print-bridge/*` | Anonymous to the cookie scheme: authenticated by the `X-PrintBridge-Token` device token (`PrintBridgeAuthMiddleware`) | | | | | | Print Bridge device API |
 | `GET /`, `/health/live`, `/health/ready` | Anonymous: service banner and probes | | | | | | |
 

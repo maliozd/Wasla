@@ -87,6 +87,19 @@ Trendyol GO polling resumes from a per-connection checkpoint, `PlatformConnectio
 
 These logs and rows carry ids, time boundaries, counts and exception types only. They contain no credentials, `Authorization` header, executor e-mail, customer details or provider payloads. Do not add those when diagnosing; ask for the window boundaries and connection id instead.
 
+### Authentication rate-limit rejections
+
+Login and credential-check attempts over their limit ([../architecture/authentication.md](../architecture/authentication.md#credential-rate-limiting)) are logged by Web (default host logging) and Api (Serilog) under the category `Wasla.Security.AuthenticationRateLimiting`:
+
+| Level | Message | When |
+|-------|---------|------|
+| Warning | `Authentication rate limit reached; rejecting requests until the window resets.` | First rejection of a partition in its window |
+| Debug | `Authentication rate limit rejected another request.` with `RejectedInWindow` | Every further rejection in that window |
+
+Fields: `Policy` (`auth-tenant-login`, `auth-central-admin-login`, `auth-api-credential-validation`), `TenantId` (the resolved tenant for tenant policies, empty otherwise), `ClientTag` and `RetryAfterSeconds`. `ClientTag` is 12 hex characters derived from the client network with a random per-process key. It groups one client's rejections within one process, but it cannot be turned back into an address and differs between processes and restarts. Nothing else is logged: no address, partition key, email, password, cookie or header.
+
+Reading them: many Warnings with different `ClientTag`s for one `TenantId` point to an attack spread over many networks, which these limits do not stop (no per-account backoff yet). Warnings for one tag across many tenants point to one network trying many tenants. A sudden rise right after a reverse proxy was added usually means `TrustedProxies` is missing ([deployment.md](deployment.md#reverse-proxy-and-client-address)). At startup each process also logs whether trusted proxies are configured.
+
 ## Explicit gaps
 
 These are **not** implemented:

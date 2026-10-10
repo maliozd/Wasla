@@ -100,6 +100,70 @@ Wasla.Api runs the same check on the same cookie (WAS-94). It has no endpoint th
 - **No `TenantId` claim**
 - Logout expires active + several legacy central-admin cookie names
 
+Tenant and Central Admin login POSTs are rate limited; see [Credential rate limiting](#credential-rate-limiting).
+
+## Credential rate limiting
+
+**Sources:** `src/Wasla.Infrastructure/Security/RateLimiting/` (options, validation, partitions, `Retry-After`, rejection log), `src/Wasla.Web/Security/AuthenticationRateLimit.cs` (Web filter), `src/Wasla.Api/Security/ApiAuthenticationRateLimiting.cs` (Api policy), `src/Wasla.Infrastructure/Security/TrustedProxies.cs` (client address). Added in WAS-90.
+
+Every endpoint that accepts a password is limited:
+
+| Endpoint | Policy | Partition | Default limit |
+|----------|--------|-----------|---------------|
+| Web `POST /auth/login` | `auth-tenant-login` | Resolved tenant + client network | 10 attempts per 5 minutes |
+| Web `POST /admin/login` | `auth-central-admin-login` | Client network (on any host) | 5 attempts per 5 minutes |
+| Api `POST /api/auth/validate` | `auth-api-credential-validation` | Resolved tenant + client network | 10 attempts per 5 minutes |
+
+Outside these policies: the forgot-password POST keeps its own earlier policy (`tenant-forgot-password`, 5 per 10 minutes per host and address); the reset-password POST (which needs a one-time emailed token), signup and Print Bridge device-token requests have no credential-entry limit from this section.
+
+**How it counts.** Each policy is a fixed window per partition with no queue. Every attempt counts: a success, a wrong password, an unknown email and an invalid form alike. When the window ends the partition starts again from zero; there is no account lockout and nothing is stored.
+
+**Partitions.** Built only from server-side values:
+
+- *Tenant:* the tenant `TenantResolutionMiddleware` resolved from the `Host` header, never a value from the body or query. Tenant A's attempts never use tenant B's allowance. A Web request that reaches `/auth/login` without a tenant shares one "no tenant" bucket per client network. On the Api an unknown host is answered `404` by tenant resolution before the limiter, so it never counts and never sees `429`.
+- *Client network:* `HttpContext.Connection.RemoteIpAddress` after the trusted-proxy step ([deployment.md](../operations/deployment.md#reverse-proxy-and-client-address)). An `X-Forwarded-For` value is used only when the connecting peer is a configured trusted proxy. IPv4 and IPv4-mapped IPv6 (`::ffff:a.b.c.d`) count as the same client; IPv6 is grouped per `/64`; a request without an address shares one bucket.
+- *Policy:* each policy has its own limiter, so an exhausted tenant login does not limit the Central Admin login or the Api, and the reverse.
+
+Partition keys are never sent to the client or logged.
+
+**Where it runs.**
+
+- *Api:* the ASP.NET Core rate-limiting middleware, placed after tenant resolution and before Print Bridge device authentication, session revalidation and authorization. A rejected request reaches no controller, its JSON body is not read, and no tenant database is opened, even when it carries a session cookie.
+- *Web:* an MVC action filter (`[AuthenticationRateLimit]`) on the two login POST actions. It runs after antiforgery validation and model binding and before the action, so a rejected attempt performs no database read and no password verification. A POST with a missing or invalid antiforgery token is still answered `400` first and does not use a permit.
+
+**Responses over the limit.**
+
+- *Api:* `429 Too Many Requests` with `Retry-After`, `Cache-Control: no-store` and `{"error":"too_many_requests"}` as `application/json`. No redirect, no `Location`, no cookie, no HTML. The API configures no CORS, and the `429` adds none.
+- *Web:* `429` with `Retry-After` and `Cache-Control: no-store`, showing the same login page again with the localized `Auth.Login.TooManyAttempts` message (TR, EN, AR, RU) in a `role="alert"` box, so screen readers announce it. The page keeps the submitted email and the return URL, never echoes the password, and is the same for every email, so it reveals nothing about whether an account exists. The return URL is only followed after a successful sign-in, through the existing local-URL check.
+- *`Retry-After`:* whole seconds, rounded up, from the limiter's report of the time until the window resets. For a fixed window, ASP.NET Core reports the full window length, so the value is an upper bound.
+
+Below the limit nothing changes: Web redirects after a successful login and shows the same page for invalid credentials; the Api answers `200`, `401` or `404`. The Api's `401`, `403` and `503` for other endpoints, session revalidation, Print Bridge device tokens, the login GET pages, `/` and the health endpoints are not rate limited.
+
+`AuthValidationService` verifies an unknown email against a dummy hash computed once per process, not a new bcrypt hash per attempt, so each tenant attempt costs one verification.
+
+**Configuration.** Section `AuthenticationRateLimiting`, also settable through environment variables such as `AuthenticationRateLimiting__TenantLogin__PermitLimit`:
+
+```json
+"AuthenticationRateLimiting": {
+  "TenantLogin": { "PermitLimit": 10, "Window": "00:05:00" },
+  "CentralAdminLogin": { "PermitLimit": 5, "Window": "00:05:00" },
+  "ApiCredentialValidation": { "PermitLimit": 10, "Window": "00:05:00" }
+}
+```
+
+These are the defaults in code; the committed appsettings do not repeat them. `PermitLimit` must be 1–10000 and `Window` between `00:00:01` and `1.00:00:00`. Web and Api refuse to start with any other value, so a typo cannot silently disable the limit. A change takes effect after a restart.
+
+Why these defaults (no threshold was set in WAS-90): 10 attempts per 5 minutes allows at most 120 password guesses per hour per tenant and network. That still leaves room for several staff behind one restaurant router to mistype a password. Central Admin has few accounts and more power, so it gets 5.
+
+**Limitations.**
+
+- *Process-local.* Counters are in each process's memory. Web and Api count separately, a restart clears the counters, and with several instances of one process behind a load balancer each instance has its own allowance. Up to that many times the limit can then be used. Today Wasla runs one instance of each on one server; nothing here is a distributed limit.
+- *Per network, not per account.* An attacker spread over many networks is not stopped by these limits, and there is no per-account backoff (a remaining WAS-90 item).
+- *Fixed window.* Up to twice the limit can pass in a short burst around a window boundary.
+- *Reverse proxy.* Behind a proxy that is not listed in `TrustedProxies`, every client has the proxy's address, so all users of a tenant share one allowance. See [deployment.md](../operations/deployment.md#reverse-proxy-and-client-address).
+
+**Monitoring:** see [observability.md](../operations/observability.md#authentication-rate-limit-rejections). **Rollback:** raise `PermitLimit` or shorten `Window` and restart, or deploy the previous release. A limit cannot be set to 0. Nothing is persisted, and no schema or data change is involved.
+
 ## Remember-me / lifetimes (confirmed in source)
 
 Scheme defaults in Web `Program.cs`:
@@ -131,11 +195,11 @@ API tenant cookie registration also sets `ExpireTimeSpan = 7 days` with sliding 
 Current API behavior:
 
 - Registers the **tenant** cookie scheme only (`WaslaTenant` / `.Wasla.TenantAuth`), with the same cookie contract as Web, via `AddWaslaApiTenantAuthentication`
-- Pipeline: tenant resolution from the host → Print Bridge device-token middleware → legacy cookie expiry → `TenantSessionUnavailableMiddleware` → authentication (session revalidation) → authorization
+- Pipeline: tenant resolution from the host → rate limiter ([Credential rate limiting](#credential-rate-limiting); only `POST /api/auth/validate` has a policy) → Print Bridge device-token middleware → legacy cookie expiry → `TenantSessionUnavailableMiddleware` → authentication (session revalidation) → authorization
 - Every request that presents the tenant cookie is revalidated exactly as on Web ([Tenant session revalidation](#tenant-session-revalidation))
 - Authorization uses the shared tenant role policies; every tenant endpoint names one. The default and fallback policies admit only a current Owner, so an endpoint without a named policy, or with a bare `[Authorize]`, is Owner-only. The endpoint matrix is in [roles-and-permissions.md](../product/roles-and-permissions.md#api-endpoints)
 - Status codes, never redirects: no session, or a rejected session → `401`; a current session without the required role → `403` (the session is kept); tenant database unreadable during validation → `503` with `{"error":"tenant_session_unavailable"}`. Responses for 401 and 403 have no body and no `Location`. A request to a route the API does not map is also answered by the Owner-only fallback (401 or 403) rather than 404
-- `POST /api/auth/validate`: credentials check only (`AllowAnonymous`); returns `200`/`401`/`404`; **does not** `SignInAsync` and does not record `LastLoginAt`, because no session is established
+- `POST /api/auth/validate`: credentials check only (`AllowAnonymous`); returns `200`/`401`/`404`, and `429` over its rate limit ([Credential rate limiting](#credential-rate-limiting)); **does not** `SignInAsync` and does not record `LastLoginAt`, because no session is established
 - `GET /api/auth/me`: any current tenant user with an assignable role (`AuthenticatedTenantUser`); returns the current user DTO from the validated claims
 - `/api/print-bridge/*` authenticates with the `X-PrintBridge-Token` device token only (`PrintBridgeAuthMiddleware`); those routes skip tenant resolution, so a tenant cookie on them is neither used nor deleted
 - Middleware expires legacy `orderhub_auth` if present; that cookie is **not** an authentication scheme
