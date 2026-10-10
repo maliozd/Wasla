@@ -22,6 +22,10 @@ internal static class ProviderHttpClientRegistration
     /// <summary>
     /// Adds the named provider client. Throws if a provider client with the same name is already registered.
     /// <list type="bullet">
+    /// <item>The primary handler is an explicitly constructed <see cref="SocketsHttpHandler"/>, so the handler type does
+    /// not depend on the factory default of the running .NET version.</item>
+    /// <item><see cref="ProviderPrimaryHandlerGuard"/> applies the cookie and redirect rules after every other handler
+    /// configuration, so a later registration for the same name cannot turn them back on.</item>
     /// <item><paramref name="configureClient"/> must be the only client configuration for the name. Another registration
     /// that configures the same client (a second <c>AddHttpClient</c> with this name, or
     /// <c>ConfigureHttpClientDefaults</c>) fails validation, at startup in the hosts and otherwise when the client is
@@ -46,6 +50,14 @@ internal static class ProviderHttpClientRegistration
 
         services.AddSingleton(new ProviderHttpClientName(name));
 
+        // First in the filter list, so it wraps every other filter and runs after all of them: IHttpClientFactory
+        // applies filters[0] outermost.
+        if (!services.Any(d => d.ServiceType == typeof(IHttpMessageHandlerBuilderFilter)
+                               && d.ImplementationType == typeof(ProviderPrimaryHandlerGuard)))
+        {
+            services.Insert(0, ServiceDescriptor.Singleton<IHttpMessageHandlerBuilderFilter, ProviderPrimaryHandlerGuard>());
+        }
+
         services.AddOptions<HttpClientFactoryOptions>(name)
             .Validate(
                 static options => options.HttpClientActions.Count == 1,
@@ -53,19 +65,56 @@ internal static class ProviderHttpClientRegistration
             .ValidateOnStart();
 
         return services.AddHttpClient(name, configureClient)
-            .ConfigurePrimaryHttpMessageHandler(static (handler, _) =>
-            {
-                if (handler is not HttpClientHandler primary)
-                {
-                    throw new InvalidOperationException(
-                        $"Provider HTTP clients expect an {nameof(HttpClientHandler)} primary handler, not {handler.GetType().Name}.");
-                }
-
-                primary.UseCookies = false;
-                primary.AllowAutoRedirect = false;
-            });
+            .ConfigurePrimaryHttpMessageHandler(static () => CreatePrimaryHandler());
     }
+
+    /// <summary>
+    /// The provider primary handler. Apart from cookies and redirects it keeps the <see cref="SocketsHttpHandler"/>
+    /// defaults, which on .NET 8 are also what the factory's default <see cref="HttpClientHandler"/> uses internally:
+    /// the system proxy, standard certificate validation, no decompression, no connection limit and pooled connections
+    /// that live as long as the handler (the factory replaces the handler every two minutes).
+    /// </summary>
+    internal static SocketsHttpHandler CreatePrimaryHandler() => new()
+    {
+        UseCookies = false,
+        AllowAutoRedirect = false
+    };
 
     /// <summary>A registered provider client name.</summary>
     internal sealed record ProviderHttpClientName(string Name);
+
+    /// <summary>
+    /// Runs after every handler configuration of a provider client (including <c>ConfigurePrimaryHttpMessageHandler</c>
+    /// or <c>ConfigureHttpClientDefaults</c> calls made later by a host, and later filters) and turns cookies and
+    /// redirects off on whatever primary handler they left. A handler type whose cookie and redirect behaviour it
+    /// cannot control fails the client instead.
+    /// </summary>
+    internal sealed class ProviderPrimaryHandlerGuard(IEnumerable<ProviderHttpClientName> providerClients)
+        : IHttpMessageHandlerBuilderFilter
+    {
+        private readonly HashSet<string> _names = providerClients.Select(c => c.Name).ToHashSet(StringComparer.Ordinal);
+
+        public Action<HttpMessageHandlerBuilder> Configure(Action<HttpMessageHandlerBuilder> next) => builder =>
+        {
+            next(builder);
+
+            if (builder.Name is null || !_names.Contains(builder.Name))
+                return;
+
+            switch (builder.PrimaryHandler)
+            {
+                case SocketsHttpHandler sockets:
+                    sockets.UseCookies = false;
+                    sockets.AllowAutoRedirect = false;
+                    break;
+                case HttpClientHandler client:
+                    client.UseCookies = false;
+                    client.AllowAutoRedirect = false;
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"Provider HTTP client '{builder.Name}' needs a {nameof(SocketsHttpHandler)} or {nameof(HttpClientHandler)} primary handler, not {builder.PrimaryHandler.GetType().Name}.");
+            }
+        };
+    }
 }

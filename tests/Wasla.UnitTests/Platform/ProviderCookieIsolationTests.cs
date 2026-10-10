@@ -203,12 +203,14 @@ public sealed class ProviderCookieIsolationTests
         // Resolving the clients builds the handler of every provider client the factory serves.
         Assert.NotEmpty(scope.ServiceProvider.GetServices<IFoodPlatformClient>());
 
-        // The Yemeksepeti named client and the Trendyol GO typed client.
-        Assert.Equal(2, observed.Count);
-        Assert.Contains(YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName, observed.Keys);
+        // The Yemeksepeti named client and the Trendyol GO typed client, each under its own name (WAS-97).
+        Assert.Equal(
+            new[] { TrendyolGoFoodPlatformClient.TrendyolGoHttpClientName, YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName },
+            observed.Keys.Order());
         foreach (var (name, handler) in observed)
         {
-            var primary = Assert.IsType<HttpClientHandler>(handler);
+            // Constructed explicitly, whatever the factory default of the running .NET version is (WAS-97).
+            var primary = Assert.IsType<SocketsHttpHandler>(handler);
             Assert.False(primary.UseCookies, $"Provider client '{name}' stores and replays cookies.");
             Assert.False(primary.AllowAutoRedirect, $"Provider client '{name}' follows redirects (see ProviderRedirectTests).");
         }
