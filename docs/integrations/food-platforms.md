@@ -54,6 +54,20 @@ No `HttpClient` is registered against tgoapis.com or Yemeksepeti partner hosts i
 | Yemeksepeti | `YemeksepetiFoodPlatformClient` | Real HTTP (OAuth2 client_credentials + Partner Picking orders API) |
 | GetirYemek | `MockGetirYemekFoodPlatformClient` | Still mock; real client not implemented |
 
+### Provider HTTP handlers
+
+Source: `ConfigureProviderPrimaryHandler` in `ServiceCollectionExtensions` (WAS-95). It configures the primary handler of both real provider clients: the Yemeksepeti named client and the Trendyol GO typed client.
+
+`IHttpClientFactory` pools handlers, and every tenant shares them. The Yemeksepeti client is a singleton that keeps one `HttpClient`, and Trendyol GO typed clients resolved in different scopes reuse the same pooled handler. A pooled handler therefore holds no tenant or connection state:
+
+- **No cookies** (`UseCookies = false`). A `Set-Cookie` in a provider response is ignored, and no `Cookie` header is sent. Turn cookies on for a provider only if it requires them, and then only with a handler and cookie store owned by one connection.
+- **No redirects** (`AllowAutoRedirect = false`). A 3xx response fails the request like any other non-2xx status (`ProviderRequestException`). The Worker's fetch retry treats it like any other HTTP failure and calls the original endpoint again. Do not follow redirects manually or add an allowlist without a verified provider requirement. A followed 307 or 308 re-sends the request body, which for the Yemeksepeti token request holds the client secret.
+- **Credentials per request.** Trendyol GO Basic credentials and `x-executor-user`, and the Yemeksepeti bearer token and token form, are set on each request. Do not put tenant credentials in `DefaultRequestHeaders` or in the client configuration.
+
+Handler pooling and lifetime are the factory defaults. A new real provider client (for example Getir) must use the same helper. `ProviderCookieIsolationTests` checks the primary handler of every provider client the factory builds in Real mode.
+
+Whether either real provider sets cookies or sends redirects is not confirmed (WAS-70). These rules are verified against a fake provider only.
+
 ## `IFoodPlatformClient`
 
 Source: `src/Wasla.Application/Abstractions/Platform/IFoodPlatformClient.cs`.
