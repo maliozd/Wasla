@@ -3478,6 +3478,7 @@
   <data name="Auth.ForgotPassword.UserInactive" xml:space="preserve"><value>حساب هذا المستخدم غير نشط. تواصل مع مدير المطعم.</value></data>
   <data name="Auth.ForgotPassword.EmailDeliveryFailed" xml:space="preserve"><value>تعذر إرسال بريد إعادة تعيين كلمة المرور الآن. يرجى المحاولة لاحقاً.</value></data>
   <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>تم إجراء محاولات كثيرة لإعادة تعيين كلمة المرور. يرجى المحاولة لاحقاً.</value></data>
+  <data name="Auth.Login.TooManyAttempts" xml:space="preserve"><value>تم إجراء محاولات تسجيل دخول كثيرة. يرجى الانتظار بضع دقائق ثم المحاولة مرة أخرى.</value></data>
   <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>إعادة تعيين كلمة المرور</value></data>
   <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
   <data name="Auth.ResetPassword.ConfirmNewPassword" xml:space="preserve"><value>تأكيد كلمة المرور الجديدة</value></data>

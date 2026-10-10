@@ -70,11 +70,20 @@ builder.Services.Configure<RequestDiagnosticsOptions>(options =>
 
 builder.Services.AddWaslaApiTenantAuthentication(CookieSecurePolicy.Always);
 
+// POST /api/auth/validate attempts per tenant and client network (AuthenticationRateLimiting section).
+builder.Services.AddWaslaApiAuthenticationRateLimiting(builder.Configuration);
+
+// X-Forwarded-For / X-Forwarded-Proto only from the proxies listed under TrustedProxies.
+builder.Services.AddWaslaTrustedProxies(builder.Configuration);
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// First, so that request logging and rate-limit partitions see the forwarded client.
+app.UseWaslaTrustedProxies();
 
 app.UseSerilogRequestLogging(options =>
 {

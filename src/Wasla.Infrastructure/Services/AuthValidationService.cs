@@ -7,6 +7,10 @@ namespace Wasla.Infrastructure.Services;
 
 public sealed class AuthValidationService : IAuthValidationService
 {
+    // Computed once per process with the default work factor, the factor stored hashes are created with, so an unknown
+    // email costs one verification like a known one, not an extra hash computation per attempt.
+    internal static readonly string DummyHash = BCrypt.Net.BCrypt.HashPassword("dummy-password");
+
     private readonly ITenantDbContextFactory _dbFactory;
 
     public AuthValidationService(ITenantDbContextFactory dbFactory)
@@ -32,8 +36,7 @@ public sealed class AuthValidationService : IAuthValidationService
             .FirstOrDefaultAsync(ct);
 
         // Timing-attack resistance: always verify against a real hash
-        var dummyHash = BCrypt.Net.BCrypt.HashPassword("dummy-password");
-        var hash = user?.PasswordHash ?? dummyHash;
+        var hash = user?.PasswordHash ?? DummyHash;
         var ok = BCrypt.Net.BCrypt.Verify(password, hash);
 
         if (!ok || user is null) return null;

@@ -1,11 +1,13 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Security;
 using Wasla.Contracts.Auth;
 using Wasla.Contracts.Enums;
+using Wasla.Infrastructure.Security.RateLimiting;
 
 namespace Wasla.Api.Controllers;
 
@@ -23,8 +25,10 @@ public sealed class AuthController : ControllerBase
     }
 
     // API login endpoint remains for API clients; cookie issuance for browser UI is handled by Wasla.Web.
+    // Rate limited per tenant and client network before this action runs (ApiAuthenticationRateLimiting).
     [HttpPost("validate")]
     [AllowAnonymous]
+    [EnableRateLimiting(AuthenticationRateLimitPolicies.ApiCredentialValidation)]
     public async Task<IActionResult> Validate([FromBody] LoginRequest request, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;

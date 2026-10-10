@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Admin;
+using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Web.Areas.Admin.Models;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -43,6 +44,7 @@ public sealed class AuthController : Controller
 
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.CentralAdminLogin)]
     [HttpPost("login")]
     public async Task<IActionResult> Login(AdminLoginViewModel model, CancellationToken ct)
     {

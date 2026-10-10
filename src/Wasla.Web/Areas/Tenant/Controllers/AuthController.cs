@@ -9,6 +9,7 @@ using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Security;
+using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Web.Models.Auth;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -77,6 +78,7 @@ public sealed class AuthController : Controller
 
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.TenantLogin)]
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginViewModel model, CancellationToken ct)
     {

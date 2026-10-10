@@ -11,13 +11,15 @@ namespace Wasla.Api;
 public static class WaslaApiPipeline
 {
     /// <summary>
-    /// Tenant resolution from the host, then Print Bridge device authentication, then the tenant cookie: authentication
-    /// revalidates the session against the resolved tenant's database, and authorization applies the tenant role
-    /// policies.
+    /// Tenant resolution from the host, then the credential-check rate limit (its partitions need the resolved tenant,
+    /// and a rejected request must not reach authentication, which opens the tenant database for a session cookie),
+    /// then Print Bridge device authentication, then the tenant cookie: authentication revalidates the session against
+    /// the resolved tenant's database, and authorization applies the tenant role policies.
     /// </summary>
     public static WebApplication UseWaslaApiRequestPipeline(this WebApplication app)
     {
         app.UseMiddleware<TenantResolutionMiddleware>();
+        app.UseRateLimiter();
         app.UseMiddleware<PrintBridgeAuthMiddleware>();
         app.UseMiddleware<ExpireLegacyTenantAuthCookieMiddleware>();
         app.UseMiddleware<TenantSessionUnavailableMiddleware>();

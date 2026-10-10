@@ -3478,6 +3478,7 @@
   <data name="Auth.ForgotPassword.UserInactive" xml:space="preserve"><value>Bu kullanıcı hesabı aktif değil. Restoran yöneticinizle iletişime geçin.</value></data>
   <data name="Auth.ForgotPassword.EmailDeliveryFailed" xml:space="preserve"><value>Şifre sıfırlama e-postası şu anda gönderilemedi. Lütfen biraz sonra tekrar deneyin.</value></data>
   <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>Çok fazla şifre sıfırlama denemesi yapıldı. Lütfen biraz sonra tekrar deneyin.</value></data>
+  <data name="Auth.Login.TooManyAttempts" xml:space="preserve"><value>Çok fazla giriş denemesi yapıldı. Lütfen birkaç dakika bekleyip tekrar deneyin.</value></data>
   <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>Şifreyi sıfırla</value></data>
   <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>Yeni şifre</value></data>
   <data name="Auth.ResetPassword.ConfirmNewPassword" xml:space="preserve"><value>Yeni şifre tekrarı</value></data>

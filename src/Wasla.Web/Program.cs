@@ -139,6 +139,12 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+// Tenant and Central Admin login attempts per tenant and client network (AuthenticationRateLimiting section).
+builder.Services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
+
+// X-Forwarded-For / X-Forwarded-Proto only from the proxies listed under TrustedProxies.
+builder.Services.AddWaslaTrustedProxies(builder.Configuration);
+
 // Temporary Development tools: off unless Development and explicitly enabled (appsettings.Development.json).
 var developmentToolsSection = builder.Configuration.GetSection(DevelopmentToolsOptions.SectionName);
 builder.Services.Configure<DevelopmentToolsOptions>(developmentToolsSection);
@@ -165,6 +171,8 @@ app.Logger.LogInformation(
     app.Environment.EnvironmentName,
     authCookieSecurePolicy);
 
+// First, so that everything after it (rate-limit partitions, HTTPS redirection, logs) sees the forwarded client.
+app.UseWaslaTrustedProxies();
 app.UseMiddleware<RequestDiagnosticsMiddleware>();
 app.UseWaslaExceptionHandling(app.Environment);
 
