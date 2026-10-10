@@ -48,7 +48,8 @@ public sealed class ThemePreferenceBrowserTests : IAsyncLifetime
           const snapshot = () => ({
             html: document.documentElement.getAttribute('data-bs-theme'),
             body: document.body ? document.body.getAttribute('data-bs-theme') : null,
-            bodyBg: document.body ? getComputedStyle(document.body).backgroundColor : null
+            bodyBg: document.body ? getComputedStyle(document.body).backgroundColor : null,
+            liveHostParsed: !!document.getElementById('ordersLiveScreenHost')
           });
           const frame = () => {
             if (!log.first) {
@@ -235,7 +236,27 @@ public sealed class ThemePreferenceBrowserTests : IAsyncLifetime
 
     [Theory]
     [MemberData(nameof(FirstFrameCases))]
-    public async Task TheFirstFrame_IsPaintedInTheResolvedTheme_WithNoLaterSwitch(string path, string system, string? stored, string expected)
+    public Task TheFirstFrame_IsPaintedInTheResolvedTheme_WithNoLaterSwitch(string path, string system, string? stored, string expected) =>
+        AssertFirstFrameAsync(path, system, stored, expected, cpuThrottling: 1);
+
+    public static TheoryData<string, string?, string> SlowLiveScreenCases() => new()
+    {
+        // system theme, stored tenant choice (null = none), expected theme
+        { "dark", null, "dark" },
+        { "light", "dark", "dark" },
+        { "dark", "light", "light" }
+    };
+
+    /// <summary>
+    /// On a loaded machine Chromium paints the Live Screen while it is still being parsed, before
+    /// <c>#ordersLiveScreenHost</c> exists. That first frame must still be painted in the resolved theme.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(SlowLiveScreenCases))]
+    public Task TheFirstFrame_OfASlowLiveScreen_IsPaintedInTheResolvedTheme_WithNoLaterSwitch(string system, string? stored, string expected) =>
+        AssertFirstFrameAsync("/orders/live-display", system, stored, expected, cpuThrottling: 6);
+
+    private async Task AssertFirstFrameAsync(string path, string system, string? stored, string expected, double cpuThrottling)
     {
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await BrowserAsync("en-US", ct);
@@ -248,6 +269,8 @@ public sealed class ThemePreferenceBrowserTests : IAsyncLifetime
         var store = stored is null ? $"localStorage.removeItem('{key}')" : $"localStorage.setItem('{key}', '{stored}')";
         await browser.EvaluateAsync<bool>($"(() => {{ localStorage.clear(); {store}; return true; }})()", ct);
         await browser.AddScriptBeforePageScriptsAsync(FirstFrameProbe, ct);
+        if (cpuThrottling != 1)
+            await browser.SetCpuThrottlingAsync(cpuThrottling, ct);
         if (isAdmin)
             await LoadAdminAsync(browser, path, ct);
         else
@@ -256,7 +279,7 @@ public sealed class ThemePreferenceBrowserTests : IAsyncLifetime
 
         var probe = await browser.EvaluateAsync<JsonElement>("window.__waslaThemeProbe", ct);
         var final = await StateAsync(browser, ct);
-        var page = $"{path} system={system} stored={stored ?? "none"}";
+        var page = $"{path} system={system} stored={stored ?? "none"} cpu={cpuThrottling}x";
         Assert.Equal(expected, final.GetProperty("html").GetString());
         Assert.Equal(expected, final.GetProperty("body").GetString());
 
@@ -266,7 +289,34 @@ public sealed class ThemePreferenceBrowserTests : IAsyncLifetime
         var withBody = probe.GetProperty("firstWithBody");
         Assert.True(withBody.ValueKind == JsonValueKind.Object, $"{page}: no frame with a body was recorded");
         Assert.True(expected == withBody.GetProperty("body").GetString(), $"{page}: the first frame painted <body> as {withBody.GetProperty("body")}");
-        Assert.Equal(final.GetProperty("bodyBg").GetString(), withBody.GetProperty("bodyBg").GetString());
+
+        // The painted background of that first frame, compared with what the finished page paints in the resolved theme.
+        // The Live Screen body paints the theme's --wasla-bg until #ordersLiveScreenHost is parsed; its :has() board rule
+        // then tints it (wasla-theme.css). A frame painted before that point (a loaded machine paints a page while it is
+        // still being parsed) must show exactly that base colour of the resolved theme; any later frame the final one.
+        var finalBodyBg = final.GetProperty("bodyBg").GetString();
+        var firstBodyBg = withBody.GetProperty("bodyBg").GetString();
+        var paintedBeforeLiveHost = !withBody.GetProperty("liveHostParsed").GetBoolean()
+            && await browser.EvaluateAsync<bool>("!!document.getElementById('ordersLiveScreenHost')", ct);
+        if (paintedBeforeLiveHost)
+        {
+            var baseBg = await browser.EvaluateAsync<string>("""
+                (() => {
+                  const probe = document.createElement('div');
+                  probe.style.backgroundColor = 'var(--wasla-bg)';
+                  document.body.appendChild(probe);
+                  const value = getComputedStyle(probe).backgroundColor;
+                  probe.remove();
+                  return value;
+                })()
+                """, ct);
+            Assert.True(baseBg == firstBodyBg,
+                $"{page}: the first frame, painted before the Live Screen host was parsed, showed {firstBodyBg}; the {expected} theme's base background is {baseBg} (final {finalBodyBg})");
+        }
+        else
+        {
+            Assert.True(finalBodyBg == firstBodyBg, $"{page}: the first frame painted the body background {firstBodyBg}, the finished page {finalBodyBg}");
+        }
 
         Assert.True(probe.GetProperty("changes").GetArrayLength() == 0,
             $"{page}: the theme changed after the first frame: {probe.GetProperty("changes")}");
