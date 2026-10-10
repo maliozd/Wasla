@@ -26,6 +26,8 @@ internal static class ProviderHttpClientRegistration
     /// not depend on the factory default of the running .NET version.</item>
     /// <item><see cref="ProviderPrimaryHandlerGuard"/> applies the cookie and redirect rules after every other handler
     /// configuration, so a later registration for the same name cannot turn them back on.</item>
+    /// <item>The factory's request logging redacts every header value (header names stay visible), including at Trace.
+    /// This is set after every other options configuration, so a later <c>RedactLoggedHeaders</c> cannot narrow it.</item>
     /// <item><paramref name="configureClient"/> must be the only client configuration for the name. Another registration
     /// that configures the same client (a second <c>AddHttpClient</c> with this name, or
     /// <c>ConfigureHttpClientDefaults</c>) fails validation, at startup in the hosts and otherwise when the client is
@@ -59,6 +61,7 @@ internal static class ProviderHttpClientRegistration
         }
 
         services.AddOptions<HttpClientFactoryOptions>(name)
+            .PostConfigure(static options => options.ShouldRedactHeaderValue = static _ => true)
             .Validate(
                 static options => options.HttpClientActions.Count == 1,
                 $"Provider HTTP client '{name}' must be configured only by its own provider registration.")
