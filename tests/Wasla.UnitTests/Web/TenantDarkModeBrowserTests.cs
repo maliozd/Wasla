@@ -516,8 +516,23 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
               // as a modal, the body state, and the modal events recorded by ModalProbe.
               const cover = hit && hit.closest('.modal') || hit, cs = cover && getComputedStyle(cover);
               const modal = cover && window.bootstrap && bootstrap.Modal && bootstrap.Modal.getInstance(cover);
+              // The stylesheet rules that set the cover's display (in cascade order of the sheets), and the stylesheets that did
+              // not load or cannot be read.
+              const file = h => (h || 'inline').split('?')[0].split('/').pop();
+              const rules = [], sheets = [];
+              for (const link of document.querySelectorAll('link[rel~="stylesheet"]'))
+                if (!link.sheet) sheets.push(file(link.href) + ' not loaded');
+              for (const sheet of document.styleSheets) {
+                let list; try { list = sheet.cssRules; } catch (err) { sheets.push(file(sheet.href) + ' unreadable'); continue; }
+                const walk = items => { for (const r of items) {
+                  if (r.cssRules && !r.selectorText) { if (!r.media || matchMedia(r.media.mediaText).matches) walk(r.cssRules); continue; }
+                  let match = false; try { match = !!cover && !!r.selectorText && cover.matches(r.selectorText); } catch (err) { }
+                  if (match && r.style.display) rules.push(file(sheet.href) + ' ' + r.selectorText.slice(0, 40) + '{' + r.style.display + '}');
+                } };
+                walk(list);
+              }
               // Most telling first: the CI annotation keeps only about 300 characters.
-              const state = cover ? 'events [' + (window.__waslaModalEvents || []).join('; ') + '], style "' + (cover.getAttribute('style') || '')
+              const state = cover ? 'display rules [' + rules.join('; ') + '], sheets [' + sheets.join('; ') + '], events [' + (window.__waslaModalEvents || []).join('; ') + '], style "' + (cover.getAttribute('style') || '')
                 + '", display ' + cs.display + ', opacity ' + cs.opacity + ', aria-modal ' + cover.getAttribute('aria-modal')
                 + ', instance ' + (modal ? 'shown ' + !!modal._isShown : 'none') + ', backdrops ' + document.querySelectorAll('.modal-backdrop').length
                 + ', body "' + document.body.className + '"' : '';
