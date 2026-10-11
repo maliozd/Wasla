@@ -100,8 +100,10 @@ Details: [migrations.md](migrations.md).
 | Command | Purpose |
 |---------|---------|
 | `add-central-admin` | Create central admin in CentralDb (`--email`, `--password`, `--display-name`) |
-| `reset-central-admin-password` | Reset central admin password |
+| `reset-central-admin-password` | Reset central admin password. Also ends that admin's existing Central Admin sessions |
 | `list-central-admins` | List central admins (safe fields) |
+
+There is no command that deactivates or reactivates a central admin; see [../architecture/authentication.md](../architecture/authentication.md#central-admin-session-revalidation) for the CentralDb statement that also ends the admin's sessions.
 
 **This is the supported setup method.** Do not use `CentralAdmin__Email` / `CentralAdmin__PasswordHash` environment variables as the setup path — they are obsolete relative to current CentralDb authentication.
 
@@ -109,7 +111,7 @@ Details: [migrations.md](migrations.md).
 
 | Command | Purpose |
 |---------|---------|
-| `reset-password` | Reset central or tenant user password (`--scope central|tenant`, `--dry-run`). Tenant scope also ends that user's existing Web sessions |
+| `reset-password` | Reset central or tenant user password (`--scope central|tenant`, `--dry-run`). Central scope also ends that admin's existing Central Admin sessions; tenant scope ends that user's existing Web sessions |
 
 ### Print Bridge
 

@@ -53,6 +53,8 @@ Print Bridge presence uses the canonical `PrintBridgeConnectionStatusCalculator`
 
 The pages use the existing central-admin attribute `[Authorize(AuthenticationSchemes = AuthSchemes.CentralAdmin)]`. Anonymous requests and tenant sessions (even with a forged role claim) are redirected to `/admin/login`. Unknown ids, registration ids and malformed ids return 404.
 
+Every Central Admin request is revalidated against the admin's row in CentralDb (WAS-37): a session whose admin was deactivated or deleted, or whose password was reset, is signed out and redirected to `/admin/login` on its next request. The check reads only `CentralAdminUsers`, never a tenant database. If CentralDb cannot be read during that check, the request gets the global error page instead of the Admin error panel. See [../architecture/authentication.md](../architecture/authentication.md#central-admin-session-revalidation).
+
 ## Troubleshooting
 
 | Observation | Next step |
@@ -65,10 +67,6 @@ The pages use the existing central-admin attribute `[Authorize(AuthenticationSch
 | Print Bridge offline with queued jobs | The restaurant checks the Print Bridge computer; jobs are picked up on reconnect |
 
 The page only reads. It never migrates, repairs, retries, provisions or changes payment, provider or device state.
-
-## Security follow-up (high priority, not implemented)
-
-**Production security requirement:** Central Admin authorization is scheme-only. Any valid `.Wasla.CentralAdminAuth` cookie is accepted; the account is not re-checked against CentralDb. A central admin who is deactivated (or whose password is reset) keeps access until the cookie expires (8 hours sliding; 1 day with remember-me). Future work must add active-admin revalidation (for example cookie validation against `CentralAdminUsers.IsActive` with a security stamp) or a named policy backed by the CentralDb account state, with tests that deactivate an admin during an active session and expect the next request to be rejected. See also [../architecture/authentication.md](../architecture/authentication.md#current-limitation).
 
 ## Source map
 

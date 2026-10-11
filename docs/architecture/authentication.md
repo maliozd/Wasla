@@ -20,6 +20,7 @@ Wasla does **not** use JWT for this auth contract.
 | `CentralAdminCookieName` | `.Wasla.CentralAdminAuth` |
 | `LegacyTenantCookieName` | `orderhub_auth` |
 | `TenantIdClaim` | `TenantId` |
+| `CentralAdminSecurityStampClaim` | `Wasla.CentralAdminSecurityStamp` |
 
 Web wrappers alias the same values:
 
@@ -46,7 +47,7 @@ Controllers select schemes explicitly (for example `[Authorize(AuthenticationSch
 
 - Default authenticate/challenge scheme: tenant (`WaslaTenant`)
 - Tenant cookie: HttpOnly, Path `/`, SameSite Lax, SecurePolicy Development=`SameAsRequest` / Production=`Always`. Registered by `AddWaslaTenantCookie` (`src/Wasla.Web/Security/TenantCookieAuthentication.cs`), which also attaches the per-request session check (see [Tenant session revalidation](#tenant-session-revalidation))
-- Central admin cookie: same cookie flags; separate login/logout/access-denied paths under `/admin`
+- Central admin cookie: same cookie flags; separate login/logout/access-denied paths under `/admin`. Registered by `AddWaslaCentralAdminCookie` (`src/Wasla.Web/Security/CentralAdminCookieAuthentication.cs`), which also attaches the per-request account check (see [Central admin session revalidation](#central-admin-session-revalidation))
 - **No cookie `Domain` is set** (host-only cookies)
 - Data Protection: `SetApplicationName("Wasla")`; optional `DataProtection:KeyPath` from configuration (no API-style hardcoded OrderHub default in Web)
 - Authorization policies registered here; handler: `TenantRoleAuthorizationHandler` (`src/Wasla.Web/Security/TenantRoleRequirement.cs`)
@@ -96,13 +97,51 @@ Wasla.Api runs the same check on the same cookie (WAS-94). It has no endpoint th
 **Source:** `src/Wasla.Web/Areas/Admin/Controllers/AuthController.cs`
 
 - Routes under `/admin`
-- Claims: name identifier, email, display name, role `CentralAdmin`
+- Claims: name identifier (the admin id), email, display name, role `CentralAdmin`, and the admin's security stamp (`Wasla.CentralAdminSecurityStamp`). They are built by `CentralAdminSessionClaims.Create` (`src/Wasla.Application/Security/CentralAdminSessionClaims.cs`), and the stamp is read in the same query as the verified password hash
 - **No `TenantId` claim**
 - Logout expires active + several legacy central-admin cookie names
 - An unknown email, an inactive account and a wrong password get the same result and the same page: `Admin.InvalidCredentials`, status 200, nothing else different (WAS-90; there is no separate "inactive" message any more). Every attempt verifies one bcrypt hash: the account's own (also for an inactive account), or for an unknown email the static dummy hash `AuthValidationService.DummyHash` (default work factor), so an unknown email does not answer measurably faster. A stored hash that cannot be read fails the same way. `CentralAdminAuthService`
-- Inactive admins are still managed only through the CLI; signing in with one is refused as above, and the attempt is not recorded as a login
+- Signing in with an inactive admin is refused as above, and the attempt is not recorded as a login. There is no supported command that deactivates or reactivates a central admin; see [Central admin session revalidation](#central-admin-session-revalidation) for the CentralDb statement
 
 Tenant and Central Admin login POSTs are rate limited; see [Credential rate limiting](#credential-rate-limiting).
+
+### Central admin session revalidation
+
+**Source:** `src/Wasla.Infrastructure/Services/CentralAdminSessionValidator.cs` (the rules, behind `ICentralAdminSessionValidator`), `src/Wasla.Web/Security/CentralAdminCookieEvents.cs` (the cookie events), `src/Wasla.Application/Security/CentralAdminSessionClaims.cs` (the claims). Added in WAS-37.
+
+Every request that authenticates `.Wasla.CentralAdminAuth` is checked against the admin's row in CentralDb before it is accepted: every Admin page and action, the authenticated logout, and the "already signed in" check of the Admin login page. No tenant database is opened.
+
+| Situation | Result |
+|-----------|--------|
+| Admin id, role or stamp claim missing, repeated, malformed or empty, a role other than exactly `CentralAdmin`, or an id or stamp not in the issued lowercase GUID form. This includes every cookie issued before WAS-37, which has no stamp | Rejected and signed out. CentralDb is not read |
+| Admin no longer exists | Rejected and signed out |
+| Admin inactive | Rejected and signed out |
+| Stored security stamp differs from the cookie's | Rejected and signed out |
+| CentralDb cannot be read | The request fails closed before any controller runs: the global exception handler answers with the HTTP 500 error page, as for a tenant session on Web. Only the exception type is logged; the session is neither accepted, renewed nor deleted, and is checked again on the next request |
+
+"Signed out" applies to the Central Admin scheme only: `.Wasla.CentralAdminAuth` is deleted, and a tenant cookie in the same browser is left alone. A rejected session is anonymous for that request, so Admin pages redirect to `/admin/login` and the login page renders.
+
+Which changes end existing sessions: `CentralAdminUsers.SecurityStamp` is replaced by both central password commands, `reset-password --scope central` and `reset-central-admin-password`. Deactivating (`IsActive = 0`) or deleting the admin fails the check directly. Signing in again does not change the stamp, so it does not end the admin's other sessions.
+
+There is no supported command to deactivate or reactivate a central admin. Until there is, deactivate in CentralDb and replace the stamp in the same statement:
+
+```sql
+UPDATE [CentralAdminUsers]
+SET [IsActive] = 0, [SecurityStamp] = NEWID(), [UpdatedAt] = SYSUTCDATETIME()
+WHERE [NormalizedEmail] = N'ADMIN@EXAMPLE.COM';
+```
+
+Reactivating then only sets `[IsActive] = 1`; cookies issued before the deactivation stay rejected because of the new stamp, and the admin signs in again. A deactivation that does not replace the stamp still rejects every request while the account is inactive, but a copy of an old cookie that was not presented during that time becomes valid again when the account is reactivated, until it expires. Any other direct write of `PasswordHash` must also set a new `SecurityStamp`.
+
+Remember-me and sliding expiration do not bypass the check. A remember-me (persistent) cookie is validated like any other. Sliding renewal is decided by the cookie handler before validation; it is deferred, and only a session that has just passed validation is re-issued, so a rejected session, a pre-WAS-37 cookie or a request whose validation could not complete never gets a renewed cookie.
+
+Cost and timing: one primary-key read of `CentralAdminUsers` (active flag and stamp only) per authenticated Central Admin request. Nothing is cached, so a change applies from the next request.
+
+Logs: `Central admin session rejected: {Reason}.` (Information; the reason is the state name, for example `AccountInactive` or `StampChanged`) and `Central admin session could not be validated against CentralDb ({ExceptionType}).` (Error). Neither contains the admin id, email, stamp or cookie.
+
+Deployment: the `AddCentralAdminSecurityStamp` CentralDb migration gives every existing admin a new stamp. Cookies issued before it carry no stamp, so every central admin signs in again once after the release. Admin login reads the column, so run `migrate-central` before the new Web starts (see [../operations/deployment.md](../operations/deployment.md#release-order-migrate-every-database-first)). An admin row inserted directly with the column's all-zero default gets a new stamp on its first login; a session is never issued or accepted with the empty stamp.
+
+Wasla.Api does not register the Central Admin scheme, so it neither accepts nor validates this cookie.
 
 ## Credential rate limiting
 
@@ -215,7 +254,7 @@ Web and API use the **same scheme, cookie name and cookie settings** (`WaslaTena
 
 Since WAS-94 a shared key ring is safe for tenant sessions in the sense that matters: a Web session presented to the API gets exactly the Web checks (current user, active, stamp, role, tenant from the host) and the same role policies, so a deactivated, deleted, demoted or password-reset user's old cookie is rejected by the API as it is by Web, and a lower role cannot use an API write that its Web policy forbids. Sharing is still a deployment choice, not a requirement; in local development Web (`{slug}.wasla.local`) and API (`localhost`) are different hosts with different keys, so a Web login does **not** authenticate API calls there.
 
-What sharing does not change: the Central Admin cookie is not registered by the API at all, and Central Admin session revalidation is a separate open item (WAS-37). Provider HTTP clients and their cookie containers are unrelated to these sessions (WAS-95).
+What sharing does not change: the Central Admin cookie is not registered by the API at all; Web revalidates it against CentralDb (WAS-37, [Central admin session revalidation](#central-admin-session-revalidation)). Provider HTTP clients and their cookie containers are unrelated to these sessions (WAS-95).
 
 ### Cross-site requests to the API
 
@@ -267,15 +306,13 @@ Current implementation:
 - `--scope central` or `--scope tenant`
 - Tenant scope requires `--tenant` slug or id
 - Interactive password entry; dry-run supported
-- Central scope updates `CentralAdminUser.PasswordHash` only. Central admins have no password-reset token table in this flow
+- Central scope updates `CentralAdminUser.PasswordHash` and `SecurityStamp`, which ends that admin's existing Central Admin sessions. Central admins have no password-reset token table in this flow. The older `reset-central-admin-password` command replaces the stamp too
 - Tenant scope updates the tenant user password hash and security stamp (ending that user's Web and API sessions) and marks unused unexpired `PasswordResetToken` rows for that user as used
 - Opens the tenant DB by decrypting the central tenant connection string
 
-### Current limitation
+### Sessions after a reset
 
-Tenant sessions are revalidated on every request (see [Tenant session revalidation](#tenant-session-revalidation)). The Central Admin cookie is not: there is no security stamp or session-version check on `.Wasla.CentralAdminAuth`, and a central-scope password reset does not revoke an already-issued Central Admin cookie. That browser can keep using it until it expires or the admin signs out.
-
-Central Admin authorization is scheme-only (`[Authorize(AuthenticationSchemes = AuthSchemes.CentralAdmin)]`): the account is not re-checked against CentralDb on each request, so a deactivated central admin also keeps access until the cookie expires. This is an open high-priority security follow-up; see [../operations/tenant-operations-center.md](../operations/tenant-operations-center.md#security-follow-up-high-priority-not-implemented).
+Tenant sessions ([Tenant session revalidation](#tenant-session-revalidation)) and Central Admin sessions ([Central admin session revalidation](#central-admin-session-revalidation)) are both revalidated on every request, so a password reset of either kind ends the account's existing sessions on their next request.
 
 ### API testing
 
