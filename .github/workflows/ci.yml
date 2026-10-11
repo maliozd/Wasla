@@ -9,9 +9,16 @@ on:
     branches:
       - dev
       - master
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+# A new push to a pull request cancels the pull request's older run. Pushes and manual runs each get a group of their
+# own (a pending run is cancelled by any newer run in its group), so every commit on dev and master gets a result.
+concurrency:
+  group: ci-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
@@ -57,6 +64,14 @@ jobs:
           Write-Host "Installed printers (enumerated only; tests print to a recording fake): $($printers.Count)"
           if ($printers.Count -eq 0) { Write-Host '::warning::No printer is installed; the Print Bridge runtime tests will skip and fail the run.' }
 
+      # Only speeds up the download; restore always runs and resolves every package itself.
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Restore solution
         run: dotnet restore Wasla.sln
 
@@ -95,6 +110,17 @@ jobs:
           ./scripts/ci/assert-test-results.ps1 -Path
           artifacts/test-results/Wasla.UnitTests.trx,
           artifacts/test-results/Wasla.PrintBridge.Tests.trx
+
+      # Every test must stop the browsers, WebView2 hosts and test hosts it started. A survivor is reported here, not
+      # killed, so a cleanup leak shows up in the run instead of slowing or breaking later tests unnoticed.
+      - name: Report leftover browser and test processes
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $left = @(Get-Process -Name msedge, msedgewebview2, testhost -ErrorAction SilentlyContinue)
+          if ($left.Count -eq 0) { Write-Host 'No Edge, WebView2 or test host process is left running.'; exit 0 }
+          $left | Group-Object ProcessName | ForEach-Object { Write-Host "$($_.Name): $($_.Count) left running" }
+          Write-Host "::warning title=Leftover processes::$($left.Count) Edge, WebView2 or test host process(es) outlived the tests."
 
       - name: Upload .NET test results
         if: ${{ !cancelled() }}
