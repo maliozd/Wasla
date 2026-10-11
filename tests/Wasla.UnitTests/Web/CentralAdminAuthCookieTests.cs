@@ -1,11 +1,14 @@
 using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Admin;
+using Wasla.Application.Security;
 using Wasla.Web.Areas.Admin.Models;
 using Wasla.Web.Security;
 using AdminAuthController = Wasla.Web.Areas.Admin.Controllers.AuthController;
@@ -29,9 +32,32 @@ public sealed class CentralAdminAuthCookieTests
         var programSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Program.cs"));
         var schemesSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Security", "AuthSchemes.cs"));
 
-        Assert.Contains("options.Cookie.Name = CentralAdminAuthCookieNames.Active;", programSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("options.Cookie.Name = \"orderhub_central_admin\";", programSource, StringComparison.Ordinal);
+        Assert.Contains(".AddWaslaCentralAdminCookie(authCookieSecurePolicy)", programSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(".AddCookie(AuthSchemes.CentralAdmin", programSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("orderhub_central_admin", programSource, StringComparison.Ordinal);
         Assert.DoesNotContain("OrderHubCentralAdmin", schemesSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CentralAdminCookie_UsesWaslaCookieAndRevalidatesEverySession()
+    {
+        using var services = new ServiceCollection()
+            .AddLogging()
+            .AddAuthentication()
+            .AddWaslaCentralAdminCookie(CookieSecurePolicy.Always)
+            .Services
+            .BuildServiceProvider();
+
+        var options = services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(AuthSchemes.CentralAdmin);
+
+        Assert.Equal(CentralAdminAuthCookieNames.Active, options.Cookie.Name);
+        Assert.Equal(CookieSecurePolicy.Always, options.Cookie.SecurePolicy);
+        Assert.True(options.Cookie.HttpOnly);
+        Assert.Equal("/admin/login", options.LoginPath);
+        Assert.Equal(TimeSpan.FromHours(8), options.ExpireTimeSpan);
+        Assert.True(options.SlidingExpiration);
+        Assert.Equal(typeof(CentralAdminCookieEvents), options.EventsType);
+        Assert.True(services.GetRequiredService<IServiceProviderIsService>().IsService(typeof(CentralAdminCookieEvents)));
     }
 
     [Fact]
@@ -52,6 +78,11 @@ public sealed class CentralAdminAuthCookieTests
         Assert.Equal(AuthSchemes.CentralAdmin, authentication.SignInScheme);
         Assert.True(authentication.SignInProperties?.IsPersistent);
         Assert.NotNull(authentication.SignInProperties?.ExpiresUtc);
+
+        // The session carries the account's security stamp, and reads back as a valid Central Admin session.
+        Assert.True(CentralAdminSessionClaims.TryRead(authentication.SignInPrincipal, out var session));
+        Assert.Equal(SuccessfulCentralAdminAuthService.UserId, session.AdminUserId);
+        Assert.Equal(SuccessfulCentralAdminAuthService.SecurityStamp, session.SecurityStamp);
     }
 
     [Fact]
@@ -107,19 +138,24 @@ public sealed class CentralAdminAuthCookieTests
 
     private sealed class SuccessfulCentralAdminAuthService : ICentralAdminAuthService
     {
+        public static readonly Guid UserId = Guid.NewGuid();
+        public static readonly Guid SecurityStamp = Guid.NewGuid();
+
         public Task<CentralAdminLoginResult> ValidateAsync(string email, string password, CancellationToken ct) =>
             Task.FromResult(new CentralAdminLoginResult(
                 true,
-                Guid.NewGuid(),
+                UserId,
                 email,
                 "Central Admin",
-                null));
+                null,
+                SecurityStamp));
     }
 
     private sealed class CapturingAuthenticationService : IAuthenticationService
     {
         public string? SignInScheme { get; private set; }
         public AuthenticationProperties? SignInProperties { get; private set; }
+        public ClaimsPrincipal? SignInPrincipal { get; private set; }
         public List<string> SignOutSchemes { get; } = [];
 
         public Task<AuthenticateResult> AuthenticateAsync(HttpContext context, string? scheme) =>
@@ -139,6 +175,7 @@ public sealed class CentralAdminAuthCookieTests
         {
             SignInScheme = scheme;
             SignInProperties = properties;
+            SignInPrincipal = principal;
             return Task.CompletedTask;
         }
 

@@ -57,7 +57,7 @@ public sealed partial class CentralAdminEnumerationTests : IAsyncLifetime
         var inactiveWithItsRightPassword = await ValidateAsync(InactiveEmail, Password, verified);
         var wrongPassword = await ValidateAsync(ActiveEmail, "Wrong-Password-1", verified);
 
-        var expected = new CentralAdminLoginResult(false, null, null, null, "Admin.InvalidCredentials");
+        var expected = new CentralAdminLoginResult(false, null, null, null, "Admin.InvalidCredentials", null);
         Assert.Equal(expected, unknown);
         Assert.Equal(expected, inactiveWithItsRightPassword);
         Assert.Equal(expected, wrongPassword);
@@ -112,7 +112,7 @@ public sealed partial class CentralAdminEnumerationTests : IAsyncLifetime
         var result = await new CentralAdminAuthService(context, NullLogger<CentralAdminAuthService>.Instance)
             .ValidateAsync("broken@wasla.test", Password, TestContext.Current.CancellationToken);
 
-        Assert.Equal(new CentralAdminLoginResult(false, null, null, null, "Admin.InvalidCredentials"), result);
+        Assert.Equal(new CentralAdminLoginResult(false, null, null, null, "Admin.InvalidCredentials", null), result);
     }
 
     // --- Login page ---------------------------------------------------------------------------------

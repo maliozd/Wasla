@@ -87,19 +87,8 @@ builder.Services.AddAuthentication(options =>
 })
 // Tenant cookie scheme; every tenant request is revalidated against the user in the tenant database.
 .AddWaslaTenantCookie(authCookieSecurePolicy)
-.AddCookie(AuthSchemes.CentralAdmin, options =>
-{
-    options.Cookie.Name = CentralAdminAuthCookieNames.Active;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.Path = "/";
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = authCookieSecurePolicy;
-    options.LoginPath = "/admin/login";
-    options.LogoutPath = "/admin/logout";
-    options.AccessDeniedPath = "/admin/login";
-    options.ExpireTimeSpan = TimeSpan.FromHours(8);
-    options.SlidingExpiration = true;
-});
+// Central Admin cookie scheme; every Central Admin request is revalidated against the admin in CentralDb.
+.AddWaslaCentralAdminCookie(authCookieSecurePolicy);
 
 builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
 builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
