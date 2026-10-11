@@ -98,17 +98,20 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
 
         _central.Counter.Reset();
         var overview = await browser.GetAsync("/admin");
-        var overviewQueries = _central.Counter.Count;
+        var overviewCommands = _central.Counter.Commands;
         _central.Counter.Reset();
         var list = await browser.GetAsync("/admin/customers?size=50");
-        var listQueries = _central.Counter.Count;
+        var listCommands = _central.Counter.Commands;
 
         Assert.Equal(HttpStatusCode.OK, overview.Status);
         Assert.Equal(HttpStatusCode.OK, list.Status);
         Assert.Empty(_tenants.Opened);
         // Overview: 4 aggregate queries + the existing attention list. List: count + page + device counts.
-        Assert.Equal(5, overviewQueries);
-        Assert.Equal(3, listQueries);
+        Assert.Equal(5, overviewCommands.Count(sql => !IsSessionValidation(sql)));
+        Assert.Equal(3, listCommands.Count(sql => !IsSessionValidation(sql)));
+        // Plus the per-request Central Admin session revalidation.
+        Assert.Equal(1, overviewCommands.Count(IsSessionValidation));
+        Assert.Equal(1, listCommands.Count(IsSessionValidation));
         Assert.Contains("Alpha Kebap", Html(list), StringComparison.Ordinal);
     }
 
@@ -329,7 +332,10 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     public async Task CentralDatabaseFailure_RendersTheLocalizedErrorPanel()
     {
         using var browser = await _host.SignedInAdminAsync("en-US");
-        _central.Dispose(); // The next open creates an empty database without tables.
+        // The pages' own CentralDb reads fail while the session can still be validated. A CentralDb that cannot be read
+        // at all fails the request during authentication (CentralAdminSessionRevalidationTests).
+        using (var db = _central.CreateContext())
+            db.Database.ExecuteSqlRaw("ALTER TABLE \"Tenants\" RENAME TO \"Tenants_Unavailable\";");
 
         foreach (var path in new[] { "/admin", "/admin/customers", $"/admin/customers/{_tenantA}" })
         {
@@ -421,6 +427,8 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     // Helpers ------------------------------------------------------------------------------------------
 
     private static string Html(AdminResponse response) => WebUtility.HtmlDecode(response.Body);
+
+    private static bool IsSessionValidation(string sql) => sql.Contains("FROM \"CentralAdminUsers\"", StringComparison.Ordinal);
 
     private static string Resource(string suffix, string key) =>
         XDocument.Load(TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "Resources", $"SharedResource{suffix}.resx"))

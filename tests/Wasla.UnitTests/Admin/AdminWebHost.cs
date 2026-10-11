@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Domain.Entities.Central;
@@ -23,6 +24,7 @@ using Wasla.Infrastructure.Plans;
 using Wasla.Infrastructure.Services;
 using Wasla.Web;
 using Wasla.Web.Areas.Admin.Controllers;
+using Wasla.Web.Middleware;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Admin;
@@ -30,7 +32,8 @@ namespace Wasla.UnitTests.Admin;
 /// <summary>
 /// Serves the real Admin controllers and compiled Razor views of Wasla.Web over loopback HTTP, with the same two cookie
 /// schemes as Program.cs, a SQLite CentralDb and SQLite tenant databases behind <see cref="ITenantDbContextFactory"/>.
-/// Central admins sign in through the real <c>/admin/login</c> form. The only test-only endpoint issues a
+/// Central admins sign in through the real <c>/admin/login</c> form, and the Central Admin cookie is the real
+/// registration, so every Central Admin request is revalidated against CentralDb. The only test-only endpoint issues a
 /// <em>tenant</em> cookie, to prove a tenant session cannot reach Admin pages.
 /// </summary>
 internal sealed class AdminWebHost : IAsyncDisposable
@@ -54,7 +57,8 @@ internal sealed class AdminWebHost : IAsyncDisposable
     public static async Task<AdminWebHost> StartAsync(
         CentralTestDatabase central,
         RecordingTenantDbFactory tenants,
-        TimeSpan? healthTimeout = null)
+        TimeSpan? healthTimeout = null,
+        TimeProvider? centralAdminCookieClock = null)
     {
         SeedAdmins(central);
 
@@ -98,13 +102,12 @@ internal sealed class AdminWebHost : IAsyncDisposable
                 options.LoginPath = "/auth/login";
                 options.AccessDeniedPath = "/auth/access-denied";
             })
-            .AddCookie(AuthSchemes.CentralAdmin, options =>
-            {
-                options.Cookie.Name = CentralAdminAuthCookieNames.Active;
-                options.LoginPath = "/admin/login";
-                options.LogoutPath = "/admin/logout";
-                options.AccessDeniedPath = "/admin/login";
-            });
+            .AddWaslaCentralAdminCookie(CookieSecurePolicy.SameAsRequest);
+        if (centralAdminCookieClock is not null)
+        {
+            // Lets tests move the Central Admin cookie handler's clock, for example to make sliding renewal due.
+            services.Configure<CookieAuthenticationOptions>(AuthSchemes.CentralAdmin, options => options.TimeProvider = centralAdminCookieClock);
+        }
         services.AddAuthorization();
         services.AddControllersWithViews()
             .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
@@ -115,6 +118,7 @@ internal sealed class AdminWebHost : IAsyncDisposable
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
+        services.AddScoped<ICentralAdminSessionValidator, CentralAdminSessionValidator>();
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
         services.AddScoped<ICentralAdminTenantOperationsService, CentralAdminTenantOperationsService>();
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
@@ -129,6 +133,8 @@ internal sealed class AdminWebHost : IAsyncDisposable
         services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
 
         var app = builder.Build();
+        // The same global error handling as Program.cs (Production: re-executes /error).
+        app.UseWaslaExceptionHandling(app.Environment);
         app.UseStaticFiles();
         app.UseRequestLocalization();
         app.UseRouting();
@@ -158,6 +164,21 @@ internal sealed class AdminWebHost : IAsyncDisposable
     }
 
     public AdminBrowser NewBrowser() => new(BaseAddress);
+
+    /// <summary>
+    /// A Central Admin cookie value protected exactly as the real cookie handler protects one, with chosen claims, so
+    /// tests can present cookies that an earlier release or a tampered issuer would have produced.
+    /// </summary>
+    public string ProtectCentralAdminCookie(IEnumerable<Claim> claims)
+    {
+        var options = _app.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(AuthSchemes.CentralAdmin);
+        var now = DateTimeOffset.UtcNow;
+        var ticket = new AuthenticationTicket(
+            new ClaimsPrincipal(new ClaimsIdentity(claims, AuthSchemes.CentralAdmin)),
+            new AuthenticationProperties { IssuedUtc = now, ExpiresUtc = now.Add(options.ExpireTimeSpan) },
+            AuthSchemes.CentralAdmin);
+        return options.TicketDataFormat.Protect(ticket);
+    }
 
     public async Task<AdminBrowser> SignedInAdminAsync(string? culture = null)
     {
@@ -209,7 +230,7 @@ internal sealed class AdminWebHost : IAsyncDisposable
     }
 }
 
-internal sealed record AdminResponse(HttpStatusCode Status, string Body, Uri? Location);
+internal sealed record AdminResponse(HttpStatusCode Status, string Body, Uri? Location, IReadOnlyList<string>? SetCookies = null);
 
 /// <summary>A browser with its own cookie jar that does not follow redirects.</summary>
 internal sealed partial class AdminBrowser : IDisposable
@@ -238,22 +259,39 @@ internal sealed partial class AdminBrowser : IDisposable
     public async Task<AdminResponse> GetAsync(string path)
     {
         using var response = await _client.GetAsync(path, TestContext.Current.CancellationToken);
-        return new AdminResponse(response.StatusCode, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken), response.Headers.Location);
+        return new AdminResponse(
+            response.StatusCode,
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
+            response.Headers.Location,
+            response.Headers.TryGetValues("Set-Cookie", out var setCookies) ? setCookies.ToList() : []);
     }
 
-    public async Task SignInAdminAsync()
+    /// <summary>The Central Admin session cookie this browser currently holds, or null.</summary>
+    public Cookie? CentralAdminCookie => _cookies.GetCookies(_baseAddress)[CentralAdminAuthCookieNames.Active];
+
+    /// <summary>Presents a Central Admin cookie value, as a copied, kept or forged cookie would be presented.</summary>
+    public void UseCentralAdminCookie(string value) =>
+        _cookies.Add(_baseAddress, new Cookie(CentralAdminAuthCookieNames.Active, value));
+
+    public Task SignInAdminAsync() => SignInAdminAsync(AdminWebHost.AdminEmail, AdminWebHost.AdminPassword);
+
+    public async Task SignInAdminAsync(string email, string password, bool rememberMe = false)
     {
         var login = await GetAsync("/admin/login");
         Assert.Equal(HttpStatusCode.OK, login.Status);
         var token = AntiforgeryToken().Match(login.Body);
         Assert.True(token.Success, "The admin login page has no antiforgery field.");
 
-        using var response = await _client.PostAsync("/admin/login", new FormUrlEncodedContent(new Dictionary<string, string>
+        var form = new Dictionary<string, string>
         {
-            ["Email"] = AdminWebHost.AdminEmail,
-            ["Password"] = AdminWebHost.AdminPassword,
+            ["Email"] = email,
+            ["Password"] = password,
             ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token.Groups[1].Value)
-        }), TestContext.Current.CancellationToken);
+        };
+        if (rememberMe)
+            form["RememberMe"] = "true";
+
+        using var response = await _client.PostAsync("/admin/login", new FormUrlEncodedContent(form), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.NotNull(_cookies.GetCookies(_baseAddress)[CentralAdminAuthCookieNames.Active]);
