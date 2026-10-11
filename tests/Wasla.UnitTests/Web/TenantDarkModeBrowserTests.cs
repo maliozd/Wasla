@@ -444,13 +444,22 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
     private async Task LoadAsync(HeadlessChromium browser, string path, CancellationToken ct, TenantVisualWebHost? host = null)
     {
         // The layout loads Bootstrap from its CDN; one retry absorbs a slow CDN response.
+        host ??= _host;
         try
         {
-            await browser.NavigateAsync(new Uri((host ?? _host).BaseAddress, path), ct);
+            try
+            {
+                await browser.NavigateAsync(new Uri(host.BaseAddress, path), ct);
+            }
+            catch (TimeoutException)
+            {
+                await browser.NavigateAsync(new Uri(host.BaseAddress, path), ct);
+            }
         }
-        catch (TimeoutException)
+        catch (TimeoutException ex) when (host.ServerErrors is { } errors)
         {
-            await browser.NavigateAsync(new Uri((host ?? _host).BaseAddress, path), ct);
+            // First, so it survives the one-line, 300-character CI annotation.
+            throw new TimeoutException($"{errors} -- {ex.Message}", ex);
         }
 
         if (!await browser.WaitForAsync("getComputedStyle(document.documentElement).getPropertyValue('--bs-blue').trim() !== ''", TimeSpan.FromSeconds(15), ct))
@@ -475,7 +484,7 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
     }
 
     // A real mouse click at the element's center, after scrolling it into view and checking that nothing covers it.
-    private static async Task ClickAsync(HeadlessChromium browser, string selector, CancellationToken ct)
+    private async Task ClickAsync(HeadlessChromium browser, string selector, CancellationToken ct)
     {
         var target = await browser.EvaluateAsync<JsonElement>($$"""
             (() => {
@@ -492,7 +501,8 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
             })()
             """, ct);
         Assert.True(target.GetProperty("found").GetBoolean(), $"{selector} is not on the page.");
-        Assert.True(target.GetProperty("hit").GetBoolean(), $"{selector} is covered or off screen: {target.GetProperty("at").GetString()} is on top.");
+        Assert.True(target.GetProperty("hit").GetBoolean(),
+            (_host.ServerErrors is { } errors ? errors + " -- " : "") + $"{selector} is covered or off screen: {target.GetProperty("at").GetString()} is on top.");
         await browser.ClickAtAsync(target.GetProperty("x").GetDouble(), target.GetProperty("y").GetDouble(), ct);
     }
 }

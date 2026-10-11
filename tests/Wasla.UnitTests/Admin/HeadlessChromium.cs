@@ -220,10 +220,17 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     }
 
     // What holds the load event back: the parser-blocking script (while the document is still loading), and images,
-    // stylesheets, frames and media that have not finished. Same-origin URLs are shown as paths.
+    // stylesheets, frames and media that have not finished. Same-origin URLs are shown as paths; a browser error page
+    // (chrome-error://chromewebdata/, shown for example for an HTTP error without a body) keeps its scheme.
     private const string LoadState = """
         (() => {
-          const short = u => { try { const x = new URL(u, location.href); return (x.origin === location.origin ? '' : x.host) + x.pathname; } catch (e) { return String(u); } };
+          const short = u => {
+            try {
+              const x = new URL(u, location.href);
+              if (!x.protocol.startsWith('http')) return (x.protocol + '//' + x.host + x.pathname).slice(0, 80);
+              return (x.origin === location.origin ? '' : x.host) + x.pathname;
+            } catch (e) { return String(u).slice(0, 80); }
+          };
           const scripts = [...document.scripts], last = scripts[scripts.length - 1];
           const pending = [
             ...(document.readyState === 'loading' && last ? ['parser at ' + (last.src ? 'script ' + short(last.src) : 'inline script ' + scripts.length)] : []),

@@ -53,13 +53,15 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
     private readonly string _contentRoot;
     private readonly CentralTestDatabase _central;
     private readonly RecordingTenantDbFactory _tenants;
+    private readonly ServerErrorLog _serverErrors;
 
-    private TenantVisualWebHost(WebApplication app, string contentRoot, CentralTestDatabase central, RecordingTenantDbFactory tenants)
+    private TenantVisualWebHost(WebApplication app, string contentRoot, CentralTestDatabase central, RecordingTenantDbFactory tenants, ServerErrorLog serverErrors)
     {
         _app = app;
         _contentRoot = contentRoot;
         _central = central;
         _tenants = tenants;
+        _serverErrors = serverErrors;
         BaseAddress = new Uri(app.Urls.First());
     }
 
@@ -168,6 +170,21 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         services.AddSingleton<ITenantDbContextFactory>(tenants);
 
         var app = builder.Build();
+        var serverErrors = new ServerErrorLog();
+        app.Use(async (http, next) =>
+        {
+            // Logging is off and the browser shows its own error page for an empty 500, so an exception in a page is
+            // recorded here for the test's failure message (a CI run is diagnosed from that message alone).
+            try
+            {
+                await next(http);
+            }
+            catch (Exception ex)
+            {
+                serverErrors.Add(http.Request.Path, ex);
+                throw;
+            }
+        });
         app.UseStaticFiles();
         app.UseRequestLocalization();
         app.UseRouting();
@@ -209,7 +226,30 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         app.MapControllerRoute(name: "areas", pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
 
         await app.StartAsync();
-        return new TenantVisualWebHost(app, contentRoot, central, tenants);
+        return new TenantVisualWebHost(app, contentRoot, central, tenants, serverErrors);
+    }
+
+    /// <summary>
+    /// The unhandled exceptions of this host's requests so far, newest first, one line each ("path: type: message @
+    /// first Wasla frame"), or null when there were none.
+    /// </summary>
+    public string? ServerErrors => _serverErrors.Describe();
+
+    private sealed class ServerErrorLog
+    {
+        private readonly System.Collections.Concurrent.ConcurrentStack<string> _errors = new();
+
+        public void Add(PathString path, Exception exception)
+        {
+            var root = exception.GetBaseException();
+            var frame = new System.Diagnostics.StackTrace(root).GetFrames()
+                .Select(f => f.GetMethod())
+                .FirstOrDefault(m => m?.DeclaringType?.FullName?.StartsWith("Wasla.", StringComparison.Ordinal) == true);
+            var where = frame is null ? "" : $" @ {frame.DeclaringType!.FullName}.{frame.Name}";
+            _errors.Push($"{path}: {root.GetType().Name}: {root.Message}{where}");
+        }
+
+        public string? Describe() => _errors.IsEmpty ? null : $"{_errors.Count} server error(s), newest: {string.Join(" | ", _errors.Take(3))}";
     }
 
     /// <summary>
