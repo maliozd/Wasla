@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.UnitTests.Admin;
 
 namespace Wasla.UnitTests.Cli;
 
@@ -42,6 +44,7 @@ public sealed class CliResetPasswordTests
         Assert.DoesNotContain("Mehmet Admin", output);
         Assert.DoesNotContain("Password updated successfully.", output);
         Assert.Equal(originalHash, (await ReloadCentralAsync(central, user.Id)).PasswordHash);
+        Assert.Equal(user.SecurityStamp, (await ReloadCentralAsync(central, user.Id)).SecurityStamp);
     }
 
     [Fact]
@@ -119,6 +122,8 @@ public sealed class CliResetPasswordTests
         var createdAt = user.CreatedAt;
         var lastLogin = user.LastLoginAt;
         var otherHash = other.PasswordHash;
+        var stamp = user.SecurityStamp;
+        var otherStamp = other.SecurityStamp;
         await using var promptOutput = new StringWriter();
         var reader = new ScriptedPasswordReader(NewPassword, NewPassword) { Output = promptOutput };
 
@@ -152,9 +157,83 @@ public sealed class CliResetPasswordTests
         Assert.Equal(lastLogin, updated.LastLoginAt);
         Assert.True(updated.UpdatedAt > createdAt);
         Assert.Equal(otherHash, (await ReloadCentralAsync(central, other.Id)).PasswordHash);
+        // Every existing Central Admin session of this admin ends; the other admin's sessions do not.
+        Assert.NotEqual(stamp, updated.SecurityStamp);
+        Assert.NotEqual(Guid.Empty, updated.SecurityStamp);
+        Assert.DoesNotContain(updated.SecurityStamp.ToString(), output, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(otherStamp, (await ReloadCentralAsync(central, other.Id)).SecurityStamp);
         Assert.Equal("starter", updatedMembership.PlanCode);
         Assert.Equal(MembershipStatus.Active, updatedMembership.Status);
         Assert.Equal("mehmet@example.com", updatedMembership.OwnerEmail);
+    }
+
+    // WAS-37: both central password commands end the admin's active Central Admin sessions, through the real Admin
+    // login, cookie and revalidation (AdminWebHost). Kept in this class so their console output is captured serially.
+
+    [Fact]
+    public async Task CentralResetPassword_RevokesActiveCentralAdminSessions_AndTheNewPasswordSignsIn()
+    {
+        using var central = new CentralTestDatabase();
+        using var tenants = new RecordingTenantDbFactory();
+        await using var host = await AdminWebHost.StartAsync(central, tenants);
+        using var session = await host.SignedInAdminAsync();
+        Assert.Equal(HttpStatusCode.OK, (await session.GetAsync("/admin")).Status);
+
+        await using (var db = central.CreateContext())
+        {
+            var (code, _) = await CaptureAsync(() => CliPasswordReset.ExecuteAsync(
+                db,
+                "central",
+                AdminWebHost.AdminEmail,
+                tenantSelector: null,
+                dryRun: false,
+                openTenant: (_, _) => throw new InvalidOperationException("Tenant database must not be opened."),
+                new ScriptedPasswordReader(NewPassword, NewPassword),
+                TestContext.Current.CancellationToken));
+            Assert.Equal(0, code);
+        }
+
+        AssertRevoked(await session.GetAsync("/admin"));
+        using var fresh = host.NewBrowser();
+        await fresh.SignInAdminAsync(AdminWebHost.AdminEmail, NewPassword);
+        Assert.Equal(HttpStatusCode.OK, (await fresh.GetAsync("/admin")).Status);
+        Assert.Empty(tenants.Opened);
+    }
+
+    [Fact]
+    public async Task LegacyResetCentralAdminPassword_RevokesActiveCentralAdminSessions_AndTheNewPasswordSignsIn()
+    {
+        using var central = new CentralTestDatabase();
+        using var tenants = new RecordingTenantDbFactory();
+        await using var host = await AdminWebHost.StartAsync(central, tenants);
+        using var session = await host.SignedInAdminAsync();
+        Assert.Equal(HttpStatusCode.OK, (await session.GetAsync("/admin")).Status);
+
+        using var cli = new HostBuilder()
+            .ConfigureServices(services => services.AddDbContext<CentralDbContext>(options => options.UseSqlite(central.ConnectionString)))
+            .Build();
+        var (code, output) = await CaptureAsync(() => CliCommands.ResetCentralAdminPasswordAsync(
+            cli,
+            AdminWebHost.AdminEmail,
+            NewPassword,
+            TestContext.Current.CancellationToken));
+        Assert.Equal(0, code);
+        Assert.Contains("Central admin password updated.", output);
+
+        AssertRevoked(await session.GetAsync("/admin"));
+        using var fresh = host.NewBrowser();
+        await fresh.SignInAdminAsync(AdminWebHost.AdminEmail, NewPassword);
+        Assert.Equal(HttpStatusCode.OK, (await fresh.GetAsync("/admin")).Status);
+    }
+
+    /// <summary>Redirected to the Admin login, with the Central Admin cookie deleted.</summary>
+    private static void AssertRevoked(AdminResponse response)
+    {
+        Assert.Equal(HttpStatusCode.Redirect, response.Status);
+        Assert.StartsWith("/admin/login", response.Location!.IsAbsoluteUri ? response.Location.PathAndQuery : response.Location.OriginalString, StringComparison.Ordinal);
+        Assert.Contains(response.SetCookies!, header =>
+            header.StartsWith(Wasla.Web.Security.CentralAdminAuthCookieNames.Active + "=;", StringComparison.Ordinal)
+            && header.Contains("expires=Thu, 01 Jan 1970", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -181,6 +260,7 @@ public sealed class CliResetPasswordTests
         Assert.DoesNotContain(NewPassword, output);
         Assert.DoesNotContain("Different123!", output);
         Assert.Equal(originalHash, stored.PasswordHash);
+        Assert.Equal(user.SecurityStamp, stored.SecurityStamp);
         Assert.Equal(updatedAt, stored.UpdatedAt);
         Assert.True(BCrypt.Net.BCrypt.Verify(OldPassword, stored.PasswordHash));
     }
@@ -208,6 +288,7 @@ public sealed class CliResetPasswordTests
         Assert.Contains("No changes were made.", output);
         Assert.DoesNotContain("short", output);
         Assert.Equal(originalHash, stored.PasswordHash);
+        Assert.Equal(user.SecurityStamp, stored.SecurityStamp);
         Assert.True(BCrypt.Net.BCrypt.Verify(OldPassword, stored.PasswordHash));
         Assert.False(BCrypt.Net.BCrypt.Verify("short", stored.PasswordHash));
     }
