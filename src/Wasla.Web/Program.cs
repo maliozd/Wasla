@@ -145,6 +145,9 @@ builder.Services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
 // X-Forwarded-For / X-Forwarded-Proto only from the proxies listed under TrustedProxies.
 builder.Services.AddWaslaTrustedProxies(builder.Configuration);
 
+// Unknown tenant hosts: one CentralDb lookup per host per short TTL, bounded in size (TenantResolution:MissCache).
+builder.Services.AddWaslaTenantHostMissCache(builder.Configuration);
+
 // Temporary Development tools: off unless Development and explicitly enabled (appsettings.Development.json).
 var developmentToolsSection = builder.Configuration.GetSection(DevelopmentToolsOptions.SectionName);
 builder.Services.Configure<DevelopmentToolsOptions>(developmentToolsSection);

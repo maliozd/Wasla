@@ -76,6 +76,9 @@ builder.Services.AddWaslaApiAuthenticationRateLimiting(builder.Configuration);
 // X-Forwarded-For / X-Forwarded-Proto only from the proxies listed under TrustedProxies.
 builder.Services.AddWaslaTrustedProxies(builder.Configuration);
 
+// Unknown tenant hosts: one CentralDb lookup per host per short TTL, bounded in size (TenantResolution:MissCache).
+builder.Services.AddWaslaTenantHostMissCache(builder.Configuration);
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
