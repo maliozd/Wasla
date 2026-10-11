@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.GuidedSetup;
 using Wasla.Domain.Entities.Central;
@@ -24,6 +25,7 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
 using Wasla.UnitTests.Admin;
+using Wasla.UnitTests.Platform;
 using Wasla.Web;
 using Wasla.Web.GuidedSetup;
 using Wasla.Infrastructure.Security;
@@ -168,6 +170,10 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         services.AddDbContext<CentralDbContext>(options => options.UseSqlite(central.ConnectionString));
         services.RemoveAll<ITenantDbContextFactory>();
         services.AddSingleton<ITenantDbContextFactory>(tenants);
+        // AesSecretManager needs the machine's ENCRYPTION_MASTER_KEY, which a developer machine may have and CI does not;
+        // the seeded credentials are fake markers that no page decrypts.
+        services.RemoveAll<ISecretManager>();
+        services.AddSingleton<ISecretManager, PassthroughSecrets>();
 
         var app = builder.Build();
         var serverErrors = new ServerErrorLog();
