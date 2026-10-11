@@ -317,6 +317,33 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
         AssertDark(await AuditAsync(browser, "#notificationSettingsModal .modal-content", ct), direction, page + " notification modal");
     }
 
+    // The browser's media features do not depend on the machine: a GitHub runner reports reduced motion, under which
+    // AdminLTE 4.0.0-rc3 displays every .fade element, so the closed (opacity 0) notification modal covered the page and
+    // its trigger there and nowhere else (WAS-74). The reduced-motion defect itself is a separate product issue.
+    [Theory]
+    [InlineData("en-US", 1280)]
+    [InlineData("ar-SA", 390)]
+    public async Task AClosedModal_DoesNotCoverItsTrigger(string culture, int width)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync(culture, width, "dark", ct);
+        await LoadAsync(browser, "/settings/orders", ct);
+
+        var state = await browser.EvaluateAsync<JsonElement>("""
+            (() => {
+              const trigger = document.getElementById('notificationSettingsBtn');
+              trigger.scrollIntoView({ block: 'center', inline: 'center' });
+              const r = trigger.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+              return { motion: matchMedia('(prefers-reduced-motion: no-preference)').matches,
+                       modal: getComputedStyle(document.getElementById('notificationSettingsModal')).display,
+                       onTop: !!hit && trigger.contains(hit) };
+            })()
+            """, ct);
+        Assert.True(state.GetProperty("motion").GetBoolean(), "The browser does not emulate prefers-reduced-motion: no-preference.");
+        Assert.Equal("none", state.GetProperty("modal").GetString());
+        Assert.True(state.GetProperty("onTop").GetBoolean(), "The closed notification modal covers its trigger.");
+    }
+
     [Theory]
     [InlineData("en-US", 1280)]
     [InlineData("ar-SA", 390)]

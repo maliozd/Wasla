@@ -20,6 +20,11 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     private readonly ClientWebSocket _socket;
     private int _nextId;
 
+    // Media features the machine would otherwise decide. A GitHub runner reports reduced motion and a developer machine
+    // usually does not, which changes the page (AdminLTE shows every .fade element under reduced motion), so every
+    // browser starts with the same values.
+    private readonly Dictionary<string, string> _mediaFeatures = new() { ["prefers-reduced-motion"] = "no-preference" };
+
     private HeadlessChromium(Process process, string profile, ClientWebSocket socket)
     {
         _process = process;
@@ -122,7 +127,9 @@ internal sealed class HeadlessChromium : IAsyncDisposable
 
             socket = new ClientWebSocket();
             await socket.ConnectAsync(new Uri(pageSocket), ct);
-            return new HeadlessChromium(browser, profile, socket);
+            var started = new HeadlessChromium(browser, profile, socket);
+            await started.EmulateMediaAsync(ct);
+            return started;
         }
         catch
         {
@@ -154,8 +161,15 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         SendAsync("Emulation.setDeviceMetricsOverride", new { width, height, deviceScaleFactor = 1, mobile }, ct);
 
     /// <summary>Emulates the operating-system color scheme ("light" or "dark"); open pages receive the change event.</summary>
-    public Task SetSystemColorSchemeAsync(string scheme, CancellationToken ct) =>
-        SendAsync("Emulation.setEmulatedMedia", new { features = new[] { new { name = "prefers-color-scheme", value = scheme } } }, ct);
+    public Task SetSystemColorSchemeAsync(string scheme, CancellationToken ct)
+    {
+        _mediaFeatures["prefers-color-scheme"] = scheme;
+        return EmulateMediaAsync(ct);
+    }
+
+    // Each call replaces the whole emulated list, so every feature set so far is sent again.
+    private Task EmulateMediaAsync(CancellationToken ct) =>
+        SendAsync("Emulation.setEmulatedMedia", new { features = _mediaFeatures.Select(f => new { name = f.Key, value = f.Value }).ToArray() }, ct);
 
     /// <summary>Runs a script in every new document before any of the page's own scripts.</summary>
     public async Task AddScriptBeforePageScriptsAsync(string source, CancellationToken ct)
