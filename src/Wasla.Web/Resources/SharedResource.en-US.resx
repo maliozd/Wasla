@@ -1623,9 +1623,6 @@
   <data name="Admin.InvalidCredentials" xml:space="preserve">
     <value>Invalid email or password.</value>
   </data>
-  <data name="Admin.AccountInactive" xml:space="preserve">
-    <value>Your admin account is inactive.</value>
-  </data>
   <data name="Admin.BackToDashboard" xml:space="preserve">
     <value>Back to restaurant list</value>
   </data>
@@ -3473,12 +3470,11 @@
   <data name="Auth.ForgotPassword.HelpText" xml:space="preserve"><value>Enter the email address associated with your account.</value></data>
   <data name="Auth.ForgotPassword.SendResetLink" xml:space="preserve"><value>Send reset link</value></data>
   <data name="Auth.ForgotPassword.ConfirmationTitle" xml:space="preserve"><value>Check your email</value></data>
-  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>A password reset link has been sent to your email address. Check your inbox and spam folder.</value></data>
-  <data name="Auth.ForgotPassword.UserNotFound" xml:space="preserve"><value>No user for this restaurant was found with this email address.</value></data>
-  <data name="Auth.ForgotPassword.UserInactive" xml:space="preserve"><value>This user account is not active. Contact your restaurant administrator.</value></data>
-  <data name="Auth.ForgotPassword.EmailDeliveryFailed" xml:space="preserve"><value>The password reset email could not be sent right now. Please try again later.</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>If an active account exists for this email address, a password reset link has been sent to it. Check your inbox and spam folder.</value></data>
   <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>Too many password reset attempts. Please try again later.</value></data>
   <data name="Auth.Login.TooManyAttempts" xml:space="preserve"><value>Too many sign-in attempts. Please wait a few minutes and try again.</value></data>
+  <data name="Signup.TooManyAttempts" xml:space="preserve"><value>Too many signup attempts. Please try again later, or complete a signup you have already started.</value></data>
+  <data name="Checkout.TooManyAttempts" xml:space="preserve"><value>Too many requests for this signup. Please wait a few minutes and try again.</value></data>
   <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>Reset password</value></data>
   <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>New password</value></data>
   <data name="Auth.ResetPassword.ConfirmNewPassword" xml:space="preserve"><value>Confirm new password</value></data>
