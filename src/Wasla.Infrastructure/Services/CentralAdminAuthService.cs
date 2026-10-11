@@ -9,7 +9,7 @@ public sealed class CentralAdminAuthService : ICentralAdminAuthService
 {
     // The one failure every unsuccessful attempt gets: an unknown email, an inactive account and a wrong password
     // cannot be told apart from the outside.
-    private static readonly CentralAdminLoginResult Failed = new(false, null, null, null, "Admin.InvalidCredentials");
+    private static readonly CentralAdminLoginResult Failed = new(false, null, null, null, "Admin.InvalidCredentials", null);
 
     private readonly CentralDbContext _db;
     private readonly ILogger<CentralAdminAuthService> _logger;
@@ -54,9 +54,14 @@ public sealed class CentralAdminAuthService : ICentralAdminAuthService
             var now = DateTime.UtcNow;
             user.LastLoginAt = now;
             user.UpdatedAt = now;
+            // A row inserted outside EF can carry the column's empty default, which no session is accepted with.
+            if (user.SecurityStamp == Guid.Empty)
+                user.SecurityStamp = Guid.NewGuid();
             await _db.SaveChangesAsync(ct).ConfigureAwait(false);
 
-            return new CentralAdminLoginResult(true, user.Id, user.Email, user.DisplayName, null);
+            // The stamp read together with the verified hash: if the password changes after this read, the session is
+            // issued with the old stamp and rejected on its first request.
+            return new CentralAdminLoginResult(true, user.Id, user.Email, user.DisplayName, null, user.SecurityStamp);
         }
         catch (Exception ex)
         {

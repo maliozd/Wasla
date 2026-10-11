@@ -161,6 +161,8 @@ internal static class CliCommands
             }
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            // Ends every existing Central Admin session of this admin.
+            user.SecurityStamp = Guid.NewGuid();
             user.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
 
