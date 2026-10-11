@@ -33,7 +33,9 @@ public sealed class WebAuthenticationRateLimiter : IDisposable
         _limiters = new Dictionary<string, PartitionedRateLimiter<HttpContext>>(StringComparer.Ordinal)
         {
             [AuthenticationRateLimitPolicies.TenantLogin] = Create(AuthenticationRateLimitPolicies.TenantLogin),
-            [AuthenticationRateLimitPolicies.CentralAdminLogin] = Create(AuthenticationRateLimitPolicies.CentralAdminLogin)
+            [AuthenticationRateLimitPolicies.CentralAdminLogin] = Create(AuthenticationRateLimitPolicies.CentralAdminLogin),
+            [AuthenticationRateLimitPolicies.SignupSubmission] = Create(AuthenticationRateLimitPolicies.SignupSubmission),
+            [AuthenticationRateLimitPolicies.SignupCheckout] = Create(AuthenticationRateLimitPolicies.SignupCheckout)
         };
     }
 
@@ -57,11 +59,12 @@ public sealed class WebAuthenticationRateLimiter : IDisposable
 }
 
 /// <summary>
-/// Limits a login POST action. It runs after antiforgery validation and model binding and before the action, so an
-/// attempt over the limit never reaches credential validation (no database, no password hash). That attempt gets the
-/// same login page with status 429, <c>Retry-After</c> and a localized message, the submitted email and return URL kept
-/// and the password not echoed. The message is the same for every email, so it does not reveal whether an account
-/// exists.
+/// Limits a login, signup or checkout POST action. It runs after antiforgery validation and model binding and before the
+/// action, so an attempt over the limit never reaches the action's work (no credential check, no password hash, no
+/// database write). By default that attempt gets the action's own view with status 429, <c>Retry-After</c> and the
+/// rate-limited flag in ViewData, the submitted form kept and the password not echoed; a controller that implements
+/// <see cref="IAuthenticationRateLimitResponder"/> builds the page itself. The answer is the same for every email, so
+/// it does not reveal whether an account exists.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
 public sealed class AuthenticationRateLimitAttribute : TypeFilterAttribute
@@ -94,10 +97,27 @@ internal sealed class AuthenticationRateLimitFilter(string policy, WebAuthentica
         AuthenticationRateLimiting.ApplyRejection(context.HttpContext.Response, retryAfter);
         AuthenticationRateLimiting.LogRejection(context.HttpContext, policy, retryAfter);
 
-        var model = context.ActionArguments.Values.FirstOrDefault(value => value is not CancellationToken);
         controller.ViewData[WebAuthenticationRateLimiting.RateLimitedViewDataKey] = true;
+        if (controller is IAuthenticationRateLimitResponder responder)
+        {
+            context.Result = await responder.RateLimitedAsync(context);
+            return;
+        }
+
+        var model = context.ActionArguments.Values.FirstOrDefault(value => value is not CancellationToken);
         var result = controller.View(model);
         result.StatusCode = StatusCodes.Status429TooManyRequests;
         context.Result = result;
     }
+}
+
+/// <summary>
+/// Implemented by a controller whose rate-limited actions need more than their own view with the bound model, for
+/// example a form that needs its option lists, or a POST action without a view. The response status is already 429 and
+/// <c>Retry-After</c> is set; the result must do no work the limit is meant to prevent. Implement it explicitly, so
+/// that MVC does not treat it as an action.
+/// </summary>
+public interface IAuthenticationRateLimitResponder
+{
+    Task<IActionResult> RateLimitedAsync(ActionExecutingContext context);
 }
