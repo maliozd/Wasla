@@ -21,12 +21,16 @@ Some Print Bridge tests also skip when no Windows printer is installed. They onl
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes to `dev` and `master` and on pull requests into them. It has two jobs that run in parallel. Each must pass.
+`.github/workflows/ci.yml` runs on pushes to `dev` and `master`, on pull requests into them, and manually (**Run workflow** on the Actions tab). It has two jobs that run in parallel. Each must pass.
 
 | Job | Runner | What it runs |
 | --- | --- | --- |
-| `build-and-test` | `windows-latest`, .NET 8 SDK (`8.0.x`) | Restore and Release build of `Wasla.sln`; the full `Wasla.UnitTests` project, including the headless-browser tests; the full `Wasla.PrintBridge.Tests` project, including the `Category=WebView2Runtime` tests. No test filter |
+| `build-and-test` | `windows-latest`, .NET 8 SDK (`8.0.x`) | Restore and Release build of `Wasla.sln`; the full `Wasla.UnitTests` project, including the headless-browser tests; the full `Wasla.PrintBridge.Tests` project, including the `Category=WebView2Runtime` tests. No test filter, and no test is excluded |
 | `javascript-tests` | `ubuntu-latest`, Node.js `24.21.0` (pinned in the workflow) | `node --test` over every file `git ls-files '*.test.js'` lists. The job fails when that list is empty |
+
+Print Bridge, its WebView2 runtime tests and the Edge headless-browser tests need Windows, so all .NET tests share the Windows job and its single Release build. The Node tests need no Windows API and run on Ubuntu.
+
+A new push to a pull request cancels that pull request's older run. Runs for pushes to `dev` and `master` and manual runs are never cancelled, so every commit on those branches gets a result. NuGet packages are cached by the project files' hash; restore still runs every time, so the cache only saves download time.
 
 Prerequisites on the Windows runner:
 
@@ -34,6 +38,8 @@ Prerequisites on the Windows runner:
 - The WebView2 runtime tests use the image's WebView2 Runtime and the runner's interactive desktop session. Windows stay off-screen.
 - The Print Bridge runtime tests need at least one installed printer on the runner. Nothing is sent to it.
 - The headless-browser tests need `cdn.jsdelivr.net`. Tests make no other network calls in CI, the workflow uses no repository secrets, and every test server is in-process with fake tokens and data.
+- The runner has no developer environment: no `ENCRYPTION_MASTER_KEY`, user secrets, certificates or local databases. A test host that registers the real Infrastructure services must replace `ISecretManager` with a fake (as `TenantVisualWebHost` and `TenantSessionApiHost` do); otherwise a test can pass on a developer machine and fail in CI. `TenantVisualWebHostTests` checks the visual host without the variable.
+- The runner reports `prefers-reduced-motion: reduce`, and a developer machine usually does not. The headless-browser driver (`HeadlessChromium`) therefore starts every browser emulating `prefers-reduced-motion: no-preference`, so a page renders the same everywhere. AdminLTE 4.0.0-rc3 displays every `.fade` element under reduced motion, which lets a closed modal cover the page. That is a product defect tracked in WAS-100, and the browser tests do not cover it yet.
 
 The workflow logs the browser version, the WebView2 Runtime version and the number of installed printers before the build.
 
@@ -41,8 +47,11 @@ How failures surface:
 
 - A build error or a failing test fails its step and the job. The Print Bridge tests still run after a unit-test failure, so one run reports both projects.
 - `scripts/ci/assert-test-results.ps1` then reads every result file. It fails the job when a file is missing, has no tests, or reports a failed or **skipped** test. A missing browser, an unreachable CDN, a missing WebView2 Runtime or a missing printer therefore fails CI instead of passing as a skip. The script adds an error annotation per failed or skipped test (first 20) and a totals table to the job summary.
-- A test that hangs for 15 minutes is stopped by `--blame-hang-timeout`. The run then fails with the hanging test's name and no memory dump. Each job also has a time limit.
+- A test that hangs for 15 minutes is stopped by `--blame-hang-timeout`. The run then fails with the hanging test's name and no memory dump. Each job also has a time limit (60 minutes for Windows, 15 for Node).
+- After the tests, the Windows job warns (it does not fail or kill anything) when an Edge, WebView2 or test host process outlived them.
 - Results are kept for 14 days as the `dotnet-test-results` (TRX files) and `javascript-test-results` (JUnit XML) artifacts. They contain test names, messages and output from fake data only.
+
+To find a failure: open the failed run. The annotations name each failed or skipped test with the first line of its message, and the job summary has the totals. Download the artifact for the full messages and stack traces (the TRX files open in Visual Studio or any XML viewer). A headless-browser page that does not finish loading reports where the page is and what it still waits for. `chrome-error://chromewebdata/` means the server answered with an error. Tests served by `TenantVisualWebHost` put the server's exception first.
 
 CI does not cover browser smoke of real screens, SQL Server, real platform providers, real printers or physical output, or the Print Bridge installer and update delivery. Those stay manual.
 
@@ -58,6 +67,28 @@ node --test (git ls-files '*.test.js')
 ```
 
 In a POSIX shell, the last command is `node --test $(git ls-files '*.test.js')`.
+
+The projects target .NET 8 (`net8.0`, `net8.0-windows`). There is no `global.json`, so a newer SDK also builds them, but the .NET 8 runtimes (`Microsoft.NETCore.App`, `Microsoft.AspNetCore.App`, `Microsoft.WindowsDesktop.App`) must be installed to run the tests. CI uses SDK `8.0.x` and Node.js `24.21.0`.
+
+To reproduce the Windows CI job exactly, run from the repository root in PowerShell. Clear `ENCRYPTION_MASTER_KEY` in that session first, because the runner does not have it:
+
+```powershell
+$env:ENCRYPTION_MASTER_KEY = $null
+dotnet restore Wasla.sln
+dotnet build Wasla.sln --configuration Release --no-restore
+dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj --configuration Release --no-build --logger "trx;LogFileName=Wasla.UnitTests.trx" --results-directory artifacts/test-results --blame-hang-timeout 15m --blame-hang-dump-type none
+dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=Wasla.PrintBridge.Tests.trx" --results-directory artifacts/test-results --blame-hang-timeout 15m --blame-hang-dump-type none
+./scripts/ci/assert-test-results.ps1 -Path artifacts/test-results/Wasla.UnitTests.trx, artifacts/test-results/Wasla.PrintBridge.Tests.trx
+```
+
+The Node job's exact command (bash, as in CI) writes a JUnit file that the same script checks:
+
+```bash
+mkdir -p artifacts/test-results
+node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=artifacts/test-results/javascript-tests.xml $(git ls-files '*.test.js')
+```
+
+`assert-test-results.ps1` runs in Windows PowerShell 5.1 and in PowerShell 7 (`pwsh`, used by CI). `artifacts/` is ignored by Git.
 
 Print Bridge tests reference the shipped `Wasla.PrintBridge.Core` and `Wasla.PrintBridge` assemblies, and they print only to a recording fake. They never read or write `C:\ProgramData\Wasla\PrintBridge`:
 
