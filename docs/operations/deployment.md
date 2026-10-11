@@ -48,6 +48,8 @@ Example without that margin: `AddAppUserSecurityStamp` (WAS-89) adds `AppUsers.S
 
 For this release, stop the previous Web version before `migrate-all-customers` runs (do not use the "keep on the previous version" option of step 1 for Web), and never run it next to the new Web. The previous version changes passwords and active states without replacing the stamp, so a password it changes, or a user it deactivates and reactivates, keeps that user's sessions on the new Web valid. A user it creates after the migration gets the column's all-zero default stamp, which never opens a session, so that user cannot sign in until their password is reset or changed on the new version.
 
+Example in CentralDb: `AddCentralAdminSecurityStamp` (WAS-37) adds `CentralAdminUsers.SecurityStamp` and gives every existing central admin a new value. Admin login and the check every Central Admin request makes read that column, so a new Web started before `migrate-central` cannot sign in central admins, and every signed-in Admin request fails closed with the error page. Central Admin cookies issued before the release carry no stamp, so every central admin signs in again once. After `migrate-central`, reset central admin passwords only with the new CLI: an older CLI changes the hash without replacing the stamp, so the admin's existing sessions would survive that reset. See [../architecture/authentication.md](../architecture/authentication.md#central-admin-session-revalidation).
+
 ## Required secrets and keys
 
 | Item | Used by | Notes |
