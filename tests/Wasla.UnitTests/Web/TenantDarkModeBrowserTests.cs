@@ -486,11 +486,13 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
               const r = e.getBoundingClientRect();
               const x = r.left + r.width / 2, y = r.top + r.height / 2;
               const hit = document.elementFromPoint(x, y);
-              return { found: true, x, y, hit: !!hit && e.contains(hit) };
+              const name = h => h ? h.tagName.toLowerCase() + (h.id ? '#' + h.id : '') + [...h.classList].slice(0, 3).map(c => '.' + c).join('') : 'nothing';
+              return { found: true, x, y, hit: !!hit && e.contains(hit),
+                       at: name(hit) + ' at (' + Math.round(x) + ', ' + Math.round(y) + ') in a ' + innerWidth + 'x' + innerHeight + ' viewport' };
             })()
             """, ct);
         Assert.True(target.GetProperty("found").GetBoolean(), $"{selector} is not on the page.");
-        Assert.True(target.GetProperty("hit").GetBoolean(), $"{selector} is covered or off screen.");
+        Assert.True(target.GetProperty("hit").GetBoolean(), $"{selector} is covered or off screen: {target.GetProperty("at").GetString()} is on top.");
         await browser.ClickAtAsync(target.GetProperty("x").GetDouble(), target.GetProperty("y").GetDouble(), ct);
     }
 }

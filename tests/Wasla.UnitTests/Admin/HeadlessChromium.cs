@@ -196,18 +196,51 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     public Task WheelAsync(double x, double y, double deltaY, CancellationToken ct) =>
         SendAsync("Input.dispatchMouseEvent", new { type = "mouseWheel", x, y, deltaX = 0, deltaY }, ct);
 
+    /// <summary>How long a navigation may take until the new document has finished loading.</summary>
+    internal static readonly TimeSpan NavigationTimeout = TimeSpan.FromSeconds(30);
+
     /// <summary>Navigates and waits until the new document has finished loading.</summary>
-    public async Task NavigateAsync(Uri url, CancellationToken ct)
+    public Task NavigateAsync(Uri url, CancellationToken ct) => NavigateAsync(url, NavigationTimeout, ct);
+
+    /// <summary>
+    /// Navigates and waits until the new document has finished loading. On timeout, the exception says where the page
+    /// is and what it still waits for, so a failure on another machine (CI) can be diagnosed from the message alone.
+    /// </summary>
+    internal async Task NavigateAsync(Uri url, TimeSpan timeout, CancellationToken ct)
     {
         await SendAsync("Page.navigate", new { url = url.ToString() }, ct);
-        var deadline = DateTime.UtcNow.AddSeconds(30);
+        var deadline = DateTime.UtcNow + timeout;
         while (await EvaluateAsync<bool>(
                    $"location.href === {JsonSerializer.Serialize(url.ToString())} && document.readyState === 'complete'", ct) is false)
         {
             if (DateTime.UtcNow > deadline)
-                throw new TimeoutException($"{url} did not finish loading.");
+                throw new TimeoutException($"{url} did not finish loading: {await DescribeLoadAsync(ct)}");
             await Task.Delay(100, ct);
         }
+    }
+
+    // What holds the load event back: the parser-blocking script (while the document is still loading), and images,
+    // stylesheets, frames and media that have not finished. Same-origin URLs are shown as paths.
+    private const string LoadState = """
+        (() => {
+          const short = u => { try { const x = new URL(u, location.href); return (x.origin === location.origin ? '' : x.host) + x.pathname; } catch (e) { return String(u); } };
+          const scripts = [...document.scripts], last = scripts[scripts.length - 1];
+          const pending = [
+            ...(document.readyState === 'loading' && last ? ['parser at ' + (last.src ? 'script ' + short(last.src) : 'inline script ' + scripts.length)] : []),
+            ...[...document.images].filter(i => i.src && !i.complete).map(i => 'img ' + short(i.currentSrc || i.src)),
+            ...[...document.querySelectorAll('link[rel~="stylesheet"][href]')].filter(l => !l.sheet).map(l => 'stylesheet ' + short(l.href)),
+            ...[...document.querySelectorAll('iframe')].map(f => 'iframe ' + short(f.src || 'about:blank')),
+            ...[...document.querySelectorAll('audio, video')].filter(m => m.readyState < 2 && m.networkState === 2).map(m => m.tagName.toLowerCase() + ' ' + short(m.currentSrc))
+          ];
+          return 'at ' + short(location.href) + location.search + ', readyState ' + document.readyState + ', fonts ' + document.fonts.status + ', '
+            + (pending.length ? 'pending: ' + pending.slice(0, 10).join(', ') : 'no pending script, image, stylesheet, frame or media');
+        })()
+        """;
+
+    private async Task<string> DescribeLoadAsync(CancellationToken ct)
+    {
+        try { return await EvaluateAsync<string>(LoadState, ct); }
+        catch (InvalidOperationException ex) { return "page state unavailable (" + ex.Message + ")"; }
     }
 
     /// <summary>Polls a boolean expression until it is true or the time runs out.</summary>
