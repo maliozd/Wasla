@@ -97,6 +97,21 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
         })();
         """;
 
+    // Runs in every document before the page's own scripts: records each Bootstrap modal show or hide with the first
+    // same-origin script frame that caused it, for the covered-click diagnosis in ClickAsync.
+    private const string ModalProbe = """
+        (() => {
+          const events = [];
+          window.__waslaModalEvents = events;
+          for (const type of ['show.bs.modal', 'hide.bs.modal'])
+            document.addEventListener(type, e => {
+              const frame = (new Error().stack || '').split('\n').map(l => l.match(/https?:\/\/[^/]+(\/[^?:)]+)[^:)]*:(\d+)/))
+                .find(m => m && !m[1].includes('bootstrap'));
+              events.push(type.split('.')[0] + ' #' + e.target.id + ' at ' + performance.now().toFixed(0) + 'ms by ' + (frame ? frame[1] + ':' + frame[2] : '?'));
+            }, true);
+        })();
+        """;
+
     // Blocks storage as a browser with storage disabled does (as the WAS-68 sidebar tests do).
     private const string BlockStorage = """
         Object.defineProperty(window, 'localStorage', {
@@ -282,6 +297,7 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
     {
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await BrowserAsync(culture, width, "dark", ct);
+        await browser.AddScriptBeforePageScriptsAsync(ModalProbe, ct);
         var page = $"{culture} {width}px dark";
 
         // Server-side validation errors after submitting the empty form with a real click.
@@ -496,13 +512,22 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
               const x = r.left + r.width / 2, y = r.top + r.height / 2;
               const hit = document.elementFromPoint(x, y);
               const name = h => h ? h.tagName.toLowerCase() + (h.id ? '#' + h.id : '') + [...h.classList].slice(0, 3).map(c => '.' + c).join('') : 'nothing';
+              // How the covering element came to be painted: its computed and inline display, whether Bootstrap shows it
+              // as a modal, the body state, and the modal events recorded by ModalProbe.
+              const cover = hit && hit.closest('.modal') || hit, cs = cover && getComputedStyle(cover);
+              const modal = cover && window.bootstrap && bootstrap.Modal && bootstrap.Modal.getInstance(cover);
+              // Most telling first: the CI annotation keeps only about 300 characters.
+              const state = cover ? 'events [' + (window.__waslaModalEvents || []).join('; ') + '], style "' + (cover.getAttribute('style') || '')
+                + '", display ' + cs.display + ', opacity ' + cs.opacity + ', aria-modal ' + cover.getAttribute('aria-modal')
+                + ', instance ' + (modal ? 'shown ' + !!modal._isShown : 'none') + ', backdrops ' + document.querySelectorAll('.modal-backdrop').length
+                + ', body "' + document.body.className + '"' : '';
               return { found: true, x, y, hit: !!hit && e.contains(hit),
-                       at: name(hit) + ' at (' + Math.round(x) + ', ' + Math.round(y) + ') in a ' + innerWidth + 'x' + innerHeight + ' viewport' };
+                       at: name(hit) + ' at (' + Math.round(x) + ', ' + Math.round(y) + ') is on top (' + state + ')' };
             })()
             """, ct);
         Assert.True(target.GetProperty("found").GetBoolean(), $"{selector} is not on the page.");
         Assert.True(target.GetProperty("hit").GetBoolean(),
-            (_host.ServerErrors is { } errors ? errors + " -- " : "") + $"{selector} is covered or off screen: {target.GetProperty("at").GetString()} is on top.");
+            (_host.ServerErrors is { } errors ? errors + " -- " : "") + $"{selector} covered: {target.GetProperty("at").GetString()}.");
         await browser.ClickAtAsync(target.GetProperty("x").GetDouble(), target.GetProperty("y").GetDouble(), ct);
     }
 }
