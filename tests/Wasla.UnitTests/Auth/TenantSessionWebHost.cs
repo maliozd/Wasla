@@ -91,7 +91,12 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
     /// <c>Wasla</c> and that key folder, as Web and Api do when an operator points both at one key ring; otherwise the
     /// keys are ephemeral and private to this host.
     /// </summary>
-    public static async Task<TenantSessionWebHost> StartAsync(DirectoryInfo? sharedDataProtectionKeys = null)
+    /// <param name="configuration">Extra configuration, for example rate limits or trusted proxies.</param>
+    /// <param name="configureServices">Runs after the application's registrations, to wrap or replace a service.</param>
+    public static async Task<TenantSessionWebHost> StartAsync(
+        DirectoryInfo? sharedDataProtectionKeys = null,
+        IReadOnlyDictionary<string, string?>? configuration = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         var central = new CentralTestDatabase();
         var tenants = new RecordingTenantDbFactory();
@@ -119,6 +124,8 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
             // Never opened: CentralDbContext is replaced by SQLite below.
             ["ConnectionStrings:CentralDb"] = "Server=(none);Database=WaslaSessionTests"
         });
+        if (configuration is not null)
+            builder.Configuration.AddInMemoryCollection(configuration);
 
         var services = builder.Services;
         services.AddMemoryCache();
@@ -167,9 +174,16 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         services.RemoveAll<ITenantDbContextFactory>();
         services.AddSingleton<ITenantDbContextFactory>(tenants);
 
+        // The login rate limits, trusted proxies and unknown-host cache Web Program.cs registers.
+        services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
+        services.AddWaslaTrustedProxies(builder.Configuration);
+        services.AddWaslaTenantHostMissCache(builder.Configuration);
+        configureServices?.Invoke(services);
+
         var app = builder.Build();
 
         // Same middleware order as Web Program.cs.
+        app.UseWaslaTrustedProxies();
         app.UseWaslaExceptionHandling(app.Environment);
         app.UseRequestLocalization();
         app.UseRouting();

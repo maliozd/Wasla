@@ -75,13 +75,13 @@ public sealed class AuthControllerPasswordResetTests
         Assert.Empty(controller.TempData);
     }
 
+    // WAS-90: an unknown or inactive email and a failed delivery get the confirmation a sent email gets, so the page
+    // never reveals whether an account exists. The rendered pages are compared in ForgotPasswordEnumerationTests.
     [Theory]
-    [InlineData(TenantPasswordResetRequestStatus.UserNotFound, "No user for this restaurant was found with this email address.")]
-    [InlineData(TenantPasswordResetRequestStatus.UserInactive, "This user account is not active. Contact your restaurant administrator.")]
-    [InlineData(TenantPasswordResetRequestStatus.EmailDeliveryFailed, "The password reset email could not be sent right now. Please try again later.")]
-    public async Task ForgotPasswordPost_NonSentOutcomesRemainOnFormWithSafeMessage(
-        TenantPasswordResetRequestStatus status,
-        string expectedMessage)
+    [InlineData(TenantPasswordResetRequestStatus.UserNotFound)]
+    [InlineData(TenantPasswordResetRequestStatus.UserInactive)]
+    [InlineData(TenantPasswordResetRequestStatus.EmailDeliveryFailed)]
+    public async Task ForgotPasswordPost_NonSentOutcomesShowTheSameConfirmation(TenantPasswordResetRequestStatus status)
     {
         var controller = CreateController(service: new FakeTenantPasswordResetService
         {
@@ -98,10 +98,12 @@ public sealed class AuthControllerPasswordResetTests
             TestContext.Current.CancellationToken);
 
         var view = Assert.IsType<ViewResult>(result);
+        Assert.Null(view.ViewName);
+        Assert.Null(view.StatusCode);
         var model = Assert.IsType<ForgotPasswordViewModel>(view.Model);
-        Assert.False(model.EmailSent);
-        Assert.Equal("owner@example.test", model.Email);
-        Assert.Contains(controller.ModelState[string.Empty]!.Errors, e => e.ErrorMessage == expectedMessage);
+        Assert.True(model.EmailSent);
+        Assert.True(string.IsNullOrEmpty(model.Email));
+        Assert.True(controller.ModelState.IsValid);
         Assert.Empty(controller.TempData);
     }
 
@@ -444,9 +446,6 @@ public sealed class AuthControllerPasswordResetTests
     {
         private static readonly Dictionary<string, string> Values = new(StringComparer.Ordinal)
         {
-            ["Auth.ForgotPassword.UserNotFound"] = "No user for this restaurant was found with this email address.",
-            ["Auth.ForgotPassword.UserInactive"] = "This user account is not active. Contact your restaurant administrator.",
-            ["Auth.ForgotPassword.EmailDeliveryFailed"] = "The password reset email could not be sent right now. Please try again later.",
             ["Auth.ResetPassword.Updated"] = "Your password has been updated.",
             ["Auth.ResetPassword.InvalidOrExpired"] = "The password reset link is invalid or has expired.",
             ["Validation.PasswordMinLength"] = "Password must be at least 8 characters."

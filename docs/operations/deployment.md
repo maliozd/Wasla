@@ -96,6 +96,30 @@ Useful URL overrides (env `__` form):
 
 Do not leave production pointing at `localhost` or LocalDB.
 
+## Reverse proxy and client address
+
+The repository contains no reverse-proxy configuration. Web and Api take the client address from the TCP connection unless the proxies in front of them are listed under `TrustedProxies` (`src/Wasla.Infrastructure/Security/TrustedProxies.cs`, WAS-90). Login rate limits are partitioned by that address ([../architecture/authentication.md](../architecture/authentication.md#credential-rate-limiting)), so this setting decides whether clients are told apart.
+
+| Key | Meaning |
+|-----|---------|
+| `TrustedProxies:KnownProxies` | Proxy addresses, for example `127.0.0.1` (and `::1` if it connects over IPv6) for a proxy on the same server |
+| `TrustedProxies:KnownNetworks` | Proxy networks in CIDR form, for example `10.0.0.0/24` |
+| `TrustedProxies:ForwardLimit` | Proxy hops to read from the right of `X-Forwarded-For`; default `1` (one proxy) |
+
+With no entries the forwarded-headers middleware is not added at all: `X-Forwarded-For` and `X-Forwarded-Proto` are ignored, and a client cannot choose its address by sending them. With entries, both headers are applied only when the connecting peer is one of them. The configured list replaces ASP.NET Core's loopback defaults. `X-Forwarded-Host` is never applied: tenants are resolved from the `Host` header, which the proxy must pass through unchanged.
+
+The proxy must append the address it saw, for example nginx `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` (or overwrite the header with `$remote_addr`), and send `X-Forwarded-Proto` when it terminates TLS. Otherwise HTTPS redirection and `Request.IsHttps` checks (for example the Print Bridge setup exchange) see plain HTTP. With `ForwardLimit` 1 only the rightmost entry counts, so whatever a client put in front of it is ignored.
+
+The process refuses to start when:
+
+- an entry does not parse, is an unspecified address (`0.0.0.0`, `::`), or is a `/0` network (every address);
+- `ForwardLimit` is outside 1–10;
+- `ASPNETCORE_FORWARDEDHEADERS_ENABLED` is `true`. That switch makes ASP.NET Core trust forwarded headers from every peer. List the proxies instead.
+
+At startup each process logs either "No trusted proxies configured…" or the number of trusted proxies and networks.
+
+If a proxy is deployed but not listed, every request appears to come from the proxy. All clients of a tenant then share one login allowance, which can lock legitimate users out for a window. Configure `TrustedProxies` in the same change that puts a proxy in front of Web or Api (production proxy decisions: WAS-77). Rate-limit counters are kept per process. Several instances behind a load balancer each count separately, and none of this is a distributed limit.
+
 ## Provider mode
 
 `Platforms__ProviderMode` = `Mock` or `Real` — **required** on Web, Worker, and API. Same value across processes.
@@ -153,6 +177,10 @@ OrderHub__CustomerOnboarding__MarketingBaseDomain
 OrderHub__CustomerOnboarding__ServerInstance
 OrderHub__CustomerOnboarding__SqlAuth
 OrderHub__ApiBaseUrl
+TrustedProxies__KnownProxies__0              # Web and API behind a reverse proxy
+AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
+OrderHub__CustomerOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
+TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
 CustomerDb__ServerInstance   # CLI
 ```
 

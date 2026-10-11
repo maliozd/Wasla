@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Infrastructure.Tenant;
 
 namespace Wasla.Api.Middleware;
 
@@ -20,6 +21,7 @@ public sealed class TenantResolutionMiddleware
         HttpContext context,
         IMemoryCache cache,
         ITenantResolver resolver,
+        TenantHostMissCache misses,
         ILogger<TenantResolutionMiddleware> logger)
     {
         var path = context.Request.Path.Value ?? string.Empty;
@@ -47,10 +49,20 @@ public sealed class TenantResolutionMiddleware
             return;
         }
 
-        var tenant = await resolver.ResolveByHostAsync(host, context.RequestAborted);
-        if (tenant is null)
+        // A host without a tenant is remembered for a short time, and concurrent requests for it share one lookup
+        // (TenantHostMissCache). The lookup is not cancelled with the request that started it: others may be waiting.
+        var lookup = await misses.GetOrLookupAsync(
+            TenantHostMissCache.Key(host)!,
+            async () =>
+            {
+                var resolved = await resolver.ResolveByHostAsync(host, CancellationToken.None);
+                if (resolved is null)
+                    logger.LogInformation("No tenant for host {Host}", host);
+                return resolved is null ? TenantHostLookup.NotFound : new TenantHostLookup(resolved);
+            },
+            context.RequestAborted);
+        if (lookup.Tenant is not { } tenant)
         {
-            logger.LogInformation("No tenant for host {Host}", host);
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             await context.Response.WriteAsync("Tenant not found");
             return;

@@ -8,5 +8,8 @@ public enum PendingRegistrationError
     DuplicateDomain,
     DuplicateDatabaseName,
     InvalidPlan,
-    SaveFailed
+    SaveFailed,
+
+    /// <summary>The owner email already has the maximum number of active (unexpired, unfinished) registrations.</summary>
+    TooManyActiveRegistrations
 }

@@ -24,6 +24,9 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         PendingRegistrationStatus.PaymentSucceeded
     ];
 
+    private const int NumberedDatabaseNameCandidates = 50;
+    private const int RandomDatabaseNameAttempts = 3;
+
     private readonly CentralDbContext _central;
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly ISignupReferenceDataService _referenceData;
@@ -66,6 +69,13 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         if (plan is null || plan.IsContactSales)
         {
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.InvalidPlan);
+        }
+
+        // Before any other lookup, the password hash and the insert: one email cannot accumulate registrations.
+        if (await HasMaximumActiveRegistrationsAsync(request.OwnerEmail, ct))
+        {
+            _logger.LogInformation("Pending registration refused: the owner email has the maximum number of active registrations.");
+            return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.TooManyActiveRegistrations);
         }
 
         var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(slug, _options.MarketingBaseDomain);
@@ -502,22 +512,66 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         return row;
     }
 
+    private async Task<bool> HasMaximumActiveRegistrationsAsync(string ownerEmail, CancellationToken ct)
+    {
+        var maximum = Math.Max(1, _options.MaxActivePendingRegistrationsPerOwnerEmail);
+        var normalizedEmail = ownerEmail.Trim().ToLowerInvariant();
+        var now = DateTime.UtcNow;
+        var active = await _central.PendingRegistrations.AsNoTracking()
+            .Where(p =>
+                BlockingStatuses.Contains(p.Status)
+                && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now)
+                && p.OwnerEmail.ToLower() == normalizedEmail)
+            .Take(maximum)
+            .CountAsync(ct);
+        return active >= maximum;
+    }
+
+    /// <summary>
+    /// A free database name in a fixed number of queries, however many registrations share the base name: the base
+    /// name and the next <see cref="NumberedDatabaseNameCandidates"/> numbered names are checked together (one query
+    /// per table), then up to <see cref="RandomDatabaseNameAttempts"/> random suffixes one at a time. At most 8 queries;
+    /// probing numbered names one by one took two queries per taken name.
+    /// </summary>
     private async Task<string?> ResolveUniqueDatabaseNameAsync(string baseDatabaseName, CancellationToken ct)
     {
-        if (!await IsDatabaseNameTakenAsync(baseDatabaseName, ct))
-            return baseDatabaseName;
+        var numbered = new List<string>(NumberedDatabaseNameCandidates + 1) { baseDatabaseName };
+        for (var suffix = 2; numbered.Count <= NumberedDatabaseNameCandidates; suffix++)
+            numbered.Add(baseDatabaseName + suffix.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-        for (var suffix = 2; suffix < 10_000; suffix++)
+        var taken = await TakenDatabaseNamesAsync(numbered, ct);
+        var free = numbered.FirstOrDefault(candidate => !taken.Contains(candidate));
+        if (free is not null)
+            return free;
+
+        for (var attempt = 0; attempt < RandomDatabaseNameAttempts; attempt++)
         {
-            var candidate = baseDatabaseName + suffix.ToString();
-            if (!RegistrationNameNormalizer.IsValidDatabaseNameFormat(candidate))
-                continue;
-
-            if (!await IsDatabaseNameTakenAsync(candidate, ct))
+            var candidate = baseDatabaseName + "_" + System.Security.Cryptography.RandomNumberGenerator.GetHexString(8, lowercase: true);
+            if (RegistrationNameNormalizer.IsValidDatabaseNameFormat(candidate) && !await IsDatabaseNameTakenAsync(candidate, ct))
                 return candidate;
         }
 
         return null;
+    }
+
+    private async Task<HashSet<string>> TakenDatabaseNamesAsync(IReadOnlyCollection<string> candidates, CancellationToken ct)
+    {
+        var tenantNames = await _central.Tenants.AsNoTracking()
+            .Where(c => candidates.Contains(c.DatabaseName))
+            .Select(c => c.DatabaseName)
+            .ToListAsync(ct);
+
+        var now = DateTime.UtcNow;
+        var pendingNames = await _central.PendingRegistrations.AsNoTracking()
+            .Where(p =>
+                BlockingStatuses.Contains(p.Status)
+                && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now)
+                && candidates.Contains(p.DatabaseName))
+            .Select(p => p.DatabaseName)
+            .ToListAsync(ct);
+
+        // SQL Server compares names case-insensitively; so does this set.
+        return new HashSet<string>(tenantNames.Concat(pendingNames), StringComparer.OrdinalIgnoreCase);
     }
 
     private static string NormalizeBillingPeriod(string billingPeriod) =>

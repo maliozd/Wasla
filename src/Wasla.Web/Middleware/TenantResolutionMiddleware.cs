@@ -5,6 +5,7 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Infrastructure.Options;
+using Wasla.Infrastructure.Tenant;
 
 namespace Wasla.Web.Middleware;
 
@@ -49,6 +50,7 @@ public sealed class TenantResolutionMiddleware
         IMemoryCache cache,
         ITenantResolver resolver,
         IPendingRegistrationService pendingRegistrations,
+        TenantHostMissCache misses,
         IOptions<CustomerOnboardingOptions> onboardingOptions,
         ILogger<TenantResolutionMiddleware> logger)
     {
@@ -100,22 +102,17 @@ public sealed class TenantResolutionMiddleware
             return;
         }
 
-        var tenant = await resolver.ResolveByHostAsync(host, context.RequestAborted);
-        if (tenant is null)
+        // A host without a tenant is remembered for a short time, and concurrent requests for it share one lookup, so
+        // requests for unknown hosts cannot turn into one CentralDb query each (TenantHostMissCache).
+        var lookup = await misses.GetOrLookupAsync(
+            TenantHostMissCache.Key(host)!,
+            () => LookupAsync(host, resolver, pendingRegistrations, logger),
+            context.RequestAborted);
+        if (lookup.Tenant is null)
         {
-            logger.LogInformation("No tenant for host {Host}", host);
-
-            var pending = await pendingRegistrations.GetActiveByPrimaryDomainAsync(
-                host,
-                context.RequestAborted);
-            if (pending is not null)
+            if (lookup.PendingRegistrationId is Guid pendingId)
             {
-                logger.LogInformation(
-                    "Pending registration found for host {Host}. RegistrationId={RegistrationId}, Status={Status}",
-                    host,
-                    pending.Id,
-                    pending.Status);
-                context.Response.Redirect($"/signup/pending/{pending.Id}");
+                context.Response.Redirect($"/signup/pending/{pendingId}");
                 return;
             }
 
@@ -125,8 +122,34 @@ public sealed class TenantResolutionMiddleware
             return;
         }
 
-        cache.Set(cacheKey, tenant, CacheTtl);
-        await ContinueWithTenantAsync(context, logger, tenant);
+        cache.Set(cacheKey, lookup.Tenant, CacheTtl);
+        await ContinueWithTenantAsync(context, logger, lookup.Tenant);
+    }
+
+    // Runs once per host at a time, for whichever request arrived first; it is not cancelled when that request ends,
+    // because other requests may be waiting for it.
+    private static async Task<TenantHostLookup> LookupAsync(
+        string host,
+        ITenantResolver resolver,
+        IPendingRegistrationService pendingRegistrations,
+        ILogger logger)
+    {
+        var tenant = await resolver.ResolveByHostAsync(host, CancellationToken.None);
+        if (tenant is not null)
+            return new TenantHostLookup(tenant);
+
+        logger.LogInformation("No tenant for host {Host}", host);
+
+        var pending = await pendingRegistrations.GetActiveByPrimaryDomainAsync(host, CancellationToken.None);
+        if (pending is null)
+            return TenantHostLookup.NotFound;
+
+        logger.LogInformation(
+            "Pending registration found for host {Host}. RegistrationId={RegistrationId}, Status={Status}",
+            host,
+            pending.Id,
+            pending.Status);
+        return new TenantHostLookup(null, pending.Id, pending.Status);
     }
 
     private async Task ContinueWithTenantAsync(HttpContext context, ILogger logger, ResolvedTenantDto tenant)

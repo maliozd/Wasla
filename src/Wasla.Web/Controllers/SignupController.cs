@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
@@ -12,6 +13,7 @@ using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
+using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Web.Models.Signup;
 using Wasla.Web.Security;
 
@@ -19,7 +21,7 @@ namespace Wasla.Web.Controllers;
 
 [AllowAnonymous]
 [Route("signup")]
-public sealed class SignupController : Controller
+public sealed class SignupController : Controller, IAuthenticationRateLimitResponder
 {
     private readonly IPendingRegistrationService _pendingRegistrations;
     private readonly ISignupReferenceDataService _referenceData;
@@ -57,7 +59,10 @@ public sealed class SignupController : Controller
         return View(model);
     }
 
+    // Limited per client network before any lookup, password hash or insert (AuthenticationRateLimiting:SignupSubmission);
+    // the service also caps active registrations per owner email.
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.SignupSubmission)]
     [HttpPost("")]
     public async Task<IActionResult> Index(SignupViewModel model, CancellationToken ct)
     {
@@ -142,6 +147,9 @@ public sealed class SignupController : Controller
         }
 
         var result = await _pendingRegistrations.SubmitAsync(request, ct);
+        if (result.Error == PendingRegistrationError.TooManyActiveRegistrations)
+            return TooManySignups(model);
+
         if (!result.Success)
         {
             ApplySignupError(result);
@@ -156,6 +164,27 @@ public sealed class SignupController : Controller
             DateTimeOffset.UtcNow.AddDays(Math.Max(1, _options.PendingRegistrationExpiryDays)));
 
         return RedirectToAction(nameof(Pending), new { id = registrationId });
+    }
+
+    /// <summary>
+    /// The signup form again, as for a validation error: its option lists (the reads a GET of this page makes), the
+    /// submitted values (never the password) and the throttling message in the validation summary, with status 429.
+    /// </summary>
+    async Task<IActionResult> IAuthenticationRateLimitResponder.RateLimitedAsync(ActionExecutingContext context)
+    {
+        var model = context.ActionArguments.Values.OfType<SignupViewModel>().FirstOrDefault() ?? new SignupViewModel();
+        await PopulateReferenceDataAsync(model, context.HttpContext.RequestAborted);
+        LocalizeModelStateErrors();
+        return TooManySignups(model);
+    }
+
+    // The same answer for the network limit and the per-email cap, so it does not say which applied.
+    private ViewResult TooManySignups(SignupViewModel model)
+    {
+        ModelState.AddModelError(string.Empty, _localizer["Signup.TooManyAttempts"].Value);
+        var result = View(nameof(Index), model);
+        result.StatusCode = StatusCodes.Status429TooManyRequests;
+        return result;
     }
 
     [HttpGet("districts")]

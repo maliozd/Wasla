@@ -9,6 +9,7 @@ using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Security;
+using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Web.Models.Auth;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -77,6 +78,7 @@ public sealed class AuthController : Controller
 
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.TenantLogin)]
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginViewModel model, CancellationToken ct)
     {
@@ -159,35 +161,17 @@ public sealed class AuthController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        var result = await _passwordReset.RequestResetAsync(
+        // Only an active user gets a token and an email; the service logs every other outcome. The page is the same
+        // confirmation for an existing, unknown or inactive email and for a failed delivery, so it never reveals
+        // whether an account exists.
+        _ = await _passwordReset.RequestResetAsync(
             tenant.Id,
             model.Email,
             rawToken => TenantWelcomeUrlBuilder.BuildPasswordResetUrl(Request, _environment, tenant.PrimaryDomain, rawToken),
             System.Globalization.CultureInfo.CurrentUICulture.Name,
             ct).ConfigureAwait(false);
 
-        return result.Status switch
-        {
-            TenantPasswordResetRequestStatus.EmailSent => View(new ForgotPasswordViewModel
-            {
-                EmailSent = true
-            }),
-            TenantPasswordResetRequestStatus.UserInactive => ForgotPasswordError(
-                model,
-                "Auth.ForgotPassword.UserInactive"),
-            TenantPasswordResetRequestStatus.EmailDeliveryFailed => ForgotPasswordError(
-                model,
-                "Auth.ForgotPassword.EmailDeliveryFailed"),
-            _ => ForgotPasswordError(
-                model,
-                "Auth.ForgotPassword.UserNotFound")
-        };
-    }
-
-    private ViewResult ForgotPasswordError(ForgotPasswordViewModel model, string resourceKey)
-    {
-        ModelState.AddModelError(string.Empty, _localizer[resourceKey].Value);
-        return View(model);
+        return View(new ForgotPasswordViewModel { EmailSent = true });
     }
 
     [AllowAnonymous]

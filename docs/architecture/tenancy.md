@@ -104,7 +104,7 @@ Domain types for tenant-DB entities still live under the legacy namespace `Wasla
 - Bypass prefixes include `/admin`, `/signup`, `/checkout`, static assets, `/api/print-bridge`, health/swagger, and several public status/access pages
 - Central/public hosts (`localhost`, marketing base domain, `www.{domain}`, raw IPs) skip tenant resolution for normal public routes; `/auth` on a central host redirects to tenant-address guidance
 - Tenant hosts are `{slug}.{MarketingBaseDomain}` (development marketing domain is typically `wasla.local`)
-- If host looks like a tenant host but no tenant exists: checks pending registration, else redirects to tenant-not-found
+- If host looks like a tenant host but no tenant exists: checks pending registration, else redirects to tenant-not-found. That outcome is kept in the [unknown-host cache](#unknown-host-cache)
 - Does **not** create databases, run migrations, or provision tenants
 
 ### API middleware
@@ -113,8 +113,21 @@ Domain types for tenant-DB entities still live under the legacy namespace `Wasla
 
 - Same `Items["CurrentTenant"]` key and **5-minute** host cache
 - Bypasses `/swagger`, `/health`, `/api/print-bridge`
-- Missing tenant → HTTP 404 `"Tenant not found"` (no pending-registration UX redirects)
+- Missing tenant → HTTP 404 `"Tenant not found"` (no pending-registration UX redirects), kept in the [unknown-host cache](#unknown-host-cache)
 - Does **not** provision databases
+
+### Unknown-host cache
+
+**Source:** `src/Wasla.Infrastructure/Tenant/TenantHostMissCache.cs` (WAS-90), used by both middlewares.
+
+The `Host` header is chosen by the client, so without this every request with an invented tenant-looking host was at least one CentralDb query (Web: two, tenant and pending registration).
+
+- A host that resolves to no tenant is remembered with what was found (nothing, or a pending registration for the Web redirect) for **60 seconds** (`TenantResolution:MissCache:Ttl`). Repeated requests for it within that time do not query CentralDb.
+- Requests for the same host that arrive while its lookup runs wait for that one lookup. The lookup is not cancelled when the request that started it ends. A lookup that fails (CentralDb down) is not remembered.
+- The cache holds at most **10,000** hosts (`TenantResolution:MissCache:MaxEntries`). When it is full, a further miss is answered correctly but not remembered until entries expire, so random hosts cannot grow memory beyond the bound.
+- The key is the host exactly as `TenantResolver` looks it up: trimmed and lower-cased, without the port (`Request.Host.Host`). A trailing dot or another spelling is a different key, so an entry can only answer for the host that produced it, and a miss is never served for a tenant's own host. `X-Forwarded-Host` is never applied. Tenants are not stored here; they stay in the 5-minute tenant cache.
+- **Trade-off:** a tenant created (or reactivated) for a host that was just requested shows as unknown for at most the TTL, and a pending registration's redirect can be up to the TTL old. Both settle on their own; there is no manual invalidation.
+- Validated at startup: `Ttl` from `00:00:01` to `00:10:00`, `MaxEntries` from 1 to 1,000,000. Process-local, like the other caches below.
 
 ### CurrentTenant
 
@@ -190,6 +203,19 @@ A registration ID is not secret: the pending-tenant redirect and `/tenant-not-fo
 - The payment simulator (`POST /checkout/simulate-success|simulate-failed/{id}`, its buttons, and the "payment will be simulated" note) exists only in Development, and only for the proven browser. Elsewhere the endpoints return 404. There is no real payment integration yet.
 - Every POST validates the antiforgery token. Status changes are compare-and-set on the status that request read, so a concurrent payment, failure, or cancellation is never overwritten (`PendingRegistrationService`).
 
+### Signup abuse limits
+
+Added in WAS-90. Every anonymous request that creates or changes a pending registration is bounded:
+
+| Bound | Default | Where | Over the bound |
+|-------|---------|-------|----------------|
+| `POST /signup` per client network | 10 per hour (`AuthenticationRateLimiting:SignupSubmission`) | Web rate-limit filter, after antiforgery and before the action | `429` with `Retry-After`: the signup form again (option lists, entered values, never the password) with `Signup.TooManyAttempts` in the validation summary |
+| Checkout POSTs that change a registration (`/checkout/cancel`, the Development simulator) per client network | 20 per 10 minutes (`AuthenticationRateLimiting:SignupCheckout`) | Same filter | `429` with `Retry-After`: a short page with `Checkout.TooManyAttempts` and a link back to the payment step; the registration is not read or changed |
+| Active registrations (Draft, AwaitingPayment, PaymentSucceeded, not expired) per owner email | 3 (`OrderHub:CustomerOnboarding:MaxActivePendingRegistrationsPerOwnerEmail`) | `PendingRegistrationService.SubmitAsync`, before any other lookup, the password hash or the insert; email compared trimmed and case-insensitively | `429` with the same form and message as the network limit, so the response does not say which bound applied |
+| Database-name search for a business name | At most 8 queries | `PendingRegistrationService`: the base name and the next 50 numbered names in one query per table, then up to 3 random 8-hex suffixes | Fails as before (`DuplicateDatabaseName`) only if all of those are taken |
+
+A rejected attempt creates no registration and does no hashing. The network limits are the shared credential rate limiter ([authentication.md](authentication.md#credential-rate-limiting)), with the same partitions, logging and process-local counters. The per-email cap is read from CentralDb, so it holds across processes and restarts. It is a count followed by an insert, not a lock: signups for one email submitted at the same moment can each pass the count, so the cap can be exceeded by the number of simultaneous requests, which the network limit in turn bounds. The database-name search used to probe numbered names one at a time, about two queries per taken name and up to roughly 20,000 for a popular name.
+
 **Sources:** `src/Wasla.Web/Security/SignupRegistrationOwnership.cs`, `src/Wasla.Web/Controllers/SignupController.cs`, `src/Wasla.Web/Controllers/CheckoutController.cs`, `src/Wasla.Infrastructure/Services/PendingRegistrationService.cs`, tests in `tests/Wasla.UnitTests/Signup/`.
 
 ## Platform connections (tenant DB)
@@ -223,6 +249,7 @@ The tenant database has a `Branch` row with name, address, and an active flag, e
 | `TenantResolver` | `tenant:{host}` | 5 minutes |
 | Web `TenantResolutionMiddleware` | `tenant:{host}` | 5 minutes |
 | API `TenantResolutionMiddleware` | `tenant:{host}` | 5 minutes |
+| `TenantHostMissCache` (Web and API, hosts without a tenant only) | the host, lower-cased | 60 seconds, at most 10,000 hosts |
 
 ## Related docs
 

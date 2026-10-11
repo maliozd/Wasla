@@ -36,6 +36,10 @@
 
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4">
+                    @if (ViewData[Wasla.Web.Security.WebAuthenticationRateLimiting.RateLimitedViewDataKey] is true)
+                    {
+                        <div class="alert alert-warning" role="alert">@L["Auth.Login.TooManyAttempts"]</div>
+                    }
                     <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
 
                     <form method="post" action="/admin/login">
