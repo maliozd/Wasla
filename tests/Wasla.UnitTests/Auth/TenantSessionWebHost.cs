@@ -174,9 +174,10 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         services.RemoveAll<ITenantDbContextFactory>();
         services.AddSingleton<ITenantDbContextFactory>(tenants);
 
-        // The login rate limits and trusted proxies Web Program.cs registers.
+        // The login rate limits, trusted proxies and unknown-host cache Web Program.cs registers.
         services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
         services.AddWaslaTrustedProxies(builder.Configuration);
+        services.AddWaslaTenantHostMissCache(builder.Configuration);
         configureServices?.Invoke(services);
 
         var app = builder.Build();

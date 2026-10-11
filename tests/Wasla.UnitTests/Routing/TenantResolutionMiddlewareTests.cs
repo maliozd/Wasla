@@ -7,6 +7,7 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
+using Wasla.Infrastructure.Tenant;
 using Wasla.Web.Middleware;
 
 namespace Wasla.UnitTests.Routing;
@@ -149,18 +150,20 @@ public sealed class TenantResolutionMiddlewareTests
         return context;
     }
 
-    private static Task InvokeAsync(
+    private static async Task InvokeAsync(
         TenantResolutionMiddleware middleware,
         HttpContext context,
         ITenantResolver resolver,
         IPendingRegistrationService pendingRegistrations)
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        return middleware.InvokeAsync(
+        using var misses = new TenantHostMissCache(Options.Create(new TenantHostMissCacheOptions()));
+        await middleware.InvokeAsync(
             context,
             cache,
             resolver,
             pendingRegistrations,
+            misses,
             Options.Create(new CustomerOnboardingOptions { MarketingBaseDomain = "wasla.local" }),
             NullLogger<TenantResolutionMiddleware>.Instance);
     }

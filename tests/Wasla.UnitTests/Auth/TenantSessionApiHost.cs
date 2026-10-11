@@ -96,6 +96,7 @@ internal sealed class TenantSessionApiHost : IAsyncDisposable
         services.AddWaslaApiTenantAuthentication(CookieSecurePolicy.Always);
         services.AddWaslaApiAuthenticationRateLimiting(builder.Configuration);
         services.AddWaslaTrustedProxies(builder.Configuration);
+        services.AddWaslaTenantHostMissCache(builder.Configuration);
         services.AddControllers();
 
         // The same databases as the Web host, and a fake secret manager instead of the master key.

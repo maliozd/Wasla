@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,7 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Plans;
@@ -25,6 +27,7 @@ using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Tenant;
 using Wasla.Web.Controllers;
 using Wasla.Web.Middleware;
+using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Signup;
 
@@ -59,7 +62,8 @@ internal sealed class SignupWebHost : IAsyncDisposable
         SqliteConnection centralDb,
         string keyRingPath,
         string environmentName = "Production",
-        string applicationName = "Wasla")
+        string applicationName = "Wasla",
+        IReadOnlyDictionary<string, string?>? configuration = null)
     {
         var contentRoot = Directory.CreateTempSubdirectory("wasla-signup-host-").FullName;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -104,6 +108,15 @@ internal sealed class SignupWebHost : IAsyncDisposable
         services.AddScoped<ITenantResolver, TenantResolver>();
         // The signup validator is not under test here; the controller's own checks still run.
         services.AddSingleton<IValidator<PendingRegistrationRequest>>(new InlineValidator<PendingRegistrationRequest>());
+
+        // The signup/checkout limits and the unknown-host cache Program.cs registers. A class shares one host and posts
+        // from one loopback address, so the limits are raised unless a test passes its own; SignupRateLimitTests covers them.
+        builder.Configuration["AuthenticationRateLimiting:SignupSubmission:PermitLimit"] = "1000";
+        builder.Configuration["AuthenticationRateLimiting:SignupCheckout:PermitLimit"] = "1000";
+        if (configuration is not null)
+            builder.Configuration.AddInMemoryCollection(configuration);
+        services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
+        services.AddWaslaTenantHostMissCache(builder.Configuration);
 
         var app = builder.Build();
         app.UseRequestLocalization();
@@ -214,7 +227,8 @@ internal sealed class TestBrowser : IDisposable
             response.Headers.Location?.OriginalString,
             setCookies.ToList(),
             response.Headers.CacheControl?.ToString(),
-            response.Content.Headers.ContentType?.MediaType);
+            response.Content.Headers.ContentType?.MediaType,
+            response.Headers.RetryAfter?.Delta);
     }
 
     public void Dispose() => _client.Dispose();
@@ -226,4 +240,5 @@ internal sealed record TestResponse(
     string? Location,
     IReadOnlyList<SetCookieHeaderValue> SetCookies,
     string? CacheControl,
-    string? ContentType);
+    string? ContentType,
+    TimeSpan? RetryAfter = null);

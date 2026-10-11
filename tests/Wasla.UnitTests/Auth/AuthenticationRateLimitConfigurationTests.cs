@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Infrastructure.Services;
+using Wasla.Web.Controllers;
 using Wasla.Web.Security;
 using ApiAuthController = Wasla.Api.Controllers.AuthController;
 using AdminAuthController = Wasla.Web.Areas.Admin.Controllers.AuthController;
@@ -63,6 +64,8 @@ public sealed class AuthenticationRateLimitConfigurationTests
         Assert.Equal((10, TimeSpan.FromMinutes(5)), (options.TenantLogin.PermitLimit, options.TenantLogin.Window));
         Assert.Equal((5, TimeSpan.FromMinutes(5)), (options.CentralAdminLogin.PermitLimit, options.CentralAdminLogin.Window));
         Assert.Equal((10, TimeSpan.FromMinutes(5)), (options.ApiCredentialValidation.PermitLimit, options.ApiCredentialValidation.Window));
+        Assert.Equal((10, TimeSpan.FromHours(1)), (options.SignupSubmission.PermitLimit, options.SignupSubmission.Window));
+        Assert.Equal((20, TimeSpan.FromMinutes(10)), (options.SignupCheckout.PermitLimit, options.SignupCheckout.Window));
     }
 
     [Fact]
@@ -88,6 +91,8 @@ public sealed class AuthenticationRateLimitConfigurationTests
     [InlineData("CentralAdminLogin", "Window", "-00:01:00")]
     [InlineData("ApiCredentialValidation", "Window", "00:00:00.5")]
     [InlineData("TenantLogin", "Window", "1.00:00:01")]
+    [InlineData("SignupSubmission", "PermitLimit", "0")]
+    [InlineData("SignupCheckout", "Window", "00:00:00")]
     public void InvalidLimits_FailValidation(string policy, string setting, string value)
     {
         var exception = Assert.Throws<OptionsValidationException>(() => Bind(new Dictionary<string, string?>
@@ -207,6 +212,19 @@ public sealed class AuthenticationRateLimitConfigurationTests
         Assert.Equal(AuthenticationRateLimitPolicies.CentralAdminLogin, LoginPolicy<AdminAuthController>(post: true));
         Assert.Null(LoginPolicy<AdminAuthController>(post: false));
 
+        // Every anonymous action that creates or changes a pending registration, and nothing that only reads one.
+        var signupPost = Assert.Single(typeof(SignupController).GetMethods(), m => m.Name == nameof(SignupController.Index) && m.GetCustomAttribute<HttpPostAttribute>() is not null);
+        Assert.Equal(AuthenticationRateLimitPolicies.SignupSubmission, signupPost.GetCustomAttribute<AuthenticationRateLimitAttribute>()?.Policy);
+        foreach (var action in typeof(SignupController).GetMethods().Where(m => m.GetCustomAttribute<HttpGetAttribute>() is not null))
+            Assert.Null(action.GetCustomAttribute<AuthenticationRateLimitAttribute>());
+        foreach (var action in typeof(CheckoutController).GetMethods().Where(m => m.DeclaringType == typeof(CheckoutController)))
+        {
+            var expected = action.GetCustomAttribute<HttpPostAttribute>() is not null ? AuthenticationRateLimitPolicies.SignupCheckout : null;
+            Assert.Equal(expected, action.GetCustomAttribute<AuthenticationRateLimitAttribute>()?.Policy);
+        }
+
+        Assert.False(AuthenticationRateLimitPolicies.IsTenantScoped(AuthenticationRateLimitPolicies.SignupSubmission));
+        Assert.False(AuthenticationRateLimitPolicies.IsTenantScoped(AuthenticationRateLimitPolicies.SignupCheckout));
         Assert.True(AuthenticationRateLimitPolicies.IsTenantScoped(AuthenticationRateLimitPolicies.TenantLogin));
         Assert.True(AuthenticationRateLimitPolicies.IsTenantScoped(AuthenticationRateLimitPolicies.ApiCredentialValidation));
         Assert.False(AuthenticationRateLimitPolicies.IsTenantScoped(AuthenticationRateLimitPolicies.CentralAdminLogin));
