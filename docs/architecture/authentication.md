@@ -99,6 +99,8 @@ Wasla.Api runs the same check on the same cookie (WAS-94). It has no endpoint th
 - Claims: name identifier, email, display name, role `CentralAdmin`
 - **No `TenantId` claim**
 - Logout expires active + several legacy central-admin cookie names
+- An unknown email, an inactive account and a wrong password get the same result and the same page: `Admin.InvalidCredentials`, status 200, nothing else different (WAS-90; there is no separate "inactive" message any more). Every attempt verifies one bcrypt hash: the account's own (also for an inactive account), or for an unknown email the static dummy hash `AuthValidationService.DummyHash` (default work factor), so an unknown email does not answer measurably faster. A stored hash that cannot be read fails the same way. `CentralAdminAuthService`
+- Inactive admins are still managed only through the CLI; signing in with one is refused as above, and the attempt is not recorded as a login
 
 Tenant and Central Admin login POSTs are rate limited; see [Credential rate limiting](#credential-rate-limiting).
 
@@ -114,7 +116,7 @@ Every endpoint that accepts a password is limited:
 | Web `POST /admin/login` | `auth-central-admin-login` | Client network (on any host) | 5 attempts per 5 minutes |
 | Api `POST /api/auth/validate` | `auth-api-credential-validation` | Resolved tenant + client network | 10 attempts per 5 minutes |
 
-Outside these policies: the forgot-password POST keeps its own earlier policy (`tenant-forgot-password`, 5 per 10 minutes per host and address); the reset-password POST (which needs a one-time emailed token), signup and Print Bridge device-token requests have no credential-entry limit from this section.
+The same mechanism and configuration section also limit anonymous signup: `signup-submission` (`POST /signup`, 10 per hour per client network) and `signup-checkout` (the checkout POSTs that change a registration, 20 per 10 minutes). See [tenancy.md](tenancy.md#signup-abuse-limits). Outside these policies: the forgot-password POST keeps its own earlier policy (`tenant-forgot-password`, 5 per 10 minutes per host and address); the reset-password POST (which needs a one-time emailed token) and Print Bridge device-token requests have no limit from this section.
 
 **How it counts.** Each policy is a fixed window per partition with no queue. Every attempt counts: a success, a wrong password, an unknown email and an invalid form alike. When the window ends the partition starts again from zero; there is no account lockout and nothing is stored.
 
@@ -158,7 +160,7 @@ Why these defaults (no threshold was set in WAS-90): 10 attempts per 5 minutes a
 **Limitations.**
 
 - *Process-local.* Counters are in each process's memory. Web and Api count separately, a restart clears the counters, and with several instances of one process behind a load balancer each instance has its own allowance. Up to that many times the limit can then be used. Today Wasla runs one instance of each on one server; nothing here is a distributed limit.
-- *Per network, not per account.* An attacker spread over many networks is not stopped by these limits, and there is no per-account backoff (a remaining WAS-90 item).
+- *Per network, not per account.* An attacker spread over many networks is not stopped by these limits, and there is no per-account backoff or lockout. A persistent per-account defence needs failure counters stored with each tenant user and Central Admin (a schema change and migration of every database) and a decision on the lockout trade-off (an attacker can lock out a known account); neither has been made, so it is not implemented.
 - *Fixed window.* Up to twice the limit can pass in a short burst around a window boundary.
 - *Reverse proxy.* Behind a proxy that is not listed in `TrustedProxies`, every client has the proxy's address, so all users of a tenant share one allowance. See [deployment.md](../operations/deployment.md#reverse-proxy-and-client-address).
 
@@ -253,6 +255,7 @@ Current implementation:
 
 - Raw token length 32 bytes; SHA-256 hash stored; expiry **60 minutes**
 - Emails reset link via `IEmailSender`
+- Only an active user of the resolved tenant gets a token and an email. The page is the same confirmation (`Auth.ForgotPassword.ConfirmationDescription`, "if an active account exists for this email address…") for an active, inactive or unknown email, a user of another tenant, and a failed delivery: same status (200), body, headers and cookies (WAS-90). The service still distinguishes these outcomes for its logs. What it cannot hide is time: an eligible request does a token write and the email send before answering, which can take noticeably longer with SMTP
 - Completing reset replaces the tenant `AppUser` password hash and security stamp, which ends that user's existing sessions
 - The used token and other unused unexpired tokens for that user are marked used
 - The Web action then redirects to the login page. It does not call `SignInAsync`

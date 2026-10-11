@@ -96,9 +96,11 @@ Login and credential-check attempts over their limit ([../architecture/authentic
 | Warning | `Authentication rate limit reached; rejecting requests until the window resets.` | First rejection of a partition in its window |
 | Debug | `Authentication rate limit rejected another request.` with `RejectedInWindow` | Every further rejection in that window |
 
-Fields: `Policy` (`auth-tenant-login`, `auth-central-admin-login`, `auth-api-credential-validation`), `TenantId` (the resolved tenant for tenant policies, empty otherwise), `ClientTag` and `RetryAfterSeconds`. `ClientTag` is 12 hex characters derived from the client network with a random per-process key. It groups one client's rejections within one process, but it cannot be turned back into an address and differs between processes and restarts. Nothing else is logged: no address, partition key, email, password, cookie or header.
+Fields: `Policy` (`auth-tenant-login`, `auth-central-admin-login`, `auth-api-credential-validation`, `signup-submission`, `signup-checkout`), `TenantId` (the resolved tenant for tenant policies, empty otherwise), `ClientTag` and `RetryAfterSeconds`. `ClientTag` is 12 hex characters derived from the client network with a random per-process key. It groups one client's rejections within one process, but it cannot be turned back into an address and differs between processes and restarts. Nothing else is logged: no address, partition key, email, password, cookie or header.
 
 Reading them: many Warnings with different `ClientTag`s for one `TenantId` point to an attack spread over many networks, which these limits do not stop (no per-account backoff yet). Warnings for one tag across many tenants point to one network trying many tenants. A sudden rise right after a reverse proxy was added usually means `TrustedProxies` is missing ([deployment.md](deployment.md#reverse-proxy-and-client-address)). At startup each process also logs whether trusted proxies are configured.
+
+A signup refused by the per-email cap logs Information `Pending registration refused: the owner email has the maximum number of active registrations.` without the email. Tenant resolution logs Information `No tenant for host {Host}` once per lookup, so with the unknown-host cache an unknown host appears at most once per TTL, not once per request ([../architecture/tenancy.md](../architecture/tenancy.md#unknown-host-cache)).
 
 ## Explicit gaps
 

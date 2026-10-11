@@ -179,6 +179,8 @@ OrderHub__CustomerOnboarding__SqlAuth
 OrderHub__ApiBaseUrl
 TrustedProxies__KnownProxies__0              # Web and API behind a reverse proxy
 AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
+OrderHub__CustomerOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
+TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
 CustomerDb__ServerInstance   # CLI
 ```
 
