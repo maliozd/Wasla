@@ -8,7 +8,8 @@ namespace Wasla.UnitTests.Web;
 /// (Edge or Chrome) against the real tenant layout: no page error, the phone/tablet drawer opens and closes by mouse,
 /// keyboard, Escape and the backdrop with focus moved and restored, and the desktop collapse control works, in English
 /// LTR and Arabic RTL at 390, 820 and 1366 px. One test checks that the preference is still saved and read when storage
-/// works, without touching other keys. Skips only when no Chromium browser is installed (see
+/// works, without touching other keys, and one that every way of closing the phone drawer returns focus to the menu
+/// button (WAS-84). Skips only when no Chromium browser is installed (see
 /// <see cref="HeadlessChromium.BrowserVariable"/>) or Bootstrap cannot be loaded from its CDN.
 /// </summary>
 public sealed class TenantSidebarStorageBrowserTests : IAsyncLifetime
@@ -53,7 +54,7 @@ public sealed class TenantSidebarStorageBrowserTests : IAsyncLifetime
           const box = e => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right, width: r.width }; };
           const shown = e => !!e && e.getBoundingClientRect().width > 0 && getComputedStyle(e).visibility !== 'hidden' && getComputedStyle(e).display !== 'none';
           return {
-            dir: html.getAttribute('dir'), width: innerWidth, scrollWidth: html.scrollWidth, clientWidth: html.clientWidth,
+            dir: html.getAttribute('dir'), width: innerWidth, scrollY, scrollWidth: html.scrollWidth, clientWidth: html.clientWidth,
             navOpen: body.classList.contains('wasla-nav-open'), locked: body.classList.contains('wasla-nav-lock'),
             mobileShell: body.classList.contains('wasla-shell-mobile'), desktopShell: body.classList.contains('wasla-shell-desktop'),
             collapsed: body.classList.contains('sidebar-collapsed'),
@@ -165,6 +166,69 @@ public sealed class TenantSidebarStorageBrowserTests : IAsyncLifetime
         AssertNoPageErrors(await StateAsync(browser, ct), "storage available");
     }
 
+    // WAS-84: the backdrop cannot take focus, so pressing it moves focus to <body> before its click closes the drawer.
+    // Focus must still return to the menu button, as it does for Escape and the close button, without a scroll jump,
+    // a trap or a change to the desktop preference.
+    [Theory]
+    [InlineData("en-US", "ltr")]
+    [InlineData("ar-SA", "rtl")]
+    public async Task OnAPhone_EveryWayOfClosingTheDrawer_ReturnsFocusToTheMenuButton(string culture, string direction)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var page = $"390px {culture}";
+        await using var browser = await BrowserAsync(culture, 390, ct);
+        await browser.AddScriptBeforePageScriptsAsync(ErrorProbe, ct);
+        await LoadTenantAsync(browser, "/help", ct);
+
+        // Scrolled a little, with the menu button still in view: closing must not move the page. Bootstrap makes
+        // scrolling smooth, so this scroll is instant.
+        await browser.EvaluateAsync<bool>("(() => { scrollTo({ top: 16, behavior: 'instant' }); return true; })()", ct);
+        Assert.True(await browser.WaitForAsync("scrollY === 16", TimeSpan.FromSeconds(5), ct), $"{page}: the page did not scroll");
+        var state = await StateAsync(browser, ct);
+        Assert.Equal(direction, state.GetProperty("dir").GetString());
+        Assert.True(state.GetProperty("mobileShell").GetBoolean(), $"{page}: not the mobile shell; page errors: {state.GetProperty("errors")}");
+        var scrollY = state.GetProperty("scrollY").GetDouble();
+        var collapsed = state.GetProperty("collapsed").GetBoolean();
+        var width = state.GetProperty("width").GetDouble();
+
+        // Pointer opens, the backdrop closes.
+        await ClickElementAsync(browser, "#tenantNavOpen", ct);
+        AssertDrawerOpen(await WaitForDrawerAsync(browser, open: true, page, ct), direction, page + " after a click");
+        await ClickBackdropAsync(browser, direction, width, page, ct);
+        state = await WaitForDrawerAsync(browser, open: false, page, ct);
+        AssertDrawerClosed(state, direction, page + " after a backdrop click", expectFocusOnTrigger: true);
+        Assert.Equal(scrollY, state.GetProperty("scrollY").GetDouble());
+
+        // Keyboard opens, the backdrop closes; Tab then moves on into the page, not into the closed drawer.
+        await browser.PressKeyAsync("Enter", shift: false, ct);
+        AssertDrawerOpen(await WaitForDrawerAsync(browser, open: true, page, ct), direction, page + " after Enter");
+        await ClickBackdropAsync(browser, direction, width, page, ct);
+        state = await WaitForDrawerAsync(browser, open: false, page, ct);
+        AssertDrawerClosed(state, direction, page + " after Enter and a backdrop click", expectFocusOnTrigger: true);
+        await browser.PressKeyAsync("Tab", shift: false, ct);
+        state = await StateAsync(browser, ct);
+        var focused = state.GetProperty("focused").GetString();
+        Assert.True(focused is not ("tenantNavOpen" or "BODY") && !state.GetProperty("focusInSidebar").GetBoolean(),
+            $"{page}: Tab after closing moved focus to {focused} (in the drawer: {state.GetProperty("focusInSidebar")})");
+
+        // Escape and a click on the close button still return focus to the menu button.
+        await ClickElementAsync(browser, "#tenantNavOpen", ct);
+        AssertDrawerOpen(await WaitForDrawerAsync(browser, open: true, page, ct), direction, page + " before Escape");
+        await browser.PressKeyAsync("Escape", shift: false, ct);
+        AssertDrawerClosed(await WaitForDrawerAsync(browser, open: false, page, ct), direction, page + " after Escape", expectFocusOnTrigger: true);
+        await ClickElementAsync(browser, "#tenantNavOpen", ct);
+        AssertDrawerOpen(await WaitForDrawerAsync(browser, open: true, page, ct), direction, page + " before the close button");
+        await ClickElementAsync(browser, "#tenantNavClose", ct);
+        state = await WaitForDrawerAsync(browser, open: false, page, ct);
+        AssertDrawerClosed(state, direction, page + " after the close button", expectFocusOnTrigger: true);
+
+        Assert.Equal(scrollY, state.GetProperty("scrollY").GetDouble());
+        Assert.Equal(collapsed, state.GetProperty("collapsed").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, (await StoredAsync(browser, ct)).GetProperty("sidebar").ValueKind);
+        AssertNoHorizontalOverflow(state, page + " at the end");
+        AssertNoPageErrors(state, page + " at the end");
+    }
+
     private async Task ExerciseDrawerAsync(HeadlessChromium browser, string direction, string page, CancellationToken ct)
     {
         var state = await StateAsync(browser, ct);
@@ -192,11 +256,9 @@ public sealed class TenantSidebarStorageBrowserTests : IAsyncLifetime
         state = await WaitForDrawerAsync(browser, open: true, page, ct);
         AssertDrawerOpen(state, direction, page + " after Space");
         var width = state.GetProperty("width").GetDouble();
-        await browser.ClickAtAsync(direction == "rtl" ? 12 : width - 12, 500, ct);
-        // Existing behavior, independent of storage: pressing on the backdrop moves focus to <body> before the drawer
-        // closes, so focus is not restored to the trigger here; it must not stay inside the hidden drawer.
+        await ClickBackdropAsync(browser, direction, width, page, ct);
         state = await WaitForDrawerAsync(browser, open: false, page, ct);
-        AssertDrawerClosed(state, direction, page + " after the backdrop", expectFocusOnTrigger: false);
+        AssertDrawerClosed(state, direction, page + " after the backdrop", expectFocusOnTrigger: true);
         Assert.False(state.GetProperty("focusInSidebar").GetBoolean(), $"{page}: focus stayed inside the closed drawer");
         AssertNoHorizontalOverflow(await StateAsync(browser, ct), page + " after the drawer");
     }
@@ -358,6 +420,15 @@ public sealed class TenantSidebarStorageBrowserTests : IAsyncLifetime
             ({ sidebar: localStorage.getItem('{{SidebarKey}}'), theme: localStorage.getItem('Wasla.tenant.theme'),
                unrelated: localStorage.getItem('wasla.test.unrelated'), count: localStorage.length })
             """, ct);
+
+    // A real mouse click on the backdrop beside the open drawer (inline-end side), after checking the backdrop is on top there.
+    private static async Task ClickBackdropAsync(HeadlessChromium browser, string direction, double width, string page, CancellationToken ct)
+    {
+        var x = (int)(direction == "rtl" ? 12 : width - 12); // an integer, so the script text does not depend on the culture
+        Assert.True(await browser.EvaluateAsync<bool>($"document.elementFromPoint({x}, 500) === document.getElementById('tenantNavBackdrop')", ct),
+            $"{page}: the backdrop is not on top at ({x}, 500)");
+        await browser.ClickAtAsync(x, 500, ct);
+    }
 
     // A real mouse click at the element's center, after checking that nothing covers it there.
     private static async Task ClickElementAsync(HeadlessChromium browser, string selector, CancellationToken ct)

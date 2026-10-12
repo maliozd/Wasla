@@ -230,10 +230,12 @@
 
     function closeNav(restoreFocus) {
       var wasOpen = document.body.classList.contains(OPEN_CLASS);
+      // The trigger is inside main, and inert content cannot take focus: release main first. A press on the backdrop
+      // has already moved focus to <body>, so this is the only chance to return focus to the trigger.
+      setMainInert(false);
       if (isFocusInside(sidebar) || (restoreFocus && wasOpen)) {
         moveFocusToTrigger();
       }
-      setMainInert(false);
       hideSidebarAfterFocusMoved();
       setOpenChrome(false);
     }
