@@ -58,6 +58,15 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         string? panelLoginUrl = null,
         CancellationToken ct = default)
     {
+        // Taken before the registration is read: a later attempt then sees the finished result and reports
+        // AlreadyProvisioned, and a simultaneous one is refused before any database work (WAS-93).
+        await using var attemptLock = await ProvisioningRegistrationLock
+            .TryAcquireAsync(_central, registrationId, ct)
+            .ConfigureAwait(false);
+        if (attemptLock is null)
+            return ProvisioningResult.NotEligible(
+                "Another provisioning attempt for this registration is in progress. Check the registration again when it finishes.");
+
         var registration = await _central.PendingRegistrations
             .FirstOrDefaultAsync(r => r.Id == registrationId, ct)
             .ConfigureAwait(false);
