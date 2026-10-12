@@ -25,6 +25,7 @@ Web must **not** start/stop Worker OS processes, Windows services, Docker contai
 - **CentralDb**: tenant registry, memberships, signup/provisioning, central admins, Print Bridge device registry. Connection: `ConnectionStrings:CentralDb` / `ConnectionStrings__CentralDb`.
 - **Per-tenant DBs**: operational data for one restaurant location. Connection strings stored encrypted on the tenant row; decrypted with `ENCRYPTION_MASTER_KEY`. Several locations are several tenants. See [../architecture/tenancy.md](../architecture/tenancy.md).
 - CLI provisioning / migrations use `CustomerDb:ServerInstance` (`CustomerDb__ServerInstance`) when creating or migrating tenant databases.
+- Tenant databases are created only on an explicitly configured SQL Server (WAS-93): `--sql-server`, then `CustomerDb:ServerInstance`, then `OrderHub:CustomerOnboarding:ServerInstance`. There is no built-in default and the committed base `appsettings.json` files no longer name one (LocalDB is set only in the Development files), so a deployment that sets none of them cannot provision: Central Admin and `provision-signup-request` report "No SQL Server instance is configured" before any database work. Before this change the CLI's base `appsettings.json`, loaded after environment variables, replaced `CustomerDb__ServerInstance` with LocalDB.
 
 Apply schema with CLI — see [migrations.md](migrations.md). Provisioning applies tenant migrations inside provisioning; not via middleware.
 
