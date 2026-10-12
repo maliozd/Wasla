@@ -77,7 +77,7 @@ Every command past `help` and `hash-password` stops when `ConnectionStrings:Cent
 | Command | Purpose |
 |---------|---------|
 | `add-customer` | Create tenant registry row, membership row, tenant database, migrations, first admin. Optional `--business-phone`, `--city`, `--country` feed the dashboard setup checklist. The database name is server-assigned (`Wasla_{SlugLabel}_{random}`), and an existing database is never adopted ([tenancy](../architecture/tenancy.md#tenant-database-identity-was-93)) |
-| `provision-signup-request` | Provision a paid `PendingRegistration` into a live tenant (`--dry-run`, `--force`, SQL options). `--force` only retries a registration marked Provisioned without a tenant row; it never adopts a database without this registration's ownership marker |
+| `provision-signup-request` | Provision a paid `PendingRegistration` into a live tenant (`--dry-run`, `--force`, SQL options). `--force` only retries a registration marked Provisioned without a tenant row; it never adopts a database without this registration's ownership marker. A second attempt for the same registration while one runs is refused |
 | `list-customers` | List tenants from CentralDb |
 | `delete-customer` | Delete tenant record and drop tenant DB (destructive) |
 | `reset-customer-db` | Drop/recreate one tenant DB; keep CentralDb row (destructive) |
@@ -88,6 +88,8 @@ Every command past `help` and `hash-password` stops when `ConnectionStrings:Cent
 CLI help still labels these as “Customer commands”; product terminology is **tenant**. The command names remain `*-customer*` / `list-customers`.
 
 ### Provisioning note
+
+`add-customer` and `provision-signup-request` need an explicit SQL Server for the tenant database: `--sql-server`, `CustomerDb:ServerInstance` or `OrderHub:CustomerOnboarding:ServerInstance`. There is no default; without one they stop before touching any database (`--dry-run` also fails). The committed CLI `appsettings.json` names no server.
 
 `provision-signup-request` is the payment-gated signup → live tenant path. Do not mark registrations Provisioned by hand in the DB. Web middleware must not provision.
 
