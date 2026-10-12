@@ -308,7 +308,7 @@ public sealed class LiveScreenTrainingIsolationTests : IDisposable
             }
         };
 
-        var ok = Assert.IsType<OkObjectResult>(await controller.LiveData(coordinator ?? Coordinator(permissions), new TenantOperationalModeService(_tenants), Ct));
+        var ok = Assert.IsType<OkObjectResult>(await controller.LiveData(coordinator ?? Coordinator(permissions), new TenantOperationalModeService(_tenants), new PlatformConnectionService(_tenants, null!, null!), Ct));
         return Assert.IsType<LiveScreenSnapshotResult>(ok.Value);
     }
 

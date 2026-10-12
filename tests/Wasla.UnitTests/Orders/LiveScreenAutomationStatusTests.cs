@@ -338,7 +338,7 @@ public sealed class LiveScreenAutomationStatusTests : IDisposable
             new TenantNavigationAuthorizationService(RealPolicies(tenant)), new FakeSetupStatus(), new FakeDemos(),
             new FakePrintBridgeDevices(), new CapturingLogger());
         var ok = Assert.IsType<OkObjectResult>(
-            await Controller(role, tenant).LiveData(coordinator, modes ?? new TenantOperationalModeService(_tenants), Ct));
+            await Controller(role, tenant).LiveData(coordinator, modes ?? new TenantOperationalModeService(_tenants), new PlatformConnectionService(_tenants, null!, null!), Ct));
         return Assert.IsType<LiveScreenSnapshotResult>(ok.Value);
     }
 
