@@ -157,6 +157,8 @@ public sealed class CentralAdminPendingRegistrationServiceTests : IDisposable
         Assert.NotNull(detail);
         Assert.Equal(reg.Id, detail.Id);
         Assert.Equal("testslug", detail.Slug);
+        // Operators review the target database before provisioning (WAS-93).
+        Assert.Equal("Wasla_testslug", detail.DatabaseName);
         Assert.True(detail.IsEligibleForProvisioning);
     }
 

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
+using Wasla.Application.Onboarding;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
@@ -14,7 +15,7 @@ namespace Wasla.UnitTests.Signup;
 /// <summary>
 /// The bounds <see cref="PendingRegistrationService.SubmitAsync"/> puts on anonymous signups (WAS-90): at most three
 /// active registrations per owner email, refused before any lookup, hash or insert; and a database-name search with a
-/// fixed number of queries, however many registrations share a business name. File-backed SQLite; every SQL command the
+/// fixed number of queries. Database names are server-assigned and paid registrations keep their reservation (WAS-93). File-backed SQLite; every SQL command the
 /// service sends is recorded. All data is fake.
 /// </summary>
 public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
@@ -88,55 +89,71 @@ public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
         Assert.True(accepted.Success, accepted.Error.ToString());
     }
 
-    // --- Database-name search -----------------------------------------------------------------------
+    // --- Database names and reservations (WAS-93) --------------------------------------------------
 
     [Fact]
-    public async Task ManyRegistrationsSharingABusinessName_CostAFixedNumberOfNameQueries()
+    public async Task ABusinessNamedCentral_GetsARandomServerAssignedName_NotTheCentralDbCatalog()
     {
-        // The base name and all 50 numbered names after it are taken.
-        await SeedAsync(PendingRegistrationStatus.AwaitingPayment, databaseName: "Wasla_BurgerHouse");
-        for (var suffix = 2; suffix <= 51; suffix++)
-            await SeedAsync(PendingRegistrationStatus.AwaitingPayment, databaseName: $"Wasla_BurgerHouse{suffix}");
-        _commands.Reset();
-
-        var result = await SubmitAsync("Burger House");
+        var result = await SubmitAsync("Central", slug: "central");
 
         Assert.True(result.Success, result.Error.ToString());
-        Assert.Matches("^Wasla_BurgerHouse_[0-9a-f]{8}$", result.DatabaseName!);
-        var nameQueries = NameQueries();
-        // One query per table for the numbered names, then one pair for the random name: 4, never more than 8.
-        Assert.InRange(nameQueries.Count, 4, 8);
+        Assert.NotEqual("Wasla_Central", result.DatabaseName, StringComparer.OrdinalIgnoreCase);
+        Assert.Matches("^Wasla_Central_[0-9a-f]{12}$", result.DatabaseName!);
+        Assert.True(TenantDatabaseNames.IsGeneratedFormat(result.DatabaseName));
     }
 
     [Fact]
-    public async Task TheFirstFreeNumberedName_IsUsed_WithOneQueryPerTable()
+    public async Task TwoSignupsWithTheSameBusinessName_GetDifferentDatabaseNames_WithAFixedNumberOfNameQueries()
     {
-        await SeedAsync(PendingRegistrationStatus.AwaitingPayment, databaseName: "Wasla_BurgerHouse");
-        await SeedAsync(PendingRegistrationStatus.AwaitingPayment, databaseName: "Wasla_BurgerHouse2");
-        await SeedAsync(PendingRegistrationStatus.AwaitingPayment, databaseName: "Wasla_BurgerHouse3");
-        // An expired registration does not hold its name.
-        await SeedAsync(PendingRegistrationStatus.Expired, databaseName: "Wasla_BurgerHouse4");
+        var first = await SubmitAsync("Burger House");
         _commands.Reset();
+        var second = await SubmitAsync("Burger House");
 
-        var result = await SubmitAsync("Burger House");
-
-        Assert.True(result.Success, result.Error.ToString());
-        Assert.Equal("Wasla_BurgerHouse4", result.DatabaseName);
+        Assert.True(first.Success, first.Error.ToString());
+        Assert.True(second.Success, second.Error.ToString());
+        Assert.NotEqual(first.DatabaseName, second.DatabaseName, StringComparer.OrdinalIgnoreCase);
+        // One query per table for the one candidate a random suffix practically always yields.
         Assert.Equal(2, NameQueries().Count);
     }
 
     [Fact]
-    public async Task AFreeBaseName_IsUsedAsItIs()
+    public async Task APaidRegistrationPastItsOriginalExpiry_StillReservesItsSlug()
     {
-        var result = await SubmitAsync("Burger House");
+        await SeedAsync(PendingRegistrationStatus.PaymentSucceeded, mutate: r =>
+        {
+            r.Slug = "paid-slug";
+            r.PrimaryDomain = "paid-slug.wasla.local";
+            r.ExpiresAtUtc = DateTime.UtcNow.AddDays(-30);
+        });
+
+        var result = await SubmitAsync("Someone Else", slug: "paid-slug");
+
+        Assert.False(result.Success);
+        Assert.Equal(PendingRegistrationError.DuplicateSlug, result.Error);
+    }
+
+    [Fact]
+    public async Task AnUnpaidRegistrationPastItsExpiry_NoLongerReservesItsSlug()
+    {
+        await SeedAsync(PendingRegistrationStatus.AwaitingPayment, mutate: r =>
+        {
+            r.Slug = "lapsed-slug";
+            r.PrimaryDomain = "lapsed-slug.wasla.local";
+            r.ExpiresAtUtc = DateTime.UtcNow.AddMinutes(-1);
+        });
+
+        var result = await SubmitAsync("Someone Else", slug: "lapsed-slug");
 
         Assert.True(result.Success, result.Error.ToString());
-        Assert.Equal("Wasla_BurgerHouse", result.DatabaseName);
     }
 
     // --- Helpers ------------------------------------------------------------------------------------
 
-    private async Task<PendingRegistrationResult> SubmitAsync(string businessName, string? ownerEmail = null, int maxActivePerEmail = 3)
+    private async Task<PendingRegistrationResult> SubmitAsync(
+        string businessName,
+        string? ownerEmail = null,
+        int maxActivePerEmail = 3,
+        string? slug = null)
     {
         await using var db = NewDb(counted: true);
         var service = new PendingRegistrationService(
@@ -156,7 +173,7 @@ public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
                 BusinessPhoneType: "Mobile",
                 BusinessPhone: "5551112233",
                 BusinessEmail: null,
-                Slug: $"s{token}",
+                Slug: slug ?? $"s{token}",
                 Country: "Germany",
                 CityId: null,
                 DistrictId: null,
@@ -179,13 +196,15 @@ public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
             TestContext.Current.CancellationToken);
     }
 
-    private async Task SeedAsync(PendingRegistrationStatus status, string? ownerEmail = null, string? databaseName = null)
+    private async Task SeedAsync(
+        PendingRegistrationStatus status,
+        string? ownerEmail = null,
+        Action<Wasla.Domain.Entities.Central.PendingRegistration>? mutate = null)
     {
         var applicant = new SentinelApplicant(status);
         if (ownerEmail is not null)
             applicant.Entity.OwnerEmail = ownerEmail;
-        if (databaseName is not null)
-            applicant.Entity.DatabaseName = databaseName;
+        mutate?.Invoke(applicant.Entity);
         await using var db = NewDb(counted: false);
         db.PendingRegistrations.Add(applicant.Entity);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
