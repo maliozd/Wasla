@@ -45,6 +45,7 @@ Print Bridge presence uses the canonical `PrintBridgeConnectionStatusCalculator`
 ## Secret redaction
 
 - Queries project only displayed columns. Encrypted connection strings, token hashes, password hashes, provider API keys and secrets, supplier ids, executor e-mails, IP addresses, installation ids and print payloads are never selected. The connection-details check returns a boolean computed in the database.
+- The Pending Registrations pages (`/admin/pending-registrations` and its detail, WAS-38) follow the same rule with one CentralDb query each. Neither selects the registration's password hash or simulated payment reference, or a tenant's connection string. The list selects the owner's name but no contact fields and reads no tenant row; the detail selects the contact and address fields it shows plus the linked tenant's primary domain, and its provision action uses that same projection. Provisioning reads the full registration only inside `PendingRegistrationProvisioningService`.
 - `LastMigrationResult`, sync error messages and integration error messages contain raw exception text and are never shown; only their outcome (succeeded/failed/not recorded) is.
 - Logs for failed health reads contain the tenant id, the state, the exception type name and the SQL error number. Never the message.
 - Tests plant marker secrets in every sensitive column and assert they appear in no rendered page, response model or selected SQL.
