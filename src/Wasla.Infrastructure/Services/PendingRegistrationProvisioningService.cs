@@ -115,11 +115,19 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         if (nameError is not null)
             return ProvisioningResult.ValidationError(nameError);
 
+        // An explicitly configured SQL Server only; no built-in LocalDB or '.' default (WAS-93).
+        var serverResolution = TenantSqlServerConfiguration.Resolve(
+            sqlServerOverride,
+            _configuration[TenantSqlServerConfiguration.CustomerDbKey],
+            _options.ServerInstance);
+        if (!serverResolution.IsResolved)
+            return ProvisioningResult.ValidationError(serverResolution.Error!);
+        var server = serverResolution.Server!;
+
         var uniquenessError = await ValidateUniquenessAsync(registration, ct).ConfigureAwait(false);
         if (uniquenessError is not null)
             return ProvisioningResult.ValidationError(uniquenessError);
 
-        var server = ResolveServer(sqlServerOverride);
         var sqlAuth = ResolveAuth(sqlAuthOverride);
 
         _logger.LogInformation(
@@ -224,15 +232,6 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
 
     /// <summary>The catalog CentralDb connects to; empty when unknown, which <see cref="TenantDatabaseNames"/> refuses.</summary>
     private string? CentralCatalog() => _central.Database.GetDbConnection().Database;
-
-    private string ResolveServer(string? sqlServerOverride)
-    {
-        if (!string.IsNullOrWhiteSpace(sqlServerOverride))
-            return sqlServerOverride.Trim();
-
-        return _configuration["CustomerDb:ServerInstance"]?.Trim()
-            ?? _options.ServerInstance;
-    }
 
     private string ResolveAuth(string? sqlAuthOverride)
     {

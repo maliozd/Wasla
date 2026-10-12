@@ -313,11 +313,14 @@ internal static class CliCommands
                     return 2;
                 }
 
-                var server = string.IsNullOrWhiteSpace(sqlServer)
-                    ? configuration["CustomerDb:ServerInstance"]?.Trim()
-                      ?? configuration.GetSection("OrderHub:CustomerOnboarding")["ServerInstance"]?.Trim()
-                      ?? "."
-                    : sqlServer.Trim();
+                var serverResolution = ResolveTenantSqlServer(configuration, sqlServer);
+                if (!serverResolution.IsResolved)
+                {
+                    WriteError(serverResolution.Error!);
+                    return 2;
+                }
+
+                var server = serverResolution.Server;
                 var resolvedAuth = sqlAuth;
 
                 Console.WriteLine("(dry-run) Would provision signup request:");
@@ -430,9 +433,15 @@ internal static class CliCommands
             return 2;
         }
 
-        var server = string.IsNullOrWhiteSpace(sqlServer)
-            ? host.Services.GetRequiredService<IConfiguration>()["CustomerDb:ServerInstance"]?.Trim() ?? "."
-            : sqlServer.Trim();
+        // An explicitly configured SQL Server only; stops before any CentralDb or SQL Server work (WAS-93).
+        var serverResolution = ResolveTenantSqlServer(host.Services.GetRequiredService<IConfiguration>(), sqlServer);
+        if (!serverResolution.IsResolved)
+        {
+            WriteError(serverResolution.Error!);
+            return 2;
+        }
+
+        var server = serverResolution.Server!;
 
         var dbCreated = false;
         Tenant? insertedCentral = null;
@@ -1824,6 +1833,12 @@ internal static class CliCommands
 
         return null;
     }
+
+    private static TenantSqlServerResolution ResolveTenantSqlServer(IConfiguration configuration, string? sqlServerOverride) =>
+        TenantSqlServerConfiguration.Resolve(
+            sqlServerOverride,
+            configuration[TenantSqlServerConfiguration.CustomerDbKey],
+            configuration[TenantSqlServerConfiguration.OnboardingKey]);
 
     private static string? CentralCatalogOrNull(string? centralConnectionString)
     {
