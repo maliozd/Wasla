@@ -61,7 +61,8 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
                 Name = "Restaurant " + id.ToString("N")[..6],
                 Slug = "r-" + id.ToString("N")[..12],
                 PrimaryDomain = "r-" + id.ToString("N")[..12] + ".wasla.local",
-                DatabaseName = "unused",
+                // Tenants.DatabaseName is unique (WAS-93): one name per tenant, derived from its id.
+                DatabaseName = "Wasla_test_" + id.ToString("N"),
                 EncryptedConnectionString = "unused",
                 EncryptionKeyVersion = 1,
                 IsActive = true,
