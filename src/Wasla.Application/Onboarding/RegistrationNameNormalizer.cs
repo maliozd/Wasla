@@ -6,14 +6,9 @@ namespace Wasla.Application.Onboarding;
 public static class RegistrationNameNormalizer
 {
     private static readonly Regex SlugPattern = new(@"^[a-z0-9][a-z0-9_-]*$", RegexOptions.Compiled);
-    private static readonly Regex DatabaseNamePattern = new(@"^Wasla_[A-Za-z][A-Za-z0-9_]*$", RegexOptions.Compiled);
-    private static readonly Regex WordSplitPattern = new(@"[\s\-_\.]+", RegexOptions.Compiled);
 
     public static bool IsValidSlugFormat(string slug) =>
         !string.IsNullOrWhiteSpace(slug) && SlugPattern.IsMatch(slug);
-
-    public static bool IsValidDatabaseNameFormat(string databaseName) =>
-        !string.IsNullOrWhiteSpace(databaseName) && DatabaseNamePattern.IsMatch(databaseName);
 
     public static string NormalizeSlug(string slug) =>
         slug.Trim().ToLowerInvariant();
@@ -47,24 +42,6 @@ public static class RegistrationNameNormalizer
         }
 
         return builder.ToString().Trim('-');
-    }
-
-    public static string GenerateDatabaseNameFromBusinessName(string businessName)
-    {
-        if (string.IsNullOrWhiteSpace(businessName))
-            return string.Empty;
-
-        var ascii = ToAsciiTurkish(businessName.Trim());
-        var parts = WordSplitPattern.Split(ascii)
-            .Where(part => part.Length > 0)
-            .Select(ToPascalWord)
-            .Where(part => part.Length > 0)
-            .ToArray();
-
-        if (parts.Length == 0)
-            return string.Empty;
-
-        return $"Wasla_{string.Concat(parts)}";
     }
 
     public static string BuildPrimaryDomain(string slug, string marketingBaseDomain)
@@ -118,40 +95,6 @@ public static class RegistrationNameNormalizer
             return null;
 
         return IsValidSlugFormat(slug) ? slug : null;
-    }
-
-    public static string ResolveUniqueDatabaseName(string baseDatabaseName, Func<string, bool> exists)
-    {
-        if (string.IsNullOrWhiteSpace(baseDatabaseName))
-            throw new ArgumentException("Base database name is required.", nameof(baseDatabaseName));
-
-        if (!exists(baseDatabaseName))
-            return baseDatabaseName;
-
-        for (var suffix = 2; suffix < 10_000; suffix++)
-        {
-            var candidate = baseDatabaseName + suffix.ToString();
-            if (!exists(candidate))
-                return candidate;
-        }
-
-        throw new InvalidOperationException("Unable to resolve a unique database name.");
-    }
-
-    private static string ToPascalWord(string word)
-    {
-        var cleaned = new StringBuilder(word.Length);
-        foreach (var ch in word)
-        {
-            if (char.IsLetterOrDigit(ch))
-                cleaned.Append(ch);
-        }
-
-        if (cleaned.Length == 0)
-            return string.Empty;
-
-        var text = cleaned.ToString();
-        return char.ToUpperInvariant(text[0]) + (text.Length > 1 ? text[1..].ToLowerInvariant() : string.Empty);
     }
 
     private static string ToAsciiTurkish(string value)

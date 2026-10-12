@@ -92,6 +92,8 @@
             <dd class="col-sm-9"><code>@Model.Slug</code></dd>
             <dt class="col-sm-3 text-muted">@L["Admin.PrimaryDomain"]</dt>
             <dd class="col-sm-9">@Model.PrimaryDomain</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.DatabaseName"]</dt>
+            <dd class="col-sm-9"><code class="text-break">@Model.DatabaseName</code></dd>
             <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.Plan"]</dt>
             <dd class="col-sm-9">@Model.PlanCode / @Model.BillingPeriod</dd>
             @if (!string.IsNullOrWhiteSpace(Model.BusinessPhone))

@@ -135,6 +135,7 @@ public sealed class CentralAdminPendingRegistrationService : ICentralAdminPendin
             BusinessName = r.BusinessName,
             Slug = r.Slug,
             PrimaryDomain = r.PrimaryDomain,
+            DatabaseName = r.DatabaseName,
             PlanCode = r.PlanCode,
             BillingPeriod = r.BillingPeriod,
             Country = r.Country,

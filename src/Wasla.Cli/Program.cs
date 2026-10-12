@@ -90,6 +90,13 @@ builder.Configuration.AddJsonFile(
     optional: false,
     reloadOnChange: false);
 
+// Every remaining command reads CentralDb; without it nothing can be checked, so stop before doing anything (WAS-93).
+if (string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("CentralDb")))
+{
+    Console.Error.WriteLine("ConnectionStrings:CentralDb is not configured.");
+    return 2;
+}
+
 builder.Services.AddDbContext<CentralDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CentralDb")));
 
@@ -108,7 +115,7 @@ var provisionSignupRequest = new Command(
 
 var optRegistrationId = new Option<Guid>("--registration-id", "PendingRegistration id (GUID)") { IsRequired = true };
 var optPsrDryRun = new Option<bool>("--dry-run", "Validate only; do not create database, tenant, or user");
-var optPsrForce = new Option<bool>("--force", "Retry when tenant database exists or registration is Provisioned without a tenant row");
+var optPsrForce = new Option<bool>("--force", "Retry a registration marked Provisioned without a tenant row. Never adopts a database Wasla did not create for this registration");
 var optPsrSqlServer = new Option<string?>("--sql-server", "SQL Server instance; default from config CustomerDb:ServerInstance or '.'");
 var optPsrSqlAuth = new Option<string>("--sql-auth", () => "trusted", "Trusted Windows auth, or 'sql:username:password'");
 

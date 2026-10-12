@@ -11,6 +11,7 @@ using Wasla.Application.Abstractions.Email;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Setup;
+using Wasla.Application.Onboarding;
 using Wasla.Application.Setup;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.Customer;
@@ -238,14 +239,26 @@ internal static class CliCommands
     private static readonly Regex SlugRegex = new(@"^[a-zA-Z0-9_-]+$", RegexOptions.Compiled);
     private static readonly Regex SqlDbNameRegex = new(@"^[A-Za-z0-9_]+$", RegexOptions.Compiled);
 
-    private static bool IsProductionEnvironment()
-    {
-        var env =
-            Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ??
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ??
-            string.Empty;
+    private static bool IsProductionEnvironment() =>
+        CliDestructiveGuards.IsProductionEnvironment(
+            Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"),
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
 
-        return string.Equals(env, "Production", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Why this tenant's database must not be dropped or recreated (WAS-93), or null when it may.</summary>
+    private static async Task<string?> GetDestructiveRefusalAsync(
+        IHost host,
+        CentralDbContext central,
+        Tenant tenant,
+        string plainConnectionString,
+        CancellationToken ct)
+    {
+        var centralConnectionString = host.Services.GetRequiredService<IConfiguration>().GetConnectionString("CentralDb");
+        var databaseName = tenant.DatabaseName;
+        var references = await central.Tenants
+            .AsNoTracking()
+            .CountAsync(t => t.DatabaseName == databaseName, ct)
+            .ConfigureAwait(false);
+        return CliDestructiveGuards.GetDatabaseRefusalReason(databaseName, plainConnectionString, centralConnectionString, references);
     }
 
     private static bool CheckDestructiveSafety(bool confirm, bool forceProduction)
@@ -405,11 +418,15 @@ internal static class CliCommands
             return 2;
         }
 
-        var pascal = SlugToPascalCase(slug);
-        var dbName = $"Wasla_{pascal}";
-        if (!SqlDbNameRegex.IsMatch(dbName))
+        // Server-assigned and random (WAS-93): the slug is only a readable label, so no slug can name CentralDb,
+        // a system database or another tenant's database.
+        var dbName = TenantDatabaseNames.Generate(slug);
+        var nameError = TenantDatabaseNames.GetRejectionReason(
+            dbName,
+            CentralCatalogOrNull(host.Services.GetRequiredService<IConfiguration>().GetConnectionString("CentralDb")));
+        if (nameError is not null)
         {
-            WriteError($"Derived database name '{dbName}' is invalid.");
+            WriteError(nameError);
             return 2;
         }
 
@@ -436,9 +453,22 @@ internal static class CliCommands
                 return 2;
             }
 
+            var databaseNameTaken = await central.Tenants.AsNoTracking().AnyAsync(c => c.DatabaseName == dbName, ct).ConfigureAwait(false)
+                || await central.PendingRegistrations.AsNoTracking().AnyAsync(p => p.DatabaseName == dbName, ct).ConfigureAwait(false);
+            if (databaseNameTaken)
+            {
+                WriteError($"Database name '{dbName}' is already recorded in CentralDb. Run the command again for a new name.");
+                return 2;
+            }
+
             WriteLineStep($"Target database name: {dbName}");
 
-            await EnsureDatabaseExistsAsync(server, sqlAuth, dbName, ct).ConfigureAwait(false);
+            // Creates and marks the database for this tenant id; an existing database of that name is never adopted.
+            var customerId = Guid.NewGuid();
+            await SqlServerTenantDatabases
+                .ClaimAsync(server, sqlAuth, dbName, TenantDatabaseOwnership.ForTenant(customerId), ct)
+                .ConfigureAwait(false);
+            WriteLineStep($"Database '{dbName}' created.");
             dbCreated = true;
 
             var customerConnString = BuildCustomerConnectionString(server, sqlAuth, dbName);
@@ -463,7 +493,6 @@ internal static class CliCommands
             WriteLineStep("Encrypting connection string…");
             var (encrypted, keyVersion) = await secret.EncryptAsync(customerConnString, ct).ConfigureAwait(false);
 
-            var customerId = Guid.NewGuid();
             var now = DateTime.UtcNow;
             var customer = new Tenant
             {
@@ -482,18 +511,24 @@ internal static class CliCommands
                 UpdatedAt = now
             };
 
-            central.Tenants.Add(customer);
-            await central.SaveChangesAsync(ct).ConfigureAwait(false);
-            insertedCentral = customer;
+            // The tenant row and its membership are stored together or not at all.
+            await using (var transaction = await central.Database.BeginTransactionAsync(ct).ConfigureAwait(false))
+            {
+                central.Tenants.Add(customer);
+                await central.SaveChangesAsync(ct).ConfigureAwait(false);
 
-            // Paid signup creates this row too; the restaurant setup step reads the contact fields from it.
-            WriteLineStep("Recording tenant membership…");
-            await TenantMembershipRecords.EnsureAsync(
-                central,
-                customerId,
-                CliMembershipSeed(adminEmail, contact),
-                now,
-                ct).ConfigureAwait(false);
+                // Paid signup creates this row too; the restaurant setup step reads the contact fields from it.
+                WriteLineStep("Recording tenant membership…");
+                await TenantMembershipRecords.EnsureAsync(
+                    central,
+                    customerId,
+                    CliMembershipSeed(adminEmail, contact),
+                    now,
+                    ct).ConfigureAwait(false);
+
+                await transaction.CommitAsync(ct).ConfigureAwait(false);
+            }
+            insertedCentral = customer;
 
             await using (var userDb = new TenantDbContext(options))
             {
@@ -1184,6 +1219,13 @@ internal static class CliCommands
 
             var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
+
+            var refusal = await GetDestructiveRefusalAsync(host, central, customer, plain, ct).ConfigureAwait(false);
+            if (refusal is not null)
+            {
+                WriteError("Refusing to drop the database: " + refusal);
+                return 2;
+            }
             var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
                 .Options;
@@ -1272,6 +1314,13 @@ internal static class CliCommands
 
             var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
+
+            var refusal = await GetDestructiveRefusalAsync(host, central, customer, plain, ct).ConfigureAwait(false);
+            if (refusal is not null)
+            {
+                WriteError("Refusing to reset the database: " + refusal);
+                return 2;
+            }
             var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
                 .Options;
@@ -1353,6 +1402,12 @@ internal static class CliCommands
                 try
                 {
                     var plain = await secret.DecryptAsync(c.EncryptedConnectionString, c.EncryptionKeyVersion, ct).ConfigureAwait(false);
+
+                    // Refused tenants are reported as failed and left untouched; the others still run.
+                    var refusal = await GetDestructiveRefusalAsync(host, central, c, plain, ct).ConfigureAwait(false);
+                    if (refusal is not null)
+                        throw new InvalidOperationException("Refused: " + refusal);
+
                     var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(plain).Options;
 
                     var migrationNow = DateTime.UtcNow;
@@ -1661,50 +1716,6 @@ internal static class CliCommands
         Console.ResetColor();
     }
 
-    private static string SlugToPascalCase(string slug)
-    {
-        return string.Join("", slug.Split('-', StringSplitOptions.RemoveEmptyEntries)
-            .Select(part =>
-            {
-                if (part.Length == 0) return string.Empty;
-                return char.ToUpperInvariant(part[0]) + (part.Length > 1 ? part[1..].ToLowerInvariant() : string.Empty);
-            }));
-    }
-
-    private static string BuildMasterConnectionString(string server, string sqlAuth)
-    {
-        if (string.Equals(sqlAuth, "trusted", StringComparison.OrdinalIgnoreCase))
-        {
-            return new SqlConnectionStringBuilder
-            {
-                DataSource = server,
-                InitialCatalog = "master",
-                IntegratedSecurity = true,
-                TrustServerCertificate = true
-            }.ConnectionString;
-        }
-
-        if (sqlAuth.StartsWith("sql:", StringComparison.OrdinalIgnoreCase))
-        {
-            var rest = sqlAuth[4..];
-            var idx = rest.IndexOf(':');
-            if (idx <= 0)
-                throw new InvalidOperationException("Invalid --sql-auth format. Use 'sql:username:password'.");
-            var user = rest[..idx];
-            var pass = rest[(idx + 1)..];
-            return new SqlConnectionStringBuilder
-            {
-                DataSource = server,
-                InitialCatalog = "master",
-                UserID = user,
-                Password = pass,
-                TrustServerCertificate = true
-            }.ConnectionString;
-        }
-
-        throw new InvalidOperationException("Invalid --sql-auth. Use 'trusted' or 'sql:username:password'.");
-    }
-
     private static string BuildCustomerConnectionString(string server, string sqlAuth, string database)
     {
         if (string.Equals(sqlAuth, "trusted", StringComparison.OrdinalIgnoreCase))
@@ -1814,50 +1825,19 @@ internal static class CliCommands
         return null;
     }
 
-    private static async Task<bool> DatabaseExistsAsync(string server, string sqlAuth, string dbName, CancellationToken ct)
+    private static string? CentralCatalogOrNull(string? centralConnectionString)
     {
-        var masterCs = BuildMasterConnectionString(server, sqlAuth);
-        await using var conn = new SqlConnection(masterCs);
-        await conn.OpenAsync(ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(centralConnectionString))
+            return null;
 
-        const string checkSql = "SELECT COUNT(*) FROM sys.databases WHERE name = @name;";
-        await using var check = new SqlCommand(checkSql, conn);
-        check.Parameters.AddWithValue("@name", dbName);
-        return Convert.ToInt32(await check.ExecuteScalarAsync(ct).ConfigureAwait(false)!) > 0;
-    }
-
-    private static async Task EnsureDatabaseExistsAsync(string server, string sqlAuth, string dbName, CancellationToken ct)
-    {
-        if (!SqlDbNameRegex.IsMatch(dbName))
-            throw new InvalidOperationException("Invalid database name after validation.");
-
-        var masterCs = BuildMasterConnectionString(server, sqlAuth);
-        await using var conn = new SqlConnection(masterCs);
-        await conn.OpenAsync(ct).ConfigureAwait(false);
-
-        const string checkSql = "SELECT COUNT(*) FROM sys.databases WHERE name = @name;";
-        await using (var check = new SqlCommand(checkSql, conn))
+        try
         {
-            check.Parameters.AddWithValue("@name", dbName);
-            var count = Convert.ToInt32(await check.ExecuteScalarAsync(ct).ConfigureAwait(false)!);
-            if (count > 0)
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"Database '{dbName}' already exists; skipping CREATE DATABASE.");
-                Console.ResetColor();
-                return;
-            }
+            return new SqlConnectionStringBuilder(centralConnectionString).InitialCatalog;
         }
-
-        // dbName validated: safe to embed as bracket-quoted identifier
-        var escaped = dbName.Replace("]", "]]", StringComparison.Ordinal);
-        var createSql = $"CREATE DATABASE [{escaped}]";
-        await using (var create = new SqlCommand(createSql, conn))
+        catch (ArgumentException)
         {
-            create.CommandTimeout = 120;
-            await create.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            return null;
         }
-        WriteLineStep($"Database '{dbName}' created.");
     }
 
     private static string SanitizeMigrationError(Exception ex)
