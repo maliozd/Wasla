@@ -687,6 +687,21 @@
   <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
     <value>Canlı</value>
   </data>
+  <data name="Orders.LiveDisplay.SyncStatus.NotConnected" xml:space="preserve">
+    <value>Platform bağlı değil</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.SyncDisabled" xml:space="preserve">
+    <value>Senkronizasyon kapalı</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.Issue" xml:space="preserve">
+    <value>Bağlantı sorunu</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.IssueWithPlatforms" xml:space="preserve">
+    <value>Bağlantı sorunu: {0}</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastSync" xml:space="preserve">
+    <value>Son başarılı senkronizasyon</value>
+  </data>
   <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
     <value>Bildirim sesi</value>
   </data>

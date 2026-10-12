@@ -687,6 +687,21 @@
   <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
     <value>مباشر</value>
   </data>
+  <data name="Orders.LiveDisplay.SyncStatus.NotConnected" xml:space="preserve">
+    <value>لا توجد منصة متصلة</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.SyncDisabled" xml:space="preserve">
+    <value>المزامنة متوقفة</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.Issue" xml:space="preserve">
+    <value>مشكلة في الاتصال</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.IssueWithPlatforms" xml:space="preserve">
+    <value>مشكلة في الاتصال: {0}</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastSync" xml:space="preserve">
+    <value>آخر مزامنة ناجحة</value>
+  </data>
   <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
     <value>صوت الإشعارات</value>
   </data>

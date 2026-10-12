@@ -2342,6 +2342,7 @@ body.wasla-orders-live-display .wasla-live-display-header {
   display: inline-flex;
   align-items: center;
   gap: .28rem;
+  max-width: 100%;
   padding-block: .08rem;
   padding-inline: .28rem .42rem;
   border: 0;
@@ -2358,6 +2359,30 @@ body.wasla-orders-live-display .wasla-live-display-header {
   height: .4rem;
   border-radius: 50%;
   background: currentColor;
+}
+
+/* Platform sync states other than Live (orders-platform-sync-status.js). Each has its own words and icon, so the
+   meaning never depends on color: waiting for the first snapshot and switched off are muted, an issue is a warning. */
+.wasla-live-display-status--pending,
+.wasla-live-display-status--off {
+  background: #eef0f2;
+  color: #495057;
+}
+
+.wasla-live-display-status--issue {
+  background: #fdf0d5;
+  color: #8a5a00;
+}
+
+.wasla-live-display-status__icon {
+  font-size: .7rem;
+  line-height: 1;
+}
+
+.wasla-live-screen-page .wasla-live-display-last-sync:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
 }
 
 .wasla-live-screen-page .wasla-live-display-header__subtitle,
@@ -2480,6 +2505,15 @@ body.wasla-orders-live-display .wasla-live-display-header {
 [data-bs-theme="dark"] .wasla-live-display-status {
   color: #9ed9b4;
   background: rgba(31, 138, 76, 0.18);
+}
+[data-bs-theme="dark"] .wasla-live-display-status--pending,
+[data-bs-theme="dark"] .wasla-live-display-status--off {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.12);
+}
+[data-bs-theme="dark"] .wasla-live-display-status--issue {
+  color: #f3c76b;
+  background: rgba(243, 199, 107, 0.14);
 }
 [data-bs-theme="dark"] .wasla-live-summary {
   border-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);

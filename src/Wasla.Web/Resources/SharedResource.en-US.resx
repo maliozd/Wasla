@@ -687,6 +687,21 @@
   <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
     <value>Live</value>
   </data>
+  <data name="Orders.LiveDisplay.SyncStatus.NotConnected" xml:space="preserve">
+    <value>No platform connected</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.SyncDisabled" xml:space="preserve">
+    <value>Sync off</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.Issue" xml:space="preserve">
+    <value>Connection issue</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.IssueWithPlatforms" xml:space="preserve">
+    <value>Connection issue: {0}</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastSync" xml:space="preserve">
+    <value>Last successful sync</value>
+  </data>
   <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
     <value>Notification Sound</value>
   </data>

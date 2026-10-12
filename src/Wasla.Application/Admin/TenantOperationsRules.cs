@@ -72,7 +72,23 @@ public static class ProviderConnectionHealthRules
         DateTime? lastSuccessfulSyncUtc,
         int consecutiveFailures,
         DateTime? circuitOpenUntilUtc,
-        DateTime nowUtc)
+        DateTime nowUtc) =>
+        Classify(isActive, tenantOrderSyncEnabled, lastSuccessfulSyncUtc, consecutiveFailures, circuitOpenUntilUtc, nowUtc, StaleAfter);
+
+    /// <summary>
+    /// The same classification with another screen's stale threshold (the Live Screen derives its own from the
+    /// connection's schedule, see <see cref="Wasla.Application.Orders.LiveScreenSyncRules"/>). Healthy needs a
+    /// successful sync within <paramref name="staleAfter"/>: a connection that has no failure on record but never
+    /// completed a sync, or stopped completing them, is not healthy.
+    /// </summary>
+    public static ProviderConnectionHealthState Classify(
+        bool isActive,
+        bool tenantOrderSyncEnabled,
+        DateTime? lastSuccessfulSyncUtc,
+        int consecutiveFailures,
+        DateTime? circuitOpenUntilUtc,
+        DateTime nowUtc,
+        TimeSpan staleAfter)
     {
         if (!isActive)
             return ProviderConnectionHealthState.Disabled;
@@ -85,7 +101,7 @@ public static class ProviderConnectionHealthRules
         if (lastSuccessfulSyncUtc is null)
             return ProviderConnectionHealthState.NeverSynced;
 
-        return nowUtc - lastSuccessfulSyncUtc.Value > StaleAfter
+        return nowUtc - lastSuccessfulSyncUtc.Value > staleAfter
             ? ProviderConnectionHealthState.Stale
             : ProviderConnectionHealthState.Healthy;
     }
