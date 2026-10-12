@@ -58,7 +58,9 @@ internal sealed class AdminWebHost : IAsyncDisposable
         CentralTestDatabase central,
         RecordingTenantDbFactory tenants,
         TimeSpan? healthTimeout = null,
-        TimeProvider? centralAdminCookieClock = null)
+        TimeProvider? centralAdminCookieClock = null,
+        IPendingRegistrationProvisioningService? provisioning = null,
+        ILoggerProvider? logs = null)
     {
         SeedAdmins(central);
 
@@ -73,6 +75,8 @@ internal sealed class AdminWebHost : IAsyncDisposable
         });
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
+        if (logs is not null)
+            builder.Logging.AddProvider(logs).SetMinimumLevel(LogLevel.Debug);
         builder.Configuration["Platforms:ProviderMode"] = "Mock";
 
         var services = builder.Services;
@@ -122,8 +126,8 @@ internal sealed class AdminWebHost : IAsyncDisposable
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
         services.AddScoped<ICentralAdminTenantOperationsService, CentralAdminTenantOperationsService>();
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
-        // The pending-registrations pages are served for layout checks only; provisioning is never invoked.
-        services.AddSingleton<IPendingRegistrationProvisioningService, NoProvisioning>();
+        // Provisioning itself is covered by PendingRegistrationProvisioningServiceTests; by default it is never invoked.
+        services.AddSingleton(provisioning ?? new NoProvisioning());
         services.AddSingleton<ITenantDbContextFactory>(tenants);
         services.Configure<TenantOperationalHealthOptions>(options => options.Timeout = healthTimeout ?? TimeSpan.FromSeconds(10));
         services.AddSingleton<ITenantOperationalHealthReader, TenantOperationalHealthReader>();
@@ -264,6 +268,20 @@ internal sealed partial class AdminBrowser : IDisposable
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
             response.Headers.Location,
             response.Headers.TryGetValues("Set-Cookie", out var setCookies) ? setCookies.ToList() : []);
+    }
+
+    /// <summary>Posts an empty form, with the antiforgery field when a token is given.</summary>
+    public async Task<AdminResponse> PostAsync(string path, string? antiforgeryToken)
+    {
+        var form = new Dictionary<string, string>();
+        if (antiforgeryToken is not null)
+            form["__RequestVerificationToken"] = antiforgeryToken;
+
+        using var response = await _client.PostAsync(path, new FormUrlEncodedContent(form), TestContext.Current.CancellationToken);
+        return new AdminResponse(
+            response.StatusCode,
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
+            response.Headers.Location);
     }
 
     /// <summary>The Central Admin session cookie this browser currently holds, or null.</summary>
