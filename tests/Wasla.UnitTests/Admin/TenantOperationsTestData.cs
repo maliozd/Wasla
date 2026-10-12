@@ -21,6 +21,7 @@ internal static class SecretMarkers
     public const string TokenHash = "TOKENHASH-SECRET-91bc";
     public const string AdminPasswordHash = "ADMIN-PWHASH-SECRET-4d2e";
     public const string RegistrationPasswordHash = "REG-PWHASH-SECRET-5e1f";
+    public const string SimulatedPaymentReference = "SIMPAY-SECRET-7d6c";
     public const string TenantUserPasswordHash = "USER-PWHASH-SECRET-6a0b";
     public const string ApiKey = "APIKEY-SECRET-0c9d";
     public const string ApiSecret = "APISECRET-SECRET-8e7f";
@@ -39,6 +40,7 @@ internal static class SecretMarkers
         TokenHash,
         AdminPasswordHash,
         RegistrationPasswordHash,
+        SimulatedPaymentReference,
         TenantUserPasswordHash,
         ApiKey,
         ApiSecret,
@@ -214,6 +216,7 @@ internal sealed class CentralTestDatabase : IDisposable
             OwnerFullName = "Owner Person",
             OwnerEmail = $"{slug}@example.test",
             PasswordHash = SecretMarkers.RegistrationPasswordHash,
+            SimulatedPaymentReference = SecretMarkers.SimulatedPaymentReference,
             Status = status,
             CreatedAtUtc = createdAt ?? new DateTime(2026, 1, 1, 9, 0, 0, DateTimeKind.Utc),
             PaymentSucceededAtUtc = paymentSucceededAt,
