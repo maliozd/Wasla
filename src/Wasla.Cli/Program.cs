@@ -85,10 +85,13 @@ AesSecretManager.ValidateMasterKeyOrThrow();
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Configuration.AddJsonFile(
-    Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
-    optional: false,
-    reloadOnChange: false);
+// Environment variables and the command line override the JSON files, never the other way round (WAS-93).
+CliConfiguration.Configure(
+    builder.Configuration,
+    AppContext.BaseDirectory,
+    builder.Environment.EnvironmentName,
+    args,
+    typeof(CliConfiguration).Assembly);
 
 // Every remaining command reads CentralDb; without it nothing can be checked, so stop before doing anything (WAS-93).
 if (string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("CentralDb")))
