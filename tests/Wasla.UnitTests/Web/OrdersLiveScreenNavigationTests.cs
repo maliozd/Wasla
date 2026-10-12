@@ -145,7 +145,9 @@ public sealed class OrdersLiveScreenNavigationTests
         Assert.Contains("ordersLiveScreenHost", liveView, StringComparison.Ordinal);
         Assert.Contains("liveDataUrl: \"/orders/live-data\"", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain("@L[\"Orders.LiveDisplay.Subtitle\"]", liveView, StringComparison.Ordinal);
-        Assert.Contains("@L[\"Orders.LiveDisplay.LiveStatus\"]", liveView, StringComparison.Ordinal);
+        // "Live" is never rendered statically (WAS-12): it is the backend's sync state, shown from the snapshot.
+        Assert.DoesNotContain("@L[\"Orders.LiveDisplay.LiveStatus\"]", liveView, StringComparison.Ordinal);
+        Assert.Contains("[\"syncStatusLive\"] = L[\"Orders.LiveDisplay.LiveStatus\"].Value", liveView, StringComparison.Ordinal);
         Assert.Contains("<h1 class=\"wasla-live-display-header__title wasla-fs-header__title mb-0\">@customerName</h1>", liveView, StringComparison.Ordinal);
         Assert.DoesNotContain("@L[\"Orders.LiveDisplay.Title\"]</h1>", liveView, StringComparison.Ordinal);
         Assert.Contains("F11", liveView, StringComparison.Ordinal);

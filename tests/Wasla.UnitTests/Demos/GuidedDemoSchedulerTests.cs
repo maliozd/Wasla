@@ -249,7 +249,9 @@ public sealed class GuidedDemoSchedulerTests : IDisposable
     public void TheDemoScheduler_LeavesTheOrderSyncCadenceAndProviderWorkAlone()
     {
         var worker = Source("src", "Wasla.Worker", "Jobs", "OrderSyncWorker.cs");
-        Assert.Contains("private const int CycleIntervalSeconds = 15;", worker, StringComparison.Ordinal);
+        // The cycle is the shared schedule constant (the Live Screen's sync status reads it too), still 15 seconds.
+        Assert.Contains("private const int CycleIntervalSeconds = OrderSyncSchedule.WorkerCycleSeconds;", worker, StringComparison.Ordinal);
+        Assert.Equal(15, Wasla.Application.Orders.OrderSyncSchedule.WorkerCycleSeconds);
         Assert.Contains("private const int CatastrophicFailureBackoffSeconds = 30;", worker, StringComparison.Ordinal);
         Assert.Contains("private const int MaxParallelCustomers = 5;", worker, StringComparison.Ordinal);
         Assert.Contains("var remaining = TimeSpan.FromSeconds(CycleIntervalSeconds) - swCycle.Elapsed;", worker, StringComparison.Ordinal);
