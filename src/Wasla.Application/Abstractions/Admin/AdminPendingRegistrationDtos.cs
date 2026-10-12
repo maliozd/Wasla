@@ -24,7 +24,6 @@ public sealed class AdminPendingRegistrationListItemDto
     public string BusinessName { get; init; } = string.Empty;
     public string Slug { get; init; } = string.Empty;
     public string OwnerFullName { get; init; } = string.Empty;
-    public string OwnerEmail { get; init; } = string.Empty;
     public string PlanCode { get; init; } = string.Empty;
     public string BillingPeriod { get; init; } = string.Empty;
     public PendingRegistrationStatus Status { get; init; }
@@ -32,7 +31,6 @@ public sealed class AdminPendingRegistrationListItemDto
     public DateTime? PaymentSucceededAtUtc { get; init; }
     public DateTime? ProvisionedAtUtc { get; init; }
     public Guid? TenantId { get; init; }
-    public string? TenantDomain { get; init; }
     public bool IsEligibleForProvisioning { get; init; }
 }
 
@@ -51,7 +49,6 @@ public sealed class AdminPendingRegistrationDetailDto
     public string City { get; init; } = string.Empty;
     public string District { get; init; } = string.Empty;
     public string? Neighborhood { get; init; }
-    public string? StreetAddress { get; init; }
     public string OwnerFullName { get; init; } = string.Empty;
     public string OwnerEmail { get; init; } = string.Empty;
     public string? OwnerPhone { get; init; }

@@ -37,6 +37,10 @@ public sealed class CentralAdminPendingRegistrationService : ICentralAdminPendin
         };
     }
 
+    /// <remarks>
+    /// One CentralDb query projecting the columns the list shows (WAS-38). The password hash, payment reference,
+    /// owner contact data and address are never selected, and no tenant row is read.
+    /// </remarks>
     public async Task<AdminPendingRegistrationListResult> GetListAsync(
         PendingRegistrationAdminFilter filter,
         CancellationToken ct)
@@ -54,27 +58,26 @@ public sealed class CentralAdminPendingRegistrationService : ICentralAdminPendin
             _ => query
         };
 
-        var rows = await query
+        var items = await query
             .OrderByDescending(r => r.CreatedAtUtc)
             .ThenBy(r => r.Id)
+            .Select(r => new AdminPendingRegistrationListItemDto
+            {
+                Id = r.Id,
+                BusinessName = r.BusinessName,
+                Slug = r.Slug,
+                OwnerFullName = r.OwnerFullName,
+                PlanCode = r.PlanCode,
+                BillingPeriod = r.BillingPeriod,
+                Status = r.Status,
+                CreatedAtUtc = r.CreatedAtUtc,
+                PaymentSucceededAtUtc = r.PaymentSucceededAtUtc,
+                ProvisionedAtUtc = r.ProvisionedAtUtc,
+                TenantId = r.TenantId,
+                IsEligibleForProvisioning = r.Status == PendingRegistrationStatus.PaymentSucceeded && r.TenantId == null
+            })
             .ToListAsync(ct)
             .ConfigureAwait(false);
-
-        // Fetch provisioned tenant domains in one query
-        var tenantIds = rows
-            .Where(r => r.TenantId.HasValue)
-            .Select(r => r.TenantId!.Value)
-            .Distinct()
-            .ToList();
-
-        var tenantDomains = tenantIds.Count > 0
-            ? await _db.Tenants.AsNoTracking()
-                .Where(t => tenantIds.Contains(t.Id))
-                .ToDictionaryAsync(t => t.Id, t => t.PrimaryDomain, ct)
-                .ConfigureAwait(false)
-            : new Dictionary<Guid, string>();
-
-        var items = rows.Select(r => MapListItem(r, tenantDomains)).ToList();
 
         return new AdminPendingRegistrationListResult
         {
@@ -85,7 +88,7 @@ public sealed class CentralAdminPendingRegistrationService : ICentralAdminPendin
 
     /// <remarks>
     /// Projects only the columns the Admin overview's attention list shows. The password hash, owner contact data,
-    /// address and payment reference are never selected; the owner fields of the returned items stay empty.
+    /// address and payment reference are never selected; the owner name of the returned items stays empty.
     /// </remarks>
     public async Task<IReadOnlyList<AdminPendingRegistrationListItemDto>> GetAttentionListAsync(CancellationToken ct)
     {
@@ -111,78 +114,49 @@ public sealed class CentralAdminPendingRegistrationService : ICentralAdminPendin
             .ConfigureAwait(false);
     }
 
+    /// <remarks>
+    /// One CentralDb query projecting the columns the detail page and the provision action use (WAS-38). The password
+    /// hash, payment reference and unshown address lines are never selected, and the linked tenant contributes only
+    /// its primary domain, never its connection string. Provisioning reads what it needs itself.
+    /// </remarks>
     public async Task<AdminPendingRegistrationDetailDto?> GetDetailAsync(Guid id, CancellationToken ct)
     {
-        var r = await _db.PendingRegistrations
+        return await _db.PendingRegistrations
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id, ct)
+            .Where(r => r.Id == id)
+            .Select(r => new AdminPendingRegistrationDetailDto
+            {
+                Id = r.Id,
+                BusinessName = r.BusinessName,
+                Slug = r.Slug,
+                PrimaryDomain = r.PrimaryDomain,
+                DatabaseName = r.DatabaseName,
+                PlanCode = r.PlanCode,
+                BillingPeriod = r.BillingPeriod,
+                Country = r.Country,
+                City = r.City,
+                District = r.District,
+                Neighborhood = r.Neighborhood,
+                OwnerFullName = r.OwnerFullName,
+                OwnerEmail = r.OwnerEmail,
+                OwnerPhone = r.OwnerPhone,
+                BusinessPhone = r.BusinessPhone,
+                BusinessEmail = r.BusinessEmail,
+                Status = r.Status,
+                CreatedAtUtc = r.CreatedAtUtc,
+                ExpiresAtUtc = r.ExpiresAtUtc,
+                PaymentSucceededAtUtc = r.PaymentSucceededAtUtc,
+                PaymentFailedAtUtc = r.PaymentFailedAtUtc,
+                ProvisionedAtUtc = r.ProvisionedAtUtc,
+                TenantId = r.TenantId,
+                TenantDomain = _db.Tenants
+                    .Where(t => t.Id == r.TenantId)
+                    .Select(t => t.PrimaryDomain)
+                    .FirstOrDefault(),
+                IsEligibleForProvisioning = r.Status == PendingRegistrationStatus.PaymentSucceeded
+                    && r.TenantId == null
+            })
+            .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
-
-        if (r is null) return null;
-
-        string? tenantDomain = null;
-        if (r.TenantId.HasValue)
-        {
-            var t = await _db.Tenants.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == r.TenantId.Value, ct)
-                .ConfigureAwait(false);
-            tenantDomain = t?.PrimaryDomain;
-        }
-
-        return new AdminPendingRegistrationDetailDto
-        {
-            Id = r.Id,
-            BusinessName = r.BusinessName,
-            Slug = r.Slug,
-            PrimaryDomain = r.PrimaryDomain,
-            DatabaseName = r.DatabaseName,
-            PlanCode = r.PlanCode,
-            BillingPeriod = r.BillingPeriod,
-            Country = r.Country,
-            City = r.City,
-            District = r.District,
-            Neighborhood = r.Neighborhood,
-            StreetAddress = r.StreetAddress,
-            OwnerFullName = r.OwnerFullName,
-            OwnerEmail = r.OwnerEmail,
-            OwnerPhone = r.OwnerPhone,
-            BusinessPhone = r.BusinessPhone,
-            BusinessEmail = r.BusinessEmail,
-            Status = r.Status,
-            CreatedAtUtc = r.CreatedAtUtc,
-            ExpiresAtUtc = r.ExpiresAtUtc,
-            PaymentSucceededAtUtc = r.PaymentSucceededAtUtc,
-            PaymentFailedAtUtc = r.PaymentFailedAtUtc,
-            ProvisionedAtUtc = r.ProvisionedAtUtc,
-            TenantId = r.TenantId,
-            TenantDomain = tenantDomain,
-            IsEligibleForProvisioning = r.Status == PendingRegistrationStatus.PaymentSucceeded
-                && r.TenantId == null
-        };
-    }
-
-    private static AdminPendingRegistrationListItemDto MapListItem(
-        Domain.Entities.Central.PendingRegistration r,
-        Dictionary<Guid, string> tenantDomains)
-    {
-        tenantDomains.TryGetValue(r.TenantId ?? Guid.Empty, out var domain);
-        return new AdminPendingRegistrationListItemDto
-        {
-            Id = r.Id,
-            BusinessName = r.BusinessName,
-            Slug = r.Slug,
-            OwnerFullName = r.OwnerFullName,
-            OwnerEmail = r.OwnerEmail,
-            PlanCode = r.PlanCode,
-            BillingPeriod = r.BillingPeriod,
-            Status = r.Status,
-            CreatedAtUtc = r.CreatedAtUtc,
-            PaymentSucceededAtUtc = r.PaymentSucceededAtUtc,
-            ProvisionedAtUtc = r.ProvisionedAtUtc,
-            TenantId = r.TenantId,
-            TenantDomain = domain,
-            IsEligibleForProvisioning = r.Status == PendingRegistrationStatus.PaymentSucceeded
-                && r.TenantId == null
-        };
     }
 }
