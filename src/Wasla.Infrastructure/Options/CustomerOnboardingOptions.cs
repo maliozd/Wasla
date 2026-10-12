@@ -6,7 +6,11 @@ public sealed class CustomerOnboardingOptions
 
     public string MarketingBaseDomain { get; set; } = "wasla.local";
 
-    public string ServerInstance { get; set; } = "(localdb)\\MSSQLLocalDB";
+    /// <summary>
+    /// SQL Server instance for new tenant databases. No default: when neither this nor <c>CustomerDb:ServerInstance</c>
+    /// is set, provisioning stops (WAS-93). Development configures LocalDB explicitly.
+    /// </summary>
+    public string ServerInstance { get; set; } = string.Empty;
 
     /// <summary>trusted or sql:username:password</summary>
     public string SqlAuth { get; set; } = "trusted";
