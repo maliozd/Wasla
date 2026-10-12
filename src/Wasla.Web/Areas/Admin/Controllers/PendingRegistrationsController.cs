@@ -112,7 +112,6 @@ public sealed class PendingRegistrationsController : Controller
         City = dto.City,
         District = dto.District,
         Neighborhood = dto.Neighborhood,
-        StreetAddress = dto.StreetAddress,
         OwnerFullName = dto.OwnerFullName,
         OwnerEmail = dto.OwnerEmail,
         OwnerPhone = dto.OwnerPhone,

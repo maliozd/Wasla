@@ -23,7 +23,6 @@ public sealed class AdminPendingRegistrationDetailViewModel
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
     public string? Neighborhood { get; set; }
-    public string? StreetAddress { get; set; }
     public string OwnerFullName { get; set; } = string.Empty;
     public string OwnerEmail { get; set; } = string.Empty;
     public string? OwnerPhone { get; set; }

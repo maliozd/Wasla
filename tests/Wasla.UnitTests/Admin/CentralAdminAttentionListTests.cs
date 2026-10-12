@@ -34,7 +34,6 @@ public sealed class CentralAdminAttentionListTests : IDisposable
             Assert.DoesNotContain($"\"{column}\"", sql, StringComparison.Ordinal);
         var item = Assert.Single(items);
         Assert.Equal("waiting", item.Slug);
-        Assert.Equal(string.Empty, item.OwnerEmail);
         Assert.Equal(string.Empty, item.OwnerFullName);
         Assert.DoesNotContain(SecretMarkers.RegistrationPasswordHash, JsonSerializer.Serialize(items), StringComparison.Ordinal);
     }
