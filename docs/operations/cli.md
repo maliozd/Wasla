@@ -57,7 +57,18 @@ Require:
 - `--confirm`
 - In Production: also `--force-production` (still requires `--confirm`)
 
-Without `--confirm`, the CLI refuses. In Production without `--force-production`, the CLI refuses.
+Without `--confirm`, the CLI refuses. In Production without `--force-production`, the CLI refuses. The environment is `DOTNET_ENVIRONMENT`, then `ASPNETCORE_ENVIRONMENT`; when neither is set the CLI counts as Production, as the .NET host does (WAS-93).
+
+Before dropping or recreating a tenant database, these commands also refuse (WAS-93, `src/Wasla.Cli/CliDestructiveGuards.cs`):
+
+- CentralDb (the catalog in `ConnectionStrings:CentralDb`, compared case-insensitively) and SQL Server system databases.
+- A missing or unreadable `ConnectionStrings:CentralDb`, or a stored tenant connection string that names no database.
+- A tenant whose stored connection string targets a database other than its `DatabaseName`.
+- A database named by more than one tenant row.
+
+`reset-all-customer-dbs` reports a refused tenant as failed, leaves it untouched and continues with the others.
+
+Every command past `help` and `hash-password` stops when `ConnectionStrings:CentralDb` is not configured.
 
 ## Command inventory
 
@@ -65,8 +76,8 @@ Without `--confirm`, the CLI refuses. In Production without `--force-production`
 
 | Command | Purpose |
 |---------|---------|
-| `add-customer` | Create tenant registry row, membership row, tenant database, migrations, first admin. Optional `--business-phone`, `--city`, `--country` feed the dashboard setup checklist |
-| `provision-signup-request` | Provision a paid `PendingRegistration` into a live tenant (`--dry-run`, `--force`, SQL options) |
+| `add-customer` | Create tenant registry row, membership row, tenant database, migrations, first admin. Optional `--business-phone`, `--city`, `--country` feed the dashboard setup checklist. The database name is server-assigned (`Wasla_{SlugLabel}_{random}`), and an existing database is never adopted ([tenancy](../architecture/tenancy.md#tenant-database-identity-was-93)) |
+| `provision-signup-request` | Provision a paid `PendingRegistration` into a live tenant (`--dry-run`, `--force`, SQL options). `--force` only retries a registration marked Provisioned without a tenant row; it never adopts a database without this registration's ownership marker |
 | `list-customers` | List tenants from CentralDb |
 | `delete-customer` | Delete tenant record and drop tenant DB (destructive) |
 | `reset-customer-db` | Drop/recreate one tenant DB; keep CentralDb row (destructive) |
