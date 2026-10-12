@@ -176,6 +176,7 @@ Rules:
 - RTL via `dir` + `rtl.css` + logical border/margin where foundation/theme already use them
 - Focus rings on Wasla controls; do not remove outline without a visible replacement
 - Theme and Live Screen CSS include `@media (prefers-reduced-motion: reduce)` blocks; JS view transitions also check the media query
+- Under reduced motion AdminLTE 4.0.0-rc3 sets `.fade{display:block}`; `wasla-theme.css` keeps closed modals (`.modal.fade:not(.show)`) hidden. Do not override `.fade` itself: Bootstrap's own rules already keep closed toasts, tab panes and collapses hidden
 
 ---
 

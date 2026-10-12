@@ -220,6 +220,14 @@ body.wasla-tenant.wasla-app .app-wrapper {
   max-width: 100%;
 }
 
+/* AdminLTE 4.0.0-rc3 sets .fade{display:block} under reduced motion, which lays every closed (opacity 0) modal over the
+   page and its controls. Closed modals stay hidden; Bootstrap still shows an opening modal with an inline display. */
+@media (prefers-reduced-motion: reduce) {
+  .modal.fade:not(.show) {
+    display: none;
+  }
+}
+
 /* Tenant shell: no top navbar — sidebar is full viewport height. */
 body.wasla-tenant.wasla-app {
   --wasla-topbar-h: 0px;

@@ -167,6 +167,16 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         return EmulateMediaAsync(ct);
     }
 
+    /// <summary>
+    /// Emulates the operating-system motion preference ("reduce" or "no-preference") for this browser only; every browser
+    /// starts with "no-preference".
+    /// </summary>
+    public Task SetReducedMotionAsync(string preference, CancellationToken ct)
+    {
+        _mediaFeatures["prefers-reduced-motion"] = preference;
+        return EmulateMediaAsync(ct);
+    }
+
     // Each call replaces the whole emulated list, so every feature set so far is sent again.
     private Task EmulateMediaAsync(CancellationToken ct) =>
         SendAsync("Emulation.setEmulatedMedia", new { features = _mediaFeatures.Select(f => new { name = f.Key, value = f.Value }).ToArray() }, ct);

@@ -319,7 +319,7 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
 
     // The browser's media features do not depend on the machine: a GitHub runner reports reduced motion, under which
     // AdminLTE 4.0.0-rc3 displays every .fade element, so the closed (opacity 0) notification modal covered the page and
-    // its trigger there and nowhere else (WAS-74). The reduced-motion defect itself is a separate product issue.
+    // its trigger there and nowhere else (WAS-74). The reduced-motion case itself is checked by the next test (WAS-100).
     [Theory]
     [InlineData("en-US", 1280)]
     [InlineData("ar-SA", 390)]
@@ -342,6 +342,61 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
         Assert.True(state.GetProperty("motion").GetBoolean(), "The browser does not emulate prefers-reduced-motion: no-preference.");
         Assert.Equal("none", state.GetProperty("modal").GetString());
         Assert.True(state.GetProperty("onTop").GetBoolean(), "The closed notification modal covers its trigger.");
+    }
+
+    // For a user who asks for reduced motion (WAS-100). AdminLTE 4.0.0-rc3 sets .fade{display:block} under
+    // prefers-reduced-motion: reduce, which displayed the closed (opacity 0) modal over the page and its trigger. The
+    // closed modal stays display: none, its trigger takes a real click, and the modal opens and closes without transitions.
+    [Theory]
+    [InlineData("en-US", "ltr", 1280)]
+    [InlineData("ar-SA", "rtl", 390)]
+    public async Task UnderReducedMotion_AClosedModalIsHidden_AndOpensAndClosesWithoutTransitions(string culture, string direction, int width)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync(culture, width, "dark", ct);
+        await browser.SetReducedMotionAsync("reduce", ct);
+        await browser.AddScriptBeforePageScriptsAsync(ModalProbe, ct);
+        await LoadAsync(browser, "/settings/orders", ct);
+        var page = $"{culture} {width}px reduced motion";
+        const string state = """
+            (() => {
+              const trigger = document.getElementById('notificationSettingsBtn'), modal = document.getElementById('notificationSettingsModal');
+              if (!modal.classList.contains('show')) trigger.scrollIntoView({ block: 'center', inline: 'center' });
+              const r = trigger.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+              const cs = getComputedStyle(modal);
+              return { reduce: matchMedia('(prefers-reduced-motion: reduce)').matches, dir: document.documentElement.getAttribute('dir'),
+                       display: cs.display, opacity: cs.opacity,
+                       // The longest transition of the modal and its dialog, in milliseconds.
+                       transitionMs: Math.max(...[cs, getComputedStyle(modal.querySelector('.modal-dialog'))].flatMap(s => s.transitionDuration.split(',').map(d => parseFloat(d) * 1000))),
+                       backdrops: document.querySelectorAll('.modal-backdrop').length, onTop: !!hit && trigger.contains(hit) };
+            })()
+            """;
+
+        var closed = await browser.EvaluateAsync<JsonElement>(state, ct);
+        Assert.True(closed.GetProperty("reduce").GetBoolean(), "The browser does not emulate prefers-reduced-motion: reduce.");
+        Assert.Equal(direction, closed.GetProperty("dir").GetString());
+        Assert.Equal("none", closed.GetProperty("display").GetString());
+        Assert.True(closed.GetProperty("onTop").GetBoolean(), $"{page}: the closed notification modal covers its trigger.");
+
+        // A real click on the trigger (ClickAsync names whatever covers it): the modal opens at once, fully opaque.
+        await ClickAsync(browser, "#notificationSettingsBtn", ct);
+        Assert.True(await browser.WaitForAsync("!!document.querySelector('#notificationSettingsModal.show .wasla-color-swatch')", TimeSpan.FromSeconds(10), ct),
+            $"{page}: the notification settings modal did not open");
+        var open = await browser.EvaluateAsync<JsonElement>(state, ct);
+        Assert.Equal("block", open.GetProperty("display").GetString());
+        Assert.Equal("1", open.GetProperty("opacity").GetString());
+        Assert.True(open.GetProperty("transitionMs").GetDouble() < 1, $"{page}: the modal still transitions for {open.GetProperty("transitionMs")}ms.");
+        Assert.Equal(1, open.GetProperty("backdrops").GetInt32());
+
+        // Its close button closes it, and the closed modal no longer covers the trigger.
+        await ClickAsync(browser, "#notificationSettingsModal .btn-close", ct);
+        Assert.True(await browser.WaitForAsync(
+                "getComputedStyle(document.getElementById('notificationSettingsModal')).display === 'none' && !document.body.classList.contains('modal-open')",
+                TimeSpan.FromSeconds(5), ct),
+            $"{page}: the notification settings modal did not close");
+        closed = await browser.EvaluateAsync<JsonElement>(state, ct);
+        Assert.Equal(0, closed.GetProperty("backdrops").GetInt32());
+        Assert.True(closed.GetProperty("onTop").GetBoolean(), $"{page}: the closed notification modal covers its trigger.");
     }
 
     [Theory]

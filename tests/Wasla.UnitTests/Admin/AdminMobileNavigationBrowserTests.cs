@@ -4,8 +4,8 @@ namespace Wasla.UnitTests.Admin;
 
 /// <summary>
 /// The Central Admin layout in a real headless Chromium browser (Edge or Chrome), English LTR and Arabic RTL:
-/// the mobile navigation drawer (AdminLTE's PushMenu plus wasla-admin-nav.js) and the definition lists on the Admin
-/// detail pages. Real keyboard, mouse and wheel input is used throughout. Skips only when no Chromium browser is
+/// the mobile navigation drawer (AdminLTE's PushMenu plus wasla-admin-nav.js), the definition lists on the Admin
+/// detail pages and, under reduced motion, a confirmation modal. Real keyboard, mouse and wheel input is used throughout. Skips only when no Chromium browser is
 /// installed (see <see cref="HeadlessChromium.BrowserVariable"/>) or AdminLTE cannot be loaded from its CDN.
 /// </summary>
 public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
@@ -314,6 +314,66 @@ public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
             Assert.All(longValues, dd => Assert.True(dd.GetProperty("height").GetDouble() > dd.GetProperty("lineHeight").GetDouble() * 1.5,
                 $"{page}: '{dd.GetProperty("text")}' did not wrap"));
         }
+    }
+
+    // For a user who asks for reduced motion (WAS-100). AdminLTE 4.0.0-rc3 sets .fade{display:block} under
+    // prefers-reduced-motion: reduce, which displayed the closed (opacity 0) provision confirmation over the page. The
+    // closed modal stays display: none, its trigger takes a real click, and the modal opens and closes without transitions.
+    [Theory]
+    [InlineData("en-US", "ltr", 1280)]
+    [InlineData("ar-SA", "rtl", 390)]
+    public async Task UnderReducedMotion_TheClosedProvisionModalIsHidden_AndOpensAndClosesWithoutTransitions(string culture, string direction, int width)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await SignedInBrowserAsync(culture, ct);
+        await browser.SetViewportAsync(width, 860, mobile: width < 992, ct);
+        await browser.SetReducedMotionAsync("reduce", ct);
+        await LoadAsync(browser, $"/admin/pending-registrations/{_registrationId}", ct);
+        var page = $"{culture} {width}px reduced motion";
+        const string state = """
+            (() => {
+              const trigger = document.querySelector('[data-bs-target="#confirmProvisionModal"]'), modal = document.getElementById('confirmProvisionModal');
+              if (!modal.classList.contains('show')) trigger.scrollIntoView({ block: 'center', inline: 'center' });
+              const center = e => { const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; };
+              const t = center(trigger), close = center(modal.querySelector('.btn-close')), hit = document.elementFromPoint(t.x, t.y);
+              const cs = getComputedStyle(modal);
+              return { reduce: matchMedia('(prefers-reduced-motion: reduce)').matches, dir: document.documentElement.dir,
+                       display: cs.display, opacity: cs.opacity,
+                       // The longest transition of the modal and its dialog, in milliseconds.
+                       transitionMs: Math.max(...[cs, getComputedStyle(modal.querySelector('.modal-dialog'))].flatMap(s => s.transitionDuration.split(',').map(d => parseFloat(d) * 1000))),
+                       backdrops: document.querySelectorAll('.modal-backdrop').length, trigger: t, close,
+                       onTop: !!hit && trigger.contains(hit), hit: hit ? hit.tagName.toLowerCase() + (hit.id ? '#' + hit.id : '') + [...hit.classList].map(c => '.' + c).join('') : 'nothing' };
+            })()
+            """;
+
+        var closed = await browser.EvaluateAsync<JsonElement>(state, ct);
+        Assert.True(closed.GetProperty("reduce").GetBoolean(), "The browser does not emulate prefers-reduced-motion: reduce.");
+        Assert.Equal(direction, closed.GetProperty("dir").GetString());
+        Assert.Equal("none", closed.GetProperty("display").GetString());
+        Assert.True(closed.GetProperty("onTop").GetBoolean(), $"{page}: the closed provision modal covers its trigger ({closed.GetProperty("hit")} is on top).");
+
+        // A real click on the trigger: the modal opens at once, fully opaque.
+        var trigger = closed.GetProperty("trigger");
+        await browser.ClickAtAsync(trigger.GetProperty("x").GetDouble(), trigger.GetProperty("y").GetDouble(), ct);
+        Assert.True(await browser.WaitForAsync("document.getElementById('confirmProvisionModal').classList.contains('show')", TimeSpan.FromSeconds(5), ct),
+            $"{page}: the provision modal did not open");
+        var open = await browser.EvaluateAsync<JsonElement>(state, ct);
+        Assert.Equal("block", open.GetProperty("display").GetString());
+        Assert.Equal("1", open.GetProperty("opacity").GetString());
+        Assert.True(open.GetProperty("transitionMs").GetDouble() < 1, $"{page}: the modal still transitions for {open.GetProperty("transitionMs")}ms.");
+        Assert.Equal(1, open.GetProperty("backdrops").GetInt32());
+
+        // Its close button closes it without provisioning, and the closed modal no longer covers the trigger.
+        var close = open.GetProperty("close");
+        await browser.ClickAtAsync(close.GetProperty("x").GetDouble(), close.GetProperty("y").GetDouble(), ct);
+        Assert.True(await browser.WaitForAsync(
+                "getComputedStyle(document.getElementById('confirmProvisionModal')).display === 'none' && !document.body.classList.contains('modal-open')",
+                TimeSpan.FromSeconds(5), ct),
+            $"{page}: the provision modal did not close");
+        closed = await browser.EvaluateAsync<JsonElement>(state, ct);
+        Assert.Equal(0, closed.GetProperty("backdrops").GetInt32());
+        Assert.True(closed.GetProperty("onTop").GetBoolean(), $"{page}: the closed provision modal covers its trigger ({closed.GetProperty("hit")} is on top).");
+        Assert.EndsWith($"/admin/pending-registrations/{_registrationId}", await browser.EvaluateAsync<string>("location.pathname", ct), StringComparison.Ordinal);
     }
 
     [Fact]
