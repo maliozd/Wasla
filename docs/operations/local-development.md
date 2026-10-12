@@ -60,23 +60,24 @@ Then open `/admin/login` on the central host.
 
 ## Database bootstrap
 
-With master key set:
+With master key set, and the CLI in Development:
 
 ```powershell
+$env:DOTNET_ENVIRONMENT = "Development"
 dotnet run --project src\Wasla.Cli -- migrate-central
 ```
+
+The CLI's committed `appsettings.json` names no CentralDb and no tenant SQL Server (WAS-93). Its `appsettings.Development.json` sets both to LocalDB, so local CLI runs need `DOTNET_ENVIRONMENT=Development`; without it the CLI stops with "ConnectionStrings:CentralDb is not configured" before touching any database. Environment variables (`ConnectionStrings__CentralDb`, `CustomerDb__ServerInstance`) override both files, and `--sql-server` overrides the tenant server. The destructive commands (`delete-customer`, `reset-customer-db`, `reset-all-customer-dbs`) also treat an unset environment as Production and then ask for `--force-production`.
 
 Create a tenant (creates DB + admin) **or** provision a paid signup request:
 
 ```powershell
-dotnet run --project src\Wasla.Cli -- add-customer --name "Demo Restaurant" --slug demo --domain demo.wasla.local --admin-email admin@demo.local --admin-password "YourStrongPassword!" --admin-name "Demo Admin" --sql-server "(localdb)\MSSQLLocalDB"
+dotnet run --project src\Wasla.Cli -- add-customer --name "Demo Restaurant" --slug demo --domain demo.wasla.local --admin-email admin@demo.local --admin-password "YourStrongPassword!" --admin-name "Demo Admin"
 
-dotnet run --project src\Wasla.Cli -- provision-signup-request --registration-id <guid> --sql-server "(localdb)\MSSQLLocalDB"
+dotnet run --project src\Wasla.Cli -- provision-signup-request --registration-id <guid>
 ```
 
-Tenant databases are created only on an explicitly chosen SQL Server (WAS-93): `--sql-server`, `CustomerDb__ServerInstance`, or `OrderHub__CustomerOnboarding__ServerInstance`. There is no default. Web's `appsettings.Development.json` sets LocalDB for Central Admin provisioning; the CLI's committed `appsettings.json` no longer names a server, so pass `--sql-server` or set `$env:CustomerDb__ServerInstance = "(localdb)\MSSQLLocalDB"`.
-
-The destructive CLI commands (`delete-customer`, `reset-customer-db`, `reset-all-customer-dbs`) treat an unset environment as Production. Set `$env:DOTNET_ENVIRONMENT = "Development"` locally, or they also ask for `--force-production`.
+Tenant databases are created only on an explicitly chosen SQL Server: `--sql-server`, `CustomerDb__ServerInstance`, or `OrderHub__CustomerOnboarding__ServerInstance`. There is no default. In Development, the CLI's and Web's `appsettings.Development.json` set LocalDB.
 
 Apply tenant schema updates after pulls:
 

@@ -28,6 +28,20 @@ Sources of truth:
 - Registration / handlers: `src/Wasla.Cli/Program.cs`
 - Help text and “known command” gate: `src/Wasla.Cli/CliHelpPrinter.cs`
 
+## Configuration sources
+
+`src/Wasla.Cli/CliConfiguration.cs` (WAS-93), lowest to highest precedence:
+
+1. `appsettings.json` next to the CLI binary (not the working directory)
+2. `appsettings.{Environment}.json` next to the CLI binary
+3. User secrets (Development only)
+4. Environment variables, for example `ConnectionStrings__CentralDb`, `CustomerDb__ServerInstance`
+5. Command-line arguments
+
+So a deployment's environment variables always override the committed JSON. Before WAS-93 the CLI added `appsettings.json` again after these sources, so its values beat environment variables.
+
+The committed base `appsettings.json` names no CentralDb and no tenant SQL Server. `appsettings.Development.json` sets both to LocalDB; anywhere else, set them through the environment. Without a CentralDb every command past `help` and `hash-password` stops before touching a database.
+
 ## ENCRYPTION_MASTER_KEY
 
 Most commands call `AesSecretManager.ValidateMasterKeyOrThrow()` before the host builds.
