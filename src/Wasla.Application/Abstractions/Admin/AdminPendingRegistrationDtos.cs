@@ -42,6 +42,9 @@ public sealed class AdminPendingRegistrationDetailDto
     public string BusinessName { get; init; } = string.Empty;
     public string Slug { get; init; } = string.Empty;
     public string PrimaryDomain { get; init; } = string.Empty;
+
+    /// <summary>The SQL Server database provisioning will create for this registration, for operator review.</summary>
+    public string DatabaseName { get; init; } = string.Empty;
     public string PlanCode { get; init; } = string.Empty;
     public string BillingPeriod { get; init; } = string.Empty;
     public string Country { get; init; } = string.Empty;

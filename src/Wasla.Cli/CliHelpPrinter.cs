@@ -114,6 +114,9 @@ internal static class CliHelpPrinter
         Console.WriteLine("Warning:");
         Console.WriteLine("  delete-customer, reset-customer-db and reset-all-customer-dbs are destructive commands.");
         Console.WriteLine("  They require --confirm and are blocked in Production unless --force-production is explicitly provided.");
+        Console.WriteLine("  With no DOTNET_ENVIRONMENT/ASPNETCORE_ENVIRONMENT set, the CLI counts as Production.");
+        Console.WriteLine("  They refuse CentralDb, SQL Server system databases, a database named by more than one tenant,");
+        Console.WriteLine("  and a tenant whose connection string targets a database other than its registered one.");
     }
 
     public static void PrintCommandHelp(string command)

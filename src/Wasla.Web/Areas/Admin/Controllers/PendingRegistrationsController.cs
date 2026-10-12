@@ -105,6 +105,7 @@ public sealed class PendingRegistrationsController : Controller
         BusinessName = dto.BusinessName,
         Slug = dto.Slug,
         PrimaryDomain = dto.PrimaryDomain,
+        DatabaseName = dto.DatabaseName,
         PlanCode = dto.PlanCode,
         BillingPeriod = dto.BillingPeriod,
         Country = dto.Country,

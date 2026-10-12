@@ -787,6 +787,10 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DatabaseName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Tenants_DatabaseName");
+
                     b.HasIndex("IsActive")
                         .HasDatabaseName("IX_Tenants_IsActive");
 
