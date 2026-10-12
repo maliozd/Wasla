@@ -1087,6 +1087,11 @@
   <data name="Notification.StopSoundButton" xml:space="preserve"><value>Sesi durdur</value></data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve"><value>Bu restorana bağlı sipariş platformlarını yönetin.</value></data>
   <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve"><value>Canlı</value></data>
+  <data name="Orders.LiveDisplay.SyncStatus.NotConnected" xml:space="preserve"><value>Platform bağlı değil</value></data>
+  <data name="Orders.LiveDisplay.SyncStatus.SyncDisabled" xml:space="preserve"><value>Senkronizasyon kapalı</value></data>
+  <data name="Orders.LiveDisplay.SyncStatus.Issue" xml:space="preserve"><value>Bağlantı sorunu</value></data>
+  <data name="Orders.LiveDisplay.SyncStatus.IssueWithPlatforms" xml:space="preserve"><value>Bağlantı sorunu: {0}</value></data>
+  <data name="Orders.LiveDisplay.LastSync" xml:space="preserve"><value>Son başarılı senkronizasyon</value></data>
   <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve"><value>Bildirim sesi</value></data>
   <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve"><value>Canlı siparişler yenilenemedi. Son güncelleme gösteriliyor.</value></data>
   <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve"><value>Oturum süresi doldu. Devam etmek için sayfayı yenileyin.</value></data>

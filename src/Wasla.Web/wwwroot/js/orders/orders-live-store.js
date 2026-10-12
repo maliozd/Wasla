@@ -552,6 +552,8 @@ function attachBrowser(O, global, api) {
   }
 
   function onStatus(kind) {
+    // The header's sync status must not keep saying "Live" while the screen cannot refresh.
+    document.dispatchEvent(new CustomEvent("wasla:live-poll-status", { detail: { kind: kind } }));
     const el = connectionEl();
     if (!el) return;
     if (kind === "ok") {
@@ -2346,14 +2348,16 @@ function attachBrowser(O, global, api) {
     lastTimings.timeUpdates = diff.timeUpdates || 0;
     setSummary(snapshot);
     touchUpdated();
-    // Listeners such as order training, the automation status and the practice-order countdown read the accepted
-    // snapshot instead of scraping one view's DOM. Neither the automation section nor the practice order's countdown
-    // deadline takes part in new-order detection; serverTimeUtc lets the countdown measure the server's deadline.
+    // Listeners such as order training, the automation and platform sync status and the practice-order countdown read
+    // the accepted snapshot instead of scraping one view's DOM. Neither the automation or sync section nor the practice
+    // order's countdown deadline takes part in new-order detection; serverTimeUtc lets the countdown measure the
+    // server's deadline.
     document.dispatchEvent(new CustomEvent("wasla:live-rendered", {
       detail: {
         orders: snapshot.orders,
         training: snapshot.training || null,
         automation: snapshot.automation || null,
+        sync: snapshot.sync || null,
         serverTimeUtc: snapshot.serverTimeUtc
       }
     }));

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Demos;
+using Wasla.Application.Orders;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Platform;
 using Wasla.Infrastructure.Services;
@@ -13,7 +14,7 @@ namespace Wasla.Worker.Jobs;
 
 public sealed class OrderSyncWorker : BackgroundService
 {
-    private const int CycleIntervalSeconds = 15;
+    private const int CycleIntervalSeconds = OrderSyncSchedule.WorkerCycleSeconds;
     private const int CatastrophicFailureBackoffSeconds = 30;
     private const int MaxParallelCustomers = 5;
 

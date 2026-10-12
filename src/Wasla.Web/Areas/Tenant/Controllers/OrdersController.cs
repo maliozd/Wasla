@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Orders;
+using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Abstractions.Tenant;
@@ -322,6 +323,7 @@ public sealed class OrdersController : BaseController
     public async Task<IActionResult> LiveData(
         [FromServices] IGuidedSetupCoordinator guidedSetup,
         [FromServices] ITenantOperationalModeService operationalModes,
+        [FromServices] IPlatformConnectionService platformConnections,
         CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -332,15 +334,35 @@ public sealed class OrdersController : BaseController
         // The settings menu's automation indicators, for everyone who may view the Live Screen: read-only effective
         // states (Active, Off, PendingSetup), never the settings themselves. From the server on every poll, so
         // Setup → Live shows up without a reload. The settings endpoints keep their own Manager/Owner policy.
+        TenantAutomationStatus? automation = null;
         try
         {
-            var automation = await operationalModes.GetAutomationStatusAsync(tenant.Id, ct);
+            automation = await operationalModes.GetAutomationStatusAsync(tenant.Id, ct);
             snapshot = snapshot with { Automation = LiveScreenAutomationStatus.From(automation) };
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // The indicators keep their last state; the orders are unaffected.
             _logger.LogWarning("Automation status could not be read: {ExceptionType}", ex.GetType().Name);
+        }
+
+        // The header's connection indicator, for the same users: from this tenant's platform connection records on
+        // every poll, never from the page or this request succeeding. Without the Order Sync setting it cannot be told,
+        // so it stays null and the page shows a connection issue; the orders are unaffected.
+        if (automation is not null)
+        {
+            try
+            {
+                var connections = await platformConnections.GetListAsync(tenant.Id, ct);
+                snapshot = snapshot with
+                {
+                    Sync = LiveScreenSyncRules.Evaluate(connections, automation.OrderSyncConfigured, snapshot.ServerTimeUtc)
+                };
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning("Platform sync status could not be read: {ExceptionType}", ex.GetType().Name);
+            }
         }
 
         var userIdValue = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value

@@ -687,6 +687,21 @@
   <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
     <value>В эфире</value>
   </data>
+  <data name="Orders.LiveDisplay.SyncStatus.NotConnected" xml:space="preserve">
+    <value>Платформа не подключена</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.SyncDisabled" xml:space="preserve">
+    <value>Синхронизация выключена</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.Issue" xml:space="preserve">
+    <value>Проблема с подключением</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.IssueWithPlatforms" xml:space="preserve">
+    <value>Проблема с подключением: {0}</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastSync" xml:space="preserve">
+    <value>Последняя успешная синхронизация</value>
+  </data>
   <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
     <value>Звук уведомлений</value>
   </data>

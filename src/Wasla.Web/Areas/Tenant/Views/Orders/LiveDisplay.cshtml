@@ -30,15 +30,22 @@
                         {
                             <h1 class="wasla-live-display-header__title wasla-fs-header__title mb-0">@customerName</h1>
                         }
-                        <span class="wasla-live-display-status">
+                        @* Platform synchronization as the server reports it on each snapshot (orders-platform-sync-status.js);
+                           never "Live" until the backend says so. The words carry the state; the dot and icon are decorative. *@
+                        <span id="ordersLiveDisplaySyncStatus" class="wasla-live-display-status wasla-live-display-status--pending" data-sync-state="pending" role="status">
                             <span class="wasla-live-display-status__dot" aria-hidden="true"></span>
-                            <span>@L["Orders.LiveDisplay.LiveStatus"]</span>
+                            <i class="wasla-live-display-status__icon bi" aria-hidden="true" hidden></i>
+                            <span data-sync-status-text>@L["Common.Loading"]</span>
                         </span>
                     </div>
                     <p class="wasla-live-display-header__meta wasla-fs-header__meta mb-0">
                         <span>@L["Orders.Today"] @today.ToString("m", System.Globalization.CultureInfo.CurrentCulture)</span>
                         <span class="wasla-fs-header__sep" aria-hidden="true"></span>
                         <span>@L["Orders.LiveDisplay.LastUpdated"] <span id="ordersLiveDisplayLastUpdated">-</span></span>
+                        <span id="ordersLiveDisplayLastSyncItem" class="wasla-live-display-last-sync" hidden>
+                            <span class="wasla-fs-header__sep" aria-hidden="true"></span>
+                            <span>@L["Orders.LiveDisplay.LastSync"] <time id="ordersLiveDisplayLastSync"></time></span>
+                        </span>
                         <span id="ordersLiveDisplayConnection" class="wasla-live-display-connection" role="status" hidden></span>
                     </p>
                 </div>
@@ -254,6 +261,11 @@
                 ["automationStatusReceiptPrintingActive"] = L["Common.Active"].Value,
                 ["automationStatusReceiptPrintingDisabled"] = L["Notification.Disabled"].Value,
                 ["automationStatusPendingSetup"] = L["Orders.Automation.PendingSetup"].Value,
+                ["syncStatusLive"] = L["Orders.LiveDisplay.LiveStatus"].Value,
+                ["syncStatusNotConnected"] = L["Orders.LiveDisplay.SyncStatus.NotConnected"].Value,
+                ["syncStatusSyncDisabled"] = L["Orders.LiveDisplay.SyncStatus.SyncDisabled"].Value,
+                ["syncStatusIssue"] = L["Orders.LiveDisplay.SyncStatus.Issue"].Value,
+                ["syncStatusIssueWithPlatforms"] = L["Orders.LiveDisplay.SyncStatus.IssueWithPlatforms"].Value,
                 ["demoCountdownPickUp"] = L["Orders.DemoCountdown.PickUp"].Value,
                 ["demoCountdownDeliver"] = L["Orders.DemoCountdown.Deliver"].Value,
                 ["demoCountdownLeave"] = L["Orders.DemoCountdown.Leave"].Value,
@@ -345,6 +357,7 @@
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-automation-status.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-platform-sync-status.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-demo-countdown.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
