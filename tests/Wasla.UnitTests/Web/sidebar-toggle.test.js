@@ -266,10 +266,7 @@ function exerciseMobileDrawer(page, label) {
     assert.equal(sidebar.inert, true, `${label}: drawer inert by ${route}`);
     assert.equal(main.inert, false, `${label}: content interactive by ${route}`);
     assert.ok(!sidebar.contains(page.doc.activeElement), `${label}: focus left the closed drawer after ${route}`);
-    if (route !== "backdrop") {
-      // Existing behavior: after a backdrop press focus stays on <body> (the trigger is still inert when it is focused).
-      assert.equal(page.doc.activeElement, open, `${label}: focus restored to the trigger by ${route}`);
-    }
+    assert.equal(page.doc.activeElement, open, `${label}: focus restored to the trigger by ${route}`);
   }
 
   // Escape with the drawer closed is left to the page.
