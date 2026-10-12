@@ -124,6 +124,28 @@ Stop Sound: `#ordersLiveDisplayStopSound`. Browser Notification API runs only if
 
 **Automation indicators (effective state):** for every Live Screen user (`CanViewLiveScreen`: Owner, Manager, Kitchen, Cashier, Viewer), each `/orders/live-data` snapshot carries `automation: { orderSync, autoApprove, autoReceipt }`, each `Active`, `Off` or `PendingSetup`, computed on the server from the resolved tenant's settings row (`ITenantOperationalModeService`). It is read-only operational status; the settings themselves stay behind `TenantManagerOrOwner`, and only those users see “Manage settings”. The indicators show `…` until the first snapshot arrives. `PendingSetup` means configured on while the tenant is in Setup ([../product/onboarding.md](../product/onboarding.md#configured-and-effective-automation)): it is shown as `Orders.Automation.PendingSetup` in a warning tone (neither the green Active nor the Off look), with the visible explanation `Orders.Automation.PendingSetupDescription`. Order sync is never pending, because Setup does not stop ingestion. `orders-automation-status.js` only displays the section from `wasla:live-rendered`; it sends no request and infers nothing from the page. Each poll refreshes it, so completing or skipping guided setup in another tab shows on the next snapshot without a reload. The section never takes part in new-order detection, so the change plays no sound, shows no notification and highlights nothing. If the status cannot be read, the snapshot is returned without it and the indicators keep their last state. Push (SignalR) is still future work.
 
+### Platform connection status (header)
+
+The badge next to the restaurant name says whether platform orders are actually being synchronized. An open page, a working poll or a successful request is never evidence: every value comes from the tenant's platform connection records, read on each `/orders/live-data` poll for every Live Screen user (`CanViewLiveScreen`). Before WAS-12 the badge was static markup that always said "Live".
+
+The snapshot carries `sync: { state, lastSuccessfulSyncUtc, platforms: [{ platform, state }] }`, computed by `LiveScreenSyncRules` (Application) from `IPlatformConnectionService.GetListAsync` and the tenant's Order Sync setting (`ITenantOperationalModeService`), both for the resolved tenant. Only states travel: no store id, credential, failure count, attempt time or error text.
+
+| State | When | Badge |
+| --- | --- | --- |
+| `NotConnected` | The tenant has no platform connection | `Orders.LiveDisplay.SyncStatus.NotConnected`, muted, plug icon |
+| `SyncDisabled` | Order Sync is off, or every connection is deactivated | `Orders.LiveDisplay.SyncStatus.SyncDisabled`, muted, pause icon |
+| `Live` | Every active connection has a successful sync within its stale threshold and did not fail its last attempt | `Orders.LiveDisplay.LiveStatus`, the existing green look with the dot |
+| `Issue` | Any active connection failed its last attempt, is paused by the circuit breaker, never completed a sync, or has no successful sync within its threshold | `Orders.LiveDisplay.SyncStatus.IssueWithPlatforms` naming the affected platforms (or `…SyncStatus.Issue`), warning look, triangle icon |
+
+Per connection, the classification is `ProviderConnectionHealthRules.Classify` (the same rule as the Central Admin view) with the Live Screen's own threshold:
+
+- **Evidence of success** is `PlatformConnection.LastSuccessfulSync`, the Worker's checkpoint. It moves only after a fetch window was fetched and stored completely (see [synchronization.md](synchronization.md#checkpoint-and-outage-recovery)). `LastSyncAttempt` is not evidence, and neither is the absence of a recorded failure: a connection with attempts but no successful sync, or whose syncs stopped completing (for example because the Worker is not running), is an issue. While history is still being recovered after an outage, the checkpoint is behind, so the connection is an issue until recovery catches up.
+- **Stale threshold** (`LiveScreenSyncRules.StaleAfter`): three expected syncs, each the connection's own `SyncIntervalSeconds` plus one Worker cycle (`OrderSyncSchedule.WorkerCycleSeconds`, 15 s), because a due connection waits for the next cycle. With the default 30-second interval that is 135 seconds. The Central Admin view keeps its longer presentation threshold (10 minutes, `ProviderConnectionHealthRules.StaleAfter`).
+- **Several platforms:** one unhealthy active connection makes the whole badge an issue and is named; healthy platforms never hide it. Deactivated connections are reported as `SyncDisabled` and do not affect the active ones.
+- **Last successful sync** (meta line, `Orders.LiveDisplay.LastSync`): the oldest last successful sync of the active connections, so everything up to that time came in from every active platform. Hidden while an active connection has never synced. Shown as a time on the server's current day in the page's time zone, otherwise with the date.
+
+`orders-platform-sync-status.js` only displays the section from `wasla:live-rendered`; it sends no request. The badge is a polite `role="status"` region whose words carry the state (the dot and icons are `aria-hidden`), written only when the text changes, and it shows `Common.Loading` until the first snapshot. When the section is missing (the status could not be read on the server) or a poll fails (`wasla:live-poll-status` from the coordinator: stale or session expired), the badge shows the issue state, because the screen cannot back up "Live"; the next accepted snapshot shows the server's state again. The section takes no part in new-order detection, sound or notifications.
+
 **Implementation quirk:** `localStorage` key `Wasla.soundUnlocked` is written when unlock succeeds and is not read on load. It is a cleanup candidate, not part of the audio contract.
 
 ### Responsive / RTL / motion
@@ -173,5 +195,6 @@ Stop Sound: `#ordersLiveDisplayStopSound`. Browser Notification API runs only if
 | Page init | `wwwroot/js/orders/orders-live-display-page.js` |
 | Audio / notifications | `wwwroot/js/orders/orders-audio.js` |
 | Automation indicators | `wwwroot/js/orders/orders-automation-status.js`, `src/Wasla.Application/Abstractions/Setup/TenantAutomationStatus.cs` |
+| Platform connection status | `wwwroot/js/orders/orders-platform-sync-status.js`, `src/Wasla.Application/Orders/LiveScreenSyncRules.cs`, `src/Wasla.Application/Orders/OrderSyncSchedule.cs` |
 | Orders bootstrap | `wwwroot/js/orders/orders-page.js` |
 | Order training | `…/Views/Orders/_GuidedTrainingPanel.cshtml`, `wwwroot/js/wasla-guided-training.js`, `src/Wasla.Web/GuidedSetup/GuidedSetupCoordinator.cs` |
