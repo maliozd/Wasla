@@ -61,7 +61,7 @@ For Trendyol GO this is described in [Checkpoint and outage recovery](#checkpoin
 
 | Constant | Value | Source |
 |----------|-------|--------|
-| Cycle interval | 15 seconds | `OrderSyncWorker.CycleIntervalSeconds` |
+| Cycle interval | 15 seconds | `OrderSyncSchedule.WorkerCycleSeconds` (Application), used by `OrderSyncWorker.CycleIntervalSeconds` and by the Live Screen's stale threshold ([live-screen.md](live-screen.md#platform-connection-status-header)) |
 | Catastrophic cycle backoff | 30 seconds | `OrderSyncWorker.CatastrophicFailureBackoffSeconds` |
 | Max parallel tenants | 5 | `OrderSyncWorker.MaxParallelCustomers` |
 | History recovery per cycle | at most 12 rounds of one window per behind connection | `OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle` |
