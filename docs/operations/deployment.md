@@ -191,6 +191,10 @@ A process with `Port` set and a missing or short secret, or an invalid port, ref
 
 **Release order.** The tenant migration `AddPrintJobStatusVersion` (WAS-23) adds `PrintJobs.StatusVersion` (bigint, existing rows 0). Receipt creation, Print Bridge reports and the order detail pages read or write it, so follow [Release order](#release-order-migrate-every-database-first): stop every Web, Worker and Api instance of the previous version (a previous Worker or Api would create jobs at version 0 and change status without raising it, which breaks the order of versions for those orders), migrate every tenant, and only then start the new Web, Worker and Api. Rolling back the application leaves the column in place and unused.
 
+The tenant migration `AddOrderChangeVersion` (WAS-24) adds `Orders.ChangeVersion` (bigint, existing rows 0). Ingestion, every order action and the Live Screen snapshot read or write it, so the same order applies: stop every previous Web, Worker and Api, migrate every tenant, then start the new versions. A previous process would change orders without raising the version or announcing them, so open Live Screens would show those changes only at their next poll, and versions would no longer count every change.
+
+At startup Wasla.Worker and Wasla.Api log whether their changes reach Wasla.Web (`Wasla.Realtime`): an information line when `Realtime:Internal` is set, a warning when it is not.
+
 ## Logging and health
 
 | Process | File sink (Serilog) | Health HTTP |
