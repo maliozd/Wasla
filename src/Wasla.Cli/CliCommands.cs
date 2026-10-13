@@ -2010,7 +2010,11 @@ internal static class CliCommands
             PayloadJson = payload,
             AttemptCount = 0,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
+            // Development helper: no active-job check or lock, but the version still starts above the order's jobs.
+            StatusVersion = await Wasla.Infrastructure.Realtime.PrintJobStatusVersions
+                .NextForNewJobAsync(db, order.Id, ct)
+                .ConfigureAwait(false)
         };
 
         db.PrintJobs.Add(job);
