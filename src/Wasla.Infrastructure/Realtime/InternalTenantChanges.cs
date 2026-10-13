@@ -70,20 +70,25 @@ public sealed class InternalRealtimeOptions
 }
 
 /// <summary>
-/// The internal wire format. Only identifiers, the status name and the version travel; the tenant id is set by the
-/// sending service from its own server-side context.
+/// The internal wire format. Only identifiers, a status name and the version travel; the tenant id is set by the
+/// sending service from its own server-side context. <c>PrintJobId</c> and <c>Status</c> belong to
+/// <see cref="PrintJobChanged"/> only and are absent for <see cref="OrderChanged"/>.
 /// </summary>
 public sealed record InternalTenantChangeMessage(
     Guid TenantId,
     string Type,
     Guid OrderId,
-    Guid PrintJobId,
-    string Status,
+    Guid? PrintJobId,
+    string? Status,
     long Version)
 {
+    /// <summary>Whether this channel carries the change; anything else is dropped by the sender.</summary>
+    public static bool CanCarry(TenantChange change) => change is PrintJobChanged or OrderChanged;
+
     public static InternalTenantChangeMessage From(Guid tenantId, TenantChange change) => change switch
     {
         PrintJobChanged p => new(tenantId, PrintJobChanged.TypeName, p.OrderId, p.PrintJobId, p.Status.ToString(), p.Version),
+        OrderChanged o => new(tenantId, OrderChanged.TypeName, o.OrderId, null, null, o.Version),
         _ => throw new ArgumentOutOfRangeException(nameof(change), change.GetType().Name, "Unknown tenant change.")
     };
 
@@ -92,16 +97,27 @@ public sealed record InternalTenantChangeMessage(
     {
         tenantId = TenantId;
         change = null;
-        if (TenantId == Guid.Empty || !string.Equals(Type, PrintJobChanged.TypeName, StringComparison.Ordinal))
+        if (TenantId == Guid.Empty || OrderId == Guid.Empty || Version < 1)
             return false;
-        if (OrderId == Guid.Empty || PrintJobId == Guid.Empty || Version < 1)
+
+        if (string.Equals(Type, OrderChanged.TypeName, StringComparison.Ordinal))
+        {
+            if (PrintJobId is not null || Status is not null)
+                return false;
+            change = new OrderChanged(OrderId, Version);
+            return true;
+        }
+
+        if (!string.Equals(Type, PrintJobChanged.TypeName, StringComparison.Ordinal))
+            return false;
+        if (PrintJobId is not { } printJobId || printJobId == Guid.Empty)
             return false;
         if (!Enum.TryParse<PrintJobStatus>(Status, ignoreCase: false, out var status)
             || !Enum.IsDefined(status)
             || int.TryParse(Status, out _))
             return false;
 
-        change = new PrintJobChanged(OrderId, PrintJobId, status, Version);
+        change = new PrintJobChanged(OrderId, printJobId, status, Version);
         return true;
     }
 }
@@ -146,7 +162,7 @@ public sealed class WebTenantChangeNotifier : ITenantChangeNotifier
         }
 
         // A change this channel cannot carry is dropped without pausing the channel for the others.
-        if (change is not PrintJobChanged)
+        if (!InternalTenantChangeMessage.CanCarry(change))
             return;
         var message = InternalTenantChangeMessage.From(tenantId, change);
 

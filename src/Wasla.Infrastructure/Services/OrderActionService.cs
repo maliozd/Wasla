@@ -2,10 +2,12 @@
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Orders;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -14,14 +16,17 @@ public sealed class OrderActionService : IOrderActionService
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<OrderActionService> _logger;
     private readonly IEnumerable<IFoodPlatformClient> _clients;
+    private readonly ITenantChangeNotifier _notifier;
 
     public OrderActionService(
         ITenantDbContextFactory dbFactory,
         IEnumerable<IFoodPlatformClient> clients,
+        ITenantChangeNotifier notifier,
         ILogger<OrderActionService> logger)
     {
         _dbFactory = dbFactory;
         _clients = clients;
+        _notifier = notifier;
         _logger = logger;
     }
 
@@ -45,6 +50,8 @@ public sealed class OrderActionService : IOrderActionService
 
         var rows = await db.SaveChangesAsync(ct);
         _logger.LogInformation("Order action updated status: orderId={OrderId} newStatus={NewStatus} rows={Rows}", orderId, newStatus, rows);
+        if (rows > 0)
+            await PublishChangedAsync(customerId, order);
         return rows > 0;
     }
 
@@ -111,6 +118,7 @@ public sealed class OrderActionService : IOrderActionService
         var rows = await db.SaveChangesAsync(ct);
         if (rows <= 0) return new OrderActionResult(false, "Orders.ActionFailed");
 
+        await PublishChangedAsync(customerId, order);
         return new OrderActionResult(true, target == OrderStatus.Accepted ? "Orders.ApproveSuccess" : "Orders.RejectSuccess");
     }
 
@@ -237,7 +245,12 @@ public sealed class OrderActionService : IOrderActionService
         var rows = await db.SaveChangesAsync(ct);
         if (rows <= 0) return new OrderActionResult(false, "Orders.ActionFailed");
 
+        await PublishChangedAsync(customerId, order);
         return new OrderActionResult(true, successKey);
     }
+
+    // After the save committed the status change: open Live Screens read their snapshot again. Never fails the action.
+    private Task PublishChangedAsync(Guid customerId, Order order) =>
+        TenantChangePublisher.PublishAsync(_notifier, customerId, OrderChanged.For(order.Id, order.UpdatedAt), _logger);
 }
 

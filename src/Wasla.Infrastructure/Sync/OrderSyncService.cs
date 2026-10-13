@@ -11,12 +11,14 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Infrastructure.Realtime;
 using Polly;
 using Polly.Retry;
 using Polly.Timeout;
@@ -39,6 +41,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly ILogger<OrderSyncService> _logger;
     private readonly ITenantBusinessSubtypeReader? _businessSubtypeReader;
     private readonly TimeProvider _time;
+    private readonly ITenantChangeNotifier _notifier;
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
         new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
@@ -80,7 +83,8 @@ public sealed class OrderSyncService : IOrderSyncService
         IOrderReceiptCreationService receiptCreation,
         ILogger<OrderSyncService> logger,
         ITenantBusinessSubtypeReader? businessSubtypeReader = null,
-        TimeProvider? time = null)
+        TimeProvider? time = null,
+        ITenantChangeNotifier? notifier = null)
     {
         _customerDbFactory = customerDbFactory;
         _platformClients = platformClients;
@@ -90,6 +94,7 @@ public sealed class OrderSyncService : IOrderSyncService
         _logger = logger;
         _businessSubtypeReader = businessSubtypeReader;
         _time = time ?? TimeProvider.System;
+        _notifier = notifier ?? NullTenantChangeNotifier.Instance;
     }
 
     public async Task SyncCustomerAsync(Guid customerId, CancellationToken ct)
@@ -700,6 +705,9 @@ public sealed class OrderSyncService : IOrderSyncService
 
             db.Orders.Add(order);
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            // The new order is committed: open Live Screens read their snapshot again.
+            await TenantChangePublisher.PublishAsync(_notifier, customerId, OrderChanged.For(order.Id, order.UpdatedAt), _logger)
+                .ConfigureAwait(false);
 
             _logger.LogDebug(
                 "Inserted order. OrderId={OrderId}, ExternalOrderId={ExternalOrderId}, Platform={Platform}, Status={Status}, ReceivedAtUtc={ReceivedAtUtc}",
@@ -818,6 +826,8 @@ public sealed class OrderSyncService : IOrderSyncService
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         await tx.CommitAsync(ct).ConfigureAwait(false);
+        await TenantChangePublisher.PublishAsync(_notifier, customerId, OrderChanged.For(existing.Id, existing.UpdatedAt), _logger)
+            .ConfigureAwait(false);
 
         await TryCreateReceiptIfProviderAcceptedAsync(
             customerId,
