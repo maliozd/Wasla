@@ -187,7 +187,9 @@ A process with `Port` set and a missing or short secret, or an invalid port, ref
 
 **Session checks.** `Realtime__SessionRevalidationSeconds` (Web, default 60, 1–600) sets how often an open connection's session is checked again ([../architecture/authentication.md](../architecture/authentication.md#long-lived-live-connections)).
 
-**One Web instance.** Connections live in Web's memory. Running more than one Web instance behind a load balancer needs a SignalR backplane, which is not set up.
+**One Web instance.** Connections live in Web's memory. Running more than one Web instance behind a load balancer needs a SignalR backplane and sticky routing, neither of which is set up; the internal channel would also reach only one instance. Run exactly one Web. The decision, the multi-instance topology and the thresholds that should trigger it: [../architecture/realtime-scale-out.md](../architecture/realtime-scale-out.md).
+
+**Metrics.** Web, Worker and Api record the `Wasla.Realtime` meter (connections, reconnects, closures, session checks, sends and their duration, internal-channel failures and pauses). Read it on the server with `dotnet-counters`; nothing is exported ([observability.md](observability.md#live-notification-metrics)). A Web restart drops every live connection; browsers reconnect over about the next 45 seconds with random spreading and read their state once connected.
 
 **Release order.** The tenant migration `AddPrintJobStatusVersion` (WAS-23) adds `PrintJobs.StatusVersion` (bigint, existing rows 0). Receipt creation, Print Bridge reports and the order detail pages read or write it, so follow [Release order](#release-order-migrate-every-database-first): stop every Web, Worker and Api instance of the previous version (a previous Worker or Api would create jobs at version 0 and change status without raising it, which breaks the order of versions for those orders), migrate every tenant, and only then start the new Web, Worker and Api. Rolling back the application leaves the column in place and unused.
 
@@ -235,7 +237,7 @@ CustomerDb__ServerInstance   # CLI
 
 ## Known gaps
 
-- No OpenTelemetry exporter / metrics stack (see [observability.md](observability.md)).
+- No OpenTelemetry exporter or metrics stack; the `Wasla.Realtime` meter is read locally with `dotnet-counters` (see [observability.md](observability.md#live-notification-metrics)).
 - Worker has no HTTP health endpoint for orchestrators.
 - Legacy names remain in config (`OrderHub` sections, `C:\OrderHub-keys`, `migrate-customer` command names).
 
