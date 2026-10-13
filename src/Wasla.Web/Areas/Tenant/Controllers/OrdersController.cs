@@ -554,6 +554,8 @@ public sealed class OrdersController : BaseController
             BackUrl = "/orders",
             ReceiptPrintInProgress = printState.HasActiveJob,
             ReceiptCanReprint = printState.CanReprint,
+            ReceiptLatestStatus = printState.LatestStatus,
+            ReceiptPrintVersion = printState.Version,
             Items = order.Items.Select(i => new OrderDetailViewModel.ItemRow
             {
                 ProductName = i.ProductName,
@@ -568,6 +570,26 @@ public sealed class OrdersController : BaseController
                 }).ToList()
             }).ToList()
         };
+    }
+
+    /// <summary>
+    /// The order's current receipt print state, as the shared print action shows it. Read-only. Open detail panels and
+    /// the full details page read it again when a live print notification arrives, after a reconnect, and every few
+    /// seconds while the live connection is down; the notification itself is never trusted as the state.
+    /// </summary>
+    [HttpGet("{id:guid}/print-state")]
+    [Authorize(Policy = TenantPolicies.CanManualPrint)]
+    public async Task<IActionResult> PrintState(Guid id, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var state = await _manualPrint.FindReceiptPrintStateAsync(tenant.Id, id, ct);
+        if (state is null) return NotFound();
+
+        Response.Headers.CacheControl = "no-store";
+        var model = OrderPrintActionModel.From(id, state);
+        return Ok(new { orderId = id, version = model.Version, mode = model.Mode, outcome = model.Outcome });
     }
 
     /// <summary>

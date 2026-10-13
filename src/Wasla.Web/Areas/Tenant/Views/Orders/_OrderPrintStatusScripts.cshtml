@@ -1,0 +1,6 @@
+@* Live receipt print status for the shared print action (WAS-23): the vendored SignalR client, the page's single live
+   connection and the print status refresh. Rendered only for users who may print manually; the hub admits no one
+   else. Load after orders-core.js and orders-print.js. *@
+<script src="~/lib/microsoft-signalr/signalr.min.js" asp-append-version="true"></script>
+<script src="~/js/realtime/wasla-realtime.js" asp-append-version="true"></script>
+<script src="~/js/orders/orders-print-status.js" asp-append-version="true"></script>

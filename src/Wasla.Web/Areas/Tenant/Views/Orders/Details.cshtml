@@ -4,7 +4,10 @@
 @using System.Text.Json
 @using Wasla.Web.Ui
 @using Wasla.Web.Models.Ui
+@using Wasla.Web.Security
+@inject ITenantNavigationAuthorizationService TenantNavigation
 @{
+    var canManualPrint = (await TenantNavigation.GetPermissionsAsync(User)).CanManualPrint;
     ViewData["Title"] = L["Orders.Details.Title"];
     var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
     var receivedLabel = OrderUiHelper.FormatReceivedAtUtc(Model.ReceivedAtUtc, tz, turkeyToday);
@@ -29,6 +32,8 @@
                 OrderId = Model.Id,
                 InProgress = Model.ReceiptPrintInProgress,
                 CanReprint = Model.ReceiptCanReprint,
+                LatestStatus = Model.ReceiptLatestStatus,
+                Version = Model.ReceiptPrintVersion,
                 ButtonSizeClass = "btn-sm"
             })
             <a class="btn btn-sm btn-outline-secondary" href="@Model.BackUrl">
@@ -232,6 +237,8 @@
     <script>
         window.waslaOrdersOptions = {
             orderPrintUrl: "/orders/{id}/print",
+            orderPrintStateUrl: "/orders/{id}/print-state",
+            realtimeHubUrl: @Html.Raw(JsonSerializer.Serialize(canManualPrint ? Wasla.Web.Realtime.TenantEventsHub.Path : null)),
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
             {
                 ["genericError"] = L["Orders.GenericError"].Value,
@@ -248,4 +255,8 @@
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
+    @if (canManualPrint)
+    {
+        <partial name="_OrderPrintStatusScripts" />
+    }
 }

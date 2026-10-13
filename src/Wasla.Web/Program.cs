@@ -13,6 +13,7 @@ using Wasla.Web.DevelopmentTools;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Localization;
 using Wasla.Web.Middleware;
+using Wasla.Web.Realtime;
 using Wasla.Web.Security;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Web.Tenant;
@@ -156,6 +157,9 @@ builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
 builder.Services.AddWaslaHealthChecks();
 
+// Live tenant notifications: the SignalR hub and, with Realtime:Internal, the loopback listener for Worker and Api.
+builder.Services.AddWaslaRealtime(builder.Configuration);
+
 var app = builder.Build();
 
 app.Logger.LogInformation(
@@ -185,6 +189,9 @@ app.UseRequestLocalization(locOptions.Value);
 
 app.UseRouting();
 
+// Live hub requests from another origin are refused before any tenant or session work.
+app.UseWaslaRealtimeOriginCheck();
+
 app.UseRateLimiter();
 
 app.UseMiddleware<TenantResolutionMiddleware>();
@@ -201,5 +208,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapWaslaHealthChecks();
+app.MapWaslaRealtime();
 
 app.Run();

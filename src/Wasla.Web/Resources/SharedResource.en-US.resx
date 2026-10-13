@@ -666,6 +666,15 @@
   <data name="Orders.Print.Failed" xml:space="preserve">
     <value>The receipt could not be queued for printing.</value>
   </data>
+  <data name="Orders.Print.Printing" xml:space="preserve">
+    <value>Printing…</value>
+  </data>
+  <data name="Orders.Print.Status.Printed" xml:space="preserve">
+    <value>Receipt sent to the printer</value>
+  </data>
+  <data name="Orders.Print.Status.Failed" xml:space="preserve">
+    <value>Receipt could not be printed</value>
+  </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
     <value>Open order</value>
   </data>
