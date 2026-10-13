@@ -9,6 +9,7 @@ using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Printing;
@@ -215,7 +216,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         new(_tenants, Central(), ReceiptJobs(), NullLogger<OrderReceiptCreationService>.Instance);
 
     private ReceiptPrintJobService ReceiptJobs() =>
-        new(_tenants, new DefaultTemplates(), NullLogger<ReceiptPrintJobService>.Instance);
+        new(_tenants, new DefaultTemplates(), NullTenantChangeNotifier.Instance, NullLogger<ReceiptPrintJobService>.Instance);
 
     private CentralDbContext Central() =>
         new(new DbContextOptionsBuilder<CentralDbContext>().UseSqlite(_centralConnection).Options);

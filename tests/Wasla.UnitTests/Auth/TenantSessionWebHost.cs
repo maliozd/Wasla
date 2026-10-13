@@ -30,6 +30,7 @@ using Wasla.UnitTests.Admin;
 using Wasla.Web;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Middleware;
+using Wasla.Web.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 using CurrentTenantService = Wasla.Web.Tenant.CurrentTenantService;
@@ -173,11 +174,17 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         services.AddDbContext<CentralDbContext>(options => options.UseSqlite(central.ConnectionString));
         services.RemoveAll<ITenantDbContextFactory>();
         services.AddSingleton<ITenantDbContextFactory>(tenants);
+        // AesSecretManager needs the machine's ENCRYPTION_MASTER_KEY, which a developer machine may have and CI does not
+        // (pages such as Orders resolve services that take it); nothing here decrypts a real secret.
+        services.RemoveAll<Wasla.Application.Abstractions.Security.ISecretManager>();
+        services.AddSingleton<Wasla.Application.Abstractions.Security.ISecretManager, Wasla.UnitTests.Platform.PassthroughSecrets>();
 
         // The login rate limits, trusted proxies and unknown-host cache Web Program.cs registers.
         services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
         services.AddWaslaTrustedProxies(builder.Configuration);
         services.AddWaslaTenantHostMissCache(builder.Configuration);
+        // The live tenant hub, its notifier and (with Realtime:Internal) the loopback listener, as in Web Program.cs.
+        services.AddWaslaRealtime(builder.Configuration);
         configureServices?.Invoke(services);
 
         var app = builder.Build();
@@ -187,12 +194,14 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         app.UseWaslaExceptionHandling(app.Environment);
         app.UseRequestLocalization();
         app.UseRouting();
+        app.UseWaslaRealtimeOriginCheck();
         app.UseMiddleware<TenantResolutionMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
         app.MapControllerRoute(name: "areas", pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
         app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+        app.MapWaslaRealtime();
 
         await app.StartAsync();
         return new TenantSessionWebHost(app, contentRoot, central, tenants, alpha.Id, beta.Id, logs);

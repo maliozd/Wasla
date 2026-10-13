@@ -28,6 +28,7 @@ using Wasla.UnitTests.Admin;
 using Wasla.UnitTests.Platform;
 using Wasla.Web;
 using Wasla.Web.GuidedSetup;
+using Wasla.Web.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 using CurrentTenantService = Wasla.Web.Tenant.CurrentTenantService;
@@ -69,6 +70,9 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
 
     public Uri BaseAddress { get; }
 
+    /// <summary>The host's services, for driving server-side work (for example a print job) during a browser test.</summary>
+    public IServiceProvider Services => _app.Services;
+
     /// <summary>
     /// <paramref name="tenantInSetup"/> seeds a tenant still in Setup with its setup checklist open, and three Owners at
     /// different points of guided setup: <see cref="OwnerId"/> in order training, <see cref="NewOwnerId"/> before the
@@ -107,7 +111,10 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         {
             ["Platforms:ProviderMode"] = "Mock",
             // Never opened: CentralDbContext is replaced by SQLite below.
-            ["ConnectionStrings:CentralDb"] = "Server=(none);Database=WaslaVisualTests"
+            ["ConnectionStrings:CentralDb"] = "Server=(none);Database=WaslaVisualTests",
+            // The test sign-in issues no security stamp, so a periodic session check would close the live connection;
+            // keep it beyond any test's length. Session checks are covered by the TenantSessionWebHost tests.
+            ["Realtime:SessionRevalidationSeconds"] = "600"
         });
 
         var services = builder.Services;
@@ -174,6 +181,8 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         // the seeded credentials are fake markers that no page decrypts.
         services.RemoveAll<ISecretManager>();
         services.AddSingleton<ISecretManager, PassthroughSecrets>();
+        // The live tenant hub and its notifier, as in Web Program.cs.
+        services.AddWaslaRealtime(builder.Configuration);
 
         var app = builder.Build();
         var serverErrors = new ServerErrorLog();
@@ -194,6 +203,7 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         app.UseStaticFiles();
         app.UseRequestLocalization();
         app.UseRouting();
+        app.UseWaslaRealtimeOriginCheck();
 
         // Stands in for TenantResolutionMiddleware: every request is this tenant.
         var tenant = new ResolvedTenantDto(TenantId, "Visual Test Restaurant", "visual-test", "127.0.0.1");
@@ -230,6 +240,7 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
 
         app.MapControllers();
         app.MapControllerRoute(name: "areas", pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+        app.MapWaslaRealtime();
 
         await app.StartAsync();
         return new TenantVisualWebHost(app, contentRoot, central, tenants, serverErrors);

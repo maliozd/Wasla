@@ -9,6 +9,7 @@ using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
@@ -47,7 +48,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         _factory = new RecordingTenantFactory(_tenants);
         _approvals = new RecordingApprovals(_tenants);
         _receipts = new CountingReceipts(new OrderReceiptCreationService(
-            _tenants, Central(), new ReceiptPrintJobService(_tenants, new DefaultTemplates(), NullLogger<ReceiptPrintJobService>.Instance),
+            _tenants, Central(), new ReceiptPrintJobService(_tenants, new DefaultTemplates(), NullTenantChangeNotifier.Instance, NullLogger<ReceiptPrintJobService>.Instance),
             NullLogger<OrderReceiptCreationService>.Instance));
 
         _centralConnection.Open();
