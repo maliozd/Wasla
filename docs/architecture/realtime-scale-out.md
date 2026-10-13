@@ -167,12 +167,14 @@ Bounded load tests (`tests/Wasla.UnitTests/Realtime/RealtimeLoadTests.cs`), real
 clients over WebSockets in one process on a developer machine (Windows 11, .NET 8); figures are for this machine and
 are not a production capacity claim:
 
-| Scenario | Default run (every pull request) |
-|----------|-----------------------------------|
-| 3 tenants × 4 roles, 120 tabs, 600 notifications (half over the internal channel) | connect 0.7 s; burst 0.28 s; every tab received exactly its tenant's streams; hub send p50 0.06 ms, p95 1.3 ms; internal send p50 3.7 ms, p95 48 ms |
-| 3 reconnect storms of all 120 tabs | 0.7–0.8 s each; active connections back to 120 (Wasla and ASP.NET Core counts), each tab in its groups once |
-| Tabs closed during a burst | no failed sends; active count and transport count back to the open tabs |
-| A client that stops reading | ~2,360 messages buffered, then 5 sends waited the 2 s bound, closed by the client timeout (8 s in the test), healthy tab received all |
+| Scenario | Default run (every pull request) | Heavier run (1,000 connections, 5 tenants, 1,000 events per tenant) |
+|----------|-----------------------------------|----------------------------------------------------------------------|
+| Tabs across tenants and roles under concurrent bursts, half over the internal channel | 3 tenants, 120 tabs, 600 notifications: connect 0.7 s; burst 0.28 s; hub send p50 0.06 ms, p95 1.3 ms; internal send p50 3.7 ms, p95 48 ms | 1,000 tabs, 5,000 notifications: connect 5.2 s; burst 5.9 s; last delivery 1.0 s after it; hub send p50 0.32 ms, p95 9.8 ms, max 675 ms; internal send p50 17 ms, p95 123 ms. Every tab received exactly its own tenant's streams in both runs |
+| Reconnect storms of every tab at once (3 in a row) | 0.7–0.8 s each | 7.2–8.1 s each; threads 68 → 67, working set 306 → 502 MB (server and 1,000 clients in one process) |
+| Revocation and demotion during a storm (at most 80 tabs) | 14 affected tabs, refused or closed by the 1 s check | 14 affected tabs: 7 refused, 7 closed by the check; the other tabs untouched |
+| Tabs closed during a burst | 60 of 120 closed; no failed sends; counts back to the open tabs | 500 of 1,000 closed during 5,000 notifications; no failed sends; hub send p95 12.8 ms, max 2.15 s (sends to groups whose connections were closing waited the 2 s bound) |
+| A client that stops reading | ~2,360 messages buffered, then 5 sends waited the 2 s bound, closed by the client timeout (8 s in the test), healthy tab received all | same |
 
-The heavier run (`WASLA_REALTIME_LOAD_*`, [../operations/testing.md](../operations/testing.md#realtime-load-tests)) is
-recorded in the WAS-25 pull request.
+The heavier run's command is in [../operations/testing.md](../operations/testing.md#realtime-load-tests). Server and
+clients share one process and one machine, so the figures bound the server's own cost only loosely; repeat the heavier
+run on the production machine before relying on the connection threshold in section 10.
