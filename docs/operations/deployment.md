@@ -153,6 +153,44 @@ Desktop clients use **`ServerUrl`** + device token. Config section may still be 
 
 See [../integrations/print-bridge.md](../integrations/print-bridge.md).
 
+## Live notifications
+
+Receipt print status reaches open tenant pages through a SignalR hub in Wasla.Web (`/hubs/tenant-events`, WAS-23). Wasla.Worker and Wasla.Api pass their changes to Web over a loopback-only internal channel. Design and failure behavior: [../architecture/realtime.md](../architecture/realtime.md).
+
+**Reverse proxy (Nginx).** The hub is served on each tenant's own host, like every tenant page: no extra domain, CORS or certificate. The proxy must allow the WebSocket upgrade on the hub path and keep the connection open longer than the default 60 seconds of inactivity (SignalR sends a keep-alive every 15 seconds). For example, in the server block that forwards `{slug}.app.wasla.tr` to Web:
+
+```nginx
+location /hubs/ {
+    proxy_pass http://127.0.0.1:5200;   # Web's local port
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;                       # tenant resolution reads Host
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 120s;
+    proxy_buffering off;                               # Server-Sent Events fallback
+}
+```
+
+The `Host` and forwarded headers are the same as for every other location ([Reverse proxy and client address](#reverse-proxy-and-client-address)). Without the upgrade headers the browser falls back to Server-Sent Events or long polling, which still work. If every transport is blocked, open detail panels fall back to reading the print status every 10 seconds. The proxy must not forward `/internal/` (Web does not serve it on its public port anyway).
+
+**Internal channel.** Set the same values for Web, Worker and Api, as environment variables:
+
+| Variable | Value |
+|----------|-------|
+| `Realtime__Internal__Port` | A free local port, for example `5290`. Web listens on `127.0.0.1` only; do not open it in the firewall or the proxy. |
+| `Realtime__Internal__Secret` | A random secret of at least 32 printable ASCII characters without spaces, for example 32 random bytes in Base64. Store it with the other server-side secrets (WAS-77); never commit it. |
+| `Realtime__Internal__TimeoutSeconds` | Optional, default 3. |
+
+A process with `Port` set and a missing or short secret, or an invalid port, refuses to start. Without `Port` the channel is off: Web opens no listener, and Worker and Api changes (automatic receipts, Bridge reports sent to Api) are not pushed; open panels then show them on their fallback reads only while disconnected, otherwise on reopen or reload. Startup logs say whether Web accepts internal notifications. To rotate the secret, change it for all three processes and restart them; notifications between the restarts are refused and logged, nothing else fails.
+
+**Session checks.** `Realtime__SessionRevalidationSeconds` (Web, default 60, 1–600) sets how often an open connection's session is checked again ([../architecture/authentication.md](../architecture/authentication.md#long-lived-live-connections)).
+
+**One Web instance.** Connections live in Web's memory. Running more than one Web instance behind a load balancer needs a SignalR backplane, which is not set up.
+
+**Release order.** The tenant migration `AddPrintJobStatusVersion` (WAS-23) adds `PrintJobs.StatusVersion` (bigint, existing rows 0). Receipt creation, Print Bridge reports and the order detail pages read or write it, so follow [Release order](#release-order-migrate-every-database-first): stop every Web, Worker and Api instance of the previous version (a previous Worker or Api would create jobs at version 0 and change status without raising it, which breaks the order of versions for those orders), migrate every tenant, and only then start the new Web, Worker and Api. Rolling back the application leaves the column in place and unused.
+
 ## Logging and health
 
 | Process | File sink (Serilog) | Health HTTP |
@@ -185,6 +223,9 @@ TrustedProxies__KnownProxies__0              # Web and API behind a reverse prox
 AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
 OrderHub__CustomerOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
 TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
+Realtime__Internal__Port                     # Web, Worker, Api: loopback channel to Web; see Live notifications
+Realtime__Internal__Secret                   # secret, at least 32 characters
+Realtime__SessionRevalidationSeconds         # Web, optional, default 60
 CustomerDb__ServerInstance   # CLI
 ```
 

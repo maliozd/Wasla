@@ -2,7 +2,7 @@
 
 **Owns:** Live Screen purpose, routes, Board/List/Focus, snapshot polling, DOM reuse, lazy details, operational attention (sound / browser notifications), and non-regression boundaries versus Orders.
 
-**Does not own:** full order lifecycle rules ([lifecycle.md](./lifecycle.md)), general frontend module map ([../frontend/architecture.md](../frontend/architecture.md)), design tokens ([../frontend/design-system.md](../frontend/design-system.md)), future PrintJob SignalR ([../future/printjob-status-signalr.md](../future/printjob-status-signalr.md)).
+**Does not own:** full order lifecycle rules ([lifecycle.md](./lifecycle.md)), general frontend module map ([../frontend/architecture.md](../frontend/architecture.md)), design tokens ([../frontend/design-system.md](../frontend/design-system.md)), live receipt print status ([../architecture/realtime.md](../architecture/realtime.md)).
 
 ---
 
@@ -12,7 +12,7 @@
 
 **Live Screen (`/orders/live-display`) is real-time operational handling.**
 
-Current implementation must keep that split. Live Screen intentionally polls. SignalR is **not** implemented for Live Screen (or PrintJob status). Do not turn Orders into a second live kitchen surface.
+Current implementation must keep that split. Live Screen intentionally polls. SignalR is **not** used for Live Screen orders; it carries only receipt print status to the detail modal and Focus panel ([../architecture/realtime.md](../architecture/realtime.md)). Do not turn Orders into a second live kitchen surface.
 
 ---
 
@@ -75,6 +75,7 @@ Cards/rows carry `data-live-signature` from `orderContentSignature` (status, dis
 - Board/List: detail modal (`orders-live-detail-modal.js`) loads `/orders/{id}/detail-panel` on demand — **not** one details DOM per card
 - Focus: same helper into the focus detail container with cancellation/retry
 - Document-level click delegation (cards are replaced on poll)
+- The receipt print action inside an open modal or Focus panel follows the server's print status live (Pending, Printing, the outcome) for users who may print manually, and reads it every 10 seconds only while the live connection is down. Closed details are never polled ([../architecture/realtime.md](../architecture/realtime.md))
 
 ### Lifecycle actions on Live Screen
 
@@ -178,7 +179,7 @@ Per connection, the classification is `ProviderConnectionHealthRules.Classify` (
 ## Future
 
 - Optional push for order deltas; even then, reconciliation polling would likely remain (see PrintJob future note for the same reliability pattern).
-- PrintJob live button states: planning only in [../future/printjob-status-signalr.md](../future/printjob-status-signalr.md).
+- Order push (WAS-24) is not built. Receipt print status in the detail modal and Focus panel is live since WAS-23 ([../architecture/realtime.md](../architecture/realtime.md)).
 
 ---
 

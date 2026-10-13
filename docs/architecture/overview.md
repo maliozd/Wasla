@@ -10,10 +10,10 @@ It does not replace the topic documents. Source code is authoritative when a doc
 
 ```text
 Browser
-  → Wasla.Web          tenant UI, signup, central admin, Print Bridge HTTP
+  → Wasla.Web          tenant UI, signup, central admin, Print Bridge HTTP, live hub (/hubs/tenant-events)
   → Wasla.Api          JSON + Print Bridge HTTP (separate host in local dev)
 
-Wasla.Worker           order sync only (no HTTP server)
+Wasla.Worker           order sync only (no HTTP server); posts live notifications to Web over loopback
 Wasla.Cli              migrations, provisioning, destructive tenant ops
 Wasla.PrintBridge      Windows process; polls Web or API and prints locally
   → Wasla.PrintBridge.Core   UI-independent engine (polling, claim, print, settings)
@@ -60,6 +60,7 @@ Details: [../orders/live-screen.md](../orders/live-screen.md), [../orders/lifecy
 
 | Topic | Document |
 |-------|----------|
+| Live notifications (SignalR) | [realtime.md](realtime.md) |
 | Tenancy and encryption | [tenancy.md](tenancy.md) |
 | Cookies and schemes | [authentication.md](authentication.md) |
 | Words: Tenant vs order Customer | [../product/terminology.md](../product/terminology.md) |

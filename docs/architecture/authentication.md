@@ -269,6 +269,23 @@ The API accepts a browser cookie and has state-changing endpoints, so it was che
 
 This protection holds only while the API keeps these properties. Adding CORS with credentials, a write that accepts form or text bodies, or a `GET` that mutates would reopen the question. An antiforgery or custom-header requirement on cookie-authenticated writes would be defence in depth; it is not implemented.
 
+## Long-lived live connections
+
+**Source:** `src/Wasla.Web/Realtime/` (`TenantEventsHub`, `RealtimeSessionRevalidator`, `RealtimeOriginMiddleware`). Added in WAS-23; the channel itself is described in [realtime.md](realtime.md).
+
+The live hub (`/hubs/tenant-events`) is one long request per browser tab, so the per-request check above would run only when it opens. Wasla.Web therefore checks it at connect and again while it is open:
+
+- **Connect.** The negotiate and connect requests are normal Web requests: tenant resolution from the host, the tenant cookie (`WaslaTenant`) with its revalidation, and policy `CanManualPrint`. A rejected or missing session is not connected; a central-admin cookie is not accepted. The group joined comes from the resolved tenant, never from the client.
+- **While open.** Every `Realtime:SessionRevalidationSeconds` (default 60, 1–600) each connection's principal is checked again with the same `ITenantSessionValidator` the cookie scheme uses, for the tenant the connection was resolved for, its role again against `CanManualPrint`, and the connection's host is resolved again (the same `ITenantResolver` and 5-minute host cache HTTP requests use). The connection is closed when the tenant is no longer the active tenant of that host, the user was deleted or deactivated, their role, password or security stamp changed, or the role no longer admits it. When the tenant database cannot be read the connection is closed too (fail closed). One primary-key read of `AppUsers` per open connection per interval.
+- **Expiry.** The hub closes a connection when its cookie's authentication ticket expires (`CloseOnAuthenticationExpiration`).
+- **After a close** the browser reconnects through negotiate, where the cookie scheme decides again, so a revoked session gets no new connection; its next page request goes to sign-in.
+
+So a revoked session can keep an already open connection for at most one interval. In that time it can receive only print notifications of its own tenant (order and job ids, a status and a version); every state it then reads goes through `GET /orders/{id}/print-state`, which is revalidated per request like any page.
+
+**Cross-site WebSockets.** Browsers do not apply CORS to WebSockets, and the tenant cookie is sent from any same-site page (for example another tenant's subdomain). Every request under `/hubs` that carries an `Origin` header for another host is refused with 403 before tenant resolution and authentication. Only the host (and the port when the `Host` header names one) is compared, because TLS ends at the proxy. The hub has no client-callable methods, so even an admitted connection cannot write anything.
+
+**Internal channel.** Wasla.Worker and Wasla.Api reach the hub through a loopback-only listener authenticated by a shared secret (`Realtime:Internal`), not through any tenant or user session. See [realtime.md](realtime.md#the-internal-channel-worker-and-api-to-web).
+
 ## Legacy cookies
 
 | Cookie / name | Status |

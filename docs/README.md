@@ -6,8 +6,6 @@ Source code wins when a document is wrong. Do not “fix” code to match a stal
 
 Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `tenant-vs-customer.md`, `wasla-design-language-v1.md`, `orders-printjob-status-signalr.md`, scratch `.txt` files) are **not** canonical. They stay until a later cleanup. Prefer the root `README.md` and the map below.
 
-`docs/future/` is planning only. It is not current architecture.
-
 [product/onboarding.md](product/onboarding.md) covers guided setup and the tenant's operational mode only. Signup and provisioning entry points are summarized in [operations/cli.md](operations/cli.md) and [architecture/tenancy.md](architecture/tenancy.md).
 
 ## Map
@@ -17,6 +15,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [architecture/overview.md](architecture/overview.md) | Process map and links |
 | [architecture/tenancy.md](architecture/tenancy.md) | One location per tenant, CentralDb, databases, one connection per platform |
 | [architecture/authentication.md](architecture/authentication.md) | Cookie schemes and Web/API session limits |
+| [architecture/realtime.md](architecture/realtime.md) | Live tenant notifications (SignalR hub, internal channel, browser fallback) |
 | [orders/lifecycle.md](orders/lifecycle.md) | Statuses, operator actions, sync merge |
 | [orders/synchronization.md](orders/synchronization.md) | Worker, pagination, upsert |
 | [orders/live-screen.md](orders/live-screen.md) | Operational UI versus Orders |
@@ -35,7 +34,6 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [product/terminology.md](product/terminology.md) | Tenant vs order customer |
 | [product/roles-and-permissions.md](product/roles-and-permissions.md) | Server-side role matrix |
 | [product/onboarding.md](product/onboarding.md) | Per-user guided setup, tenant operational mode (Setup / Live), going live |
-| [future/printjob-status-signalr.md](future/printjob-status-signalr.md) | Future PrintJob SignalR only |
 
 ## Task → documents
 
@@ -51,6 +49,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | Orders management UI | [orders/lifecycle.md](orders/lifecycle.md), [frontend/architecture.md](frontend/architecture.md) |
 | Provider or sync | [architecture/tenancy.md](architecture/tenancy.md), [orders/synchronization.md](orders/synchronization.md), [integrations/food-platforms.md](integrations/food-platforms.md) |
 | Print Bridge | [architecture/tenancy.md](architecture/tenancy.md), [integrations/print-bridge.md](integrations/print-bridge.md) |
+| Live updates, SignalR | [architecture/realtime.md](architecture/realtime.md), [architecture/authentication.md](architecture/authentication.md#long-lived-live-connections) |
 | Signup or provisioning | [architecture/tenancy.md](architecture/tenancy.md), [operations/cli.md](operations/cli.md) |
 | CLI | [operations/cli.md](operations/cli.md), [architecture/tenancy.md](architecture/tenancy.md) |
 | Migrations | [architecture/tenancy.md](architecture/tenancy.md), [operations/migrations.md](operations/migrations.md) |
