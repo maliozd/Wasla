@@ -76,8 +76,9 @@ public sealed class LiveScreenRealtimeBrowserTests
         Assert.True(await browser.WaitForAsync(CardShown(orderId), Push, ct), $"The new order did not appear without polling. {host.ServerErrors}");
         Assert.True(await browser.WaitForAsync("window.__notifications === 1", TimeSpan.FromSeconds(3), ct), "The new order was not announced once.");
 
-        // Duplicates of a version the snapshot already shows: no read at all, and never announced again.
-        var readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        // Duplicates of a version the snapshot already shows: no read at all, and never announced again. Reads already
+        // under way (a coalesced follow-up) settle first, so only reads caused by the duplicates are counted.
+        var readsBefore = await WaitForNoReadsAsync(browser, ct);
         for (var i = 0; i < 10; i++)
             await AnnounceAsync(host, orderId, ct);
         await Task.Delay(TimeSpan.FromSeconds(2.5), ct);
@@ -243,6 +244,25 @@ public sealed class LiveScreenRealtimeBrowserTests
         Assert.True(await browser.WaitForAsync("!!window.WaslaRealtime && !!window.WaslaRealtime.get() && window.WaslaRealtime.get().state() === 'connected'", TimeSpan.FromSeconds(15), ct),
             $"The Live Screen did not connect to the live hub. {host.ServerErrors}");
         return browser;
+    }
+
+    /// <summary>
+    /// Waits until no snapshot read has started for 1.5 seconds (well under the 30-second connected poll) and returns the
+    /// read count; a slow machine may still finish a coalesced follow-up read after the card it waited for appeared.
+    /// </summary>
+    private static async Task<int> WaitForNoReadsAsync(HeadlessChromium browser, CancellationToken ct)
+    {
+        var reads = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1.5), ct);
+            var now = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+            if (now == reads)
+                return now;
+            reads = now;
+        }
+
+        throw new TimeoutException("Live Screen snapshot reads did not settle.");
     }
 
     private static string CardShown(Guid orderId) => $"!!document.querySelector('#ordersLiveScreenHost [data-order-id=\"{orderId}\"]')";
