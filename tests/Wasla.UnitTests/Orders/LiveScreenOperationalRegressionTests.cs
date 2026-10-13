@@ -235,7 +235,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     }
 
     private OrderActionService CreateActions(RecordingPlatformClient client) =>
-        new(_tenantDb, [client], NullLogger<OrderActionService>.Instance);
+        new(_tenantDb, [client], NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
 
     private OrderReceiptCreationService CreateReceipts() =>
         new(

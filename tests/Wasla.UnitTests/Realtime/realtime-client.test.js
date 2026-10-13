@@ -52,8 +52,10 @@ function fakeSignalR() {
           start: function () {
             log.push("start");
             const outcome = starts.shift() || "ok";
-            if (outcome === "ok") {
+            if (outcome === "ok" || outcome === "no-ready") {
               connection.state = "Connected";
+              // The hub announces readiness after joining the groups, separately from the handshake.
+              if (outcome === "ok") Promise.resolve().then(function () { handlers.on.tenantEventsReady(); });
               return Promise.resolve();
             }
             return Promise.reject(new Error("negotiate failed"));
@@ -66,7 +68,11 @@ function fakeSignalR() {
           },
           emit: function (message) { handlers.on.tenantChange(message); },
           drop: function () { connection.state = "Reconnecting"; handlers.reconnecting.forEach(function (fn) { fn(); }); },
-          back: function () { connection.state = "Connected"; handlers.reconnected.forEach(function (fn) { fn(); }); }
+          back: function () {
+            connection.state = "Connected";
+            handlers.reconnected.forEach(function (fn) { fn(); });
+            handlers.on.tenantEventsReady();
+          }
         };
         return connection;
       };
@@ -92,8 +98,25 @@ test("one connection, with its handler attached before the first start", async f
   await flush();
 
   assert.equal(signalR.builds, 1);
-  assert.deepEqual(signalR.log, ["withUrl:/hubs/tenant-events", "on:tenantChange", "start"]);
+  assert.deepEqual(signalR.log, ["withUrl:/hubs/tenant-events", "on:tenantChange", "on:tenantEventsReady", "start"]);
   assert.equal(c.state(), "connected");
+});
+
+test("an open transport is not 'connected' until the hub says the groups are joined", async function () {
+  const signalR = fakeSignalR();
+  signalR.starts.push("no-ready");
+  const c = client(signalR, clock());
+  const states = [];
+  c.onState(function (info) { states.push(info.state); });
+
+  c.start();
+  await flush();
+  assert.equal(c.state(), "connecting");
+  assert.deepEqual(states, []);
+
+  signalR.connection().handlers.on.tenantEventsReady();
+  assert.equal(c.state(), "connected");
+  assert.deepEqual(states, ["connected"]);
 });
 
 test("a failed first start is retried, and the first success after it counts as a reconnect", async function () {
