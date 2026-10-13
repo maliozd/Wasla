@@ -76,21 +76,36 @@ public sealed class LiveScreenRealtimeBrowserTests
         Assert.True(await browser.WaitForAsync(CardShown(orderId), Push, ct), $"The new order did not appear without polling. {host.ServerErrors}");
         Assert.True(await browser.WaitForAsync("window.__notifications === 1", TimeSpan.FromSeconds(3), ct), "The new order was not announced once.");
 
-        // A burst of invalidations for the same order: read together, never announced again.
+        // Duplicates of a version the snapshot already shows: no read at all, and never announced again.
         var readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
         for (var i = 0; i < 10; i++)
             await AnnounceAsync(host, orderId, ct);
         await Task.Delay(TimeSpan.FromSeconds(2.5), ct);
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__liveDataReads", ct) - readsBefore);
+        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__notifications", ct));
+
+        // A burst of newer versions (several orders arriving together): read together. The Live Screen announces the new
+        // orders of one snapshot with one sound and notification, so a burst costs one announcement per read, not per
+        // event.
+        readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        var burst = new List<Guid>();
+        for (var i = 0; i < 5; i++)
+            burst.Add(await InsertNewOrderAsync(host, $"RT-BURST-{i}", ct));
+        foreach (var id in burst)
+            await AnnounceAsync(host, id, ct);
+        Assert.True(await browser.WaitForAsync(string.Join(" && ", burst.Select(CardShown)), Push, ct), "The burst of new orders did not appear.");
+        await Task.Delay(TimeSpan.FromSeconds(1.5), ct);
         var burstReads = await browser.EvaluateAsync<int>("window.__liveDataReads", ct) - readsBefore;
         Assert.InRange(burstReads, 1, 3);
-        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__notifications", ct));
+        var notifications = await browser.EvaluateAsync<int>("window.__notifications", ct);
+        Assert.InRange(notifications, 2, 1 + burstReads);
 
         // A lifecycle action through the real action service (it announces after its save).
         using (var scope = host.Services.CreateScope())
             Assert.True((await scope.ServiceProvider.GetRequiredService<IOrderActionService>().TryApproveAsync(Tenant, TenantVisualWebHost.DetailOrderId, ct)).Succeeded);
         Assert.True(await browser.WaitForAsync(CardStatus(TenantVisualWebHost.DetailOrderId, "Accepted"), Push, ct),
             $"The approved order did not change on screen. {host.ServerErrors}");
-        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__notifications", ct));
+        Assert.Equal(notifications, await browser.EvaluateAsync<int>("window.__notifications", ct));
         Assert.Equal(1, await browser.EvaluateAsync<int>("window.__connectionsBuilt", ct));
         Assert.Null(host.ServerErrors);
     }
@@ -102,6 +117,7 @@ public sealed class LiveScreenRealtimeBrowserTests
         await using var host = await TenantVisualWebHost.StartAsync();
         await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct);
 
+        Assert.True(await browser.EvaluateAsync<bool>(CountNotifications, ct));
         await browser.EvaluateAsync<bool>("(window.WaslaRealtime.get().stop(), true)", ct);
         Assert.True(await browser.WaitForAsync("window.WaslaOrders.liveStore.pollingIntervalMs() === 10000", Push, ct));
         var whileDown = await InsertNewOrderAsync(host, "RT-DOWN-1", ct);
@@ -113,6 +129,8 @@ public sealed class LiveScreenRealtimeBrowserTests
         var beforeReconnect = await InsertNewOrderAsync(host, "RT-DOWN-2", ct);
         await browser.EvaluateAsync<bool>("(window.WaslaRealtime.get().start(), true)", ct);
         Assert.True(await browser.WaitForAsync(CardShown(beforeReconnect), Push, ct), "A reconnect did not read the snapshot at once.");
+        // Each new order announced exactly once across the fallback and the reconnect.
+        Assert.Equal(2, await browser.EvaluateAsync<int>("window.__notifications", ct));
         Assert.Equal(30000, await browser.EvaluateAsync<int>("window.WaslaOrders.liveStore.pollingIntervalMs()", ct));
         Assert.Equal(1, await browser.EvaluateAsync<int>("window.__connectionsBuilt", ct));
     }
@@ -124,6 +142,7 @@ public sealed class LiveScreenRealtimeBrowserTests
         await using var host = await TenantVisualWebHost.StartAsync();
         await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct);
 
+        Assert.True(await browser.EvaluateAsync<bool>(CountNotifications, ct));
         await browser.EvaluateAsync<bool>("(window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })), true)", ct);
         Assert.True(await browser.WaitForAsync("window.WaslaRealtime.get().state() === 'disconnected'", Push, ct));
         var whileAway = await InsertNewOrderAsync(host, "RT-BFCACHE-1", ct);
@@ -135,11 +154,13 @@ public sealed class LiveScreenRealtimeBrowserTests
         var afterRestore = await InsertNewOrderAsync(host, "RT-BFCACHE-2", ct);
         await AnnounceAsync(host, afterRestore, ct);
         Assert.True(await browser.WaitForAsync(CardShown(afterRestore), Push, ct), "After the restore, invalidations were no longer handled.");
+        await Task.Delay(TimeSpan.FromSeconds(1), ct);
+        Assert.Equal(2, await browser.EvaluateAsync<int>("window.__notifications", ct));
         Assert.Equal(1, await browser.EvaluateAsync<int>("window.__connectionsBuilt", ct));
     }
 
     [Fact]
-    public async Task DuringOrderTraining_ARealOrderIsCountedQuickly_ButNotShownOrAnnounced()
+    public async Task DuringOrderTraining_ARealOrderIsCountedQuickly_ButNeverPausesTrainingOrIsAnnounced()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var host = await TenantVisualWebHost.StartAsync(tenantInSetup: true);
@@ -155,7 +176,33 @@ public sealed class LiveScreenRealtimeBrowserTests
             "The real order was not counted in the training panel without polling.");
         Assert.False(await browser.EvaluateAsync<bool>(CardShown(orderId), ct));
         Assert.Equal(0, await browser.EvaluateAsync<int>("window.__notifications", ct));
+        var trainingBefore = await browser.EvaluateAsync<string>(TrainingState, ct);
+
+        // Duplicates of the event, a dropped connection, and a back/forward-cache restore: still no pause, no step
+        // change, no announcement, and the real order is still only counted.
+        for (var i = 0; i < 5; i++)
+            await AnnounceAsync(host, orderId, ct);
+        await browser.EvaluateAsync<bool>("(window.WaslaRealtime.get().stop(), true)", ct);
+        await browser.EvaluateAsync<bool>("(window.WaslaRealtime.get().start(), true)", ct);
+        Assert.True(await browser.WaitForAsync("window.WaslaRealtime.get().state() === 'connected'", Push, ct));
+        await browser.EvaluateAsync<bool>("(window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })), true)", ct);
+        await browser.EvaluateAsync<bool>("(window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })), true)", ct);
+        Assert.True(await browser.WaitForAsync("window.WaslaRealtime.get().state() === 'connected'", Push, ct));
+        var second = await InsertNewOrderAsync(host, "RT-TRAINING-2", ct);
+        await AnnounceAsync(host, second, ct);
+        await Task.Delay(TimeSpan.FromSeconds(2), ct);
+
+        Assert.Equal(trainingBefore, await browser.EvaluateAsync<string>(TrainingState, ct));
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__notifications", ct));
+        Assert.False(await browser.EvaluateAsync<bool>(CardShown(second), ct));
+        // The pause flow removed in 7bd1bca does not come back in any form.
+        Assert.True(await browser.EvaluateAsync<bool>(
+            "!document.querySelector('[data-training-pause], [data-training-resume], [data-training-show-active], .is-paused')", ct));
     }
+
+    // The training panel's step and visibility, which a pause would change.
+    private const string TrainingState =
+        "(() => { const s = document.querySelector('[data-guided-training]'); return s ? `${s.getAttribute('data-step')}|${s.hidden}|${document.querySelector('[data-training-panel]')?.hidden}` : 'none'; })()";
 
     [Fact]
     public async Task AKitchenScreen_FollowsOrders_WithoutLoadingPrintStatus()
@@ -210,13 +257,19 @@ public sealed class LiveScreenRealtimeBrowserTests
         order.PlatformStatus = "Created";
         order.ReceivedAt = DateTime.UtcNow;
         order.CreatedAtPlatform = DateTime.UtcNow.AddMinutes(-1);
+        order.ChangeVersion = 1; // as ingestion stores a new order
         await using var db = await host.Services.GetRequiredService<ITenantDbContextFactory>().CreateAsync(Tenant, ct);
         db.Orders.Add(order);
         await db.SaveChangesAsync(ct);
         return order.Id;
     }
 
-    private static Task AnnounceAsync(TenantVisualWebHost host, Guid orderId, CancellationToken ct) =>
-        host.Services.GetRequiredService<ITenantChangeNotifier>()
-            .NotifyAsync(Tenant, OrderChanged.For(orderId, DateTime.UtcNow), ct);
+    /// <summary>Announces the order at its stored version, as the writer that committed it does.</summary>
+    private static async Task AnnounceAsync(TenantVisualWebHost host, Guid orderId, CancellationToken ct)
+    {
+        long version;
+        await using (var db = await host.Services.GetRequiredService<ITenantDbContextFactory>().CreateAsync(Tenant, ct))
+            version = db.Orders.Where(o => o.Id == orderId).Select(o => o.ChangeVersion).Single();
+        await host.Services.GetRequiredService<ITenantChangeNotifier>().NotifyAsync(Tenant, new OrderChanged(orderId, version), ct);
+    }
 }

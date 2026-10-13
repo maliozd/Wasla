@@ -591,6 +591,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
+            NullTenantChangeNotifier.Instance,
             NullLogger<OrderSyncService>.Instance);
     }
 

@@ -99,8 +99,8 @@ internal static class OrderChangeFixtures
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             NoAutoApprove.Instance,
             NoReceipts.Instance,
-            NullLogger<OrderSyncService>.Instance,
-            notifier: notifier);
+            notifier,
+            NullLogger<OrderSyncService>.Instance);
 
     public static OrderActionService Actions(ITenantDbContextFactory tenants, IFoodPlatformClient client, ITenantChangeNotifier notifier) =>
         new(tenants, [client], notifier, NullLogger<OrderActionService>.Instance);
