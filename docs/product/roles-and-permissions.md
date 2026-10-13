@@ -64,7 +64,8 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 | Mutate order lifecycle | `CanManageOrders` | Order action endpoints on `OrdersController` |
 | Live Screen view / poll, including the read-only effective automation states | `CanViewLiveScreen` | `/orders/live-display`, `/orders/live-screen`, `/orders/live-data` |
 | Manual print / reprint | `CanManualPrint` | Orders print actions; some Print Bridge job actions |
-| Live receipt print status | `CanManualPrint` | `GET /orders/{id}/print-state`; the live hub `/hubs/tenant-events` ([../architecture/realtime.md](../architecture/realtime.md)) |
+| Live receipt print status | `CanManualPrint` | `GET /orders/{id}/print-state`; the hub's `print-status` group ([../architecture/realtime.md](../architecture/realtime.md#the-hub)) |
+| Live Screen invalidation | `CanViewLiveScreen` | The hub's `live-screen` group; the hub itself admits the roles of either stream (`CanReceiveLiveTenantUpdates`) |
 | Order sync / order automation settings | `TenantManagerOrOwner` | Orders sync/order-settings endpoints; `OrderSettingsController`; nav `CanManageOrderSettings` |
 | Platform, receipt printer, account, and branch settings pages | `CanManageTenantSettings` | `PlatformConnectionsController`, `ReceiptPrinterSettingsController`, `AccountSettingsController`, `BranchesController` |
 | Team / users | `CanManageTenantUsers` | `TenantUsersController` |

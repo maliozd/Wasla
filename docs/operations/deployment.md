@@ -155,7 +155,7 @@ See [../integrations/print-bridge.md](../integrations/print-bridge.md).
 
 ## Live notifications
 
-Receipt print status reaches open tenant pages through a SignalR hub in Wasla.Web (`/hubs/tenant-events`, WAS-23). Wasla.Worker and Wasla.Api pass their changes to Web over a loopback-only internal channel. Design and failure behavior: [../architecture/realtime.md](../architecture/realtime.md).
+Receipt print status (WAS-23) and Live Screen order invalidation (WAS-24) reach open tenant pages through a SignalR hub in Wasla.Web (`/hubs/tenant-events`). Every Live Screen keeps one connection open while it is shown. Wasla.Worker and Wasla.Api pass their changes to Web over a loopback-only internal channel. Design and failure behavior: [../architecture/realtime.md](../architecture/realtime.md).
 
 **Reverse proxy (Nginx).** The hub is served on each tenant's own host, like every tenant page: no extra domain, CORS or certificate. The proxy must allow the WebSocket upgrade on the hub path and keep the connection open longer than the default 60 seconds of inactivity (SignalR sends a keep-alive every 15 seconds). For example, in the server block that forwards `{slug}.app.wasla.tr` to Web:
 
@@ -183,7 +183,7 @@ The `Host` and forwarded headers are the same as for every other location ([Reve
 | `Realtime__Internal__Secret` | A random secret of at least 32 printable ASCII characters without spaces, for example 32 random bytes in Base64. Store it with the other server-side secrets (WAS-77); never commit it. |
 | `Realtime__Internal__TimeoutSeconds` | Optional, default 3. |
 
-A process with `Port` set and a missing or short secret, or an invalid port, refuses to start. Without `Port` the channel is off: Web opens no listener, and Worker and Api changes (automatic receipts, Bridge reports sent to Api) are not pushed; open panels then show them on their fallback reads only while disconnected, otherwise on reopen or reload. Startup logs say whether Web accepts internal notifications. To rotate the secret, change it for all three processes and restart them; notifications between the restarts are refused and logged, nothing else fails.
+A process with `Port` set and a missing or short secret, or an invalid port, refuses to start. Without `Port` the channel is off: Web opens no listener, and Worker and Api changes (ingested orders, automatic approvals and receipts, Bridge reports sent to Api) are not pushed. Open print panels then show them on their fallback reads only while disconnected, otherwise on reopen or reload; a connected Live Screen shows new and updated platform orders only at its 30-second poll, which is slower than the 10 seconds before WAS-24. Configure the channel wherever the Worker runs. Startup logs say whether Web accepts internal notifications. To rotate the secret, change it for all three processes and restart them; notifications between the restarts are refused and logged, nothing else fails.
 
 **Session checks.** `Realtime__SessionRevalidationSeconds` (Web, default 60, 1–600) sets how often an open connection's session is checked again ([../architecture/authentication.md](../architecture/authentication.md#long-lived-live-connections)).
 

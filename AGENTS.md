@@ -389,8 +389,9 @@ Use Cancelled only according to the existing business rules.
 
 Refer to `docs/architecture/realtime.md`.
 
-Live receipt print status (WAS-23) is implemented through the SignalR hub in
-Wasla.Web. Live Screen order updates are not; the Live Screen still polls.
+Live receipt print status (WAS-23) and Live Screen order invalidation (WAS-24)
+are implemented through the SignalR hub in Wasla.Web. The Live Screen still
+renders only its polled snapshot; polling remains as the safety net.
 
 Notifications are published only after a commit, carry identifiers and a version
 only, and never decide the shown state: screens read it again through their
