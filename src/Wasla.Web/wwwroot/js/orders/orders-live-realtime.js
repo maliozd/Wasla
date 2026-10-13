@@ -35,6 +35,8 @@
       now: function () { return Date.now(); }
     });
 
+    // Read-only for tests and support (counters, pending read); the page itself only uses the subscriptions below.
+    O.liveInvalidation = { stats: live.stats, isConnected: live.isConnected };
     realtime.on("OrderChanged", live.onNotification);
     realtime.onState(live.onConnectionState);
     live.onConnectionState({ state: realtime.state(), reconnected: false });
@@ -68,9 +70,13 @@
     let lastReadAt = -Infinity;
     let connected = false;
     let disposed = false;
+    // notifications: OrderChanged received; skipped: already shown at that version; coalesced: folded into a read
+    // already scheduled; reads: snapshot reads asked for (notification-triggered and on every (re)connect).
+    const counters = { notifications: 0, skipped: 0, coalesced: 0, reads: 0, connectReads: 0, ignoredAfterDispose: 0 };
 
     function read() {
       lastReadAt = options.now();
+      counters.reads += 1;
       return options.requestRefresh();
     }
 
@@ -81,12 +87,23 @@
 
     return {
       onNotification: function (message) {
-        if (disposed || !message || message.type !== "OrderChanged") return;
+        if (disposed) {
+          counters.ignoredAfterDispose += 1;
+          return;
+        }
+        if (!message || message.type !== "OrderChanged") return;
+        counters.notifications += 1;
         // Already shown at this version or a later one (a duplicate, or a change an earlier read already included).
         const version = Number(message.version);
-        if (typeof options.shownVersion === "function" && isFinite(version) && options.shownVersion(String(message.orderId || "")) >= version) return;
+        if (typeof options.shownVersion === "function" && isFinite(version) && options.shownVersion(String(message.orderId || "")) >= version) {
+          counters.skipped += 1;
+          return;
+        }
         // Already scheduled: this notification is read with it (duplicates and bursts collapse here).
-        if (timer) return;
+        if (timer) {
+          counters.coalesced += 1;
+          return;
+        }
         const delay = Math.max(settleMs, lastReadAt + minGapMs - options.now());
         timer = options.setTimeout(function () {
           timer = null;
@@ -99,7 +116,9 @@
           connected = true;
           options.setPollingIntervalMs(options.connectedPollingMs || CONNECTED_POLLING_MS);
           // Anything sent before or during the connection was missed: read the full snapshot now.
+          if (timer) counters.coalesced += 1;
           clearScheduled();
+          counters.connectReads += 1;
           read();
         } else {
           connected = false;
@@ -112,7 +131,8 @@
         clearScheduled();
       },
       isConnected: function () { return connected; },
-      hasPendingRead: function () { return timer !== null; }
+      hasPendingRead: function () { return timer !== null; },
+      stats: function () { return Object.assign({ pendingRead: timer !== null, disposed: disposed }, counters); }
     };
   }
 
