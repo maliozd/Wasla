@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Wasla.Application.Security;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Web.Security;
 using Wasla.Web.Tenant;
 
@@ -52,15 +53,24 @@ public sealed class TenantEventsHub : Hub
 
     internal static IEnumerable<UserRole> AnyStreamRoles => Streams.SelectMany(s => s.Roles).Distinct();
 
-    private readonly RealtimeSessionRevalidator _revalidator;
+    // Context.Items key: the streams label of an admitted connection, so OnDisconnectedAsync balances the active count.
+    private static readonly object AdmittedStreamsKey = new();
 
-    public TenantEventsHub(RealtimeSessionRevalidator revalidator)
+    private readonly RealtimeSessionRevalidator _revalidator;
+    private readonly RealtimeMetrics _metrics;
+
+    public TenantEventsHub(RealtimeSessionRevalidator revalidator, RealtimeMetrics metrics)
     {
         _revalidator = revalidator;
+        _metrics = metrics;
     }
 
     public override async Task OnConnectedAsync()
     {
+        // A diagnostic label the browser client declares in the hub URL; it decides nothing below.
+        var attempt = RealtimeMetrics.Attempts.Parse(
+            Context.GetHttpContext()?.Request.Query[RealtimeMetrics.Attempts.QueryParameter].ToString());
+
         // The endpoint policy admitted this session for the tenant resolved from the host. Each stream's role check runs
         // again against that tenant before its group is joined, so a connection only ever joins its own tenant's groups,
         // and only those its role admits.
@@ -71,12 +81,25 @@ public sealed class TenantEventsHub : Hub
             : Streams.Where(s => TenantSessionClaims.IsInRole(user, tenant.Id, s.Roles)).ToList();
         if (streams.Count == 0)
         {
+            _metrics.ConnectionNotAdmitted(RealtimeMetrics.ConnectionResults.Refused, attempt);
             Context.Abort();
             return;
         }
 
-        foreach (var stream in streams)
-            await Groups.AddToGroupAsync(Context.ConnectionId, stream.Group(tenant!.Id), Context.ConnectionAborted);
+        try
+        {
+            foreach (var stream in streams)
+                await Groups.AddToGroupAsync(Context.ConnectionId, stream.Group(tenant!.Id), Context.ConnectionAborted);
+        }
+        catch
+        {
+            _metrics.ConnectionNotAdmitted(RealtimeMetrics.ConnectionResults.Failed, attempt);
+            throw;
+        }
+
+        var label = StreamsLabel(streams);
+        Context.Items[AdmittedStreamsKey] = label;
+        _metrics.ConnectionAdmitted(label, attempt);
 
         // Later checks require the role to still admit every stream joined here.
         var required = streams.SelectMany(s => s.Roles).ToHashSet();
@@ -85,6 +108,33 @@ public sealed class TenantEventsHub : Hub
         _revalidator.Watch(Context, tenant!.Id, required);
         await base.OnConnectedAsync();
         await Clients.Caller.SendAsync(ReadyMethod, Context.ConnectionAborted);
+    }
+
+    public override Task OnDisconnectedAsync(Exception? exception)
+    {
+        // Only admitted connections were counted as active. The reason is the session check's when it closed the
+        // connection; otherwise whether the transport ended with an error.
+        var closedBy = _revalidator.TakeCloseReason(Context);
+        if (Context.Items.TryGetValue(AdmittedStreamsKey, out var label) && label is string streams)
+        {
+            _metrics.ConnectionClosed(
+                streams,
+                closedBy ?? (exception is null ? RealtimeMetrics.CloseReasons.Closed : RealtimeMetrics.CloseReasons.Error));
+        }
+
+        return base.OnDisconnectedAsync(exception);
+    }
+
+    private static string StreamsLabel(IReadOnlyCollection<(Func<Guid, string> Group, IReadOnlySet<UserRole> Roles)> joined)
+    {
+        var printStatus = joined.Any(s => ReferenceEquals(s.Roles, PrintStatusRoles));
+        var liveScreen = joined.Any(s => ReferenceEquals(s.Roles, LiveScreenRoles));
+        return (liveScreen, printStatus) switch
+        {
+            (true, true) => RealtimeMetrics.Streams.LiveScreenAndPrintStatus,
+            (true, false) => RealtimeMetrics.Streams.LiveScreen,
+            _ => RealtimeMetrics.Streams.PrintStatus
+        };
     }
 }
 

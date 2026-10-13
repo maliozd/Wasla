@@ -1,3 +1,5 @@
+using Wasla.Infrastructure.Realtime;
+
 namespace Wasla.Web.Realtime;
 
 /// <summary>
@@ -14,10 +16,12 @@ public sealed class RealtimeOriginMiddleware
     public const string PathPrefix = "/hubs";
 
     private readonly RequestDelegate _next;
+    private readonly RealtimeMetrics _metrics;
 
-    public RealtimeOriginMiddleware(RequestDelegate next)
+    public RealtimeOriginMiddleware(RequestDelegate next, RealtimeMetrics metrics)
     {
         _next = next;
+        _metrics = metrics;
     }
 
     public Task InvokeAsync(HttpContext context)
@@ -26,6 +30,7 @@ public sealed class RealtimeOriginMiddleware
             && context.Request.Headers.Origin.Count > 0
             && !IsSameOrigin(context.Request.Headers.Origin.ToString(), context.Request.Host))
         {
+            _metrics.OriginRefused();
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             context.Response.Headers.CacheControl = "no-store";
             return Task.CompletedTask;
