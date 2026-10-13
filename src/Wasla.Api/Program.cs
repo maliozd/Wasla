@@ -89,6 +89,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.Services.LogWebTenantChangeChannel(builder.Configuration, "Wasla.Api");
 
 // First, so that request logging and rate-limit partitions see the forwarded client.
 app.UseWaslaTrustedProxies();

@@ -28,14 +28,13 @@ public sealed record PrintJobChanged(Guid OrderId, Guid PrintJobId, PrintJobStat
 
 /// <summary>
 /// An order was stored or changed (ingestion, a lifecycle action or automatic approval), so the Live Screen snapshot
-/// may differ. An invalidation only: screens read the snapshot again. <paramref name="Version"/> is the order's stored
-/// <c>UpdatedAt</c> as Unix milliseconds (UTC): when the change was written. It identifies the change; it is not a
-/// sequence a screen may use to skip reading, because writers in different processes stamp it independently.
+/// may differ: a versioned snapshot-changed signal. <paramref name="Version"/> is the order's <c>ChangeVersion</c> after
+/// the change, assigned atomically in the change's own transaction: it only grows within the order and no two changes
+/// share it. The Live Screen snapshot carries each order's <c>ChangeVersion</c>, so a screen whose snapshot already
+/// shows this version (or a later one) for the order can skip the read; otherwise it reads the snapshot, which stays
+/// the only state it renders.
 /// </summary>
 public sealed record OrderChanged(Guid OrderId, long Version) : TenantChange
 {
     public const string TypeName = nameof(OrderChanged);
-
-    public static OrderChanged For(Guid orderId, DateTime updatedAtUtc) =>
-        new(orderId, new DateTimeOffset(DateTime.SpecifyKind(updatedAtUtc, DateTimeKind.Utc)).ToUnixTimeMilliseconds());
 }

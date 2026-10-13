@@ -42,6 +42,36 @@ public sealed class NullTenantChangeNotifier : ITenantChangeNotifier
     public Task NotifyAsync(Guid tenantId, TenantChange change, CancellationToken ct) => Task.CompletedTask;
 }
 
+/// <summary><c>Order.ChangeVersion</c>, the per-order change sequence of Live Screen invalidation (WAS-24).</summary>
+public static class OrderChangeVersions
+{
+    /// <summary>The version of an order when it is first stored.</summary>
+    public const long Initial = 1;
+
+    /// <summary>
+    /// Adds one to the order's <c>ChangeVersion</c> with an atomic <c>UPDATE ... SET ChangeVersion = ChangeVersion + 1</c>
+    /// and returns the new value. Call it inside the transaction that writes the change, after the change: the row
+    /// stays locked until the commit, so the value read back is this change's own, and a snapshot can never show the
+    /// version without the change.
+    /// </summary>
+    public static async Task<long> NextAsync(TenantDbContext db, Guid orderId, CancellationToken ct)
+    {
+        if (db.Database.CurrentTransaction is null)
+            throw new InvalidOperationException("An order's change version is raised only inside the transaction of the change.");
+
+        await db.Orders
+            .Where(o => o.Id == orderId)
+            .ExecuteUpdateAsync(s => s.SetProperty(o => o.ChangeVersion, o => o.ChangeVersion + 1), ct)
+            .ConfigureAwait(false);
+        return await db.Orders
+            .AsNoTracking()
+            .Where(o => o.Id == orderId)
+            .Select(o => o.ChangeVersion)
+            .SingleAsync(ct)
+            .ConfigureAwait(false);
+    }
+}
+
 /// <summary>Order-scoped <c>PrintJob.StatusVersion</c> values.</summary>
 public static class PrintJobStatusVersions
 {

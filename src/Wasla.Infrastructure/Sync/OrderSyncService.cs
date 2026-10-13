@@ -81,10 +81,10 @@ public sealed class OrderSyncService : IOrderSyncService
         IOrderStatusMapper statusMapper,
         IOrderAutoApproveService autoApprove,
         IOrderReceiptCreationService receiptCreation,
+        ITenantChangeNotifier notifier,
         ILogger<OrderSyncService> logger,
         ITenantBusinessSubtypeReader? businessSubtypeReader = null,
-        TimeProvider? time = null,
-        ITenantChangeNotifier? notifier = null)
+        TimeProvider? time = null)
     {
         _customerDbFactory = customerDbFactory;
         _platformClients = platformClients;
@@ -94,7 +94,7 @@ public sealed class OrderSyncService : IOrderSyncService
         _logger = logger;
         _businessSubtypeReader = businessSubtypeReader;
         _time = time ?? TimeProvider.System;
-        _notifier = notifier ?? NullTenantChangeNotifier.Instance;
+        _notifier = notifier;
     }
 
     public async Task SyncCustomerAsync(Guid customerId, CancellationToken ct)
@@ -703,10 +703,11 @@ public sealed class OrderSyncService : IOrderSyncService
                 internalStatus: newStatus,
                 nowUtc: nowUtc);
 
+            order.ChangeVersion = OrderChangeVersions.Initial;
             db.Orders.Add(order);
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
             // The new order is committed: open Live Screens read their snapshot again.
-            await TenantChangePublisher.PublishAsync(_notifier, customerId, OrderChanged.For(order.Id, order.UpdatedAt), _logger)
+            await TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(order.Id, order.ChangeVersion), _logger)
                 .ConfigureAwait(false);
 
             _logger.LogDebug(
@@ -825,8 +826,9 @@ public sealed class OrderSyncService : IOrderSyncService
         }
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        var changeVersion = await OrderChangeVersions.NextAsync(db, existing.Id, ct).ConfigureAwait(false);
         await tx.CommitAsync(ct).ConfigureAwait(false);
-        await TenantChangePublisher.PublishAsync(_notifier, customerId, OrderChanged.For(existing.Id, existing.UpdatedAt), _logger)
+        await TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(existing.Id, changeVersion), _logger)
             .ConfigureAwait(false);
 
         await TryCreateReceiptIfProviderAcceptedAsync(

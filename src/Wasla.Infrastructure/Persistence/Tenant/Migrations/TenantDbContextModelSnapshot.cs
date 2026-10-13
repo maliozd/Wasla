@@ -218,6 +218,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<long>("ChangeVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 

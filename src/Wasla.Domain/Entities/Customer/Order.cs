@@ -94,6 +94,14 @@ public class Order : BaseEntity
     /// </summary>
     public string RawPayloadJson { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Per-order change sequence for live Live Screen invalidation (WAS-24). 1 when the order is stored; every later
+    /// write that changes the order adds one with an atomic <c>ChangeVersion + 1</c> in the same transaction as the
+    /// change, so it only grows, two changes never share a value, and a snapshot that shows version N includes every
+    /// change up to N. Orders stored before it existed have 0 until their next change.
+    /// </summary>
+    public long ChangeVersion { get; set; }
+
     // --- Relations ---
 
     public List<OrderItem> Items { get; set; } = new();

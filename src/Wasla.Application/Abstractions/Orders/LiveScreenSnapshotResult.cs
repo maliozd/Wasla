@@ -112,6 +112,12 @@ public sealed record LiveScreenOrderDto(
     /// the Worker uses. The Live Screen shows a countdown from it and never acts on it. Null for every real order.
     /// </summary>
     public LiveScreenDemoAutomation? DemoAutomation { get; init; }
+
+    /// <summary>
+    /// The order's <c>ChangeVersion</c> when this snapshot was read; 0 for a practice order. A live
+    /// <c>OrderChanged</c> whose version is not higher than this is already shown by the snapshot.
+    /// </summary>
+    public long ChangeVersion { get; init; }
 }
 
 /// <summary>
