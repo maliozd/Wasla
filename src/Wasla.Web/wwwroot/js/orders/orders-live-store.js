@@ -189,6 +189,7 @@
       if (order.customerAddress != null && typeof order.customerAddress !== "string") return { ok: false, reason: "address" };
       if (order.customerNote != null && typeof order.customerNote !== "string") return { ok: false, reason: "orderNote" };
       if (typeof order.totalAmount !== "number" || !isFinite(order.totalAmount)) return { ok: false, reason: "amount" };
+      if (order.changeVersion != null && !isWholeNumber(order.changeVersion)) return { ok: false, reason: "changeVersion" };
       if (!Array.isArray(order.items)) return { ok: false, reason: "items" };
       for (let n = 0; n < order.items.length; n++) {
         const item = order.items[n];
@@ -2453,6 +2454,22 @@ function attachBrowser(O, global, api) {
     requestRefresh: function () { return ensureCoordinator().requestRefresh(); },
     setPollingIntervalMs: function (ms) { ensureCoordinator().setIntervalMs(ms); },
     pollingIntervalMs: function () { return coordinator ? coordinator.intervalMs() : null; },
+    /**
+     * The order's ChangeVersion in the snapshot on screen, or -1 when the order is not shown (not loaded yet, not on
+     * the Live Screen, or hidden by order training). A live OrderChanged at or below it is already shown.
+     */
+    shownChangeVersion: function (orderId) {
+      const snapshot = coordinator && coordinator.lastSnapshot();
+      if (!snapshot || !Array.isArray(snapshot.orders)) return -1;
+      const wanted = String(orderId || "").toLowerCase();
+      for (let i = 0; i < snapshot.orders.length; i++) {
+        const order = snapshot.orders[i];
+        if (String(order.id).toLowerCase() === wanted) {
+          return typeof order.changeVersion === "number" ? order.changeVersion : -1;
+        }
+      }
+      return -1;
+    },
     refreshView: function () {
       const snapshot = coordinator && coordinator.lastSnapshot();
       if (snapshot) renderSnapshot(snapshot);

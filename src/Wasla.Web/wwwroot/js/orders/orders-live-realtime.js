@@ -1,6 +1,7 @@
 // Live Screen invalidation (WAS-24). The page's single live connection (wasla-realtime.js) says when an order was
 // stored or changed; this module then asks the Live Screen store for its ordinary snapshot read
-// (O.liveStore.requestRefresh, GET /orders/live-data). A notification is never rendered: ordering, role filters,
+// (O.liveStore.requestRefresh, GET /orders/live-data) unless the snapshot on screen already shows the order at that
+// version (Order.ChangeVersion only grows). A notification is never rendered: ordering, role filters,
 // training isolation, new-order detection, sound and browser notifications all stay with the snapshot coordinator.
 // - Connected: notifications trigger a read, bursts coalesced; polling continues at a lower rate as a safety net.
 // - Connecting or disconnected: the normal polling rate; every (re)connect, including after the back/forward cache,
@@ -26,6 +27,7 @@
     const live = api.createLiveInvalidation({
       requestRefresh: function () { return store.requestRefresh(); },
       setPollingIntervalMs: function (ms) { store.setPollingIntervalMs(ms); },
+      shownVersion: function (orderId) { return store.shownChangeVersion(orderId); },
       disconnectedPollingMs: opts.pollingIntervalMs || api.DISCONNECTED_POLLING_MS,
       connectedPollingMs: opts.connectedPollingIntervalMs || api.CONNECTED_POLLING_MS,
       setTimeout: root.setTimeout.bind(root),
@@ -56,8 +58,8 @@
   const MIN_GAP_MS = 1000;
 
   /**
-   * options: requestRefresh(), setPollingIntervalMs(ms), disconnectedPollingMs, connectedPollingMs, setTimeout,
-   * clearTimeout, now().
+   * options: requestRefresh(), setPollingIntervalMs(ms), shownVersion(orderId) (-1 when not shown),
+   * disconnectedPollingMs, connectedPollingMs, setTimeout, clearTimeout, now().
    */
   function createLiveInvalidation(options) {
     const settleMs = options.settleMs != null ? options.settleMs : SETTLE_MS;
@@ -80,6 +82,9 @@
     return {
       onNotification: function (message) {
         if (disposed || !message || message.type !== "OrderChanged") return;
+        // Already shown at this version or a later one (a duplicate, or a change an earlier read already included).
+        const version = Number(message.version);
+        if (typeof options.shownVersion === "function" && isFinite(version) && options.shownVersion(String(message.orderId || "")) >= version) return;
         // Already scheduled: this notification is read with it (duplicates and bursts collapse here).
         if (timer) return;
         const delay = Math.max(settleMs, lastReadAt + minGapMs - options.now());
