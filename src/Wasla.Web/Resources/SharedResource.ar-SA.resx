@@ -666,6 +666,15 @@
   <data name="Orders.Print.Failed" xml:space="preserve">
     <value>تعذر إضافة الإيصال إلى قائمة الطباعة.</value>
   </data>
+  <data name="Orders.Print.Printing" xml:space="preserve">
+    <value>جارٍ الطباعة…</value>
+  </data>
+  <data name="Orders.Print.Status.Printed" xml:space="preserve">
+    <value>أُرسل الإيصال إلى الطابعة</value>
+  </data>
+  <data name="Orders.Print.Status.Failed" xml:space="preserve">
+    <value>تعذّرت طباعة الإيصال</value>
+  </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
     <value>فتح الطلب</value>
   </data>

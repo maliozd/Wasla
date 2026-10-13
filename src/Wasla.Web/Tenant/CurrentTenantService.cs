@@ -12,13 +12,15 @@ public sealed class CurrentTenantService : ICurrentTenantService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public ResolvedTenantDto? CurrentTenant
+    public ResolvedTenantDto? CurrentTenant => From(_httpContextAccessor.HttpContext);
+
+    /// <summary>
+    /// The tenant that TenantResolutionMiddleware resolved from the request's host, or null. For code that holds the
+    /// request directly, such as a SignalR hub reading its connection's request.
+    /// </summary>
+    public static ResolvedTenantDto? From(HttpContext? ctx)
     {
-        get
-        {
-            var ctx = _httpContextAccessor.HttpContext;
-            if (ctx is null) return null;
-            return ctx.Items.TryGetValue(ItemKey, out var value) ? value as ResolvedTenantDto : null;
-        }
+        if (ctx is null) return null;
+        return ctx.Items.TryGetValue(ItemKey, out var value) ? value as ResolvedTenantDto : null;
     }
 }

@@ -1069,6 +1069,9 @@
   <data name="Orders.Print.ConfirmReprint" xml:space="preserve"><value>Bu fiş yazıcıya yeniden gönderilsin mi?</value></data>
   <data name="Orders.Print.OrderNotFound" xml:space="preserve"><value>Sipariş bulunamadı.</value></data>
   <data name="Orders.Print.Failed" xml:space="preserve"><value>Fiş yazdırma kuyruğuna eklenemedi.</value></data>
+  <data name="Orders.Print.Printing" xml:space="preserve"><value>Yazdırılıyor…</value></data>
+  <data name="Orders.Print.Status.Printed" xml:space="preserve"><value>Fiş yazıcıya gönderildi</value></data>
+  <data name="Orders.Print.Status.Failed" xml:space="preserve"><value>Fiş yazdırılamadı</value></data>
   <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>Kullanıcı özeti</value></data>
   <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Toplam</value></data>
   <data name="TenantUsers.SummaryActive" xml:space="preserve"><value>Aktif</value></data>

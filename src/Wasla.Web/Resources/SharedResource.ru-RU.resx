@@ -666,6 +666,15 @@
   <data name="Orders.Print.Failed" xml:space="preserve">
     <value>Не удалось добавить чек в очередь печати.</value>
   </data>
+  <data name="Orders.Print.Printing" xml:space="preserve">
+    <value>Печатается…</value>
+  </data>
+  <data name="Orders.Print.Status.Printed" xml:space="preserve">
+    <value>Чек отправлен на принтер</value>
+  </data>
+  <data name="Orders.Print.Status.Failed" xml:space="preserve">
+    <value>Не удалось напечатать чек</value>
+  </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
     <value>Открыть заказ</value>
   </data>

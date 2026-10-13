@@ -666,6 +666,15 @@
   <data name="Orders.Print.Failed" xml:space="preserve">
     <value>Fiş yazdırma kuyruğuna eklenemedi.</value>
   </data>
+  <data name="Orders.Print.Printing" xml:space="preserve">
+    <value>Yazdırılıyor…</value>
+  </data>
+  <data name="Orders.Print.Status.Printed" xml:space="preserve">
+    <value>Fiş yazıcıya gönderildi</value>
+  </data>
+  <data name="Orders.Print.Status.Failed" xml:space="preserve">
+    <value>Fiş yazdırılamadı</value>
+  </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
     <value>Siparişi aç</value>
   </data>

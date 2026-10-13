@@ -35,6 +35,12 @@ public sealed class OrderDetailViewModel
     /// <summary>A previous receipt job finished as Printed or Failed, so the action becomes a reprint.</summary>
     public bool ReceiptCanReprint { get; set; }
 
+    /// <summary>Status of the order's newest receipt job, or null without one.</summary>
+    public PrintJobStatus? ReceiptLatestStatus { get; set; }
+
+    /// <summary>Order-scoped receipt version the print state was read at.</summary>
+    public long ReceiptPrintVersion { get; set; }
+
     public List<ItemRow> Items { get; set; } = new();
 
     public sealed class ItemRow

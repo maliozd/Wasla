@@ -230,6 +230,8 @@
             notificationSettingsJsonUrl: "/notification-settings/current",
             orderDetailPanelUrl: "/orders/{id}/detail-panel",
             orderPrintUrl: "/orders/{id}/print",
+            orderPrintStateUrl: "/orders/{id}/print-state",
+            realtimeHubUrl: @Html.Raw(JsonSerializer.Serialize(navPermissions.CanManualPrint ? Wasla.Web.Realtime.TenantEventsHub.Path : null)),
             viewModeStorageKey: "Wasla.liveScreen.viewMode",
             defaultViewMode: "kitchen",
             pollingIntervalMs: 10000,
@@ -362,6 +364,10 @@
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
+    @if (navPermissions.CanManualPrint)
+    {
+        <partial name="_OrderPrintStatusScripts" />
+    }
     <script src="~/js/orders/orders-live-view.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-detail-modal.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-store.js" asp-append-version="true"></script>

@@ -141,6 +141,8 @@
             OrderId = Model.Id,
             InProgress = Model.ReceiptPrintInProgress,
             CanReprint = Model.ReceiptCanReprint,
+            LatestStatus = Model.ReceiptLatestStatus,
+            Version = Model.ReceiptPrintVersion,
             ButtonSizeClass = "btn-sm"
         })
         <a class="btn btn-sm wasla-live-detail__open" href="/orders/details/@Model.Id" target="_blank" rel="noopener noreferrer">
