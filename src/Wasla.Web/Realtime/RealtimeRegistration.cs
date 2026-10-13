@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Infrastructure.Realtime;
+using Wasla.Infrastructure.Security;
+using Wasla.Web.Security;
 
 namespace Wasla.Web.Realtime;
 
@@ -16,6 +18,12 @@ public static class RealtimeRegistration
     public static IServiceCollection AddWaslaRealtime(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSignalR(options => options.EnableDetailedErrors = false);
+        // The hub admits a user who may receive at least one stream; each stream's group is then joined only when its own
+        // role check passes (TenantEventsHub.OnConnectedAsync).
+        services.Configure<Microsoft.AspNetCore.Authorization.AuthorizationOptions>(options =>
+            options.AddPolicy(
+                TenantEventsHub.ConnectPolicy,
+                TenantRolePolicyRegistration.BuildPolicy(TenantEventsHub.AnyStreamRoles, AuthSchemes.Tenant)));
         services.AddSingleton(RealtimeOptions.Read(configuration));
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<RealtimeSessionRevalidator>();

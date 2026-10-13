@@ -213,7 +213,7 @@
   }
 
   function createRefreshCoordinator(options) {
-    const intervalMs = options.intervalMs || 10000;
+    let intervalMs = options.intervalMs || 10000;
     const timeoutMs = options.timeoutMs || 15000;
     const maxBackoffMs = options.maxBackoffMs || 30000;
     const known = new Set();
@@ -385,9 +385,22 @@
       return ticket.promise;
     }
 
+    /**
+     * Changes the polling interval (the live connection lowers it while connected). A shorter interval reschedules a
+     * pending poll at once; a longer one applies from the next poll. Error backoff is unchanged.
+     */
+    function setIntervalMs(ms) {
+      if (!(ms > 0) || ms === intervalMs) return;
+      const shorter = ms < intervalMs;
+      intervalMs = ms;
+      if (timer && shorter) schedule(intervalMs);
+    }
+
     return {
       beginMutation: beginMutation,
       requestRefresh: requestRefresh,
+      setIntervalMs: setIntervalMs,
+      intervalMs: function () { return intervalMs; },
       start: function () { return start("start"); },
       lastSnapshot: function () { return lastSnapshot; },
       isBaselineReady: function () { return baselineReady; }
@@ -2438,6 +2451,8 @@ function attachBrowser(O, global, api) {
       return ensureCoordinator().beginMutation();
     },
     requestRefresh: function () { return ensureCoordinator().requestRefresh(); },
+    setPollingIntervalMs: function (ms) { ensureCoordinator().setIntervalMs(ms); },
+    pollingIntervalMs: function () { return coordinator ? coordinator.intervalMs() : null; },
     refreshView: function () {
       const snapshot = coordinator && coordinator.lastSnapshot();
       if (snapshot) renderSnapshot(snapshot);

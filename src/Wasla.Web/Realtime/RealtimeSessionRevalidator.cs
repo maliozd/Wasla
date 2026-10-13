@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Security;
+using Wasla.Domain.Enums;
 
 namespace Wasla.Web.Realtime;
 
@@ -9,8 +10,8 @@ namespace Wasla.Web.Realtime;
 /// A tenant cookie is checked against the user's row on every HTTP request, but a live connection is one long request.
 /// This repeats the same check (<see cref="ITenantSessionValidator"/>, the validator of the cookie scheme) for every
 /// open hub connection once per <see cref="RealtimeOptions.SessionRevalidationInterval"/>, and closes the connection
-/// when the user was deactivated or deleted, their password, role or security stamp changed, they can no longer print
-/// manually, the connection's host no longer resolves to its tenant (for example the tenant was deactivated; the same
+/// when the user was deactivated or deleted, their password, role or security stamp changed, their role no longer admits
+/// the streams it joined, the connection's host no longer resolves to its tenant (for example the tenant was deactivated; the same
 /// resolver and cache HTTP requests use), or a database cannot be read (fail closed). A closed browser reconnects through negotiate, where
 /// the cookie scheme decides again; a session that is no longer valid gets no new connection.
 /// </summary>
@@ -34,14 +35,15 @@ public sealed class RealtimeSessionRevalidator
     }
 
     /// <summary>Starts the periodic check of one connection; it ends with the connection.</summary>
-    public void Watch(HubCallerContext connection, Guid tenantId)
+    /// <param name="roles">The roles that admit every stream the connection joined.</param>
+    public void Watch(HubCallerContext connection, Guid tenantId, IReadOnlySet<UserRole> roles)
     {
         var host = connection.GetHttpContext()?.Request.Host.Host;
         // One loop per connection, bound to the connection's lifetime; it catches everything and ends with it.
-        _ = Task.Run(() => WatchAsync(connection, tenantId, host), CancellationToken.None);
+        _ = Task.Run(() => WatchAsync(connection, tenantId, host, roles), CancellationToken.None);
     }
 
-    private async Task WatchAsync(HubCallerContext connection, Guid tenantId, string? host)
+    private async Task WatchAsync(HubCallerContext connection, Guid tenantId, string? host, IReadOnlySet<UserRole> roles)
     {
         var closed = connection.ConnectionAborted;
         try
@@ -49,7 +51,7 @@ public sealed class RealtimeSessionRevalidator
             while (!closed.IsCancellationRequested)
             {
                 await Task.Delay(_options.SessionRevalidationInterval, _time, closed).ConfigureAwait(false);
-                if (!await IsStillAllowedAsync(connection, tenantId, host, closed).ConfigureAwait(false))
+                if (!await IsStillAllowedAsync(connection, tenantId, host, roles, closed).ConfigureAwait(false))
                 {
                     connection.Abort();
                     return;
@@ -66,7 +68,12 @@ public sealed class RealtimeSessionRevalidator
         }
     }
 
-    private async Task<bool> IsStillAllowedAsync(HubCallerContext connection, Guid tenantId, string? host, CancellationToken ct)
+    private async Task<bool> IsStillAllowedAsync(
+        HubCallerContext connection,
+        Guid tenantId,
+        string? host,
+        IReadOnlySet<UserRole> roles,
+        CancellationToken ct)
     {
         await using var scope = _scopes.CreateAsyncScope();
 
@@ -98,7 +105,7 @@ public sealed class RealtimeSessionRevalidator
             return false;
         }
 
-        if (connection.User is null || !TenantSessionClaims.IsInRole(connection.User, tenantId, TenantEventsHub.PrintStatusRoles))
+        if (connection.User is null || !TenantSessionClaims.IsInRole(connection.User, tenantId, roles))
         {
             _logger.LogInformation("Live connection closed: the role no longer admits it. TenantId={TenantId}", tenantId);
             return false;

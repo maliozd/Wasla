@@ -26,14 +26,21 @@ public sealed class SignalRTenantChangeNotifier : ITenantChangeNotifier
     {
         try
         {
-            if (change is not PrintJobChanged printJob)
+            // Each change goes only to the group of the stream it belongs to, in its own message shape.
+            (string Group, object Message)? target = change switch
+            {
+                PrintJobChanged printJob => (TenantEventGroups.PrintStatus(tenantId), TenantChangeClientMessage.From(printJob)),
+                OrderChanged order => (TenantEventGroups.LiveScreen(tenantId), OrderChangeClientMessage.From(order)),
+                _ => null
+            };
+            if (target is not { } send)
                 return;
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(SendTimeout);
             await _hub.Clients
-                .Group(TenantEventGroups.PrintStatus(tenantId))
-                .SendAsync(TenantEventsHub.ClientMethod, TenantChangeClientMessage.From(printJob), timeout.Token)
+                .Group(send.Group)
+                .SendAsync(TenantEventsHub.ClientMethod, send.Message, timeout.Token)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -54,4 +61,14 @@ public sealed record TenantChangeClientMessage(string Type, Guid OrderId, Guid P
 {
     public static TenantChangeClientMessage From(PrintJobChanged change) =>
         new(PrintJobChanged.TypeName, change.OrderId, change.PrintJobId, change.Status.ToString(), change.Version);
+}
+
+/// <summary>
+/// What a Live Screen receives when an order changed: the type, the order id and the change's version. No status,
+/// customer, items, amounts or any other order content; the screen reads its snapshot.
+/// </summary>
+public sealed record OrderChangeClientMessage(string Type, Guid OrderId, long Version)
+{
+    public static OrderChangeClientMessage From(OrderChanged change) =>
+        new(OrderChanged.TypeName, change.OrderId, change.Version);
 }

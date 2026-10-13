@@ -37,6 +37,8 @@
   "use strict";
 
   const CLIENT_METHOD = "tenantChange";
+  // Sent by the hub once this connection's groups are joined; only then is the connection "connected" (see below).
+  const READY_METHOD = "tenantEventsReady";
   // Automatic reconnect after a drop: quickly at first, then every 30 seconds for as long as the page is open.
   const RECONNECT_DELAYS_MS = [0, 2000, 5000, 10000];
   const MAX_DELAY_MS = 30000;
@@ -49,13 +51,17 @@
    * options: signalR (the browser client), hubUrl, setTimeout, clearTimeout.
    * States: "connecting" (never connected yet), "connected", "disconnected". Handlers registered with onState are told
    * every change; { reconnected: true } marks a connection that came back after a drop or a failed first attempt.
+   * "connected" is reported when the hub says the connection's groups are joined, not when the transport opens: the
+   * client's start completes at the handshake, before the server joins the groups, and a screen that read its state in
+   * between could miss a change made just before the join.
    */
   function createRealtimeClient(options) {
     const signalR = options.signalR;
     const typeHandlers = {};
     const stateHandlers = [];
     let state = "connecting";
-    let hadConnectedOrFailed = false;
+    let readyCount = 0;
+    let failedBefore = false;
     let stopped = true;
     let startAttempt = 0;
     let startTimer = null;
@@ -78,8 +84,15 @@
         try { handler(message); } catch (_) { /* one screen's failure does not stop the others */ }
       });
     });
+    connection.on(READY_METHOD, function () {
+      if (stopped) return;
+      const reconnected = readyCount > 0 || failedBefore;
+      readyCount += 1;
+      setState("connected", { reconnected: reconnected });
+    });
     connection.onreconnecting(function () { setState("disconnected"); });
-    connection.onreconnected(function () { setState("connected", { reconnected: true }); });
+    // A reconnect is a new server connection: it is reported as connected when its ready message arrives.
+    connection.onreconnected(function () { /* wait for READY_METHOD */ });
     connection.onclose(function () {
       // Automatic reconnect gave up or the server refused the session: keep trying, slowly, while the page is open.
       setState("disconnected");
@@ -116,16 +129,11 @@
       return connection.start().then(function () {
         starting = false;
         startAttempt = 0;
-        if (stopped) {
-          connection.stop();
-          return;
-        }
-        const reconnected = hadConnectedOrFailed;
-        hadConnectedOrFailed = true;
-        setState("connected", { reconnected: reconnected });
+        if (stopped) connection.stop();
+        // Otherwise "connected" follows with the hub's ready message.
       }, function () {
         starting = false;
-        hadConnectedOrFailed = true;
+        failedBefore = true;
         setState("disconnected");
         if (!stopped) scheduleStart(delayFor(++startAttempt));
       });
@@ -164,6 +172,7 @@
 
   return {
     CLIENT_METHOD: CLIENT_METHOD,
+    READY_METHOD: READY_METHOD,
     delayFor: delayFor,
     createRealtimeClient: createRealtimeClient
   };
