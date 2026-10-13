@@ -154,25 +154,28 @@ public sealed class InternalTenantChangeChannelTests
     [Fact]
     public async Task Sender_WaitsOnlyForItsTimeout_NeverThrows_AndPausesAfterAFailure()
     {
+        // Web accepts the request and then hangs for 10 seconds; the sender gives up after 1.5.
         await using var listener = await FakeWebListener.StartAsync(HttpStatusCode.Accepted, delay: TimeSpan.FromSeconds(10));
-        var notifier = CreateSender(listener.Port, out var clock, timeoutSeconds: 0.5);
+        var notifier = CreateSender(listener.Port, out var clock, timeoutSeconds: 1.5);
         var change = new PrintJobChanged(Guid.NewGuid(), Guid.NewGuid(), PrintJobStatus.Pending, 1);
 
         var watch = Stopwatch.StartNew();
         await notifier.NotifyAsync(Guid.NewGuid(), change, Ct);
-        Assert.InRange(watch.Elapsed, TimeSpan.Zero, TimeSpan.FromSeconds(5));
-        Assert.Single(listener.Requests);
+        Assert.InRange(watch.Elapsed, TimeSpan.Zero, TimeSpan.FromSeconds(6));
+        // Counted when the request reaches the listener, not after its body is read: a slow runner may cancel first.
+        Assert.True(await listener.WaitForArrivalsAsync(1), "The first notification never reached the listener.");
 
         // Paused: no further attempt for 30 seconds, and no waiting.
         watch.Restart();
         await notifier.NotifyAsync(Guid.NewGuid(), change, Ct);
         Assert.InRange(watch.Elapsed, TimeSpan.Zero, TimeSpan.FromSeconds(1));
-        Assert.Single(listener.Requests);
+        await Task.Delay(TimeSpan.FromMilliseconds(500), Ct);
+        Assert.Equal(1, listener.Arrivals);
 
         clock.Advance(WebTenantChangeNotifier.SuspendAfterFailure + TimeSpan.FromSeconds(1));
         listener.Delay = TimeSpan.Zero;
         await notifier.NotifyAsync(Guid.NewGuid(), change, Ct);
-        Assert.Equal(2, listener.Requests.Count);
+        Assert.True(await listener.WaitForArrivalsAsync(2), "After the pause the sender did not try again.");
     }
 
     [Fact]
@@ -241,6 +244,18 @@ public sealed class InternalTenantChangeChannelTests
 
         public TimeSpan Delay { get; set; }
 
+        private int _arrivals;
+
+        /// <summary>Requests that reached the handler, counted before their body is read.</summary>
+        public int Arrivals => Volatile.Read(ref _arrivals);
+
+        public async Task<bool> WaitForArrivalsAsync(int count)
+        {
+            for (var i = 0; i < 50 && Arrivals < count; i++)
+                await Task.Delay(100);
+            return Arrivals == count;
+        }
+
         public ConcurrentQueue<(string Method, string Path, string Secret, string Body)> RequestQueue { get; } = new();
 
         public IReadOnlyList<(string Method, string Path, string Secret, string Body)> Requests => RequestQueue.ToArray();
@@ -254,6 +269,7 @@ public sealed class InternalTenantChangeChannelTests
             var listener = new FakeWebListener(app, port) { Delay = delay };
             app.Run(async http =>
             {
+                Interlocked.Increment(ref listener._arrivals);
                 using var reader = new StreamReader(http.Request.Body);
                 listener.RequestQueue.Enqueue((http.Request.Method, http.Request.Path.Value ?? "", http.Request.Headers[InternalRealtimeOptions.SecretHeaderName].ToString(), await reader.ReadToEndAsync()));
                 if (listener.Delay > TimeSpan.Zero)
