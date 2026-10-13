@@ -10,6 +10,7 @@ using Wasla.Application.Printing;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
@@ -243,6 +244,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
             new ReceiptPrintJobService(
                 _tenantDb,
                 new FixedReceiptTemplateSettings(),
+                NullTenantChangeNotifier.Instance,
                 NullLogger<ReceiptPrintJobService>.Instance),
             NullLogger<OrderReceiptCreationService>.Instance);
 

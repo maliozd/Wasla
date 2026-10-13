@@ -8,6 +8,7 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Printing;
@@ -139,7 +140,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, AcceptedOrder("provider-poll-1"));
         var sync = CreateSyncService(client);
         await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
-        var polling = new PrintBridgeJobService(_dbFactory, NullLogger<PrintBridgeJobService>.Instance);
+        var polling = new PrintBridgeJobService(_dbFactory, NullTenantChangeNotifier.Instance, NullLogger<PrintBridgeJobService>.Instance);
 
         var jobs = await polling.GetPendingJobsAsync(_tenantId, max: 10, TestContext.Current.CancellationToken);
 
@@ -160,7 +161,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             .Select(j => j.Id)
             .SingleAsync(TestContext.Current.CancellationToken);
         var installationId = Guid.NewGuid();
-        var polling = new PrintBridgeJobService(_dbFactory, NullLogger<PrintBridgeJobService>.Instance);
+        var polling = new PrintBridgeJobService(_dbFactory, NullTenantChangeNotifier.Instance, NullLogger<PrintBridgeJobService>.Instance);
 
         var result = await polling.TryMarkPrintingAsync(
             _tenantId,
@@ -182,6 +183,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var receiptJobs = new ReceiptPrintJobService(
             _dbFactory,
             DefaultReceiptTemplateSettingsService.Instance,
+            NullTenantChangeNotifier.Instance,
             NullLogger<ReceiptPrintJobService>.Instance);
 
         var receiptCreation = new TestOrderReceiptCreationService(_dbFactory, receiptJobs);

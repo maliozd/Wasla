@@ -811,15 +811,31 @@ public sealed partial class GuidedSetupWebTests
     [Fact]
     public void OrderTraining_AddsNoRealtimeTransport_TheLiveScreenStillPolls()
     {
+        // The live print status channel (WAS-23) is the only realtime transport, and it lives in these files only.
+        // Order training, the Live Screen snapshot and every other file must not open one of their own.
+        var realtimeModule = new[]
+        {
+            Path.Combine("src", "Wasla.Web", "Realtime") + Path.DirectorySeparatorChar,
+            Path.Combine("src", "Wasla.Web", "wwwroot", "js", "realtime", "wasla-realtime.js")
+        };
         var source = Directory.EnumerateFiles(Path.Combine(Root(), "src"), "*.*", SearchOption.AllDirectories)
             .Where(path => path.EndsWith(".cs", StringComparison.Ordinal) || path.EndsWith(".js", StringComparison.Ordinal)
                 || path.EndsWith(".cshtml", StringComparison.Ordinal) || path.EndsWith(".csproj", StringComparison.Ordinal))
-            .Where(path => !Regex.IsMatch(path, @"[\\/](bin|obj|lib)[\\/]"));
+            .Where(path => !Regex.IsMatch(path, @"[\\/](bin|obj|lib)[\\/]"))
+            .Where(path => !realtimeModule.Any(allowed => Path.GetRelativePath(Root(), path).StartsWith(allowed, StringComparison.Ordinal)))
+            .ToList();
+        Assert.NotEmpty(source);
         foreach (var path in source)
         {
             var text = File.ReadAllText(path);
             foreach (var transport in new[] { "AddSignalR", "MapHub", "HubConnectionBuilder", "Microsoft.AspNetCore.SignalR", "new EventSource", "new WebSocket", "text/event-stream" })
                 Assert.False(text.Contains(transport, StringComparison.Ordinal), $"{transport} in {Path.GetFileName(path)}");
+        }
+
+        foreach (var training in new[] { Read("src", "Wasla.Web", "wwwroot", "js", "wasla-guided-training.js"), Read("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-store.js") })
+        {
+            Assert.DoesNotContain("WaslaRealtime", training, StringComparison.Ordinal);
+            Assert.DoesNotContain("signalR", training, StringComparison.Ordinal);
         }
 
         Assert.Contains("liveDataUrl: \"/orders/live-data\"", Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml"), StringComparison.Ordinal);
