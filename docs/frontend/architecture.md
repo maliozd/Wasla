@@ -122,7 +122,7 @@ Not themed: every page that does not use one of the three layouts above has no t
 ## Future
 
 - Continue modular vanilla JS; avoid a second parallel orders UI framework.
-- Any SignalR consumer should reuse shared print/action components — see [../future/printjob-status-signalr.md](../future/printjob-status-signalr.md). Live Screen order polling remains until a deliberate phase.
+- The live channel (`wasla-realtime.js`, one connection per page) is used only by `orders-print-status.js` for the shared print action; see [../architecture/realtime.md](../architecture/realtime.md). A further consumer should subscribe to it and read its state from the server, not render from the notification. Live Screen order polling remains until a deliberate phase.
 
 ---
 

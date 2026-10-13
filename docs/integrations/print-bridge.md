@@ -358,7 +358,7 @@ See [../operations/cli.md](../operations/cli.md):
 - Every WebView2 host honors the `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` environment variable (for example a remote-debugging port). This is platform behavior the shell does not override; anyone who can set the user's environment can already inspect the process.
 - Sample / download packaging may still mention older folder names in places; prefer `ServerUrl` and Wasla ProgramData paths above.
 - The device details page still formats times on the server with `ToLocalTime()` (the server's zone, not `Europe/Istanbul`) and does not refresh itself. The token regeneration response still returns device times without a UTC marker.
-- Live SignalR push for print-job status is future planning only: [../future/printjob-status-signalr.md](../future/printjob-status-signalr.md). It is not current implementation. An older copy remains at `docs/orders-printjob-status-signalr.md` until that file is retired.
+- Each job creation and each accepted `mark-printing`, `mark-printed` and `mark-failed` is announced to the tenant's open order detail pages after it is recorded ([../architecture/realtime.md](../architecture/realtime.md)). A report sent to Wasla.Api is announced only when Api has `Realtime:Internal` configured. The Bridge's own polling, claiming and retries are unchanged, and a skipped report announces nothing. The historical planning note `docs/orders-printjob-status-signalr.md` is superseded.
 
 ## Related docs
 

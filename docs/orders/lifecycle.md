@@ -2,7 +2,7 @@
 
 **Owns:** canonical order statuses, operator transitions, provider calls, Worker sync upsert/merge, and note field semantics.
 
-**Does not own:** Live Screen UI ([live-screen.md](./live-screen.md)), frontend module layout ([../frontend/architecture.md](../frontend/architecture.md)), PrintJob push ([../future/printjob-status-signalr.md](../future/printjob-status-signalr.md)).
+**Does not own:** Live Screen UI ([live-screen.md](./live-screen.md)), frontend module layout ([../frontend/architecture.md](../frontend/architecture.md)), live receipt print status ([../architecture/realtime.md](../architecture/realtime.md)).
 
 ---
 
@@ -108,7 +108,7 @@ Sync iterates each tenant's platform connections. Each tenant may have at most o
 ## Future
 
 - Shared prepare provider hook for `Preparing` (commented as deferred in `OrderActionService`).
-- SignalR / push for PrintJob status is planning-only; see [../future/printjob-status-signalr.md](../future/printjob-status-signalr.md). Live Screen polling is unrelated and remains canonical until a deliberate phase.
+- Order push to the Live Screen (WAS-24). Live receipt print status exists ([../architecture/realtime.md](../architecture/realtime.md)); Live Screen polling is unrelated and remains canonical.
 
 ---
 
