@@ -341,6 +341,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new OrderAutoApproveService(_tenants, _approvals, _receipts, NullLogger<OrderAutoApproveService>.Instance),
             _receipts,
+            NullTenantChangeNotifier.Instance,
             NullLogger<OrderSyncService>.Instance,
             businessSubtypeReader: null,
             time: _clock);

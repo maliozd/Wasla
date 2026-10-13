@@ -159,7 +159,7 @@ public sealed class TenantEventsHubTests
             .SyncCustomerAsync(host.AlphaId, Ct);
 
         var order = await OrderChangeFixtures.ReadOrderAsync(host.Tenants, host.AlphaId, "WORKER-1");
-        AssertOrderMessage(OrderChanged.For(order.Id, order.UpdatedAt), await alphaLive.NextAsync());
+        AssertOrderMessage(new OrderChanged(order.Id, order.ChangeVersion), await alphaLive.NextAsync());
         var forBeta = new OrderChanged(Guid.NewGuid(), 5);
         await host.Services.GetRequiredService<ITenantChangeNotifier>().NotifyAsync(host.BetaId, forBeta, Ct);
         AssertOrderMessage(forBeta, await betaLive.NextAsync());

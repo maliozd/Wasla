@@ -210,6 +210,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new OrderAutoApproveService(_tenants, _approvals, ReceiptCreation(), NullLogger<OrderAutoApproveService>.Instance),
             ReceiptCreation(),
+            NullTenantChangeNotifier.Instance,
             NullLogger<OrderSyncService>.Instance);
 
     private OrderReceiptCreationService ReceiptCreation() =>

@@ -50,7 +50,8 @@ public sealed class OrderChangeNotificationTests : IDisposable
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "ING-1");
         var (tenantId, change) = Assert.Single(_notifier.Sent);
         Assert.Equal(_tenant, tenantId);
-        Assert.Equal(OrderChanged.For(order.Id, order.UpdatedAt), change);
+        Assert.Equal(new OrderChanged(order.Id, 1), change);
+        Assert.Equal(1, order.ChangeVersion);
         Assert.True(committed);
     }
 
@@ -76,7 +77,8 @@ public sealed class OrderChangeNotificationTests : IDisposable
 
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "UPD-1");
         Assert.Equal(2, OrderChanges.Count);
-        Assert.Equal(OrderChanged.For(order.Id, order.UpdatedAt), OrderChanges[1]);
+        Assert.Equal(new OrderChanged(order.Id, 2), OrderChanges[1]);
+        Assert.Equal(2, order.ChangeVersion);
         Assert.True(accepted);
     }
 
@@ -106,8 +108,59 @@ public sealed class OrderChangeNotificationTests : IDisposable
             statusAtNotification);
         var announced = OrderChanges.Skip(before).ToList();
         Assert.Equal([first.Id, first.Id, first.Id, second.Id], announced.Select(c => c.OrderId));
-        var finalFirst = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "LIFE-1");
-        Assert.Equal(OrderChanged.For(first.Id, finalFirst.UpdatedAt), announced[2]);
+        // Each order's versions only grow, one per committed change; the stored value is the last one announced.
+        Assert.Equal([2L, 3L, 4L, 2L], announced.Select(c => c.Version));
+        Assert.Equal(4, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "LIFE-1")).ChangeVersion);
+        Assert.Equal(2, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "LIFE-2")).ChangeVersion);
+    }
+
+    [Fact]
+    public async Task ChangeVersions_AreRaisedAtomically_SoConcurrentWritersNeverShareOne()
+    {
+        _provider.Returns(OrderChangeFixtures.External("RACE-1"));
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "RACE-1");
+
+        // Twenty writers, each in its own transaction (as the services do), racing on the same order.
+        var versions = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => Task.Run(async () =>
+        {
+            await using var db = await _tenants.CreateAsync(_tenant, CancellationToken.None);
+            await using var tx = await db.Database.BeginTransactionAsync(Ct);
+            var version = await Wasla.Infrastructure.Realtime.OrderChangeVersions.NextAsync(db, order.Id, Ct);
+            await tx.CommitAsync(Ct);
+            return version;
+        }, Ct)));
+
+        Assert.Equal(Enumerable.Range(2, 20).Select(v => (long)v), versions.Order());
+        Assert.Equal(21, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "RACE-1")).ChangeVersion);
+    }
+
+    [Fact]
+    public async Task AChangeVersion_IsNeverRaisedOutsideTheChangesTransaction()
+    {
+        _provider.Returns(OrderChangeFixtures.External("NO-TX-1"));
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "NO-TX-1");
+        await using var db = await _tenants.CreateAsync(_tenant, Ct);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Wasla.Infrastructure.Realtime.OrderChangeVersions.NextAsync(db, order.Id, Ct));
+        Assert.Equal(1, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "NO-TX-1")).ChangeVersion);
+    }
+
+    [Fact]
+    public async Task TheLiveScreenSnapshot_CarriesEachOrdersChangeVersion()
+    {
+        _provider.Returns(OrderChangeFixtures.External("SNAP-1"));
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "SNAP-1");
+        await OrderChangeFixtures.Actions(_tenants, _provider, _notifier).TryApproveAsync(_tenant, order.Id, Ct);
+        var read = new Wasla.Infrastructure.Services.OrderReadService(_tenants, TimeProvider.System, Microsoft.Extensions.Logging.Abstractions.NullLogger<Wasla.Infrastructure.Services.OrderReadService>.Instance);
+
+        var snapshot = await read.GetLiveScreenSnapshotAsync(_tenant, Ct);
+
+        var shown = Assert.Single(snapshot.Orders, o => o.Id == order.Id);
+        Assert.Equal(2, shown.ChangeVersion);
+        Assert.Equal(OrderChanges.Last().Version, shown.ChangeVersion);
     }
 
     [Fact]

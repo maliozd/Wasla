@@ -31,11 +31,13 @@ function clock() {
   };
 }
 
-function live(c) {
+function live(c, shown) {
   const calls = { reads: 0, intervals: [] };
+  const versions = shown || {};
   const sync = invalidation.createLiveInvalidation({
     requestRefresh: function () { calls.reads += 1; return Promise.resolve(); },
     setPollingIntervalMs: function (ms) { calls.intervals.push(ms); },
+    shownVersion: function (id) { return id in versions ? versions[id] : -1; },
     disconnectedPollingMs: 10000,
     connectedPollingMs: 30000,
     setTimeout: c.setTimeout,
@@ -94,6 +96,28 @@ test("a burst of notifications becomes one read, and reads are at least a second
   sync.onNotification(changed(31));
   c.advance(invalidation.SETTLE_MS);
   assert.equal(calls.reads, 3);
+});
+
+test("a version the snapshot already shows is not read again; a newer one or an unshown order is", function () {
+  const c = clock();
+  const ORDER = "8a1f0c6e-0000-4000-8000-000000000001";
+  const shown = { [ORDER]: 4 };
+  const { sync, calls } = live(c, shown);
+
+  sync.onNotification({ type: "OrderChanged", orderId: ORDER, version: 3 }); // stale
+  sync.onNotification({ type: "OrderChanged", orderId: ORDER, version: 4 }); // duplicate
+  c.advance(5000);
+  assert.equal(calls.reads, 0);
+
+  sync.onNotification({ type: "OrderChanged", orderId: ORDER, version: 5 }); // newer
+  c.advance(invalidation.SETTLE_MS);
+  assert.equal(calls.reads, 1);
+
+  // An order the screen does not show (new, or hidden by training): always read.
+  c.advance(5000);
+  sync.onNotification({ type: "OrderChanged", orderId: "8a1f0c6e-0000-4000-8000-000000000009", version: 1 });
+  c.advance(invalidation.SETTLE_MS);
+  assert.equal(calls.reads, 2);
 });
 
 test("other notification types and malformed messages read nothing", function () {

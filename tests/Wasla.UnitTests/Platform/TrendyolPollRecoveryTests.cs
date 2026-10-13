@@ -10,6 +10,7 @@ using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Diagnostics;
 using Wasla.UnitTests.Setup;
@@ -724,6 +725,7 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
             mapper,
             _effects,
             _effects,
+            NullTenantChangeNotifier.Instance,
             _syncLog,
             businessSubtypeReader: null,
             time: _clock);

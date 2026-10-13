@@ -6,6 +6,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Sync;
@@ -65,6 +66,7 @@ public sealed class OrderSyncCancellationTests : IDisposable
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
+            NullTenantChangeNotifier.Instance,
             NullLogger<OrderSyncService>.Instance);
 
     private async Task SeedAsync()

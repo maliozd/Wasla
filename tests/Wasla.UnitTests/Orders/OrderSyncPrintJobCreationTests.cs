@@ -194,6 +194,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             NoAutoApproveService.Instance,
             receiptCreation,
+            NullTenantChangeNotifier.Instance,
             NullLogger<OrderSyncService>.Instance);
     }
 
