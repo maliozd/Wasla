@@ -81,12 +81,14 @@ function fakeSignalR() {
   return api;
 }
 
-function client(signalR, timers) {
+// random() of 0 removes the reconnect jitter, so the base delays can be asserted; the jitter has its own tests.
+function client(signalR, timers, random) {
   return realtime.createRealtimeClient({
     signalR: signalR,
     hubUrl: "/hubs/tenant-events",
     setTimeout: timers.setTimeout,
-    clearTimeout: timers.clearTimeout
+    clearTimeout: timers.clearTimeout,
+    random: random || function () { return 0; }
   });
 }
 
@@ -98,7 +100,7 @@ test("one connection, with its handler attached before the first start", async f
   await flush();
 
   assert.equal(signalR.builds, 1);
-  assert.deepEqual(signalR.log, ["withUrl:/hubs/tenant-events", "on:tenantChange", "on:tenantEventsReady", "start"]);
+  assert.deepEqual(signalR.log, ["withUrl:/hubs/tenant-events?attempt=initial", "on:tenantChange", "on:tenantEventsReady", "start"]);
   assert.equal(c.state(), "connected");
 });
 
