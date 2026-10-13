@@ -1,8 +1,11 @@
+using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Security;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Web.Realtime;
 
@@ -21,18 +24,32 @@ public sealed class RealtimeSessionRevalidator
     private readonly RealtimeOptions _options;
     private readonly TimeProvider _time;
     private readonly ILogger<RealtimeSessionRevalidator> _logger;
+    private readonly RealtimeMetrics _metrics;
+
+    // Why this check closed a connection, until the hub's OnDisconnectedAsync takes it for the closure metric. Weak, so
+    // a reason recorded just after a connection ended on its own goes away with the connection.
+    private readonly ConditionalWeakTable<HubCallerContext, string> _closeReasons = new();
 
     public RealtimeSessionRevalidator(
         IServiceScopeFactory scopes,
         RealtimeOptions options,
         TimeProvider time,
-        ILogger<RealtimeSessionRevalidator> logger)
+        ILogger<RealtimeSessionRevalidator> logger,
+        RealtimeMetrics metrics)
     {
         _scopes = scopes;
         _options = options;
         _time = time;
         _logger = logger;
+        _metrics = metrics;
     }
+
+    /// <summary>
+    /// The reason (<see cref="RealtimeMetrics.CloseReasons"/>) this check closed the connection, or null when it did not;
+    /// removes it. Called once per connection when it ends.
+    /// </summary>
+    public string? TakeCloseReason(HubCallerContext connection) =>
+        _closeReasons.TryGetValue(connection, out var reason) && _closeReasons.Remove(connection) ? reason : null;
 
     /// <summary>Starts the periodic check of one connection; it ends with the connection.</summary>
     /// <param name="roles">The roles that admit every stream the connection joined.</param>
@@ -51,9 +68,24 @@ public sealed class RealtimeSessionRevalidator
             while (!closed.IsCancellationRequested)
             {
                 await Task.Delay(_options.SessionRevalidationInterval, _time, closed).ConfigureAwait(false);
-                if (!await IsStillAllowedAsync(connection, tenantId, host, roles, closed).ConfigureAwait(false))
+                var started = Stopwatch.GetTimestamp();
+                string? refusal;
+                try
                 {
-                    connection.Abort();
+                    refusal = await CheckAsync(connection, tenantId, host, roles, closed).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException || !closed.IsCancellationRequested)
+                {
+                    _metrics.SessionChecked(RealtimeMetrics.CloseReasons.CheckFailed, RealtimeMetrics.Since(started));
+                    _logger.LogWarning("Live connection check failed ({ExceptionType}); the connection is closed.", ex.GetType().Name);
+                    Close(connection, RealtimeMetrics.CloseReasons.CheckFailed);
+                    return;
+                }
+
+                _metrics.SessionChecked(refusal ?? RealtimeMetrics.CloseReasons.Valid, RealtimeMetrics.Since(started));
+                if (refusal is not null)
+                {
+                    Close(connection, refusal);
                     return;
                 }
             }
@@ -61,14 +93,16 @@ public sealed class RealtimeSessionRevalidator
         catch (OperationCanceledException) when (closed.IsCancellationRequested)
         {
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning("Live connection check failed ({ExceptionType}); the connection is closed.", ex.GetType().Name);
-            connection.Abort();
-        }
     }
 
-    private async Task<bool> IsStillAllowedAsync(
+    private void Close(HubCallerContext connection, string reason)
+    {
+        _closeReasons.AddOrUpdate(connection, reason);
+        connection.Abort();
+    }
+
+    /// <summary>Null when the connection may stay open; otherwise the reason it is closed (<see cref="RealtimeMetrics.CloseReasons"/>).</summary>
+    private async Task<string?> CheckAsync(
         HubCallerContext connection,
         Guid tenantId,
         string? host,
@@ -84,7 +118,7 @@ public sealed class RealtimeSessionRevalidator
         if (resolved is null || resolved.Id != tenantId)
         {
             _logger.LogInformation("Live connection closed: the host no longer resolves to the tenant. TenantId={TenantId}", tenantId);
-            return false;
+            return RealtimeMetrics.CloseReasons.TenantUnresolved;
         }
 
         TenantSessionState state;
@@ -96,22 +130,22 @@ public sealed class RealtimeSessionRevalidator
         catch (TenantSessionUnavailableException)
         {
             _logger.LogWarning("Live connection closed: the tenant session could not be checked. TenantId={TenantId}", tenantId);
-            return false;
+            return RealtimeMetrics.CloseReasons.CheckUnavailable;
         }
 
         if (state != TenantSessionState.Valid)
         {
             _logger.LogInformation("Live connection closed: tenant session {State}. TenantId={TenantId}", state, tenantId);
-            return false;
+            return RealtimeMetrics.CloseReasons.SessionInvalid;
         }
 
         if (connection.User is null || !TenantSessionClaims.IsInRole(connection.User, tenantId, roles))
         {
             _logger.LogInformation("Live connection closed: the role no longer admits it. TenantId={TenantId}", tenantId);
-            return false;
+            return RealtimeMetrics.CloseReasons.RoleChanged;
         }
 
-        return true;
+        return null;
     }
 }
 

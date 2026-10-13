@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
@@ -137,6 +138,7 @@ public sealed class WebTenantChangeNotifier : ITenantChangeNotifier
     private readonly InternalRealtimeOptions _options;
     private readonly TimeProvider _time;
     private readonly ILogger<WebTenantChangeNotifier> _logger;
+    private readonly RealtimeMetrics _metrics;
     private readonly object _gate = new();
     private DateTimeOffset _suspendedUntil = DateTimeOffset.MinValue;
     private bool _suspended;
@@ -145,12 +147,14 @@ public sealed class WebTenantChangeNotifier : ITenantChangeNotifier
         IHttpClientFactory httpClients,
         InternalRealtimeOptions options,
         TimeProvider time,
-        ILogger<WebTenantChangeNotifier> logger)
+        ILogger<WebTenantChangeNotifier> logger,
+        RealtimeMetrics metrics)
     {
         _httpClients = httpClients;
         _options = options;
         _time = time;
         _logger = logger;
+        _metrics = metrics;
     }
 
     public async Task NotifyAsync(Guid tenantId, TenantChange change, CancellationToken ct)
@@ -158,17 +162,24 @@ public sealed class WebTenantChangeNotifier : ITenantChangeNotifier
         lock (_gate)
         {
             if (_suspended && _time.GetUtcNow() < _suspendedUntil)
+            {
+                _metrics.NotificationHandled(RealtimeMetrics.Channels.Internal, change, RealtimeMetrics.NotificationResults.Paused);
                 return;
+            }
         }
 
         // A change this channel cannot carry is dropped without pausing the channel for the others.
         if (!InternalTenantChangeMessage.CanCarry(change))
+        {
+            _metrics.NotificationHandled(RealtimeMetrics.Channels.Internal, change, RealtimeMetrics.NotificationResults.Unsupported);
             return;
-        var message = InternalTenantChangeMessage.From(tenantId, change);
+        }
 
+        var message = InternalTenantChangeMessage.From(tenantId, change);
+        var started = Stopwatch.GetTimestamp();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(_options.Timeout);
 
             using var request = new HttpRequestMessage(HttpMethod.Post, _options.Endpoint)
@@ -183,10 +194,12 @@ public sealed class WebTenantChangeNotifier : ITenantChangeNotifier
 
             if (!response.IsSuccessStatusCode)
             {
-                Suspend($"HTTP {(int)response.StatusCode}");
+                Record(change, RealtimeMetrics.NotificationResults.Rejected, started);
+                Suspend(RealtimeMetrics.NotificationResults.Rejected, $"HTTP {(int)response.StatusCode}");
                 return;
             }
 
+            Record(change, RealtimeMetrics.NotificationResults.Sent, started);
             lock (_gate)
             {
                 if (_suspended)
@@ -198,11 +211,24 @@ public sealed class WebTenantChangeNotifier : ITenantChangeNotifier
         }
         catch (Exception ex)
         {
-            Suspend(ex.GetType().Name);
+            var result = ex switch
+            {
+                OperationCanceledException when ct.IsCancellationRequested => RealtimeMetrics.NotificationResults.Cancelled,
+                OperationCanceledException when timeout.IsCancellationRequested => RealtimeMetrics.NotificationResults.Timeout,
+                HttpRequestException => RealtimeMetrics.NotificationResults.Unreachable,
+                _ => RealtimeMetrics.NotificationResults.Failed
+            };
+            Record(change, result, started);
+            Suspend(result, ex.GetType().Name);
         }
     }
 
-    private void Suspend(string reason)
+    private void Record(TenantChange change, string result, long started) =>
+        _metrics.NotificationHandled(RealtimeMetrics.Channels.Internal, change, result, RealtimeMetrics.Since(started));
+
+    /// <param name="category">The bounded metric reason (<see cref="RealtimeMetrics.NotificationResults"/>).</param>
+    /// <param name="detail">An HTTP status or exception type for the log; never a message, URL or secret.</param>
+    private void Suspend(string category, string detail)
     {
         lock (_gate)
         {
@@ -211,9 +237,10 @@ public sealed class WebTenantChangeNotifier : ITenantChangeNotifier
             _suspendedUntil = _time.GetUtcNow() + SuspendAfterFailure;
             if (!wasSuspended)
             {
+                _metrics.InternalChannelPaused(category);
                 _logger.LogWarning(
                     "Live notification to Wasla.Web failed ({Reason}); notifications pause for {Seconds} seconds and open screens fall back to refreshing.",
-                    reason,
+                    detail,
                     SuspendAfterFailure.TotalSeconds);
             }
         }
@@ -237,6 +264,7 @@ public static class InternalRealtimeServiceCollectionExtensions
             return services;
 
         services.AddSingleton(options);
+        services.AddWaslaRealtimeMetrics();
         services.AddHttpClient(WebTenantChangeNotifier.HttpClientName)
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
@@ -248,6 +276,14 @@ public static class InternalRealtimeServiceCollectionExtensions
             });
         services.RemoveAll<ITenantChangeNotifier>();
         services.AddSingleton<ITenantChangeNotifier, WebTenantChangeNotifier>();
+        return services;
+    }
+
+    /// <summary>The <see cref="RealtimeMetrics"/> of this process (meter <c>Wasla.Realtime</c>); safe to call more than once.</summary>
+    public static IServiceCollection AddWaslaRealtimeMetrics(this IServiceCollection services)
+    {
+        services.AddMetrics();
+        services.TryAddSingleton<RealtimeMetrics>();
         return services;
     }
 

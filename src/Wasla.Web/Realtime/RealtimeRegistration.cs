@@ -25,6 +25,7 @@ public static class RealtimeRegistration
                 TenantEventsHub.ConnectPolicy,
                 TenantRolePolicyRegistration.BuildPolicy(TenantEventsHub.AnyStreamRoles, AuthSchemes.Tenant)));
         services.AddSingleton(RealtimeOptions.Read(configuration));
+        services.AddWaslaRealtimeMetrics();
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<RealtimeSessionRevalidator>();
         services.RemoveAll<ITenantChangeNotifier>();

@@ -22,17 +22,20 @@ public sealed class InternalTenantChangeListener : IHostedService, IAsyncDisposa
     private readonly InternalRealtimeOptions _options;
     private readonly ITenantChangeNotifier _notifier;
     private readonly ILogger<InternalTenantChangeListener> _logger;
+    private readonly RealtimeMetrics _metrics;
     private readonly byte[] _secret;
     private WebApplication? _app;
 
     public InternalTenantChangeListener(
         InternalRealtimeOptions options,
         ITenantChangeNotifier notifier,
-        ILogger<InternalTenantChangeListener> logger)
+        ILogger<InternalTenantChangeListener> logger,
+        RealtimeMetrics metrics)
     {
         _options = options;
         _notifier = notifier;
         _logger = logger;
+        _metrics = metrics;
         _secret = Encoding.UTF8.GetBytes(options.Secret!.Trim());
     }
 
@@ -77,18 +80,21 @@ public sealed class InternalTenantChangeListener : IHostedService, IAsyncDisposa
             || http.Connection.LocalPort != _options.Port
             || !string.Equals(http.Request.Path.Value, InternalRealtimeOptions.Path, StringComparison.Ordinal))
         {
+            _metrics.InternalRequestAnswered(RealtimeMetrics.InternalRequestResults.NotFound);
             http.Response.StatusCode = StatusCodes.Status404NotFound;
             return;
         }
 
         if (!HttpMethods.IsPost(http.Request.Method))
         {
+            _metrics.InternalRequestAnswered(RealtimeMetrics.InternalRequestResults.MethodNotAllowed);
             http.Response.StatusCode = StatusCodes.Status405MethodNotAllowed;
             return;
         }
 
         if (!HasSecret(http.Request.Headers[InternalRealtimeOptions.SecretHeaderName].ToString()))
         {
+            _metrics.InternalRequestAnswered(RealtimeMetrics.InternalRequestResults.Unauthorized);
             _logger.LogWarning("Internal live notification refused: missing or wrong secret.");
             http.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return;
@@ -108,11 +114,14 @@ public sealed class InternalTenantChangeListener : IHostedService, IAsyncDisposa
 
         if (message is null || !message.TryRead(out var tenantId, out var change) || change is null)
         {
+            _metrics.InternalRequestAnswered(RealtimeMetrics.InternalRequestResults.Invalid);
             http.Response.StatusCode = StatusCodes.Status400BadRequest;
             return;
         }
 
+        // The hub send is measured by the notifier (channel "hub"); this counts the request itself.
         await _notifier.NotifyAsync(tenantId, change, http.RequestAborted).ConfigureAwait(false);
+        _metrics.InternalRequestAnswered(RealtimeMetrics.InternalRequestResults.Accepted);
         http.Response.StatusCode = StatusCodes.Status202Accepted;
     }
 
