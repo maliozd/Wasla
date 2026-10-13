@@ -257,6 +257,7 @@
     <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
     @if (canManualPrint)
     {
+        <partial name="_LiveConnectionScripts" />
         <partial name="_OrderPrintStatusScripts" />
     }
 }

@@ -231,7 +231,8 @@
             orderDetailPanelUrl: "/orders/{id}/detail-panel",
             orderPrintUrl: "/orders/{id}/print",
             orderPrintStateUrl: "/orders/{id}/print-state",
-            realtimeHubUrl: @Html.Raw(JsonSerializer.Serialize(navPermissions.CanManualPrint ? Wasla.Web.Realtime.TenantEventsHub.Path : null)),
+            // Every Live Screen user receives order invalidation (WAS-24); the hub adds print status only for CanManualPrint.
+            realtimeHubUrl: @Html.Raw(JsonSerializer.Serialize(Wasla.Web.Realtime.TenantEventsHub.Path)),
             viewModeStorageKey: "Wasla.liveScreen.viewMode",
             defaultViewMode: "kitchen",
             pollingIntervalMs: 10000,
@@ -364,6 +365,7 @@
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
+    <partial name="_LiveConnectionScripts" />
     @if (navPermissions.CanManualPrint)
     {
         <partial name="_OrderPrintStatusScripts" />
@@ -371,5 +373,6 @@
     <script src="~/js/orders/orders-live-view.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-detail-modal.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-store.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-live-realtime.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-live-display-page.js" asp-append-version="true"></script>
 }
