@@ -52,7 +52,7 @@ Wasla Orders keeps its management and operational surfaces separate:
 | Surface | Job |
 |---------|-----|
 | `/orders` | Management, search, and history |
-| Live Screen (`/orders/live-display`) | Operational handling; polls a snapshot |
+| Live Screen (`/orders/live-display`) | Operational handling; reads a snapshot when notified of an order change and polls it as a safety net |
 
 Details: [../orders/live-screen.md](../orders/live-screen.md), [../orders/lifecycle.md](../orders/lifecycle.md).
 

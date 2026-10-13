@@ -5,25 +5,32 @@
 This document describes the live notification channel of Wasla Orders: the SignalR hub in Wasla.Web, how changes in
 Wasla.Web, Wasla.Worker and Wasla.Api reach it, what a browser receives, and what happens when the channel is down.
 
-Implemented: receipt print status (WAS-23). The shared print action (`_OrderPrintAction`) in an open Live Screen detail
-modal, the Focus detail panel and the full order details page shows Pending, Printing, and the outcome of the newest
-receipt without a reload.
+Implemented:
 
-Not implemented: Live Screen order updates (WAS-24). The Live Screen still polls `/orders/live-data` every 10 seconds
-([../orders/live-screen.md](../orders/live-screen.md)); the Print Bridge devices page still refreshes on its own
-([../integrations/print-bridge.md](../integrations/print-bridge.md#devices-page-presence-web-panel)).
+- **Receipt print status (WAS-23).** The shared print action (`_OrderPrintAction`) in an open Live Screen detail modal,
+  the Focus detail panel and the full order details page shows Pending, Printing, and the outcome of the newest
+  receipt without a reload.
+- **Live Screen invalidation (WAS-24).** When an order is stored or changed (provider ingestion, an operator's lifecycle
+  action, automatic approval), open Live Screens read their snapshot (`/orders/live-data`) at once instead of waiting
+  for the next poll. Polling stays, at a lower rate while connected ([../orders/live-screen.md](../orders/live-screen.md)).
+
+Not covered: practice orders of order training, the Orders management page, the Print Bridge devices page (it
+refreshes on its own, [../integrations/print-bridge.md](../integrations/print-bridge.md#devices-page-presence-web-panel)),
+and the print history page.
 
 ## Principles
 
 - **The database is the source of truth.** A notification only says "this changed, at this version". The screen then
   reads the current state through its normal, authorized HTTP request. A notification is never shown as the state.
 - **Published only after the commit.** Creation is announced after `CommitAsync`; a status transition after its
-  conditional update changed a row. Work that did not happen (a duplicate print, a skipped Bridge report, a rollback)
-  announces nothing.
+  conditional update changed a row; an order write after its `SaveChanges` or transaction commit. Work that did not
+  happen (a duplicate print, a skipped Bridge report, a refused or failed order action, an unchanged provider order, a
+  rollback) announces nothing.
 - **Best effort.** A notification can be lost. One that fails is logged with its exception type only and never changes
   the result of the work it reports. What a screen missed while it was connecting or disconnected is read on reconnect
   and by the fallback. A notification lost while the screen stays connected (a failed send in Web, or the internal
-  channel's 30-second pause) is **not** repaired until the next notification for that order, a reopen or a reload; see
+  channel's 30-second pause) is **not** repaired for the print action until the next notification for that order, a
+  reopen or a reload; the Live Screen repairs it at its next poll (30 seconds while connected). See
   [Limitations](#limitations).
 - **The server chooses the tenant.** The group of a connection comes from the tenant resolved from the request's host
   and the revalidated tenant cookie. A client cannot name a tenant or a group.
@@ -35,10 +42,10 @@ Not implemented: Live Screen order updates (WAS-24). The Live Screen still polls
 ```text
 Browser ──same origin (WebSocket, SSE or long polling)──► Wasla.Web  /hubs/tenant-events   (TenantEventsHub)
                                                             ▲
-                     in process (IHubContext) ──────────────┤  manual print, approve, reprint,
+                     in process (IHubContext) ──────────────┤  manual print, reprint, operator order actions,
                                                             │  Print Bridge reports to Web
-Wasla.Worker ──HTTP POST 127.0.0.1:{Realtime:Internal:Port}─┤  automatic receipts (auto-approve during sync)
-Wasla.Api    ──HTTP POST 127.0.0.1:{Realtime:Internal:Port}─┘  Print Bridge reports to Api
+Wasla.Worker ──HTTP POST 127.0.0.1:{Realtime:Internal:Port}─┤  ingested orders, automatic approval and receipts
+Wasla.Api    ──HTTP POST 127.0.0.1:{Realtime:Internal:Port}─┘  Print Bridge reports to Api (Api writes no orders)
 ```
 
 `ITenantChangeNotifier` (`src/Wasla.Application/Abstractions/Realtime/ITenantChangeNotifier.cs`) is the
@@ -70,6 +77,19 @@ Print Bridge talks to the server named by its `ServerUrl`. The setup page always
 A device pointed at Wasla.Api by hand has its reports announced over the internal channel when Api has
 `Realtime:Internal` configured, and not at all otherwise (its screens then rely on the fallback refresh).
 
+## Where order changes are published (WAS-24)
+
+| Change | Service | Called from |
+|--------|---------|-------------|
+| New order stored by ingestion | `OrderSyncService.UpsertOrderAsync`, after the insert's `SaveChanges` | Worker sync (internal channel) |
+| Order updated by ingestion (status, items, amounts, customer fields) | `OrderSyncService.UpsertOrderAsync`, after its transaction commits; an order whose provider data did not change writes and announces nothing | Worker sync (internal channel) |
+| Approve, Reject, Start preparing, Mark ready, Hand to courier, Mark delivered | `OrderActionService`, after `SaveChanges` changed the row; a wrong status, a refused user command, a missing connection or a failed provider call announces nothing | Web operator actions on Orders and the Live Screen (in process); Worker automatic approval (`OrderAutoApproveService` → `TryApproveAsync`, internal channel) |
+
+`OrderChanged` is an invalidation, not a state: the Live Screen reads its whole snapshot, so ordering, role filters,
+training isolation and the Delivered window stay on the server. Wasla.Api writes no orders. Practice orders
+(`GuidedDemoSession`) are not orders and are not announced; their own countdown asks the Live Screen to refresh at each
+stage ([../orders/live-screen.md](../orders/live-screen.md)). The Development-only tenant reset announces nothing.
+
 ## Message and version
 
 A browser receives, on client method `tenantChange`:
@@ -79,6 +99,21 @@ A browser receives, on client method `tenantChange`:
 ```
 
 Nothing else: no order content, customer data, receipt payload, device, printer, token or error text.
+
+For an order change (WAS-24), only Live Screen connections receive:
+
+```json
+{ "type": "OrderChanged", "orderId": "…", "version": 1760350000123 }
+```
+
+No status, customer, items, amounts or notes. Its `version` is the order's stored `UpdatedAt` in Unix milliseconds
+(UTC): it identifies when the change was written. It is **not** a sequence: Web and Worker stamp it independently, so
+the Live Screen never uses it to skip a read. Every distinct `OrderChanged` leads to (at most) one coalesced snapshot
+read, and the snapshot is the state. A strictly ordered tenant-wide sequence would need a counter row written in every
+order transaction (a migration and a lock on every order write); it was not built because skipping reads is not
+needed for correctness.
+
+The rest of this section is about `PrintJobChanged`.
 
 `version` is `PrintJob.StatusVersion` (bigint, tenant migration `AddPrintJobStatusVersion`). It is **order-scoped and
 only grows**:
@@ -105,13 +140,25 @@ give them the same version; it is a test helper, not a production path.
 `TenantEventsHub` (`src/Wasla.Web/Realtime/TenantEventsHub.cs`), mapped at `/hubs/tenant-events` by
 `MapWaslaRealtime`:
 
-- `[Authorize(AuthenticationSchemes = WaslaTenant, Policy = CanManualPrint)]`: Owner, Manager and Cashier. Only they
-  see the print action, so no one else needs the channel today; Kitchen and Viewer pages do not load it.
+- `[Authorize(AuthenticationSchemes = WaslaTenant, Policy = CanReceiveLiveTenantUpdates)]`. The policy admits a role
+  that may receive at least one stream: the roles of `CanViewLiveScreen` and of `CanManualPrint` together (today every
+  assignable role). It is registered by `AddWaslaRealtime` from the shared role table.
 - The negotiate and connect requests go through the normal Web pipeline: tenant resolution from the host, the tenant
   cookie with its per-request revalidation ([authentication.md](authentication.md#long-lived-live-connections)), and
   the tenant role policy.
-- `OnConnectedAsync` repeats the role check against the tenant resolved for the connection's request and adds the
-  connection to `tenant:{tenantId:N}:print-status`. A connection is in no other group.
+- `OnConnectedAsync` checks each stream's role against the tenant resolved for the connection's request and joins only
+  the groups that pass:
+
+  | Group | Roles (policy) | Receives |
+  |-------|----------------|----------|
+  | `tenant:{tenantId:N}:print-status` | Owner, Manager, Cashier (`CanManualPrint`) | `PrintJobChanged` |
+  | `tenant:{tenantId:N}:live-screen` | Owner, Manager, Kitchen, Cashier, Viewer (`CanViewLiveScreen`) | `OrderChanged` |
+
+  A connection that passes neither is closed. Kitchen and Viewer never receive print status.
+- After joining its groups the hub sends the caller `tenantEventsReady`. A client's start completes at the handshake,
+  before `OnConnectedAsync` has joined the groups, so `wasla-realtime.js` reports "connected" (and screens read their
+  state) only on this message; a change made between a screen's read and the join can therefore not be missed.
+- The periodic session check also requires the role to still admit every stream the connection joined.
 - The hub declares no method a client can call. A client invocation fails with a hub error and changes nothing.
 - Requests under `/hubs` with an `Origin` header for another host are refused with 403 before tenant resolution and
   authentication (`RealtimeOriginMiddleware`), because browsers apply no CORS to WebSockets and a tenant cookie is sent
@@ -157,9 +204,11 @@ not carry is dropped without pausing it.
 | File | Job |
 |------|-----|
 | `wwwroot/lib/microsoft-signalr/signalr.min.js` | The official browser client, `@microsoft/signalr` 8.0.29, unchanged from the npm package (integrity in its `LICENSE.txt`). Served from the app; no CDN at run time. |
-| `wwwroot/js/realtime/wasla-realtime.js` | One connection per page (`window.WaslaRealtime.get`). Handlers are attached before the first start; the first start is retried (2, 5, 10, then every 30 seconds), because automatic reconnect does not cover it; automatic reconnect retries at 0, 2, 5, 10 and then every 30 seconds without giving up; stopped on `pagehide` and started again if the page returns from the back/forward cache. |
+| `wwwroot/js/realtime/wasla-realtime.js` | One connection per page (`window.WaslaRealtime.get`). Handlers are attached before the first start; the first start is retried (2, 5, 10, then every 30 seconds), because automatic reconnect does not cover it; automatic reconnect retries at 0, 2, 5, 10 and then every 30 seconds without giving up; stopped on `pagehide` and started again if the page returns from the back/forward cache. "Connected" means the hub's `tenantEventsReady` arrived (groups joined), not just that the transport opened. |
 | `wwwroot/js/orders/orders-print-status.js` | Keeps every shown print action current (below). |
-| `Views/Orders/_OrderPrintStatusScripts.cshtml` | Loads the three scripts on the Live Screen and the order details page, only for users with `CanManualPrint`. |
+| `wwwroot/js/orders/orders-live-realtime.js` | Live Screen invalidation (WAS-24, below). |
+| `Views/Orders/_LiveConnectionScripts.cshtml` | Loads the SignalR client and `wasla-realtime.js`: on the Live Screen for every user, on the order details page for `CanManualPrint` users. |
+| `Views/Orders/_OrderPrintStatusScripts.cshtml` | Loads `orders-print-status.js`, only for users with `CanManualPrint`. |
 
 Each print action carries `data-print-action-for` (the order) and `data-print-version` (the version it was rendered or
 last updated at). `orders-print-status.js` reads `GET /orders/{id}/print-state` (Owner, Manager, Cashier; 404 for an
@@ -193,29 +242,56 @@ What the action shows (`_OrderPrintAction.cshtml`, text from SharedResource in t
 proof of paper output. The status text uses Bootstrap's theme-aware `text-success-emphasis` / `text-danger-emphasis`
 colours, is written only when it changes (so it is announced once), and follows the page direction in Arabic.
 
-Sound, browser notifications, new-order detection and order training are not involved: the Live Screen snapshot
-coordinator does not use the channel.
+### Live Screen invalidation (WAS-24)
+
+`orders-live-realtime.js` subscribes to `OrderChanged` on the page's single connection and drives the existing
+snapshot coordinator (`O.liveStore`); it renders nothing itself.
+
+| Connection state | Behavior |
+|------------------|----------|
+| Connected | An `OrderChanged` schedules one `requestRefresh()`: notifications within 150 ms are read together and notification-triggered reads are at least 1 second apart. The coordinator still runs one request at a time with one follow-up. Polling continues every **30 seconds** as a safety net |
+| Connecting, disconnected or reconnecting | Polling every **10 seconds**, as before WAS-24 |
+| Each (re)connect, including after a back/forward-cache restore | One full snapshot read at once (notifications sent meanwhile were missed); a scheduled read is folded into it |
+
+- The polling rate is switched with `setPollingIntervalMs` on the coordinator; a shorter rate reschedules the pending
+  poll at once. Error backoff is unchanged.
+- Older or slower responses never replace newer state: the coordinator's single-flight, generation and mutation guards
+  are unchanged.
+- New-order detection, sound, browser notifications and the "silent first snapshot" baseline stay in the coordinator,
+  so an order is announced once however many invalidations arrive. During isolated order training the snapshot
+  leaves real orders out; an invalidation only updates the real-order count faster. Training is not paused or advanced.
+- `pagehide` disposes the module only when the page is really unloading; a page kept in the back/forward cache keeps
+  it, and the reconnect on `pageshow` reads the snapshot.
+
+The print-status flow does not use the snapshot coordinator, and the Live Screen flow does not use the print-state
+endpoint.
 
 ## Failure behavior
 
 | Situation | Result |
 |-----------|--------|
-| SignalR send fails or times out in Web | Warning with the exception type; the work's result is unchanged; screens catch up by fallback or reconnect |
+| SignalR send fails or times out in Web | Warning with the exception type; the work's result is unchanged; print actions catch up on reconnect or reopen, the Live Screen at its next poll |
 | Web not running or refusing, seen from Worker or Api | One warning, 30-second pause, the work continues; screens catch up when they reconnect to the restarted Web |
-| `Realtime:Internal` not configured | Worker and Api changes are not pushed; open panels show them within 10 seconds only while disconnected, otherwise on reopen or reload |
-| Browser never connects (blocked WebSockets and fallbacks, proxy without upgrade) | Fallback reads every 10 seconds while a print action is shown |
+| `Realtime:Internal` not configured | Worker and Api changes are not pushed. Print actions show them within 10 seconds only while disconnected, otherwise on reopen or reload. The Live Screen shows ingested orders and automatic approvals only at its next poll: **up to 30 seconds while connected**, slower than before WAS-24. Configure the channel wherever the Worker runs |
+| Browser never connects (blocked WebSockets and fallbacks, proxy without upgrade) | Print actions read every 10 seconds while shown; the Live Screen keeps polling every 10 seconds |
 | Session revoked or tenant deactivated while connected | Connection closed at the next check (default 60 s; a deactivated tenant once the 5-minute host cache has expired, as for HTTP); reconnect is refused; the next page request goes to sign-in |
-| Notification lost while the page stays connected | Not repaired until the next notification for that order, a reopen of the panel or a reload (no periodic read while connected) |
+| Notification lost while the page stays connected | Print action: not repaired until the next notification for that order, a reopen of the panel or a reload. Live Screen: repaired at the next poll (30 seconds) |
 
 ## Limitations
 
 - **One Web instance.** No backplane. A second Web instance would need one (and the internal channel would reach only one
   instance). WAS-22 names multi-instance support as a goal; it is not met by this phase.
-- **Not durable, and not repaired while connected.** Notifications are not stored or replayed. Missed ones are covered
-  by the read on reconnect and the fallback while disconnected. A screen that stays connected does not read the state
-  on a timer (by design: the fallback runs only while disconnected), so a notification lost by a failed send leaves
-  the action stale until the next notification of that order, a reopen or a reload. A periodic safety read while
-  connected would close this gap; it is not built.
+- **Not durable.** Notifications are not stored or replayed. Missed ones are covered by the read on reconnect, the
+  fallback while disconnected, and for the Live Screen its 30-second poll while connected. The print action does not
+  read on a timer while connected (WAS-23 decision), so a lost print notification leaves it stale until the next
+  notification of that order, a reopen or a reload.
+- **The Live Screen polls less while connected** (30 seconds instead of 10, as WAS-24 asks for a lower-frequency
+  fallback). Anything that changes the snapshot without an order write (the platform connection badge, automation
+  indicators, the 2-minute Delivered window, a settings change) shows up to 30 seconds later than before while
+  connected. Not measured yet; WAS-24 forbids removing polling without measurements, and the rate is one constant
+  (`CONNECTED_POLLING_MS`, overridable with `connectedPollingIntervalMs`).
+- **Order invalidation is not a sequence** (see [Message and version](#message-and-version)); bursts are coalesced,
+  not deduplicated by version.
 - **The hub send is awaited** (at most 2 seconds) inside the request that recorded the change: a manual print, an
   Approve or a Print Bridge report to Web can take that much longer when a client's connection is slow.
 - **Mixed versions.** A previous Worker or Api running against the migrated schema inserts jobs at version 0 and does
@@ -224,7 +300,8 @@ coordinator does not use the channel.
 - **Worker and Api need `Realtime:Internal`** on the same machine as Web (loopback only).
 - **Concurrency evidence.** Version and single-announcement behavior are tested with SQLite, which serializes writers.
   SQL Server locking of the serializable creation path is the existing behavior and was not re-tested.
-- The Print Bridge devices page, the print history page and the Live Screen cards do not use the channel.
+- The Print Bridge devices page, the print history page, the Orders management page and practice orders do not use
+  the channel.
 
 ## Tests
 
@@ -237,6 +314,14 @@ coordinator does not use the channel.
 - `PrintStatusBrowserTests.cs`: headless Chromium, details page (LTR and RTL) and the Live Screen modal, including the
   disconnected fallback and the read on reconnect.
 - `realtime-client.test.js`, `order-print-status.test.js`: the two browser modules.
+- WAS-24: `OrderChangeNotificationTests.cs` (ingestion insert, update and unchanged; every lifecycle action; refused
+  and failed actions; failing notifier; tenant attribution), `TenantEventsHubTests.cs` (Kitchen and Viewer get order
+  changes but never print status, a Cashier gets both, tenant isolation, Worker ingestion through the loopback listener,
+  revocation of a Kitchen connection), `InternalTenantChangeChannelTests.cs` (the `OrderChanged` message),
+  `live-screen-invalidation.test.js` (coalescing, polling rates, reconnect read, dispose, the coordinator's rate
+  switch) and `LiveScreenRealtimeBrowserTests.cs` (headless Chromium in English and Arabic: push without polling, one
+  announcement per new order through a burst, lifecycle action, disconnected fallback, reconnect, back/forward-cache
+  restore with one connection, order training, a Kitchen screen).
 
 ## Source map
 
@@ -248,4 +333,5 @@ coordinator does not use the channel.
 | Hub, groups, notifier, origin check, revalidation, listener, registration | `src/Wasla.Web/Realtime/` |
 | Print state endpoint | `OrdersController.PrintState` (`GET /orders/{id}/print-state`) |
 | Print action | `Areas/Tenant/Views/Orders/_OrderPrintAction.cshtml`, `Models/Orders/OrderPrintActionModel.cs` |
-| Browser | `wwwroot/js/realtime/wasla-realtime.js`, `wwwroot/js/orders/orders-print-status.js`, `wwwroot/js/orders/orders-print.js` |
+| Order change publishing | `OrderSyncService.UpsertOrderAsync`, `OrderActionService` |
+| Browser | `wwwroot/js/realtime/wasla-realtime.js`, `wwwroot/js/orders/orders-print-status.js`, `wwwroot/js/orders/orders-print.js`, `wwwroot/js/orders/orders-live-realtime.js`, `setIntervalMs` in `orders-live-store.js` |

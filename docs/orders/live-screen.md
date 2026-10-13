@@ -12,7 +12,7 @@
 
 **Live Screen (`/orders/live-display`) is real-time operational handling.**
 
-Current implementation must keep that split. Live Screen intentionally polls. SignalR is **not** used for Live Screen orders; it carries only receipt print status to the detail modal and Focus panel ([../architecture/realtime.md](../architecture/realtime.md)). Do not turn Orders into a second live kitchen surface.
+Current implementation must keep that split. The Live Screen reads one canonical snapshot (`/orders/live-data`). Since WAS-24 a live invalidation (`OrderChanged` over SignalR) makes it read that snapshot as soon as an order is stored or changed, and polling continues as the safety net ([Live invalidation](#live-invalidation-was-24), [../architecture/realtime.md](../architecture/realtime.md)). Do not turn Orders into a second live kitchen surface.
 
 ---
 
@@ -61,7 +61,7 @@ Authorization: Live Screen actions use `CanViewLiveScreen` where applied on thos
 
 `createRefreshCoordinator` in `orders-live-store.js`:
 
-- Default interval: **10000 ms** (`waslaOrdersOptions.pollingIntervalMs` / `orders-core.js` default)
+- Default interval: **10000 ms** (`waslaOrdersOptions.pollingIntervalMs` / `orders-core.js` default). While the live connection is up the interval is **30000 ms** (`CONNECTED_POLLING_MS`, overridable with `connectedPollingIntervalMs`); `setPollingIntervalMs` switches it ([Live invalidation](#live-invalidation-was-24))
 - One in-flight fetch; mutations invalidate and refresh; errors use exponential backoff (cap 30s)
 - First successful snapshot is the **notification baseline** (no sound/notify for pre-existing IDs); so is the first snapshot after the snapshot's training isolation changes (see Order training below)
 - Later polls detect new order IDs, then notify **after** render acceptance (notify failure does not roll back the snapshot)
@@ -92,7 +92,7 @@ The last guided-setup section (`live-screen-demo`) runs here. Guided setup is Ow
 - `wasla-guided-training.js` follows `wasla:live-rendered` (which carries the snapshot's `orders`, `training` and `automation`) forward only and outlines the practice order in Board, List and Focus. Real orders never pause, advance or otherwise change training. Escape hides the panel for this page view only. Provider synchronization and polling never stop for training.
 - **Per-user isolation during order training:** for the Owner who is in order training, `/orders/live-data` leaves real orders out of `orders` (only the practice order remains) and adds `training: { isolated: true, realOrdersReceived }`: how many orders have a `ReceivedAt` at or after that user's guided-setup start, in any status. This depends only on the user being in order training, not on the tenant's operational mode: an Owner training in an already-live restaurant is isolated too, while everyone else keeps the normal snapshot (`training: null`) and the restaurant's automation keeps running. The header counters are unchanged. The page shows the count in one polite status line (`role="status"`) below the training actions: updated in place, never focused, absent at zero, only the number (`GuidedSetup.Training.RealOrders.*`). Real orders are still synchronized and listed on Orders. If the training state cannot be read, the normal snapshot is returned.
 - **Silent first live snapshot:** besides the first snapshot after a page load, the coordinator also treats the first snapshot whose isolation differs from the previous one (entering or leaving isolated training, e.g. the Owner completed or skipped in another tab) as the notification baseline. The orders it reveals get no sound, browser notification or highlight; orders after it are announced as usual. Complete and Skip redirect to the Live Screen, so their first snapshot is a fresh baseline too. Orders that arrived during training then appear by the usual snapshot rules: active ones on the Live Screen, terminal ones only on Orders and in history.
-- Push (SignalR) is still future work; isolation and the count use the existing polling.
+- Isolation and the count come from the same snapshot. A live invalidation for a real order makes the snapshot read sooner, so the count updates within seconds; it never shows the order, plays a sound, or pauses or advances training. Practice orders are not announced live; the countdown's refresh moves them.
 
 ### Customer note and money
 
@@ -123,7 +123,7 @@ Runtime state in `orders-audio.js`: `unknown`, `allowed`, or `blocked`. Page loa
 
 Stop Sound: `#ordersLiveDisplayStopSound`. Browser Notification API runs only if settings allow it and permission is `granted`. The Live Screen settings gear shows read-only status in two labelled groups (`role="group"`): Automation (sync, auto-approve, receipt, and the pending-setup hint) and Notifications (sound). Each value is a pill in the active, off, or waiting-for-setup state. It is a Bootstrap dropdown, so Escape closes it and returns focus to the gear. “Manage settings” opens `/settings/orders`. The notification modal is not on the Orders header.
 
-**Automation indicators (effective state):** for every Live Screen user (`CanViewLiveScreen`: Owner, Manager, Kitchen, Cashier, Viewer), each `/orders/live-data` snapshot carries `automation: { orderSync, autoApprove, autoReceipt }`, each `Active`, `Off` or `PendingSetup`, computed on the server from the resolved tenant's settings row (`ITenantOperationalModeService`). It is read-only operational status; the settings themselves stay behind `TenantManagerOrOwner`, and only those users see “Manage settings”. The indicators show `…` until the first snapshot arrives. `PendingSetup` means configured on while the tenant is in Setup ([../product/onboarding.md](../product/onboarding.md#configured-and-effective-automation)): it is shown as `Orders.Automation.PendingSetup` in a warning tone (neither the green Active nor the Off look), with the visible explanation `Orders.Automation.PendingSetupDescription`. Order sync is never pending, because Setup does not stop ingestion. `orders-automation-status.js` only displays the section from `wasla:live-rendered`; it sends no request and infers nothing from the page. Each poll refreshes it, so completing or skipping guided setup in another tab shows on the next snapshot without a reload. The section never takes part in new-order detection, so the change plays no sound, shows no notification and highlights nothing. If the status cannot be read, the snapshot is returned without it and the indicators keep their last state. Push (SignalR) is still future work.
+**Automation indicators (effective state):** for every Live Screen user (`CanViewLiveScreen`: Owner, Manager, Kitchen, Cashier, Viewer), each `/orders/live-data` snapshot carries `automation: { orderSync, autoApprove, autoReceipt }`, each `Active`, `Off` or `PendingSetup`, computed on the server from the resolved tenant's settings row (`ITenantOperationalModeService`). It is read-only operational status; the settings themselves stay behind `TenantManagerOrOwner`, and only those users see “Manage settings”. The indicators show `…` until the first snapshot arrives. `PendingSetup` means configured on while the tenant is in Setup ([../product/onboarding.md](../product/onboarding.md#configured-and-effective-automation)): it is shown as `Orders.Automation.PendingSetup` in a warning tone (neither the green Active nor the Off look), with the visible explanation `Orders.Automation.PendingSetupDescription`. Order sync is never pending, because Setup does not stop ingestion. `orders-automation-status.js` only displays the section from `wasla:live-rendered`; it sends no request and infers nothing from the page. Each poll refreshes it, so completing or skipping guided setup in another tab shows on the next snapshot without a reload. The section never takes part in new-order detection, so the change plays no sound, shows no notification and highlights nothing. If the status cannot be read, the snapshot is returned without it and the indicators keep their last state. A settings change is not announced live: while the live connection is up it shows at the next 30-second poll.
 
 ### Platform connection status (header)
 
@@ -149,6 +149,15 @@ Per connection, the classification is `ProviderConnectionHealthRules.Classify` (
 
 **Implementation quirk:** `localStorage` key `Wasla.soundUnlocked` is written when unlock succeeds and is not read on load. It is a cleanup candidate, not part of the audio contract.
 
+### Live invalidation (WAS-24)
+
+`orders-live-realtime.js` connects the page's single live connection (`wasla-realtime.js`, loaded for every Live Screen user through `_LiveConnectionScripts`) to the snapshot coordinator. Details: [../architecture/realtime.md](../architecture/realtime.md#live-screen-invalidation-was-24).
+
+- The hub joins every Live Screen user (`CanViewLiveScreen`) to the tenant's `live-screen` group; Kitchen and Viewer do not get print status.
+- An `OrderChanged` (an ingested order, an operator action, automatic approval) calls `liveStore.requestRefresh()`. Notifications within 150 ms are read together; notification reads are at least 1 s apart; the coordinator keeps one request in flight with one follow-up.
+- Connected: polling every 30 s. Not connected: every 10 s. Every (re)connect, including a back/forward-cache restore, reads the snapshot at once.
+- Nothing in the notification is rendered. New-order detection, sound, browser notifications, highlight, the silent baseline and training isolation run exactly as for a poll, so a new order is announced once.
+
 ### Responsive / RTL / motion
 
 - Live layout: `_OrdersDisplayLayout` sets `lang` / `dir` (Arabic → RTL) and loads `rtl.css`
@@ -171,7 +180,7 @@ Per connection, the classification is `ProviderConnectionHealthRules.Classify` (
 2. **No duplicate view DOM** — only the selected Board/List/Focus tree is rendered in the host.
 3. **No details DOM per card** — lazy modal / Focus panel only.
 4. **No polling per view** — one snapshot coordinator for the page.
-5. **Polling remains** until a deliberate SignalR (or other push) phase; Live Screen polling stays canonical until then.
+5. **Polling remains** as the safety net (10 s while not connected, 30 s while connected). Do not remove it without measurements (WAS-24). The snapshot stays the only source the Live Screen renders.
 6. Do not put Notification Settings back on the Orders header; operational attention stays Live Screen / settings routes.
 
 ---
@@ -179,7 +188,8 @@ Per connection, the classification is `ProviderConnectionHealthRules.Classify` (
 ## Future
 
 - Optional push for order deltas; even then, reconciliation polling would likely remain (see PrintJob future note for the same reliability pattern).
-- Order push (WAS-24) is not built. Receipt print status in the detail modal and Focus panel is live since WAS-23 ([../architecture/realtime.md](../architecture/realtime.md)).
+- Order deltas instead of invalidation, if snapshot reads ever need to shrink (not measured yet).
+- A connected polling rate chosen from measurements (30 s is a starting value).
 
 ---
 
@@ -191,6 +201,7 @@ Per connection, the classification is `ProviderConnectionHealthRules.Classify` (
 | Live page | `…/Views/Orders/LiveDisplay.cshtml`, `_OrdersDisplayLayout.cshtml` |
 | Snapshot | `src/Wasla.Infrastructure/Services/OrderReadService.cs` |
 | Coordinator + render | `wwwroot/js/orders/orders-live-store.js` |
+| Live invalidation | `wwwroot/js/orders/orders-live-realtime.js`, `Views/Orders/_LiveConnectionScripts.cshtml` |
 | View mode | `wwwroot/js/orders/orders-live-view.js` |
 | Detail modal | `wwwroot/js/orders/orders-live-detail-modal.js` |
 | Page init | `wwwroot/js/orders/orders-live-display-page.js` |

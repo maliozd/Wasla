@@ -108,7 +108,7 @@ Sync iterates each tenant's platform connections. Each tenant may have at most o
 ## Future
 
 - Shared prepare provider hook for `Preparing` (commented as deferred in `OrderActionService`).
-- Order push to the Live Screen (WAS-24). Live receipt print status exists ([../architecture/realtime.md](../architecture/realtime.md)); Live Screen polling is unrelated and remains canonical.
+- Every successful lifecycle action and every ingested order change is announced to open Live Screens as an invalidation after its save ([../architecture/realtime.md](../architecture/realtime.md#where-order-changes-are-published-was-24)); the snapshot stays canonical.
 
 ---
 
