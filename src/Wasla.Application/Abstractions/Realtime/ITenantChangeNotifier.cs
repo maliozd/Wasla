@@ -25,3 +25,17 @@ public sealed record PrintJobChanged(Guid OrderId, Guid PrintJobId, PrintJobStat
 {
     public const string TypeName = nameof(PrintJobChanged);
 }
+
+/// <summary>
+/// An order was stored or changed (ingestion, a lifecycle action or automatic approval), so the Live Screen snapshot
+/// may differ. An invalidation only: screens read the snapshot again. <paramref name="Version"/> is the order's stored
+/// <c>UpdatedAt</c> as Unix milliseconds (UTC): when the change was written. It identifies the change; it is not a
+/// sequence a screen may use to skip reading, because writers in different processes stamp it independently.
+/// </summary>
+public sealed record OrderChanged(Guid OrderId, long Version) : TenantChange
+{
+    public const string TypeName = nameof(OrderChanged);
+
+    public static OrderChanged For(Guid orderId, DateTime updatedAtUtc) =>
+        new(orderId, new DateTimeOffset(DateTime.SpecifyKind(updatedAtUtc, DateTimeKind.Utc)).ToUnixTimeMilliseconds());
+}
