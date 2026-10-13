@@ -250,4 +250,23 @@ public static class InternalRealtimeServiceCollectionExtensions
         services.AddSingleton<ITenantChangeNotifier, WebTenantChangeNotifier>();
         return services;
     }
+
+    /// <summary>
+    /// Logs at startup whether this process's changes reach Wasla.Web, so a missing <c>Realtime:Internal</c> never
+    /// silently turns off live Live Screen and print status updates for them.
+    /// </summary>
+    public static void LogWebTenantChangeChannel(this IServiceProvider services, IConfiguration configuration, string process)
+    {
+        var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.Realtime");
+        if (InternalRealtimeOptions.Read(configuration).IsEnabled)
+        {
+            logger.LogInformation("{Process} sends live change notifications to Wasla.Web over the loopback channel.", process);
+            return;
+        }
+
+        logger.LogWarning(
+            "{Process}: {Section} is not configured, so changes made here (orders, automatic approvals, receipts, Print Bridge reports) are not pushed to open screens; they show at the screens' next poll. See docs/operations/deployment.md#live-notifications.",
+            process,
+            InternalRealtimeOptions.SectionName);
+    }
 }

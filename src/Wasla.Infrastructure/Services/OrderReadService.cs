@@ -225,6 +225,7 @@ public sealed class OrderReadService : IOrderReadService
                 o.CustomerAddress,
                 o.CustomerNote,
                 o.TotalAmount,
+                o.ChangeVersion,
                 Items = o.Items
                     .OrderBy(i => i.Id)
                     .Select(i => new LiveScreenLineItemDto(i.ProductName, i.Quantity, i.Notes))
@@ -243,7 +244,7 @@ public sealed class OrderReadService : IOrderReadService
             o.CustomerAddress ?? string.Empty,
             string.IsNullOrWhiteSpace(o.CustomerNote) ? null : o.CustomerNote.Trim(),
             o.TotalAmount,
-            o.Items)).ToList();
+            o.Items) { ChangeVersion = o.ChangeVersion }).ToList();
 
         var utcServer = SpecifyUtc(serverTimeUtc);
         var turkeyToday = DateOnly.FromDateTime(

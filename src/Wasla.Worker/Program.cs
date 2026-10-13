@@ -47,6 +47,7 @@ builder.Services.AddSingleton<GuidedDemoSchedule>();
 builder.Services.AddHostedService<GuidedDemoScheduler>();
 
 var host = builder.Build();
+host.Services.LogWebTenantChangeChannel(builder.Configuration, "Wasla.Worker");
 
 await host.RunAsync();
 

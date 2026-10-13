@@ -48,11 +48,12 @@ public sealed class OrderActionService : IOrderActionService
         if (newStatus == OrderStatus.Accepted) order.AcceptedAt ??= DateTime.UtcNow;
         if (newStatus == OrderStatus.Cancelled) order.CancelledAt ??= DateTime.UtcNow;
 
-        var rows = await db.SaveChangesAsync(ct);
-        _logger.LogInformation("Order action updated status: orderId={OrderId} newStatus={NewStatus} rows={Rows}", orderId, newStatus, rows);
-        if (rows > 0)
-            await PublishChangedAsync(customerId, order);
-        return rows > 0;
+        var version = await SaveWithNextVersionAsync(db, order, ct);
+        _logger.LogInformation("Order action updated status: orderId={OrderId} newStatus={NewStatus} saved={Saved}", orderId, newStatus, version is not null);
+        if (version is not { } changed)
+            return false;
+        await PublishChangedAsync(customerId, order.Id, changed);
+        return true;
     }
 
     public async Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct)
@@ -115,10 +116,10 @@ public sealed class OrderActionService : IOrderActionService
         if (target == OrderStatus.Accepted) order.AcceptedAt ??= DateTime.UtcNow;
         if (target == OrderStatus.Cancelled) order.CancelledAt ??= DateTime.UtcNow;
 
-        var rows = await db.SaveChangesAsync(ct);
-        if (rows <= 0) return new OrderActionResult(false, "Orders.ActionFailed");
+        if (await SaveWithNextVersionAsync(db, order, ct) is not { } version)
+            return new OrderActionResult(false, "Orders.ActionFailed");
 
-        await PublishChangedAsync(customerId, order);
+        await PublishChangedAsync(customerId, order.Id, version);
         return new OrderActionResult(true, target == OrderStatus.Accepted ? "Orders.ApproveSuccess" : "Orders.RejectSuccess");
     }
 
@@ -242,15 +243,34 @@ public sealed class OrderActionService : IOrderActionService
         if (nextStatus == OrderStatus.Delivered)
             order.DeliveredAt ??= DateTime.UtcNow;
 
-        var rows = await db.SaveChangesAsync(ct);
-        if (rows <= 0) return new OrderActionResult(false, "Orders.ActionFailed");
+        if (await SaveWithNextVersionAsync(db, order, ct) is not { } version)
+            return new OrderActionResult(false, "Orders.ActionFailed");
 
-        await PublishChangedAsync(customerId, order);
+        await PublishChangedAsync(customerId, order.Id, version);
         return new OrderActionResult(true, successKey);
     }
 
+    /// <summary>
+    /// Saves the order's change and raises its <c>ChangeVersion</c> in one short transaction (provider calls happen
+    /// before it), and returns the new version; null when the save changed nothing, in which case nothing is committed.
+    /// </summary>
+    private static async Task<long?> SaveWithNextVersionAsync(TenantDbContext db, Order order, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var rows = await db.SaveChangesAsync(ct);
+        if (rows <= 0)
+        {
+            await tx.RollbackAsync(ct);
+            return null;
+        }
+
+        var version = await OrderChangeVersions.NextAsync(db, order.Id, ct);
+        await tx.CommitAsync(ct);
+        return version;
+    }
+
     // After the save committed the status change: open Live Screens read their snapshot again. Never fails the action.
-    private Task PublishChangedAsync(Guid customerId, Order order) =>
-        TenantChangePublisher.PublishAsync(_notifier, customerId, OrderChanged.For(order.Id, order.UpdatedAt), _logger);
+    private Task PublishChangedAsync(Guid customerId, Guid orderId, long version) =>
+        TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(orderId, version), _logger);
 }
 
