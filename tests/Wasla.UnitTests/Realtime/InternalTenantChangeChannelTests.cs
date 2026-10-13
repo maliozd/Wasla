@@ -74,6 +74,47 @@ public sealed class InternalTenantChangeChannelTests
     }
 
     [Fact]
+    public void OrderChangedMessage_RoundTrips_WithoutPrintFields_AndRefusesThemWhenPresent()
+    {
+        var tenant = Guid.NewGuid();
+        var change = new OrderChanged(Guid.NewGuid(), 1_760_000_000_123);
+        var message = InternalTenantChangeMessage.From(tenant, change);
+
+        Assert.Null(message.PrintJobId);
+        Assert.Null(message.Status);
+        Assert.True(message.TryRead(out var readTenant, out var readChange));
+        Assert.Equal(tenant, readTenant);
+        Assert.Equal(change, readChange);
+
+        Assert.False((message with { PrintJobId = Guid.NewGuid() }).TryRead(out _, out _));
+        Assert.False((message with { Status = "Printed" }).TryRead(out _, out _));
+        Assert.False((message with { Version = 0 }).TryRead(out _, out _));
+        Assert.False((message with { OrderId = Guid.Empty }).TryRead(out _, out _));
+        Assert.False((message with { TenantId = Guid.Empty }).TryRead(out _, out _));
+        // A print change must keep its print fields.
+        var print = InternalTenantChangeMessage.From(tenant, new PrintJobChanged(Guid.NewGuid(), Guid.NewGuid(), PrintJobStatus.Pending, 1));
+        Assert.False((print with { PrintJobId = null }).TryRead(out _, out _));
+        Assert.False((print with { Status = null }).TryRead(out _, out _));
+    }
+
+    [Fact]
+    public async Task Sender_CarriesOrderChanges_OnlyWithTheirIdentifiers()
+    {
+        await using var listener = await FakeWebListener.StartAsync(HttpStatusCode.Accepted, delay: TimeSpan.Zero);
+        var notifier = CreateSender(listener.Port, out _);
+        var tenant = Guid.NewGuid();
+        var change = new OrderChanged(Guid.NewGuid(), 1_760_000_000_456);
+
+        await notifier.NotifyAsync(tenant, change, Ct);
+
+        var request = Assert.Single(listener.Requests);
+        var body = JsonSerializer.Deserialize<InternalTenantChangeMessage>(request.Body, new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        Assert.True(body.TryRead(out var readTenant, out var readChange));
+        Assert.Equal(tenant, readTenant);
+        Assert.Equal(change, readChange);
+    }
+
+    [Fact]
     public async Task Sender_PostsTheNotificationWithTheSecret_ToTheLoopbackListener()
     {
         await using var listener = await FakeWebListener.StartAsync(HttpStatusCode.Accepted, delay: TimeSpan.Zero);

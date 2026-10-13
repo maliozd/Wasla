@@ -78,14 +78,91 @@ public sealed class TenantEventsHubTests
     [Theory]
     [InlineData(UserRole.Kitchen)]
     [InlineData(UserRole.Viewer)]
-    public async Task UsersWhoCannotPrintManually_CannotConnect(UserRole role)
+    public async Task LiveScreenOnlyRoles_ReceiveOrderChanges_ButNeverPrintStatus(UserRole role)
     {
         await using var host = await TenantSessionWebHost.StartAsync();
         using var client = await SignInAsync(host, TenantSessionWebHost.AlphaHost, host.AlphaId, role);
+        await using var live = await ConnectAsync(host, client);
+        var notifier = host.Services.GetRequiredService<ITenantChangeNotifier>();
 
-        var negotiate = await NegotiateAsync(client);
-        Assert.NotEqual(HttpStatusCode.OK, negotiate.StatusCode);
-        await Assert.ThrowsAnyAsync<Exception>(() => ConnectAsync(host, client));
+        // Print status (CanManualPrint) is not this role's stream; the order change that follows arrives first.
+        await notifier.NotifyAsync(host.AlphaId, new PrintJobChanged(Guid.NewGuid(), Guid.NewGuid(), PrintJobStatus.Pending, 1), Ct);
+        var order = new OrderChanged(Guid.NewGuid(), 1_760_000_000_000);
+        await notifier.NotifyAsync(host.AlphaId, order, Ct);
+
+        AssertOrderMessage(order, await live.NextAsync());
+    }
+
+    [Fact]
+    public async Task ARoleWithBothStreams_ReceivesBoth_EachInItsOwnShape()
+    {
+        await using var host = await TenantSessionWebHost.StartAsync();
+        using var cashier = await SignInAsync(host, TenantSessionWebHost.AlphaHost, host.AlphaId, UserRole.Cashier);
+        await using var live = await ConnectAsync(host, cashier);
+        var notifier = host.Services.GetRequiredService<ITenantChangeNotifier>();
+        var print = new PrintJobChanged(Guid.NewGuid(), Guid.NewGuid(), PrintJobStatus.Printing, 2);
+        var order = new OrderChanged(Guid.NewGuid(), 1_760_000_000_001);
+
+        await notifier.NotifyAsync(host.AlphaId, print, Ct);
+        await notifier.NotifyAsync(host.AlphaId, order, Ct);
+
+        AssertMessage(print, await live.NextAsync());
+        var message = await live.NextAsync();
+        AssertOrderMessage(order, message);
+        // An order change carries no status, customer, items or amounts.
+        Assert.Equal(["orderId", "type", "version"], message.EnumerateObject().Select(p => p.Name).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task OrderChanges_StayInTheirTenant()
+    {
+        await using var host = await TenantSessionWebHost.StartAsync();
+        using var alpha = await SignInAsync(host, TenantSessionWebHost.AlphaHost, host.AlphaId, UserRole.Kitchen);
+        using var beta = await SignInAsync(host, TenantSessionWebHost.BetaHost, host.BetaId, UserRole.Kitchen);
+        await using var alphaLive = await ConnectAsync(host, alpha);
+        await using var betaLive = await ConnectAsync(host, beta);
+        var notifier = host.Services.GetRequiredService<ITenantChangeNotifier>();
+        var forAlpha = new OrderChanged(Guid.NewGuid(), 10);
+        var forBeta = new OrderChanged(Guid.NewGuid(), 20);
+
+        await notifier.NotifyAsync(host.BetaId, forBeta, Ct);
+        await notifier.NotifyAsync(host.AlphaId, forAlpha, Ct);
+
+        // In-order delivery per connection: each one's first message is its own tenant's.
+        AssertOrderMessage(forAlpha, await alphaLive.NextAsync());
+        AssertOrderMessage(forBeta, await betaLive.NextAsync());
+    }
+
+    [Fact]
+    public async Task AnOrderIngestedByTheWorker_ReachesTheTenantsLiveScreens_ThroughTheLoopbackListener()
+    {
+        var internalPort = InternalTenantChangeChannelTests.FreeLoopbackPort();
+        var channel = new Dictionary<string, string?>
+        {
+            ["Realtime:Internal:Port"] = internalPort.ToString(CultureInfo.InvariantCulture),
+            ["Realtime:Internal:Secret"] = Secret
+        };
+        await using var host = await TenantSessionWebHost.StartAsync(configuration: channel);
+        using var alpha = await SignInAsync(host, TenantSessionWebHost.AlphaHost, host.AlphaId, UserRole.Viewer);
+        using var beta = await SignInAsync(host, TenantSessionWebHost.BetaHost, host.BetaId, UserRole.Viewer);
+        await using var alphaLive = await ConnectAsync(host, alpha);
+        await using var betaLive = await ConnectAsync(host, beta);
+
+        // The Worker's composition: the real sync service with the internal channel notifier, over the tenant database.
+        var workerServices = new ServiceCollection().AddLogging().AddSingleton(TimeProvider.System)
+            .AddWaslaWebTenantChangeNotifier(new ConfigurationBuilder().AddInMemoryCollection(channel).Build())
+            .BuildServiceProvider();
+        OrderChangeFixtures.SeedSyncableTenant(host.Tenants, host.AlphaId);
+        var provider = new ScriptedPlatformClient(FoodPlatform.TrendyolYemek);
+        provider.Returns(OrderChangeFixtures.External("WORKER-1"));
+        await OrderChangeFixtures.Sync(host.Tenants, provider, workerServices.GetRequiredService<ITenantChangeNotifier>())
+            .SyncCustomerAsync(host.AlphaId, Ct);
+
+        var order = await OrderChangeFixtures.ReadOrderAsync(host.Tenants, host.AlphaId, "WORKER-1");
+        AssertOrderMessage(OrderChanged.For(order.Id, order.UpdatedAt), await alphaLive.NextAsync());
+        var forBeta = new OrderChanged(Guid.NewGuid(), 5);
+        await host.Services.GetRequiredService<ITenantChangeNotifier>().NotifyAsync(host.BetaId, forBeta, Ct);
+        AssertOrderMessage(forBeta, await betaLive.NextAsync());
     }
 
     [Fact]
@@ -154,16 +231,18 @@ public sealed class TenantEventsHubTests
     }
 
     [Theory]
-    [InlineData("deactivated")]
-    [InlineData("demoted")]
-    [InlineData("password reset")]
-    public async Task AnOpenConnection_IsClosed_WhenTheSessionIsNoLongerValid(string change)
+    [InlineData("deactivated", UserRole.Manager)]
+    [InlineData("demoted", UserRole.Manager)]
+    [InlineData("password reset", UserRole.Manager)]
+    [InlineData("deactivated", UserRole.Kitchen)]
+    [InlineData("demoted", UserRole.Kitchen)]
+    public async Task AnOpenConnection_IsClosed_WhenTheSessionIsNoLongerValid(string change, UserRole role)
     {
         await using var host = await TenantSessionWebHost.StartAsync(configuration: new Dictionary<string, string?>
         {
             ["Realtime:SessionRevalidationSeconds"] = "1"
         });
-        var user = host.SeedUser(host.AlphaId, $"{Guid.NewGuid():N}@alpha.test", UserRole.Manager);
+        var user = host.SeedUser(host.AlphaId, $"{Guid.NewGuid():N}@alpha.test", role);
         using var client = host.Client(TenantSessionWebHost.AlphaHost);
         await client.LoginAsync(user.Email);
         await using var live = await ConnectAsync(host, client);
@@ -177,7 +256,7 @@ public sealed class TenantEventsHubTests
             switch (change)
             {
                 case "deactivated": u.IsActive = false; break;
-                case "demoted": u.Role = UserRole.Kitchen; break;
+                case "demoted": u.Role = role == UserRole.Kitchen ? UserRole.Viewer : UserRole.Kitchen; break;
                 default: u.SecurityStamp = Guid.NewGuid(); break;
             }
         });
@@ -314,6 +393,13 @@ public sealed class TenantEventsHubTests
         Assert.Equal(outcome, body.GetProperty("outcome").GetString());
     }
 
+    private static void AssertOrderMessage(OrderChanged expected, JsonElement message)
+    {
+        Assert.Equal("OrderChanged", message.GetProperty("type").GetString());
+        Assert.Equal(expected.OrderId, message.GetProperty("orderId").GetGuid());
+        Assert.Equal(expected.Version, message.GetProperty("version").GetInt64());
+    }
+
     private static void AssertMessage(PrintJobChanged expected, JsonElement message)
     {
         Assert.Equal("PrintJobChanged", message.GetProperty("type").GetString());
@@ -358,6 +444,9 @@ public sealed class TenantEventsHubTests
             })
             .Build();
         connection.On<JsonElement>(TenantEventsHub.ClientMethod, message => received.Writer.TryWrite(message));
+        // Groups are joined after the handshake; the hub says when, and only then is the connection ready to receive.
+        var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.On(TenantEventsHub.ReadyMethod, () => ready.TrySetResult());
         connection.Closed += _ =>
         {
             closed.TrySetResult();
@@ -366,6 +455,7 @@ public sealed class TenantEventsHubTests
         try
         {
             await connection.StartAsync(Ct);
+            await ready.Task.WaitAsync(Wait, Ct);
         }
         catch
         {

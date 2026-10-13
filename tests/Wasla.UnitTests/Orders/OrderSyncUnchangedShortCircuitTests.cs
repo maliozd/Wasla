@@ -14,6 +14,7 @@ using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 
@@ -531,7 +532,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         await SyncAsync(sync, order);
         var ready = await ReadAsync(order.ExternalOrderId);
         Assert.Equal(OrderStatus.ReadyForPickup, ready.InternalStatus);
-        var actions = new OrderActionService(_db, [_client], NullLogger<OrderActionService>.Instance);
+        var actions = new OrderActionService(_db, [_client], NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
 
         // Pickup: refused before any provider call or status change; provider sync applies it.
         var manualPickup = await actions.MarkOnTheWayAsync(_tenantId, ready.Id, CancellationToken);

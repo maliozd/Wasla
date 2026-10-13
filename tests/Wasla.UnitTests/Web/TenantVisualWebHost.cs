@@ -51,6 +51,7 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
     public static readonly Guid NewOwnerId = Guid.Parse("81000000-0000-4000-8000-000000000002");
     public static readonly Guid ResumingOwnerId = Guid.Parse("81000000-0000-4000-8000-000000000003");
     public static readonly Guid DetailOrderId = Guid.Parse("81000000-0000-4000-8000-0000000000a1");
+    public static readonly Guid KitchenUserId = Guid.Parse("81000000-0000-4000-8000-000000000004");
 
     private readonly WebApplication _app;
     private readonly string _contentRoot;
@@ -218,20 +219,22 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
 
         app.MapGet(SignInPath, async (HttpContext http) =>
         {
-            // ?as=new or ?as=resume signs in one of the Owners seeded for a tenant in setup.
+            // ?as=new or ?as=resume signs in one of the Owners seeded for a tenant in setup; ?as=kitchen a Kitchen user.
             var userId = http.Request.Query["as"].ToString() switch
             {
                 "new" => NewOwnerId,
                 "resume" => ResumingOwnerId,
+                "kitchen" => KitchenUserId,
                 _ => OwnerId
             };
+            var role = userId == KitchenUserId ? UserRole.Kitchen : UserRole.Owner;
             var identity = new ClaimsIdentity(
                 [
                     new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                     new Claim(ClaimTypes.Name, "Visual Owner"),
                     new Claim(ClaimTypes.Email, "owner@visual.test"),
                     new Claim("TenantId", TenantId.ToString()),
-                    new Claim(ClaimTypes.Role, nameof(UserRole.Owner))
+                    new Claim(ClaimTypes.Role, role.ToString())
                 ],
                 AuthSchemes.Tenant);
             await http.SignInAsync(AuthSchemes.Tenant, new ClaimsPrincipal(identity));
