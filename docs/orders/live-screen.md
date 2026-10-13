@@ -154,8 +154,9 @@ Per connection, the classification is `ProviderConnectionHealthRules.Classify` (
 `orders-live-realtime.js` connects the page's single live connection (`wasla-realtime.js`, loaded for every Live Screen user through `_LiveConnectionScripts`) to the snapshot coordinator. Details: [../architecture/realtime.md](../architecture/realtime.md#live-screen-invalidation-was-24).
 
 - The hub joins every Live Screen user (`CanViewLiveScreen`) to the tenant's `live-screen` group; Kitchen and Viewer do not get print status.
-- An `OrderChanged` (an ingested order, an operator action, automatic approval) calls `liveStore.requestRefresh()`. Notifications within 150 ms are read together; notification reads are at least 1 s apart; the coordinator keeps one request in flight with one follow-up.
+- An `OrderChanged` (an ingested order, an operator action, automatic approval) carries the order's `ChangeVersion`; each snapshot order carries its `changeVersion` too. When the snapshot on screen already shows the order at that version or later, nothing is read; otherwise it calls `liveStore.requestRefresh()`. Notifications within 150 ms are read together; notification reads are at least 1 s apart; the coordinator keeps one request in flight with one follow-up.
 - Connected: polling every 30 s. Not connected: every 10 s. Every (re)connect, including a back/forward-cache restore, reads the snapshot at once.
+- The page is "connected" only after the hub's `tenantEventsReady` (sent once the groups are joined), so the read on (re)connect cannot miss a change made just before the join.
 - Nothing in the notification is rendered. New-order detection, sound, browser notifications, highlight, the silent baseline and training isolation run exactly as for a poll, so a new order is announced once.
 
 ### Responsive / RTL / motion
