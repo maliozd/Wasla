@@ -42,6 +42,24 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
         return BuildState(await LoadReceiptJobsAsync(db, orderId, ct).ConfigureAwait(false));
     }
 
+    public async Task<OrderReceiptPrintState?> FindReceiptPrintStateAsync(
+        Guid customerId,
+        Guid orderId,
+        CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+
+        // Tenant isolation: the order is looked up inside this tenant's database only.
+        var orderExists = await db.Orders
+            .AsNoTracking()
+            .AnyAsync(o => o.Id == orderId, ct)
+            .ConfigureAwait(false);
+
+        return orderExists
+            ? BuildState(await LoadReceiptJobsAsync(db, orderId, ct).ConfigureAwait(false))
+            : null;
+    }
+
     public async Task<ManualOrderPrintResult> QueueReceiptPrintAsync(
         Guid customerId,
         Guid orderId,
@@ -174,9 +192,11 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
         var canReprint = !hasActive
             && jobs.Any(j => j.Status is PrintJobStatus.Printed or PrintJobStatus.Failed);
 
-        return new OrderReceiptPrintState(jobs[0].Status, hasActive, canReprint);
+        return new OrderReceiptPrintState(jobs[0].Status, hasActive, canReprint, jobs[0].StatusVersion);
     }
 
+    // Newest first by the order-scoped StatusVersion; jobs created before it existed all have 0 and keep the
+    // CreatedAt order.
     private static async Task<IReadOnlyList<ReceiptJobRow>> LoadReceiptJobsAsync(
         TenantDbContext db,
         Guid orderId,
@@ -184,11 +204,12 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
         await db.PrintJobs
             .AsNoTracking()
             .Where(j => j.OrderId == orderId && j.Type == PrintJobType.Receipt)
-            .OrderByDescending(j => j.CreatedAt)
+            .OrderByDescending(j => j.StatusVersion)
+            .ThenByDescending(j => j.CreatedAt)
             .ThenByDescending(j => j.Id)
-            .Select(j => new ReceiptJobRow(j.Id, j.Status))
+            .Select(j => new ReceiptJobRow(j.Id, j.Status, j.StatusVersion))
             .ToListAsync(ct)
             .ConfigureAwait(false);
 
-    private sealed record ReceiptJobRow(Guid Id, PrintJobStatus Status);
+    private sealed record ReceiptJobRow(Guid Id, PrintJobStatus Status, long StatusVersion);
 }

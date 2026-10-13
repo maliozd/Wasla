@@ -2,10 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Printing;
+using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -13,15 +15,18 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
 {
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly IReceiptTemplateSettingsService _templateSettings;
+    private readonly ITenantChangeNotifier _notifier;
     private readonly ILogger<PrintJobHistoryService> _logger;
 
     public PrintJobHistoryService(
         ITenantDbContextFactory dbFactory,
         IReceiptTemplateSettingsService templateSettings,
+        ITenantChangeNotifier notifier,
         ILogger<PrintJobHistoryService> logger)
     {
         _dbFactory = dbFactory;
         _templateSettings = templateSettings;
+        _notifier = notifier;
         _logger = logger;
     }
 
@@ -154,6 +159,7 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
         var payloadJson = ReceiptPayloadBuilder.Build(order, tenantDisplayName, template);
 
         var nowUtc = DateTime.UtcNow;
+        var statusVersion = await PrintJobStatusVersions.NextForNewJobAsync(db, source.OrderId, ct).ConfigureAwait(false);
 
         var job = new PrintJob
         {
@@ -164,7 +170,8 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
             PayloadJson = payloadJson,
             AttemptCount = 0,
             CreatedAt = nowUtc,
-            UpdatedAt = nowUtc
+            UpdatedAt = nowUtc,
+            StatusVersion = statusVersion
         };
 
         db.PrintJobs.Add(job);
@@ -193,6 +200,13 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
             printJobId,
             job.Id,
             source.OrderId);
+
+        await TenantChangePublisher.PublishAsync(
+                _notifier,
+                customerId,
+                new PrintJobChanged(source.OrderId, job.Id, job.Status, job.StatusVersion),
+                _logger)
+            .ConfigureAwait(false);
 
         return new ReprintReceiptResult(true, "PrintBridge.ReprintCreated", job.Id);
     }

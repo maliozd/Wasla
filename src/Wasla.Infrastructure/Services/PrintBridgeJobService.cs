@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -13,11 +15,16 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
     private const string JobNotPrintingKey = "PrintBridge.JobNotPrinting";
 
     private readonly ITenantDbContextFactory _dbFactory;
+    private readonly ITenantChangeNotifier _notifier;
     private readonly ILogger<PrintBridgeJobService> _logger;
 
-    public PrintBridgeJobService(ITenantDbContextFactory dbFactory, ILogger<PrintBridgeJobService> logger)
+    public PrintBridgeJobService(
+        ITenantDbContextFactory dbFactory,
+        ITenantChangeNotifier notifier,
+        ILogger<PrintBridgeJobService> logger)
     {
         _dbFactory = dbFactory;
+        _notifier = notifier;
         _logger = logger;
     }
 
@@ -79,6 +86,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
                     .SetProperty(j => j.LockedByInstallationId, lockedByInstallationId)
                     .SetProperty(j => j.LastAttemptAt, now)
                     .SetProperty(j => j.AttemptCount, j => j.AttemptCount + 1)
+                    .SetProperty(j => j.StatusVersion, j => j.StatusVersion + 1)
                     .SetProperty(j => j.UpdatedAt, now),
                 ct)
             .ConfigureAwait(false);
@@ -90,6 +98,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
                 customerId,
                 jobId,
                 safeLockedBy);
+            await PublishCurrentStateAsync(db, customerId, jobId).ConfigureAwait(false);
             return new PrintJobClaimResponse(PrintJobClaimResult.Claimed, "PrintBridge.JobClaimed");
         }
 
@@ -118,6 +127,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
                     .SetProperty(j => j.Status, PrintJobStatus.Printed)
                     .SetProperty(j => j.PrintedAt, now)
                     .SetProperty(j => j.ErrorMessage, (string?)null)
+                    .SetProperty(j => j.StatusVersion, j => j.StatusVersion + 1)
                     .SetProperty(j => j.UpdatedAt, now),
                 ct)
             .ConfigureAwait(false);
@@ -128,6 +138,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
                 "Print job marked printed. CustomerId={CustomerId}, JobId={JobId}",
                 customerId,
                 jobId);
+            await PublishCurrentStateAsync(db, customerId, jobId).ConfigureAwait(false);
             return new PrintJobClaimResponse(PrintJobClaimResult.Claimed, "PrintBridge.JobPrinted");
         }
 
@@ -154,6 +165,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
                 s => s
                     .SetProperty(j => j.Status, PrintJobStatus.Failed)
                     .SetProperty(j => j.ErrorMessage, safeError)
+                    .SetProperty(j => j.StatusVersion, j => j.StatusVersion + 1)
                     .SetProperty(j => j.UpdatedAt, now),
                 ct)
             .ConfigureAwait(false);
@@ -165,6 +177,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
                 customerId,
                 jobId,
                 safeError);
+            await PublishCurrentStateAsync(db, customerId, jobId).ConfigureAwait(false);
             return new PrintJobClaimResponse(PrintJobClaimResult.Claimed, "PrintBridge.JobFailed");
         }
 
@@ -176,6 +189,40 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
             .AsNoTracking()
             .AnyAsync(j => j.Id == jobId, ct)
             .ConfigureAwait(false);
+
+    /// <summary>
+    /// After a conditional update succeeded (each runs as its own committed statement), reads the job's status and
+    /// version together and publishes them. A later transition may already have happened; the pair read is still
+    /// consistent, and the version tells screens which notification is newest. Nothing here can change the response
+    /// the Bridge gets for its report.
+    /// </summary>
+    private async Task PublishCurrentStateAsync(TenantDbContext db, Guid customerId, Guid jobId)
+    {
+        PrintJobChanged? change;
+        try
+        {
+            // Bounded, so a slow read cannot hold the Bridge's response; not the request's token (the work is committed).
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            change = await db.PrintJobs
+                .AsNoTracking()
+                .Where(j => j.Id == jobId)
+                .Select(j => new PrintJobChanged(j.OrderId, j.Id, j.Status, j.StatusVersion))
+                .FirstOrDefaultAsync(timeout.Token)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                "Print job state could not be read for its change notification ({ExceptionType}). CustomerId={CustomerId}, JobId={JobId}",
+                ex.GetType().Name,
+                customerId,
+                jobId);
+            return;
+        }
+
+        if (change is not null)
+            await TenantChangePublisher.PublishAsync(_notifier, customerId, change, _logger).ConfigureAwait(false);
+    }
 
     private static PrintJobClaimResponse JobNotFound() =>
         new(PrintJobClaimResult.NotFound, JobNotFoundKey);

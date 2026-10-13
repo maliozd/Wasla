@@ -3,6 +3,7 @@ using Wasla.Infrastructure.Security;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.Worker.Jobs;
@@ -33,6 +34,9 @@ builder.Services.AddSerilog((services, cfg) =>
 builder.Services.AddMemoryCache();
 
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
+
+// Receipt jobs this process creates are announced to Wasla.Web's open screens (Realtime:Internal; off when not set).
+builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration);
 
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 

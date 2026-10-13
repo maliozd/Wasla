@@ -6,6 +6,7 @@ using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Sync;
 using Serilog;
@@ -62,6 +63,10 @@ builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
+
+// Print Bridge job reports this process records are announced to Wasla.Web's open screens (Realtime:Internal; off
+// when not set).
+builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration);
 builder.Services.AddWaslaHealthChecks();
 builder.Services.Configure<RequestDiagnosticsOptions>(options =>
 {

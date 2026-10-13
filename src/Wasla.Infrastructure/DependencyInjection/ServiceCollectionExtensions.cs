@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using FluentValidation;
 using Wasla.Application.Abstractions.Admin;
@@ -13,6 +14,7 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Onboarding;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
@@ -32,6 +34,7 @@ using Wasla.Infrastructure.Platform.Mock;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Tenant;
@@ -147,6 +150,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantDevelopmentResetService, TenantDevelopmentResetService>();
         services.AddScoped<IPrintJobHistoryService, PrintJobHistoryService>();
         services.AddScoped<IManualOrderPrintService, ManualOrderPrintService>();
+        // Live change notifications: dropped unless the host registers a channel (Wasla.Web's SignalR hub, or the
+        // internal channel to Wasla.Web in Wasla.Worker and Wasla.Api).
+        services.TryAddSingleton<ITenantChangeNotifier>(NullTenantChangeNotifier.Instance);
 
         return services;
     }

@@ -559,6 +559,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<long>("StatusVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
