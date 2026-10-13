@@ -102,12 +102,67 @@ Reading them: many Warnings with different `ClientTag`s for one `TenantId` point
 
 A signup refused by the per-email cap logs Information `Pending registration refused: the owner email has the maximum number of active registrations.` without the email. Tenant resolution logs Information `No tenant for host {Host}` once per lookup, so with the unknown-host cache an unknown host appears at most once per TTL, not once per request ([../architecture/tenancy.md](../architecture/tenancy.md#unknown-host-cache)).
 
+### Live notification metrics
+
+The live channel ([../architecture/realtime.md](../architecture/realtime.md)) records metrics with the .NET metrics API
+(meter **`Wasla.Realtime`**, `RealtimeMetrics` in `src/Wasla.Infrastructure/Realtime/`), added in WAS-25. Wasla.Web
+records the hub, connection, session-check, listener and Origin instruments; Wasla.Worker and Wasla.Api record the
+internal channel's sends. Nothing is exported: read them on the server with `dotnet-counters` (below).
+
+| Instrument | Type, unit | Tags | Meaning |
+|------------|-----------|------|---------|
+| `wasla.realtime.connections.active` | up-down counter, `{connection}` | `wasla.realtime.streams` | Open hub connections whose groups are joined (Web) |
+| `wasla.realtime.connection.attempts` | counter, `{connection}` | `wasla.realtime.result`, `wasla.realtime.attempt` | Authenticated connections that reached the hub: `admitted`, `refused` (no stream for the role), `failed` (joining failed). `attempt` is what the browser client declares in the hub URL: `initial`, `reconnect` (after a drop, a failed start or a back/forward-cache restore) or `unknown`; a diagnostic label only, it decides nothing |
+| `wasla.realtime.connection.closures` | counter, `{connection}` | `wasla.realtime.reason` | Admitted connections that ended: `closed` (client stopped, page closed, cookie expired, or the server's client timeout), `error` (ended with an exception), or the session check's reason: `session_invalid`, `role_changed`, `tenant_unresolved`, `check_unavailable`, `check_failed`. Opened minus closed equals active |
+| `wasla.realtime.session_checks` | counter, `{check}` | `wasla.realtime.result` | Periodic checks of open connections (every `Realtime:SessionRevalidationSeconds`): `valid` or the closure reasons above |
+| `wasla.realtime.session_check.duration` | histogram, `s` | `wasla.realtime.result` | Time of one check (host resolution and one `AppUsers` read) |
+| `wasla.realtime.notifications` | counter, `{notification}` | `wasla.realtime.channel`, `wasla.realtime.stream`, `wasla.realtime.result` | Notifications handed on after a commit. Channel `hub` (Web sends to the tenant's group): `sent`, `timeout` (the 2 s bound), `cancelled`, `failed`, `unsupported`. Channel `internal` (Worker or Api posts to Web): `sent`, `timeout`, `cancelled`, `rejected` (Web answered an error, for example a wrong secret), `unreachable`, `failed`, `paused` (dropped during the 30 s pause), `unsupported` |
+| `wasla.realtime.notification.duration` | histogram, `s` | as above | Time to hand on one notification: the hub's group send in Web, or the internal request until Web acknowledged it (which includes Web's hub send). Recorded for attempted sends only |
+| `wasla.realtime.internal.pauses` | counter, `{pause}` | `wasla.realtime.reason` | Times the internal sender started a 30 s pause, by the failure that caused it (`timeout`, `rejected`, `unreachable`, `cancelled`, `failed`) |
+| `wasla.realtime.internal.requests` | counter, `{request}` | `wasla.realtime.result` | Requests to Web's loopback listener: `accepted`, `unauthorized` (missing or wrong secret), `invalid`, `not_found`, `method_not_allowed` |
+| `wasla.realtime.origin_refusals` | counter, `{request}` | none | Hub requests refused because their `Origin` is another host |
+
+Tag values: `wasla.realtime.channel` is `hub` or `internal`; `wasla.realtime.stream` is `print_status`,
+`live_screen` or `other`; `wasla.realtime.streams` is `print_status`, `live_screen` or `live_screen+print_status`.
+Every tag has only the values listed here. No metric carries a tenant, user, order, job or connection id, a host name,
+a URL, an exception message or a secret; `RealtimeMetricsTests` checks this. The existing warnings (failed sends, the
+internal pause, refused secrets, closed connections) keep their `TenantId` field where they had it, and never log the
+secret.
+
+**Delivery lag.** `wasla.realtime.notification.duration` is the send time on the server, not the time until a screen
+shows the change: that also includes the network, the browser's coalescing (up to about 1 s, see
+[../architecture/realtime.md](../architecture/realtime.md#live-screen-invalidation-was-24)) and the snapshot read.
+Notifications carry no send time, because restaurant devices' clocks are not synchronized with the server and the
+difference would be measured mostly as skew; `version` is an ordering value, never a time. End-to-end lag is measured
+in the browser tests, where the server and the browser share one clock. Snapshot reads themselves show in ASP.NET
+Core's `http.server.request.duration` for the route of `/orders/live-data`.
+
+**ASP.NET Core's own metrics** cover the transport: meter `Microsoft.AspNetCore.Http.Connections` has
+`signalr.server.active_connections` and `signalr.server.connection.duration` (by `signalr.transport`, which also shows
+how many clients fall back to Server-Sent Events or long polling), and `Microsoft.AspNetCore.Hosting` has
+`http.server.request.duration` (negotiate refusals appear there as 401 or 403 on `/hubs/tenant-events/negotiate`).
+
+**Reading them.** On the server, as the account that runs the process, with the .NET diagnostics tool (no
+application change, no open port):
+
+```text
+dotnet tool install --global dotnet-counters
+dotnet-counters ps
+dotnet-counters monitor --name Wasla.Web --counters Wasla.Realtime,Microsoft.AspNetCore.Http.Connections,System.Runtime
+dotnet-counters monitor --name Wasla.Worker --counters Wasla.Realtime
+dotnet-counters collect --name Wasla.Web --counters Wasla.Realtime,Microsoft.AspNetCore.Http.Connections --format csv --output realtime.csv
+```
+
+`monitor` shows counters as rates and histograms as percentiles; `collect` writes them to a file for a busy period.
+The thresholds that should start multi-instance work are in
+[../architecture/realtime-scale-out.md](../architecture/realtime-scale-out.md#10-thresholds-that-trigger-the-scale-out-work).
+
 ## Explicit gaps
 
 These are **not** implemented:
 
 - **No OpenTelemetry exporter** (no OTLP/Jaeger/Zipkin wiring in source)
-- **No metrics system** (no meters/dashboards as a first-class product feature)
+- **No metrics exporter or dashboards.** The only Wasla meter is `Wasla.Realtime` ([above](#live-notification-metrics)), read on the server with `dotnet-counters`
 - **Worker has no HTTP health endpoint**
 
 Do not invent exporters or scrape endpoints that are not in source.

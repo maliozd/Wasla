@@ -177,6 +177,11 @@ give them the same version; it is a test helper, not a production path.
   state) only on this message; a change made between a screen's read and the join can therefore not be missed.
 - The periodic session check also requires the role to still admit every stream the connection joined.
 - The hub declares no method a client can call. A client invocation fails with a hub error and changes nothing.
+  `OnConnectedAsync` and `OnDisconnectedAsync` are server-side handlers that SignalR never exposes to clients.
+- The `attempt` query parameter of the hub URL (`initial` or `reconnect`, set by `wasla-realtime.js`) is read only as
+  a metric label; any other value is counted as `unknown`. Tenant, groups and authorization never depend on it.
+- Every connection that reaches the hub, each admission, each closure with its reason and each periodic session check
+  is counted in the `Wasla.Realtime` meter ([../operations/observability.md](../operations/observability.md#live-notification-metrics)).
 - Requests under `/hubs` with an `Origin` header for another host are refused with 403 before tenant resolution and
   authentication (`RealtimeOriginMiddleware`), because browsers apply no CORS to WebSockets and a tenant cookie is sent
   from any same-site page. Only the host is compared (and the port when the `Host` header has one), not the scheme,
@@ -187,8 +192,8 @@ give them the same version; it is a test helper, not a production path.
 - Transports: WebSockets, then Server-Sent Events, then long polling. Detailed errors are off.
 
 Connections and groups live in the Wasla.Web process. With more than one Web instance a notification would reach only
-the instance it was sent on; that needs a backplane and is not built (one Web instance runs today; see
-[Limitations](#limitations)).
+the instance it was sent on; that needs a backplane and sticky routing, which are not built. One Web instance is the
+recorded decision for the first production stage: [realtime-scale-out.md](realtime-scale-out.md).
 
 ## The internal channel (Worker and Api to Web)
 
@@ -221,7 +226,7 @@ not carry is dropped without pausing it.
 | File | Job |
 |------|-----|
 | `wwwroot/lib/microsoft-signalr/signalr.min.js` | The official browser client, `@microsoft/signalr` 8.0.29, unchanged from the npm package (integrity in its `LICENSE.txt`). Served from the app; no CDN at run time. |
-| `wwwroot/js/realtime/wasla-realtime.js` | One connection per page (`window.WaslaRealtime.get`). Handlers are attached before the first start; the first start is retried (2, 5, 10, then every 30 seconds), because automatic reconnect does not cover it; automatic reconnect retries at 0, 2, 5, 10 and then every 30 seconds without giving up; stopped on `pagehide` and started again if the page returns from the back/forward cache. "Connected" means the hub's `tenantEventsReady` arrived (groups joined), not just that the transport opened. |
+| `wwwroot/js/realtime/wasla-realtime.js` | One connection per page (`window.WaslaRealtime.get`). Handlers are attached before the first start; the first start is retried (2, 5, 10, then every 30 seconds), because automatic reconnect does not cover it; automatic reconnect retries at 0, 2, 5, 10 and then every 30 seconds without giving up. Every delay after the immediate first retry is lengthened by a random 0–50 % (at most 45 seconds), so screens dropped together by a Web restart do not reconnect in the same second (WAS-25). Stopped on `pagehide` and started again if the page returns from the back/forward cache; a message that arrives after the stop reaches no screen. "Connected" means the hub's `tenantEventsReady` arrived (groups joined), not just that the transport opened. The hub URL carries `attempt=initial` or `attempt=reconnect` for the server's metrics only. `stats()` returns read-only counters (starts, failed starts, drops, ready messages, reconnects, messages) for tests and support. |
 | `wwwroot/js/orders/orders-print-status.js` | Keeps every shown print action current (below). |
 | `wwwroot/js/orders/orders-live-realtime.js` | Live Screen invalidation (WAS-24, below). |
 | `Views/Orders/_LiveConnectionScripts.cshtml` | Loads the SignalR client and `wasla-realtime.js`: on the Live Screen for every user, on the order details page for `CanManualPrint` users. |
@@ -293,11 +298,21 @@ endpoint.
 | Browser never connects (blocked WebSockets and fallbacks, proxy without upgrade) | Print actions read every 10 seconds while shown; the Live Screen keeps polling every 10 seconds |
 | Session revoked or tenant deactivated while connected | Connection closed at the next check (default 60 s; a deactivated tenant once the 5-minute host cache has expired, as for HTTP); reconnect is refused; the next page request goes to sign-in |
 | Notification lost while the page stays connected | Print action: not repaired until the next notification for that order, a reopen of the panel or a reload. Live Screen: repaired at the next poll (30 seconds) |
+| A client stops reading (frozen device, dead network) | Its outgoing buffer fills (about 2,000 small messages); then each send to its tenant's group waits the full 2-second bound (counted as `timeout`) until the server's client timeout (30 seconds) closes it. Other tabs receive everything; memory stays bounded. Measured in WAS-25 (`RealtimeLoadTests`) |
+| Many tabs of one user, or a reconnect storm after a Web restart | Each tab is one connection, joins its groups once and reads its state once per (re)connect; reconnects are spread by jitter. Each tab announces a new order itself (one sound and notification per tab, as before live updates) |
 
 ## Limitations
 
-- **One Web instance.** No backplane. A second Web instance would need one (and the internal channel would reach only one
-  instance). WAS-22 names multi-instance support as a goal; it is not met by this phase.
+- **One Web instance.** No backplane, no sticky routing. A second Web instance would need both, and the internal
+  channel would reach only one instance. WAS-22 names multi-instance support as a goal; WAS-25 recorded the decision,
+  the topology to use and the thresholds that should trigger it in [realtime-scale-out.md](realtime-scale-out.md).
+- **A stuck client slows its tenant's sends.** Until the client timeout closes it, every notification to that
+  tenant's group waits up to 2 seconds inside the request that sends it (see the failure table).
+- **Announcements are per tab.** Two Live Screen tabs of one user both play the sound and show the browser
+  notification for a new order. Live updates add no duplicates within a tab; cross-tab de-duplication would be a
+  product decision.
+- **Metrics are local.** The `Wasla.Realtime` meter is read on the server with `dotnet-counters`; there is no exporter
+  or dashboard.
 - **Not durable.** Notifications are not stored or replayed. Missed ones are covered by the read on reconnect, the
   fallback while disconnected, and for the Live Screen its 30-second poll while connected. The print action does not
   read on a timer while connected (WAS-23 decision), so a lost print notification leaves it stale until the next
@@ -346,6 +361,18 @@ endpoint.
   all distinct, never outside a transaction, carried by the snapshot) and `LiveScreenRealtimeBrowserTests.cs` (headless Chromium in English and Arabic: push without polling, one
   announcement per new order through a burst, lifecycle action, disconnected fallback, reconnect, back/forward-cache
   restore with one connection, order training, a Kitchen screen).
+- WAS-25: `RealtimeLoadTests.cs` (lightweight .NET SignalR clients over WebSockets against the real Web pipeline:
+  many tabs across tenants and roles under concurrent bursts through the hub and the internal channel, each tab
+  receiving exactly its own tenant's streams; reconnect storms; revocation and demotion during a storm; a client that
+  stops reading; tabs closed during a burst; sizes bounded and configurable, see
+  [../operations/testing.md](../operations/testing.md#realtime-load-tests)), `RealtimeMetricsTests.cs` (every
+  instrument, result and reason, the active count back to zero, bounded tags, no secret in tags or logs),
+  `RealtimeLifecycleBrowserTests.cs` (headless Chromium: several Live Screen pages of one user with one connection
+  each, one announcement per page, closing pages and navigating away releases connections, notification permission
+  never requested and settings unchanged in the default, denied and granted states, English and Arabic) and
+  `realtime-resilience.test.js` (jitter and its spread over a storm, the attempt label, 100 stop/start cycles, messages
+  after stop, 1,000 invalidations against the real coordinator, an invalidation during a read, one announcement through
+  reconnects, disposal).
 
 ## Source map
 
@@ -355,6 +382,8 @@ endpoint.
 | Version helper, publisher, null notifier | `src/Wasla.Infrastructure/Realtime/TenantChangePublisher.cs` |
 | Internal channel (options, message, sender) | `src/Wasla.Infrastructure/Realtime/InternalTenantChanges.cs` |
 | Hub, groups, notifier, origin check, revalidation, listener, registration | `src/Wasla.Web/Realtime/` |
+| Metrics (meter `Wasla.Realtime`) | `src/Wasla.Infrastructure/Realtime/RealtimeMetrics.cs` |
+| Scale-out decision | [realtime-scale-out.md](realtime-scale-out.md) |
 | Print state endpoint | `OrdersController.PrintState` (`GET /orders/{id}/print-state`) |
 | Print action | `Areas/Tenant/Views/Orders/_OrderPrintAction.cshtml`, `Models/Orders/OrderPrintActionModel.cs` |
 | Order change publishing | `OrderSyncService.UpsertOrderAsync`, `OrderActionService` |
