@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using Wasla.Application.Abstractions.Realtime;
+using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Web.Realtime;
 
@@ -15,42 +17,62 @@ public sealed class SignalRTenantChangeNotifier : ITenantChangeNotifier
 
     private readonly IHubContext<TenantEventsHub> _hub;
     private readonly ILogger<SignalRTenantChangeNotifier> _logger;
+    private readonly RealtimeMetrics _metrics;
 
-    public SignalRTenantChangeNotifier(IHubContext<TenantEventsHub> hub, ILogger<SignalRTenantChangeNotifier> logger)
+    public SignalRTenantChangeNotifier(
+        IHubContext<TenantEventsHub> hub,
+        ILogger<SignalRTenantChangeNotifier> logger,
+        RealtimeMetrics metrics)
     {
         _hub = hub;
         _logger = logger;
+        _metrics = metrics;
     }
 
     public async Task NotifyAsync(Guid tenantId, TenantChange change, CancellationToken ct)
     {
+        // Each change goes only to the group of the stream it belongs to, in its own message shape.
+        (string Group, object Message)? target = change switch
+        {
+            PrintJobChanged printJob => (TenantEventGroups.PrintStatus(tenantId), TenantChangeClientMessage.From(printJob)),
+            OrderChanged order => (TenantEventGroups.LiveScreen(tenantId), OrderChangeClientMessage.From(order)),
+            _ => null
+        };
+        if (target is not { } send)
+        {
+            _metrics.NotificationHandled(RealtimeMetrics.Channels.Hub, change, RealtimeMetrics.NotificationResults.Unsupported);
+            return;
+        }
+
+        var started = Stopwatch.GetTimestamp();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
-            // Each change goes only to the group of the stream it belongs to, in its own message shape.
-            (string Group, object Message)? target = change switch
-            {
-                PrintJobChanged printJob => (TenantEventGroups.PrintStatus(tenantId), TenantChangeClientMessage.From(printJob)),
-                OrderChanged order => (TenantEventGroups.LiveScreen(tenantId), OrderChangeClientMessage.From(order)),
-                _ => null
-            };
-            if (target is not { } send)
-                return;
-
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(SendTimeout);
             await _hub.Clients
                 .Group(send.Group)
                 .SendAsync(TenantEventsHub.ClientMethod, send.Message, timeout.Token)
                 .ConfigureAwait(false);
+            Record(change, RealtimeMetrics.NotificationResults.Sent, started);
         }
         catch (Exception ex)
         {
+            var result = ex switch
+            {
+                OperationCanceledException when ct.IsCancellationRequested => RealtimeMetrics.NotificationResults.Cancelled,
+                OperationCanceledException when timeout.IsCancellationRequested => RealtimeMetrics.NotificationResults.Timeout,
+                _ => RealtimeMetrics.NotificationResults.Failed
+            };
+            Record(change, result, started);
             _logger.LogWarning(
                 "Live tenant notification could not be sent ({ExceptionType}). TenantId={TenantId}",
                 ex.GetType().Name,
                 tenantId);
         }
     }
+
+    private void Record(TenantChange change, string result, long started) =>
+        _metrics.NotificationHandled(RealtimeMetrics.Channels.Hub, change, result, RealtimeMetrics.Since(started));
 }
 
 /// <summary>

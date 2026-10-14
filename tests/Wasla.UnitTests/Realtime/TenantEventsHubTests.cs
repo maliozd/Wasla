@@ -181,18 +181,20 @@ public sealed class TenantEventsHubTests
     [Fact]
     public async Task AClientCannotChooseATenantOrGroup()
     {
-        // The hub declares nothing a client can call: only the server-side connect handler.
+        // The hub declares nothing a client can call: only the server-side connect and disconnect handlers, which
+        // SignalR never exposes as hub methods (both are invoked below and refused).
         var callable = typeof(TenantEventsHub)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .Select(m => m.Name);
-        Assert.Equal([nameof(Hub.OnConnectedAsync)], callable);
+            .Select(m => m.Name)
+            .Order(StringComparer.Ordinal);
+        Assert.Equal([nameof(Hub.OnConnectedAsync), nameof(Hub.OnDisconnectedAsync)], callable);
 
         await using var host = await TenantSessionWebHost.StartAsync();
         using var alpha = await SignInAsync(host, TenantSessionWebHost.AlphaHost, host.AlphaId, UserRole.Owner);
         await using var live = await ConnectAsync(host, alpha);
 
         var betaGroup = TenantEventGroups.PrintStatus(host.BetaId);
-        foreach (var method in new[] { "AddToGroupAsync", "JoinGroup", "Subscribe", "OnConnectedAsync" })
+        foreach (var method in new[] { "AddToGroupAsync", "JoinGroup", "Subscribe", "OnConnectedAsync", "OnDisconnectedAsync" })
             await Assert.ThrowsAsync<HubException>(() => live.Connection.InvokeAsync(method, betaGroup, Ct));
 
         var notifier = host.Services.GetRequiredService<ITenantChangeNotifier>();
