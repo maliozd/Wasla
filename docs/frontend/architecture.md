@@ -79,6 +79,7 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 ### Formatters and density
 
 - Live Screen money uses `Intl.NumberFormat` with `currency: "TRY"` and `currencyDisplay: "narrowSymbol"` so visible amounts show `₺`. UI culture changes separators and placement, not the business currency. Do not print the literal code `TRY` or concatenate `₺` in those formatters. See [../orders/live-screen.md](../orders/live-screen.md).
+- Server-rendered order amounts (Dashboard, the Orders list, order details) use `OrderUiHelper.FormatMoney`: the culture's number format with `OrderCurrency` (`Wasla.Application.Orders`, code `TRY`, symbol `₺`) as the currency (WAS-44). Never `ToString("C")`, which takes the currency from the culture (`$` in en-US, `₽` in ru-RU). The Live Screen detail markup keeps a plain number (`OrderUiHelper.FormatAmount`) in `data-money` elements for the browser formatter to replace. The two formatters agree on the symbol, separators and placement. In Arabic, `Intl` prints Arabic-Indic digits and .NET prints Latin digits, as for every other server-rendered number.
 - Operational screens favor compact Bootstrap controls and Wasla-owned classes; management screens use filter cards and dense tables.
 
 ### Responsive, RTL, accessibility

@@ -98,6 +98,7 @@ public sealed class OrderReadService : IOrderReadService
         var pageQuery = q.Skip((page - 1) * pageSize).Take(pageSize);
 
         // Single SQL projection either way — never 1+N. Line items only when Live Screen asks for them.
+        // Items in OrderItemOrdering's order: provider position, stored time, Id.
         List<OrderListResult.Row> items;
         if (includeLineItems)
         {
@@ -114,9 +115,9 @@ public sealed class OrderReadService : IOrderReadService
                     o.CreatedAtPlatform,
                     o.ReceivedAt,
                     o.Items.Count,
-                    o.Items.OrderBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
+                    o.Items.OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
                     o.Items
-                        .OrderBy(i => i.Id)
+                        .OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id)
                         .Select(i => new OrderListResult.LineItem(i.ProductName, i.Quantity, i.Notes))
                         .ToList()))
                 .ToListAsync(ct);
@@ -136,7 +137,7 @@ public sealed class OrderReadService : IOrderReadService
                     o.CreatedAtPlatform,
                     o.ReceivedAt,
                     o.Items.Count,
-                    o.Items.OrderBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
+                    o.Items.OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
                     Array.Empty<OrderListResult.LineItem>()))
                 .ToListAsync(ct);
         }
@@ -154,7 +155,7 @@ public sealed class OrderReadService : IOrderReadService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct);
         var order = await db.Orders.AsNoTracking()
-            .Include(o => o.Items).ThenInclude(i => i.Options)
+            .IncludeItemsInSequence()
             .FirstOrDefaultAsync(o => o.Id == id, ct);
 
         if (order is null) return null;
@@ -226,8 +227,9 @@ public sealed class OrderReadService : IOrderReadService
                 o.CustomerNote,
                 o.TotalAmount,
                 o.ChangeVersion,
+                // OrderItemOrdering's order: provider position, stored time, Id.
                 Items = o.Items
-                    .OrderBy(i => i.Id)
+                    .OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id)
                     .Select(i => new LiveScreenLineItemDto(i.ProductName, i.Quantity, i.Notes))
                     .ToList()
             })

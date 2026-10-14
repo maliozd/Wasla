@@ -142,10 +142,10 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
             return new ReprintReceiptResult(false, "PrintBridge.ReprintAlreadyPending", null);
         }
 
+        // Same item order as the first print and every screen.
         var order = await db.Orders
             .AsNoTracking()
-            .Include(o => o.Items)
-            .ThenInclude(i => i.Options)
+            .IncludeItemsInSequence()
             .FirstOrDefaultAsync(o => o.Id == source.OrderId, ct)
             .ConfigureAwait(false);
 

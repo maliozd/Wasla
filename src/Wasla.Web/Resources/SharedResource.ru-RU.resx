@@ -423,8 +423,8 @@
   <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
     <value>Средняя стоимость заказа</value>
   </data>
-  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
-    <value>Последние заказы, полученные сегодня</value>
+  <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
+    <value>Последние полученные заказы</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>Заказы по платформам сегодня</value>
@@ -450,8 +450,8 @@
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>Заказы</value>
   </data>
-  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
-    <value>Сегодня заказов еще нет.</value>
+  <data name="Dashboard.NoOrdersYet" xml:space="preserve">
+    <value>Заказов пока нет.</value>
   </data>
   <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
     <value>Новые заказы будут появляться здесь автоматически.</value>

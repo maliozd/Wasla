@@ -432,7 +432,9 @@ public sealed class OrdersLiveScreenSeparationTests
         Assert.DoesNotContain("₺", panel, StringComparison.Ordinal);
         Assert.DoesNotContain(" TL", panel, StringComparison.Ordinal);
         Assert.Contains("amount.ToString(\"N2\", CultureInfo.CurrentCulture)", helper, StringComparison.Ordinal);
-        Assert.Contains("ToString(\"C\"", details, StringComparison.Ordinal);
+        // The full details page renders lira itself; the culture never picks the currency (WAS-44, OrderDataPresentationTests).
+        Assert.Contains("OrderUiHelper.FormatMoney(Model.TotalAmount)", details, StringComparison.Ordinal);
+        Assert.DoesNotContain("ToString(\"C\"", details, StringComparison.Ordinal);
 
         Assert.Contains("consumer !== \"modal\" && consumer !== \"focus\"", modalJs, StringComparison.Ordinal);
         Assert.Contains("O.applyDetailCurrency(container, culture)", modalJs, StringComparison.Ordinal);

@@ -423,8 +423,8 @@
   <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
     <value>متوسط القيمة لكل طلب</value>
   </data>
-  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
-    <value>أحدث الطلبات المستلمة اليوم</value>
+  <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
+    <value>أحدث الطلبات المستلمة</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>الطلبات حسب المنصة اليوم</value>
@@ -450,8 +450,8 @@
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>طلبات</value>
   </data>
-  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
-    <value>لا توجد طلبات اليوم بعد.</value>
+  <data name="Dashboard.NoOrdersYet" xml:space="preserve">
+    <value>لا توجد طلبات بعد.</value>
   </data>
   <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
     <value>ستظهر الطلبات الجديدة هنا تلقائيًا.</value>

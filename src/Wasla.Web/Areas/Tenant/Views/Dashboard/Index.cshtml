@@ -14,13 +14,13 @@
         (Modifier: "orders", Icon: "bi-receipt", LabelKey: "Dashboard.TodayOrders", HintKey: "Dashboard.OrdersReceivedToday",
             Value: Model.TodayOrderCount.ToString("N0", CultureInfo.CurrentCulture)),
         (Modifier: "revenue", Icon: "bi-cash-stack", LabelKey: "Dashboard.TodayRevenue", HintKey: "Dashboard.TotalOrderAmountToday",
-            Value: Model.TodayRevenue.ToString("C", CultureInfo.CurrentCulture)),
+            Value: OrderUiHelper.FormatMoney(Model.TodayRevenue)),
         (Modifier: "active", Icon: "bi-lightning-charge", LabelKey: "Dashboard.ActiveOrders", HintKey: "Dashboard.CurrentlyActiveOrders",
             Value: Model.ActiveOrderCount.ToString("N0", CultureInfo.CurrentCulture)),
         (Modifier: "cancelled", Icon: "bi-x-circle", LabelKey: "Dashboard.CancelledOrders", HintKey: "Dashboard.CancelledToday",
             Value: Model.CancelledOrderCount.ToString("N0", CultureInfo.CurrentCulture)),
         (Modifier: "average", Icon: "bi-calculator", LabelKey: "Dashboard.AverageOrderValue", HintKey: "Dashboard.AverageValuePerOrder",
-            Value: averageOrderValue.ToString("C", CultureInfo.CurrentCulture))
+            Value: OrderUiHelper.FormatMoney(averageOrderValue))
     };
 }
 
@@ -72,7 +72,8 @@
                     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
                         <div>
                             <h2 class="wasla-dash-section__title h6 mb-1">@L["Dashboard.RecentOrders"]</h2>
-                            <p class="text-muted small mb-0">@L["Dashboard.LatestOrdersReceivedToday"]</p>
+                            @* The latest orders of any day, as DashboardService reads them; rows from an earlier day show their date. *@
+                            <p class="text-muted small mb-0">@L["Dashboard.LatestOrdersReceived"]</p>
                         </div>
                         <a href="/orders" class="btn btn-sm btn-outline-primary">@L["Dashboard.ViewAll"]</a>
                     </div>
@@ -83,7 +84,7 @@
                             <div class="wasla-dash-empty__icon text-muted mb-2" aria-hidden="true">
                                 <i class="bi bi-inbox"></i>
                             </div>
-                            <p class="wasla-dash-empty__title mb-1">@L["Dashboard.NoOrdersYetToday"]</p>
+                            <p class="wasla-dash-empty__title mb-1">@L["Dashboard.NoOrdersYet"]</p>
                             <p class="wasla-dash-empty__hint text-muted small mb-0">@L["Dashboard.NewOrdersWillAppearHere"]</p>
                         </div>
                     }
@@ -120,7 +121,7 @@
                                         </td>
                                         <td class="wasla-table__num wasla-table__amount">
                                             <span class="wasla-table__cell-label" aria-hidden="true">@L["Dashboard.Total"]</span>
-                                            <span>@o.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</span>
+                                            <span>@OrderUiHelper.FormatMoney(o.TotalAmount)</span>
                                         </td>
                                         <td>
                                             <span class="wasla-table__cell-label" aria-hidden="true">@L["Dashboard.Status"]</span>
@@ -167,7 +168,7 @@
                                             <span class="wasla-dash-platform-item__count">
                                                 @p.Count <span class="text-muted">@L["Dashboard.Orders"]</span>
                                             </span>
-                                            <span class="wasla-dash-platform-item__revenue">@p.Revenue.ToString("C", CultureInfo.CurrentCulture)</span>
+                                            <span class="wasla-dash-platform-item__revenue">@OrderUiHelper.FormatMoney(p.Revenue)</span>
                                         </div>
                                     </div>
                                     @if (share > 0)

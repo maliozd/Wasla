@@ -55,7 +55,7 @@
         <div class="col">
             <div class="wasla-order-details-stat">
                 <div class="wasla-order-details-stat__label">@L["Orders.Details.Total"]</div>
-                <div class="wasla-order-details-stat__value wasla-order-details-stat__value--amount">@Model.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</div>
+                <div class="wasla-order-details-stat__value wasla-order-details-stat__value--amount">@OrderUiHelper.FormatMoney(Model.TotalAmount)</div>
             </div>
         </div>
         <div class="col">
@@ -181,7 +181,7 @@
                                                 <ul class="wasla-order-details-item-options list-unstyled mb-0 mt-1">
                                                     @foreach (var o in i.Options)
                                                     {
-                                                        <li class="text-muted small">@o.Name @(o.Price > 0 ? $"(+{o.Price.ToString("C", CultureInfo.CurrentCulture)})" : "")</li>
+                                                        <li class="text-muted small">@o.Name @(o.Price > 0 ? $"(+{OrderUiHelper.FormatMoney(o.Price)})" : "")</li>
                                                     }
                                                 </ul>
                                             }
@@ -189,8 +189,8 @@
                                         <td class="text-end">
                                             <span class="@(i.Quantity > 1 ? "wasla-order-details-qty wasla-order-details-qty--highlight" : "wasla-order-details-qty")">@i.Quantity</span>
                                         </td>
-                                        <td class="text-end">@i.UnitPrice.ToString("C", CultureInfo.CurrentCulture)</td>
-                                        <td class="text-end fw-medium">@i.TotalPrice.ToString("C", CultureInfo.CurrentCulture)</td>
+                                        <td class="text-end">@OrderUiHelper.FormatMoney(i.UnitPrice)</td>
+                                        <td class="text-end fw-medium">@OrderUiHelper.FormatMoney(i.TotalPrice)</td>
                                     </tr>
                                 }
                                 </tbody>
@@ -208,19 +208,19 @@
                         {
                             <div class="wasla-order-details-totals-dl__row">
                                 <dt>@L["Orders.Details.DeliveryFee"]</dt>
-                                <dd>@Model.DeliveryFee.ToString("C", CultureInfo.CurrentCulture)</dd>
+                                <dd>@OrderUiHelper.FormatMoney(Model.DeliveryFee)</dd>
                             </div>
                         }
                         @if (Model.ServiceFee != 0)
                         {
                             <div class="wasla-order-details-totals-dl__row">
                                 <dt>@L["Orders.Details.ServiceFee"]</dt>
-                                <dd>@Model.ServiceFee.ToString("C", CultureInfo.CurrentCulture)</dd>
+                                <dd>@OrderUiHelper.FormatMoney(Model.ServiceFee)</dd>
                             </div>
                         }
                         <div class="wasla-order-details-totals-dl__row wasla-order-details-totals-dl__row--grand">
                             <dt>@L["Orders.Details.Total"]</dt>
-                            <dd>@Model.TotalAmount.ToString("C", CultureInfo.CurrentCulture)</dd>
+                            <dd>@OrderUiHelper.FormatMoney(Model.TotalAmount)</dd>
                         </div>
                     </dl>
                 </div>

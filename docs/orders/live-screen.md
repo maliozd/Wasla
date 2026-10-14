@@ -97,7 +97,8 @@ The last guided-setup section (`live-screen-demo`) runs here. Guided setup is Ow
 ### Customer note and money
 
 - Order note rendered distinctly from item notes (board / list / focus helpers)
-- Visible amounts use the shared Live Screen formatter in `orders-live-store.js` (`formatAmount` / `liveMoneyFormat`). Business currency is TRY. The formatter uses `style: "currency"`, `currency: "TRY"`, and `currencyDisplay: "narrowSymbol"`, so the visible symbol is `₺`. Do not render the literal code `TRY` on those amounts, and do not concatenate a `₺` string onto the number. UI culture (`displayCulture`, default `tr-TR`) controls separators and symbol placement only.
+- Visible amounts use the shared Live Screen formatter in `orders-live-store.js` (`formatAmount` / `liveMoneyFormat`). Business currency is TRY. The formatter uses `style: "currency"`, `currency: "TRY"`, and `currencyDisplay: "narrowSymbol"`, so the visible symbol is `₺`. Do not render the literal code `TRY` on those amounts, and do not concatenate a `₺` string onto the number. UI culture (`displayCulture`, default `tr-TR`) controls separators and symbol placement only. The code is `OrderCurrency.Code`, which the server-rendered Dashboard and Orders pages also use (`OrderUiHelper.FormatMoney`); a unit test keeps the two the same.
+- Line items, on the board, list and focus cards and in the detail, come in the provider's order (`OrderItems.Sequence`), the same order as order details and receipts; see [../frontend/design-system.md](../frontend/design-system.md#tables-and-sorting).
 
 ### Audio and browser notifications (Live Screen ownership)
 

@@ -284,8 +284,14 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         Assert.NotEqual(before.OptionIds, after.OptionIds);
     }
 
+    /// <summary>
+    /// The provider's order is part of the order (WAS-44): the same lines (same ids) and modifiers listed in a different
+    /// order are an update, stored with their new positions. Ids and payload noise alone still change nothing (see
+    /// StableOrder_RepeatedSync_DoesNotRewriteRows). OrderItemSequenceTests covers every surface, the order's version and
+    /// the change notification.
+    /// </summary>
     [Fact]
-    public async Task ReorderedItemsAndModifiers_AreUnchanged()
+    public async Task ReorderedItemsAndModifiers_AreAnUpdate()
     {
         var sync = await CreateSyncAsync();
         var cheese = new ExternalOrderItemOptionDto("Cheese", 5m);
@@ -298,32 +304,33 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         await SyncAsync(sync, original);
         var before = await ReadAsync(original.ExternalOrderId);
 
+        // The same provider lines (same ids, quantities, prices and modifiers), listed in a different order.
         var reordered = original with
         {
-            Subtotal = 1m,
             RawPayloadJson = "{\"reordered\":true}",
-            Items =
-            [
-                fries with { ExternalItemId = "fries-moved" },
-                burger with
-                {
-                    ExternalItemId = "burger-moved",
-                    Options = [bacon, cheese]
-                }
-            ]
+            Items = [fries, burger with { Options = [bacon, cheese] }]
         };
 
         var result = await SyncAsync(sync, reordered);
 
-        Assert.Equal(1, result.UnchangedCount);
-        Assert.Equal(0, result.UpdatedCount);
+        Assert.Equal(0, result.UnchangedCount);
+        Assert.Equal(1, result.UpdatedCount);
         var after = await ReadAsync(original.ExternalOrderId);
-        Assert.Equal(before.UpdatedAt, after.UpdatedAt);
-        Assert.Equal(before.ItemIds, after.ItemIds);
-        Assert.Equal(before.OptionIds, after.OptionIds);
-        Assert.Equal(before.RawPayloadJson, after.RawPayloadJson);
+        Assert.NotEqual(before.ItemIds, after.ItemIds);
+        Assert.Equal("{\"reordered\":true}", after.RawPayloadJson);
         Assert.Equal(2, after.Items.Length);
         Assert.Equal(3, after.OptionIds.Length);
+
+        await using (var db = await _db.CreateAsync(_tenantId, CancellationToken))
+        {
+            var items = await db.OrderItems.Include(i => i.Options).OrderBy(i => i.Sequence).ToListAsync(CancellationToken);
+            Assert.Equal(["Fries", "Burger"], items.Select(i => i.ProductName).ToArray());
+            Assert.Equal([0, 1], items.Select(i => i.Sequence).ToArray());
+            Assert.Equal(["Bacon", "Cheese"], items[1].Options.OrderBy(o => o.Sequence).Select(o => o.Name).ToArray());
+        }
+
+        // Stored as the provider lists it now, so the same list again is unchanged.
+        Assert.Equal(1, (await SyncAsync(sync, reordered)).UnchangedCount);
     }
 
     [Fact]

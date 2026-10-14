@@ -39,11 +39,24 @@ public static class OrderUiHelper
             : local.ToString("g", CultureInfo.CurrentCulture);
 
     /// <summary>
-    /// Culture-aware amount with two fraction digits and no currency symbol.
-    /// There is no authoritative currency on the order.
+    /// Culture-aware amount with two fraction digits and no currency symbol, for Live Screen markup whose amounts the
+    /// browser formatter replaces (<c>data-money</c>). Everywhere else use <see cref="FormatMoney(decimal)"/>.
     /// </summary>
     public static string FormatAmount(decimal amount) =>
         amount.ToString("N2", CultureInfo.CurrentCulture);
+
+    /// <summary>
+    /// An order amount in the order currency (<see cref="OrderCurrency"/>), with two fraction digits. The UI culture
+    /// decides digit grouping, the decimal separator and where the symbol goes; it never decides the currency.
+    /// </summary>
+    public static string FormatMoney(decimal amount) => FormatMoney(amount, CultureInfo.CurrentCulture);
+
+    public static string FormatMoney(decimal amount, CultureInfo culture)
+    {
+        var format = (NumberFormatInfo)culture.NumberFormat.Clone();
+        format.CurrencySymbol = OrderCurrency.Symbol;
+        return amount.ToString("C2", format);
+    }
 
     public static string FormatElapsed(DateTime receivedAtUtc, DateTime serverTimeUtc, IStringLocalizer localizer)
     {

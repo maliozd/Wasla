@@ -13,6 +13,10 @@ internal static class ReceiptPayloadBuilder
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    /// <summary>
+    /// Items and options are written in the order they were loaded; callers load them with
+    /// <see cref="Persistence.Tenant.OrderItemOrdering.IncludeItemsInSequence"/> so the receipt matches the screens.
+    /// </summary>
     public static string Build(
         Order order,
         string? tenantDisplayName,

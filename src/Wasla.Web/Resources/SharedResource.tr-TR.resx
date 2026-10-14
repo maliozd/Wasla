@@ -423,8 +423,8 @@
   <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
     <value>Sipariş başına ortalama tutar</value>
   </data>
-  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
-    <value>Bugün alınan son siparişler</value>
+  <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
+    <value>Son alınan siparişler</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>Bugün platforma göre siparişler</value>
@@ -450,8 +450,8 @@
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>sipariş</value>
   </data>
-  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
-    <value>Bugün henüz sipariş yok.</value>
+  <data name="Dashboard.NoOrdersYet" xml:space="preserve">
+    <value>Henüz sipariş yok.</value>
   </data>
   <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
     <value>Yeni siparişler burada otomatik görünecek.</value>

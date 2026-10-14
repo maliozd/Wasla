@@ -797,6 +797,8 @@ public sealed class OrderSyncService : IOrderSyncService
             .ExecuteDeleteAsync(ct)
             .ConfigureAwait(false);
 
+        // Items and options keep the provider's list order (Sequence), as on insert.
+        var itemSequence = 0;
         foreach (var itemDto in external.Items)
         {
             var item = new OrderItem
@@ -807,16 +809,19 @@ public sealed class OrderSyncService : IOrderSyncService
                 UnitPrice = itemDto.UnitPrice,
                 TotalPrice = itemDto.TotalPrice,
                 Notes = itemDto.Notes,
+                Sequence = itemSequence++,
                 CreatedAt = nowUtc,
                 UpdatedAt = nowUtc
             };
 
+            var optionSequence = 0;
             foreach (var opt in itemDto.Options)
             {
                 item.Options.Add(new OrderItemOption
                 {
                     Name = opt.Name,
                     Price = opt.Price,
+                    Sequence = optionSequence++,
                     CreatedAt = nowUtc,
                     UpdatedAt = nowUtc
                 });
@@ -922,6 +927,9 @@ public sealed class OrderSyncService : IOrderSyncService
         // Initial milestone timestamps based on initial status
         ApplyStatusTransitionTimestamps(order, OrderStatus.New, internalStatus, nowUtc);
 
+        // Sequence keeps the order in which the provider listed the lines and their options; the mapped
+        // ExternalOrderDto lists them in that order. Readers order by it (OrderItemOrdering).
+        var itemSequence = 0;
         foreach (var itemDto in external.Items)
         {
             var item = new OrderItem
@@ -931,14 +939,17 @@ public sealed class OrderSyncService : IOrderSyncService
                 UnitPrice = itemDto.UnitPrice,
                 TotalPrice = itemDto.TotalPrice,
                 Notes = itemDto.Notes,
+                Sequence = itemSequence++,
             };
 
+            var optionSequence = 0;
             foreach (var opt in itemDto.Options)
             {
                 item.Options.Add(new OrderItemOption
                 {
                     Name = opt.Name,
-                    Price = opt.Price
+                    Price = opt.Price,
+                    Sequence = optionSequence++
                 });
             }
 
@@ -1094,9 +1105,11 @@ public sealed class OrderSyncService : IOrderSyncService
         Guid orderId,
         CancellationToken ct)
     {
+        // In the order the screens show (OrderItemOrdering), so the comparison below sees the provider's order.
         var rows = await db.OrderItems
             .AsNoTracking()
             .Where(i => i.OrderId == orderId)
+            .OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id)
             .Select(i => new
             {
                 i.Id,
@@ -1116,6 +1129,7 @@ public sealed class OrderSyncService : IOrderSyncService
         var optionRows = await db.OrderItemOptions
             .AsNoTracking()
             .Where(o => itemIds.Contains(o.OrderItemId))
+            .OrderBy(o => o.Sequence).ThenBy(o => o.CreatedAt).ThenBy(o => o.Id)
             .Select(o => new
             {
                 o.OrderItemId,
@@ -1139,6 +1153,10 @@ public sealed class OrderSyncService : IOrderSyncService
             .ToList();
     }
 
+    /// <summary>
+    /// Item by item in order: the provider's order of the lines, and of each line's options, is part of the order
+    /// (WAS-44, <c>Sequence</c>), so the same lines in a different order are a change that rewrites the positions.
+    /// </summary>
     private static bool ItemsSemanticallyEqual(
         IReadOnlyList<PersistedOrderItemSnapshot> persistedItems,
         IReadOnlyCollection<ExternalOrderItemDto>? incomingItems)
@@ -1149,8 +1167,6 @@ public sealed class OrderSyncService : IOrderSyncService
 
         var left = persistedItems.Select(ToComparableItem).ToList();
         var right = incoming.Select(ToComparableItem).ToList();
-        left.Sort(CompareItems);
-        right.Sort(CompareItems);
 
         for (var i = 0; i < left.Count; i++)
         {
@@ -1179,11 +1195,10 @@ public sealed class OrderSyncService : IOrderSyncService
             NormalizeItemNote(item.Notes),
             NormalizeOptions((item.Options ?? []).Select(o => (o.Name, o.Price))));
 
+    // Kept in the given order: the options' order is compared too.
     private static ComparableOption[] NormalizeOptions(IEnumerable<(string Name, decimal Price)> options) =>
         options
             .Select(o => new ComparableOption(o.Name ?? string.Empty, NormalizeMoney(o.Price)))
-            .OrderBy(o => o.Name, StringComparer.Ordinal)
-            .ThenBy(o => o.Price)
             .ToArray();
 
     private static int CompareItems(ComparableItem left, ComparableItem right)
