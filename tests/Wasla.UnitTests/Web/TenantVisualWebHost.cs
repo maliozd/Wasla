@@ -287,12 +287,14 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
             (await client.GetAsync(signInAs is null ? SignInPath : $"{SignInPath}?as={signInAs}", ct)).EnsureSuccessStatusCode();
 
         var browser = await HeadlessChromium.StartAsync(executable, ct);
-        foreach (System.Net.Cookie cookie in cookies.GetCookies(BaseAddress))
-            await browser.SetCookieAsync(BaseAddress, cookie.Name, cookie.Value, ct);
-        await browser.SetCookieAsync(BaseAddress, CookieRequestCultureProvider.DefaultCookieName,
-            Uri.EscapeDataString(CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture))), ct);
-        await browser.SetViewportAsync(width, height, mobile, ct);
-        return browser;
+        return await browser.SetUpAsync(async started =>
+        {
+            foreach (System.Net.Cookie cookie in cookies.GetCookies(BaseAddress))
+                await started.SetCookieAsync(BaseAddress, cookie.Name, cookie.Value, ct);
+            await started.SetCookieAsync(BaseAddress, CookieRequestCultureProvider.DefaultCookieName,
+                Uri.EscapeDataString(CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture))), ct);
+            await started.SetViewportAsync(width, height, mobile, ct);
+        });
     }
 
     public async ValueTask DisposeAsync()

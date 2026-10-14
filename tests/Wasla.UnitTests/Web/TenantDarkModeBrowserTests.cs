@@ -530,13 +530,15 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
         var browser = await host.BrowserAsync(culture, width, 860, mobile: width < 992, ct, signInAs);
         if (browser is null)
             Assert.Skip($"No Chromium browser found; set {HeadlessChromium.BrowserVariable} to run the real-browser dark-mode checks.");
-        await browser.SetSystemColorSchemeAsync(theme ?? "light", ct);
+        return await browser.SetUpAsync(async started =>
+        {
+            await started.SetSystemColorSchemeAsync(theme ?? "light", ct);
 
-        // Store the choice from a page of this origin before any tenant page loads.
-        await browser.NavigateAsync(new Uri(host.BaseAddress, "/css/site.css"), ct);
-        var store = theme is null ? $"localStorage.removeItem('{TenantKey}')" : $"localStorage.setItem('{TenantKey}', '{theme}')";
-        await browser.EvaluateAsync<bool>($"(() => {{ localStorage.clear(); {store}; return true; }})()", ct);
-        return browser;
+            // Store the choice from a page of this origin before any tenant page loads.
+            await started.NavigateAsync(new Uri(host.BaseAddress, "/css/site.css"), ct);
+            var store = theme is null ? $"localStorage.removeItem('{TenantKey}')" : $"localStorage.setItem('{TenantKey}', '{theme}')";
+            await started.EvaluateAsync<bool>($"(() => {{ localStorage.clear(); {store}; return true; }})()", ct);
+        });
     }
 
     private async Task LoadAsync(HeadlessChromium browser, string path, CancellationToken ct, TenantVisualWebHost? host = null)
