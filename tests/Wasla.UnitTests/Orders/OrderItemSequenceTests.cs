@@ -6,6 +6,7 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
@@ -15,28 +16,45 @@ using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Admin;
+using Wasla.UnitTests.Realtime;
 
 namespace Wasla.UnitTests.Orders;
 
 /// <summary>
 /// WAS-44: an order's items and their options keep the order of the provider's list on every surface that shows them
-/// (order details, the Live Screen snapshot, the list's line items, a receipt and its reprint). Rows stored before the
-/// position was kept fall back to their stored time, then their Id, and every surface still agrees. Runs the real sync,
-/// read and receipt services over the real tenant model on SQLite; it does not prove SQL Server translation.
+/// (order details, the Live Screen snapshot, the list's line items, a receipt and its reprint). A provider list that
+/// only changes the order of the same lines, or of one line's options, is an update like any other: the new positions
+/// are stored, the order's version moves on once and one change notification is sent. Rows stored before positions
+/// were kept fall back to their stored time, then their Id, and every surface still agrees. Runs the real sync, read
+/// and receipt services over the real tenant model on SQLite; it does not prove SQL Server translation.
 /// </summary>
 public sealed class OrderItemSequenceTests : IDisposable
 {
     private static readonly DateTime OrderedAt = new(2026, 10, 14, 9, 0, 0, DateTimeKind.Utc);
 
-    // Neither alphabetical nor any other order a database or GUID sort would produce by chance (8! orders).
-    private static readonly string[] ProviderItems =
-        ["Mercimek Çorbası", "Adana Kebap", "Ayran", "Künefe", "Lahmacun", "Çoban Salata", "Baklava", "Su"];
+    // Provider lines with stable identities: a line keeps its id wherever the provider lists it.
+    private static readonly Line Kebap = new("ty-line-2001", "Adana Kebap", ["Acılı", "Ekstra lavaş", "Az pişmiş", "Bol soğan", "Yoğurtlu"]);
+    private static readonly Line Ayran = new("ty-line-2002", "Ayran", []);
+    private static readonly Line Kunefe = new("ty-line-2003", "Künefe", ["Kaymaklı"]);
+    private static readonly Line Su = new("ty-line-2004", "Su", []);
 
-    private static readonly string[] ProviderOptions = ["Acılı", "Ekstra lavaş", "Az pişmiş", "Bol soğan", "Yoğurtlu"];
+    // Neither alphabetical nor any other order a database or GUID sort would produce by chance (8! orders).
+    private static readonly Line[] Menu =
+    [
+        new("ty-line-1001", "Mercimek Çorbası", ["Limonlu", "Ekstra ekmek", "Az tuzlu"]),
+        Kebap,
+        Ayran,
+        Kunefe,
+        new("ty-line-1005", "Lahmacun", []),
+        new("ty-line-1006", "Çoban Salata", []),
+        new("ty-line-1007", "Baklava", []),
+        Su
+    ];
 
     private readonly Guid _tenantId = Guid.NewGuid();
     private readonly TenantSqlite _databases = new();
     private readonly FakeClient _client = new();
+    private readonly RecordingTenantChangeNotifier _notifier = new();
 
     public void Dispose() => _databases.Dispose();
 
@@ -46,43 +64,70 @@ public sealed class OrderItemSequenceTests : IDisposable
     public async Task NewOrder_KeepsTheProviderSequence_OnEverySurface()
     {
         var sync = await CreateSyncAsync();
-        await SyncAsync(sync, Sample("ext-1", ProviderItems));
-        var orderId = await OrderIdAsync("ext-1");
+        await SyncAsync(sync, Sample("ext-1", Menu));
 
-        await AssertEverySurfaceShowsAsync(orderId, ProviderItems, ProviderOptions);
+        await AssertEverySurfaceShowsAsync(await OrderIdAsync("ext-1"), Menu);
     }
 
     [Fact]
     public async Task ProviderUpdate_StoresTheNewSequence()
     {
         var sync = await CreateSyncAsync();
-        await SyncAsync(sync, Sample("ext-2", ["Ayran", "Adana Kebap", "Künefe"]));
+        await SyncAsync(sync, Sample("ext-2", [Ayran, Kebap, Kunefe]));
 
         // A content change (a new line) rewrites the items in the provider's new order.
-        string[] updated = ["Künefe", "Su", "Adana Kebap", "Ayran"];
+        Line[] updated = [Kunefe, Su, Kebap, Ayran];
         var result = await SyncAsync(sync, Sample("ext-2", updated, rawPayloadJson: """{"id":"ext-2","v":2}"""));
         Assert.Equal(1, result.UpdatedCount);
 
-        await AssertEverySurfaceShowsAsync(await OrderIdAsync("ext-2"), updated, ProviderOptions);
+        await AssertEverySurfaceShowsAsync(await OrderIdAsync("ext-2"), updated);
     }
 
-    /// <summary>
-    /// Sync compares items as a set and writes nothing when only their order changed (no write, no live notification).
-    /// The stored sequence is then the provider's order at the last write. Documents that limit.
-    /// </summary>
     [Fact]
-    public async Task ProviderReorderWithoutAnyOtherChange_IsNotWritten()
+    public async Task ProviderReorderOfTheSameLines_IsStoredAndAnnouncedOnce_AndShownEverywhere()
     {
         var sync = await CreateSyncAsync();
-        string[] first = ["Ayran", "Adana Kebap", "Künefe"];
-        await SyncAsync(sync, Sample("ext-3", first));
+        await SyncAsync(sync, Sample("ext-3", [Ayran, Kebap, Kunefe]));
+        var orderId = await OrderIdAsync("ext-3");
+        var before = await StoredAsync(orderId);
+        var mark = _notifier.Sent.Count;
 
-        // Same lines, same options on the same line; only their order differs.
-        var result = await SyncAsync(sync, Sample("ext-3", ["Künefe", "Ayran", "Adana Kebap"], optionsOn: "Ayran"));
+        // The same lines with the same ids, options and payload; only their order differs.
+        Line[] reordered = [Kunefe, Ayran, Kebap];
+        var result = await SyncAsync(sync, Sample("ext-3", reordered));
 
-        Assert.Equal(0, result.UpdatedCount);
-        Assert.Equal(1, result.UnchangedCount);
-        await AssertEverySurfaceShowsAsync(await OrderIdAsync("ext-3"), first, ProviderOptions);
+        Assert.Equal(1, result.UpdatedCount);
+        Assert.Equal(0, result.UnchangedCount);
+        await AssertStoredAndAnnouncedOnceAsync(orderId, before, mark, reordered);
+        await AssertEverySurfaceShowsAsync(orderId, reordered);
+
+        // The stored order now matches the provider's: the next identical poll writes and announces nothing.
+        var again = await SyncAsync(sync, Sample("ext-3", reordered));
+        Assert.Equal(1, again.UnchangedCount);
+        Assert.Single(OrderChangesSince(mark, orderId));
+    }
+
+    [Fact]
+    public async Task ProviderReorderOfOneLinesOptions_IsStoredAndAnnouncedOnce_AndShownEverywhere()
+    {
+        var sync = await CreateSyncAsync();
+        await SyncAsync(sync, Sample("ext-4", [Kebap, Ayran]));
+        var orderId = await OrderIdAsync("ext-4");
+        var before = await StoredAsync(orderId);
+        var mark = _notifier.Sent.Count;
+
+        // The same lines in the same order; only the kebab's options come in a different order.
+        Line[] reordered = [Kebap with { Options = ["Yoğurtlu", "Acılı", "Az pişmiş", "Ekstra lavaş", "Bol soğan"] }, Ayran];
+        var result = await SyncAsync(sync, Sample("ext-4", reordered));
+
+        Assert.Equal(1, result.UpdatedCount);
+        Assert.Equal(0, result.UnchangedCount);
+        await AssertStoredAndAnnouncedOnceAsync(orderId, before, mark, reordered);
+        await AssertEverySurfaceShowsAsync(orderId, reordered);
+
+        var again = await SyncAsync(sync, Sample("ext-4", reordered));
+        Assert.Equal(1, again.UnchangedCount);
+        Assert.Single(OrderChangesSince(mark, orderId));
     }
 
     [Fact]
@@ -105,7 +150,7 @@ public sealed class OrderItemSequenceTests : IDisposable
             await db.SaveChangesAsync(Ct);
         }
 
-        var surfaces = await ReadSurfacesAsync(orderId);
+        var surfaces = await ReadSurfacesAsync(orderId, "Tie A");
         var details = surfaces.Details;
 
         // Stored time first; the three that share it come before the later ones, in one fixed order.
@@ -116,25 +161,72 @@ public sealed class OrderItemSequenceTests : IDisposable
         Assert.Equal(details[0], surfaces.ListFirstProductName);
         Assert.Equal(details, surfaces.Receipt);
         Assert.Equal(details, surfaces.Reprint);
-        Assert.Equal(details, (await ReadSurfacesAsync(orderId)).Details);
+        Assert.Equal(details, (await ReadSurfacesAsync(orderId, "Tie A")).Details);
     }
 
-    private async Task AssertEverySurfaceShowsAsync(Guid orderId, string[] items, string[] firstItemOptions)
+    /// <summary>
+    /// The update stored every position (0..n-1, options too), moved the order's version on by exactly one and sent
+    /// exactly one change notification for the order, carrying that version.
+    /// </summary>
+    private async Task AssertStoredAndAnnouncedOnceAsync(Guid orderId, Stored before, int mark, Line[] lines)
     {
-        var surfaces = await ReadSurfacesAsync(orderId);
+        var after = await StoredAsync(orderId);
+
+        Assert.Equal(lines.Select(l => l.Name).ToArray(), after.Items.Select(i => i.Name).ToArray());
+        Assert.Equal(Enumerable.Range(0, lines.Length).ToArray(), after.Items.Select(i => i.Sequence).ToArray());
+        for (var i = 0; i < lines.Length; i++)
+        {
+            Assert.Equal(lines[i].Options, after.Items[i].Options.Select(o => o.Name).ToArray());
+            Assert.Equal(Enumerable.Range(0, lines[i].Options.Length).ToArray(), after.Items[i].Options.Select(o => o.Sequence).ToArray());
+        }
+
+        Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
+        var change = Assert.Single(OrderChangesSince(mark, orderId));
+        Assert.Equal(after.ChangeVersion, change.Version);
+    }
+
+    private List<OrderChanged> OrderChangesSince(int mark, Guid orderId) =>
+        _notifier.Sent
+            .Skip(mark)
+            .Where(s => s.TenantId == _tenantId)
+            .Select(s => s.Change)
+            .OfType<OrderChanged>()
+            .Where(c => c.OrderId == orderId)
+            .ToList();
+
+    private async Task<Stored> StoredAsync(Guid orderId)
+    {
+        await using var db = await _databases.CreateAsync(_tenantId, Ct);
+        var version = await db.Orders.Where(o => o.Id == orderId).Select(o => o.ChangeVersion).SingleAsync(Ct);
+        var items = (await db.OrderItems.AsNoTracking().Include(i => i.Options).Where(i => i.OrderId == orderId).ToListAsync(Ct))
+            .OrderBy(i => i.Sequence)
+            .Select(i => new StoredItem(
+                i.ProductName,
+                i.Sequence,
+                i.Options.OrderBy(o => o.Sequence).Select(o => new StoredOption(o.Name, o.Sequence)).ToArray()))
+            .ToArray();
+        return new Stored(version, items);
+    }
+
+    private async Task AssertEverySurfaceShowsAsync(Guid orderId, Line[] lines)
+    {
+        string[] items = lines.Select(l => l.Name).ToArray();
+        // The options of the first line that has some; every surface shows them in the provider's order too.
+        var withOptions = lines.First(l => l.Options.Length > 0);
+        var surfaces = await ReadSurfacesAsync(orderId, withOptions.Name);
 
         Assert.Equal(items, surfaces.Details);
-        Assert.Equal(firstItemOptions, surfaces.DetailsFirstItemOptions);
+        Assert.Equal(withOptions.Options, surfaces.DetailsOptions);
         Assert.Equal(items, surfaces.LiveScreen);
         Assert.Equal(items, surfaces.ListLineItems);
         Assert.Equal(items[0], surfaces.ListFirstProductName);
         Assert.Equal(items, surfaces.Receipt);
-        Assert.Equal(firstItemOptions, surfaces.ReceiptFirstItemOptions);
+        Assert.Equal(withOptions.Options, surfaces.ReceiptOptions);
         Assert.Equal(items, surfaces.Reprint);
-        Assert.Equal(firstItemOptions, surfaces.ReprintFirstItemOptions);
+        Assert.Equal(withOptions.Options, surfaces.ReprintOptions);
     }
 
-    private async Task<Surfaces> ReadSurfacesAsync(Guid orderId)
+    private async Task<Surfaces> ReadSurfacesAsync(Guid orderId, string optionsOf)
     {
         var reads = new OrderReadService(_databases, TimeProvider.System, NullLogger<OrderReadService>.Instance);
 
@@ -150,17 +242,17 @@ public sealed class OrderItemSequenceTests : IDisposable
         var receipts = new ReceiptPrintJobService(_databases, DefaultTemplates.Instance, NullTenantChangeNotifier.Instance, NullLogger<ReceiptPrintJobService>.Instance);
         await ClearReceiptJobsAsync(orderId);
         Assert.True(await receipts.TryCreateReceiptJobAsync(_tenantId, orderId, 1, "Test Restaurant", Ct));
-        var (receipt, receiptOptions, firstJobId) = await LatestReceiptAsync(orderId);
+        var (receipt, receiptOptions, firstJobId) = await LatestReceiptAsync(orderId, optionsOf);
 
         await MarkPrintedAsync(firstJobId);
         var history = new PrintJobHistoryService(_databases, DefaultTemplates.Instance, NullTenantChangeNotifier.Instance, NullLogger<PrintJobHistoryService>.Instance);
         var reprint = await history.CreateReprintAsync(_tenantId, firstJobId, "Test Restaurant", Ct);
         Assert.True(reprint.Success, reprint.MessageKey);
-        var (reprinted, reprintedOptions, _) = await LatestReceiptAsync(orderId);
+        var (reprinted, reprintedOptions, _) = await LatestReceiptAsync(orderId, optionsOf);
 
         return new Surfaces(
             details.Items.Select(i => i.ProductName).ToArray(),
-            details.Items[0].Options.Select(o => o.Name).ToArray(),
+            details.Items.Single(i => i.ProductName == optionsOf).Options.Select(o => o.Name).ToArray(),
             live.Items.Select(i => i.ProductName).ToArray(),
             row.LineItems.Select(i => i.ProductName).ToArray(),
             row.FirstProductName,
@@ -170,7 +262,7 @@ public sealed class OrderItemSequenceTests : IDisposable
             reprintedOptions);
     }
 
-    private async Task<(string[] Items, string[] FirstItemOptions, Guid JobId)> LatestReceiptAsync(Guid orderId)
+    private async Task<(string[] Items, string[] Options, Guid JobId)> LatestReceiptAsync(Guid orderId, string optionsOf)
     {
         await using var db = await _databases.CreateAsync(_tenantId, Ct);
         var job = (await db.PrintJobs.AsNoTracking().Where(j => j.OrderId == orderId).ToListAsync(Ct))
@@ -178,7 +270,8 @@ public sealed class OrderItemSequenceTests : IDisposable
             .First();
         using var payload = JsonDocument.Parse(job.PayloadJson);
         var items = payload.RootElement.GetProperty("items").EnumerateArray().ToArray();
-        var options = items[0].TryGetProperty("options", out var list)
+        var item = items.Single(i => i.GetProperty("productName").GetString() == optionsOf);
+        var options = item.TryGetProperty("options", out var list)
             ? list.EnumerateArray().Select(o => o.GetProperty("name").GetString()!).ToArray()
             : [];
         return (items.Select(i => i.GetProperty("productName").GetString()!).ToArray(), options, job.Id);
@@ -233,7 +326,7 @@ public sealed class OrderItemSequenceTests : IDisposable
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
-            NullTenantChangeNotifier.Instance,
+            _notifier,
             NullLogger<OrderSyncService>.Instance);
     }
 
@@ -245,8 +338,8 @@ public sealed class OrderItemSequenceTests : IDisposable
         return result;
     }
 
-    /// <summary>The provider's order with <paramref name="items"/> in that order; the options belong to <paramref name="optionsOn"/> (the first line by default).</summary>
-    private static ExternalOrderDto Sample(string externalOrderId, string[] items, string? rawPayloadJson = null, string? optionsOn = null) =>
+    /// <summary>The provider's order with <paramref name="lines"/> in that order, each under its own stable id.</summary>
+    private static ExternalOrderDto Sample(string externalOrderId, Line[] lines, string? rawPayloadJson = null) =>
         new(
             FoodPlatform.TrendyolYemek,
             externalOrderId,
@@ -263,15 +356,15 @@ public sealed class OrderItemSequenceTests : IDisposable
             PaymentStatus.Paid,
             "Created",
             rawPayloadJson ?? $$"""{"id":"{{externalOrderId}}"}""",
-            items
-                .Select((name, index) => new ExternalOrderItemDto(
-                    $"{externalOrderId}-line-{index + 1}",
-                    name,
+            lines
+                .Select(line => new ExternalOrderItemDto(
+                    line.Id,
+                    line.Name,
                     1,
                     10m,
                     10m,
                     null,
-                    name == (optionsOn ?? items[0]) ? ProviderOptions.Select(o => new ExternalOrderItemOptionDto(o, 1m)).ToArray() : []))
+                    line.Options.Select(o => new ExternalOrderItemOptionDto(o, 1m)).ToArray()))
                 .ToArray());
 
     private static Order NewOrder(Guid id, string externalOrderId) => new()
@@ -301,16 +394,25 @@ public sealed class OrderItemSequenceTests : IDisposable
         Options = options.Select(o => new OrderItemOption { Name = o, Price = 1m, CreatedAt = storedAt, UpdatedAt = storedAt }).ToList()
     };
 
+    /// <summary>One provider line: its stable id, its name and its options in the provider's order.</summary>
+    private sealed record Line(string Id, string Name, string[] Options);
+
+    private sealed record Stored(long ChangeVersion, StoredItem[] Items);
+
+    private sealed record StoredItem(string Name, int Sequence, StoredOption[] Options);
+
+    private sealed record StoredOption(string Name, int Sequence);
+
     private sealed record Surfaces(
         string[] Details,
-        string[] DetailsFirstItemOptions,
+        string[] DetailsOptions,
         string[] LiveScreen,
         string[] ListLineItems,
         string? ListFirstProductName,
         string[] Receipt,
-        string[] ReceiptFirstItemOptions,
+        string[] ReceiptOptions,
         string[] Reprint,
-        string[] ReprintFirstItemOptions);
+        string[] ReprintOptions);
 
     private sealed class FakeClient : IFoodPlatformClient
     {
