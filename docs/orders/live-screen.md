@@ -55,6 +55,8 @@ Authorization: Live Screen actions use `CanViewLiveScreen` where applied on thos
 - Board columns group `New`+`Accepted` together; then Preparing, Ready, On the way, Completed (recent Delivered)
 - Board cards have one height on desktop and tablet (≥ 768 px): `--wasla-live-board-card-block-size` (20.5rem) on every status, with identity and status at the top, the note and product preview in the middle, and the price and actions on the bottom edge. The product preview keeps its 6.75rem cap and "more in details" line. When a card holds more than fits (a long note, wrapped actions, the practice-order countdown), only the preview gives way, and a `ResizeObserver` keeps that line in step. On phones, Board cards size to their content with a shared minimum (`--wasla-live-board-card-min-block-size`, 15rem). List, Focus and the detail modal keep their own sizing
 - Focus: queue + detail panel; narrow viewports toggle queue/detail; detail is loaded lazily
+- From 768 px up to the Board's own width (five 280 px columns, about 1,480 px with the page padding; `max-width: 1499.98px`) the Board is wider than the screen. The Board host then fills the screen below the header and scrolls both ways, so its horizontal scrollbar stays on screen instead of under the last card of the longest column (WAS-5). Phones keep the stacked columns and the page scroll; wider screens keep the page scroll
+- Each Board column, List group and Focus queue group renders at most one page of orders; see [Large active-order sets](#large-active-order-sets-was-5)
 - Focus queue rows show at most two lines of product summary (CSS line clamp); the full text stays in the button's accessible name and `title`, and the selected order lists every item. In the Focus detail panel, item prices share one column at the panel edge and the action bar stays pinned at the bottom of the panel while a long item list scrolls (`.wasla-live-focus .wasla-live-detail__*` in `wasla-theme.css`; the detail modal is unchanged)
 
 ### Snapshot coordinator (one poll)
@@ -63,12 +65,26 @@ Authorization: Live Screen actions use `CanViewLiveScreen` where applied on thos
 
 - Default interval: **10000 ms** (`waslaOrdersOptions.pollingIntervalMs` / `orders-core.js` default). While the live connection is up the interval is **30000 ms** when Web's internal listener is on, and stays **10000 ms** when it is off (WAS-103). Both are rendered by the server (`pollingIntervalMs`, `connectedPollingIntervalMs`, from `LiveScreenPolling`); `setPollingIntervalMs` switches between them ([Live invalidation](#live-invalidation-was-24))
 - One in-flight fetch; mutations invalidate and refresh; errors use exponential backoff (cap 30s)
+- A read is aborted after `liveDataTimeoutMs` (15 s). A timeout that fires more than 1 s after it was due waited behind a long task on the page, not for the network: the read gets its time back once instead of being discarded (WAS-5)
 - First successful snapshot is the **notification baseline** (no sound/notify for pre-existing IDs); so is the first snapshot after the snapshot's training isolation changes (see Order training below)
 - Later polls detect new order IDs, then notify **after** render acceptance (notify failure does not roll back the snapshot)
 
 ### Incremental DOM reuse
 
 Cards/rows carry `data-live-signature` from `orderContentSignature` (status, display number, platform, customer fields, note, total, timestamps, item product/qty/notes). Matching signature → reuse node (time/elapsed updates only when needed). Mismatched layout or signature → replace/rebuild that node.
+
+The Board's "more in details" line needs each card's product preview measured. Only cards on screen are measured (an `IntersectionObserver`; a card is measured when it scrolls into view, and only on-screen previews are followed by the `ResizeObserver`), and all sizes are read before any class is written. Measuring every card with a class change between reads made the browser lay out the page once per card (WAS-5).
+
+### Large active-order sets (WAS-5)
+
+Unresolved orders never leave the Live Screen by date, so an outage, a test run or a provider problem can leave thousands of active orders. On 14 October 2026 a development tenant had 5,754 (about 5 MB of snapshot) and the page stayed on Loading for minutes.
+
+- Each Board column, List group and Focus queue group renders at most **100** orders (`GROUP_PAGE_SIZE`; `waslaOrdersOptions.liveGroupPageSize` overrides it), newest first as sorted. Below the column, a line says how many it shows (`Orders.LiveScreen.GroupShowing`, "Showing {0} of {1}") and a button renders the next page (`Orders.LiveScreen.GroupShowMore`). The button is described by that line, keeps focus while there is more, and then moves focus to the first order it revealed. No request is made.
+- Nothing is filtered: the snapshot, the header counts and the column counts still hold every active order, and every order is reachable. Revealed pages are kept for the page view, across polls and view switches. A restaurant-sized column (100 or fewer) looks as before, without the control.
+- Always rendered beyond the page: the order holding keyboard focus, the Focus selection, the order whose details are open (so focus can return to its button) and the practice order.
+- New orders are the newest, so they are on the first page; the sound, notification and highlight rules are unchanged. An order pushed off the first page by newer ones waits behind "Show more".
+
+Measured in headless Edge on a developer machine with a deterministic copy of that set (5,756 snapshot orders, 3.2 MB; `LargeActiveOrderSeed`, `LiveScreenLargeSnapshotBrowserTests`): before, the first Board frame came 216 s after the response and an unchanged refresh took 154 s; rendering all cards with the overflow fix alone still froze the page for about 40 s after the first frame (`content-visibility: auto` on thousands of cards) or, without `content-visibility`, made every frame take 0.4 to 0.8 s. With paging, the first frame comes about 0.1 s after the response (about 1.4 s after navigation), the page has about 4,300 elements instead of 225,000, an unchanged refresh renders in about 5 ms, and each further page takes 15 to 30 ms up to 1,000 cards. JSON parsing (10 to 30 ms) and the transfer were never the bottleneck. These figures describe one machine and are not a capacity claim.
 
 ### Lazy order details
 
@@ -185,6 +201,7 @@ Per connection, the classification is `ProviderConnectionHealthRules.Classify` (
 4. **No polling per view** — one snapshot coordinator for the page.
 5. **Polling remains** as the safety net (10 s while not connected; while connected, 30 s with Web's internal listener on and 10 s without it). Do not remove it without measurements (WAS-24). The snapshot stays the only source the Live Screen renders.
 6. Do not put Notification Settings back on the Orders header; operational attention stays Live Screen / settings routes.
+7. **Bounded columns** — a column renders one page of orders at a time; the counts and "Show more" keep every active order visible and reachable. Do not render thousands of cards at once (WAS-5).
 
 ---
 

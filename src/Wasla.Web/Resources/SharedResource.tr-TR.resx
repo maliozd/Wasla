@@ -3571,6 +3571,8 @@
   <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Pano</value></data>
   <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Tamamlanan</value></data>
   <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>Sipariş yok</value></data>
+  <data name="Orders.LiveScreen.GroupShowing" xml:space="preserve"><value>{1} siparişin {0} tanesi gösteriliyor</value></data>
+  <data name="Orders.LiveScreen.GroupShowMore" xml:space="preserve"><value>{0} sipariş daha göster</value></data>
   <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Sipariş</value></data>
   <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Süre</value></data>
   <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>Toplam</value></data>

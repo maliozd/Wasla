@@ -79,24 +79,34 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
     /// different points of guided setup: <see cref="OwnerId"/> in order training, <see cref="NewOwnerId"/> before the
     /// first-use decision and <see cref="ResumingOwnerId"/> in the platform connections section.
     /// <paramref name="configuration"/> adds or overrides settings, for example <c>Realtime:Internal</c>.
+    /// <paramref name="seed"/> adds fake rows to the tenant database after the standard seed (it receives the seed time),
+    /// for example a large set of active orders.
     /// </summary>
-    public static Task<TenantVisualWebHost> StartAsync(bool tenantInSetup = false, IReadOnlyDictionary<string, string?>? configuration = null) =>
-        StartAsync(TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "wwwroot"), "http://127.0.0.1:0", tenantInSetup, configuration);
+    public static Task<TenantVisualWebHost> StartAsync(
+        bool tenantInSetup = false, IReadOnlyDictionary<string, string?>? configuration = null, Action<TenantDbContext, DateTime>? seed = null) =>
+        StartAsync(TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "wwwroot"), "http://127.0.0.1:0", tenantInSetup, configuration, seed);
 
     public static Task<TenantVisualWebHost> StartAsync(string webRootPath, string url) => StartAsync(webRootPath, url, tenantInSetup: false);
 
     public static async Task<TenantVisualWebHost> StartAsync(
-        string webRootPath, string url, bool tenantInSetup, IReadOnlyDictionary<string, string?>? configuration = null)
+        string webRootPath, string url, bool tenantInSetup, IReadOnlyDictionary<string, string?>? configuration = null,
+        Action<TenantDbContext, DateTime>? seed = null)
     {
         var central = new CentralTestDatabase();
         var tenants = new RecordingTenantDbFactory();
         SeedCentral(central);
         tenants.CreateTenantDatabase(TenantId);
         tenants.Override(TenantId, _ => Task.FromResult<TenantDbContext>(new SqliteAggregateTenantDbContext(tenants.ConnectionStringFor(TenantId))));
-        using (var seed = new SqliteAggregateTenantDbContext(tenants.ConnectionStringFor(TenantId)))
+        using (var db = new SqliteAggregateTenantDbContext(tenants.ConnectionStringFor(TenantId)))
         {
-            SeedTenant(seed, DateTime.UtcNow, tenantInSetup);
-            seed.SaveChanges();
+            var now = DateTime.UtcNow;
+            SeedTenant(db, now, tenantInSetup);
+            db.SaveChanges();
+            if (seed is not null)
+            {
+                seed(db, now);
+                db.SaveChanges();
+            }
         }
 
         var contentRoot = Directory.CreateTempSubdirectory("wasla-visual-host-").FullName;
