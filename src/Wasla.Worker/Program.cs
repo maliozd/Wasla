@@ -35,8 +35,9 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
 
-// Receipt jobs this process creates are announced to Wasla.Web's open screens (Realtime:Internal; off when not set).
-builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration);
+// Orders, automatic approvals and receipt jobs this process stores are announced to Wasla.Web's open screens
+// (Realtime:Internal). Outside Development it must be configured or explicitly disabled, or startup stops (WAS-103).
+builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration, builder.Environment);
 
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 

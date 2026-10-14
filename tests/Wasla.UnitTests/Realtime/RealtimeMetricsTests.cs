@@ -257,7 +257,7 @@ public sealed class RealtimeMetricsTests
         var services = new ServiceCollection()
             .AddLogging(b => b.AddProvider(logs).SetMinimumLevel(LogLevel.Debug))
             .AddSingleton(TimeProvider.System)
-            .AddWaslaWebTenantChangeNotifier(new ConfigurationBuilder().AddInMemoryCollection(channel).Build())
+            .AddWaslaWebTenantChangeNotifier(new ConfigurationBuilder().AddInMemoryCollection(channel).Build(), InternalTenantChangeChannelTests.ProductionEnvironment)
             .BuildServiceProvider();
         return (services, logs);
     }

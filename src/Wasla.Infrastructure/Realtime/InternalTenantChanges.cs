@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Domain.Enums;
@@ -20,6 +21,9 @@ namespace Wasla.Infrastructure.Realtime;
 /// <see cref="SecretHeaderName"/>. Never committed; set it as an environment variable.</item>
 /// <item><c>TimeoutSeconds</c>: how long a sender waits for Wasla.Web (default 3, longer than Web's own 2-second bound
 /// on handing the notification to the hub, so a slow hub send is not mistaken for an unreachable Web).</item>
+/// <item><c>Disabled</c>: <c>true</c> declares an environment that is polling-only on purpose (WAS-103). Without it,
+/// Wasla.Worker and Wasla.Api refuse to start outside Development when <c>Port</c> is not set. Not allowed together
+/// with <c>Port</c>.</item>
 /// </list>
 /// </summary>
 public sealed class InternalRealtimeOptions
@@ -32,8 +36,14 @@ public sealed class InternalRealtimeOptions
     public int? Port { get; set; }
     public string? Secret { get; set; }
     public double TimeoutSeconds { get; set; } = 3;
+    public bool Disabled { get; set; }
 
-    public bool IsEnabled => Port is not null;
+    public InternalRealtimeState State =>
+        Disabled ? InternalRealtimeState.Disabled
+        : Port is not null ? InternalRealtimeState.Enabled
+        : InternalRealtimeState.NotConfigured;
+
+    public bool IsEnabled => State == InternalRealtimeState.Enabled;
 
     public TimeSpan Timeout => TimeSpan.FromSeconds(TimeoutSeconds);
 
@@ -47,8 +57,19 @@ public sealed class InternalRealtimeOptions
     /// </summary>
     public IReadOnlyList<string> Validate()
     {
-        if (!IsEnabled)
-            return [];
+        if (Disabled)
+        {
+            return Port is null
+                ? []
+                : [$"{SectionName}:Disabled is true, but {SectionName}:Port is set too. Remove {SectionName}:Port for a polling-only environment, or {SectionName}:Disabled to use the channel."];
+        }
+
+        if (Port is null)
+        {
+            return string.IsNullOrWhiteSpace(Secret)
+                ? []
+                : [$"{SectionName}:Secret is set, but {SectionName}:Port is not, so the channel is incomplete. Set {SectionName}:Port to the same value in Wasla.Web, Wasla.Worker and Wasla.Api, or remove {SectionName}:Secret."];
+        }
 
         var errors = new List<string>();
         if (Port is < 1 or > 65535)
@@ -68,6 +89,36 @@ public sealed class InternalRealtimeOptions
         if (errors.Count > 0)
             throw new InvalidOperationException(string.Join(" ", errors));
     }
+
+    /// <summary>
+    /// The startup policy of a process that sends to Wasla.Web (Wasla.Worker and Wasla.Api, WAS-103). An incomplete or
+    /// invalid channel never starts. A missing one starts only in Development; anywhere else the channel must be
+    /// configured, or the environment declared polling-only with <c>Disabled</c>. The message names keys, never values.
+    /// </summary>
+    public void ThrowIfNotAllowedForSender(IHostEnvironment environment)
+    {
+        ThrowIfInvalid();
+        if (State == InternalRealtimeState.NotConfigured && !environment.IsDevelopment())
+        {
+            throw new InvalidOperationException(
+                $"{SectionName} is not configured, which is allowed only in Development (environment: {environment.EnvironmentName}). " +
+                $"Set {SectionName}:Port and {SectionName}:Secret to the same values as Wasla.Web, so that changes made by this process reach open screens, " +
+                $"or set {SectionName}:Disabled to true for an environment that is polling-only on purpose. See docs/operations/deployment.md#live-notifications.");
+        }
+    }
+}
+
+/// <summary>The states of <see cref="InternalRealtimeOptions"/> that a process may start with.</summary>
+public enum InternalRealtimeState
+{
+    /// <summary>No <c>Port</c> and no <c>Disabled</c>: allowed for Wasla.Worker and Wasla.Api in Development only.</summary>
+    NotConfigured,
+
+    /// <summary><c>Disabled</c> is true: a polling-only environment, on purpose.</summary>
+    Disabled,
+
+    /// <summary><c>Port</c> is set: Wasla.Web listens and the other processes send.</summary>
+    Enabled
 }
 
 /// <summary>
@@ -251,15 +302,17 @@ public static class InternalRealtimeServiceCollectionExtensions
 {
     /// <summary>
     /// For Wasla.Worker and Wasla.Api: sends this process's tenant change notifications to Wasla.Web when
-    /// <c>Realtime:Internal</c> is configured, and keeps the default (drop them) otherwise. An invalid configuration
-    /// stops the process at startup.
+    /// <c>Realtime:Internal</c> is configured, and keeps the default (drop them) when it is disabled or, in Development
+    /// only, missing. Anything else stops the process at startup
+    /// (<see cref="InternalRealtimeOptions.ThrowIfNotAllowedForSender"/>).
     /// </summary>
     public static IServiceCollection AddWaslaWebTenantChangeNotifier(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         var options = InternalRealtimeOptions.Read(configuration);
-        options.ThrowIfInvalid();
+        options.ThrowIfNotAllowedForSender(environment);
         if (!options.IsEnabled)
             return services;
 
@@ -294,15 +347,23 @@ public static class InternalRealtimeServiceCollectionExtensions
     public static void LogWebTenantChangeChannel(this IServiceProvider services, IConfiguration configuration, string process)
     {
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.Realtime");
-        if (InternalRealtimeOptions.Read(configuration).IsEnabled)
+        switch (InternalRealtimeOptions.Read(configuration).State)
         {
-            logger.LogInformation("{Process} sends live change notifications to Wasla.Web over the loopback channel.", process);
-            return;
+            case InternalRealtimeState.Enabled:
+                logger.LogInformation("{Process} sends live change notifications to Wasla.Web over the loopback channel.", process);
+                return;
+            case InternalRealtimeState.Disabled:
+                logger.LogWarning(
+                    "{Process}: {Key} is true, so this environment is polling-only: changes made here (orders, automatic approvals, receipts, Print Bridge reports) are not pushed to open screens; they show at the screens' next poll.",
+                    process,
+                    $"{InternalRealtimeOptions.SectionName}:Disabled");
+                return;
+            default:
+                logger.LogWarning(
+                    "{Process}: {Section} is not configured (allowed in Development only), so changes made here (orders, automatic approvals, receipts, Print Bridge reports) are not pushed to open screens; they show at the screens' next poll. See docs/operations/deployment.md#live-notifications.",
+                    process,
+                    InternalRealtimeOptions.SectionName);
+                return;
         }
-
-        logger.LogWarning(
-            "{Process}: {Section} is not configured, so changes made here (orders, automatic approvals, receipts, Print Bridge reports) are not pushed to open screens; they show at the screens' next poll. See docs/operations/deployment.md#live-notifications.",
-            process,
-            InternalRealtimeOptions.SectionName);
     }
 }

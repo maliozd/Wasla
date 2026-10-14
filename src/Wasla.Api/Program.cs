@@ -64,9 +64,9 @@ builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
 
-// Print Bridge job reports this process records are announced to Wasla.Web's open screens (Realtime:Internal; off
-// when not set).
-builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration);
+// Print Bridge job reports this process records are announced to Wasla.Web's open screens (Realtime:Internal). Same
+// startup policy as Wasla.Worker: outside Development it must be configured or explicitly disabled (WAS-103).
+builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration, builder.Environment);
 builder.Services.AddWaslaHealthChecks();
 builder.Services.Configure<RequestDiagnosticsOptions>(options =>
 {
