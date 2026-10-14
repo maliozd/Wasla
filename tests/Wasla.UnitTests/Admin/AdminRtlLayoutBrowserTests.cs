@@ -147,9 +147,11 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
 
         using var session = await _host.SignedInAdminAsync(culture);
         var browser = await HeadlessChromium.StartAsync(executable, ct);
-        foreach (var cookie in session.Cookies)
-            await browser.SetCookieAsync(_host.BaseAddress, cookie.Name, cookie.Value, ct);
-        return browser;
+        return await browser.SetUpAsync(async started =>
+        {
+            foreach (var cookie in session.Cookies)
+                await started.SetCookieAsync(_host.BaseAddress, cookie.Name, cookie.Value, ct);
+        });
     }
 
     /// <summary>Loads a page, waits for AdminLTE to create its live region, and returns the layout metrics.</summary>

@@ -9,14 +9,17 @@ namespace Wasla.UnitTests.Admin;
 /// <summary>
 /// A minimal Chrome DevTools Protocol driver for layout checks that need a real rendering engine. It launches an
 /// installed Chromium browser (Edge or Chrome, or the one named by <c>WASLA_TEST_BROWSER</c>) headless with a
-/// throw-away profile, and is disposed with its whole process tree. No package dependency.
+/// throw-away profile, and is disposed with its whole process tree (see <see cref="HeadlessBrowserCleanup"/>). A caller
+/// owns the browser once it is in an <c>await using</c>; setup before that point goes through <see cref="SetUpAsync"/>.
+/// No package dependency.
 /// </summary>
 internal sealed class HeadlessChromium : IAsyncDisposable
 {
     public const string BrowserVariable = "WASLA_TEST_BROWSER";
 
-    private readonly Process _process;
-    private readonly string _profile;
+    private readonly IBrowserProcessTree _processes;
+    private readonly BrowserProfile _profile;
+    private readonly HeadlessBrowserCleanup _cleanup;
     private readonly ClientWebSocket _socket;
     private int _nextId;
 
@@ -25,12 +28,20 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     // browser starts with the same values.
     private readonly Dictionary<string, string> _mediaFeatures = new() { ["prefers-reduced-motion"] = "no-preference" };
 
-    private HeadlessChromium(Process process, string profile, ClientWebSocket socket)
+    /// <summary>Takes ownership of the processes and the profile; tests construct it around a stand-in process.</summary>
+    internal HeadlessChromium(IBrowserProcessTree processes, BrowserProfile profile, ClientWebSocket socket)
     {
-        _process = process;
+        _processes = processes;
         _profile = profile;
         _socket = socket;
+        _cleanup = new HeadlessBrowserCleanup(processes, profile);
     }
+
+    /// <summary>The profile directory this browser was started with.</summary>
+    internal string ProfilePath => _profile.Path;
+
+    /// <summary>The processes this browser has started so far, the browser process first. Valid until disposal.</summary>
+    internal IReadOnlyList<IBrowserProcess> TrackedProcesses() => _processes.Refresh();
 
     public static string? FindExecutable()
     {
@@ -75,9 +86,10 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     internal static async Task<HeadlessChromium> StartAsync(
         string executable, TimeSpan timeout, Func<ProcessStartInfo, Process?> launch, CancellationToken ct)
     {
-        var profile = Directory.CreateTempSubdirectory("wasla-headless-").FullName;
-        Process? process = null;
+        var profile = BrowserProfile.Create();
+        BrowserProcessTree? processes = null;
         ClientWebSocket? socket = null;
+        HeadlessChromium started;
         try
         {
             var start = new ProcessStartInfo(executable)
@@ -90,7 +102,7 @@ internal sealed class HeadlessChromium : IAsyncDisposable
                      {
                          "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
                          "--disable-extensions", "--disable-background-networking", "--remote-debugging-port=0",
-                         $"--user-data-dir={profile}", "about:blank"
+                         $"--user-data-dir={profile.Path}", "about:blank"
                      })
                 start.ArgumentList.Add(argument);
             // The relaunched copy would be outside the started process tree: startup would fail when the started
@@ -98,14 +110,14 @@ internal sealed class HeadlessChromium : IAsyncDisposable
             start.Environment.Remove(CompatibilityLayerVariable);
 
             var browser = launch(start) ?? throw new InvalidOperationException("The browser did not start.");
-            process = browser;
+            processes = BrowserProcessTree.Track(browser, Path.GetFileName(executable));
             browser.BeginErrorReadLine();
             browser.BeginOutputReadLine();
 
             // Edge may still hold the file open while writing it, so a non-empty file is not yet a readable one.
             var startup = Stopwatch.StartNew();
             var endpoint = await DevToolsActivePort.WaitAsync(
-                token => DevToolsActivePort.ReadAsync(Path.Combine(profile, DevToolsActivePort.FileName), token),
+                token => DevToolsActivePort.ReadAsync(Path.Combine(profile.Path, DevToolsActivePort.FileName), token),
                 () => DescribeExit(browser), () => startup.Elapsed, Task.Delay, timeout, ct);
 
             using var http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{endpoint.Port}") };
@@ -127,16 +139,18 @@ internal sealed class HeadlessChromium : IAsyncDisposable
 
             socket = new ClientWebSocket();
             await socket.ConnectAsync(new Uri(pageSocket), ct);
-            var started = new HeadlessChromium(browser, profile, socket);
-            await started.EmulateMediaAsync(ct);
-            return started;
+            // Track the processes the browser started with while their parents still run; cleanup looks again.
+            processes.Refresh();
+            started = new HeadlessChromium(processes, profile, socket);
         }
-        catch
+        catch (Exception startupFailure)
         {
             socket?.Dispose();
-            await CleanUpAsync(process, profile);
+            await CleanUpAfterAsync(startupFailure, new HeadlessBrowserCleanup(processes, profile).RunAsync);
             throw;
         }
+
+        return await started.SetUpAsync(browser => browser.EmulateMediaAsync(ct));
     }
 
     private static string? DescribeExit(Process process)
@@ -326,35 +340,45 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Runs setup on a browser its caller does not own yet: cookies, viewport, a first page. If setup throws (a failed
+    /// command, a skip, cancellation), the browser is disposed before the exception propagates, because the caller's
+    /// <c>await using</c> takes over only once this returns.
+    /// </summary>
+    public async Task<HeadlessChromium> SetUpAsync(Func<HeadlessChromium, Task> setUp)
+    {
+        try
+        {
+            await setUp(this);
+            return this;
+        }
+        catch (Exception setUpFailure)
+        {
+            await CleanUpAfterAsync(setUpFailure, async () => await DisposeAsync());
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Kills the browser's process tree and deletes its profile; repeated and concurrent calls share one cleanup. Throws
+    /// <see cref="HeadlessBrowserCleanupException"/> when a process or the profile outlives the bounded cleanup.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         try { _socket.Dispose(); } catch (WebSocketException) { }
-        await CleanUpAsync(_process, _profile);
+        await _cleanup.RunAsync();
     }
 
-    /// <summary>Kills the browser's whole process tree, if it started, and deletes its throw-away profile.</summary>
-    private static async Task CleanUpAsync(Process? process, string profile)
+    /// <summary>Cleans up after <paramref name="failure"/>; when the cleanup fails too, both are reported together.</summary>
+    private static async Task CleanUpAfterAsync(Exception failure, Func<Task> cleanUp)
     {
-        if (process is not null)
+        try
         {
-            try
-            {
-                if (!process.HasExited)
-                    process.Kill(entireProcessTree: true);
-                await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
-            }
-            catch (Exception ex) when (ex is InvalidOperationException or TimeoutException) { }
-            finally
-            {
-                process.Dispose();
-            }
+            await cleanUp();
         }
-
-        for (var attempt = 0; attempt < 5; attempt++)
+        catch (HeadlessBrowserCleanupException cleanupFailure)
         {
-            try { Directory.Delete(profile, recursive: true); break; }
-            catch (IOException) { await Task.Delay(200); }
-            catch (UnauthorizedAccessException) { await Task.Delay(200); }
+            throw new AggregateException("The browser failed and its cleanup failed too.", failure, cleanupFailure);
         }
     }
 }

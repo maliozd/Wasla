@@ -384,8 +384,7 @@ public sealed class TenantSidebarStorageBrowserTests : IAsyncLifetime
         var browser = await _host.BrowserAsync(culture, signedIn: true, ct);
         if (browser is null)
             Assert.Skip($"No Chromium browser found; set {HeadlessChromium.BrowserVariable} to run the real-browser sidebar checks.");
-        await browser.SetViewportAsync(width, 860, mobile: width < 992, ct);
-        return browser;
+        return await browser.SetUpAsync(started => started.SetViewportAsync(width, 860, mobile: width < 992, ct));
     }
 
     private async Task LoadTenantAsync(HeadlessChromium browser, string path, CancellationToken ct)

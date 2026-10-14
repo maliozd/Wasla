@@ -223,27 +223,31 @@ public sealed class LiveScreenRealtimeBrowserTests
         var browser = await host.BrowserAsync(culture, 1280, 900, mobile: false, ct, signInAs);
         if (browser is null)
             Assert.Skip($"No Chromium browser found; set {HeadlessChromium.BrowserVariable} to run the real-browser Live Screen checks.");
-        await browser.AddScriptBeforePageScriptsAsync(Instrumentation, ct);
-        try
-        {
-            await browser.NavigateAsync(new Uri(host.BaseAddress, "/orders/live-display"), ct);
-        }
-        catch (TimeoutException)
-        {
-            await browser.NavigateAsync(new Uri(host.BaseAddress, "/orders/live-display"), ct);
-        }
 
-        if (!await browser.WaitForAsync("getComputedStyle(document.documentElement).getPropertyValue('--bs-blue').trim() !== ''", TimeSpan.FromSeconds(15), ct))
-            Assert.Skip("Bootstrap did not load (its CDN is unreachable), so the tenant layout cannot be exercised.");
-        if (waitForCards)
+        // A stalled page (a slow CDN, a hub that does not connect) fails or skips here, before the test's await using.
+        return await browser.SetUpAsync(async started =>
         {
-            Assert.True(await browser.WaitForAsync("document.querySelectorAll('#ordersLiveScreenHost [data-order-id]').length >= 3", TimeSpan.FromSeconds(15), ct),
-                $"The Live Screen did not render the seeded orders. {host.ServerErrors}");
-        }
+            await started.AddScriptBeforePageScriptsAsync(Instrumentation, ct);
+            try
+            {
+                await started.NavigateAsync(new Uri(host.BaseAddress, "/orders/live-display"), ct);
+            }
+            catch (TimeoutException)
+            {
+                await started.NavigateAsync(new Uri(host.BaseAddress, "/orders/live-display"), ct);
+            }
 
-        Assert.True(await browser.WaitForAsync("!!window.WaslaRealtime && !!window.WaslaRealtime.get() && window.WaslaRealtime.get().state() === 'connected'", TimeSpan.FromSeconds(15), ct),
-            $"The Live Screen did not connect to the live hub. {host.ServerErrors}");
-        return browser;
+            if (!await started.WaitForAsync("getComputedStyle(document.documentElement).getPropertyValue('--bs-blue').trim() !== ''", TimeSpan.FromSeconds(15), ct))
+                Assert.Skip("Bootstrap did not load (its CDN is unreachable), so the tenant layout cannot be exercised.");
+            if (waitForCards)
+            {
+                Assert.True(await started.WaitForAsync("document.querySelectorAll('#ordersLiveScreenHost [data-order-id]').length >= 3", TimeSpan.FromSeconds(15), ct),
+                    $"The Live Screen did not render the seeded orders. {host.ServerErrors}");
+            }
+
+            Assert.True(await started.WaitForAsync("!!window.WaslaRealtime && !!window.WaslaRealtime.get() && window.WaslaRealtime.get().state() === 'connected'", TimeSpan.FromSeconds(15), ct),
+                $"The Live Screen did not connect to the live hub. {host.ServerErrors}");
+        });
     }
 
     /// <summary>
