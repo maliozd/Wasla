@@ -30,7 +30,8 @@ and the print history page.
   the result of the work it reports. What a screen missed while it was connecting or disconnected is read on reconnect
   and by the fallback. A notification lost while the screen stays connected (a failed send in Web, or the internal
   channel's 30-second pause) is **not** repaired for the print action until the next notification for that order, a
-  reopen or a reload; the Live Screen repairs it at its next poll (30 seconds while connected). See
+  reopen or a reload; the Live Screen repairs it at its next poll (while connected, 30 seconds with Web's internal
+  listener on, 10 without it). See
   [Limitations](#limitations).
 - **The server chooses the tenant.** The group of a connection comes from the tenant resolved from the request's host
   and the revalidated tenant cookie. A client cannot name a tenant or a group.
@@ -55,7 +56,7 @@ transport-free contract. Each process registers one implementation:
 |---------|----------------|--------------|
 | Wasla.Web | `SignalRTenantChangeNotifier`: sends to the tenant's group on the hub, waits at most 2 seconds | `AddWaslaRealtime` (`src/Wasla.Web/Realtime/RealtimeRegistration.cs`) |
 | Wasla.Worker, Wasla.Api | `WebTenantChangeNotifier`: POST to Wasla.Web's loopback listener | `AddWaslaWebTenantChangeNotifier` (`src/Wasla.Infrastructure/Realtime/InternalTenantChanges.cs`) when `Realtime:Internal` is set |
-| Everything else (CLI, tests), or Worker/Api without `Realtime:Internal` | `NullTenantChangeNotifier`: drops notifications | default in `AddWaslaInfrastructure` |
+| Everything else (CLI, tests), or Worker/Api with the channel disabled (or, in Development only, missing) | `NullTenantChangeNotifier`: drops notifications | default in `AddWaslaInfrastructure` |
 
 No Application or Infrastructure service uses SignalR types. The services call `TenantChangePublisher.PublishAsync`
 (`src/Wasla.Infrastructure/Realtime/TenantChangePublisher.cs`), which uses `CancellationToken.None` (an aborted request
@@ -201,12 +202,41 @@ Configuration section `Realtime:Internal`, the same values in Web, Worker and Ap
 
 | Key | Meaning |
 |-----|---------|
-| `Port` | Wasla.Web listens on `127.0.0.1:Port`; Worker and Api post to it. Not set: the channel is off (Worker and Api drop notifications; Web opens no listener). |
+| `Port` | Wasla.Web listens on `127.0.0.1:Port`; Worker and Api post to it. Not set: the channel is off (see the startup policy below). |
 | `Secret` | Shared secret, at least 32 printable ASCII characters without spaces, sent in `X-Wasla-Realtime-Secret`. A secret: set it as an environment variable, never in a committed file. |
 | `TimeoutSeconds` | How long a sender waits for Web (default 3, 0.1–10). Keep it above Web's 2-second bound on the hub send, so a slow send is not taken for an unreachable Web. |
+| `Disabled` | `true` declares an environment that is polling-only on purpose (WAS-103). Only then may Worker and Api start outside Development without `Port`. Not allowed together with `Port`. |
 
-A process refuses to start when `Port` is set and the port or secret is invalid; the message names the key, never the
-value. See [../operations/deployment.md](../operations/deployment.md#live-notifications).
+### Startup policy (WAS-103)
+
+Each process reads only its own configuration. The five states behave and log differently:
+
+| State | Wasla.Web | Wasla.Worker and Wasla.Api |
+|-------|-----------|----------------------------|
+| **Enabled**: `Port` and a valid `Secret` | Opens the listener and logs its address; a connected Live Screen polls every 30 seconds | Send to Web; information line at startup |
+| **Disabled**: `Disabled=true`, no `Port` | Starts without the listener; warning naming `Realtime:Internal:Disabled`; a connected Live Screen keeps polling every 10 seconds | Start in every environment and drop notifications; warning naming `Realtime:Internal:Disabled` (polling-only) |
+| **Missing**: neither `Port` nor `Disabled` | Same as Disabled, with a warning that `Realtime:Internal:Port` is not set | Development: start and drop notifications as before, with a warning that `Realtime:Internal` is not configured. Any other environment: refuse to start, naming `Port`, `Secret` and `Disabled` |
+| **Incomplete**: `Port` without a secret of at least 32 characters, or `Secret` without `Port` | Refuses to start | Refuses to start |
+| **Invalid**: port outside 1–65535, timeout outside 0.1–10, a secret with spaces or non-ASCII characters, or `Disabled=true` together with `Port` | Refuses to start | Refuses to start |
+
+Startup errors and warnings name keys and whether a value is set, never the secret's value. A `Port`, `TimeoutSeconds`
+or `Disabled` value of the wrong type fails in configuration binding, which names the key.
+
+- **Why Web starts without its listener.** Web serves every tenant page. Without the listener nothing reaches its
+  screens later than before WAS-24, because the Live Screen keeps its 10-second rate while connected
+  (`LiveScreenPolling`, rendered as `connectedPollingIntervalMs`). Refusing to start would take the whole tenant UI
+  down for a slower-updates configuration.
+- **Why Worker refuses.** New platform orders come from the Worker, and new-order awareness is the Live Screen's main
+  job. Web cannot see the Worker's configuration, so a Web with its listener on would keep connected screens at 30
+  seconds while a Worker without the channel pushes nothing. Outside Development a missing section is treated as a
+  mistake, not as a choice.
+- **Decision for Wasla.Api: the same policy as Worker.** Api shares the section and the deployment with Worker, and a
+  Print Bridge report sent to Api is the only way an open print action learns Printing, Printed or Failed while
+  connected (it does not poll while connected). A silently missing channel in Api would leave print status stale until
+  a reopen. A deployment that does not run Api is not affected. A polling-only environment sets `Disabled=true` for
+  Web, Worker and Api.
+
+See [../operations/deployment.md](../operations/deployment.md#live-notifications).
 
 **Receiving (Web).** `InternalTenantChangeListener` is a second Kestrel server inside the Web process, bound to the
 IPv4 loopback address only, with one route (`POST /internal/tenant-changes`) and nothing else: no tenant resolution,
@@ -271,12 +301,15 @@ snapshot coordinator (`O.liveStore`); it renders nothing itself.
 
 | Connection state | Behavior |
 |------------------|----------|
-| Connected | An `OrderChanged` for a version the snapshot does not show yet schedules one `requestRefresh()`: notifications within 150 ms are read together and notification-triggered reads are at least 1 second apart. The coordinator still runs one request at a time with one follow-up. Polling continues every **30 seconds** as a safety net |
+| Connected | An `OrderChanged` for a version the snapshot does not show yet schedules one `requestRefresh()`: notifications within 150 ms are read together and notification-triggered reads are at least 1 second apart. The coordinator still runs one request at a time with one follow-up. Polling continues as a safety net: every **30 seconds** when Web's internal listener is on, every **10 seconds** when it is off (WAS-103), because the page's own connection says nothing about whether Worker and Api changes can reach it |
 | Connecting, disconnected or reconnecting | Polling every **10 seconds**, as before WAS-24 |
 | Each (re)connect, including after a back/forward-cache restore | One full snapshot read at once (notifications sent meanwhile were missed); a scheduled read is folded into it |
 
 - The polling rate is switched with `setPollingIntervalMs` on the coordinator; a shorter rate reschedules the pending
   poll at once. Error backoff is unchanged.
+- Both rates come from the server: `pollingIntervalMs` and `connectedPollingIntervalMs` in `waslaOrdersOptions`,
+  rendered from `LiveScreenPolling` (`src/Wasla.Web/Realtime/LiveScreenPolling.cs`). `pollingRates()` keeps the normal
+  rate while connected when the page gives no usable connected rate; the browser never lowers it on its own.
 - Older or slower responses never replace newer state: the coordinator's single-flight, generation and mutation guards
   are unchanged.
 - New-order detection, sound, browser notifications and the "silent first snapshot" baseline stay in the coordinator,
@@ -294,10 +327,12 @@ endpoint.
 |-----------|--------|
 | SignalR send fails or times out in Web | Warning with the exception type; the work's result is unchanged; print actions catch up on reconnect or reopen, the Live Screen at its next poll |
 | Web not running or refusing, seen from Worker or Api | One warning, 30-second pause, the work continues; screens catch up when they reconnect to the restarted Web |
-| `Realtime:Internal` not configured | Worker and Api changes are not pushed. Print actions show them within 10 seconds only while disconnected, otherwise on reopen or reload. The Live Screen shows ingested orders and automatic approvals only at its next poll: **up to 30 seconds while connected**, slower than before WAS-24. Configure the channel wherever the Worker runs |
+| `Realtime:Internal` missing or disabled in Web | Web warns at startup and opens no listener. Its Live Screens keep polling every **10 seconds** while connected, so ingested orders, automatic approvals and their sound and browser notification show within 10 seconds, as before WAS-24. Print actions show Worker and Api changes within 10 seconds only while disconnected, otherwise on reopen or reload |
+| `Realtime:Internal` missing in Worker or Api | Development: a warning, and their changes are not pushed. Any other environment: the process refuses to start unless `Disabled=true` declares the environment polling-only |
+| Web's listener on, but Worker or Api cannot deliver (a different port or secret, Web briefly unreachable) | Not visible to the page: a connected Live Screen stays at 30 seconds, so Worker orders can show **up to 30 seconds late** until delivery resumes. The sender logs a warning per 30-second pause, Web logs each refused request, and the `Wasla.Realtime` meter counts pauses and refusals ([../operations/observability.md](../operations/observability.md#live-notification-metrics)). Set the same values for all three processes |
 | Browser never connects (blocked WebSockets and fallbacks, proxy without upgrade) | Print actions read every 10 seconds while shown; the Live Screen keeps polling every 10 seconds |
 | Session revoked or tenant deactivated while connected | Connection closed at the next check (default 60 s; a deactivated tenant once the 5-minute host cache has expired, as for HTTP); reconnect is refused; the next page request goes to sign-in |
-| Notification lost while the page stays connected | Print action: not repaired until the next notification for that order, a reopen of the panel or a reload. Live Screen: repaired at the next poll (30 seconds) |
+| Notification lost while the page stays connected | Print action: not repaired until the next notification for that order, a reopen of the panel or a reload. Live Screen: repaired at the next poll (30 seconds with Web's internal listener on, 10 without it) |
 | A client stops reading (frozen device, dead network) | Its outgoing buffer fills (about 2,000 small messages); then each send to its tenant's group waits the full 2-second bound (counted as `timeout`) until the server's client timeout (30 seconds) closes it. Other tabs receive everything; memory stays bounded. Measured in WAS-25 (`RealtimeLoadTests`) |
 | Many tabs of one user, or a reconnect storm after a Web restart | Each tab is one connection, joins its groups once and reads its state once per (re)connect; reconnects are spread by jitter. Each tab announces a new order itself (one sound and notification per tab, as before live updates) |
 
@@ -314,14 +349,16 @@ endpoint.
 - **Metrics are local.** The `Wasla.Realtime` meter is read on the server with `dotnet-counters`; there is no exporter
   or dashboard.
 - **Not durable.** Notifications are not stored or replayed. Missed ones are covered by the read on reconnect, the
-  fallback while disconnected, and for the Live Screen its 30-second poll while connected. The print action does not
+  fallback while disconnected, and for the Live Screen its poll while connected (30 seconds, or 10 without Web's
+  internal listener). The print action does not
   read on a timer while connected (WAS-23 decision), so a lost print notification leaves it stale until the next
   notification of that order, a reopen or a reload.
-- **The Live Screen polls less while connected** (30 seconds instead of 10, as WAS-24 asks for a lower-frequency
-  fallback). Anything that changes the snapshot without an order write (the platform connection badge, automation
-  indicators, the 2-minute Delivered window, a settings change) shows up to 30 seconds later than before while
-  connected. Not measured yet; WAS-24 forbids removing polling without measurements, and the rate is one constant
-  (`CONNECTED_POLLING_MS`, overridable with `connectedPollingIntervalMs`).
+- **The Live Screen polls less while connected** when Web's internal listener is on (30 seconds instead of 10, as
+  WAS-24 asks for a lower-frequency fallback). Anything that changes the snapshot without an order write (the platform
+  connection badge, automation indicators, the 2-minute Delivered window, a settings change) then shows up to 30
+  seconds later than before while connected. Not measured yet; WAS-24 forbids removing polling without measurements,
+  and the rate is one constant (`LiveScreenPolling.ConnectedWithInternalListenerIntervalMs`, rendered as
+  `connectedPollingIntervalMs`).
 - **Order versions are per order.** There is no tenant-wide order of changes; none is needed, because the screen
   always reads the whole snapshot. A previous Worker or Web running against the migrated schema changes orders without
   raising `ChangeVersion` or announcing them, so stop every old process before a new one starts.
@@ -332,7 +369,10 @@ endpoint.
 - **Mixed versions.** A previous Worker or Api running against the migrated schema inserts jobs at version 0 and does
   not bump versions, which breaks the ordering; stop every old process before any new one starts
   ([../operations/deployment.md](../operations/deployment.md#live-notifications)).
-- **Worker and Api need `Realtime:Internal`** on the same machine as Web (loopback only).
+- **Worker and Api need `Realtime:Internal`** on the same machine as Web (loopback only). Outside Development they
+  refuse to start without it unless the environment is declared polling-only. Each process checks only its own
+  configuration, so a port or secret that differs from Web's is not caught at startup; it shows as sender warnings
+  and refused requests (failure table above).
 - **Concurrency evidence.** Version and single-announcement behavior are tested with SQLite, which serializes writers.
   SQL Server locking of the serializable creation path is the existing behavior and was not re-tested.
 - The Print Bridge devices page, the print history page, the Orders management page and practice orders do not use
@@ -373,6 +413,14 @@ endpoint.
   `realtime-resilience.test.js` (jitter and its spread over a storm, the attempt label, 100 stop/start cycles, messages
   after stop, 1,000 invalidations against the real coordinator, an invalidation during a read, one announcement through
   reconnects, disposal).
+- WAS-103: `InternalRealtimeStartupPolicyTests.cs` (sender hosts built as in Worker `Program.cs`: refused outside
+  Development without the channel, started with `Disabled=true` and in Development, every incomplete and invalid
+  state refused by Worker/Api and Web in Development and Production, the four states logged differently, Web's
+  listener-off warning and its polling rates; an obvious fake secret absent from every exception and log line),
+  `LiveScreenPollingRenderingTests.cs` (the Live Screen page renders 10 seconds while connected without the listener,
+  missing or disabled, and 30 with it, and never the secret), `live-screen-invalidation.test.js` (`pollingRates()` and
+  10 seconds while connected without the listener) and `LiveScreenRealtimeBrowserTests.cs` (the other browser tests
+  run with the listener on; one checks a connected page without it stays at 10 seconds through a reconnect).
 
 ## Source map
 
