@@ -166,6 +166,7 @@ app.Logger.LogInformation(
     "Environment={Environment}, AuthCookieSecurePolicy={SecurePolicy}",
     app.Environment.EnvironmentName,
     authCookieSecurePolicy);
+app.Services.LogInternalListenerState(builder.Configuration);
 
 // First, so that everything after it (rate-limit partitions, HTTPS redirection, logs) sees the forwarded client.
 app.UseWaslaTrustedProxies();

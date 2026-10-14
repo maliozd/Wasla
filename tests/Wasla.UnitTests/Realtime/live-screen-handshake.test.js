@@ -88,6 +88,9 @@ function page(options) {
     requestRefresh: (options && options.requestRefresh) || function () { calls.reads += 1; return Promise.resolve(); },
     setPollingIntervalMs: function (ms) { calls.intervals.push(ms); },
     shownVersion: (options && options.shownVersion) || function () { return -1; },
+    // The rates a page renders when Web's internal listener is on (WAS-103).
+    disconnectedPollingMs: 10000,
+    connectedPollingMs: 30000,
     setTimeout: c.setTimeout,
     clearTimeout: c.clearTimeout,
     now: c.now

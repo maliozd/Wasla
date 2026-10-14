@@ -184,8 +184,11 @@ The `Host` and forwarded headers are the same as for every other location ([Reve
 | `Realtime__Internal__Port` | A free local port, for example `5290`. Web listens on `127.0.0.1` only; do not open it in the firewall or the proxy. |
 | `Realtime__Internal__Secret` | A random secret of at least 32 printable ASCII characters without spaces, for example 32 random bytes in Base64. Store it with the other server-side secrets (WAS-77); never commit it. |
 | `Realtime__Internal__TimeoutSeconds` | Optional, default 3. |
+| `Realtime__Internal__Disabled` | Only for an environment that is polling-only on purpose: `true`, with no `Port`. Set it for Web, Worker and Api. |
 
-A process with `Port` set and a missing or short secret, or an invalid port, refuses to start. Without `Port` the channel is off: Web opens no listener, and Worker and Api changes (ingested orders, automatic approvals and receipts, Bridge reports sent to Api) are not pushed. Open print panels then show them on their fallback reads only while disconnected, otherwise on reopen or reload; a connected Live Screen shows new and updated platform orders only at its 30-second poll, which is slower than the 10 seconds before WAS-24. Configure the channel wherever the Worker runs. Startup logs say whether Web accepts internal notifications. To rotate the secret, change it for all three processes and restart them; notifications between the restarts are refused and logged, nothing else fails.
+**Startup policy (WAS-103).** Outside Development, Worker and Api refuse to start when `Realtime:Internal` is missing; the error names `Port`, `Secret` and `Disabled`. Configure the channel, or set `Realtime__Internal__Disabled=true` to run polling-only. Development keeps starting without the section (with a warning). In every environment and every process, an incomplete channel (`Port` without a secret of at least 32 characters, or `Secret` without `Port`) or an invalid one (a port outside 1–65535, a timeout outside 0.1–10, a secret with spaces or non-ASCII characters, or `Disabled=true` together with `Port`) refuses to start. Web starts without its listener (missing or disabled) and logs a warning naming the key. Errors and warnings name keys, never the secret. The full table and the reasons, including why Api follows the Worker's policy: [../architecture/realtime.md](../architecture/realtime.md#startup-policy-was-103).
+
+Without the channel nothing is pushed from Worker and Api (ingested orders, automatic approvals and receipts, Bridge reports sent to Api). A Web without its listener keeps connected Live Screens polling every 10 seconds, so new platform orders, their sound and browser notification show within 10 seconds, as before WAS-24; with the listener on, connected Live Screens poll every 30 seconds and rely on the channel. Open print panels show Worker and Api changes on their fallback reads only while disconnected, otherwise on reopen or reload. Each process checks only its own configuration: a Worker or Api whose port or secret differs from Web's starts, its sends are refused or unreachable, and connected Live Screens can then show Worker orders up to 30 seconds late. Set the same values for all three processes and check the startup logs below. To rotate the secret, change it for all three processes and restart them; notifications between the restarts are refused and logged, nothing else fails.
 
 **Session checks.** `Realtime__SessionRevalidationSeconds` (Web, default 60, 1–600) sets how often an open connection's session is checked again ([../architecture/authentication.md](../architecture/authentication.md#long-lived-live-connections)).
 
@@ -197,7 +200,7 @@ A process with `Port` set and a missing or short secret, or an invalid port, ref
 
 The tenant migration `AddOrderChangeVersion` (WAS-24) adds `Orders.ChangeVersion` (bigint, existing rows 0). Ingestion, every order action and the Live Screen snapshot read or write it, so the same order applies: stop every previous Web, Worker and Api, migrate every tenant, then start the new versions. A previous process would change orders without raising the version or announcing them, so open Live Screens would show those changes only at their next poll, and versions would no longer count every change.
 
-At startup Wasla.Worker and Wasla.Api log whether their changes reach Wasla.Web (`Wasla.Realtime`): an information line when `Realtime:Internal` is set, a warning when it is not.
+At startup each process logs its channel state (category `Wasla.Realtime`). Wasla.Worker and Wasla.Api: an information line when `Realtime:Internal` is configured, a warning naming `Realtime:Internal:Disabled` when the environment is polling-only, and in Development a warning that `Realtime:Internal` is not configured. Wasla.Web: the listener's loopback address when it accepts internal notifications, otherwise a warning that `Realtime:Internal:Port` is not set or `Realtime:Internal:Disabled` is true, and that connected Live Screens keep polling every 10 seconds.
 
 ## Logging and health
 
@@ -233,6 +236,7 @@ OrderHub__CustomerOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # opt
 TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
 Realtime__Internal__Port                     # Web, Worker, Api: loopback channel to Web; see Live notifications
 Realtime__Internal__Secret                   # secret, at least 32 characters
+Realtime__Internal__Disabled                 # true only for a polling-only environment (no Port); required then outside Development
 Realtime__SessionRevalidationSeconds         # Web, optional, default 60
 CustomerDb__ServerInstance   # CLI
 ```

@@ -16,8 +16,10 @@ namespace Wasla.UnitTests.Realtime;
 /// Covered: a new order and a lifecycle action shown without waiting for polling, one browser notification per new
 /// order however many invalidations arrive, a burst read together, the 10-second fallback while disconnected, the
 /// immediate read on reconnect and after a back/forward-cache restore with one connection throughout, training
-/// isolation (no sound or card for a real order, only its count), and a Kitchen screen. Skips only when no Chromium
-/// browser is installed or Bootstrap cannot be loaded from its CDN.
+/// isolation (no sound or card for a real order, only its count), and a Kitchen screen. The host runs with Web's
+/// internal listener on (<c>Realtime:Internal</c>), as a deployment with Worker changes pushed does; without it a
+/// connected screen keeps the 10-second rate (WAS-103). Skips only when no Chromium browser is installed or Bootstrap
+/// cannot be loaded from its CDN.
 /// </summary>
 public sealed class LiveScreenRealtimeBrowserTests
 {
@@ -58,13 +60,22 @@ public sealed class LiveScreenRealtimeBrowserTests
         })()
         """;
 
+    // Web's internal listener on, so the page lowers its connected rate to 30 seconds. Nothing posts to it here; the
+    // tests announce through the host's own notifier.
+    private static Task<TenantVisualWebHost> StartHostAsync(bool tenantInSetup = false) =>
+        TenantVisualWebHost.StartAsync(tenantInSetup, new Dictionary<string, string?>
+        {
+            ["Realtime:Internal:Port"] = InternalTenantChangeChannelTests.FreeLoopbackPort().ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["Realtime:Internal:Secret"] = "FAKE-TEST-SECRET-browser-tests-0123456789abcd"
+        });
+
     [Theory]
     [InlineData("en-US", "ltr")]
     [InlineData("ar-SA", "rtl")]
     public async Task NewOrdersAndLifecycleChanges_ShowWithoutPolling_AndANewOrderIsAnnouncedOnce(string culture, string direction)
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var host = await TenantVisualWebHost.StartAsync();
+        await using var host = await StartHostAsync();
         await using var browser = await OpenLiveScreenAsync(host, culture, signInAs: null, ct);
         Assert.Equal(direction, await browser.EvaluateAsync<string>("document.documentElement.getAttribute('dir')", ct));
         Assert.Equal(30000, await browser.EvaluateAsync<int>("window.WaslaOrders.liveStore.pollingIntervalMs()", ct));
@@ -112,10 +123,28 @@ public sealed class LiveScreenRealtimeBrowserTests
     }
 
     [Fact]
+    public async Task WithoutWebsInternalListener_AConnectedScreenKeepsPollingEveryTenSeconds()
+    {
+        // WAS-103: no Worker or Api change can be pushed, so the page keeps the normal rate while connected, through a
+        // reconnect as well.
+        var ct = TestContext.Current.CancellationToken;
+        await using var host = await TenantVisualWebHost.StartAsync();
+        await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct);
+
+        Assert.True(await browser.EvaluateAsync<bool>("window.WaslaOrders.liveInvalidation.isConnected()", ct));
+        Assert.Equal(10000, await browser.EvaluateAsync<int>("window.WaslaOrders.liveStore.pollingIntervalMs()", ct));
+        await browser.EvaluateAsync<bool>("(window.WaslaRealtime.get().stop(), true)", ct);
+        Assert.True(await browser.WaitForAsync("window.WaslaRealtime.get().state() === 'disconnected'", Push, ct));
+        await browser.EvaluateAsync<bool>("(window.WaslaRealtime.get().start(), true)", ct);
+        Assert.True(await browser.WaitForAsync("window.WaslaOrders.liveInvalidation.isConnected()", Push, ct));
+        Assert.Equal(10000, await browser.EvaluateAsync<int>("window.WaslaOrders.liveStore.pollingIntervalMs()", ct));
+    }
+
+    [Fact]
     public async Task WhileDisconnected_ItPollsEveryTenSeconds_AndAReconnectReadsAtOnce()
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var host = await TenantVisualWebHost.StartAsync();
+        await using var host = await StartHostAsync();
         await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct);
 
         Assert.True(await browser.EvaluateAsync<bool>(CountNotifications, ct));
@@ -140,7 +169,7 @@ public sealed class LiveScreenRealtimeBrowserTests
     public async Task ARestoreFromTheBackForwardCache_ReconnectsTheSameConnection_ReadsAtOnce_AndKeepsListening()
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var host = await TenantVisualWebHost.StartAsync();
+        await using var host = await StartHostAsync();
         await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct);
 
         Assert.True(await browser.EvaluateAsync<bool>(CountNotifications, ct));
@@ -164,7 +193,7 @@ public sealed class LiveScreenRealtimeBrowserTests
     public async Task DuringOrderTraining_ARealOrderIsCountedQuickly_ButNeverPausesTrainingOrIsAnnounced()
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var host = await TenantVisualWebHost.StartAsync(tenantInSetup: true);
+        await using var host = await StartHostAsync(tenantInSetup: true);
         await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct, waitForCards: false);
         Assert.True(await browser.WaitForAsync("!!document.querySelector('[data-training-real-orders]')", TimeSpan.FromSeconds(10), ct),
             $"The order training panel is not shown. {host.ServerErrors}");
@@ -209,7 +238,7 @@ public sealed class LiveScreenRealtimeBrowserTests
     public async Task AKitchenScreen_FollowsOrders_WithoutLoadingPrintStatus()
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var host = await TenantVisualWebHost.StartAsync();
+        await using var host = await StartHostAsync();
         await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: "kitchen", ct);
         Assert.False(await browser.EvaluateAsync<bool>("!!window.WaslaOrders.printStatus", ct));
 

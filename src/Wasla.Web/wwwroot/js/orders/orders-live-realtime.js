@@ -3,7 +3,8 @@
 // (O.liveStore.requestRefresh, GET /orders/live-data) unless the snapshot on screen already shows the order at that
 // version (Order.ChangeVersion only grows). A notification is never rendered: ordering, role filters,
 // training isolation, new-order detection, sound and browser notifications all stay with the snapshot coordinator.
-// - Connected: notifications trigger a read, bursts coalesced; polling continues at a lower rate as a safety net.
+// - Connected: notifications trigger a read, bursts coalesced; polling continues as a safety net, at a lower rate only
+//   when the page says Wasla.Web receives Worker and Api changes (connectedPollingIntervalMs, WAS-103).
 // - Connecting or disconnected: the normal polling rate; every (re)connect, including after the back/forward cache,
 //   reads the snapshot at once because notifications sent meanwhile were missed.
 (function (root, factory) {
@@ -24,12 +25,13 @@
     const realtime = root.WaslaRealtime.get(opts.realtimeHubUrl);
     if (!realtime) return;
 
+    const rates = api.pollingRates(opts);
     const live = api.createLiveInvalidation({
       requestRefresh: function () { return store.requestRefresh(); },
       setPollingIntervalMs: function (ms) { store.setPollingIntervalMs(ms); },
       shownVersion: function (orderId) { return store.shownChangeVersion(orderId); },
-      disconnectedPollingMs: opts.pollingIntervalMs || api.DISCONNECTED_POLLING_MS,
-      connectedPollingMs: opts.connectedPollingIntervalMs || api.CONNECTED_POLLING_MS,
+      disconnectedPollingMs: rates.disconnected,
+      connectedPollingMs: rates.connected,
       setTimeout: root.setTimeout.bind(root),
       clearTimeout: root.clearTimeout.bind(root),
       now: function () { return Date.now(); }
@@ -52,12 +54,25 @@
 
   /** The Live Screen's existing polling rate, kept while not connected. */
   const DISCONNECTED_POLLING_MS = 10000;
-  /** The lower safety rate while connected: notifications carry the changes, polling catches anything missed. */
-  const CONNECTED_POLLING_MS = 30000;
   /** Notifications within this window are read together. */
   const SETTLE_MS = 150;
   /** At most one notification-triggered read per second; the coordinator still runs one request at a time. */
   const MIN_GAP_MS = 1000;
+
+  function usableInterval(value) {
+    return typeof value === "number" && isFinite(value) && value > 0 ? value : null;
+  }
+
+  /**
+   * The page's polling rates. Wasla.Web renders connectedPollingIntervalMs from its internal listener (WAS-103): the
+   * lower safety rate when Worker and Api changes are pushed, the normal rate when they cannot be, however healthy this
+   * page's own connection is. Without a usable value a connected page keeps the normal rate; the browser never lowers
+   * it on its own.
+   */
+  function pollingRates(opts) {
+    const disconnected = usableInterval(opts && opts.pollingIntervalMs) || DISCONNECTED_POLLING_MS;
+    return { disconnected: disconnected, connected: usableInterval(opts && opts.connectedPollingIntervalMs) || disconnected };
+  }
 
   /**
    * options: requestRefresh(), setPollingIntervalMs(ms), shownVersion(orderId) (-1 when not shown),
@@ -114,7 +129,7 @@
         if (disposed || !info) return;
         if (info.state === "connected") {
           connected = true;
-          options.setPollingIntervalMs(options.connectedPollingMs || CONNECTED_POLLING_MS);
+          options.setPollingIntervalMs(options.connectedPollingMs || options.disconnectedPollingMs || DISCONNECTED_POLLING_MS);
           // Anything sent before or during the connection was missed: read the full snapshot now.
           if (timer) counters.coalesced += 1;
           clearScheduled();
@@ -138,7 +153,7 @@
 
   return {
     DISCONNECTED_POLLING_MS: DISCONNECTED_POLLING_MS,
-    CONNECTED_POLLING_MS: CONNECTED_POLLING_MS,
+    pollingRates: pollingRates,
     SETTLE_MS: SETTLE_MS,
     MIN_GAP_MS: MIN_GAP_MS,
     createLiveInvalidation: createLiveInvalidation

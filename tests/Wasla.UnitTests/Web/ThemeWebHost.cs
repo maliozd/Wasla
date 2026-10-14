@@ -158,6 +158,8 @@ internal sealed class ThemeWebHost : IAsyncDisposable
         services.AddSingleton(Unused<IGuidedDemoService>.Create());
         services.AddSingleton(Unused<IValidator<UpdateTenantOrderSettingsCommand>>.Create());
         services.AddSingleton(Unused<IGuidedSetupCoordinator>.Create());
+        // The polling rates the page renders, as AddWaslaRealtime registers them for a Web without its internal listener.
+        services.AddSingleton(Wasla.Web.Realtime.LiveScreenPolling.For(new Wasla.Infrastructure.Realtime.InternalRealtimeOptions()));
 
         // Central Admin dashboard, as AdminWebHost registers it.
         services.AddDbContext<CentralDbContext>(options => options.UseSqlite(central.ConnectionString));

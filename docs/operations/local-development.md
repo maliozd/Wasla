@@ -124,6 +124,8 @@ Health (Web and API; currently uncommitted diagnostics wiring in working tree):
 
 Worker has **no** HTTP health endpoint.
 
+The launch profiles run every process in Development, where Worker and Api start without `Realtime:Internal` (live notifications from them are then off, with a warning). Started in any other environment, for example a published binary without `DOTNET_ENVIRONMENT`/`ASPNETCORE_ENVIRONMENT`, Worker and Api refuse to start until the channel is configured or `Realtime__Internal__Disabled=true` is set ([deployment.md](deployment.md#live-notifications)).
+
 ### Auth nuance (local)
 
 API Data Protection keys: committed API `appsettings.json` still sets `DataProtection:KeyPath` to `C:\OrderHub-keys` (**legacy path debt**). If unset, API `Program.cs` falls back to `C:\Wasla-keys`.

@@ -72,6 +72,60 @@ test("connected: a lower polling rate and an immediate full read; disconnected: 
   assert.deepEqual(calls.intervals, [10000, 30000, 10000, 30000]);
 });
 
+test("the connected rate is lowered only when the page says Web receives Worker and Api changes (WAS-103)", function () {
+  // Web's internal listener on: the page renders the lower connected rate.
+  assert.deepEqual(invalidation.pollingRates({ pollingIntervalMs: 10000, connectedPollingIntervalMs: 30000 }), { disconnected: 10000, connected: 30000 });
+  // Listener off: the page renders the normal rate for both, so a Worker order still shows within 10 seconds.
+  assert.deepEqual(invalidation.pollingRates({ pollingIntervalMs: 10000, connectedPollingIntervalMs: 10000 }), { disconnected: 10000, connected: 10000 });
+  // No connected rate on the page, or an unusable one: the browser never lowers the rate on its own.
+  assert.deepEqual(invalidation.pollingRates({ pollingIntervalMs: 10000 }), { disconnected: 10000, connected: 10000 });
+  assert.deepEqual(invalidation.pollingRates({ pollingIntervalMs: 10000, connectedPollingIntervalMs: 0 }), { disconnected: 10000, connected: 10000 });
+  assert.deepEqual(invalidation.pollingRates({ pollingIntervalMs: 10000, connectedPollingIntervalMs: -1 }), { disconnected: 10000, connected: 10000 });
+  assert.deepEqual(invalidation.pollingRates({ pollingIntervalMs: 10000, connectedPollingIntervalMs: "30000" }), { disconnected: 10000, connected: 10000 });
+  assert.deepEqual(invalidation.pollingRates({}), { disconnected: 10000, connected: 10000 });
+  assert.deepEqual(invalidation.pollingRates(undefined), { disconnected: 10000, connected: 10000 });
+});
+
+test("with Web's internal listener off, a connected Live Screen keeps polling every 10 seconds (WAS-103)", function () {
+  const c = clock();
+  const calls = { reads: 0, intervals: [] };
+  const rates = invalidation.pollingRates({ pollingIntervalMs: 10000, connectedPollingIntervalMs: 10000 });
+  const sync = invalidation.createLiveInvalidation({
+    requestRefresh: function () { calls.reads += 1; return Promise.resolve(); },
+    setPollingIntervalMs: function (ms) { calls.intervals.push(ms); },
+    shownVersion: function () { return -1; },
+    disconnectedPollingMs: rates.disconnected,
+    connectedPollingMs: rates.connected,
+    setTimeout: c.setTimeout,
+    clearTimeout: c.clearTimeout,
+    now: c.now
+  });
+
+  sync.onConnectionState({ state: "connecting" });
+  sync.onConnectionState({ state: "connected", reconnected: false });
+  // Still connected, still the normal rate; the read on connect is unchanged.
+  assert.deepEqual(calls.intervals, [10000, 10000]);
+  assert.equal(calls.reads, 1);
+  sync.onConnectionState({ state: "disconnected" });
+  assert.deepEqual(calls.intervals, [10000, 10000, 10000]);
+});
+
+test("without a connected rate, the invalidation keeps the disconnected rate when connected", function () {
+  const c = clock();
+  const intervals = [];
+  const sync = invalidation.createLiveInvalidation({
+    requestRefresh: function () { return Promise.resolve(); },
+    setPollingIntervalMs: function (ms) { intervals.push(ms); },
+    disconnectedPollingMs: 10000,
+    setTimeout: c.setTimeout,
+    clearTimeout: c.clearTimeout,
+    now: c.now
+  });
+
+  sync.onConnectionState({ state: "connected", reconnected: false });
+  assert.deepEqual(intervals, [10000]);
+});
+
 test("a burst of notifications becomes one read, and reads are at least a second apart", function () {
   const c = clock();
   const { sync, calls } = live(c);

@@ -26,6 +26,10 @@ public sealed class InternalTenantChangeChannelTests
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
+    /// <summary>The strictest startup policy for senders (WAS-103); the startup policy itself is covered by <see cref="InternalRealtimeStartupPolicyTests"/>.</summary>
+    internal static Microsoft.Extensions.Hosting.IHostEnvironment ProductionEnvironment { get; } =
+        new Microsoft.Extensions.Hosting.Internal.HostingEnvironment { EnvironmentName = Microsoft.Extensions.Hosting.Environments.Production };
+
     [Fact]
     public void Configuration_IsOffWithoutAPort_AndRefusedWhenIncomplete()
     {
@@ -49,7 +53,7 @@ public sealed class InternalTenantChangeChannelTests
 
         // Worker and Api refuse to start with an incomplete channel instead of silently dropping notifications.
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Realtime:Internal:Port"] = "5290" }).Build();
-        Assert.Throws<InvalidOperationException>(() => new ServiceCollection().AddWaslaWebTenantChangeNotifier(config));
+        Assert.Throws<InvalidOperationException>(() => new ServiceCollection().AddWaslaWebTenantChangeNotifier(config, ProductionEnvironment));
     }
 
     [Fact]
@@ -206,7 +210,7 @@ public sealed class InternalTenantChangeChannelTests
         services.AddLogging();
         services.AddSingleton<TimeProvider>(clock);
         services.AddSingleton<ITenantChangeNotifier>(NullTenantChangeNotifier.Instance);
-        services.AddWaslaWebTenantChangeNotifier(configuration);
+        services.AddWaslaWebTenantChangeNotifier(configuration, ProductionEnvironment);
         var notifier = services.BuildServiceProvider().GetRequiredService<ITenantChangeNotifier>();
         Assert.IsType<WebTenantChangeNotifier>(notifier);
         return notifier;

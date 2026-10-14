@@ -150,7 +150,7 @@ public sealed class TenantEventsHubTests
 
         // The Worker's composition: the real sync service with the internal channel notifier, over the tenant database.
         var workerServices = new ServiceCollection().AddLogging().AddSingleton(TimeProvider.System)
-            .AddWaslaWebTenantChangeNotifier(new ConfigurationBuilder().AddInMemoryCollection(channel).Build())
+            .AddWaslaWebTenantChangeNotifier(new ConfigurationBuilder().AddInMemoryCollection(channel).Build(), InternalTenantChangeChannelTests.ProductionEnvironment)
             .BuildServiceProvider();
         OrderChangeFixtures.SeedSyncableTenant(host.Tenants, host.AlphaId);
         var provider = new ScriptedPlatformClient(FoodPlatform.TrendyolYemek);
@@ -309,7 +309,7 @@ public sealed class TenantEventsHubTests
 
         // What Wasla.Worker registers (Program.cs: AddWaslaWebTenantChangeNotifier), over the same tenant database.
         var workerServices = new ServiceCollection().AddLogging().AddSingleton(TimeProvider.System)
-            .AddWaslaWebTenantChangeNotifier(new ConfigurationBuilder().AddInMemoryCollection(channel).Build())
+            .AddWaslaWebTenantChangeNotifier(new ConfigurationBuilder().AddInMemoryCollection(channel).Build(), InternalTenantChangeChannelTests.ProductionEnvironment)
             .BuildServiceProvider();
         var workerReceipts = new ReceiptPrintJobService(
             host.Tenants, new DefaultReceiptTemplates(), workerServices.GetRequiredService<ITenantChangeNotifier>(), NullLogger<ReceiptPrintJobService>.Instance);
