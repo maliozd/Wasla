@@ -423,8 +423,8 @@
   <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
     <value>Average value per order</value>
   </data>
-  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
-    <value>Latest orders received today</value>
+  <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
+    <value>Latest orders received</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>Orders by platform today</value>
@@ -450,8 +450,8 @@
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>orders</value>
   </data>
-  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
-    <value>No orders yet today.</value>
+  <data name="Dashboard.NoOrdersYet" xml:space="preserve">
+    <value>No orders yet.</value>
   </data>
   <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
     <value>New orders will appear here automatically.</value>

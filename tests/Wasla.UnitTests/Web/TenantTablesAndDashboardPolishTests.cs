@@ -173,7 +173,7 @@ public sealed class TenantTablesAndDashboardPolishTests
         Assert.Contains("class=\"wasla-table wasla-table--stack wasla-dash-table\"", dashboard);
         Assert.Contains("_OrderStatusBadge", dashboard);
         Assert.Contains("href=\"/orders/details/@o.Id\"", dashboard);
-        Assert.Contains("Dashboard.NoOrdersYetToday", dashboard);
+        Assert.Contains("Dashboard.NoOrdersYet", dashboard);
         Assert.True(
             dashboard.IndexOf("</header>", StringComparison.Ordinal) < dashboard.IndexOf("_GuidedSetupCard", StringComparison.Ordinal));
     }

@@ -76,7 +76,7 @@
                     </td>
                     <td class="wasla-table__num wasla-table__amount">
                         <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.TotalAmount"]</span>
-                        <span>@o.TotalAmount.ToString("C")</span>
+                        <span>@OrderUiHelper.FormatMoney(o.TotalAmount)</span>
                     </td>
                     <td class="wasla-table__num wasla-table__muted wasla-table__datetime">
                         <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.ReceivedAt"]</span>
