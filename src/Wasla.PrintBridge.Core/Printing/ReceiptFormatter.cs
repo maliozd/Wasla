@@ -87,7 +87,8 @@ public sealed class ReceiptFormatter
                 {
                     foreach (var opt in item.Options)
                     {
-                        var price = opt.Price > 0 ? $" ({opt.Price:0.00})" : string.Empty;
+                        // Invariant like every other amount here, whatever the culture of the PC that prints.
+                        var price = opt.Price > 0 ? $" ({opt.Price.ToString("0.00", CultureInfo.InvariantCulture)})" : string.Empty;
                         AppendWrapped(sb, "  +", $"{opt.Name}{price}");
                     }
                 }
