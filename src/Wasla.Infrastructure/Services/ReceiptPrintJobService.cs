@@ -79,10 +79,10 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
             return false;
         }
 
+        // The receipt lists items in the order every screen shows them.
         var order = await db.Orders
             .AsNoTracking()
-            .Include(o => o.Items)
-            .ThenInclude(i => i.Options)
+            .IncludeItemsInSequence()
             .FirstOrDefaultAsync(o => o.Id == orderId, ct)
             .ConfigureAwait(false);
 

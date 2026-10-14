@@ -797,6 +797,8 @@ public sealed class OrderSyncService : IOrderSyncService
             .ExecuteDeleteAsync(ct)
             .ConfigureAwait(false);
 
+        // Items and options keep the provider's list order (Sequence), as on insert.
+        var itemSequence = 0;
         foreach (var itemDto in external.Items)
         {
             var item = new OrderItem
@@ -807,16 +809,19 @@ public sealed class OrderSyncService : IOrderSyncService
                 UnitPrice = itemDto.UnitPrice,
                 TotalPrice = itemDto.TotalPrice,
                 Notes = itemDto.Notes,
+                Sequence = itemSequence++,
                 CreatedAt = nowUtc,
                 UpdatedAt = nowUtc
             };
 
+            var optionSequence = 0;
             foreach (var opt in itemDto.Options)
             {
                 item.Options.Add(new OrderItemOption
                 {
                     Name = opt.Name,
                     Price = opt.Price,
+                    Sequence = optionSequence++,
                     CreatedAt = nowUtc,
                     UpdatedAt = nowUtc
                 });
@@ -922,6 +927,9 @@ public sealed class OrderSyncService : IOrderSyncService
         // Initial milestone timestamps based on initial status
         ApplyStatusTransitionTimestamps(order, OrderStatus.New, internalStatus, nowUtc);
 
+        // Sequence keeps the order in which the provider listed the lines and their options; the mapped
+        // ExternalOrderDto lists them in that order. Readers order by it (OrderItemOrdering).
+        var itemSequence = 0;
         foreach (var itemDto in external.Items)
         {
             var item = new OrderItem
@@ -931,14 +939,17 @@ public sealed class OrderSyncService : IOrderSyncService
                 UnitPrice = itemDto.UnitPrice,
                 TotalPrice = itemDto.TotalPrice,
                 Notes = itemDto.Notes,
+                Sequence = itemSequence++,
             };
 
+            var optionSequence = 0;
             foreach (var opt in itemDto.Options)
             {
                 item.Options.Add(new OrderItemOption
                 {
                     Name = opt.Name,
-                    Price = opt.Price
+                    Price = opt.Price,
+                    Sequence = optionSequence++
                 });
             }
 
