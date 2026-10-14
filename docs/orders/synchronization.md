@@ -308,6 +308,7 @@ Rules:
 - Preserve parent `Order` row, `Id`, and `CreatedAt`.
 - New orders are inserted; then auto-approve / receipt hooks may run for eligible new rows (never while the tenant is in Setup; see [Operational mode: Setup](#operational-mode-setup)).
 - Real updates replace child `OrderItems` / `OrderItemOptions` via `ExecuteDeleteAsync` then reinsert, update scalars, set `UpdatedAt`, and rewrite `RawPayloadJson`.
+- Insert and update write each item's and option's zero-based position in the provider's list as `Sequence` (WAS-44). The mappers keep the provider's order: Trendyol GO `lines`, Yemeksepeti `basket`; neither payload has an explicit position field. Screens and receipts order by it (see [../frontend/design-system.md](../frontend/design-system.md#tables-and-sorting)). The short circuit below compares items as a set, so a payload that only reorders the same lines and options writes nothing, and the stored order stays as of the last write.
 - Provider internal status is **merged** with local progress so stale provider statuses cannot undo operator progress (see `MergeInternalStatusForSync`).
 - Missing `ExternalOrderId` skips the order (counted as skipped).
 

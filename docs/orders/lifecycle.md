@@ -81,7 +81,7 @@ On existing orders, mapped external status is merged via `MergeInternalStatusFor
 
 ### Child replace on real updates
 
-When a semantic change is detected, sync opens a transaction, updates scalars (including `CustomerNote`, money, platform status, etc.), sets `UpdatedAt`, deletes existing `OrderItemOption` / `OrderItem` rows with `ExecuteDeleteAsync`, then inserts items/options from the provider payload and `SaveChanges`.
+When a semantic change is detected, sync opens a transaction, updates scalars (including `CustomerNote`, money, platform status, etc.), sets `UpdatedAt`, deletes existing `OrderItemOption` / `OrderItem` rows with `ExecuteDeleteAsync`, then inserts items/options from the provider payload, each with its position in the provider's list (`Sequence`, see [synchronization.md](./synchronization.md#order-upsert)), and `SaveChanges`.
 
 ### Unchanged-order short circuit
 
