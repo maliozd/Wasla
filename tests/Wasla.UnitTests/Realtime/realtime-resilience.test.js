@@ -91,10 +91,30 @@ function fakeSignalR() {
             return Promise.reject(new Error("negotiate failed"));
           },
           stop: function () {
+            // With holdStop, a stop stays in "Disconnecting" until the test calls finishStop(), like the real client
+            // while it closes its transport; a second stop meanwhile gets the same pending promise. When it finishes
+            // the close handlers run first and then the promise resolves, in that order, as in the real client.
+            if (api.pendingStop) return api.pendingStop.promise;
             const wasOpen = connection.state !== "Disconnected";
-            connection.state = "Disconnected";
-            if (wasOpen) handlers.close.forEach(function (fn) { fn(); });
-            return Promise.resolve();
+            if (!api.holdStop) {
+              connection.state = "Disconnected";
+              if (wasOpen) handlers.close.forEach(function (fn) { fn(); });
+              return Promise.resolve();
+            }
+            connection.state = "Disconnecting";
+            let resolve;
+            const promise = new Promise(function (r) { resolve = r; });
+            api.pendingStop = {
+              promise: promise,
+              finish: function () {
+                api.pendingStop = null;
+                connection.state = "Disconnected";
+                if (wasOpen) handlers.close.forEach(function (fn) { fn(); });
+                resolve();
+              }
+            };
+            api.stopCalls = (api.stopCalls || 0) + 1;
+            return promise;
           },
           emit: function (message) { handlers.on.tenantChange(message); },
           drop: function () {
@@ -257,6 +277,73 @@ test("100 stop/start cycles keep one connection, one set of handlers and no time
   assert.equal(received, 1, "one handler, called once");
   assert.equal(states.filter(function (s) { return s === "connected"; }).length, 101);
   assert.equal(live.stats().readies, 101);
+});
+
+// pagehide calls stop() and pageshow (back/forward cache) can call start() before that stop has finished.
+test("a start asked for while a stop is still completing connects as soon as the stop completes, with one connection and no timer", async function () {
+  const signalR = fakeSignalR();
+  const c = clock();
+  const live = client(signalR, c);
+  live.start();
+  await flush();
+  assert.equal(live.state(), "connected");
+
+  signalR.holdStop = true;
+  const stopping = live.stop();
+  live.start();
+  await flush();
+  // Nothing may start while the old connection is still closing.
+  assert.equal(signalR.connection.state, "Disconnecting");
+  assert.equal(signalR.urls.length, 1, "a second start was attempted before the stop completed");
+
+  signalR.pendingStop.finish();
+  await stopping;
+  await flush();
+
+  // Started again at once (not after the 30-45 s retry), on the same connection, with nothing left scheduled.
+  assert.equal(signalR.urls.length, 2);
+  assert.equal(signalR.urls[1], "https://tenant.example/hubs/tenant-events?attempt=reconnect");
+  assert.equal(live.state(), "connected");
+  assert.equal(signalR.builds, 1);
+  assert.equal(c.timers.size, 0, "a retry timer was left behind: " + JSON.stringify(c.pending()));
+  assert.equal(live.stats().pendingStart, false);
+});
+
+test("repeated stop/start while a stop is completing ends in one start, and a final stop ends in none", async function () {
+  const signalR = fakeSignalR();
+  const c = clock();
+  const live = client(signalR, c);
+  live.start();
+  await flush();
+
+  // pagehide/pageshow several times before the first stop completes: still started once.
+  signalR.holdStop = true;
+  live.stop();
+  live.start();
+  live.stop();
+  live.start();
+  live.stop();
+  live.start();
+  await flush();
+  assert.equal(signalR.urls.length, 1);
+  signalR.pendingStop.finish();
+  await flush();
+  await flush();
+  assert.equal(signalR.urls.length, 2);
+  assert.equal(live.state(), "connected");
+  assert.equal(c.timers.size, 0);
+  assert.equal(signalR.builds, 1);
+
+  // The page goes away again before the stop completes: nothing starts and nothing is scheduled.
+  live.stop();
+  live.start();
+  live.stop();
+  signalR.pendingStop.finish();
+  await flush();
+  await flush();
+  assert.equal(signalR.urls.length, 2);
+  assert.equal(live.state(), "disconnected");
+  assert.equal(c.timers.size, 0);
 });
 
 test("after stop, a message or ready already on its way reaches no screen", async function () {

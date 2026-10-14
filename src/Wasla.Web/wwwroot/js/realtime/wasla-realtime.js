@@ -87,6 +87,9 @@
     let startAttempt = 0;
     let startTimer = null;
     let starting = false;
+    // The stop in progress (pagehide), or null. A start asked for meanwhile (pageshow from the back/forward cache)
+    // waits for it: the client cannot start while it is still disconnecting.
+    let stopping = null;
     // Read-only counters for tests and support (window.WaslaRealtime.get().stats()); never sent anywhere.
     const counters = { starts: 0, startFailures: 0, drops: 0, closes: 0, readies: 0, reconnects: 0, messages: 0 };
 
@@ -128,7 +131,8 @@
       // Automatic reconnect gave up or the server refused the session: keep trying, slowly, while the page is open.
       counters.closes += 1;
       setState("disconnected");
-      if (!stopped) scheduleStart(jitteredDelayFor(RECONNECT_DELAYS_MS.length, random));
+      // The close of a stop in progress is not a drop: if the page wants to run again, the stop's end starts it.
+      if (!stopped && !stopping) scheduleStart(jitteredDelayFor(RECONNECT_DELAYS_MS.length, random));
     });
 
     function setState(next, detail) {
@@ -163,7 +167,7 @@
 
     // The first start is not covered by automatic reconnect, so it retries here with the same delays.
     function attemptStart() {
-      if (stopped || starting) return Promise.resolve();
+      if (stopped || starting || stopping) return Promise.resolve();
       if (connection.state && connection.state !== signalR.HubConnectionState.Disconnected) return Promise.resolve();
       starting = true;
       counters.starts += 1;
@@ -207,7 +211,19 @@
       stop: function () {
         stopped = true;
         clearStartTimer();
-        return Promise.resolve(connection.stop()).catch(function () { /* already closed */ });
+        const current = Promise.resolve(connection.stop())
+          .catch(function () { /* already closed */ })
+          .then(function () {
+            if (stopping !== current) return;
+            stopping = null;
+            // Started again while it was stopping: connect now, not after a retry delay.
+            if (!stopped) {
+              clearStartTimer();
+              attemptStart();
+            }
+          });
+        stopping = current;
+        return current;
       },
       state: function () { return state; },
       /** Counters since the page loaded: starts and failed starts, drops, closes, ready messages, reconnects, messages. */
