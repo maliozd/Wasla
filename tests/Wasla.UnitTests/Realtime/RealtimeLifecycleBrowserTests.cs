@@ -100,6 +100,11 @@ public sealed class RealtimeLifecycleBrowserTests
         Assert.True(await browser.EvaluateAsync<bool>(AllPages("w.document.documentElement.getAttribute('dir') === '" + direction + "' && w.__connectionsBuilt === 1"), ct));
         Assert.True(await browser.EvaluateAsync<bool>(AllPages(CountAnnouncements), ct));
         Assert.True(await browser.EvaluateAsync<bool>(AllPages(SoundStaysLocked), ct));
+        // The cards are rendered by the server and the connection starts on its own, so a page can be connected while its
+        // notification settings (GET /notification-settings/current, loaded once when the page starts) are still on the
+        // way. Compare preferences only from the moment every page has loaded them.
+        Assert.True(await browser.WaitForAsync(AllPages(SettingsLoaded), Connect, ct),
+            "Notification settings did not load on every page: " + await DescribeSettingsAsync(browser, ct));
         var before = await PreferencesAsync(browser, ct);
 
         // A new order: every page reads it and announces it once, however many duplicates follow.
@@ -201,6 +206,25 @@ public sealed class RealtimeLifecycleBrowserTests
             "const storage = Object.keys(localStorage).sort().map(k => k + '=' + localStorage.getItem(k)); " +
             "return JSON.stringify({ storage, pages: pages.map(w => ({ settings: w.WaslaOrders.state.notificationSettings, " +
             "unlocked: w.WaslaOrders.audio.isSoundUnlocked(), permission: w.Notification.permission })) }); })()", ct);
+
+    /// <summary>
+    /// The page has loaded the user's notification settings: <c>loadNotificationSettings</c> replaces the initial null with
+    /// the server's values, merged with defaults, so the fields the Live Screen uses for sound and notifications exist.
+    /// </summary>
+    private const string SettingsLoaded =
+        "(() => { const s = w.WaslaOrders && w.WaslaOrders.state && w.WaslaOrders.state.notificationSettings; " +
+        "return !!s && typeof s === 'object' && typeof s.newOrderSoundEnabled === 'boolean' && typeof s.showBrowserNotification === 'boolean' " +
+        "&& typeof s.newOrderSoundName === 'string'; })()";
+
+    /// <summary>For a timeout: each page, where it is and whether its notification settings are loaded.</summary>
+    private static Task<string> DescribeSettingsAsync(HeadlessChromium browser, CancellationToken ct) =>
+        browser.EvaluateAsync<string>(
+            "(() => { const pages = [window, ...[...document.querySelectorAll('iframe[data-test-page]')].map(f => f.contentWindow)]; " +
+            "return JSON.stringify(pages.map((w, i) => { try { const s = w.WaslaOrders && w.WaslaOrders.state ? w.WaslaOrders.state.notificationSettings : undefined; " +
+            "return { page: i === 0 ? 'top' : 'frame ' + (i - 1), path: w.location.pathname, readyState: w.document.readyState, " +
+            "settings: s === undefined ? 'no WaslaOrders.state' : s === null ? 'null (not loaded)' : 'loaded', " +
+            "realtime: w.WaslaRealtime && w.WaslaRealtime.get() ? w.WaslaRealtime.get().state() : 'none' }; } " +
+            "catch (e) { return { page: i, error: String(e) }; } })); })()", ct);
 
     /// <summary>No page has sound unlocked or audio "allowed": only a user gesture does that, never a live update.</summary>
     private const string SoundStaysLocked = "!w.WaslaOrders.audio.isSoundUnlocked() && w.WaslaOrders.audio.getAudioState() !== 'allowed'";
