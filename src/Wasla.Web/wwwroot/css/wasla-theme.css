@@ -4610,6 +4610,19 @@ body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--b
 @media (min-width: 768px) {
     .wasla-live-board { width: max(100%, calc(5 * 280px + 4 * .75rem)); }
 }
+/* A column, List group or Focus queue group with more orders than one page: how many are shown, and the next page. */
+.wasla-live-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-block: .75rem 0;
+}
+.wasla-live-more__status {
+    margin: 0;
+    font-size: .8125rem;
+    color: var(--wasla-text, #212529);
+}
 .wasla-live-board__column {
     min-width: 0;
     background: transparent;

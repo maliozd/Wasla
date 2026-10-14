@@ -516,7 +516,9 @@ test("a minute boundary updates elapsed labels without rebuilding item nodes", f
     changedCards: diff.changed
   }));
   assert.equal(diff.changed, 0);
-  assert.equal(diff.timeUpdates, 5700);
+  // One page of the group is rendered (WAS-5); every rendered card follows the minute.
+  assert.equal(host.querySelectorAll(".wasla-live-screen-card").length, 100);
+  assert.equal(diff.timeUpdates, 100);
   assert.equal(card.querySelector(".wasla-live-screen-card__item"), item);
   assert.equal(card.querySelector("img"), image);
   assert.equal(card.querySelector("[data-order-action]"), action);
@@ -864,7 +866,7 @@ function boardHarness(canManageOrders = true, extras) {
   const browser = store.attachBrowser({
     opts: { displayCulture: "tr-TR", timeZoneId: "Europe/Istanbul", canManageOrders },
     liveView: { getView: () => view },
-    getMessage: key => key,
+    getMessage: options.getMessage || (key => key),
     liveDetailModal: options.liveDetailModal,
     audio: options.audio
   }, options.global || {}, store);
@@ -1336,20 +1338,176 @@ for (const count of [30, 5755]) {
       const first = performance.now();
       const unchanged = h.browser.renderSnapshot(body);
       const next = performance.now();
-      assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, count);
+      // Each group renders one page (WAS-5); the rest stays one "Show more" away.
+      const groupSizes = {};
+      body.orders.forEach(o => {
+        const key = o.status === "New" || o.status === "Accepted" ? "new" : o.status === "Preparing" ? "preparing"
+          : o.status === "ReadyForPickup" ? "ready" : o.status === "OnTheWay" ? "on-the-way" : "completed";
+        groupSizes[key] = (groupSizes[key] || 0) + 1;
+      });
+      const rendered = Object.values(groupSizes).reduce((sum, size) => sum + Math.min(size, 100), 0);
+      assert.equal(h.host.querySelectorAll(".wasla-live-screen-card").length, rendered);
       assert.equal(unchanged.moved, 0);
       assert.equal(unchanged.changed, 0);
       assert.equal(unchanged.timeUpdates, 0);
       body.serverTimeUtc = "2026-09-23T08:01:00Z";
       const minute = h.browser.renderSnapshot(body);
       const end = performance.now();
-      assert.equal(minute.timeUpdates, count);
+      assert.equal(minute.timeUpdates, rendered);
       assert.equal(minute.changed, 0);
       assert.equal(minute.moved, 0);
       console.log(JSON.stringify({ fixture: "Board fake DOM (no layout/paint)", count, initialMs: +(first-start).toFixed(1), unchangedMs: +(next-first).toFixed(1), minuteMs: +(end-next).toFixed(1) }));
     } finally { h.restore(); }
   });
 }
+
+// WAS-5: a large active-order set renders one page per group; every order stays reachable through "Show more".
+function largeBody(newCount, acceptedCount, extra) {
+  const orders = [];
+  for (let i = 0; i < newCount + acceptedCount; i++) {
+    orders.push({
+      id: guid(i + 1),
+      displayNumber: "YS-" + (900000 + i),
+      platform: "Yemeksepeti",
+      status: i < newCount ? "New" : "Accepted",
+      // Newest first in the group: order 1 is the newest.
+      receivedAtUtc: new Date(Date.UTC(2026, 9, 14, 12, 0, 0) - i * 60000).toISOString(),
+      deliveredAtUtc: null,
+      customerName: "Zeynep",
+      totalAmount: 10,
+      items: [{ productName: "Lahmacun", quantity: 1, notes: null }]
+    });
+  }
+  (extra || []).forEach(o => orders.push(o));
+  return { serverTimeUtc: "2026-10-14T12:00:00Z", todayOrderCount: 53, cancelledOrderCount: 0, orders };
+}
+
+const pagingMessages = key => ({
+  groupShowing: "Showing {0} of {1}",
+  groupShowMore: "Show {0} more"
+})[key] || key;
+
+function renderedIds(h, selector) {
+  return h.host.querySelectorAll(selector || ".wasla-live-screen-card").map(node => node.getAttribute("data-order-id"));
+}
+
+test("a large snapshot renders one page per group, says so, and keeps every order reachable", () => {
+  const h = boardHarness(true, { getMessage: pagingMessages });
+  try {
+    const body = largeBody(5312, 438);
+    const first = h.browser.renderSnapshot(body);
+    const column = h.host.querySelector('[data-board-column="new"]');
+    assert.equal(first.added, 100, "one page of the New column");
+    assert.equal(column.querySelector("[data-board-count]").textContent, "5750", "the column still counts every order");
+    const more = column.querySelector("[data-live-more]");
+    assert.ok(more, "the column says it shows only part of its orders");
+    assert.equal(more.querySelector("[data-live-more-status]").textContent, "Showing 100 of 5.750");
+    const button = more.querySelector("[data-live-show-more]");
+    assert.equal(button.tagName, "BUTTON");
+    assert.equal(button.textContent, "Show 100 more");
+    assert.equal(button.getAttribute("aria-describedby"), more.querySelector("[data-live-more-status]").id);
+    assert.deepEqual(renderedIds(h), body.orders.slice(0, 100).map(o => o.id), "the newest orders come first");
+    assert.equal(column.querySelector("[data-board-list]").querySelector("[data-live-more]"), null, "the list holds only orders");
+
+    // Next page: the first page is kept as it was, nothing is rebuilt.
+    const firstCard = h.card(guid(1));
+    h.browser.showMoreInGroup("new");
+    assert.equal(h.card(guid(1)), firstCard);
+    assert.equal(renderedIds(h).length, 200);
+    assert.equal(column.querySelector("[data-live-more-status]").textContent, "Showing 200 of 5.750");
+
+    // Every order can be reached, each exactly once, and the control goes away at the end.
+    while (column.querySelector("[data-live-show-more]")) h.browser.showMoreInGroup("new");
+    const all = renderedIds(h);
+    assert.equal(all.length, 5750);
+    assert.equal(new Set(all).size, 5750);
+    assert.deepEqual(all, body.orders.map(o => o.id));
+    assert.equal(column.querySelector("[data-live-more]"), null);
+  } finally { h.restore(); }
+});
+
+test("a restaurant-sized column renders as before, without a Show more control", () => {
+  const h = boardHarness(true, { getMessage: pagingMessages });
+  try {
+    h.browser.renderSnapshot(largeBody(100, 0));
+    assert.equal(renderedIds(h).length, 100);
+    assert.equal(h.host.querySelector("[data-live-more]"), null);
+  } finally { h.restore(); }
+});
+
+test("an unchanged large snapshot moves, rebuilds and re-creates nothing", () => {
+  const h = boardHarness(true, { getMessage: pagingMessages });
+  try {
+    const body = largeBody(5312, 438);
+    h.browser.renderSnapshot(body);
+    const again = h.browser.renderSnapshot(JSON.parse(JSON.stringify(body)));
+    assert.deepEqual([again.added, again.removed, again.changed, again.moved, again.timeUpdates], [0, 0, 0, 0, 0]);
+  } finally { h.restore(); }
+});
+
+test("a new order enters the first page and the oldest rendered one moves behind Show more", () => {
+  const h = boardHarness(true, { getMessage: pagingMessages });
+  try {
+    const body = largeBody(300, 0);
+    h.browser.renderSnapshot(body);
+    const fresh = Object.assign({}, body.orders[0], { id: guid(9999), displayNumber: "YS-NEW", receivedAtUtc: "2026-10-14T12:00:30Z" });
+    const next = h.browser.renderSnapshot(Object.assign({}, body, { orders: [fresh].concat(body.orders) }));
+    assert.equal(next.added, 1);
+    assert.equal(next.removed, 1);
+    assert.equal(renderedIds(h)[0], guid(9999));
+    assert.equal(renderedIds(h).length, 100);
+    assert.equal(h.card(guid(100)), null, "the 100th order now waits behind Show more");
+    assert.equal(h.host.querySelector("[data-live-more-status]").textContent, "Showing 100 of 301");
+  } finally { h.restore(); }
+});
+
+test("the focused card, the open details and the practice order stay rendered beyond the page", () => {
+  let openId = null;
+  const h = boardHarness(true, { getMessage: pagingMessages, liveDetailModal: { getOpenOrderId: () => openId } });
+  try {
+    const demo = { id: guid(8888), displayNumber: "DEMO", platform: "Yemeksepeti", status: "New", isDemo: true,
+      receivedAtUtc: "2026-10-01T12:00:00Z", deliveredAtUtc: null, customerName: "Demo", totalAmount: 1, items: [] };
+    const body = largeBody(300, 0, [demo]);
+    h.browser.renderSnapshot(body);
+    assert.ok(h.card(guid(8888)), "the practice order is never paged out");
+    h.browser.showMoreInGroup("new");
+    h.card(guid(150)).querySelector("[data-order-detail]").focus();
+    openId = guid(160);
+    // 120 newer orders push both beyond the two rendered pages; they stay rendered.
+    const newer = Array.from({ length: 120 }, (_, i) => Object.assign({}, body.orders[0], {
+      id: guid(20000 + i), receivedAtUtc: new Date(Date.UTC(2026, 9, 14, 12, 1, 0) + i * 1000).toISOString() }));
+    h.browser.renderSnapshot(Object.assign({}, body, { orders: newer.concat(body.orders) }));
+    assert.ok(h.card(guid(150)), "the card holding focus stays");
+    assert.ok(h.card(guid(160)), "the open details' order stays, so focus can return to its button");
+    assert.ok(h.card(guid(8888)));
+    assert.equal(new Set(renderedIds(h)).size, renderedIds(h).length);
+    assert.equal(h.card(guid(140)), null, "an order that is neither focused nor open waits behind Show more");
+  } finally { h.restore(); }
+});
+
+test("Board, List and Focus page the same groups and never duplicate or lose an order", async () => {
+  const h = boardHarness(true, {
+    getMessage: pagingMessages,
+    liveDetailModal: { loadPanel: () => Promise.resolve(true), cancelPanel: () => {} }
+  });
+  try {
+    const body = largeBody(5312, 438);
+    h.browser.renderSnapshot(body);
+    h.browser.showMoreInGroup("new");
+    for (const view of ["list", "focus", "board", "focus", "list", "board"]) {
+      h.view(view);
+      h.browser.renderSnapshot(body);
+      await flush();
+      const selector = view === "focus" ? "[data-focus-select]" : ".wasla-live-screen-card";
+      const ids = renderedIds(h, selector);
+      assert.equal(ids.length, 200, view + ": the revealed pages are kept across views");
+      assert.equal(new Set(ids).size, 200, view + ": no duplicate order");
+      assert.deepEqual(ids, body.orders.slice(0, 200).map(o => o.id), view);
+      assert.equal(h.host.querySelectorAll("[data-live-more]").length, 1, view + ": one control for the one paged group");
+      assert.equal(h.host.querySelector('[data-board-column="new"] [data-board-count]').textContent, "5750", view);
+    }
+  } finally { h.restore(); }
+});
 
 function paintDetail(container, action) {
   while (container.firstChild) container.removeChild(container.firstChild);
