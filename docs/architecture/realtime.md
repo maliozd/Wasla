@@ -220,7 +220,7 @@ Each process reads only its own configuration. The five states behave and log di
 | **Invalid**: port outside 1–65535, timeout outside 0.1–10, a secret with spaces or non-ASCII characters, or `Disabled=true` together with `Port` | Refuses to start | Refuses to start |
 
 Startup errors and warnings name keys and whether a value is set, never the secret's value. A `Port`, `TimeoutSeconds`
-or `Disabled` value of the wrong type fails in configuration binding, which names the key.
+or `Disabled` value of the wrong type stops startup in configuration binding.
 
 - **Why Web starts without its listener.** Web serves every tenant page. Without the listener nothing reaches its
   screens later than before WAS-24, because the Live Screen keeps its 10-second rate while connected
@@ -415,9 +415,10 @@ endpoint.
   reconnects, disposal).
 - WAS-103: `InternalRealtimeStartupPolicyTests.cs` (sender hosts built as in Worker `Program.cs`: refused outside
   Development without the channel, started with `Disabled=true` and in Development, every incomplete and invalid
-  state refused by Worker/Api and Web in Development and Production, the four states logged differently, Web's
-  listener-off warning and its polling rates; an obvious fake secret absent from every exception and log line),
-  `LiveScreenPollingRenderingTests.cs` (the Live Screen page renders 10 seconds while connected without the listener,
+  state refused in Development and Production, each state logged differently),
+  `WebInternalListenerStartupTests.cs` (Web hosts built as in Web `Program.cs`: the same incomplete and invalid states
+  refused, the listener-off warning for a missing and a disabled listener, the 10- and 30-second rates; both files
+  assert an obvious fake secret is absent from every exception and log line), `LiveScreenPollingRenderingTests.cs` (the Live Screen page renders 10 seconds while connected without the listener,
   missing or disabled, and 30 with it, and never the secret), `live-screen-invalidation.test.js` (`pollingRates()` and
   10 seconds while connected without the listener) and `LiveScreenRealtimeBrowserTests.cs` (the other browser tests
   run with the listener on; one checks a connected page without it stays at 10 seconds through a reconnect).
