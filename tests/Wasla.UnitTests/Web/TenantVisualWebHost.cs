@@ -78,13 +78,15 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
     /// <paramref name="tenantInSetup"/> seeds a tenant still in Setup with its setup checklist open, and three Owners at
     /// different points of guided setup: <see cref="OwnerId"/> in order training, <see cref="NewOwnerId"/> before the
     /// first-use decision and <see cref="ResumingOwnerId"/> in the platform connections section.
+    /// <paramref name="configuration"/> adds or overrides settings, for example <c>Realtime:Internal</c>.
     /// </summary>
-    public static Task<TenantVisualWebHost> StartAsync(bool tenantInSetup = false) =>
-        StartAsync(TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "wwwroot"), "http://127.0.0.1:0", tenantInSetup);
+    public static Task<TenantVisualWebHost> StartAsync(bool tenantInSetup = false, IReadOnlyDictionary<string, string?>? configuration = null) =>
+        StartAsync(TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "wwwroot"), "http://127.0.0.1:0", tenantInSetup, configuration);
 
     public static Task<TenantVisualWebHost> StartAsync(string webRootPath, string url) => StartAsync(webRootPath, url, tenantInSetup: false);
 
-    public static async Task<TenantVisualWebHost> StartAsync(string webRootPath, string url, bool tenantInSetup)
+    public static async Task<TenantVisualWebHost> StartAsync(
+        string webRootPath, string url, bool tenantInSetup, IReadOnlyDictionary<string, string?>? configuration = null)
     {
         var central = new CentralTestDatabase();
         var tenants = new RecordingTenantDbFactory();
@@ -117,6 +119,8 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
             // keep it beyond any test's length. Session checks are covered by the TenantSessionWebHost tests.
             ["Realtime:SessionRevalidationSeconds"] = "600"
         });
+        if (configuration is not null)
+            builder.Configuration.AddInMemoryCollection(configuration);
 
         var services = builder.Services;
         services.AddMemoryCache();

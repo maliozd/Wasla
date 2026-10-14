@@ -6,6 +6,7 @@
 @using Wasla.Web.Security
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject ITenantNavigationAuthorizationService TenantNavigation
+@inject Wasla.Web.Realtime.LiveScreenPolling LivePolling
 @{
     Layout = "_OrdersDisplayLayout";
     ViewData["Title"] = L["Orders.LiveDisplay.Title"];
@@ -235,7 +236,9 @@
             realtimeHubUrl: @Html.Raw(JsonSerializer.Serialize(Wasla.Web.Realtime.TenantEventsHub.Path)),
             viewModeStorageKey: "Wasla.liveScreen.viewMode",
             defaultViewMode: "kitchen",
-            pollingIntervalMs: 10000,
+            pollingIntervalMs: @LivePolling.IntervalMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            // Lower while connected only when this Web receives Worker and Api changes (WAS-103).
+            connectedPollingIntervalMs: @LivePolling.ConnectedIntervalMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
             todayYmd: "@today.ToString("yyyy-MM-dd")",
             liveDisplayPageSize: 100,
             defaultFoodImage: "/images/demo-food/chicken-rice-01.svg",
