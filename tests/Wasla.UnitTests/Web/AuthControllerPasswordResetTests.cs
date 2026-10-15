@@ -315,6 +315,7 @@ public sealed class AuthControllerPasswordResetTests
             new NoopLoginRecorder(),
             new FakeSignupCompletionTokenService(),
             service ?? new FakeTenantPasswordResetService(),
+            new DashboardLandingPages(),
             new TestWebHostEnvironment(environmentName),
             new FakeStringLocalizer());
 

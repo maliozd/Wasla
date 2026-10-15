@@ -178,10 +178,12 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
             "AccessDenied.cshtml"));
 
         Assert.Contains("[HttpGet(\"access-denied\")]", controllerSource, StringComparison.Ordinal);
-        Assert.Contains("IActionResult AccessDenied()", controllerSource, StringComparison.Ordinal);
+        Assert.Contains("Task<IActionResult> AccessDenied()", controllerSource, StringComparison.Ordinal);
         Assert.Contains("Auth.AccessDenied.Title", viewSource, StringComparison.Ordinal);
         Assert.Contains("Auth.AccessDenied.Description", viewSource, StringComparison.Ordinal);
-        Assert.Contains("href=\"/orders\"", viewSource, StringComparison.Ordinal);
+        // The recovery link is the user's own landing page (WAS-113), covered over HTTP by TenantPostLoginRedirectTests.
+        Assert.Contains("href=\"@Model.LandingPageUrl\"", viewSource, StringComparison.Ordinal);
+        Assert.Contains("Auth.AccessDenied.GoToStartPage", viewSource, StringComparison.Ordinal);
     }
 
     [Theory]

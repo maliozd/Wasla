@@ -93,6 +93,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
 builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
+// Post-login destination: a safe ReturnUrl the user may open, otherwise the role's landing page (WAS-113).
+builder.Services.AddWaslaTenantLandingPages();
 builder.Services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
 
 // Tenant role policies, shared with Wasla.Api (WaslaTenantPolicies.AllowedRoles).
@@ -210,5 +212,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapWaslaHealthChecks();
 app.MapWaslaRealtime();
+app.EnableWaslaTenantLandingPages();
 
 app.Run();
