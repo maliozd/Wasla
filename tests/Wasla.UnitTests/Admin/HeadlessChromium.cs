@@ -79,12 +79,17 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     public static Task<HeadlessChromium> StartAsync(string executable, CancellationToken ct) =>
         StartAsync(executable, StartupTimeout, Process.Start, ct);
 
+    /// <summary>Starts the browser with extra command-line switches, for example <c>--host-resolver-rules</c>.</summary>
+    public static Task<HeadlessChromium> StartAsync(string executable, IReadOnlyList<string> arguments, CancellationToken ct) =>
+        StartAsync(executable, StartupTimeout, Process.Start, ct, arguments);
+
     /// <summary>
     /// Starts the browser through <paramref name="launch"/> (tests substitute another process). When startup fails or
     /// is cancelled, the process tree is killed and the profile deleted before the exception propagates.
     /// </summary>
     internal static async Task<HeadlessChromium> StartAsync(
-        string executable, TimeSpan timeout, Func<ProcessStartInfo, Process?> launch, CancellationToken ct)
+        string executable, TimeSpan timeout, Func<ProcessStartInfo, Process?> launch, CancellationToken ct,
+        IReadOnlyList<string>? arguments = null)
     {
         var profile = BrowserProfile.Create();
         BrowserProcessTree? processes = null;
@@ -102,8 +107,8 @@ internal sealed class HeadlessChromium : IAsyncDisposable
                      {
                          "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
                          "--disable-extensions", "--disable-background-networking", "--remote-debugging-port=0",
-                         $"--user-data-dir={profile.Path}", "about:blank"
-                     })
+                         $"--user-data-dir={profile.Path}"
+                     }.Concat(arguments ?? []).Append("about:blank"))
                 start.ArgumentList.Add(argument);
             // The relaunched copy would be outside the started process tree: startup would fail when the started
             // process exits, and the copy would outlive cleanup. Without the layer, the started process is the browser.
