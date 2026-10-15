@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -49,25 +50,32 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         var accepted = payload with { ExternalStatus = "Picking" };
 
         var paused = new PauseBeforeUpdateTransaction(payload.ExternalOrderId);
-        var sync = Sync("worker", paused);
+        var probe = new ProbeRowLockAfterLockWrite(_database, orderId);
+        var sync = Sync("worker", paused, probe);
         _provider.Set(accepted);
         var pass = sync.SyncCustomerWithResultAsync(_tenantId, Ct);
         await paused.Reached.WaitAsync(Deadline, Ct);
 
-        // Sync read the order as New and merged the provider's Accepted. The operator rejects it now.
+        // Sync read the order as New and merged the provider's Accepted. The operator rejects it now, so the order's
+        // UpdatedAt is later than the time sync took before it paused.
         var rejected = await Operator("operator").TryRejectAsync(_tenantId, orderId, Ct);
         Assert.Equal(new OrderActionResult(true, "Orders.RejectSuccess"), rejected);
-        var operatorVersion = (await ReadAsync(orderId)).ChangeVersion;
+        var byOperator = await ReadAsync(orderId);
 
         paused.Resume();
         var result = await pass.WaitAsync(Deadline, Ct);
 
         Assert.Equal(0, result.FailedConnections);
+        // The lock write kept the operator's newer UpdatedAt, and still held the row until sync committed.
+        Assert.True(probe.Probed, "The sync never wrote the row lock.");
+        Assert.True(probe.Blocked, "Another connection could update the order while sync held its row lock.");
         var after = await ReadAsync(orderId);
         Assert.Equal(OrderStatus.Cancelled, after.InternalStatus);
         Assert.NotNull(after.CancelledAt);
         Assert.Null(after.AcceptedAt);
         Assert.Equal("Picking", after.PlatformStatus);
+        Assert.True(after.UpdatedAt >= byOperator.UpdatedAt, $"UpdatedAt moved backwards: {byOperator.UpdatedAt:O} -> {after.UpdatedAt:O}.");
+        var operatorVersion = byOperator.ChangeVersion;
         Assert.Equal(operatorVersion + 1, after.ChangeVersion);
         Assert.Equal([operatorVersion, after.ChangeVersion], _notifier.VersionsFor(orderId));
         Assert.Empty(_receipts.Created);
@@ -87,7 +95,8 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
 
         var approved = await Operator("operator").TryApproveAsync(_tenantId, orderId, Ct);
         Assert.Equal(new OrderActionResult(true, "Orders.ApproveSuccess"), approved);
-        var operatorVersion = (await ReadAsync(orderId)).ChangeVersion;
+        var byOperator = await ReadAsync(orderId);
+        var operatorVersion = byOperator.ChangeVersion;
 
         paused.Resume();
         var result = await pass.WaitAsync(Deadline, Ct);
@@ -99,8 +108,44 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         Assert.NotNull(after.AcceptedAt);
         Assert.Null(after.CancelledAt);
         Assert.Equal(150m, after.TotalAmount);
+        Assert.True(after.UpdatedAt >= byOperator.UpdatedAt, $"UpdatedAt moved backwards: {byOperator.UpdatedAt:O} -> {after.UpdatedAt:O}.");
         Assert.Equal(operatorVersion + 1, after.ChangeVersion);
         Assert.Empty(_receipts.Created);
+    }
+
+    [Fact]
+    public async Task OperatorApproveCommittedDuringAnItemOnlySync_UpdatedAtDoesNotMoveBackwards()
+    {
+        var (orderId, payload) = await InsertThroughSyncAsync("ITEMS-ONLY");
+        // Only the lines change: the order's own columns stay as stored, so its UpdatedAt is whatever the row lock left.
+        var changedItems = payload with
+        {
+            Items = [new ExternalOrderItemDto(payload.ExternalOrderId + "-item", "Lahmacun", 1, 100m, 100m, "No onions", [])]
+        };
+
+        var paused = new PauseBeforeUpdateTransaction(payload.ExternalOrderId);
+        var sync = Sync("worker", paused);
+        _provider.Set(changedItems);
+        var pass = sync.SyncCustomerWithResultAsync(_tenantId, Ct);
+        await paused.Reached.WaitAsync(Deadline, Ct);
+
+        // The sync took its time before it paused; the operator's write is later.
+        var approved = await Operator("operator").TryApproveAsync(_tenantId, orderId, Ct);
+        Assert.Equal(new OrderActionResult(true, "Orders.ApproveSuccess"), approved);
+        var byOperator = await ReadAsync(orderId);
+
+        paused.Resume();
+        var result = await pass.WaitAsync(Deadline, Ct);
+
+        Assert.Equal(0, result.FailedConnections);
+        Assert.Equal(1, result.UpdatedCount);
+        var after = await ReadAsync(orderId);
+        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(byOperator.AcceptedAt, after.AcceptedAt);
+        Assert.Equal(byOperator.ChangeVersion + 1, after.ChangeVersion);
+        Assert.True(after.UpdatedAt >= byOperator.UpdatedAt, $"UpdatedAt moved backwards: {byOperator.UpdatedAt:O} -> {after.UpdatedAt:O}.");
+        await using var db = _database.Open();
+        Assert.Equal("No onions", await db.OrderItems.Where(i => i.OrderId == orderId).Select(i => i.Notes).SingleAsync(Ct));
     }
 
     [Fact]
@@ -133,6 +178,70 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         Assert.Equal([orderId], _receipts.Created);
     }
 
+    [Fact]
+    public async Task AnotherWorkerAppliedTheSameItemChangesDuringSync_TheSecondWriteChangesNothing()
+    {
+        var (orderId, payload) = await InsertThroughSyncAsync("TWO-WORKERS-ITEMS");
+        var changed = payload with
+        {
+            ExternalStatus = "Picking",
+            Subtotal = 145m,
+            Total = 145m,
+            Items =
+            [
+                new ExternalOrderItemDto(payload.ExternalOrderId + "-item", "Lahmacun", 2, 60m, 120m, "No onions",
+                    [new ExternalOrderItemOptionDto("Cheese", 5m), new ExternalOrderItemOptionDto("Spicy", 0m)]),
+                new ExternalOrderItemDto(payload.ExternalOrderId + "-drink", "Ayran", 1, 20m, 20m, null, [])
+            ]
+        };
+        _provider.Set(changed);
+
+        var paused = new PauseBeforeUpdateTransaction(payload.ExternalOrderId);
+        var first = Sync("worker-a", paused).SyncCustomerWithResultAsync(_tenantId, Ct);
+        await paused.Reached.WaitAsync(Deadline, Ct);
+
+        // A second Worker process applies the same items, options and status first.
+        var second = await Sync("worker-b").SyncCustomerWithResultAsync(_tenantId, Ct);
+        Assert.Equal(1, second.UpdatedCount);
+        var bySecond = await ReadAsync(orderId);
+        var secondRows = await ReadItemRowIdsAsync(orderId);
+        Assert.Equal(2, secondRows.Items.Length);
+        Assert.Equal(2, secondRows.Options.Length);
+        Assert.Equal([orderId], _receipts.Created);
+
+        paused.Resume();
+        var result = await first.WaitAsync(Deadline, Ct);
+
+        Assert.Equal(0, result.FailedConnections);
+        Assert.Equal(0, result.UpdatedCount);
+        Assert.Equal(1, result.UnchangedCount);
+        var after = await ReadAsync(orderId);
+        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(bySecond.ChangeVersion, after.ChangeVersion);
+        Assert.Equal(bySecond.UpdatedAt, after.UpdatedAt);
+        Assert.Equal(bySecond.AcceptedAt, after.AcceptedAt);
+        // The item and option rows the second Worker wrote are still there: nothing was deleted and inserted again.
+        var afterRows = await ReadItemRowIdsAsync(orderId);
+        Assert.Equal(secondRows.Items, afterRows.Items);
+        Assert.Equal(secondRows.Options, afterRows.Options);
+        Assert.Equal([bySecond.ChangeVersion], _notifier.VersionsFor(orderId));
+        Assert.Equal([orderId], _receipts.Created);
+    }
+
+    private async Task<(Guid[] Items, Guid[] Options)> ReadItemRowIdsAsync(Guid orderId)
+    {
+        await using var db = _database.Open();
+        var items = await db.OrderItems.AsNoTracking()
+            .Where(i => i.OrderId == orderId)
+            .Select(i => i.Id)
+            .ToListAsync(Ct);
+        var options = await db.OrderItemOptions.AsNoTracking()
+            .Where(o => items.Contains(o.OrderItemId))
+            .Select(o => o.Id)
+            .ToListAsync(Ct);
+        return (items.Order().ToArray(), options.Order().ToArray());
+    }
+
     /// <summary>Inserts a New order through a normal sync pass, as the Worker would, and forgets its side effects.</summary>
     private async Task<(Guid OrderId, ExternalOrderDto Payload)> InsertThroughSyncAsync(string name)
     {
@@ -150,9 +259,9 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         return (order.Id, payload);
     }
 
-    private OrderSyncService Sync(string instance, PauseBeforeUpdateTransaction? pause = null) =>
+    private OrderSyncService Sync(string instance, params IInterceptor[] interceptors) =>
         new(
-            new InterceptedFactory(_database.ConnectionString(instance), pause),
+            new InterceptedFactory(_database.ConnectionString(instance), interceptors),
             [_provider],
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
@@ -258,13 +367,59 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         }
     }
 
-    private sealed class InterceptedFactory(string connectionString, IInterceptor? interceptor) : ITenantDbContextFactory
+    /// <summary>
+    /// Right after the sync's row-lock write (its first set-based update of the order inside a transaction), tries to
+    /// update the same order from another connection with a short lock timeout. The row lock must hold it off even when
+    /// the lock write left the stored values unchanged.
+    /// </summary>
+    private sealed class ProbeRowLockAfterLockWrite(SqlServerTenantDatabase database, Guid orderId) : DbCommandInterceptor
+    {
+        private int _probed;
+
+        public bool Probed => Volatile.Read(ref _probed) == 1;
+        public bool Blocked { get; private set; }
+
+        public override async ValueTask<int> NonQueryExecutedAsync(
+            DbCommand command,
+            CommandExecutedEventData eventData,
+            int result,
+            CancellationToken cancellationToken = default)
+        {
+            var isLockWrite = command.Transaction is not null
+                && command.CommandText.Contains("FROM [Orders] AS [o]", StringComparison.Ordinal)
+                && command.CommandText.Contains("[UpdatedAt]", StringComparison.Ordinal);
+            if (isLockWrite && Interlocked.Exchange(ref _probed, 1) == 0)
+                Blocked = await TryUpdateFromAnotherConnectionTimesOutAsync(cancellationToken).ConfigureAwait(false);
+
+            return result;
+        }
+
+        private async Task<bool> TryUpdateFromAnotherConnectionTimesOutAsync(CancellationToken ct)
+        {
+            await using var other = new SqlConnection(database.ConnectionString("lock-probe"));
+            await other.OpenAsync(ct).ConfigureAwait(false);
+            await using var probe = other.CreateCommand();
+            probe.CommandText = "SET LOCK_TIMEOUT 500; UPDATE [Orders] SET [UpdatedAt] = [UpdatedAt] WHERE [Id] = @id;";
+            probe.Parameters.AddWithValue("@id", orderId);
+            try
+            {
+                await probe.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                return false;
+            }
+            catch (SqlException ex) when (ex.Number == 1222)
+            {
+                return true;
+            }
+        }
+    }
+
+    private sealed class InterceptedFactory(string connectionString, IInterceptor[] interceptors) : ITenantDbContextFactory
     {
         public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
         {
             var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(connectionString);
-            if (interceptor is not null)
-                options.AddInterceptors(interceptor);
+            if (interceptors.Length > 0)
+                options.AddInterceptors(interceptors);
             return Task.FromResult(new TenantDbContext(options.Options));
         }
     }
