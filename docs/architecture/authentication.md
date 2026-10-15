@@ -64,6 +64,29 @@ Controllers select schemes explicitly (for example `[Authorize(AuthenticationSch
 - The signup welcome link (`/auth/welcome`) builds the session from the user's current row (`IAuthValidationService.GetActiveSessionAsync`): current role and stamp, and no session for a user who is inactive or gone
 - Logout: `SignOutAsync(WaslaTenant)` and expires active + legacy tenant cookies
 
+### Where a tenant user goes after signing in
+
+**Source:** `src/Wasla.Web/Security/TenantLandingPages.cs` (`ITenantLandingPageResolver`, `TenantReturnUrl`), used by the tenant `AuthController`. Added in WAS-113.
+
+The login POST, the login page opened with a session that is already valid on this host, and the signup welcome link all ask one resolver where to go. The answer is always a page the signed-in principal may open on this host:
+
+1. **A return URL**, only when all of the following hold:
+   - It is a plain path on this host (`/path` or `/path?query`). Everything else is refused: another host or scheme (`https://…`, `//host`, `/\host`, `javascript:`), backslashes, control and white-space characters, fragments, non-ASCII text, encoded slashes, backslashes and percent signs (`%2F`, `%5C`, `%25`, so double encoding), malformed escapes, dot segments, and anything under `/auth` (login, logout, Access denied), which would loop.
+   - A GET for that path reaches a controller action through the application's own route matcher (the same endpoints, constraints and precedence as a real request). Unknown and POST-only paths, anonymous pages, Central Admin pages and non-MVC endpoints (hubs, health) are refused.
+   - The action's own `[Authorize]` metadata, combined as the authorization middleware combines it, admits the principal for the tenant resolved for this request.
+
+   The query string of an accepted return URL is kept unchanged.
+2. **Otherwise the user's landing page:** the first of `/dashboard`, `/orders/live-display` (Live Screen) and `/orders` that the same check admits. With the current policies this is the Dashboard for Owner, Manager and Viewer (`CanViewReports`), and the Live Screen for Kitchen and Cashier. The full list is in [roles-and-permissions.md](../product/roles-and-permissions.md#landing-page-after-sign-in).
+3. **A session that may open none of them** goes to `/auth/login`. Only obsolete `Staff` can reach this, and its session is rejected there, so the login form renders. The login page redirects a signed-in user only when there is a destination, so it never redirects to itself.
+
+The resolver reads no data. It does not open another tenant's resources or disclose whether they exist. A return URL naming another tenant's order is decided by route and role alone, and that page then answers as it does for any unknown id. Endpoint authorization is unchanged: the destination still runs its own policy check when the browser opens it.
+
+### Access denied
+
+`GET /auth/access-denied` is where the tenant cookie scheme sends a signed-in user who lacks a page's policy. It requires a tenant session. An anonymous request goes to the login page, and signing in from there does not return to Access denied, because `/auth` is never a destination.
+
+The page tells a signed-in user that they are signed in but lack permission. It offers one recovery link, `Auth.AccessDenied.GoToStartPage`, to their landing page, and no login link. The layout keeps its logout control. The denied path (`ReturnUrl`) is neither shown on the card nor followed. Copy is localized in TR, EN, AR and RU, and Arabic renders right to left through the tenant layout.
+
 ### Tenant session revalidation
 
 **Source:** `src/Wasla.Infrastructure/Services/TenantSessionValidator.cs` (the rules, behind `ITenantSessionValidator`), `src/Wasla.Infrastructure/Security/TenantSessionCookieEvents.cs` (the cookie events), `src/Wasla.Application/Security/TenantSessionClaims.cs` (the claims). Web's `TenantCookieEvents` (`src/Wasla.Web/Security/TenantCookieEvents.cs`) and the API's `ApiTenantCookieEvents` (`src/Wasla.Api/Security/ApiTenantAuthenticationExtensions.cs`) derive from the shared events and differ only in how they answer a challenge or a forbid.
@@ -82,7 +105,7 @@ Every request that presents `.Wasla.TenantAuth` to Wasla.Web or Wasla.Api is che
 | No tenant resolved for the request (a central host, or a path that skips tenant resolution such as `/culture` or `/error`) | The session does not authenticate that request. The cookie is not deleted and not renewed |
 | The tenant database cannot be read | The request fails closed before any controller runs: Wasla.Web answers HTTP 500, Wasla.Api answers HTTP 503 with `{"error":"tenant_session_unavailable"}` (`TenantSessionUnavailableMiddleware`). Only the exception type is logged; the session is neither accepted, renewed nor deleted, and is checked again on the next request |
 
-A rejected session is anonymous for that request. On Web, protected pages redirect to `/auth/login` on the same host (no `ReturnUrl` from another host is followed), and the login page itself renders, so there is no redirect loop. On the API, a protected endpoint answers 401 without a redirect; the rejected cookie is deleted on that host as well.
+A rejected session is anonymous for that request. On Web, protected pages redirect to `/auth/login` on the same host (no `ReturnUrl` from another host is followed, see [Where a tenant user goes after signing in](#where-a-tenant-user-goes-after-signing-in)), and the login page itself renders, so there is no redirect loop. On the API, a protected endpoint answers 401 without a redirect; the rejected cookie is deleted on that host as well.
 
 Which changes end existing sessions: `AppUsers.SecurityStamp` is replaced whenever a user's role, active state or password changes (user management, the Web password reset and `reset-password --scope tenant`). Deleting a user or deactivating them also fails the check directly. A name-only edit keeps the stamp. A role change is not refreshed into the cookie: the old session is rejected and the user signs in again with the new role. A reactivated user's old cookie stays rejected, because deactivation already replaced the stamp; they sign in again with their password. An Owner who changes their own password on the Users page is signed out on the next request.
 
@@ -175,7 +198,7 @@ Partition keys are never sent to the client or logged.
 **Responses over the limit.**
 
 - *Api:* `429 Too Many Requests` with `Retry-After`, `Cache-Control: no-store` and `{"error":"too_many_requests"}` as `application/json`. No redirect, no `Location`, no cookie, no HTML. The API configures no CORS, and the `429` adds none.
-- *Web:* `429` with `Retry-After` and `Cache-Control: no-store`, showing the same login page again with the localized `Auth.Login.TooManyAttempts` message (TR, EN, AR, RU) in a `role="alert"` box, so screen readers announce it. The page keeps the submitted email and the return URL, never echoes the password, and is the same for every email, so it reveals nothing about whether an account exists. The return URL is only followed after a successful sign-in, through the existing local-URL check.
+- *Web:* `429` with `Retry-After` and `Cache-Control: no-store`, showing the same login page again with the localized `Auth.Login.TooManyAttempts` message (TR, EN, AR, RU) in a `role="alert"` box, so screen readers announce it. The page keeps the submitted email and the return URL, never echoes the password, and is the same for every email, so it reveals nothing about whether an account exists. The return URL is only followed after a successful sign-in, and only when it is a local page the new session may open ([Where a tenant user goes after signing in](#where-a-tenant-user-goes-after-signing-in)).
 - *`Retry-After`:* whole seconds, rounded up, from the limiter's report of the time until the window resets. For a fixed window, ASP.NET Core reports the full window length, so the value is an upper bound.
 
 Below the limit nothing changes: Web redirects after a successful login and shows the same page for invalid credentials; the Api answers `200`, `401` or `404`. The Api's `401`, `403` and `503` for other endpoints, session revalidation, Print Bridge device tokens, the login GET pages, `/` and the health endpoints are not rate limited.
