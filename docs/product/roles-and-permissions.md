@@ -80,6 +80,22 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 
 Central admin uses scheme `WaslaCentralAdmin` and is outside this tenant role matrix.
 
+## Landing page after sign-in
+
+**Source:** `TenantLandingPageResolver.LandingPages` (`src/Wasla.Web/Security/TenantLandingPages.cs`). Added in WAS-113.
+
+After signing in, a user goes to a safe local return URL they may open. Otherwise they go to the first of these pages their policies admit. The check is made against each page's own `[Authorize]` metadata, not against role names:
+
+| Order | Page | Policy | Lands here today |
+|------:|------|--------|------------------|
+| 1 | `/dashboard` | `CanViewReports` | Owner, Manager, Viewer |
+| 2 | `/orders/live-display` (Live Screen) | `CanViewLiveScreen` | Kitchen, Cashier |
+| 3 | `/orders` | `CanViewOrders` | Nobody today: every role reaches an earlier page |
+
+Obsolete `Staff` has no landing page; its session is rejected on the next request. Before WAS-113 every role was sent to `/dashboard`, so Kitchen and Cashier saw Access denied after every sign-in. The Access denied page links to the same landing page. The return-URL rules are in [authentication.md](../architecture/authentication.md#where-a-tenant-user-goes-after-signing-in).
+
+The sidebar's brand link is a separate navigation shortcut: the Dashboard with `CanViewReports`, otherwise Orders. It is unchanged.
+
 ## User management rules: acting Owner, own account, last Owner
 
 **Source:** `src/Wasla.Infrastructure/Services/TenantUserRoleService.cs`
