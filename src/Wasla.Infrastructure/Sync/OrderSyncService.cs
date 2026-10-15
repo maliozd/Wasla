@@ -751,6 +751,26 @@ public sealed class OrderSyncService : IOrderSyncService
         if (IsSemanticallyUnchanged(existing, persistedItems, external, newStatus))
             return new OrderUpsertResult(false, false, false, true, existing.ExternalOrderId);
 
+        await using var tx = await db.Database.BeginTransactionAsync(ct)
+            .ConfigureAwait(false);
+
+        // An operator action or another Worker may have committed a status since the read above (WAS-123). Lock the
+        // order row first with the UpdatedAt write this update makes anyway, then read the row again: the merge below
+        // starts from the committed status, and nothing can change it before this transaction commits.
+        await db.Orders
+            .Where(o => o.Id == existing.Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(o => o.UpdatedAt, nowUtc), ct)
+            .ConfigureAwait(false);
+        await db.Entry(existing).ReloadAsync(ct).ConfigureAwait(false);
+
+        if (IsSemanticallyUnchanged(existing, persistedItems, external, newStatus))
+        {
+            // The committed row already holds what the provider reports: write nothing, as for an unchanged order.
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+            db.Entry(existing).State = EntityState.Detached;
+            return new OrderUpsertResult(false, false, false, true, existing.ExternalOrderId);
+        }
+
         var oldStatus = existing.InternalStatus;
         var oldTotal = existing.TotalAmount;
         var oldPlatformStatus = existing.PlatformStatus;
@@ -758,9 +778,6 @@ public sealed class OrderSyncService : IOrderSyncService
         // EN: Provider status can lag behind local operator actions; merge instead of blindly overwriting InternalStatus so stale New/Accepted never undoes manual progress.
         // TR: Provider statüsü paneldeki manuel aksiyonların gerisinde kalabilir; InternalStatus'u körlemesine ezmemek için merge ediyoruz; eski New/Accepted manuel ilerlemeyi geri almasın.
         var mergedStatus = MergeInternalStatusForSync(existing.InternalStatus, newStatus);
-
-        await using var tx = await db.Database.BeginTransactionAsync(ct)
-            .ConfigureAwait(false);
 
         existing.InternalStatus = mergedStatus;
         existing.PlatformStatus = external.ExternalStatus;
