@@ -83,7 +83,7 @@ Failure handling:
 - **Provider failure:** nothing is written or published and the claim is released; a retry is a new attempt.
 - **Process stops while holding the claim:** the lock ends with the database session, so the order is not left claimed. A release that fails discards the pooled connection, which ends the session.
 - **Provider succeeded, local write failed** (for example the tenant database is unreachable right after the call): the order keeps its old status, and a later retry calls the provider again. No current provider call carries an idempotency key (Trendyol GO lifecycle calls are plain `PUT`s; the Yemeksepeti lifecycle calls are not implemented and fail). Closing this gap needs a durable claim record on the order (a schema change), which is not part of WAS-104.
-- **Worker sync upsert** is not claimed: it merges `InternalStatus` from the value it read (see below). The conditional write keeps an action from overwriting sync; sync writing an older status over a just-committed action is a separate, pre-existing race.
+- **Worker sync upsert** is not claimed. The conditional write keeps an action from overwriting sync, and sync merges into the status committed when its update transaction locks the order row, so it never overwrites an action committed meanwhile (WAS-123, see [Child replace on real updates](#child-replace-on-real-updates)).
 
 The claim needs SQL Server. SQLite-backed unit tests run without it (the conditional write still applies); any other provider is refused. Tests: `tests/Wasla.UnitTests/Orders/OrderActionConcurrencySqlServerTests.cs` ([../operations/testing.md](../operations/testing.md#sql-server-concurrency-tests)).
 
@@ -98,7 +98,7 @@ On existing orders, mapped external status is merged via `MergeInternalStatusFor
 
 ### Child replace on real updates
 
-When a semantic change is detected, sync opens a transaction, updates scalars (including `CustomerNote`, money, platform status, etc.), sets `UpdatedAt`, deletes existing `OrderItemOption` / `OrderItem` rows with `ExecuteDeleteAsync`, then inserts items/options from the provider payload, each with its position in the provider's list (`Sequence`, see [synchronization.md](./synchronization.md#order-upsert)), and `SaveChanges`.
+When a semantic change is detected, sync opens a transaction and first locks the order row by writing `UpdatedAt`, then reads the row again (WAS-123). An operator action, auto-approve or another Worker process may have committed a status since sync's first read; the merge, the transition timestamps and the receipt rule start from the status read inside the transaction, and the row stays locked until the commit. If the row read again is already semantically equal to the payload, the transaction is rolled back and the order counts as unchanged: no write, no `ChangeVersion` raise, no notification, no receipt. Otherwise sync updates scalars (including `CustomerNote`, money, platform status, etc.), sets `UpdatedAt`, deletes existing `OrderItemOption` / `OrderItem` rows with `ExecuteDeleteAsync`, then inserts items/options from the provider payload, each with its position in the provider's list (`Sequence`, see [synchronization.md](./synchronization.md#order-upsert)), and `SaveChanges`.
 
 ### Unchanged-order short circuit
 
