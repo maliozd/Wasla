@@ -27,6 +27,7 @@ public sealed class AuthController : Controller
     private readonly ITenantLoginRecorder _loginRecorder;
     private readonly ISignupCompletionTokenService _signupCompletionTokens;
     private readonly ITenantPasswordResetService _passwordReset;
+    private readonly ITenantLandingPageResolver _landingPages;
     private readonly IWebHostEnvironment _environment;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
@@ -36,6 +37,7 @@ public sealed class AuthController : Controller
         ITenantLoginRecorder loginRecorder,
         ISignupCompletionTokenService signupCompletionTokens,
         ITenantPasswordResetService passwordReset,
+        ITenantLandingPageResolver landingPages,
         IWebHostEnvironment environment,
         IStringLocalizer<SharedResource> localizer)
     {
@@ -44,6 +46,7 @@ public sealed class AuthController : Controller
         _loginRecorder = loginRecorder;
         _signupCompletionTokens = signupCompletionTokens;
         _passwordReset = passwordReset;
+        _landingPages = landingPages;
         _environment = environment;
         _localizer = localizer;
     }
@@ -60,10 +63,10 @@ public sealed class AuthController : Controller
             && Guid.TryParse(auth.Principal.FindFirstValue("TenantId"), out var claimTenantId)
             && claimTenantId == tenant.Id)
         {
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
-
-            return Redirect("/dashboard");
+            // Already signed in: go where the user may go. With no such page the form is shown, so this never loops.
+            var destination = await _landingPages.ResolveAsync(auth.Principal, returnUrl, HttpContext);
+            if (destination is not null)
+                return Redirect(destination);
         }
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
@@ -71,9 +74,13 @@ public sealed class AuthController : Controller
 
     [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
     [HttpGet("access-denied")]
-    public IActionResult AccessDenied()
+    public async Task<IActionResult> AccessDenied()
     {
-        return View();
+        // The recovery link is the user's own landing page; the denied path (ReturnUrl) is not shown or followed.
+        return View(new AccessDeniedViewModel
+        {
+            LandingPageUrl = await _landingPages.GetLandingPageAsync(User, HttpContext)
+        });
     }
 
     [AllowAnonymous]
@@ -99,16 +106,15 @@ public sealed class AuthController : Controller
         }
 
         ExpireTenantAuthCookies();
-        await SignInSessionAsync(session, model.RememberMe, ct);
+        var principal = await SignInSessionAsync(session, model.RememberMe, ct);
 
         // A login is a password sign-in that established the session. Credential checks alone
         // (/api/auth/validate), the signup welcome link and cookie authentication do not record one.
         await _loginRecorder.RecordSuccessfulLoginAsync(tenant.Id, session.UserId, ct);
 
-        if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-            return Redirect(model.ReturnUrl);
-
-        return Redirect("/dashboard");
+        // A safe local ReturnUrl the new session may open, otherwise the role's landing page (WAS-113). A session that
+        // may open neither (obsolete Staff) goes back to the login page, where its rejected cookie is not followed.
+        return Redirect(await _landingPages.ResolveAsync(principal, model.ReturnUrl, HttpContext) ?? "/auth/login");
     }
 
     [AllowAnonymous]
@@ -133,8 +139,8 @@ public sealed class AuthController : Controller
             return Redirect("/auth/login");
         }
 
-        await SignInSessionAsync(session, rememberMe: false, ct);
-        return Redirect("/dashboard");
+        var principal = await SignInSessionAsync(session, rememberMe: false, ct);
+        return Redirect(await _landingPages.GetLandingPageAsync(principal, HttpContext) ?? "/auth/login");
     }
 
     [AllowAnonymous]
@@ -228,7 +234,7 @@ public sealed class AuthController : Controller
         return View(model);
     }
 
-    private async Task SignInSessionAsync(AuthSessionResult session, bool rememberMe, CancellationToken ct)
+    private async Task<ClaimsPrincipal> SignInSessionAsync(AuthSessionResult session, bool rememberMe, CancellationToken ct)
     {
         _ = ct;
         // Tenant, user, role and security stamp are revalidated on every request (TenantCookieEvents).
@@ -250,6 +256,7 @@ public sealed class AuthController : Controller
             AuthSchemes.Tenant,
             principal,
             AuthCookiePersistence.Create(rememberMe, AuthCookiePersistence.TenantPersistentDuration));
+        return principal;
     }
 
     private static bool IsClearlyMalformedResetToken(string? token)

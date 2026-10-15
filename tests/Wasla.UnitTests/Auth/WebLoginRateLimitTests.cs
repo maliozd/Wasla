@@ -63,25 +63,25 @@ public sealed class WebLoginRateLimitTests : IAsyncLifetime
     {
         await StartAsync(RateLimitTestConfig.Limits(3));
         using var signedIn = _web.Client(TenantSessionWebHost.AlphaHost);
-        var valid = await PostLoginAsync(signedIn, "/auth/login", _alphaOwner.Email, TenantSessionWebHost.Password, "/orders/live");
+        var valid = await PostLoginAsync(signedIn, "/auth/login", _alphaOwner.Email, TenantSessionWebHost.Password, "/orders/live-display");
         Assert.Equal(HttpStatusCode.Redirect, valid.StatusCode);
-        Assert.Equal("/orders/live", valid.Headers.Location?.OriginalString);
+        Assert.Equal("/orders/live-display", valid.Headers.Location?.OriginalString);
 
         using var client = _web.Client(TenantSessionWebHost.AlphaHost);
         var invalidCredentials = Localized("en-US", "Auth.InvalidCredentials");
         foreach (var email in new[] { _alphaOwner.Email, "nobody@alpha.test" })
         {
-            var invalid = await PostLoginAsync(client, "/auth/login", email, "Wrong-Password-1", "/orders/live");
+            var invalid = await PostLoginAsync(client, "/auth/login", email, "Wrong-Password-1", "/orders/live-display");
             Assert.Equal(HttpStatusCode.OK, invalid.StatusCode);
             Assert.Contains(invalidCredentials, await HtmlAsync(invalid), StringComparison.Ordinal);
         }
 
         Assert.Equal(3, _probe.TenantChecks);
-        var token = await client.AntiforgeryTokenAsync("/auth/login?returnUrl=%2Forders%2Flive");
+        var token = await client.AntiforgeryTokenAsync("/auth/login?returnUrl=%2Forders%2Flive-display");
         var opened = _web.Tenants.Opened.Count;
 
         // Correct credentials do not get past the limit either.
-        var limited = await PostLoginAsync(client, "/auth/login", _alphaOwner.Email, TenantSessionWebHost.Password, "/orders/live", token);
+        var limited = await PostLoginAsync(client, "/auth/login", _alphaOwner.Email, TenantSessionWebHost.Password, "/orders/live-display", token);
 
         Assert.Equal(3, _probe.TenantChecks);
         Assert.Equal(opened, _web.Tenants.Opened.Count);
@@ -91,7 +91,7 @@ public sealed class WebLoginRateLimitTests : IAsyncLifetime
         var html = await HtmlAsync(limited);
         Assert.Contains($"<div class=\"alert alert-warning\" role=\"alert\">{Localized("en-US", "Auth.Login.TooManyAttempts")}</div>", html, StringComparison.Ordinal);
         Assert.DoesNotContain(invalidCredentials, html, StringComparison.Ordinal);
-        Assert.Matches(HiddenReturnUrl("/orders/live"), html);
+        Assert.Matches(HiddenReturnUrl("/orders/live-display"), html);
         Assert.Contains($"value=\"{_alphaOwner.Email}\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain(TenantSessionWebHost.Password, html, StringComparison.Ordinal);
         Assert.Contains("name=\"__RequestVerificationToken\"", html, StringComparison.Ordinal);

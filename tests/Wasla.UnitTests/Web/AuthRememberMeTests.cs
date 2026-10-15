@@ -328,6 +328,7 @@ public sealed class AuthRememberMeTests
             new NoopLoginRecorder(),
             new FakeSignupCompletionTokenService(),
             new FakeTenantPasswordResetService(),
+            new DashboardLandingPages(),
             new TestWebHostEnvironment("Development"),
             new FakeStringLocalizer())
         {
