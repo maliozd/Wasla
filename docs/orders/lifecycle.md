@@ -70,6 +70,23 @@ Rules observed in source:
 
 There is no free-form transition graph in code beyond the rows above.
 
+### Concurrent actions (WAS-104)
+
+Of several simultaneous actions on one order (two operators, two tabs, a retried request, an operator and Worker auto-approve), exactly one runs; it calls the provider once, raises `ChangeVersion` once and publishes one `OrderChanged`. This holds across every Web and Worker process that shares the tenant database.
+
+1. **Claim before the provider.** Every action first takes the order's claim: a SQL Server application lock in the tenant database (`sp_getapplock`, resource `Wasla.OrderAction.{orderId}`, session-owned, no wait), held on the action's own connection until it has called the provider and written the result (`OrderActionLock`). An action that finds the claim held is refused at once with `Orders.InvalidStatusForAction` (HTTP 400, client key `ordersInvalidStatusForAction`): it reads nothing, calls no provider, writes and publishes nothing. When the claim is free, the status is read and checked inside it, so an action that arrives after the winner finished sees the new status and is refused the same way.
+2. **Single-winner write.** The status change is a conditional update (`… WHERE Id = @id AND InternalStatus = @required`) in the short transaction that raises `ChangeVersion`. Only the first matching write changes the row, and a status Worker sync applied during the provider call (for example the platform cancelling the order) is never overwritten: the action then returns `Orders.InvalidStatusForAction`, logs a warning and publishes nothing. The transition's timestamp (`AcceptedAt`, `CancelledAt`, `DeliveredAt`) is only set when empty.
+3. **No request cancellation after the claim.** Once an action holds the claim, its provider call and local write no longer use the request's cancellation token, so a closed browser tab does not leave a provider change without its local status. The provider HTTP clients bound the call with their own timeouts.
+
+Failure handling:
+
+- **Provider failure:** nothing is written or published and the claim is released; a retry is a new attempt.
+- **Process stops while holding the claim:** the lock ends with the database session, so the order is not left claimed. A release that fails discards the pooled connection, which ends the session.
+- **Provider succeeded, local write failed** (for example the tenant database is unreachable right after the call): the order keeps its old status, and a later retry calls the provider again. No current provider call carries an idempotency key (Trendyol GO lifecycle calls are plain `PUT`s; the Yemeksepeti lifecycle calls are not implemented and fail). Closing this gap needs a durable claim record on the order (a schema change), which is not part of WAS-104.
+- **Worker sync upsert** is not claimed: it merges `InternalStatus` from the value it read (see below). The conditional write keeps an action from overwriting sync; sync writing an older status over a just-committed action is a separate, pre-existing race.
+
+The claim needs SQL Server. SQLite-backed unit tests run without it (the conditional write still applies); any other provider is refused. Tests: `tests/Wasla.UnitTests/Orders/OrderActionConcurrencySqlServerTests.cs` ([../operations/testing.md](../operations/testing.md#sql-server-concurrency-tests)).
+
 ### Sync status merge
 
 On existing orders, mapped external status is merged via `MergeInternalStatusForSync` before write:
