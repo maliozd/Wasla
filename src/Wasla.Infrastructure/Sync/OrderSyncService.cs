@@ -754,14 +754,21 @@ public sealed class OrderSyncService : IOrderSyncService
         await using var tx = await db.Database.BeginTransactionAsync(ct)
             .ConfigureAwait(false);
 
-        // An operator action or another Worker may have committed a status since the read above (WAS-123). Lock the
-        // order row first with the UpdatedAt write this update makes anyway, then read the row again: the merge below
-        // starts from the committed status, and nothing can change it before this transaction commits.
+        // An operator action or another Worker may have committed a status or items since the reads above (WAS-123).
+        // Lock the order row first with the UpdatedAt write this update makes anyway, then read the row and its items
+        // again: the comparison and the merge below start from what is committed, and nothing can change it before this
+        // transaction commits. The lock write never moves UpdatedAt back past a writer that committed during the wait.
         await db.Orders
             .Where(o => o.Id == existing.Id)
-            .ExecuteUpdateAsync(s => s.SetProperty(o => o.UpdatedAt, nowUtc), ct)
+            .ExecuteUpdateAsync(s => s.SetProperty(o => o.UpdatedAt, o => o.UpdatedAt > nowUtc ? o.UpdatedAt : nowUtc), ct)
             .ConfigureAwait(false);
         await db.Entry(existing).ReloadAsync(ct).ConfigureAwait(false);
+        persistedItems = await LoadPersistedItemSnapshotsAsync(db, existing.Id, ct).ConfigureAwait(false);
+
+        // The change is applied now, after any wait for the lock, and never before the order's last committed change.
+        nowUtc = DateTime.UtcNow;
+        if (nowUtc < existing.UpdatedAt)
+            nowUtc = existing.UpdatedAt;
 
         if (IsSemanticallyUnchanged(existing, persistedItems, external, newStatus))
         {
