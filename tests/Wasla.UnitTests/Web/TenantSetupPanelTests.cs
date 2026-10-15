@@ -92,10 +92,17 @@ public sealed class TenantSetupPanelTests
     {
         var auth = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "AuthController.cs");
         var onboarding = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "OnboardingController.cs");
+        var welcomeStart = auth.IndexOf("public async Task<IActionResult> Welcome(", StringComparison.Ordinal);
+        Assert.True(welcomeStart >= 0, "No Welcome action.");
+        var welcome = auth[welcomeStart..auth.IndexOf("[AllowAnonymous]", welcomeStart, StringComparison.Ordinal)];
 
-        Assert.Contains("return Redirect(\"/dashboard\");", auth, StringComparison.Ordinal);
+        // The welcome link sends the new user to their authorized landing page (WAS-113). The signup user is an Owner,
+        // whose landing page is the Dashboard with the setup panel, never the static onboarding cards. The HTTP
+        // behaviour is covered by TenantPostLoginRedirectTests.WelcomeLink_LandsOnTheCurrentRolesLandingPage.
+        Assert.Contains("_landingPages.GetLandingPageAsync(principal, HttpContext)", welcome, StringComparison.Ordinal);
+        Assert.Equal("/dashboard", TenantLandingPageResolver.LandingPages[0]);
+        Assert.DoesNotContain("/onboarding", welcome, StringComparison.Ordinal);
         Assert.Contains("Redirect(\"/dashboard\")", onboarding, StringComparison.Ordinal);
-        Assert.DoesNotContain("return Redirect(\"/onboarding\");", auth, StringComparison.Ordinal);
     }
 
     [Fact]

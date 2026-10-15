@@ -91,21 +91,30 @@ public sealed class TenantPostLoginRedirectTests : IAsyncLifetime
         Assert.Equal([Dashboard, "/auth/access-denied?ReturnUrl=%2Fdashboard"], chain);
     }
 
-    /// <summary>The signup welcome link uses the same landing page, from the user's current role.</summary>
-    [Fact]
-    public async Task WelcomeLink_LandsOnTheCurrentRolesLandingPage()
+    /// <summary>
+    /// The signup welcome link uses the same landing page, from the user's current role: the new Owner lands on the
+    /// Dashboard (with the setup panel, not the static onboarding cards), and a user whose role changed since the link
+    /// was issued lands on the page of the current role.
+    /// </summary>
+    [Theory]
+    [InlineData(UserRole.Owner, Dashboard)]
+    [InlineData(UserRole.Kitchen, LiveScreen)]
+    public async Task WelcomeLink_LandsOnTheCurrentRolesLandingPage(UserRole currentRole, string expected)
     {
         var owner = Seed(UserRole.Owner);
         using var scope = _host.Services.CreateScope();
         var tokens = scope.ServiceProvider.GetRequiredService<Wasla.Application.Abstractions.Auth.ISignupCompletionTokenService>();
         var link = tokens.CreateToken(new Wasla.Application.Abstractions.Auth.SignupCompletionPayload(
             _host.AlphaId, owner.Id, owner.Email, owner.FullName, UserRole.Owner));
-        _host.UpdateUser(_host.AlphaId, owner.Id, user => user.Role = UserRole.Kitchen);
+        if (currentRole != UserRole.Owner)
+            _host.UpdateUser(_host.AlphaId, owner.Id, user => user.Role = currentRole);
         using var client = Alpha();
 
         var response = await client.GetAsync($"/auth/welcome?token={Uri.EscapeDataString(link)}");
+        var landing = await client.GetAsync(Location(response));
 
-        Assert.Equal(LiveScreen, Location(response));
+        Assert.Equal(expected, Location(response));
+        Assert.Equal(HttpStatusCode.OK, landing.StatusCode);
     }
 
     /// <summary>
