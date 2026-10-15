@@ -123,6 +123,7 @@ internal sealed class ThemeWebHost : IAsyncDisposable
         services.AddScoped<ICurrentTenantService, CurrentTenantService>();
         services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
         services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
+        services.AddWaslaTenantLandingPages();
         services.AddAuthorization(options =>
         {
             AddTenantRolePolicy(options, TenantPolicies.TenantOwner, UserRole.Owner);
@@ -218,6 +219,7 @@ internal sealed class ThemeWebHost : IAsyncDisposable
 
         app.MapControllers();
         app.MapControllerRoute(name: "areas", pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+        app.EnableWaslaTenantLandingPages();
 
         await app.StartAsync();
         return new ThemeWebHost(app, contentRoot, central, tenants);

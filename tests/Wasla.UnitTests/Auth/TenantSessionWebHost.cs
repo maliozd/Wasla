@@ -159,6 +159,7 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         services.AddScoped<ICurrentTenantService, CurrentTenantService>();
         services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
         services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
+        services.AddWaslaTenantLandingPages();
         services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
         // The tenant role policies Web Program.cs registers (the shared table, also used by Wasla.Api).
         services.AddAuthorization(options => options.AddWaslaTenantRolePolicies());
@@ -192,6 +193,7 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         // Same middleware order as Web Program.cs.
         app.UseWaslaTrustedProxies();
         app.UseWaslaExceptionHandling(app.Environment);
+        app.UseStaticFiles();
         app.UseRequestLocalization();
         app.UseRouting();
         app.UseWaslaRealtimeOriginCheck();
@@ -202,6 +204,7 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         app.MapControllerRoute(name: "areas", pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
         app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
         app.MapWaslaRealtime();
+        app.EnableWaslaTenantLandingPages();
 
         await app.StartAsync();
         return new TenantSessionWebHost(app, contentRoot, central, tenants, alpha.Id, beta.Id, logs);
@@ -330,7 +333,11 @@ internal sealed class TenantSessionClient : IDisposable
         return response;
     }
 
-    /// <summary>Signs in through the real login form; the response must be the post-login redirect.</summary>
+    /// <summary>
+    /// Signs in through the real login form; the response must be the post-login redirect to a landing page (which
+    /// one depends on the role, see <c>TenantPostLoginRedirectTests</c>), or to the login page for a session that may
+    /// open none (obsolete Staff).
+    /// </summary>
     public async Task LoginAsync(string email, string password = TenantSessionWebHost.Password)
     {
         var token = await AntiforgeryTokenAsync("/auth/login");
@@ -342,7 +349,7 @@ internal sealed class TenantSessionClient : IDisposable
             new("__RequestVerificationToken", token)
         ]);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Equal("/dashboard", response.Headers.Location?.OriginalString);
+        Assert.Contains(response.Headers.Location?.OriginalString, TenantLandingPageResolver.LandingPages.Append("/auth/login"));
         Assert.NotNull(AuthCookie);
     }
 
