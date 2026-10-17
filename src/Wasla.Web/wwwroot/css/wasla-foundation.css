@@ -983,6 +983,18 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
   white-space: normal;
 }
 
+/* WAS-125: an order time, with a smaller line under it naming Wasla's import time when that stands in for the
+   provider's time or came much later. Each line follows the cell's text alignment (end, or start when stacked). */
+.wasla-order-time {
+  display: inline-block;
+}
+
+.wasla-order-time__source {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--wasla-text-muted);
+}
+
 .wasla-table__amount {
   color: var(--wasla-text);
   font-weight: 650;

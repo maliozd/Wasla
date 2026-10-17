@@ -75,14 +75,27 @@ public class Order : BaseEntity
     // --- Timestamps (all UTC) ---
 
     /// <summary>
-    /// When the customer actually placed this order on the platform.
+    /// When the order was created on the platform, as the provider reported it (Trendyol GO <c>packageCreationDate</c>).
+    /// Null when the provider sent no plausible creation time: Wasla never fills it from its own clock.
     /// </summary>
-    public DateTime CreatedAtPlatform { get; set; }
+    public DateTime? CreatedAtPlatform { get; set; }
 
     /// <summary>
-    /// When our worker first received this order, stored in UTC (compare/query using UTC; display in the restaurant timezone in the app).
+    /// The provider's latest modification time for the order (Trendyol GO <c>packageModificationDate</c>), when it sends one.
+    /// </summary>
+    public DateTime? PlatformModifiedAt { get; set; }
+
+    /// <summary>
+    /// When Wasla first stored this order. Set once on insert; later synchronization never changes it.
     /// </summary>
     public DateTime ReceivedAt { get; set; }
+
+    /// <summary>
+    /// The operational order time (WAS-125): <see cref="CreatedAtPlatform"/> when the provider supplied it, otherwise
+    /// <see cref="ReceivedAt"/>. Computed and stored by the database; Orders, Dashboard and Live Screen sort, filter
+    /// and count by it. Read <see cref="CreatedAtPlatform"/> to know whether it is the provider's time.
+    /// </summary>
+    public DateTime OrderedAt { get; private set; }
 
     public DateTime? AcceptedAt { get; set; }
     public DateTime? DeliveredAt { get; set; }

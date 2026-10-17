@@ -91,13 +91,13 @@ public sealed class TenantTablesAndDashboardPolishTests
             var result = await reader.GetListAsync(
                 tenantId, null, null, null, null, "platform", "asc", page, 4, null, CancellationToken.None);
             Assert.Equal(9, result.TotalCount);
-            seen.AddRange(result.Items.Select(row => new OrderListRowSnapshot(row.Id, row.ReceivedAtUtc)));
+            seen.AddRange(result.Items.Select(row => new OrderListRowSnapshot(row.Id, row.OrderedAtUtc)));
         }
 
         Assert.Equal(9, seen.Count);
         Assert.Equal(expected.OrderBy(id => id), seen.Select(row => row.Id).OrderBy(id => id));
         var orderedForTies = seen
-            .OrderByDescending(row => row.ReceivedAtUtc)
+            .OrderByDescending(row => row.OrderedAtUtc)
             .ThenBy(row => row.Id.ToString().ToUpperInvariant(), StringComparer.Ordinal)
             .Select(row => row.Id);
         Assert.Equal(orderedForTies, seen.Select(row => row.Id));
@@ -113,9 +113,10 @@ public sealed class TenantTablesAndDashboardPolishTests
         var controller = Read("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "OrdersController.cs");
         var service = Read("src", "Wasla.Infrastructure", "Services", "OrderReadService.cs");
 
-        Assert.Contains("\"receivedAt\" or \"platform\" or \"status\" or \"customerName\" or \"totalAmount\" => s,", controller);
-        Assert.Contains("_ => ascending ? q.OrderBy(o => o.ReceivedAt) : q.OrderByDescending(o => o.ReceivedAt)", service);
-        Assert.Contains("q = ordered.ThenByDescending(o => o.ReceivedAt).ThenBy(o => o.Id);", service);
+        Assert.Contains("OrderListSort.OrderedAt or OrderListSort.ReceivedAt or \"platform\" or \"status\" or \"customerName\" or \"totalAmount\" => s,", controller);
+        Assert.Contains("OrderListSort.ReceivedAt => ascending ? q.OrderBy(o => o.ReceivedAt) : q.OrderByDescending(o => o.ReceivedAt),", service);
+        Assert.Contains("_ => ascending ? q.OrderBy(o => o.OrderedAt) : q.OrderByDescending(o => o.OrderedAt)", service);
+        Assert.Contains("q = ordered.ThenByDescending(o => o.OrderedAt).ThenBy(o => o.Id);", service);
         Assert.DoesNotContain("EF.Property", service);
         Assert.DoesNotContain("FromSql", service);
     }
@@ -413,7 +414,7 @@ public sealed class TenantTablesAndDashboardPolishTests
         return directory?.FullName ?? throw new InvalidOperationException("Repository root was not found.");
     }
 
-    private sealed record OrderListRowSnapshot(Guid Id, DateTime ReceivedAtUtc);
+    private sealed record OrderListRowSnapshot(Guid Id, DateTime OrderedAtUtc);
 
     private sealed class TenantSqlite : ITenantDbContextFactory, IDisposable
     {
@@ -456,6 +457,7 @@ public sealed class TenantTablesAndDashboardPolishTests
                 builder.ToTable("Orders");
                 builder.HasKey(x => x.Id);
                 builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+                builder.Property(x => x.OrderedAt).HasComputedColumnSql(Wasla.Infrastructure.Persistence.Tenant.Configurations.OrderConfiguration.OrderedAtSql, stored: true);
                 builder.HasMany(x => x.Items).WithOne(x => x.Order).HasForeignKey(x => x.OrderId);
             });
 

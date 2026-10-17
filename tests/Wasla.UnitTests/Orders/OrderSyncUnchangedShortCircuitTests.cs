@@ -737,7 +737,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         Guid Id,
         DateTime CreatedAt,
         DateTime UpdatedAt,
-        DateTime CreatedAtPlatform,
+        DateTime? CreatedAtPlatform,
         OrderStatus InternalStatus,
         string PlatformStatus,
         string ExternalOrderCode,
@@ -932,6 +932,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
                     builder.ToTable("Orders");
                     builder.HasKey(x => x.Id);
                     builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+                    builder.Property(x => x.OrderedAt).HasComputedColumnSql(Wasla.Infrastructure.Persistence.Tenant.Configurations.OrderConfiguration.OrderedAtSql, stored: true);
                     builder.HasMany(x => x.Items).WithOne(x => x.Order).HasForeignKey(x => x.OrderId);
                 });
 

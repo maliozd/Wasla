@@ -24,8 +24,9 @@ public sealed class DashboardService : IDashboardService
         var todayStartUtc = TimeZoneInfo.ConvertTimeToUtc(todayStartLocal, tz);
         var todayEndUtc = todayStartUtc.AddDays(1);
 
+        // "Today" and the latest orders go by the operational order time (WAS-125), like Orders and Live Screen.
         var todayOrders = db.Orders.AsNoTracking()
-            .Where(o => o.ReceivedAt >= todayStartUtc && o.ReceivedAt < todayEndUtc);
+            .Where(o => o.OrderedAt >= todayStartUtc && o.OrderedAt < todayEndUtc);
 
         var todayOrderCount = await todayOrders.CountAsync(ct);
         var todayRevenue = await todayOrders.SumAsync(o => o.TotalAmount, ct);
@@ -60,7 +61,8 @@ public sealed class DashboardService : IDashboardService
             .ToList();
 
         var recent = await db.Orders.AsNoTracking()
-            .OrderByDescending(o => o.ReceivedAt)
+            .OrderByDescending(o => o.OrderedAt)
+            .ThenBy(o => o.Id)
             .Take(10)
             .Select(o => new DashboardResult.RecentOrderRow(
                 o.Id,
@@ -69,7 +71,8 @@ public sealed class DashboardService : IDashboardService
                 o.InternalStatus,
                 o.CustomerName,
                 o.TotalAmount,
-                o.ReceivedAt))
+                o.OrderedAt,
+                o.CreatedAtPlatform != null))
             .ToListAsync(ct);
 
         return new DashboardResult

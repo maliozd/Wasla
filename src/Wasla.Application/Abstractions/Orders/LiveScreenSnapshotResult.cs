@@ -118,6 +118,17 @@ public sealed record LiveScreenOrderDto(
     /// <c>OrderChanged</c> whose version is not higher than this is already shown by the snapshot.
     /// </summary>
     public long ChangeVersion { get; init; }
+
+    /// <summary>
+    /// When the order was placed on the platform, as the provider reported it (WAS-125); null when it sent no creation
+    /// time, and for a practice order. The Live Screen shows and counts from it, and falls back to
+    /// <see cref="ReceivedAtUtc"/> under the "received in Wasla" label when it is null.
+    /// </summary>
+    public DateTime? PlacedAtUtc { get; init; }
+
+    /// <summary>The operational order time: <see cref="PlacedAtUtc"/>, otherwise <see cref="ReceivedAtUtc"/>.</summary>
+    [JsonIgnore]
+    public DateTime OrderedAtUtc => PlacedAtUtc ?? ReceivedAtUtc;
 }
 
 /// <summary>

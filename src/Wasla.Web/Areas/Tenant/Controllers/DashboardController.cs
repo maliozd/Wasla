@@ -70,7 +70,8 @@ public sealed class DashboardController : BaseController
                     Status = o.Status,
                     CustomerName = o.CustomerName,
                     TotalAmount = o.TotalAmount,
-                    ReceivedAtUtc = o.ReceivedAtUtc
+                    OrderedAtUtc = o.OrderedAtUtc,
+                    OrderedAtIsFromPlatform = o.OrderedAtIsFromPlatform
                 })
                 .ToList()
         };

@@ -12,7 +12,12 @@
     var canManageOrders = (await AuthorizationService.AuthorizeAsync(User, TenantPolicies.CanManageOrders)).Succeeded;
     var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
     var receivedLabel = OrderUiHelper.FormatReceivedAtUtc(Model.ReceivedAtUtc, tz, turkeyToday);
-    var elapsedLabel = OrderUiHelper.FormatElapsed(Model.ReceivedAtUtc, DateTime.UtcNow, L);
+    // WAS-125: elapsed and the headline time run from the order time; without a provider time the import time stands
+    // in under its own label, and a much later import is shown under the order time.
+    var orderTimeLabel = OrderUiHelper.FormatReceivedAtUtc(Model.OrderedAtUtc, tz, turkeyToday);
+    var orderTimeCaption = Model.OrderedAtIsFromPlatform ? L["Orders.OrderTime"] : L["Orders.Details.Received"];
+    var showReceivedSeparately = OrderUiHelper.ShowReceivedSeparately(Model.CreatedAtPlatformUtc, Model.ReceivedAtUtc);
+    var elapsedLabel = OrderUiHelper.FormatElapsed(Model.OrderedAtUtc, DateTime.UtcNow, L);
     var phoneTel = OrderUiHelper.PhoneTelHref(Model.CustomerPhone);
     string InvariantAmount(decimal amount) => amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 }
@@ -25,7 +30,11 @@
             @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
             <span class="wasla-live-detail__elapsed" data-elapsed>@elapsedLabel</span>
         </div>
-        <p class="wasla-live-detail__received" data-received>@L["Orders.Details.Received"] @receivedLabel</p>
+        <p class="wasla-live-detail__received" data-received>@orderTimeCaption @orderTimeLabel</p>
+        @if (showReceivedSeparately)
+        {
+            <p class="wasla-live-detail__received" data-received-in-wasla>@L["Orders.Details.Received"] @receivedLabel</p>
+        }
     </header>
 
     @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))

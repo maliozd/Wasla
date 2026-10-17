@@ -51,7 +51,8 @@ public static class OrderListUrlHelper
         }
         else
         {
-            nextDir = sortBy == "receivedAt" ? "desc" : "asc";
+            // Time columns start newest first.
+            nextDir = sortBy is Wasla.Application.Orders.OrderListSort.OrderedAt or Wasla.Application.Orders.OrderListSort.ReceivedAt ? "desc" : "asc";
         }
 
         SortHeaderDirection? direction = null;

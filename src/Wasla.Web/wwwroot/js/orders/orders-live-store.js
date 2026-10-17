@@ -66,6 +66,7 @@
       order.customerNote || "",
       order.totalAmount,
       order.receivedAtUtc || "",
+      order.placedAtUtc || "",
       order.deliveredAtUtc || "",
       itemPart
     ].join("\u001d");
@@ -158,6 +159,16 @@
     return typeof value === "string" && value.length > 0 && isFinite(Date.parse(value));
   }
 
+  // WAS-125: the operational order time. placedAtUtc is the provider's creation time; an order without one shows,
+  // counts and sorts by when Wasla received it, under that label, never as the order time.
+  function orderTimeUtc(order) {
+    return isTimestamp(order.placedAtUtc) ? order.placedAtUtc : order.receivedAtUtc;
+  }
+
+  function hasPlacedTime(order) {
+    return isTimestamp(order.placedAtUtc);
+  }
+
   function isWholeNumber(value) {
     return typeof value === "number" && isFinite(value) && Math.floor(value) === value && value >= 0;
   }
@@ -184,6 +195,7 @@
       if (typeof order.platform !== "string" || !order.platform) return { ok: false, reason: "platform" };
       if (!SUPPORTED_STATUSES[order.status]) return { ok: false, reason: "status" };
       if (!isTimestamp(order.receivedAtUtc)) return { ok: false, reason: "received" };
+      if (order.placedAtUtc != null && !isTimestamp(order.placedAtUtc)) return { ok: false, reason: "placed" };
       if (order.deliveredAtUtc != null && !isTimestamp(order.deliveredAtUtc)) return { ok: false, reason: "delivered" };
       if (typeof order.customerName !== "string") return { ok: false, reason: "customer" };
       if (order.customerAddress != null && typeof order.customerAddress !== "string") return { ok: false, reason: "address" };
@@ -458,6 +470,8 @@
     formatAmount: formatAmount,
     applyDetailCurrency: applyDetailCurrency,
     elapsedMinutes: elapsedMinutes,
+    orderTimeUtc: orderTimeUtc,
+    hasPlacedTime: hasPlacedTime,
     collectNewIds: collectNewIds,
     isIsolatedSnapshot: isIsolatedSnapshot,
     validateSnapshot: validateSnapshot,
@@ -470,6 +484,7 @@
 
 function attachBrowser(O, global, api) {
   const hostId = "ordersLiveScreenHost";
+  const orderTimeUtc = api.orderTimeUtc;
   let coordinator = null;
   let timeFormat = null;
   let dateTimeFormat = null;
@@ -512,6 +527,10 @@ function attachBrowser(O, global, api) {
     unchangedCards: 0,
     movedCards: 0
   };
+
+  function orderTimeLabel(order) {
+    return message(api.hasPlacedTime(order) ? "ordersFullscreenOrderTime" : "ordersFullscreenReceived");
+  }
 
   function message(key) {
     return O.getMessage(key);
@@ -749,7 +768,7 @@ function attachBrowser(O, global, api) {
     elapsed.className = "wasla-live-screen-card__elapsed";
     elapsed.setAttribute("data-elapsed", "");
     elapsed.setAttribute("data-tour", "live-timer");
-    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    elapsed.textContent = formatElapsed(serverTimeUtc, orderTimeUtc(order));
     head.appendChild(platformHost);
     head.appendChild(status);
     head.appendChild(fresh);
@@ -862,13 +881,14 @@ function attachBrowser(O, global, api) {
     received.setAttribute("data-received-row", "");
     const receivedLabel = document.createElement("span");
     receivedLabel.className = "wasla-live-list-row__received-label";
-    receivedLabel.textContent = message("ordersFullscreenReceived");
+    receivedLabel.setAttribute("data-order-time-label", "");
+    receivedLabel.textContent = orderTimeLabel(order);
     const receivedValue = document.createElement("span");
     receivedValue.setAttribute("data-received", "");
-    receivedValue.textContent = formatReceived(order.receivedAtUtc, serverTimeUtc);
+    receivedValue.textContent = formatReceived(orderTimeUtc(order), serverTimeUtc);
     received.appendChild(receivedLabel);
     received.appendChild(receivedValue);
-    markReceivedDay(received, order.receivedAtUtc, serverTimeUtc);
+    markReceivedDay(received, orderTimeUtc(order), serverTimeUtc);
     meta.appendChild(received);
     identity.appendChild(headline);
     identity.appendChild(meta);
@@ -910,7 +930,7 @@ function attachBrowser(O, global, api) {
     elapsed.className = "wasla-live-screen-card__elapsed wasla-live-list-row__elapsed";
     elapsed.setAttribute("data-elapsed", "");
     elapsed.setAttribute("data-tour", "live-timer");
-    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    elapsed.textContent = formatElapsed(serverTimeUtc, orderTimeUtc(order));
 
     const aside = document.createElement("div");
     aside.className = "wasla-live-list-row__aside";
@@ -1307,14 +1327,14 @@ function attachBrowser(O, global, api) {
   }
 
   function timeKey(order, serverTimeUtc) {
-    return Math.floor(Date.parse(serverTimeUtc) / 3600000) + "|" + api.elapsedMinutes(serverTimeUtc, order.receivedAtUtc) + "|" + order.receivedAtUtc;
+    return Math.floor(Date.parse(serverTimeUtc) / 3600000) + "|" + api.elapsedMinutes(serverTimeUtc, orderTimeUtc(order)) + "|" + orderTimeUtc(order);
   }
 
   function syncTimeLabels(card, order, serverTimeUtc) {
     const key = timeKey(order, serverTimeUtc);
     if (cardTimes.get(card) === key) return false;
-    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
-    const received = (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(order.receivedAtUtc, serverTimeUtc);
+    const elapsed = formatElapsed(serverTimeUtc, orderTimeUtc(order));
+    const received = (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(orderTimeUtc(order), serverTimeUtc);
     let changed = false;
     const elapsedEl = card.querySelector("[data-elapsed]");
     if (elapsedEl && elapsedEl.textContent !== elapsed) {
@@ -1326,7 +1346,8 @@ function attachBrowser(O, global, api) {
       receivedEl.textContent = received;
       changed = true;
     }
-    markReceivedDay(card.querySelector("[data-received-row]"), order.receivedAtUtc, serverTimeUtc);
+    markReceivedDay(card.querySelector("[data-received-row]"), orderTimeUtc(order), serverTimeUtc);
+    setText(card.querySelector("[data-order-time-label]"), orderTimeLabel(order));
     cardTimes.set(card, key);
     return changed;
   }
@@ -1372,9 +1393,10 @@ function attachBrowser(O, global, api) {
       card.getAttribute("data-live-layout") === "list"
         ? formatListMoney(order.totalAmount)
         : (" " + formatMoney(order.totalAmount)));
-    setText(card.querySelector("[data-received]"), (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(order.receivedAtUtc, serverTimeUtc));
-    setText(card.querySelector("[data-elapsed]"), formatElapsed(serverTimeUtc, order.receivedAtUtc));
-    markReceivedDay(card.querySelector("[data-received-row]"), order.receivedAtUtc, serverTimeUtc);
+    setText(card.querySelector("[data-received]"), (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(orderTimeUtc(order), serverTimeUtc));
+    setText(card.querySelector("[data-elapsed]"), formatElapsed(serverTimeUtc, orderTimeUtc(order)));
+    markReceivedDay(card.querySelector("[data-received-row]"), orderTimeUtc(order), serverTimeUtc);
+    setText(card.querySelector("[data-order-time-label]"), orderTimeLabel(order));
     if (statusChanged) {
       const actions = card.querySelector("[data-order-actions]");
       if (actions) fillActions(actions, order);
@@ -1411,13 +1433,13 @@ function attachBrowser(O, global, api) {
     return 4;
   }
 
-  // Newest received time first within a visual group, then the immutable id.
+  // Newest order time first within a visual group (WAS-125), then the immutable id.
   // Actual status must not separate New from Accepted or reshuffle a group.
   function comparePresentation(a, b) {
     const group = groupRank(a.status) - groupRank(b.status);
     if (group) return group;
-    const timeA = Date.parse(a.receivedAtUtc);
-    const timeB = Date.parse(b.receivedAtUtc);
+    const timeA = Date.parse(orderTimeUtc(a));
+    const timeB = Date.parse(orderTimeUtc(b));
     const validA = timeA === timeA;
     const validB = timeB === timeB;
     if (validA && validB && timeA !== timeB) return timeB - timeA;
@@ -1756,7 +1778,7 @@ function attachBrowser(O, global, api) {
     elapsed.className = "wasla-live-focus-entry__elapsed";
     elapsed.setAttribute("data-elapsed", "");
     elapsed.setAttribute("data-tour", "live-timer");
-    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    elapsed.textContent = formatElapsed(serverTimeUtc, orderTimeUtc(order));
     meta.appendChild(platformHost);
     meta.appendChild(status);
     meta.appendChild(elapsed);
@@ -1777,7 +1799,7 @@ function attachBrowser(O, global, api) {
 
   function updateFocusEntry(entry, order, serverTimeUtc) {
     const signature = queueSignature(order);
-    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    const elapsed = formatElapsed(serverTimeUtc, orderTimeUtc(order));
     if (entry.getAttribute("data-live-signature") === signature) {
       const elapsedEl = entry.querySelector("[data-elapsed]");
       if (elapsedEl && elapsedEl.textContent !== elapsed) {
@@ -1831,7 +1853,7 @@ function attachBrowser(O, global, api) {
     if (!detail || typeof detail.querySelector !== "function") return;
     const panel = detail.querySelector(".wasla-live-detail");
     if (!panel || panel.getAttribute("data-order-id") !== String(order.id)) return;
-    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    const elapsed = formatElapsed(serverTimeUtc, orderTimeUtc(order));
     const elapsedEl = panel.querySelector("[data-elapsed]");
     if (elapsedEl && elapsedEl.textContent !== elapsed) elapsedEl.textContent = elapsed;
     if (typeof order.totalAmount === "number" && isFinite(order.totalAmount)) {

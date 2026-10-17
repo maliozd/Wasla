@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -600,13 +601,31 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
             Options:        options);
     }
 
-    private static DateTime TryParseDateTime(string? raw)
+    /// <summary>
+    /// The order's creation instant, or null. TODO: confirm the date format from the real API. Accepted: Unix epoch
+    /// milliseconds, or a date and time with an explicit offset or <c>Z</c>. A value without an offset is not an instant
+    /// (reading it in the server's zone would shift it), so it stays null like a missing one; Wasla never substitutes
+    /// its own clock for the provider's order time (WAS-125).
+    /// </summary>
+    internal static DateTime? TryParseDateTime(string? raw)
     {
-        if (string.IsNullOrWhiteSpace(raw)) return DateTime.UtcNow;
-        // TODO: Confirm date format from real API; try ISO-8601 first, fallback to UtcNow.
-        if (DateTimeOffset.TryParse(raw, out var dto)) return dto.UtcDateTime;
-        if (long.TryParse(raw, out var ms)) return DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
-        return DateTime.UtcNow;
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        var value = raw.Trim();
+
+        if (long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var ms))
+        {
+            return ms > 0 && ms <= DateTimeOffset.MaxValue.ToUnixTimeMilliseconds()
+                ? DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime
+                : null;
+        }
+
+        if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed)
+            && parsed.Kind != DateTimeKind.Unspecified)
+        {
+            return parsed.ToUniversalTime();
+        }
+
+        return null;
     }
 
     private static PaymentMethod MapPaymentMethod(string? method)

@@ -424,7 +424,7 @@
     <value>Средняя стоимость заказа</value>
   </data>
   <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
-    <value>Последние полученные заказы</value>
+    <value>Последние заказы по времени заказа</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>Заказы по платформам сегодня</value>
@@ -443,9 +443,6 @@
   </data>
   <data name="Dashboard.Status" xml:space="preserve">
     <value>Статус</value>
-  </data>
-  <data name="Dashboard.Received" xml:space="preserve">
-    <value>Полученный</value>
   </data>
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>Заказы</value>
@@ -589,7 +586,25 @@
     <value>Общий</value>
   </data>
   <data name="Orders.ReceivedAt" xml:space="preserve">
-    <value>Полученный</value>
+    <value>Получен в Wasla</value>
+  </data>
+  <data name="Orders.OrderTime" xml:space="preserve">
+    <value>Время заказа</value>
+  </data>
+  <data name="Orders.OrderTimeFallbackHint" xml:space="preserve">
+    <value>Платформа не передала время заказа; показано время получения заказа в Wasla.</value>
+  </data>
+  <data name="Orders.Details.PlacedOnPlatform" xml:space="preserve">
+    <value>Создан на платформе</value>
+  </data>
+  <data name="Orders.Details.PlatformModified" xml:space="preserve">
+    <value>Последнее изменение на платформе</value>
+  </data>
+  <data name="Orders.Details.LastChangedInWasla" xml:space="preserve">
+    <value>Последнее обновление в Wasla</value>
+  </data>
+  <data name="Orders.Details.NotProvidedByPlatform" xml:space="preserve">
+    <value>Платформа не передала</value>
   </data>
   <data name="Orders.Details" xml:space="preserve">
     <value>Подробности</value>
@@ -805,7 +820,7 @@
     <value>Статус</value>
   </data>
   <data name="Orders.Details.Received" xml:space="preserve">
-    <value>Полученный</value>
+    <value>Получен в Wasla</value>
   </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>Способ оплаты</value>

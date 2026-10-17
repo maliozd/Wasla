@@ -62,7 +62,8 @@ public sealed class OrdersController : ControllerBase
             (OrderStatusDto)(int)o.Status,
             o.PlatformStatus,
             o.CreatedAtPlatformUtc,
-            o.ReceivedAtUtc)).ToList();
+            o.ReceivedAtUtc,
+            o.OrderedAtUtc)).ToList();
 
         return Ok(new OrderListResponse(items, result.TotalCount, result.Page, result.PageSize));
     }
@@ -103,7 +104,9 @@ public sealed class OrdersController : ControllerBase
             order.AcceptedAtUtc,
             order.DeliveredAtUtc,
             order.CancelledAtUtc,
-            items));
+            items,
+            order.OrderedAtUtc,
+            order.PlatformModifiedAtUtc));
     }
 }
 

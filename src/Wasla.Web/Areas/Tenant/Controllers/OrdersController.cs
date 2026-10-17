@@ -77,7 +77,7 @@ public sealed class OrdersController : BaseController
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
         [FromQuery] string? search,
-        [FromQuery] string? sortBy = "receivedAt",
+        [FromQuery] string? sortBy = OrderListSort.OrderedAt,
         [FromQuery] string? sortDirection = "desc",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
@@ -240,7 +240,7 @@ public sealed class OrdersController : BaseController
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
         [FromQuery] string? search,
-        [FromQuery] string? sortBy = "receivedAt",
+        [FromQuery] string? sortBy = OrderListSort.OrderedAt,
         [FromQuery] string? sortDirection = "desc",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
@@ -272,7 +272,7 @@ public sealed class OrdersController : BaseController
         var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, null, null, today, today, search: null,
-            sortBy: "receivedAt", sortDirection: "desc", page: 1, pageSize: 100,
+            sortBy: OrderListSort.OrderedAt, sortDirection: "desc", page: 1, pageSize: 100,
             useHistoryDefaults: false,
             addDateValidationErrors: false, logDateFilterAs: null, ct,
             includeLineItems: true);
@@ -290,7 +290,7 @@ public sealed class OrdersController : BaseController
         var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, null, null, today, today, search: null,
-            sortBy: "receivedAt",
+            sortBy: OrderListSort.OrderedAt,
             sortDirection: "desc",
             page: 1, pageSize: 100,
             useHistoryDefaults: false,
@@ -547,8 +547,11 @@ public sealed class OrdersController : BaseController
             ServiceFee = order.ServiceFee,
             PaymentMethod = order.PaymentMethod,
             CreatedAtPlatformUtc = order.CreatedAtPlatformUtc,
+            PlatformModifiedAtUtc = order.PlatformModifiedAtUtc,
+            OrderedAtUtc = order.OrderedAtUtc,
             ReceivedAtUtc = order.ReceivedAtUtc,
             ReceivedAtLocal = receivedLocal,
+            LastChangedAtUtc = order.LastChangedAtUtc,
             AcceptedAtUtc = order.AcceptedAtUtc,
             AcceptedAtLocal = acceptedLocal,
             BackUrl = "/orders",
@@ -745,6 +748,12 @@ public sealed class OrdersController : BaseController
                 ReceivedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
                     DateTime.SpecifyKind(o.ReceivedAtUtc, DateTimeKind.Utc),
                     timeZone),
+                OrderedAtUtc = o.OrderedAtUtc,
+                OrderedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
+                    DateTime.SpecifyKind(o.OrderedAtUtc, DateTimeKind.Utc),
+                    timeZone),
+                OrderedAtIsFromPlatform = o.CreatedAtPlatformUtc.HasValue,
+                ShowReceivedSeparately = OrderUiHelper.ShowReceivedSeparately(o.CreatedAtPlatformUtc, o.ReceivedAtUtc),
                 ItemCount = o.ItemCount,
                 FirstProductName = o.FirstProductName,
                 DisplayImageUrl = OrderProductImageHelper.ResolveDisplayImageUrl(null, imageSeed),
@@ -848,11 +857,11 @@ public sealed class OrdersController : BaseController
 
     private static string NormalizeSortBy(string? sortBy)
     {
-        var s = string.IsNullOrWhiteSpace(sortBy) ? "receivedAt" : sortBy.Trim();
+        var s = string.IsNullOrWhiteSpace(sortBy) ? OrderListSort.OrderedAt : sortBy.Trim();
         return s switch
         {
-            "receivedAt" or "platform" or "status" or "customerName" or "totalAmount" => s,
-            _ => "receivedAt"
+            OrderListSort.OrderedAt or OrderListSort.ReceivedAt or "platform" or "status" or "customerName" or "totalAmount" => s,
+            _ => OrderListSort.OrderedAt
         };
     }
 }

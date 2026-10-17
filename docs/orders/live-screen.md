@@ -43,7 +43,8 @@ Authorization: Live Screen actions use `CanViewLiveScreen` where applied on thos
 - Plus `Delivered` only when `DeliveredAt` is within the last **2 minutes** (null `DeliveredAt` omitted). The value is `LiveScreenVisibility.RecentDeliveredWindow`; the guided-demo success copy shows the same value. Orders leave only the Live Screen; they stay on the Orders page and in history.
 - Line items: product name, quantity, notes
 - Order-level `CustomerNote` (trimmed; whitespace → null)
-- Header counters: today’s received count and today’s cancelled count (Turkey local day)
+- Header counters: today’s orders and today’s cancelled orders by order time (`OrderedAt`, Turkey local day; WAS-125), so a recovery import of yesterday's orders is not counted as today's
+- Each order carries `placedAtUtc` (the provider's creation time, or null) beside `receivedAtUtc`. Cards show, time (elapsed) and sort by the order time: `placedAtUtc`, otherwise `receivedAtUtc` under the "Received in Wasla" label (`ordersFullscreenReceived`) instead of "Order time" (`ordersFullscreenOrderTime`). See [lifecycle.md](lifecycle.md#order-times-was-125)
 
 ### Views: Board, List, Focus
 
@@ -79,7 +80,7 @@ The Board's "more in details" line needs each card's product preview measured. O
 
 Unresolved orders never leave the Live Screen by date, so an outage, a test run or a provider problem can leave thousands of active orders. On 14 October 2026 a development tenant had 5,754 (about 5 MB of snapshot) and the page stayed on Loading for minutes.
 
-- Each Board column, List group and Focus queue group renders at most **100** orders (`GROUP_PAGE_SIZE`; `waslaOrdersOptions.liveGroupPageSize` overrides it), newest first as sorted. Below the column, a line says how many it shows (`Orders.LiveScreen.GroupShowing`, "Showing {0} of {1}") and a button renders the next page (`Orders.LiveScreen.GroupShowMore`). The button is described by that line, keeps focus while there is more, and then moves focus to the first order it revealed. No request is made.
+- Each Board column, List group and Focus queue group renders at most **100** orders (`GROUP_PAGE_SIZE`; `waslaOrdersOptions.liveGroupPageSize` overrides it), newest order time first as sorted. Below the column, a line says how many it shows (`Orders.LiveScreen.GroupShowing`, "Showing {0} of {1}") and a button renders the next page (`Orders.LiveScreen.GroupShowMore`). The button is described by that line, keeps focus while there is more, and then moves focus to the first order it revealed. No request is made.
 - Nothing is filtered: the snapshot, the header counts and the column counts still hold every active order, and every order is reachable. Revealed pages are kept for the page view, across polls and view switches. A restaurant-sized column (100 or fewer) looks as before, without the control.
 - Always rendered beyond the page: the order holding keyboard focus, the Focus selection, the order whose details are open (so focus can return to its button) and the practice order.
 - New orders are the newest, so they are on the first page; the sound, notification and highlight rules are unchanged. An order pushed off the first page by newer ones waits behind "Show more".

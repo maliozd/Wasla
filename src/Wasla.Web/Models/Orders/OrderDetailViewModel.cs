@@ -21,9 +21,23 @@ public sealed class OrderDetailViewModel
 
     public PaymentMethod PaymentMethod { get; set; }
 
-    public DateTime CreatedAtPlatformUtc { get; set; }
+    /// <summary>The provider's creation time; null when it sent none (WAS-125).</summary>
+    public DateTime? CreatedAtPlatformUtc { get; set; }
+
+    /// <summary>The provider's latest modification time, when it sends one.</summary>
+    public DateTime? PlatformModifiedAtUtc { get; set; }
+
+    /// <summary>Operational order time: <see cref="CreatedAtPlatformUtc"/>, otherwise <see cref="ReceivedAtUtc"/>.</summary>
+    public DateTime OrderedAtUtc { get; set; }
+
+    /// <summary>When Wasla first stored the order.</summary>
     public DateTime ReceivedAtUtc { get; set; }
     public DateTime ReceivedAtLocal { get; set; }
+
+    /// <summary>When Wasla last wrote a change to the order, from synchronization or an operator.</summary>
+    public DateTime LastChangedAtUtc { get; set; }
+
+    public bool OrderedAtIsFromPlatform => CreatedAtPlatformUtc.HasValue;
     public DateTime? AcceptedAtUtc { get; set; }
     public DateTime? AcceptedAtLocal { get; set; }
 

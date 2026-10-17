@@ -224,7 +224,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CreatedAtPlatform")
+                    b.Property<DateTime?>("CreatedAtPlatform")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CustomerAddress")
@@ -271,6 +271,11 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<int>("InternalStatus")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("OrderedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime2")
+                        .HasComputedColumnSql("COALESCE(CreatedAtPlatform, ReceivedAt)", true);
+
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("int");
 
@@ -279,6 +284,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
 
                     b.Property<int>("Platform")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlatformModifiedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PlatformStatus")
                         .IsRequired()
@@ -308,6 +316,10 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique()
                         .HasDatabaseName("IX_Orders_IdempotencyKey");
+
+                    b.HasIndex("OrderedAt")
+                        .IsDescending()
+                        .HasDatabaseName("IX_Orders_OrderedAt");
 
                     b.HasIndex("ReceivedAt")
                         .IsDescending()
