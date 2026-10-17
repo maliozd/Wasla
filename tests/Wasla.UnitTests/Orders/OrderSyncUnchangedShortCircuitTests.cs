@@ -497,6 +497,8 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
     public async Task DeliveredOrder_IgnoresProviderCancellation()
     {
         var sync = await CreateSyncAsync();
+        // A first sync looks back an hour, which dates no milestone; after it, polling is live.
+        await SyncAsync(sync);
         var delivered = Sample(externalStatus: "Delivered");
         await SyncAsync(sync, delivered);
         var before = await ReadAsync(delivered.ExternalOrderId);
@@ -519,6 +521,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
     public async Task CancelledOrder_IsNotReopenedByProviderRefresh()
     {
         var sync = await CreateSyncAsync();
+        await SyncAsync(sync);
         var cancelled = Sample(externalStatus: "Cancelled");
         await SyncAsync(sync, cancelled);
 

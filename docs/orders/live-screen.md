@@ -40,7 +40,7 @@ Authorization: Live Screen actions use `CanViewLiveScreen` where applied on thos
 `OrderReadService.GetLiveScreenSnapshotAsync`:
 
 - Includes active statuses: `New`, `Accepted`, `Preparing`, `ReadyForPickup`, `OnTheWay`
-- Plus `Delivered` only when `DeliveredAt` is within the last **2 minutes** (null `DeliveredAt` omitted). The value is `LiveScreenVisibility.RecentDeliveredWindow`; the guided-demo success copy shows the same value. Orders leave only the Live Screen; they stay on the Orders page and in history.
+- Plus `Delivered` only when `DeliveredAt` is within the last **2 minutes** (null `DeliveredAt` omitted; synchronization leaves it null for a delivery it cannot date, such as one a recovery poll imports, see [lifecycle.md](lifecycle.md#milestone-times)). The value is `LiveScreenVisibility.RecentDeliveredWindow`; the guided-demo success copy shows the same value. Orders leave only the Live Screen; they stay on the Orders page and in history.
 - Line items: product name, quantity, notes
 - Order-level `CustomerNote` (trimmed; whitespace → null)
 - Header counters: today’s orders and today’s cancelled orders by order time (`OrderedAt`, Turkey local day; WAS-125), so a recovery import of yesterday's orders is not counted as today's

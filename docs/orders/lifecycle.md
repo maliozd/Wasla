@@ -62,6 +62,17 @@ Every time is stored as a UTC instant and converted only for display.
 - **Provider clock ahead.** A creation time more than 5 minutes ahead of Wasla's clock is dropped, so the order shows its import time; if a later poll's value is plausible, the order time moves to it.
 - **Receipts** print the time Wasla received the order under the "received" label (`ReceiptLabelLocalizer.Received`), which is what it is; they are unchanged.
 
+### Milestone times
+
+`AcceptedAt`, `DeliveredAt` and `CancelledAt` are set once, when the order first reaches that status, and are never moved afterwards.
+
+- **Operator actions** (`OrderActionService`) set them to the time of the action.
+- **Synchronization** sets them to the time Wasla saw the change, and only when the fetched window proves the change is recent (`OrderSyncService.MilestoneObservationLimit`, 15 minutes). That holds for a current-pass window that starts at the checkpoint and is at most 15 minutes long, which is normal polling: five minutes before the checkpoint to now. A change found in such a window happened inside it, because the earlier windows that moved the checkpoint did not see it.
+- **Not dated (left null):** the first sync of a connection (it looks back an hour), the hot window fetched ahead of a history gap, every backfill window, and a current window longer than 15 minutes after a short outage. This covers an order first imported already Accepted, Delivered or Cancelled during recovery, and an order Wasla already had that changed status during an outage. No provider field dates the change: Trendyol GO `packageModificationDate` is the latest modification of any kind, not the delivery or cancellation time.
+- **Effects of null:** a Delivered order without `DeliveredAt` is not shown as "recently delivered" on the Live Screen (`OrderReadService.GetLiveScreenSnapshotAsync` omits it); order details show no accepted time; the API returns null.
+- **Rows stored before this rule** keep the times they have. Orders a recovery poll imported already Delivered, Accepted or Cancelled carry the import time there (for example the three Pilavcı Rahim orders imported on 17 October 2026 at 02:19/02:21). They cannot be told apart from live-observed times, so no data is changed.
+- Yemeksepeti and the mock clients ignore the planned window. For them the same rule uses the window computed from the checkpoint, which is accurate in normal polling.
+
 ### Idempotency and parent row
 
 - Idempotency key = SHA-256 Base64 of `"{Platform}:{ExternalOrderId}"`, stored as `Order.IdempotencyKey`.
