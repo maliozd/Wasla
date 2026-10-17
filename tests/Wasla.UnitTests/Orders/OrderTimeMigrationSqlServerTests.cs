@@ -38,9 +38,24 @@ public sealed class OrderTimeMigrationSqlServerTests(SqlServerTenantDatabase dat
                 'Delivered', 'Test', '', '', 100, 0, 0, 0, 0, {Placed}, {Imported}, {payload}, {Imported}, {Imported}, 1);
             """, ct);
 
+        // Trendyol GO stored a missing packageCreationDate as 1970-01-01 before WAS-125.
+        var epochId = Guid.NewGuid();
+        var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO [Orders] ([Id], [Platform], [ExternalOrderId], [ExternalOrderCode], [IdempotencyKey], [InternalStatus],
+                [PlatformStatus], [CustomerName], [CustomerPhone], [CustomerAddress], [TotalAmount], [DeliveryFee], [ServiceFee],
+                [PaymentMethod], [PaymentStatus], [CreatedAtPlatform], [ReceivedAt], [RawPayloadJson], [CreatedAt], [UpdatedAt], [ChangeVersion])
+            VALUES ({epochId}, {(int)FoodPlatform.TrendyolYemek}, 'epoch-125', 'TY-EPOCH-125', 'epoch-125-key', {(int)OrderStatus.Delivered},
+                'Delivered', 'Test', '', '', 100, 0, 0, 0, 0, {epoch}, {Imported}, {payload}, {Imported}, {Imported}, 1);
+            """, ct);
+
         await migrator.MigrateAsync(OrderTimeMigration, ct);
 
         db.ChangeTracker.Clear();
+        var epochRow = await db.Orders.AsNoTracking().SingleAsync(o => o.Id == epochId, ct);
+        Assert.Null(epochRow.CreatedAtPlatform);
+        Assert.Equal(Imported, epochRow.OrderedAt);
+
         var legacy = await db.Orders.AsNoTracking().SingleAsync(o => o.Id == legacyId, ct);
         Assert.Equal(Placed, legacy.CreatedAtPlatform);
         Assert.Equal(Placed, legacy.OrderedAt);

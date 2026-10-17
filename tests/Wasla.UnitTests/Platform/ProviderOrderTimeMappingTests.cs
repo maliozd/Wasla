@@ -47,6 +47,9 @@ public sealed class ProviderOrderTimeMappingTests
     [InlineData("1792172400000", "2026-10-16T17:40:00Z")]
     [InlineData("2026-10-16T20:40:00+03:00", "2026-10-16T17:40:00Z")]
     [InlineData("2026-10-16T17:40:00Z", "2026-10-16T17:40:00Z")]
+    // The hour that repeats when Central European summer time ends: an offset fixes the instant whatever the server zone.
+    [InlineData("2026-10-25T02:30:00+02:00", "2026-10-25T00:30:00Z")]
+    [InlineData("2026-10-25T02:30:00+01:00", "2026-10-25T01:30:00Z")]
     public void Yemeksepeti_ReadsInstantsOnly(string raw, string expectedUtc)
     {
         var parsed = YemeksepetiFoodPlatformClient.TryParseDateTime(raw);

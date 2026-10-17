@@ -619,10 +619,13 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
                 : null;
         }
 
+        // RoundtripKind only tells whether the text carries an offset or Z; the instant itself is read as a
+        // DateTimeOffset, which never passes through the server's zone (a DST change would shift a Local value).
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed)
-            && parsed.Kind != DateTimeKind.Unspecified)
+            && parsed.Kind != DateTimeKind.Unspecified
+            && DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var instant))
         {
-            return parsed.ToUniversalTime();
+            return instant.UtcDateTime;
         }
 
         return null;

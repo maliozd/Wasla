@@ -19,6 +19,10 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                 oldClrType: typeof(DateTime),
                 oldType: "datetime2");
 
+            // A creation time before 2000 is a missing provider value read as zero (Trendyol GO stored 1970-01-01), not
+            // an order time: it becomes unknown, so the order time falls back to the import time, as for new orders.
+            migrationBuilder.Sql("UPDATE [Orders] SET [CreatedAtPlatform] = NULL WHERE [CreatedAtPlatform] < '2000-01-01';");
+
             migrationBuilder.AddColumn<DateTime>(
                 name: "PlatformModifiedAt",
                 table: "Orders",
