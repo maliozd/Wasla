@@ -210,6 +210,12 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
             {
                 await next(http);
             }
+            catch (OperationCanceledException) when (http.RequestAborted.IsCancellationRequested)
+            {
+                // The browser abandoned the request (a page or frame closed while its poll was running). That is not a
+                // server error, and ASP.NET Core treats it as a client disconnect too.
+                throw;
+            }
             catch (Exception ex)
             {
                 serverErrors.Add(http.Request.Path, ex);
