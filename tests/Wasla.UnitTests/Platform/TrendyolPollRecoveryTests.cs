@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
@@ -11,6 +12,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
 using Wasla.Infrastructure.Realtime;
+using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Diagnostics;
 using Wasla.UnitTests.Setup;
@@ -157,13 +159,15 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         Assert.Equal(4, after.Count);
         Assert.Equal(OrderStatus.Delivered, after["delivered"].InternalStatus);
         Assert.Equal("Delivered", after["delivered"].PlatformStatus);
-        Assert.NotNull(after["delivered"].DeliveredAt);
+        // Each change happened somewhere in the outage; recovery does not know when, so it does not claim its own time
+        // (the delivered order is not "recently delivered" on the Live Screen).
+        Assert.Null(after["delivered"].DeliveredAt);
         Assert.Equal(OrderStatus.Cancelled, after["cancelled"].InternalStatus);
         Assert.Equal("Cancelled", after["cancelled"].PlatformStatus);
-        Assert.NotNull(after["cancelled"].CancelledAt);
+        Assert.Null(after["cancelled"].CancelledAt);
         Assert.Equal(OrderStatus.Cancelled, after["unsupplied"].InternalStatus);
         Assert.Equal("UnSupplied", after["unsupplied"].PlatformStatus);
-        Assert.NotNull(after["unsupplied"].CancelledAt);
+        Assert.Null(after["unsupplied"].CancelledAt);
         Assert.Equal(OrderStatus.New, after["arrived-during-outage"].InternalStatus);
         Assert.Equal(before["delivered"].Id, after["delivered"].Id);
         Assert.Equal(before["delivered"].CreatedAt, after["delivered"].CreatedAt);
@@ -704,6 +708,120 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
                 Assert.DoesNotContain(value, message ?? string.Empty, StringComparison.Ordinal);
         }
     }
+
+    // Milestone times (AcceptedAt, DeliveredAt, CancelledAt) come from when Wasla saw the change, and only when the
+    // window proves the change is recent: never from a recovery poll, which would date old events at the poll.
+
+    [Fact]
+    public async Task LivePoll_DatesTheChangesItSees_AndTheLiveScreenShowsTheRecentDelivery()
+    {
+        _clock.Now = Noon.AddMinutes(-1);
+        await SeedConnectionAsync(_tenant, checkpoint: Noon.AddMinutes(-2));
+        _api.Put("courier", "Shipped", Noon.AddMinutes(-3));
+        await RunAsync();
+        Assert.Null((await OrdersAsync())["courier"].DeliveredAt);
+
+        _clock.Now = Noon;
+        _api.Put("courier", "Delivered", Noon.AddSeconds(-20));
+        _api.Put("cancelled-at-once", "Cancelled", Noon.AddSeconds(-30));
+        var before = DateTime.UtcNow;
+        await RunAsync();
+
+        var after = await OrdersAsync();
+        Assert.Equal(OrderStatus.Delivered, after["courier"].InternalStatus);
+        Assert.InRange(after["courier"].DeliveredAt!.Value, before.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
+        // First seen already cancelled, but inside a five-minute window: the change is minutes old at most.
+        Assert.NotNull(after["cancelled-at-once"].CancelledAt);
+
+        var snapshot = await LiveScreenAsync();
+        Assert.Contains(snapshot.Orders, o => o.DisplayNumber == "N-courier" && o.Status == OrderStatus.Delivered);
+    }
+
+    [Fact]
+    public async Task FirstImportDuringRecovery_LeavesMilestonesUnknown_AndTheLiveScreenOmitsTheOldDelivery()
+    {
+        // A first sync looks back an hour: these changes may be up to an hour old.
+        await SeedConnectionAsync(_tenant, checkpoint: null);
+        _api.Put("old-delivered", "Delivered", Noon.AddMinutes(-40));
+        _api.Put("old-accepted", "Picking", Noon.AddMinutes(-30));
+        _api.Put("old-cancelled", "Cancelled", Noon.AddMinutes(-20));
+
+        await RunAsync();
+
+        var orders = await OrdersAsync();
+        Assert.Equal(OrderStatus.Delivered, orders["old-delivered"].InternalStatus);
+        Assert.Null(orders["old-delivered"].DeliveredAt);
+        Assert.Equal(OrderStatus.Accepted, orders["old-accepted"].InternalStatus);
+        Assert.Null(orders["old-accepted"].AcceptedAt);
+        Assert.Equal(OrderStatus.Cancelled, orders["old-cancelled"].InternalStatus);
+        Assert.Null(orders["old-cancelled"].CancelledAt);
+
+        var snapshot = await LiveScreenAsync();
+        Assert.DoesNotContain(snapshot.Orders, o => o.DisplayNumber == "N-old-delivered");
+        Assert.Contains(snapshot.Orders, o => o.DisplayNumber == "N-old-accepted");
+    }
+
+    [Fact]
+    public async Task HotWindowAheadOfAHistoryGap_DoesNotDateWhatItImports()
+    {
+        await SeedConnectionAsync(_tenant, checkpoint: Noon.AddHours(-6));
+        _api.Put("delivered-after-outage", "Delivered", Noon.AddMinutes(-2));
+
+        await RunAsync();
+
+        var order = (await OrdersAsync())["delivered-after-outage"];
+        Assert.Equal(OrderStatus.Delivered, order.InternalStatus);
+        Assert.Null(order.DeliveredAt);
+    }
+
+    [Fact]
+    public async Task RepeatedPolls_NeverInventAMilestone_ALaterLiveChangeIsDated()
+    {
+        await SeedConnectionAsync(_tenant, checkpoint: null);
+        _api.Put("recovered", "Picking", Noon.AddMinutes(-45));
+        await RunAsync();
+
+        // Live polls that see the same status, even with a newer modification time, leave AcceptedAt unknown.
+        for (var minute = 1; minute <= 3; minute++)
+        {
+            _clock.Now = Noon.AddMinutes(minute);
+            _api.Put("recovered", "Picking", Noon.AddMinutes(minute).AddSeconds(-10));
+            await RunAsync();
+            Assert.Null((await OrdersAsync())["recovered"].AcceptedAt);
+        }
+
+        _clock.Now = Noon.AddMinutes(4);
+        _api.Put("recovered", "Delivered", Noon.AddMinutes(4).AddSeconds(-10));
+        await RunAsync();
+        var delivered = (await OrdersAsync())["recovered"];
+        Assert.NotNull(delivered.DeliveredAt);
+        Assert.Null(delivered.AcceptedAt);
+
+        // Another poll of the same delivered package keeps the first DeliveredAt.
+        _clock.Now = Noon.AddMinutes(5);
+        _api.Put("recovered", "Delivered", Noon.AddMinutes(5).AddSeconds(-10));
+        await RunAsync();
+        Assert.Equal(delivered.DeliveredAt, (await OrdersAsync())["recovered"].DeliveredAt);
+    }
+
+    [Theory]
+    [InlineData(9, true)]   // window of 14 minutes
+    [InlineData(11, false)] // window of 16 minutes: a short outage
+    public async Task OnlyAWindowWithinTheObservationLimit_DatesAChange(int checkpointMinutesAgo, bool dated)
+    {
+        Assert.Equal(TimeSpan.FromMinutes(15), OrderSyncService.MilestoneObservationLimit);
+        await SeedConnectionAsync(_tenant, checkpoint: Noon.AddMinutes(-checkpointMinutesAgo));
+        _api.Put("delivered", "Delivered", Noon.AddMinutes(-1));
+
+        await RunAsync();
+
+        Assert.Equal(dated, (await OrdersAsync())["delivered"].DeliveredAt is not null);
+    }
+
+    private async Task<LiveScreenSnapshotResult> LiveScreenAsync() =>
+        // Milestones are written with the wall clock, so the snapshot reads with it too.
+        await new OrderReadService(_tenants, TimeProvider.System, NullLogger<OrderReadService>.Instance)
+            .GetLiveScreenSnapshotAsync(_tenant, Ct);
 
     public void Dispose() => _tenants.Dispose();
 

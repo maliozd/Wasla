@@ -497,9 +497,17 @@ public sealed class OrderSyncService : IOrderSyncService
                     externalOrders.Select(x => x.ExternalOrderId).Where(x => !string.IsNullOrWhiteSpace(x)).Take(10).ToArray());
 
                 swUpsert.Start();
+                // A status change found in this window happened inside it: everything the provider modified before the
+                // window was already fetched by the windows that moved the checkpoint here. Only a current window that
+                // starts at the checkpoint and is short enough dates such a change by when Wasla saw it; otherwise the
+                // change may be hours old and its milestone time stays unknown (see MilestoneObservationLimit).
+                var milestonesObservedLive = pass == OrderSyncPass.Current
+                    && advancesCheckpoint
+                    && window.EndUtc - window.StartUtc <= MilestoneObservationLimit;
+
                 foreach (var external in externalOrders)
                 {
-                    var r = await UpsertOrderAsync(customerId, db, external, ct).ConfigureAwait(false);
+                    var r = await UpsertOrderAsync(customerId, db, external, milestonesObservedLive, ct).ConfigureAwait(false);
 
                     if (r.Inserted) { syncLog.OrdersInserted++; connInserted++; }
                     if (r.Updated) { syncLog.OrdersUpdated++; connUpdated++; }
@@ -670,6 +678,7 @@ public sealed class OrderSyncService : IOrderSyncService
       Guid customerId,
       TenantDbContext db,
       ExternalOrderDto external,
+      bool milestonesObservedLive,
       CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(external.ExternalOrderId))
@@ -702,7 +711,8 @@ public sealed class OrderSyncService : IOrderSyncService
                 key,
                 receivedAtUtc: nowUtc,
                 internalStatus: newStatus,
-                nowUtc: nowUtc);
+                nowUtc: nowUtc,
+                milestonesObservedLive: milestonesObservedLive);
 
             order.ChangeVersion = OrderChangeVersions.Initial;
             db.Orders.Add(order);
@@ -809,7 +819,8 @@ public sealed class OrderSyncService : IOrderSyncService
             existing,
             oldStatus,
             mergedStatus,
-            nowUtc);
+            nowUtc,
+            milestonesObservedLive);
 
         await db.OrderItemOptions
             .Where(o => db.OrderItems
@@ -964,7 +975,13 @@ public sealed class OrderSyncService : IOrderSyncService
         return external with { OrderedAtUtc = orderedAt, ModifiedAtUtc = modifiedAt };
     }
 
-    private static Order MapToOrderEntity(ExternalOrderDto external, string idempotencyKey, DateTime receivedAtUtc, OrderStatus internalStatus, DateTime nowUtc)
+    private static Order MapToOrderEntity(
+        ExternalOrderDto external,
+        string idempotencyKey,
+        DateTime receivedAtUtc,
+        OrderStatus internalStatus,
+        DateTime nowUtc,
+        bool milestonesObservedLive)
     {
         var order = new Order
         {
@@ -989,8 +1006,8 @@ public sealed class OrderSyncService : IOrderSyncService
             CustomerNote = NormalizeCustomerNote(external.CustomerNote)
         };
 
-        // Initial milestone timestamps based on initial status
-        ApplyStatusTransitionTimestamps(order, OrderStatus.New, internalStatus, nowUtc);
+        // An order first seen already Accepted, Delivered or Cancelled gets those times only from a live window.
+        ApplyStatusTransitionTimestamps(order, OrderStatus.New, internalStatus, nowUtc, milestonesObservedLive);
 
         // Sequence keeps the order in which the provider listed the lines and their options; the mapped
         // ExternalOrderDto lists them in that order. Readers order by it (OrderItemOrdering).
@@ -1059,9 +1076,28 @@ public sealed class OrderSyncService : IOrderSyncService
         _ => 0
     };
 
-    private static void ApplyStatusTransitionTimestamps(Order order, OrderStatus oldStatus, OrderStatus newStatus, DateTime nowUtc)
+    /// <summary>
+    /// Longest current fetch window whose status changes are dated by when Wasla saw them (<c>AcceptedAt</c>,
+    /// <c>DeliveredAt</c>, <c>CancelledAt</c>). Normal polling reads from five minutes before the checkpoint
+    /// (<see cref="OrderFetchWindowPlanner.CheckpointOverlap"/>) to now, so its changes are minutes old at most. A longer
+    /// window is recovery after a gap (or a first sync, which looks back an hour): a change in it can be anywhere in the
+    /// window, and no provider field dates it (Trendyol GO <c>packageModificationDate</c> is the latest modification of
+    /// any kind), so the milestone stays null rather than claiming the recovery time.
+    /// </summary>
+    internal static readonly TimeSpan MilestoneObservationLimit = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Sets the milestone a sync-observed status change reaches, once, to <paramref name="nowUtc"/> when the change was
+    /// observed live (<see cref="MilestoneObservationLimit"/>); otherwise leaves it null: the time is unknown.
+    /// </summary>
+    private static void ApplyStatusTransitionTimestamps(
+        Order order,
+        OrderStatus oldStatus,
+        OrderStatus newStatus,
+        DateTime nowUtc,
+        bool milestonesObservedLive)
     {
-        if (oldStatus == newStatus) return;
+        if (oldStatus == newStatus || !milestonesObservedLive) return;
 
         switch (newStatus)
         {

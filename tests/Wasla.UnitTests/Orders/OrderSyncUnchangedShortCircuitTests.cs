@@ -497,6 +497,8 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
     public async Task DeliveredOrder_IgnoresProviderCancellation()
     {
         var sync = await CreateSyncAsync();
+        // A first sync looks back an hour, which dates no milestone; after it, polling is live.
+        await SyncAsync(sync);
         var delivered = Sample(externalStatus: "Delivered");
         await SyncAsync(sync, delivered);
         var before = await ReadAsync(delivered.ExternalOrderId);
@@ -515,10 +517,38 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         Assert.Null(after.CancelledAt);
     }
 
+    /// <summary>
+    /// A client that ignores the fetch window (this fake, like Yemeksepeti and the mocks): milestones still follow the
+    /// window planned from the checkpoint, so only live polling dates them.
+    /// </summary>
+    [Fact]
+    public async Task WindowlessClient_DatesMilestonesOnlyWhilePollingIsLive()
+    {
+        var sync = await CreateSyncAsync();
+
+        // The first sync looks back an hour.
+        var first = Sample(externalOrderId: "ext-first", externalStatus: "Delivered");
+        await SyncAsync(sync, first);
+        Assert.Null((await ReadAsync("ext-first")).DeliveredAt);
+
+        // Live polling: the window starts five minutes before the checkpoint.
+        var live = Sample(externalOrderId: "ext-live", externalStatus: "Cancelled");
+        await SyncAsync(sync, first, live);
+        Assert.NotNull((await ReadAsync("ext-live")).CancelledAt);
+        Assert.Null((await ReadAsync("ext-first")).DeliveredAt);
+
+        // Twenty minutes without a successful sync: the next window is too long to date what it finds.
+        await MoveCheckpointAsync(TimeSpan.FromMinutes(-20));
+        var afterGap = Sample(externalOrderId: "ext-gap", externalStatus: "Delivered");
+        await SyncAsync(sync, first, live, afterGap);
+        Assert.Null((await ReadAsync("ext-gap")).DeliveredAt);
+    }
+
     [Fact]
     public async Task CancelledOrder_IsNotReopenedByProviderRefresh()
     {
         var sync = await CreateSyncAsync();
+        await SyncAsync(sync);
         var cancelled = Sample(externalStatus: "Cancelled");
         await SyncAsync(sync, cancelled);
 
@@ -606,6 +636,14 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
     {
         _client.Set(orders);
         return await sync.SyncCustomerWithResultAsync(_tenantId, CancellationToken);
+    }
+
+    private async Task MoveCheckpointAsync(TimeSpan fromNow)
+    {
+        await using var db = await _db.CreateAsync(_tenantId, CancellationToken);
+        var connection = await db.PlatformConnections.SingleAsync(CancellationToken);
+        connection.LastSuccessfulSync = DateTime.UtcNow + fromNow;
+        await db.SaveChangesAsync(CancellationToken);
     }
 
     private async Task SetStatusAsync(string externalOrderId, OrderStatus status)
