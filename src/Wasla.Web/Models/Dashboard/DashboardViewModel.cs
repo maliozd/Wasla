@@ -22,7 +22,11 @@ public sealed class DashboardViewModel
         public OrderStatus Status { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
-        public DateTime ReceivedAtUtc { get; set; }
+        /// <summary>Operational order time (UTC, WAS-125): the provider's creation time, otherwise the import time.</summary>
+        public DateTime OrderedAtUtc { get; set; }
+
+        /// <summary>False when <see cref="OrderedAtUtc"/> is Wasla's import time because the provider sent none.</summary>
+        public bool OrderedAtIsFromPlatform { get; set; }
     }
 
     public sealed class PlatformSummaryRow

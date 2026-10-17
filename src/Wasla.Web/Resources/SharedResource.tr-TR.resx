@@ -424,7 +424,7 @@
     <value>Sipariş başına ortalama tutar</value>
   </data>
   <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
-    <value>Son alınan siparişler</value>
+    <value>Sipariş zamanına göre en yeni siparişler</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>Bugün platforma göre siparişler</value>
@@ -443,9 +443,6 @@
   </data>
   <data name="Dashboard.Status" xml:space="preserve">
     <value>Durum</value>
-  </data>
-  <data name="Dashboard.Received" xml:space="preserve">
-    <value>Alındı</value>
   </data>
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>sipariş</value>
@@ -589,7 +586,25 @@
     <value>Tutar</value>
   </data>
   <data name="Orders.ReceivedAt" xml:space="preserve">
-    <value>Alındı</value>
+    <value>Wasla'ya alındı</value>
+  </data>
+  <data name="Orders.OrderTime" xml:space="preserve">
+    <value>Sipariş zamanı</value>
+  </data>
+  <data name="Orders.OrderTimeFallbackHint" xml:space="preserve">
+    <value>Platform sipariş zamanını göndermedi; Wasla'ya alınma zamanı gösteriliyor.</value>
+  </data>
+  <data name="Orders.Details.PlacedOnPlatform" xml:space="preserve">
+    <value>Platformda oluşturuldu</value>
+  </data>
+  <data name="Orders.Details.PlatformModified" xml:space="preserve">
+    <value>Platformda son değişiklik</value>
+  </data>
+  <data name="Orders.Details.LastChangedInWasla" xml:space="preserve">
+    <value>Wasla'da son güncelleme</value>
+  </data>
+  <data name="Orders.Details.NotProvidedByPlatform" xml:space="preserve">
+    <value>Platform göndermedi</value>
   </data>
   <data name="Orders.Details" xml:space="preserve">
     <value>Detay</value>
@@ -805,7 +820,7 @@
     <value>Durum</value>
   </data>
   <data name="Orders.Details.Received" xml:space="preserve">
-    <value>Alındı</value>
+    <value>Wasla'ya alındı</value>
   </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>Ödeme Yöntemi</value>

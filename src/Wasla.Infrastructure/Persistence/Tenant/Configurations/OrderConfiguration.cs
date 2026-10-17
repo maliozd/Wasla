@@ -6,6 +6,12 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Configurations;
 
 public class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
+    /// <summary>
+    /// SQL of the stored <see cref="Order.OrderedAt"/> column (WAS-125): the provider's creation time when it sent one,
+    /// otherwise Wasla's first-import time. Unquoted names keep it valid on SQL Server and SQLite.
+    /// </summary>
+    internal const string OrderedAtSql = "COALESCE(CreatedAtPlatform, ReceivedAt)";
+
     public void Configure(EntityTypeBuilder<Order> builder)
     {
         builder.ToTable("Orders");
@@ -21,6 +27,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.CustomerAddress).HasMaxLength(1000);
         builder.Property(o => o.CustomerNote).HasMaxLength(2000);
         builder.Property(o => o.ChangeVersion).IsRequired();
+
+        // Stored so the Orders list, Dashboard and Live Screen can sort, filter and count by it through an index.
+        builder.Property(o => o.OrderedAt)
+            .HasComputedColumnSql(OrderedAtSql, stored: true);
 
         builder.Property(o => o.TotalAmount).HasPrecision(18, 2);
         builder.Property(o => o.DeliveryFee).HasPrecision(18, 2);
@@ -54,5 +64,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         // Filter by status + recency
         builder.HasIndex(o => new { o.InternalStatus, o.ReceivedAt })
             .HasDatabaseName("IX_Orders_InternalStatus_ReceivedAt");
+
+        // Orders list default sort and date filter, Dashboard and Live Screen "today" (WAS-125).
+        builder.HasIndex(o => o.OrderedAt)
+            .IsDescending()
+            .HasDatabaseName("IX_Orders_OrderedAt");
     }
 }

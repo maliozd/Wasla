@@ -41,7 +41,7 @@ public sealed class DashboardController : ControllerBase
         var todayEnd = todayStart.AddDays(1);
 
         var todayQuery = db.Orders.AsNoTracking()
-            .Where(o => o.CreatedAtPlatform >= todayStart && o.CreatedAtPlatform < todayEnd);
+            .Where(o => o.OrderedAt >= todayStart && o.OrderedAt < todayEnd);
 
         var todayOrderCount = await todayQuery.CountAsync(ct);
         var revenue = await todayQuery.SumAsync(o => o.TotalAmount, ct);
@@ -65,7 +65,7 @@ public sealed class DashboardController : ControllerBase
             .ToListAsync(ct);
 
         var recent = await db.Orders.AsNoTracking()
-            .OrderByDescending(o => o.CreatedAtPlatform)
+            .OrderByDescending(o => o.OrderedAt)
             .Take(10)
             .Select(o => new
             {
@@ -75,7 +75,8 @@ public sealed class DashboardController : ControllerBase
                 o.InternalStatus,
                 o.CustomerName,
                 o.TotalAmount,
-                o.CreatedAtPlatform
+                o.CreatedAtPlatform,
+                o.OrderedAt
             })
             .ToListAsync(ct);
 
@@ -104,7 +105,7 @@ public sealed class DashboardController : ControllerBase
         var todayEnd = todayStart.AddDays(1);
 
         var todayOrders = db.Orders.AsNoTracking()
-            .Where(o => o.ReceivedAt >= todayStart && o.ReceivedAt < todayEnd);
+            .Where(o => o.OrderedAt >= todayStart && o.OrderedAt < todayEnd);
 
         var todayOrderCount = await todayOrders.CountAsync(ct);
         var todayRevenue = await todayOrders.SumAsync(o => o.TotalAmount, ct);
@@ -126,7 +127,7 @@ public sealed class DashboardController : ControllerBase
             .ToListAsync(ct);
 
         var recent = await db.Orders.AsNoTracking()
-            .OrderByDescending(o => o.ReceivedAt)
+            .OrderByDescending(o => o.OrderedAt)
             .Take(5)
             .Select(o => new OrderListItemDto(
                 o.Id,
@@ -137,7 +138,8 @@ public sealed class DashboardController : ControllerBase
                 (OrderStatusDto)(int)o.InternalStatus,
                 o.PlatformStatus,
                 o.CreatedAtPlatform,
-                o.ReceivedAt))
+                o.ReceivedAt,
+                o.OrderedAt))
             .ToListAsync(ct);
 
         return Ok(new DashboardSummaryDto(

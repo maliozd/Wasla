@@ -467,6 +467,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
                 builder.ToTable("Orders");
                 builder.HasKey(x => x.Id);
                 builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+                builder.Property(x => x.OrderedAt).HasComputedColumnSql(Wasla.Infrastructure.Persistence.Tenant.Configurations.OrderConfiguration.OrderedAtSql, stored: true);
                 builder.HasMany(x => x.Items).WithOne(x => x.Order).HasForeignKey(x => x.OrderId);
             });
 

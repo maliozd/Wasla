@@ -424,7 +424,7 @@
     <value>Average value per order</value>
   </data>
   <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
-    <value>Latest orders received</value>
+    <value>Newest orders by order time</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>Orders by platform today</value>
@@ -443,9 +443,6 @@
   </data>
   <data name="Dashboard.Status" xml:space="preserve">
     <value>Status</value>
-  </data>
-  <data name="Dashboard.Received" xml:space="preserve">
-    <value>Received</value>
   </data>
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>orders</value>
@@ -589,7 +586,25 @@
     <value>Total</value>
   </data>
   <data name="Orders.ReceivedAt" xml:space="preserve">
-    <value>Received</value>
+    <value>Received in Wasla</value>
+  </data>
+  <data name="Orders.OrderTime" xml:space="preserve">
+    <value>Order time</value>
+  </data>
+  <data name="Orders.OrderTimeFallbackHint" xml:space="preserve">
+    <value>The platform sent no order time; this is when Wasla received the order.</value>
+  </data>
+  <data name="Orders.Details.PlacedOnPlatform" xml:space="preserve">
+    <value>Created on platform</value>
+  </data>
+  <data name="Orders.Details.PlatformModified" xml:space="preserve">
+    <value>Last changed on platform</value>
+  </data>
+  <data name="Orders.Details.LastChangedInWasla" xml:space="preserve">
+    <value>Last updated in Wasla</value>
+  </data>
+  <data name="Orders.Details.NotProvidedByPlatform" xml:space="preserve">
+    <value>Not sent by the platform</value>
   </data>
   <data name="Orders.Details" xml:space="preserve">
     <value>Details</value>
@@ -805,7 +820,7 @@
     <value>Status</value>
   </data>
   <data name="Orders.Details.Received" xml:space="preserve">
-    <value>Received</value>
+    <value>Received in Wasla</value>
   </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>Payment Method</value>

@@ -3436,3 +3436,63 @@ test("the Board sizing is logical (RTL-safe) and colour-free (dark mode keeps it
   assert.equal(/[\s{;](left|right|top|bottom|width|height|min-height|max-height)\s*:/.test(block.replace(/\/\*[\s\S]*?\*\//g, "")), false, "block-size and inline-size, not physical sizes");
   assert.equal(/#[0-9a-f]{3,8}\b|rgba?\(|color\s*:|background/.test(block.replace(/\/\*[\s\S]*?\*\//g, "")), false, "no colours: light and dark keep the existing tokens");
 });
+
+test("WAS-125: the order time is the provider's placed time, and an order without one falls back to the import time", () => {
+  assert.equal(store.orderTimeUtc({ placedAtUtc: "2026-09-23T07:00:00Z", receivedAtUtc: "2026-09-23T07:50:00Z" }), "2026-09-23T07:00:00Z");
+  assert.equal(store.orderTimeUtc({ placedAtUtc: null, receivedAtUtc: "2026-09-23T07:50:00Z" }), "2026-09-23T07:50:00Z");
+  assert.equal(store.orderTimeUtc({ receivedAtUtc: "2026-09-23T07:50:00Z" }), "2026-09-23T07:50:00Z");
+  assert.equal(store.hasPlacedTime({ placedAtUtc: null, receivedAtUtc: "2026-09-23T07:50:00Z" }), false);
+
+  const valid = snapshot([guid(1)]);
+  valid.orders[0].placedAtUtc = "2026-09-23T06:55:00Z";
+  assert.equal(store.validateSnapshot(valid).ok, true);
+  valid.orders[0].placedAtUtc = null;
+  assert.equal(store.validateSnapshot(valid).ok, true);
+  valid.orders[0].placedAtUtc = "yesterday evening";
+  assert.equal(store.validateSnapshot(valid).reason, "placed");
+
+  const order = snapshot([guid(1)]).orders[0];
+  const without = store.orderContentSignature(order);
+  order.placedAtUtc = "2026-09-23T06:55:00Z";
+  assert.notEqual(store.orderContentSignature(order), without);
+});
+
+test("WAS-125: cards time and sort by the order time; an import-time fallback keeps the 'received in Wasla' label", () => {
+  const messages = {
+    elapsedMinutes: "{0} dk",
+    elapsedHoursMinutes: "{0} sa {1} dk",
+    ordersFullscreenOrderTime: "Sipariş zamanı",
+    ordersFullscreenReceived: "Wasla'ya alındı"
+  };
+  const h = boardHarness(true, { getMessage: key => messages[key] || key });
+  try {
+    const recovered = guid(1);
+    const legacy = guid(2);
+    const live = guid(3);
+    const body = snapshot([recovered, legacy, live]);
+    // Placed at 07:00 and imported by a recovery poll at 07:50; stored without a provider time at 07:30; placed at 07:40.
+    Object.assign(body.orders[0], { placedAtUtc: "2026-09-23T07:00:00Z", receivedAtUtc: "2026-09-23T07:50:00Z" });
+    Object.assign(body.orders[1], { placedAtUtc: null, receivedAtUtc: "2026-09-23T07:30:00Z" });
+    Object.assign(body.orders[2], { placedAtUtc: "2026-09-23T07:40:00Z", receivedAtUtc: "2026-09-23T07:40:30Z" });
+
+    h.browser.renderSnapshot(body);
+    const boardIds = Array.from(h.host.querySelectorAll(".wasla-live-screen-card")).map(card => card.getAttribute("data-order-id"));
+    assert.deepEqual(boardIds, [live, legacy, recovered]);
+    // Waiting since it was placed at 07:00, not since the 07:50 import.
+    assert.equal(h.card(recovered).querySelector("[data-elapsed]").textContent, "1 sa 0 dk");
+    assert.equal(h.card(legacy).querySelector("[data-elapsed]").textContent, "30 dk");
+
+    h.view("list");
+    h.browser.renderSnapshot(body);
+    assert.equal(h.card(recovered).querySelector("[data-order-time-label]").textContent, "Sipariş zamanı");
+    assert.equal(h.card(legacy).querySelector("[data-order-time-label]").textContent, "Wasla'ya alındı");
+
+    // The provider's time arrives later: the label follows it.
+    const next = JSON.parse(JSON.stringify(body));
+    next.serverTimeUtc = "2026-09-23T08:01:00Z";
+    next.orders[1].placedAtUtc = "2026-09-23T07:20:00Z";
+    h.browser.renderSnapshot(next);
+    assert.equal(h.card(legacy).querySelector("[data-order-time-label]").textContent, "Sipariş zamanı");
+    assert.equal(h.card(legacy).querySelector("[data-elapsed]").textContent, "41 dk");
+  } finally { h.restore(); }
+});

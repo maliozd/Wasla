@@ -410,7 +410,10 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var phone = package.Address?.Phone ?? string.Empty;
         var address = BuildAddress(package.Address);
 
-        var orderedAtUtc = DateTimeOffset.FromUnixTimeMilliseconds(package.PackageCreationDate).UtcDateTime;
+        // packageCreationDate and packageModificationDate: epoch milliseconds in the official package model. A missing
+        // or non-positive value stays null; Wasla does not substitute its own clock (WAS-125).
+        var orderedAtUtc = FromEpochMilliseconds(package.PackageCreationDate);
+        var modifiedAtUtc = FromEpochMilliseconds(package.PackageModificationDate);
 
         var internalStatus = _statusMapper.MapToInternalStatus(FoodPlatform.TrendyolYemek, package.PackageStatus ?? string.Empty);
 
@@ -440,7 +443,16 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             ExternalStatus: package.PackageStatus ?? string.Empty,
             RawPayloadJson: JsonSerializer.Serialize(package, JsonOptions),
             Items: items,
-            CustomerNote: package.CustomerNote);
+            CustomerNote: package.CustomerNote,
+            ModifiedAtUtc: modifiedAtUtc);
+    }
+
+    private static DateTime? FromEpochMilliseconds(long? value)
+    {
+        if (value is not > 0 || value.Value > DateTimeOffset.MaxValue.ToUnixTimeMilliseconds())
+            return null;
+
+        return DateTimeOffset.FromUnixTimeMilliseconds(value.Value).UtcDateTime;
     }
 
     private static ExternalOrderItemDto MapLine(string? packageId, TrendyolGoLine line, int idx)
@@ -583,7 +595,8 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         public string? Id { get; set; }
         public string? OrderCode { get; set; }
         public string? OrderNumber { get; set; }
-        public long PackageCreationDate { get; set; }
+        public long? PackageCreationDate { get; set; }
+        public long? PackageModificationDate { get; set; }
         public string? PackageStatus { get; set; }
         public decimal TotalPrice { get; set; }
         public TrendyolGoCustomer? Customer { get; set; }

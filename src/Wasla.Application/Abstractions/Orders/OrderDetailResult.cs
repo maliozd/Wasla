@@ -24,8 +24,20 @@ public sealed class OrderDetailResult
     public required OrderStatus Status { get; init; }
     public required string PlatformStatus { get; init; }
 
-    public required DateTime CreatedAtPlatformUtc { get; init; }
+    /// <summary>The provider's creation time; null when it sent none (WAS-125).</summary>
+    public required DateTime? CreatedAtPlatformUtc { get; init; }
+
+    /// <summary>The provider's latest modification time, when it sends one.</summary>
+    public required DateTime? PlatformModifiedAtUtc { get; init; }
+
+    /// <summary>Operational order time: <see cref="CreatedAtPlatformUtc"/>, otherwise <see cref="ReceivedAtUtc"/>.</summary>
+    public required DateTime OrderedAtUtc { get; init; }
+
+    /// <summary>When Wasla first stored the order.</summary>
     public required DateTime ReceivedAtUtc { get; init; }
+
+    /// <summary>When Wasla last wrote a change to the order, from synchronization or an operator.</summary>
+    public required DateTime LastChangedAtUtc { get; init; }
     public required DateTime? AcceptedAtUtc { get; init; }
     public required DateTime? DeliveredAtUtc { get; init; }
     public required DateTime? CancelledAtUtc { get; init; }

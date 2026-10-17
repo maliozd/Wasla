@@ -161,7 +161,7 @@ internal static class MockOrders
                     platform, connection, externalOrderId, externalStatus, items,
                     subtotal, deliveryFee, serviceFee, total, customerNote, built.ScenarioName);
                 list.Add(CreateDto(
-                    platform, rng, externalOrderId, externalStatus,
+                    platform, rng, externalOrderId, isExisting, externalStatus,
                     items, subtotal, deliveryFee, serviceFee, total, customerNote, rawPayload));
                 continue;
             }
@@ -181,7 +181,7 @@ internal static class MockOrders
                 platform, connection, externalOrderId, lokantaStatus, items,
                 lokantaSubtotal, lokantaDeliveryFee, lokantaServiceFee, lokantaTotal, customerNote, basket.Scenario);
             list.Add(CreateDto(
-                platform, rng, externalOrderId, lokantaStatus,
+                platform, rng, externalOrderId, isExisting, lokantaStatus,
                 items, lokantaSubtotal, lokantaDeliveryFee, lokantaServiceFee, lokantaTotal, customerNote, rawPayload));
         }
 
@@ -192,6 +192,7 @@ internal static class MockOrders
         FoodPlatform platform,
         Random rng,
         string externalOrderId,
+        bool isExisting,
         string externalStatus,
         IReadOnlyCollection<ExternalOrderItemDto> items,
         decimal subtotal,
@@ -204,7 +205,10 @@ internal static class MockOrders
             Platform: platform,
             ExternalOrderId: externalOrderId,
             ExternalOrderCode: CreateOrderCode(platform, rng),
-            OrderedAtUtc: DateTime.UtcNow.AddMinutes(-rng.Next(1, 90)),
+            // A new mock order was placed moments before this poll, as a live provider order is; the order time drives
+            // Orders, Dashboard and Live Screen since WAS-125. A reused id is an update and sends no creation time, like a
+            // provider that omits it: the stored one is kept, so a mock update never moves an order in time.
+            OrderedAtUtc: isExisting ? null : DateTime.UtcNow.AddSeconds(-rng.Next(0, 120)),
             CustomerName: CreateCustomerName(rng),
             CustomerPhone: CreatePhone(rng),
             CustomerAddress: CreateAddress(rng),

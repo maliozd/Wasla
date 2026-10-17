@@ -424,7 +424,7 @@
     <value>متوسط القيمة لكل طلب</value>
   </data>
   <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
-    <value>أحدث الطلبات المستلمة</value>
+    <value>أحدث الطلبات حسب وقت الطلب</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>الطلبات حسب المنصة اليوم</value>
@@ -443,9 +443,6 @@
   </data>
   <data name="Dashboard.Status" xml:space="preserve">
     <value>الحالة</value>
-  </data>
-  <data name="Dashboard.Received" xml:space="preserve">
-    <value>الاستلام</value>
   </data>
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>طلبات</value>
@@ -589,7 +586,25 @@
     <value>الإجمالي</value>
   </data>
   <data name="Orders.ReceivedAt" xml:space="preserve">
-    <value>تم الاستلام</value>
+    <value>وصل إلى Wasla</value>
+  </data>
+  <data name="Orders.OrderTime" xml:space="preserve">
+    <value>وقت الطلب</value>
+  </data>
+  <data name="Orders.OrderTimeFallbackHint" xml:space="preserve">
+    <value>لم ترسل المنصة وقت الطلب؛ هذا هو وقت وصول الطلب إلى Wasla.</value>
+  </data>
+  <data name="Orders.Details.PlacedOnPlatform" xml:space="preserve">
+    <value>وقت الإنشاء على المنصة</value>
+  </data>
+  <data name="Orders.Details.PlatformModified" xml:space="preserve">
+    <value>آخر تغيير على المنصة</value>
+  </data>
+  <data name="Orders.Details.LastChangedInWasla" xml:space="preserve">
+    <value>آخر تحديث في Wasla</value>
+  </data>
+  <data name="Orders.Details.NotProvidedByPlatform" xml:space="preserve">
+    <value>لم ترسله المنصة</value>
   </data>
   <data name="Orders.Details" xml:space="preserve">
     <value>التفاصيل</value>
@@ -805,7 +820,7 @@
     <value>الحالة</value>
   </data>
   <data name="Orders.Details.Received" xml:space="preserve">
-    <value>تم الاستلام</value>
+    <value>وصل إلى Wasla</value>
   </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>طريقة الدفع</value>

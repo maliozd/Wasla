@@ -100,7 +100,7 @@
                                     <th scope="col">@L["Dashboard.Customer"]</th>
                                     <th scope="col" class="wasla-table__num">@L["Dashboard.Total"]</th>
                                     <th scope="col">@L["Dashboard.Status"]</th>
-                                    <th scope="col" class="wasla-table__num">@L["Dashboard.Received"]</th>
+                                    <th scope="col" class="wasla-table__num">@L["Orders.OrderTime"]</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -128,8 +128,14 @@
                                             @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(o.Status))
                                         </td>
                                         <td class="wasla-table__num wasla-table__muted wasla-table__datetime wasla-dash-received">
-                                            <span class="wasla-table__cell-label" aria-hidden="true">@L["Dashboard.Received"]</span>
-                                            @await Html.PartialAsync("_ReceivedAtTime", new ReceivedAtTimeModel(o.ReceivedAtUtc, TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(o.ReceivedAtUtc, DateTimeKind.Utc), tz), turkeyToday))
+                                            <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.OrderTime"]</span>
+                                            <span class="wasla-order-time">
+                                                @await Html.PartialAsync("_ReceivedAtTime", new ReceivedAtTimeModel(o.OrderedAtUtc, TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(o.OrderedAtUtc, DateTimeKind.Utc), tz), turkeyToday))
+                                                @if (!o.OrderedAtIsFromPlatform)
+                                                {
+                                                    <span class="wasla-order-time__source" title="@L["Orders.OrderTimeFallbackHint"]">@L["Orders.ReceivedAt"]</span>
+                                                }
+                                            </span>
                                         </td>
                                     </tr>
                                 }

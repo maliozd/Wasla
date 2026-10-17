@@ -100,7 +100,7 @@ Responsive modifiers:
 
 Sorting rules:
 
-- Paginated or growing lists sort on the server, before `Skip`/`Take`, from an allowlist of column names (never a raw column name or SQL fragment), with a deterministic tie-breaker (newest `ReceivedAt`, then `Id`).
+- Paginated or growing lists sort on the server, before `Skip`/`Take`, from an allowlist of column names (never a raw column name or SQL fragment), with a deterministic tie-breaker (newest `OrderedAt`, the order time, then `Id`).
 - A sort link keeps every filter, the search and the page size, and returns to page 1. Culture is a cookie, so it is unaffected.
 - A small list that is fully rendered on the page sorts in the browser, stably, with a deterministic tie-breaker.
 - The sorted column's header cell carries `aria-sort`; the control is a link (server-side) or a button (client-side), keyboard-operable with a visible focus ring; the arrow icon is decorative.
@@ -108,9 +108,9 @@ Sorting rules:
 
 | Table | Kind | Sorting |
 | --- | --- | --- |
-| Orders (`Orders/_OrdersTable.cshtml`) | Sortable data table (paginated) | Server-side: platform, customer, status, total, received, with `aria-sort`, icons and a stable tie-breaker. Order code and actions are intentionally not sortable; search finds a specific order. |
+| Orders (`Orders/_OrdersTable.cshtml`) | Sortable data table (paginated) | Server-side: platform, customer, status, total, order time (`orderedAt`, the default, newest first; `receivedAt` is still accepted), with `aria-sort`, icons and a stable tie-breaker. The order-time cell names Wasla's import time under it when that stands in for a missing provider time or came 10 minutes or more later ([../orders/lifecycle.md](../orders/lifecycle.md#order-times-was-125)). Order code and actions are intentionally not sortable; search finds a specific order. |
 | Users (`TenantUsers/Index.cshtml`) | Sortable data table (complete list on the page) | Client-side, stable (`tenant-users-index.js`): name (display name, else email), role (by permission level, Owner first, not by the translated label), created, last login (by the stored UTC value in `data-sort-last-login`, newest first on the first click; users with no recorded login stay last in both directions). Ties fall back to email, then the rendered order. Status and actions are not sortable. Last login is shown in the page culture followed by "UTC" inside `<time datetime>` (Wasla has no tenant or user time zone setting), or "Not recorded"; the list and details page share `_LastLogin.cshtml`. |
-| Dashboard Recent Orders (`Dashboard/Index.cshtml`) | Chronological snapshot | Not sortable: the latest 10 of any day, newest first, is its meaning; "View all" opens the sortable Orders list. Its subtitle and empty state say "latest orders", never "today" (the figures above it are today's), and rows from an earlier day show their date. |
+| Dashboard Recent Orders (`Dashboard/Index.cshtml`) | Chronological snapshot | Not sortable: the latest 10 of any day by order time, newest first, is its meaning; "View all" opens the sortable Orders list. Its subtitle and empty state say "latest orders", never "today" (the figures above it are today's), and rows from an earlier day show their date. |
 | Print jobs (`PrintBridge/_PrintJobHistory.cshtml`) | Chronological snapshot (capped feed) | Not sortable: the latest 50, newest first, refreshed in place. |
 | Order items (`Orders/Details.cshtml`, Live Screen board, list, focus and detail, receipts) | Ordered item list | Not sortable: an order's items, and each item's options, in the order the provider listed them (`Sequence`, written by order sync, WAS-44), then by stored time, then by `Id`. Rows stored before `Sequence` existed all have 0 and use that fallback, which is deterministic and the same on every surface but not guaranteed to be the provider's order. One definition: `OrderItemOrdering` (Infrastructure). |
 | Platform connections (`PlatformConnections/Index.cshtml`) | Small operational list | Not sortable: at most one row per platform (three today). |

@@ -40,6 +40,28 @@ Raw platform strings remain on `Order.PlatformStatus`. Mapping into these values
 
 End-customer fields (`CustomerName`, `CustomerPhone`, `CustomerAddress`) refer to the restaurant’s buyer, not the SaaS tenant.
 
+### Order times (WAS-125)
+
+Every time is stored as a UTC instant and converted only for display.
+
+| Field | Meaning | Set by | Shown |
+| --- | --- | --- | --- |
+| `CreatedAtPlatform` (nullable) | When the order was created on the platform, as the provider reported it (Trendyol GO `packageCreationDate`) | Sync, from a plausible provider value only; a later payload without one keeps the stored value | Order details: "Created on platform", or "Not sent by the platform" |
+| `PlatformModifiedAt` (nullable) | The provider's latest modification time (Trendyol GO `packageModificationDate`) | Sync, like `CreatedAtPlatform` | Order details, when present |
+| `ReceivedAt` | When Wasla first stored the order | Insert only; synchronization never changes it | "Received in Wasla" (`Orders.ReceivedAt`, `Orders.Details.Received`) |
+| `UpdatedAt` | When Wasla last wrote a change (sync or operator); unchanged polls do not write it | Every real change | Order details: "Last updated in Wasla" |
+| `OrderedAt` (stored computed column, indexed) | The operational order time: `COALESCE(CreatedAtPlatform, ReceivedAt)` | The database | "Order time" (`Orders.OrderTime`) on Orders, Dashboard, Live Screen and details |
+
+- **Primary time.** Orders (column, default sort `orderedAt` newest first, date filter), Dashboard (today's figures and latest orders), Live Screen (card time, elapsed time, order within a group, today's counts) and the API Dashboard all use `OrderedAt`. Sorting by `receivedAt` is still accepted and sorts by `ReceivedAt`.
+- **Recovery imports.** An order Wasla received at least 10 minutes after it was placed (`OrderUiHelper.ReceivedSeparatelyAfter`) shows its import time on a second line under the order time on Orders and in the Live Screen detail panel. A recovery poll that imports yesterday's orders at 02:19 therefore lists them at yesterday's time and does not count them as today's.
+- **Fallback.** Without a provider creation time (a provider that sends none, an implausible value, a practice order) the import time stands in under its own label, "Received in Wasla", with a hint that the platform sent no order time. It is never shown or stored as the provider's time.
+- **Plausible provider times** (`OrderSyncService.PlausibleProviderTime`): not before 2000-01-01 and at most 5 minutes after Wasla's clock (`ProviderClockTolerance`). Others are dropped with a warning that names the platform and the external order id only. Clients never substitute the server's clock: Trendyol GO maps a missing or non-positive epoch to null, Yemeksepeti accepts only epoch milliseconds or a date with an explicit offset, and mock updates send no creation time.
+- **Time zone.** Wasla has no tenant time zone yet. Display and local-day boundaries use `TimeZoneHelper.ResolveTurkeyTimeZone()` (`Europe/Istanbul`) on the server and `Intl.DateTimeFormat` with that zone on the Live Screen. A per-tenant zone needs a tenant setting first; until then every tenant is treated as Türkiye.
+- **Legacy rows.** Orders stored before WAS-125 keep the `CreatedAtPlatform` value their client stored: Trendyol GO's `packageCreationDate`; the mock's synthetic time; for Yemeksepeti, possibly the server clock at fetch time (its old fallback), which cannot be told apart and is shown as the order time. The migration only clears values before 2000 (a missing Trendyol GO value was stored as 1970-01-01), so those orders fall back to their import time. No other backfill runs.
+- **First poll after deploying.** Stored orders have no `PlatformModifiedAt` yet, so each one the provider returns again is updated once (new `ChangeVersion`, one live notification). After that, a change of the provider's modification time alone is an update too.
+- **Provider clock ahead.** A creation time more than 5 minutes ahead of Wasla's clock is dropped, so the order shows its import time; if a later poll's value is plausible, the order time moves to it.
+- **Receipts** print the time Wasla received the order under the "received" label (`ReceiptLabelLocalizer.Received`), which is what it is; they are unchanged.
+
 ### Idempotency and parent row
 
 - Idempotency key = SHA-256 Base64 of `"{Platform}:{ExternalOrderId}"`, stored as `Order.IdempotencyKey`.
@@ -114,7 +136,7 @@ Behavior when `IsSemanticallyUnchanged` returns true:
 
 Real field/item changes still take the existing update path above (which does rewrite `RawPayloadJson`).
 
-Compared fields include merged internal status, platform status, order code, customer fields, note, money, payment fields, `CreatedAtPlatform`, and item/option multisets (not `Subtotal` / `ExternalItemId`, which are not persisted).
+Compared fields include merged internal status, platform status, order code, customer fields, note, money, payment fields, `CreatedAtPlatform` and `PlatformModifiedAt` (when the payload sends them; a missing one keeps the stored value), and item/option multisets (not `Subtotal` / `ExternalItemId`, which are not persisted).
 
 ### Platform connections
 

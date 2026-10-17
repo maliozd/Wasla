@@ -686,6 +686,7 @@ public sealed class OrderSyncService : IOrderSyncService
         var key = Convert.ToBase64String(hash);
 
         var nowUtc = DateTime.UtcNow;
+        external = WithPlausibleProviderTimes(external, nowUtc);
         var newStatus = _statusMapper.MapToInternalStatus(
             external.Platform,
             external.ExternalStatus);
@@ -795,7 +796,9 @@ public sealed class OrderSyncService : IOrderSyncService
         existing.PaymentMethod = external.PaymentMethod;
         existing.PaymentStatus = external.PaymentStatus;
         existing.RawPayloadJson = external.RawPayloadJson;
-        existing.CreatedAtPlatform = external.OrderedAtUtc;
+        // ReceivedAt (first import) is never written here. A provider time the payload lacks keeps the stored one.
+        existing.CreatedAtPlatform = external.OrderedAtUtc ?? existing.CreatedAtPlatform;
+        existing.PlatformModifiedAt = external.ModifiedAtUtc ?? existing.PlatformModifiedAt;
         existing.ExternalOrderCode = external.ExternalOrderCode;
         existing.CustomerPhone = external.CustomerPhone;
         existing.CustomerAddress = external.CustomerAddress;
@@ -924,6 +927,43 @@ public sealed class OrderSyncService : IOrderSyncService
         return oldStatus is null or not OrderStatus.Accepted;
     }
 
+    /// <summary>Earliest provider time accepted as real; anything before it is a missing value read as zero.</summary>
+    internal static readonly DateTime EarliestProviderTimeUtc = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    /// <summary>How far a provider time may lie after Wasla's clock (clock skew) and still be accepted.</summary>
+    internal static readonly TimeSpan ProviderClockTolerance = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// A provider order time as UTC when it is plausible, otherwise null (WAS-125): before
+    /// <see cref="EarliestProviderTimeUtc"/>, or more than <see cref="ProviderClockTolerance"/> after
+    /// <paramref name="nowUtc"/>. An unspecified kind is taken as UTC, which is what every client produces.
+    /// </summary>
+    internal static DateTime? PlausibleProviderTime(DateTime? value, DateTime nowUtc)
+    {
+        if (value is not { } time)
+            return null;
+
+        var utc = time.Kind == DateTimeKind.Local ? time.ToUniversalTime() : DateTime.SpecifyKind(time, DateTimeKind.Utc);
+        return utc < EarliestProviderTimeUtc || utc > nowUtc + ProviderClockTolerance ? null : utc;
+    }
+
+    private ExternalOrderDto WithPlausibleProviderTimes(ExternalOrderDto external, DateTime nowUtc)
+    {
+        var orderedAt = PlausibleProviderTime(external.OrderedAtUtc, nowUtc);
+        var modifiedAt = PlausibleProviderTime(external.ModifiedAtUtc, nowUtc);
+        if (orderedAt is null && external.OrderedAtUtc is not null || modifiedAt is null && external.ModifiedAtUtc is not null)
+        {
+            _logger.LogWarning(
+                "Provider order time ignored as implausible. Platform={Platform}, ExternalOrderId={ExternalOrderId}, CreationTimeIgnored={CreationTimeIgnored}, ModificationTimeIgnored={ModificationTimeIgnored}",
+                external.Platform,
+                external.ExternalOrderId,
+                orderedAt is null && external.OrderedAtUtc is not null,
+                modifiedAt is null && external.ModifiedAtUtc is not null);
+        }
+
+        return external with { OrderedAtUtc = orderedAt, ModifiedAtUtc = modifiedAt };
+    }
+
     private static Order MapToOrderEntity(ExternalOrderDto external, string idempotencyKey, DateTime receivedAtUtc, OrderStatus internalStatus, DateTime nowUtc)
     {
         var order = new Order
@@ -940,6 +980,7 @@ public sealed class OrderSyncService : IOrderSyncService
             PaymentMethod = external.PaymentMethod,
             PaymentStatus = external.PaymentStatus,
             CreatedAtPlatform = external.OrderedAtUtc,
+            PlatformModifiedAt = external.ModifiedAtUtc,
             ReceivedAt = receivedAtUtc,
             RawPayloadJson = external.RawPayloadJson,
             ExternalOrderCode = external.ExternalOrderCode,
@@ -1118,7 +1159,11 @@ public sealed class OrderSyncService : IOrderSyncService
         if (existing.PaymentStatus != external.PaymentStatus)
             return false;
 
-        if (existing.CreatedAtPlatform != external.OrderedAtUtc)
+        // A provider time the payload lacks keeps the stored one (see UpdateExisting), so only a sent value can differ.
+        if (external.OrderedAtUtc is { } orderedAt && existing.CreatedAtPlatform != orderedAt)
+            return false;
+
+        if (external.ModifiedAtUtc is { } modifiedAt && existing.PlatformModifiedAt != modifiedAt)
             return false;
 
         return ItemsSemanticallyEqual(persistedItems, external.Items);

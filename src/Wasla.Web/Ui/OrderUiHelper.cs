@@ -24,6 +24,17 @@ public static class OrderUiHelper
     public static (TimeZoneInfo TimeZone, DateOnly Today) GetTurkeyDisplayContext() =>
         (TimeZoneHelper.ResolveTurkeyTimeZone(), OrdersReceivedAtQueryRange.GetTurkeyLocalToday());
 
+    /// <summary>
+    /// How much later than the provider's creation time Wasla must have received an order before screens show the
+    /// import time beside the order time (WAS-125). Live orders arrive within a polling interval; a recovery import of
+    /// an older order is the case worth showing.
+    /// </summary>
+    public static readonly TimeSpan ReceivedSeparatelyAfter = TimeSpan.FromMinutes(10);
+
+    public static bool ShowReceivedSeparately(DateTime? createdAtPlatformUtc, DateTime receivedAtUtc) =>
+        createdAtPlatformUtc is { } placed && receivedAtUtc - placed >= ReceivedSeparatelyAfter;
+
+    /// <summary>A UTC instant as a short Turkey-local label: the time for today, the date and time otherwise.</summary>
     public static string FormatReceivedAtUtc(DateTime receivedAtUtc, TimeZoneInfo timeZone, DateOnly turkeyToday)
     {
         var local = TimeZoneInfo.ConvertTimeFromUtc(

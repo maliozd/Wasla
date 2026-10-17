@@ -11,6 +11,9 @@
     ViewData["Title"] = L["Orders.Details.Title"];
     var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
     var receivedLabel = OrderUiHelper.FormatReceivedAtUtc(Model.ReceivedAtUtc, tz, turkeyToday);
+    // WAS-125: the order time is the provider's creation time; without one the import time stands in under its own label.
+    var orderTimeLabel = OrderUiHelper.FormatReceivedAtUtc(Model.OrderedAtUtc, tz, turkeyToday);
+    var orderTimeCaption = Model.OrderedAtIsFromPlatform ? L["Orders.OrderTime"] : L["Orders.Details.Received"];
     var phoneTel = OrderUiHelper.PhoneTelHref(Model.CustomerPhone);
 }
 
@@ -22,7 +25,7 @@
                 @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
                 <span class="wasla-order-details__code font-monospace">@Model.ExternalOrderCode</span>
                 <span class="text-muted" aria-hidden="true">·</span>
-                <span class="text-muted small">@L["Orders.Details.Received"] @receivedLabel</span>
+                <span class="text-muted small">@orderTimeCaption @orderTimeLabel</span>
             </div>
         </div>
         <div class="wasla-order-details__header-actions d-flex flex-wrap align-items-center gap-2 ms-auto">
@@ -68,8 +71,8 @@
         </div>
         <div class="col">
             <div class="wasla-order-details-stat">
-                <div class="wasla-order-details-stat__label">@L["Orders.Details.Received"]</div>
-                <div class="wasla-order-details-stat__value wasla-order-details-stat__value--time">@receivedLabel</div>
+                <div class="wasla-order-details-stat__label">@orderTimeCaption</div>
+                <div class="wasla-order-details-stat__value wasla-order-details-stat__value--time">@orderTimeLabel</div>
             </div>
         </div>
     </div>
@@ -124,9 +127,25 @@
                             <dt>@L["Orders.Details.Code"]</dt>
                             <dd class="font-monospace">@Model.ExternalOrderCode</dd>
                         </div>
-                        <div class="wasla-order-details-dl__row">
+                        @* WAS-125: each time with its source: the platform's, then Wasla's. *@
+                        <div class="wasla-order-details-dl__row" data-order-time="placed">
+                            <dt>@L["Orders.Details.PlacedOnPlatform"]</dt>
+                            <dd>@(Model.CreatedAtPlatformUtc is { } placedUtc ? OrderUiHelper.FormatReceivedAtUtc(placedUtc, tz, turkeyToday) : L["Orders.Details.NotProvidedByPlatform"].Value)</dd>
+                        </div>
+                        @if (Model.PlatformModifiedAtUtc is { } platformModifiedUtc)
+                        {
+                            <div class="wasla-order-details-dl__row" data-order-time="platform-modified">
+                                <dt>@L["Orders.Details.PlatformModified"]</dt>
+                                <dd>@OrderUiHelper.FormatReceivedAtUtc(platformModifiedUtc, tz, turkeyToday)</dd>
+                            </div>
+                        }
+                        <div class="wasla-order-details-dl__row" data-order-time="received">
                             <dt>@L["Orders.Details.Received"]</dt>
                             <dd>@receivedLabel</dd>
+                        </div>
+                        <div class="wasla-order-details-dl__row" data-order-time="last-changed">
+                            <dt>@L["Orders.Details.LastChangedInWasla"]</dt>
+                            <dd>@OrderUiHelper.FormatReceivedAtUtc(Model.LastChangedAtUtc, tz, turkeyToday)</dd>
                         </div>
                         @if (Model.AcceptedAtLocal.HasValue)
                         {
