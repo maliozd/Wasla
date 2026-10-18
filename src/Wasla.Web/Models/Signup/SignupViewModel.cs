@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
@@ -121,4 +122,11 @@ public sealed class SignupViewModel
     public IReadOnlyList<SelectListItem> DistrictOptions { get; set; } = Array.Empty<SelectListItem>();
 
     public bool IsContactSalesPlan { get; set; }
+
+    /// <summary>
+    /// True only where the payment simulator exists (<see cref="Security.CheckoutPaymentSimulator"/>). Set by the
+    /// server for every render of the form and never taken from the posted form.
+    /// </summary>
+    [BindNever]
+    public bool IsPaymentSimulatorAvailable { get; set; }
 }

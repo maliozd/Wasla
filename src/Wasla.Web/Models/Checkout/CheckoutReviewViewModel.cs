@@ -36,6 +36,12 @@ public sealed class CheckoutReviewViewModel
 
     public PendingRegistrationStatus Status { get; set; }
 
+    /// <summary>
+    /// True only where the payment simulator exists (<see cref="Security.CheckoutPaymentSimulator"/>). It selects
+    /// the copy; <see cref="CanSimulatePayment"/> also depends on the registration's status.
+    /// </summary>
+    public bool IsPaymentSimulatorAvailable { get; set; }
+
     public bool CanSimulatePayment { get; set; }
 
     public bool CanCancel { get; set; }

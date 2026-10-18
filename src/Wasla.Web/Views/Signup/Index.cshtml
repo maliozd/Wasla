@@ -98,7 +98,7 @@
                                             <option value="Monthly">@L["Signup.BillingMonthly"]</option>
                                             <option value="Yearly">@L["Signup.BillingYearly"]</option>
                                         </select>
-                                        <div class="form-text">@L["Signup.BillingNote"]</div>
+                                        <div class="form-text">@L[Model.IsPaymentSimulatorAvailable ? "Signup.BillingNote" : "Signup.BillingNoteAwaitingPayment"]</div>
                                         <span asp-validation-for="BillingPeriod" class="text-danger small"></span>
                                     </div>
                                 </div>

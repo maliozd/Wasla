@@ -141,7 +141,11 @@ public sealed class CheckoutController : Controller, IAuthenticationRateLimitRes
             return RedirectToAction(nameof(Review), new { id });
 
         // Public page: it carries only the ID and shows generic text.
-        return View(new CheckoutResultViewModel { RegistrationId = details.Id });
+        return View(new CheckoutResultViewModel
+        {
+            RegistrationId = details.Id,
+            IsPaymentSimulatorAvailable = IsPaymentSimulatorAvailable
+        });
     }
 
     [HttpGet("cancelled/{id:guid}")]
@@ -172,9 +176,7 @@ public sealed class CheckoutController : Controller, IAuthenticationRateLimitRes
         return Task.FromResult<IActionResult>(result);
     }
 
-    // The payment simulator is a local-development tool. Anywhere else it would let an anonymous
-    // request mark a registration as paid, which makes it eligible for provisioning.
-    private bool IsPaymentSimulatorAvailable => _environment.IsDevelopment();
+    private bool IsPaymentSimulatorAvailable => CheckoutPaymentSimulator.IsAvailable(_environment);
 
     private bool IsOwner(Guid registrationId) => _ownership.IsOwner(Request, registrationId);
 
@@ -219,7 +221,9 @@ public sealed class CheckoutController : Controller, IAuthenticationRateLimitRes
 
         string? statusNoticeKey = details.Status switch
         {
-            PendingRegistrationStatus.PaymentSucceeded => "Checkout.StatusAlreadyPaid",
+            PendingRegistrationStatus.PaymentSucceeded => IsPaymentSimulatorAvailable
+                ? "Checkout.StatusAlreadyPaid"
+                : "Checkout.StatusPaymentReceived",
             PendingRegistrationStatus.Cancelled => "Checkout.StatusCancelled",
             PendingRegistrationStatus.Provisioned => "Checkout.StatusProvisioned",
             PendingRegistrationStatus.Expired => "Checkout.StatusExpired",
@@ -244,6 +248,7 @@ public sealed class CheckoutController : Controller, IAuthenticationRateLimitRes
             TotalPriceTry = details.TotalPriceTry,
             IsYearlyBilling = details.IsYearlyBilling,
             Status = details.Status,
+            IsPaymentSimulatorAvailable = IsPaymentSimulatorAvailable,
             CanSimulatePayment = canSimulate,
             CanCancel = canCancel,
             StatusNoticeKey = statusNoticeKey

@@ -3166,6 +3166,7 @@
   <data name="Signup.BillingMonthly" xml:space="preserve"><value>Monthly</value></data>
   <data name="Signup.BillingYearly" xml:space="preserve"><value>Yearly</value></data>
   <data name="Signup.BillingNote" xml:space="preserve"><value>Payment integration is not active yet. The payment flow will be simulated on the next screen.</value></data>
+  <data name="Signup.BillingNoteAwaitingPayment" xml:space="preserve"><value>Payment is not taken during online signup. After you submit, your registration awaits payment, and your restaurant panel is prepared only after payment is received.</value></data>
   <data name="Signup.BusinessName" xml:space="preserve"><value>Business / restaurant name</value></data>
   <data name="Signup.BusinessType" xml:space="preserve"><value>Business type</value></data>
   <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>e.g. Restaurant, café</value></data>
@@ -3213,6 +3214,7 @@
   <data name="Signup.CreateAccount" xml:space="preserve"><value>Create account</value></data>
   <data name="Signup.PendingTitle" xml:space="preserve"><value>Your account is almost ready</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>We received your details. Complete the payment step to continue.</value></data>
+  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve"><value>We received your details. Your registration is awaiting payment.</value></data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>After payment is complete, your restaurant panel will be prepared.</value></data>
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>Back to homepage</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Continue to payment</value></data>
@@ -3252,6 +3254,7 @@
   <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>Setup complete</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Payment summary</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Review your selected package and restaurant details. In this test environment, the payment outcome will be simulated.</value></data>
+  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve"><value>Review your selected package and restaurant details. Payment is not taken on this page; your registration stays pending until payment is received.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Real payment integration is not active yet. Payment outcome is simulated on this screen.</value></data>
   <data name="Checkout.SectionPackageInfo" xml:space="preserve"><value>Package details</value></data>
   <data name="Checkout.SectionRestaurantInfo" xml:space="preserve"><value>Restaurant details</value></data>
@@ -3278,11 +3281,14 @@
   <data name="Checkout.FailedTitle" xml:space="preserve"><value>Payment simulated as failed</value></data>
   <data name="Checkout.FailedMessage" xml:space="preserve"><value>Payment was simulated as failed.</value></data>
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>Your restaurant panel was not created. You can try the payment step again if you wish.</value></data>
+  <data name="Checkout.PaymentNotCompletedTitle" xml:space="preserve"><value>Payment not completed</value></data>
+  <data name="Checkout.PaymentNotCompletedMessage" xml:space="preserve"><value>Payment for this registration was not completed, so your restaurant panel was not created.</value></data>
   <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Registration cancelled</value></data>
   <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Registration was cancelled. You can register again if you wish.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>Return to payment step</value></data>
   <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Register again</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>Payment has already been simulated as successful for this registration.</value></data>
+  <data name="Checkout.StatusPaymentReceived" xml:space="preserve"><value>Payment for this registration has been received.</value></data>
   <data name="Checkout.StatusCancelled" xml:space="preserve"><value>This registration has been cancelled.</value></data>
   <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>The restaurant panel for this registration is already prepared.</value></data>
   <data name="Checkout.StatusExpired" xml:space="preserve"><value>This registration has expired. Please register again.</value></data>

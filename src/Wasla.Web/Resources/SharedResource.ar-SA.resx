@@ -3166,6 +3166,7 @@
   <data name="Signup.BillingMonthly" xml:space="preserve"><value>شهري</value></data>
   <data name="Signup.BillingYearly" xml:space="preserve"><value>سنوي</value></data>
   <data name="Signup.BillingNote" xml:space="preserve"><value>تكامل الدفع غير مفعّل بعد. سيتم محاكاة تدفق الدفع في الشاشة التالية.</value></data>
+  <data name="Signup.BillingNoteAwaitingPayment" xml:space="preserve"><value>لا يتم تحصيل الدفع أثناء التسجيل عبر الإنترنت. بعد الإرسال يبقى تسجيلك بانتظار الدفع، ولا يتم تجهيز لوحة مطعمك إلا بعد استلام الدفع.</value></data>
   <data name="Signup.BusinessName" xml:space="preserve"><value>اسم العمل / المطعم</value></data>
   <data name="Signup.BusinessType" xml:space="preserve"><value>نوع العمل</value></data>
   <data name="Signup.BusinessTypePlaceholder" xml:space="preserve"><value>مثال: مطعم، مقهى</value></data>
@@ -3213,6 +3214,7 @@
   <data name="Signup.CreateAccount" xml:space="preserve"><value>إنشاء الحساب</value></data>
   <data name="Signup.PendingTitle" xml:space="preserve"><value>حسابك جاهز تقريباً</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>استلمنا بياناتك. أكمل خطوة الدفع للمتابعة.</value></data>
+  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve"><value>استلمنا بياناتك. تسجيلك بانتظار الدفع.</value></data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>بعد إتمام الدفع، سيتم تجهيز لوحة مطعمك.</value></data>
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>العودة إلى الصفحة الرئيسية</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>متابعة الدفع</value></data>
@@ -3252,6 +3254,7 @@
   <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>اكتمل الإعداد</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>ملخص الدفع</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>راجع الباقة المختارة وبيانات المطعم. في بيئة الاختبار هذه، سيتم محاكاة نتيجة الدفع.</value></data>
+  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve"><value>راجع الباقة المختارة وبيانات مطعمك. لا يتم تحصيل الدفع في هذه الصفحة؛ ويبقى تسجيلك معلقًا حتى يتم استلام الدفع.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>تكامل الدفع الحقيقي غير مفعّل بعد. تتم محاكاة نتيجة الدفع في هذه الشاشة.</value></data>
   <data name="Checkout.SectionPackageInfo" xml:space="preserve"><value>معلومات الباقة</value></data>
   <data name="Checkout.SectionRestaurantInfo" xml:space="preserve"><value>معلومات المطعم</value></data>
@@ -3278,11 +3281,14 @@
   <data name="Checkout.FailedTitle" xml:space="preserve"><value>تمت محاكاة فشل الدفع</value></data>
   <data name="Checkout.FailedMessage" xml:space="preserve"><value>تمت محاكاة فشل الدفع.</value></data>
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>لم يتم إنشاء لوحة مطعمك. يمكنك إعادة محاولة خطوة الدفع إذا رغبت.</value></data>
+  <data name="Checkout.PaymentNotCompletedTitle" xml:space="preserve"><value>لم يكتمل الدفع</value></data>
+  <data name="Checkout.PaymentNotCompletedMessage" xml:space="preserve"><value>لم يكتمل الدفع لهذا التسجيل، لذلك لم يتم إنشاء لوحة مطعمك.</value></data>
   <data name="Checkout.CancelledTitle" xml:space="preserve"><value>تم إلغاء التسجيل</value></data>
   <data name="Checkout.CancelledMessage" xml:space="preserve"><value>تم إلغاء التسجيل. يمكنك التسجيل مرة أخرى إذا رغبت.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>العودة إلى خطوة الدفع</value></data>
   <data name="Checkout.RegisterAgain" xml:space="preserve"><value>التسجيل مرة أخرى</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح مسبقاً لهذا التسجيل.</value></data>
+  <data name="Checkout.StatusPaymentReceived" xml:space="preserve"><value>تم استلام الدفع لهذا التسجيل.</value></data>
   <data name="Checkout.StatusCancelled" xml:space="preserve"><value>تم إلغاء هذا التسجيل.</value></data>
   <data name="Checkout.StatusProvisioned" xml:space="preserve"><value>تم تجهيز لوحة المطعم لهذا التسجيل.</value></data>
   <data name="Checkout.StatusExpired" xml:space="preserve"><value>انتهت صلاحية هذا التسجيل. يرجى التسجيل مرة أخرى.</value></data>
