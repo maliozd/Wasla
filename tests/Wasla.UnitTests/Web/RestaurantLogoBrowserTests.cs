@@ -165,7 +165,7 @@ public sealed class RestaurantLogoBrowserTests
     }
 
     [Fact]
-    public async Task AccountSettings_PreviewsAChosenLogo_AndRefusesAWrongTypeBeforeSending()
+    public async Task AccountSettings_PreviewsAChosenLogo_AndRefusesNoFileOrAWrongTypeBeforeSending()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var host = await TenantVisualWebHost.StartAsync();
@@ -178,7 +178,14 @@ public sealed class RestaurantLogoBrowserTests
               const error = document.getElementById('restaurantLogoClientError');
               const choose = file => { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); };
               const png = Uint8Array.from(atob('{{Convert.ToBase64String(TestImages.Png(40, 40))}}'), c => c.charCodeAt(0));
-              const before = { icon: !document.querySelector('.wasla-restaurant-logo-frame .bi-shop').hidden, img: !!document.querySelector('.wasla-restaurant-logo-frame img') };
+              const before = { icon: !document.querySelector('.wasla-restaurant-logo-frame .bi-shop').hidden, img: !!document.querySelector('.wasla-restaurant-logo-frame img'),
+                               invalid: input.matches(':invalid') || input.getAttribute('aria-invalid') === 'true' };
+              let submitted = true;
+              form.addEventListener('submit', e => { submitted = !e.defaultPrevented; e.preventDefault(); });
+
+              // Saving with no file: the page's own message, not the browser's bubble in the browser's language.
+              form.requestSubmit();
+              const empty = { submitted, errorShown: !error.hidden, error: error.textContent, invalid: input.getAttribute('aria-invalid') };
 
               choose(new File([png], 'logo.png', { type: 'image/png' }));
               const preview = document.querySelector('.wasla-restaurant-logo-frame img');
@@ -186,10 +193,9 @@ public sealed class RestaurantLogoBrowserTests
               const previewed = { blob: preview.src.startsWith('blob:'), drawn: preview.naturalWidth > 0, caption: document.querySelector('[data-logo-preview-caption]').textContent.trim(), errorShown: !error.hidden };
 
               choose(new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], 'logo.svg', { type: 'image/svg+xml' }));
-              let submitted = true;
-              form.addEventListener('submit', e => { submitted = !e.defaultPrevented; e.preventDefault(); });
+              submitted = true;
               form.requestSubmit();
-              return { before, previewed, refused: { errorShown: !error.hidden, error: error.textContent, invalid: input.getAttribute('aria-invalid'), submitted,
+              return { before, empty, previewed, refused: { errorShown: !error.hidden, error: error.textContent, invalid: input.getAttribute('aria-invalid'), submitted,
                        previewGone: !document.querySelector('.wasla-restaurant-logo-frame img') },
                        dir: document.documentElement.getAttribute('dir'), overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
             })()
@@ -197,6 +203,12 @@ public sealed class RestaurantLogoBrowserTests
 
         Assert.True(result.GetProperty("before").GetProperty("icon").GetBoolean());
         Assert.False(result.GetProperty("before").GetProperty("img").GetBoolean());
+        Assert.False(result.GetProperty("before").GetProperty("invalid").GetBoolean(), "the untouched file input is already invalid");
+        var empty = result.GetProperty("empty");
+        Assert.False(empty.GetProperty("submitted").GetBoolean(), "the form was sent without a file");
+        Assert.True(empty.GetProperty("errorShown").GetBoolean());
+        Assert.Equal(Resource("ar-SA", "Settings.RestaurantLogo.Error.Required"), empty.GetProperty("error").GetString());
+        Assert.Equal("true", empty.GetProperty("invalid").GetString());
         var previewed = result.GetProperty("previewed");
         Assert.True(previewed.GetProperty("blob").GetBoolean());
         Assert.True(previewed.GetProperty("drawn").GetBoolean());

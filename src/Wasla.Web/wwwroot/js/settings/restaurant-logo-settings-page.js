@@ -1,7 +1,9 @@
 /**
  * Account settings: previews the chosen restaurant logo before it is saved and refuses, with the page's
- * localized messages, a file the server would refuse for its type or size. The server checks the content
- * again on save; this only saves a round trip.
+ * localized messages, a missing file or one the server would refuse for its type or size. The server checks
+ * the content again on save; this only saves a round trip. The input is deliberately not `required`: the
+ * browser's own bubble would speak the browser's language, and the field would be announced as invalid
+ * before anyone touched it.
  */
 (function () {
     'use strict';
@@ -71,7 +73,8 @@
     });
 
     form.addEventListener('submit', function (event) {
-        var message = validate(input.files && input.files[0]);
+        var file = input.files && input.files[0];
+        var message = file ? validate(file) : form.dataset.messageRequired;
         if (message) {
             event.preventDefault();
             setError(message);

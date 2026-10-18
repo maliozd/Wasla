@@ -48,6 +48,7 @@
                           data-accepted-types="@string.Join(",", RestaurantLogoImage.ContentTypes)"
                           data-message-too-large="@L["Settings.RestaurantLogo.Error.TooLarge", maxMegabytes]"
                           data-message-unsupported="@L["Settings.RestaurantLogo.Error.UnsupportedFormat"]"
+                          data-message-required="@L["Settings.RestaurantLogo.Error.Required"]"
                           data-message-preview="@L["Settings.RestaurantLogo.Preview"]"
                           data-preview-alt="@L["Settings.RestaurantLogo.PreviewAlt"]">
                         @Html.AntiForgeryToken()
@@ -59,7 +60,6 @@
                                id="restaurantLogoFile"
                                name="logo"
                                accept="@string.Join(",", RestaurantLogoImage.ContentTypes)"
-                               required
                                aria-describedby="restaurantLogoHelp restaurantLogoClientError" />
                         <div id="restaurantLogoHelp" class="form-text">@L["Settings.RestaurantLogo.Requirements", maxMegabytes, maxDimension]</div>
                         <div id="restaurantLogoClientError" class="invalid-feedback d-block" role="alert" hidden></div>
