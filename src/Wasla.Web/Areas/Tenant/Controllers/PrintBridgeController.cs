@@ -156,9 +156,8 @@ public sealed class PrintBridgeController : BaseController
 
         var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
         var activeDevice = deviceRows.FirstOrDefault(d => d.IsActive);
-        var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
         var packageFileName = PrintBridgePackagePaths.GetPackageFileName(_configuration);
-        var packageAvailable = System.IO.File.Exists(packagePath);
+        var packageAvailable = PrintBridgePackagePaths.PackageExists(_configuration, _environment);
         var guidedSetup = await _guidedSetup
             .GetSectionPanelAsync(tenant.Id, CurrentUserId, User, GuidedSetupSections.PrintBridge, ct)
             .ConfigureAwait(false);
@@ -495,7 +494,7 @@ public sealed class PrintBridgeController : BaseController
     public IActionResult DownloadPackage()
     {
         var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
-        if (!System.IO.File.Exists(packagePath))
+        if (packagePath is null || !System.IO.File.Exists(packagePath))
             return NotFound();
 
         var fileName = Path.GetFileName(packagePath);
