@@ -1,5 +1,4 @@
 using Wasla.Api.Middleware;
-using Wasla.Api.Security;
 using Wasla.Infrastructure.Diagnostics;
 
 namespace Wasla.Api;
@@ -21,7 +20,6 @@ public static class WaslaApiPipeline
         app.UseMiddleware<TenantResolutionMiddleware>();
         app.UseRateLimiter();
         app.UseMiddleware<PrintBridgeAuthMiddleware>();
-        app.UseMiddleware<ExpireLegacyTenantAuthCookieMiddleware>();
         app.UseMiddleware<TenantSessionUnavailableMiddleware>();
 
         app.UseAuthentication();

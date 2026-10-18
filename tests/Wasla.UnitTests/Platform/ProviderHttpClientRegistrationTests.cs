@@ -323,6 +323,9 @@ public sealed class ProviderHttpClientRegistrationTests
             var basic = Convert.ToBase64String(Encoding.UTF8.GetBytes($"api-key-{tenant}:api-secret-{tenant}"));
             Assert.Equal($"Basic {basic}", request.Header("Authorization"));
             Assert.Equal($"executor-{tenant}@wasla.test", request.Header("x-executor-user"));
+            // The default agent name, since the test configuration sets none (WAS-141).
+            Assert.Equal("Wasla", request.Header("x-agentname"));
+            Assert.Equal($"supplier-{tenant} - Wasla", request.Header("User-Agent"));
             Assert.Null(request.Header("Cookie"));
         }
     }

@@ -26,16 +26,13 @@ public sealed class CentralAdminAuthCookieTests
     }
 
     [Fact]
-    public void Program_UsesCentralAdminCookieConstantWithoutLegacyActiveConfiguration()
+    public void Program_RegistersTheCentralAdminCookieThroughTheWaslaExtension()
     {
         var root = FindSolutionRoot();
         var programSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Program.cs"));
-        var schemesSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Security", "AuthSchemes.cs"));
 
         Assert.Contains(".AddWaslaCentralAdminCookie(authCookieSecurePolicy)", programSource, StringComparison.Ordinal);
         Assert.DoesNotContain(".AddCookie(AuthSchemes.CentralAdmin", programSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("orderhub_central_admin", programSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("OrderHubCentralAdmin", schemesSource, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -51,8 +48,12 @@ public sealed class CentralAdminAuthCookieTests
         var options = services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(AuthSchemes.CentralAdmin);
 
         Assert.Equal(CentralAdminAuthCookieNames.Active, options.Cookie.Name);
+        Assert.Equal(".Wasla.CentralAdminAuth", options.Cookie.Name);
         Assert.Equal(CookieSecurePolicy.Always, options.Cookie.SecurePolicy);
         Assert.True(options.Cookie.HttpOnly);
+        Assert.Equal(SameSiteMode.Lax, options.Cookie.SameSite);
+        Assert.Equal("/", options.Cookie.Path);
+        Assert.Null(options.Cookie.Domain);
         Assert.Equal("/admin/login", options.LoginPath);
         Assert.Equal(TimeSpan.FromHours(8), options.ExpireTimeSpan);
         Assert.True(options.SlidingExpiration);
@@ -86,7 +87,7 @@ public sealed class CentralAdminAuthCookieTests
     }
 
     [Fact]
-    public async Task Logout_ExpiresActiveAndLegacyCentralAdminCookiesWithoutTenantCookie()
+    public async Task Logout_ExpiresOnlyTheActiveCentralAdminCookie()
     {
         var authentication = new CapturingAuthenticationService();
         var controller = CreateController(authentication);
@@ -97,14 +98,13 @@ public sealed class CentralAdminAuthCookieTests
         Assert.Equal("/admin/login", redirect.Url);
         Assert.Contains(AuthSchemes.CentralAdmin, authentication.SignOutSchemes);
 
-        var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
-        Assert.Contains($"{CentralAdminAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyOrderHubScheme}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyAspNetCoreOrderHubScheme}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.DoesNotContain($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains("expires=", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("path=/", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+        var setCookie = Assert.Single(controller.Response.Headers.SetCookie)!;
+        Assert.StartsWith(".Wasla.CentralAdminAuth=;", setCookie, StringComparison.Ordinal);
+        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=lax", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("domain=", setCookie, StringComparison.OrdinalIgnoreCase);
     }
 
     private static AdminAuthController CreateController(CapturingAuthenticationService authentication)

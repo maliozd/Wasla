@@ -101,9 +101,6 @@ public sealed class AuthController : Controller
         };
 
         Response.Cookies.Delete(CentralAdminAuthCookieNames.Active, options);
-        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyOrderHub, options);
-        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyOrderHubScheme, options);
-        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyAspNetCoreOrderHubScheme, options);
     }
 }
 

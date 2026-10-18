@@ -128,7 +128,7 @@ The launch profiles run every process in Development, where Worker and Api start
 
 ### Auth nuance (local)
 
-API Data Protection keys: committed API `appsettings.json` still sets `DataProtection:KeyPath` to `C:\OrderHub-keys` (**legacy path debt**). If unset, API `Program.cs` falls back to `C:\Wasla-keys`.
+API Data Protection keys: no committed configuration sets `DataProtection:KeyPath`, so on Windows the API keeps its keys in `C:\Wasla-keys` (`ApiDataProtection`); on other operating systems it uses the framework's default key storage.
 
 Do **not** assume a Web browser login cookie authenticates the API. Local Web is `{slug}.wasla.local` and local API is `localhost`. Cookies do not set a shared domain, and the API Data Protection key path is not the Web path, so the browser session is not shared.
 

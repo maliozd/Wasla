@@ -18,7 +18,6 @@ Wasla does **not** use JWT for this auth contract.
 | `CentralAdminScheme` | `WaslaCentralAdmin` |
 | `TenantCookieName` | `.Wasla.TenantAuth` |
 | `CentralAdminCookieName` | `.Wasla.CentralAdminAuth` |
-| `LegacyTenantCookieName` | `orderhub_auth` |
 | `TenantIdClaim` | `TenantId` |
 | `CentralAdminSecurityStampClaim` | `Wasla.CentralAdminSecurityStamp` |
 
@@ -26,7 +25,9 @@ Web wrappers alias the same values:
 
 - `src/Wasla.Web/Security/AuthSchemes.cs` → `AuthSchemes.Tenant` / `AuthSchemes.CentralAdmin`
 - `src/Wasla.Web/Security/TenantAuthCookieNames.cs`
-- `src/Wasla.Web/Security/CentralAdminAuthCookieNames.cs` (also lists additional legacy central-admin cookie names for cleanup)
+- `src/Wasla.Web/Security/CentralAdminAuthCookieNames.cs`
+
+Each of these exposes only the active Wasla names; see [Cookie inventory](#cookie-inventory).
 
 **Working-tree note:** `WaslaAuthContracts.cs` is untracked; Web cookie-name/scheme files and API auth setup currently reference it. Treat the contract above as the intended source of truth once committed; verify against the working tree when auditing.
 
@@ -49,7 +50,7 @@ Controllers select schemes explicitly (for example `[Authorize(AuthenticationSch
 - Tenant cookie: HttpOnly, Path `/`, SameSite Lax, SecurePolicy Development=`SameAsRequest` / Production=`Always`. Registered by `AddWaslaTenantCookie` (`src/Wasla.Web/Security/TenantCookieAuthentication.cs`), which also attaches the per-request session check (see [Tenant session revalidation](#tenant-session-revalidation))
 - Central admin cookie: same cookie flags; separate login/logout/access-denied paths under `/admin`. Registered by `AddWaslaCentralAdminCookie` (`src/Wasla.Web/Security/CentralAdminCookieAuthentication.cs`), which also attaches the per-request account check (see [Central admin session revalidation](#central-admin-session-revalidation))
 - **No cookie `Domain` is set** (host-only cookies)
-- Data Protection: `SetApplicationName("Wasla")`; optional `DataProtection:KeyPath` from configuration (no API-style hardcoded OrderHub default in Web)
+- Data Protection: `SetApplicationName("Wasla")`; optional `DataProtection:KeyPath` from configuration (Web has no default key folder; the API's default is described under [When a Web session reaches the API](#when-a-web-session-reaches-the-api))
 - Authorization policies registered here; handler: `TenantRoleAuthorizationHandler` (`src/Wasla.Web/Security/TenantRoleRequirement.cs`)
 
 ### Tenant login / logout
@@ -62,7 +63,7 @@ Controllers select schemes explicitly (for example `[Authorize(AuthenticationSch
 - After `SignInAsync` succeeds, `ITenantLoginRecorder` (`TenantLoginRecorder`) stores the UTC time in `AppUsers.LastLoginAt` for that user in that tenant database. It uses one conditional `UPDATE` that only moves the value forward, so a slower concurrent login cannot overwrite a newer time, and it does not change `UpdatedAt`. If that database write fails, the login still succeeds and a warning with only the tenant id, user id and exception type is logged; cancellation and non-database errors are not swallowed. Failed or cancelled logins, the signup welcome link (`/auth/welcome`) and requests authenticated by an existing cookie do not record a login. `AuthValidationService` only checks credentials and reads only the columns it needs
 - Claims include `TenantId` (value from `AuthSessionResult.CustomerId`), `UserId` (also `ClaimTypes.NameIdentifier`), email, role (`ClaimTypes.Role` and `"Role"`), name, and the user's security stamp (`Wasla.TenantSecurityStamp`, `WaslaAuthContracts.TenantSecurityStampClaim`)
 - The signup welcome link (`/auth/welcome`) builds the session from the user's current row (`IAuthValidationService.GetActiveSessionAsync`): current role and stamp, and no session for a user who is inactive or gone
-- Logout: `SignOutAsync(WaslaTenant)` and expires active + legacy tenant cookies
+- Logout: `SignOutAsync(WaslaTenant)` and expires `.Wasla.TenantAuth` only
 
 ### Where a tenant user goes after signing in
 
@@ -122,7 +123,7 @@ Wasla.Api runs the same check on the same cookie (WAS-94). It has no endpoint th
 - Routes under `/admin`
 - Claims: name identifier (the admin id), email, display name, role `CentralAdmin`, and the admin's security stamp (`Wasla.CentralAdminSecurityStamp`). They are built by `CentralAdminSessionClaims.Create` (`src/Wasla.Application/Security/CentralAdminSessionClaims.cs`), and the stamp is read in the same query as the verified password hash
 - **No `TenantId` claim**
-- Logout expires active + several legacy central-admin cookie names
+- Logout expires `.Wasla.CentralAdminAuth` only; the tenant cookie is untouched
 - An unknown email, an inactive account and a wrong password get the same result and the same page: `Admin.InvalidCredentials`, status 200, nothing else different (WAS-90; there is no separate "inactive" message any more). Every attempt verifies one bcrypt hash: the account's own (also for an inactive account), or for an unknown email the static dummy hash `AuthValidationService.DummyHash` (default work factor), so an unknown email does not answer measurably faster. A stored hash that cannot be read fails the same way. `CentralAdminAuthService`
 - Signing in with an inactive admin is refused as above, and the attempt is not recorded as a login. There is no supported command that deactivates or reactivates a central admin; see [Central admin session revalidation](#central-admin-session-revalidation) for the CentralDb statement
 
@@ -254,25 +255,24 @@ API tenant cookie registration also sets `ExpireTimeSpan = 7 days` with sliding 
 - `src/Wasla.Api/Security/ApiTenantAuthenticationExtensions.cs` (cookie scheme, `ApiTenantCookieEvents`, policies)
 - `src/Wasla.Api/Middleware/TenantSessionUnavailableMiddleware.cs`
 - `src/Wasla.Api/Controllers/AuthController.cs`
-- `src/Wasla.Api/Security/ExpireLegacyTenantAuthCookieMiddleware.cs`
+- `src/Wasla.Api/Security/ApiDataProtection.cs` (Data Protection key ring)
 
 Current API behavior:
 
 - Registers the **tenant** cookie scheme only (`WaslaTenant` / `.Wasla.TenantAuth`), with the same cookie contract as Web, via `AddWaslaApiTenantAuthentication`
-- Pipeline: tenant resolution from the host → rate limiter ([Credential rate limiting](#credential-rate-limiting); only `POST /api/auth/validate` has a policy) → Print Bridge device-token middleware → legacy cookie expiry → `TenantSessionUnavailableMiddleware` → authentication (session revalidation) → authorization
+- Pipeline: tenant resolution from the host → rate limiter ([Credential rate limiting](#credential-rate-limiting); only `POST /api/auth/validate` has a policy) → Print Bridge device-token middleware → `TenantSessionUnavailableMiddleware` → authentication (session revalidation) → authorization
 - Every request that presents the tenant cookie is revalidated exactly as on Web ([Tenant session revalidation](#tenant-session-revalidation))
 - Authorization uses the shared tenant role policies; every tenant endpoint names one. The default and fallback policies admit only a current Owner, so an endpoint without a named policy, or with a bare `[Authorize]`, is Owner-only. The endpoint matrix is in [roles-and-permissions.md](../product/roles-and-permissions.md#api-endpoints)
 - Status codes, never redirects: no session, or a rejected session → `401`; a current session without the required role → `403` (the session is kept); tenant database unreadable during validation → `503` with `{"error":"tenant_session_unavailable"}`. Responses for 401 and 403 have no body and no `Location`. A request to a route the API does not map is also answered by the Owner-only fallback (401 or 403) rather than 404
 - `POST /api/auth/validate`: credentials check only (`AllowAnonymous`); returns `200`/`401`/`404`, and `429` over its rate limit ([Credential rate limiting](#credential-rate-limiting)); **does not** `SignInAsync` and does not record `LastLoginAt`, because no session is established
 - `GET /api/auth/me`: any current tenant user with an assignable role (`AuthenticatedTenantUser`); returns the current user DTO from the validated claims
 - `/api/print-bridge/*` authenticates with the `X-PrintBridge-Token` device token only (`PrintBridgeAuthMiddleware`); those routes skip tenant resolution, so a tenant cookie on them is neither used nor deleted
-- Middleware expires legacy `orderhub_auth` if present; that cookie is **not** an authentication scheme
 
 ## When a Web session reaches the API
 
 Web and API use the **same scheme, cookie name and cookie settings** (`WaslaTenant`, `.Wasla.TenantAuth`, host-only, path `/`, SameSite Lax, HttpOnly, 7-day sliding expiration) and the same Data Protection application name (`Wasla`). The cookie's ticket is protected for that scheme name, so **any** API process that has Web's Data Protection keys can read a Web session cookie. Whether it gets one depends on deployment:
 
-- **Keys.** By default they are not shared: the API persists keys to `DataProtection:KeyPath` (committed `appsettings.json`: `C:\OrderHub-keys`, legacy naming/config debt; code fallback `C:\Wasla-keys`), and Web uses `DataProtection:KeyPath` only when it is set, otherwise the default store. An operator who points both at one folder shares the key ring. `docs/deployment-config.md` (non-canonical) recommends exactly that when Web and API must share protected payloads.
+- **Keys.** By default they are not shared: the API persists keys to `DataProtection:KeyPath`; when that is unset it uses `C:\Wasla-keys` on Windows and the framework's default key store on other operating systems (`ApiDataProtection`; no committed configuration sets the path). Web uses `DataProtection:KeyPath` only when it is set, otherwise the default store. An operator who points both at one folder shares the key ring. `docs/deployment-config.md` (non-canonical) recommends exactly that when Web and API must share protected payloads.
 - **Host.** The cookie is host-only. A browser sends it to the API only when the API is served on the tenant's own host (for example behind a reverse proxy under the tenant domain). Anyone who has the cookie value can still present it with the tenant's `Host` header.
 
 Since WAS-94 a shared key ring is safe for tenant sessions in the sense that matters: a Web session presented to the API gets exactly the Web checks (current user, active, stamp, role, tenant from the host) and the same role policies, so a deactivated, deleted, demoted or password-reset user's old cookie is rejected by the API as it is by Web, and a lower role cannot use an API write that its Web policy forbids. Sharing is still a deployment choice, not a requirement; in local development Web (`{slug}.wasla.local`) and API (`localhost`) are different hosts with different keys, so a Web login does **not** authenticate API calls there.
@@ -309,12 +309,17 @@ So a revoked session can keep an already open connection for at most one interva
 
 **Internal channel.** Wasla.Worker and Wasla.Api reach the hub through a loopback-only listener authenticated by a shared secret (`Realtime:Internal`), not through any tenant or user session. See [realtime.md](realtime.md#the-internal-channel-worker-and-api-to-web).
 
-## Legacy cookies
+## Cookie inventory
 
-| Cookie / name | Status |
-|---------------|--------|
-| `orderhub_auth` | **Not** accepted for authentication. Expired/deleted on logout (Web) and by API `ExpireLegacyTenantAuthCookieMiddleware` when seen. Named in `WaslaAuthContracts.LegacyTenantCookieName`. |
-| Central admin legacy names (`orderhub_central_admin`, `OrderHubCentralAdmin`, `.AspNetCore.OrderHubCentralAdmin`) | Cleanup on central-admin logout only; not active schemes |
+Wasla's own cookies (WAS-141). Nothing else is registered, read or deleted as an authentication cookie; `WaslaAuthCookieInventoryTests` checks the exact set.
+
+| Cookie | Set by | Attributes |
+|--------|--------|------------|
+| `.Wasla.TenantAuth` | Web and API, scheme `WaslaTenant` | HttpOnly, SameSite Lax, Path `/`, host-only, 7-day sliding; Secure: API always, Web outside Development |
+| `.Wasla.CentralAdminAuth` | Web, scheme `WaslaCentralAdmin` | HttpOnly, SameSite Lax, Path `/`, host-only, 8-hour sliding; Secure outside Development |
+| `.Wasla.SignupRegistration` | Web, `SignupRegistrationOwnership` | HttpOnly, SameSite Strict, Path `/`, host-only, expires with the registration; Secure outside Development |
+
+Sign-out deletes only that audience's active cookie: tenant logout deletes `.Wasla.TenantAuth`, Central Admin logout deletes `.Wasla.CentralAdminAuth`. The antiforgery, request-culture and TempData cookies keep their ASP.NET Core default names.
 
 ## Legacy property: `AuthSessionResult.CustomerId`
 

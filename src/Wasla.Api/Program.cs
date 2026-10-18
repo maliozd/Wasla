@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.DataProtection;
-using Wasla.Api;
+﻿using Wasla.Api;
 using Wasla.Api.Security;
 using Wasla.Api.Tenant;
 using Wasla.Application.Abstractions.Orders.Services;
@@ -35,28 +34,7 @@ builder.Host.UseSerilog((ctx, services, cfg) =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 
-try
-{
-    var keyPath = builder.Configuration["DataProtection:KeyPath"];
-    if (string.IsNullOrWhiteSpace(keyPath))
-        keyPath = @"C:\Wasla-keys";
-
-    var keyDir = new DirectoryInfo(keyPath);
-    if (!keyDir.Exists)
-    {
-        Directory.CreateDirectory(keyDir.FullName);
-    }
-
-    builder.Services.AddDataProtection()
-        .SetApplicationName("Wasla")
-        .PersistKeysToFileSystem(keyDir);
-}
-catch
-{
-    // Fallback gracefully: if key persistence fails, default DP settings apply.
-    builder.Services.AddDataProtection()
-        .SetApplicationName("Wasla");
-}
+builder.Services.AddWaslaApiDataProtection(builder.Configuration, OperatingSystem.IsWindows());
 
 builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 

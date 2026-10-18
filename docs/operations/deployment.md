@@ -65,15 +65,9 @@ Example in CentralDb: `AddCentralAdminSecurityStamp` (WAS-37) adds `CentralAdmin
 | `ENCRYPTION_MASTER_KEY` | Web, Worker, API, most CLI | Base64 32-byte key. Required at startup for secret decrypt. Never commit. |
 | Data Protection key folder | Web, API | Persist ASP.NET Data Protection keys across restarts/instances. |
 
-### Data Protection path debt (API)
+### Data Protection key folder (API)
 
-Committed `src/Wasla.Api/appsettings.json` still contains:
-
-`DataProtection:KeyPath` = `C:\OrderHub-keys`
-
-That path is **current legacy configuration debt**. Prefer overriding with `DataProtection__KeyPath` to a Wasla-named folder in real deployments. If the configured value is empty, API `Program.cs` defaults to `C:\Wasla-keys`.
-
-Do not change the committed path as part of documentation-only work.
+No committed configuration sets `DataProtection:KeyPath` for the API. When it is unset the API keeps its keys in `C:\Wasla-keys` on Windows and uses the framework's default key storage on other operating systems (`src/Wasla.Api/Security/ApiDataProtection.cs`, WAS-141). Set `DataProtection__KeyPath` explicitly in real deployments.
 
 Web persists keys only when `DataProtection:KeyPath` is set.
 
@@ -249,7 +243,7 @@ CustomerDb__ServerInstance   # CLI
 
 - No OpenTelemetry exporter or metrics stack; the `Wasla.Realtime` meter is read locally with `dotnet-counters` (see [observability.md](observability.md#live-notification-metrics)).
 - Worker has no HTTP health endpoint for orchestrators.
-- Legacy names remain in config (`OrderHub` sections, `C:\OrderHub-keys`, `migrate-customer` command names).
+- Legacy names remain in config (`OrderHub` sections, `migrate-customer` command names).
 
 ## Related docs
 

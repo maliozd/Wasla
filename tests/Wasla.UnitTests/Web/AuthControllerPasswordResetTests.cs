@@ -251,7 +251,7 @@ public sealed class AuthControllerPasswordResetTests
     }
 
     [Fact]
-    public async Task LoginPost_ValidCredentialsExpiresLegacyCookieBeforeFreshSignIn()
+    public async Task LoginPost_ValidCredentialsExpiresTheActiveTenantCookieBeforeFreshSignIn()
     {
         var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
         var authValidation = new FakeAuthValidationService
@@ -266,15 +266,17 @@ public sealed class AuthControllerPasswordResetTests
             Password = "Password123!"
         }, TestContext.Current.CancellationToken);
 
-        var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
-        Assert.Contains($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{TenantAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains("expires=", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("path=/", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+        var setCookie = Assert.Single(controller.Response.Headers.SetCookie)!;
+        Assert.StartsWith(".Wasla.TenantAuth=;", setCookie, StringComparison.Ordinal);
+        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=lax", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("domain=", setCookie, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task Logout_ExpiresActiveAndLegacyTenantCookies()
+    public async Task Logout_ExpiresOnlyTheActiveTenantCookie()
     {
         var auth = new CapturingAuthenticationService();
         var controller = CreateController(authenticationService: auth);
@@ -285,11 +287,13 @@ public sealed class AuthControllerPasswordResetTests
         Assert.Equal("/auth/login", redirect.Url);
         Assert.Contains(AuthSchemes.Tenant, auth.SignOutSchemes);
 
-        var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
-        Assert.Contains($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{TenantAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains("expires=", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("path=/", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+        var setCookie = Assert.Single(controller.Response.Headers.SetCookie)!;
+        Assert.StartsWith(".Wasla.TenantAuth=;", setCookie, StringComparison.Ordinal);
+        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=lax", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("domain=", setCookie, StringComparison.OrdinalIgnoreCase);
     }
 
     private static AuthController CreateController(

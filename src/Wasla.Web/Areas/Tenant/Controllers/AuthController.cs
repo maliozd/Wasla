@@ -284,7 +284,6 @@ public sealed class AuthController : Controller
         };
 
         Response.Cookies.Delete(TenantAuthCookieNames.Active, options);
-        Response.Cookies.Delete(TenantAuthCookieNames.LegacyOrderHub, options);
     }
 }
 
