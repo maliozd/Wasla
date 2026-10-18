@@ -215,10 +215,12 @@ Sections (not tenant secrets):
 
 | Section | Purpose |
 |---------|---------|
-| `Platform:TrendyolGo` | `BaseUrl`, timeouts, agent name |
+| `Platform:TrendyolGo` | `BaseUrl`, timeouts, agent name (`AgentName`, default `Wasla`) |
 | `Platform:Yemeksepeti` | `BaseUrl`, `TokenPath`, `DefaultPageSize` (default 20), timeouts |
 
 Per-tenant API keys live encrypted in TenantDb after UI setup.
+
+**Trendyol GO agent name.** In Real mode every Trendyol GO request identifies Wasla as `x-agentname: Wasla` and `User-Agent: <supplierId> - Wasla`, one value per header. The value is `TrendyolGoOptions.AgentName`; its default is `Wasla` and every committed appsettings file sets that same value (WAS-141, checked by `TrendyolGoAgentNameTests` and `ProviderHttpClientRegistrationTests`). Mock mode sends nothing. Trendyol's public Partner API documentation describes the `User-Agent` as the seller id followed by the integrator company name (alphanumeric, at most 30 characters). Whether Trendyol GO requires that name to match a registered integrator record has not been confirmed with Trendyol.
 
 ## Fetch summary (Real HTTP)
 

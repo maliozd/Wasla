@@ -157,11 +157,9 @@ public sealed class AuthRememberMeTests
 
         await controller.Logout();
 
+        Assert.Single(controller.Response.Headers.SetCookie);
         var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
         Assert.Contains($"{CentralAdminAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyOrderHubScheme}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyAspNetCoreOrderHubScheme}=", setCookieHeaders, StringComparison.Ordinal);
         Assert.DoesNotContain($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
     }
 
@@ -286,9 +284,9 @@ public sealed class AuthRememberMeTests
 
         await controller.Logout();
 
+        Assert.Single(controller.Response.Headers.SetCookie);
         var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
         Assert.Contains($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{TenantAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
         Assert.DoesNotContain($"{CentralAdminAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
     }
 

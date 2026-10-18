@@ -79,7 +79,7 @@ Per-tenant API keys/secrets are stored **encrypted in the database** after setup
 | Variable | Required for | Notes |
 |----------|--------------|-------|
 | `Platform__TrendyolGo__BaseUrl` | **Web**, **Worker**, **Api** (Real mode) | Production: `https://api.tgoapis.com`. Stage: `https://stageapi.tgoapis.com`. |
-| `Platform__TrendyolGo__AgentName` | Optional | Default: `OrderHub`. |
+| `Platform__TrendyolGo__AgentName` | Optional | Default and committed value: `Wasla`. Sent as `x-agentname` and in the `User-Agent` suffix. |
 | `Platform__TrendyolGo__RequestTimeout` | Optional | e.g. `00:00:15` |
 
 #### Yemeksepeti (`Platform:Yemeksepeti`)
@@ -181,7 +181,7 @@ These values are **acceptable for local development** but **must not leak** into
 | `https://stageapi.tgoapis.com` | Base Trendyol GO URL (Worker/Api) | Stage API used if Production overlay not loaded |
 | `../../.certs/wasla-local.pfx` | Web `appsettings.Development.json` | Dev HTTPS cert path; not for production |
 | PFX password in Development config | Web `appsettings.Development.json` | Dev-only; never deploy Development config as Production |
-| `C:\Wasla-keys` | Api `appsettings.json` | Windows-specific path; set explicitly per environment |
+| `C:\Wasla-keys` | Api code default on Windows (`ApiDataProtection`); not in committed config | Windows only; set `DataProtection__KeyPath` explicitly per environment |
 | `*.wasla.local` launch URLs | Web `launchSettings.json` | IDE-only; not used on server |
 | `trusted` SQL auth for onboarding | Default `SqlAuth` | May be wrong on Linux/cloud SQL; use explicit SQL auth if needed |
 
@@ -197,7 +197,7 @@ ASP.NET Core Data Protection encrypts cookies and other protected payloads. Both
 
 - **Use a persistent key path in production** so keys survive app restarts and deployments.
 - **Web:** reads `DataProtection:KeyPath` from configuration. If missing or unusable, keys may be ephemeral (users can be logged out after restart).
-- **Api:** uses `DataProtection:KeyPath` from config; if empty, code falls back to `C:\Wasla-keys` (Windows-oriented default).
+- **Api:** uses `DataProtection:KeyPath` from config; if empty, it uses `C:\Wasla-keys` on Windows and the framework's default key storage on other operating systems.
 - **Path must not be committed to Git.** Store keys on server disk or a shared volume accessible to all instances.
 - **Service account** running Web/Api must have **read/write** permission on the key directory.
 - Use the **same key ring** across Web and Api if they must share protected payloads (same `SetApplicationName("Wasla")` is already used).

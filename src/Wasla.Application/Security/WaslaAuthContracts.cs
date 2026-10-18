@@ -22,10 +22,5 @@ public static class WaslaAuthContracts
     /// </summary>
     public const string CentralAdminSecurityStampClaim = "Wasla.CentralAdminSecurityStamp";
 
-    /// <summary>
-    /// Pre-Wasla tenant cookie. It is expired when seen and is not an authentication scheme.
-    /// </summary>
-    public const string LegacyTenantCookieName = "orderhub_auth";
-
     public const string TenantIdClaim = "TenantId";
 }

@@ -141,12 +141,9 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         var cookieSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Security", "TenantCookieAuthentication.cs"));
 
         Assert.Equal(".Wasla.TenantAuth", TenantAuthCookieNames.Active);
-        Assert.Equal("orderhub_auth", TenantAuthCookieNames.LegacyOrderHub);
         Assert.Contains(".AddWaslaTenantCookie(authCookieSecurePolicy)", programSource, StringComparison.Ordinal);
         Assert.DoesNotContain(".AddCookie(AuthSchemes.Tenant", programSource, StringComparison.Ordinal);
         Assert.Contains("options.Cookie.Name = TenantAuthCookieNames.Active;", cookieSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("options.Cookie.Name = \"orderhub_auth\";", cookieSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("options.Cookie.Name = TenantAuthCookieNames.LegacyOrderHub;", cookieSource, StringComparison.Ordinal);
         Assert.Contains("options.LoginPath = \"/auth/login\";", cookieSource, StringComparison.Ordinal);
         Assert.Contains("options.AccessDeniedPath = \"/auth/access-denied\";", cookieSource, StringComparison.Ordinal);
         Assert.DoesNotContain("options.AccessDeniedPath = \"/auth/login\";", cookieSource, StringComparison.Ordinal);
