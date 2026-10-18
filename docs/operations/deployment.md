@@ -20,6 +20,10 @@ Older matrix: `docs/deployment-config.md` (superseded for day-to-day ops; not de
 
 Web must **not** start/stop Worker OS processes, Windows services, Docker containers, or systemd units.
 
+### Web content root and web root
+
+Start `Wasla.Web` with its content root set to the folder that contains its `wwwroot`: the publish folder for a published build (run it from that folder or pass `--contentRoot`), the project folder for `dotnet run --project src/Wasla.Web`. ASP.NET Core leaves `WebRootPath` null when the content root has no `wwwroot`, and then serves no CSS, scripts or notification sounds, except in Development, where the static web assets manifest still maps the project's `wwwroot` (for example when the binary is started from `bin/`). Notification settings read the sound list through the same web root file provider and fall back to the default `/sounds/<name>.mp3` entries instead of failing (WAS-122); the files themselves are only served when the web root is correct.
+
 ## Databases
 
 - **CentralDb**: tenant registry, memberships, signup/provisioning, central admins, Print Bridge device registry. Connection: `ConnectionStrings:CentralDb` / `ConnectionStrings__CentralDb`.
