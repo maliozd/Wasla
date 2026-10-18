@@ -2412,6 +2412,21 @@
   <data name="PlatformConnections.ApiSecretLeaveEmptyHelp" xml:space="preserve">
     <value>Оставьте пустым, чтобы сохранить существующую тайну.</value>
   </data>
+  <data name="PlatformConnections.ShowApiKey" xml:space="preserve">
+    <value>Показать API ключ</value>
+  </data>
+  <data name="PlatformConnections.ShowApiSecret" xml:space="preserve">
+    <value>Показать API секрет</value>
+  </data>
+  <data name="PlatformConnections.CredentialSaved" xml:space="preserve">
+    <value>Значение сохранено и никогда не отображается.</value>
+  </data>
+  <data name="PlatformConnections.CredentialMissing" xml:space="preserve">
+    <value>Значение не сохранено. Введите его для подключения.</value>
+  </data>
+  <data name="PlatformConnections.CredentialsReenter" xml:space="preserve">
+    <value>В целях безопасности введённые учётные данные API очищены, и ничего не сохранено. Введите их снова.</value>
+  </data>
   <data name="PlatformConnections.SupplierId" xml:space="preserve">
     <value>Идентификатор поставщика</value>
   </data>

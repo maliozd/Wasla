@@ -85,7 +85,9 @@ public sealed class PlatformConnectionsController : BaseController
             ExecutorEmail = c.ExecutorEmail,
             IsActive = c.IsActive,
             ApiKey = string.Empty,
-            ApiSecret = string.Empty
+            ApiSecret = string.Empty,
+            HasStoredApiKey = c.HasApiKey,
+            HasStoredApiSecret = c.HasApiSecret
         };
 
         return View("Edit", vm);
@@ -98,7 +100,7 @@ public sealed class PlatformConnectionsController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        if (!ModelState.IsValid) return View("Edit", model);
+        if (!ModelState.IsValid) return await EditAgainAsync(tenant.Id, id, model, ct);
 
         var cmd = new UpdatePlatformConnectionCommand(
             Platform: model.Platform,
@@ -117,11 +119,16 @@ public sealed class PlatformConnectionsController : BaseController
             {
                 ModelState.AddModelError(nameof(EditPlatformConnectionViewModel.Platform), _localizer["PlatformConnections.DuplicateError"].Value);
             }
+            else if (string.Equals(result.ErrorCode, "Validation", StringComparison.Ordinal) && result.ErrorMessage is not null)
+            {
+                // A resource key from the service's credential check; it names the problem, never the value.
+                ModelState.AddModelError(string.Empty, _localizer[result.ErrorMessage].Value);
+            }
             else
             {
                 ModelState.AddModelError(string.Empty, _localizer["PlatformConnections.UpdateFailed"].Value);
             }
-            return View("Edit", model);
+            return await EditAgainAsync(tenant.Id, id, model, ct);
         }
 
         TempData["Success"] = _localizer["PlatformConnections.Updated"].Value;
@@ -157,10 +164,7 @@ public sealed class PlatformConnectionsController : BaseController
         if (tenant is null) return NotFound();
 
         if (!ModelState.IsValid)
-        {
-            await PopulateConfiguredPlatformsAsync(model, ct);
-            return View(model);
-        }
+            return await CreateAgainAsync(model, ct);
 
         var cmd = new CreatePlatformConnectionCommand(
             model.Platform,
@@ -176,8 +180,7 @@ public sealed class PlatformConnectionsController : BaseController
         {
             foreach (var e in validation.Errors)
                 ModelState.AddModelError(e.PropertyName, _localizer[e.ErrorMessage].Value);
-            await PopulateConfiguredPlatformsAsync(model, ct);
-            return View(model);
+            return await CreateAgainAsync(model, ct);
         }
 
         var result = await _connections.CreateAsync(tenant.Id, cmd, ct);
@@ -191,8 +194,7 @@ public sealed class PlatformConnectionsController : BaseController
             {
                 ModelState.AddModelError(string.Empty, result.ErrorMessage ?? _localizer["PlatformConnections.CreateFailed"].Value);
             }
-            await PopulateConfiguredPlatformsAsync(model, ct);
-            return View(model);
+            return await CreateAgainAsync(model, ct);
         }
 
         TempData["Success"] = _localizer["Common.Saved"].Value;
@@ -212,6 +214,59 @@ public sealed class PlatformConnectionsController : BaseController
     {
         return await SetActive(id, false, ct);
     }
+
+    /// <summary>
+    /// Shows the create form again after a failed submission: the typed credentials are dropped from the model and from
+    /// ModelState (whose attempted values the input helpers would otherwise prefer), and the form asks for them again.
+    /// The other fields and every validation error are kept.
+    /// </summary>
+    private async Task<IActionResult> CreateAgainAsync(CreatePlatformConnectionViewModel model, CancellationToken ct)
+    {
+        model.CredentialsNeedReentry = !string.IsNullOrEmpty(model.ApiKey) || !string.IsNullOrEmpty(model.ApiSecret);
+        model.ApiKey = string.Empty;
+        model.ApiSecret = string.Empty;
+        ForgetSubmittedCredentials();
+        await PopulateConfiguredPlatformsAsync(model, ct);
+        return View("Create", model);
+    }
+
+    /// <summary>
+    /// Shows the edit form again after a failed submission, as <see cref="CreateAgainAsync"/> does. Which credentials are
+    /// stored is read again from the tenant's own connection; a connection this tenant does not have is not found.
+    /// </summary>
+    private async Task<IActionResult> EditAgainAsync(Guid tenantId, Guid id, EditPlatformConnectionViewModel model, CancellationToken ct)
+    {
+        model.CredentialsNeedReentry = !string.IsNullOrEmpty(model.ApiKey) || !string.IsNullOrEmpty(model.ApiSecret);
+        model.ApiKey = null;
+        model.ApiSecret = null;
+        ForgetSubmittedCredentials();
+
+        var stored = await _connections.GetByIdAsync(tenantId, id, ct);
+        if (stored is null) return NotFound();
+
+        model.Id = stored.Id;
+        model.HasStoredApiKey = stored.HasApiKey;
+        model.HasStoredApiSecret = stored.HasApiSecret;
+        return View("Edit", model);
+    }
+
+    private void ForgetSubmittedCredentials()
+    {
+        foreach (var key in CredentialFields)
+        {
+            if (ModelState.TryGetValue(key, out var entry))
+            {
+                entry.RawValue = null;
+                entry.AttemptedValue = null;
+            }
+        }
+    }
+
+    private static readonly string[] CredentialFields =
+    [
+        nameof(CreatePlatformConnectionViewModel.ApiKey),
+        nameof(CreatePlatformConnectionViewModel.ApiSecret)
+    ];
 
     private async Task PopulateConfiguredPlatformsAsync(CreatePlatformConnectionViewModel model, CancellationToken ct)
     {

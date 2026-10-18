@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Web.Models.PlatformConnections;
@@ -32,5 +33,9 @@ public sealed class CreatePlatformConnectionViewModel
     public string? ExecutorEmail { get; set; }
 
     public IReadOnlyList<FoodPlatform> ConfiguredPlatforms { get; set; } = [];
+
+    /// <summary>The submission failed after credentials were typed; they were cleared and must be entered again.</summary>
+    [BindNever]
+    public bool CredentialsNeedReentry { get; set; }
 }
 

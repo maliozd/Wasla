@@ -1647,6 +1647,12 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
   color: var(--wasla-text);
 }
 
+/* A field with a control beside it (a credential's reveal button) shares its row with that control. */
+.wasla-manage-form .input-group > .form-control {
+  width: 1%;
+  min-width: 0;
+}
+
 .wasla-manage-form .form-text {
   margin-top: var(--wasla-space-1);
   color: var(--wasla-text-muted);

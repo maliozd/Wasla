@@ -180,6 +180,18 @@ Implications:
 
 Never log decrypted secrets.
 
+### Credentials in the tenant Web forms
+
+Source: `PlatformConnectionsController` (Web), `PlatformConnectionService.UpdateAsync`, the `Create` and `Edit` views and `platform-connection-form.js` (WAS-131). Every platform uses the same two credentials, API key and API secret; `SupplierId` and `ExecutorEmail` are configuration, not secrets.
+
+- **Never sent to the browser.** `GetByIdAsync` returns only whether each credential is stored (`HasApiKey`, `HasApiSecret`), and the edit page shows only that. No input value, hidden field, attribute, script or message carries a stored credential.
+- **Masked inputs.** Both fields are `type="password"` with `autocomplete="off"` (provider credentials, not a Wasla login) and `spellcheck="false"`. The reveal button next to each (`aria-pressed`, localized name) only switches the field's type, so it can show only what was typed into the current form; it fetches nothing. A revealed field is masked again on submit and on `pagehide`.
+- **Create** requires both credentials (`CreatePlatformConnectionCommandValidator`, at most 500 characters each).
+- **Edit.** An empty or omitted credential keeps the stored value; a non-blank value replaces only that credential, stored exactly as sent (no trimming). The service checks the effective pair (stored plus replacements: each present, a replacement at most 500 characters) before writing any field, so a refused edit, and any edit that fails later, leaves the row unchanged. Editing other fields never touches the credentials. There is no rule that both must be replaced together: no provider contract in this repository requires it, and a Yemeksepeti secret rotation keeps its client id.
+- **Failed submissions.** Before either form is shown again, the controller clears the typed credentials from the view model and from ModelState (whose attempted values the input helpers would otherwise prefer), keeps the other fields and every validation error, and tells the user to enter the credentials again.
+
+`PlatformConnectionCredentialWebTests` (real request pipeline, every failure path, roles, antiforgery, cross-tenant, logs at Trace) and `PlatformConnectionCredentialBrowserTests` (reveal control in four cultures, right to left, dark mode, phone width) cover this.
+
 ### Yemeksepeti OAuth tokens
 
 Source: `YemeksepetiFoodPlatformClient` (WAS-88). In Real mode one client instance (a singleton) serves every tenant in a process, so its in-memory token cache is shared across tenants. A cached token is reused only when all of these match the request that obtained it:

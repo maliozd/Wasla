@@ -17,6 +17,10 @@
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            @if (Model.CredentialsNeedReentry)
+            {
+                <div class="alert alert-warning" role="status">@L["PlatformConnections.CredentialsReenter"]</div>
+            }
 
             <div class="row g-3">
                 <div class="col-12 col-md-4">
@@ -55,17 +59,52 @@
                     </div>
                 </div>
 
+                @* Provider credentials: masked and always empty. A stored value never reaches the browser, only whether one
+                   is stored. Empty keeps the stored value; a new value replaces it once the whole edit succeeds. The reveal
+                   control only shows what was typed into this form. *@
                 <div class="col-12 col-md-6">
                     <label class="form-label" asp-for="ApiKey"></label>
-                    <input class="form-control" asp-for="ApiKey" autocomplete="off" />
-                    <div class="form-text">@L["PlatformConnections.ApiLeaveEmptyHelp"]</div>
+                    <div class="input-group">
+                        <input class="form-control" asp-for="ApiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" dir="ltr"
+                               aria-describedby="apiKeyStored" />
+                        <button class="btn btn-outline-secondary" type="button" data-credential-toggle aria-controls="ApiKey" aria-pressed="false"
+                                aria-label="@L["PlatformConnections.ShowApiKey"]" title="@L["PlatformConnections.ShowApiKey"]" hidden>
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="form-text" id="apiKeyStored">
+                        @if (Model.HasStoredApiKey)
+                        {
+                            <span><i class="bi bi-shield-lock" aria-hidden="true"></i> @L["PlatformConnections.CredentialSaved"] @L["PlatformConnections.ApiLeaveEmptyHelp"]</span>
+                        }
+                        else
+                        {
+                            <span>@L["PlatformConnections.CredentialMissing"]</span>
+                        }
+                    </div>
                     <span class="text-danger" asp-validation-for="ApiKey"></span>
                 </div>
 
                 <div class="col-12 col-md-6">
                     <label class="form-label" asp-for="ApiSecret"></label>
-                    <input class="form-control" asp-for="ApiSecret" autocomplete="off" />
-                    <div class="form-text">@L["PlatformConnections.ApiLeaveEmptyHelp"]</div>
+                    <div class="input-group">
+                        <input class="form-control" asp-for="ApiSecret" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" dir="ltr"
+                               aria-describedby="apiSecretStored" />
+                        <button class="btn btn-outline-secondary" type="button" data-credential-toggle aria-controls="ApiSecret" aria-pressed="false"
+                                aria-label="@L["PlatformConnections.ShowApiSecret"]" title="@L["PlatformConnections.ShowApiSecret"]" hidden>
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="form-text" id="apiSecretStored">
+                        @if (Model.HasStoredApiSecret)
+                        {
+                            <span><i class="bi bi-shield-lock" aria-hidden="true"></i> @L["PlatformConnections.CredentialSaved"] @L["PlatformConnections.ApiLeaveEmptyHelp"]</span>
+                        }
+                        else
+                        {
+                            <span>@L["PlatformConnections.CredentialMissing"]</span>
+                        }
+                    </div>
                     <span class="text-danger" asp-validation-for="ApiSecret"></span>
                 </div>
 

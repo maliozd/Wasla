@@ -2412,6 +2412,21 @@
   <data name="PlatformConnections.ApiSecretLeaveEmptyHelp" xml:space="preserve">
     <value>اتركه فارغًا للاحتفاظ بالسر الحالي.</value>
   </data>
+  <data name="PlatformConnections.ShowApiKey" xml:space="preserve">
+    <value>إظهار مفتاح API</value>
+  </data>
+  <data name="PlatformConnections.ShowApiSecret" xml:space="preserve">
+    <value>إظهار سر API</value>
+  </data>
+  <data name="PlatformConnections.CredentialSaved" xml:space="preserve">
+    <value>توجد قيمة محفوظة ولا تُعرض أبدًا.</value>
+  </data>
+  <data name="PlatformConnections.CredentialMissing" xml:space="preserve">
+    <value>لا توجد قيمة محفوظة. أدخل قيمة للاتصال.</value>
+  </data>
+  <data name="PlatformConnections.CredentialsReenter" xml:space="preserve">
+    <value>حفاظًا على أمانك، تم مسح بيانات اعتماد API التي أدخلتها ولم يُحفظ أي تغيير. أدخلها مرة أخرى.</value>
+  </data>
   <data name="PlatformConnections.SupplierId" xml:space="preserve">
     <value>Supplier Id</value>
   </data>

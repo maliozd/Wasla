@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Security;
+using Wasla.Application.PlatformConnections;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Domain.Entities.Customer;
 
@@ -54,7 +55,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
                 p.IsActive,
                 p.SyncIntervalSeconds,
                 p.SupplierId,
-                p.ExecutorEmail))
+                p.ExecutorEmail,
+                p.EncryptedApiKey != "",
+                p.EncryptedApiSecret != ""))
             .FirstOrDefaultAsync(ct);
     }
 
@@ -139,6 +142,24 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             };
         }
 
+        // Credentials: a blank value keeps the stored one, a non-blank value replaces only that credential. The
+        // effective pair (stored plus replacements) is checked before any field is written, so a refused edit leaves
+        // the whole row, credentials included, as it was. Replacements are stored exactly as sent.
+        var newApiKey = string.IsNullOrWhiteSpace(command.ApiKey) ? null : command.ApiKey;
+        var newApiSecret = string.IsNullOrWhiteSpace(command.ApiSecret) ? null : command.ApiSecret;
+        var credentialError =
+            CredentialError(newApiKey, entity.EncryptedApiKey, "Validation.ApiKeyRequired", "Validation.ApiKeyMaxLength")
+            ?? CredentialError(newApiSecret, entity.EncryptedApiSecret, "Validation.ApiSecretRequired", "Validation.ApiSecretMaxLength");
+        if (credentialError is not null)
+        {
+            return new CreatePlatformConnectionResult
+            {
+                Succeeded = false,
+                ErrorCode = "Validation",
+                ErrorMessage = credentialError
+            };
+        }
+
         var storeId = (command.StoreId ?? string.Empty).Trim();
 
         entity.StoreId = storeId;
@@ -159,16 +180,16 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         // Secrets: never return existing secrets; if omitted, keep existing; if provided, replace only that value.
         var keyVerMax = entity.EncryptionKeyVersion;
 
-        if (!string.IsNullOrWhiteSpace(command.ApiKey))
+        if (newApiKey is not null)
         {
-            var (encKey, keyVer) = await _secret.EncryptAsync(command.ApiKey, ct);
+            var (encKey, keyVer) = await _secret.EncryptAsync(newApiKey, ct);
             entity.EncryptedApiKey = encKey;
             keyVerMax = Math.Max(keyVerMax, keyVer);
         }
 
-        if (!string.IsNullOrWhiteSpace(command.ApiSecret))
+        if (newApiSecret is not null)
         {
-            var (encSecret, keyVer) = await _secret.EncryptAsync(command.ApiSecret, ct);
+            var (encSecret, keyVer) = await _secret.EncryptAsync(newApiSecret, ct);
             entity.EncryptedApiSecret = encSecret;
             keyVerMax = Math.Max(keyVerMax, keyVer);
         }
@@ -180,6 +201,14 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             return duplicate;
 
         return new CreatePlatformConnectionResult { Succeeded = true, Id = entity.Id };
+    }
+
+    /// <summary>The resource key of the problem with one effective credential, or null when it is usable.</summary>
+    private static string? CredentialError(string? replacement, string stored, string requiredKey, string maxLengthKey)
+    {
+        if (replacement is null)
+            return stored.Length == 0 ? requiredKey : null;
+        return replacement.Length > CreatePlatformConnectionCommandValidator.MaxCredentialLength ? maxLengthKey : null;
     }
 
     private static async Task<CreatePlatformConnectionResult?> SaveOrPlatformDuplicateAsync(
