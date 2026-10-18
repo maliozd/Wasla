@@ -331,7 +331,7 @@
                                 </div>
                                 <p class="text-secondary small mt-3 mb-3">@L["Signup.SetupLaterNote"]</p>
                                 <button type="submit" id="signupSubmitButton" class="btn btn-primary btn-lg rounded-pill px-4">
-                                    <i class="bi bi-arrow-right-circle me-2" aria-hidden="true"></i>@L["Signup.ContinueToPayment"]
+                                    <i class="bi bi-arrow-right-circle me-2" aria-hidden="true"></i>@L[Model.IsPaymentSimulatorAvailable ? "Signup.ContinueToPayment" : "Signup.SubmitRegistration"]
                                 </button>
                             </section>
                             </div>

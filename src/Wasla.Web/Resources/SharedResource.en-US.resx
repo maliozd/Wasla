@@ -3211,6 +3211,7 @@
   <data name="Signup.ConfirmPassword" xml:space="preserve"><value>Confirm password</value></data>
   <data name="Signup.SetupLaterNote" xml:space="preserve"><value>You can complete platform connections and other settings after payment.</value></data>
   <data name="Signup.ContinueToPayment" xml:space="preserve"><value>Complete registration and continue to payment</value></data>
+  <data name="Signup.SubmitRegistration" xml:space="preserve"><value>Submit registration</value></data>
   <data name="Signup.CreateAccount" xml:space="preserve"><value>Create account</value></data>
   <data name="Signup.PendingTitle" xml:space="preserve"><value>Your account is almost ready</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>We received your details. Complete the payment step to continue.</value></data>
@@ -3254,6 +3255,7 @@
   <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve"><value>Setup in progress</value></data>
   <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>Setup complete</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Payment summary</value></data>
+  <data name="Checkout.RegistrationSummaryTitle" xml:space="preserve"><value>Registration summary</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Review your selected package and restaurant details. In this test environment, the payment outcome will be simulated.</value></data>
   <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve"><value>Review your selected package and restaurant details. Payment is not taken on this page; your registration stays pending until payment is received.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Real payment integration is not active yet. Payment outcome is simulated on this screen.</value></data>

@@ -3441,6 +3441,9 @@
   <data name="Signup.ContinueToPayment" xml:space="preserve">
     <value>Завершите регистрацию и продолжите оплату</value>
   </data>
+  <data name="Signup.SubmitRegistration" xml:space="preserve">
+    <value>Отправить регистрацию</value>
+  </data>
   <data name="Signup.CreateAccount" xml:space="preserve">
     <value>Зарегистрироваться</value>
   </data>
@@ -3569,6 +3572,9 @@
   </data>
   <data name="Checkout.ReviewTitle" xml:space="preserve">
     <value>Сводка платежей</value>
+  </data>
+  <data name="Checkout.RegistrationSummaryTitle" xml:space="preserve">
+    <value>Сводка регистрации</value>
   </data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve">
     <value>Просмотрите выбранный пакет и информацию о ресторане. В этой тестовой среде будет смоделирован результат платежа.</value>

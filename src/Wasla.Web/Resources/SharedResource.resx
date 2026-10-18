@@ -351,6 +351,9 @@
   <data name="Signup.ContinueToPayment" xml:space="preserve">
     <value>Kaydı tamamla ve ödemeye geç</value>
   </data>
+  <data name="Signup.SubmitRegistration" xml:space="preserve">
+    <value>Kaydı gönder</value>
+  </data>
   <data name="Signup.PendingTitle" xml:space="preserve">
     <value>Hesabınız neredeyse hazır</value>
   </data>
@@ -540,6 +543,9 @@
   </data>
   <data name="Checkout.ReviewTitle" xml:space="preserve">
     <value>Ödeme özeti</value>
+  </data>
+  <data name="Checkout.RegistrationSummaryTitle" xml:space="preserve">
+    <value>Kayıt özeti</value>
   </data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve">
     <value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu test ortamında ödeme sonucu simüle edilecektir.</value>
