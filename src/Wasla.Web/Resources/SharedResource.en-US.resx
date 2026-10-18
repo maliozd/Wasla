@@ -1788,6 +1788,9 @@
   <data name="Orders.InvalidEndDate" xml:space="preserve">
     <value>Invalid end date.</value>
   </data>
+  <data name="Orders.InvalidDateRange" xml:space="preserve">
+    <value>The end date cannot be before the start date.</value>
+  </data>
   <data name="Orders.AutoApprove" xml:space="preserve">
     <value>Auto Approve</value>
   </data>

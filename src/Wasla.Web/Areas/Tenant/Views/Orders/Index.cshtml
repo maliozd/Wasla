@@ -4,6 +4,8 @@
 @using Wasla.Domain.Enums
 @using Microsoft.Extensions.Localization
 @using Wasla.Web.Security
+@using Wasla.Application.Orders
+@using Microsoft.AspNetCore.Mvc.ModelBinding
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject ITenantNavigationAuthorizationService TenantNavigation
 @{
@@ -12,6 +14,11 @@
     var today = Model.TurkeyLocalToday;
     var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"];
+    // Date inputs carry the invariant Gregorian yyyy-MM-dd value in every UI culture.
+    string? DateValue(DateOnly? date) => date.HasValue ? OrdersReceivedAtQueryRange.FormatWebDate(date.Value) : null;
+    bool DateInvalid(string key) => ViewData.ModelState.GetFieldValidationState(key) == ModelValidationState.Invalid;
+    var startDateInvalid = DateInvalid("startDate");
+    var endDateInvalid = DateInvalid("endDate");
 }
 
 <div class="wasla-orders-page">
@@ -83,11 +90,13 @@
             </div>
             <div class="col-12 col-md-4 col-lg-2">
                 <label class="form-label" for="ordersStartDate">@L["Orders.StartDate"]</label>
-                <input id="ordersStartDate" class="form-control" type="date" name="startDate" value="@(f.StartDate?.ToString("yyyy-MM-dd"))" />
+                <input id="ordersStartDate" class="form-control@(startDateInvalid ? " is-invalid" : "")" type="date" name="startDate" value="@DateValue(f.StartDate)"
+                       aria-invalid="@(startDateInvalid ? "true" : null)" aria-describedby="@(startDateInvalid ? "ordersFilterErrors" : null)" />
             </div>
             <div class="col-12 col-md-4 col-lg-2">
                 <label class="form-label" for="ordersEndDate">@L["Orders.EndDate"]</label>
-                <input id="ordersEndDate" class="form-control" type="date" name="endDate" value="@(f.EndDate?.ToString("yyyy-MM-dd"))" />
+                <input id="ordersEndDate" class="form-control@(endDateInvalid ? " is-invalid" : "")" type="date" name="endDate" value="@DateValue(f.EndDate)"
+                       aria-invalid="@(endDateInvalid ? "true" : null)" aria-describedby="@(endDateInvalid ? "ordersFilterErrors" : null)" />
             </div>
             <div class="col-12 col-md-4 col-lg-2">
                 <label class="form-label" for="ordersPageSize">@L["Orders.History.PageSize"]</label>
@@ -123,7 +132,7 @@
         @if (!ViewData.ModelState.IsValid)
         {
             <div class="mt-2">
-                <div class="text-danger small">
+                <div id="ordersFilterErrors" class="text-danger small" role="alert">
                     @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
                     {
                         <div>@e.ErrorMessage</div>
@@ -154,7 +163,7 @@
     <script>
         window.waslaOrdersOptions = {
             tableUrl: "/orders/table",
-            todayYmd: "@today.ToString("yyyy-MM-dd")",
+            todayYmd: "@OrdersReceivedAtQueryRange.FormatWebDate(today)",
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
             {
                 ["genericError"] = L["Orders.GenericError"].Value,

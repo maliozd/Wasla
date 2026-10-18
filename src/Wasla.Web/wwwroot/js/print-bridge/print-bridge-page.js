@@ -82,7 +82,8 @@
   /** The same Intl approach as the Live Screen: the UI culture, in the configured restaurant time zone. */
   function formatInstant(ms) {
     if (!dateTimeFormat) {
-      var options = { timeZone: cfg.timeZoneId || "Europe/Istanbul", dateStyle: "short", timeStyle: "medium" };
+      // Gregorian in every language: ar-SA would otherwise default to the Umm al-Qura calendar.
+      var options = { timeZone: cfg.timeZoneId || "Europe/Istanbul", calendar: "gregory", dateStyle: "short", timeStyle: "medium" };
       try {
         dateTimeFormat = new Intl.DateTimeFormat(displayCulture(), options);
       } catch (_) {

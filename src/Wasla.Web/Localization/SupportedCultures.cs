@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using Wasla.Application.Printing;
 
 namespace Wasla.Web.Localization;
 
@@ -19,8 +20,12 @@ internal static class SupportedCultures
         Russian
     };
 
+    /// <summary>
+    /// The request cultures. Every language uses the Gregorian calendar: ar-SA keeps its language and right-to-left
+    /// layout but not its default Umm al-Qura calendar, so dates mean the same day on every page and in every language.
+    /// </summary>
     public static readonly IReadOnlyList<CultureInfo> AllCultureInfos =
-        All.Select(c => new CultureInfo(c)).ToList();
+        All.Select(c => GregorianCulture.For(new CultureInfo(c))).ToList();
 
     public static bool IsSupported(string? culture) =>
         !string.IsNullOrWhiteSpace(culture) &&

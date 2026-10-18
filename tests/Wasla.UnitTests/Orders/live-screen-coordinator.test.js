@@ -864,7 +864,7 @@ function boardHarness(canManageOrders = true, extras) {
   let view = "board";
   const options = extras || {};
   const browser = store.attachBrowser({
-    opts: { displayCulture: "tr-TR", timeZoneId: "Europe/Istanbul", canManageOrders },
+    opts: { displayCulture: options.culture || "tr-TR", timeZoneId: "Europe/Istanbul", canManageOrders },
     liveView: { getView: () => view },
     getMessage: options.getMessage || (key => key),
     liveDetailModal: options.liveDetailModal,
@@ -3495,4 +3495,38 @@ test("WAS-125: cards time and sort by the order time; an import-time fallback ke
     assert.equal(h.card(legacy).querySelector("[data-order-time-label]").textContent, "Sipariş zamanı");
     assert.equal(h.card(legacy).querySelector("[data-elapsed]").textContent, "41 dk");
   } finally { h.restore(); }
+});
+
+test("received times from an earlier day use the Gregorian calendar in every culture, chosen explicitly for Arabic (WAS-130)", () => {
+  const original = Intl.DateTimeFormat;
+  const requested = [];
+  // Recent ICU data already defaults ar-SA to Gregorian, older data to Umm al-Qura: the page must not depend on either.
+  Intl.DateTimeFormat = function (locales, options) {
+    requested.push({ locales: locales, options: options });
+    return new original(locales, options);
+  };
+  const receivedAtUtc = "2026-09-21T21:00:00Z"; // 00:00 on 22 September in Turkey; the snapshot's server day is the 23rd.
+  try {
+    for (const culture of ["tr-TR", "en-US", "ar-SA", "ru-RU"]) {
+      const h = boardHarness(true, { culture: culture });
+      try {
+        h.view("list");
+        h.browser.renderSnapshot(snapshot([guid(1)], { orders: snapshot([guid(1)]).orders.map(o => Object.assign(o, { receivedAtUtc: receivedAtUtc })) }));
+        const text = h.card(guid(1)).querySelector("[data-received]").textContent.trim();
+        const gregorian = new original(culture, { timeZone: "Europe/Istanbul", calendar: "gregory", dateStyle: "short", timeStyle: "short" });
+        assert.equal(text, gregorian.format(new Date(receivedAtUtc)), culture);
+        const hijri = new original(culture, { timeZone: "Europe/Istanbul", calendar: "islamic-umalqura", dateStyle: "short", timeStyle: "short" });
+        assert.notEqual(text, hijri.format(new Date(receivedAtUtc)), culture);
+      } finally {
+        h.restore();
+      }
+    }
+  } finally {
+    Intl.DateTimeFormat = original;
+  }
+
+  const shown = requested.filter(r => r.options && r.options.timeStyle);
+  assert.ok(shown.length >= 4, "every culture formats the received time");
+  for (const r of shown)
+    assert.equal(r.options.calendar, "gregory", String(r.locales));
 });

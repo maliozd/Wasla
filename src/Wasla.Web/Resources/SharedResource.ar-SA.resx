@@ -1788,6 +1788,9 @@
   <data name="Orders.InvalidEndDate" xml:space="preserve">
     <value>تاريخ النهاية غير صالح.</value>
   </data>
+  <data name="Orders.InvalidDateRange" xml:space="preserve">
+    <value>لا يمكن أن يكون تاريخ النهاية قبل تاريخ البداية.</value>
+  </data>
   <data name="Orders.AutoApprove" xml:space="preserve">
     <value>الموافقة التلقائية</value>
   </data>

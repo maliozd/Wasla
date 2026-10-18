@@ -269,7 +269,7 @@ public sealed class OrdersController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
+        var today = OrdersReceivedAtQueryRange.FormatWebDate(OrdersReceivedAtQueryRange.GetTurkeyLocalToday());
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, null, null, today, today, search: null,
             sortBy: OrderListSort.OrderedAt, sortDirection: "desc", page: 1, pageSize: 100,
@@ -290,7 +290,7 @@ public sealed class OrdersController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
+        var today = OrdersReceivedAtQueryRange.FormatWebDate(OrdersReceivedAtQueryRange.GetTurkeyLocalToday());
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, null, null, today, today, search: null,
             sortBy: OrderListSort.OrderedAt,
@@ -448,30 +448,36 @@ public sealed class OrdersController : BaseController
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
         DefaultDateRangeIfNoDates(ref startDate, ref endDate, useHistoryDefaults);
 
-        var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
+        var dates = OrdersReceivedAtQueryRange.ParseWebQueryStrings(startDate, endDate);
+        var (startUtc, endUtc, startDateParsed, endDateParsed) = (dates.UtcStartInclusive, dates.UtcEndExclusive, dates.StartDate, dates.EndDate);
         var trimmedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 
         if (addDateValidationErrors)
         {
-            if (startUtc is null && !string.IsNullOrWhiteSpace(startDate))
+            if (dates.StartInvalid)
                 ModelState.AddModelError("startDate", _localizer["Orders.InvalidStartDate"].Value);
-            if (endUtc is null && !string.IsNullOrWhiteSpace(endDate))
+            if (dates.EndInvalid)
                 ModelState.AddModelError("endDate", _localizer["Orders.InvalidEndDate"].Value);
+            if (dates.Inverted)
+                ModelState.AddModelError("endDate", _localizer["Orders.InvalidDateRange"].Value);
         }
 
-        var result = await _orders.GetListAsync(
-            customerId,
-            platform,
-            status,
-            startUtc,
-            endUtc,
-            sortBy,
-            sortDirection,
-            safePage,
-            safePageSize,
-            trimmedSearch,
-            ct,
-            includeLineItems);
+        // A supplied date that cannot be used never widens the query: nothing is listed until the filter is corrected.
+        var result = dates.IsValid
+            ? await _orders.GetListAsync(
+                customerId,
+                platform,
+                status,
+                startUtc,
+                endUtc,
+                sortBy,
+                sortDirection,
+                safePage,
+                safePageSize,
+                trimmedSearch,
+                ct,
+                includeLineItems)
+            : new OrderListResult { Items = [], TotalCount = 0, Page = safePage, PageSize = safePageSize };
 
         if (logDateFilterAs is not null)
         {
@@ -843,7 +849,7 @@ public sealed class OrdersController : BaseController
         if (string.IsNullOrWhiteSpace(startDate) && string.IsNullOrWhiteSpace(endDate))
         {
             var y = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
-            var s = y.ToString("yyyy-MM-dd");
+            var s = OrdersReceivedAtQueryRange.FormatWebDate(y);
             startDate = s;
             endDate = s;
         }
@@ -857,20 +863,13 @@ public sealed class OrdersController : BaseController
         if (useHistoryDefaults)
         {
             var (historyStart, historyEnd) = OrdersReceivedAtQueryRange.GetDefaultHistoryRange();
-            startDate = historyStart.ToString("yyyy-MM-dd");
-            endDate = historyEnd.ToString("yyyy-MM-dd");
+            startDate = OrdersReceivedAtQueryRange.FormatWebDate(historyStart);
+            endDate = OrdersReceivedAtQueryRange.FormatWebDate(historyEnd);
         }
         else
         {
             DefaultTodayIfNoDates(ref startDate, ref endDate);
         }
-    }
-
-    private static (DateTime? StartUtc, DateTime? EndUtc, DateOnly? StartDate, DateOnly? EndDate) ParseDateFilters(
-        string? startDate, string? endDate)
-    {
-        var (startUtc, endUtc) = OrdersReceivedAtQueryRange.FromWebQueryStrings(startDate, endDate, out var start, out var end);
-        return (startUtc, endUtc, start, end);
     }
 
     private static string NormalizeSortDirection(string? sortDirection) =>

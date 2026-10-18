@@ -15,7 +15,7 @@ const DEVICES_URL = "/print-bridge/devices/list";
 const JOBS_URL = "/print-bridge/print-jobs";
 const T0 = Date.parse("2026-10-01T08:49:30.000Z");
 const iso = (ms) => new Date(ms).toISOString();
-const OPTIONS = { timeZone: "Europe/Istanbul", dateStyle: "short", timeStyle: "medium" };
+const OPTIONS = { timeZone: "Europe/Istanbul", calendar: "gregory", dateStyle: "short", timeStyle: "medium" };
 const expected = (culture, ms) => new Intl.DateTimeFormat(culture, OPTIONS).format(new Date(ms));
 
 const MESSAGES = {
@@ -76,7 +76,7 @@ function el(id) {
 }
 
 /** One Devices page on a virtual clock. <clientOffsetMs> is the browser clock minus the server clock. */
-function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", visibility = "visible", timeZoneId = "Europe/Istanbul" } = {}) {
+function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", visibility = "visible", timeZoneId = "Europe/Istanbul", intl = Intl } = {}) {
   const clock = { now: Date.parse(initial.serverTimeUtc) + clientOffsetMs };
   class FakeDate extends Date {
     constructor(...args) { if (args.length === 0) super(clock.now); else super(...args); }
@@ -151,7 +151,7 @@ function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", vis
   };
 
   vm.runInNewContext(source, {
-    window, document, fetch, URLSearchParams, Intl, Date: FakeDate, AbortController,
+    window, document, fetch, URLSearchParams, Intl: intl, Date: FakeDate, AbortController,
     setTimeout: (fn, ms) => addTimer(fn, ms, false), clearTimeout: clearTimer,
     setInterval: (fn, ms) => addTimer(fn, ms, true), clearInterval: clearTimer,
     console
@@ -483,4 +483,22 @@ test("an unchanged snapshot does not rewrite the table", async () => {
   await p.respond(snapshot({ serverMs: T0 + 20_000 }));
 
   assert.equal(p.els.printBridgeDevicesPanel.writes, writes);
+});
+
+test("Arabic times use the Gregorian calendar, chosen explicitly rather than left to the browser's default (WAS-130)", () => {
+  const requested = [];
+  const intl = Object.assign(Object.create(Intl), {
+    DateTimeFormat: function (locales, options) {
+      requested.push({ locales, options });
+      return new Intl.DateTimeFormat(locales, options);
+    }
+  });
+  const p = page({ culture: "ar-SA", intl });
+
+  const shown = requested.filter(r => r.options && r.options.dateStyle);
+  assert.ok(shown.length > 0);
+  for (const r of shown) assert.equal(r.options.calendar, "gregory");
+  assert.ok(p.panel().includes(expected("ar-SA", T0)));
+  const hijri = new Intl.DateTimeFormat("ar-SA", Object.assign({}, OPTIONS, { calendar: "islamic-umalqura" })).format(new Date(T0));
+  assert.equal(p.panel().includes(hijri), false);
 });
