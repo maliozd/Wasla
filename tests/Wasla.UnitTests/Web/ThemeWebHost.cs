@@ -159,6 +159,7 @@ internal sealed class ThemeWebHost : IAsyncDisposable
         services.AddSingleton(Unused<IGuidedDemoService>.Create());
         services.AddSingleton(Unused<IValidator<UpdateTenantOrderSettingsCommand>>.Create());
         services.AddSingleton(Unused<IGuidedSetupCoordinator>.Create());
+        services.AddSingleton<IRestaurantLogoService, NoRestaurantLogo>();
         // The polling rates the page renders, as AddWaslaRealtime registers them for a Web without its internal listener.
         services.AddSingleton(Wasla.Web.Realtime.LiveScreenPolling.For(new Wasla.Infrastructure.Realtime.InternalRealtimeOptions()));
 
@@ -280,6 +281,23 @@ internal sealed class ThemeWebHost : IAsyncDisposable
             targetMethod?.Name == nameof(IOrderReadService.GetListAsync)
                 ? Task.FromResult(new OrderListResult { Items = [], TotalCount = 0, Page = (int)args![7]!, PageSize = (int)args[8]! })
                 : throw new NotSupportedException($"{nameof(IOrderReadService)}.{targetMethod?.Name} is not part of the theme tests.");
+    }
+
+    /// <summary>A tenant without a restaurant logo (the Live Screen shows its storefront icon).</summary>
+    public sealed class NoRestaurantLogo : IRestaurantLogoService
+    {
+        public Task<RestaurantLogoSummary?> GetCurrentAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<RestaurantLogoSummary?>(null);
+
+        public Task<RestaurantLogoContent?> GetAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<RestaurantLogoContent?>(null);
+
+        public Task<RestaurantLogoSaveResult> SaveAsync(Guid tenantId, byte[] content, CancellationToken ct) =>
+            throw new NotSupportedException("Saving a restaurant logo is not part of the theme tests.");
+
+        public Task<bool> SetBackgroundAsync(Guid tenantId, RestaurantLogoBackground background, CancellationToken ct) =>
+            throw new NotSupportedException("Styling a restaurant logo is not part of the theme tests.");
+
+        public Task<bool> RemoveAsync(Guid tenantId, CancellationToken ct) =>
+            throw new NotSupportedException("Removing a restaurant logo is not part of the theme tests.");
     }
 
     /// <summary>A service the served pages need in DI but never call.</summary>

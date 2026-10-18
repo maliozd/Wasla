@@ -282,7 +282,10 @@ public sealed class OrdersController : BaseController
 
     [HttpGet("live-display")]
     [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
-    public async Task<IActionResult> LiveDisplay([FromServices] IGuidedSetupCoordinator guidedSetup, CancellationToken ct = default)
+    public async Task<IActionResult> LiveDisplay(
+        [FromServices] IGuidedSetupCoordinator guidedSetup,
+        [FromServices] IRestaurantLogoService restaurantLogos,
+        CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
@@ -305,7 +308,25 @@ public sealed class OrdersController : BaseController
             vm.GuidedTraining = await guidedSetup.GetLiveScreenAsync(tenant.Id, userId, User, ct);
 
         ViewData["CustomerName"] = tenant.Name;
+        var logo = await ReadRestaurantLogoAsync(restaurantLogos, tenant.Id, ct);
+        ViewData["RestaurantLogoUrl"] = Url.RestaurantLogo(logo?.Version);
+        if (logo is not null)
+            ViewData["RestaurantLogoBackgroundClass"] = RestaurantLogoBackgrounds.CssClass(logo.Background);
         return View("LiveDisplay", vm);
+    }
+
+    // The logo is decoration: a failed read shows the storefront icon and never breaks the Live Screen.
+    private async Task<RestaurantLogoSummary?> ReadRestaurantLogoAsync(IRestaurantLogoService logos, Guid tenantId, CancellationToken ct)
+    {
+        try
+        {
+            return await logos.GetCurrentAsync(tenantId, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Could not read the restaurant logo for tenant {TenantId}; the Live Screen shows the default icon", tenantId);
+            return null;
+        }
     }
 
     /// <summary>

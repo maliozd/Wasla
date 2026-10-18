@@ -1,8 +1,14 @@
-﻿@using Microsoft.Extensions.Localization
+﻿@model Wasla.Web.Models.Settings.AccountSettingsViewModel
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Wasla.Application.Branding
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @using Wasla.Web.Models.Ui
+@using Wasla.Web.Ui
 @{
     ViewData["Title"] = L["Settings.AccountSettings.Title"];
+    var maxMegabytes = (RestaurantLogoImage.MaxBytes / (1024 * 1024)).ToString(CultureInfo.CurrentCulture);
+    var maxDimension = RestaurantLogoImage.MaxDimension.ToString(CultureInfo.CurrentCulture);
 }
 
 <div class="wasla-account-settings-page">
@@ -12,9 +18,142 @@
         Subtitle = L["Settings.AccountSettings.Subtitle"].Value
     })
 
-    <div class="card wasla-card">
+    <section class="card wasla-card wasla-restaurant-logo-settings" aria-labelledby="restaurantLogoTitle">
         <div class="card-body py-4">
-            <p class="text-muted mb-0">@L["Settings.AccountSettings.ComingSoon"]</p>
+            <h2 id="restaurantLogoTitle" class="h5 mb-1">@L["Settings.RestaurantLogo.Title"]</h2>
+            <p class="text-muted mb-4">@L["Settings.RestaurantLogo.Description"]</p>
+
+            <div class="wasla-restaurant-logo-settings__body">
+                <figure class="wasla-restaurant-logo-settings__preview mb-0">
+                    @* The storefront icon is what the Live Screen shows without a logo, or when the logo cannot be loaded. *@
+                    <span class="wasla-restaurant-logo-frame @(Model.HasRestaurantLogo ? "wasla-restaurant-logo-frame--logo" : "")" data-restaurant-logo-mark>
+                        @if (Model.HasRestaurantLogo)
+                        {
+                            <img class="wasla-restaurant-logo-frame__image" src="@Model.RestaurantLogoUrl" alt="@L["Settings.RestaurantLogo.CurrentAlt"]" data-restaurant-logo />
+                        }
+                        <i class="bi bi-shop" aria-hidden="true" data-restaurant-logo-fallback hidden="@(Model.HasRestaurantLogo ? "hidden" : null)"></i>
+                    </span>
+                    <figcaption class="small text-muted mt-2" data-logo-preview-caption>
+                        @(Model.HasRestaurantLogo ? L["Settings.RestaurantLogo.Current"] : L["Settings.RestaurantLogo.None"])
+                    </figcaption>
+                </figure>
+
+                <div class="wasla-restaurant-logo-settings__controls">
+                    <form method="post"
+                          asp-area="Tenant"
+                          asp-controller="AccountSettings"
+                          asp-action="UploadLogo"
+                          enctype="multipart/form-data"
+                          id="restaurantLogoUploadForm"
+                          data-max-bytes="@RestaurantLogoImage.MaxBytes"
+                          data-accepted-types="@string.Join(",", RestaurantLogoImage.ContentTypes)"
+                          data-message-too-large="@L["Settings.RestaurantLogo.Error.TooLarge", maxMegabytes]"
+                          data-message-unsupported="@L["Settings.RestaurantLogo.Error.UnsupportedFormat"]"
+                          data-message-required="@L["Settings.RestaurantLogo.Error.Required"]"
+                          data-message-preview="@L["Settings.RestaurantLogo.Preview"]"
+                          data-preview-alt="@L["Settings.RestaurantLogo.PreviewAlt"]">
+                        @Html.AntiForgeryToken()
+                        <label for="restaurantLogoFile" class="form-label">
+                            @(Model.HasRestaurantLogo ? L["Settings.RestaurantLogo.ChooseReplacement"] : L["Settings.RestaurantLogo.ChooseFile"])
+                        </label>
+                        <input type="file"
+                               class="form-control"
+                               id="restaurantLogoFile"
+                               name="logo"
+                               accept="@string.Join(",", RestaurantLogoImage.ContentTypes)"
+                               aria-describedby="restaurantLogoHelp restaurantLogoClientError" />
+                        <div id="restaurantLogoHelp" class="form-text">@L["Settings.RestaurantLogo.Requirements", maxMegabytes, maxDimension]</div>
+                        <div id="restaurantLogoClientError" class="invalid-feedback d-block" role="alert" hidden></div>
+                        <button type="submit" class="btn btn-primary mt-3" id="restaurantLogoSubmit">
+                            @(Model.HasRestaurantLogo ? L["Settings.RestaurantLogo.Replace"] : L["Settings.RestaurantLogo.Upload"])
+                        </button>
+                    </form>
+
+                    @if (Model.HasRestaurantLogo)
+                    {
+                        <form method="post"
+                              asp-area="Tenant"
+                              asp-controller="AccountSettings"
+                              asp-action="RemoveLogo"
+                              class="mt-3"
+                              id="restaurantLogoRemoveForm">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="bi bi-trash me-1" aria-hidden="true"></i>@L["Settings.RestaurantLogo.Remove"]
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            @if (Model.HasRestaurantLogo)
+            {
+                var selectedClass = RestaurantLogoBackgrounds.CssClass(Model.RestaurantLogoBackground);
+                <hr class="my-4" />
+                <form method="post"
+                      asp-area="Tenant"
+                      asp-controller="AccountSettings"
+                      asp-action="SetLogoBackground"
+                      id="restaurantLogoBackgroundForm"
+                      class="wasla-logo-background-settings"
+                      aria-labelledby="restaurantLogoBackgroundTitle">
+                    @Html.AntiForgeryToken()
+                    <h3 id="restaurantLogoBackgroundTitle" class="h6 mb-1">@L["Settings.RestaurantLogo.Background.Title"]</h3>
+                    <p class="text-muted small mb-3">@L["Settings.RestaurantLogo.Background.Description"]</p>
+
+                    @* The Live Screen header in each theme, with the same markup and classes; the page script swaps the
+                       wasla-logo-bg--* class on both as soon as another option is picked. *@
+                    <div class="wasla-logo-theme-previews mb-3" data-logo-background-previews>
+                        @foreach (var previewTheme in new[] { "light", "dark" })
+                        {
+                            <figure class="wasla-logo-theme-preview">
+                                <div class="wasla-logo-theme-preview__header" data-bs-theme="@previewTheme" data-logo-preview-theme="@previewTheme">
+                                    <span class="wasla-live-display-identity__mark wasla-live-display-identity__mark--logo @selectedClass" aria-hidden="true" data-restaurant-logo-mark data-logo-background-target>
+                                        <img class="wasla-live-display-identity__logo" src="@Model.RestaurantLogoUrl" alt="" width="48" height="48" data-restaurant-logo />
+                                        <i class="bi bi-shop" data-restaurant-logo-fallback hidden></i>
+                                    </span>
+                                    <span class="wasla-logo-theme-preview__name">@Model.RestaurantName</span>
+                                </div>
+                                <figcaption class="small text-muted mt-1">
+                                    @(previewTheme == "light" ? L["Settings.RestaurantLogo.Background.PreviewLight"] : L["Settings.RestaurantLogo.Background.PreviewDark"])
+                                </figcaption>
+                            </figure>
+                        }
+                    </div>
+
+                    <fieldset class="wasla-logo-background-options">
+                        <legend class="visually-hidden">@L["Settings.RestaurantLogo.Background.Title"]</legend>
+                        @foreach (var option in RestaurantLogoBackgrounds.All)
+                        {
+                            var id = "restaurantLogoBackground-" + option.Token;
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="background"
+                                       id="@id"
+                                       value="@option.Token"
+                                       aria-describedby="@(id)-description"
+                                       checked="@(option.Value == Model.RestaurantLogoBackground)" />
+                                <label class="form-check-label fw-semibold" for="@id">
+                                    @L[option.LabelKey]
+                                    @if (option.Recommended)
+                                    {
+                                        <span class="badge text-bg-success ms-1">@L["Settings.RestaurantLogo.Background.Recommended"]</span>
+                                    }
+                                </label>
+                                <div id="@(id)-description" class="form-text mt-0">@L[option.DescriptionKey]</div>
+                            </div>
+                        }
+                    </fieldset>
+
+                    <button type="submit" class="btn btn-primary mt-2">@L["Settings.RestaurantLogo.Background.Save"]</button>
+                </form>
+            }
         </div>
-    </div>
+    </section>
 </div>
+
+@section Scripts {
+    <script src="~/js/restaurant-logo.js" asp-append-version="true"></script>
+    <script src="~/js/settings/restaurant-logo-settings-page.js" asp-append-version="true"></script>
+}

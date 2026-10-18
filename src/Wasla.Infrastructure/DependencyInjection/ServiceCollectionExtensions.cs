@@ -134,6 +134,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrderSyncSettingsService, OrderSyncSettingsService>();
         services.AddScoped<ITenantOrderSettingsService, TenantOrderSettingsService>();
         services.AddScoped<IReceiptTemplateSettingsService, ReceiptTemplateSettingsService>();
+        services.AddScoped<IRestaurantLogoService, RestaurantLogoService>();
         services.AddScoped<IOrderAutoApproveService, OrderAutoApproveService>();
         services.AddScoped<IOrderReceiptCreationService, OrderReceiptCreationService>();
         services.AddScoped<IReceiptPrintJobService, ReceiptPrintJobService>();
