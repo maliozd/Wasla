@@ -555,8 +555,9 @@ function attachBrowser(O, global, api) {
   function ensureDateFormatters() {
     if (timeFormat) return;
     const zone = timeZone();
-    timeFormat = new Intl.DateTimeFormat(culture(), { timeZone: zone, timeStyle: "short" });
-    dateTimeFormat = new Intl.DateTimeFormat(culture(), { timeZone: zone, dateStyle: "short", timeStyle: "short" });
+    // Gregorian in every language: ar-SA would otherwise default to the Umm al-Qura calendar.
+    timeFormat = new Intl.DateTimeFormat(culture(), { timeZone: zone, calendar: "gregory", timeStyle: "short" });
+    dateTimeFormat = new Intl.DateTimeFormat(culture(), { timeZone: zone, calendar: "gregory", dateStyle: "short", timeStyle: "short" });
     dayFormat = new Intl.DateTimeFormat("en-CA", {
       timeZone: zone,
       year: "numeric",

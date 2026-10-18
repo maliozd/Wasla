@@ -255,7 +255,7 @@
             pollingIntervalMs: @LivePolling.IntervalMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
             // Lower while connected only when this Web receives Worker and Api changes (WAS-103).
             connectedPollingIntervalMs: @LivePolling.ConnectedIntervalMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            todayYmd: "@today.ToString("yyyy-MM-dd")",
+            todayYmd: "@Wasla.Application.Orders.OrdersReceivedAtQueryRange.FormatWebDate(today)",
             liveDisplayPageSize: 100,
             defaultFoodImage: "/images/demo-food/chicken-rice-01.svg",
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>

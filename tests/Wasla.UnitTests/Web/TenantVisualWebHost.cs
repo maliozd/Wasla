@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -28,6 +27,7 @@ using Wasla.UnitTests.Admin;
 using Wasla.UnitTests.Platform;
 using Wasla.Web;
 using Wasla.Web.GuidedSetup;
+using Wasla.Web.Localization;
 using Wasla.Web.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
@@ -138,10 +138,8 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         services.Configure<RequestLocalizationOptions>(options =>
         {
-            var supported = new[] { "tr-TR", "en-US", "ar-SA", "ru-RU" }.Select(CultureInfo.GetCultureInfo).ToList();
-            options.DefaultRequestCulture = new RequestCulture("tr-TR");
-            options.SupportedCultures = supported;
-            options.SupportedUICultures = supported;
+            // The Web application's cultures (Gregorian in every language), chosen by the culture cookie only.
+            WaslaRequestLocalization.Configure(options);
             options.RequestCultureProviders = new List<IRequestCultureProvider> { new CookieRequestCultureProvider() };
         });
         services.AddDataProtection().UseEphemeralDataProtectionProvider();

@@ -62,7 +62,10 @@
     var day = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" });
     var server = new Date(serverTimeUtc);
     var sameDay = !isNaN(server.getTime()) && day.format(at) === day.format(server);
-    var options = sameDay ? { timeZone: zone, timeStyle: "short" } : { timeZone: zone, dateStyle: "short", timeStyle: "short" };
+    // Gregorian in every language: ar-SA would otherwise default to the Umm al-Qura calendar.
+    var options = sameDay
+      ? { timeZone: zone, calendar: "gregory", timeStyle: "short" }
+      : { timeZone: zone, calendar: "gregory", dateStyle: "short", timeStyle: "short" };
     try {
       return new Intl.DateTimeFormat(culture || "tr-TR", options).format(at);
     } catch (e) {

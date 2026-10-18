@@ -208,3 +208,34 @@ test("the script only displays the server's answer: no request, no realtime tran
   for (const copy of ["Canlı", "Connection issue", "Bağlantı", "Sync off", "Not connected", "مباشر", "В эфире"])
     assert.equal(source.includes(copy), false, copy);
 });
+
+test("sync times use the Gregorian calendar in every culture, chosen explicitly for Arabic (WAS-130)", () => {
+  const original = Intl.DateTimeFormat;
+  const requested = [];
+  // Recent ICU data already defaults ar-SA to Gregorian, older data to Umm al-Qura: the page must not depend on either.
+  Intl.DateTimeFormat = function (locales, options) {
+    requested.push({ locales: locales, options: options });
+    return new original(locales, options);
+  };
+  const shownByCulture = {};
+  try {
+    for (const culture of ["tr-TR", "en-US", "ar-SA", "ru-RU"]) {
+      status.formatSyncTime("2026-10-13T05:00:00Z", SERVER_NOW, culture, "Europe/Istanbul");
+      shownByCulture[culture] = status.formatSyncTime("2026-10-12T05:00:00Z", SERVER_NOW, culture, "Europe/Istanbul");
+    }
+  } finally {
+    Intl.DateTimeFormat = original;
+  }
+
+  const shown = requested.filter(r => r.options && r.options.timeStyle);
+  assert.equal(shown.length, 8);
+  for (const r of shown)
+    assert.equal(r.options.calendar, "gregory", String(r.locales));
+
+  const at = new Date("2026-10-12T05:00:00Z");
+  const options = { timeZone: "Europe/Istanbul", dateStyle: "short", timeStyle: "short" };
+  assert.equal(shownByCulture["ar-SA"], new Intl.DateTimeFormat("ar-SA", Object.assign({ calendar: "gregory" }, options)).format(at));
+  assert.notEqual(shownByCulture["ar-SA"], new Intl.DateTimeFormat("ar-SA", Object.assign({ calendar: "islamic-umalqura" }, options)).format(at));
+  for (const culture of ["tr-TR", "en-US", "ru-RU"])
+    assert.match(shownByCulture[culture], /2026|\b26\b/, culture);
+});

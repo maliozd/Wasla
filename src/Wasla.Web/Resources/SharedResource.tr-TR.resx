@@ -1788,6 +1788,9 @@
   <data name="Orders.InvalidEndDate" xml:space="preserve">
     <value>Bitiş tarihi geçersiz.</value>
   </data>
+  <data name="Orders.InvalidDateRange" xml:space="preserve">
+    <value>Bitiş tarihi başlangıç tarihinden önce olamaz.</value>
+  </data>
   <data name="Orders.AutoApprove" xml:space="preserve">
     <value>Otomatik Onay</value>
   </data>

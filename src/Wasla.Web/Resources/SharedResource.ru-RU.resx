@@ -1788,6 +1788,9 @@
   <data name="Orders.InvalidEndDate" xml:space="preserve">
     <value>Неверная дата окончания.</value>
   </data>
+  <data name="Orders.InvalidDateRange" xml:space="preserve">
+    <value>Дата окончания не может быть раньше даты начала.</value>
+  </data>
   <data name="Orders.AutoApprove" xml:space="preserve">
     <value>Автоматическое одобрение</value>
   </data>

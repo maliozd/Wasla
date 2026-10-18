@@ -28,25 +28,7 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
-builder.Services.Configure<RequestLocalizationOptions>(options =>
-{
-    var supported = SupportedCultures.AllCultureInfos;
-
-    options.DefaultRequestCulture = new RequestCulture(SupportedCultures.Default);
-    options.SupportedCultures = supported.ToList();
-    options.SupportedUICultures = supported.ToList();
-
-    // Provider priority:
-    // 1) Cookie
-    // 2) Accept-Language
-    // 3) Default fallback
-
-    options.RequestCultureProviders = new List<IRequestCultureProvider>
-    {
-        new CookieRequestCultureProvider(),
-        new AcceptLanguageHeaderRequestCultureProvider()
-    };
-});
+builder.Services.Configure<RequestLocalizationOptions>(WaslaRequestLocalization.Configure);
 
 var dataProtection = builder.Services.AddDataProtection()
     .SetApplicationName("Wasla");
