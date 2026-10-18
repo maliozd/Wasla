@@ -157,6 +157,61 @@ public sealed partial class OrdersDateFilterTests
         Assert.Null(host.ServerErrors);
     }
 
+    /// <summary>
+    /// The only upper limit is what the query can represent: an end day is used up to its next Turkey-local midnight in
+    /// UTC, so 9999-12-30 is the last end day and 9999-12-31 the last start day. There is no product ceiling below that.
+    /// </summary>
+    [Fact]
+    public void LatestDates_AreLimitedOnlyByTheRepresentableEndBoundary()
+    {
+        var lastEnd = OrdersReceivedAtQueryRange.ParseWebQueryStrings(null, "9999-12-30");
+        Assert.True(lastEnd.IsValid);
+        Assert.Equal(new DateTime(9999, 12, 30, 21, 0, 0, DateTimeKind.Utc), lastEnd.UtcEndExclusive);
+
+        var lastStart = OrdersReceivedAtQueryRange.ParseWebQueryStrings("9999-12-31", null);
+        Assert.True(lastStart.IsValid);
+        Assert.Equal(new DateTime(9999, 12, 30, 21, 0, 0, DateTimeKind.Utc), lastStart.UtcStartInclusive);
+
+        var noNextDay = OrdersReceivedAtQueryRange.ParseWebQueryStrings("2025-03-10", "9999-12-31");
+        Assert.True(noNextDay.EndInvalid);
+        Assert.Null(noNextDay.EndDate);
+        Assert.Null(noNextDay.UtcStartInclusive);
+
+        var afterTheOldCeiling = OrdersReceivedAtQueryRange.ParseWebQueryStrings("2100-01-01", "2100-01-01");
+        Assert.True(afterTheOldCeiling.IsValid);
+        Assert.Equal(new DateTime(2099, 12, 31, 21, 0, 0, DateTimeKind.Utc), afterTheOldCeiling.UtcStartInclusive);
+        Assert.Equal(new DateTime(2100, 1, 1, 21, 0, 0, DateTimeKind.Utc), afterTheOldCeiling.UtcEndExclusive);
+
+        Assert.True(OrdersReceivedAtQueryRange.ParseWebQueryStrings("1999-12-31", null).StartInvalid);
+    }
+
+    [Fact]
+    public async Task LatestRepresentableDates_FilterNormally_InEveryCulture()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var host = await StartAsync();
+
+        foreach (var name in Cultures)
+        {
+            using var client = await SignedInClientAsync(host, name, ct);
+
+            var openEnded = await PageAsync(client, host, "/orders?startDate=2025-03-10&endDate=9999-12-30", ct);
+            Assert.Equal("2025-03-10", InputValue(openEnded, "ordersStartDate"));
+            Assert.Equal("9999-12-30", InputValue(openEnded, "ordersEndDate"));
+            AssertOrders(openEnded, name, [First, Last, After]);
+            Assert.Contains(CurrentOrder, openEnded, StringComparison.Ordinal);
+            AssertNoDateErrors(openEnded, name);
+
+            var lastDay = await PageAsync(client, host, "/orders?startDate=9999-12-31", ct);
+            Assert.Equal("9999-12-31", InputValue(lastDay, "ordersStartDate"));
+            AssertOrders(lastDay, name, []);
+            Assert.DoesNotContain(CurrentOrder, lastDay, StringComparison.Ordinal);
+            AssertNoDateErrors(lastDay, name);
+        }
+
+        Assert.Null(host.ServerErrors);
+    }
+
     [Fact]
     public async Task InvertedRange_ShowsTheLocalizedError_KeepsBothValues_AndListsNothing()
     {
