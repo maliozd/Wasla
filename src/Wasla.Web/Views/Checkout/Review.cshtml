@@ -12,7 +12,7 @@
             <div class="col-xl-9">
                 <div class="text-center mb-4">
                     <h1 class="h3 fw-bold mb-2">@L["Checkout.ReviewTitle"]</h1>
-                    <p class="text-secondary mb-0">@L["Checkout.ReviewSubtitle"]</p>
+                    <p class="text-secondary mb-0">@L[Model.IsPaymentSimulatorAvailable ? "Checkout.ReviewSubtitle" : "Checkout.ReviewSubtitleAwaitingPayment"]</p>
                 </div>
 
                 <div class="card border-0 shadow-sm wasla-signup-card mb-3">

@@ -13,4 +13,7 @@ public sealed class CheckoutResultViewModel
     public PendingRegistrationStatus Status { get; set; }
 
     public string? PanelLoginUrl { get; set; }
+
+    /// <summary>True only where the payment simulator exists (<see cref="Security.CheckoutPaymentSimulator"/>).</summary>
+    public bool IsPaymentSimulatorAvailable { get; set; }
 }

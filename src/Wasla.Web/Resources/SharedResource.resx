@@ -222,6 +222,9 @@
   <data name="Signup.BillingNote" xml:space="preserve">
     <value>Ödeme entegrasyonu henüz aktif değil. Bir sonraki ekranda ödeme akışı simüle edilecek.</value>
   </data>
+  <data name="Signup.BillingNoteAwaitingPayment" xml:space="preserve">
+    <value>Çevrim içi kayıt sırasında ödeme alınmaz. Gönderdikten sonra kaydınız ödeme bekler; restoran paneliniz yalnızca ödeme alındıktan sonra hazırlanır.</value>
+  </data>
   <data name="Signup.BusinessName" xml:space="preserve">
     <value>İşletme / restoran adı</value>
   </data>
@@ -353,6 +356,9 @@
   </data>
   <data name="Signup.PendingSubtitle" xml:space="preserve">
     <value>Bilgilerinizi aldık. Devam etmek için ödeme adımını tamamlayın.</value>
+  </data>
+  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve">
+    <value>Bilgilerinizi aldık. Kaydınız ödeme bekliyor.</value>
   </data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve">
     <value>Ödeme tamamlandıktan sonra restoran paneliniz hazırlanır.</value>
@@ -535,6 +541,9 @@
   <data name="Checkout.ReviewSubtitle" xml:space="preserve">
     <value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu test ortamında ödeme sonucu simüle edilecektir.</value>
   </data>
+  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve">
+    <value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu sayfada ödeme alınmaz; kaydınız ödeme alınana kadar beklemede kalır.</value>
+  </data>
   <data name="Checkout.SectionPackageInfo" xml:space="preserve">
     <value>Paket bilgileri</value>
   </data>
@@ -600,6 +609,15 @@
   </data>
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve">
     <value>Restoran paneliniz oluşturulmadı. İsterseniz ödeme adımını tekrar deneyebilirsiniz.</value>
+  </data>
+  <data name="Checkout.StatusPaymentReceived" xml:space="preserve">
+    <value>Bu kayıt için ödeme alındı.</value>
+  </data>
+  <data name="Checkout.PaymentNotCompletedTitle" xml:space="preserve">
+    <value>Ödeme tamamlanmadı</value>
+  </data>
+  <data name="Checkout.PaymentNotCompletedMessage" xml:space="preserve">
+    <value>Bu kayıt için ödeme tamamlanmadı, bu nedenle restoran paneliniz oluşturulmadı.</value>
   </data>
   <data name="Checkout.CancelledTitle" xml:space="preserve">
     <value>Kayıt iptal edildi</value>

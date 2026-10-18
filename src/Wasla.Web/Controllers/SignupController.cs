@@ -271,6 +271,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
     private async Task PopulateReferenceDataAsync(SignupViewModel model, CancellationToken ct)
     {
         model.MarketingBaseDomain = _options.MarketingBaseDomain;
+        model.IsPaymentSimulatorAvailable = CheckoutPaymentSimulator.IsAvailable(_environment);
         model.PlanOptions = BuildPlanOptions(model.PlanCode);
         model.IsContactSalesPlan = _planCatalog.FindByCode(model.PlanCode)?.IsContactSales ?? false;
         model.BusinessTypeOptions = await _referenceData.GetActiveBusinessTypesAsync(ct);

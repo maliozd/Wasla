@@ -3306,6 +3306,9 @@
   <data name="Signup.BillingNote" xml:space="preserve">
     <value>Интеграция платежей еще не активна. Поток платежей будет смоделирован на следующем экране.</value>
   </data>
+  <data name="Signup.BillingNoteAwaitingPayment" xml:space="preserve">
+    <value>Оплата не принимается при онлайн-регистрации. После отправки регистрация ожидает оплаты, а панель ресторана готовится только после получения оплаты.</value>
+  </data>
   <data name="Signup.BusinessName" xml:space="preserve">
     <value>Название компании/ресторана</value>
   </data>
@@ -3447,6 +3450,9 @@
   <data name="Signup.PendingSubtitle" xml:space="preserve">
     <value>Мы получили ваши данные. Завершите шаг оплаты, чтобы продолжить.</value>
   </data>
+  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve">
+    <value>Мы получили ваши данные. Ваша регистрация ожидает оплаты.</value>
+  </data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve">
     <value>После оплаты панно вашего ресторана будет готово.</value>
   </data>
@@ -3564,6 +3570,9 @@
   <data name="Checkout.ReviewSubtitle" xml:space="preserve">
     <value>Просмотрите выбранный пакет и информацию о ресторане. В этой тестовой среде будет смоделирован результат платежа.</value>
   </data>
+  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve">
+    <value>Проверьте выбранный пакет и данные ресторана. На этой странице оплата не принимается; регистрация остаётся в ожидании, пока оплата не будет получена.</value>
+  </data>
   <data name="Checkout.SimulationNotice" xml:space="preserve">
     <value>Интеграция реальных платежей еще не активна. На этом экране моделируется результат платежа.</value>
   </data>
@@ -3642,6 +3651,12 @@
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve">
     <value>Панель ресторана не создана. При желании вы можете попробовать выполнить платеж еще раз.</value>
   </data>
+  <data name="Checkout.PaymentNotCompletedTitle" xml:space="preserve">
+    <value>Оплата не завершена</value>
+  </data>
+  <data name="Checkout.PaymentNotCompletedMessage" xml:space="preserve">
+    <value>Оплата по этой регистрации не завершена, поэтому панель ресторана не создана.</value>
+  </data>
   <data name="Checkout.CancelledTitle" xml:space="preserve">
     <value>Регистрация отменена</value>
   </data>
@@ -3656,6 +3671,9 @@
   </data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve">
     <value>Платеж уже смоделирован как успешный для этой регистрации.</value>
+  </data>
+  <data name="Checkout.StatusPaymentReceived" xml:space="preserve">
+    <value>Оплата по этой регистрации получена.</value>
   </data>
   <data name="Checkout.StatusCancelled" xml:space="preserve">
     <value>Данная регистрация отменена.</value>

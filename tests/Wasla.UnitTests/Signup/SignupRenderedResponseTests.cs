@@ -98,6 +98,150 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
         Assert.DoesNotContain(note, strangerPage.Body);
     }
 
+    public static TheoryData<string> Cultures => new() { "tr-TR", "en-US", "ar-SA", "ru-RU" };
+
+    // Copy that says payment is or was simulated. Outside Development no signup or checkout page may show it.
+    private static readonly string[] SimulatedPaymentKeys =
+    [
+        "Signup.BillingNote", "Signup.PendingSubtitle", "Signup.PendingTestNote", "Checkout.ReviewSubtitle",
+        "Checkout.SimulateSuccess", "Checkout.SimulateFailed", "Checkout.StatusAlreadyPaid", "Checkout.FailedTitle",
+        "Checkout.FailedMessage", "Checkout.FailedNoWorkspace"
+    ];
+
+    // What the same pages say outside Development: the registration waits for payment.
+    private static readonly string[] AwaitingPaymentKeys =
+    [
+        "Signup.BillingNoteAwaitingPayment", "Signup.PendingSubtitleAwaitingPayment",
+        "Checkout.ReviewSubtitleAwaitingPayment", "Checkout.StatusPaymentReceived",
+        "Checkout.PaymentNotCompletedTitle", "Checkout.PaymentNotCompletedMessage"
+    ];
+
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task PaymentCopy_InStaging_DescribesAwaitingPayment_AndNeverASimulator(string culture)
+    {
+        var pages = await RenderPaymentPagesAsync(_hosts.Staging, culture);
+
+        foreach (var (name, page, expectedKey) in new[]
+                 {
+                     ("signup form", pages.SignupForm, "Signup.BillingNoteAwaitingPayment"),
+                     ("pending", pages.Pending, "Signup.PendingSubtitleAwaitingPayment"),
+                     ("review", pages.Review, "Checkout.ReviewSubtitleAwaitingPayment"),
+                     ("review, paid", pages.PaidReview, "Checkout.StatusPaymentReceived"),
+                     ("failed", pages.Failed, "Checkout.PaymentNotCompletedMessage")
+                 })
+        {
+            AssertHtml(page);
+            Assert.True(page.Body.Contains(Text(expectedKey, culture), StringComparison.Ordinal), $"{name}: {expectedKey} missing");
+            foreach (var key in SimulatedPaymentKeys)
+                Assert.False(page.Body.Contains(Text(key, culture), StringComparison.Ordinal), $"{name}: shows {key}");
+            Assert.DoesNotContain("/checkout/simulate-", page.Body);
+        }
+
+        Assert.Contains(Text("Checkout.PaymentNotCompletedTitle", culture), pages.Failed.Body);
+        Assert.Contains($"action=\"/checkout/cancel/{pages.AwaitingPaymentId}\"", pages.Review.Body);
+    }
+
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task PaymentCopy_InDevelopment_KeepsTheSimulatorExplanationAndControls(string culture)
+    {
+        var pages = await RenderPaymentPagesAsync(_hosts.Development, culture);
+
+        foreach (var (name, page, expectedKeys) in new[]
+                 {
+                     ("signup form", pages.SignupForm, new[] { "Signup.BillingNote" }),
+                     ("pending", pages.Pending, new[] { "Signup.PendingSubtitle", "Signup.PendingTestNote" }),
+                     ("review", pages.Review, new[] { "Checkout.ReviewSubtitle", "Checkout.SimulateSuccess", "Checkout.SimulateFailed" }),
+                     ("review, paid", pages.PaidReview, new[] { "Checkout.StatusAlreadyPaid" }),
+                     ("failed", pages.Failed, new[] { "Checkout.FailedTitle", "Checkout.FailedMessage", "Checkout.FailedNoWorkspace" })
+                 })
+        {
+            AssertHtml(page);
+            foreach (var key in expectedKeys)
+                Assert.True(page.Body.Contains(Text(key, culture), StringComparison.Ordinal), $"{name}: {key} missing");
+            foreach (var key in AwaitingPaymentKeys)
+                Assert.False(page.Body.Contains(Text(key, culture), StringComparison.Ordinal), $"{name}: shows {key}");
+        }
+
+        Assert.Contains($"action=\"/checkout/simulate-success/{pages.AwaitingPaymentId}\"", pages.Review.Body);
+        Assert.Contains($"action=\"/checkout/simulate-failed/{pages.AwaitingPaymentId}\"", pages.Review.Body);
+    }
+
+    // The applicant holds valid proof and a valid antiforgery token, so only the environment refuses the simulator.
+    [Theory]
+    [InlineData("simulate-success")]
+    [InlineData("simulate-failed")]
+    public async Task PaymentSimulator_InStaging_IsNotFound_ForTheApplicant_AndChangesNothing(string action)
+    {
+        var applicant = await _hosts.SeedAsync(PendingRegistrationStatus.AwaitingPayment);
+        using var owner = _hosts.OwnerBrowser(_hosts.Staging, applicant);
+        var review = await owner.GetAsync($"/checkout/review/{applicant.Id}");
+
+        var response = await owner.PostFormAsync(
+            $"/checkout/{action}/{applicant.Id}",
+            [new("__RequestVerificationToken", TestBrowser.AntiforgeryTokenIn(review.Body))]);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.Status);
+        var stored = await _hosts.ReloadAsync(applicant.Id);
+        Assert.Equal(PendingRegistrationStatus.AwaitingPayment, stored.Status);
+        Assert.Null(stored.PaymentSucceededAtUtc);
+        Assert.Null(stored.PaymentFailedAtUtc);
+        Assert.Null(stored.SimulatedPaymentReference);
+    }
+
+    // The copy follows the host environment; a posted form field cannot switch it to the simulator text.
+    [Fact]
+    public async Task SignupForm_InStaging_IgnoresAPostedSimulatorFlag()
+    {
+        using var browser = _hosts.Staging.NewBrowser();
+        var token = await browser.GetAntiforgeryTokenAsync("/signup");
+
+        var page = await browser.PostFormAsync("/signup",
+        [
+            new("__RequestVerificationToken", token),
+            new("IsPaymentSimulatorAvailable", "true")
+        ]);
+
+        AssertHtml(page);
+        Assert.Contains(Text("Signup.BillingNoteAwaitingPayment", "tr-TR"), page.Body);
+        Assert.DoesNotContain(Text("Signup.BillingNote", "tr-TR"), page.Body);
+    }
+
+    private async Task<PaymentPages> RenderPaymentPagesAsync(SignupWebHost host, string culture)
+    {
+        var awaiting = await _hosts.SeedAsync(PendingRegistrationStatus.AwaitingPayment);
+        var paid = await _hosts.SeedAsync(PendingRegistrationStatus.PaymentSucceeded);
+        var failed = await _hosts.SeedAsync(PendingRegistrationStatus.PaymentFailed);
+        using var awaitingOwner = _hosts.OwnerBrowser(host, awaiting);
+        using var paidOwner = _hosts.OwnerBrowser(host, paid);
+        using var stranger = host.NewBrowser();
+        var query = $"?culture={culture}&ui-culture={culture}";
+
+        return new PaymentPages(
+            awaiting.Id,
+            await stranger.GetAsync($"/signup{query}"),
+            await awaitingOwner.GetAsync($"/signup/pending/{awaiting.Id}{query}"),
+            await awaitingOwner.GetAsync($"/checkout/review/{awaiting.Id}{query}"),
+            await paidOwner.GetAsync($"/checkout/review/{paid.Id}{query}"),
+            await stranger.GetAsync($"/checkout/failed/{failed.Id}{query}"));
+    }
+
+    private sealed record PaymentPages(
+        Guid AwaitingPaymentId,
+        TestResponse SignupForm,
+        TestResponse Pending,
+        TestResponse Review,
+        TestResponse PaidReview,
+        TestResponse Failed);
+
+    private static readonly System.Resources.ResourceManager WebResources =
+        new("Wasla.Web.Resources.SharedResource", typeof(Wasla.Web.SharedResource).Assembly);
+
+    private static string Text(string key, string culture) =>
+        Html(WebResources.GetString(key, System.Globalization.CultureInfo.GetCultureInfo(culture))
+             ?? throw new InvalidOperationException($"Missing resource {key}"));
+
     [Theory]
     [InlineData(PendingRegistrationStatus.AwaitingPayment)]
     [InlineData(PendingRegistrationStatus.PaymentFailed)]
@@ -397,13 +541,15 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
         ];
     }
 
-    /// <summary>A Production and a Development host over one isolated CentralDb and key ring.</summary>
+    /// <summary>A Production, a Staging and a Development host over one isolated CentralDb and key ring.</summary>
     public sealed class Hosts : IAsyncLifetime
     {
         private readonly SqliteConnection _connection = new("Data Source=:memory:");
         private readonly string _keyRing = Directory.CreateTempSubdirectory("wasla-signup-keys-").FullName;
 
         internal SignupWebHost Production { get; private set; } = null!;
+
+        internal SignupWebHost Staging { get; private set; } = null!;
 
         internal SignupWebHost Development { get; private set; } = null!;
 
@@ -412,12 +558,14 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
             _connection.Open();
             await SignupWebHost.CreateCentralDbAsync(_connection);
             Production = await SignupWebHost.StartAsync(_connection, _keyRing, Environments.Production);
+            Staging = await SignupWebHost.StartAsync(_connection, _keyRing, Environments.Staging);
             Development = await SignupWebHost.StartAsync(_connection, _keyRing, Environments.Development);
         }
 
         public async ValueTask DisposeAsync()
         {
             await Production.DisposeAsync();
+            await Staging.DisposeAsync();
             await Development.DisposeAsync();
             _connection.Dispose();
             try { Directory.Delete(_keyRing, recursive: true); } catch (IOException) { }

@@ -49,6 +49,12 @@ public sealed class SignupPendingViewModel
     public bool ShowPrivateDetails { get; set; }
 
     /// <summary>
+    /// True only where the payment simulator exists (<see cref="Security.CheckoutPaymentSimulator"/>). Elsewhere
+    /// the page describes the registration as awaiting payment.
+    /// </summary>
+    public bool IsPaymentSimulatorAvailable { get; set; }
+
+    /// <summary>
     /// True only in Development, where checkout offers the payment simulator. Elsewhere the page must not
     /// suggest that payment can be simulated.
     /// </summary>

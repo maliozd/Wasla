@@ -1,6 +1,7 @@
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Domain.Enums;
 using Wasla.Web.Routing;
+using Wasla.Web.Security;
 
 namespace Wasla.Web.Models.Signup;
 
@@ -20,6 +21,7 @@ public static class SignupPendingViewModelMapper
         bool showCheckoutAction = false)
     {
         var hasPrimaryDomain = !string.IsNullOrWhiteSpace(summary.PrimaryDomain);
+        var isPaymentSimulatorAvailable = CheckoutPaymentSimulator.IsAvailable(environment);
 
         var model = new SignupPendingViewModel
         {
@@ -36,6 +38,7 @@ public static class SignupPendingViewModelMapper
                     summary.PrimaryDomain)
                 : null,
             Status = summary.Status,
+            IsPaymentSimulatorAvailable = isPaymentSimulatorAvailable,
             PanelLoginUrl = summary.Status == PendingRegistrationStatus.Provisioned && hasPrimaryDomain
                 ? TenantWelcomeUrlBuilder.BuildLoginUrl(request, environment, summary.PrimaryDomain)
                 : null
@@ -46,7 +49,7 @@ public static class SignupPendingViewModelMapper
 
         model.ShowPrivateDetails = true;
         model.ShowCheckoutAction = showCheckoutAction;
-        model.ShowPaymentSimulatorNote = showCheckoutAction && environment.IsDevelopment();
+        model.ShowPaymentSimulatorNote = showCheckoutAction && isPaymentSimulatorAvailable;
         model.BusinessName = summary.BusinessName;
         model.PlanCode = summary.PlanCode;
         model.PlanDisplayName = planDisplayName;
