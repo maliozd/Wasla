@@ -92,10 +92,9 @@ public static class OrdersReceivedAtQueryRange
     /// </summary>
     public const string WebDateFormat = "yyyy-MM-dd";
 
-    // Accepted filter dates. Hijri years (14xx) cannot pass for Gregorian ones, and the end bound's next local midnight
-    // stays representable.
+    // No order has an order time before 2000 (OrderSyncService.PlausibleProviderTime), and Hijri years (14xx) cannot pass
+    // for Gregorian ones.
     private static readonly DateOnly MinWebDate = new(2000, 1, 1);
-    private static readonly DateOnly MaxWebDate = new(2099, 12, 31);
 
     public static string FormatWebDate(DateOnly date) => date.ToString(WebDateFormat, CultureInfo.InvariantCulture);
 
@@ -105,8 +104,23 @@ public static class OrdersReceivedAtQueryRange
     /// </summary>
     public static bool TryParseWebDate(string? value, out DateOnly date) =>
         DateOnly.TryParseExact(value, WebDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out date)
-        && date >= MinWebDate
-        && date <= MaxWebDate;
+        && date >= MinWebDate;
+
+    /// <summary>
+    /// An end day is queried up to its next local midnight, converted to UTC. That midnight must exist (9999-12-31 has no
+    /// next day) and its UTC instant must be representable, which a zone behind UTC could push past
+    /// <see cref="DateTime.MaxValue"/>. A start day's midnight always converts: dates start at 2000, and a zone behind
+    /// UTC moves 9999-12-31 00:00 by at most a few hours.
+    /// </summary>
+    private static bool HasRepresentableEndBoundary(DateOnly end, TimeZoneInfo tz)
+    {
+        if (end == DateOnly.MaxValue)
+            return false;
+
+        var nextMidnight = end.AddDays(1).ToDateTime(TimeOnly.MinValue);
+        var offset = tz.GetUtcOffset(nextMidnight);
+        return offset >= TimeSpan.Zero || DateTime.MaxValue - nextMidnight >= offset.Negate();
+    }
 
     /// <summary>
     /// Parses the web filter's optional start and end dates. A missing value leaves that side open; a value that is not a
@@ -118,7 +132,10 @@ public static class OrdersReceivedAtQueryRange
         var startSupplied = !string.IsNullOrWhiteSpace(startDate);
         var endSupplied = !string.IsNullOrWhiteSpace(endDate);
         DateOnly? start = startSupplied && TryParseWebDate(startDate, out var s) ? s : null;
-        DateOnly? end = endSupplied && TryParseWebDate(endDate, out var e) ? e : null;
+        DateOnly? end = endSupplied && TryParseWebDate(endDate, out var e)
+                        && HasRepresentableEndBoundary(e, TimeZoneHelper.ResolveTurkeyTimeZone())
+            ? e
+            : null;
 
         var filter = new OrdersWebDateFilter(
             start,
