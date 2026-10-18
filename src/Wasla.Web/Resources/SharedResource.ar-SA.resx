@@ -3211,6 +3211,7 @@
   <data name="Signup.ConfirmPassword" xml:space="preserve"><value>تأكيد كلمة المرور</value></data>
   <data name="Signup.SetupLaterNote" xml:space="preserve"><value>يمكنك إكمال ربط المنصات والإعدادات الأخرى بعد الدفع.</value></data>
   <data name="Signup.ContinueToPayment" xml:space="preserve"><value>إكمال التسجيل والمتابعة إلى الدفع</value></data>
+  <data name="Signup.SubmitRegistration" xml:space="preserve"><value>إرسال التسجيل</value></data>
   <data name="Signup.CreateAccount" xml:space="preserve"><value>إنشاء الحساب</value></data>
   <data name="Signup.PendingTitle" xml:space="preserve"><value>حسابك جاهز تقريباً</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>استلمنا بياناتك. أكمل خطوة الدفع للمتابعة.</value></data>
@@ -3254,6 +3255,7 @@
   <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve"><value>الإعداد قيد التنفيذ</value></data>
   <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>اكتمل الإعداد</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>ملخص الدفع</value></data>
+  <data name="Checkout.RegistrationSummaryTitle" xml:space="preserve"><value>ملخص التسجيل</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>راجع الباقة المختارة وبيانات المطعم. في بيئة الاختبار هذه، سيتم محاكاة نتيجة الدفع.</value></data>
   <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve"><value>راجع الباقة المختارة وبيانات مطعمك. لا يتم تحصيل الدفع في هذه الصفحة؛ ويبقى تسجيلك معلقًا حتى يتم استلام الدفع.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>تكامل الدفع الحقيقي غير مفعّل بعد. تتم محاكاة نتيجة الدفع في هذه الشاشة.</value></data>

@@ -100,21 +100,23 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
 
     public static TheoryData<string> Cultures => new() { "tr-TR", "en-US", "ar-SA", "ru-RU" };
 
-    // Copy that says payment is or was simulated, or that the applicant can continue to or return to a payment step.
+    // Copy that says payment is or was simulated, or that the applicant can start, continue or return to a payment step.
     // Outside Development no signup or checkout page may show it.
     private static readonly string[] DevelopmentOnlyKeys =
     [
-        "Signup.BillingNote", "Signup.PendingSubtitle", "Signup.PendingTestNote", "Signup.ContinueToCheckout",
-        "Checkout.ReviewSubtitle", "Checkout.SimulateSuccess", "Checkout.SimulateFailed", "Checkout.StatusAlreadyPaid",
-        "Checkout.FailedTitle", "Checkout.FailedMessage", "Checkout.FailedNoWorkspace", "Checkout.TryAgain"
+        "Signup.BillingNote", "Signup.ContinueToPayment", "Signup.PendingSubtitle", "Signup.PendingTestNote",
+        "Signup.ContinueToCheckout", "Checkout.ReviewTitle", "Checkout.ReviewSubtitle", "Checkout.SimulateSuccess",
+        "Checkout.SimulateFailed", "Checkout.StatusAlreadyPaid", "Checkout.FailedTitle", "Checkout.FailedMessage",
+        "Checkout.FailedNoWorkspace", "Checkout.TryAgain"
     ];
 
     // What the same pages say outside Development: the registration waits for payment, and the buttons lead to its summary.
     private static readonly string[] OutsideDevelopmentKeys =
     [
-        "Signup.BillingNoteAwaitingPayment", "Signup.PendingSubtitleAwaitingPayment", "Signup.ViewRegistrationSummary",
-        "Checkout.ReviewSubtitleAwaitingPayment", "Checkout.StatusPaymentReceived",
-        "Checkout.PaymentNotCompletedTitle", "Checkout.PaymentNotCompletedMessage", "Checkout.ReturnToRegistrationSummary"
+        "Signup.BillingNoteAwaitingPayment", "Signup.SubmitRegistration", "Signup.PendingSubtitleAwaitingPayment",
+        "Signup.ViewRegistrationSummary", "Checkout.RegistrationSummaryTitle", "Checkout.ReviewSubtitleAwaitingPayment",
+        "Checkout.StatusPaymentReceived", "Checkout.PaymentNotCompletedTitle", "Checkout.PaymentNotCompletedMessage",
+        "Checkout.ReturnToRegistrationSummary"
     ];
 
     [Theory]
@@ -125,10 +127,10 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
 
         foreach (var (name, page, expectedKeys) in new[]
                  {
-                     ("signup form", pages.SignupForm, new[] { "Signup.BillingNoteAwaitingPayment" }),
+                     ("signup form", pages.SignupForm, new[] { "Signup.BillingNoteAwaitingPayment", "Signup.SubmitRegistration" }),
                      ("pending", pages.Pending, new[] { "Signup.PendingSubtitleAwaitingPayment", "Signup.ViewRegistrationSummary" }),
-                     ("review", pages.Review, new[] { "Checkout.ReviewSubtitleAwaitingPayment" }),
-                     ("review, paid", pages.PaidReview, new[] { "Checkout.StatusPaymentReceived" }),
+                     ("review", pages.Review, new[] { "Checkout.RegistrationSummaryTitle", "Checkout.ReviewSubtitleAwaitingPayment" }),
+                     ("review, paid", pages.PaidReview, new[] { "Checkout.RegistrationSummaryTitle", "Checkout.StatusPaymentReceived" }),
                      ("failed", pages.Failed, new[]
                      {
                          "Checkout.PaymentNotCompletedTitle", "Checkout.PaymentNotCompletedMessage", "Checkout.ReturnToRegistrationSummary"
@@ -143,7 +145,11 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
             Assert.DoesNotContain("/checkout/simulate-", page.Body);
         }
 
-        // Only the labels change: the buttons still lead to the same summary page.
+        // The Turkish and Arabic title also occurs inside the summary button labels, so check the heading itself.
+        Assert.Contains($">{Text("Checkout.RegistrationSummaryTitle", culture)}</h1>", pages.Review.Body);
+
+        // Only the labels change: the form and the buttons still lead to the same places.
+        Assert.Contains("id=\"signupSubmitButton\"", pages.SignupForm.Body);
         Assert.Contains($"href=\"/checkout/review/{pages.AwaitingPaymentId}\"", pages.Pending.Body);
         Assert.Contains($"href=\"/checkout/review/{pages.FailedId}\"", pages.Failed.Body);
         Assert.Contains($"action=\"/checkout/cancel/{pages.AwaitingPaymentId}\"", pages.Review.Body);
@@ -157,10 +163,13 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
 
         foreach (var (name, page, expectedKeys) in new[]
                  {
-                     ("signup form", pages.SignupForm, new[] { "Signup.BillingNote" }),
+                     ("signup form", pages.SignupForm, new[] { "Signup.BillingNote", "Signup.ContinueToPayment" }),
                      ("pending", pages.Pending, new[] { "Signup.PendingSubtitle", "Signup.PendingTestNote", "Signup.ContinueToCheckout" }),
-                     ("review", pages.Review, new[] { "Checkout.ReviewSubtitle", "Checkout.SimulateSuccess", "Checkout.SimulateFailed" }),
-                     ("review, paid", pages.PaidReview, new[] { "Checkout.StatusAlreadyPaid" }),
+                     ("review", pages.Review, new[]
+                     {
+                         "Checkout.ReviewTitle", "Checkout.ReviewSubtitle", "Checkout.SimulateSuccess", "Checkout.SimulateFailed"
+                     }),
+                     ("review, paid", pages.PaidReview, new[] { "Checkout.ReviewTitle", "Checkout.StatusAlreadyPaid" }),
                      ("failed", pages.Failed, new[]
                      {
                          "Checkout.FailedTitle", "Checkout.FailedMessage", "Checkout.FailedNoWorkspace", "Checkout.TryAgain"
@@ -174,6 +183,7 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
                 Assert.False(page.Body.Contains(Text(key, culture), StringComparison.Ordinal), $"{name}: shows {key}");
         }
 
+        Assert.Contains($">{Text("Checkout.ReviewTitle", culture)}</h1>", pages.Review.Body);
         Assert.Contains($"href=\"/checkout/review/{pages.AwaitingPaymentId}\"", pages.Pending.Body);
         Assert.Contains($"href=\"/checkout/review/{pages.FailedId}\"", pages.Failed.Body);
         Assert.Contains($"action=\"/checkout/simulate-success/{pages.AwaitingPaymentId}\"", pages.Review.Body);

@@ -3,7 +3,8 @@
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
     Layout = "_PublicLayout";
-    ViewData["Title"] = L["Checkout.ReviewTitle"];
+    var titleKey = Model.IsPaymentSimulatorAvailable ? "Checkout.ReviewTitle" : "Checkout.RegistrationSummaryTitle";
+    ViewData["Title"] = L[titleKey];
     var billingLabel = Model.IsYearlyBilling ? L["Signup.BillingYearly"] : L["Signup.BillingMonthly"];
 }
 <div class="wasla-signup-page py-4 py-md-5">
@@ -11,7 +12,7 @@
         <div class="row justify-content-center">
             <div class="col-xl-9">
                 <div class="text-center mb-4">
-                    <h1 class="h3 fw-bold mb-2">@L["Checkout.ReviewTitle"]</h1>
+                    <h1 class="h3 fw-bold mb-2">@L[titleKey]</h1>
                     <p class="text-secondary mb-0">@L[Model.IsPaymentSimulatorAvailable ? "Checkout.ReviewSubtitle" : "Checkout.ReviewSubtitleAwaitingPayment"]</p>
                 </div>
 
