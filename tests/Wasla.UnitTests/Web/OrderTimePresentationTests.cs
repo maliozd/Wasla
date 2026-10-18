@@ -23,16 +23,18 @@ public sealed partial class OrderDataPresentationTests
         await using var host = await TenantVisualWebHost.StartAsync();
 
         var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
-        var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
+        // Today in Turkey and the fallback order's import time come from one instant, and the import time stays in that
+        // day (a minute ago, or the day's first moment just after midnight), so it counts as today.
+        var nowUtc = DateTime.UtcNow;
+        var (today, fallbackReceivedUtc) = TurkeyTodayAt(nowUtc, nowUtc.AddMinutes(-1));
         var yesterday = today.AddDays(-1);
         // Placed at 20:40 yesterday in Turkey and imported now by a recovery poll, like the three production orders.
         var placedUtc = TimeZoneInfo.ConvertTimeToUtc(yesterday.ToDateTime(new TimeOnly(20, 40)), tz);
-        var nowUtc = DateTime.UtcNow;
 
         var todayBefore = await TodayOrderCountAsync(host, ct);
         var recoveryId = await SeedAsync(host, "TY-RECOVERY-125", placedUtc, nowUtc, ct);
         Assert.Equal(todayBefore, await TodayOrderCountAsync(host, ct));
-        var fallbackId = await SeedAsync(host, "TY-NOTIME-125", null, nowUtc.AddMinutes(-1), ct);
+        var fallbackId = await SeedAsync(host, "TY-NOTIME-125", null, fallbackReceivedUtc, ct);
         Assert.Equal(todayBefore + 1, await TodayOrderCountAsync(host, ct));
 
         foreach (var name in Cultures)
@@ -93,6 +95,18 @@ public sealed partial class OrderDataPresentationTests
         Assert.Contains("Wasla", resources["Orders.Details.Received"], StringComparison.Ordinal);
         Assert.NotEqual(resources["Orders.OrderTime"], resources["Orders.ReceivedAt"]);
         Assert.DoesNotContain("Dashboard.Received", resources.Keys);
+    }
+
+    /// <summary>
+    /// The Türkiye-local day that holds <paramref name="nowUtc"/>, and an instant of that day no later than
+    /// <paramref name="nowUtc"/>: <paramref name="preferredUtc"/> when it is in that day, otherwise the day's first moment.
+    /// </summary>
+    private static (DateOnly Today, DateTime InstantUtc) TurkeyTodayAt(DateTime nowUtc, DateTime preferredUtc)
+    {
+        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz));
+        var startUtc = TimeZoneInfo.ConvertTimeToUtc(today.ToDateTime(TimeOnly.MinValue), tz);
+        return (today, preferredUtc < startUtc ? startUtc : preferredUtc);
     }
 
     private static async Task<int> TodayOrderCountAsync(TenantVisualWebHost host, CancellationToken ct)
