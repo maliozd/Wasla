@@ -2409,6 +2409,21 @@
   <data name="PlatformConnections.ApiSecretLeaveEmptyHelp" xml:space="preserve">
     <value>Mevcut gizli anahtarı korumak için boş bırakın.</value>
   </data>
+  <data name="PlatformConnections.ShowApiKey" xml:space="preserve">
+    <value>API Key değerini göster</value>
+  </data>
+  <data name="PlatformConnections.ShowApiSecret" xml:space="preserve">
+    <value>API Secret değerini göster</value>
+  </data>
+  <data name="PlatformConnections.CredentialSaved" xml:space="preserve">
+    <value>Kayıtlı bir değer var; hiçbir zaman gösterilmez.</value>
+  </data>
+  <data name="PlatformConnections.CredentialMissing" xml:space="preserve">
+    <value>Kayıtlı değer yok. Bağlanmak için bir değer girin.</value>
+  </data>
+  <data name="PlatformConnections.CredentialsReenter" xml:space="preserve">
+    <value>Güvenliğiniz için girdiğiniz API bilgileri temizlendi ve hiçbir değişiklik kaydedilmedi. Lütfen yeniden girin.</value>
+  </data>
   <data name="PlatformConnections.SupplierId" xml:space="preserve">
     <value>Supplier Id</value>
   </data>

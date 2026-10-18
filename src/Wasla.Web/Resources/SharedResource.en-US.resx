@@ -2409,6 +2409,21 @@
   <data name="PlatformConnections.ApiSecretLeaveEmptyHelp" xml:space="preserve">
     <value>Leave empty to keep the existing secret.</value>
   </data>
+  <data name="PlatformConnections.ShowApiKey" xml:space="preserve">
+    <value>Show API key</value>
+  </data>
+  <data name="PlatformConnections.ShowApiSecret" xml:space="preserve">
+    <value>Show API secret</value>
+  </data>
+  <data name="PlatformConnections.CredentialSaved" xml:space="preserve">
+    <value>A value is saved and is never shown.</value>
+  </data>
+  <data name="PlatformConnections.CredentialMissing" xml:space="preserve">
+    <value>No value is saved. Enter one to connect.</value>
+  </data>
+  <data name="PlatformConnections.CredentialsReenter" xml:space="preserve">
+    <value>For your security, the API credentials you entered were cleared, and nothing was saved. Enter them again.</value>
+  </data>
   <data name="PlatformConnections.SupplierId" xml:space="preserve">
     <value>Supplier Id</value>
   </data>
