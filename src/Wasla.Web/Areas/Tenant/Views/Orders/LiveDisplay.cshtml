@@ -13,6 +13,7 @@
     var today = Model.TurkeyLocalToday;
     var customerName = ViewData["CustomerName"] as string;
     var restaurantLogoUrl = ViewData["RestaurantLogoUrl"] as string;
+    var restaurantLogoBackgroundClass = ViewData["RestaurantLogoBackgroundClass"] as string;
     var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
     var timeZoneId = TimeZoneHelper.ResolveTurkeyTimeZone().Id;
     if (timeZoneId == "Turkey Standard Time")
@@ -27,10 +28,11 @@
             <div class="wasla-live-display-identity">
                 @* The restaurant's logo when it has one, otherwise (or when it cannot be loaded, restaurant-logo.js) the
                    storefront icon. Decorative: the restaurant name beside it names the restaurant. Rendered once with the
-                   page; polling never touches it. *@
+                   page; polling never touches it. The Owner's background style is a CSS class (wasla-logo-bg--*), so a
+                   theme switch restyles it without requesting the image again. *@
                 @if (!string.IsNullOrEmpty(restaurantLogoUrl))
                 {
-                    <span class="wasla-live-display-identity__mark wasla-live-display-identity__mark--logo" aria-hidden="true" data-restaurant-logo-mark>
+                    <span class="wasla-live-display-identity__mark wasla-live-display-identity__mark--logo @restaurantLogoBackgroundClass" aria-hidden="true" data-restaurant-logo-mark>
                         <img class="wasla-live-display-identity__logo" src="@restaurantLogoUrl" alt="" width="48" height="48" decoding="async" data-restaurant-logo />
                         <i class="bi bi-shop" data-restaurant-logo-fallback hidden></i>
                     </span>

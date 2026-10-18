@@ -609,6 +609,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Background")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("Content")
                         .IsRequired()
                         .HasColumnType("varbinary(max)");

@@ -2275,7 +2275,7 @@
     <value>اختر ملف شعار جديد</value>
   </data>
   <data name="Settings.RestaurantLogo.Requirements" xml:space="preserve">
-    <value>PNG أو JPEG أو WebP؛ بحد أقصى {0} ميغابايت و{1} × {1} بكسل. تعطي الصورة المربعة أفضل نتيجة.</value>
+    <value>PNG أو JPEG أو WebP؛ بحد أقصى {0} ميغابايت و{1} × {1} بكسل. للحصول على أفضل نتيجة، استخدم رمزًا مربعًا وبسيطًا بخلفية شفافة (PNG أو WebP).</value>
   </data>
   <data name="Settings.RestaurantLogo.Upload" xml:space="preserve">
     <value>حفظ الشعار</value>
@@ -2306,6 +2306,54 @@
   </data>
   <data name="Settings.RestaurantLogo.Error.Dimensions" xml:space="preserve">
     <value>يجب ألا تتجاوز أبعاد الشعار {0} × {0} بكسل.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Title" xml:space="preserve">
+    <value>خلفية الشعار</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Description" xml:space="preserve">
+    <value>اختر ما يظهر خلف شعارك في رأس الشاشة المباشرة. لا يتم تغيير الصورة المرفوعة.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAware" xml:space="preserve">
+    <value>متوافق مع السمة</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAwareDescription" xml:space="preserve">
+    <value>شفاف في السمة الفاتحة؛ وسطح فاتح خفيف خلف الشعار في السمة الداكنة. تبقى الشعارات الداكنة مقروءة في السمتين.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Transparent" xml:space="preserve">
+    <value>شفاف</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.TransparentDescription" xml:space="preserve">
+    <value>بدون خلفية في السمتين.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Light" xml:space="preserve">
+    <value>فاتح</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.LightDescription" xml:space="preserve">
+    <value>سطح فاتح خفيف في السمتين.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Dark" xml:space="preserve">
+    <value>داكن</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.DarkDescription" xml:space="preserve">
+    <value>سطح داكن خفيف في السمتين. مناسب للشعارات الفاتحة أو البيضاء.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Recommended" xml:space="preserve">
+    <value>موصى به</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.PreviewLight" xml:space="preserve">
+    <value>السمة الفاتحة</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.PreviewDark" xml:space="preserve">
+    <value>السمة الداكنة</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Save" xml:space="preserve">
+    <value>حفظ الخلفية</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Saved" xml:space="preserve">
+    <value>تم حفظ خلفية الشعار.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.NoLogo" xml:space="preserve">
+    <value>ارفع شعارًا أولًا.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>جديد</value>

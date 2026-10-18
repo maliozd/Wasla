@@ -308,16 +308,19 @@ public sealed class OrdersController : BaseController
             vm.GuidedTraining = await guidedSetup.GetLiveScreenAsync(tenant.Id, userId, User, ct);
 
         ViewData["CustomerName"] = tenant.Name;
-        ViewData["RestaurantLogoUrl"] = Url.RestaurantLogo(await ReadRestaurantLogoVersionAsync(restaurantLogos, tenant.Id, ct));
+        var logo = await ReadRestaurantLogoAsync(restaurantLogos, tenant.Id, ct);
+        ViewData["RestaurantLogoUrl"] = Url.RestaurantLogo(logo?.Version);
+        if (logo is not null)
+            ViewData["RestaurantLogoBackgroundClass"] = RestaurantLogoBackgrounds.CssClass(logo.Background);
         return View("LiveDisplay", vm);
     }
 
     // The logo is decoration: a failed read shows the storefront icon and never breaks the Live Screen.
-    private async Task<string?> ReadRestaurantLogoVersionAsync(IRestaurantLogoService logos, Guid tenantId, CancellationToken ct)
+    private async Task<RestaurantLogoSummary?> ReadRestaurantLogoAsync(IRestaurantLogoService logos, Guid tenantId, CancellationToken ct)
     {
         try
         {
-            return await logos.GetVersionAsync(tenantId, ct);
+            return await logos.GetCurrentAsync(tenantId, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

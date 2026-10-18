@@ -286,12 +286,15 @@ internal sealed class ThemeWebHost : IAsyncDisposable
     /// <summary>A tenant without a restaurant logo (the Live Screen shows its storefront icon).</summary>
     public sealed class NoRestaurantLogo : IRestaurantLogoService
     {
-        public Task<string?> GetVersionAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<string?>(null);
+        public Task<RestaurantLogoSummary?> GetCurrentAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<RestaurantLogoSummary?>(null);
 
         public Task<RestaurantLogoContent?> GetAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<RestaurantLogoContent?>(null);
 
         public Task<RestaurantLogoSaveResult> SaveAsync(Guid tenantId, byte[] content, CancellationToken ct) =>
             throw new NotSupportedException("Saving a restaurant logo is not part of the theme tests.");
+
+        public Task<bool> SetBackgroundAsync(Guid tenantId, RestaurantLogoBackground background, CancellationToken ct) =>
+            throw new NotSupportedException("Styling a restaurant logo is not part of the theme tests.");
 
         public Task<bool> RemoveAsync(Guid tenantId, CancellationToken ct) =>
             throw new NotSupportedException("Removing a restaurant logo is not part of the theme tests.");

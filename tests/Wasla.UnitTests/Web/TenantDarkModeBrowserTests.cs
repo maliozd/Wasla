@@ -49,9 +49,10 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
         };
         const describe = e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + [...e.classList].slice(0, 3).map(c => '.' + c).join('');
         // Light on purpose in dark mode: the printed-receipt preview, the logo plate of the black Trendyol GO wordmark, the
-        // plate of the restaurant's own logo (drawn for a white page) and the highlight colour choices (they show the
-        // colours themselves).
-        const allowedLight = '.wasla-receipt-preview-paper, .platform-badge--trendyol, .wasla-live-display-identity__mark--logo, .wasla-restaurant-logo-frame--logo, .wasla-color-swatch, input[type="color"]';
+        // Account Settings preview tile of the restaurant's own logo, the light surface the Owner may choose behind it
+        // (Theme-aware or Light) and the light-theme Live Screen preview beside the dark one, and the highlight colour
+        // choices (they show the colours themselves).
+        const allowedLight = '.wasla-receipt-preview-paper, .platform-badge--trendyol, .wasla-restaurant-logo-frame--logo, .wasla-logo-bg--theme-aware, .wasla-logo-bg--light, .wasla-logo-theme-preview__header[data-bs-theme="light"], .wasla-color-swatch, input[type="color"]';
         // White on the Wasla orange is the brand's primary-button pairing in both themes; recently completed Live Screen
         // orders are deliberately dimmed in both themes; disabled controls are exempt.
         const exemptText = '.btn-primary, .wasla-btn--primary, .orders-card--muted, .wasla-orders-card--muted, :disabled, .disabled, [aria-disabled="true"], .modal:not(.show), .visually-hidden';

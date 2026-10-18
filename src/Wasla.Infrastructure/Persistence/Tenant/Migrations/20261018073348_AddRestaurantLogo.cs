@@ -19,6 +19,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     Content = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
                     ContentType = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
                     Version = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    Background = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },

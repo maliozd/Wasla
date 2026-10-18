@@ -188,6 +188,8 @@ public class RestaurantLogoConfiguration : IEntityTypeConfiguration<RestaurantLo
         builder.Property(x => x.Content).IsRequired();
         builder.Property(x => x.ContentType).IsRequired().HasMaxLength(32);
         builder.Property(x => x.Version).IsRequired().HasMaxLength(64);
+        // Stored as int, written by EF on every insert; 0 is ThemeAware, the default.
+        builder.Property(x => x.Background).IsRequired();
     }
 }
 

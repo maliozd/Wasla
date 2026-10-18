@@ -12,7 +12,8 @@ namespace Wasla.UnitTests.Web;
 
 /// <summary>
 /// WAS-127 in a real headless Chromium browser against <see cref="TenantVisualWebHost"/>: the restaurant logo replaces the
-/// storefront icon in the Live Screen header in the same box, beside a readable restaurant name, in light and dark mode,
+/// storefront icon in the Live Screen header in the same box, drawn straight on the header (no plate), beside a readable
+/// restaurant name, in light and dark mode,
 /// on phones and right to left; it is requested once and never touched while the board refreshes and changes; a logo
 /// the browser cannot draw falls back to the storefront icon; and Account Settings previews a chosen file and refuses
 /// one of the wrong type before it is sent. Skips only when no Chromium browser is installed or Bootstrap cannot be
@@ -21,6 +22,123 @@ namespace Wasla.UnitTests.Web;
 public sealed class RestaurantLogoBrowserTests
 {
     private const string TenantThemeKey = "Wasla.tenant.theme";
+
+    // The computed colours of the logo background surfaces (wasla-theme.css).
+    private const string Transparent = "rgba(0, 0, 0, 0)";
+    private const string LightThemeLightSurface = "rgb(255, 255, 255)";
+    private const string DarkThemeLightSurface = "rgb(236, 233, 228)";
+    private const string DarkSurface = "rgb(35, 38, 44)";
+
+    /// <summary>Each style's surface in the light and the dark theme.</summary>
+    private static readonly (string Token, string Light, string Dark)[] Styles =
+    [
+        ("theme-aware", Transparent, DarkThemeLightSurface),
+        ("transparent", Transparent, Transparent),
+        ("light", LightThemeLightSurface, DarkThemeLightSurface),
+        ("dark", DarkSurface, DarkSurface)
+    ];
+
+    [Fact]
+    public async Task EveryStyle_InBothThemes_IsOnlyCss_AndNeverRequestsTheLogoAgain()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var host = await TenantVisualWebHost.StartAsync(
+            seed: (db, _) => db.RestaurantLogos.Add(Logo(TestImages.Png(64, 64), RestaurantLogoBackground.Dark)));
+        await using var browser = await OpenAsync(host, "en-US", 1280, "light", ct);
+
+        // The server renders the stored style.
+        Assert.Equal("wasla-logo-bg--dark", await browser.EvaluateAsync<string>(
+            "[...document.querySelector('.wasla-live-display-identity__mark').classList].find(c => c.startsWith('wasla-logo-bg--'))", ct));
+
+        foreach (var (token, light, dark) in Styles)
+        {
+            foreach (var (theme, expected) in new[] { ("light", light), ("dark", dark) })
+            {
+                var style = await browser.EvaluateAsync<JsonElement>($$"""
+                    (async () => {
+                      for (const el of [document.documentElement, document.body]) el.setAttribute('data-bs-theme', '{{theme}}');
+                      const mark = document.querySelector('.wasla-live-display-identity__mark');
+                      mark.classList.remove(...[...mark.classList].filter(c => c.startsWith('wasla-logo-bg--')));
+                      mark.classList.add('wasla-logo-bg--{{token}}');
+                      await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+                      const cs = getComputedStyle(mark), m = mark.getBoundingClientRect(), i = mark.querySelector('img').getBoundingClientRect();
+                      return { bg: cs.backgroundColor, shadow: cs.boxShadow, border: cs.borderTopWidth, width: Math.round(m.width), inside: i.width <= m.width && i.height <= m.height };
+                    })()
+                    """, ct);
+                var label = $"{token} in the {theme} theme";
+                Assert.True(expected == style.GetProperty("bg").GetString(), $"{label}: background {style.GetProperty("bg").GetString()}, expected {expected}");
+                Assert.Equal("0px", style.GetProperty("border").GetString());
+                Assert.Equal(48, style.GetProperty("width").GetInt32());
+                Assert.True(style.GetProperty("inside").GetBoolean(), $"{label}: the logo spills out of its box");
+                if (expected == Transparent)
+                    Assert.True(style.GetProperty("shadow").GetString() == "none", $"{label}: a transparent style has a ring");
+                else
+                    Assert.StartsWith("rgba(", style.GetProperty("shadow").GetString());
+            }
+        }
+
+        var logoRequests = await browser.EvaluateAsync<int>(
+            "performance.getEntriesByType('resource').filter(e => new URL(e.name).pathname === '/restaurant-logo').length", ct);
+        Assert.Equal(1, logoRequests);
+    }
+
+    [Theory]
+    [InlineData("tr-TR", "ltr", "light", 1280)]
+    [InlineData("ar-SA", "rtl", "dark", 390)]
+    public async Task AccountSettings_PreviewsBothThemesSideBySide_AndRestylesThemAtOnce(string culture, string direction, string theme, int width)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var host = await TenantVisualWebHost.StartAsync(seed: (db, _) => db.RestaurantLogos.Add(Logo(TestImages.Png(64, 64))));
+        await using var browser = await OpenAsync(host, culture, width, theme, ct, path: "/settings/account");
+
+        var result = await browser.EvaluateAsync<JsonElement>("""
+            (async () => {
+              const settle = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+              const tile = t => document.querySelector(`.wasla-logo-theme-preview__header[data-bs-theme="${t}"]`);
+              const read = () => ['light', 'dark'].map(t => {
+                const mark = tile(t).querySelector('[data-logo-background-target]');
+                return { bg: getComputedStyle(mark).backgroundColor, cls: [...mark.classList].find(c => c.startsWith('wasla-logo-bg--')), rect: tile(t).getBoundingClientRect() };
+              });
+              const requests = () => performance.getEntriesByType('resource').filter(e => new URL(e.name).pathname === '/restaurant-logo').length;
+              const choose = async token => { document.getElementById('restaurantLogoBackground-' + token).click(); await settle(); return read(); };
+              const label = document.querySelector('label[for="restaurantLogoBackground-theme-aware"]');
+              const checkedAtStart = document.querySelector('input[name="background"]:checked').value;
+              const before = read(), requestsBefore = requests();
+              const dark = await choose('dark');
+              const transparent = await choose('transparent');
+              const light = await choose('light');
+              const themeAware = await choose('theme-aware');
+              const [l, d] = themeAware;
+              return {
+                checkedAtStart, recommended: !!label.querySelector('.badge') && label.querySelector('.badge').textContent.trim(),
+                before: before.map(x => x.bg), dark: dark.map(x => x.bg), transparent: transparent.map(x => x.bg), light: light.map(x => x.bg), themeAware: themeAware.map(x => x.bg),
+                classes: themeAware.map(x => x.cls),
+                sideBySide: Math.abs(l.rect.top - d.rect.top) < 1, stacked: d.rect.top >= l.rect.bottom,
+                requestsBefore, requestsAfter: requests(),
+                dir: document.documentElement.getAttribute('dir'), overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
+              };
+            })()
+            """, ct);
+
+        Assert.Equal("theme-aware", result.GetProperty("checkedAtStart").GetString());
+        Assert.Equal(Resource(culture, "Settings.RestaurantLogo.Background.Recommended"), result.GetProperty("recommended").GetString());
+        // Each preview shows its own theme, whatever theme the page is in, and follows the option at once.
+        Assert.Equal(new[] { Transparent, DarkThemeLightSurface }, Colours(result, "before"));
+        Assert.Equal(new[] { DarkSurface, DarkSurface }, Colours(result, "dark"));
+        Assert.Equal(new[] { Transparent, Transparent }, Colours(result, "transparent"));
+        Assert.Equal(new[] { LightThemeLightSurface, DarkThemeLightSurface }, Colours(result, "light"));
+        Assert.Equal(new[] { Transparent, DarkThemeLightSurface }, Colours(result, "themeAware"));
+        Assert.Equal(new[] { "wasla-logo-bg--theme-aware", "wasla-logo-bg--theme-aware" }, Colours(result, "classes"));
+        // Side by side on a desktop, one above the other on a phone.
+        Assert.True(width >= 992 ? result.GetProperty("sideBySide").GetBoolean() : result.GetProperty("stacked").GetBoolean(),
+            $"{culture} {width}px: the previews are not laid out as expected");
+        Assert.Equal(result.GetProperty("requestsBefore").GetInt32(), result.GetProperty("requestsAfter").GetInt32());
+        Assert.Equal(direction, result.GetProperty("dir").GetString());
+        Assert.False(result.GetProperty("overflow").GetBoolean(), $"{culture} {width}px: the page overflows horizontally");
+    }
+
+    private static string[] Colours(JsonElement result, string name) =>
+        result.GetProperty(name).EnumerateArray().Select(x => x.GetString() ?? "").ToArray();
 
     [Theory]
     [InlineData("tr-TR", "ltr", "light", 1280)]
@@ -50,6 +168,11 @@ public sealed class RestaurantLogoBrowserTests
                 markHidden: mark.getAttribute('aria-hidden'),
                 iconShown: !!icon && !icon.hidden && icon.getBoundingClientRect().width > 0,
                 plate: getComputedStyle(mark).backgroundColor,
+                border: getComputedStyle(mark).borderTopWidth,
+                shadow: getComputedStyle(mark).boxShadow,
+                imgWidth: i ? Math.round(i.width) : 0, imgHeight: i ? Math.round(i.height) : 0,
+                filter: img ? getComputedStyle(img).filter : null,
+                background: [...mark.classList].find(c => c.startsWith('wasla-logo-bg--')) || null,
                 titleText: title.textContent.trim(), titleVisible: t.width > 0 && t.height > 0, overlap,
                 markBeforeTitle: document.documentElement.dir === 'rtl' ? m.left >= t.right - 1 : m.right <= t.left + 1,
                 dir: document.documentElement.getAttribute('dir'),
@@ -69,7 +192,25 @@ public sealed class RestaurantLogoBrowserTests
         Assert.Equal("", header.GetProperty("alt").GetString());
         Assert.Equal("true", header.GetProperty("markHidden").GetString());
         Assert.False(header.GetProperty("iconShown").GetBoolean(), $"{page}: the storefront icon is shown beside the logo");
-        Assert.Equal("rgb(255, 255, 255)", header.GetProperty("plate").GetString());
+        // The default style, Theme-aware: no border ever (a plate looked like a button). In the light theme the logo is
+        // drawn straight on the header and uses the whole box; in the dark theme it sits on a subtle light surface with a
+        // hairline inset ring, so dark logos stay readable. No filter is applied to the image.
+        Assert.Equal("wasla-logo-bg--theme-aware", header.GetProperty("background").GetString());
+        Assert.Equal("0px", header.GetProperty("border").GetString());
+        Assert.Equal("none", header.GetProperty("filter").GetString());
+        if (theme == "dark")
+        {
+            Assert.Equal(DarkThemeLightSurface, header.GetProperty("plate").GetString());
+            Assert.Contains("inset", header.GetProperty("shadow").GetString());
+            Assert.InRange(header.GetProperty("imgWidth").GetInt32(), header.GetProperty("rem3").GetInt32() - 6, header.GetProperty("rem3").GetInt32() - 3);
+        }
+        else
+        {
+            Assert.Equal(Transparent, header.GetProperty("plate").GetString());
+            Assert.Equal("none", header.GetProperty("shadow").GetString());
+            Assert.Equal(header.GetProperty("rem3").GetInt32(), header.GetProperty("imgWidth").GetInt32());
+            Assert.Equal(header.GetProperty("rem3").GetInt32(), header.GetProperty("imgHeight").GetInt32());
+        }
         Assert.False(string.IsNullOrEmpty(header.GetProperty("titleText").GetString()));
         Assert.True(header.GetProperty("titleVisible").GetBoolean());
         Assert.False(header.GetProperty("overlap").GetBoolean(), $"{page}: the logo overlaps the restaurant name");
@@ -145,7 +286,7 @@ public sealed class RestaurantLogoBrowserTests
         // Stored behind the upload checks' back: the image request answers with something that is not an image (as it
         // would after an expired session or a removed logo).
         var damaged = "not an image"u8.ToArray();
-        await using var host = await TenantVisualWebHost.StartAsync(seed: (db, _) => db.RestaurantLogos.Add(Logo(damaged)));
+        await using var host = await TenantVisualWebHost.StartAsync(seed: (db, _) => db.RestaurantLogos.Add(Logo(damaged, RestaurantLogoBackground.Light)));
         await using var browser = await OpenAsync(host, "en-US", 1280, "dark", ct);
 
         Assert.True(await browser.WaitForAsync("!document.querySelector('.wasla-live-display-identity img')", TimeSpan.FromSeconds(10), ct),
@@ -156,11 +297,14 @@ public sealed class RestaurantLogoBrowserTests
               const icon = mark.querySelector('.bi-shop');
               return { iconShown: !!icon && !icon.hidden && icon.getBoundingClientRect().width > 0,
                        plated: mark.classList.contains('wasla-live-display-identity__mark--logo'),
+                       bg: getComputedStyle(mark).backgroundColor,
                        width: Math.round(mark.getBoundingClientRect().width), rem3: Math.round(3 * parseFloat(getComputedStyle(document.documentElement).fontSize)) };
             })()
             """, ct);
         Assert.True(mark.GetProperty("iconShown").GetBoolean());
         Assert.False(mark.GetProperty("plated").GetBoolean());
+        // The storefront tile of the dark theme, not the Light logo surface the Owner chose.
+        Assert.Equal("rgba(224, 122, 69, 0.14)", mark.GetProperty("bg").GetString());
         Assert.Equal(mark.GetProperty("rem3").GetInt32(), mark.GetProperty("width").GetInt32());
     }
 
@@ -224,10 +368,11 @@ public sealed class RestaurantLogoBrowserTests
         Assert.False(result.GetProperty("overflow").GetBoolean());
     }
 
-    private static RestaurantLogo Logo(byte[] content) => new()
+    private static RestaurantLogo Logo(byte[] content, RestaurantLogoBackground background = RestaurantLogoBackground.ThemeAware) => new()
     {
         Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
         Content = content,
+        Background = background,
         ContentType = RestaurantLogoImage.Png,
         Version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(content), 0, 16).ToLowerInvariant()
     };

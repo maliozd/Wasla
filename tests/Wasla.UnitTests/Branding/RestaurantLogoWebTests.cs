@@ -25,6 +25,12 @@ public sealed class RestaurantLogoWebTests : IAsyncLifetime
     private static readonly Regex HeaderLogo = new(
         "<img class=\"wasla-live-display-identity__logo\" src=\"/restaurant-logo\\?v=([0-9a-f]{32})\"", RegexOptions.Compiled);
 
+    private static readonly Regex HeaderMark = new(
+        "<span class=\"wasla-live-display-identity__mark wasla-live-display-identity__mark--logo (wasla-logo-bg--[a-z-]+)\"", RegexOptions.Compiled);
+
+    private static readonly Regex CheckedBackgroundInput = new(
+        "<input[^>]*name=\"background\"[^>]*value=\"([a-z-]+)\"[^>]*checked=\"checked\"", RegexOptions.Compiled);
+
     private static readonly Regex NotificationPayload = new(@"var data = (\{.*?\});", RegexOptions.Compiled | RegexOptions.Singleline);
 
     private TenantSessionWebHost _host = null!;
@@ -116,8 +122,10 @@ public sealed class RestaurantLogoWebTests : IAsyncLifetime
         AssertRedirectsTo(await staff.GetAsync("/settings/account"), "/auth/access-denied");
         AssertRedirectsTo(await UploadAsync(staff, TestImages.Png(32, 32, red: 0, green: 0, blue: 0)), "/auth/access-denied");
         AssertRedirectsTo(await RemoveAsync(staff), "/auth/access-denied");
+        AssertRedirectsTo(await SetBackgroundAsync(staff, "dark"), "/auth/access-denied");
 
         Assert.Equal(version, await CurrentVersionAsync(_host.AlphaId));
+        Assert.Equal(RestaurantLogoBackground.ThemeAware, await CurrentBackgroundAsync(_host.AlphaId));
     }
 
     [Fact]
@@ -142,10 +150,14 @@ public sealed class RestaurantLogoWebTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Redirect, replayed.StatusCode);
         Assert.StartsWith("/auth/login", PathOf(replayed));
 
-        // Beta's own upload and removal leave Alpha's logo alone.
+        // Beta's own upload, background and removal leave Alpha's logo alone.
         var betaLogo = TestImages.Png(40, 20, red: 0, green: 0x80, blue: 0);
         AssertRedirectsTo(await UploadAsync(beta, betaLogo), "/settings/account");
         Assert.Equal(alphaVersion, await CurrentVersionAsync(_host.AlphaId));
+        AssertRedirectsTo(await SetBackgroundAsync(beta, "dark"), "/settings/account");
+        Assert.Equal(RestaurantLogoBackground.Dark, await CurrentBackgroundAsync(_host.BetaId));
+        Assert.Equal(RestaurantLogoBackground.ThemeAware, await CurrentBackgroundAsync(_host.AlphaId));
+        Assert.Equal("wasla-logo-bg--theme-aware", HeaderBackgroundClass(await HtmlAsync(alpha, "/orders/live-display")));
         Assert.Equal(betaLogo, await (await beta.GetAsync("/restaurant-logo")).Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken));
         AssertRedirectsTo(await RemoveAsync(beta), "/settings/account");
         Assert.Equal(alphaVersion, await CurrentVersionAsync(_host.AlphaId));
@@ -217,10 +229,137 @@ public sealed class RestaurantLogoWebTests : IAsyncLifetime
         Assert.Contains($"src=\"/restaurant-logo?v={version}\"", page);
     }
 
+    [Fact]
+    public async Task AnOwner_ChoosesEachBackground_TheLiveScreenUsesIt_AndTheLogoStaysTheSame()
+    {
+        _host.SeedUser(_host.AlphaId, "owner@alpha.test", UserRole.Owner);
+        using var owner = _host.Client(TenantSessionWebHost.AlphaHost);
+        await owner.LoginAsync("owner@alpha.test");
+        var logo = TestImages.Png(48, 48);
+        AssertRedirectsTo(await UploadAsync(owner, logo), "/settings/account");
+        await HtmlAsync(owner, "/settings/account");
+        var version = await CurrentVersionAsync(_host.AlphaId);
+
+        // A new logo is Theme-aware, and the settings page marks it as chosen.
+        Assert.Equal(RestaurantLogoBackground.ThemeAware, await CurrentBackgroundAsync(_host.AlphaId));
+        Assert.Equal("wasla-logo-bg--theme-aware", HeaderBackgroundClass(await HtmlAsync(owner, "/orders/live-display")));
+        Assert.Equal("theme-aware", CheckedBackground(await HtmlAsync(owner, "/settings/account")));
+
+        foreach (var (token, value) in new[]
+                 {
+                     ("transparent", RestaurantLogoBackground.Transparent), ("light", RestaurantLogoBackground.Light),
+                     ("dark", RestaurantLogoBackground.Dark), ("theme-aware", RestaurantLogoBackground.ThemeAware)
+                 })
+        {
+            AssertRedirectsTo(await SetBackgroundAsync(owner, token), "/settings/account");
+            var settings = await HtmlAsync(owner, "/settings/account");
+            Assert.Equal(Resource("en-US", "Settings.RestaurantLogo.Background.Saved"), Notification(settings).Success);
+            Assert.Equal(token, CheckedBackground(settings));
+            Assert.Equal(value, await CurrentBackgroundAsync(_host.AlphaId));
+
+            // Only the class changes: the same image under the same URL, so nothing is uploaded or fetched again.
+            var live = await HtmlAsync(owner, "/orders/live-display");
+            Assert.Equal("wasla-logo-bg--" + token, HeaderBackgroundClass(live));
+            Assert.Equal(version, HeaderLogoVersion(live));
+            Assert.Equal(version, await CurrentVersionAsync(_host.AlphaId));
+            var image = await owner.GetAsync($"/restaurant-logo?v={version}");
+            Assert.Equal(logo, await image.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken));
+        }
+
+        // Replacing keeps the chosen style; removing ends it with the logo, and the next logo is Theme-aware again.
+        AssertRedirectsTo(await SetBackgroundAsync(owner, "dark"), "/settings/account");
+        AssertRedirectsTo(await UploadAsync(owner, TestImages.Png(48, 48, red: 1, green: 2, blue: 3)), "/settings/account");
+        Assert.Equal(RestaurantLogoBackground.Dark, await CurrentBackgroundAsync(_host.AlphaId));
+        AssertRedirectsTo(await RemoveAsync(owner), "/settings/account");
+        Assert.Null(await CurrentBackgroundAsync(_host.AlphaId));
+        Assert.DoesNotContain("wasla-logo-bg--", await HtmlAsync(owner, "/orders/live-display"));
+        AssertRedirectsTo(await UploadAsync(owner, logo), "/settings/account");
+        Assert.Equal(RestaurantLogoBackground.ThemeAware, await CurrentBackgroundAsync(_host.AlphaId));
+    }
+
+    [Theory]
+    [InlineData("Dark")]
+    [InlineData("THEME-AWARE")]
+    [InlineData("ThemeAware")]
+    [InlineData("1")]
+    [InlineData("99")]
+    [InlineData("purple")]
+    [InlineData(" dark")]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task AnUnknownBackground_IsRefused_AndTheCurrentOneIsKept(string? posted)
+    {
+        _host.SeedUser(_host.AlphaId, "owner@alpha.test", UserRole.Owner);
+        using var owner = _host.Client(TenantSessionWebHost.AlphaHost);
+        await owner.LoginAsync("owner@alpha.test");
+        AssertRedirectsTo(await UploadAsync(owner, TestImages.Png(32, 32)), "/settings/account");
+        AssertRedirectsTo(await SetBackgroundAsync(owner, "light"), "/settings/account");
+
+        var response = await SetBackgroundAsync(owner, posted);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(RestaurantLogoBackground.Light, await CurrentBackgroundAsync(_host.AlphaId));
+    }
+
+    [Fact]
+    public async Task ABackgroundWithoutAnAntiforgeryToken_IsRefused()
+    {
+        _host.SeedUser(_host.AlphaId, "owner@alpha.test", UserRole.Owner);
+        using var owner = _host.Client(TenantSessionWebHost.AlphaHost);
+        await owner.LoginAsync("owner@alpha.test");
+        AssertRedirectsTo(await UploadAsync(owner, TestImages.Png(32, 32)), "/settings/account");
+
+        var response = await owner.PostFormAsync("/settings/account/logo/background", [new("background", "dark")]);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(RestaurantLogoBackground.ThemeAware, await CurrentBackgroundAsync(_host.AlphaId));
+    }
+
+    [Fact]
+    public async Task ABackgroundWithoutALogo_StoresNothing_AndSaysSo()
+    {
+        _host.SeedUser(_host.AlphaId, "owner@alpha.test", UserRole.Owner);
+        using var owner = _host.Client(TenantSessionWebHost.AlphaHost);
+        await owner.LoginAsync("owner@alpha.test");
+
+        AssertRedirectsTo(await SetBackgroundAsync(owner, "dark"), "/settings/account");
+
+        Assert.Equal(Resource("en-US", "Settings.RestaurantLogo.Background.NoLogo"), Notification(await HtmlAsync(owner, "/settings/account")).Error);
+        Assert.Null(await CurrentBackgroundAsync(_host.AlphaId));
+    }
+
     private async Task<string?> CurrentVersionAsync(Guid tenantId)
     {
         using var scope = _host.Services.CreateScope();
-        return await scope.ServiceProvider.GetRequiredService<IRestaurantLogoService>().GetVersionAsync(tenantId, TestContext.Current.CancellationToken);
+        return (await scope.ServiceProvider.GetRequiredService<IRestaurantLogoService>().GetCurrentAsync(tenantId, TestContext.Current.CancellationToken))?.Version;
+    }
+
+    private async Task<RestaurantLogoBackground?> CurrentBackgroundAsync(Guid tenantId)
+    {
+        using var scope = _host.Services.CreateScope();
+        return (await scope.ServiceProvider.GetRequiredService<IRestaurantLogoService>().GetCurrentAsync(tenantId, TestContext.Current.CancellationToken))?.Background;
+    }
+
+    private static async Task<HttpResponseMessage> SetBackgroundAsync(TenantSessionClient client, string? background)
+    {
+        var token = await client.AntiforgeryTokenAsync("/orders/live-display");
+        var form = new List<KeyValuePair<string, string>> { new("__RequestVerificationToken", token) };
+        if (background is not null)
+            form.Add(new("background", background));
+        return await client.PostFormAsync("/settings/account/logo/background", form);
+    }
+
+    private static string HeaderBackgroundClass(string html)
+    {
+        var match = HeaderMark.Match(html);
+        Assert.True(match.Success, "The Live Screen header shows no restaurant logo box.");
+        return match.Groups[1].Value;
+    }
+
+    private static string? CheckedBackground(string html)
+    {
+        var match = CheckedBackgroundInput.Match(html);
+        return match.Success ? match.Groups[1].Value : null;
     }
 
     private static async Task<HttpResponseMessage> UploadAsync(

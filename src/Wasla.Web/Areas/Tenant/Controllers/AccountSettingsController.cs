@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Branding;
+using Wasla.Domain.Enums;
 using Wasla.Web.Controllers;
 using Wasla.Web.Models.Settings;
 using Wasla.Web.Routing;
@@ -41,8 +42,33 @@ public sealed class AccountSettingsController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var version = await _logos.GetVersionAsync(tenant.Id, ct).ConfigureAwait(false);
-        return View(new AccountSettingsViewModel { RestaurantLogoUrl = Url.RestaurantLogo(version) });
+        var logo = await _logos.GetCurrentAsync(tenant.Id, ct).ConfigureAwait(false);
+        return View(new AccountSettingsViewModel
+        {
+            RestaurantName = tenant.Name,
+            RestaurantLogoUrl = Url.RestaurantLogo(logo?.Version),
+            RestaurantLogoBackground = logo?.Background ?? RestaurantLogoBackground.ThemeAware
+        });
+    }
+
+    /// <summary>
+    /// Changes what the Live Screen header draws behind the current logo. Only the four style tokens are accepted;
+    /// anything else is refused with 400 and changes nothing. The image and its URL stay the same.
+    /// </summary>
+    [ValidateAntiForgeryToken]
+    [HttpPost("logo/background")]
+    public async Task<IActionResult> SetLogoBackground([FromForm(Name = "background")] string? background, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+        if (!RestaurantLogoBackgrounds.TryParse(background, out var value))
+            return BadRequest();
+
+        if (await _logos.SetBackgroundAsync(tenant.Id, value, ct).ConfigureAwait(false))
+            TempData["Success"] = _localizer["Settings.RestaurantLogo.Background.Saved"].Value;
+        else
+            TempData["Error"] = _localizer["Settings.RestaurantLogo.Background.NoLogo"].Value;
+        return RedirectToAction(nameof(Index));
     }
 
     [ValidateAntiForgeryToken]

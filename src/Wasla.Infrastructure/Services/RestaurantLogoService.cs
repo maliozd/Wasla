@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Branding;
 using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 
 namespace Wasla.Infrastructure.Services;
@@ -21,15 +22,32 @@ public sealed class RestaurantLogoService : IRestaurantLogoService
         _logger = logger;
     }
 
-    public async Task<string?> GetVersionAsync(Guid tenantId, CancellationToken ct)
+    public async Task<RestaurantLogoSummary?> GetCurrentAsync(Guid tenantId, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
         return await db.RestaurantLogos
             .AsNoTracking()
             .Where(x => x.Id == SingletonId)
-            .Select(x => x.Version)
+            .Select(x => new RestaurantLogoSummary(x.Version, x.Background))
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
+    }
+
+    public async Task<bool> SetBackgroundAsync(Guid tenantId, RestaurantLogoBackground background, CancellationToken ct)
+    {
+        if (!Enum.IsDefined(background))
+            throw new ArgumentOutOfRangeException(nameof(background), background, "Unknown restaurant logo background.");
+
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
+        var updated = await db.RestaurantLogos
+            .Where(x => x.Id == SingletonId)
+            .ExecuteUpdateAsync(set => set
+                .SetProperty(x => x.Background, background)
+                .SetProperty(x => x.UpdatedAt, DateTime.UtcNow), ct)
+            .ConfigureAwait(false);
+        if (updated > 0)
+            _logger.LogInformation("Restaurant logo background set to {Background} for tenant {TenantId}", background, tenantId);
+        return updated > 0;
     }
 
     public async Task<RestaurantLogoContent?> GetAsync(Guid tenantId, CancellationToken ct)

@@ -4,6 +4,7 @@
 @using Wasla.Application.Branding
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @using Wasla.Web.Models.Ui
+@using Wasla.Web.Ui
 @{
     ViewData["Title"] = L["Settings.AccountSettings.Title"];
     var maxMegabytes = (RestaurantLogoImage.MaxBytes / (1024 * 1024)).ToString(CultureInfo.CurrentCulture);
@@ -84,6 +85,70 @@
                     }
                 </div>
             </div>
+
+            @if (Model.HasRestaurantLogo)
+            {
+                var selectedClass = RestaurantLogoBackgrounds.CssClass(Model.RestaurantLogoBackground);
+                <hr class="my-4" />
+                <form method="post"
+                      asp-area="Tenant"
+                      asp-controller="AccountSettings"
+                      asp-action="SetLogoBackground"
+                      id="restaurantLogoBackgroundForm"
+                      class="wasla-logo-background-settings"
+                      aria-labelledby="restaurantLogoBackgroundTitle">
+                    @Html.AntiForgeryToken()
+                    <h3 id="restaurantLogoBackgroundTitle" class="h6 mb-1">@L["Settings.RestaurantLogo.Background.Title"]</h3>
+                    <p class="text-muted small mb-3">@L["Settings.RestaurantLogo.Background.Description"]</p>
+
+                    @* The Live Screen header in each theme, with the same markup and classes; the page script swaps the
+                       wasla-logo-bg--* class on both as soon as another option is picked. *@
+                    <div class="wasla-logo-theme-previews mb-3" data-logo-background-previews>
+                        @foreach (var previewTheme in new[] { "light", "dark" })
+                        {
+                            <figure class="wasla-logo-theme-preview">
+                                <div class="wasla-logo-theme-preview__header" data-bs-theme="@previewTheme" data-logo-preview-theme="@previewTheme">
+                                    <span class="wasla-live-display-identity__mark wasla-live-display-identity__mark--logo @selectedClass" aria-hidden="true" data-restaurant-logo-mark data-logo-background-target>
+                                        <img class="wasla-live-display-identity__logo" src="@Model.RestaurantLogoUrl" alt="" width="48" height="48" data-restaurant-logo />
+                                        <i class="bi bi-shop" data-restaurant-logo-fallback hidden></i>
+                                    </span>
+                                    <span class="wasla-logo-theme-preview__name">@Model.RestaurantName</span>
+                                </div>
+                                <figcaption class="small text-muted mt-1">
+                                    @(previewTheme == "light" ? L["Settings.RestaurantLogo.Background.PreviewLight"] : L["Settings.RestaurantLogo.Background.PreviewDark"])
+                                </figcaption>
+                            </figure>
+                        }
+                    </div>
+
+                    <fieldset class="wasla-logo-background-options">
+                        <legend class="visually-hidden">@L["Settings.RestaurantLogo.Background.Title"]</legend>
+                        @foreach (var option in RestaurantLogoBackgrounds.All)
+                        {
+                            var id = "restaurantLogoBackground-" + option.Token;
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="background"
+                                       id="@id"
+                                       value="@option.Token"
+                                       aria-describedby="@(id)-description"
+                                       checked="@(option.Value == Model.RestaurantLogoBackground)" />
+                                <label class="form-check-label fw-semibold" for="@id">
+                                    @L[option.LabelKey]
+                                    @if (option.Recommended)
+                                    {
+                                        <span class="badge text-bg-success ms-1">@L["Settings.RestaurantLogo.Background.Recommended"]</span>
+                                    }
+                                </label>
+                                <div id="@(id)-description" class="form-text mt-0">@L[option.DescriptionKey]</div>
+                            </div>
+                        }
+                    </fieldset>
+
+                    <button type="submit" class="btn btn-primary mt-2">@L["Settings.RestaurantLogo.Background.Save"]</button>
+                </form>
+            }
         </div>
     </section>
 </div>

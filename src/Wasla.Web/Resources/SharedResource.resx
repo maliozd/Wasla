@@ -1657,7 +1657,7 @@
   <data name="Settings.RestaurantLogo.PreviewAlt" xml:space="preserve"><value>Seçilen logonun önizlemesi</value></data>
   <data name="Settings.RestaurantLogo.ChooseFile" xml:space="preserve"><value>Logo dosyası seçin</value></data>
   <data name="Settings.RestaurantLogo.ChooseReplacement" xml:space="preserve"><value>Yeni logo dosyası seçin</value></data>
-  <data name="Settings.RestaurantLogo.Requirements" xml:space="preserve"><value>PNG, JPEG veya WebP; en fazla {0} MB ve {1} × {1} piksel. Kare bir görsel en iyi sonucu verir.</value></data>
+  <data name="Settings.RestaurantLogo.Requirements" xml:space="preserve"><value>PNG, JPEG veya WebP; en fazla {0} MB ve {1} × {1} piksel. En iyi sonuç için şeffaf arka planlı (PNG veya WebP), kare ve sade bir simge kullanın.</value></data>
   <data name="Settings.RestaurantLogo.Upload" xml:space="preserve"><value>Logoyu kaydet</value></data>
   <data name="Settings.RestaurantLogo.Replace" xml:space="preserve"><value>Logoyu değiştir</value></data>
   <data name="Settings.RestaurantLogo.Remove" xml:space="preserve"><value>Logoyu kaldır</value></data>
@@ -1668,4 +1668,20 @@
   <data name="Settings.RestaurantLogo.Error.UnsupportedFormat" xml:space="preserve"><value>Yalnızca PNG, JPEG veya WebP görselleri yüklenebilir.</value></data>
   <data name="Settings.RestaurantLogo.Error.Invalid" xml:space="preserve"><value>Bu dosya geçerli bir görsel olarak okunamadı.</value></data>
   <data name="Settings.RestaurantLogo.Error.Dimensions" xml:space="preserve"><value>Logo en fazla {0} × {0} piksel olabilir.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Title" xml:space="preserve"><value>Logo arka planı</value></data>
+  <data name="Settings.RestaurantLogo.Background.Description" xml:space="preserve"><value>Logonun Canlı Ekran başlığında hangi zeminde görüneceğini seçin. Yüklenen görsel değiştirilmez.</value></data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAware" xml:space="preserve"><value>Temaya uyumlu</value></data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAwareDescription" xml:space="preserve"><value>Aydınlık temada şeffaf; karanlık temada logonun arkasında hafif açık bir zemin. Koyu logolar iki temada da okunur.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Transparent" xml:space="preserve"><value>Şeffaf</value></data>
+  <data name="Settings.RestaurantLogo.Background.TransparentDescription" xml:space="preserve"><value>Her iki temada da arka plan yok.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Light" xml:space="preserve"><value>Açık</value></data>
+  <data name="Settings.RestaurantLogo.Background.LightDescription" xml:space="preserve"><value>Her iki temada da hafif açık bir zemin.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Dark" xml:space="preserve"><value>Koyu</value></data>
+  <data name="Settings.RestaurantLogo.Background.DarkDescription" xml:space="preserve"><value>Her iki temada da hafif koyu bir zemin. Açık veya beyaz logolar için uygundur.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Recommended" xml:space="preserve"><value>Önerilen</value></data>
+  <data name="Settings.RestaurantLogo.Background.PreviewLight" xml:space="preserve"><value>Aydınlık tema</value></data>
+  <data name="Settings.RestaurantLogo.Background.PreviewDark" xml:space="preserve"><value>Karanlık tema</value></data>
+  <data name="Settings.RestaurantLogo.Background.Save" xml:space="preserve"><value>Arka planı kaydet</value></data>
+  <data name="Settings.RestaurantLogo.Background.Saved" xml:space="preserve"><value>Logo arka planı kaydedildi.</value></data>
+  <data name="Settings.RestaurantLogo.Background.NoLogo" xml:space="preserve"><value>Önce bir logo yükleyin.</value></data>
 </root>

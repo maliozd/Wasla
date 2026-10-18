@@ -2275,7 +2275,7 @@
     <value>Choose a new logo file</value>
   </data>
   <data name="Settings.RestaurantLogo.Requirements" xml:space="preserve">
-    <value>PNG, JPEG or WebP; up to {0} MB and {1} × {1} pixels. A square image works best.</value>
+    <value>PNG, JPEG or WebP; up to {0} MB and {1} × {1} pixels. For the best result, use a square, simple icon with a transparent background (PNG or WebP).</value>
   </data>
   <data name="Settings.RestaurantLogo.Upload" xml:space="preserve">
     <value>Save logo</value>
@@ -2306,6 +2306,54 @@
   </data>
   <data name="Settings.RestaurantLogo.Error.Dimensions" xml:space="preserve">
     <value>The logo can be at most {0} × {0} pixels.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Title" xml:space="preserve">
+    <value>Logo background</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Description" xml:space="preserve">
+    <value>Choose what the Live Screen header shows behind your logo. The uploaded image is not changed.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAware" xml:space="preserve">
+    <value>Theme-aware</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAwareDescription" xml:space="preserve">
+    <value>Transparent in the light theme; a subtle light surface behind the logo in the dark theme. Dark logos stay readable in both themes.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Transparent" xml:space="preserve">
+    <value>Transparent</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.TransparentDescription" xml:space="preserve">
+    <value>No background in either theme.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.LightDescription" xml:space="preserve">
+    <value>A subtle light surface in both themes.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.DarkDescription" xml:space="preserve">
+    <value>A subtle dark surface in both themes. Suits light or white logos.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Recommended" xml:space="preserve">
+    <value>Recommended</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.PreviewLight" xml:space="preserve">
+    <value>Light theme</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.PreviewDark" xml:space="preserve">
+    <value>Dark theme</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Save" xml:space="preserve">
+    <value>Save background</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Saved" xml:space="preserve">
+    <value>Logo background saved.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.NoLogo" xml:space="preserve">
+    <value>Upload a logo first.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>New</value>

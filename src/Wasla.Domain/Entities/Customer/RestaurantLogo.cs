@@ -1,4 +1,5 @@
 using Wasla.Domain.Common;
+using Wasla.Domain.Enums;
 
 namespace Wasla.Domain.Entities.Customer;
 
@@ -17,4 +18,10 @@ public sealed class RestaurantLogo : BaseEntity
 
     /// <summary>A hash of the content; it changes with every different image and versions the image URL.</summary>
     public string Version { get; set; } = string.Empty;
+
+    /// <summary>
+    /// What the Live Screen header draws behind the logo. It belongs to this logo: replacing the image keeps it, and
+    /// removing the logo removes it, so the next logo starts at <see cref="RestaurantLogoBackground.ThemeAware"/>.
+    /// </summary>
+    public RestaurantLogoBackground Background { get; set; } = RestaurantLogoBackground.ThemeAware;
 }

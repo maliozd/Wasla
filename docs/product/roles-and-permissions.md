@@ -67,7 +67,7 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 | Live receipt print status | `CanManualPrint` | `GET /orders/{id}/print-state`; the hub's `print-status` group ([../architecture/realtime.md](../architecture/realtime.md#the-hub)) |
 | Live Screen invalidation | `CanViewLiveScreen` | The hub's `live-screen` group; the hub itself admits the roles of either stream (`CanReceiveLiveTenantUpdates`) |
 | Order sync / order automation settings | `TenantManagerOrOwner` | Orders sync/order-settings endpoints; `OrderSettingsController`; nav `CanManageOrderSettings` |
-| Platform, receipt printer, account (including the restaurant logo upload and removal), and branch settings pages | `CanManageTenantSettings` | `PlatformConnectionsController`, `ReceiptPrinterSettingsController`, `AccountSettingsController`, `BranchesController` |
+| Platform, receipt printer, account (including the restaurant logo upload, background style and removal), and branch settings pages | `CanManageTenantSettings` | `PlatformConnectionsController`, `ReceiptPrinterSettingsController`, `AccountSettingsController`, `BranchesController` |
 | Team / users | `CanManageTenantUsers` | `TenantUsersController` |
 | Print Bridge devices | `CanManagePrintBridgeDevices` | Device management actions on `PrintBridgeController` |
 | Print Bridge device security (tokens, etc.) | `CanManageDeviceSecurity` | Security-sensitive Print Bridge actions |

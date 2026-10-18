@@ -86,3 +86,31 @@
         if (previewUrl) URL.revokeObjectURL(previewUrl);
     });
 })();
+
+/**
+ * Account settings: the logo background style. Picking an option restyles the light and dark Live Screen previews
+ * at once by swapping their wasla-logo-bg--* class; the image is not requested again. Saving posts the option; the
+ * server accepts only the four known values.
+ */
+(function () {
+    'use strict';
+
+    var form = document.getElementById('restaurantLogoBackgroundForm');
+    if (!form) return;
+    var prefix = 'wasla-logo-bg--';
+    var targets = form.querySelectorAll('[data-logo-background-target]');
+
+    function apply(token) {
+        targets.forEach(function (target) {
+            Array.prototype.slice.call(target.classList)
+                .filter(function (name) { return name.indexOf(prefix) === 0; })
+                .forEach(function (name) { target.classList.remove(name); });
+            target.classList.add(prefix + token);
+        });
+    }
+
+    form.addEventListener('change', function (event) {
+        var radio = event.target;
+        if (radio && radio.name === 'background' && radio.checked) apply(radio.value);
+    });
+})();
