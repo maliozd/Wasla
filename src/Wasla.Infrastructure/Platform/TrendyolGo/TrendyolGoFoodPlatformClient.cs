@@ -632,7 +632,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     {
         public bool IsCancelled { get; set; }
         public string? PackageItemId { get; set; }
-        public string? LineItemId { get; set; }
+
+        /// <summary>A JSON number in the documented package model (<c>packageItemId</c> is a string).</summary>
+        public long? LineItemId { get; set; }
     }
 
     private sealed class TrendyolGoModifierProduct
