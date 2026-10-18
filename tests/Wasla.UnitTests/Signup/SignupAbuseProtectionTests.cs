@@ -186,6 +186,9 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
         var html = WebUtility.HtmlDecode(ownerCancel.Body);
         Assert.Contains(Localized(host, "tr-TR", "Checkout.TooManyAttempts"), html, StringComparison.Ordinal);
         Assert.Contains($"href=\"/checkout/review/{applicant.Id}\"", html, StringComparison.Ordinal);
+        // Outside Development the link leads back to the registration summary, not to a payment step.
+        Assert.Contains(Localized(host, "tr-TR", "Checkout.ReturnToRegistrationSummary"), html, StringComparison.Ordinal);
+        Assert.DoesNotContain(Localized(host, "tr-TR", "Checkout.TryAgain"), html, StringComparison.Ordinal);
         Assert.DoesNotContain(applicant.Entity.OwnerEmail, html, StringComparison.Ordinal);
         await using var check = NewDb();
         var stored = await check.PendingRegistrations.AsNoTracking().SingleAsync(r => r.Id == applicant.Id, TestContext.Current.CancellationToken);
@@ -212,6 +215,7 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Redirect, failed.Status);
         Assert.Equal(HttpStatusCode.TooManyRequests, success.Status);
+        Assert.Contains(Localized(host, "tr-TR", "Checkout.TryAgain"), WebUtility.HtmlDecode(success.Body), StringComparison.Ordinal);
         await using var check = NewDb();
         var stored = await check.PendingRegistrations.AsNoTracking().SingleAsync(r => r.Id == applicant.Id, TestContext.Current.CancellationToken);
         Assert.Equal(PendingRegistrationStatus.PaymentFailed, stored.Status);

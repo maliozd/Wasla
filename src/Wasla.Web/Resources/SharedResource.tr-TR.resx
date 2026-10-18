@@ -3218,6 +3218,7 @@
   <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>Ödeme tamamlandıktan sonra restoran paneliniz hazırlanır.</value></data>
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>Ana sayfaya dön</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Ödemeye devam et</value></data>
+  <data name="Signup.ViewRegistrationSummary" xml:space="preserve"><value>Kayıt özetini görüntüle</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Restoranınız</value></data>
   <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Wasla adresiniz</value></data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>{0} adresini aç</value></data>
@@ -3286,6 +3287,7 @@
   <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Kayıt iptal edildi</value></data>
   <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Kayıt iptal edildi. İsterseniz yeniden kayıt oluşturabilirsiniz.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>Ödeme adımına dön</value></data>
+  <data name="Checkout.ReturnToRegistrationSummary" xml:space="preserve"><value>Kayıt özetine dön</value></data>
   <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Yeniden kayıt ol</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>Bu kayıt için ödeme zaten başarılı olarak simüle edildi.</value></data>
   <data name="Checkout.StatusPaymentReceived" xml:space="preserve"><value>Bu kayıt için ödeme alındı.</value></data>

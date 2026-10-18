@@ -163,7 +163,7 @@ public sealed class CheckoutController : Controller, IAuthenticationRateLimitRes
     }
 
     /// <summary>
-    /// A rate-limited registration change: a short localized page with a link back to the payment step, status 429.
+    /// A rate-limited registration change: a short localized page with a link back to the summary, status 429.
     /// Nothing about the registration is read, so the page is the same whoever asks.
     /// </summary>
     Task<IActionResult> IAuthenticationRateLimitResponder.RateLimitedAsync(ActionExecutingContext context)
@@ -171,7 +171,11 @@ public sealed class CheckoutController : Controller, IAuthenticationRateLimitRes
         var id = context.ActionArguments.TryGetValue("id", out var value) && value is Guid registrationId
             ? registrationId
             : Guid.Empty;
-        var result = View("TooManyRequests", new CheckoutResultViewModel { RegistrationId = id });
+        var result = View("TooManyRequests", new CheckoutResultViewModel
+        {
+            RegistrationId = id,
+            IsPaymentSimulatorAvailable = IsPaymentSimulatorAvailable
+        });
         result.StatusCode = StatusCodes.Status429TooManyRequests;
         return Task.FromResult<IActionResult>(result);
     }

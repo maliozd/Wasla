@@ -3218,6 +3218,7 @@
   <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>After payment is complete, your restaurant panel will be prepared.</value></data>
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>Back to homepage</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Continue to payment</value></data>
+  <data name="Signup.ViewRegistrationSummary" xml:space="preserve"><value>View registration summary</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Your restaurant</value></data>
   <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Your Wasla address</value></data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>Open {0}</value></data>
@@ -3286,6 +3287,7 @@
   <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Registration cancelled</value></data>
   <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Registration was cancelled. You can register again if you wish.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>Return to payment step</value></data>
+  <data name="Checkout.ReturnToRegistrationSummary" xml:space="preserve"><value>Return to registration summary</value></data>
   <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Register again</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>Payment has already been simulated as successful for this registration.</value></data>
   <data name="Checkout.StatusPaymentReceived" xml:space="preserve"><value>Payment for this registration has been received.</value></data>
