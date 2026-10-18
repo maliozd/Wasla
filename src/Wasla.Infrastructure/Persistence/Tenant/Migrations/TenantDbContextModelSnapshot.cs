@@ -600,6 +600,37 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("PrintJobs", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.Customer.RestaurantLogo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RestaurantLogos", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.SyncLog", b =>
                 {
                     b.Property<Guid>("Id")

@@ -2247,8 +2247,65 @@
   <data name="Settings.AccountSettings.Subtitle" xml:space="preserve">
     <value>Управление настройками учетной записи и профиля.</value>
   </data>
-  <data name="Settings.AccountSettings.ComingSoon" xml:space="preserve">
-    <value>Настройки аккаунта будут доступны здесь позже.</value>
+  <data name="Settings.RestaurantLogo.Title" xml:space="preserve">
+    <value>Логотип ресторана</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Description" xml:space="preserve">
+    <value>Логотип показывается рядом с названием ресторана в заголовке экрана «Живой экран». Без логотипа показывается стандартный значок магазина.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Current" xml:space="preserve">
+    <value>Текущий логотип</value>
+  </data>
+  <data name="Settings.RestaurantLogo.None" xml:space="preserve">
+    <value>Логотип не загружен</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Preview" xml:space="preserve">
+    <value>Предпросмотр — ещё не сохранено</value>
+  </data>
+  <data name="Settings.RestaurantLogo.CurrentAlt" xml:space="preserve">
+    <value>Текущий логотип ресторана</value>
+  </data>
+  <data name="Settings.RestaurantLogo.PreviewAlt" xml:space="preserve">
+    <value>Предпросмотр выбранного логотипа</value>
+  </data>
+  <data name="Settings.RestaurantLogo.ChooseFile" xml:space="preserve">
+    <value>Выберите файл логотипа</value>
+  </data>
+  <data name="Settings.RestaurantLogo.ChooseReplacement" xml:space="preserve">
+    <value>Выберите новый файл логотипа</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Requirements" xml:space="preserve">
+    <value>PNG, JPEG или WebP; не более {0} МБ и {1} × {1} пикселей. Лучше всего подходит квадратное изображение.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Upload" xml:space="preserve">
+    <value>Сохранить логотип</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Replace" xml:space="preserve">
+    <value>Заменить логотип</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Remove" xml:space="preserve">
+    <value>Удалить логотип</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Saved" xml:space="preserve">
+    <value>Логотип сохранён.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Removed" xml:space="preserve">
+    <value>Логотип удалён.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Required" xml:space="preserve">
+    <value>Выберите файл логотипа.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.TooLarge" xml:space="preserve">
+    <value>Размер файла логотипа — не более {0} МБ.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.UnsupportedFormat" xml:space="preserve">
+    <value>Можно загрузить только изображения PNG, JPEG или WebP.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Invalid" xml:space="preserve">
+    <value>Не удалось прочитать файл как изображение.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Dimensions" xml:space="preserve">
+    <value>Размер логотипа — не более {0} × {0} пикселей.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>Новый</value>

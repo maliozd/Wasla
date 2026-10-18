@@ -179,6 +179,18 @@ public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<Us
     }
 }
 
+public class RestaurantLogoConfiguration : IEntityTypeConfiguration<RestaurantLogo>
+{
+    public void Configure(EntityTypeBuilder<RestaurantLogo> builder)
+    {
+        builder.ToTable("RestaurantLogos");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Content).IsRequired();
+        builder.Property(x => x.ContentType).IsRequired().HasMaxLength(32);
+        builder.Property(x => x.Version).IsRequired().HasMaxLength(64);
+    }
+}
+
 public class TenantOperationalSettingsConfiguration : IEntityTypeConfiguration<TenantOperationalSettings>
 {
     public void Configure(EntityTypeBuilder<TenantOperationalSettings> builder)

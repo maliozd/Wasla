@@ -165,6 +165,16 @@ Per connection, the classification is `ProviderConnectionHealthRules.Classify` (
 
 `orders-platform-sync-status.js` only displays the section from `wasla:live-rendered`; it sends no request. The badge is a polite `role="status"` region whose words carry the state (the dot and icons are `aria-hidden`), written only when the text changes, and it shows `Common.Loading` until the first snapshot. When the section is missing (the status could not be read on the server) or a poll fails (`wasla:live-poll-status` from the coordinator: stale or session expired), the badge shows the issue state, because the screen cannot back up "Live"; the next accepted snapshot shows the server's state again. The section takes no part in new-order detection, sound or notifications.
 
+### Restaurant logo (header)
+
+Added in WAS-127. The box before the restaurant name shows the tenant's own logo when it has one, otherwise the storefront icon (`bi-shop`). The logo is decorative (`alt=""`, the box is `aria-hidden`): the restaurant name beside it names the restaurant.
+
+- **Managing it:** Account Settings (`/settings/account`, `CanManageTenantSettings`, Owner only) uploads, previews, replaces and removes it. Other roles see it and cannot change it; the server enforces this, not the hidden page.
+- **Storage:** one `RestaurantLogos` row in the tenant's own database (`IRestaurantLogoService`), apart from `TenantOperationalSettings` so reading settings never loads the image. There is no file path: the bytes, the media type detected from them and a version (a hash of the bytes) are stored. A user-supplied file name or media type is never used.
+- **Accepted images** (`RestaurantLogoImage`): PNG, JPEG or WebP, recognized from the content; at most 1 MB and 4096 × 4096 pixels. SVG, GIF and everything else are refused with a localized message. The pixel data is not decoded: a damaged image that passes shows blank or partial; a response that is not an image at all falls back to the storefront icon.
+- **Serving:** `GET /restaurant-logo?v={version}` (`CanViewLiveScreen`) serves the current tenant's logo from tenant resolution, with `nosniff`, a `sandbox` CSP and `Cross-Origin-Resource-Policy: same-origin`. The current version may be cached for good (`immutable`); an old or missing version is served `no-cache` with an ETag, and no logo is `404`, `no-store`. A page rendered after a replacement or removal therefore never shows the old image.
+- **Rendering:** the header is rendered once with the page and is not part of the polled snapshot, so polling never re-renders or re-requests it. A Live Screen already open keeps the logo it loaded until it is reloaded. A failed read of the logo version shows the storefront icon and never breaks the page. The logo sits on a light plate in both themes, contained in the icon's 3rem box.
+
 **Implementation quirk:** `localStorage` key `Wasla.soundUnlocked` is written when unlock succeeds and is not read on load. It is a cleanup candidate, not part of the audio contract.
 
 ### Live invalidation (WAS-24)

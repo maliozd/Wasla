@@ -21,6 +21,7 @@ public class TenantDbContext : DbContext
     public DbSet<GuidedDemoSession> GuidedDemoSessions => Set<GuidedDemoSession>();
     public DbSet<UserGuidedSetupState> UserGuidedSetupStates => Set<UserGuidedSetupState>();
     public DbSet<TenantOperationalSettings> TenantOperationalSettings => Set<TenantOperationalSettings>();
+    public DbSet<RestaurantLogo> RestaurantLogos => Set<RestaurantLogo>();
     public DbSet<PlatformConnection> PlatformConnections => Set<PlatformConnection>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
@@ -39,6 +40,7 @@ public class TenantDbContext : DbContext
         modelBuilder.ApplyConfiguration(new GuidedDemoSessionConfiguration());
         modelBuilder.ApplyConfiguration(new UserGuidedSetupStateConfiguration());
         modelBuilder.ApplyConfiguration(new TenantOperationalSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new RestaurantLogoConfiguration());
         modelBuilder.ApplyConfiguration(new PlatformConnectionConfiguration());
         modelBuilder.ApplyConfiguration(new OrderConfiguration());
         modelBuilder.ApplyConfiguration(new OrderItemConfiguration());

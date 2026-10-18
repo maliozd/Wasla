@@ -2247,8 +2247,65 @@
   <data name="Settings.AccountSettings.Subtitle" xml:space="preserve">
     <value>Manage account and profile settings.</value>
   </data>
-  <data name="Settings.AccountSettings.ComingSoon" xml:space="preserve">
-    <value>Account settings will be available here later.</value>
+  <data name="Settings.RestaurantLogo.Title" xml:space="preserve">
+    <value>Restaurant logo</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Description" xml:space="preserve">
+    <value>Your logo appears next to the restaurant name in the Live Screen header. Without a logo, the default storefront icon is shown.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Current" xml:space="preserve">
+    <value>Current logo</value>
+  </data>
+  <data name="Settings.RestaurantLogo.None" xml:space="preserve">
+    <value>No logo uploaded</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Preview" xml:space="preserve">
+    <value>Preview — not saved yet</value>
+  </data>
+  <data name="Settings.RestaurantLogo.CurrentAlt" xml:space="preserve">
+    <value>Current restaurant logo</value>
+  </data>
+  <data name="Settings.RestaurantLogo.PreviewAlt" xml:space="preserve">
+    <value>Preview of the selected logo</value>
+  </data>
+  <data name="Settings.RestaurantLogo.ChooseFile" xml:space="preserve">
+    <value>Choose a logo file</value>
+  </data>
+  <data name="Settings.RestaurantLogo.ChooseReplacement" xml:space="preserve">
+    <value>Choose a new logo file</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Requirements" xml:space="preserve">
+    <value>PNG, JPEG or WebP; up to {0} MB and {1} × {1} pixels. A square image works best.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Upload" xml:space="preserve">
+    <value>Save logo</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Replace" xml:space="preserve">
+    <value>Replace logo</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Remove" xml:space="preserve">
+    <value>Remove logo</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Saved" xml:space="preserve">
+    <value>Logo saved.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Removed" xml:space="preserve">
+    <value>Logo removed.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Required" xml:space="preserve">
+    <value>Choose a logo file.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.TooLarge" xml:space="preserve">
+    <value>The logo file can be at most {0} MB.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.UnsupportedFormat" xml:space="preserve">
+    <value>Only PNG, JPEG or WebP images can be uploaded.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Invalid" xml:space="preserve">
+    <value>This file could not be read as a valid image.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Dimensions" xml:space="preserve">
+    <value>The logo can be at most {0} × {0} pixels.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>New</value>

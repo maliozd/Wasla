@@ -62,12 +62,12 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 |------------|--------|------------------------------|
 | View orders / history | `CanViewOrders` | `OrdersController` class-level |
 | Mutate order lifecycle | `CanManageOrders` | Order action endpoints on `OrdersController` |
-| Live Screen view / poll, including the read-only effective automation states | `CanViewLiveScreen` | `/orders/live-display`, `/orders/live-screen`, `/orders/live-data` |
+| Live Screen view / poll, including the read-only effective automation states and the restaurant logo image | `CanViewLiveScreen` | `/orders/live-display`, `/orders/live-screen`, `/orders/live-data`, `GET /restaurant-logo` |
 | Manual print / reprint | `CanManualPrint` | Orders print actions; some Print Bridge job actions |
 | Live receipt print status | `CanManualPrint` | `GET /orders/{id}/print-state`; the hub's `print-status` group ([../architecture/realtime.md](../architecture/realtime.md#the-hub)) |
 | Live Screen invalidation | `CanViewLiveScreen` | The hub's `live-screen` group; the hub itself admits the roles of either stream (`CanReceiveLiveTenantUpdates`) |
 | Order sync / order automation settings | `TenantManagerOrOwner` | Orders sync/order-settings endpoints; `OrderSettingsController`; nav `CanManageOrderSettings` |
-| Platform, receipt printer, account, and branch settings pages | `CanManageTenantSettings` | `PlatformConnectionsController`, `ReceiptPrinterSettingsController`, `AccountSettingsController`, `BranchesController` |
+| Platform, receipt printer, account (including the restaurant logo upload and removal), and branch settings pages | `CanManageTenantSettings` | `PlatformConnectionsController`, `ReceiptPrinterSettingsController`, `AccountSettingsController`, `BranchesController` |
 | Team / users | `CanManageTenantUsers` | `TenantUsersController` |
 | Print Bridge devices | `CanManagePrintBridgeDevices` | Device management actions on `PrintBridgeController` |
 | Print Bridge device security (tokens, etc.) | `CanManageDeviceSecurity` | Security-sensitive Print Bridge actions |

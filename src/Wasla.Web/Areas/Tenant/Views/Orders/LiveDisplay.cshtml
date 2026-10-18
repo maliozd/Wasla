@@ -12,6 +12,7 @@
     ViewData["Title"] = L["Orders.LiveDisplay.Title"];
     var today = Model.TurkeyLocalToday;
     var customerName = ViewData["CustomerName"] as string;
+    var restaurantLogoUrl = ViewData["RestaurantLogoUrl"] as string;
     var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
     var timeZoneId = TimeZoneHelper.ResolveTurkeyTimeZone().Id;
     if (timeZoneId == "Turkey Standard Time")
@@ -24,7 +25,20 @@
     <header class="wasla-live-display-header wasla-fs-header">
         <div class="wasla-live-display-header__left wasla-fs-header__left">
             <div class="wasla-live-display-identity">
-                <span class="wasla-live-display-identity__mark" aria-hidden="true"><i class="bi bi-shop"></i></span>
+                @* The restaurant's logo when it has one, otherwise (or when it cannot be loaded, restaurant-logo.js) the
+                   storefront icon. Decorative: the restaurant name beside it names the restaurant. Rendered once with the
+                   page; polling never touches it. *@
+                @if (!string.IsNullOrEmpty(restaurantLogoUrl))
+                {
+                    <span class="wasla-live-display-identity__mark wasla-live-display-identity__mark--logo" aria-hidden="true" data-restaurant-logo-mark>
+                        <img class="wasla-live-display-identity__logo" src="@restaurantLogoUrl" alt="" width="48" height="48" decoding="async" data-restaurant-logo />
+                        <i class="bi bi-shop" data-restaurant-logo-fallback hidden></i>
+                    </span>
+                }
+                else
+                {
+                    <span class="wasla-live-display-identity__mark" aria-hidden="true"><i class="bi bi-shop"></i></span>
+                }
                 <div class="wasla-live-display-identity__copy">
                     <div class="wasla-live-display-identity__heading">
                         @if (!string.IsNullOrWhiteSpace(customerName))
@@ -362,6 +376,10 @@
             }))
         };
     </script>
+    @if (!string.IsNullOrEmpty(restaurantLogoUrl))
+    {
+        <script src="~/js/restaurant-logo.js" asp-append-version="true"></script>
+    }
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-audio.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-notification-settings.js" asp-append-version="true"></script>
