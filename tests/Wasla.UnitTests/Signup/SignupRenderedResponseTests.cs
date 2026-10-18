@@ -100,20 +100,21 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
 
     public static TheoryData<string> Cultures => new() { "tr-TR", "en-US", "ar-SA", "ru-RU" };
 
-    // Copy that says payment is or was simulated. Outside Development no signup or checkout page may show it.
-    private static readonly string[] SimulatedPaymentKeys =
+    // Copy that says payment is or was simulated, or that the applicant can continue to or return to a payment step.
+    // Outside Development no signup or checkout page may show it.
+    private static readonly string[] DevelopmentOnlyKeys =
     [
-        "Signup.BillingNote", "Signup.PendingSubtitle", "Signup.PendingTestNote", "Checkout.ReviewSubtitle",
-        "Checkout.SimulateSuccess", "Checkout.SimulateFailed", "Checkout.StatusAlreadyPaid", "Checkout.FailedTitle",
-        "Checkout.FailedMessage", "Checkout.FailedNoWorkspace"
+        "Signup.BillingNote", "Signup.PendingSubtitle", "Signup.PendingTestNote", "Signup.ContinueToCheckout",
+        "Checkout.ReviewSubtitle", "Checkout.SimulateSuccess", "Checkout.SimulateFailed", "Checkout.StatusAlreadyPaid",
+        "Checkout.FailedTitle", "Checkout.FailedMessage", "Checkout.FailedNoWorkspace", "Checkout.TryAgain"
     ];
 
-    // What the same pages say outside Development: the registration waits for payment.
-    private static readonly string[] AwaitingPaymentKeys =
+    // What the same pages say outside Development: the registration waits for payment, and the buttons lead to its summary.
+    private static readonly string[] OutsideDevelopmentKeys =
     [
-        "Signup.BillingNoteAwaitingPayment", "Signup.PendingSubtitleAwaitingPayment",
+        "Signup.BillingNoteAwaitingPayment", "Signup.PendingSubtitleAwaitingPayment", "Signup.ViewRegistrationSummary",
         "Checkout.ReviewSubtitleAwaitingPayment", "Checkout.StatusPaymentReceived",
-        "Checkout.PaymentNotCompletedTitle", "Checkout.PaymentNotCompletedMessage"
+        "Checkout.PaymentNotCompletedTitle", "Checkout.PaymentNotCompletedMessage", "Checkout.ReturnToRegistrationSummary"
     ];
 
     [Theory]
@@ -122,23 +123,29 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
     {
         var pages = await RenderPaymentPagesAsync(_hosts.Staging, culture);
 
-        foreach (var (name, page, expectedKey) in new[]
+        foreach (var (name, page, expectedKeys) in new[]
                  {
-                     ("signup form", pages.SignupForm, "Signup.BillingNoteAwaitingPayment"),
-                     ("pending", pages.Pending, "Signup.PendingSubtitleAwaitingPayment"),
-                     ("review", pages.Review, "Checkout.ReviewSubtitleAwaitingPayment"),
-                     ("review, paid", pages.PaidReview, "Checkout.StatusPaymentReceived"),
-                     ("failed", pages.Failed, "Checkout.PaymentNotCompletedMessage")
+                     ("signup form", pages.SignupForm, new[] { "Signup.BillingNoteAwaitingPayment" }),
+                     ("pending", pages.Pending, new[] { "Signup.PendingSubtitleAwaitingPayment", "Signup.ViewRegistrationSummary" }),
+                     ("review", pages.Review, new[] { "Checkout.ReviewSubtitleAwaitingPayment" }),
+                     ("review, paid", pages.PaidReview, new[] { "Checkout.StatusPaymentReceived" }),
+                     ("failed", pages.Failed, new[]
+                     {
+                         "Checkout.PaymentNotCompletedTitle", "Checkout.PaymentNotCompletedMessage", "Checkout.ReturnToRegistrationSummary"
+                     })
                  })
         {
             AssertHtml(page);
-            Assert.True(page.Body.Contains(Text(expectedKey, culture), StringComparison.Ordinal), $"{name}: {expectedKey} missing");
-            foreach (var key in SimulatedPaymentKeys)
+            foreach (var key in expectedKeys)
+                Assert.True(page.Body.Contains(Text(key, culture), StringComparison.Ordinal), $"{name}: {key} missing");
+            foreach (var key in DevelopmentOnlyKeys)
                 Assert.False(page.Body.Contains(Text(key, culture), StringComparison.Ordinal), $"{name}: shows {key}");
             Assert.DoesNotContain("/checkout/simulate-", page.Body);
         }
 
-        Assert.Contains(Text("Checkout.PaymentNotCompletedTitle", culture), pages.Failed.Body);
+        // Only the labels change: the buttons still lead to the same summary page.
+        Assert.Contains($"href=\"/checkout/review/{pages.AwaitingPaymentId}\"", pages.Pending.Body);
+        Assert.Contains($"href=\"/checkout/review/{pages.FailedId}\"", pages.Failed.Body);
         Assert.Contains($"action=\"/checkout/cancel/{pages.AwaitingPaymentId}\"", pages.Review.Body);
     }
 
@@ -151,19 +158,24 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
         foreach (var (name, page, expectedKeys) in new[]
                  {
                      ("signup form", pages.SignupForm, new[] { "Signup.BillingNote" }),
-                     ("pending", pages.Pending, new[] { "Signup.PendingSubtitle", "Signup.PendingTestNote" }),
+                     ("pending", pages.Pending, new[] { "Signup.PendingSubtitle", "Signup.PendingTestNote", "Signup.ContinueToCheckout" }),
                      ("review", pages.Review, new[] { "Checkout.ReviewSubtitle", "Checkout.SimulateSuccess", "Checkout.SimulateFailed" }),
                      ("review, paid", pages.PaidReview, new[] { "Checkout.StatusAlreadyPaid" }),
-                     ("failed", pages.Failed, new[] { "Checkout.FailedTitle", "Checkout.FailedMessage", "Checkout.FailedNoWorkspace" })
+                     ("failed", pages.Failed, new[]
+                     {
+                         "Checkout.FailedTitle", "Checkout.FailedMessage", "Checkout.FailedNoWorkspace", "Checkout.TryAgain"
+                     })
                  })
         {
             AssertHtml(page);
             foreach (var key in expectedKeys)
                 Assert.True(page.Body.Contains(Text(key, culture), StringComparison.Ordinal), $"{name}: {key} missing");
-            foreach (var key in AwaitingPaymentKeys)
+            foreach (var key in OutsideDevelopmentKeys)
                 Assert.False(page.Body.Contains(Text(key, culture), StringComparison.Ordinal), $"{name}: shows {key}");
         }
 
+        Assert.Contains($"href=\"/checkout/review/{pages.AwaitingPaymentId}\"", pages.Pending.Body);
+        Assert.Contains($"href=\"/checkout/review/{pages.FailedId}\"", pages.Failed.Body);
         Assert.Contains($"action=\"/checkout/simulate-success/{pages.AwaitingPaymentId}\"", pages.Review.Body);
         Assert.Contains($"action=\"/checkout/simulate-failed/{pages.AwaitingPaymentId}\"", pages.Review.Body);
     }
@@ -220,6 +232,7 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
 
         return new PaymentPages(
             awaiting.Id,
+            failed.Id,
             await stranger.GetAsync($"/signup{query}"),
             await awaitingOwner.GetAsync($"/signup/pending/{awaiting.Id}{query}"),
             await awaitingOwner.GetAsync($"/checkout/review/{awaiting.Id}{query}"),
@@ -229,6 +242,7 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
 
     private sealed record PaymentPages(
         Guid AwaitingPaymentId,
+        Guid FailedId,
         TestResponse SignupForm,
         TestResponse Pending,
         TestResponse Review,

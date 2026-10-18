@@ -369,6 +369,9 @@
   <data name="Signup.ContinueToCheckout" xml:space="preserve">
     <value>Ödemeye devam et</value>
   </data>
+  <data name="Signup.ViewRegistrationSummary" xml:space="preserve">
+    <value>Kayıt özetini görüntüle</value>
+  </data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve">
     <value>Restoranınız</value>
   </data>
@@ -627,6 +630,9 @@
   </data>
   <data name="Checkout.TryAgain" xml:space="preserve">
     <value>Ödeme adımına dön</value>
+  </data>
+  <data name="Checkout.ReturnToRegistrationSummary" xml:space="preserve">
+    <value>Kayıt özetine dön</value>
   </data>
   <data name="Checkout.RegisterAgain" xml:space="preserve">
     <value>Yeniden kayıt ol</value>

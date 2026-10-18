@@ -3218,6 +3218,7 @@
   <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>بعد إتمام الدفع، سيتم تجهيز لوحة مطعمك.</value></data>
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>العودة إلى الصفحة الرئيسية</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>متابعة الدفع</value></data>
+  <data name="Signup.ViewRegistrationSummary" xml:space="preserve"><value>عرض ملخص التسجيل</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>مطعمك</value></data>
   <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>عنوان Wasla الخاص بك</value></data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>فتح {0}</value></data>
@@ -3286,6 +3287,7 @@
   <data name="Checkout.CancelledTitle" xml:space="preserve"><value>تم إلغاء التسجيل</value></data>
   <data name="Checkout.CancelledMessage" xml:space="preserve"><value>تم إلغاء التسجيل. يمكنك التسجيل مرة أخرى إذا رغبت.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>العودة إلى خطوة الدفع</value></data>
+  <data name="Checkout.ReturnToRegistrationSummary" xml:space="preserve"><value>العودة إلى ملخص التسجيل</value></data>
   <data name="Checkout.RegisterAgain" xml:space="preserve"><value>التسجيل مرة أخرى</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح مسبقاً لهذا التسجيل.</value></data>
   <data name="Checkout.StatusPaymentReceived" xml:space="preserve"><value>تم استلام الدفع لهذا التسجيل.</value></data>

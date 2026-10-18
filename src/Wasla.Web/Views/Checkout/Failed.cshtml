@@ -29,7 +29,7 @@
 
                         <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
                             <a class="btn btn-primary rounded-pill" asp-controller="Checkout" asp-action="Review" asp-route-id="@Model.RegistrationId">
-                                @L["Checkout.TryAgain"]
+                                @L[Model.IsPaymentSimulatorAvailable ? "Checkout.TryAgain" : "Checkout.ReturnToRegistrationSummary"]
                             </a>
                             <a class="btn btn-outline-secondary rounded-pill" href="/signup">@L["Checkout.RegisterAgain"]</a>
                         </div>
