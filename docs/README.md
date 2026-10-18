@@ -2,7 +2,7 @@
 
 Canonical developer and agent documentation is **English**. Turkish, English, Arabic, and Russian remain UI languages. This folder is not a second product manual.
 
-Source code wins when a document is wrong. Do not “fix” code to match a stale doc. Label legacy `OrderHub` names as current config debt when they still exist in source.
+Source code wins when a document is wrong. Do not “fix” code to match a stale doc. Retired product and tenant names are not tolerated debt: they are removed under the [clean-break policy](product/terminology.md#clean-break-policy), with no aliases or compatibility layer. Do not add new uses of them.
 
 Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `tenant-vs-customer.md`, `wasla-design-language-v1.md`, `orders-printjob-status-signalr.md`, scratch `.txt` files) are **not** canonical. They stay until a later cleanup. Prefer the root `README.md` and the map below.
 
@@ -32,7 +32,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [operations/tenant-operations-center.md](operations/tenant-operations-center.md) | Central Admin tenant overview, list and per-tenant health |
 | [operations/testing.md](operations/testing.md) | What to run, and what not to claim |
 | [product/product-boundaries.md](product/product-boundaries.md) | Wasla Orders, Wasla POS, and shared-infrastructure boundaries |
-| [product/terminology.md](product/terminology.md) | Tenant vs order customer |
+| [product/terminology.md](product/terminology.md) | Product names, Tenant vs order customer, clean-break policy and the historical migration exception |
 | [product/roles-and-permissions.md](product/roles-and-permissions.md) | Server-side role matrix |
 | [product/onboarding.md](product/onboarding.md) | Per-user guided setup, tenant operational mode (Setup / Live), going live |
 
