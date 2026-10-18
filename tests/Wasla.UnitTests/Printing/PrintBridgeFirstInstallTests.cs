@@ -210,9 +210,9 @@ public sealed partial class PrintBridgeFirstInstallTests
         Assert.Contains("<button type=\"button\" class=\"btn btn-link\" id=\"pbAlreadyInstalledBtn\" aria-controls=\"pbStepConnect\">", markup, StringComparison.Ordinal);
         Assert.Contains("id=\"pbNotWindowsNotice\" role=\"note\"", markup, StringComparison.Ordinal);
 
-        // No dead download link in the shared fallback during the first install.
+        // No dead download link in the shared fallback, in the first install or on the ordinary page (WAS-128).
         var status = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "PrintBridge", "_PrintBridgeAutoStatus.cshtml");
-        Assert.Matches(new Regex(@"@if \(!Model\.IsGuidedFirstInstall \|\| Model\.PackageAvailable\)\s*\{\s*<a class=""btn btn-outline-secondary btn-sm"" href=""@Model\.PackageDownloadUrl"">"), status);
+        Assert.Matches(new Regex(@"@if \(Model\.PackageAvailable\)\s*\{\s*<a class=""btn btn-outline-secondary btn-sm"" href=""@Model\.PackageDownloadUrl"">"), status);
 
         // The guided panel has no Print Bridge top action any more; "set up later" and the next-section line stay.
         var panel = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Shared", "_GuidedSetupSectionPanel.cshtml");

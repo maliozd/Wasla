@@ -94,10 +94,15 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
     /// </summary>
     /// <param name="configuration">Extra configuration, for example rate limits or trusted proxies.</param>
     /// <param name="configureServices">Runs after the application's registrations, to wrap or replace a service.</param>
+    /// <param name="withoutWebRoot">
+    /// Starts without a web root, as Web started from a folder that has no <c>wwwroot</c>: ASP.NET Core then leaves
+    /// <c>WebRootPath</c> null (the temporary content root has none).
+    /// </param>
     public static async Task<TenantSessionWebHost> StartAsync(
         DirectoryInfo? sharedDataProtectionKeys = null,
         IReadOnlyDictionary<string, string?>? configuration = null,
-        Action<IServiceCollection>? configureServices = null)
+        Action<IServiceCollection>? configureServices = null,
+        bool withoutWebRoot = false)
     {
         var central = new CentralTestDatabase();
         var tenants = new RecordingTenantDbFactory();
@@ -112,7 +117,7 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
             EnvironmentName = Environments.Production,
             ApplicationName = typeof(SharedResource).Assembly.GetName().Name,
             ContentRootPath = contentRoot,
-            WebRootPath = TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "wwwroot")
+            WebRootPath = withoutWebRoot ? null : TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "wwwroot")
         });
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
