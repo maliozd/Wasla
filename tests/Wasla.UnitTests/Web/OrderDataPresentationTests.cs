@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Localization;
 using Wasla.Application.Orders;
+using Wasla.Application.Time;
 using Wasla.UnitTests.Admin;
 using Wasla.Web.Ui;
 
@@ -26,7 +27,11 @@ public sealed partial class OrderDataPresentationTests
     public async Task DashboardAndOrders_ShowLiraInEveryCulture_NeverTheCultureCurrency()
     {
         var ct = TestContext.Current.CancellationToken;
+        // The host seeds the newest order two minutes before its start. Orders defaults to today in Türkiye, which that
+        // order is not in just after midnight there, so the list is asked for the local days the order can fall on.
+        var startingUtc = DateTime.UtcNow;
         await using var host = await TenantVisualWebHost.StartAsync();
+        var (startDate, endDate) = TurkeyLocalDateRange(startingUtc.AddMinutes(-2), DateTime.UtcNow);
 
         foreach (var name in Cultures)
         {
@@ -34,7 +39,7 @@ public sealed partial class OrderDataPresentationTests
             using var client = await SignedInClientAsync(host, name, ct);
 
             var dashboard = await PageAsync(client, host, "/dashboard", ct);
-            var orders = await PageAsync(client, host, "/orders", ct);
+            var orders = await PageAsync(client, host, $"/orders?startDate={startDate}&endDate={endDate}", ct);
             var details = await PageAsync(client, host, $"/orders/details/{TenantVisualWebHost.DetailOrderId}", ct);
 
             // The newest seeded order (412.50) is on all three pages; its details add the fee and the line amounts.
@@ -159,6 +164,58 @@ public sealed partial class OrderDataPresentationTests
 
         var cultureCurrency = resources.Where(p => CultureCurrencyFormatItem().IsMatch(p.Value)).Select(p => p.Key).ToList();
         Assert.True(cultureCurrency.Count == 0, $"Culture currency format in SharedResource{culture}.resx: {string.Join(", ", cultureCurrency)}");
+    }
+
+    /// <summary>
+    /// The date arithmetic the two page tests above rely on, at fixed instants around midnight in Türkiye (21:00 UTC),
+    /// checked against the Orders filter's own mapping of local dates to UTC bounds. The pages and the Dashboard read the
+    /// system clock, so these instants cannot be replayed through them.
+    /// </summary>
+    [Theory]
+    [InlineData("2026-10-18T12:00:00Z")]
+    [InlineData("2026-10-18T20:58:30Z")]
+    [InlineData("2026-10-18T20:59:59Z")]
+    [InlineData("2026-10-18T21:00:00Z")]
+    [InlineData("2026-10-18T21:00:15Z")]
+    [InlineData("2026-10-18T21:00:59Z")]
+    [InlineData("2026-10-18T21:01:00Z")]
+    [InlineData("2026-10-18T21:02:30Z")]
+    public void AroundMidnightInTurkey_TheRangeCoversTheFixture_AndTheFallbackOrderIsToday(string instant)
+    {
+        var nowUtc = DateTime.Parse(instant, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
+        var localToday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz));
+
+        // The newest fixture order is seeded two minutes before the host starts, which is at or after nowUtc.
+        foreach (var hostStartUtc in new[] { nowUtc, nowUtc.AddSeconds(3) })
+        {
+            var fixtureUtc = hostStartUtc.AddMinutes(-2);
+            var (start, end) = TurkeyLocalDateRange(nowUtc.AddMinutes(-2), hostStartUtc.AddSeconds(5));
+            var (fromUtc, toUtc) = OrdersReceivedAtQueryRange.FromWebQueryStrings(start, end, out _, out _);
+            Assert.True(fromUtc <= fixtureUtc && fixtureUtc < toUtc, $"{instant}: {start}..{end} misses {fixtureUtc:O}");
+        }
+
+        var (today, fallbackUtc) = TurkeyTodayAt(nowUtc, nowUtc.AddMinutes(-1));
+        Assert.Equal(localToday, today);
+        Assert.True(fallbackUtc <= nowUtc);
+        var day = today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var (todayStartUtc, todayEndUtc) = OrdersReceivedAtQueryRange.FromWebQueryStrings(day, day, out _, out _);
+        Assert.True(todayStartUtc <= fallbackUtc && fallbackUtc < todayEndUtc, $"{instant}: {fallbackUtc:O} is not on {day}");
+        // Away from midnight the fallback order keeps its minute-old import time.
+        if (nowUtc.AddMinutes(-1) >= todayStartUtc)
+            Assert.Equal(nowUtc.AddMinutes(-1), fallbackUtc);
+    }
+
+    /// <summary>
+    /// The Türkiye-local calendar days that hold <paramref name="earliestUtc"/> and <paramref name="latestUtc"/>, in the
+    /// Orders filter's invariant <c>yyyy-MM-dd</c> form.
+    /// </summary>
+    private static (string Start, string End) TurkeyLocalDateRange(DateTime earliestUtc, DateTime latestUtc)
+    {
+        var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
+        string Day(DateTime utc) =>
+            DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(utc, tz)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return (Day(earliestUtc), Day(latestUtc));
     }
 
     /// <summary>The expected text of a lira amount: the culture's number format with the lira sign as its currency.</summary>
