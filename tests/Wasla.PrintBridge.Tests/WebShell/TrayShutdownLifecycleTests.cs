@@ -22,7 +22,6 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
     [
         "shutdown-started",
         "runtime-stopped",
-        "classic-window-disposed",
         "tray-icon-disposed",
         "services-disposed",
         "thread-exited"
@@ -44,7 +43,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task Exit_StopsTheEngineFirst_ThenDisposesEachComponentOnce_ThenEndsTheThread() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var iconDisposals = 0;
@@ -56,14 +55,16 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
             Assert.Equal(FullSequence, tray.ShutdownStepsForTests);
             Assert.False(tray.RuntimeForTests.IsRunning);
-            Assert.True(tray.ClassicWindowForTests.IsDisposed);
+            // A configured installation runs in the tray only: no window was ever created.
+            Assert.Null(tray.ShellFormForTests);
+            Assert.Null(tray.RuntimeNoticeForTests);
             Assert.Equal(1, iconDisposals);
             Assert.Equal(1, threadExits);
         }, configure: Listen);
 
     [Fact]
     public Task RepeatedAndConcurrentExitRequests_JoinTheOneShutdown() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var threadExits = 0;
@@ -95,12 +96,10 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task ATrayUpdateQueuedBeforeExit_AndDeliveredAfterItBegan_DoesNothing() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             var ignored = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             tray.TrayUpdateIgnoredForTests = () => ignored.TrySetResult();
-            // The classic window marshals with its own handle; it exists before any engine thread asks for it.
-            _ = tray.ClassicWindowForTests.Handle;
 
             // An engine thread reports a status change: the tray queues its update on this (the UI) thread, which is
             // busy until Exit has been requested, so the update arrives after the shutdown began.
@@ -115,7 +114,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task ExitWhileAJobIsBeingClaimed_WaitsForIt_AndItIsReportedPrintedOnce() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             var claim = new TrayGate();
             _server.HoldClaimAnswer = claim;
@@ -144,7 +143,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task ExitAfterTheStopLimit_EndsTheApplication_AndTheJobIsNeverReportedFailed() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             tray.RuntimeForTests.StopGracePeriod = TimeSpan.FromMilliseconds(200);
             var claim = new TrayGate();
@@ -167,7 +166,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
     [Fact]
     public Task ASetupLinkArrivingAfterExitBegan_IsDropped() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var exit = tray.ExitForTests();
@@ -178,8 +177,9 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
             await exit.WaitAsync(Timeout);
 
             Assert.DoesNotContain(_server.Requests, r => r.Contains("setup", StringComparison.Ordinal));
-            Assert.False(tray.ClassicWindowForTests.Visible);
+            Assert.Null(tray.RuntimeNoticeForTests);
             Assert.Null(tray.ShellFormForTests);
+            Assert.Empty(_host.SetupResultMessages);
             Assert.Equal(FullSequence, tray.ShutdownStepsForTests);
         }, configure: Listen);
 
@@ -188,7 +188,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
     {
         Guid jobId = default;
         JsonNode? before = null;
-        return _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        return _host.RunAsync(available: false, async (tray, localizer) =>
         {
             jobId = _server.AddJob();
             await _server.JobFinished(jobId).WaitAsync(Timeout);
@@ -197,10 +197,9 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
 
             await tray.ExitForTests().WaitAsync(Timeout);
 
-            // Exit may save the window layout (Ui); the connection and printer settings are never touched.
+            // Exit writes no settings: the connection, printer and UI settings are left exactly as they were.
             var after = JsonNode.Parse(File.ReadAllText(PrintBridgePaths.ProgramDataConfigPath))!;
-            Assert.True(JsonNode.DeepEquals(before!["OrderHub"], after["OrderHub"]));
-            Assert.True(JsonNode.DeepEquals(before["PrintBridge"], after["PrintBridge"]));
+            Assert.True(JsonNode.DeepEquals(before, after));
             var history = JsonNode.Parse(File.ReadAllText(PrintBridgePaths.ProgramDataHistoryPath));
             Assert.NotNull(history);
             Assert.Equal(LocalPrintJobStatus.Printed, HistoryEntry(jobId)?.Status);
@@ -210,7 +209,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
     [Fact]
     [Trait("Category", "WebView2Runtime")]
     public Task ExitWithTheAppWindowOpen_DisposesItAfterTheEngineStopped() =>
-        _host.RunAsync(ShellSelection.WebView2Value, available: true, async (tray, localizer) =>
+        _host.RunAsync(available: true, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.Open"]);
             var shell = tray.ShellFormForTests!;
@@ -227,7 +226,7 @@ public sealed class TrayShutdownLifecycleTests : IDisposable
     [Fact]
     [Trait("Category", "WebView2Runtime")]
     public Task ExitWithTheAppWindowClosedToTheTray_DisposesItAfterTheEngineStopped() =>
-        _host.RunAsync(ShellSelection.WebView2Value, available: true, async (tray, localizer) =>
+        _host.RunAsync(available: true, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.Open"]);
             var shell = tray.ShellFormForTests!;

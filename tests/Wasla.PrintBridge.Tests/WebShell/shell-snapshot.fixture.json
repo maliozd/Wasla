@@ -195,9 +195,6 @@
       "Shell.Diagnostics.Engine": "Dinleme durumu",
       "Shell.Diagnostics.LastError": "Son hata",
       "Shell.Diagnostics.None": "Yok",
-      "Shell.Diagnostics.Fallback": "Klasik pencere",
-      "Shell.Diagnostics.FallbackHelp": "Acil durum yedeği: yalnızca bu pencere düzgün çalışmazsa eski klasik pencereyi açın. Klasik pencere en az bir sürüm daha kullanılabilir kalacak.",
-      "Shell.OpenClassicWindow": "Klasik pencereyi aç",
       "Shell.Toast.Dismiss": "Kapat"
     }
   }

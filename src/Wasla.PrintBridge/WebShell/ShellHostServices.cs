@@ -16,16 +16,16 @@ public interface IPrinterCatalog
     bool IsInstalled(string printerName);
 }
 
-/// <summary>Persists the selected printer through the same settings store and validator as the classic window.</summary>
+/// <summary>Persists the selected printer through the settings store and <c>PrintBridgeSettingsValidator</c>.</summary>
 public interface IShellPrinterSettings
 {
     bool TrySavePrinter(string printerName, out string? errorKey);
 }
 
-/// <summary>The operational settings the app may change: exactly those of the classic window's Advanced section.</summary>
+/// <summary>The operational settings the app may change: test mode and the idle, busy and error poll intervals.</summary>
 public sealed record ShellOperationalSettingsChange(bool TestMode, int IdlePollSeconds, int BusyPollSeconds, int ErrorPollSeconds);
 
-/// <summary>Persists operational settings through the same validator and settings store as the classic window.</summary>
+/// <summary>Persists operational settings through <c>PrintBridgeSettingsValidator</c> and the settings store.</summary>
 public interface IShellOperationalSettings
 {
     bool TrySave(ShellOperationalSettingsChange change, out string? errorKey);
@@ -37,8 +37,6 @@ public interface IShellOperationalSettings
 /// </summary>
 public interface IShellNativeActions
 {
-    void OpenClassicWindow();
-
     /// <summary>
     /// Shows the native connection dialog, where the server URL and device token are entered, and completes when it
     /// closes. The result carries only a localized message.
@@ -126,7 +124,7 @@ public sealed class ShellPrinterSettings : IShellPrinterSettings
 }
 
 /// <summary>
-/// Saves test mode and the poll intervals. The classic validator decides the ranges; the file is written before the
+/// Saves test mode and the poll intervals. <c>PrintBridgeSettingsValidator</c> decides the ranges; the file is written before the
 /// in-memory settings change, so a failed save changes nothing. The engine reads these values for every poll and job,
 /// so they apply from its next check without a restart (a wait already in progress finishes first).
 /// </summary>

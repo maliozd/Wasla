@@ -456,7 +456,6 @@ public sealed class ShellOperationsTests : IDisposable
 
         Assert.Equal(new ShellOperationResult("connection.openSetup", requestId, expected, "dialog message", navigateTo), result);
         Assert.Equal(1, _rig.Native.ConnectionSetupRequests);
-        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
     }
 
     [Fact]
@@ -492,7 +491,7 @@ public sealed class ShellOperationsTests : IDisposable
     [Theory]
     [InlineData(ShellCommandType.UiReady)]
     [InlineData(ShellCommandType.LanguageChange)]
-    [InlineData(ShellCommandType.ClassicWindowOpen)]
+    [InlineData(ShellCommandType.SnapshotRequest)]
     [InlineData(ShellCommandType.HistoryQuery)]
     public async Task NonOperations_AreNeverExecuted(ShellCommandType type)
     {

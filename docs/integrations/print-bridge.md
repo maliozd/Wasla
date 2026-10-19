@@ -27,14 +27,15 @@ Wasla Print Bridge is a **separate Windows process** (`Wasla.PrintBridge`).
 Print Bridge is **Windows-only**. It has no macOS or Linux build.
 
 ```text
-WebView2 desktop app (packaged HTML/CSS/JS, opt-in)    Classic WinForms window (default)
-        │ narrow, versioned web-message contract                │
-        ▼                                                       ▼
-Wasla.PrintBridge (WinExe): tray, windows, localization resources, composition root,
-                            protocol registration, single-instance setup IPC
+WebView2 desktop app (packaged HTML/CSS/JS): the only Print Bridge window
+        │ narrow, versioned web-message contract
+        ▼
+Wasla.PrintBridge (WinExe): tray, app window and its native dialogs, WebView2 Runtime notice,
+                            localization resources, composition root, protocol registration,
+                            single-instance setup IPC
         │ the app reads state through IPrintBridgeStatusSource and changes it only
         │ through ShellOperations → IPrintBridgeEngine (allowlisted, single-flight);
-        │ the classic window and setup keep using the engine directly
+        │ setup links use the engine through PrintBridgeAutoSetupCoordinator
         ▼
 Wasla.PrintBridge.Core (library): PrintBridgeRuntime (poll, claim, print, retry, mark-*),
                             WaslaPrintBridgeClient (X-PrintBridge-Token), settings and token
@@ -45,9 +46,9 @@ Wasla.PrintBridge.Core (library): PrintBridgeRuntime (poll, claim, print, retry,
 | Project | Owns |
 |---------|------|
 | `Wasla.PrintBridge.Core` | Engine and integrations. Must not reference WinForms, WPF or WebView2 (checked by `PrintBridgeCoreBoundaryTests`). Namespaces stay `Wasla.PrintBridge.*`. |
-| `Wasla.PrintBridge` | Desktop host: `TrayApplicationContext`, classic `MainForm`, `WebShell/` (WebView2 shell), `Localization/` and `Resources/` (TR, EN, AR, RU), `Program` |
+| `Wasla.PrintBridge` | Desktop host: `TrayApplicationContext`, `WebShell/` (the WebView2 app window `PrintBridgeShellForm`, its native dialogs and `WebView2RuntimeNotice`), `Localization/` and `Resources/` (TR, EN, AR, RU), `Program` |
 
-There is exactly one engine per process. Both windows observe the same `PrintBridgeRuntime`; neither creates a second polling loop.
+There is exactly one engine per process. The app window observes `PrintBridgeRuntime`; it never creates a second polling loop, and the engine keeps running while no window is open.
 
 ## Setup (canonical fields)
 
@@ -130,17 +131,17 @@ Stop and the engine (`PrintBridgeRuntime`, WAS-56):
 Connection changes and active jobs (WAS-58):
 
 - **One decision.** `IPrintBridgeConnectionGuard.TryBeginConnectionChange` (implemented by `PrintBridgeRuntime`) decides whether the server URL and device token may change now. A job is active from just before its claim until its last report, including `mark-printed` retries and a job that still finishes after Stop returned at its 10-second limit. While one or more jobs are active the change is refused. Otherwise the caller gets a lease, and until it is released no new job is claimed. Both are decided under one lock, so a job and a change never both proceed.
-- **Who asks.** The setup link (`PrintBridgeAutoSetupCoordinator`, both windows), the app's connection dialog (`ApplyVerifiedConnectionAsync`), and the classic window's connection **Save** and **Test**. A refused setup link returns `PrintingInProgress` before the one-time code is exchanged, so the code is not used up. URL, token, device name, installation ID and the settings file stay byte-for-byte unchanged, and nothing is kept for later. The app window shows `Auto.PrintingInProgress` as a failed setup, and the classic window shows it in a message box without reloading or re-verifying anything. The classic Save and Test show `Settings.Connection.PrintingInProgress` and keep the typed input. Opening the same link again after printing has finished applies it normally.
+- **Who asks.** The setup link (`PrintBridgeAutoSetupCoordinator`) and the app's connection dialog (`ApplyVerifiedConnectionAsync`). A refused setup link returns `PrintingInProgress` before the one-time code is exchanged, so the code is not used up. URL, token, device name, installation ID and the settings file stay byte-for-byte unchanged, and nothing is kept for later. The app window shows `Auto.PrintingInProgress` as a failed setup without reloading or re-verifying anything; without a usable WebView2 Runtime the same text is shown in a message box. Opening the same link again after printing has finished applies it normally.
 - **One connection per job.** Each polling cycle takes one copy of the URL and token. Its health check, its poll, and every request of the jobs it claims (`mark-printing`, `mark-printed` and its retries, `mark-failed`) use that copy, never the current settings. A job offered by a poll whose connection has changed since is not claimed and stays pending on the server that offered it. A failure of a replaced connection is logged but not recorded as a problem of the new one. This also covers **Reset connection**, which is not refused (it does not move to another server): a job already claimed still finishes with the token that claimed it.
 - **Not covered.** Editing `appsettings.json` by hand while Print Bridge runs is outside this guard. The running engine does not reload that file.
 
 Exiting the app (`TrayApplicationContext`, WAS-59):
 
-- **One shutdown.** The tray's **Exit** enters a shutting-down state at once. From then on no window, tray update, printer test or setup link starts; a setup link forwarded during shutdown is dropped and can be opened after a restart. A second or concurrent Exit joins the shutdown already running. The app window has no exit command of its own, and closing either window only hides it to the tray.
+- **One shutdown.** The tray's **Exit** enters a shutting-down state at once. From then on no window, tray update, printer test or setup link starts; a setup link forwarded during shutdown is dropped and can be opened after a restart. A second or concurrent Exit joins the shutdown already running. The app window has no exit command of its own; closing it only hides it to the tray, and closing the runtime notice only closes the notice.
 - **Order:**
-  1. A connection change or setup link still in progress is abandoned before it writes anything. The tray and the classic window stop following the engine, and the tray icon and windows disappear. A tray update queued just before Exit does nothing when it arrives.
+  1. A connection change or setup link still in progress is abandoned before it writes anything. The tray stops following the engine, and the tray icon and windows disappear. A tray update queued just before Exit does nothing when it arrives.
   2. The engine stops. This is awaited, so the UI thread is never blocked.
-  3. The app window (WebView2), the classic window and the tray icon are disposed. Closing the classic window still saves its layout, as before.
+  3. The app window (WebView2), the runtime notice and the tray icon are disposed. Exit writes no settings.
   4. The services are disposed, the message loop ends and the process exits.
 - **With an active print job:** the job is not cancelled (WAS-56). Exit waits for it for up to 10 seconds. A job that finishes in that time is printed and reported once, and Exit then completes. Only the print itself decides `mark-failed`: a status update after the receipt was printed can no longer turn it into a failure. Before WAS-59, the tray's status handler threw on the already disposed tray icon at exactly that point. Measured with test mode and a fake API: without a job the process ended about 0.5–0.7 seconds after Exit; with a job, when the job finished.
 - **After the 10-second limit:** the process exits anyway. The log line "stopped listening while a print job is still finishing; it completes in the background" still appears, but on Exit the process ends, so the job does **not** complete. Its remaining requests are not sent and the server keeps it in Printing (see Known gaps). WAS-59 does not change this limit and does not add a durable acknowledgement.
@@ -178,9 +179,9 @@ Controllers exist on both **Web** (`PrintBridgeApiController`, setup APIs) and *
 - A token issued on the setup page (manual setup) or by Regenerate token on the device details page is shown once, in a read-only field that starts masked. Show token / Hide token changes only the field's type; the field's value is the token's single copy on the page, and Copy works while it stays masked. Dismissing the details page's token box clears the value. The token is never written into an HTML attribute.
 - The same rules are explained in the shared device topics (`_PrintBridgeDeviceTopics`), shown in the guided device guide and on Help.
 
-## WebView2 desktop app (WAS-53, WAS-54, WAS-57)
+## WebView2 desktop app (WAS-53, WAS-54, WAS-57, WAS-65)
 
-The modern desktop UI. WAS-53 added the secure shell and a status view, WAS-54 the daily-use features, and WAS-57 made it the complete normal UI: connection setup, operational settings and tray navigation no longer open the classic window. The page renders host state and sends allowlisted commands; polling, claiming, printing, retries, history, settings and the device token stay in `Wasla.PrintBridge.Core`, and privileged desktop actions stay in the host.
+The only Print Bridge UI. WAS-53 added the secure shell and a status view, WAS-54 the daily-use features, WAS-57 connection setup, operational settings and tray navigation, and WAS-65 removed the earlier WinForms window and every route to it. The page renders host state and sends allowlisted commands; polling, claiming, printing, retries, history, settings and the device token stay in `Wasla.PrintBridge.Core`, and privileged desktop actions stay in the host.
 
 | Area | Contents |
 |------|----------|
@@ -188,23 +189,23 @@ The modern desktop UI. WAS-53 added the secure shell and a status view, WAS-54 t
 | Overview | Connection state with a localized explanation and the next step for every problem (connect, reconnect, choose printer, check connection, start, show diagnostics); test-mode notice; printer and its state; listening state and device name; last contact; latest print job; today's jobs, failures and last print time |
 | Printer | Installed Windows printers (listed by the host, refresh), save, printer state, test print, test-mode notice |
 | History | Today / last 7 days / last 30 days, order search, pages of 20 rows, status labels, failure category (printer, server or other), reprint of printed rows after an inline confirmation |
-| Settings | Wasla connection (state; **Connect**, **Reconnect** or **Change connection** opens the native connection dialog; check; reset with a native confirmation), printing behavior (test mode and the three poll intervals), language, theme note, diagnostics (app version, WebView2 Runtime version, listening state, last contact, last error category, printer, test mode, open log folder) and the classic window as an emergency fallback |
+| Settings | Wasla connection (state; **Connect**, **Reconnect** or **Change connection** opens the native connection dialog; check; reset with a native confirmation), printing behavior (test mode and the three poll intervals), language, theme note, diagnostics (app version, WebView2 Runtime version, listening state, last contact, last error category, printer, test mode, open log folder) |
 | Action bar | Start or Stop, Test print, Check connection; always visible below the scrolling content |
 
-Test print is single-flight and refused in test mode with the engine's localized message. Saving a printer accepts only a name the host listed from Windows, uses the classic window's validator and settings store, and replaces the options object, so a job that is already printing keeps the printer it was claimed for.
+Test print is single-flight and refused in test mode with the engine's localized message. Saving a printer accepts only a name the host listed from Windows, uses `PrintBridgeSettingsValidator` and the settings store, and replaces the options object, so a job that is already printing keeps the printer it was claimed for.
 
 ### Logo
 
 Print Bridge shows the canonical Wasla logo owned by Wasla.Web (`src/Wasla.Web/wwwroot/images/brand/wasla-logo.svg`; see [../frontend/design-system.md](../frontend/design-system.md#logo)). The project links that file instead of keeping a copy, so both apps always ship the same bytes:
 
 - `shell-ui/wasla-logo.svg` (copied on build and publish) for the WebView2 page header. It is served from the shell origin, which the page's `img-src 'self'` allows.
-- An embedded resource for the native windows: `WaslaLogo` (`UI/WaslaLogo.cs`) fills the SVG's vector paths with GDI+, so it stays sharp at every DPI and keeps its aspect ratio. It is used in the classic window header (logo and "Print Bridge") and as the brand mark of the connection and confirmation dialogs. If the drawing surface is mirrored by a right-to-left layout, it flips back, so the wordmark is never shown back to front.
+- An embedded resource for the native windows: `WaslaLogo` (`UI/WaslaLogo.cs`) fills the SVG's vector paths with GDI+, so it stays sharp at every DPI and keeps its aspect ratio. It is the brand mark of the connection and confirmation dialogs and of the WebView2 Runtime notice. If the drawing surface is mirrored by a right-to-left layout, it flips back, so the wordmark is never shown back to front.
 
 `WaslaLogoTests` check that both shipped copies equal the Web asset, that the geometry and colour are read exactly, and the mirrored case. The tray icons (status dots drawn at runtime) and the executable have no Wasla logo; there is no dedicated icon artwork yet.
 
 ### Connection dialog
 
-The server URL and device token are entered in a host-owned native dialog (`ShellConnectionDialog`) drawn in the app's palette (light or dark from the Windows app theme, the same orange accent, rounded border-first controls, the Wasla logo) and owned by the app window, so it reads as part of the app and not as the classic window. The logic is in `ShellConnectionSetup`; it reuses `PrintBridgeSettingsValidator`, the setup-link paste guard, the API client and the settings store.
+The server URL and device token are entered in a host-owned native dialog (`ShellConnectionDialog`) drawn in the app's palette (light or dark from the Windows app theme, the same orange accent, rounded border-first controls, the Wasla logo) and owned by the app window, so it reads as part of the app. The logic is in `ShellConnectionSetup`; it reuses `PrintBridgeSettingsValidator`, the setup-link paste guard, the API client and the settings store.
 
 - The title and introduction follow why it opens: **first setup** (no token), **reconnect** (the token was rejected or reset) or **change** (a token is saved). The address field is prefilled with the saved address (not the built-in `localhost` default); the token field always starts empty and masked.
 - **Show** reveals only what was typed in this dialog. The saved token is never loaded into it and cannot be shown again. In change mode an empty token keeps the saved one, which the dialog says without showing it.
@@ -217,73 +218,39 @@ The server URL and device token are entered in a host-owned native dialog (`Shel
 
 ### Operational settings
 
-The Settings tab edits exactly the classic Advanced section: test mode and the idle, busy and error poll intervals. The page sends one typed command (`settings.save`); there is no generic "write a setting" command. The host validates with `PrintBridgeSettingsValidator` (idle 1–300 s, busy 1–60 s, error 1–300 s, also sent to the page as ranges), writes the settings file and replaces the in-memory options. The engine reads these values for every poll and job, so they apply from its next check without a restart; a wait already in progress finishes first. The form shows the saved values unless the user is editing, marks unsaved changes and invalid fields, and keeps a draft only until the host reports those values as saved.
+The Settings tab edits exactly test mode and the idle, busy and error poll intervals. The page sends one typed command (`settings.save`); there is no generic "write a setting" command. The host validates with `PrintBridgeSettingsValidator` (idle 1–300 s, busy 1–60 s, error 1–300 s, also sent to the page as ranges), writes the settings file and replaces the in-memory options. The engine reads these values for every poll and job, so they apply from its next check without a restart; a wait already in progress finishes first. The form shows the saved values unless the user is editing, marks unsaved changes and invalid fields, and keeps a draft only until the host reports those values as saved.
 
-Turning test mode **on** needs a native confirmation, because in test mode new receipt jobs are not printed on paper but are still reported to Wasla as printed. The page alone cannot turn it on. Turning it off needs no confirmation. Max jobs per poll has no UI in either window and stays a settings-file value.
+Turning test mode **on** needs a native confirmation, because in test mode new receipt jobs are not printed on paper but are still reported to Wasla as printed. The page alone cannot turn it on. Turning it off needs no confirmation.
 
 ### Navigation and tray
 
-| Entry point | `Ui.Shell = WebView2` | Classic default |
-|-------------|----------------------|-----------------|
-| Tray Open, double-click | The app window (one instance), brought forward | Classic window |
-| Tray Print history / Settings | The app window on the History / Settings tab | Classic window on that tab |
-| Tray Printer test | Native message box with the result (no window) | Same |
-| Tray **Open classic window (fallback)** | Classic window; shown only while the app window is in use | Not shown |
-| Setup link (`wasla-printbridge://setup`) | Applied in the app window; result shown there, Printer tab when a printer is missing | Classic window with message boxes, as before |
-| WebView2 Runtime missing, or the app fails to start | Classic window on the requested tab, with one balloon notice per session | — |
+The WebView2 app is the only Print Bridge window (WAS-65). There is no other window, no setting that selects one and no fallback to one.
 
-The classic window reloads every setting before it is shown, so a later save there cannot write back values the app changed while it was hidden.
+| Entry point | Opens |
+|-------------|-------|
+| Start without a usable connection (no server URL or device token saved: a new installation, or after **Reset connection** or a rejected token) | The app window on Overview, whose next step is **Connect**; it opens the native connection dialog in first-setup or reconnect mode |
+| Start of a configured installation (server URL and device token saved) | Nothing: the tray icon only. Listening starts on its own when a printer is chosen as well |
+| Tray Open, double-click | The app window (one instance), brought forward |
+| Tray Print history / Settings | The app window on the History / Settings tab |
+| Tray Printer test | Native message box with the result (no window) |
+| Setup link (`wasla-printbridge://setup`) | Applied in the app window; result shown there, Printer tab when a printer is missing |
+| Any of the above when the WebView2 Runtime is missing, too old or the app fails to start | The runtime notice (below); the tray and the engine keep running. A setup link is still applied and its result shown in a message box |
 
-### Parity with the classic window
+The tray menu has exactly Open, Print history, Printer test, Settings and Exit, below a disabled line with the connection state.
 
-| Capability | Classic window | WebView2 app | Shared host or engine service |
-|------------|----------------|--------------|-------------------------------|
-| Connection state, last contact, printer state, today's counts, last print | Status tab | Overview | `IPrintBridgeStatusSource`, `ShellSnapshotFactory` |
-| Recent jobs of the session | Status tab grid | Overview latest job; History | Engine recent jobs, `LocalPrintJobHistoryStore` |
-| Start or stop listening | Status tab | Action bar, Overview | `ShellOperations` → `IPrintBridgeEngine` |
-| Check the saved connection | Status tab, Settings | Action bar, Settings, Overview | `IPrintBridgeEngine.TestConnectionAsync` |
-| Enter or replace server URL and token, show or hide, paste guard, save and verify | Settings → Wasla connection | Native connection dialog | `ShellConnectionSetup`, `PrintBridgeSettingsValidator`, `CheckConnectionAsync`, `ApplyVerifiedConnectionAsync`, `PrintBridgeSettingsStore` |
-| Check unsaved connection values | Settings → Test connection | Part of Connect and save | Same |
-| Reset the connection | Settings → troubleshooting, confirmation | Settings, native confirmation | `ResetConnectionForReconnectAsync` |
-| Printer list, refresh, save | Settings → Printer | Printer tab | `IPrinterCatalog`, `ShellPrinterSettings` |
-| Test print | Status tab, Settings, tray | Action bar, Printer tab, tray | `IPrintBridgeEngine.TestPrinterAsync` (refused in test mode; the classic Settings button prints even in test mode) |
-| Language | Settings → Language | Header and Settings | `PrintBridgeLanguageService` |
-| Test mode | Settings → Advanced | Settings → Printing behavior, native confirmation to turn on | `ShellOperationalSettings` |
-| Idle, busy and error poll intervals | Settings → Advanced | Settings → Printing behavior | `ShellOperationalSettings` |
-| Print history, search, reprint | History tab | History tab | `ShellHistory`, `IPrintBridgeEngine` |
-| Open the log folder | Status tab, Logs tab | Settings → Diagnostics | `ShellLogFolder` |
-| Live log viewer, copy, clear | Logs tab | **Not in the app on purpose**: log lines contain the server URL, machine name, printer names and file paths. Open the log folder, or the classic fallback | `UiLogBuffer` |
-| App version | Footer | Diagnostics | — |
-| Machine name, settings file path | Footer, Settings hint | **Not shown** (secret boundary) | — |
-| Setup link | Classic window | App window | `PrintBridgeAutoSetupCoordinator`, `PrintBridgeRuntime.VerifyAndResumeAsync` |
-| Max jobs per poll, `Ui.Shell`, start with Windows, minimize to tray | No UI | No UI (settings file only; the last two have no effect today) | — |
+The app window keeps no settings of its own: it reads the saved settings each time it renders. The settings file's `Ui` section holds only `Language`, `StartWithWindows` and `MinimizeToTray`; the last two have no effect today. Any other key in that section is ignored when the file is read and dropped the next time the settings are saved. Max jobs per poll has no UI and stays a settings-file value.
 
-### Enabling (explicit switch)
+Not in the app on purpose: a live log viewer (log lines contain the server URL, machine name, printer names and file paths; **Open log folder** in Settings → Diagnostics opens them in File Explorer), the Windows machine name and the settings file path (secret boundary).
 
-The classic WinForms window remains the default. Set `Ui.Shell` in `C:\ProgramData\Wasla\PrintBridge\appsettings.json`:
+### Runtime dependency and recovery notice
 
-| `Ui.Shell` | Tray entries open |
-|------------|-------------------|
-| missing, empty or `WinForms` | Classic window (WebView2 is never loaded) |
-| `WebView2` | WebView2 desktop app, if the runtime is usable (see the navigation table) |
-| anything else | Classic window, with a warning in the log |
+The app window needs the Microsoft Edge WebView2 Runtime (Evergreen), version 120.0.2210.55 or newer (`WebView2RuntimeProbe`). It is checked each time a window is requested. When it is missing or too old, or the app window fails to start (runtime error, page failed to load, browser process exit), the tray shows `WebView2RuntimeNotice` instead:
 
-The key is written back only when it was set.
-
-### Default-switch decision (after WAS-55 and WAS-56)
-
-The classic window stays the default. Switch it (missing `Ui.Shell` means `WebView2`, `WinForms` stays an explicit opt-out) only when all of these hold:
-
-1. WAS-55 delivers and updates the WebView2 Runtime with the installer and Windows Service, so the fallback is rare.
-2. WAS-56 fixes the job acknowledgement race when listening stops: Stop, Reset and the classic window's connection save no longer cancel a claimed job, and app exit waits up to 10 seconds for it (see Job flow).
-3. A test print and a real order receipt have been verified on a physical receipt printer with the app (WAS-54 and WAS-57 verified with test mode and fakes only).
-4. The classic window remains reachable as the labelled emergency fallback for at least one release.
-
-The tray's Print history and Settings entries open the matching app tabs since WAS-57.
-
-### Runtime dependency and fallback
-
-The shell needs the Microsoft Edge WebView2 Runtime (Evergreen), version 120.0.2210.55 or newer (`WebView2RuntimeProbe`). WAS-53 only detects it. When it is missing or too old, or the shell fails to start (runtime error, page failed to load, browser process exit), the tray opens the classic window on the requested tab and shows one balloon notice per session. Shipping or installing the runtime belongs to WAS-55.
+- A small native window in the app's palette (light or dark from the Windows app theme, the Wasla logo) with a title, one message and a **Close** button: the window needs the Microsoft Edge WebView2 Runtime, which is missing or cannot be used; receipt printing continues in the background; install or repair the runtime, then restart Print Bridge. Resource keys `RuntimeNotice.Title`, `RuntimeNotice.Message` and `RuntimeNotice.Close`, in TR, EN, AR and RU.
+- Arabic mirrors it right to left. It scales with the monitor's DPI, has a taskbar button (there is no owner window), and Enter, Escape and the button close it; the message is also its accessible description.
+- One notice at a time: asking again (any tray entry, double-click, a setup link, a start without a connection) brings the open notice forward. After the app window failed to start, the notice is shown for the rest of the session.
+- The tray, the engine, polling, printing, history and setup links keep working. A setup link is applied, and refused while a print job is being completed (WAS-58), exactly as with the app window; its result is shown in a message box. Manual connection setup needs the app window, so without the runtime a new device can be connected only through a setup link.
+- Shipping or installing the runtime belongs to WAS-55 and WAS-62. Rollback is the previous signed package, never a second window in this one.
 
 ### Security model
 
@@ -301,14 +268,13 @@ The shell needs the Microsoft Edge WebView2 Runtime (Evergreen), version 120.0.2
 
 ### Message contract (version 3)
 
-Messages are JSON strings `{ "version": 3, "type": "…", "payload": { … } }`, at most 1024 characters from the page (`ShellMessageContract`, `ShellMessageParser`, `shell-model.js`). WAS-57 raised the version from 2: `connection.openSetup` became a tracked command, `settings.save` and `ui.navigate` were added, and the snapshot gained the operational settings. The page and the host ship together.
+Messages are JSON strings `{ "version": 3, "type": "…", "payload": { … } }`, at most 1024 characters from the page (`ShellMessageContract`, `ShellMessageParser`, `shell-model.js`). WAS-57 raised the version from 2: `connection.openSetup` became a tracked command, `settings.save` and `ui.navigate` were added, and the snapshot gained the operational settings. WAS-65 removed the page's command that opened the earlier WinForms window without raising the version: the page and the host ship together in one package, no remaining message changed its meaning, and the host rejects the removed type like any unknown type.
 
 | Direction | Type | Payload |
 |-----------|------|---------|
 | page → host | `ui.ready` | `{}`; the host replies with a full snapshot, then any queued tab request or setup-link result, and lists printers once. Repeats are harmless. |
 | page → host | `snapshot.request` | `{}` |
 | page → host | `language.change` | `{ "culture": "tr-TR" }`; exactly one of `tr-TR`, `en-US`, `ar-SA`, `ru-RU` |
-| page → host | `classicWindow.open` | `{}` |
 | page → host | `engine.start`, `engine.stop` | `{ "requestId" }`; start is refused while a reconnect is required |
 | page → host | `connection.openSetup` | `{ "requestId" }`; opens the native connection dialog and is answered when it closes |
 | page → host | `connection.test`, `connection.reset`, `printers.refresh`, `printer.testPrint`, `logs.openFolder` | `{ "requestId" }` |
@@ -327,19 +293,19 @@ Rules:
 
 - The host accepts messages only from the shell document. It rejects unknown types, other versions, unknown or duplicate properties, non-object payloads, unexpected or invalid payload fields, malformed JSON and oversized messages, and logs only the rejection reason and length.
 - Commands map to a fixed enum; no page string ever selects a host method, and no host object is exposed.
-- The page renders what the host sends and never derives connection or print state. All host messages share one `sequence`; the page drops older or repeated ones. A command is shown as done only when its `operation.result` arrives; the page stops waiting after 45 seconds and then shows host state again (the busy flag of an open connection dialog keeps its button busy). Language changes are applied by the host (same persistence as the classic Settings tab) and confirmed by the next snapshot.
-- The app reads the engine through `IPrintBridgeStatusSource` and changes it only through `ShellOperations`, which uses `IPrintBridgeEngine` (start, stop, connection test, check and apply, reset, test print, history, reprint). It has no timer, thread or HTTP client of its own, so it cannot create a second poll loop. Engine notifications from background threads are coalesced into one UI-thread update, and unchanged snapshots are not resent. Closing the window hides it to the tray, like the classic window.
+- The page renders what the host sends and never derives connection or print state. All host messages share one `sequence`; the page drops older or repeated ones. A command is shown as done only when its `operation.result` arrives; the page stops waiting after 45 seconds and then shows host state again (the busy flag of an open connection dialog keeps its button busy). Language changes are applied by the host (saved as `Ui.Language`) and confirmed by the next snapshot.
+- The app reads the engine through `IPrintBridgeStatusSource` and changes it only through `ShellOperations`, which uses `IPrintBridgeEngine` (start, stop, connection test, check and apply, reset, test print, history, reprint). It has no timer, thread or HTTP client of its own, so it cannot create a second poll loop. Engine notifications from background threads are coalesced into one UI-thread update, and unchanged snapshots are not resent. Closing the window hides it to the tray.
 
 ### Dates, theme and accessibility
 
-- Operational times (orders, print jobs, contact, test print, receipts) use the Gregorian calendar in every language, including Arabic, whose culture default is Umm al-Qura. `GregorianCulture.For` (`Wasla.Application.Printing`) keeps the language's names, separators and era marker and changes only the calendar. It is used by `PrintBridgeDateTimeFormatter` (both windows, the app snapshot and history), `ReceiptLabelLocalizer.GetCulture` (receipt times) and the engine's test print.
+- Operational times (orders, print jobs, contact, test print, receipts) use the Gregorian calendar in every language, including Arabic, whose culture default is Umm al-Qura. `GregorianCulture.For` (`Wasla.Application.Printing`) keeps the language's names, separators and era marker and changes only the calendar. It is used by `PrintBridgeDateTimeFormatter` (the app snapshot and history), `ReceiptLabelLocalizer.GetCulture` (receipt times) and the engine's test print.
 - Receipt amounts (lines, option surcharges, subtotal, delivery, total) are printed in one format whatever the PC's culture: two decimals with a point, no currency sign, matching the receipt preview in Web. Option surcharges used the PC's culture until WAS-44 (`12,50` next to `12.50` on a Turkish Windows PC). Items and options come in the order of the server's payload, which is the order every screen shows ([../frontend/design-system.md](../frontend/design-system.md#tables-and-sorting)).
 - Light or dark follows the Windows app theme: the page uses `prefers-color-scheme`, and the host updates the window background and title bar when the Windows setting changes. Native dialogs pick the same palette when they open.
 - Tabs follow the ARIA tab pattern: one tab stop, arrow keys that follow the reading direction, Home and End. Unavailable actions use `aria-disabled` so focus is not lost; busy buttons are described as working. The reprint confirmation takes focus and returns it. Results are announced through polite (`status`) and assertive (`alert`) live regions. Invalid poll intervals are marked with `aria-invalid` and described by the error text only while it applies; test mode is a labelled switch. Styles use logical directions for right-to-left, honor reduced motion and forced colors, and every coloured state also has a text label. The layout needs no horizontal scrolling at the 420 × 420 minimum window, at 200 % zoom or at 320 CSS pixels.
 
 ### Future work
 
-- **WAS-55:** Windows Service, installer, WebView2 Runtime delivery and automatic update, then the default-switch decision above.
+- **WAS-55:** Windows Service, installer, WebView2 Runtime delivery and automatic update.
 
 ## CLI helpers
 
@@ -352,7 +318,8 @@ See [../operations/cli.md](../operations/cli.md):
 ## Known gaps / debt
 
 - Config section still named `OrderHub` while product is Wasla.
-- The WebView2 app is opt-in and has not yet been verified with a physical receipt printer; WAS-54 and WAS-57 verification used test mode, a fake API and a recording or missing printer. The live log viewer stays only in the classic window on purpose (see the parity table).
+- The WebView2 app has not yet been verified with a physical receipt printer, and the runtime notice not on a physical installation without the WebView2 Runtime; WAS-54, WAS-57 and WAS-65 verification used test mode, a fake API, a simulated missing runtime and a recording or missing printer.
+- Without the WebView2 Runtime a device can be connected only through a setup link; manual setup needs the app window.
 - Engine and client log lines include the server URL, the Windows machine name and printer names (for example the startup "Effective config" line and request warnings). Tokens are never logged.
 - A setup link opened while a print job is being completed is refused, not queued (WAS-58, see Job flow). The user has to open it again after printing has finished. Hand edits to `appsettings.json` while Print Bridge runs are not guarded.
 - The server has no claim lease. A printed job whose `mark-printed` never arrives stays in Printing, for example after every retry failed, after Exit (or Stop followed by Exit) gave up waiting at its 10-second limit, or after a crash or power loss between the print and the report. It is never printed again automatically, but it blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.

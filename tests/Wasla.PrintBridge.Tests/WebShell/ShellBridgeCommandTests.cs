@@ -142,7 +142,7 @@ public sealed class ShellBridgeCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task ConnectionSetup_OpensTheNativeDialog_NotTheClassicWindow_AndAnswersWithItsLocalizedResult()
+    public async Task ConnectionSetup_OpensTheNativeDialog_AndAnswersWithItsLocalizedResult()
     {
         var requestId = NewRequestId();
         _rig.Native.SetupGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -164,7 +164,6 @@ public sealed class ShellBridgeCommandTests : IDisposable
         Assert.Equal("connection.openSetup", payload.GetProperty("operation").GetString());
         Assert.Equal("succeeded", payload.GetProperty("outcome").GetString());
         Assert.Equal(1, _rig.Native.ConnectionSetupRequests);
-        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
         Assert.Equal(0, _rig.Engine.ResetCalls);
         Assert.False(_rig.Operations.Busy.ConnectionSetup);
     }
@@ -190,7 +189,7 @@ public sealed class ShellBridgeCommandTests : IDisposable
         using var rig = new ShellTestRig(Culture(), ShellTestRig.NewSettings(SentinelToken));
 
         rig.Bridge.Navigate("history");
-        rig.Bridge.Navigate("../classic");
+        rig.Bridge.Navigate("../settings");
         Assert.Empty(rig.Messages(ShellMessageContract.UiNavigate));
 
         rig.Bridge.HandleWebMessage(ShellDocument, Command("ui.ready"));
@@ -247,7 +246,6 @@ public sealed class ShellBridgeCommandTests : IDisposable
     [InlineData("""{"version":2,"type":"connection.openSetup","payload":{}}""")]
     [InlineData("""{"version":3,"type":"settings.save","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","key":"OrderHub:AgentToken","value":"pb_x"}}""")]
     [InlineData("""{"version":3,"type":"connection.reset","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","token":"pb_x"}}""")]
-    [InlineData("""{"version":3,"type":"classicWindow.open","payload":{"url":"https://evil.example"}}""")]
     [InlineData("""{"version":3,"type":"history.reprint","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","itemRef":"4b6f0c8e-1f8a-4f5e-9d9e-0f3a9c000001"}}""")]
     [InlineData("""{"version":3,"type":"history.reprint","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","jobId":"4b6f0c8e-1f8a-4f5e-9d9e-0f3a9c000001"}}""")]
     [InlineData("""{"version":3,"type":"printer.save","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","name":"POS-58","port":"LPT1"}}""")]
@@ -260,7 +258,7 @@ public sealed class ShellBridgeCommandTests : IDisposable
         Assert.Equal(ShellMessageOutcome.Rejected, Send(raw));
 
         Assert.Equal(sentBefore, _rig.Host.Sent.Count);
-        Assert.Equal(0, _rig.Native.LogFolderRequests + _rig.Native.ConnectionSetupRequests + _rig.Native.ClassicWindowRequests);
+        Assert.Equal(0, _rig.Native.LogFolderRequests + _rig.Native.ConnectionSetupRequests);
         Assert.Equal(0, _rig.Engine.ResetCalls + _rig.Engine.ReprintCalls + _rig.Engine.TestPrintCalls + _rig.Engine.StartCalls);
         Assert.Equal(0, _rig.Engine.CheckConnectionCalls + _rig.Engine.ApplyConnectionCalls);
         Assert.Empty(_rig.PrinterSettings.Saved);

@@ -287,7 +287,6 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
 
 internal sealed class FakeNativeActions : IShellNativeActions
 {
-    public int ClassicWindowRequests { get; private set; }
     public int ConnectionSetupRequests { get; private set; }
     public int ResetConfirmations { get; private set; }
     public int TestModeConfirmations { get; private set; }
@@ -302,8 +301,6 @@ internal sealed class FakeNativeActions : IShellNativeActions
 
     /// <summary>When set, the connection dialog stays open until this gate completes.</summary>
     public TaskCompletionSource? SetupGate { get; set; }
-
-    public void OpenClassicWindow() => ClassicWindowRequests++;
 
     public async Task<ShellConnectionSetupResult> RunConnectionSetupAsync()
     {
@@ -336,7 +333,7 @@ internal sealed class FakeOperationalSettings : IShellOperationalSettings
 {
     public List<ShellOperationalSettingsChange> Saved { get; } = [];
 
-    /// <summary>Behaves like the real validator unless overridden: the classic ranges decide.</summary>
+    /// <summary>Behaves like the real validator unless overridden: its ranges decide.</summary>
     public bool TrySave(ShellOperationalSettingsChange change, out string? errorKey)
     {
         var probe = new Wasla.PrintBridge.Options.PrintBridgeOptions
@@ -428,7 +425,6 @@ internal sealed class ShellTestRig : IDisposable
             culture,
             Operations,
             History,
-            Native,
             Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
     }
 

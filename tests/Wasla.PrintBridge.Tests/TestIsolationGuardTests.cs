@@ -63,7 +63,7 @@ public sealed class TestIsolationGuardTests
             release.Wait();
             var store = new PrintBridgeSettingsStore();
             var document = store.Load();
-            document.Ui.WindowLeft = 1234;
+            document.Ui.Language = "ru-RU";
             store.Save(document);
         })
         {
@@ -79,7 +79,7 @@ public sealed class TestIsolationGuardTests
 
             release.Set();
             Assert.True(writer.Join(TimeSpan.FromSeconds(30)));
-            Assert.Equal(1234, new PrintBridgeSettingsStore().Load().Ui.WindowLeft);
+            Assert.Equal("ru-RU", new PrintBridgeSettingsStore().Load().Ui.Language);
             Assert.True(File.Exists(root.ConfigPath));
 
             root.Dispose();

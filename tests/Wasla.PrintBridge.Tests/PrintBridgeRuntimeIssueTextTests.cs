@@ -1,96 +1,10 @@
 using Wasla.PrintBridge.Models;
-using Wasla.PrintBridge.UI;
 
 namespace Wasla.PrintBridge.Tests;
 
-public sealed class PrintBridgeConnectionFieldSyncTests
+/// <summary>The texts the engine's connection issues resolve to.</summary>
+public sealed class PrintBridgeRuntimeIssueTextTests
 {
-    [Theory]
-    [InlineData(false, false, false, false)]
-    [InlineData(true, false, false, true)]
-    [InlineData(false, true, false, true)]
-    [InlineData(false, false, true, true)]
-    [InlineData(false, true, true, true)]
-    public void ShouldPreserveAgentTokenInput_RespectsEditingAndSaveState(
-        bool isSavingConnection,
-        bool isTokenFieldFocused,
-        bool userEditedAgentToken,
-        bool expected)
-    {
-        var actual = PrintBridgeConnectionFieldSync.ShouldPreserveAgentTokenInput(
-            isSavingConnection,
-            isTokenFieldFocused,
-            userEditedAgentToken);
-
-        Assert.Equal(expected, actual);
-    }
-
-    [Theory]
-    [InlineData(true, true, false)]
-    [InlineData(true, false, false)]
-    [InlineData(false, false, false)]
-    [InlineData(false, true, true)]
-    public void ShouldTreatAgentTokenTextChangeAsUserEdit_IgnoresProgrammaticSync(
-        bool isSyncingConnectionFields,
-        bool isTokenFieldFocused,
-        bool expected)
-    {
-        var actual = PrintBridgeConnectionFieldSync.ShouldTreatAgentTokenTextChangeAsUserEdit(
-            isSyncingConnectionFields,
-            isTokenFieldFocused);
-
-        Assert.Equal(expected, actual);
-    }
-
-    [Theory]
-    [InlineData(true, true, false)]
-    [InlineData(true, false, false)]
-    [InlineData(false, false, false)]
-    [InlineData(false, true, true)]
-    public void ShouldClearConnectionStatusOnFieldTextChange_IgnoresProgrammaticSync(
-        bool isSyncingConnectionFields,
-        bool isFieldFocused,
-        bool expected)
-    {
-        var actual = PrintBridgeConnectionFieldSync.ShouldClearConnectionStatusOnFieldTextChange(
-            isSyncingConnectionFields,
-            isFieldFocused);
-
-        Assert.Equal(expected, actual);
-    }
-
-    [Fact]
-    public void ProgrammaticSync_DoesNotMarkUserEdited_OrClearStatus()
-    {
-        Assert.False(PrintBridgeConnectionFieldSync.ShouldTreatAgentTokenTextChangeAsUserEdit(
-            isSyncingConnectionFields: true,
-            isTokenFieldFocused: true));
-        Assert.False(PrintBridgeConnectionFieldSync.ShouldClearConnectionStatusOnFieldTextChange(
-            isSyncingConnectionFields: true,
-            isFieldFocused: true));
-    }
-
-    [Fact]
-    public void FocusedUserPaste_MarksUserEdited_AndPreservesInput()
-    {
-        Assert.True(PrintBridgeConnectionFieldSync.ShouldTreatAgentTokenTextChangeAsUserEdit(
-            isSyncingConnectionFields: false,
-            isTokenFieldFocused: true));
-        Assert.True(PrintBridgeConnectionFieldSync.ShouldPreserveAgentTokenInput(
-            isSavingConnection: false,
-            isTokenFieldFocused: true,
-            userEditedAgentToken: true));
-    }
-
-    [Fact]
-    public void AfterSuccessfulSaveOrTest_UserEditGuardResets()
-    {
-        Assert.False(PrintBridgeConnectionFieldSync.ShouldPreserveAgentTokenInput(
-            isSavingConnection: false,
-            isTokenFieldFocused: false,
-            userEditedAgentToken: false));
-    }
-
     [Fact]
     public void ReconnectRequiredIssue_UsesLifecycleTitleAndGenericConnectionSummary()
     {
@@ -141,6 +55,43 @@ public sealed class PrintBridgeConnectionFieldSyncTests
         Assert.Equal("Devre dışı", summary);
         Assert.Contains("Wasla Web", detail, StringComparison.Ordinal);
         Assert.True(detail.Length > summary.Length);
+    }
+
+    [Fact]
+    public void ResetFollowUpCopy_PointsToWebSetupPage_NotDesktopSetupCodeEntry()
+    {
+        var root = PrintBridgeRuntimeLifecycleTestsHelpers.FindRepositoryRoot();
+        var resourcesDir = Path.Combine(root, "src", "Wasla.PrintBridge", "Resources");
+
+        var tr = PrintBridgeRuntimeLifecycleTestsHelpers.ReadResourceValue(
+            root,
+            "PrintBridgeResources.tr-TR.resx",
+            "RuntimeIssue.ManualReset.Detail");
+        var en = PrintBridgeRuntimeLifecycleTestsHelpers.ReadResourceValue(
+            root,
+            "PrintBridgeResources.en-US.resx",
+            "RuntimeIssue.ManualReset.Detail");
+
+        Assert.Contains("Wasla Web", tr, StringComparison.Ordinal);
+        Assert.Contains("kurulum sayfas", tr, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("buraya gir", tr, StringComparison.OrdinalIgnoreCase);
+
+        Assert.Contains("Wasla Web panel", en, StringComparison.Ordinal);
+        Assert.Contains("Print Bridge setup page", en, StringComparison.Ordinal);
+        Assert.DoesNotContain("enter it here", en, StringComparison.OrdinalIgnoreCase);
+
+        foreach (var culture in new[]
+                 {
+                     "PrintBridgeResources.resx",
+                     "PrintBridgeResources.tr-TR.resx",
+                     "PrintBridgeResources.en-US.resx",
+                     "PrintBridgeResources.ar-SA.resx",
+                     "PrintBridgeResources.ru-RU.resx"
+                 })
+        {
+            var content = File.ReadAllText(Path.Combine(resourcesDir, culture));
+            Assert.Contains("RuntimeIssue.ManualReset.Detail", content);
+        }
     }
 
     [Fact]

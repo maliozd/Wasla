@@ -2803,10 +2803,10 @@
     <value>أنشئ رمز الجهاز وانسخه.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>في Print Bridge افتح الإعدادات والصق رابط لوحة Wasla Web ورمز الجهاز.</value>
+    <value>في Print Bridge انقر على "الاتصال بـ Wasla" (في الإعدادات، ضمن اتصال Wasla) والصق رابط لوحة Wasla Web ورمز الجهاز.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>انقر على "حفظ الاتصال" ثم على "اختبار الاتصال".</value>
+    <value>انقر على "الاتصال والحفظ". يتحقق Print Bridge من الاتصال قبل حفظه.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>اختر الطابعة واحفظ الإعدادات.</value>
@@ -3518,7 +3518,7 @@
   <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>تُدخل بنفسك رابط لوحة Wasla Web ورمز جهاز في الإعدادات في Print Bridge. استخدم هذا إذا لم يُفتح التطبيق تلقائيًا.</value></data>
   <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>اختر طريقة الاتصال</value></data>
   <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>اختر طابعتك واختبرها</value></data>
-  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>في Print Bridge افتح الإعدادات، واختر طابعة الإيصالات في إعداد الطابعة، ثم انقر على "حفظ الطابعة" وبعدها "طباعة إيصال تجريبي".</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>في Print Bridge افتح تبويب الطابعة، واختر طابعة الإيصالات، ثم انقر على "حفظ الطابعة" وبعدها "طباعة إيصال تجريبي".</value></data>
   <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>عندما يتحقق Wasla من الاتصال، تعرض لوحة الإعداد الموجّه أعلى هذه الصفحة "{0}". يلي ذلك دليل الجهاز ثم التدريب على الطلبات.</value></data>
   <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>رابط لوحة Wasla Web ورمز الجهاز</value></data>
   <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>استخدم هذا إذا لم يُفتح Print Bridge من هذه الصفحة. تطلب شاشة الإعدادات في Print Bridge هاتين القيمتين تحديدًا.</value></data>
@@ -3536,7 +3536,7 @@
   <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>إظهار الرمز</value></data>
   <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>إخفاء الرمز</value></data>
   <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>تم نسخ رمز الجهاز.</value></data>
-  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>افتح الآن الإعدادات في Print Bridge، والصق القيمتين في الحقلين اللذين يحملان الاسم نفسه، ثم انقر على "حفظ الاتصال" وبعده "اختبار الاتصال".</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>افتح الآن Print Bridge وانقر على "الاتصال بـ Wasla" (في الإعدادات، ضمن اتصال Wasla)، والصق القيمتين في الحقلين اللذين يحملان الاسم نفسه، ثم انقر على "الاتصال والحفظ".</value></data>
   <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>إنشاء الرمز أو نسخه لا يربط Print Bridge. لا يُعدّ متصلًا إلا بعد أن يتحقق Wasla من الاتصال القادم من Print Bridge.</value></data>
   <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>تحقق Wasla من اتصال Print Bridge. يمكنك المتابعة من لوحة الإعداد الموجّه أعلى هذه الصفحة.</value></data>
   <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>لم يتحقق Wasla من الاتصال بعد. انقر على "اختبار الاتصال" في Print Bridge، ثم أعد تحميل هذه الصفحة للتحقق مرة أخرى.</value></data>
@@ -3982,7 +3982,7 @@
   <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>استخرج ملف ZIP إلى مجلد.</value></data>
   <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>شغّل Wasla.PrintBridge.exe مرة واحدة. إذا طلب Windows تثبيت .NET 8 Desktop Runtime فثبّته.</value></data>
   <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>في صفحة الإعداد اختر طريقة الاتصال: "{0}" يفتح التطبيق ويربطه تلقائيًا (موصى به)، أو اتصل يدويًا بلصق رمز جهاز ورابط لوحة Wasla Web في الإعدادات في Print Bridge. لا تشارك رمز الجهاز مع أحد.</value></data>
-  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>في Print Bridge افتح الإعدادات، واختر طابعة الإيصالات، ثم انقر على "حفظ الطابعة" وبعدها "طباعة إيصال تجريبي".</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>في Print Bridge افتح تبويب الطابعة، واختر طابعة الإيصالات، ثم انقر على "حفظ الطابعة" وبعدها "طباعة إيصال تجريبي".</value></data>
   <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>بعد أن يتحقق Wasla من الاتصال، تعرّف على جهازك: تعرض صفحته الاتصال، ومنها تُعيد توليد رمزه أو تزيله. راجع "{0}" أدناه.</value></data>
   <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>إدارة أجهزة Print Bridge</value></data>
   <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>يظهر كل تثبيت لـ Print Bridge كجهاز في قائمة أجهزة Print Bridge. افتح تفاصيل الجهاز لإعادة تسميته أو التحقق من اتصاله أو إعادة توليد رمزه أو إزالته.</value></data>
@@ -3996,7 +3996,7 @@
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>إعادة توليد الرمز</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>يُنشئ رمز جهاز جديدًا لهذا الجهاز.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>يتوقف الرمز القديم عن العمل فورًا، فلا يستطيع هذا التثبيت الطباعة حتى يحصل على الرمز الجديد.</value></data>
-  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>أدخل الرمز الجديد في الإعدادات في تطبيق Print Bridge، ثم احفظ الاتصال واختبره.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>في تطبيق Print Bridge افتح الإعدادات، وأدخل الرمز الجديد ضمن اتصال Wasla، ثم انقر على "الاتصال والحفظ".</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>يُعرض الرمز الجديد مرة واحدة فقط.</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>إزالة الجهاز</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>يُنهي وصول هذا الجهاز إلى Wasla ويتوقف رمزه عن العمل.</value></data>
