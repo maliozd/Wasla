@@ -138,7 +138,7 @@ public sealed class BusinessSubtypeFlowTests : IDisposable
             _db,
             new SelfServicePlanCatalog(),
             new SignupReferenceDataService(_db),
-            Options.Create(new CustomerOnboardingOptions()),
+            Options.Create(new TenantOnboardingOptions()),
             NullLogger<PendingRegistrationService>.Instance);
 
         return await service.SubmitAsync(Request(codes), TestContext.Current.CancellationToken);
@@ -189,13 +189,14 @@ public sealed class BusinessSubtypeFlowTests : IDisposable
         return new PendingRegistrationProvisioningService(
             _db,
             new FakeSecretManager(),
-            Options.Create(new CustomerOnboardingOptions
+            Options.Create(new TenantOnboardingOptions
             {
-                ServerInstance = "(localdb)\\MSSQLLocalDB",
                 SqlAuth = "trusted",
                 TrialDays = 14
             }),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["TenantDb:ServerInstance"] = "(localdb)\\MSSQLLocalDB" })
+                .Build(),
             new FakeServiceProvider(),
             new FakeTenantDatabaseProvisioningOperations(),
             NullLogger<PendingRegistrationProvisioningService>.Instance);

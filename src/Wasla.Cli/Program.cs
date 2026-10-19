@@ -100,14 +100,7 @@ if (string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Central
     return 2;
 }
 
-builder.Services.AddDbContext<CentralDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CentralDb")));
-
-builder.Services.AddSingleton<ISecretManager, AesSecretManager>();
-builder.Services.Configure<CustomerOnboardingOptions>(builder.Configuration.GetSection(CustomerOnboardingOptions.SectionName));
-builder.Services.AddScoped<ITenantDatabaseProvisioningOperations, SqlServerTenantDatabaseProvisioningOperations>();
-builder.Services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();
-builder.Services.AddWaslaEmail(builder.Configuration);
+builder.Services.AddWaslaCliServices(builder.Configuration);
 
 var host = builder.Build();
 
@@ -119,7 +112,7 @@ var provisionSignupRequest = new Command(
 var optRegistrationId = new Option<Guid>("--registration-id", "PendingRegistration id (GUID)") { IsRequired = true };
 var optPsrDryRun = new Option<bool>("--dry-run", "Validate only; do not create database, tenant, or user");
 var optPsrForce = new Option<bool>("--force", "Retry a registration marked Provisioned without a tenant row. Never adopts a database Wasla did not create for this registration");
-var optPsrSqlServer = new Option<string?>("--sql-server", "SQL Server instance for the tenant database; required unless CustomerDb:ServerInstance or OrderHub:CustomerOnboarding:ServerInstance is configured (no default)");
+var optPsrSqlServer = new Option<string?>("--sql-server", "SQL Server instance for the tenant database; required unless TenantDb:ServerInstance is configured (no default)");
 var optPsrSqlAuth = new Option<string>("--sql-auth", () => "trusted", "Trusted Windows auth, or 'sql:username:password'");
 
 provisionSignupRequest.AddOption(optRegistrationId);
@@ -150,7 +143,7 @@ var optDomain = new Option<string>("--domain", "Primary domain, e.g. ahmet.Wasla
 var optAdminEmail = new Option<string>("--admin-email", "First admin user email") { IsRequired = true };
 var optAdminPassword = new Option<string>("--admin-password", "First admin password (visible in shell history)") { IsRequired = true };
 var optAdminName = new Option<string>("--admin-name", () => "Admin", "Admin full name");
-var optSqlServer = new Option<string?>("--sql-server", "SQL Server instance for the tenant database; required unless CustomerDb:ServerInstance or OrderHub:CustomerOnboarding:ServerInstance is configured (no default)");
+var optSqlServer = new Option<string?>("--sql-server", "SQL Server instance for the tenant database; required unless TenantDb:ServerInstance is configured (no default)");
 var optSqlAuth = new Option<string>("--sql-auth", () => "trusted", "Trusted Windows auth, or 'sql:username:password'");
 var optBusinessPhone = new Option<string?>("--business-phone", "Restaurant business phone (required by the setup checklist)");
 var optCity = new Option<string?>("--city", "Restaurant city (the setup checklist needs a city or country)");

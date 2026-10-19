@@ -44,7 +44,7 @@ Tenant hosts:
 
 Map these in the hosts file to `127.0.0.1`. Web launch profiles bind HTTP `5200` and HTTPS `7200` (see `Wasla.Web` launchSettings). Prefer the HTTPS tenant URL when using mkcert.
 
-Marketing / signup base domain in Web `appsettings.json`: `OrderHub:CustomerOnboarding:MarketingBaseDomain` = `wasla.local` (section name is legacy `OrderHub`; product is Wasla).
+Marketing / signup base domain in Web `appsettings.json`: `Wasla:TenantOnboarding:MarketingBaseDomain` = `wasla.local`.
 
 ## Central admin
 
@@ -67,7 +67,7 @@ $env:DOTNET_ENVIRONMENT = "Development"
 dotnet run --project src\Wasla.Cli -- migrate-central
 ```
 
-The CLI's committed `appsettings.json` names no CentralDb and no tenant SQL Server (WAS-93). Its `appsettings.Development.json` sets both to LocalDB, so local CLI runs need `DOTNET_ENVIRONMENT=Development`; without it the CLI stops with "ConnectionStrings:CentralDb is not configured" before touching any database. Environment variables (`ConnectionStrings__CentralDb`, `CustomerDb__ServerInstance`) override both files, and `--sql-server` overrides the tenant server. The destructive commands (`delete-customer`, `reset-customer-db`, `reset-all-customer-dbs`) also treat an unset environment as Production and then ask for `--force-production`.
+The CLI's committed `appsettings.json` names no CentralDb and no tenant SQL Server (WAS-93). Its `appsettings.Development.json` sets both to LocalDB, so local CLI runs need `DOTNET_ENVIRONMENT=Development`; without it the CLI stops with "ConnectionStrings:CentralDb is not configured" before touching any database. Environment variables (`ConnectionStrings__CentralDb`, `TenantDb__ServerInstance`) override both files, and `--sql-server` overrides the tenant server. The destructive commands (`delete-customer`, `reset-customer-db`, `reset-all-customer-dbs`) also treat an unset environment as Production and then ask for `--force-production`.
 
 Create a tenant (creates DB + admin) **or** provision a paid signup request:
 
@@ -77,7 +77,7 @@ dotnet run --project src\Wasla.Cli -- add-customer --name "Demo Restaurant" --sl
 dotnet run --project src\Wasla.Cli -- provision-signup-request --registration-id <guid>
 ```
 
-Tenant databases are created only on an explicitly chosen SQL Server: `--sql-server`, `CustomerDb__ServerInstance`, or `OrderHub__CustomerOnboarding__ServerInstance`. There is no default. In Development, the CLI's and Web's `appsettings.Development.json` set LocalDB.
+Tenant databases are created only on an explicitly chosen SQL Server: `--sql-server`, else `TenantDb__ServerInstance` (`TenantDb:ServerInstance`). There is no default. In Development, the CLI's and Web's `appsettings.Development.json` set `TenantDb:ServerInstance` to LocalDB.
 
 Apply tenant schema updates after pulls:
 

@@ -16,9 +16,9 @@ using Wasla.Infrastructure.Services;
 namespace Wasla.UnitTests.Admin;
 
 /// <summary>
-/// WAS-93: tenant databases are created only on an explicitly configured SQL Server. Without
-/// <c>--sql-server</c>, <c>CustomerDb:ServerInstance</c> or <c>OrderHub:CustomerOnboarding:ServerInstance</c>,
-/// provisioning and <c>add-customer</c> stop before any database work; nothing falls back to LocalDB or '.'.
+/// WAS-93, WAS-136: tenant databases are created only on an explicitly configured SQL Server: <c>--sql-server</c>,
+/// else <c>TenantDb:ServerInstance</c>. Without either, provisioning and <c>add-customer</c> stop before any database
+/// work with an error that names <c>TenantDb:ServerInstance</c>; nothing falls back to LocalDB or '.'.
 /// All databases are in-memory SQLite or fakes.
 /// </summary>
 public sealed class TenantSqlServerRequirementTests : IDisposable
@@ -44,13 +44,22 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
 
     // --- Resolution ---------------------------------------------------------------------------------
 
-    [Theory]
-    [InlineData(null, null, null)]
-    [InlineData("", "", "")]
-    [InlineData("   ", "\t", " ")]
-    public void Resolve_WithNothingConfigured_HasNoServer(string? overrideServer, string? customerDb, string? onboarding)
+    [Fact]
+    public void TheConfiguredSource_IsTenantDbServerInstance_AndTheMissingErrorNamesOnlyIt()
     {
-        var resolution = TenantSqlServerConfiguration.Resolve(overrideServer, customerDb, onboarding);
+        Assert.Equal("TenantDb:ServerInstance", TenantSqlServerConfiguration.ServerInstanceKey);
+        Assert.Equal(
+            "No SQL Server instance is configured for tenant databases. Set TenantDb:ServerInstance, or pass --sql-server.",
+            TenantSqlServerConfiguration.MissingMessage);
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", "")]
+    [InlineData("   ", "\t")]
+    public void Resolve_WithNothingConfigured_HasNoServer(string? overrideServer, string? configured)
+    {
+        var resolution = TenantSqlServerConfiguration.Resolve(overrideServer, configured);
 
         Assert.False(resolution.IsResolved);
         Assert.Null(resolution.Server);
@@ -58,14 +67,14 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
     }
 
     [Theory]
-    [InlineData(" sql-override ", "sql-customerdb", "sql-onboarding", "sql-override")]
-    [InlineData(null, " sql-customerdb ", "sql-onboarding", "sql-customerdb")]
-    [InlineData("  ", "", "sql-onboarding", "sql-onboarding")]
-    [InlineData(null, LocalDb, null, LocalDb)]
-    [InlineData(".", null, null, ".")]
-    public void Resolve_UsesTheFirstExplicitValue(string? overrideServer, string? customerDb, string? onboarding, string expected)
+    [InlineData(" sql-override ", "sql-tenantdb", "sql-override")]
+    [InlineData(null, " sql-tenantdb ", "sql-tenantdb")]
+    [InlineData("  ", "sql-tenantdb", "sql-tenantdb")]
+    [InlineData(null, LocalDb, LocalDb)]
+    [InlineData(".", null, ".")]
+    public void Resolve_TheOverrideWins_ThenTenantDbServerInstance(string? overrideServer, string? configured, string expected)
     {
-        var resolution = TenantSqlServerConfiguration.Resolve(overrideServer, customerDb, onboarding);
+        var resolution = TenantSqlServerConfiguration.Resolve(overrideServer, configured);
 
         Assert.True(resolution.IsResolved);
         Assert.Equal(expected, resolution.Server);
@@ -78,10 +87,13 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
     [InlineData("sql\nx")]
     public void Resolve_AnInvalidExplicitValue_StopsInsteadOfFallingThrough(string invalid)
     {
-        var resolution = TenantSqlServerConfiguration.Resolve(invalid, "sql-customerdb", "sql-onboarding");
+        var fromOverride = TenantSqlServerConfiguration.Resolve(invalid, "sql-tenantdb");
+        var fromConfiguration = TenantSqlServerConfiguration.Resolve(null, invalid);
 
-        Assert.False(resolution.IsResolved);
-        Assert.NotNull(resolution.Error);
+        Assert.False(fromOverride.IsResolved);
+        Assert.Equal("The SQL Server instance from --sql-server is not a valid server name.", fromOverride.Error);
+        Assert.False(fromConfiguration.IsResolved);
+        Assert.Equal("The SQL Server instance from TenantDb:ServerInstance is not a valid server name.", fromConfiguration.Error);
     }
 
     // --- Provisioning service -----------------------------------------------------------------------
@@ -94,7 +106,7 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
     {
         var operations = new RecordingOperations();
         var reg = await SeedPaidRegistrationAsync("noserver");
-        var service = BuildService(operations, optionsServer: configured, customerDbServer: configured);
+        var service = BuildService(operations, configuredServer: configured);
 
         var result = await service.ProvisionAsync(reg.Id, ct: Ct);
 
@@ -111,7 +123,7 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
     {
         var operations = new RecordingOperations();
         var reg = await SeedPaidRegistrationAsync("override");
-        var service = BuildService(operations, optionsServer: "sql-onboarding", customerDbServer: "sql-customerdb");
+        var service = BuildService(operations, configuredServer: "sql-tenantdb");
 
         var result = await service.ProvisionAsync(reg.Id, sqlServerOverride: "sql-override", ct: Ct);
 
@@ -119,21 +131,18 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
         Assert.Equal("sql-override", Assert.Single(operations.Servers));
     }
 
-    [Fact]
-    public async Task ProvisionAsync_UsesCustomerDbServerInstance_ThenTheOnboardingServer()
+    [Theory]
+    [InlineData("sql-tenantdb", "sql-tenantdb")]
+    [InlineData(LocalDb, LocalDb)]
+    public async Task ProvisionAsync_WithoutAnOverride_UsesTenantDbServerInstance(string configured, string expected)
     {
-        var first = new RecordingOperations();
-        var reg = await SeedPaidRegistrationAsync("customerdb");
-        var result = await BuildService(first, optionsServer: "sql-onboarding", customerDbServer: "sql-customerdb")
-            .ProvisionAsync(reg.Id, ct: Ct);
-        Assert.Equal(ProvisioningOutcome.Success, result.Outcome);
-        Assert.Equal("sql-customerdb", Assert.Single(first.Servers));
+        var operations = new RecordingOperations();
+        var reg = await SeedPaidRegistrationAsync("tenantdb");
 
-        var second = new RecordingOperations();
-        var other = await SeedPaidRegistrationAsync("onboarding");
-        result = await BuildService(second, optionsServer: LocalDb, customerDbServer: null).ProvisionAsync(other.Id, ct: Ct);
+        var result = await BuildService(operations, configuredServer: configured).ProvisionAsync(reg.Id, ct: Ct);
+
         Assert.Equal(ProvisioningOutcome.Success, result.Outcome);
-        Assert.Equal(LocalDb, Assert.Single(second.Servers));
+        Assert.Equal(expected, Assert.Single(operations.Servers));
     }
 
     [Fact]
@@ -141,18 +150,12 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
     {
         var operations = new RecordingOperations();
         var reg = await SeedPaidRegistrationAsync("badoverride");
-        var service = BuildService(operations, optionsServer: "sql-onboarding", customerDbServer: null);
+        var service = BuildService(operations, configuredServer: "sql-tenantdb");
 
         var result = await service.ProvisionAsync(reg.Id, sqlServerOverride: "sql;Database=master", ct: Ct);
 
         Assert.Equal(ProvisioningOutcome.ValidationError, result.Outcome);
         Assert.Empty(operations.Servers);
-    }
-
-    [Fact]
-    public void CustomerOnboardingOptions_HasNoBuiltInServer()
-    {
-        Assert.Equal(string.Empty, new CustomerOnboardingOptions().ServerInstance);
     }
 
     // --- CLI ----------------------------------------------------------------------------------------
@@ -179,6 +182,18 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
 
         var exitCode = await QuietAsync(() => CliCommands.ProvisionSignupRequestAsync(
             host, reg.Id, dryRun: true, force: false, sqlServer: LocalDb, sqlAuth: "trusted", ct: Ct));
+
+        Assert.Equal(0, exitCode);
+    }
+
+    [Fact]
+    public async Task ProvisionSignupRequest_DryRun_WithTenantDbServerInstance_Succeeds()
+    {
+        using var host = BuildCliHost(configuredServer: LocalDb);
+        var reg = await SeedPaidRegistrationAsync(host, "clidryconfigured");
+
+        var exitCode = await QuietAsync(() => CliCommands.ProvisionSignupRequestAsync(
+            host, reg.Id, dryRun: true, force: false, sqlServer: null, sqlAuth: "trusted", ct: Ct));
 
         Assert.Equal(0, exitCode);
     }
@@ -213,18 +228,15 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
 
     // --- Helpers ------------------------------------------------------------------------------------
 
-    private PendingRegistrationProvisioningService BuildService(
-        RecordingOperations operations,
-        string? optionsServer,
-        string? customerDbServer)
+    private PendingRegistrationProvisioningService BuildService(RecordingOperations operations, string? configuredServer)
     {
         var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { [TenantSqlServerConfiguration.CustomerDbKey] = customerDbServer })
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["TenantDb:ServerInstance"] = configuredServer })
             .Build();
         return new PendingRegistrationProvisioningService(
             _db,
             new FakeSecretManager(),
-            Options.Create(new CustomerOnboardingOptions { ServerInstance = optionsServer ?? string.Empty, SqlAuth = "trusted" }),
+            Options.Create(new TenantOnboardingOptions { SqlAuth = "trusted" }),
             config,
             new NullServiceProvider(),
             operations,
@@ -239,8 +251,7 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
                     .AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         ["ConnectionStrings:CentralDb"] = "Server=fixture;Database=Wasla_Central;Trusted_Connection=True",
-                        [TenantSqlServerConfiguration.CustomerDbKey] = configuredServer,
-                        [TenantSqlServerConfiguration.OnboardingKey] = configuredServer
+                        ["TenantDb:ServerInstance"] = configuredServer
                     })
                     .Build());
                 services.AddDbContext<CentralDbContext>(options => options.UseSqlite(_connection));

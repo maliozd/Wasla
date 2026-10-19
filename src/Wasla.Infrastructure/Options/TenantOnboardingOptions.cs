@@ -1,16 +1,10 @@
 ﻿namespace Wasla.Infrastructure.Options;
 
-public sealed class CustomerOnboardingOptions
+public sealed class TenantOnboardingOptions
 {
-    public const string SectionName = "OrderHub:CustomerOnboarding";
+    public const string SectionName = "Wasla:TenantOnboarding";
 
     public string MarketingBaseDomain { get; set; } = "wasla.local";
-
-    /// <summary>
-    /// SQL Server instance for new tenant databases. No default: when neither this nor <c>CustomerDb:ServerInstance</c>
-    /// is set, provisioning stops (WAS-93). Development configures LocalDB explicitly.
-    /// </summary>
-    public string ServerInstance { get; set; } = string.Empty;
 
     /// <summary>trusted or sql:username:password</summary>
     public string SqlAuth { get; set; } = "trusted";

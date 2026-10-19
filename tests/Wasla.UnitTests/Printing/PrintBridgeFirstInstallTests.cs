@@ -360,9 +360,9 @@ public sealed partial class PrintBridgeFirstInstallTests
 
     private PrintBridgeController Controller(TenantNavigationPermissions permissions, string? packagePath = null)
     {
-        var settings = new Dictionary<string, string?> { ["OrderHub:CustomerWebBaseUrl"] = "https://tenant.wasla.local/" };
+        var settings = new Dictionary<string, string?> { ["Wasla:TenantWebBaseUrl"] = "https://tenant.wasla.local/" };
         if (packagePath is not null)
-            settings["OrderHub:PrintBridgeDownload:PackagePath"] = packagePath;
+            settings["Wasla:PrintBridgeDownload:PackagePath"] = packagePath;
 
         var httpContext = new DefaultHttpContext { User = Principal() };
         return new PrintBridgeController(

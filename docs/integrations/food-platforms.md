@@ -249,7 +249,12 @@ Trendyol GO package requests share one process-wide limit of 40 requests per rol
 
 ## Webhooks
 
-For Trendyol GO the target is webhook first, with polling as the safety net (WAS-17). No webhook is implemented for any platform yet; polling is the only ingestion path. See [../orders/synchronization.md](../orders/synchronization.md#webhooks-and-polling).
+No webhook is implemented for any platform yet; polling is the only ingestion path. The WAS-17 decision record, [provider-webhooks.md](provider-webhooks.md), holds the evidence:
+
+- Trendyol GO documents a Meal webhook. Wasla will use it provider-specifically, in front of the checkpointed polling, never instead of it. The endpoint and its tenant routing are blocked until Trendyol GO confirms how an event identifies its seller ([Tenant routing](provider-webhooks.md#tenant-routing)).
+- Yemeksepeti's restaurant webhook contract is not currently confirmable; implementation is blocked by WAS-70.
+
+See also [../orders/synchronization.md](../orders/synchronization.md#webhooks-and-polling).
 
 ## Mock order behavior (product rules)
 
