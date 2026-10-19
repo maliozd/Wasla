@@ -191,15 +191,19 @@ public sealed partial class OrderDataPresentationTests
         {
             var fixtureUtc = hostStartUtc.AddMinutes(-2);
             var (start, end) = TurkeyLocalDateRange(nowUtc.AddMinutes(-2), hostStartUtc.AddSeconds(5));
-            var (fromUtc, toUtc) = OrdersReceivedAtQueryRange.FromWebQueryStrings(start, end, out _, out _);
-            Assert.True(fromUtc <= fixtureUtc && fixtureUtc < toUtc, $"{instant}: {start}..{end} misses {fixtureUtc:O}");
+            var range = OrdersReceivedAtQueryRange.ParseWebQueryStrings(start, end);
+            Assert.True(range.IsValid, $"{instant}: {start}..{end} is not a valid filter");
+            Assert.True(range.UtcStartInclusive <= fixtureUtc && fixtureUtc < range.UtcEndExclusive,
+                $"{instant}: {start}..{end} misses {fixtureUtc:O}");
         }
 
         var (today, fallbackUtc) = TurkeyTodayAt(nowUtc, nowUtc.AddMinutes(-1));
         Assert.Equal(localToday, today);
         Assert.True(fallbackUtc <= nowUtc);
         var day = today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var (todayStartUtc, todayEndUtc) = OrdersReceivedAtQueryRange.FromWebQueryStrings(day, day, out _, out _);
+        var todayRange = OrdersReceivedAtQueryRange.ParseWebQueryStrings(day, day);
+        Assert.True(todayRange.IsValid, $"{instant}: {day} is not a valid filter");
+        var (todayStartUtc, todayEndUtc) = (todayRange.UtcStartInclusive, todayRange.UtcEndExclusive);
         Assert.True(todayStartUtc <= fallbackUtc && fallbackUtc < todayEndUtc, $"{instant}: {fallbackUtc:O} is not on {day}");
         // Away from midnight the fallback order keeps its minute-old import time.
         if (nowUtc.AddMinutes(-1) >= todayStartUtc)
