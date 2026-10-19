@@ -10,6 +10,10 @@ namespace Wasla.PrintBridge.Services;
 
 public static class PrintBridgeAppServices
 {
+    /// <summary>Serilog adds the date before the extension: one <c>wasla-print-bridge-yyyyMMdd.log</c> per day.</summary>
+    internal static string LogFilePath =>
+        Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "wasla-print-bridge-.log");
+
     public static ServiceProvider Build()
     {
         PrintBridgePaths.EnsureProgramDataDirectories();
@@ -24,18 +28,17 @@ public static class PrintBridgeAppServices
         cultureService.Initialize(document.Ui.Language);
 
         var holder = new PrintBridgeSettingsHolder();
-        holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+        holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
 
         var appVersion = new AppVersionInfo(typeof(PrintBridgeAppServices).Assembly);
 
-        var logPath = Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "orderhub-print-bridge-.log");
         const string logTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}";
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
             .MinimumLevel.Override("System.Net.Http.HttpClient", Serilog.Events.LogEventLevel.Warning)
             .Enrich.FromLogContext()
-            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: logTemplate)
+            .WriteTo.File(LogFilePath, rollingInterval: RollingInterval.Day, outputTemplate: logTemplate)
             .CreateLogger();
 
         var services = new ServiceCollection();
@@ -84,7 +87,7 @@ public static class PrintBridgeAppServices
     private static void LogStartup(ServiceProvider provider, PrintBridgeSettingsHolder holder)
     {
         var logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Startup");
-        var (hub, bridge, ui) = holder.Snapshot();
+        var (connection, bridge, ui) = holder.Snapshot();
 
         if (OperatingSystem.IsWindows())
         {
@@ -106,7 +109,7 @@ public static class PrintBridgeAppServices
 
         logger.LogInformation(
             "Effective config: ServerUrl={ServerUrl}, DryRun={DryRun}, PrinterMode={PrinterMode}, PrinterName={PrinterName}, DisplayName={DisplayName}, MachineName={MachineName}, Language={Language}, IdlePoll={IdlePoll}s, BusyPoll={BusyPoll}s, ErrorPoll={ErrorPoll}s, MaxJobsPerPoll={MaxJobsPerPoll}, ConfigPath={ConfigPath}, LogPath={LogPath}",
-            hub.ServerUrl,
+            connection.ServerUrl,
             bridge.DryRun,
             bridge.PrinterMode,
             string.IsNullOrWhiteSpace(bridge.PrinterName) ? "(not set)" : bridge.PrinterName,

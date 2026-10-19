@@ -101,7 +101,7 @@ public sealed class ShellPrinterSettings : IShellPrinterSettings
 
     public bool TrySavePrinter(string printerName, out string? errorKey)
     {
-        var (hub, bridge, ui) = _holder.Snapshot();
+        var (connection, bridge, ui) = _holder.Snapshot();
 
         // A new options object: a job already being printed keeps the printer it captured when it was claimed.
         var updated = bridge.Clone();
@@ -113,11 +113,11 @@ public sealed class ShellPrinterSettings : IShellPrinterSettings
 
         _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
         {
-            OrderHub = hub,
+            Wasla = connection,
             PrintBridge = updated,
             Ui = ui
         });
-        _holder.Replace(hub, updated, ui);
+        _holder.Replace(connection, updated, ui);
         errorKey = null;
         return true;
     }
@@ -141,7 +141,7 @@ public sealed class ShellOperationalSettings : IShellOperationalSettings
 
     public bool TrySave(ShellOperationalSettingsChange change, out string? errorKey)
     {
-        var (hub, bridge, ui) = _holder.Snapshot();
+        var (connection, bridge, ui) = _holder.Snapshot();
         var updated = bridge.Clone();
         updated.DryRun = change.TestMode;
         updated.IdlePollIntervalSeconds = change.IdlePollSeconds;
@@ -153,11 +153,11 @@ public sealed class ShellOperationalSettings : IShellOperationalSettings
 
         _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
         {
-            OrderHub = hub,
+            Wasla = connection,
             PrintBridge = updated,
             Ui = ui
         });
-        _holder.Replace(hub, updated, ui);
+        _holder.Replace(connection, updated, ui);
         errorKey = null;
         return true;
     }

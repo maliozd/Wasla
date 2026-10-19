@@ -167,7 +167,7 @@ public sealed class ShellSnapshotActionsTests : IDisposable
     public void Operational_ShowsTheSavedValuesTheEngineUses_WithTheValidatorRanges()
     {
         _rig.Settings.Replace(
-            _rig.Settings.OrderHub,
+            _rig.Settings.Connection,
             new Wasla.PrintBridge.Options.PrintBridgeOptions
             {
                 PrinterName = "POS-58",

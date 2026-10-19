@@ -28,8 +28,8 @@ public sealed class ShellHostServicesTests : IDisposable
         var saved = store.Load();
         Assert.Equal("Microsoft Print to PDF", saved.PrintBridge.PrinterName);
         Assert.Equal("WindowsPrinter", saved.PrintBridge.PrinterMode);
-        Assert.Equal(FakeToken, saved.OrderHub.AgentToken);
-        Assert.Equal("http://print-bridge.test", saved.OrderHub.ServerUrl);
+        Assert.Equal(FakeToken, saved.Wasla.AgentToken);
+        Assert.Equal("http://print-bridge.test", saved.Wasla.ServerUrl);
         Assert.True(saved.PrintBridge.DryRun);
         Assert.Equal(7, saved.PrintBridge.IdlePollIntervalSeconds);
         Assert.Equal(2, saved.PrintBridge.BusyPollIntervalSeconds);
@@ -78,7 +78,7 @@ public sealed class ShellHostServicesTests : IDisposable
         PrintBridgePaths.EnsureProgramDataDirectories();
         File.WriteAllText(PrintBridgePaths.ProgramDataConfigPath, """
             {
-              "OrderHub": { "ServerUrl": "http://print-bridge.test/", "AgentToken": "test-token-not-a-real-credential" },
+              "Wasla": { "ServerUrl": "http://print-bridge.test/", "AgentToken": "test-token-not-a-real-credential" },
               "PrintBridge": { "PrinterName": "POS-58", "DryRun": true, "BridgeName": "Kasa 1" },
               "Ui": { "Language": "ru-RU" }
             }
@@ -86,16 +86,16 @@ public sealed class ShellHostServicesTests : IDisposable
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
         var holder = new PrintBridgeSettingsHolder();
-        holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+        holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
 
         Assert.True(new ShellPrinterSettings(store, holder).TrySavePrinter("Microsoft Print to PDF", out _));
 
         var root = JsonNode.Parse(File.ReadAllText(PrintBridgePaths.ProgramDataConfigPath))!.AsObject();
-        Assert.Equal(["OrderHub", "PrintBridge", "Ui"], root.Select(p => p.Key));
+        Assert.Equal(["Wasla", "PrintBridge", "Ui"], root.Select(p => p.Key));
         var saved = store.Load();
         Assert.Equal("Microsoft Print to PDF", saved.PrintBridge.PrinterName);
-        Assert.Equal(FakeToken, saved.OrderHub.AgentToken);
-        Assert.Equal("http://print-bridge.test", saved.OrderHub.ServerUrl);
+        Assert.Equal(FakeToken, saved.Wasla.AgentToken);
+        Assert.Equal("http://print-bridge.test", saved.Wasla.ServerUrl);
         Assert.Equal("Kasa 1", saved.PrintBridge.DisplayName);
         Assert.True(saved.PrintBridge.DryRun);
         Assert.Equal("ru-RU", saved.Ui.Language);
@@ -168,8 +168,8 @@ public sealed class ShellHostServicesTests : IDisposable
         Assert.Equal(60, saved.PrintBridge.ErrorPollIntervalSeconds);
         Assert.Equal(3, saved.PrintBridge.MaxJobsPerPoll);
         Assert.Equal("POS-58", saved.PrintBridge.PrinterName);
-        Assert.Equal(FakeToken, saved.OrderHub.AgentToken);
-        Assert.Equal("http://print-bridge.test", saved.OrderHub.ServerUrl);
+        Assert.Equal(FakeToken, saved.Wasla.AgentToken);
+        Assert.Equal("http://print-bridge.test", saved.Wasla.ServerUrl);
         Assert.Equal(before.InstallationId, saved.PrintBridge.InstallationId);
         Assert.Equal("Kasa 1", saved.PrintBridge.DisplayName);
         Assert.Equal("ar-SA", saved.Ui.Language);
@@ -224,8 +224,8 @@ public sealed class ShellHostServicesTests : IDisposable
     {
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
-        document.OrderHub.ServerUrl = "http://print-bridge.test";
-        document.OrderHub.AgentToken = FakeToken;
+        document.Wasla.ServerUrl = "http://print-bridge.test";
+        document.Wasla.AgentToken = FakeToken;
         document.PrintBridge.PrinterName = "POS-58";
         document.PrintBridge.DisplayName = "Kasa 1";
         document.PrintBridge.DryRun = true;
@@ -236,7 +236,7 @@ public sealed class ShellHostServicesTests : IDisposable
         store.Save(document);
 
         var holder = new PrintBridgeSettingsHolder();
-        holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+        holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
         return (store, holder);
     }
 }

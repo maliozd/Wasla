@@ -17,7 +17,7 @@ public sealed record PrintJobActionResponse(
 
 public sealed record PrintBridgeHealthResponse(
     bool Success,
-    string CustomerName,
+    string TenantName,
     string DeviceName,
     DateTime ServerTimeUtc,
     string? MachineName = null,

@@ -23,8 +23,8 @@ public sealed class PrintBridgeDeviceMetadataSync
     public bool ApplyFromHealth(WaslaPrintBridgeClient.PrintBridgeHealthResult health)
     {
         _logger.LogInformation(
-            "Device metadata received. CustomerName={CustomerName}, DeviceName={DeviceName}, ServerTimeUtc={ServerTimeUtc}",
-            string.IsNullOrWhiteSpace(health.CustomerName) ? "(empty)" : health.CustomerName,
+            "Device metadata received. TenantName={TenantName}, DeviceName={DeviceName}, ServerTimeUtc={ServerTimeUtc}",
+            string.IsNullOrWhiteSpace(health.TenantName) ? "(empty)" : health.TenantName,
             string.IsNullOrWhiteSpace(health.DeviceName) ? "(empty)" : health.DeviceName,
             health.ServerTimeUtc);
 
@@ -34,17 +34,17 @@ public sealed class PrintBridgeDeviceMetadataSync
 
         lock (_sync)
         {
-            var (hub, bridge, ui) = _holder.Snapshot();
+            var (connection, bridge, ui) = _holder.Snapshot();
             var changed = !string.Equals(bridge.DisplayName, deviceName, StringComparison.Ordinal)
                 || !bridge.ServerDeviceNameResolved;
 
             bridge.DisplayName = deviceName;
             bridge.ServerDeviceNameResolved = true;
-            _holder.Replace(hub, bridge, ui);
+            _holder.Replace(connection, bridge, ui);
 
             if (changed)
             {
-                Persist(hub, bridge, ui);
+                Persist(connection, bridge, ui);
                 _logger.LogInformation("Device display name updated: {DisplayName}", deviceName);
             }
 
@@ -56,13 +56,13 @@ public sealed class PrintBridgeDeviceMetadataSync
     {
         lock (_sync)
         {
-            var (hub, bridge, ui) = _holder.Snapshot();
+            var (connection, bridge, ui) = _holder.Snapshot();
             if (!bridge.ServerDeviceNameResolved)
                 return;
 
             bridge.ServerDeviceNameResolved = false;
-            _holder.Replace(hub, bridge, ui);
-            Persist(hub, bridge, ui);
+            _holder.Replace(connection, bridge, ui);
+            Persist(connection, bridge, ui);
             _logger.LogInformation("Device display name marked unresolved after authentication failure.");
         }
     }
@@ -71,25 +71,25 @@ public sealed class PrintBridgeDeviceMetadataSync
     {
         lock (_sync)
         {
-            var (hub, bridge, ui) = _holder.Snapshot();
+            var (connection, bridge, ui) = _holder.Snapshot();
             if (string.IsNullOrWhiteSpace(bridge.DisplayName) && !bridge.ServerDeviceNameResolved)
                 return;
 
             bridge.DisplayName = string.Empty;
             bridge.ServerDeviceNameResolved = false;
-            _holder.Replace(hub, bridge, ui);
-            Persist(hub, bridge, ui);
+            _holder.Replace(connection, bridge, ui);
+            Persist(connection, bridge, ui);
             _logger.LogInformation("Device display name cleared after token change.");
         }
     }
 
-    private void Persist(WaslaOptions hub, PrintBridgeOptions bridge, UiOptions ui)
+    private void Persist(WaslaOptions connection, PrintBridgeOptions bridge, UiOptions ui)
     {
         try
         {
             _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
             {
-                OrderHub = hub,
+                Wasla = connection,
                 PrintBridge = bridge,
                 Ui = ui
             });

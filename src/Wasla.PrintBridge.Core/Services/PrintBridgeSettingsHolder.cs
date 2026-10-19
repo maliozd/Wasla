@@ -5,13 +5,13 @@ namespace Wasla.PrintBridge.Services;
 public sealed class PrintBridgeSettingsHolder
 {
     private readonly object _sync = new();
-    private WaslaOptions _orderHub = new();
+    private WaslaOptions _connection = new();
     private PrintBridgeOptions _bridge = new();
     private UiOptions _ui = new();
 
-    public WaslaOptions OrderHub
+    public WaslaOptions Connection
     {
-        get { lock (_sync) return _orderHub; }
+        get { lock (_sync) return _connection; }
     }
 
     public PrintBridgeOptions Bridge
@@ -24,11 +24,11 @@ public sealed class PrintBridgeSettingsHolder
         get { lock (_sync) return _ui; }
     }
 
-    public void Replace(WaslaOptions orderHub, PrintBridgeOptions bridge, UiOptions? ui = null)
+    public void Replace(WaslaOptions connection, PrintBridgeOptions bridge, UiOptions? ui = null)
     {
         lock (_sync)
         {
-            _orderHub = orderHub;
+            _connection = connection;
             _bridge = bridge;
             if (ui is not null)
                 _ui = ui;
@@ -41,9 +41,9 @@ public sealed class PrintBridgeSettingsHolder
             _ui = ui;
     }
 
-    public (WaslaOptions OrderHub, PrintBridgeOptions Bridge, UiOptions Ui) Snapshot()
+    public (WaslaOptions Connection, PrintBridgeOptions Bridge, UiOptions Ui) Snapshot()
     {
         lock (_sync)
-            return (_orderHub, _bridge, _ui);
+            return (_connection, _bridge, _ui);
     }
 }

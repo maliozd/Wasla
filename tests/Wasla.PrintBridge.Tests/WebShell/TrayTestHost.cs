@@ -51,7 +51,7 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
 
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
-        document.OrderHub.AgentToken = string.Empty;
+        document.Wasla.AgentToken = string.Empty;
         document.PrintBridge.DryRun = true;
         document.Ui.Language = SupportedCultures.Turkish;
         // A test that needs a listening engine points it at a local fake server with a fake token here.
