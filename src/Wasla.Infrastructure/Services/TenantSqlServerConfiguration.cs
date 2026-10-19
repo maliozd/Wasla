@@ -8,30 +8,24 @@ public sealed record TenantSqlServerResolution(string? Server, string? Error)
 
 /// <summary>
 /// Which SQL Server instance provisioning creates tenant databases on (WAS-93). There is no built-in default: an
-/// explicit override (CLI <c>--sql-server</c>) wins, then <c>CustomerDb:ServerInstance</c>, then
-/// <c>OrderHub:CustomerOnboarding:ServerInstance</c>. Unset, empty or whitespace-only values do not count, so with none
-/// of them provisioning stops before touching any database. LocalDB or <c>.</c> are used only when configured.
+/// explicit override (CLI <c>--sql-server</c>) wins, then <c>TenantDb:ServerInstance</c>. Unset, empty or
+/// whitespace-only values do not count, so with neither provisioning stops before touching any database. LocalDB or
+/// <c>.</c> are used only when configured.
 /// </summary>
 public static class TenantSqlServerConfiguration
 {
-    public const string CustomerDbKey = "CustomerDb:ServerInstance";
-    public const string OnboardingKey = "OrderHub:CustomerOnboarding:ServerInstance";
+    public const string ServerInstanceKey = "TenantDb:ServerInstance";
     private const int MaxLength = 256;
 
     public const string MissingMessage =
-        "No SQL Server instance is configured for tenant databases. Set CustomerDb:ServerInstance or " +
-        "OrderHub:CustomerOnboarding:ServerInstance, or pass --sql-server.";
+        "No SQL Server instance is configured for tenant databases. Set TenantDb:ServerInstance, or pass --sql-server.";
 
-    public static TenantSqlServerResolution Resolve(
-        string? overrideServer,
-        string? customerDbServerInstance,
-        string? onboardingServerInstance)
+    public static TenantSqlServerResolution Resolve(string? overrideServer, string? configuredServerInstance)
     {
         foreach (var (source, value) in new[]
                  {
                      ("--sql-server", overrideServer),
-                     (CustomerDbKey, customerDbServerInstance),
-                     (OnboardingKey, onboardingServerInstance)
+                     (ServerInstanceKey, configuredServerInstance)
                  })
         {
             if (string.IsNullOrWhiteSpace(value))

@@ -147,6 +147,24 @@ public sealed partial class PrintBridgeManualConnectionTests
         Assert.DoesNotContain("token", json, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData(" https://panel.wasla.local ", "https://public.wasla.local/", "https://panel.wasla.local/")]
+    [InlineData(null, "https://public.wasla.local", "https://public.wasla.local/")]
+    [InlineData(null, null, "https://sushim.wasla.local:7200/")]
+    public async Task SetupPage_HandsOutTheTenantWebUrl_ThenThePublicWebUrl_ThenTheRequestHost(
+        string? tenantWebBaseUrl,
+        string? publicWebBaseUrl,
+        string expected)
+    {
+        var controller = Controller(new RecordingDevices(), webPanelUrl: tenantWebBaseUrl, publicWebBaseUrl: publicWebBaseUrl);
+        controller.HttpContext.Request.Scheme = "https";
+        controller.HttpContext.Request.Host = new HostString("sushim.wasla.local", 7200);
+
+        var model = Assert.IsType<PrintBridgeSetupViewModel>(Assert.IsType<ViewResult>(await controller.Setup(CancellationToken.None)).Model);
+
+        Assert.Equal(expected, model.ServerUrl);
+    }
+
     [Fact]
     public async Task ManualDevice_WithoutAWebPanelUrl_CreatesNothing()
     {
@@ -382,11 +400,14 @@ public sealed partial class PrintBridgeManualConnectionTests
         string? webPanelUrl = "https://tenant.wasla.local/",
         ICurrentTenantService? tenant = null,
         IAuthorizationService? authorization = null,
-        IGuidedSetupCoordinator? guidedSetup = null)
+        IGuidedSetupCoordinator? guidedSetup = null,
+        string? publicWebBaseUrl = null)
     {
         var settings = new Dictionary<string, string?>();
         if (webPanelUrl is not null)
-            settings["OrderHub:CustomerWebBaseUrl"] = webPanelUrl;
+            settings["Wasla:TenantWebBaseUrl"] = webPanelUrl;
+        if (publicWebBaseUrl is not null)
+            settings["Wasla:PublicWebBaseUrl"] = publicWebBaseUrl;
 
         var owner = new TenantNavigationPermissions(true, true, true, true, true, true, true, true, true, true, true);
         var httpContext = new DefaultHttpContext

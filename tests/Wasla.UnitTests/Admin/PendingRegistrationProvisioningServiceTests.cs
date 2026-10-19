@@ -418,13 +418,14 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
         FakeTenantDatabaseProvisioningOperations? operations = null,
         FakeSecretManager? secret = null)
     {
-        var opts = Options.Create(new CustomerOnboardingOptions
+        var opts = Options.Create(new TenantOnboardingOptions
         {
-            ServerInstance = "(localdb)\\MSSQLLocalDB",
             SqlAuth = "trusted",
             TrialDays = 14
         });
-        var config = new ConfigurationBuilder().Build();
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["TenantDb:ServerInstance"] = "(localdb)\\MSSQLLocalDB" })
+            .Build();
         var logger = NullLogger<PendingRegistrationProvisioningService>.Instance;
         var sp = new FakeServiceProvider();
         return new PendingRegistrationProvisioningService(

@@ -5,13 +5,16 @@ using Microsoft.Extensions.Configuration;
 namespace Wasla.Infrastructure.Persistence.Tenant;
 
 /// <summary>
-/// Only used for scaffolding TenantDbContext migrations. At runtime, real
-/// customer connections are resolved per-tenant by ITenantDbContextFactory.
+/// Only used for scaffolding TenantDbContext migrations. At runtime, tenant
+/// connections are resolved per-tenant by ITenantDbContextFactory.
 /// This factory points at a design-time scratch database whose only purpose
 /// is to generate migration files. It is never queried by the API or Worker.
 /// </summary>
 public sealed class TenantDesignTimeDbContextFactory : IDesignTimeDbContextFactory<TenantDbContext>
 {
+    internal const string ConnectionStringName = "TenantDbDesignTime";
+    internal const string DerivedCatalog = "Wasla_Tenant_DesignTime";
+
     public TenantDbContext CreateDbContext(string[] args)
     {
         var solutionRoot = FindSolutionRoot();
@@ -23,20 +26,24 @@ public sealed class TenantDesignTimeDbContextFactory : IDesignTimeDbContextFacto
             .AddEnvironmentVariables()
             .Build();
 
-        // Use dedicated key if provided, otherwise derive from CentralDb's server only.
-        var cs = configuration.GetConnectionString("CustomerDbDesignTime")
-                 ?? BuildFromCentral(configuration)
-                 ?? throw new InvalidOperationException(
-                     "CustomerDb design-time connection string not found. " +
-                     "Set 'ConnectionStrings:CustomerDbDesignTime' in appsettings.json, " +
-                     "or ensure 'ConnectionStrings:CentralDb' is set so a design-time DB name can be derived.");
-
         var options = new DbContextOptionsBuilder<TenantDbContext>()
-            .UseSqlServer(cs)
+            .UseSqlServer(ResolveConnectionString(configuration))
             .Options;
 
         return new TenantDbContext(options);
     }
+
+    /// <summary>
+    /// <c>ConnectionStrings:TenantDbDesignTime</c> if set, otherwise CentralDb's server with the scratch catalog
+    /// <c>Wasla_Tenant_DesignTime</c>.
+    /// </summary>
+    internal static string ResolveConnectionString(IConfiguration configuration) =>
+        configuration.GetConnectionString(ConnectionStringName)
+        ?? BuildFromCentral(configuration)
+        ?? throw new InvalidOperationException(
+            "TenantDb design-time connection string not found. " +
+            $"Set 'ConnectionStrings:{ConnectionStringName}' in appsettings.json, " +
+            "or ensure 'ConnectionStrings:CentralDb' is set so a design-time DB name can be derived.");
 
     private static string? BuildFromCentral(IConfiguration configuration)
     {
@@ -46,7 +53,7 @@ public sealed class TenantDesignTimeDbContextFactory : IDesignTimeDbContextFacto
         // Replace the Database= portion with the design-time scratch DB name.
         var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(central)
         {
-            InitialCatalog = "OrderHub_Customer_DesignTime"
+            InitialCatalog = DerivedCatalog
         };
         return builder.ConnectionString;
     }

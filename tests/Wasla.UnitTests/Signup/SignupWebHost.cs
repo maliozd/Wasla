@@ -101,7 +101,7 @@ internal sealed class SignupWebHost : IAsyncDisposable
             .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
 
         services.AddDbContext<CentralDbContext>(options => options.UseSqlite(centralDb));
-        services.Configure<CustomerOnboardingOptions>(_ => { });
+        services.Configure<TenantOnboardingOptions>(_ => { });
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();

@@ -6,9 +6,9 @@ public static class PrintBridgePackagePaths
     public const string DefaultRelativeFolder = "downloads/wasla-print-bridge";
 
     public static string GetPackageFileName(IConfiguration configuration) =>
-        string.IsNullOrWhiteSpace(configuration["OrderHub:PrintBridgeDownload:PackageFileName"])
+        string.IsNullOrWhiteSpace(configuration["Wasla:PrintBridgeDownload:PackageFileName"])
             ? DefaultPackageFileName
-            : configuration["OrderHub:PrintBridgeDownload:PackageFileName"]!.Trim();
+            : configuration["Wasla:PrintBridgeDownload:PackageFileName"]!.Trim();
 
     /// <summary>
     /// The configured package path, otherwise the default folder in the web root. Null when no path is configured and
@@ -17,7 +17,7 @@ public static class PrintBridgePackagePaths
     /// </summary>
     public static string? ResolvePackagePath(IConfiguration configuration, IWebHostEnvironment environment)
     {
-        var configured = configuration["OrderHub:PrintBridgeDownload:PackagePath"]?.Trim();
+        var configured = configuration["Wasla:PrintBridgeDownload:PackagePath"]?.Trim();
         if (!string.IsNullOrWhiteSpace(configured))
         {
             return Path.IsPathRooted(configured)

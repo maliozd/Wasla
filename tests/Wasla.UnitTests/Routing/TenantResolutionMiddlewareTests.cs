@@ -164,7 +164,7 @@ public sealed class TenantResolutionMiddlewareTests
             resolver,
             pendingRegistrations,
             misses,
-            Options.Create(new CustomerOnboardingOptions { MarketingBaseDomain = "wasla.local" }),
+            Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local" }),
             NullLogger<TenantResolutionMiddleware>.Instance);
     }
 

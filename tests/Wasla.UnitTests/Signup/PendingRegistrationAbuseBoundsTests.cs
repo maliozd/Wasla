@@ -160,7 +160,7 @@ public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
             db,
             new WaslaPlanCatalog(),
             new SignupReferenceDataService(db),
-            Options.Create(new CustomerOnboardingOptions { MaxActivePendingRegistrationsPerOwnerEmail = maxActivePerEmail }),
+            Options.Create(new TenantOnboardingOptions { MaxActivePendingRegistrationsPerOwnerEmail = maxActivePerEmail }),
             NullLogger<PendingRegistrationService>.Instance);
 
         var token = SentinelApplicant.NewToken();
