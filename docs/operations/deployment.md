@@ -243,7 +243,7 @@ TenantDb__ServerInstance                     # CLI and Web: SQL Server for new t
 
 - No OpenTelemetry exporter or metrics stack; the `Wasla.Realtime` meter is read locally with `dotnet-counters` (see [observability.md](observability.md#live-notification-metrics)).
 - Worker has no HTTP health endpoint for orchestrators.
-- Legacy names remain outside the Web, Api, Worker and CLI configuration: the Print Bridge desktop settings section (WAS-135) and the `migrate-customer` command names (WAS-137).
+- Legacy names remain outside the Web, Api, Worker and CLI configuration: the `migrate-customer` command names (WAS-137).
 
 ## Related docs
 
