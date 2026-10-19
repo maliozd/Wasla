@@ -9,7 +9,6 @@ public sealed class ShellMessageParserTests
     [Theory]
     [InlineData("ui.ready", ShellCommandType.UiReady)]
     [InlineData("snapshot.request", ShellCommandType.SnapshotRequest)]
-    [InlineData("classicWindow.open", ShellCommandType.ClassicWindowOpen)]
     public void AcceptsEachAllowlistedCommand(string type, ShellCommandType expected)
     {
         Assert.True(ShellMessageParser.TryParse(Command(type), out var command, out var rejection));
@@ -45,7 +44,7 @@ public sealed class ShellMessageParserTests
     {
         Assert.Equal(
             [
-                "ui.ready", "snapshot.request", "language.change", "classicWindow.open",
+                "ui.ready", "snapshot.request", "language.change",
                 "engine.start", "engine.stop", "connection.test", "connection.openSetup", "connection.reset",
                 "printers.refresh", "printer.save", "printer.testPrint", "history.query", "history.reprint",
                 "logs.openFolder", "settings.save"
@@ -228,12 +227,12 @@ public sealed class ShellMessageParserTests
     [InlineData("""{"version":1.5,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
     [InlineData("""{"version":3,"type":"ui.ready","method":"Exit"}""", ShellMessageRejection.UnexpectedProperty)]
     [InlineData("""{"version":3,"type":"ui.ready","Type":"x"}""", ShellMessageRejection.UnexpectedProperty)]
-    [InlineData("""{"version":3,"type":"ui.ready","type":"classicWindow.open"}""", ShellMessageRejection.DuplicateProperty)]
+    [InlineData("""{"version":3,"type":"ui.ready","type":"snapshot.request"}""", ShellMessageRejection.DuplicateProperty)]
     [InlineData("""{"version":3,"version":3,"type":"ui.ready"}""", ShellMessageRejection.DuplicateProperty)]
     [InlineData("""{"version":3,"type":"ui.ready","payload":[]}""", ShellMessageRejection.InvalidPayload)]
     [InlineData("""{"version":3,"type":"ui.ready","payload":"x"}""", ShellMessageRejection.InvalidPayload)]
     [InlineData("""{"version":3,"type":"ui.ready","payload":{"force":true}}""", ShellMessageRejection.InvalidPayload)]
-    [InlineData("""{"version":3,"type":"classicWindow.open","payload":{"tab":"settings"}}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":3,"type":"snapshot.request","payload":{"tab":"settings"}}""", ShellMessageRejection.InvalidPayload)]
     public void RejectsMalformedEnvelopes(string raw, ShellMessageRejection expected)
     {
         Assert.False(ShellMessageParser.TryParse(raw, out var command, out var rejection));

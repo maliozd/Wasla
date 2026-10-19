@@ -77,13 +77,4 @@ public sealed class PrintBridgeConnectionResetTests
         Assert.True(issue.ShouldStopPolling);
         Assert.True(issue.IsBlockingLifecycleIssue);
     }
-
-    [Fact]
-    public void TokenFieldSync_AllowsEmptyTokenAfterResetWithoutTreatingAsUserEdit()
-    {
-        Assert.False(PrintBridgeConnectionFieldSync.ShouldPreserveAgentTokenInput(
-            isSavingConnection: false,
-            isTokenFieldFocused: false,
-            userEditedAgentToken: false));
-    }
 }

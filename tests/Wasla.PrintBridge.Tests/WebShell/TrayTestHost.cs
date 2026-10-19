@@ -1,4 +1,5 @@
-using Wasla.PrintBridge.Configuration;
+using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.UI;
@@ -6,24 +7,26 @@ using Wasla.PrintBridge.WebShell;
 
 namespace Wasla.PrintBridge.Tests.WebShell;
 
-/// <summary>When the tray application exits; exiting saves its settings (the window layout).</summary>
+/// <summary>When the tray application exits, relative to the end of the test.</summary>
 internal enum TrayExit
 {
     /// <summary>On the UI thread before the test is reported done. Every normal test uses this.</summary>
     BeforeTheTestEnds,
 
     /// <summary>
-    /// Only after the test was reported done and its teardown began: the ordering that once let the exit save reach
-    /// the machine's real settings file. Used to prove the data root outlives every writer.
+    /// Only after the test was reported done and its teardown began: the ordering that once let a write made while the
+    /// application exited reach the machine's real settings file. Used to prove the data root outlives every writer.
     /// </summary>
     DuringTeardown
 }
 
 /// <summary>
-/// The real tray application (services, engine, classic window, WebView2 window) on its own STA message-loop thread,
+/// The real tray application (services, engine, WebView2 window or runtime notice) on its own STA message-loop thread,
 /// with a private data root that tracks the thread, so teardown waits for the application to exit before the root is
-/// released. The tray icon is hidden and both windows open off-screen. No device token is configured unless a test
-/// points the engine at a local fake server with a fake token, so by default nothing contacts a server.
+/// released. The tray icon is hidden, every window opens off-screen, and a setup-link result that would be shown in a
+/// message box is recorded in <see cref="SetupResultMessages"/> instead. No device token is configured unless a test
+/// points the engine at a local fake server with a fake token, so by default nothing contacts a server and the
+/// application starts as a first run.
 /// </summary>
 internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
 {
@@ -32,8 +35,11 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
     /// <summary>A failure while exiting with <see cref="TrayExit.DuringTeardown"/>, after the test was reported done.</summary>
     public Exception? TeardownFailure { get; private set; }
 
+    /// <summary>Setup-link results the application would have shown in a message box.</summary>
+    public ConcurrentQueue<string> SetupResultMessages { get; } = new();
+
+    /// <param name="available">Whether the WebView2 Runtime counts as usable. True needs a real runtime (skipped otherwise).</param>
     public Task RunAsync(
-        string? shell,
         bool available,
         Func<TrayApplicationContext, PrintBridgeLocalizer, Task> body,
         bool failShellStartup = false,
@@ -48,10 +54,6 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
         document.OrderHub.AgentToken = string.Empty;
         document.PrintBridge.DryRun = true;
         document.Ui.Language = SupportedCultures.Turkish;
-        document.Ui.Shell = shell;
-        // The classic window restores its saved position; keep it off-screen.
-        document.Ui.WindowLeft = -32000;
-        document.Ui.WindowTop = -32000;
         // A test that needs a listening engine points it at a local fake server with a fake token here.
         configure?.Invoke(document);
         store.Save(document);
@@ -72,7 +74,8 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                     tray = new TrayApplicationContext(services, new FixedProbe(available));
                     // No icon or balloon on the desktop; the menu is driven directly.
                     tray.TrayIconForTests.Visible = false;
-                    // Both windows open off-screen; the tests check what opens, not where.
+                    // Every window opens off-screen; the tests check what opens, not where. These hooks run before a
+                    // window is first shown, including the one a first run opens once the message loop runs.
                     tray.ShellFormCreatedForTests = form =>
                     {
                         form.StartPosition = FormStartPosition.Manual;
@@ -80,9 +83,15 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                         form.ShowInTaskbar = false;
                         form.FailStartupForTests = failShellStartup;
                     };
-                    tray.ClassicWindowForTests.StartPosition = FormStartPosition.Manual;
-                    tray.ClassicWindowForTests.Location = new Point(-32000, -32000);
-                    var localizer = new PrintBridgeLocalizer(new PrintBridgeCultureService());
+                    tray.RuntimeNoticeCreatedForTests = notice =>
+                    {
+                        notice.StartPosition = FormStartPosition.Manual;
+                        notice.Location = new Point(-32000, -32000);
+                        notice.ShowInTaskbar = false;
+                    };
+                    tray.SetupResultMessageForTests = SetupResultMessages.Enqueue;
+                    // The application's own culture service, so the expected text follows the language it runs in.
+                    var localizer = new PrintBridgeLocalizer(services.GetRequiredService<PrintBridgeCultureService>());
                     await body(tray, localizer);
                 }
                 catch (Exception ex)
@@ -98,7 +107,6 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                     dataRoot.TeardownStarted.Wait(Timeout + Timeout);
                 }
 
-                // Exiting writes settings; normally it finishes before the test is reported done.
                 try
                 {
                     // Exit is queued on this thread and awaited, as from the tray menu; every request joins one shutdown.

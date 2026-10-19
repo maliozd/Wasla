@@ -30,7 +30,7 @@ public sealed class TrayExitTests : IDisposable
 
     [Fact]
     public Task ExitWhileListening_EndsTheApplication_WithoutAnException() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var exited = ThreadExited(tray);
@@ -44,7 +44,7 @@ public sealed class TrayExitTests : IDisposable
 
     [Fact]
     public Task ExitWhileStopped_EndsTheApplication_WithoutAnException() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             var exited = ThreadExited(tray);
 
@@ -56,23 +56,29 @@ public sealed class TrayExitTests : IDisposable
         });
 
     [Fact]
-    public Task ExitFromTheClassicWindowMode_WithTheWindowOpen_EndsTheApplication() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+    public Task ExitWithTheRuntimeNoticeOpen_WhileListening_DisposesItAfterTheEngineStopped() =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.Open"]);
-            Assert.True(tray.ClassicWindowForTests.Visible);
+            var notice = tray.RuntimeNoticeForTests!;
+            Assert.True(notice.Visible);
             await _server.NextPoll().WaitAsync(Timeout);
             var exited = ThreadExited(tray);
 
             Click(tray, localizer["Tray.Exit"]);
 
             await exited.WaitAsync(Timeout);
-            Assert.True(tray.ClassicWindowForTests.IsDisposed);
+            Assert.True(notice.IsDisposed);
+            Assert.Null(tray.RuntimeNoticeForTests);
+            Assert.Equal(
+                ["shutdown-started", "runtime-stopped", "runtime-notice-disposed", "tray-icon-disposed", "services-disposed", "thread-exited"],
+                tray.ShutdownStepsForTests);
+            Assert.DoesNotContain(_server.Requests, r => r.EndsWith("/mark-failed", StringComparison.Ordinal));
         }, configure: ListenToTheFakeServer);
 
     [Fact]
     public Task ExitClickedAgain_AfterTheApplicationEnded_DoesNothing() =>
-        _host.RunAsync(shell: null, available: false, async (tray, localizer) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
         {
             await _server.NextPoll().WaitAsync(Timeout);
             var exits = 0;

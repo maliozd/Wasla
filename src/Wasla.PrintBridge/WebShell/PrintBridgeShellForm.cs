@@ -13,7 +13,7 @@ namespace Wasla.PrintBridge.WebShell;
 /// download and external request outside that origin, and forwards page messages to <see cref="ShellBridge"/>.
 /// It also owns the privileged native actions the page may request (<see cref="IShellNativeActions"/>): the
 /// connection dialog and the confirmations are host windows in the app's design, never page content.
-/// Closing the window hides it to the tray, like the classic window.
+/// It is the only Print Bridge window. Closing it hides it to the tray.
 /// </summary>
 internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActions
 {
@@ -81,7 +81,6 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
             cultureService,
             operations,
             history,
-            this,
             logger);
 
         _refreshTimer = new System.Windows.Forms.Timer { Interval = RefreshIntervalMilliseconds };
@@ -91,10 +90,8 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
 
-    /// <summary>Raised once when the shell cannot run; the tray then falls back to the classic window.</summary>
+    /// <summary>Raised once when the shell cannot run; the tray then shows the WebView2 Runtime recovery notice.</summary>
     public event EventHandler? ShellUnavailable;
-
-    public event EventHandler? ClassicWindowRequested;
 
     /// <summary>
     /// True while the page can receive messages. A window hidden to the tray still receives them, so the result
@@ -159,8 +156,6 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     }
 
     public void PostWebMessageAsJson(string json) => _webView.CoreWebView2?.PostWebMessageAsJson(json);
-
-    public void OpenClassicWindow() => ClassicWindowRequested?.Invoke(this, EventArgs.Empty);
 
     public Task<ShellConnectionSetupResult> RunConnectionSetupAsync() =>
         ShowModalAsync(
@@ -324,7 +319,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         catch (Exception ex)
         {
             // Any startup failure (missing or broken runtime, locked profile folder, missing page files)
-            // must leave the user with the classic window rather than an empty one.
+            // must leave the user with the runtime recovery notice rather than an empty window.
             _logger.LogWarning(ex, "Print Bridge WebView2 shell could not start.");
             RaiseUnavailable();
         }

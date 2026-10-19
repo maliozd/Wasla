@@ -26,7 +26,6 @@
     'ui.ready': [],
     'snapshot.request': [],
     'language.change': ['culture'],
-    'classicWindow.open': [],
     'engine.start': ['requestId'],
     'engine.stop': ['requestId'],
     'connection.test': ['requestId'],

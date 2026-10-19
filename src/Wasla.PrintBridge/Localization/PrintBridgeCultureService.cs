@@ -11,7 +11,7 @@ public sealed class PrintBridgeCultureService
 
     /// <summary>
     /// Raised on the calling thread after <see cref="Initialize"/> switches to a different culture, so every
-    /// open window (classic or WebView2 shell) and the tray menu can re-localize.
+    /// open window (the WebView2 app and its dialogs) and the tray menu can re-localize.
     /// </summary>
     public event EventHandler? CultureChanged;
 

@@ -72,7 +72,6 @@ public sealed class ShellBridgeTests : IDisposable
             _host.Sent.Select(s => JsonDocument.Parse(s).RootElement.GetProperty("sequence").GetInt64()));
         Assert.Single(_host.Sent.Select(s => JsonDocument.Parse(s).RootElement.GetProperty("payload").GetRawText()).Distinct());
         Assert.Empty(_languages.Requests);
-        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
     }
 
     [Fact]
@@ -133,10 +132,9 @@ public sealed class ShellBridgeTests : IDisposable
     [InlineData("file:///C:/shell-ui/index.html")]
     public void MessagesFromAnyOtherSource_AreRejectedWithoutEffect(string? source)
     {
-        var outcome = _bridge.HandleWebMessage(source, Command("classicWindow.open"));
+        var outcome = _bridge.HandleWebMessage(source, Command("ui.ready"));
 
         Assert.Equal(ShellMessageOutcome.Rejected, outcome);
-        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
         Assert.Empty(_host.Sent);
     }
 
@@ -148,15 +146,6 @@ public sealed class ShellBridgeTests : IDisposable
     {
         Assert.Equal(ShellMessageOutcome.Rejected, _bridge.HandleWebMessage(ShellDocument, raw));
         Assert.Empty(_host.Sent);
-        Assert.Equal(0, _rig.Native.ClassicWindowRequests);
-    }
-
-    [Fact]
-    public void ClassicWindowOpen_AsksTheHost()
-    {
-        _bridge.HandleWebMessage(ShellDocument, Command("classicWindow.open"));
-
-        Assert.Equal(1, _rig.Native.ClassicWindowRequests);
     }
 
     [Fact]

@@ -2,7 +2,7 @@ namespace Wasla.PrintBridge.Services;
 
 /// <summary>
 /// The one decision about whether the saved server URL and device token may change now. Every path that replaces them
-/// (a setup link, the app's connection dialog, the classic window's save and test) asks here first.
+/// (a setup link, the app's connection dialog) asks here first.
 /// </summary>
 public interface IPrintBridgeConnectionGuard
 {

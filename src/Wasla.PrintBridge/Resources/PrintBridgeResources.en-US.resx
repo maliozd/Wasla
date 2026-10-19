@@ -12,15 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Button.ClearLogs" xml:space="preserve">
-    <value>Clear logs</value>
-  </data>
-  <data name="Button.CopyLogs" xml:space="preserve">
-    <value>Copy logs</value>
-  </data>
-  <data name="Button.JumpToLatest" xml:space="preserve">
-    <value>Jump to latest</value>
-  </data>
   <data name="Button.HideToken" xml:space="preserve">
     <value>Hide</value>
   </data>
@@ -33,20 +24,11 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>Save settings</value>
   </data>
-  <data name="Button.SaveConnection" xml:space="preserve">
-    <value>Save connection</value>
-  </data>
   <data name="Button.SavePrinter" xml:space="preserve">
     <value>Save printer</value>
   </data>
   <data name="Button.SaveDeviceName" xml:space="preserve">
     <value>Save device name</value>
-  </data>
-  <data name="Button.ApplyLanguage" xml:space="preserve">
-    <value>Apply language</value>
-  </data>
-  <data name="Button.SaveAdvanced" xml:space="preserve">
-    <value>Save advanced settings</value>
   </data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>Show</value>
@@ -74,9 +56,6 @@
   </data>
   <data name="Common.NotConfigured" xml:space="preserve">
     <value>(not configured)</value>
-  </data>
-  <data name="Common.Subtitle" xml:space="preserve">
-    <value>Receipt printing bridge</value>
   </data>
   <data name="Connection.AuthenticationFailed" xml:space="preserve">
     <value>Authentication failed</value>
@@ -201,15 +180,6 @@
   <data name="Message.ConnectionSuccess" xml:space="preserve">
     <value>Connection successful.</value>
   </data>
-  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve">
-    <value>Connection successful.{0}Customer: {1}{0}Device: {2}</value>
-  </data>
-  <data name="Message.DeviceNameLoadedFromServer" xml:space="preserve">
-    <value>Device name loaded from server.</value>
-  </data>
-  <data name="Message.LogsCopyFailed" xml:space="preserve">
-    <value>Could not copy logs: {0}</value>
-  </data>
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Logs folder has not been created yet.</value>
   </data>
@@ -225,23 +195,14 @@
   <data name="Message.SettingsSaved" xml:space="preserve">
     <value>Settings saved.</value>
   </data>
-  <data name="Message.SettingsSavedConnectionVerified" xml:space="preserve">
-    <value>Settings saved. Connection verified.</value>
-  </data>
   <data name="Message.SslCertificateError" xml:space="preserve">
     <value>SSL certificate error. Ensure the HTTPS certificate is trusted by Windows.</value>
   </data>
   <data name="Message.TokenInvalidUnauthorized" xml:space="preserve">
     <value>Token is invalid or not authorized for this device.</value>
   </data>
-  <data name="Message.ValidatingConnection" xml:space="preserve">
-    <value>Validating connection...</value>
-  </data>
   <data name="Message.LanguageRestartRequired" xml:space="preserve">
     <value>Language changes will take effect after restarting Print Bridge.</value>
-  </data>
-  <data name="Message.SettingsSaveFailed" xml:space="preserve">
-    <value>Could not save settings: {0}</value>
   </data>
   <data name="Message.TestPrintSent" xml:space="preserve">
     <value>Test print sent to printer.</value>
@@ -255,47 +216,14 @@
   <data name="Printing.Started" xml:space="preserve">
     <value>Printing started</value>
   </data>
-  <data name="RecentJobs.Column.Order" xml:space="preserve">
-    <value>Order</value>
-  </data>
-  <data name="RecentJobs.Column.Printer" xml:space="preserve">
-    <value>Printer</value>
-  </data>
-  <data name="RecentJobs.Column.Status" xml:space="preserve">
-    <value>Status</value>
-  </data>
-  <data name="RecentJobs.Column.Time" xml:space="preserve">
-    <value>Time</value>
-  </data>
-  <data name="RecentJobs.Column.Type" xml:space="preserve">
-    <value>Type</value>
-  </data>
-  <data name="RecentJobs.Tooltip.JobId" xml:space="preserve">
-    <value>Job ID: {0}</value>
-  </data>
   <data name="RecentJobs.Empty" xml:space="preserve">
     <value>No print jobs have been processed in this session yet.</value>
-  </data>
-  <data name="RecentJobs.Title" xml:space="preserve">
-    <value>Recent Jobs (this session)</value>
-  </data>
-  <data name="Settings.Advanced" xml:space="preserve">
-    <value>Advanced</value>
   </data>
   <data name="Settings.AgentToken" xml:space="preserve">
     <value>Device token</value>
   </data>
-  <data name="Settings.BusyPollSeconds" xml:space="preserve">
-    <value>Busy poll interval (sec)</value>
-  </data>
-  <data name="Footer.Device" xml:space="preserve">
-    <value>Device: {0}</value>
-  </data>
   <data name="Footer.NotConnected" xml:space="preserve">
     <value>Not connected</value>
-  </data>
-  <data name="Footer.Version" xml:space="preserve">
-    <value>Version: {0}</value>
   </data>
   <data name="Settings.ComputerName" xml:space="preserve">
     <value>Computer name</value>
@@ -312,26 +240,11 @@
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Machine: {0}</value>
   </data>
-  <data name="Settings.DryRunDescription" xml:space="preserve">
-    <value>Do not send to printer, log only</value>
-  </data>
-  <data name="Settings.DryRunMode" xml:space="preserve">
-    <value>Test mode</value>
-  </data>
-  <data name="Settings.ErrorPollSeconds" xml:space="preserve">
-    <value>Error poll interval (sec)</value>
-  </data>
-  <data name="Settings.IdlePollSeconds" xml:space="preserve">
-    <value>Idle poll interval (sec)</value>
-  </data>
   <data name="Settings.Language" xml:space="preserve">
     <value>Language</value>
   </data>
   <data name="Settings.PrinterName" xml:space="preserve">
     <value>Printer name</value>
-  </data>
-  <data name="Settings.SavedPathHint" xml:space="preserve">
-    <value>Settings are saved to: {0}</value>
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
     <value>Wasla Web Panel URL</value>
@@ -345,38 +258,11 @@
   <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
     <value>This field is for the device token. Do not paste a setup code or wasla-printbridge link here. Use the Print Bridge setup page in the Wasla Web panel to connect.</value>
   </data>
-  <data name="Settings.Section.Connection" xml:space="preserve">
-    <value>Wasla connection</value>
-  </data>
-  <data name="Settings.Section.ConnectionHelp" xml:space="preserve">
-    <value>Web panel URL and device connection settings.</value>
-  </data>
-  <data name="Settings.Section.Printer" xml:space="preserve">
-    <value>Printer configuration</value>
-  </data>
-  <data name="Settings.Section.PrinterHelp" xml:space="preserve">
-    <value>Select the local Windows printer used for receipts. This does not require server credentials.</value>
-  </data>
   <data name="Settings.Section.Device" xml:space="preserve">
     <value>Device identity</value>
   </data>
   <data name="Settings.Section.DeviceHelp" xml:space="preserve">
     <value>Manage local display information for this Print Bridge installation.</value>
-  </data>
-  <data name="Settings.Section.Language" xml:space="preserve">
-    <value>Language</value>
-  </data>
-  <data name="Settings.Section.LanguageHelp" xml:space="preserve">
-    <value>Change the application language without validating connection or printer settings.</value>
-  </data>
-  <data name="Settings.SectionSaved" xml:space="preserve">
-    <value>Saved.</value>
-  </data>
-  <data name="Settings.Saving" xml:space="preserve">
-    <value>Saving...</value>
-  </data>
-  <data name="Settings.LanguageApplied" xml:space="preserve">
-    <value>Language applied.</value>
   </data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Test mode is enabled. Receipts will not be printed; jobs will only be logged.</value>
@@ -389,9 +275,6 @@
   </data>
   <data name="Status.Disconnected" xml:space="preserve">
     <value>Disconnected</value>
-  </data>
-  <data name="Status.Error" xml:space="preserve">
-    <value>Error</value>
   </data>
   <data name="Status.Offline" xml:space="preserve">
     <value>Offline</value>
@@ -410,9 +293,6 @@
   </data>
   <data name="Status.Running" xml:space="preserve">
     <value>Running</value>
-  </data>
-  <data name="Status.RunningDryRun" xml:space="preserve">
-    <value>Running (test)</value>
   </data>
   <data name="Status.Stopped" xml:space="preserve">
     <value>Stopped</value>
@@ -489,27 +369,6 @@
   <data name="PrintHistory.EmptyFiltered" xml:space="preserve">
     <value>No records match the selected filter or search.</value>
   </data>
-  <data name="PrintHistory.Tooltip.Error" xml:space="preserve">
-    <value>Error: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.JobId" xml:space="preserve">
-    <value>Job ID: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Order" xml:space="preserve">
-    <value>Order: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Platform" xml:space="preserve">
-    <value>Platform: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Printer" xml:space="preserve">
-    <value>Printer: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Status" xml:space="preserve">
-    <value>Status: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Time" xml:space="preserve">
-    <value>Time: {0}</value>
-  </data>
   <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
     <value>Last 30 Days</value>
   </data>
@@ -546,9 +405,6 @@
   <data name="Reprint.Button" xml:space="preserve">
     <value>Reprint</value>
   </data>
-  <data name="Reprint.Confirm" xml:space="preserve">
-    <value>Reprint receipt for {0}?</value>
-  </data>
   <data name="Reprint.Created" xml:space="preserve">
     <value>Reprint job created. Print Bridge will pick it up shortly.</value>
   </data>
@@ -564,20 +420,11 @@
   <data name="Reprint.OrderNotFound" xml:space="preserve">
     <value>Order not found.</value>
   </data>
-  <data name="Reprint.SelectPrintedJob" xml:space="preserve">
-    <value>Select a successfully printed job to reprint.</value>
-  </data>
-  <data name="Tab.Logs" xml:space="preserve">
-    <value>Logs</value>
-  </data>
   <data name="Tab.PrintHistory" xml:space="preserve">
     <value>Print History</value>
   </data>
   <data name="Tab.Settings" xml:space="preserve">
     <value>Settings</value>
-  </data>
-  <data name="Tab.Status" xml:space="preserve">
-    <value>Status</value>
   </data>
   <data name="Tray.ConnectionStatus" xml:space="preserve">
     <value>● {0}</value>
@@ -632,7 +479,6 @@
   <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>Reset connection?</value></data>
   <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>This clears the connection token on this computer. Server URL, device identity, language, and local history are kept. You will need to reconnect Print Bridge to continue.</value></data>
   <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>Use this when the connection or token is no longer valid.</value></data>
-  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>Connection troubleshooting</value></data>
   <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>Reconnect Print Bridge from the Web panel to continue.</value></data>
   <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>Connection was reset. Reconnect this device from the Print Bridge setup page in the Wasla Web panel.</value></data>
   <data name="Settings.SetupCode" xml:space="preserve"><value>Setup code</value></data>
@@ -641,9 +487,6 @@
   <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>Connection was reset. Reconnect this device from the Print Bridge setup page in the Wasla Web panel.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Connection could not be verified</value>
-  </data>
-  <data name="Settings.Validation.Verified" xml:space="preserve">
-    <value>Connection verified</value>
   </data>
   <data name="Validation.ServerUrlRequired" xml:space="preserve">
     <value>Wasla Web Panel URL is required.</value>
@@ -668,7 +511,6 @@
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge on this computer is already registered as an active device. Use "Reconnect existing device" in Wasla Web instead of setting up a new device, or remove the old device record first.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Automatic setup could not be completed.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>A receipt print job is still being completed. The connection was not changed; the receipt finishes on the saved connection. Open the setup link again when printing has finished.</value></data>
-  <data name="Settings.Connection.PrintingInProgress" xml:space="preserve"><value>A receipt print job is still being completed. The connection was not changed. Try again when printing has finished.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>Connecting</value>
   </data>
@@ -692,18 +534,6 @@
   </data>
   <data name="Shell.Today.Title" xml:space="preserve">
     <value>Today</value>
-  </data>
-  <data name="Shell.OpenClassicWindow" xml:space="preserve">
-    <value>Open classic window</value>
-  </data>
-  <data name="Shell.Fallback.Title" xml:space="preserve">
-    <value>Classic window opened</value>
-  </data>
-  <data name="Shell.Fallback.RuntimeMissing" xml:space="preserve">
-    <value>The new view needs the Microsoft Edge WebView2 Runtime. The classic window is used instead.</value>
-  </data>
-  <data name="Shell.Fallback.StartFailed" xml:space="preserve">
-    <value>The new view could not start. The classic window is used instead.</value>
   </data>
   <data name="Shell.Nav.Label" xml:space="preserve">
     <value>Sections</value>
@@ -833,12 +663,6 @@
   </data>
   <data name="Shell.Diagnostics.Unavailable" xml:space="preserve">
     <value>Unknown</value>
-  </data>
-  <data name="Shell.Diagnostics.Fallback" xml:space="preserve">
-    <value>Classic window</value>
-  </data>
-  <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
-    <value>Emergency fallback: open the old classic window only if this window does not work. It stays available for at least one more release.</value>
   </data>
   <data name="Shell.Toast.Dismiss" xml:space="preserve">
     <value>Dismiss</value>
@@ -981,7 +805,13 @@
   <data name="Shell.Setup.TokenTooLong" xml:space="preserve">
     <value>This value is too long for a device token. Copy the token from Wasla Web again.</value>
   </data>
-  <data name="Tray.OpenClassicFallback" xml:space="preserve">
-    <value>Open classic window (fallback)</value>
+  <data name="RuntimeNotice.Title" xml:space="preserve">
+    <value>WebView2 Runtime required</value>
+  </data>
+  <data name="RuntimeNotice.Message" xml:space="preserve">
+    <value>The Print Bridge window needs the Microsoft Edge WebView2 Runtime, which is missing or cannot be used on this computer. Receipt printing continues in the background. Install or repair the Microsoft Edge WebView2 Runtime, then restart Print Bridge.</value>
+  </data>
+  <data name="RuntimeNotice.Close" xml:space="preserve">
+    <value>Close</value>
   </data>
 </root>

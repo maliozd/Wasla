@@ -339,9 +339,8 @@ public sealed partial class PrintBridgeFirstInstallTests
         var desktop = LoadResx(Path.Combine(Root(), "src", "Wasla.PrintBridge", "Resources", $"PrintBridgeResources{culture}.resx"));
 
         foreach (var key in new[] { "PrintBridge.FirstInstall.Printer.Body", "Help.PrintBridge.Step5" })
-        foreach (var label in new[] { desktop["Tab.Settings"], desktop["Button.SavePrinter"], desktop["Button.TestPrinter"] })
+        foreach (var label in new[] { desktop["Shell.Tab.Printer"], desktop["Button.SavePrinter"], desktop["Button.TestPrinter"] })
             Assert.Contains(label, copy[key], StringComparison.Ordinal);
-        Assert.Contains(desktop["Settings.Section.Printer"], copy["PrintBridge.FirstInstall.Printer.Body"], StringComparison.Ordinal);
         Assert.Contains("Wasla.PrintBridge.exe", copy["PrintBridge.FirstInstall.Prepare.Run"], StringComparison.Ordinal);
         Assert.Contains(".NET 8 Desktop Runtime", copy["PrintBridge.FirstInstall.Prepare.Runtime"], StringComparison.Ordinal);
         Assert.Contains("ZIP", copy["PrintBridge.FirstInstall.Download.Requirement"], StringComparison.Ordinal);
