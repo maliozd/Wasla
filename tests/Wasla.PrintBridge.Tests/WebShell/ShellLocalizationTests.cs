@@ -16,11 +16,12 @@ public sealed partial class ShellLocalizationTests
         "PrintBridgeResources.ru-RU.resx"
     ];
 
-    private static readonly string[] FallbackKeys =
+    /// <summary>The WebView2 Runtime recovery notice the tray shows when the app window cannot open.</summary>
+    private static readonly string[] RuntimeNoticeKeys =
     [
-        "Shell.Fallback.Title",
-        "Shell.Fallback.RuntimeMissing",
-        "Shell.Fallback.StartFailed"
+        "RuntimeNotice.Title",
+        "RuntimeNotice.Message",
+        "RuntimeNotice.Close"
     ];
 
     [Fact]
@@ -59,7 +60,7 @@ public sealed partial class ShellLocalizationTests
     [Fact]
     public void EveryShellKey_HasANonEmptyTranslationInEveryCulture()
     {
-        var shellKeys = ShellSnapshotFactory.StringKeys.Concat(ShellSnapshotFactory.StateKeys).Concat(FallbackKeys).Distinct().ToArray();
+        var shellKeys = ShellSnapshotFactory.StringKeys.Concat(ShellSnapshotFactory.StateKeys).Concat(RuntimeNoticeKeys).Distinct().ToArray();
 
         foreach (var file in ResourceFiles)
         {
@@ -86,6 +87,33 @@ public sealed partial class ShellLocalizationTests
             foreach (var file in new[] { "PrintBridgeResources.en-US.resx", "PrintBridgeResources.ar-SA.resx", "PrintBridgeResources.ru-RU.resx" })
                 Assert.NotEqual(turkish[key], LoadKeys(file).Single(k => k.Key == key).Value);
         }
+    }
+
+    [Fact]
+    public void RuntimeNotice_IsTranslatedInEveryCulture_NamesTheRuntime_AndSaysPrintingContinues()
+    {
+        var turkish = LoadKeys("PrintBridgeResources.tr-TR.resx").ToDictionary(k => k.Key, k => k.Value, StringComparer.Ordinal);
+        var neutral = LoadKeys("PrintBridgeResources.resx").ToDictionary(k => k.Key, k => k.Value, StringComparer.Ordinal);
+        var english = LoadKeys("PrintBridgeResources.en-US.resx").ToDictionary(k => k.Key, k => k.Value, StringComparer.Ordinal);
+        var arabic = LoadKeys("PrintBridgeResources.ar-SA.resx").ToDictionary(k => k.Key, k => k.Value, StringComparer.Ordinal);
+        var russian = LoadKeys("PrintBridgeResources.ru-RU.resx").ToDictionary(k => k.Key, k => k.Value, StringComparer.Ordinal);
+
+        foreach (var key in RuntimeNoticeKeys)
+        {
+            Assert.Equal(turkish[key], neutral[key]);
+            Assert.All(new[] { english, arabic, russian }, other => Assert.NotEqual(turkish[key], other[key]));
+            Assert.Empty(PlaceholderRegex().Matches(turkish[key]));
+        }
+
+        foreach (var values in new[] { turkish, english, arabic, russian })
+            Assert.Contains("Microsoft Edge WebView2 Runtime", values["RuntimeNotice.Message"], StringComparison.Ordinal);
+
+        Assert.Equal("WebView2 Runtime required", english["RuntimeNotice.Title"]);
+        Assert.Contains("Receipt printing continues", english["RuntimeNotice.Message"], StringComparison.Ordinal);
+        Assert.Matches(@"\p{IsArabic}", arabic["RuntimeNotice.Message"]);
+        Assert.Matches(@"\p{IsArabic}", arabic["RuntimeNotice.Close"]);
+        Assert.Matches(@"\p{IsCyrillic}", russian["RuntimeNotice.Message"]);
+        Assert.Matches(@"\p{IsCyrillic}", russian["RuntimeNotice.Close"]);
     }
 
     [Fact]

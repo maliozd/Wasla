@@ -12,15 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Button.ClearLogs" xml:space="preserve">
-    <value>Logları temizle</value>
-  </data>
-  <data name="Button.CopyLogs" xml:space="preserve">
-    <value>Logları kopyala</value>
-  </data>
-  <data name="Button.JumpToLatest" xml:space="preserve">
-    <value>Son loglara git</value>
-  </data>
   <data name="Button.HideToken" xml:space="preserve">
     <value>Gizle</value>
   </data>
@@ -33,11 +24,8 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>Ayarları kaydet</value>
   </data>
-  <data name="Button.SaveConnection" xml:space="preserve"><value>Bağlantıyı kaydet</value></data>
   <data name="Button.SavePrinter" xml:space="preserve"><value>Yazıcıyı kaydet</value></data>
   <data name="Button.SaveDeviceName" xml:space="preserve"><value>Cihaz adını kaydet</value></data>
-  <data name="Button.ApplyLanguage" xml:space="preserve"><value>Dili uygula</value></data>
-  <data name="Button.SaveAdvanced" xml:space="preserve"><value>Gelişmiş ayarları kaydet</value></data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>Göster</value>
   </data>
@@ -64,9 +52,6 @@
   </data>
   <data name="Common.NotConfigured" xml:space="preserve">
     <value>(ayarlanmadı)</value>
-  </data>
-  <data name="Common.Subtitle" xml:space="preserve">
-    <value>Fiş yazdırma köprüsü</value>
   </data>
   <data name="Connection.AuthenticationFailed" xml:space="preserve">
     <value>Kimlik doğrulama başarısız</value>
@@ -189,15 +174,6 @@
   <data name="Message.ConnectionSuccess" xml:space="preserve">
     <value>Bağlantı başarılı.</value>
   </data>
-  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve">
-    <value>Bağlantı başarılı.{0}Müşteri: {1}{0}Cihaz: {2}</value>
-  </data>
-  <data name="Message.DeviceNameLoadedFromServer" xml:space="preserve">
-    <value>Cihaz adı sunucudan yüklendi.</value>
-  </data>
-  <data name="Message.LogsCopyFailed" xml:space="preserve">
-    <value>Loglar kopyalanamadı: {0}</value>
-  </data>
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Log klasörü henüz oluşturulmadı.</value>
   </data>
@@ -213,23 +189,14 @@
   <data name="Message.SettingsSaved" xml:space="preserve">
     <value>Ayarlar kaydedildi.</value>
   </data>
-  <data name="Message.SettingsSavedConnectionVerified" xml:space="preserve">
-    <value>Ayarlar kaydedildi. Bağlantı doğrulandı.</value>
-  </data>
   <data name="Message.SslCertificateError" xml:space="preserve">
     <value>SSL sertifika hatası. HTTPS sertifikasının Windows tarafından güvenilir olduğundan emin olun.</value>
   </data>
   <data name="Message.TokenInvalidUnauthorized" xml:space="preserve">
     <value>Token geçersiz veya bu cihaz için yetkili değil.</value>
   </data>
-  <data name="Message.ValidatingConnection" xml:space="preserve">
-    <value>Bağlantı doğrulanıyor...</value>
-  </data>
   <data name="Message.LanguageRestartRequired" xml:space="preserve">
     <value>Dil değişikliği uygulama yeniden başlatıldığında uygulanacaktır.</value>
-  </data>
-  <data name="Message.SettingsSaveFailed" xml:space="preserve">
-    <value>Ayarlar kaydedilemedi: {0}</value>
   </data>
   <data name="Message.TestPrintSent" xml:space="preserve">
     <value>Test çıktısı yazıcıya gönderildi.</value>
@@ -243,47 +210,14 @@
   <data name="Printing.Started" xml:space="preserve">
     <value>Yazdırma başladı</value>
   </data>
-  <data name="RecentJobs.Column.Order" xml:space="preserve">
-    <value>Sipariş</value>
-  </data>
-  <data name="RecentJobs.Column.Printer" xml:space="preserve">
-    <value>Yazıcı</value>
-  </data>
-  <data name="RecentJobs.Column.Status" xml:space="preserve">
-    <value>Durum</value>
-  </data>
-  <data name="RecentJobs.Column.Time" xml:space="preserve">
-    <value>Saat</value>
-  </data>
-  <data name="RecentJobs.Column.Type" xml:space="preserve">
-    <value>Tür</value>
-  </data>
-  <data name="RecentJobs.Tooltip.JobId" xml:space="preserve">
-    <value>İş ID: {0}</value>
-  </data>
   <data name="RecentJobs.Empty" xml:space="preserve">
     <value>Bu oturumda henüz yazdırma işi işlenmedi.</value>
-  </data>
-  <data name="RecentJobs.Title" xml:space="preserve">
-    <value>Son işler (bu oturum)</value>
-  </data>
-  <data name="Settings.Advanced" xml:space="preserve">
-    <value>Gelişmiş</value>
   </data>
   <data name="Settings.AgentToken" xml:space="preserve">
     <value>Cihaz tokenı</value>
   </data>
-  <data name="Settings.BusyPollSeconds" xml:space="preserve">
-    <value>Yoğunken bekleme (sn)</value>
-  </data>
-  <data name="Footer.Device" xml:space="preserve">
-    <value>Cihaz: {0}</value>
-  </data>
   <data name="Footer.NotConnected" xml:space="preserve">
     <value>Bağlı değil</value>
-  </data>
-  <data name="Footer.Version" xml:space="preserve">
-    <value>Sürüm: {0}</value>
   </data>
   <data name="Settings.ComputerName" xml:space="preserve">
     <value>Bilgisayar adı</value>
@@ -298,26 +232,11 @@
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Makine: {0}</value>
   </data>
-  <data name="Settings.DryRunDescription" xml:space="preserve">
-    <value>Fişi yazıcıya gönderme, sadece logla</value>
-  </data>
-  <data name="Settings.DryRunMode" xml:space="preserve">
-    <value>Test modu</value>
-  </data>
-  <data name="Settings.ErrorPollSeconds" xml:space="preserve">
-    <value>Hata sonrası bekleme (sn)</value>
-  </data>
-  <data name="Settings.IdlePollSeconds" xml:space="preserve">
-    <value>Boşta bekleme (sn)</value>
-  </data>
   <data name="Settings.Language" xml:space="preserve">
     <value>Dil</value>
   </data>
   <data name="Settings.PrinterName" xml:space="preserve">
     <value>Yazıcı adı</value>
-  </data>
-  <data name="Settings.SavedPathHint" xml:space="preserve">
-    <value>Ayarlar şuraya kaydedilir: {0}</value>
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
     <value>Wasla Web Panel Linki</value>
@@ -331,17 +250,8 @@
   <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
     <value>Bu alan cihaz token'ı içindir. Kurulum kodunu veya wasla-printbridge bağlantısını buraya yapıştırmayın. Bağlanmak için Wasla Web panelindeki Print Bridge kurulum sayfasını kullanın.</value>
   </data>
-  <data name="Settings.Section.Connection" xml:space="preserve"><value>Wasla bağlantısı</value></data>
-  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>Web panel adresi ve cihaz bağlantısı ayarları.</value></data>
-  <data name="Settings.Section.Printer" xml:space="preserve"><value>Yazıcı yapılandırması</value></data>
-  <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>Fişler için kullanılacak yerel Windows yazıcısını seçin. Sunucu bilgileri gerekmez.</value></data>
   <data name="Settings.Section.Device" xml:space="preserve"><value>Cihaz kimliği</value></data>
   <data name="Settings.Section.DeviceHelp" xml:space="preserve"><value>Bu Print Bridge kurulumu için yerel görünen bilgileri yönetin.</value></data>
-  <data name="Settings.Section.Language" xml:space="preserve"><value>Dil</value></data>
-  <data name="Settings.Section.LanguageHelp" xml:space="preserve"><value>Bağlantı veya yazıcı ayarlarını doğrulamadan uygulama dilini değiştirin.</value></data>
-  <data name="Settings.SectionSaved" xml:space="preserve"><value>Kaydedildi.</value></data>
-  <data name="Settings.Saving" xml:space="preserve"><value>Kaydediliyor...</value></data>
-  <data name="Settings.LanguageApplied" xml:space="preserve"><value>Dil uygulandı.</value></data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Test modu açık. Fişler yazdırılmaz; işler yalnızca loglanır.</value>
   </data>
@@ -353,9 +263,6 @@
   </data>
   <data name="Status.Disconnected" xml:space="preserve">
     <value>Bağlı değil</value>
-  </data>
-  <data name="Status.Error" xml:space="preserve">
-    <value>Hata</value>
   </data>
   <data name="Status.Offline" xml:space="preserve">
     <value>Çevrimdışı</value>
@@ -374,9 +281,6 @@
   </data>
   <data name="Status.Running" xml:space="preserve">
     <value>Çalışıyor</value>
-  </data>
-  <data name="Status.RunningDryRun" xml:space="preserve">
-    <value>Çalışıyor (test)</value>
   </data>
   <data name="Status.Stopped" xml:space="preserve">
     <value>Durduruldu</value>
@@ -453,27 +357,6 @@
   <data name="PrintHistory.EmptyFiltered" xml:space="preserve">
     <value>Seçili filtreye veya aramaya uygun kayıt bulunamadı.</value>
   </data>
-  <data name="PrintHistory.Tooltip.Error" xml:space="preserve">
-    <value>Hata: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.JobId" xml:space="preserve">
-    <value>İş kimliği: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Order" xml:space="preserve">
-    <value>Sipariş: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Platform" xml:space="preserve">
-    <value>Platform: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Printer" xml:space="preserve">
-    <value>Yazıcı: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Status" xml:space="preserve">
-    <value>Durum: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Time" xml:space="preserve">
-    <value>Zaman: {0}</value>
-  </data>
   <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
     <value>Son 30 Gün</value>
   </data>
@@ -510,9 +393,6 @@
   <data name="Reprint.Button" xml:space="preserve">
     <value>Yeniden yazdır</value>
   </data>
-  <data name="Reprint.Confirm" xml:space="preserve">
-    <value>{0} için fiş yeniden yazdırılsın mı?</value>
-  </data>
   <data name="Reprint.Created" xml:space="preserve">
     <value>Yeniden yazdırma işi oluşturuldu. Print Bridge kısa süre içinde alacak.</value>
   </data>
@@ -528,20 +408,11 @@
   <data name="Reprint.OrderNotFound" xml:space="preserve">
     <value>Sipariş bulunamadı.</value>
   </data>
-  <data name="Reprint.SelectPrintedJob" xml:space="preserve">
-    <value>Yeniden yazdırmak için başarılı bir iş seçin.</value>
-  </data>
-  <data name="Tab.Logs" xml:space="preserve">
-    <value>Loglar</value>
-  </data>
   <data name="Tab.PrintHistory" xml:space="preserve">
     <value>Yazdırma Geçmişi</value>
   </data>
   <data name="Tab.Settings" xml:space="preserve">
     <value>Ayarlar</value>
-  </data>
-  <data name="Tab.Status" xml:space="preserve">
-    <value>Durum</value>
   </data>
   <data name="Tray.ConnectionStatus" xml:space="preserve">
     <value>● {0}</value>
@@ -596,7 +467,6 @@
   <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>Bağlantıyı sıfırla?</value></data>
   <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>Bu işlem bu bilgisayardaki bağlantı anahtarını temizler. Sunucu adresi, cihaz kimliği, dil ve geçmiş kayıtlar korunur. Devam etmek için Print Bridge'i tekrar bağlamanız gerekir.</value></data>
   <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>Yanlış bağlantı veya geçersiz token durumunda tekrar bağlanmak için kullanın.</value></data>
-  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>Bağlantı sorunları</value></data>
   <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>Devam etmek için Web panelden Print Bridge'i tekrar bağlayın.</value></data>
   <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>Bağlantı sıfırlandı. Wasla Web panelindeki Print Bridge kurulum sayfasından bu cihazı yeniden bağlayın.</value></data>
   <data name="Settings.SetupCode" xml:space="preserve"><value>Kurulum kodu</value></data>
@@ -605,9 +475,6 @@
   <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>Bağlantı sıfırlandı. Wasla Web panelindeki Print Bridge kurulum sayfasından bu cihazı yeniden bağlayın.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Bağlantı doğrulanamadı</value>
-  </data>
-  <data name="Settings.Validation.Verified" xml:space="preserve">
-    <value>Bağlantı doğrulandı</value>
   </data>
   <data name="Validation.ServerUrlRequired" xml:space="preserve">
     <value>Wasla Web Panel linki gereklidir.</value>
@@ -630,7 +497,6 @@
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Bu bilgisayardaki Print Bridge zaten aktif bir cihaz olarak kayıtlı. Yeni cihaz kurmak yerine Wasla Web'de "Mevcut cihazı yeniden bağla" seçeneğini kullanın veya önce eski cihaz kaydını kaldırın.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Otomatik kurulum tamamlanamadı.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>Bir fiş yazdırma işi hâlâ tamamlanıyor. Bağlantı değiştirilmedi; fiş kayıtlı bağlantıyla tamamlanıyor. Yazdırma bitince kurulum bağlantısını yeniden açın.</value></data>
-  <data name="Settings.Connection.PrintingInProgress" xml:space="preserve"><value>Bir fiş yazdırma işi hâlâ tamamlanıyor. Bağlantı değiştirilmedi. Yazdırma bitince yeniden deneyin.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>Bağlanıyor</value>
   </data>
@@ -654,18 +520,6 @@
   </data>
   <data name="Shell.Today.Title" xml:space="preserve">
     <value>Bugün</value>
-  </data>
-  <data name="Shell.OpenClassicWindow" xml:space="preserve">
-    <value>Klasik pencereyi aç</value>
-  </data>
-  <data name="Shell.Fallback.Title" xml:space="preserve">
-    <value>Klasik pencere açıldı</value>
-  </data>
-  <data name="Shell.Fallback.RuntimeMissing" xml:space="preserve">
-    <value>Yeni görünüm için Microsoft Edge WebView2 Runtime gerekiyor. Klasik pencere kullanılıyor.</value>
-  </data>
-  <data name="Shell.Fallback.StartFailed" xml:space="preserve">
-    <value>Yeni görünüm başlatılamadı. Klasik pencere kullanılıyor.</value>
   </data>
   <data name="Shell.Nav.Label" xml:space="preserve">
     <value>Bölümler</value>
@@ -795,12 +649,6 @@
   </data>
   <data name="Shell.Diagnostics.Unavailable" xml:space="preserve">
     <value>Bilinmiyor</value>
-  </data>
-  <data name="Shell.Diagnostics.Fallback" xml:space="preserve">
-    <value>Klasik pencere</value>
-  </data>
-  <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
-    <value>Acil durum yedeği: yalnızca bu pencere düzgün çalışmazsa eski klasik pencereyi açın. Klasik pencere en az bir sürüm daha kullanılabilir kalacak.</value>
   </data>
   <data name="Shell.Toast.Dismiss" xml:space="preserve">
     <value>Kapat</value>
@@ -943,7 +791,13 @@
   <data name="Shell.Setup.TokenTooLong" xml:space="preserve">
     <value>Bu değer bir cihaz tokenı için fazla uzun. Tokenı Wasla Web'den yeniden kopyalayın.</value>
   </data>
-  <data name="Tray.OpenClassicFallback" xml:space="preserve">
-    <value>Klasik pencereyi aç (yedek)</value>
+  <data name="RuntimeNotice.Title" xml:space="preserve">
+    <value>WebView2 Runtime gerekli</value>
+  </data>
+  <data name="RuntimeNotice.Message" xml:space="preserve">
+    <value>Print Bridge penceresi Microsoft Edge WebView2 Runtime gerektirir; bu bilgisayarda yüklü değil ya da kullanılamıyor. Fiş yazdırma arka planda devam ediyor. Microsoft Edge WebView2 Runtime'ı yükleyin veya onarın, ardından Print Bridge'i yeniden başlatın.</value>
+  </data>
+  <data name="RuntimeNotice.Close" xml:space="preserve">
+    <value>Kapat</value>
   </data>
 </root>

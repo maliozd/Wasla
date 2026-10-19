@@ -28,7 +28,6 @@ public static class PrintBridgeAppServices
 
         var appVersion = new AppVersionInfo(typeof(PrintBridgeAppServices).Assembly);
 
-        var uiLogBuffer = new UiLogBuffer();
         var logPath = Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "orderhub-print-bridge-.log");
         const string logTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}";
         Log.Logger = new LoggerConfiguration()
@@ -36,12 +35,10 @@ public static class PrintBridgeAppServices
             .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
             .MinimumLevel.Override("System.Net.Http.HttpClient", Serilog.Events.LogEventLevel.Warning)
             .Enrich.FromLogContext()
-            .WriteTo.Sink(new UiLogBufferSink(uiLogBuffer))
             .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, outputTemplate: logTemplate)
             .CreateLogger();
 
         var services = new ServiceCollection();
-        services.AddSingleton(uiLogBuffer);
         services.AddLogging(builder => builder.AddSerilog(dispose: true));
         services.AddSingleton(store);
         services.AddSingleton(cultureService);

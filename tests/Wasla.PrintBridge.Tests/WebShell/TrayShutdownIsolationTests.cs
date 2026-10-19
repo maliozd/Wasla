@@ -1,19 +1,22 @@
 using System.Text.Json.Nodes;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.UI;
 
 namespace Wasla.PrintBridge.Tests.WebShell;
 
 /// <summary>
-/// Regression tests for the incident in which the tray application's exit-time settings save (the window layout) ran
-/// after its test had released the temporary data root and overwrote the machine's real settings file. The real tray
-/// application runs with the classic window, so no WebView2 Runtime is needed. Outside an isolated root the paths
-/// point at the run's <see cref="EscapedWriteCanary"/>, never at ProgramData, and an escaped write fails the test.
+/// Regression tests for the incident in which a settings save the tray application made while it exited ran after its
+/// test had released the temporary data root and overwrote the machine's real settings file. The application no longer
+/// saves anything on exit, so the save is made by the application's own UI thread as it exits (its message loop ending),
+/// which is the latest point any of its components can write. The runtime notice stands in for the app window, so no
+/// WebView2 Runtime is needed. Outside an isolated root the paths point at the run's <see cref="EscapedWriteCanary"/>,
+/// never at ProgramData, and an escaped write fails the test.
 /// </summary>
 [Collection(PrintBridgeDataRootCollection.Name)]
 public sealed class TrayShutdownIsolationTests : IDisposable
 {
-    private const int StartLeft = -32000;
-    private const int MovedLeft = -31000;
+    private const string StartLanguage = "tr-TR";
+    private const string ExitLanguage = "ru-RU";
 
     private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-tray-isolation-tests");
     private readonly CultureScope _cultureScope = new();
@@ -36,7 +39,7 @@ public sealed class TrayShutdownIsolationTests : IDisposable
 
                 // The late save is in the isolated folder, which is kept until Dispose.
                 var saved = JsonNode.Parse(File.ReadAllText(_dataRoot.ConfigPath))!;
-                Assert.Equal(MovedLeft, saved["Ui"]!["WindowLeft"]!.GetValue<int>());
+                Assert.Equal(ExitLanguage, saved["Ui"]!["Language"]!.GetValue<string>());
             }
         }
         finally
@@ -49,14 +52,14 @@ public sealed class TrayShutdownIsolationTests : IDisposable
     [Fact]
     public async Task AnExitSaveThatRunsAfterTheTestEnds_StaysInTheIsolatedRoot()
     {
-        await _host.RunAsync(shell: null, available: false, (tray, _) =>
+        await _host.RunAsync(available: false, (tray, _) =>
         {
-            tray.ClassicWindowForTests.Location = new Point(MovedLeft, MovedLeft);
+            SaveWhenTheApplicationExits(tray);
             return Task.CompletedTask;
         }, exit: TrayExit.DuringTeardown);
 
-        // Reported done while the application still runs: the window layout is not saved yet.
-        Assert.Equal(StartLeft, SavedWindowLeft());
+        // Reported done while the application still runs: nothing is saved yet.
+        Assert.Equal(StartLanguage, SavedLanguage());
         _exitSaveExpectedDuringTeardown = true;
     }
 
@@ -64,17 +67,21 @@ public sealed class TrayShutdownIsolationTests : IDisposable
     public async Task AFailingTest_StillExitsTheTrayInsideTheIsolatedRoot_BeforeTheFailureIsReported()
     {
         var failure = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _host.RunAsync(shell: null, available: false, (tray, _) =>
+            _host.RunAsync(available: false, (tray, _) =>
             {
-                tray.ClassicWindowForTests.Location = new Point(MovedLeft, MovedLeft);
+                SaveWhenTheApplicationExits(tray);
                 throw new InvalidOperationException("Deliberate failure inside the test body.");
             }));
 
         Assert.Equal("Deliberate failure inside the test body.", failure.Message);
         // The exit save already ran, inside the isolated root, before the failure reached the test.
-        Assert.Equal(MovedLeft, SavedWindowLeft());
+        Assert.Equal(ExitLanguage, SavedLanguage());
         EscapedWriteCanary.AssertNothingEscaped("after the failing tray test");
     }
 
-    private static int? SavedWindowLeft() => new PrintBridgeSettingsStore().Load().Ui.WindowLeft;
+    /// <summary>Saves a settings change on the application's UI thread when its message loop ends.</summary>
+    private static void SaveWhenTheApplicationExits(TrayApplicationContext tray) =>
+        tray.ThreadExit += (_, _) => new PrintBridgeSettingsStore().SaveLanguage(ExitLanguage);
+
+    private static string SavedLanguage() => new PrintBridgeSettingsStore().Load().Ui.Language;
 }

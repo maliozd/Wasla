@@ -1,15 +1,14 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Services;
-using Wasla.PrintBridge.UI;
 using Wasla.PrintBridge.WebShell;
 
 namespace Wasla.PrintBridge.Localization;
 
 /// <summary>
-/// Applies a UI language chosen in the WebView2 shell with the same steps as the classic Settings tab:
-/// persist <c>Ui.Language</c>, update the in-memory settings, then switch the culture (which notifies
-/// every open window and the tray). Must be awaited on the UI thread.
+/// Applies a UI language chosen in the WebView2 app: persist <c>Ui.Language</c>, update the in-memory
+/// settings, then switch the culture (which notifies the app window and the tray). Must be awaited on the
+/// UI thread.
 /// </summary>
 public sealed class PrintBridgeLanguageService : IShellLanguageSwitcher
 {
@@ -48,7 +47,7 @@ public sealed class PrintBridgeLanguageService : IShellLanguageSwitcher
             return false;
         }
 
-        var ui = MainForm.CloneUiOptions(_holder.Ui);
+        var ui = _holder.Ui.Clone();
         ui.Language = culture;
         _holder.ReplaceUi(ui);
         _cultureService.Initialize(culture);

@@ -7,22 +7,6 @@ namespace Wasla.PrintBridge.Tests;
 public sealed class PrintBridgeDeviceIdentityTests
 {
     [Fact]
-    public void LocalDeviceLabel_PrefersLocalDeviceName()
-    {
-        var label = PrintBridgeRuntimeStatus.ResolveLocalDeviceLabel("  Mali Vivobook  ", "DESKTOP-CTFGHRE");
-
-        Assert.Equal("Mali Vivobook", label);
-    }
-
-    [Fact]
-    public void LocalDeviceLabel_FallsBackToMachineName()
-    {
-        var label = PrintBridgeRuntimeStatus.ResolveLocalDeviceLabel(" ", "DESKTOP-CTFGHRE");
-
-        Assert.Equal("DESKTOP-CTFGHRE", label);
-    }
-
-    [Fact]
     public void DeviceIdentityValidation_DoesNotAlterConnectionPrinterOrLanguageValues()
     {
         var hub = new WaslaOptions

@@ -46,7 +46,6 @@ public sealed class ShellBridge : IDisposable
     private readonly PrintBridgeCultureService _cultureService;
     private readonly ShellOperations _operations;
     private readonly ShellHistory _history;
-    private readonly IShellNativeActions _native;
     private readonly ILogger _logger;
 
     private int _pushQueued;
@@ -67,7 +66,6 @@ public sealed class ShellBridge : IDisposable
         PrintBridgeCultureService cultureService,
         ShellOperations operations,
         ShellHistory history,
-        IShellNativeActions native,
         ILogger logger)
     {
         _statusSource = statusSource;
@@ -77,7 +75,6 @@ public sealed class ShellBridge : IDisposable
         _cultureService = cultureService;
         _operations = operations;
         _history = history;
-        _native = native;
         _logger = logger;
 
         _statusSource.StatusChanged += OnStateChanged;
@@ -119,10 +116,6 @@ public sealed class ShellBridge : IDisposable
 
             case ShellCommandType.LanguageChange:
                 _ = ChangeLanguageAsync(command.Culture!);
-                break;
-
-            case ShellCommandType.ClassicWindowOpen:
-                _native.OpenClassicWindow();
                 break;
 
             case ShellCommandType.HistoryQuery:

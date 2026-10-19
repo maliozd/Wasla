@@ -622,7 +622,6 @@
       printerDraft = event.target.value;
       renderButtons();
     });
-    byId('open-classic').addEventListener('click', function () { send('classicWindow.open'); });
 
     ['ops-test-mode', OPS_INPUTS.idle, OPS_INPUTS.busy, OPS_INPUTS.error].forEach(function (id) {
       byId(id).addEventListener('input', onOpsEdited);

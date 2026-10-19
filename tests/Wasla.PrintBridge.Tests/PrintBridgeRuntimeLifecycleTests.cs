@@ -130,7 +130,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.False(isConnected);
         Assert.Equal(BridgeServerConnectionStatus.Error, status.ServerConnectionStatus);
         Assert.Equal(TrayIconState.ConnectionLost, status.TrayIconState);
-        Assert.Equal("RuntimeIssue.ReconnectRequired.Title", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
     }
 
     [Fact]
@@ -149,7 +148,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.Equal("RuntimeIssue.DisabledByAdmin.Detail", issue.EffectiveDetailResourceKey);
         Assert.Equal("RuntimeIssue.DisabledByAdmin.Title", issue.EffectiveTitleResourceKey);
         Assert.Equal(BridgeServerConnectionStatus.Error, status.ServerConnectionStatus);
-        Assert.Equal("RuntimeIssue.DisabledByAdmin.Title", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
     }
 
     [Fact]
@@ -163,7 +161,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.True(isConnected);
         Assert.Equal(BridgeServerConnectionStatus.Connected, status.ServerConnectionStatus);
         Assert.Equal(TrayIconState.Polling, status.TrayIconState);
-        Assert.Equal("Status.RunningDryRun", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
     }
 
     [Fact]
@@ -235,7 +232,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         var status = CreateStatus(isRunning: false, isConnected, issue);
 
         Assert.False(isConnected);
-        Assert.Equal("RuntimeIssue.DuplicateInstallation.Title", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
         Assert.NotEqual(
             new PrintBridgeRuntimeIssue(PrintBridgeRuntimeIssueCode.ReconnectRequired).EffectiveDetailResourceKey,
             issue.EffectiveDetailResourceKey);
@@ -400,7 +396,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.Null(status.LastIssue);
         Assert.Equal(BridgeServerConnectionStatus.Connected, status.ServerConnectionStatus);
         Assert.Equal(TrayIconState.Polling, status.TrayIconState);
-        Assert.Equal("Status.RunningDryRun", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
     }
 
     [Fact]

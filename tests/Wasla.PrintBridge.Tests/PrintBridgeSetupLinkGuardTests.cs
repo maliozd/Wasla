@@ -211,7 +211,7 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
     [Fact]
     public async Task TheConnectionChangeLease_IsRefusedDuringAJob_HoldsNewJobs_AndIsReleasedOnlyOnce()
     {
-        // The lease the classic window's Save and Test and the app's connection dialog take before changing anything.
+        // The lease the setup link and the app's connection dialog take before changing anything.
         var print = new Gate();
         var servers = new FakeServers();
         var first = servers.AddJob(HostA);
