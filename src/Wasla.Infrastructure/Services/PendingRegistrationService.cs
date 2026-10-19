@@ -22,14 +22,14 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
     private readonly CentralDbContext _central;
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly ISignupReferenceDataService _referenceData;
-    private readonly CustomerOnboardingOptions _options;
+    private readonly TenantOnboardingOptions _options;
     private readonly ILogger<PendingRegistrationService> _logger;
 
     public PendingRegistrationService(
         CentralDbContext central,
         IWaslaPlanCatalog planCatalog,
         ISignupReferenceDataService referenceData,
-        IOptions<CustomerOnboardingOptions> options,
+        IOptions<TenantOnboardingOptions> options,
         ILogger<PendingRegistrationService> logger)
     {
         _central = central;

@@ -11,7 +11,7 @@ using Wasla.Web.PrintBridge;
 namespace Wasla.UnitTests.Printing;
 
 /// <summary>
-/// WAS-128: the Print Bridge package is resolved from <c>OrderHub:PrintBridgeDownload:PackagePath</c> when it is set,
+/// WAS-128: the Print Bridge package is resolved from <c>Wasla:PrintBridgeDownload:PackagePath</c> when it is set,
 /// otherwise from the web root. Web started without a web root (ASP.NET Core leaves <c>WebRootPath</c> null when the
 /// content root has no <c>wwwroot</c>) must report the default package as unavailable: the setup page shows its
 /// unavailable state and the download returns 404, never a 500 or a filesystem path. Packages are stand-in files.
@@ -20,7 +20,7 @@ public sealed class PrintBridgePackageWebRootTests : IDisposable
 {
     private const string PackageFileName = PrintBridgePackagePaths.DefaultPackageFileName;
     private const string DownloadUrl = "/print-bridge/download/package";
-    private const string PackagePathKey = "OrderHub:PrintBridgeDownload:PackagePath";
+    private const string PackagePathKey = "Wasla:PrintBridgeDownload:PackagePath";
 
     private readonly DirectoryInfo _temp = Directory.CreateTempSubdirectory("wasla-was128-");
 
@@ -64,7 +64,7 @@ public sealed class PrintBridgePackageWebRootTests : IDisposable
         Assert.Equal(package, PrintBridgePackagePaths.ResolvePackagePath(Configuration(), environment));
         Assert.True(PrintBridgePackagePaths.PackageExists(Configuration(), environment));
 
-        var renamed = Configuration(("OrderHub:PrintBridgeDownload:PackageFileName", " Custom.zip "));
+        var renamed = Configuration(("Wasla:PrintBridgeDownload:PackageFileName", " Custom.zip "));
         Assert.Equal(Path.Combine(folder, "Custom.zip"), PrintBridgePackagePaths.ResolvePackagePath(renamed, environment));
         Assert.False(PrintBridgePackagePaths.PackageExists(renamed, environment));
     }

@@ -27,7 +27,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
     private readonly ISignupReferenceDataService _referenceData;
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly IValidator<PendingRegistrationRequest> _signupValidator;
-    private readonly CustomerOnboardingOptions _options;
+    private readonly TenantOnboardingOptions _options;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
     private readonly SignupRegistrationOwnership _ownership;
@@ -37,7 +37,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         ISignupReferenceDataService referenceData,
         IWaslaPlanCatalog planCatalog,
         IValidator<PendingRegistrationRequest> signupValidator,
-        IOptions<CustomerOnboardingOptions> options,
+        IOptions<TenantOnboardingOptions> options,
         IStringLocalizer<SharedResource> localizer,
         IWebHostEnvironment environment,
         IDataProtectionProvider dataProtection)

@@ -51,7 +51,7 @@ public sealed class TenantResolutionMiddleware
         ITenantResolver resolver,
         IPendingRegistrationService pendingRegistrations,
         TenantHostMissCache misses,
-        IOptions<CustomerOnboardingOptions> onboardingOptions,
+        IOptions<TenantOnboardingOptions> onboardingOptions,
         ILogger<TenantResolutionMiddleware> logger)
     {
         var path = context.Request.Path.Value ?? string.Empty;

@@ -328,7 +328,7 @@ public sealed class TenantHostMissCacheTests
                 resolver,
                 pending,
                 Misses,
-                Options.Create(new CustomerOnboardingOptions { MarketingBaseDomain = "wasla.local" }),
+                Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local" }),
                 NullLogger<WebTenantResolutionMiddleware>.Instance);
             return context;
         }
