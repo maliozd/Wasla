@@ -155,12 +155,14 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
             device.Id,
             device.TenantId);
 
-        return PrintBridgeAuthResult.Success(new PrintBridgeAuthContext(
-            device.Id,
-            device.TenantId,
-            device.Tenant.Name,
-            device.Name,
-            device.InstallationId,
-            string.IsNullOrWhiteSpace(device.MachineName) ? null : device.MachineName));
+        return PrintBridgeAuthResult.Success(new PrintBridgeAuthContext
+        {
+            DeviceId = device.Id,
+            TenantId = device.TenantId,
+            TenantName = device.Tenant.Name,
+            DeviceName = device.Name,
+            InstallationId = device.InstallationId,
+            MachineName = string.IsNullOrWhiteSpace(device.MachineName) ? null : device.MachineName
+        });
     }
 }

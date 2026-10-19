@@ -225,7 +225,7 @@ public sealed class ShellSnapshotFactory
     /// </summary>
     internal ShellActionsView CreateActions(PrintBridgeRuntimeStatus status, string connectionState)
     {
-        var token = _settings?.OrderHub.AgentToken;
+        var token = _settings?.Connection.AgentToken;
         var hasToken = !string.IsNullOrWhiteSpace(token);
         var requiresReconnect = PrintBridgePollingGate.RequiresReconnectBeforeStart(token, status.LastIssue)
                                 || status.LastIssue?.Code == PrintBridgeRuntimeIssueCode.DuplicateInstallation

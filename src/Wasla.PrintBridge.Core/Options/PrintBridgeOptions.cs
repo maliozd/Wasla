@@ -21,7 +21,7 @@ public sealed class PrintBridgeOptions
     /// <summary>Stable local installation identity. Generated once and sent to Wasla for device binding.</summary>
     public string InstallationId { get; set; } = string.Empty;
 
-    /// <summary>User-facing device label (e.g. Kasadaki POS). Synced from OrderHub Web panel.</summary>
+    /// <summary>User-facing device label (e.g. Kasadaki POS). Synced from the Wasla Web panel.</summary>
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>Whether <see cref="DisplayName"/> was resolved from the server for the current token.</summary>

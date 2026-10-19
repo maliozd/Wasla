@@ -4,13 +4,13 @@ namespace Wasla.PrintBridge.Services;
 
 public static class PrintBridgeRuntimeCredentialFallback
 {
-    public static bool ClearTokenForReconnectRequired(WaslaOptions hub, PrintBridgeOptions bridge)
+    public static bool ClearTokenForReconnectRequired(WaslaOptions connection, PrintBridgeOptions bridge)
     {
-        var changed = !string.IsNullOrWhiteSpace(hub.AgentToken)
+        var changed = !string.IsNullOrWhiteSpace(connection.AgentToken)
             || !string.IsNullOrWhiteSpace(bridge.DisplayName)
             || bridge.ServerDeviceNameResolved;
 
-        hub.AgentToken = string.Empty;
+        connection.AgentToken = string.Empty;
         bridge.DisplayName = string.Empty;
         bridge.ServerDeviceNameResolved = false;
 

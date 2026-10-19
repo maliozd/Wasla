@@ -7,7 +7,7 @@ namespace Wasla.PrintBridge.Setup;
 /// <summary>
 /// Registers (or repairs) the per-user <c>wasla-printbridge://</c> protocol handler under
 /// <c>HKCU\Software\Classes</c> so the browser can launch this app. Per-user registration does
-/// not require administrator rights. Never registers any legacy OrderHub scheme.
+/// not require administrator rights. Registers no other scheme.
 /// </summary>
 [SupportedOSPlatform("windows")]
 public static class PrintBridgeProtocolRegistrar

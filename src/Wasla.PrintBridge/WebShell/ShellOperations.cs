@@ -183,7 +183,7 @@ public sealed class ShellOperations
                 if (_engine.IsRunning)
                     return (ShellOperationOutcome.Succeeded, _localizer["Shell.Op.Started"]);
 
-                var token = _settings.OrderHub.AgentToken;
+                var token = _settings.Connection.AgentToken;
                 if (PrintBridgePollingGate.RequiresReconnectBeforeStart(token, _engine.GetStatus().LastIssue))
                     return (ShellOperationOutcome.Rejected, _localizer["Message.ReconnectFromWebToContinue"]);
 

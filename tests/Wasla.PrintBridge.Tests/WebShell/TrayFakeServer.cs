@@ -120,7 +120,7 @@ internal sealed class TrayFakeServer : IDisposable
 
             if (path == "api/print-bridge/health")
             {
-                Write(context, HttpStatusCode.OK, new { success = true, customerName = "QA", deviceName = "QA Kasa", serverTimeUtc = DateTime.UtcNow });
+                Write(context, HttpStatusCode.OK, new { success = true, tenantName = "QA", deviceName = "QA Kasa", serverTimeUtc = DateTime.UtcNow });
                 return;
             }
 

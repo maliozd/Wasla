@@ -1,12 +1,14 @@
 ﻿namespace Wasla.Application.Abstractions.Printing;
 
-public sealed record PrintBridgeAuthContext(
-    Guid DeviceId,
-    Guid CustomerId,
-    string CustomerName,
-    string DeviceName,
-    Guid? InstallationId = null,
-    string? MachineName = null);
+public sealed record PrintBridgeAuthContext
+{
+    public required Guid DeviceId { get; init; }
+    public required Guid TenantId { get; init; }
+    public required string TenantName { get; init; }
+    public required string DeviceName { get; init; }
+    public Guid? InstallationId { get; init; }
+    public string? MachineName { get; init; }
+}
 
 public sealed record PendingPrintJobDto(
     Guid Id,

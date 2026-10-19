@@ -139,7 +139,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Print Bridge device token regenerated. DeviceId={DeviceId}, CustomerId={CustomerId}",
+            "Print Bridge device token regenerated. DeviceId={DeviceId}, TenantId={TenantId}",
             device.Id,
             customerId);
 
@@ -176,7 +176,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Print Bridge device active state changed. DeviceId={DeviceId}, CustomerId={CustomerId}, IsActive={IsActive}",
+            "Print Bridge device active state changed. DeviceId={DeviceId}, TenantId={TenantId}, IsActive={IsActive}",
             deviceId,
             customerId,
             isActive);
@@ -219,7 +219,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Print Bridge device removed. DeviceId={DeviceId}, CustomerId={CustomerId}",
+            "Print Bridge device removed. DeviceId={DeviceId}, TenantId={TenantId}",
             deviceId,
             customerId);
 
@@ -299,7 +299,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Print Bridge device created. DeviceId={DeviceId}, CustomerId={CustomerId}, DeviceName={DeviceName}",
+            "Print Bridge device created. DeviceId={DeviceId}, TenantId={TenantId}, DeviceName={DeviceName}",
             device.Id,
             customerId,
             name);

@@ -54,8 +54,11 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.Equal([("new.print-bridge.test", NewToken, "api/print-bridge/health")], api.Requests.ToArray());
 
         var saved = harness.Store.Load();
-        Assert.Equal(NewUrl, saved.OrderHub.ServerUrl);
-        Assert.Equal(NewToken, saved.OrderHub.AgentToken);
+        Assert.Equal(NewUrl, saved.Wasla.ServerUrl);
+        Assert.Equal(NewToken, saved.Wasla.AgentToken);
+        var root = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(PrintBridgePaths.ProgramDataConfigPath))!.AsObject();
+        Assert.Equal(["Wasla", "PrintBridge", "Ui"], root.Select(p => p.Key));
+        Assert.Equal((NewUrl, NewToken), ((string?)root["Wasla"]!["ServerUrl"], (string?)root["Wasla"]!["AgentToken"]));
         Assert.Equal("Kasa 2", saved.PrintBridge.DisplayName);
         Assert.True(saved.PrintBridge.ServerDeviceNameResolved);
         Assert.Equal(MissingPrinter, saved.PrintBridge.PrinterName);
@@ -66,7 +69,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.True(status.IsConnected);
         Assert.Null(status.LastIssue);
         Assert.False(status.IsRunning);
-        Assert.Equal(NewToken, harness.Holder.OrderHub.AgentToken);
+        Assert.Equal(NewToken, harness.Holder.Connection.AgentToken);
     }
 
     [Fact]
@@ -82,7 +85,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.Equal(ShellConnectionSetupField.Token, result.Field);
         Assert.Equal(_localizer["Shell.Setup.TokenRejected"], result.Message);
         Assert.Equal(fileBefore, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
-        Assert.Equal(SavedToken, harness.Holder.OrderHub.AgentToken);
+        Assert.Equal(SavedToken, harness.Holder.Connection.AgentToken);
         // A rejected candidate is not the saved token: it must not clear it or mark the device for reconnect.
         Assert.Null(harness.Runtime.GetStatus().LastIssue);
         AssertNoSecrets(result.Message);
@@ -142,8 +145,8 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.Equal(ShellConnectionSetupOutcome.ConnectedChoosePrinter, result.Outcome);
         Assert.Equal([("new.print-bridge.test", SavedToken, "api/print-bridge/health")], api.Requests.ToArray());
         var saved = harness.Store.Load();
-        Assert.Equal(NewUrl, saved.OrderHub.ServerUrl);
-        Assert.Equal(SavedToken, saved.OrderHub.AgentToken);
+        Assert.Equal(NewUrl, saved.Wasla.ServerUrl);
+        Assert.Equal(SavedToken, saved.Wasla.AgentToken);
         Assert.Equal("Kasa 1", saved.PrintBridge.DisplayName);
         // The setup exposes the address for the native field, never the token.
         Assert.DoesNotContain(typeof(ShellConnectionSetup).GetProperties(), p => p.Name.Contains("Token", StringComparison.Ordinal) && p.PropertyType == typeof(string));
@@ -166,7 +169,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.Equal(ShellConnectionSetupOutcome.Cancelled, result.Outcome);
         Assert.Equal(_localizer["Shell.Setup.Cancelled"], result.Message);
         Assert.Equal(fileBefore, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
-        Assert.Equal(SavedToken, harness.Holder.OrderHub.AgentToken);
+        Assert.Equal(SavedToken, harness.Holder.Connection.AgentToken);
     }
 
     [Fact]
@@ -223,8 +226,8 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.Equal(ShellConnectionSetupOutcome.SaveFailed, result.Outcome);
         Assert.Equal(_localizer["Shell.Setup.SaveFailed"], result.Message);
         Assert.Equal(fileBefore, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
-        Assert.Equal(SavedToken, harness.Holder.OrderHub.AgentToken);
-        Assert.Equal(SavedUrl, harness.Holder.OrderHub.ServerUrl);
+        Assert.Equal(SavedToken, harness.Holder.Connection.AgentToken);
+        Assert.Equal(SavedUrl, harness.Holder.Connection.ServerUrl);
         Assert.False(harness.Runtime.GetStatus().IsConnected);
     }
 
@@ -244,7 +247,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
 
         Assert.Equal(ShellConnectionSetupOutcome.Connected, result.Outcome);
         Assert.Equal(_localizer["Shell.Setup.Connected"], result.Message);
-        Assert.Equal(NewToken, harness.Store.Load().OrderHub.AgentToken);
+        Assert.Equal(NewToken, harness.Store.Load().Wasla.AgentToken);
         Assert.All(api.Requests.Skip(changedAt), r => Assert.Equal(NewToken, r.Token));
     }
 
@@ -260,8 +263,8 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.Equal(ShellConnectionSetupMode.Reconnect, harness.Setup.Mode);
         Assert.False(harness.Setup.CanKeepSavedToken);
         var afterReset = harness.Store.Load();
-        Assert.Equal(string.Empty, afterReset.OrderHub.AgentToken);
-        Assert.Equal(SavedUrl, afterReset.OrderHub.ServerUrl);
+        Assert.Equal(string.Empty, afterReset.Wasla.AgentToken);
+        Assert.Equal(SavedUrl, afterReset.Wasla.ServerUrl);
         Assert.Equal(before.PrinterName, afterReset.PrintBridge.PrinterName);
         Assert.Equal(before.DryRun, afterReset.PrintBridge.DryRun);
         Assert.Equal(before.IdlePollIntervalSeconds, afterReset.PrintBridge.IdlePollIntervalSeconds);
@@ -324,7 +327,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
         Assert.False(refused.IsConnected);
         Assert.Equal(_localizer["Shell.Setup.PrintingInProgress"], refused.Message);
         Assert.Equal(fileBefore, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
-        Assert.Equal((SavedUrl, SavedToken, printerName), (harness.Holder.OrderHub.ServerUrl, harness.Holder.OrderHub.AgentToken, harness.Holder.Bridge.PrinterName));
+        Assert.Equal((SavedUrl, SavedToken, printerName), (harness.Holder.Connection.ServerUrl, harness.Holder.Connection.AgentToken, harness.Holder.Bridge.PrinterName));
         Assert.True(harness.Runtime.IsRunning);
 
         hold.SetResult();
@@ -343,7 +346,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
 
         Assert.Equal(ShellConnectionSetupOutcome.Connected, retried.Outcome);
         var saved = harness.Store.Load();
-        Assert.Equal((NewUrl, NewToken, printerName), (saved.OrderHub.ServerUrl, saved.OrderHub.AgentToken, saved.PrintBridge.PrinterName));
+        Assert.Equal((NewUrl, NewToken, printerName), (saved.Wasla.ServerUrl, saved.Wasla.AgentToken, saved.PrintBridge.PrinterName));
         Assert.All(api.Requests.Skip(changedAt), r => Assert.Equal(("new.print-bridge.test", NewToken), (r.Host, r.Token)));
         Assert.Equal(new[] { ("mark-printing", SavedToken), ("mark-printed", SavedToken) }, api.JobReports(jobId));
         Assert.Equal(1, receipts.Calls);
@@ -453,8 +456,8 @@ public sealed class ShellConnectionSetupTests : IDisposable
     {
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
-        document.OrderHub.ServerUrl = SavedUrl;
-        document.OrderHub.AgentToken = token;
+        document.Wasla.ServerUrl = SavedUrl;
+        document.Wasla.AgentToken = token;
         document.PrintBridge.PrinterName = printer;
         document.PrintBridge.DryRun = dryRun;
         document.PrintBridge.DisplayName = displayName;
@@ -468,7 +471,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
 
         store.Save(document);
         var holder = new PrintBridgeSettingsHolder();
-        holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+        holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
 
         var loggers = logs ?? (ILoggerFactory)NullLoggerFactory.Instance;
         var http = new HttpClient(api);
@@ -634,7 +637,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
                 return Json(HttpStatusCode.Unauthorized, new { error = "device_auth_invalid" });
 
             if (path == "api/print-bridge/health")
-                return Json(HttpStatusCode.OK, new { success = true, customerName = "QA", deviceName = DeviceName, serverTimeUtc = DateTime.UtcNow });
+                return Json(HttpStatusCode.OK, new { success = true, tenantName = "QA", deviceName = DeviceName, serverTimeUtc = DateTime.UtcNow });
 
             if (path == "api/print-bridge/jobs/pending")
             {

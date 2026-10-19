@@ -171,8 +171,8 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
         var status = harness.Runtime.GetStatus();
         Assert.Equal(PrintBridgeRuntimeIssueCode.ReconnectRequired, status.LastIssue?.Code);
         Assert.False(status.IsConnected);
-        Assert.Equal(string.Empty, harness.Holder.OrderHub.AgentToken);
-        Assert.Equal(ServerUrl, harness.Holder.OrderHub.ServerUrl);
+        Assert.Equal(string.Empty, harness.Holder.Connection.AgentToken);
+        Assert.Equal(ServerUrl, harness.Holder.Connection.ServerUrl);
         Assert.Equal(harness.PrinterName, harness.Holder.Bridge.PrinterName);
 
         var persisted = File.ReadAllText(PrintBridgePaths.ProgramDataConfigPath);
@@ -237,8 +237,8 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
         var printerName = FirstInstalledPrinterOrSkip();
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
-        document.OrderHub.ServerUrl = ServerUrl;
-        document.OrderHub.AgentToken = FakeToken;
+        document.Wasla.ServerUrl = ServerUrl;
+        document.Wasla.AgentToken = FakeToken;
         document.PrintBridge.PrinterName = printerName;
         document.PrintBridge.DryRun = dryRun;
         document.PrintBridge.IdlePollIntervalSeconds = 1;
@@ -247,7 +247,7 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
         store.Save(document);
 
         var holder = new PrintBridgeSettingsHolder();
-        holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+        holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
 
         var http = new HttpClient(api);
         var client = new WaslaPrintBridgeClient(
@@ -427,7 +427,7 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
                 return Json(new
                 {
                     success = true,
-                    customerName = "QA",
+                    tenantName = "QA",
                     deviceName = "Kasa 1",
                     serverTimeUtc = DateTime.UtcNow
                 });
