@@ -47,11 +47,22 @@ What the contract gives:
 - A receiver timeout chosen by the integrator, 10–5000 ms [T5].
 - Up to 3 retries [T1, T3], and a possible duplicate delivery [T5].
 
-What it does not give: a signature, timestamp or nonce check, sender IP ranges, ordering, event ids, a defined acknowledgement response, and events for acceptance (`Picking`) or preparation (`Invoiced`) [T2, T14].
+What it does not give:
+
+- A signature, timestamp or nonce check.
+- Sender IP ranges.
+- Ordering and event ids.
+- A defined acknowledgement response.
+- Events for acceptance (`Picking`) or preparation (`Invoiced`) [T2, T14].
+- A documented way to tell which seller an event belongs to. One integrator with one URL set and one secret set serves every seller [T1, T5]. `supplierId` and `storeId` appear only in the `created` sample, with no field definition, and the status events have neither [T2].
 
 Confidence: high that the webhook exists and what its events and payloads are. Medium on delivery semantics, because the retry wording is ambiguous [T1] and acknowledgement, ordering and the disable threshold are undocumented.
 
-Recommendation: enable Trendyol GO webhooks provider-specifically, as a faster path in front of the existing checkpointed polling, never as a replacement for it.
+Recommendation:
+
+- Use Trendyol GO webhooks provider-specifically, as a faster path in front of the existing checkpointed polling, never as a replacement for it.
+- Enabling the external endpoint is **blocked**, and so is the tenant-routing design behind it. Wasla cannot yet safely tell which tenant a previously unseen order belongs to. Trendyol GO must first confirm a tenant discriminator, by documentation or by a stage test that it then confirms (see [Tenant routing](#tenant-routing)).
+- Internal, provider-agnostic ingestion work can go ahead now (see [Implications](#implications-for-was-18-to-was-21)).
 
 ### Yemeksepeti
 
@@ -69,7 +80,7 @@ The archived model matters even before it is confirmed. If it is current:
 - New restaurant orders reach an integrator only by webhook. The report service returns only accepted and cancelled orders [Y8], so polling cannot take in new orders.
 - Wasla's current Yemeksepeti client follows the Local Shops Partner API (OAuth client credentials and a vendor orders GET; see [Comparison with Wasla today](#comparison-with-wasla-today)). It would then be the wrong product for restaurants.
 
-Recommendation: build nothing for Yemeksepeti webhooks until WAS-70 obtains the current restaurant contract.
+Conclusion: the Yemeksepeti restaurant webhook contract cannot be confirmed at present. Implementation is blocked by WAS-70, the separate provider-confirmation task. Build nothing for Yemeksepeti webhooks until WAS-70 obtains the current restaurant contract.
 
 ### Webhooks and reconciliation polling
 
@@ -82,9 +93,10 @@ Neither provider gives those guarantees:
 
 **Decision:**
 
-1. One idempotent shared ingestion path for webhooks and polling (WAS-18).
+1. One idempotent shared ingestion path for webhooks and polling (WAS-18). Its internal part can start now, with polling as its only caller.
 2. A durable webhook inbox (WAS-19).
 3. Polling stays as reconciliation (WAS-21).
+4. No external webhook endpoint and no central routing schema until a tenant discriminator is confirmed ([Tenant routing](#tenant-routing)).
 
 For Trendyol GO the checkpointed polling stays enabled for every connection. Its frequency may be lowered only after Wasla's own metrics show webhook coverage in production, and it is not removed while the contract stays as documented today.
 
@@ -108,6 +120,9 @@ Product: "Uber Eats Trendyol Go – Meal", Webhook Meal Integration (English doc
 | Event type in the payload | Not documented | No payload example has an event-type field, so the receiver must tell types apart by `destinationUrl` | [T2, T5] |
 | New order contents | Confirmed | `created` carries the full package: customer, address, lines, payment and totals. It omits some GET fields (for example `packageModificationDate`) and replaces `packageCreationDate` with `timestamp`. The documentation warns that the two models will never be identical | [T2] |
 | Other events | Confirmed | `courierNearby`, `shipped` and `delivered` carry `id`, `orderNumber`, `orderCode` and `timestamp`. `cancelled` and `unsupplied` add `status`, cancelled line items and `cancelInfo` (reason code and text). `pickupEtaCalculated` carries `id`, `orderNumber`, `pickupEtaState` and the estimated pickup window, and no `timestamp`. None of them carries `supplierId` or `storeId` | [T2] |
+| Seller identity in `created` | Partner confirmation required | The sample includes `supplierId` and `storeId`. No field definition says they are always present, or that `supplierId` equals the seller id registered with Add Seller | [T2, T8] |
+| Seller-specific URL, integrator or secret | Not documented | The documentation advises one integrator for all sellers. `baseUrl`, `destinationUrl` and `secrets` are set per integrator, not per seller | [T1, T5, T9] |
+| Package lookup that identifies the seller | Not documented | Both documented package reads, the list and the single package by `packageId`, sit under `/suppliers/{supplierid}/` and use that supplier's own credentials. They cannot find the seller of an unknown package | [T11, T15] |
 | Meaning of `timestamp` | Not documented | For `created` it stands in for the creation date. For the other events it is not defined (event time or send time) | [T2] |
 | Accepted | Not supported | No event. `Picking` is a status the seller sets | [T2, T14] |
 | Rejected | Confirmed | `unsupplied` covers cancellation by the seller | [T2, T14] |
@@ -202,12 +217,13 @@ The site itself says it is not for restaurants [Y1]. For restaurant orders it is
 | Duplicates | Possible [T5] | Possible [Y7] |
 | Event id | None | None documented |
 | Acknowledgement | Not documented | 200/202 with `remoteOrderId` [Y7] |
-| Reconciliation read | Order packages by status and modification window [T15] | Accepted/cancelled order ids, ≤ 24 h [Y8] |
+| Tenant discriminator | Not confirmed: one integrator, URL and secret for all sellers; `supplierId` only in the `created` sample [T1, T2, T5] | `remoteId` in the dispatch URL, chosen by the integrator [Y7] (partner confirmation required) |
+| Reconciliation read | Order packages by status and modification window, or one package by id, per supplier [T15] | Accepted/cancelled order ids, ≤ 24 h [Y8] |
 | Polling can take in new orders | Yes | No [Y8] |
 
 ## Comparison with Wasla today
 
-Verified against `dev` at b27505e. Static review only; nothing was run.
+Verified against `dev` at b27505e. None of the cited files changed up to 198b49b. Static review only; nothing was run.
 
 ### Ingestion and recovery
 
@@ -226,18 +242,51 @@ Verified against `dev` at b27505e. Static review only; nothing was run.
 
 - **Idempotency key.** Orders are upserted by `Platform` + `ExternalOrderId`, and the Trendyol GO `ExternalOrderId` is the package `id` ([Fetch-level duplicate handling](../orders/synchronization.md#fetch-level-duplicate-handling)). Webhook payloads carry that same `id` [T2, T15], so polling and webhooks share one key.
 - **Thin events.** The upsert treats every payload as a complete order and replaces items and options on a real change ([Order upsert](../orders/synchronization.md#order-upsert)). A Trendyol GO status event has no lines [T2], so it must not go through that path: it would look like an order with no items. Status-only events need their own apply path, and an event for an order Wasla does not have must not create one.
-- **Tenant routing.** Webhook requests arrive on a central host with no tenant in the URL. Tenant resolution today is host- and claim-based. Platform connections and their supplier ids live in each TenantDb, and `CentralDbContext` has no platform connection or supplier index. Trendyol GO status events carry neither `supplierId` nor `storeId` [T2]. A webhook path therefore needs a central routing index. That is a schema change, which needs explicit approval.
+- **Tenant routing.** Unresolved; see [Tenant routing](#tenant-routing) below.
 - **Shared side effects.** Setup-mode rules already sit in the shared side-effect services, so a future webhook path inherits them ([Operational mode: Setup](../orders/synchronization.md#operational-mode-setup)). So does `MergeInternalStatusForSync`, which keeps stale or out-of-order status changes from moving an order backwards.
+
+### Tenant routing
+
+**Facts**
+
+- **Wasla today.** A webhook request arrives on a central host with no tenant in the URL. Tenant resolution today is host- and claim-based. Platform connections, their supplier ids and their credentials live in each TenantDb. `CentralDbContext` has no platform connection, supplier or package index.
+- **Trendyol GO identifiers.** The documentation gives no reliable seller discriminator for an event:
+  - One integrator, with one `baseUrl`, one set of `destinationUrl`s and one set of secrets, serves every seller [T1, T5, T9]. Neither the URL nor the secret tells sellers apart.
+  - `supplierId` and `storeId` appear in the `created` sample only. Nothing defines them as always present, or ties `supplierId` to the seller id registered with Add Seller [T2, T8].
+  - Status events carry no seller field at all [T2].
+- **Package reads.** Both documented package reads are scoped to one supplier and use that supplier's credentials [T11, T15].
+
+**Consequences**
+
+- **A central routing index helps only in two cases:** the event carries a routing identifier Wasla can rely on, or the package is already known from an earlier `created` event or from polling.
+- **It cannot by itself route a previously unseen event.**
+  - A new `created` event could be routed only through its `supplierId`, whose presence and meaning are not contractual.
+  - A status event for an unknown package has no identifier at all.
+- **"Unknown order → targeted reconciliation fetch" has the same problem.**
+  - A fetch needs a specific tenant's supplier id and credentials, which is exactly what is unknown.
+  - Trying the credentials of several tenants is not acceptable. It would cross tenant boundaries and spend the shared request limit.
+  - Until a discriminator exists, an unroutable event must not reach any tenant database. That tenant's own checkpointed polling picks the change up. Whether such an event is dropped or held without tenant data is a WAS-19/WAS-20 design point.
+- **Usable discriminators.** Any one of these would resolve it, once confirmed by Trendyol GO:
+  - A seller-specific destination URL.
+  - A seller-specific integrator or secret.
+  - Seller identity in a documented payload field or header on every event.
+  - An authoritative package lookup that returns the seller before any tenant database is accessed.
+
+  A stage test can show which candidate exists. Production routing may rely on it only after Trendyol GO confirms it is part of the contract.
+- **What is blocked.**
+  - No central schema change should be approved on the current documentation alone.
+  - Enabling the Trendyol GO endpoint and the final routing design wait for a confirmed discriminator.
+- **Yemeksepeti, for contrast.** In the archived model the dispatch URL carries the integrator's own restaurant identifier: `POST /order/{remoteId}`, where `remoteId` is the integrator's id for the restaurant [Y7]. That would give a per-restaurant discriminator if the model is confirmed (WAS-70).
 
 ### Missing components (gaps, not changed here)
 
 | Component | Needed for | Issue |
 |---|---|---|
-| Webhook endpoint per provider adapter | Receiving events | WAS-18, WAS-20 |
-| Central routing index (supplier → tenant, package → tenant) | Routing thin events without a tenant host | WAS-18 (schema approval) |
-| Durable inbox with a composite dedupe key, replay and dead letters | Acknowledge fast, retry safely | WAS-19 |
+| Normalized ingestion contracts and a status-only apply path that never creates orders or replaces items, used first by polling | Thin events, one pipeline | WAS-18 (can proceed) |
+| Webhook endpoint per provider adapter | Receiving events | WAS-20; **blocked** on a confirmed tenant discriminator |
+| Central routing index (supplier → tenant, package → tenant) | Routing events without a tenant host | **Blocked**: no schema approval until a discriminator is confirmed; it cannot route unseen events by itself ([Tenant routing](#tenant-routing)) |
+| Durable inbox with a composite dedupe key, replay and dead letters | Acknowledge fast, retry safely | WAS-19 (design can proceed; placement depends on routing) |
 | Secret validation in constant time, payload and content limits, log redaction | Authenticity | WAS-20 |
-| Status-only apply path that never creates orders or replaces items | Thin events | WAS-18 |
 | Webhook metrics (last event, lag, duplicates, retries, dead letters) and a connection health signal | Deciding any polling reduction | WAS-21 |
 | Integrator management (create, add seller, enable, rotate secret) | Trendyol GO registration | Follow-up, after stage validation |
 
@@ -245,38 +294,47 @@ Verified against `dev` at b27505e. Static review only; nothing was run.
 
 | Issue | Implication |
 |---|---|
-| WAS-18 shared ingestion | **Can proceed, provider-agnostic.** Support two inputs: a full order (Trendyol GO `created`, polling results, and later a Yemeksepeti dispatch) and a status-only event. A status-only event never creates an order and never replaces items. An unknown order triggers a targeted reconciliation fetch. Status changes keep using `MergeInternalStatusForSync`. Tenant and store ownership comes from the central routing index and is checked against the stored connection. |
-| WAS-19 inbox | **Can proceed.** No provider documents an event id, so the dedupe key is a composite fingerprint: platform, package or order id, event type and provider `timestamp` where present. Persist first, then acknowledge inside the configured Trendyol GO timeout (at most 5000 ms [T5]). Process in the background. Replaying an applied event is a no-op. |
-| WAS-20 security | **Provider-specific.** Trendyol GO: a high-entropy secret in a custom header (not a query parameter, which ends up in URLs and logs), compared in constant time, and rotated through Update Integrator [T9]. HTTPS only. The issue's criteria for signatures, a timestamp/nonce replay window and an IP allowlist cannot be met from the official contract [T1, T5]. Replay protection must come from inbox dedupe and the status merge, and the criteria should say so. Yemeksepeti: blocked; if [Y7] is confirmed, JWT HS512 validation, the `service` claim, IP allowlist and a valid certificate. |
-| WAS-21 reconciliation | **Required for Trendyol GO** and already unblocked by WAS-69. Keep the checkpointed polling for every connection. Add webhook metrics. Lower the polling frequency only on evidence, and keep a floor. Yemeksepeti reconciliation is blocked; note that the archived report service covers only accepted and cancelled orders within 24 hours [Y8]. |
+| WAS-18 shared ingestion | **Internal, provider-agnostic work can proceed:** <br>• normalized ingestion contracts; <br>• full-order versus status-only handling (full: polling results, and later a Trendyol GO `created` or a Yemeksepeti dispatch); <br>• idempotency boundaries (`Platform` + `ExternalOrderId`); <br>• status-only events never create an order and never replace items; <br>• status changes through `MergeInternalStatusForSync`; <br>• the existing polling routed through the shared path. <br>**Not unblocked:** the external Trendyol GO webhook endpoint and any tenant-routing schema. Both wait for a confirmed tenant discriminator ([Tenant routing](#tenant-routing)). |
+| WAS-19 inbox | **Design can proceed.** No provider documents an event id, so the dedupe key is a composite fingerprint: platform, package or order id, event type and provider `timestamp` where present. Persist first, then acknowledge inside the configured Trendyol GO timeout (at most 5000 ms [T5]). Process in the background. Replaying an applied event is a no-op. Where the inbox lives (central or per tenant) depends on routing and is blocked with it. |
+| WAS-20 security | **Provider-specific, and the Trendyol GO endpoint is blocked on routing.** Trendyol GO: a high-entropy secret in a custom header (not a query parameter, which ends up in URLs and logs), compared in constant time, and rotated through Update Integrator [T9]. HTTPS only. The issue's criteria for signatures, a timestamp/nonce replay window and an IP allowlist cannot be met from the official contract [T1, T5]. Replay protection must come from inbox dedupe and the status merge, and the criteria should say so. The shared secret authenticates Trendyol GO, not a seller, so it does not route. Yemeksepeti: blocked; if [Y7] is confirmed, JWT HS512 validation, the `service` claim, IP allowlist and a valid certificate. |
+| WAS-21 reconciliation | **Required for Trendyol GO.** Its polling side is already unblocked by WAS-69. Keep the checkpointed polling for every connection. Webhook metrics wait for the endpoint. Lower the polling frequency only on evidence, and keep a floor. Yemeksepeti reconciliation is blocked; note that the archived report service covers only accepted and cancelled orders within 24 hours [Y8]. |
 
 ## Recommended implementation sequence
 
 This sequence invents no missing contract. Each step names what it waits for.
 
 1. **Provider questions (owner action).** Send the [questions below](#known-unknowns-and-provider-questions) to Trendyol GO and Yemeksepeti. This record does not contact either provider.
-2. **WAS-18 first, with polling as the only caller.** Build the shared normalize → validate → idempotency → upsert/apply → lifecycle path and the status-only apply path, and route the existing polling through them. Design the central routing index and get schema approval. No endpoint yet.
-3. **WAS-19 and WAS-20 for Trendyol GO only.** A Trendyol GO adapter behind a per-environment switch that is off by default, with no real provider call in Mock mode. Use the inbox and header-secret validation. Distinct `destinationUrl` per event type, because payloads do not name their type [T2, T5].
-4. **Stage validation (needs owner authorization and stage IP authorization [T12]).** Create one stage integrator, add the stage seller, enable it, and send test orders [T10]. Record what the documentation leaves open: `Content-Type`, the headers actually sent, the response codes Trendyol GO accepts, retry timing, duplicate frequency, event order, and the meaning of `timestamp`. Update this record with the observed results, labelled as stage observations rather than contract.
-5. **WAS-21.** Webhook metrics, resilience tests (duplicates, replay, out-of-order events, concurrent webhook and poll, delivery/cancellation conflicts) and accurate connection health. Polling cadence stays unchanged until production data exists.
-6. **Trendyol GO production**, once Trendyol GO confirms the production creation path and multi-seller use. Enable per connection, and keep polling.
-7. **Yemeksepeti, only after WAS-70.** If the restaurant middleware model is confirmed, it is a new integration (a plugin endpoint plus middleware calls) that replaces the Local Shops client. That needs its own decision. If WAS-70 confirms another model, revisit this record.
+2. **WAS-18 internal work, with polling as the only caller.** Build the normalized ingestion contracts, the shared normalize → validate → idempotency → upsert/apply → lifecycle path and the status-only apply path, and route the existing polling through them. No endpoint and no central schema.
+3. **Stage validation (needs owner authorization and stage IP authorization [T12]).**
+   - **Setup:** create one stage integrator pointed at a request-recording HTTPS receiver the owner controls, not a product endpoint. Add the stage seller (more than one if stage allows), enable it, and send test orders [T10].
+   - **Record:** the documentation gaps — whether `supplierId` and `storeId` arrive in every `created` and match the registered seller, `Content-Type`, the headers actually sent, the response codes Trendyol GO accepts, retry timing, duplicate frequency, event order, and the meaning of `timestamp`.
+   - **Write-up:** update this record with the results, labelled as stage observations rather than contract.
+4. **Tenant discriminator decision.** Only after Trendyol GO confirms a discriminator ([Tenant routing](#tenant-routing)): design the routing and ask for approval of any central schema change.
+5. **WAS-19 and WAS-20 for Trendyol GO.** A Trendyol GO adapter and endpoint behind a per-environment switch that is off by default, with no real provider call in Mock mode. Use the inbox and header-secret validation, and a distinct `destinationUrl` per event type, because payloads do not name their type [T2, T5].
+6. **WAS-21.** Webhook metrics, resilience tests (duplicates, replay, out-of-order events, concurrent webhook and poll, delivery/cancellation conflicts) and accurate connection health. Polling cadence stays unchanged until production data exists.
+7. **Trendyol GO production**, once Trendyol GO confirms the production creation path and multi-seller use. Enable per connection, and keep polling.
+8. **Yemeksepeti, only after WAS-70.** If the restaurant middleware model is confirmed, it is a new integration (a plugin endpoint plus middleware calls) that replaces the Local Shops client. That needs its own decision. If WAS-70 confirms another model, revisit this record.
 
 ## Known unknowns and provider questions
 
 ### Trendyol GO
 
-1. Is Webhook Meal Integration generally available to every Meal seller, including stores moved to Uber Eats, and why is it missing from the Turkish documentation [T17]?
-2. How is the production integrator created? Create Integrator lists only a stage URL [T5]. Is there any certification or approval?
-3. May one integrator serve independent restaurants of a multi-tenant SaaS, given that secrets are per integrator [T5]? Can secrets or `destinationUrl` differ per seller?
-4. Is there a payload signature or a published sender IP range?
-5. What exactly are the retry count and spacing [T1, T3], which HTTP status codes count as an acknowledgement, and what happens after the last attempt?
-6. Is any ordering guaranteed? Will an event id or sequence number be added?
-7. What does `timestamp` mean in status events: event time or send time?
-8. What `Content-Type` and headers are sent?
-9. After how much downtime is an integrator disabled, is the integrator notified, and how are events from the disabled period retrieved [T6]?
-10. Will events be added for `Picking`, `Invoiced` (including Uber's automatic `Invoiced` [T16]), item changes or partial cancellation?
-11. Does the 50-requests-per-10-seconds limit [T11] apply per supplier, integrator or IP? Is there a single-package lookup for Meal suitable for enriching an event?
+Questions 1 to 3 decide tenant routing and block the endpoint ([Tenant routing](#tenant-routing)).
+
+1. Are `supplierId` and `storeId` guaranteed in every `created` event, and is `supplierId` always the seller id registered with Add Seller [T2, T8]? Can the status events carry the seller id too?
+2. Can `destinationUrl` or the secrets differ per seller, or may a SaaS create one integrator per seller, although the documentation advises one integrator [T1, T5]?
+3. Is there a package lookup by package id that identifies the seller, using the integrator token instead of a supplier's credentials [T15]?
+4. Is Webhook Meal Integration generally available to every Meal seller, including stores moved to Uber Eats, and why is it missing from the Turkish documentation [T17]?
+5. How is the production integrator created? Create Integrator lists only a stage URL [T5]. Is there any certification or approval?
+6. May one integrator serve independent restaurants of a multi-tenant SaaS?
+7. Is there a payload signature or a published sender IP range?
+8. What exactly are the retry count and spacing [T1, T3], which HTTP status codes count as an acknowledgement, and what happens after the last attempt?
+9. Is any ordering guaranteed? Will an event id or sequence number be added?
+10. What does `timestamp` mean in status events: event time or send time?
+11. What `Content-Type` and headers are sent?
+12. After how much downtime is an integrator disabled, is the integrator notified, and how are events from the disabled period retrieved [T6]?
+13. Will events be added for `Picking`, `Invoiced` (including Uber's automatic `Invoiced` [T16]), item changes or partial cancellation?
+14. Does the 50-requests-per-10-seconds limit [T11] apply per supplier, integrator or IP?
 
 ### Yemeksepeti (Delivery Hero Türkiye)
 
