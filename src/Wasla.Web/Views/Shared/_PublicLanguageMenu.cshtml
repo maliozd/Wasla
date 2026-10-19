@@ -1,0 +1,45 @@
+@model Wasla.Web.Models.Marketing.PublicLanguageMenuModel
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    // Language names are endonyms, the same in every culture.
+    var languages = new[]
+    {
+        (Culture: "tr-TR", Name: "Türkçe", Code: "TR"),
+        (Culture: "en-US", Name: "English", Code: "EN"),
+        (Culture: "ar-SA", Name: "العربية", Code: "AR"),
+        (Culture: "ru-RU", Name: "Русский", Code: "RU")
+    };
+    var current = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
+    var active = languages.FirstOrDefault(l => string.Equals(l.Culture, current, StringComparison.OrdinalIgnoreCase));
+    if (active.Culture is null)
+    {
+        active = languages[0];
+    }
+}
+<div class="wm-nav__item wm-lang">
+    <button class="wm-nav__link wm-lang__toggle" type="button" data-wm-disclosure aria-expanded="false" aria-controls="@Model.MenuId">
+        <i class="bi bi-globe2" aria-hidden="true"></i>
+        <span class="wm-visually-hidden">@L["Common.Language"]:</span>
+        @if (Model.ShowLanguageName)
+        {
+            <span lang="@active.Culture">@active.Name</span>
+        }
+        else
+        {
+            <span aria-hidden="true">@active.Code</span>
+            <span class="wm-visually-hidden" lang="@active.Culture">@active.Name</span>
+        }
+        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+    </button>
+    <ul class="wm-nav__menu wm-lang__menu" id="@Model.MenuId" hidden>
+        @foreach (var language in languages)
+        {
+            <li>
+                <a asp-controller="Culture" asp-action="Set" asp-route-culture="@language.Culture" asp-route-returnUrl="@Model.ReturnUrl"
+                   lang="@language.Culture" aria-current="@(language.Culture == active.Culture ? "true" : null)">@language.Name</a>
+            </li>
+        }
+    </ul>
+</div>

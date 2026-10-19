@@ -1,0 +1,60 @@
+@model string
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    var returnUrl = Model ?? "/";
+}
+@* Public site footer (WAS-155, Figma "Site footer"). Only destinations that exist are listed: legal pages and the
+   LinkedIn, YouTube and X accounts are not published yet, so they are left out rather than linked to placeholders. *@
+<footer class="wm-footer">
+    <div class="wm-container">
+        <div class="wm-footer__grid">
+            <div>
+                <a class="wm-header__brand" href="/">
+                    @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--marketing" })
+                </a>
+                <p class="wm-footer__tagline">@L["Marketing.Footer.Tagline"]</p>
+                <div class="wm-footer__tools">
+                    @await Html.PartialAsync("_PublicLanguageMenu", new PublicLanguageMenuModel(returnUrl, "wm-footer-languages", ShowLanguageName: true))
+                    <a class="wm-social" href="@PublicSiteUrls.InstagramUrl" rel="noopener" aria-label="@L["Marketing.Footer.InstagramLabel", PublicSiteUrls.InstagramHandle]">
+                        <i class="bi bi-instagram" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="wm-footer__columns">
+                <nav aria-labelledby="wm-footer-products">
+                    <h2 class="wm-footer__heading" id="wm-footer-products">@L["Marketing.Nav.Products"]</h2>
+                    <ul class="wm-footer__links">
+                        <li><a href="/#orders">@L["Marketing.Product.Orders"]</a></li>
+                        <li><a href="@PublicSiteUrls.PosPath">@L["Marketing.Product.Pos"] <span class="wm-soon">@L["Marketing.ComingSoon"]</span></a></li>
+                        <li><a href="/#print-bridge">@L["Marketing.Product.PrintBridge"]</a></li>
+                    </ul>
+                </nav>
+                <nav aria-labelledby="wm-footer-start">
+                    <h2 class="wm-footer__heading" id="wm-footer-start">@L["Marketing.Footer.GetStarted"]</h2>
+                    <ul class="wm-footer__links">
+                        <li><a asp-controller="Signup" asp-action="Index">@L["Marketing.Cta.Start"]</a></li>
+                        <li><a href="/#pricing">@L["Pricing.NavTitle"]</a></li>
+                        <li><a asp-area="Tenant" asp-controller="Auth" asp-action="Login">@L["Marketing.Nav.Login"]</a></li>
+                    </ul>
+                </nav>
+                <nav aria-labelledby="wm-footer-contact">
+                    <h2 class="wm-footer__heading" id="wm-footer-contact">@L["Marketing.Footer.Contact"]</h2>
+                    <ul class="wm-footer__links">
+                        <li>
+                            <a href="@PublicSiteUrls.InstagramUrl" rel="noopener">
+                                <i class="bi bi-instagram" aria-hidden="true"></i>
+                                <span><span class="wm-visually-hidden">Instagram: </span>@PublicSiteUrls.InstagramHandle</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        <div class="wm-footer__bottom">
+            <p class="m-0">@L["Marketing.Footer.Copyright", DateTime.UtcNow.Year]</p>
+        </div>
+    </div>
+</footer>
