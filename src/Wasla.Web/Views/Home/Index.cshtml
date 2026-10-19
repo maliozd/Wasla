@@ -1,482 +1,411 @@
-@using System.Globalization
 @using Microsoft.Extensions.Localization
 @using Wasla.Application.Abstractions.Plans
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@using Wasla.Web.Ui
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject IWaslaPlanCatalog PlanCatalog
 @{
-    Layout = null;
-    ViewData["Title"] = "Wasla";
-    var returnUrl = (Context.Request.Path.Value ?? "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : "");
-    var culture = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
-    var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
+    ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(
+        L["Marketing.Home.MetaTitle"].Value,
+        L["Marketing.Home.MetaDescription"].Value,
+        "/");
+    var signupUrl = Url.Action("Index", "Signup")!;
+    string Money(decimal amount) => OrderUiHelper.FormatMoney(amount);
 }
-<!DOCTYPE html>
-<html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="@L["Landing.MetaDescription"]" />
-    <title>@L["Landing.Title"] — @L["Landing.Subtitle"]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
-    @if (isRtl)
-    {
-        <link rel="stylesheet" href="~/css/rtl.css" asp-append-version="true" />
-    }
-</head>
-<body class="wasla-landing">
-<header class="wasla-landing-header border-bottom">
-    <div class="container py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--header" })
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" type="button" aria-label="@L["Common.Language"]">
-                    <i class="bi bi-translate me-1"></i>@L["Common.Language"]
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="tr-TR" asp-route-returnUrl="@returnUrl">Türkçe</a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="en-US" asp-route-returnUrl="@returnUrl">English</a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ar-SA" asp-route-returnUrl="@returnUrl">العربية</a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" asp-controller="Culture" asp-action="Set" asp-route-culture="ru-RU" asp-route-returnUrl="@returnUrl">Русский</a>
-                    </li>
+@* Wasla Marketing homepage (Figma 20:2). Product visuals are decorative mockups and hidden from assistive technology;
+   the text around them carries the content. Photos marked temporary in Figma are not used. *@
+
+<section class="wm-hero" aria-labelledby="home-title">
+    <div class="wm-container wm-hero__grid">
+        <div class="wm-hero__copy">
+            <h1 class="wm-h1" id="home-title">@L["Marketing.Home.HeroTitle"] <span class="wm-h1__accent">@L["Marketing.Home.HeroTitleAccent"]</span></h1>
+            <p class="wm-hero__lead">@L["Marketing.Home.HeroLead"]</p>
+            <div class="wm-actions">
+                <a class="wm-btn wm-btn--primary" href="#products">@L["Marketing.Cta.ExploreProducts"]</a>
+                <a class="wm-btn wm-btn--secondary" href="@signupUrl">@L["Marketing.Cta.Start"]</a>
+            </div>
+            <div class="wm-shortcuts">
+                <a class="wm-shortcut" href="#orders">
+                    <span class="wm-icon-tile wm-icon-tile--s" aria-hidden="true"><i class="bi bi-display"></i></span>
+                    <span class="wm-shortcut__text">
+                        <span class="wm-shortcut__title">@L["Marketing.Product.Orders"]</span>
+                        <span class="wm-shortcut__desc">@L["Marketing.Product.OrdersShort"]</span>
+                    </span>
+                    <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
+                </a>
+                <a class="wm-shortcut" href="@PublicSiteUrls.PosPath">
+                    <span class="wm-icon-tile wm-icon-tile--s wm-icon-tile--ink" aria-hidden="true"><i class="bi bi-grid-3x3-gap"></i></span>
+                    <span class="wm-shortcut__text">
+                        <span class="wm-shortcut__title">@L["Marketing.Product.Pos"] <span class="wm-soon">@L["Marketing.ComingSoon"]</span></span>
+                        <span class="wm-shortcut__desc">@L["Marketing.Product.PosShort"]</span>
+                    </span>
+                    <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="wm-hero-visual wm-mock" aria-hidden="true">
+            <div class="wm-hero-visual__backdrop"></div>
+            <div class="wm-hero-visual__line wm-hero-visual__line--orders"></div>
+            <div class="wm-hero-visual__line wm-hero-visual__line--pos"></div>
+            <div class="wm-hero-visual__line wm-hero-visual__line--kitchen"></div>
+            <div class="wm-window wm-window--orders">
+                <div class="wm-window__row wm-window__head">
+                    <span class="wm-icon-tile wm-icon-tile--xs"><i class="bi bi-display"></i></span>
+                    <span class="wm-window__title">
+                        <span class="wm-ui-title">@L["Marketing.Product.Orders"]</span>
+                        <span class="wm-ui-caption">@L["Marketing.Mock.OnlinePlatformOrders"]</span>
+                    </span>
+                    <span class="wm-badge wm-badge--green">@L["Orders.LiveDisplay.LiveStatus"]</span>
+                </div>
+                <div class="wm-window__row">
+                    @await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("yemeksepeti"))
+                    <span class="wm-ui-code">#YS-48213</span>
+                    <span class="wm-badge wm-badge--amber">@L["OrderStatus.New"]</span>
+                    <span class="wm-ui-time">00:42</span>
+                </div>
+                <div class="wm-window__row">
+                    @await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("trendyolgo"))
+                    <span class="wm-ui-code">#TY-90412</span>
+                    <span class="wm-badge wm-badge--blue">@L["OrderStatus.Preparing"]</span>
+                    <span class="wm-ui-time">04:10</span>
+                </div>
+                <div class="wm-window__row">
+                    @await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("getiryemek"))
+                    <span class="wm-ui-code">#GY-20577</span>
+                    <span class="wm-badge wm-badge--green">@L["OrderStatus.ReadyForPickup"]</span>
+                    <span class="wm-ui-time">11:36</span>
+                </div>
+            </div>
+            <div class="wm-hub">
+                @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--hub", Decorative = true })
+                <span class="wm-hub__text">
+                    <span class="wm-hub__title">@L["Marketing.Mock.OneFamily"]</span>
+                    <span class="wm-ui-caption">@L["Marketing.Mock.SameTeam"]</span>
+                </span>
+            </div>
+            <div class="wm-kitchen-chip">
+                <i class="bi bi-printer"></i>
+                <span class="wm-ui-strong">@L["Marketing.Mock.KitchenTicketPrinted"]</span>
+            </div>
+            <div class="wm-window wm-window--pos">
+                <div class="wm-window__row wm-window__head wm-window__head--ink">
+                    <span class="wm-icon-tile wm-icon-tile--xs wm-icon-tile--raised"><i class="bi bi-grid-3x3-gap"></i></span>
+                    <span class="wm-window__title">
+                        <span class="wm-ui-title">@L["Marketing.Product.Pos"]</span>
+                        <span class="wm-ui-caption">@L["Marketing.Mock.TableAndTakeaway"]</span>
+                    </span>
+                    <span class="wm-ui-strong">@L["Marketing.Mock.Hall"]</span>
+                </div>
+                <div class="wm-pos-tables">
+                    <span class="wm-table wm-table--occupied"><span class="wm-table__name">@L["Marketing.Mock.Table", 4]</span><span class="wm-table__meta">@L["Marketing.Mock.Guests", 2]</span></span>
+                    <span class="wm-table"><span class="wm-table__name">@L["Marketing.Mock.Table", 5]</span><span class="wm-table__meta">@L["Marketing.Mock.TableFree"]</span></span>
+                    <span class="wm-table wm-table--selected"><span class="wm-table__name">@L["Marketing.Mock.Table", 6]</span><span class="wm-table__meta">@L["Marketing.Mock.Guests", 4]</span></span>
+                </div>
+                <div class="wm-pos-total">
+                    <span class="wm-ui-title">@L["Marketing.Mock.Table", 6] · @Money(905m)</span>
+                    <span class="wm-mini-btn wm-mini-btn--action">@L["Marketing.Mock.TakePayment"]</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="wm-section wm-section--white" id="products" aria-labelledby="products-title">
+    <div class="wm-container">
+        <div class="wm-section-heading">
+            <h2 class="wm-h2" id="products-title">@L["Marketing.Home.ProductsTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Home.ProductsLead"]</p>
+        </div>
+        <div class="wm-products">
+            <article class="wm-product" id="orders" aria-labelledby="orders-title">
+                <div class="wm-product__head">
+                    <span class="wm-icon-tile" aria-hidden="true"><i class="bi bi-display"></i></span>
+                    <div>
+                        <h3 class="wm-product__title" id="orders-title">@L["Marketing.Product.Orders"]</h3>
+                        <p class="wm-product__desc">@L["Marketing.Home.OrdersTagline"]</p>
+                    </div>
+                </div>
+                <div class="wm-orders-visual wm-mock" aria-hidden="true">
+                    <div class="wm-orders-visual__sources">
+                        <span class="wm-source-chip">@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("yemeksepeti"))</span>
+                        <span class="wm-source-chip">@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("trendyolgo"))</span>
+                        <span class="wm-source-chip">@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("getiryemek"))</span>
+                    </div>
+                    <span class="wm-orders-visual__arrow"><i class="bi bi-arrow-right wm-flip-rtl"></i></span>
+                    <div class="wm-orders-visual__stack">
+                        <div class="wm-order-card">
+                            <div class="wm-order-card__top">
+                                @await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("yemeksepeti"))
+                                <span class="wm-ui-time"><i class="bi bi-clock"></i> 00:12</span>
+                            </div>
+                            <span class="wm-ui-code">#YS-48213</span>
+                            <span class="wm-ui-caption">@L["Marketing.Mock.OrderItems"]</span>
+                            <div class="wm-order-card__bottom">
+                                <span class="wm-order-card__amount">@Money(418m)</span>
+                                <span class="wm-mini-btn wm-mini-btn--action">@L["Marketing.Mock.Approve"]</span>
+                            </div>
+                        </div>
+                        <div class="wm-receipt">@L["Marketing.Mock.ReceiptPlatform"]
+#YS-48213   19:42
+- - - - - - - - - - - -
+2x @L["Marketing.Mock.ItemAdana"]
+1x @L["Marketing.Mock.ItemLentilSoup"]
+1x @L["Marketing.Mock.ItemAyran"]
+- - - - - - - - - - - -
+@L["Common.Total"]   @Money(486.5m)</div>
+                    </div>
+                </div>
+                <ul class="wm-checks wm-checks--two">
+                    <li>@L["Marketing.Home.OrdersFeature1"]</li>
+                    <li>@L["Marketing.Home.OrdersFeature2"]</li>
+                    <li>@L["Marketing.Home.OrdersFeature3"]</li>
+                    <li>@L["Marketing.Home.OrdersFeature4"]</li>
                 </ul>
-            </div>
-            <a class="btn btn-outline-secondary btn-sm" href="#pricing">@L["Pricing.NavTitle"]</a>
-            <a class="btn btn-outline-primary btn-sm" href="/signup">@L["Signup.StartNow"]</a>
-            <a class="btn btn-outline-primary btn-sm" href="/auth/login">@L["Landing.CustomerLogin"]</a>
-            <a class="btn btn-primary btn-sm" href="/admin/login">@L["Landing.AdminLogin"]</a>
+                <p class="wm-note">@L["Marketing.Home.IntegrationsNote"]</p>
+                <div class="wm-product__cta">
+                    <a class="wm-btn wm-btn--secondary" href="#pricing">@L["Marketing.Cta.ViewPlans"]</a>
+                </div>
+            </article>
+
+            <article class="wm-product wm-product--ink wm-on-dark" id="pos" aria-labelledby="pos-title">
+                <div class="wm-product__head">
+                    <span class="wm-icon-tile wm-icon-tile--raised" aria-hidden="true"><i class="bi bi-grid-3x3-gap"></i></span>
+                    <div>
+                        <h3 class="wm-product__title" id="pos-title">@L["Marketing.Product.Pos"] <span class="wm-soon">@L["Marketing.ComingSoon"]</span></h3>
+                        <p class="wm-product__desc">@L["Marketing.Home.PosTagline"]</p>
+                    </div>
+                </div>
+                <div class="wm-dining wm-mock" aria-hidden="true">
+                    <div class="wm-pos-tables">
+                        <span class="wm-table wm-table--occupied"><span class="wm-table__name">@L["Marketing.Mock.Table", 2]</span><span class="wm-table__meta">@L["Marketing.Mock.TableOccupied"]</span></span>
+                        <span class="wm-table wm-table--bill"><span class="wm-table__name">@L["Marketing.Mock.Table", 3]</span><span class="wm-table__meta">@L["Marketing.Mock.TableBill"]</span></span>
+                        <span class="wm-table"><span class="wm-table__name">@L["Marketing.Mock.Table", 5]</span><span class="wm-table__meta">@L["Marketing.Mock.TableFree"]</span></span>
+                    </div>
+                </div>
+                <p class="wm-product__caption">@L["Marketing.ConceptUi"]</p>
+                <ul class="wm-checks">
+                    <li>@L["Marketing.Home.PosFeature1"]</li>
+                    <li>@L["Marketing.Home.PosFeature2"]</li>
+                    <li>@L["Marketing.Home.PosFeature3"]</li>
+                    <li>@L["Marketing.Home.PosFeature4"]</li>
+                </ul>
+                <div class="wm-product__cta">
+                    <a class="wm-btn wm-btn--secondary-dark" href="@PublicSiteUrls.PosPath">@L["Marketing.Cta.ExplorePos"]</a>
+                </div>
+            </article>
         </div>
     </div>
-</header>
+</section>
 
-<main>
-    <section class="wasla-hero py-5">
-        <div class="container">
-            <div class="row align-items-center g-4 g-lg-5">
-                <div class="col-lg-6">
-                    <h1 class="wasla-hero-title display-5 fw-bold mb-3">@L["Landing.HeroTitle"]</h1>
-                    <p class="wasla-hero-sub lead text-secondary mb-4">@L["Landing.HeroSubtitle"]</p>
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        <a class="btn btn-primary btn-lg rounded-pill px-4" href="/signup">
-                            <i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>@L["Signup.StartNow"]
-                        </a>
-                        <a class="btn btn-outline-secondary btn-lg rounded-pill px-4" href="#pricing">
-                            @L["Pricing.ViewPlans"]
-                        </a>
-                    </div>
-                    <p class="small text-muted mb-0">@L["Landing.TenantNote"]</p>
+<section class="wm-section wm-section--canvas" id="channels" aria-labelledby="channels-title">
+    <div class="wm-container">
+        <div class="wm-section-heading">
+            <h2 class="wm-h2" id="channels-title">@L["Marketing.Home.ChannelsTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Home.ChannelsLead"]</p>
+        </div>
+        <div class="wm-channels">
+            <div class="wm-channel">
+                <div class="wm-channel__head">
+                    <h3 class="wm-channel__title">@L["Marketing.Home.ChannelOnlineTitle"]</h3>
+                    <p class="wm-channel__desc">@L["Marketing.Home.ChannelOnlineDesc"]</p>
                 </div>
-                <div class="col-lg-6">
-                    <div class="wasla-hero-illu rounded-4 border bg-white p-3 p-md-4 shadow" aria-hidden="true">
-                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                            @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--illustration", Decorative = true })
-                            <span class="badge rounded-pill wasla-badge-live">@L["Landing.Live"]</span>
-                        </div>
-                        <div class="wasla-illu-board">
-                            <div class="wasla-illu-order">
-                                <div class="wasla-illu-order-top">
-                                    <div class="wasla-illu-order-id">
-                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">@L["Landing.NewOrder"]</span>
-                                        <span class="font-monospace fw-semibold">YS-901</span>
-                                    </div>
-                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"Yemeksepeti", (string?)null))
-                                </div>
-                                <div class="wasla-illu-order-meta">
-                                    <span class="font-monospace text-secondary">₺132,00</span>
-                                    <span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span>
-                                </div>
-                            </div>
-                            <div class="wasla-illu-order">
-                                <div class="wasla-illu-order-top">
-                                    <div class="wasla-illu-order-id">
-                                        <span class="font-monospace fw-semibold">GY-204</span>
-                                    </div>
-                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"GetirYemek", (string?)null))
-                                </div>
-                                <div class="wasla-illu-order-meta">
-                                    <span class="font-monospace text-secondary">₺67,25</span>
-                                    <span class="badge bg-success-subtle text-success border">@L["Landing.Delivered"]</span>
-                                </div>
-                            </div>
-                            <div class="wasla-illu-order">
-                                <div class="wasla-illu-order-top">
-                                    <div class="wasla-illu-order-id">
-                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">@L["Landing.NewOrder"]</span>
-                                        <span class="font-monospace fw-semibold">TY-991</span>
-                                    </div>
-                                    @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"TrendyolYemek", (string?)null))
-                                </div>
-                                <div class="wasla-illu-order-meta">
-                                    <span class="font-monospace text-secondary">₺341,00</span>
-                                    <span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="wm-mock" aria-hidden="true">
+                    <div class="wm-channel__row">@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("yemeksepeti"))<span class="wm-channel__row-text">@L["Marketing.Mock.NewOrderAmount", Money(418m)]</span><span class="wm-ui-time">19:42</span></div>
+                    <div class="wm-channel__row">@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("trendyolgo"))<span class="wm-channel__row-text">@L["Marketing.Mock.NewOrderAmount", Money(312m)]</span><span class="wm-ui-time">19:44</span></div>
+                    <div class="wm-channel__row">@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("getiryemek"))<span class="wm-channel__row-text">@L["Marketing.Mock.NewOrderAmount", Money(465m)]</span><span class="wm-ui-time">19:47</span></div>
                 </div>
+                <div class="wm-channel__foot"><i class="bi bi-display" aria-hidden="true"></i>@L["Marketing.Home.ChannelOnlineFoot"]</div>
+            </div>
+            <div class="wm-kitchen-node" aria-hidden="true">
+                <span class="wm-kitchen-node__arrows"><i class="bi bi-arrow-right wm-flip-rtl"></i><i class="bi bi-arrow-left wm-flip-rtl"></i></span>
+                <span class="wm-kitchen-node__card">
+                    <span class="wm-icon-tile wm-icon-tile--success"><i class="bi bi-printer"></i></span>
+                    <span class="wm-kitchen-node__title">@L["Marketing.Home.SameKitchen"]</span>
+                    <span class="wm-ui-caption">@L["Marketing.Home.ReceiptAndPrinter"]</span>
+                </span>
+            </div>
+            <div class="wm-channel wm-channel--pos">
+                <div class="wm-channel__head">
+                    <h3 class="wm-channel__title">@L["Marketing.Home.ChannelInStoreTitle"]</h3>
+                    <p class="wm-channel__desc">@L["Marketing.Home.ChannelInStoreDesc"]</p>
+                </div>
+                <div class="wm-mock" aria-hidden="true">
+                    <div class="wm-channel__row"><i class="bi bi-grid-3x3-gap"></i><span class="wm-channel__row-text">@L["Marketing.Mock.Table", 6] · @L["Marketing.Mock.Guests", 4]</span><span class="wm-ui-time">@Money(905m)</span></div>
+                    <div class="wm-channel__row"><i class="bi bi-bag"></i><span class="wm-channel__row-text">@L["Marketing.Mock.PhoneTakeaway"]</span><span class="wm-ui-time">@L["OrderStatus.Preparing"]</span></div>
+                    <div class="wm-channel__row"><i class="bi bi-clock-history"></i><span class="wm-channel__row-text">@L["Marketing.Mock.PickupAt"]</span><span class="wm-ui-time">@L["OrderStatus.ReadyForPickup"]</span></div>
+                    <div class="wm-channel__row"><i class="bi bi-lightning-charge"></i><span class="wm-channel__row-text">@L["Marketing.Mock.QuickSaleCounter"]</span><span class="wm-ui-time">@Money(95m)</span></div>
+                </div>
+                <div class="wm-channel__foot"><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>@L["Marketing.Home.ChannelInStoreFoot"] <span class="wm-soon">@L["Marketing.ComingSoon"]</span></div>
             </div>
         </div>
-    </section>
-
-    <section class="py-5 bg-white" id="about">
-        <div class="container">
-            <div class="row justify-content-center text-center mb-4">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-3">@L["Landing.WhatIsWaslaTitle"]</h2>
-                    <p class="lead text-secondary mb-0">@L["Landing.WhatIsWaslaLead"]</p>
-                </div>
-            </div>
-            <div class="row g-3 g-lg-4 justify-content-center">
-                <div class="col-md-6 col-lg-5">
-                    <div class="wasla-intro-card h-100 rounded-4 border bg-light p-4">
-                        <div class="wasla-benefit-icon mb-3"><i class="bi bi-tablet" aria-hidden="true"></i></div>
-                        <p class="text-secondary mb-0">@L["Landing.WhatIsWaslaProblem"]</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-5">
-                    <div class="wasla-intro-card h-100 rounded-4 border-0 bg-white p-4 shadow-sm">
-                        <div class="wasla-benefit-icon mb-3"><i class="bi bi-grid-1x2" aria-hidden="true"></i></div>
-                        <p class="text-secondary mb-0">@L["Landing.WhatIsWaslaSolution"]</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-5 wasla-section-muted" id="mockup">
-        <div class="container">
-            <div class="row justify-content-center text-center mb-4">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.MockupTitle"]</h2>
-                    <p class="text-secondary mb-0">@L["Landing.MockupSubtitle"]</p>
-                </div>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-xl-9">
-                    <div class="card border-0 shadow-sm wasla-mockup-card">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 wasla-landing-table">
-                                <thead class="wasla-landing-thead">
-                                    <tr>
-                                        <th scope="col">@L["Orders.OrderCode"]</th>
-                                        <th scope="col">@L["Orders.Platform"]</th>
-                                        <th scope="col" class="text-end">@L["Orders.TotalAmount"]</th>
-                                        <th scope="col">@L["Orders.Status"]</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1">@L["Landing.NewOrder"]</span>
-                                            <span class="font-monospace">YS-901</span>
-                                            <i class="bi bi-bell-fill text-primary small ms-1" title="@L["Landing.SoundNotification"]" aria-label="@L["Landing.SoundNotification"]"></i>
-                                        </td>
-                                        <td>
-                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"Yemeksepeti", (string?)null))
-                                        </td>
-                                        <td class="text-end font-monospace">₺132,00</td>
-                                        <td><span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <span class="font-monospace">GY-204</span>
-                                            <i class="bi bi-volume-up-fill text-primary small ms-1" title="@L["Landing.SoundNotification"]" aria-label="@L["Landing.SoundNotification"]"></i>
-                                        </td>
-                                        <td>
-                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"GetirYemek", (string?)null))
-                                        </td>
-                                        <td class="text-end font-monospace">₺67,25</td>
-                                        <td><span class="badge bg-success-subtle text-success border">@L["Landing.Delivered"]</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1">@L["Landing.NewOrder"]</span>
-                                            <span class="font-monospace">TY-991</span>
-                                        </td>
-                                        <td>
-                                            @await Html.PartialAsync("~/Areas/Tenant/Views/Shared/_PlatformBadge.cshtml", ((object?)"TrendyolYemek", (string?)null))
-                                        </td>
-                                        <td class="text-end font-monospace">₺341,00</td>
-                                        <td><span class="badge bg-warning-subtle text-dark border">@L["Landing.Preparing"]</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-5 bg-white" id="platforms">
-        <div class="container">
-            <div class="row justify-content-center text-center mb-4">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.PlatformsTitle"]</h2>
-                    <p class="text-secondary mb-0">@L["Landing.PlatformsDescription"]</p>
-                </div>
-            </div>
-            <div class="d-flex flex-wrap justify-content-center gap-2 gap-md-3">
-                <span class="wasla-platform-pill">Yemeksepeti</span>
-                <span class="wasla-platform-pill">GetirYemek</span>
-                <span class="wasla-platform-pill">TrendyolYemek</span>
-                <span class="wasla-platform-pill">Trendyol GO</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-5 wasla-section-muted" id="how">
-        <div class="container">
-            <div class="row justify-content-center text-center mb-4">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.HowItWorksTitle"]</h2>
-                    <p class="text-secondary mb-0">@L["Landing.HowItWorksDescription"]</p>
-                </div>
-            </div>
-            <div class="wasla-flow-grid">
-                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
-                    <div class="wasla-step-num mb-2" aria-hidden="true">1</div>
-                    <h3 class="h6 fw-bold">@L["Landing.StepConnectionsTitle"]</h3>
-                    <p class="text-secondary small mb-0">@L["Landing.StepConnectionsDescription"]</p>
-                </div>
-                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
-                    <div class="wasla-step-num mb-2" aria-hidden="true">2</div>
-                    <h3 class="h6 fw-bold">@L["Landing.StepTrackTitle"]</h3>
-                    <p class="text-secondary small mb-0">@L["Landing.StepTrackDescription"]</p>
-                </div>
-                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
-                    <div class="wasla-step-num mb-2" aria-hidden="true">3</div>
-                    <h3 class="h6 fw-bold">@L["Landing.StepReviewTitle"]</h3>
-                    <p class="text-secondary small mb-0">@L["Landing.StepReviewDescription"]</p>
-                </div>
-                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
-                    <div class="wasla-step-num mb-2" aria-hidden="true">4</div>
-                    <h3 class="h6 fw-bold">@L["Landing.StepKitchenTitle"]</h3>
-                    <p class="text-secondary small mb-0">@L["Landing.StepKitchenDescription"]</p>
-                </div>
-                <div class="wasla-step-card h-100 border-0 bg-light rounded-4 p-4">
-                    <div class="wasla-step-num mb-2" aria-hidden="true">5</div>
-                    <h3 class="h6 fw-bold">@L["Landing.StepPrintTitle"]</h3>
-                    <p class="text-secondary small mb-0">@L["Landing.StepPrintDescription"]</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-5 bg-white" id="benefits">
-        <div class="container">
-            <div class="row justify-content-center text-center mb-4">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.ProblemsTitle"]</h2>
-                    <p class="text-secondary mb-0">@L["Landing.ProblemsDescription"]</p>
-                </div>
-            </div>
-            <div class="row g-3">
-                <div class="col-sm-6 col-lg-3">
-                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-collection" aria-hidden="true"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.ProblemUnifiedOrders"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.ProblemUnifiedOrdersDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-phone" aria-hidden="true"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.ProblemFewerDevices"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.ProblemFewerDevicesDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-check2-circle" aria-hidden="true"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.ProblemMissedOrders"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.ProblemMissedOrdersDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.ProblemKitchenCoordination"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.ProblemKitchenCoordinationDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-printer" aria-hidden="true"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.ProblemAutoPrint"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.ProblemAutoPrintDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-clock-history" aria-hidden="true"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.ProblemBusyHours"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.ProblemBusyHoursDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-layout-sidebar" aria-hidden="true"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.ProblemLessSwitching"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.ProblemLessSwitchingDescription"]</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="wasla-benefit-card h-100 border-0 bg-light rounded-4 p-4">
-                        <div class="wasla-benefit-icon mb-2"><i class="bi bi-eye" aria-hidden="true"></i></div>
-                        <h3 class="h6 fw-bold">@L["Landing.ProblemMonitorProcess"]</h3>
-                        <p class="text-secondary small mb-0">@L["Landing.ProblemMonitorProcessDescription"]</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-5 wasla-section-muted" id="audience">
-        <div class="container">
-            <div class="row justify-content-center text-center mb-4">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.WhoIsItForTitle"]</h2>
-                    <p class="text-secondary mb-0">@L["Landing.WhoIsItForDescription"]</p>
-                </div>
-            </div>
-            <div class="row g-2 g-md-3 justify-content-center">
-                <div class="col-sm-6 col-lg-4">
-                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
-                        <i class="bi bi-bag-check text-primary flex-shrink-0" aria-hidden="true"></i>
-                        <span class="small fw-semibold">@L["Landing.AudienceDelivery"]</span>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-4">
-                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
-                        <i class="bi bi-layers text-primary flex-shrink-0" aria-hidden="true"></i>
-                        <span class="small fw-semibold">@L["Landing.AudienceMultiPlatform"]</span>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-4">
-                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
-                        <i class="bi bi-building text-primary flex-shrink-0" aria-hidden="true"></i>
-                        <span class="small fw-semibold">@L["Landing.AudienceChains"]</span>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-4">
-                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
-                        <i class="bi bi-fire text-primary flex-shrink-0" aria-hidden="true"></i>
-                        <span class="small fw-semibold">@L["Landing.AudienceKitchenWorkflow"]</span>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-4">
-                    <div class="wasla-audience-item h-100 rounded-4 border bg-light px-3 py-3 d-flex align-items-center gap-2">
-                        <i class="bi bi-printer text-primary flex-shrink-0" aria-hidden="true"></i>
-                        <span class="small fw-semibold">@L["Landing.AudienceAutoPrint"]</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-5 bg-white" id="pricing">
-        <div class="container">
-            <div class="row justify-content-center text-center mb-4">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Pricing.Title"]</h2>
-                    <p class="text-secondary mb-0">@L["Pricing.Subtitle"]</p>
-                </div>
-            </div>
-            <div class="row g-4 justify-content-center">
-                @foreach (var plan in PlanCatalog.GetPublicPlans())
-                {
-                    <div class="col-md-6 col-xl-3">
-                        <div class="wasla-pricing-card h-100 d-flex flex-column @(plan.IsRecommended ? "wasla-pricing-card--featured" : "")">
-                            @if (plan.IsRecommended)
-                            {
-                                <div class="wasla-pricing-badge">@L["Pricing.Recommended"]</div>
-                            }
-                            <h3 class="h5 fw-bold mb-1">@L[plan.DisplayNameKey]</h3>
-                            <p class="text-secondary small mb-3">@L[plan.DescriptionKey]</p>
-                            <div class="wasla-pricing-price mb-2">
-                                <span class="wasla-pricing-amount">@L[plan.PriceLabelKey]</span>
-                            </div>
-                            <div class="wasla-pricing-device-limit small fw-semibold text-primary mb-3">
-                                <i class="bi bi-printer me-1" aria-hidden="true"></i>@L[plan.DeviceLimitKey]
-                            </div>
-                            <ul class="wasla-pricing-features list-unstyled small mb-4 flex-grow-1">
-                                @foreach (var featureKey in plan.FeatureKeys)
-                                {
-                                    <li><i class="bi bi-check2 text-success me-2" aria-hidden="true"></i>@L[featureKey]</li>
-                                }
-                            </ul>
-                            @if (plan.IsContactSales)
-                            {
-                                <a class="btn @(plan.IsRecommended ? "btn-primary" : "btn-outline-primary") w-100 rounded-pill mt-auto"
-                                   href="mailto:support@wasla.local">@L[plan.CtaLabelKey]</a>
-                            }
-                            else
-                            {
-                                <a class="btn @(plan.IsRecommended ? "btn-primary" : "btn-outline-primary") w-100 rounded-pill mt-auto"
-                                   asp-controller="Signup" asp-action="Index" asp-route-plan="@plan.PlanCode">
-                                    @L[plan.CtaLabelKey]
-                                </a>
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-            <p class="text-center text-muted small mt-4 mb-0">@L["Pricing.BillingNote"]</p>
-        </div>
-    </section>
-
-    <section class="py-5 wasla-section-muted" id="trust">
-        <div class="container">
-            <div class="row justify-content-center text-center">
-                <div class="col-lg-8">
-                    <div class="wasla-trust-bubble mx-auto p-4 p-md-5 bg-white rounded-4 shadow-sm border-0">
-                        <i class="bi bi-shield-check wasla-trust-icon d-block mb-3" aria-hidden="true"></i>
-                        <h2 class="h4 fw-bold mb-2">@L["Landing.TrustTitle"]</h2>
-                        <p class="text-secondary mb-0">@L["Landing.TrustDescription"]</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="wasla-cta-section py-5 text-white" id="cta">
-        <div class="container">
-            <div class="row justify-content-center text-center">
-                <div class="col-lg-8">
-                    <h2 class="h3 fw-bold mb-2">@L["Landing.FinalCtaTitle"]</h2>
-                    <p class="mb-4 opacity-90">@L["Landing.FinalCtaDescription"]</p>
-                    <div class="d-flex flex-wrap justify-content-center gap-2">
-                        <a class="btn btn-light btn-lg rounded-pill px-4" href="/signup">
-                            <i class="bi bi-rocket-takeoff me-2" aria-hidden="true"></i>@L["Landing.FinalCtaButton"]
-                        </a>
-                        <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="#pricing">
-                            @L["Pricing.ViewPlans"]
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-</main>
-
-<footer class="wasla-landing-footer border-top py-4">
-    <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="text-muted small">© @DateTime.UtcNow.Year Wasla</div>
-        <div class="small text-muted">@L["Landing.FooterTagline"]</div>
+        <p class="wm-note mt-4">@L["Marketing.Home.IntegrationsNote"]</p>
     </div>
-</footer>
+</section>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-</body>
-</html>
+<section class="wm-section wm-section--peach" id="which-product" aria-labelledby="routes-title">
+    <div class="wm-container">
+        <div class="wm-section-heading">
+            <h2 class="wm-h2" id="routes-title">@L["Marketing.Home.RoutesTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Home.RoutesLead"]</p>
+        </div>
+        <div class="wm-routes">
+            <div class="wm-route">
+                <div>
+                    <h3 class="wm-route__need">@L["Marketing.Home.RouteOrdersNeed"]</h3>
+                    <p class="wm-route__detail">@L["Marketing.Home.RouteOrdersDetail"]</p>
+                </div>
+                <span class="wm-route__line" aria-hidden="true"></span>
+                <p class="wm-route__product m-0"><span class="wm-icon-tile wm-icon-tile--s" aria-hidden="true"><i class="bi bi-display"></i></span>@L["Marketing.Product.Orders"]</p>
+                <a class="wm-btn wm-btn--tertiary wm-route__cta" href="#orders">@L["Marketing.Cta.ExploreOrders"] <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i></a>
+            </div>
+            <div class="wm-route">
+                <div>
+                    <h3 class="wm-route__need">@L["Marketing.Home.RoutePosNeed"]</h3>
+                    <p class="wm-route__detail">@L["Marketing.Home.RoutePosDetail"]</p>
+                </div>
+                <span class="wm-route__line" aria-hidden="true"></span>
+                <p class="wm-route__product m-0"><span class="wm-icon-tile wm-icon-tile--s wm-icon-tile--ink" aria-hidden="true"><i class="bi bi-grid-3x3-gap"></i></span>@L["Marketing.Product.Pos"] <span class="wm-soon">@L["Marketing.ComingSoon"]</span></p>
+                <a class="wm-btn wm-btn--tertiary wm-route__cta" href="@PublicSiteUrls.PosPath">@L["Marketing.Cta.ExplorePos"] <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i></a>
+            </div>
+            <div class="wm-route">
+                <div>
+                    <h3 class="wm-route__need">@L["Marketing.Home.RouteBothNeed"]</h3>
+                    <p class="wm-route__detail">@L["Marketing.Home.RouteBothDetail"]</p>
+                </div>
+                <span class="wm-route__line" aria-hidden="true"></span>
+                <p class="wm-route__product m-0"><span class="wm-icon-tile wm-icon-tile--s" aria-hidden="true"><i class="bi bi-shop"></i></span>@L["Marketing.Product.Family"]</p>
+                <a class="wm-btn wm-btn--secondary wm-btn--m wm-route__cta" href="@signupUrl">@L["Marketing.Cta.Start"]</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="wm-section wm-section--white" id="values" aria-labelledby="values-title">
+    <div class="wm-container">
+        <div class="wm-section-heading">
+            <h2 class="wm-h2" id="values-title">@L["Marketing.Home.ValuesTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Home.ValuesLead"]</p>
+        </div>
+        <div class="wm-values">
+            <div class="wm-value-feature">
+                <div>
+                    <span class="wm-icon-tile wm-icon-tile--l wm-icon-tile--raised" aria-hidden="true"><i class="bi bi-shop"></i></span>
+                    <h3 class="wm-value-feature__title">@L["Marketing.Home.ValueOperationTitle"]</h3>
+                    <p class="wm-value-feature__text">@L["Marketing.Home.ValueOperationText"]</p>
+                </div>
+                <div class="wm-status-row" aria-hidden="true">
+                    <span class="wm-status-chip wm-status-chip--new">@L["OrderStatus.New"]</span>
+                    <span class="wm-status-chip wm-status-chip--preparing">@L["OrderStatus.Preparing"]</span>
+                    <span class="wm-status-chip wm-status-chip--ready">@L["OrderStatus.ReadyForPickup"]</span>
+                </div>
+            </div>
+            <div class="wm-values__grid">
+                <div class="wm-value">
+                    <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-hand-index-thumb"></i></span>
+                    <h3 class="wm-h3">@L["Marketing.Home.ValueLearnTitle"]</h3>
+                    <p class="wm-text-s">@L["Marketing.Home.ValueLearnText"]</p>
+                </div>
+                <div class="wm-value wm-value--peach">
+                    <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
+                    <h3 class="wm-h3">@L["Marketing.Home.ValueLocalTitle"]</h3>
+                    <p class="wm-text-s">@L["Marketing.Home.ValueLocalText"]</p>
+                </div>
+                <div class="wm-value wm-value--peach">
+                    <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-headset"></i></span>
+                    <h3 class="wm-h3">@L["Marketing.Home.ValueSupportTitle"]</h3>
+                    <p class="wm-text-s">@L["Marketing.Home.ValueSupportText"]</p>
+                </div>
+                <div class="wm-value">
+                    <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span>
+                    <h3 class="wm-h3">@L["Marketing.Home.ValueFamilyTitle"]</h3>
+                    <p class="wm-text-s">@L["Marketing.Home.ValueFamilyText"]</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="wm-section wm-section--canvas" id="trust" aria-labelledby="trust-title">
+    <div class="wm-container wm-trust">
+        <div>
+            <h2 class="wm-h2" id="trust-title">@L["Marketing.Home.TrustTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Home.TrustLead"]</p>
+        </div>
+        <ul class="wm-trust__points">
+            <li class="wm-trust-item">
+                <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
+                <div><h3 class="wm-h3">@L["Marketing.Home.TrustRestaurantsTitle"]</h3><p class="wm-text-s">@L["Marketing.Home.TrustRestaurantsText"]</p></div>
+            </li>
+            <li class="wm-trust-item">
+                <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-plug"></i></span>
+                <div><h3 class="wm-h3">@L["Marketing.Home.TrustPlatformsTitle"]</h3><p class="wm-text-s">@L["Marketing.Home.TrustPlatformsText"]</p></div>
+            </li>
+            <li class="wm-trust-item">
+                <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-chat-dots"></i></span>
+                <div><h3 class="wm-h3">@L["Marketing.Home.TrustTurkishTitle"]</h3><p class="wm-text-s">@L["Marketing.Home.TrustTurkishText"]</p></div>
+            </li>
+            <li class="wm-trust-item" id="print-bridge">
+                <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-printer"></i></span>
+                <div><h3 class="wm-h3">@L["Marketing.Product.PrintBridge"]</h3><p class="wm-text-s">@L["Marketing.Home.TrustPrintBridgeText"]</p></div>
+            </li>
+            <li class="wm-trust-item">
+                <span class="wm-icon-tile wm-icon-tile--white" aria-hidden="true"><i class="bi bi-globe2"></i></span>
+                <div><h3 class="wm-h3">@L["Marketing.Home.TrustLanguagesTitle"]</h3><p class="wm-text-s">@L["Marketing.Home.TrustLanguagesText"]</p></div>
+            </li>
+        </ul>
+    </div>
+</section>
+
+<section class="wm-section wm-section--white" id="pricing" aria-labelledby="pricing-title">
+    <div class="wm-container">
+        <div class="wm-section-heading">
+            <h2 class="wm-h2" id="pricing-title">@L["Pricing.Title"]</h2>
+            <p class="wm-lead">@L["Pricing.Subtitle"]</p>
+        </div>
+        <div class="wm-pricing">
+            @foreach (var plan in PlanCatalog.GetPublicPlans())
+            {
+                <article class="wm-plan@(plan.IsRecommended ? " wm-plan--featured" : string.Empty)" aria-labelledby="plan-@plan.PlanCode">
+                    @if (plan.IsRecommended)
+                    {
+                        <span class="wm-badge wm-badge--orange wm-plan__badge">@L["Pricing.Recommended"]</span>
+                    }
+                    <h3 class="wm-plan__name" id="plan-@plan.PlanCode">@L[plan.DisplayNameKey]</h3>
+                    <p class="wm-text-s">@L[plan.DescriptionKey]</p>
+                    <p class="wm-plan__price">@L[plan.PriceLabelKey]</p>
+                    <p class="wm-plan__devices"><i class="bi bi-printer" aria-hidden="true"></i> @L[plan.DeviceLimitKey]</p>
+                    <ul class="wm-checks">
+                        @foreach (var featureKey in plan.FeatureKeys)
+                        {
+                            <li>@L[featureKey]</li>
+                        }
+                    </ul>
+                    @if (plan.IsContactSales)
+                    {
+                        @* No sales mailbox is published yet; the confirmed Instagram account is the contact channel. *@
+                        <a class="wm-btn wm-btn--secondary" href="@PublicSiteUrls.InstagramUrl" rel="noopener">@L["Marketing.Cta.ContactInstagram"]</a>
+                    }
+                    else
+                    {
+                        <a class="wm-btn @(plan.IsRecommended ? "wm-btn--primary" : "wm-btn--secondary")"
+                           asp-controller="Signup" asp-action="Index" asp-route-plan="@plan.PlanCode">@L[plan.CtaLabelKey]</a>
+                    }
+                </article>
+            }
+        </div>
+        <p class="wm-pricing__note">@L["Pricing.BillingNote"]</p>
+    </div>
+</section>
+
+@await Html.PartialAsync("_MarketingCtaPanel", new MarketingCtaPanelModel(
+    "home-final-title",
+    L["Marketing.Home.FinalTitle"].Value,
+    L["Marketing.Home.FinalLead"].Value,
+    new[]
+    {
+        new MarketingLink(L["Marketing.Cta.Start"].Value, signupUrl, MarketingLinkStyle.Primary),
+        new MarketingLink(L["Marketing.Cta.ExplorePos"].Value, PublicSiteUrls.PosPath, MarketingLinkStyle.SecondaryOnDark),
+        new MarketingLink(L["Marketing.Cta.ViewPlans"].Value, "#pricing", MarketingLinkStyle.TertiaryOnDark)
+    }))

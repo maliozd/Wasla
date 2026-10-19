@@ -21,6 +21,8 @@ Wasla POS is intended for in-restaurant workflows such as tables, dine-in and ta
 
 This description records the product boundary. It does not claim that these features are implemented in the current solution.
 
+The public `/pos` page (WAS-155) is marketing for this direction only: it presents Wasla POS as coming soon, labels its screens as concept interface and offers no purchase or sign-up for it. It adds no POS module or behaviour to this solution.
+
 ## Sharing between products
 
 The products may share capabilities when an actual cross-product requirement exists, including:

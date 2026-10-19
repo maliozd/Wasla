@@ -279,53 +279,14 @@
   <data name="Layout.TenantNavigation" xml:space="preserve">
     <value>Restaurant menu</value>
   </data>
-  <data name="Landing.Title" xml:space="preserve">
-    <value>Wasla</value>
-  </data>
   <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
-  </data>
-  <data name="Landing.Subtitle" xml:space="preserve">
-    <value>Multi-platform order management</value>
   </data>
   <data name="Landing.CustomerLogin" xml:space="preserve">
     <value>Customer Login</value>
   </data>
   <data name="Landing.AdminLogin" xml:space="preserve">
     <value>Admin Login</value>
-  </data>
-  <data name="Landing.SinglePanel" xml:space="preserve">
-    <value>Single Panel</value>
-  </data>
-  <data name="Landing.SinglePanelDescription" xml:space="preserve">
-    <value>All platform orders in one place</value>
-  </data>
-  <data name="Landing.EasyManagement" xml:space="preserve">
-    <value>Easy Management</value>
-  </data>
-  <data name="Landing.EasyManagementDescription" xml:space="preserve">
-    <value>Manage branches and connections easily</value>
-  </data>
-  <data name="Landing.LiveTracking" xml:space="preserve">
-    <value>Live Tracking</value>
-  </data>
-  <data name="Landing.LiveTrackingDescription" xml:space="preserve">
-    <value>Track order flow and status changes</value>
-  </data>
-  <data name="Landing.HeroBadge" xml:space="preserve">
-    <value>SaaS • Restaurant • Operations</value>
-  </data>
-  <data name="Landing.HeroTitle" xml:space="preserve">
-    <value>Manage your restaurant orders from one screen.</value>
-  </data>
-  <data name="Landing.HeroDescription" xml:space="preserve">
-    <value>View, track and manage orders from Yemeksepeti, Getir and Trendyol in one panel.</value>
-  </data>
-  <data name="Landing.HeroSubtitle" xml:space="preserve">
-    <value>Track Yemeksepeti, GetirYemek and TrendyolYemek orders from a single panel. See new orders instantly, receive sound notifications, and simplify restaurant operations.</value>
-  </data>
-  <data name="Landing.TenantNote" xml:space="preserve">
-    <value>Customer login works through the restaurant domain assigned to you.</value>
   </data>
   <data name="Landing.FooterTagline" xml:space="preserve">
     <value>Modern order management for operations teams</value>
@@ -1221,356 +1182,8 @@
   <data name="Validation.AddressRequired" xml:space="preserve">
     <value>Address is required.</value>
   </data>
-  <data name="Landing.Order" xml:space="preserve">
-    <value>Order</value>
-  </data>
-  <data name="Landing.Endorsement" xml:space="preserve">
-    <value>Endorsement</value>
-  </data>
-  <data name="Landing.Preparing" xml:space="preserve">
-    <value>Preparing</value>
-  </data>
-  <data name="Landing.OnTheRoad" xml:space="preserve">
-    <value>On the Road</value>
-  </data>
-  <data name="Landing.OrdersToday" xml:space="preserve">
-    <value>Orders Today</value>
-  </data>
-  <data name="Landing.Live" xml:space="preserve">
-    <value>Live</value>
-  </data>
-  <data name="Landing.PlatformsTitle" xml:space="preserve">
-    <value>Platform orders in one panel</value>
-  </data>
-  <data name="Landing.PlatformsDescription" xml:space="preserve">
-    <value>Orders from different food platforms are collected in one panel.</value>
-  </data>
-  <data name="Landing.HowItWorksTitle" xml:space="preserve">
-    <value>How it works</value>
-  </data>
-  <data name="Landing.HowItWorksDescription" xml:space="preserve">
-    <value>Five steps from online orders to the kitchen and automatic receipt printing.</value>
-  </data>
-  <data name="Landing.Step1Title" xml:space="preserve">
-    <value>Define platform connections</value>
-  </data>
-  <data name="Landing.Step1Description" xml:space="preserve">
-    <value>Connect your restaurant’s marketplace accounts in one place.</value>
-  </data>
-  <data name="Landing.Step2Title" xml:space="preserve">
-    <value>Track orders from one screen</value>
-  </data>
-  <data name="Landing.Step2Description" xml:space="preserve">
-    <value>See new and in-progress orders without switching between systems.</value>
-  </data>
-  <data name="Landing.Step3Title" xml:space="preserve">
-    <value>Get sound and visual notifications</value>
-  </data>
-  <data name="Landing.Step3Description" xml:space="preserve">
-    <value>Be alerted the moment a new order arrives, even during peak hours.</value>
-  </data>
-  <data name="Landing.Step4Title" xml:space="preserve">
-    <value>Run restaurant operations with clarity</value>
-  </data>
-  <data name="Landing.Step4Description" xml:space="preserve">
-    <value>Branches, staff, and platforms stay aligned with one consistent workflow.</value>
-  </data>
-  <data name="Landing.FeaturesTitle" xml:space="preserve">
-    <value>Features</value>
-  </data>
-  <data name="Landing.FeaturesDescription" xml:space="preserve">
-    <value>Everything you need to manage marketplaces, branches, and teams in one system.</value>
-  </data>
-  <data name="Landing.FeatureSinglePanel" xml:space="preserve">
-    <value>Single-panel order management</value>
-  </data>
-  <data name="Landing.FeatureSinglePanelDescription" xml:space="preserve">
-    <value>All channels in one list with live status and details.</value>
-  </data>
-  <data name="Landing.FeatureLiveTracking" xml:space="preserve">
-    <value>Live order tracking</value>
-  </data>
-  <data name="Landing.FeatureLiveTrackingDescription" xml:space="preserve">
-    <value>See where every order is from acceptance to handoff.</value>
-  </data>
-  <data name="Landing.FeatureNotifications" xml:space="preserve">
-    <value>New order notifications</value>
-  </data>
-  <data name="Landing.FeatureNotificationsDescription" xml:space="preserve">
-    <value>Don’t miss orders during busy rushes with clear alerts.</value>
-  </data>
-  <data name="Landing.FeatureBranchManagement" xml:space="preserve">
-    <value>Branch management</value>
-  </data>
-  <data name="Landing.FeatureBranchManagementDescription" xml:space="preserve">
-    <value>Organize multiple locations and teams from one place.</value>
-  </data>
-  <data name="Landing.FeaturePlatformConnections" xml:space="preserve">
-    <value>Platform connections</value>
-  </data>
-  <data name="Landing.FeaturePlatformConnectionsDescription" xml:space="preserve">
-    <value>Connect major delivery marketplaces and grow without extra chaos.</value>
-  </data>
-  <data name="Landing.FeatureMultilingual" xml:space="preserve">
-    <value>Multilingual interface</value>
-  </data>
-  <data name="Landing.FeatureMultilingualDescription" xml:space="preserve">
-    <value>Work in the language that fits your team, including right-to-left support.</value>
-  </data>
-  <data name="Landing.FeatureAdminPanel" xml:space="preserve">
-    <value>Admin panel</value>
-  </data>
-  <data name="Landing.FeatureAdminPanelDescription" xml:space="preserve">
-    <value>System administration, security, and configuration in a dedicated area.</value>
-  </data>
-  <data name="Landing.FeatureSeparateDatabases" xml:space="preserve">
-    <value>Separate database per customer</value>
-  </data>
-  <data name="Landing.FeatureSeparateDatabasesDescription" xml:space="preserve">
-    <value>Each restaurant’s data stays isolated for privacy and performance.</value>
-  </data>
-  <data name="Landing.BenefitsTitle" xml:space="preserve">
-    <value>Simplify restaurant operations</value>
-  </data>
-  <data name="Landing.BenefitsDescription" xml:space="preserve">
-    <value>Practical benefits for kitchen and front-of-house teams.</value>
-  </data>
-  <data name="Landing.BenefitLessSwitching" xml:space="preserve">
-    <value>Less switching between platform screens</value>
-  </data>
-  <data name="Landing.BenefitLessSwitchingDescription" xml:space="preserve">
-    <value>You do not have to keep jumping between different platform dashboards all day.</value>
-  </data>
-  <data name="Landing.BenefitFewerMissedOrders" xml:space="preserve">
-    <value>Lower risk of missed orders</value>
-  </data>
-  <data name="Landing.BenefitFewerMissedOrdersDescription" xml:space="preserve">
-    <value>Consolidated visibility and alerts help nothing slip through.</value>
-  </data>
-  <data name="Landing.BenefitBranchTracking" xml:space="preserve">
-    <value>Track orders by branch and platform</value>
-  </data>
-  <data name="Landing.BenefitBranchTrackingDescription" xml:space="preserve">
-    <value>Follow orders by platform and branch in a more organized way.</value>
-  </data>
-  <data name="Landing.BenefitSimpleInterface" xml:space="preserve">
-    <value>Simple for restaurant teams</value>
-  </data>
-  <data name="Landing.BenefitSimpleInterfaceDescription" xml:space="preserve">
-    <value>An interface designed for speed during service, not slow office work.</value>
-  </data>
-  <data name="Landing.VisualTitle" xml:space="preserve">
-    <value>From kitchen to handoff</value>
-  </data>
-  <data name="Landing.VisualDescription" xml:space="preserve">
-    <value>Visual cues that match how orders move through a real service flow.</value>
-  </data>
-  <data name="Landing.CtaTitle" xml:space="preserve">
-    <value>Sign in to your customer panel</value>
-  </data>
-  <data name="Landing.CtaDescription" xml:space="preserve">
-    <value>Customer login works only through the domain assigned to your restaurant.</value>
-  </data>
-  <data name="Landing.MockupTitle" xml:space="preserve">
-    <value>Live orders screen</value>
-  </data>
-  <data name="Landing.MockupSubtitle" xml:space="preserve">
-    <value>See new orders in one table, follow statuses, and get sound notifications.</value>
-  </data>
-  <data name="Landing.TrustTitle" xml:space="preserve">
-    <value>Each restaurant’s data is managed separately</value>
-  </data>
-  <data name="Landing.TrustDescription" xml:space="preserve">
-    <value>Your operations stay in a dedicated space—secure and under your control.</value>
-  </data>
-  <data name="Landing.FinalCtaTitle" xml:space="preserve">
-    <value>Connect online orders with your kitchen operations</value>
-  </data>
-  <data name="Landing.FinalCtaDescription" xml:space="preserve">
-    <value>Wasla links online ordering platforms with your restaurant operations. It brings orders onto one screen, simplifies the kitchen flow, and prints receipts automatically.</value>
-  </data>
-  <data name="Landing.FinalCtaButton" xml:space="preserve">
-    <value>Start for Free</value>
-  </data>
-  <data name="Landing.NewOrder" xml:space="preserve">
-    <value>New</value>
-  </data>
-  <data name="Landing.Delivered" xml:space="preserve">
-    <value>Delivered</value>
-  </data>
-  <data name="Landing.SoundNotification" xml:space="preserve">
-    <value>Sound notification</value>
-  </data>
-  <data name="Landing.BenefitMissedOrders" xml:space="preserve">
-    <value>Reduce missed orders</value>
-  </data>
-  <data name="Landing.BenefitMissedOrdersDescription" xml:space="preserve">
-    <value>See new orders immediately and act fast with clear sound alerts.</value>
-  </data>
-  <data name="Landing.BenefitSimpleOperation" xml:space="preserve">
-    <value>Simple operations screen</value>
-  </data>
-  <data name="Landing.BenefitSimpleOperationDescription" xml:space="preserve">
-    <value>A clear order view your restaurant team can use during a busy service.</value>
-  </data>
-  <data name="Landing.StepConnectionsTitle" xml:space="preserve">
-    <value>Platforms connect to Wasla</value>
-  </data>
-  <data name="Landing.StepConnectionsDescription" xml:space="preserve">
-    <value>The food-ordering platforms you use are integrated with Wasla.</value>
-  </data>
-  <data name="Landing.StepTrackTitle" xml:space="preserve">
-    <value>Orders appear on one screen</value>
-  </data>
-  <data name="Landing.StepTrackDescription" xml:space="preserve">
-    <value>Incoming orders are listed instantly on a single management screen.</value>
-  </data>
-  <data name="Landing.StepNotifyTitle" xml:space="preserve">
-    <value>Get notified on new orders</value>
-  </data>
-  <data name="Landing.StepNotifyDescription" xml:space="preserve">
-    <value>Hear and see when a new order lands—especially during rushes.</value>
-  </data>
-  <data name="Landing.StepManageTitle" xml:space="preserve">
-    <value>Run service with more clarity</value>
-  </data>
-  <data name="Landing.StepManageDescription" xml:space="preserve">
-    <value>Stay in control across platforms, branches, and order statuses.</value>
-  </data>
-  <data name="Landing.CustomerOnlyTitle" xml:space="preserve">
-    <value>Customer panel is only on your restaurant domain</value>
-  </data>
-  <data name="Landing.CustomerOnlyDescription" xml:space="preserve">
-    <value>The public site does not host customer login. Use the address you were given.</value>
-  </data>
-  <data name="Landing.CustomerOnlyHelp" xml:space="preserve">
-    <value>Open the private login link for your business — usually a subdomain on your operator’s domain.</value>
-  </data>
-  <data name="Landing.CustomerOnlyExample" xml:space="preserve">
-    <value>Example: companyname.wasla.local/auth/login</value>
-  </data>
   <data name="Landing.BackToHome" xml:space="preserve">
     <value>Back to home</value>
-  </data>
-  <data name="Landing.HeroImageAlt" xml:space="preserve">
-    <value>Chefs working in a bright restaurant kitchen</value>
-  </data>
-  <data name="Landing.VisualImageAlt1" xml:space="preserve">
-    <value>Team preparing food in a restaurant kitchen</value>
-  </data>
-  <data name="Landing.VisualImageAlt2" xml:space="preserve">
-    <value>Plated food ready to be packed for delivery</value>
-  </data>
-  <data name="Landing.VisualImageAlt3" xml:space="preserve">
-    <value>Packaged order handoff at a service counter</value>
-  </data>
-  <data name="Landing.MetaDescription" xml:space="preserve">
-    <value>Wasla is a cloud-based online order management system for restaurant order management. It brings orders from food-ordering platforms onto one screen, with a kitchen order display and automatic receipt printing.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaTitle" xml:space="preserve">
-    <value>What is Wasla?</value>
-  </data>
-  <data name="Landing.WhatIsWaslaLead" xml:space="preserve">
-    <value>A cloud-based restaurant order management system that lets you manage orders from different food-ordering platforms on a single screen.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaProblem" xml:space="preserve">
-    <value>Restaurants working with several ordering platforms usually have to follow multiple tablets, devices, and separate workflows at the same time.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaSolution" xml:space="preserve">
-    <value>Wasla brings these order flows together and makes day-to-day operations easier to manage.</value>
-  </data>
-  <data name="Landing.StepReviewTitle" xml:space="preserve">
-    <value>Staff review and manage orders</value>
-  </data>
-  <data name="Landing.StepReviewDescription" xml:space="preserve">
-    <value>Restaurant staff review, confirm, and manage each order in the daily flow.</value>
-  </data>
-  <data name="Landing.StepKitchenTitle" xml:space="preserve">
-    <value>Kitchen follows preparation</value>
-  </data>
-  <data name="Landing.StepKitchenDescription" xml:space="preserve">
-    <value>The kitchen team tracks preparation on a clear kitchen order display.</value>
-  </data>
-  <data name="Landing.StepPrintTitle" xml:space="preserve">
-    <value>Receipts print automatically</value>
-  </data>
-  <data name="Landing.StepPrintDescription" xml:space="preserve">
-    <value>Wasla Print Bridge sends the receipt to your configured printer automatically.</value>
-  </data>
-  <data name="Landing.ProblemsTitle" xml:space="preserve">
-    <value>What problem does Wasla solve?</value>
-  </data>
-  <data name="Landing.ProblemsDescription" xml:space="preserve">
-    <value>A restaurant order tracking system focused on practical challenges in daily operations.</value>
-  </data>
-  <data name="Landing.ProblemUnifiedOrders" xml:space="preserve">
-    <value>Orders collected in one place</value>
-  </data>
-  <data name="Landing.ProblemUnifiedOrdersDescription" xml:space="preserve">
-    <value>Orders from different platforms come together in a single list.</value>
-  </data>
-  <data name="Landing.ProblemFewerDevices" xml:space="preserve">
-    <value>Less device monitoring</value>
-  </data>
-  <data name="Landing.ProblemFewerDevicesDescription" xml:space="preserve">
-    <value>You need to watch fewer tablets and devices at the same time.</value>
-  </data>
-  <data name="Landing.ProblemMissedOrders" xml:space="preserve">
-    <value>Lower risk of missed orders</value>
-  </data>
-  <data name="Landing.ProblemMissedOrdersDescription" xml:space="preserve">
-    <value>With every channel on one screen, orders are less likely to be overlooked.</value>
-  </data>
-  <data name="Landing.ProblemKitchenCoordination" xml:space="preserve">
-    <value>Easier kitchen coordination</value>
-  </data>
-  <data name="Landing.ProblemKitchenCoordinationDescription" xml:space="preserve">
-    <value>Kitchen and order management move forward more clearly in the same flow.</value>
-  </data>
-  <data name="Landing.ProblemAutoPrint" xml:space="preserve">
-    <value>Automatic receipt printing</value>
-  </data>
-  <data name="Landing.ProblemAutoPrintDescription" xml:space="preserve">
-    <value>Receipts are sent to the printer automatically through Wasla Print Bridge.</value>
-  </data>
-  <data name="Landing.ProblemBusyHours" xml:space="preserve">
-    <value>More organized busy hours</value>
-  </data>
-  <data name="Landing.ProblemBusyHoursDescription" xml:space="preserve">
-    <value>During peak demand, the process stays more controlled and organized.</value>
-  </data>
-  <data name="Landing.ProblemLessSwitching" xml:space="preserve">
-    <value>Less switching between devices</value>
-  </data>
-  <data name="Landing.ProblemLessSwitchingDescription" xml:space="preserve">
-    <value>Staff spend less time moving between different screens.</value>
-  </data>
-  <data name="Landing.ProblemMonitorProcess" xml:space="preserve">
-    <value>Easier order process monitoring</value>
-  </data>
-  <data name="Landing.ProblemMonitorProcessDescription" xml:space="preserve">
-    <value>Following the order flow from one screen becomes simpler.</value>
-  </data>
-  <data name="Landing.WhoIsItForTitle" xml:space="preserve">
-    <value>Who is it for?</value>
-  </data>
-  <data name="Landing.WhoIsItForDescription" xml:space="preserve">
-    <value>Wasla is a good fit for:</value>
-  </data>
-  <data name="Landing.AudienceDelivery" xml:space="preserve">
-    <value>Restaurants offering delivery or takeaway</value>
-  </data>
-  <data name="Landing.AudienceMultiPlatform" xml:space="preserve">
-    <value>Businesses using multiple online ordering platforms</value>
-  </data>
-  <data name="Landing.AudienceChains" xml:space="preserve">
-    <value>Restaurant chains that want centralized order management</value>
-  </data>
-  <data name="Landing.AudienceKitchenWorkflow" xml:space="preserve">
-    <value>Businesses that want to improve kitchen workflow</value>
-  </data>
-  <data name="Landing.AudienceAutoPrint" xml:space="preserve">
-    <value>Restaurants that need automatic receipt printing</value>
   </data>
   <data name="PlatformConnections.ErrorCount" xml:space="preserve">
     <value>Consecutive errors</value>
@@ -3222,7 +2835,6 @@
   <data name="Pricing.NavTitle" xml:space="preserve"><value>Pricing</value></data>
   <data name="Pricing.Title" xml:space="preserve"><value>Choose the plan that fits your business</value></data>
   <data name="Pricing.Subtitle" xml:space="preserve"><value>Connect your restaurant to online order platforms from one place. Payment integration coming soon.</value></data>
-  <data name="Pricing.ViewPlans" xml:space="preserve"><value>View Plans</value></data>
   <data name="Pricing.Recommended" xml:space="preserve"><value>Recommended</value></data>
   <data name="Pricing.PerMonth" xml:space="preserve"><value>month</value></data>
   <data name="Pricing.Monthly" xml:space="preserve"><value>Monthly</value></data>
@@ -3272,7 +2884,6 @@
   <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>Custom integrations</value></data>
   <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Custom setup and support</value></data>
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Custom agreement and limits</value></data>
-  <data name="Signup.StartNow" xml:space="preserve"><value>Start Now</value></data>
   <data name="Signup.Title" xml:space="preserve"><value>Create your Wasla account</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Connect your restaurant to online order platforms and manage everything in one place.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>Choose plan</value></data>
@@ -4255,4 +3866,247 @@
   <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>Some print jobs failed in the last 24 hours. The owner can check the printer on the Print Bridge computer.</value></data>
   <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>The linked signup registration is not marked provisioned. Open it to review its state; do not change it by hand.</value></data>
   <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Nothing needs attention right now.</value></data>
+  <data name="Marketing.SkipToContent" xml:space="preserve"><value>Skip to content</value></data>
+  <data name="Marketing.ComingSoon" xml:space="preserve"><value>Coming soon</value></data>
+  <data name="Marketing.ConceptUi" xml:space="preserve"><value>Concept interface: Wasla POS is not available yet.</value></data>
+  <data name="Marketing.Nav.Label" xml:space="preserve"><value>Main menu</value></data>
+  <data name="Marketing.Nav.OpenMenu" xml:space="preserve"><value>Open menu</value></data>
+  <data name="Marketing.Nav.CloseMenu" xml:space="preserve"><value>Close menu</value></data>
+  <data name="Marketing.Nav.Products" xml:space="preserve"><value>Products</value></data>
+  <data name="Marketing.Nav.Integrations" xml:space="preserve"><value>Integrations</value></data>
+  <data name="Marketing.Nav.Login" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Marketing.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Marketing.Product.OrdersShort" xml:space="preserve"><value>Online orders</value></data>
+  <data name="Marketing.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Marketing.Product.PosShort" xml:space="preserve"><value>In-restaurant sales</value></data>
+  <data name="Marketing.Product.PrintBridge" xml:space="preserve"><value>Wasla Print Bridge</value></data>
+  <data name="Marketing.Product.Family" xml:space="preserve"><value>Wasla product family</value></data>
+  <data name="Marketing.Cta.Start" xml:space="preserve"><value>Get started</value></data>
+  <data name="Marketing.Cta.ExploreProducts" xml:space="preserve"><value>Explore the products</value></data>
+  <data name="Marketing.Cta.ExploreOrders" xml:space="preserve"><value>Explore Wasla Orders</value></data>
+  <data name="Marketing.Cta.ExplorePos" xml:space="preserve"><value>Explore Wasla POS</value></data>
+  <data name="Marketing.Cta.ExplorePosFeatures" xml:space="preserve"><value>Explore POS features</value></data>
+  <data name="Marketing.Cta.ViewPlans" xml:space="preserve"><value>View plans</value></data>
+  <data name="Marketing.Cta.FollowInstagram" xml:space="preserve"><value>Follow updates on Instagram</value></data>
+  <data name="Marketing.Cta.ContactInstagram" xml:space="preserve"><value>Contact us on Instagram</value></data>
+  <data name="Marketing.Footer.Tagline" xml:space="preserve"><value>Online order management and in-restaurant sales software for restaurants.</value></data>
+  <data name="Marketing.Footer.GetStarted" xml:space="preserve"><value>Get started</value></data>
+  <data name="Marketing.Footer.Contact" xml:space="preserve"><value>Contact</value></data>
+  <data name="Marketing.Footer.InstagramLabel" xml:space="preserve"><value>Instagram: {0}</value></data>
+  <data name="Marketing.Footer.Copyright" xml:space="preserve"><value>© {0} Wasla. All rights reserved.</value></data>
+  <data name="Marketing.Home.MetaTitle" xml:space="preserve"><value>Wasla — Online ordering and sales software for restaurants</value></data>
+  <data name="Marketing.Home.MetaDescription" xml:space="preserve"><value>Manage online platform orders on one screen with Wasla Orders, with a Live Screen and automatic receipt printing. Wasla POS for in-restaurant sales is coming soon.</value></data>
+  <data name="Marketing.Home.HeroTitle" xml:space="preserve"><value>Your whole restaurant operation, in one place:</value></data>
+  <data name="Marketing.Home.HeroTitleAccent" xml:space="preserve"><value>Wasla.</value></data>
+  <data name="Marketing.Home.HeroLead" xml:space="preserve"><value>Manage your online platform orders with Wasla Orders today; Wasla POS for in-restaurant sales is coming soon. Smoother service, faster operations and one product family.</value></data>
+  <data name="Marketing.Home.ProductsTitle" xml:space="preserve"><value>Two products, one restaurant operation.</value></data>
+  <data name="Marketing.Home.ProductsLead" xml:space="preserve"><value>Wasla Orders for online orders, Wasla POS for in-restaurant sales. One brand, one design language, one support team.</value></data>
+  <data name="Marketing.Home.OrdersTagline" xml:space="preserve"><value>The centre of your online order management.</value></data>
+  <data name="Marketing.Home.OrdersFeature1" xml:space="preserve"><value>Platform orders</value></data>
+  <data name="Marketing.Home.OrdersFeature2" xml:space="preserve"><value>Live Screen</value></data>
+  <data name="Marketing.Home.OrdersFeature3" xml:space="preserve"><value>Automatic receipt printing</value></data>
+  <data name="Marketing.Home.OrdersFeature4" xml:space="preserve"><value>Order history</value></data>
+  <data name="Marketing.Home.IntegrationsNote" xml:space="preserve"><value>Yemeksepeti, Trendyol GO and GetirYemek integrations are being rolled out step by step; not every platform connection is live yet.</value></data>
+  <data name="Marketing.Home.PosTagline" xml:space="preserve"><value>A fast, modern POS for in-restaurant sales.</value></data>
+  <data name="Marketing.Home.PosFeature1" xml:space="preserve"><value>Table and takeaway orders</value></data>
+  <data name="Marketing.Home.PosFeature2" xml:space="preserve"><value>Touch-first use</value></data>
+  <data name="Marketing.Home.PosFeature3" xml:space="preserve"><value>Menu and payment flow</value></data>
+  <data name="Marketing.Home.PosFeature4" xml:space="preserve"><value>In-restaurant operations</value></data>
+  <data name="Marketing.Home.ChannelsTitle" xml:space="preserve"><value>Your orders arrive through two channels.</value></data>
+  <data name="Marketing.Home.ChannelsLead" xml:space="preserve"><value>Online platform orders come together in Wasla Orders; Wasla POS for table and counter sales is coming soon. Both are designed to work for the same kitchen.</value></data>
+  <data name="Marketing.Home.ChannelOnlineTitle" xml:space="preserve"><value>Online platforms</value></data>
+  <data name="Marketing.Home.ChannelOnlineDesc" xml:space="preserve"><value>Courier and delivery orders</value></data>
+  <data name="Marketing.Home.ChannelOnlineFoot" xml:space="preserve"><value>Collected in Wasla Orders</value></data>
+  <data name="Marketing.Home.ChannelInStoreTitle" xml:space="preserve"><value>In-restaurant sales</value></data>
+  <data name="Marketing.Home.ChannelInStoreDesc" xml:space="preserve"><value>Tables, takeaway, pickup and counter</value></data>
+  <data name="Marketing.Home.ChannelInStoreFoot" xml:space="preserve"><value>Taken in Wasla POS</value></data>
+  <data name="Marketing.Home.SameKitchen" xml:space="preserve"><value>One kitchen</value></data>
+  <data name="Marketing.Home.ReceiptAndPrinter" xml:space="preserve"><value>Receipts and printer</value></data>
+  <data name="Marketing.Home.RoutesTitle" xml:space="preserve"><value>Which product fits you?</value></data>
+  <data name="Marketing.Home.RoutesLead" xml:space="preserve"><value>Start with what you need; the product family can grow with your restaurant.</value></data>
+  <data name="Marketing.Home.RouteOrdersNeed" xml:space="preserve"><value>I only want to manage online platform orders.</value></data>
+  <data name="Marketing.Home.RouteOrdersDetail" xml:space="preserve"><value>Designed to bring Yemeksepeti, Trendyol GO and GetirYemek orders onto one screen.</value></data>
+  <data name="Marketing.Home.RoutePosNeed" xml:space="preserve"><value>I want in-restaurant sales and table management.</value></data>
+  <data name="Marketing.Home.RoutePosDetail" xml:space="preserve"><value>A touch POS for table, takeaway, pickup and counter sales; coming soon.</value></data>
+  <data name="Marketing.Home.RouteBothNeed" xml:space="preserve"><value>I want to grow both operations together.</value></data>
+  <data name="Marketing.Home.RouteBothDetail" xml:space="preserve"><value>Start with Wasla Orders today and continue with the same product family when Wasla POS is ready.</value></data>
+  <data name="Marketing.Home.ValuesTitle" xml:space="preserve"><value>The approach both products share.</value></data>
+  <data name="Marketing.Home.ValuesLead" xml:space="preserve"><value>Wasla products are designed on the same principles.</value></data>
+  <data name="Marketing.Home.ValueOperationTitle" xml:space="preserve"><value>Designed for restaurant operations</value></data>
+  <data name="Marketing.Home.ValueOperationText" xml:space="preserve"><value>Screens are built for the kitchen, the counter and service: readable from a distance and quick to use at rush hour.</value></data>
+  <data name="Marketing.Home.ValueLearnTitle" xml:space="preserve"><value>Quick to learn</value></data>
+  <data name="Marketing.Home.ValueLearnText" xml:space="preserve"><value>Simple screens, so a new team member can handle the basics on their first shift.</value></data>
+  <data name="Marketing.Home.ValueLocalTitle" xml:space="preserve"><value>Focused on local needs</value></data>
+  <data name="Marketing.Home.ValueLocalText" xml:space="preserve"><value>Ordering platforms in Türkiye, delivery and Turkish-language use come first.</value></data>
+  <data name="Marketing.Home.ValueSupportTitle" xml:space="preserve"><value>Setup and support</value></data>
+  <data name="Marketing.Home.ValueSupportText" xml:space="preserve"><value>We set things up together and stay with you while you use it.</value></data>
+  <data name="Marketing.Home.ValueFamilyTitle" xml:space="preserve"><value>A product family that grows</value></data>
+  <data name="Marketing.Home.ValueFamilyText" xml:space="preserve"><value>Wasla is growing into a product family that reaches from online orders to in-restaurant sales.</value></data>
+  <data name="Marketing.Home.TrustTitle" xml:space="preserve"><value>Built for restaurants in Türkiye.</value></data>
+  <data name="Marketing.Home.TrustLead" xml:space="preserve"><value>We will share customer reviews and figures once we have real data. What we can say today:</value></data>
+  <data name="Marketing.Home.TrustRestaurantsTitle" xml:space="preserve"><value>For restaurant operations in Türkiye</value></data>
+  <data name="Marketing.Home.TrustRestaurantsText" xml:space="preserve"><value>Designed with the delivery kitchen, the counter and table service in mind.</value></data>
+  <data name="Marketing.Home.TrustPlatformsTitle" xml:space="preserve"><value>Focused on local ordering platforms</value></data>
+  <data name="Marketing.Home.TrustPlatformsText" xml:space="preserve"><value>We are working on Yemeksepeti, Trendyol GO and GetirYemek connections; integrations are being rolled out step by step.</value></data>
+  <data name="Marketing.Home.TrustTurkishTitle" xml:space="preserve"><value>Turkish product and support</value></data>
+  <data name="Marketing.Home.TrustTurkishText" xml:space="preserve"><value>The interface and support are in Turkish; our team is with you during setup.</value></data>
+  <data name="Marketing.Home.TrustPrintBridgeText" xml:space="preserve"><value>A companion app installed on a Windows computer sends receipts to your printer.</value></data>
+  <data name="Marketing.Home.TrustLanguagesTitle" xml:space="preserve"><value>Multilingual</value></data>
+  <data name="Marketing.Home.TrustLanguagesText" xml:space="preserve"><value>Turkish, English, Arabic and Russian interface support is being developed.</value></data>
+  <data name="Marketing.Home.FinalTitle" xml:space="preserve"><value>Find the right Wasla product for your restaurant.</value></data>
+  <data name="Marketing.Home.FinalLead" xml:space="preserve"><value>Wasla Orders is ready today for online orders; Wasla POS for in-restaurant sales is coming soon.</value></data>
+  <data name="Marketing.Pos.MetaTitle" xml:space="preserve"><value>Wasla POS (coming soon) — In-restaurant sales | Wasla</value></data>
+  <data name="Marketing.Pos.MetaDescription" xml:space="preserve"><value>Wasla POS is a touch restaurant POS in development for table, takeaway, pickup and counter sales. It is not on sale yet.</value></data>
+  <data name="Marketing.Pos.HeroTitle" xml:space="preserve"><value>From table to till, your in-restaurant sales</value></data>
+  <data name="Marketing.Pos.HeroTitleAccent" xml:space="preserve"><value>on one screen.</value></data>
+  <data name="Marketing.Pos.HeroLead" xml:space="preserve"><value>With Wasla POS you will take table and takeaway orders, manage your menu, complete payments and follow service from one modern POS.</value></data>
+  <data name="Marketing.Pos.Notice" xml:space="preserve"><value>Wasla POS is in development: it cannot be purchased yet and is not in live use. The screens on this page show the product concept.</value></data>
+  <data name="Marketing.Pos.HeroPoint1" xml:space="preserve"><value>Touch-first</value></data>
+  <data name="Marketing.Pos.HeroPoint2" xml:space="preserve"><value>Tables and takeaway</value></data>
+  <data name="Marketing.Pos.HeroPoint3" xml:space="preserve"><value>Kitchen tickets</value></data>
+  <data name="Marketing.Pos.ServicesTitle" xml:space="preserve"><value>Its own flow for every type of service.</value></data>
+  <data name="Marketing.Pos.ServicesLead" xml:space="preserve"><value>Table, takeaway, quick-sale and pickup orders in one POS, each with its own layout.</value></data>
+  <data name="Marketing.Pos.ServiceTableTitle" xml:space="preserve"><value>Table order</value></data>
+  <data name="Marketing.Pos.ServiceTableText" xml:space="preserve"><value>Pick the table, add items and send the order to the kitchen.</value></data>
+  <data name="Marketing.Pos.ServiceTakeawayTitle" xml:space="preserve"><value>Takeaway order</value></data>
+  <data name="Marketing.Pos.ServiceTakeawayText" xml:space="preserve"><value>Record phone orders with the customer and address details.</value></data>
+  <data name="Marketing.Pos.ServiceQuickTitle" xml:space="preserve"><value>Quick sale</value></data>
+  <data name="Marketing.Pos.ServiceQuickText" xml:space="preserve"><value>Complete counter sales in a few taps, without opening a table.</value></data>
+  <data name="Marketing.Pos.ServicePickupTitle" xml:space="preserve"><value>Pickup order</value></data>
+  <data name="Marketing.Pos.ServicePickupText" xml:space="preserve"><value>Enter the pickup time and hand the order over when it is ready.</value></data>
+  <data name="Marketing.Pos.TablesTitle" xml:space="preserve"><value>See the whole room at a glance.</value></data>
+  <data name="Marketing.Pos.TablesLead" xml:space="preserve"><value>Which tables are free, occupied or waiting for the bill: the service team follows it on the same screen.</value></data>
+  <data name="Marketing.Pos.TablesPoint1" xml:space="preserve"><value>Room and table view</value></data>
+  <data name="Marketing.Pos.TablesPoint2" xml:space="preserve"><value>Free, occupied and bill-requested tables</value></data>
+  <data name="Marketing.Pos.TablesPoint3" xml:space="preserve"><value>Adding orders to a table</value></data>
+  <data name="Marketing.Pos.TablesPoint4" xml:space="preserve"><value>Bill and payment flow</value></data>
+  <data name="Marketing.Pos.TouchTitle" xml:space="preserve"><value>Fast ordering by touch.</value></data>
+  <data name="Marketing.Pos.TouchLead" xml:space="preserve"><value>Large touch targets, clear categories and options on one screen. Even at rush hour an order takes a few taps.</value></data>
+  <data name="Marketing.Pos.TouchPoint1" xml:space="preserve"><value>Menu categories</value></data>
+  <data name="Marketing.Pos.TouchPoint2" xml:space="preserve"><value>Item options</value></data>
+  <data name="Marketing.Pos.TouchPoint3" xml:space="preserve"><value>Extras and notes</value></data>
+  <data name="Marketing.Pos.TouchPoint4" xml:space="preserve"><value>Quick add</value></data>
+  <data name="Marketing.Pos.TouchNote" xml:space="preserve"><value>Touch targets of at least 48 px (design target).</value></data>
+  <data name="Marketing.Pos.MenuTitle" xml:space="preserve"><value>Menu and prices at your fingertips.</value></data>
+  <data name="Marketing.Pos.MenuLead" xml:space="preserve"><value>Edit items and categories, update prices and take sold-out items off sale.</value></data>
+  <data name="Marketing.Pos.MenuPoint1" xml:space="preserve"><value>Items and categories</value></data>
+  <data name="Marketing.Pos.MenuPoint2" xml:space="preserve"><value>Price updates</value></data>
+  <data name="Marketing.Pos.MenuPoint3" xml:space="preserve"><value>Available / sold-out status</value></data>
+  <data name="Marketing.Pos.PaymentTitle" xml:space="preserve"><value>Take payment, print the receipt, close the table.</value></data>
+  <data name="Marketing.Pos.PaymentLead" xml:space="preserve"><value>Every step from the bill to closing, on one screen and in the same order.</value></data>
+  <data name="Marketing.Pos.PaymentStageBill" xml:space="preserve"><value>Bill</value></data>
+  <data name="Marketing.Pos.PaymentStageMethod" xml:space="preserve"><value>Payment method</value></data>
+  <data name="Marketing.Pos.PaymentStageReceipt" xml:space="preserve"><value>Receipt</value></data>
+  <data name="Marketing.Pos.PaymentStageClose" xml:space="preserve"><value>Closing</value></data>
+  <data name="Marketing.Pos.KitchenTitle" xml:space="preserve"><value>Orders to the kitchen, tickets to the printer.</value></data>
+  <data name="Marketing.Pos.KitchenLead" xml:space="preserve"><value>The order a waiter takes comes out of the thermal printer as a kitchen ticket. The kitchen knows what to prepare and for which table.</value></data>
+  <data name="Marketing.Pos.KitchenStepPos" xml:space="preserve"><value>POS</value></data>
+  <data name="Marketing.Pos.KitchenStepPosMeta" xml:space="preserve"><value>Table 6 · Send to kitchen</value></data>
+  <data name="Marketing.Pos.KitchenStepTicket" xml:space="preserve"><value>Kitchen ticket</value></data>
+  <data name="Marketing.Pos.KitchenStepTicketMeta" xml:space="preserve"><value>2× Adana kebab · Not spicy</value></data>
+  <data name="Marketing.Pos.KitchenStepPrinter" xml:space="preserve"><value>Thermal printer</value></data>
+  <data name="Marketing.Pos.KitchenStepPrinterMeta" xml:space="preserve"><value>Kitchen printer · Printed</value></data>
+  <data name="Marketing.Pos.EcosystemTitle" xml:space="preserve"><value>Online orders and in-restaurant sales in one Wasla ecosystem.</value></data>
+  <data name="Marketing.Pos.EcosystemLead" xml:space="preserve"><value>Two products run the two order channels of the same restaurant.</value></data>
+  <data name="Marketing.Pos.EcosystemInStore" xml:space="preserve"><value>Tables and in-restaurant sales</value></data>
+  <data name="Marketing.Pos.EcosystemOperation" xml:space="preserve"><value>Your restaurant operation</value></data>
+  <data name="Marketing.Pos.EcosystemKitchen" xml:space="preserve"><value>Kitchen</value></data>
+  <data name="Marketing.Pos.EcosystemTeam" xml:space="preserve"><value>Team</value></data>
+  <data name="Marketing.Pos.FinalTitle" xml:space="preserve"><value>Modernise your in-restaurant sales.</value></data>
+  <data name="Marketing.Pos.FinalLead" xml:space="preserve"><value>Wasla POS is coming soon. Follow the updates; you can start using Wasla Orders for online orders today.</value></data>
+  <data name="Marketing.Mock.OnlinePlatformOrders" xml:space="preserve"><value>Online platform orders</value></data>
+  <data name="Marketing.Mock.OneFamily" xml:space="preserve"><value>One product family</value></data>
+  <data name="Marketing.Mock.SameTeam" xml:space="preserve"><value>Same restaurant, same team</value></data>
+  <data name="Marketing.Mock.KitchenTicketPrinted" xml:space="preserve"><value>Kitchen ticket printed</value></data>
+  <data name="Marketing.Mock.TableAndTakeaway" xml:space="preserve"><value>Table and takeaway orders</value></data>
+  <data name="Marketing.Mock.Hall" xml:space="preserve"><value>Main room</value></data>
+  <data name="Marketing.Mock.Garden" xml:space="preserve"><value>Garden</value></data>
+  <data name="Marketing.Mock.Terrace" xml:space="preserve"><value>Terrace</value></data>
+  <data name="Marketing.Mock.Table" xml:space="preserve"><value>Table {0}</value></data>
+  <data name="Marketing.Mock.Guests" xml:space="preserve"><value>{0} guests</value></data>
+  <data name="Marketing.Mock.GuestsMinutes" xml:space="preserve"><value>{0} guests · {1} min</value></data>
+  <data name="Marketing.Mock.TableFree" xml:space="preserve"><value>Free</value></data>
+  <data name="Marketing.Mock.TableOccupied" xml:space="preserve"><value>Occupied</value></data>
+  <data name="Marketing.Mock.TableBill" xml:space="preserve"><value>Bill requested</value></data>
+  <data name="Marketing.Mock.TableSelected" xml:space="preserve"><value>Selected</value></data>
+  <data name="Marketing.Mock.TakePayment" xml:space="preserve"><value>Take payment</value></data>
+  <data name="Marketing.Mock.OrderItems" xml:space="preserve"><value>2× Adana wrap, 1× Ayran</value></data>
+  <data name="Marketing.Mock.Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="Marketing.Mock.ReceiptPlatform" xml:space="preserve"><value>YEMEKSEPETI · DELIVERY</value></data>
+  <data name="Marketing.Mock.ItemAdana" xml:space="preserve"><value>Adana kebab</value></data>
+  <data name="Marketing.Mock.ItemUrfa" xml:space="preserve"><value>Urfa kebab</value></data>
+  <data name="Marketing.Mock.ItemIskender" xml:space="preserve"><value>İskender</value></data>
+  <data name="Marketing.Mock.ItemBeyti" xml:space="preserve"><value>Beyti</value></data>
+  <data name="Marketing.Mock.ItemChicken" xml:space="preserve"><value>Chicken shish</value></data>
+  <data name="Marketing.Mock.ItemLamb" xml:space="preserve"><value>Lamb shish</value></data>
+  <data name="Marketing.Mock.ItemLentilSoup" xml:space="preserve"><value>Lentil soup</value></data>
+  <data name="Marketing.Mock.ItemAyran" xml:space="preserve"><value>Ayran</value></data>
+  <data name="Marketing.Mock.ItemLahmacun" xml:space="preserve"><value>Lahmacun</value></data>
+  <data name="Marketing.Mock.ItemMixedPide" xml:space="preserve"><value>Mixed pide</value></data>
+  <data name="Marketing.Mock.ItemTea" xml:space="preserve"><value>Tea</value></data>
+  <data name="Marketing.Mock.ItemWater" xml:space="preserve"><value>Water</value></data>
+  <data name="Marketing.Mock.ItemSimit" xml:space="preserve"><value>Simit</value></data>
+  <data name="Marketing.Mock.ItemLavash" xml:space="preserve"><value>Lavash</value></data>
+  <data name="Marketing.Mock.ItemKunefe" xml:space="preserve"><value>Künefe</value></data>
+  <data name="Marketing.Mock.NewOrderAmount" xml:space="preserve"><value>New order · {0}</value></data>
+  <data name="Marketing.Mock.PhoneTakeaway" xml:space="preserve"><value>Takeaway #P-031 · phone</value></data>
+  <data name="Marketing.Mock.PickupAt" xml:space="preserve"><value>Pickup · 19:30</value></data>
+  <data name="Marketing.Mock.QuickSaleCounter" xml:space="preserve"><value>Quick sale · counter</value></data>
+  <data name="Marketing.Mock.ServiceTable" xml:space="preserve"><value>Table</value></data>
+  <data name="Marketing.Mock.ServiceTakeaway" xml:space="preserve"><value>Takeaway</value></data>
+  <data name="Marketing.Mock.ServiceQuickSale" xml:space="preserve"><value>Quick sale</value></data>
+  <data name="Marketing.Mock.ServicePickup" xml:space="preserve"><value>Pickup</value></data>
+  <data name="Marketing.Mock.CatSoups" xml:space="preserve"><value>Soups</value></data>
+  <data name="Marketing.Mock.CatKebabs" xml:space="preserve"><value>Kebabs</value></data>
+  <data name="Marketing.Mock.CatPide" xml:space="preserve"><value>Pide</value></data>
+  <data name="Marketing.Mock.CatDrinks" xml:space="preserve"><value>Drinks</value></data>
+  <data name="Marketing.Mock.CatDesserts" xml:space="preserve"><value>Desserts</value></data>
+  <data name="Marketing.Mock.SoldOut" xml:space="preserve"><value>Sold out</value></data>
+  <data name="Marketing.Mock.Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Marketing.Mock.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Marketing.Mock.NotSpicy" xml:space="preserve"><value>Not spicy</value></data>
+  <data name="Marketing.Mock.MildSpicy" xml:space="preserve"><value>Mild</value></data>
+  <data name="Marketing.Mock.Spicy" xml:space="preserve"><value>Spicy</value></data>
+  <data name="Marketing.Mock.SendToKitchen" xml:space="preserve"><value>To kitchen</value></data>
+  <data name="Marketing.Mock.TakeawayOrder" xml:space="preserve"><value>Takeaway order #P-031</value></data>
+  <data name="Marketing.Mock.PreparingMinutes" xml:space="preserve"><value>Preparing · {0} min</value></data>
+  <data name="Marketing.Mock.PaidByCard" xml:space="preserve"><value>Paid by card</value></data>
+  <data name="Marketing.Mock.Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Marketing.Mock.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Marketing.Mock.Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Marketing.Mock.TableTotal" xml:space="preserve"><value>Table total</value></data>
+  <data name="Marketing.Mock.Card" xml:space="preserve"><value>Card</value></data>
+  <data name="Marketing.Mock.ItemsAmount" xml:space="preserve"><value>{0} items · {1}</value></data>
+  <data name="Marketing.Mock.MarkDelivered" xml:space="preserve"><value>Mark as handed over</value></data>
+  <data name="Marketing.Mock.AddOrder" xml:space="preserve"><value>Add order</value></data>
+  <data name="Marketing.Mock.PrintBill" xml:space="preserve"><value>Print bill</value></data>
+  <data name="Marketing.Mock.Portion" xml:space="preserve"><value>Portion</value></data>
+  <data name="Marketing.Mock.PortionOne" xml:space="preserve"><value>1 portion</value></data>
+  <data name="Marketing.Mock.PortionOneHalf" xml:space="preserve"><value>1.5 portions</value></data>
+  <data name="Marketing.Mock.Spice" xml:space="preserve"><value>Spice level</value></data>
+  <data name="Marketing.Mock.Extras" xml:space="preserve"><value>Extras</value></data>
+  <data name="Marketing.Mock.RoastedPepper" xml:space="preserve"><value>Roasted pepper</value></data>
+  <data name="Marketing.Mock.ExtraLavash" xml:space="preserve"><value>Extra lavash</value></data>
+  <data name="Marketing.Mock.Note" xml:space="preserve"><value>Note</value></data>
+  <data name="Marketing.Mock.NoOnion" xml:space="preserve"><value>No onion</value></data>
+  <data name="Marketing.Mock.AddToCart" xml:space="preserve"><value>Add to cart · {0}</value></data>
+  <data name="Marketing.Mock.CartFor" xml:space="preserve"><value>Cart · {0}</value></data>
+  <data name="Marketing.Mock.ItemCount" xml:space="preserve"><value>{0} items</value></data>
+  <data name="Marketing.Mock.QuickAdd" xml:space="preserve"><value>Quick add</value></data>
+  <data name="Marketing.Mock.SearchProduct" xml:space="preserve"><value>Search items</value></data>
+  <data name="Marketing.Mock.AllCategories" xml:space="preserve"><value>All categories</value></data>
+  <data name="Marketing.Mock.AddProduct" xml:space="preserve"><value>Add item</value></data>
+  <data name="Marketing.Mock.ColProduct" xml:space="preserve"><value>Item</value></data>
+  <data name="Marketing.Mock.ColCategory" xml:space="preserve"><value>Category</value></data>
+  <data name="Marketing.Mock.ColPrice" xml:space="preserve"><value>Price</value></data>
+  <data name="Marketing.Mock.ColStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="Marketing.Mock.Subtotal" xml:space="preserve"><value>Subtotal</value></data>
+  <data name="Marketing.Mock.Service" xml:space="preserve"><value>Service charge</value></data>
+  <data name="Marketing.Mock.NotIncluded" xml:space="preserve"><value>Not included</value></data>
+  <data name="Marketing.Mock.AmountDue" xml:space="preserve"><value>Amount due</value></data>
+  <data name="Marketing.Mock.AmountByCard" xml:space="preserve"><value>{0} by card</value></data>
+  <data name="Marketing.Mock.Bill" xml:space="preserve"><value>BILL</value></data>
+  <data name="Marketing.Mock.SentToPrinter" xml:space="preserve"><value>Sent to the counter printer</value></data>
+  <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} closed</value></data>
+  <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>KITCHEN · {0}</value></data>
 </root>

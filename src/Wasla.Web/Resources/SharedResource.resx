@@ -21,9 +21,6 @@
   <data name="Pricing.Subtitle" xml:space="preserve">
     <value>Online sipariş yönetimine tek panelden başlayın. Ödeme entegrasyonu yakında eklenecek.</value>
   </data>
-  <data name="Pricing.ViewPlans" xml:space="preserve">
-    <value>Planları Gör</value>
-  </data>
   <data name="Pricing.Recommended" xml:space="preserve">
     <value>Önerilen</value>
   </data>
@@ -170,9 +167,6 @@
   </data>
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve">
     <value>Özel anlaşma ve limitler</value>
-  </data>
-  <data name="Signup.StartNow" xml:space="preserve">
-    <value>Hemen Başla</value>
   </data>
   <data name="Signup.Title" xml:space="preserve">
     <value>Wasla hesabı oluştur</value>
@@ -796,14 +790,8 @@
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
   </data>
-  <data name="Landing.Title" xml:space="preserve">
-    <value>Wasla</value>
-  </data>
   <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
-  </data>
-  <data name="Landing.Subtitle" xml:space="preserve">
-    <value>Çoklu platform sipariş yönetimi</value>
   </data>
   <data name="TenantNotFound.PageTitle" xml:space="preserve">
     <value>Bu Wasla adresi aktif değil</value>
