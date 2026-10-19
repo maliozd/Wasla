@@ -427,7 +427,8 @@ public sealed partial class GuidedSetupDeviceGuideTests
         Assert.Equal(ui["PrintBridge.RegenerateToken"], copy["Help.PrintBridgeDevices.Regenerate.Title"]);
         Assert.Equal(ui["PrintBridge.RemoveDevice"], copy["Help.PrintBridgeDevices.Remove.Title"]);
         Assert.Equal(desktop["Settings.AgentToken"], copy["Help.PrintBridgeDevices.Token.Title"]);
-        Assert.Contains(desktop["Tab.Settings"], copy["Help.PrintBridgeDevices.Regenerate.EnterAgain"], StringComparison.Ordinal);
+        foreach (var label in new[] { desktop["Tab.Settings"], desktop["Shell.Settings.Connection"], desktop["Shell.Setup.Connect"] })
+            Assert.Contains(label, copy["Help.PrintBridgeDevices.Regenerate.EnterAgain"], StringComparison.Ordinal);
         Assert.Contains(ui["PrintBridge.StatusConnected"], copy["Help.PrintBridgeDevices.Status.Body"], StringComparison.Ordinal);
         // The token presentation names the real Show/Hide toggle labels used by the setup and device details pages.
         Assert.Contains(ui["PrintBridge.Manual.ShowToken"], copy["Help.PrintBridgeDevices.Token.Display"], StringComparison.Ordinal);

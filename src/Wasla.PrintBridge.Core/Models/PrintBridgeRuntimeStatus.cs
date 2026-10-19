@@ -88,36 +88,4 @@ public sealed class PrintBridgeRuntimeStatus
 
     public static bool ShouldReportConnectionSuccess(PrintBridgeRuntimeStatus status) =>
         status.LastIssue is null || !status.LastIssue.IsBlockingLifecycleIssue;
-
-    public static string ResolveHeaderBadgeResourceKey(PrintBridgeRuntimeStatus status)
-    {
-        if (status.LastIssue is { IsBlockingLifecycleIssue: true } issue
-            && !string.IsNullOrWhiteSpace(issue.EffectiveTitleResourceKey))
-            return issue.EffectiveTitleResourceKey;
-
-        if (status.LastIssue is { IsBlockingLifecycleIssue: true })
-            return "Status.Error";
-
-        if (status.IsRunning && status.IsConnected)
-            return status.DryRun ? "Status.RunningDryRun" : "Status.Running";
-
-        if (status.IsRunning)
-            return "Status.Running";
-
-        if (status.IsConnected)
-            return "Status.Connected";
-
-        return "Status.Stopped";
-    }
-
-    public static string ResolveLocalDeviceLabel(string? localDeviceName, string? machineName)
-    {
-        if (!string.IsNullOrWhiteSpace(localDeviceName))
-            return localDeviceName.Trim();
-
-        if (!string.IsNullOrWhiteSpace(machineName))
-            return machineName.Trim();
-
-        return Environment.MachineName;
-    }
 }

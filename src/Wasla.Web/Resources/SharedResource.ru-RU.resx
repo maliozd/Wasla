@@ -2803,10 +2803,10 @@
     <value>Создайте токен устройства и скопируйте его.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>В Print Bridge откройте «Настройки» и вставьте Wasla Веб-панель URL и токен устройства.</value>
+    <value>В Print Bridge нажмите «Подключить к Wasla» (в разделе «Настройки», «Подключение к Wasla») и вставьте Wasla Веб-панель URL и токен устройства.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Нажмите «Сохранить подключение», затем «Тестовое соединение».</value>
+    <value>Нажмите «Подключить и сохранить». Print Bridge проверяет подключение перед сохранением.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Выберите принтер и сохраните.</value>
@@ -4022,7 +4022,7 @@
   <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>Вы сами вводите Wasla Веб-панель URL и токен устройства в «Настройках» Print Bridge. Используйте этот способ, если приложение не открывается автоматически.</value></data>
   <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Выберите способ подключения</value></data>
   <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Выберите и проверьте принтер</value></data>
-  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>В Print Bridge откройте «Настройки», выберите принтер чеков в разделе «Настройка принтера», нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>В Print Bridge откройте вкладку «Принтер», выберите принтер чеков, нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
   <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>Когда Wasla подтвердит подключение, панель пошаговой настройки вверху страницы покажет «{0}». Дальше — знакомство с устройством, затем обучение работе с заказами.</value></data>
   <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Веб-панель URL и токен устройства</value></data>
   <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Используйте этот способ, если Print Bridge не открывается с этой страницы. На экране «Настройки» Print Bridge нужны именно эти два значения.</value></data>
@@ -4040,7 +4040,7 @@
   <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Показать токен</value></data>
   <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Скрыть токен</value></data>
   <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Токен устройства скопирован.</value></data>
-  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Теперь откройте «Настройки» в Print Bridge, вставьте оба значения в поля с такими же названиями, затем нажмите «Сохранить подключение» и «Тестовое соединение».</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Теперь откройте Print Bridge и нажмите «Подключить к Wasla» (в разделе «Настройки», «Подключение к Wasla»), вставьте оба значения в поля с такими же названиями, затем нажмите «Подключить и сохранить».</value></data>
   <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Создание или копирование токена не подключает Print Bridge. Подключение засчитывается только после того, как Wasla подтвердит соединение от Print Bridge.</value></data>
   <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla подтвердил подключение Print Bridge. Продолжить можно на панели пошаговой настройки вверху этой страницы.</value></data>
   <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla ещё не подтвердил подключение. Нажмите «Тестовое соединение» в Print Bridge, затем перезагрузите эту страницу, чтобы проверить снова.</value></data>
@@ -4486,7 +4486,7 @@
   <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Распакуйте ZIP-файл в папку.</value></data>
   <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Один раз запустите Wasla.PrintBridge.exe. Если Windows запросит .NET 8 Desktop Runtime, установите её.</value></data>
   <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>На странице настройки выберите способ подключения: «{0}» откроет приложение и подключит его автоматически (рекомендуется), или подключите вручную, вставив токен устройства и Wasla Веб-панель URL в «Настройки» Print Bridge. Никому не сообщайте токен устройства.</value></data>
-  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>В Print Bridge откройте «Настройки», выберите принтер чеков, нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>В Print Bridge откройте вкладку «Принтер», выберите принтер чеков, нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
   <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Когда Wasla подтвердит подключение, познакомьтесь с устройством: на его странице видно подключение, там же можно восстановить токен или удалить устройство. Подробнее — в разделе «{0}» ниже.</value></data>
   <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Управление устройствами Print Bridge</value></data>
   <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Каждая установка Print Bridge отображается как устройство в списке устройств Print Bridge. Откройте сведения об устройстве, чтобы переименовать его, проверить подключение, восстановить токен или удалить устройство.</value></data>
@@ -4500,7 +4500,7 @@
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Восстановить токен</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Создаёт новый токен для этого устройства.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Старый токен сразу перестаёт работать, и эта установка не сможет печатать, пока не получит новый.</value></data>
-  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Введите новый токен в разделе «Настройки» приложения Print Bridge, затем сохраните и проверьте подключение.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>В приложении Print Bridge откройте «Настройки», введите новый токен в разделе «Подключение к Wasla» и нажмите «Подключить и сохранить».</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>Новый токен показывается только один раз.</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Удалить устройство</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Прекращает доступ этого устройства к Wasla; его токен перестаёт работать.</value></data>

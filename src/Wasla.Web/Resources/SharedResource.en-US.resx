@@ -2803,10 +2803,10 @@
     <value>Create a device token and copy it.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>In Print Bridge, open Settings and paste the Wasla Web Panel URL and the device token.</value>
+    <value>In Print Bridge, click "Connect to Wasla" (in Settings, under Wasla connection) and paste the Wasla Web Panel URL and the device token.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Click "Save connection", then "Test connection".</value>
+    <value>Click "Connect and save". Print Bridge checks the connection before it saves it.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Select your printer and save.</value>
@@ -3518,7 +3518,7 @@
   <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>You enter the Wasla Web Panel URL and a device token in Print Bridge's Settings yourself. Use this if the app doesn't open automatically.</value></data>
   <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Choose how to connect</value></data>
   <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Choose and test your printer</value></data>
-  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>In Print Bridge, open Settings, choose your receipt printer under Printer configuration, click "Save printer", then "Print test receipt".</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>In Print Bridge, open the Printer tab, choose your receipt printer, click "Save printer", then "Print test receipt".</value></data>
   <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>When Wasla verifies the connection, the guided setup panel at the top of this page shows "{0}". The device guide comes next, then order training.</value></data>
   <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Web Panel URL and device token</value></data>
   <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Use this if Print Bridge doesn't open from this page. Print Bridge's Settings screen asks for exactly these two values.</value></data>
@@ -3536,7 +3536,7 @@
   <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Show token</value></data>
   <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Hide token</value></data>
   <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Device token copied.</value></data>
-  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Now open Settings in Print Bridge, paste both values into the fields with the same names, then click "Save connection" and "Test connection".</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Now open Print Bridge and click "Connect to Wasla" (in Settings, under Wasla connection), paste both values into the fields with the same names, then click "Connect and save".</value></data>
   <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Creating or copying the token doesn't connect Print Bridge. It counts as connected only after Wasla verifies the connection from Print Bridge.</value></data>
   <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla verified the Print Bridge connection. You can continue from the guided setup panel at the top of this page.</value></data>
   <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla hasn't verified the connection yet. Click "Test connection" in Print Bridge, then reload this page to check again.</value></data>
@@ -3982,7 +3982,7 @@
   <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Extract the ZIP file to a folder.</value></data>
   <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Run Wasla.PrintBridge.exe once. If Windows asks for the .NET 8 Desktop Runtime, install it.</value></data>
   <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>On the setup page, choose how to connect: "{0}" opens the app and connects it automatically (recommended), or connect manually by pasting a device token and the Wasla Web Panel URL into Print Bridge's Settings. Never share the device token.</value></data>
-  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>In Print Bridge, open Settings, choose your receipt printer, click "Save printer", then "Print test receipt".</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>In Print Bridge, open the Printer tab, choose your receipt printer, click "Save printer", then "Print test receipt".</value></data>
   <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Once Wasla verifies the connection, get to know your device: its page shows the connection, and it's where you regenerate its token or remove it. See "{0}" below.</value></data>
   <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Managing Print Bridge devices</value></data>
   <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Each Print Bridge installation appears as a device under Print Bridge Devices. Open a device's details to rename it, check its connection, regenerate its token or remove it.</value></data>
@@ -3996,7 +3996,7 @@
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Regenerate token</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Creates a new device token for this device.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>The old token stops working immediately, so this installation can't print until it has the new one.</value></data>
-  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Enter the new token in the Print Bridge app's Settings, then save and test the connection.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>In the Print Bridge app, open Settings, enter the new token under Wasla connection, then click "Connect and save".</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>The new token is shown only once.</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Remove device</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Ends this device's access to Wasla; its token stops working.</value></data>

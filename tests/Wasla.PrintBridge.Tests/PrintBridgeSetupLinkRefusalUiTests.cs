@@ -8,12 +8,12 @@ using static Wasla.PrintBridge.Tests.WebShell.WebShellTestSupport;
 namespace Wasla.PrintBridge.Tests;
 
 /// <summary>
-/// WAS-58: how both windows show a connection change that was refused because a print job is still being completed,
-/// and the text they show in every culture.
+/// WAS-58: how the tray shows a setup link that was refused because a print job is still being completed, and the
+/// text it shows in every culture.
 /// </summary>
 public sealed partial class PrintBridgeSetupLinkRefusalUiTests
 {
-    private static readonly string[] RefusalKeys = ["Auto.PrintingInProgress", "Settings.Connection.PrintingInProgress"];
+    private static readonly string[] RefusalKeys = ["Auto.PrintingInProgress", "Shell.Setup.PrintingInProgress"];
 
     private static readonly (string File, string Culture)[] ResourceFiles =
     [
@@ -25,7 +25,7 @@ public sealed partial class PrintBridgeSetupLinkRefusalUiTests
     ];
 
     [Fact]
-    public void ARefusedSetupLink_IsShownAsNotApplied_InBothWindows_AndNothingIsReloadedOrVerified()
+    public void ARefusedSetupLink_IsShownAsNotApplied_AndNothingIsReloadedOrVerified()
     {
         var view = TrayApplicationContext.DescribeAutoSetupOutcome(PrintBridgeAutoSetupOutcome.PrintingInProgress);
 
@@ -47,26 +47,6 @@ public sealed partial class PrintBridgeSetupLinkRefusalUiTests
 
         Assert.Equal((key, saved, connected), (view.MessageKey, view.Saved, view.Connected));
         Assert.Equal(connected ? MessageBoxIcon.Information : MessageBoxIcon.Warning, view.Icon);
-    }
-
-    [Fact]
-    public void ClassicSaveAndTest_AskTheEngineBeforeChangingTheConnection()
-    {
-        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", "Wasla.PrintBridge", "UI", "MainForm.SettingsSave.cs"));
-
-        foreach (var method in new[] { "SaveConnectionSettingsAsync", "TestConnectionFromSettingsAsync" })
-        {
-            var start = source.IndexOf($"private async Task {method}()", StringComparison.Ordinal);
-            var end = source.IndexOf("\n    private ", start + 1, StringComparison.Ordinal);
-            var body = source[start..end];
-            var guard = body.IndexOf("TryBeginConnectionChange()", StringComparison.Ordinal);
-
-            Assert.True(guard > 0, $"{method} does not ask the engine first.");
-            Assert.True(guard < body.IndexOf("_settingsHolder.Replace(", StringComparison.Ordinal), $"{method} changes the connection before asking.");
-            Assert.True(guard < body.IndexOf("_runtime.StopAsync()", StringComparison.Ordinal) || !body.Contains("_runtime.StopAsync()", StringComparison.Ordinal));
-        }
-
-        Assert.Contains("_localizer[\"Settings.Connection.PrintingInProgress\"]", source, StringComparison.Ordinal);
     }
 
     [Fact]

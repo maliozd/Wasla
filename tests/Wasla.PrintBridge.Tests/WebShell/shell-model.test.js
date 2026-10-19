@@ -181,7 +181,7 @@ test('accepts every connection state the host can send and an empty last job', (
 
 test('creates only allowlisted, versioned commands with their allowed fields', () => {
   assert.deepEqual(JSON.parse(model.createCommand('ui.ready')), { version: 3, type: 'ui.ready', payload: {} });
-  assert.deepEqual(JSON.parse(model.createCommand('classicWindow.open', { tab: 'settings' })), { version: 3, type: 'classicWindow.open', payload: {} });
+  assert.deepEqual(JSON.parse(model.createCommand('snapshot.request', { tab: 'settings' })), { version: 3, type: 'snapshot.request', payload: {} });
   assert.deepEqual(
     JSON.parse(model.createCommand('language.change', { culture: 'ar-SA', extra: 'ignored' })),
     { version: 3, type: 'language.change', payload: { culture: 'ar-SA' } });
@@ -195,7 +195,7 @@ test('creates only allowlisted, versioned commands with their allowed fields', (
     JSON.parse(model.createCommand('history.reprint', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', jobId: 'x' })),
     { version: 3, type: 'history.reprint', payload: { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef' } });
   assert.deepEqual(model.COMMANDS, [
-    'ui.ready', 'snapshot.request', 'language.change', 'classicWindow.open',
+    'ui.ready', 'snapshot.request', 'language.change',
     'engine.start', 'engine.stop', 'connection.test', 'connection.openSetup', 'connection.reset',
     'printers.refresh', 'printer.save', 'printer.testPrint', 'history.query', 'history.reprint',
     'logs.openFolder', 'settings.save'
@@ -234,7 +234,7 @@ test('accepts tab requests from the host only for known tabs', () => {
   for (const tab of ['overview', 'printer', 'settings']) {
     assert.notEqual(model.readHostMessage(navigate(tab), 1), null, tab);
   }
-  for (const tab of ['classic', 'Settings', '', '../history', null, 3]) {
+  for (const tab of ['logs', 'Settings', '', '../history', null, 3]) {
     assert.equal(model.readHostMessage(navigate(tab), 1), null, String(tab));
   }
   assert.equal(model.readHostMessage(navigate('history', 2), 2), null);

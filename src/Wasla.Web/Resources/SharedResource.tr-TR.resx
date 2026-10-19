@@ -2800,10 +2800,10 @@
     <value>Cihaz tokenı oluşturup kopyalayın.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Print Bridge'de Ayarlar'ı açın; Wasla Web Panel Linki ile cihaz tokenını yapıştırın.</value>
+    <value>Print Bridge'de "Wasla'ya bağlan" düğmesine tıklayın (Ayarlar'da, Wasla bağlantısı bölümünde); Wasla Web Panel Linki ile cihaz tokenını yapıştırın.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>"Bağlantıyı kaydet" düğmesine, ardından "Bağlantıyı test et" düğmesine tıklayın.</value>
+    <value>"Bağlan ve kaydet" düğmesine tıklayın. Print Bridge bağlantıyı kaydetmeden önce kontrol eder.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Yazıcınızı seçip kaydedin.</value>
@@ -3518,7 +3518,7 @@
   <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>Wasla Web Panel Linki ile bir cihaz tokenını Print Bridge'in Ayarlar ekranına kendiniz girersiniz. Uygulama otomatik açılmazsa bunu kullanın.</value></data>
   <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Bağlantı yöntemini seçin</value></data>
   <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Yazıcınızı seçin ve test edin</value></data>
-  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>Print Bridge'de Ayarlar'ı açın, Yazıcı yapılandırması bölümünde fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>Print Bridge'de Yazıcı sekmesini açın, fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
   <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>Wasla bağlantıyı doğruladığında bu sayfanın üstündeki rehberli kurulum paneli "{0}" seçeneğini gösterir. Sırada cihaz rehberi, ardından sipariş eğitimi var.</value></data>
   <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Web Panel Linki ve cihaz tokenı</value></data>
   <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Print Bridge bu sayfadan açılmıyorsa bunu kullanın. Print Bridge'in Ayarlar ekranı tam olarak bu iki bilgiyi ister.</value></data>
@@ -3536,7 +3536,7 @@
   <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Tokenı göster</value></data>
   <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Tokenı gizle</value></data>
   <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Cihaz tokenı kopyalandı.</value></data>
-  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Şimdi Print Bridge'de Ayarlar'ı açın, iki bilgiyi aynı adlı alanlara yapıştırın, "Bağlantıyı kaydet" ve ardından "Bağlantıyı test et" düğmesine tıklayın.</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Şimdi Print Bridge'i açıp "Wasla'ya bağlan" düğmesine tıklayın (Ayarlar'da, Wasla bağlantısı bölümünde), iki bilgiyi aynı adlı alanlara yapıştırın ve "Bağlan ve kaydet" düğmesine tıklayın.</value></data>
   <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Token oluşturmak veya kopyalamak Print Bridge'i bağlamaz. Bağlantı ancak Wasla, Print Bridge'den gelen bağlantıyı doğruladıktan sonra tamamlanmış sayılır.</value></data>
   <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla, Print Bridge bağlantısını doğruladı. Bu sayfanın üstündeki rehberli kurulum panelinden devam edebilirsiniz.</value></data>
   <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla bağlantıyı henüz doğrulamadı. Print Bridge'de "Bağlantıyı test et" düğmesine tıklayın, ardından yeniden kontrol etmek için bu sayfayı yenileyin.</value></data>
@@ -3982,7 +3982,7 @@
   <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>ZIP dosyasını bir klasöre çıkarın.</value></data>
   <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Wasla.PrintBridge.exe dosyasını bir kez çalıştırın. Windows .NET 8 Desktop Runtime isterse kurun.</value></data>
   <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>Kurulum sayfasında bağlantı yöntemini seçin: "{0}" uygulamayı açıp otomatik bağlar (önerilir); ya da manuel bağlanıp bir cihaz tokenını Wasla Web Panel Linki ile birlikte Print Bridge Ayarlar'ına yapıştırın. Cihaz tokenını kimseyle paylaşmayın.</value></data>
-  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>Print Bridge'de Ayarlar'ı açın, fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>Print Bridge'de Yazıcı sekmesini açın, fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
   <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Wasla bağlantıyı doğruladıktan sonra cihazınızı tanıyın: cihaz sayfası bağlantıyı gösterir; tokenı yenilemek veya cihazı kaldırmak da oradan yapılır. Ayrıntılar için "{0}" bölümüne bakın.</value></data>
   <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Print Bridge cihazlarını yönetme</value></data>
   <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Her Print Bridge kurulumu, Print Bridge Cihazları listesinde bir cihaz olarak görünür. Cihazı yeniden adlandırmak, bağlantısını kontrol etmek, tokenını yenilemek veya cihazı kaldırmak için cihazın detaylarını açın.</value></data>
@@ -3996,7 +3996,7 @@
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Token yenile</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Bu cihaz için yeni bir cihaz tokenı oluşturur.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Eski token hemen geçersiz olur; bu kurulum yeni tokenı alana kadar yazdıramaz.</value></data>
-  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Yeni tokenı Print Bridge uygulamasında Ayarlar ekranına girin, ardından bağlantıyı kaydedip test edin.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Print Bridge uygulamasında Ayarlar'ı açın, Wasla bağlantısı bölümünde yeni tokenı girin ve "Bağlan ve kaydet" düğmesine tıklayın.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>Yeni token yalnızca bir kez gösterilir.</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Cihazı kaldır</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Bu cihazın Wasla erişimini sonlandırır; tokenı artık çalışmaz.</value></data>

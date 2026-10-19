@@ -12,15 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Button.ClearLogs" xml:space="preserve">
-    <value>Clear logs</value>
-  </data>
-  <data name="Button.CopyLogs" xml:space="preserve">
-    <value>Copy logs</value>
-  </data>
-  <data name="Button.JumpToLatest" xml:space="preserve">
-    <value>Jump to latest</value>
-  </data>
   <data name="Button.HideToken" xml:space="preserve">
     <value>Скрывать</value>
   </data>
@@ -33,11 +24,8 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>Сохранить настройки</value>
   </data>
-  <data name="Button.SaveConnection" xml:space="preserve"><value>Сохранить подключение</value></data>
   <data name="Button.SavePrinter" xml:space="preserve"><value>Сохранить принтер</value></data>
   <data name="Button.SaveDeviceName" xml:space="preserve"><value>Сохранить имя устройства</value></data>
-  <data name="Button.ApplyLanguage" xml:space="preserve"><value>Применить язык</value></data>
-  <data name="Button.SaveAdvanced" xml:space="preserve"><value>Сохранить расширенные настройки</value></data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>Показывать</value>
   </data>
@@ -64,9 +52,6 @@
   </data>
   <data name="Common.NotConfigured" xml:space="preserve">
     <value>(не настроено)</value>
-  </data>
-  <data name="Common.Subtitle" xml:space="preserve">
-    <value>Мост для печати чеков</value>
   </data>
   <data name="Connection.AuthenticationFailed" xml:space="preserve">
     <value>Аутентификация не удалась</value>
@@ -189,15 +174,6 @@
   <data name="Message.ConnectionSuccess" xml:space="preserve">
     <value>Соединение успешное.</value>
   </data>
-  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve">
-    <value>Подключение успешно. {0}Клиент: {1}{0}Устройство: {2}</value>
-  </data>
-  <data name="Message.DeviceNameLoadedFromServer" xml:space="preserve">
-    <value>Имя устройства загружено с сервера.</value>
-  </data>
-  <data name="Message.LogsCopyFailed" xml:space="preserve">
-    <value>Не удалось скопировать журналы: {0}.</value>
-  </data>
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Папка журналов еще не создана.</value>
   </data>
@@ -213,23 +189,14 @@
   <data name="Message.SettingsSaved" xml:space="preserve">
     <value>Настройки сохранены.</value>
   </data>
-  <data name="Message.SettingsSavedConnectionVerified" xml:space="preserve">
-    <value>Настройки сохранены. Соединение проверено.</value>
-  </data>
   <data name="Message.SslCertificateError" xml:space="preserve">
     <value>Ошибка сертификата SSL. Убедитесь, что сертификат HTTPS является доверенным для Windows.</value>
   </data>
   <data name="Message.TokenInvalidUnauthorized" xml:space="preserve">
     <value>Токен недействителен или не авторизован для этого устройства.</value>
   </data>
-  <data name="Message.ValidatingConnection" xml:space="preserve">
-    <value>Проверка соединения...</value>
-  </data>
   <data name="Message.LanguageRestartRequired" xml:space="preserve">
     <value>Изменения языка вступят в силу после перезапуска Print Bridge.</value>
-  </data>
-  <data name="Message.SettingsSaveFailed" xml:space="preserve">
-    <value>Не удалось сохранить настройки: {0}.</value>
   </data>
   <data name="Message.TestPrintSent" xml:space="preserve">
     <value>Пробная печать отправлена ​​на принтер.</value>
@@ -243,47 +210,14 @@
   <data name="Printing.Started" xml:space="preserve">
     <value>Печать началась</value>
   </data>
-  <data name="RecentJobs.Column.Order" xml:space="preserve">
-    <value>Заказ</value>
-  </data>
-  <data name="RecentJobs.Column.Printer" xml:space="preserve">
-    <value>Принтер</value>
-  </data>
-  <data name="RecentJobs.Column.Status" xml:space="preserve">
-    <value>Статус</value>
-  </data>
-  <data name="RecentJobs.Column.Time" xml:space="preserve">
-    <value>Время</value>
-  </data>
-  <data name="RecentJobs.Column.Type" xml:space="preserve">
-    <value>Тип</value>
-  </data>
-  <data name="RecentJobs.Tooltip.JobId" xml:space="preserve">
-    <value>Идентификатор вакансии: {0}</value>
-  </data>
   <data name="RecentJobs.Empty" xml:space="preserve">
     <value>В этом сеансе еще не было обработано ни одного задания печати.</value>
-  </data>
-  <data name="RecentJobs.Title" xml:space="preserve">
-    <value>Недавние вакансии (эта сессия)</value>
-  </data>
-  <data name="Settings.Advanced" xml:space="preserve">
-    <value>Передовой</value>
   </data>
   <data name="Settings.AgentToken" xml:space="preserve">
     <value>Токен устройства</value>
   </data>
-  <data name="Settings.BusyPollSeconds" xml:space="preserve">
-    <value>Интервал опроса занятости (сек)</value>
-  </data>
-  <data name="Footer.Device" xml:space="preserve">
-    <value>Устройство: {0}</value>
-  </data>
   <data name="Footer.NotConnected" xml:space="preserve">
     <value>Не подключено</value>
-  </data>
-  <data name="Footer.Version" xml:space="preserve">
-    <value>Версия: {0}</value>
   </data>
   <data name="Settings.ComputerName" xml:space="preserve">
     <value>Имя компьютера</value>
@@ -298,26 +232,11 @@
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>Машина: {0}</value>
   </data>
-  <data name="Settings.DryRunDescription" xml:space="preserve">
-    <value>Не отправлять на принтер, только журнал</value>
-  </data>
-  <data name="Settings.DryRunMode" xml:space="preserve">
-    <value>Тестовый режим</value>
-  </data>
-  <data name="Settings.ErrorPollSeconds" xml:space="preserve">
-    <value>Интервал опроса ошибок (сек)</value>
-  </data>
-  <data name="Settings.IdlePollSeconds" xml:space="preserve">
-    <value>Интервал опроса в режиме ожидания (сек)</value>
-  </data>
   <data name="Settings.Language" xml:space="preserve">
     <value>Язык</value>
   </data>
   <data name="Settings.PrinterName" xml:space="preserve">
     <value>Имя принтера</value>
-  </data>
-  <data name="Settings.SavedPathHint" xml:space="preserve">
-    <value>Настройки сохраняются в: {0}.</value>
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
     <value>Wasla Веб-панель URL</value>
@@ -331,17 +250,8 @@
   <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
     <value>Это поле предназначено для токена устройства. Не вставляйте сюда код настройки или ссылку wasla-printbridge. Для подключения используйте страницу настройки Print Bridge в веб-панели Wasla.</value>
   </data>
-  <data name="Settings.Section.Connection" xml:space="preserve"><value>Подключение Wasla</value></data>
-  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>URL веб-панели и настройки подключения устройства.</value></data>
-  <data name="Settings.Section.Printer" xml:space="preserve"><value>Настройка принтера</value></data>
-  <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>Выберите локальный принтер Windows для чеков. Данные сервера не требуются.</value></data>
   <data name="Settings.Section.Device" xml:space="preserve"><value>Идентификация устройства</value></data>
   <data name="Settings.Section.DeviceHelp" xml:space="preserve"><value>Управляйте локальной отображаемой информацией этой установки Print Bridge.</value></data>
-  <data name="Settings.Section.Language" xml:space="preserve"><value>Язык</value></data>
-  <data name="Settings.Section.LanguageHelp" xml:space="preserve"><value>Измените язык приложения без проверки подключения или принтера.</value></data>
-  <data name="Settings.SectionSaved" xml:space="preserve"><value>Сохранено.</value></data>
-  <data name="Settings.Saving" xml:space="preserve"><value>Сохранение...</value></data>
-  <data name="Settings.LanguageApplied" xml:space="preserve"><value>Язык применён.</value></data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>Тестовый режим включен. Чеки не будут распечатаны; задания будут только регистрироваться.</value>
   </data>
@@ -353,9 +263,6 @@
   </data>
   <data name="Status.Disconnected" xml:space="preserve">
     <value>Отключено</value>
-  </data>
-  <data name="Status.Error" xml:space="preserve">
-    <value>Ошибка</value>
   </data>
   <data name="Status.Offline" xml:space="preserve">
     <value>Оффлайн</value>
@@ -374,9 +281,6 @@
   </data>
   <data name="Status.Running" xml:space="preserve">
     <value>Бег</value>
-  </data>
-  <data name="Status.RunningDryRun" xml:space="preserve">
-    <value>Бег (тест)</value>
   </data>
   <data name="Status.Stopped" xml:space="preserve">
     <value>Остановлено</value>
@@ -453,27 +357,6 @@
   <data name="PrintHistory.EmptyFiltered" xml:space="preserve">
     <value>Нет записей, соответствующих выбранному фильтру или поиску.</value>
   </data>
-  <data name="PrintHistory.Tooltip.Error" xml:space="preserve">
-    <value>Ошибка: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.JobId" xml:space="preserve">
-    <value>Идентификатор вакансии: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Order" xml:space="preserve">
-    <value>Заказ: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Platform" xml:space="preserve">
-    <value>Платформа: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Printer" xml:space="preserve">
-    <value>Принтер: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Status" xml:space="preserve">
-    <value>Статус: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Time" xml:space="preserve">
-    <value>Время: {0}</value>
-  </data>
   <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
     <value>Последние 30 дней</value>
   </data>
@@ -510,9 +393,6 @@
   <data name="Reprint.Button" xml:space="preserve">
     <value>Перепечатка</value>
   </data>
-  <data name="Reprint.Confirm" xml:space="preserve">
-    <value>Перепечатать квитанцию ​​для {0}?</value>
-  </data>
   <data name="Reprint.Created" xml:space="preserve">
     <value>Задание повторной печати создано. Print Bridge заберет его в ближайшее время.</value>
   </data>
@@ -528,20 +408,11 @@
   <data name="Reprint.OrderNotFound" xml:space="preserve">
     <value>Заказ не найден.</value>
   </data>
-  <data name="Reprint.SelectPrintedJob" xml:space="preserve">
-    <value>Выберите успешно напечатанное задание для повторной печати.</value>
-  </data>
-  <data name="Tab.Logs" xml:space="preserve">
-    <value>Журналы</value>
-  </data>
   <data name="Tab.PrintHistory" xml:space="preserve">
     <value>Распечатать историю</value>
   </data>
   <data name="Tab.Settings" xml:space="preserve">
     <value>Настройки</value>
-  </data>
-  <data name="Tab.Status" xml:space="preserve">
-    <value>Статус</value>
   </data>
   <data name="Tray.ConnectionStatus" xml:space="preserve">
     <value>● {0}</value>
@@ -596,7 +467,6 @@
   <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>Сбросить подключение?</value></data>
   <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>Это очищает токен подключения на этом компьютере. Адрес сервера, идентификатор устройства, язык и локальная история сохраняются. Чтобы продолжить, нужно снова подключить Print Bridge.</value></data>
   <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>Используйте, когда подключение или токен больше не действительны.</value></data>
-  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>Устранение проблем с подключением</value></data>
   <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>Чтобы продолжить, снова подключите Print Bridge через веб-панель.</value></data>
   <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>Подключение сброшено. Повторно подключите это устройство на странице настройки Print Bridge в веб-панели Wasla.</value></data>
   <data name="Settings.SetupCode" xml:space="preserve"><value>Код настройки</value></data>
@@ -605,9 +475,6 @@
   <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>Подключение сброшено. Повторно подключите это устройство на странице настройки Print Bridge в веб-панели Wasla.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>Соединение не удалось проверить</value>
-  </data>
-  <data name="Settings.Validation.Verified" xml:space="preserve">
-    <value>Соединение проверено</value>
   </data>
   <data name="Validation.ServerUrlRequired" xml:space="preserve">
     <value>Wasla Требуется веб-панель URL.</value>
@@ -630,7 +497,6 @@
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge на этом компьютере уже зарегистрирован как активное устройство. Используйте в Wasla Web вариант "Повторно подключить существующее устройство" вместо настройки нового устройства или сначала удалите старую запись устройства.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Не удалось завершить автоматическую настройку.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>Задание печати чека ещё выполняется. Подключение не изменено; чек завершается через сохранённое подключение. Откройте ссылку настройки ещё раз, когда печать закончится.</value></data>
-  <data name="Settings.Connection.PrintingInProgress" xml:space="preserve"><value>Задание печати чека ещё выполняется. Подключение не изменено. Повторите попытку, когда печать закончится.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>Подключение</value>
   </data>
@@ -654,18 +520,6 @@
   </data>
   <data name="Shell.Today.Title" xml:space="preserve">
     <value>Сегодня</value>
-  </data>
-  <data name="Shell.OpenClassicWindow" xml:space="preserve">
-    <value>Открыть классическое окно</value>
-  </data>
-  <data name="Shell.Fallback.Title" xml:space="preserve">
-    <value>Открыто классическое окно</value>
-  </data>
-  <data name="Shell.Fallback.RuntimeMissing" xml:space="preserve">
-    <value>Для нового вида требуется Microsoft Edge WebView2 Runtime. Вместо него используется классическое окно.</value>
-  </data>
-  <data name="Shell.Fallback.StartFailed" xml:space="preserve">
-    <value>Не удалось запустить новый вид. Вместо него используется классическое окно.</value>
   </data>
   <data name="Shell.Nav.Label" xml:space="preserve">
     <value>Разделы</value>
@@ -795,12 +649,6 @@
   </data>
   <data name="Shell.Diagnostics.Unavailable" xml:space="preserve">
     <value>Неизвестно</value>
-  </data>
-  <data name="Shell.Diagnostics.Fallback" xml:space="preserve">
-    <value>Классическое окно</value>
-  </data>
-  <data name="Shell.Diagnostics.FallbackHelp" xml:space="preserve">
-    <value>Аварийный вариант: открывайте старое классическое окно, только если это окно не работает. Оно останется доступным как минимум ещё один выпуск.</value>
   </data>
   <data name="Shell.Toast.Dismiss" xml:space="preserve">
     <value>Закрыть</value>
@@ -943,7 +791,13 @@
   <data name="Shell.Setup.TokenTooLong" xml:space="preserve">
     <value>Это значение слишком длинное для токена устройства. Скопируйте токен из Wasla Web ещё раз.</value>
   </data>
-  <data name="Tray.OpenClassicFallback" xml:space="preserve">
-    <value>Открыть классическое окно (резерв)</value>
+  <data name="RuntimeNotice.Title" xml:space="preserve">
+    <value>Требуется WebView2 Runtime</value>
+  </data>
+  <data name="RuntimeNotice.Message" xml:space="preserve">
+    <value>Для окна Print Bridge нужен Microsoft Edge WebView2 Runtime, но на этом компьютере он не установлен или не может быть использован. Печать чеков продолжается в фоновом режиме. Установите или восстановите Microsoft Edge WebView2 Runtime, затем перезапустите Print Bridge.</value>
+  </data>
+  <data name="RuntimeNotice.Close" xml:space="preserve">
+    <value>Закрыть</value>
   </data>
 </root>

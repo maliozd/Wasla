@@ -145,7 +145,7 @@ public sealed class ShellHostServicesTests : IDisposable
         // connection dialog returns only a result with a localized message.
         Assert.All(typeof(IShellNativeActions).GetMethods(), m => Assert.Empty(m.GetParameters()));
         Assert.Equal(
-            ["ConfirmConnectionResetAsync", "ConfirmEnableTestModeAsync", "OpenClassicWindow", "OpenLogFolder", "RunConnectionSetupAsync"],
+            ["ConfirmConnectionResetAsync", "ConfirmEnableTestModeAsync", "OpenLogFolder", "RunConnectionSetupAsync"],
             typeof(IShellNativeActions).GetMethods().Select(m => m.Name).Order());
         Assert.Equal(
             ["Field", "IsConnected", "Message", "Outcome"],

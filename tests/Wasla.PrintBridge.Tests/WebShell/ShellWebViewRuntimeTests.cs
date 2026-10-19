@@ -108,22 +108,22 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
     public Task AcceptsOnlyContractMessagesFromThePage() =>
         RunShellAsync(async (form, core, _) =>
         {
-            var classicRequests = 0;
-            form.ClassicWindowRequested += (_, _) => classicRequests++;
+            var culture = CurrentCultureService!;
             var sentBefore = form.BridgeForTests.SentSnapshotCount;
 
+            // An unknown field, a non-string message, an unknown type and an oversized message change nothing.
             await EvalAsync(core, """
-                chrome.webview.postMessage('{"version":3,"type":"classicWindow.open","payload":{"tab":"settings"}}');
+                chrome.webview.postMessage('{"version":3,"type":"language.change","payload":{"culture":"en-US","tab":"settings"}}');
                 chrome.webview.postMessage('{"version":3,"type":"host.exec","payload":{"method":"Exit"}}');
-                chrome.webview.postMessage({ version: 3, type: 'classicWindow.open' });
+                chrome.webview.postMessage({ version: 3, type: 'language.change', payload: { culture: 'en-US' } });
                 chrome.webview.postMessage('x'.repeat(5000));
                 'sent'
                 """);
             await EvalAsync(core, "new Promise(r => setTimeout(() => r('waited'), 500))");
-            Assert.Equal(0, classicRequests);
+            Assert.Equal(SupportedCultures.Turkish, culture.CurrentCulture.Name);
 
-            await EvalAsync(core, """chrome.webview.postMessage('{"version":3,"type":"classicWindow.open","payload":{}}'); 'sent'""");
-            await WaitUntilAsync(() => Task.FromResult(classicRequests == 1));
+            await EvalAsync(core, """chrome.webview.postMessage('{"version":3,"type":"language.change","payload":{"culture":"en-US"}}'); 'sent'""");
+            await WaitUntilAsync(() => Task.FromResult(culture.CurrentCulture.Name == "en-US"));
 
             await EvalAsync(core, """chrome.webview.postMessage('{"version":3,"type":"ui.ready","payload":{}}'); 'sent'""");
             await WaitUntilAsync(() => Task.FromResult(form.BridgeForTests.SentSnapshotCount > sentBefore));
@@ -258,12 +258,10 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
         });
 
     [Fact]
-    public Task ConnectionSetup_OpensTheNativeDialog_NotTheClassicWindow_AndThePageNeverSeesTheSecrets() =>
+    public Task ConnectionSetup_OpensTheNativeDialog_AndThePageNeverSeesTheSecrets() =>
         RunShellAsync(async (form, core, source) =>
         {
             var localizer = new PrintBridgeLocalizer(CurrentCultureService!);
-            var classicRequests = 0;
-            form.ClassicWindowRequested += (_, _) => classicRequests++;
             // The real engine records the verified contact and raises StatusChanged; the fake does the same.
             source.OnApplied = () => source.Set(Status(displayName: "Kasa 9"));
             source.Set(Status(BridgeServerConnectionStatus.Error, new PrintBridgeRuntimeIssue(PrintBridgeRuntimeIssueCode.ServerUnreachable), isRunning: false));
@@ -287,7 +285,6 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
             await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('toast-text').textContent") == localizer["Shell.Setup.Connected"]);
             await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('connection').dataset.state") == "online");
             Assert.Equal("Kasa 9", await EvalAsync(core, "document.getElementById('device-name').textContent"));
-            Assert.Equal(0, classicRequests);
             Assert.Equal(("https://print-bridge.test", NewTypedToken, false), source.AppliedConnection);
 
             var html = await EvalAsync(core, "document.documentElement.outerHTML");

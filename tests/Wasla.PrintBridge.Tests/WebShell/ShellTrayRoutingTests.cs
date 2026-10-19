@@ -1,15 +1,18 @@
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
+using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.UI;
 using Wasla.PrintBridge.WebShell;
+using static Wasla.PrintBridge.Tests.WebShell.TrayExitTests;
 
 namespace Wasla.PrintBridge.Tests.WebShell;
 
 /// <summary>
-/// The real tray application (services, engine, classic window, WebView2 window) on a temporary data root, driven
-/// through its tray menu. With <c>Ui.Shell = WebView2</c> every normal entry opens the one WebView2 window on the
-/// matching tab; the classic window opens only from its explicit fallback entry or when WebView2 cannot run.
-/// No device token is configured, so nothing contacts a server.
+/// The real tray application with a usable WebView2 Runtime, on a temporary data root, driven through its tray menu.
+/// A first run opens the WebView2 app on its connect step; a configured installation starts in the tray only; every
+/// tray entry and a setup link open the one WebView2 window; when the app fails to start, the runtime notice opens
+/// instead for the rest of the session. A configured engine listens to a local fake server with a fake token in test
+/// mode, so nothing is printed.
 /// </summary>
 [Collection(PrintBridgeDataRootCollection.Name)]
 [Trait("Category", "WebView2Runtime")]
@@ -17,9 +20,9 @@ public sealed class ShellTrayRoutingTests : IDisposable
 {
     private static readonly TimeSpan Timeout = TrayTestHost.Timeout;
 
-    // The tray application saves settings (window layout) when it exits; the data root waits for its thread.
     private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-tray-tests");
     private readonly CultureScope _cultureScope = new();
+    private readonly TrayFakeServer _server = new();
     private readonly TrayTestHost _host;
 
     public ShellTrayRoutingTests() => _host = new TrayTestHost(_dataRoot);
@@ -27,13 +30,33 @@ public sealed class ShellTrayRoutingTests : IDisposable
     public void Dispose()
     {
         _dataRoot.Dispose();
+        _server.Dispose();
         _cultureScope.Dispose();
     }
 
     [Fact]
-    public Task TrayHistoryAndSettings_OpenTheWebView2Tabs_InOneWindow_AndNeverTheClassicWindow() =>
-        _host.RunAsync(ShellSelection.WebView2Value, available: true, async (tray, localizer) =>
+    public Task FirstRunWithoutAToken_OpensTheWebView2App_OnItsConnectStep() =>
+        _host.RunAsync(available: true, async (tray, localizer) =>
         {
+            var shell = await WaitForAsync(() => tray.ShellFormForTests is { Visible: true } form ? form : null);
+            await shell.InitializationForTests!.WaitAsync(Timeout);
+            var core = shell.CoreWebView2ForTests!;
+
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('connection').dataset.state") == "notConfigured");
+            Assert.Equal("true", await EvalAsync(core, "document.getElementById('tab-overview').getAttribute('aria-selected')"));
+            Assert.Contains(localizer["Shell.Action.Connect"], await EvalAsync(core, "document.getElementById('hero-actions').textContent"));
+            Assert.Equal([typeof(PrintBridgeShellForm)], VisibleWindows());
+            Assert.Null(tray.RuntimeNoticeForTests);
+        });
+
+    [Fact]
+    public Task EveryTrayEntry_OpensTheOneWebView2Window_OnItsTab() =>
+        _host.RunAsync(available: true, async (tray, localizer) =>
+        {
+            await _server.NextPoll().WaitAsync(Timeout);
+            // Configured: the application started in the tray only.
+            Assert.Null(tray.ShellFormForTests);
+
             Click(tray, localizer["Tray.PrintHistory"]);
             var shell = await WaitForAsync(() => tray.ShellFormForTests is { Visible: true } form ? form : null);
             await shell.InitializationForTests!.WaitAsync(Timeout);
@@ -49,75 +72,68 @@ public sealed class ShellTrayRoutingTests : IDisposable
             await WaitUntilAsync(() => Task.FromResult(shell.Visible));
             Assert.Same(shell, tray.ShellFormForTests);
 
-            Assert.Single(System.Windows.Forms.Application.OpenForms.OfType<PrintBridgeShellForm>());
-            Assert.False(tray.ClassicWindowForTests.Visible);
+            shell.Hide();
+            DoubleClickTrayIcon(tray);
+            await WaitUntilAsync(() => Task.FromResult(shell.Visible));
+            Assert.Same(shell, tray.ShellFormForTests);
 
-            // The classic window is still one deliberate click away, as a labelled fallback.
-            var fallback = Item(tray, localizer["Tray.OpenClassicFallback"]);
-            OpenMenu(tray);
-            Assert.True(fallback.Available);
-            fallback.PerformClick();
-            Assert.True(tray.ClassicWindowForTests.Visible);
-        });
-
-    [Fact]
-    public Task MissingWebView2Runtime_TrayHistoryOpensTheClassicHistoryTab() =>
-        _host.RunAsync(ShellSelection.WebView2Value, available: false, async (tray, localizer) =>
-        {
-            Click(tray, localizer["Tray.PrintHistory"]);
-
-            Assert.Null(tray.ShellFormForTests);
-            Assert.True(tray.ClassicWindowForTests.Visible);
-            Assert.Equal(localizer["Tab.PrintHistory"], tray.ClassicWindowForTests.SelectedTabTitleForTests);
-            Assert.Equal("Shell.Fallback.RuntimeMissing", tray.FallbackNoticeForTests);
-            OpenMenu(tray);
-            Assert.False(Item(tray, localizer["Tray.OpenClassicFallback"]).Available);
-            await Task.CompletedTask;
-        });
+            Assert.Equal([typeof(PrintBridgeShellForm)], VisibleWindows());
+            Assert.Null(tray.RuntimeNoticeForTests);
+            Assert.True(tray.RuntimeForTests.IsRunning);
+        }, configure: Listen);
 
     [Fact]
-    public Task WebView2StartupFailure_FallsBackToTheClassicTabThatWasAskedFor() =>
-        _host.RunAsync(ShellSelection.WebView2Value, available: true, async (tray, localizer) =>
+    public Task ASetupLink_IsHandledInTheWebView2Window_AndItsResultShownThere() =>
+        _host.RunAsync(available: true, async (tray, localizer) =>
         {
+            await _server.NextPoll().WaitAsync(Timeout);
+
+            tray.HandleSetupUri("wasla-printbridge://setup?server=not-a-server");
+
+            var shell = await WaitForAsync(() => tray.ShellFormForTests is { Visible: true } form ? form : null);
+            await shell.InitializationForTests!.WaitAsync(Timeout);
+            var core = shell.CoreWebView2ForTests!;
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('toast-text').textContent") == localizer["Auto.InvalidLink"]);
+            Assert.Empty(_host.SetupResultMessages);
+            Assert.Null(tray.RuntimeNoticeForTests);
+            Assert.True(tray.RuntimeForTests.IsRunning);
+        }, configure: Listen);
+
+    [Fact]
+    public Task WebView2StartupFailure_ShowsTheRuntimeNotice_ForTheRestOfTheSession_AndKeepsListening() =>
+        _host.RunAsync(available: true, async (tray, localizer) =>
+        {
+            await _server.NextPoll().WaitAsync(Timeout);
+
             Click(tray, localizer["Tray.Settings"]);
 
-            await WaitUntilAsync(() => Task.FromResult(tray.ClassicWindowForTests.Visible));
-            Assert.Equal(localizer["Tab.Settings"], tray.ClassicWindowForTests.SelectedTabTitleForTests);
-            Assert.Equal("Shell.Fallback.StartFailed", tray.FallbackNoticeForTests);
+            var notice = await WaitForAsync(() => tray.RuntimeNoticeForTests is { Visible: true } open ? open : null);
             await WaitUntilAsync(() => Task.FromResult(tray.ShellFormForTests is null));
+            Assert.Equal(localizer["RuntimeNotice.Message"], notice.Message.Text);
 
-            // For the rest of the session the tray opens the classic window directly.
-            tray.ClassicWindowForTests.Hide();
+            // For the rest of the session the tray shows the notice directly; no new app window is created.
+            notice.CloseButton.PerformClick();
+            Assert.True(notice.IsDisposed);
             Click(tray, localizer["Tray.PrintHistory"]);
-            Assert.True(tray.ClassicWindowForTests.Visible);
-            Assert.Equal(localizer["Tab.PrintHistory"], tray.ClassicWindowForTests.SelectedTabTitleForTests);
+            Assert.True(tray.RuntimeNoticeForTests is { Visible: true });
             Assert.Null(tray.ShellFormForTests);
-        }, failShellStartup: true);
+            Assert.Equal([typeof(WebView2RuntimeNotice)], VisibleWindows());
 
-    [Fact]
-    public Task ClassicDefault_KeepsEveryTrayEntryOnTheClassicWindow() =>
-        _host.RunAsync(shell: null, available: true, async (tray, localizer) =>
-        {
-            Click(tray, localizer["Tray.Settings"]);
+            await _server.NextPoll().WaitAsync(Timeout);
+            Assert.True(tray.RuntimeForTests.IsRunning);
+        }, failShellStartup: true, configure: Listen);
 
-            Assert.Null(tray.ShellFormForTests);
-            Assert.True(tray.ClassicWindowForTests.Visible);
-            Assert.Equal(localizer["Tab.Settings"], tray.ClassicWindowForTests.SelectedTabTitleForTests);
-            OpenMenu(tray);
-            Assert.False(Item(tray, localizer["Tray.OpenClassicFallback"]).Available);
-            await Task.CompletedTask;
-        });
+    private void Listen(PrintBridgeSettingsStore.AppSettingsDocument document) => ListenToTheFakeServer(document, _server.Url);
 
-    private static ToolStripMenuItem Item(TrayApplicationContext tray, string text) =>
-        tray.TrayMenuForTests.Items.OfType<ToolStripMenuItem>().Single(i => i.Text == text);
+    internal static Type[] VisibleWindows() =>
+        [.. System.Windows.Forms.Application.OpenForms.Cast<Form>().Where(f => f.Visible).Select(f => f.GetType())];
 
-    private static void Click(TrayApplicationContext tray, string text) => Item(tray, text).PerformClick();
-
-    /// <summary>Raises the menu's Opening event, as right-clicking the tray icon does, without showing the menu.</summary>
-    private static void OpenMenu(TrayApplicationContext tray)
+    /// <summary>Raises the tray icon's double-click, as the user does, without a visible icon.</summary>
+    internal static void DoubleClickTrayIcon(TrayApplicationContext tray)
     {
-        var raise = typeof(ToolStripDropDown).GetMethod("OnOpening", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        raise.Invoke(tray.TrayMenuForTests, [new System.ComponentModel.CancelEventArgs()]);
+        var raise = typeof(NotifyIcon).GetMethod("OnDoubleClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("NotifyIcon has no double-click handler to raise.");
+        raise.Invoke(tray.TrayIconForTests, [EventArgs.Empty]);
     }
 
     private static async Task<T> WaitForAsync<T>(Func<T?> find)

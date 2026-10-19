@@ -7,7 +7,7 @@ namespace Wasla.PrintBridge.WebShell;
 
 /// <summary>
 /// Projects engine, settings and host operation state into the page model, using the existing Print Bridge
-/// resources and date formats so the shell and the classic window say the same thing.
+/// resources and date formats so the window, the tray and the receipts say the same thing.
 /// </summary>
 public sealed class ShellSnapshotFactory
 {
@@ -99,9 +99,6 @@ public sealed class ShellSnapshotFactory
         "Shell.Diagnostics.Engine",
         "Shell.Diagnostics.LastError",
         "Shell.Diagnostics.None",
-        "Shell.Diagnostics.Fallback",
-        "Shell.Diagnostics.FallbackHelp",
-        "Shell.OpenClassicWindow",
         "Shell.Toast.Dismiss"
     ];
 
@@ -223,8 +220,8 @@ public sealed class ShellSnapshotFactory
     }
 
     /// <summary>
-    /// The actions the page may offer. Start is withheld while a reconnect is required (the same gate as the
-    /// classic window); test print needs a ready printer outside test mode.
+    /// The actions the page may offer. Start is withheld while a reconnect is required
+    /// (<see cref="PrintBridgePollingGate"/>); test print needs a ready printer outside test mode.
     /// </summary>
     internal ShellActionsView CreateActions(PrintBridgeRuntimeStatus status, string connectionState)
     {

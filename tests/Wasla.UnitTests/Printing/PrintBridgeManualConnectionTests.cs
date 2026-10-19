@@ -360,17 +360,19 @@ public sealed partial class PrintBridgeManualConnectionTests
     {
         var web = Load(culture);
         var desktop = LoadDesktop(culture);
-        var mainForm = Read("src", "Wasla.PrintBridge", "UI", "MainForm.cs");
+        var connectionDialog = Read("src", "Wasla.PrintBridge", "WebShell", "ShellConnectionDialog.cs");
 
-        // The fields the desktop Settings screen labels with these keys...
-        Assert.Contains("_lblServerUrl.Text = _localizer[\"Settings.ServerUrl\"];", mainForm, StringComparison.Ordinal);
-        Assert.Contains("_lblAgentToken.Text = _localizer[\"Settings.AgentToken\"];", mainForm, StringComparison.Ordinal);
+        // The fields the desktop app's connection dialog labels with these keys...
+        Assert.Contains("AddField(layout, _localizer[\"Settings.ServerUrl\"]", connectionDialog, StringComparison.Ordinal);
+        Assert.Contains("AddField(layout, _localizer[\"Settings.AgentToken\"]", connectionDialog, StringComparison.Ordinal);
         // ...carry exactly the labels the Web page shows next to the values to paste.
         Assert.Equal(desktop["Settings.ServerUrl"], web["PrintBridge.Manual.WebPanelUrlLabel"]);
         Assert.Equal(desktop["Settings.AgentToken"], web["PrintBridge.Manual.DeviceTokenLabel"]);
-        // The next step names the app's real Settings tab and its Save and Test buttons.
-        foreach (var label in new[] { desktop["Tab.Settings"], desktop["Button.SaveConnection"], desktop["Button.TestConnection"] })
+        // The next step and the setup steps name the app's real connect button, where it is, and the dialog's button.
+        foreach (var label in new[] { desktop["Shell.Action.Connect"], desktop["Tab.Settings"], desktop["Shell.Settings.Connection"], desktop["Shell.Setup.Connect"] })
             Assert.Contains(label, web["PrintBridge.Manual.Next"], StringComparison.Ordinal);
+        Assert.Contains(desktop["Shell.Action.Connect"], web["PrintBridge.SetupStep4"], StringComparison.Ordinal);
+        Assert.Contains(desktop["Shell.Setup.Connect"], web["PrintBridge.SetupStep5"], StringComparison.Ordinal);
     }
 
     // Helpers ------------------------------------------------------------------------------------

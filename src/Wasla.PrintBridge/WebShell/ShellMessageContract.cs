@@ -34,7 +34,6 @@ public static partial class ShellMessageContract
     public const string UiReady = "ui.ready";
     public const string SnapshotRequest = "snapshot.request";
     public const string LanguageChange = "language.change";
-    public const string ClassicWindowOpen = "classicWindow.open";
     public const string EngineStart = "engine.start";
     public const string EngineStop = "engine.stop";
     public const string ConnectionTest = "connection.test";
@@ -86,7 +85,6 @@ public static partial class ShellMessageContract
             [UiReady] = new(ShellCommandType.UiReady, []),
             [SnapshotRequest] = new(ShellCommandType.SnapshotRequest, []),
             [LanguageChange] = new(ShellCommandType.LanguageChange, [new("culture", FieldKind.Culture, Required: true)]),
-            [ClassicWindowOpen] = new(ShellCommandType.ClassicWindowOpen, []),
             [EngineStart] = new(ShellCommandType.EngineStart, [RequestIdField]),
             [EngineStop] = new(ShellCommandType.EngineStop, [RequestIdField]),
             [ConnectionTest] = new(ShellCommandType.ConnectionTest, [RequestIdField]),
@@ -104,7 +102,7 @@ public static partial class ShellMessageContract
             ]),
             [HistoryReprint] = new(ShellCommandType.HistoryReprint, [RequestIdField, new("itemRef", FieldKind.HistoryItemRef, Required: true)]),
             [LogsOpenFolder] = new(ShellCommandType.LogsOpenFolder, [RequestIdField]),
-            // Exactly the operational settings the classic Advanced section edits; no other setting can be named.
+            // Exactly the operational settings the app edits (test mode and poll intervals); no other setting can be named.
             [SettingsSave] = new(ShellCommandType.SettingsSave,
             [
                 RequestIdField,
@@ -138,7 +136,6 @@ public enum ShellCommandType
     UiReady,
     SnapshotRequest,
     LanguageChange,
-    ClassicWindowOpen,
     EngineStart,
     EngineStop,
     ConnectionTest,
