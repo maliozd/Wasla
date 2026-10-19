@@ -49,6 +49,8 @@ Primary sources:
 
 The WAS-17 decision for Trendyol GO is webhook first, with polling as the safety net that reconciles what webhooks miss. Webhooks are **not implemented**: polling is the only ingestion path today, for every platform. Yemeksepeti stays polling-only until its restaurant contract is confirmed.
 
+The evidence and the open provider questions are in [../integrations/provider-webhooks.md](../integrations/provider-webhooks.md). It explains why the Trendyol GO webhook (3 retries, no events for `Picking` or `Invoiced`, no documented ordering) does not allow polling to be removed.
+
 Polling is a safety net only if it sees every change, so it must:
 
 - Ask for every provider status, including the terminal ones (delivered, cancelled, seller-cancelled).
