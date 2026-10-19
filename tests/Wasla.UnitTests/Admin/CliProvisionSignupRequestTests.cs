@@ -26,7 +26,7 @@ public sealed class CliProvisionSignupRequestTests : IDisposable
                 var config = new ConfigurationBuilder()
                     .AddInMemoryCollection(new Dictionary<string, string?>
                     {
-                        ["CustomerDb:ServerInstance"] = "test-sql"
+                        ["TenantDb:ServerInstance"] = "test-sql"
                     })
                     .Build();
 

@@ -4,7 +4,7 @@
 
 This document lists what must be configured to run Wasla in a non-local environment: processes, databases, secrets, domains, provider mode, Print Bridge, logging, and health endpoints.
 
-It corrects stale names from older checklists (e.g. treating `BaseUrl` as the Print Bridge setup field, or OrderHub as the current product name). It does **not** embed real secrets or placeholder passwords.
+It corrects stale names from older checklists (e.g. treating `BaseUrl` as the Print Bridge setup field, or the former product name as the current one). It does **not** embed real secrets or placeholder passwords.
 
 Older matrix: `docs/deployment-config.md` (superseded for day-to-day ops; not deleted).
 
@@ -28,8 +28,8 @@ Start `Wasla.Web` with its content root set to the folder that contains its `www
 
 - **CentralDb**: tenant registry, memberships, signup/provisioning, central admins, Print Bridge device registry. Connection: `ConnectionStrings:CentralDb` / `ConnectionStrings__CentralDb`.
 - **Per-tenant DBs**: operational data for one restaurant location. Connection strings stored encrypted on the tenant row; decrypted with `ENCRYPTION_MASTER_KEY`. Several locations are several tenants. See [../architecture/tenancy.md](../architecture/tenancy.md).
-- CLI provisioning / migrations use `CustomerDb:ServerInstance` (`CustomerDb__ServerInstance`) when creating or migrating tenant databases.
-- Tenant databases are created only on an explicitly configured SQL Server (WAS-93): `--sql-server`, then `CustomerDb:ServerInstance`, then `OrderHub:CustomerOnboarding:ServerInstance`. There is no built-in default and the committed base `appsettings.json` files no longer name one (LocalDB is set only in the Development files), so a deployment that sets none of them cannot provision: Central Admin and `provision-signup-request` report "No SQL Server instance is configured" before any database work. Before this change the CLI's base `appsettings.json`, loaded after environment variables, replaced `CustomerDb__ServerInstance` with LocalDB.
+- CLI provisioning and Central Admin provisioning use `TenantDb:ServerInstance` (`TenantDb__ServerInstance`) when creating tenant databases.
+- Tenant databases are created only on an explicitly configured SQL Server (WAS-93): `--sql-server`, then `TenantDb:ServerInstance` (WAS-136). No other key is read. There is no built-in default and the committed base `appsettings.json` files name none (LocalDB is set only in the Development files), so a deployment that sets neither cannot provision: Central Admin and `provision-signup-request` report "No SQL Server instance is configured" before any database work. Before WAS-93 the CLI's base `appsettings.json`, loaded after environment variables, replaced the environment's tenant server with LocalDB.
 - The CLI's environment variables override its JSON files, and its base `appsettings.json` no longer names a CentralDb: set `ConnectionStrings__CentralDb` for every CLI run outside Development ([cli.md](cli.md#configuration-sources)). Before WAS-93 the CLI's base file supplied LocalDB and also overrode `ConnectionStrings__CentralDb` from the environment.
 
 Apply schema with CLI — see [migrations.md](migrations.md). Provisioning applies tenant migrations inside provisioning; not via middleware.
@@ -87,7 +87,7 @@ Central admins are created with CLI `add-central-admin`, not `CentralAdmin__Emai
 ## Domains and HTTPS
 
 - Public / marketing host and `{slug}.<MarketingBaseDomain>` tenant hosts.
-- Config section for onboarding remains `OrderHub:CustomerOnboarding` (legacy section name debt): `MarketingBaseDomain`, `ServerInstance`, `SqlAuth`, optional `TrialDays`.
+- Onboarding settings are in `Wasla:TenantOnboarding`: `MarketingBaseDomain`, `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`. The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
 - Production should force HTTPS (Web enables HSTS + HTTPS redirection outside Development).
 - Print Bridge and browsers need a trusted certificate chain on real domains.
 
@@ -95,8 +95,8 @@ Useful URL overrides (env `__` form):
 
 | Variable | Role |
 |----------|------|
-| `OrderHub__ApiBaseUrl` | Public API URL used when generating Print Bridge setup helpers |
-| `OrderHub__CustomerWebBaseUrl` / `OrderHub__PublicWebBaseUrl` | Optional fixed public Web URLs behind proxies |
+| `Wasla__ApiBaseUrl` | Public API URL for Print Bridge setup helpers (committed as `http://localhost:59451`; no current page reads it) |
+| `Wasla__TenantWebBaseUrl`, else `Wasla__PublicWebBaseUrl` | Optional fixed Web URL that the Print Bridge setup page hands out as `ServerUrl` behind proxies; without either it uses the request's scheme and host |
 
 Do not leave production pointing at `localhost` or LocalDB.
 
@@ -145,7 +145,7 @@ Details: [../integrations/food-platforms.md](../integrations/food-platforms.md).
 
 Desktop clients use **`ServerUrl`** + device token. Config section may still be named `OrderHub` (legacy). ProgramData: `C:\ProgramData\Wasla\PrintBridge`.
 
-**Download package.** The tenant setup page (including guided setup's first install) offers the portable Windows ZIP through `GET /print-bridge/download/package` (same origin, no query values, `CanManageDeviceSecurity`). The ZIP is not in the repository: build it with `scripts/release/package-print-bridge.ps1` and either set `OrderHub:PrintBridgeDownload:PackagePath` to the file or place it at `wwwroot/downloads/wasla-print-bridge/` under the name in `OrderHub:PrintBridgeDownload:PackageFileName` (default `Wasla.PrintBridge-win-x64.zip`). A relative `PackagePath` is resolved against Web's content root. The default location needs a web root: start Web with its content root set to the folder that contains `wwwroot` (the publish folder, or the project folder for `dotnet run`). Without one, ASP.NET Core leaves `WebRootPath` null and the default package counts as missing (WAS-128); a configured `PackagePath` still works. Without the file the page shows a "coming soon" state and no download link anywhere on it, and the download route returns 404. The package is portable (extract and run `Wasla.PrintBridge.exe`; the first run registers the `wasla-printbridge://` link) and needs the .NET 8 Desktop Runtime unless built with `-SelfContained`. The package also contains the opt-in WebView2 desktop app (`shell-ui/`, WebView2 SDK assemblies and loaders); it is off unless `Ui.Shell` is `WebView2`, and then needs the Microsoft Edge WebView2 Runtime, which the package does not install (WAS-55).
+**Download package.** The tenant setup page (including guided setup's first install) offers the portable Windows ZIP through `GET /print-bridge/download/package` (same origin, no query values, `CanManageDeviceSecurity`). The ZIP is not in the repository: build it with `scripts/release/package-print-bridge.ps1` and either set `Wasla:PrintBridgeDownload:PackagePath` to the file or place it at `wwwroot/downloads/wasla-print-bridge/` under the name in `Wasla:PrintBridgeDownload:PackageFileName` (default `Wasla.PrintBridge-win-x64.zip`). A relative `PackagePath` is resolved against Web's content root. The default location needs a web root: start Web with its content root set to the folder that contains `wwwroot` (the publish folder, or the project folder for `dotnet run`). Without one, ASP.NET Core leaves `WebRootPath` null and the default package counts as missing (WAS-128); a configured `PackagePath` still works. Without the file the page shows a "coming soon" state and no download link anywhere on it, and the download route returns 404. The package is portable (extract and run `Wasla.PrintBridge.exe`; the first run registers the `wasla-printbridge://` link) and needs the .NET 8 Desktop Runtime unless built with `-SelfContained`. The package also contains the opt-in WebView2 desktop app (`shell-ui/`, WebView2 SDK assemblies and loaders); it is off unless `Ui.Shell` is `WebView2`, and then needs the Microsoft Edge WebView2 Runtime, which the package does not install (WAS-55).
 
 **Moving a device to another server.** Open the new setup link when no receipt is being printed. While a print job is still being completed, Print Bridge refuses the link and says so. Nothing is changed and the code is not used up, so the same link works once printing has finished (WAS-58). Edit `appsettings.json` by hand only while Print Bridge is closed.
 
@@ -224,26 +224,26 @@ DataProtection__KeyPath
 Platforms__ProviderMode
 Platform__TrendyolGo__BaseUrl
 Platform__Yemeksepeti__BaseUrl
-OrderHub__CustomerOnboarding__MarketingBaseDomain
-OrderHub__CustomerOnboarding__ServerInstance
-OrderHub__CustomerOnboarding__SqlAuth
-OrderHub__ApiBaseUrl
+Wasla__TenantOnboarding__MarketingBaseDomain
+Wasla__TenantOnboarding__SqlAuth
+Wasla__ApiBaseUrl
+Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl behind a proxy
 TrustedProxies__KnownProxies__0              # Web and API behind a reverse proxy
 AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
-OrderHub__CustomerOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
+Wasla__TenantOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
 TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
 Realtime__Internal__Port                     # Web, Worker, Api: loopback channel to Web; see Live notifications
 Realtime__Internal__Secret                   # secret, at least 32 characters
 Realtime__Internal__Disabled                 # true only for a polling-only environment (no Port); required then outside Development
 Realtime__SessionRevalidationSeconds         # Web, optional, default 60
-CustomerDb__ServerInstance   # CLI
+TenantDb__ServerInstance                     # CLI and Web: SQL Server for new tenant databases; no default
 ```
 
 ## Known gaps
 
 - No OpenTelemetry exporter or metrics stack; the `Wasla.Realtime` meter is read locally with `dotnet-counters` (see [observability.md](observability.md#live-notification-metrics)).
 - Worker has no HTTP health endpoint for orchestrators.
-- Legacy names remain in config (`OrderHub` sections, `migrate-customer` command names).
+- Legacy names remain outside the Web, Api, Worker and CLI configuration: the Print Bridge desktop settings section (WAS-135) and the `migrate-customer` command names (WAS-137).
 
 ## Related docs
 

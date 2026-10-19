@@ -33,7 +33,7 @@ namespace Wasla.UnitTests.Signup;
 internal sealed class CheckoutTestHarness : IDisposable
 {
     private readonly SqliteConnection _connection;
-    private readonly IOptions<CustomerOnboardingOptions> _options = Options.Create(new CustomerOnboardingOptions());
+    private readonly IOptions<TenantOnboardingOptions> _options = Options.Create(new TenantOnboardingOptions());
     private readonly IDataProtectionProvider _dataProtection = new EphemeralDataProtectionProvider();
     private readonly List<CentralDbContext> _extraContexts = [];
 

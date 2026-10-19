@@ -141,8 +141,8 @@ internal static class CliHelpPrinter
                 Console.WriteLine("Also records the tenant membership. The dashboard setup checklist needs a business phone");
                 Console.WriteLine("and a city or country; without them, set them later with update-customer-profile.");
                 Console.WriteLine();
-                Console.WriteLine("The tenant database is created on --sql-server, or on CustomerDb:ServerInstance /");
-                Console.WriteLine("OrderHub:CustomerOnboarding:ServerInstance. There is no default server: without one, nothing is created.");
+                Console.WriteLine("The tenant database is created on --sql-server, or on TenantDb:ServerInstance.");
+                Console.WriteLine("There is no default server: without one, nothing is created.");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-customer --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\" --business-phone \"+90 212 000 00 00\" --city Istanbul");
@@ -166,8 +166,8 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Provisions a PaymentSucceeded PendingRegistration into a live tenant.");
                 Console.WriteLine("Uses the stored PasswordHash for the first owner user (no plaintext password).");
-                Console.WriteLine("The tenant database is created on --sql-server, or on CustomerDb:ServerInstance /");
-                Console.WriteLine("OrderHub:CustomerOnboarding:ServerInstance. There is no default server: without one, nothing is created.");
+                Console.WriteLine("The tenant database is created on --sql-server, or on TenantDb:ServerInstance.");
+                Console.WriteLine("There is no default server: without one, nothing is created.");
                 Console.WriteLine("--force only retries a registration marked Provisioned without a tenant row; it never adopts a");
                 Console.WriteLine("database that lacks this registration's ownership marker.");
                 Console.WriteLine();

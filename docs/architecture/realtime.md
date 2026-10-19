@@ -74,7 +74,7 @@ must not drop the notice of committed work) and catches every exception.
 version but announces nothing.
 
 Print Bridge talks to the server named by its `ServerUrl`. The setup page always hands out the tenant's Web URL
-(`PrintBridgeController.ResolveCustomerWebBaseUrl`), so normally its reports are recorded and announced inside Wasla.Web.
+(`PrintBridgeController.ResolveTenantWebBaseUrl`: `Wasla:TenantWebBaseUrl`, else `Wasla:PublicWebBaseUrl`, else the request host), so normally its reports are recorded and announced inside Wasla.Web.
 A device pointed at Wasla.Api by hand has its reports announced over the internal channel when Api has
 `Realtime:Internal` configured, and not at all otherwise (its screens then rely on the fallback refresh).
 

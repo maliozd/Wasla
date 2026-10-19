@@ -95,26 +95,33 @@ public sealed class CliConfigurationPrecedenceTests : IDisposable
     // --- Tenant SQL Server --------------------------------------------------------------------------
 
     [Fact]
+    public void TenantSqlServer_FromTheJson_IsUsedWhenNothingOverridesIt()
+    {
+        WriteJson("appsettings.json", """{ "TenantDb": { "ServerInstance": "json-tenantdb" } }""");
+
+        Assert.Equal("json-tenantdb", Resolve(Build("Production"), overrideServer: null).Server);
+    }
+
+    [Fact]
     public void TenantSqlServer_FromTheEnvironment_OverridesJson_AndTheOverrideStillWins()
     {
-        WriteJson("appsettings.json", """
-            { "CustomerDb": { "ServerInstance": "json-customerdb" },
-              "OrderHub": { "CustomerOnboarding": { "ServerInstance": "json-onboarding" } } }
-            """);
-        SetVariable("CustomerDb__ServerInstance", "env-customerdb");
+        WriteJson("appsettings.json", """{ "TenantDb": { "ServerInstance": "json-tenantdb" } }""");
+        SetVariable("TenantDb__ServerInstance", "env-tenantdb");
         var configuration = Build("Production");
 
-        Assert.Equal("env-customerdb", Resolve(configuration, overrideServer: null).Server);
+        Assert.Equal("env-tenantdb", Resolve(configuration, overrideServer: null).Server);
         Assert.Equal("cli-override", Resolve(configuration, overrideServer: "cli-override").Server);
     }
 
     [Fact]
-    public void TenantSqlServer_OnboardingKeyFromTheEnvironment_IsUsedWhenCustomerDbIsUnset()
+    public void TenantSqlServer_FromTheCommandLine_OverridesTheEnvironment()
     {
-        WriteJson("appsettings.json", """{ "OrderHub": { "CustomerOnboarding": { "ServerInstance": "json-onboarding" } } }""");
-        SetVariable("OrderHub__CustomerOnboarding__ServerInstance", "env-onboarding");
+        WriteJson("appsettings.json", """{ "TenantDb": { "ServerInstance": "json-tenantdb" } }""");
+        SetVariable("TenantDb__ServerInstance", "env-tenantdb");
 
-        Assert.Equal("env-onboarding", Resolve(Build("Production"), overrideServer: null).Server);
+        var configuration = Build("Production", "--TenantDb:ServerInstance", "command-line-tenantdb");
+
+        Assert.Equal("command-line-tenantdb", Resolve(configuration, overrideServer: null).Server);
     }
 
     [Fact]
@@ -141,10 +148,11 @@ public sealed class CliConfigurationPrecedenceTests : IDisposable
             .Build();
 
         Assert.Null(production.GetConnectionString("CentralDb"));
-        Assert.Null(production[TenantSqlServerConfiguration.CustomerDbKey]);
-        Assert.Null(production[TenantSqlServerConfiguration.OnboardingKey]);
+        Assert.Null(production["TenantDb:ServerInstance"]);
+        Assert.False(Resolve(production, overrideServer: null).IsResolved);
         Assert.Contains("(localdb)", development.GetConnectionString("CentralDb"), StringComparison.OrdinalIgnoreCase);
-        Assert.Equal("(localdb)\\MSSQLLocalDB", development[TenantSqlServerConfiguration.CustomerDbKey]);
+        Assert.Equal("(localdb)\\MSSQLLocalDB", development["TenantDb:ServerInstance"]);
+        Assert.Equal("(localdb)\\MSSQLLocalDB", Resolve(development, overrideServer: null).Server);
     }
 
     // --- The CLI binary -----------------------------------------------------------------------------
@@ -208,10 +216,7 @@ public sealed class CliConfigurationPrecedenceTests : IDisposable
     }
 
     private static TenantSqlServerResolution Resolve(IConfiguration configuration, string? overrideServer) =>
-        TenantSqlServerConfiguration.Resolve(
-            overrideServer,
-            configuration[TenantSqlServerConfiguration.CustomerDbKey],
-            configuration[TenantSqlServerConfiguration.OnboardingKey]);
+        TenantSqlServerConfiguration.Resolve(overrideServer, configuration[TenantSqlServerConfiguration.ServerInstanceKey]);
 
     private void WriteJson(string fileName, string json) => File.WriteAllText(Path.Combine(_directory, fileName), json);
 
@@ -262,8 +267,8 @@ public sealed class CliConfigurationPrecedenceTests : IDisposable
         foreach (var name in start.Environment.Keys.ToList())
         {
             if (name.StartsWith("ConnectionStrings", StringComparison.OrdinalIgnoreCase)
-                || name.StartsWith("CustomerDb", StringComparison.OrdinalIgnoreCase)
-                || name.StartsWith("OrderHub", StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith("TenantDb", StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith("Wasla", StringComparison.OrdinalIgnoreCase)
                 || name.Equals("ASPNETCORE_ENVIRONMENT", StringComparison.OrdinalIgnoreCase)
                 || name.Equals("DOTNET_ENVIRONMENT", StringComparison.OrdinalIgnoreCase))
                 start.Environment.Remove(name);

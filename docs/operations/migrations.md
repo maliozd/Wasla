@@ -27,7 +27,7 @@ CLI command names still say `migrate-customer` / `migrate-all-customers` even th
 Notes:
 
 - Both prefer connection info from `src/Wasla.Api/appsettings.json` (plus environment variables) when scaffolding.
-- Tenant design-time factory uses `ConnectionStrings:CustomerDbDesignTime` if set; otherwise derives a scratch catalog `OrderHub_Customer_DesignTime` from the CentralDb server. That scratch DB is **not** used by Web/Worker/API at runtime.
+- Tenant design-time factory uses `ConnectionStrings:TenantDbDesignTime` (`ConnectionStrings__TenantDbDesignTime`) if set; otherwise derives a scratch catalog `Wasla_Tenant_DesignTime` from the CentralDb server. That scratch DB is **not** used by Web/Worker/API at runtime.
 
 ## EF startup project
 

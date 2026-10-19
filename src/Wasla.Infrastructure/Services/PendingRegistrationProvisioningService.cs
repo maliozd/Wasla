@@ -26,7 +26,7 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
 {
     private readonly CentralDbContext _central;
     private readonly ISecretManager _secret;
-    private readonly CustomerOnboardingOptions _options;
+    private readonly TenantOnboardingOptions _options;
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
     private readonly ITenantDatabaseProvisioningOperations _tenantDatabaseOperations;
@@ -35,7 +35,7 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
     public PendingRegistrationProvisioningService(
         CentralDbContext central,
         ISecretManager secret,
-        IOptions<CustomerOnboardingOptions> options,
+        IOptions<TenantOnboardingOptions> options,
         IConfiguration configuration,
         IServiceProvider serviceProvider,
         ITenantDatabaseProvisioningOperations tenantDatabaseOperations,
@@ -127,8 +127,7 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         // An explicitly configured SQL Server only; no built-in LocalDB or '.' default (WAS-93).
         var serverResolution = TenantSqlServerConfiguration.Resolve(
             sqlServerOverride,
-            _configuration[TenantSqlServerConfiguration.CustomerDbKey],
-            _options.ServerInstance);
+            _configuration[TenantSqlServerConfiguration.ServerInstanceKey]);
         if (!serverResolution.IsResolved)
             return ProvisioningResult.ValidationError(serverResolution.Error!);
         var server = serverResolution.Server!;
