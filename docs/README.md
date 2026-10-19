@@ -32,6 +32,9 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [operations/tenant-operations-center.md](operations/tenant-operations-center.md) | Central Admin tenant overview, list and per-tenant health |
 | [operations/testing.md](operations/testing.md) | What to run, and what not to claim |
 | [product/product-boundaries.md](product/product-boundaries.md) | Wasla Orders, Wasla POS, and shared-infrastructure boundaries |
+| [product/pos-mvp.md](product/pos-mvp.md) | Wasla POS MVP (planned, not implemented): workflows, POS roles, scope, payment boundary, UX and non-functional requirements |
+| [product/pos-first-slice.md](product/pos-first-slice.md) | Wasla POS first vertical slice, acceptance criteria and backlog |
+| [architecture/pos-application-boundary.md](architecture/pos-application-boundary.md) | Decision: Wasla POS as a separate application in this repository; POS database, identity and Print Bridge boundaries |
 | [product/terminology.md](product/terminology.md) | Product names, Tenant vs order customer, clean-break policy and the historical migration exception |
 | [product/roles-and-permissions.md](product/roles-and-permissions.md) | Server-side role matrix |
 | [product/onboarding.md](product/onboarding.md) | Per-user guided setup, tenant operational mode (Setup / Live), going live |
@@ -41,7 +44,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | Task | Read first |
 |------|------------|
 | Any change | [architecture/overview.md](architecture/overview.md) |
-| Product scope or POS | [product/product-boundaries.md](product/product-boundaries.md) |
+| Product scope or POS | [product/product-boundaries.md](product/product-boundaries.md), [product/pos-mvp.md](product/pos-mvp.md), [architecture/pos-application-boundary.md](architecture/pos-application-boundary.md), [product/pos-first-slice.md](product/pos-first-slice.md) |
 | Tests / verification | [operations/testing.md](operations/testing.md) |
 | Hosts, databases, secrets | [architecture/tenancy.md](architecture/tenancy.md) |
 | Login, roles, password reset | [architecture/tenancy.md](architecture/tenancy.md), [architecture/authentication.md](architecture/authentication.md), [product/roles-and-permissions.md](product/roles-and-permissions.md) |

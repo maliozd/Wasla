@@ -21,6 +21,8 @@ Wasla POS is intended for in-restaurant workflows such as tables, dine-in and ta
 
 This description records the product boundary. It does not claim that these features are implemented in the current solution.
 
+The MVP scope, POS roles and payment boundary are defined in [pos-mvp.md](pos-mvp.md). Where POS code, data, identity and printing will live is decided in [../architecture/pos-application-boundary.md](../architecture/pos-application-boundary.md): a separate application in this repository with its own database per tenant, never a screen of Wasla Orders. The first build steps are in [pos-first-slice.md](pos-first-slice.md). None of it is implemented yet.
+
 ## Sharing between products
 
 The products may share capabilities when an actual cross-product requirement exists, including:
@@ -40,7 +42,7 @@ Before designing a feature, identify whether it belongs to Wasla Orders, Wasla P
 - Do not turn the existing Live Screen into Wasla POS.
 - Do not place speculative POS concepts in the Orders domain merely because they may be useful later.
 - Do not duplicate a mature shared capability when both products actually require it.
-- Treat the current repository as the Wasla Orders implementation until a deliberate POS repository or module decision is made.
+- Treat the current repository as the Wasla Orders implementation until POS projects exist. The repository decision is recorded in [pos-application-boundary.md](../architecture/pos-application-boundary.md); POS code goes only into the POS projects it names.
 
 ## Related documents
 
@@ -48,3 +50,5 @@ Before designing a feature, identify whether it belongs to Wasla Orders, Wasla P
 - [Live Screen](../orders/live-screen.md)
 - [Frontend architecture](../frontend/architecture.md)
 - [Terminology](terminology.md)
+- [Wasla POS MVP](pos-mvp.md)
+- [Decision: Wasla POS application boundary](../architecture/pos-application-boundary.md)
