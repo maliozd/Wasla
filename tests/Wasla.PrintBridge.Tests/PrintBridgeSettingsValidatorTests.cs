@@ -8,27 +8,27 @@ public sealed class PrintBridgeSettingsValidatorTests
     [Fact]
     public void ConnectionSettings_ValidUrlAndToken_SucceedWithoutPrinter()
     {
-        var hub = new WaslaOptions
+        var connection = new WaslaOptions
         {
             ServerUrl = " https://sushi-m.wasla.local:7200/ ",
             AgentToken = " token-value "
         };
 
-        var ok = PrintBridgeSettingsValidator.TryValidateConnectionSettings(hub, out var errorKey);
+        var ok = PrintBridgeSettingsValidator.TryValidateConnectionSettings(connection, out var errorKey);
 
         Assert.True(ok);
         Assert.Null(errorKey);
-        Assert.Equal("https://sushi-m.wasla.local:7200", hub.ServerUrl);
-        Assert.Equal("token-value", hub.AgentToken);
+        Assert.Equal("https://sushi-m.wasla.local:7200", connection.ServerUrl);
+        Assert.Equal("token-value", connection.AgentToken);
     }
 
     [Fact]
     public void ConnectionSettings_EmptyToken_FailsOnlyConnectionValidation()
     {
-        var hub = new WaslaOptions { ServerUrl = "https://localhost:7200", AgentToken = " " };
+        var connection = new WaslaOptions { ServerUrl = "https://localhost:7200", AgentToken = " " };
         var bridge = new PrintBridgeOptions { PrinterName = "Kitchen printer" };
 
-        var connectionOk = PrintBridgeSettingsValidator.TryValidateConnectionSettings(hub, out var connectionError);
+        var connectionOk = PrintBridgeSettingsValidator.TryValidateConnectionSettings(connection, out var connectionError);
         var printerOk = PrintBridgeSettingsValidator.TryValidatePrinterSettings(bridge, out var printerError);
 
         Assert.False(connectionOk);
@@ -52,10 +52,10 @@ public sealed class PrintBridgeSettingsValidatorTests
     [Fact]
     public void PrinterSettings_MissingPrinter_FailsPrinterValidationOnly()
     {
-        var hub = new WaslaOptions { ServerUrl = "https://localhost:7200", AgentToken = "token" };
+        var connection = new WaslaOptions { ServerUrl = "https://localhost:7200", AgentToken = "token" };
         var bridge = new PrintBridgeOptions { PrinterName = " " };
 
-        var connectionOk = PrintBridgeSettingsValidator.TryValidateConnectionSettings(hub, out var connectionError);
+        var connectionOk = PrintBridgeSettingsValidator.TryValidateConnectionSettings(connection, out var connectionError);
         var printerOk = PrintBridgeSettingsValidator.TryValidatePrinterSettings(bridge, out var printerError);
 
         Assert.True(connectionOk);
@@ -84,10 +84,10 @@ public sealed class PrintBridgeSettingsValidatorTests
     [Fact]
     public void PrintingReadiness_ReportsConnectionBeforePrinterWhenBothMissing()
     {
-        var hub = new WaslaOptions { ServerUrl = " ", AgentToken = " " };
+        var connection = new WaslaOptions { ServerUrl = " ", AgentToken = " " };
         var bridge = new PrintBridgeOptions { PrinterName = " " };
 
-        var ok = PrintBridgeSettingsValidator.TryValidatePrintingReadiness(hub, bridge, out var errorKey);
+        var ok = PrintBridgeSettingsValidator.TryValidatePrintingReadiness(connection, bridge, out var errorKey);
 
         Assert.False(ok);
         Assert.Equal("Validation.ServerUrlRequired", errorKey);
@@ -96,10 +96,10 @@ public sealed class PrintBridgeSettingsValidatorTests
     [Fact]
     public void PrintingReadiness_ReportsPrinterWhenConnectionIsConfigured()
     {
-        var hub = new WaslaOptions { ServerUrl = "https://localhost:7200", AgentToken = "token" };
+        var connection = new WaslaOptions { ServerUrl = "https://localhost:7200", AgentToken = "token" };
         var bridge = new PrintBridgeOptions { PrinterName = " " };
 
-        var ok = PrintBridgeSettingsValidator.TryValidatePrintingReadiness(hub, bridge, out var errorKey);
+        var ok = PrintBridgeSettingsValidator.TryValidatePrintingReadiness(connection, bridge, out var errorKey);
 
         Assert.False(ok);
         Assert.Equal("Validation.PrinterRequired", errorKey);

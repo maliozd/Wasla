@@ -9,7 +9,7 @@
     download folder for local tenant setup page testing.
 
 .PARAMETER CopyToWebDownload
-    Copy Wasla.PrintBridge-win-x64.zip to src/Wasla.Web/wwwroot/downloads/orderhub-print-bridge/
+    Copy Wasla.PrintBridge-win-x64.zip to src/Wasla.Web/wwwroot/downloads/wasla-print-bridge/
 
 .PARAMETER SelfContained
     Publish self-contained (larger zip; no .NET 8 runtime required on target PC).

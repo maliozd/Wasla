@@ -5,9 +5,9 @@ namespace Wasla.PrintBridge.Services;
 
 public static class PrintBridgeConnectionReset
 {
-    public static bool ApplyToSettings(WaslaOptions hub, PrintBridgeOptions bridge)
+    public static bool ApplyToSettings(WaslaOptions connection, PrintBridgeOptions bridge)
     {
-        return PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(hub, bridge);
+        return PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(connection, bridge);
     }
 
     public static PrintBridgeRuntimeIssue CreateReconnectRequiredIssue() =>

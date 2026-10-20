@@ -152,8 +152,8 @@ public sealed class TrayApplicationContext : ApplicationContext
     private void TryAutoStartPolling()
     {
         var holder = _services.GetRequiredService<PrintBridgeSettingsHolder>();
-        var (hub, bridge, _) = holder.Snapshot();
-        if (!PrintBridgeSettingsValidator.TryValidate(hub, bridge, out _))
+        var (connection, bridge, _) = holder.Snapshot();
+        if (!PrintBridgeSettingsValidator.TryValidate(connection, bridge, out _))
             return;
 
         try

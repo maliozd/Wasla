@@ -120,12 +120,12 @@ public sealed class ShellConnectionSetup
     {
         get
         {
-            var url = _settings.OrderHub.ServerUrl?.Trim() ?? string.Empty;
+            var url = _settings.Connection.ServerUrl?.Trim() ?? string.Empty;
             return string.Equals(url, WaslaOptions.DefaultServerUrl, StringComparison.OrdinalIgnoreCase) ? string.Empty : url;
         }
     }
 
-    private bool HasSavedToken => !string.IsNullOrWhiteSpace(_settings.OrderHub.AgentToken);
+    private bool HasSavedToken => !string.IsNullOrWhiteSpace(_settings.Connection.AgentToken);
 
     /// <summary>
     /// Validates the input with the existing connection rules and the setup-link paste guard. No request is sent.
@@ -146,7 +146,7 @@ public sealed class ShellConnectionSetup
             return Invalid("Settings.AgentTokenPasteGuard", ShellConnectionSetupField.Token);
 
         if (token.Length == 0 && CanKeepSavedToken)
-            token = _settings.OrderHub.AgentToken.Trim();
+            token = _settings.Connection.AgentToken.Trim();
 
         var options = new WaslaOptions { ServerUrl = url, AgentToken = token };
         if (!PrintBridgeSettingsValidator.TryValidateConnectionSettings(options, out var errorKey))

@@ -143,7 +143,7 @@ Details: [../integrations/food-platforms.md](../integrations/food-platforms.md).
 
 ## Print Bridge
 
-Desktop clients use **`ServerUrl`** + device token. Config section may still be named `OrderHub` (legacy). ProgramData: `C:\ProgramData\Wasla\PrintBridge`.
+Desktop clients use **`ServerUrl`** + device token in the `Wasla` settings section. Devices set up before WAS-135 must be paired again; there is no migration ([../integrations/print-bridge.md](../integrations/print-bridge.md#settings-sections)). ProgramData: `C:\ProgramData\Wasla\PrintBridge`.
 
 **Download package.** The tenant setup page (including guided setup's first install) offers the portable Windows ZIP through `GET /print-bridge/download/package` (same origin, no query values, `CanManageDeviceSecurity`). The ZIP is not in the repository: build it with `scripts/release/package-print-bridge.ps1` and either set `Wasla:PrintBridgeDownload:PackagePath` to the file or place it at `wwwroot/downloads/wasla-print-bridge/` under the name in `Wasla:PrintBridgeDownload:PackageFileName` (default `Wasla.PrintBridge-win-x64.zip`). A relative `PackagePath` is resolved against Web's content root. The default location needs a web root: start Web with its content root set to the folder that contains `wwwroot` (the publish folder, or the project folder for `dotnet run`). Without one, ASP.NET Core leaves `WebRootPath` null and the default package counts as missing (WAS-128); a configured `PackagePath` still works. Without the file the page shows a "coming soon" state and no download link anywhere on it, and the download route returns 404. The package is portable (extract and run `Wasla.PrintBridge.exe`; the first run registers the `wasla-printbridge://` link) and needs the .NET 8 Desktop Runtime unless built with `-SelfContained`. The package contains the WebView2 desktop app, the only Print Bridge window (`shell-ui/`, WebView2 SDK assemblies and loaders). It needs the Microsoft Edge WebView2 Runtime, which the package does not install (WAS-55); without it the tray shows a notice asking to install the runtime and keeps printing.
 
@@ -243,7 +243,7 @@ TenantDb__ServerInstance                     # CLI and Web: SQL Server for new t
 
 - No OpenTelemetry exporter or metrics stack; the `Wasla.Realtime` meter is read locally with `dotnet-counters` (see [observability.md](observability.md#live-notification-metrics)).
 - Worker has no HTTP health endpoint for orchestrators.
-- Legacy names remain outside the Web, Api, Worker and CLI configuration: the Print Bridge desktop settings section (WAS-135) and the `migrate-customer` command names (WAS-137).
+- Legacy names remain outside the Web, Api, Worker and CLI configuration: the `migrate-customer` command names (WAS-137).
 
 ## Related docs
 

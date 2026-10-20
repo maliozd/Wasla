@@ -62,6 +62,9 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
         Assert.Equal(JobState.Pending, servers.State(jobId));
         Assert.Equal(0, printer.Copies);
         Assert.Equal((UrlB, TokenB), bridge.SavedConnection());
+        var root = System.Text.Json.Nodes.JsonNode.Parse(System.IO.File.ReadAllText(PrintBridgePaths.ProgramDataConfigPath))!.AsObject();
+        Assert.Equal(["Wasla", "PrintBridge", "Ui"], root.Select(p => p.Key));
+        Assert.Equal((UrlB, TokenB), ((string?)root["Wasla"]!["ServerUrl"], (string?)root["Wasla"]!["AgentToken"]));
     }
 
     [Fact]
@@ -261,7 +264,7 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
         await print.Entered.Task.WaitAsync(Wait, Ct);
 
         await bridge.Runtime.ResetConnectionForReconnectAsync().WaitAsync(Wait, Ct);
-        Assert.Equal(string.Empty, bridge.Holder.OrderHub.AgentToken);
+        Assert.Equal(string.Empty, bridge.Holder.Connection.AgentToken);
 
         var finished = servers.JobFinished(jobId);
         print.Open();
@@ -368,8 +371,8 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
             var loggers = logs ?? NullLoggerFactory.Instance;
             var store = new PrintBridgeSettingsStore();
             var document = store.Load();
-            document.OrderHub.ServerUrl = UrlA;
-            document.OrderHub.AgentToken = TokenA;
+            document.Wasla.ServerUrl = UrlA;
+            document.Wasla.AgentToken = TokenA;
             document.PrintBridge.PrinterName = FirstInstalledPrinterOrSkip();
             document.PrintBridge.DryRun = false;
             document.PrintBridge.DisplayName = "Kasa A";
@@ -380,7 +383,7 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
             store.Save(document);
 
             var holder = new PrintBridgeSettingsHolder();
-            holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+            holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
             var http = new HttpClient(servers, disposeHandler: false);
             var client = new WaslaPrintBridgeClient(
                 http,
@@ -418,17 +421,17 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
 
         public (string Url, string Token) SavedConnection()
         {
-            var saved = Store.Load().OrderHub;
+            var saved = Store.Load().Wasla;
             return (saved.ServerUrl, saved.AgentToken);
         }
 
         public SettingsCapture Capture()
         {
-            var (hub, bridge, _) = Holder.Snapshot();
+            var (connection, bridge, _) = Holder.Snapshot();
             return new SettingsCapture(
                 System.IO.File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath),
-                hub.ServerUrl,
-                hub.AgentToken,
+                connection.ServerUrl,
+                connection.AgentToken,
                 bridge.InstallationId,
                 bridge.DisplayName);
         }
@@ -590,7 +593,7 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
                 return Json(HttpStatusCode.Unauthorized, new { error = "device_auth_invalid" });
 
             if (path == "api/print-bridge/health")
-                return Json(HttpStatusCode.OK, new { success = true, customerName = "QA", deviceName = host == HostA ? "Kasa A" : "Kasa B", serverTimeUtc = DateTime.UtcNow });
+                return Json(HttpStatusCode.OK, new { success = true, tenantName = "QA", deviceName = host == HostA ? "Kasa A" : "Kasa B", serverTimeUtc = DateTime.UtcNow });
 
             if (path == "api/print-bridge/jobs/pending")
             {

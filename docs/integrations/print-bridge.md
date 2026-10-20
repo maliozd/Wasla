@@ -63,14 +63,20 @@ Rules enforced locally:
 - Save reconnects/pings with the newly saved values
 - Manual setup remains available even when protocol-based auto setup exists
 
-### Legacy config-section debt
+### Settings sections
 
-The options class that holds `ServerUrl` / agent token still uses config section name **`OrderHub`** (`WaslaOptions.SectionName = "OrderHub"`).
+The settings file (`appsettings.json`, see ProgramData) has exactly three top-level sections:
 
-- Treat `OrderHub` as **current legacy config-section debt**.
+| Section | Options class | Holds |
+|---------|---------------|-------|
+| `Wasla` | `WaslaOptions` | `ServerUrl` and the device token (`AgentToken`) |
+| `PrintBridge` | `PrintBridgeOptions` | Printer, polling, test mode and device identity |
+| `Ui` | `UiOptions` | Language, start with Windows, minimize to tray |
+
+- The connection is read only from `Wasla`. No other section is read, copied or written.
 - The property name is **`ServerUrl`**. Do not introduce new `BaseUrl` aliases in docs or code.
 
-Polling and printer options use section `PrintBridge` (`PrintBridgeOptions`).
+**Re-pairing after WAS-135.** A settings file written before WAS-135 has no `Wasla` section, so the device starts unconnected and must be paired again (setup link or manual connection); printer and polling settings are kept. There is no migration. A settings file written by this version is not read by older versions: rolling back means reinstalling the previous package and pairing again.
 
 ## ProgramData
 
@@ -81,7 +87,7 @@ Canonical root (Windows CommonApplicationData):
 | Path | Role |
 |------|------|
 | `...\appsettings.json` | Runtime config (preferred over Program Files / repo) |
-| `...\logs\` | Client logs |
+| `...\logs\` | Client logs, one file per day: `wasla-print-bridge-<yyyyMMdd>.log`. Log files with another name were written by earlier versions and can be deleted manually |
 | `...\print-history.json` | Local print history store |
 
 Source: `PrintBridgePaths`.
@@ -156,6 +162,8 @@ Typical client routes (relative to `ServerUrl`):
 - `POST api/print-bridge/jobs/{id}/mark-printed`
 - `POST api/print-bridge/jobs/{id}/mark-failed`
 - Setup: `api/print-bridge/setup/exchange`, `api/print-bridge/setup/complete`
+
+The health response (`PrintBridgeHealthResponse`) has the properties `success`, `tenantName` (the restaurant's name), `deviceName`, `serverTimeUtc`, `machineName` and `installationId`. A client older than WAS-135 reads no restaurant name (it is only logged) until it is updated.
 
 Controllers exist on both **Web** (`PrintBridgeApiController`, setup APIs) and **API** (`PrintBridgeController`). Point `ServerUrl` at the host that actually serves those routes in your environment (often the tenant Web URL in local/dev samples).
 
@@ -317,14 +325,12 @@ See [../operations/cli.md](../operations/cli.md):
 
 ## Known gaps / debt
 
-- Config section still named `OrderHub` while product is Wasla.
 - The WebView2 app has not yet been verified with a physical receipt printer, and the runtime notice not on a physical installation without the WebView2 Runtime; WAS-54, WAS-57 and WAS-65 verification used test mode, a fake API, a simulated missing runtime and a recording or missing printer.
 - Without the WebView2 Runtime a device can be connected only through a setup link; manual setup needs the app window.
 - Engine and client log lines include the server URL, the Windows machine name and printer names (for example the startup "Effective config" line and request warnings). Tokens are never logged.
 - A setup link opened while a print job is being completed is refused, not queued (WAS-58, see Job flow). The user has to open it again after printing has finished. Hand edits to `appsettings.json` while Print Bridge runs are not guarded.
 - The server has no claim lease. A printed job whose `mark-printed` never arrives stays in Printing, for example after every retry failed, after Exit (or Stop followed by Exit) gave up waiting at its 10-second limit, or after a crash or power loss between the print and the report. It is never printed again automatically, but it blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.
 - Every WebView2 host honors the `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` environment variable (for example a remote-debugging port). This is platform behavior the shell does not override; anyone who can set the user's environment can already inspect the process.
-- Sample / download packaging may still mention older folder names in places; prefer `ServerUrl` and Wasla ProgramData paths above.
 - The device details page still formats times on the server with `ToLocalTime()` (the server's zone, not `Europe/Istanbul`) and does not refresh itself. The token regeneration response still returns device times without a UTC marker.
 - Each job creation and each accepted `mark-printing`, `mark-printed` and `mark-failed` is announced to the tenant's open order detail pages after it is recorded ([../architecture/realtime.md](../architecture/realtime.md)). A report sent to Wasla.Api is announced only when Api has `Realtime:Internal` configured. The Bridge's own polling, claiming and retries are unchanged, and a skipped report announces nothing. The historical planning note `docs/orders-printjob-status-signalr.md` is superseded.
 

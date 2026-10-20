@@ -189,7 +189,7 @@ public sealed class ShellMessageParserTests
     [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":86401,"busyPollSeconds":1,"errorPollSeconds":15}""")]
     [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15,"maxJobsPerPoll":10}""")]
     [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15,"serverUrl":"https://evil.example"}""")]
-    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","key":"OrderHub:AgentToken","value":"x"}""")]
+    [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","key":"Wasla:AgentToken","value":"x"}""")]
     [InlineData("settings.save", """{"testMode":false,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15}""")]
     public void RejectsInvalidCommandPayloads(string type, string payload)
     {
