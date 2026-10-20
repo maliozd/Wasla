@@ -25,7 +25,7 @@ public sealed class CheckoutController : Controller, IAuthenticationRateLimitRes
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
-    private readonly CustomerOnboardingOptions _onboardingOptions;
+    private readonly TenantOnboardingOptions _onboardingOptions;
     private readonly SignupRegistrationOwnership _ownership;
 
     public CheckoutController(
@@ -33,7 +33,7 @@ public sealed class CheckoutController : Controller, IAuthenticationRateLimitRes
         IWaslaPlanCatalog planCatalog,
         IStringLocalizer<SharedResource> localizer,
         IWebHostEnvironment environment,
-        IOptions<CustomerOnboardingOptions> onboardingOptions,
+        IOptions<TenantOnboardingOptions> onboardingOptions,
         IDataProtectionProvider dataProtection)
     {
         _pendingRegistrations = pendingRegistrations;

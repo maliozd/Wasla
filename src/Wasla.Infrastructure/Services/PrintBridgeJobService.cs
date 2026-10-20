@@ -53,7 +53,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
             .ConfigureAwait(false);
 
         _logger.LogDebug(
-            "Print Bridge pending jobs fetched. CustomerId={CustomerId}, Count={Count}, Max={Max}",
+            "Print Bridge pending jobs fetched. TenantId={TenantId}, Count={Count}, Max={Max}",
             customerId,
             jobs.Count,
             safeMax);
@@ -94,7 +94,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         if (rows > 0)
         {
             _logger.LogInformation(
-                "Print job claimed for printing. CustomerId={CustomerId}, JobId={JobId}, LockedBy={LockedBy}",
+                "Print job claimed for printing. TenantId={TenantId}, JobId={JobId}, LockedBy={LockedBy}",
                 customerId,
                 jobId,
                 safeLockedBy);
@@ -103,7 +103,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         }
 
         _logger.LogInformation(
-            "Print job claim skipped because status is no longer Pending. CustomerId={CustomerId}, JobId={JobId}",
+            "Print job claim skipped because status is no longer Pending. TenantId={TenantId}, JobId={JobId}",
             customerId,
             jobId);
         return new PrintJobClaimResponse(PrintJobClaimResult.Skipped, "PrintBridge.JobNotPending");
@@ -135,7 +135,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         if (rows > 0)
         {
             _logger.LogInformation(
-                "Print job marked printed. CustomerId={CustomerId}, JobId={JobId}",
+                "Print job marked printed. TenantId={TenantId}, JobId={JobId}",
                 customerId,
                 jobId);
             await PublishCurrentStateAsync(db, customerId, jobId).ConfigureAwait(false);
@@ -173,7 +173,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         if (rows > 0)
         {
             _logger.LogWarning(
-                "Print job marked failed. CustomerId={CustomerId}, JobId={JobId}, Error={Error}",
+                "Print job marked failed. TenantId={TenantId}, JobId={JobId}, Error={Error}",
                 customerId,
                 jobId,
                 safeError);
@@ -213,7 +213,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         catch (Exception ex)
         {
             _logger.LogWarning(
-                "Print job state could not be read for its change notification ({ExceptionType}). CustomerId={CustomerId}, JobId={JobId}",
+                "Print job state could not be read for its change notification ({ExceptionType}). TenantId={TenantId}, JobId={JobId}",
                 ex.GetType().Name,
                 customerId,
                 jobId);

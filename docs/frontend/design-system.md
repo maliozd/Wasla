@@ -152,7 +152,7 @@ The approved Wasla logo is the orange (`#E87342`) lowercase "wasla" wordmark. It
 Rules:
 
 - Web renders the logo only through the `_WaslaLogo` partial (`WaslaLogoModel`: a placement class, and `Decorative` for an empty alt). Do not inline the SVG, embed it as Base64, redraw it in CSS or replace it with a font.
-- Set only the height (`.wasla-logo--sidebar`, `--admin-sidebar`, `--admin`, `--auth`, `--header`, `--status`, `--illustration`); the width follows the aspect ratio. The collapsed tenant rail shrinks the full logo to the rail width rather than widening the rail.
+- Set only the height (`.wasla-logo--sidebar`, `--admin-sidebar`, `--admin`, `--auth`, `--header`, `--status`, `--marketing`, `--hub`); the width follows the aspect ratio. The collapsed tenant rail shrinks the full logo to the rail width rather than widening the rail.
 - Alt text is `Brand.LogoAlt` ("Wasla"). Use `Decorative = true` where the logo is inside content already hidden from or named for assistive technology. Plain-text mentions of Wasla stay text.
 - One colour works on the light and dark surfaces in use (Central Admin dark mode, the Print Bridge app); there are no logo variants.
 - The Live Screen empty state shows the logo as a decorative CSS background of the same file.
@@ -165,6 +165,7 @@ Rules:
 ## Typography
 
 - System / local font stacks. Do not add a font CDN.
+- Exception: the public marketing pages (see [Public marketing site](#public-marketing-site)) self-host the two Wasla Marketing typefaces from `wwwroot/fonts/`. The tenant app, Central Admin and the Live Screen keep system fonts.
 - One semantic `H1` per page; clear section hierarchy
 - Validate layout in tr-TR, en-US, ar-SA, ru-RU (Arabic line-height / RTL)
 
@@ -177,6 +178,25 @@ Rules:
 - Focus rings on Wasla controls; do not remove outline without a visible replacement
 - Theme and Live Screen CSS include `@media (prefers-reduced-motion: reduce)` blocks; JS view transitions also check the media query
 - Under reduced motion AdminLTE 4.0.0-rc3 sets `.fade{display:block}`; `wasla-theme.css` keeps closed modals (`.modal.fade:not(.show)`) hidden. Do not override `.fade` itself: Bootstrap's own rules already keep closed toasts, tab panes and collapses hidden
+
+---
+
+## Public marketing site
+
+**Owns:** the homepage (`/`) and the Wasla POS page (`/pos`), and the shared header and footer of `_PublicLayout` (WAS-155). The approved design is the Figma file *Wasla Marketing* (homepage frame `20:2`, POS frame `18:2`, design-system page `14:804`). Figma is the visual source only; what the pages may claim follows the product state.
+
+- **Styles.** `wasla-marketing.css`, every rule scoped to a `wm-` class, so tenant, Admin and the other public pages are unaffected. `landing.css` still styles the signup, checkout, tenant-not-found and tenant-address-required pages. The marketing tokens (`--wm-*`, on `.wasla-landing`) are the Figma design-system values; brand orange, action orange, canvas, surface, borders and ink equal the foundation tokens above. The extra peach, sand and ink surfaces come from the same Figma file; they are not a second palette.
+- **Type.** Bricolage Grotesque (headings) and Figtree (text), both SIL Open Font License 1.1 with their `OFL.txt`, self-hosted as Latin and Latin Extended subsets (Turkish included). Arabic and Cyrillic have no glyphs in them and use the system font. Mockup UI text uses the system font instead of Figma's Inter.
+- **Primary action.** Action orange `#B94F2A` with white text (4.9:1). Focus is a 2 px action-orange outline with a soft brand-orange ring; the brand orange alone is 3.0:1 on white and is not used as the only focus indicator.
+- **Responsive.** Figma has 1440 px desktop frames only. From 1200 px the hero mockups follow the Figma composition; below it they stack on a peach panel. Below 1100 px the header navigation folds into a menu button. Checked at 1440, 768 and 390 px with no horizontal scroll, in both reading directions.
+- **Behaviour.** `wasla-marketing.js` opens the products and language menus and the mobile menu on click or keyboard (never on hover); Escape closes the open menu and returns focus. Without JavaScript the mobile navigation stays visible.
+- **Mockups.** Product screens are decorative markup, not images: `aria-hidden="true"`, with the surrounding text carrying the content. Wasla POS screens are labelled as concept interface.
+- **Photos.** Every photo in the Figma file is marked AI-generated and temporary. None is shipped; the hero and closing panels use the design-system surfaces until approved photos exist.
+- **Platform marks.** Yemeksepeti and GetirYemek use the repository assets the app already shows (`images/platforms/`). The Trendyol GO wordmark in the repository comes from a third-party logo site and its marketing use is not confirmed, so the public pages name Trendyol GO in text. The Figma "Migros Yemek (INTERNAL PLACEHOLDER)" component is never rendered.
+- **Truthfulness.** Wasla POS is shown as "coming soon" everywhere it appears and cannot be bought; platform integrations are described as being rolled out, not as live. Calls to action lead only to existing flows: signup (`/signup`, with a plan), sign-in (`/auth/login`, which on the public host asks for the restaurant address), in-page sections, `/pos`, and the confirmed Instagram account `app.wasla.tr`. Unconfirmed social accounts and legal pages are left out, not linked to placeholders.
+- **Metadata.** Each page sets its title, description, canonical URL and Open Graph tags through `PublicPageMetadata`. The canonical URL is built by `PublicSiteUrls` from the request with a leading `www.` removed; the redirect from `www.` and the application host `app.wasla.tr` belong to deployment (WAS-76) and tenant routing (WAS-66).
+
+`PublicMarketingSiteTests` renders both pages in every culture and checks the metadata, one `H1`, every link target, the Instagram link and the decorative mockups.
 
 ---
 
@@ -199,3 +219,4 @@ Rules:
 | RTL helpers | `src/Wasla.Web/wwwroot/css/rtl.css` |
 | Logo (canonical asset, partial) | `src/Wasla.Web/wwwroot/images/brand/wasla-logo.svg`, `Views/Shared/_WaslaLogo.cshtml` |
 | Logo master | `docs/brand/wasla-logo-source.svg` |
+| Public marketing site | `src/Wasla.Web/wwwroot/css/wasla-marketing.css`, `wwwroot/js/wasla-marketing.js`, `wwwroot/fonts/`, `Views/Home/Index.cshtml`, `Views/Marketing/Pos.cshtml`, `Views/Shared/_Public*.cshtml`, `Views/Shared/_Marketing*.cshtml` |

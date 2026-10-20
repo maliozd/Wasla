@@ -431,7 +431,7 @@ public sealed class ShellOperationsTests : IDisposable
     public async Task TurningTestModeOff_OrKeepingItOn_NeedsNoConfirmation()
     {
         var off = await _rig.Operations.ExecuteAsync(Parse(Tracked("settings.save", SettingsFields(false, 5, 1, 15))));
-        _rig.Settings.Replace(_rig.Settings.OrderHub, new Wasla.PrintBridge.Options.PrintBridgeOptions { PrinterName = "POS-58", DryRun = true });
+        _rig.Settings.Replace(_rig.Settings.Connection, new Wasla.PrintBridge.Options.PrintBridgeOptions { PrinterName = "POS-58", DryRun = true });
         var stillOn = await _rig.Operations.ExecuteAsync(Parse(Tracked("settings.save", SettingsFields(true, 7, 1, 15))));
 
         Assert.Equal(ShellOperationOutcome.Succeeded, off.Outcome);

@@ -35,7 +35,7 @@ public sealed class PrintBridgeProtocolUriTests
     [Fact]
     public void TryParseSetup_RejectsWrongScheme()
     {
-        var uri = $"orderhub-printbridge://setup?server={Uri.EscapeDataString("https://x.example.com")}&code={ValidCode}";
+        var uri = $"printbridge://setup?server={Uri.EscapeDataString("https://x.example.com")}&code={ValidCode}";
 
         var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out var request, out var error);
 

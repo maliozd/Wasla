@@ -13,21 +13,21 @@ public static class PrintBridgeSettingsValidator
     public const int MinErrorPollIntervalSeconds = 1;
     public const int MaxErrorPollIntervalSeconds = 300;
 
-    public static bool TryValidate(WaslaOptions orderHub, PrintBridgeOptions bridge, out string? errorKey)
+    public static bool TryValidate(WaslaOptions connection, PrintBridgeOptions bridge, out string? errorKey)
     {
-        if (!TryValidatePrintingReadiness(orderHub, bridge, out errorKey))
+        if (!TryValidatePrintingReadiness(connection, bridge, out errorKey))
             return false;
 
         errorKey = null;
         return true;
     }
 
-    public static bool TryNormalize(WaslaOptions orderHub, PrintBridgeOptions bridge, out string? errorKey)
-        => TryValidatePrintingReadiness(orderHub, bridge, out errorKey);
+    public static bool TryNormalize(WaslaOptions connection, PrintBridgeOptions bridge, out string? errorKey)
+        => TryValidatePrintingReadiness(connection, bridge, out errorKey);
 
-    public static bool TryValidateConnectionSettings(WaslaOptions orderHub, out string? errorKey)
+    public static bool TryValidateConnectionSettings(WaslaOptions connection, out string? errorKey)
     {
-        var serverUrl = orderHub.ServerUrl?.Trim() ?? string.Empty;
+        var serverUrl = connection.ServerUrl?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(serverUrl))
         {
             errorKey = "Validation.ServerUrlRequired";
@@ -47,14 +47,14 @@ public static class PrintBridgeSettingsValidator
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(orderHub.AgentToken))
+        if (string.IsNullOrWhiteSpace(connection.AgentToken))
         {
             errorKey = "Validation.AgentTokenRequired";
             return false;
         }
 
-        orderHub.ServerUrl = NormalizeServerUrl(uri);
-        orderHub.AgentToken = orderHub.AgentToken.Trim();
+        connection.ServerUrl = NormalizeServerUrl(uri);
+        connection.AgentToken = connection.AgentToken.Trim();
 
         errorKey = null;
         return true;
@@ -105,11 +105,11 @@ public static class PrintBridgeSettingsValidator
     }
 
     public static bool TryValidatePrintingReadiness(
-        WaslaOptions orderHub,
+        WaslaOptions connection,
         PrintBridgeOptions bridge,
         out string? errorKey)
     {
-        if (!TryValidateConnectionSettings(orderHub, out errorKey))
+        if (!TryValidateConnectionSettings(connection, out errorKey))
             return false;
 
         if (!TryValidatePrinterSettings(bridge, out errorKey))

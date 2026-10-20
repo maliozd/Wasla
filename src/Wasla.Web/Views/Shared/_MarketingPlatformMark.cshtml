@@ -1,0 +1,18 @@
+@model Wasla.Web.Models.Marketing.MarketingPlatformMarkModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@* A platform mark inside a decorative mockup. Yemeksepeti and GetirYemek use the repository assets the Wasla app
+   already shows. The Trendyol GO wordmark in the repository comes from a third-party logo site and its marketing use
+   is not confirmed, so the public site names the platform in text until an approved asset exists (WAS-155). *@
+@switch (Model.Platform)
+{
+    case "yemeksepeti":
+        <span class="wm-platform @Model.CssClass"><img src="~/images/platforms/yemeksepeti.svg" asp-append-version="true" alt="@L["Orders.PlatformYemeksepeti"]" width="62" height="12" /></span>
+        break;
+    case "getiryemek":
+        <span class="wm-platform wm-platform--getir @Model.CssClass"><img src="~/images/platforms/getiryemek.svg" asp-append-version="true" alt="@L["Orders.PlatformGetirYemek"]" width="55" height="10" /></span>
+        break;
+    default:
+        <span class="wm-platform @Model.CssClass"><span class="wm-platform__name">@L["Orders.PlatformTrendyolGo"]</span></span>
+        break;
+}

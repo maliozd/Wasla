@@ -94,8 +94,8 @@ public sealed class PrintBridgeAutoSetupCoordinator
 
         // 2. Persist via the existing settings store + holder.
         var document = _store.Load();
-        document.OrderHub.ServerUrl = config.ServerUrl.Trim();
-        document.OrderHub.AgentToken = config.DeviceToken.Trim();
+        document.Wasla.ServerUrl = config.ServerUrl.Trim();
+        document.Wasla.AgentToken = config.DeviceToken.Trim();
 
         if (!string.IsNullOrWhiteSpace(config.DeviceName))
         {
@@ -109,7 +109,7 @@ public sealed class PrintBridgeAutoSetupCoordinator
         if (string.IsNullOrWhiteSpace(document.PrintBridge.MachineName))
             document.PrintBridge.MachineName = Environment.MachineName;
 
-        if (!PrintBridgeSettingsValidator.TryValidateConnectionSettings(document.OrderHub, out var errorKey))
+        if (!PrintBridgeSettingsValidator.TryValidateConnectionSettings(document.Wasla, out var errorKey))
         {
             // Do not log the token; only the validation key.
             _logger.LogWarning("Automatic setup produced invalid settings. ErrorKey={ErrorKey}", errorKey);
@@ -117,7 +117,7 @@ public sealed class PrintBridgeAutoSetupCoordinator
         }
 
         _store.Save(document);
-        _holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+        _holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
 
         // The new connection is in place: jobs may be claimed from it again (the lease is idempotent).
         change.Dispose();

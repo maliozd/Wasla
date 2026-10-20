@@ -35,7 +35,7 @@ Sources of truth:
 1. `appsettings.json` next to the CLI binary (not the working directory)
 2. `appsettings.{Environment}.json` next to the CLI binary
 3. User secrets (Development only)
-4. Environment variables, for example `ConnectionStrings__CentralDb`, `CustomerDb__ServerInstance`
+4. Environment variables, for example `ConnectionStrings__CentralDb`, `TenantDb__ServerInstance`
 5. Command-line arguments
 
 So a deployment's environment variables always override the committed JSON. Before WAS-93 the CLI added `appsettings.json` again after these sources, so its values beat environment variables.
@@ -103,7 +103,7 @@ CLI help still labels these as “Customer commands”; product terminology is *
 
 ### Provisioning note
 
-`add-customer` and `provision-signup-request` need an explicit SQL Server for the tenant database: `--sql-server`, `CustomerDb:ServerInstance` or `OrderHub:CustomerOnboarding:ServerInstance`. There is no default; without one they stop before touching any database (`--dry-run` also fails). The committed CLI `appsettings.json` names no server.
+`add-customer` and `provision-signup-request` need an explicit SQL Server for the tenant database: `--sql-server`, else `TenantDb:ServerInstance`. No other key is read and there is no default; without one they stop before touching any database (`--dry-run` also fails). The committed CLI `appsettings.json` names no server.
 
 `provision-signup-request` is the payment-gated signup → live tenant path. Do not mark registrations Provisioned by hand in the DB. Web middleware must not provision.
 

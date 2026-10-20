@@ -79,11 +79,11 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
     {
         lock (_sync)
         {
-            var (hub, bridge, _) = _holder.Snapshot();
+            var (current, bridge, _) = _holder.Snapshot();
             var connectionOptions = new WaslaOptions
             {
-                ServerUrl = hub.ServerUrl,
-                AgentToken = hub.AgentToken
+                ServerUrl = current.ServerUrl,
+                AgentToken = current.AgentToken
             };
             var isConnectionConfigured = PrintBridgeSettingsValidator.TryValidateConnectionSettings(connectionOptions, out _);
             var recentJobs = _recentJobs.Select(CloneRecord).ToList();
@@ -103,7 +103,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
                 LastPollUtc = _lastPollUtc,
                 LastIssue = _lastIssue,
                 LastError = _lastIssue?.EffectiveResourceKey,
-                ServerUrl = hub.ServerUrl,
+                ServerUrl = current.ServerUrl,
                 PrinterName = bridge.PrinterName,
                 LocalDeviceName = bridge.DisplayName?.Trim() ?? string.Empty,
                 DisplayName = bridge.DisplayName?.Trim() ?? string.Empty,
@@ -135,8 +135,8 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
             if (_isRunning)
                 return;
 
-            var (hub, bridge, _) = _holder.Snapshot();
-            if (!PrintBridgeSettingsValidator.TryValidatePrintingReadiness(hub, bridge, out var errorKey))
+            var (current, bridge, _) = _holder.Snapshot();
+            if (!PrintBridgeSettingsValidator.TryValidatePrintingReadiness(current, bridge, out var errorKey))
                 throw new LocalizedApplicationException(errorKey!);
 
             if (!PrintBridgeSettingsValidator.TryValidatePrinterAvailability(bridge, out errorKey))
@@ -285,14 +285,14 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
         if (abandon.IsCancellationRequested)
             return PrintBridgeConnectionChange.Abandoned;
 
-        var (hub, bridge, ui) = _holder.Snapshot();
+        var (current, bridge, ui) = _holder.Snapshot();
         var connection = new WaslaOptions
         {
             ServerUrl = verified.ServerUrl,
             AgentToken = verified.AgentToken
         };
         var updatedBridge = bridge.Clone();
-        var tokenChanged = !string.Equals(hub.AgentToken?.Trim(), connection.AgentToken, StringComparison.Ordinal);
+        var tokenChanged = !string.Equals(current.AgentToken?.Trim(), connection.AgentToken, StringComparison.Ordinal);
         if (tokenChanged)
         {
             updatedBridge.DisplayName = string.Empty;
@@ -303,7 +303,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
         {
             _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
             {
-                OrderHub = connection,
+                Wasla = connection,
                 PrintBridge = updatedBridge,
                 Ui = ui
             });
@@ -482,9 +482,9 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var (hub, bridge, _) = _holder.Snapshot();
+            var (current, bridge, _) = _holder.Snapshot();
             // One connection for the whole cycle: its poll, and every request of the jobs it claims (WAS-58).
-            var connection = new WaslaOptions { ServerUrl = hub.ServerUrl, AgentToken = hub.AgentToken };
+            var connection = new WaslaOptions { ServerUrl = current.ServerUrl, AgentToken = current.AgentToken };
             var waitSeconds = Math.Max(1, bridge.IdlePollIntervalSeconds);
             var hadJobs = false;
             var hadError = false;
@@ -598,7 +598,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
 
     private bool IsSavedConnection(WaslaOptions connection)
     {
-        var saved = _holder.OrderHub;
+        var saved = _holder.Connection;
         return string.Equals(saved.ServerUrl, connection.ServerUrl, StringComparison.Ordinal)
             && string.Equals(saved.AgentToken, connection.AgentToken, StringComparison.Ordinal);
     }
@@ -941,12 +941,12 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
     {
         try
         {
-            var (hub, bridge, ui) = _holder.Snapshot();
-            PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(hub, bridge);
-            _holder.Replace(hub, bridge, ui);
+            var (current, bridge, ui) = _holder.Snapshot();
+            PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(current, bridge);
+            _holder.Replace(current, bridge, ui);
             _store.Save(new PrintBridgeSettingsStore.AppSettingsDocument
             {
-                OrderHub = hub,
+                Wasla = current,
                 PrintBridge = bridge,
                 Ui = ui
             });

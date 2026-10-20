@@ -56,6 +56,21 @@ public sealed class TrayExitTests : IDisposable
         });
 
     [Fact]
+    public Task TheApplication_LogsToItsDailyWaslaPrintBridgeFile() =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
+        {
+            var exited = ThreadExited(tray);
+
+            Click(tray, localizer["Tray.Exit"]);
+
+            await exited.WaitAsync(Timeout);
+            var log = Assert.Single(Directory.GetFiles(PrintBridgePaths.ProgramDataLogDirectory));
+            Assert.Matches(@"^wasla-print-bridge-\d{8}\.log$", Path.GetFileName(log));
+            using var reader = new StreamReader(new FileStream(log, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete));
+            Assert.Contains("Print Bridge exit requested.", reader.ReadToEnd(), StringComparison.Ordinal);
+        });
+
+    [Fact]
     public Task ExitWithTheRuntimeNoticeOpen_WhileListening_DisposesItAfterTheEngineStopped() =>
         _host.RunAsync(available: false, async (tray, localizer) =>
         {
@@ -93,8 +108,8 @@ public sealed class TrayExitTests : IDisposable
 
     internal static void ListenToTheFakeServer(PrintBridgeSettingsStore.AppSettingsDocument document, string url)
     {
-        document.OrderHub.ServerUrl = url;
-        document.OrderHub.AgentToken = TrayFakeServer.Token;
+        document.Wasla.ServerUrl = url;
+        document.Wasla.AgentToken = TrayFakeServer.Token;
         document.PrintBridge.DryRun = true;
         document.PrintBridge.PrinterName = FirstInstalledPrinterOrSkip();
         document.PrintBridge.DisplayName = "QA Kasa";

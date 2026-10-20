@@ -8,7 +8,7 @@ namespace Wasla.PrintBridge.Services;
 /// <summary>
 /// Loads and saves Print Bridge settings.
 /// Repo/exe-local appsettings.json is a safe empty sample only.
-/// Real customer values are entered in the tray app Settings UI and persisted under ProgramData.
+/// Real connection values are entered in the Print Bridge app and persisted under ProgramData.
 /// Loading order: ProgramData (if present) → else seed from exe-local appsettings.json or defaults → ProgramData.
 /// Runtime saves always write to ProgramData only.
 /// </summary>
@@ -58,7 +58,7 @@ public sealed class PrintBridgeSettingsStore
             return;
 
         var initial = TryLoadExeLocalConfig() ?? CreateDefaultDocument();
-        NormalizeOrderHub(initial.OrderHub);
+        NormalizeConnection(initial.Wasla);
         NormalizeDeviceIdentity(initial);
         WriteDocument(PrintBridgePaths.ProgramDataConfigPath, initial);
     }
@@ -88,7 +88,7 @@ public sealed class PrintBridgeSettingsStore
         {
             var json = File.ReadAllText(path);
             var document = JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions) ?? CreateDefaultDocument();
-            NormalizeOrderHub(document.OrderHub);
+            NormalizeConnection(document.Wasla);
             NormalizeDeviceIdentity(document);
             return document;
         }
@@ -142,14 +142,14 @@ public sealed class PrintBridgeSettingsStore
         }
     }
 
-    private static void NormalizeOrderHub(WaslaOptions orderHub)
+    private static void NormalizeConnection(WaslaOptions connection)
     {
-        if (string.IsNullOrWhiteSpace(orderHub.ServerUrl))
-            orderHub.ServerUrl = WaslaOptions.DefaultServerUrl;
+        if (string.IsNullOrWhiteSpace(connection.ServerUrl))
+            connection.ServerUrl = WaslaOptions.DefaultServerUrl;
         else
-            orderHub.ServerUrl = orderHub.ServerUrl.Trim().TrimEnd('/');
+            connection.ServerUrl = connection.ServerUrl.Trim().TrimEnd('/');
 
-        orderHub.AgentToken = orderHub.AgentToken?.Trim() ?? string.Empty;
+        connection.AgentToken = connection.AgentToken?.Trim() ?? string.Empty;
     }
 
     private static void NormalizeDeviceIdentity(AppSettingsDocument document)
@@ -179,14 +179,14 @@ public sealed class PrintBridgeSettingsStore
     private static AppSettingsDocument CreateDefaultDocument() =>
         new()
         {
-            OrderHub = new WaslaOptions(),
+            Wasla = new WaslaOptions(),
             PrintBridge = new PrintBridgeOptions { DryRun = true },
             Ui = new UiOptions()
         };
 
     public sealed class AppSettingsDocument
     {
-        public WaslaOptions OrderHub { get; set; } = new();
+        public WaslaOptions Wasla { get; set; } = new();
         public PrintBridgeOptions PrintBridge { get; set; } = new();
         public UiOptions Ui { get; set; } = new();
     }

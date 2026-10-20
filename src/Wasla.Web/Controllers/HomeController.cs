@@ -9,11 +9,11 @@ namespace Wasla.Web.Controllers;
 [AllowAnonymous]
 public sealed class HomeController : Controller
 {
-    private readonly CustomerOnboardingOptions _onboardingOptions;
+    private readonly TenantOnboardingOptions _onboardingOptions;
     private readonly IPendingRegistrationService _pendingRegistrations;
 
     public HomeController(
-        IOptions<CustomerOnboardingOptions> onboardingOptions,
+        IOptions<TenantOnboardingOptions> onboardingOptions,
         IPendingRegistrationService pendingRegistrations)
     {
         _onboardingOptions = onboardingOptions.Value;

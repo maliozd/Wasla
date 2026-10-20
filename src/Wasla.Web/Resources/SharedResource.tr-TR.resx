@@ -279,53 +279,14 @@
   <data name="Layout.TenantNavigation" xml:space="preserve">
     <value>Restoran menüsü</value>
   </data>
-  <data name="Landing.Title" xml:space="preserve">
-    <value>Wasla</value>
-  </data>
   <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
-  </data>
-  <data name="Landing.Subtitle" xml:space="preserve">
-    <value>Çoklu platform sipariş yönetimi</value>
   </data>
   <data name="Landing.CustomerLogin" xml:space="preserve">
     <value>Müşteri Girişi</value>
   </data>
   <data name="Landing.AdminLogin" xml:space="preserve">
     <value>Admin Girişi</value>
-  </data>
-  <data name="Landing.SinglePanel" xml:space="preserve">
-    <value>Tek Panel</value>
-  </data>
-  <data name="Landing.SinglePanelDescription" xml:space="preserve">
-    <value>Tüm platform siparişleri tek yerde</value>
-  </data>
-  <data name="Landing.EasyManagement" xml:space="preserve">
-    <value>Kolay Yönetim</value>
-  </data>
-  <data name="Landing.EasyManagementDescription" xml:space="preserve">
-    <value>Şube ve platform bağlantılarını kolayca yönetin</value>
-  </data>
-  <data name="Landing.LiveTracking" xml:space="preserve">
-    <value>Canlı Takip</value>
-  </data>
-  <data name="Landing.LiveTrackingDescription" xml:space="preserve">
-    <value>Sipariş akışını ve durum değişimlerini izleyin</value>
-  </data>
-  <data name="Landing.HeroBadge" xml:space="preserve">
-    <value>SaaS • Restoran • Operasyon</value>
-  </data>
-  <data name="Landing.HeroTitle" xml:space="preserve">
-    <value>Restoran siparişlerinizi tek ekranda yönetin.</value>
-  </data>
-  <data name="Landing.HeroDescription" xml:space="preserve">
-    <value>Yemeksepeti, Getir ve Trendyol’dan gelen siparişleri tek panelde görüntüleyin, takip edin ve yönetin.</value>
-  </data>
-  <data name="Landing.HeroSubtitle" xml:space="preserve">
-    <value>Yemeksepeti, GetirYemek ve TrendyolYemek siparişlerini tek panelde takip edin. Yeni siparişleri anlık görün, sesli bildirim alın, operasyonu sadeleştirin.</value>
-  </data>
-  <data name="Landing.TenantNote" xml:space="preserve">
-    <value>Müşteri girişi, restoranınıza tanımlanan özel alan adı üzerinden çalışır.</value>
   </data>
   <data name="Landing.FooterTagline" xml:space="preserve">
     <value>Operasyon ekipleri için modern sipariş yönetimi</value>
@@ -1221,356 +1182,8 @@
   <data name="Validation.AddressRequired" xml:space="preserve">
     <value>Adres gerekli.</value>
   </data>
-  <data name="Landing.Order" xml:space="preserve">
-    <value>Sipariş</value>
-  </data>
-  <data name="Landing.Endorsement" xml:space="preserve">
-    <value>Ciro</value>
-  </data>
-  <data name="Landing.Preparing" xml:space="preserve">
-    <value>Hazırlanıyor</value>
-  </data>
-  <data name="Landing.OnTheRoad" xml:space="preserve">
-    <value>Yolda</value>
-  </data>
-  <data name="Landing.OrdersToday" xml:space="preserve">
-    <value>Bugünkü Siparişler</value>
-  </data>
-  <data name="Landing.Live" xml:space="preserve">
-    <value>Canlı</value>
-  </data>
-  <data name="Landing.PlatformsTitle" xml:space="preserve">
-    <value>Platform siparişleri tek panelde</value>
-  </data>
-  <data name="Landing.PlatformsDescription" xml:space="preserve">
-    <value>Farklı yemek siparişi platformlarından gelen siparişleri tek ekranda toplayın.</value>
-  </data>
-  <data name="Landing.HowItWorksTitle" xml:space="preserve">
-    <value>Nasıl çalışır?</value>
-  </data>
-  <data name="Landing.HowItWorksDescription" xml:space="preserve">
-    <value>Beş adımda online siparişlerden mutfağa ve otomatik fiş yazdırmaya.</value>
-  </data>
-  <data name="Landing.Step1Title" xml:space="preserve">
-    <value>Platform bağlantılarını tanımlayın</value>
-  </data>
-  <data name="Landing.Step1Description" xml:space="preserve">
-    <value>Restoran pazar yeri hesaplarınızı tek yerde bağlayın.</value>
-  </data>
-  <data name="Landing.Step2Title" xml:space="preserve">
-    <value>Siparişleri tek ekrandan takip edin</value>
-  </data>
-  <data name="Landing.Step2Description" xml:space="preserve">
-    <value>Uygulamalar arası geçiş yapmadan yeni ve devam eden siparişleri görün.</value>
-  </data>
-  <data name="Landing.Step3Title" xml:space="preserve">
-    <value>Yeni siparişler için sesli ve görsel bildirim</value>
-  </data>
-  <data name="Landing.Step3Description" xml:space="preserve">
-    <value>Yoğun anlarda bile yeni gelen siparişi kaçırmayın.</value>
-  </data>
-  <data name="Landing.Step4Title" xml:space="preserve">
-    <value>Restoran operasyonlarınızı net yönetin</value>
-  </data>
-  <data name="Landing.Step4Description" xml:space="preserve">
-    <value>Şube, platform ve ekipleriniz aynı akışta hizalanır.</value>
-  </data>
-  <data name="Landing.FeaturesTitle" xml:space="preserve">
-    <value>Özellikler</value>
-  </data>
-  <data name="Landing.FeaturesDescription" xml:space="preserve">
-    <value>Çoklu şube, pazar yeri ve ekiplerinizi tek sistemde yönetin.</value>
-  </data>
-  <data name="Landing.FeatureSinglePanel" xml:space="preserve">
-    <value>Tek panelden sipariş yönetimi</value>
-  </data>
-  <data name="Landing.FeatureSinglePanelDescription" xml:space="preserve">
-    <value>Tüm kanallar canlı durum ve detaylarla tek listede.</value>
-  </data>
-  <data name="Landing.FeatureLiveTracking" xml:space="preserve">
-    <value>Canlı sipariş takibi</value>
-  </data>
-  <data name="Landing.FeatureLiveTrackingDescription" xml:space="preserve">
-    <value>Her siparişin onaydan teslimata kadar izini sürün.</value>
-  </data>
-  <data name="Landing.FeatureNotifications" xml:space="preserve">
-    <value>Yeni sipariş bildirimleri</value>
-  </data>
-  <data name="Landing.FeatureNotificationsDescription" xml:space="preserve">
-    <value>Yoğunlukta dahi anlaşılır uyarılarla kaçırmayın.</value>
-  </data>
-  <data name="Landing.FeatureBranchManagement" xml:space="preserve">
-    <value>Şube yönetimi</value>
-  </data>
-  <data name="Landing.FeatureBranchManagementDescription" xml:space="preserve">
-    <value>Birden çok konumu ve ekibi tek yerden düzenleyin.</value>
-  </data>
-  <data name="Landing.FeaturePlatformConnections" xml:space="preserve">
-    <value>Platform bağlantıları</value>
-  </data>
-  <data name="Landing.FeaturePlatformConnectionsDescription" xml:space="preserve">
-    <value>Önde gelen teslimat pazar yerlerine bağlanın, karmaşıklığı artırmayın.</value>
-  </data>
-  <data name="Landing.FeatureMultilingual" xml:space="preserve">
-    <value>Çok dilli arayüz</value>
-  </data>
-  <data name="Landing.FeatureMultilingualDescription" xml:space="preserve">
-    <value>Ekibinizin dilinde çalışın; Arapça dahil sağdan sola destek.</value>
-  </data>
-  <data name="Landing.FeatureAdminPanel" xml:space="preserve">
-    <value>Yönetim paneli</value>
-  </data>
-  <data name="Landing.FeatureAdminPanelDescription" xml:space="preserve">
-    <value>Sistem yönetimi, güvenlik ve ayarlar ayrı bir alanda.</value>
-  </data>
-  <data name="Landing.FeatureSeparateDatabases" xml:space="preserve">
-    <value>Müşteri başına ayrı veritabanı mimarisi</value>
-  </data>
-  <data name="Landing.FeatureSeparateDatabasesDescription" xml:space="preserve">
-    <value>Her restoranın verisi gizlilik ve performans için ayrı tutulur.</value>
-  </data>
-  <data name="Landing.BenefitsTitle" xml:space="preserve">
-    <value>Restoran operasyonunu sadeleştirin</value>
-  </data>
-  <data name="Landing.BenefitsDescription" xml:space="preserve">
-    <value>Mutfak ve servis ekipleri için pratik faydalar.</value>
-  </data>
-  <data name="Landing.BenefitLessSwitching" xml:space="preserve">
-    <value>Daha az ekran değiştirin</value>
-  </data>
-  <data name="Landing.BenefitLessSwitchingDescription" xml:space="preserve">
-    <value>Farklı platform panelleri arasında sürekli geçiş yapmak zorunda kalmayın.</value>
-  </data>
-  <data name="Landing.BenefitFewerMissedOrders" xml:space="preserve">
-    <value>Kaçırılan sipariş riski azalır</value>
-  </data>
-  <data name="Landing.BenefitFewerMissedOrdersDescription" xml:space="preserve">
-    <value>Tekil görünürlük ve uyarılarla hiçbir şeyin sızmasını zorlaştırın.</value>
-  </data>
-  <data name="Landing.BenefitBranchTracking" xml:space="preserve">
-    <value>Şube ve platform bazlı takip</value>
-  </data>
-  <data name="Landing.BenefitBranchTrackingDescription" xml:space="preserve">
-    <value>Siparişleri platforma ve şubeye göre daha düzenli izleyin.</value>
-  </data>
-  <data name="Landing.BenefitSimpleInterface" xml:space="preserve">
-    <value>Restoran ekipleri için sade arayüz</value>
-  </data>
-  <data name="Landing.BenefitSimpleInterfaceDescription" xml:space="preserve">
-    <value>Yavaş ofis işleri değil, servis hızı için tasarlandı.</value>
-  </data>
-  <data name="Landing.VisualTitle" xml:space="preserve">
-    <value>Mutfaktan teslimata</value>
-  </data>
-  <data name="Landing.VisualDescription" xml:space="preserve">
-    <value>Gerçek servis akışına uygun görsel vurgular.</value>
-  </data>
-  <data name="Landing.CtaTitle" xml:space="preserve">
-    <value>Müşteri panelinize giriş yapın</value>
-  </data>
-  <data name="Landing.CtaDescription" xml:space="preserve">
-    <value>Müşteri girişi yalnızca restoranınıza atanan alan adı üzerinden çalışır.</value>
-  </data>
-  <data name="Landing.MockupTitle" xml:space="preserve">
-    <value>Canlı sipariş ekranı</value>
-  </data>
-  <data name="Landing.MockupSubtitle" xml:space="preserve">
-    <value>Yeni siparişleri tek tabloda görün, durumları takip edin ve sesli bildirim alın.</value>
-  </data>
-  <data name="Landing.TrustTitle" xml:space="preserve">
-    <value>Restoran verileri ayrı yönetilir</value>
-  </data>
-  <data name="Landing.TrustDescription" xml:space="preserve">
-    <value>Her restoranın verisi kendi alanında güvenli ve düzenli şekilde yönetilir.</value>
-  </data>
-  <data name="Landing.FinalCtaTitle" xml:space="preserve">
-    <value>Online siparişlerle mutfak operasyonunuzu birleştirin</value>
-  </data>
-  <data name="Landing.FinalCtaDescription" xml:space="preserve">
-    <value>Wasla, online sipariş platformları ile restoran operasyonunuz arasında bağlantı kurar. Siparişleri tek ekranda toplar, mutfak sürecini sadeleştirir ve fişleri otomatik yazdırır.</value>
-  </data>
-  <data name="Landing.FinalCtaButton" xml:space="preserve">
-    <value>Ücretsiz Başlayın</value>
-  </data>
-  <data name="Landing.NewOrder" xml:space="preserve">
-    <value>Yeni</value>
-  </data>
-  <data name="Landing.Delivered" xml:space="preserve">
-    <value>Teslim Edildi</value>
-  </data>
-  <data name="Landing.SoundNotification" xml:space="preserve">
-    <value>Sesli bildirim</value>
-  </data>
-  <data name="Landing.BenefitMissedOrders" xml:space="preserve">
-    <value>Sipariş kaçırma riskini azaltın</value>
-  </data>
-  <data name="Landing.BenefitMissedOrdersDescription" xml:space="preserve">
-    <value>Yeni siparişleri anlık görün ve sesli bildirimlerle hızlı aksiyon alın.</value>
-  </data>
-  <data name="Landing.BenefitSimpleOperation" xml:space="preserve">
-    <value>Sade operasyon ekranı</value>
-  </data>
-  <data name="Landing.BenefitSimpleOperationDescription" xml:space="preserve">
-    <value>Restoran ekibinizin kolay kullanabileceği net bir sipariş ekranı sağlayın.</value>
-  </data>
-  <data name="Landing.StepConnectionsTitle" xml:space="preserve">
-    <value>Platformlar Wasla'ya bağlanır</value>
-  </data>
-  <data name="Landing.StepConnectionsDescription" xml:space="preserve">
-    <value>Kullandığınız yemek sipariş platformları Wasla ile entegre edilir.</value>
-  </data>
-  <data name="Landing.StepTrackTitle" xml:space="preserve">
-    <value>Siparişler tek ekranda görünür</value>
-  </data>
-  <data name="Landing.StepTrackDescription" xml:space="preserve">
-    <value>Gelen siparişler anında tek yönetim ekranında listelenir.</value>
-  </data>
-  <data name="Landing.StepNotifyTitle" xml:space="preserve">
-    <value>Yeni siparişte bildirim alın</value>
-  </data>
-  <data name="Landing.StepNotifyDescription" xml:space="preserve">
-    <value>Yeni sipariş geldiğinde sesli ve görsel bildirimlerle haberdar olun.</value>
-  </data>
-  <data name="Landing.StepManageTitle" xml:space="preserve">
-    <value>Operasyonu daha net yönetin</value>
-  </data>
-  <data name="Landing.StepManageDescription" xml:space="preserve">
-    <value>Platformlar, şubeler ve sipariş durumları arasında daha kontrollü ilerleyin.</value>
-  </data>
-  <data name="Landing.CustomerOnlyTitle" xml:space="preserve">
-    <value>Müşteri paneli yalnızca restoran alan adınızda</value>
-  </data>
-  <data name="Landing.CustomerOnlyDescription" xml:space="preserve">
-    <value>Halka açık sitede müşteri girişi yoktur. Size verilen adresi kullanın.</value>
-  </data>
-  <data name="Landing.CustomerOnlyHelp" xml:space="preserve">
-    <value>İşletmeniz için verilen özel giriş bağlantısını açın — genellikle operatör alan adınızda alt alan adı.</value>
-  </data>
-  <data name="Landing.CustomerOnlyExample" xml:space="preserve">
-    <value>Örnek: sirketadi.wasla.local/auth/login</value>
-  </data>
   <data name="Landing.BackToHome" xml:space="preserve">
     <value>Ana sayfaya dön</value>
-  </data>
-  <data name="Landing.HeroImageAlt" xml:space="preserve">
-    <value>Aydınlık restoran mutfağında çalışan ekip</value>
-  </data>
-  <data name="Landing.VisualImageAlt1" xml:space="preserve">
-    <value>Restoran mutfağında yemek hazırlayan ekip</value>
-  </data>
-  <data name="Landing.VisualImageAlt2" xml:space="preserve">
-    <value>Teslimat için paketlenmeye hazır tabak</value>
-  </data>
-  <data name="Landing.VisualImageAlt3" xml:space="preserve">
-    <value>Servis tezgahında paketli sipariş teslimi</value>
-  </data>
-  <data name="Landing.MetaDescription" xml:space="preserve">
-    <value>Wasla, restoran sipariş yönetimi için bulut tabanlı online sipariş yönetim sistemidir. Yemek sipariş platformlarından gelen siparişleri tek ekranda toplar, mutfak sipariş ekranı ve otomatik fiş yazdırma ile operasyonu sadeleştirir.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaTitle" xml:space="preserve">
-    <value>Wasla nedir?</value>
-  </data>
-  <data name="Landing.WhatIsWaslaLead" xml:space="preserve">
-    <value>Farklı yemek sipariş platformlarından gelen siparişleri tek ekranda yönetmenizi sağlayan bulut tabanlı bir restoran sipariş yönetim sistemidir.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaProblem" xml:space="preserve">
-    <value>Birden fazla sipariş platformuyla çalışan restoranlar genellikle farklı tabletler, cihazlar ve ayrı iş akışlarını aynı anda takip etmek zorunda kalır.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaSolution" xml:space="preserve">
-    <value>Wasla bu sipariş akışlarını bir araya getirir ve günlük operasyonunuzu daha kolay yönetmenizi sağlar.</value>
-  </data>
-  <data name="Landing.StepReviewTitle" xml:space="preserve">
-    <value>Ekip siparişi yönetir</value>
-  </data>
-  <data name="Landing.StepReviewDescription" xml:space="preserve">
-    <value>Restoran personeli siparişi inceler, onaylar ve günlük akışta yönetir.</value>
-  </data>
-  <data name="Landing.StepKitchenTitle" xml:space="preserve">
-    <value>Mutfak hazırlığı takip eder</value>
-  </data>
-  <data name="Landing.StepKitchenDescription" xml:space="preserve">
-    <value>Mutfak ekibi hazırlık sürecini net bir mutfak sipariş ekranı üzerinden izler.</value>
-  </data>
-  <data name="Landing.StepPrintTitle" xml:space="preserve">
-    <value>Fiş otomatik yazdırılır</value>
-  </data>
-  <data name="Landing.StepPrintDescription" xml:space="preserve">
-    <value>Wasla Print Bridge, yapılandırılmış yazıcıya fişi otomatik gönderir.</value>
-  </data>
-  <data name="Landing.ProblemsTitle" xml:space="preserve">
-    <value>Wasla hangi sorunu çözer?</value>
-  </data>
-  <data name="Landing.ProblemsDescription" xml:space="preserve">
-    <value>Günlük operasyonda karşılaşılan pratik zorluklara odaklanan bir restoran sipariş takip sistemi.</value>
-  </data>
-  <data name="Landing.ProblemUnifiedOrders" xml:space="preserve">
-    <value>Tek yerde toplanan siparişler</value>
-  </data>
-  <data name="Landing.ProblemUnifiedOrdersDescription" xml:space="preserve">
-    <value>Farklı platformlardan gelen siparişler tek listede bir araya gelir.</value>
-  </data>
-  <data name="Landing.ProblemFewerDevices" xml:space="preserve">
-    <value>Daha az cihaz takibi</value>
-  </data>
-  <data name="Landing.ProblemFewerDevicesDescription" xml:space="preserve">
-    <value>Birden fazla tablet ve cihazı aynı anda izleme ihtiyacı azalır.</value>
-  </data>
-  <data name="Landing.ProblemMissedOrders" xml:space="preserve">
-    <value>Kaçırılan sipariş riski azalır</value>
-  </data>
-  <data name="Landing.ProblemMissedOrdersDescription" xml:space="preserve">
-    <value>Tüm kanallar tek ekranda göründüğü için siparişleri gözden kaçırma riski düşer.</value>
-  </data>
-  <data name="Landing.ProblemKitchenCoordination" xml:space="preserve">
-    <value>Daha koordineli mutfak yönetimi</value>
-  </data>
-  <data name="Landing.ProblemKitchenCoordinationDescription" xml:space="preserve">
-    <value>Mutfak ve sipariş yönetimi aynı akışta daha net ilerler.</value>
-  </data>
-  <data name="Landing.ProblemAutoPrint" xml:space="preserve">
-    <value>Otomatik fiş yazdırma</value>
-  </data>
-  <data name="Landing.ProblemAutoPrintDescription" xml:space="preserve">
-    <value>Fişler Wasla Print Bridge ile otomatik olarak yazıcıya iletilir.</value>
-  </data>
-  <data name="Landing.ProblemBusyHours" xml:space="preserve">
-    <value>Yoğun saatlerde daha düzenli operasyon</value>
-  </data>
-  <data name="Landing.ProblemBusyHoursDescription" xml:space="preserve">
-    <value>Sipariş yoğunluğunda süreç daha kontrollü ve organize ilerler.</value>
-  </data>
-  <data name="Landing.ProblemLessSwitching" xml:space="preserve">
-    <value>Cihazlar arası daha az geçiş</value>
-  </data>
-  <data name="Landing.ProblemLessSwitchingDescription" xml:space="preserve">
-    <value>Personel farklı ekranlar arasında daha az zaman harcar.</value>
-  </data>
-  <data name="Landing.ProblemMonitorProcess" xml:space="preserve">
-    <value>Kolay izlenen sipariş süreci</value>
-  </data>
-  <data name="Landing.ProblemMonitorProcessDescription" xml:space="preserve">
-    <value>Sipariş akışını tek ekrandan takip etmek daha kolay hale gelir.</value>
-  </data>
-  <data name="Landing.WhoIsItForTitle" xml:space="preserve">
-    <value>Kimler için?</value>
-  </data>
-  <data name="Landing.WhoIsItForDescription" xml:space="preserve">
-    <value>Wasla aşağıdaki işletmeler için uygundur:</value>
-  </data>
-  <data name="Landing.AudienceDelivery" xml:space="preserve">
-    <value>Paket servis veya gel-al sunan restoranlar</value>
-  </data>
-  <data name="Landing.AudienceMultiPlatform" xml:space="preserve">
-    <value>Birden fazla online sipariş platformu kullanan işletmeler</value>
-  </data>
-  <data name="Landing.AudienceChains" xml:space="preserve">
-    <value>Merkezi sipariş yönetimi isteyen restoran zincirleri</value>
-  </data>
-  <data name="Landing.AudienceKitchenWorkflow" xml:space="preserve">
-    <value>Mutfak iş akışını iyileştirmek isteyen işletmeler</value>
-  </data>
-  <data name="Landing.AudienceAutoPrint" xml:space="preserve">
-    <value>Otomatik fiş yazdırma ihtiyacı olan restoranlar</value>
   </data>
   <data name="PlatformConnections.ErrorCount" xml:space="preserve">
     <value>Ardışık hata</value>
@@ -3222,7 +2835,6 @@
   <data name="Pricing.NavTitle" xml:space="preserve"><value>Fiyatlandırma</value></data>
   <data name="Pricing.Title" xml:space="preserve"><value>İşletmenize uygun planı seçin</value></data>
   <data name="Pricing.Subtitle" xml:space="preserve"><value>Online sipariş yönetimine tek panelden başlayın. Ödeme entegrasyonu yakında eklenecek.</value></data>
-  <data name="Pricing.ViewPlans" xml:space="preserve"><value>Planları Gör</value></data>
   <data name="Pricing.Recommended" xml:space="preserve"><value>Önerilen</value></data>
   <data name="Pricing.PerMonth" xml:space="preserve"><value>ay</value></data>
   <data name="Pricing.Monthly" xml:space="preserve"><value>Aylık</value></data>
@@ -3272,7 +2884,6 @@
   <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>Özel entegrasyonlar</value></data>
   <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Özel kurulum ve destek</value></data>
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Özel anlaşma ve limitler</value></data>
-  <data name="Signup.StartNow" xml:space="preserve"><value>Hemen Başla</value></data>
   <data name="Signup.Title" xml:space="preserve"><value>Wasla hesabı oluştur</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Restoranınızı online sipariş platformlarına bağlayın ve tek yerden yönetin.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>Plan seçimi</value></data>
@@ -4255,4 +3866,247 @@
   <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>Son 24 saatte bazı yazdırma işleri başarısız oldu. Sahip, Print Bridge bilgisayarındaki yazıcıyı kontrol edebilir.</value></data>
   <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>Bağlı kayıt başvurusu oluşturuldu olarak işaretli değil. Durumunu incelemek için açın; elle değiştirmeyin.</value></data>
   <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Şu anda dikkat gerektiren bir şey yok.</value></data>
+  <data name="Marketing.SkipToContent" xml:space="preserve"><value>İçeriğe geç</value></data>
+  <data name="Marketing.ComingSoon" xml:space="preserve"><value>Yakında</value></data>
+  <data name="Marketing.ConceptUi" xml:space="preserve"><value>Konsept arayüz: Wasla POS henüz kullanıma sunulmadı.</value></data>
+  <data name="Marketing.Nav.Label" xml:space="preserve"><value>Ana menü</value></data>
+  <data name="Marketing.Nav.OpenMenu" xml:space="preserve"><value>Menüyü aç</value></data>
+  <data name="Marketing.Nav.CloseMenu" xml:space="preserve"><value>Menüyü kapat</value></data>
+  <data name="Marketing.Nav.Products" xml:space="preserve"><value>Ürünler</value></data>
+  <data name="Marketing.Nav.Integrations" xml:space="preserve"><value>Entegrasyonlar</value></data>
+  <data name="Marketing.Nav.Login" xml:space="preserve"><value>Giriş yap</value></data>
+  <data name="Marketing.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Marketing.Product.OrdersShort" xml:space="preserve"><value>Online siparişler</value></data>
+  <data name="Marketing.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Marketing.Product.PosShort" xml:space="preserve"><value>Restoran içi satış</value></data>
+  <data name="Marketing.Product.PrintBridge" xml:space="preserve"><value>Wasla Print Bridge</value></data>
+  <data name="Marketing.Product.Family" xml:space="preserve"><value>Wasla ürün ailesi</value></data>
+  <data name="Marketing.Cta.Start" xml:space="preserve"><value>Hemen başlayın</value></data>
+  <data name="Marketing.Cta.ExploreProducts" xml:space="preserve"><value>Ürünleri keşfedin</value></data>
+  <data name="Marketing.Cta.ExploreOrders" xml:space="preserve"><value>Wasla Orders’ı keşfedin</value></data>
+  <data name="Marketing.Cta.ExplorePos" xml:space="preserve"><value>Wasla POS’u keşfedin</value></data>
+  <data name="Marketing.Cta.ExplorePosFeatures" xml:space="preserve"><value>POS özelliklerini keşfedin</value></data>
+  <data name="Marketing.Cta.ViewPlans" xml:space="preserve"><value>Planları inceleyin</value></data>
+  <data name="Marketing.Cta.FollowInstagram" xml:space="preserve"><value>Gelişmeleri Instagram’da takip edin</value></data>
+  <data name="Marketing.Cta.ContactInstagram" xml:space="preserve"><value>Instagram’dan bize ulaşın</value></data>
+  <data name="Marketing.Footer.Tagline" xml:space="preserve"><value>Restoranlar için online sipariş yönetimi ve restoran içi satış yazılımları.</value></data>
+  <data name="Marketing.Footer.GetStarted" xml:space="preserve"><value>Başlangıç</value></data>
+  <data name="Marketing.Footer.Contact" xml:space="preserve"><value>İletişim</value></data>
+  <data name="Marketing.Footer.InstagramLabel" xml:space="preserve"><value>Instagram: {0}</value></data>
+  <data name="Marketing.Footer.Copyright" xml:space="preserve"><value>© {0} Wasla. Tüm hakları saklıdır.</value></data>
+  <data name="Marketing.Home.MetaTitle" xml:space="preserve"><value>Wasla — Restoranlar için online sipariş ve satış yazılımları</value></data>
+  <data name="Marketing.Home.MetaDescription" xml:space="preserve"><value>Wasla Orders ile online platform siparişlerinizi tek ekranda yönetin; Canlı Sipariş Ekranı ve otomatik fiş yazdırma ile operasyonu sadeleştirin. Restoran içi satış için Wasla POS yakında.</value></data>
+  <data name="Marketing.Home.HeroTitle" xml:space="preserve"><value>Restoran operasyonunuzun tamamı, tek bir</value></data>
+  <data name="Marketing.Home.HeroTitleAccent" xml:space="preserve"><value>Wasla’da.</value></data>
+  <data name="Marketing.Home.HeroLead" xml:space="preserve"><value>Online platform siparişlerinizi bugün Wasla Orders ile yönetin; restoran içi satışlar için Wasla POS yakında geliyor. Daha düzenli servis, daha hızlı operasyon ve tek bir ürün ailesi.</value></data>
+  <data name="Marketing.Home.ProductsTitle" xml:space="preserve"><value>İki ürün, tek restoran operasyonu.</value></data>
+  <data name="Marketing.Home.ProductsLead" xml:space="preserve"><value>Online siparişler için Wasla Orders, restoran içi satışlar için Wasla POS. Aynı marka, aynı tasarım dili, aynı destek ekibi.</value></data>
+  <data name="Marketing.Home.OrdersTagline" xml:space="preserve"><value>Online sipariş yönetiminin merkezi.</value></data>
+  <data name="Marketing.Home.OrdersFeature1" xml:space="preserve"><value>Platform siparişleri</value></data>
+  <data name="Marketing.Home.OrdersFeature2" xml:space="preserve"><value>Canlı Sipariş Ekranı</value></data>
+  <data name="Marketing.Home.OrdersFeature3" xml:space="preserve"><value>Otomatik fiş yazdırma</value></data>
+  <data name="Marketing.Home.OrdersFeature4" xml:space="preserve"><value>Sipariş geçmişi</value></data>
+  <data name="Marketing.Home.IntegrationsNote" xml:space="preserve"><value>Yemeksepeti, Trendyol GO ve GetirYemek entegrasyonları kademeli olarak devreye alınıyor; tüm platform bağlantıları henüz canlı değildir.</value></data>
+  <data name="Marketing.Home.PosTagline" xml:space="preserve"><value>Restoran içi satışlar için hızlı ve modern POS.</value></data>
+  <data name="Marketing.Home.PosFeature1" xml:space="preserve"><value>Masa ve paket siparişi</value></data>
+  <data name="Marketing.Home.PosFeature2" xml:space="preserve"><value>Dokunmatik kullanım</value></data>
+  <data name="Marketing.Home.PosFeature3" xml:space="preserve"><value>Menü ve ödeme akışı</value></data>
+  <data name="Marketing.Home.PosFeature4" xml:space="preserve"><value>Restoran içi operasyon</value></data>
+  <data name="Marketing.Home.ChannelsTitle" xml:space="preserve"><value>Siparişleriniz iki kanaldan gelir.</value></data>
+  <data name="Marketing.Home.ChannelsLead" xml:space="preserve"><value>Online platform siparişleri Wasla Orders’ta toplanır; masa ve tezgâh satışları için Wasla POS yakında. İkisi de aynı mutfağa çalışacak şekilde tasarlanıyor.</value></data>
+  <data name="Marketing.Home.ChannelOnlineTitle" xml:space="preserve"><value>Online platformlar</value></data>
+  <data name="Marketing.Home.ChannelOnlineDesc" xml:space="preserve"><value>Kurye ve paket siparişleri</value></data>
+  <data name="Marketing.Home.ChannelOnlineFoot" xml:space="preserve"><value>Wasla Orders’ta toplanır</value></data>
+  <data name="Marketing.Home.ChannelInStoreTitle" xml:space="preserve"><value>Restoran içi satışlar</value></data>
+  <data name="Marketing.Home.ChannelInStoreDesc" xml:space="preserve"><value>Masa, paket, gel-al ve tezgâh</value></data>
+  <data name="Marketing.Home.ChannelInStoreFoot" xml:space="preserve"><value>Wasla POS’ta alınır</value></data>
+  <data name="Marketing.Home.SameKitchen" xml:space="preserve"><value>Aynı mutfak</value></data>
+  <data name="Marketing.Home.ReceiptAndPrinter" xml:space="preserve"><value>Fiş ve yazıcı</value></data>
+  <data name="Marketing.Home.RoutesTitle" xml:space="preserve"><value>Hangi ürün size uygun?</value></data>
+  <data name="Marketing.Home.RoutesLead" xml:space="preserve"><value>İhtiyacınıza göre başlayın; ürün ailesi restoranınızla birlikte büyüyebilir.</value></data>
+  <data name="Marketing.Home.RouteOrdersNeed" xml:space="preserve"><value>Yalnızca online platform siparişlerini yönetmek istiyorum.</value></data>
+  <data name="Marketing.Home.RouteOrdersDetail" xml:space="preserve"><value>Yemeksepeti, Trendyol GO ve GetirYemek siparişlerini tek ekranda toplamak için tasarlandı.</value></data>
+  <data name="Marketing.Home.RoutePosNeed" xml:space="preserve"><value>Restoran içi satış ve masa yönetimi istiyorum.</value></data>
+  <data name="Marketing.Home.RoutePosDetail" xml:space="preserve"><value>Masa, paket, gel-al ve tezgâh satışları için dokunmatik POS; yakında.</value></data>
+  <data name="Marketing.Home.RouteBothNeed" xml:space="preserve"><value>Her iki operasyonu birlikte geliştirmek istiyorum.</value></data>
+  <data name="Marketing.Home.RouteBothDetail" xml:space="preserve"><value>Bugün Wasla Orders ile başlayın; Wasla POS hazır olduğunda aynı ürün ailesiyle devam edin.</value></data>
+  <data name="Marketing.Home.ValuesTitle" xml:space="preserve"><value>İki ürünün ortak yaklaşımı.</value></data>
+  <data name="Marketing.Home.ValuesLead" xml:space="preserve"><value>Wasla ürünleri aynı ilkelerle tasarlanıyor.</value></data>
+  <data name="Marketing.Home.ValueOperationTitle" xml:space="preserve"><value>Restoran operasyonuna uygun tasarım</value></data>
+  <data name="Marketing.Home.ValueOperationText" xml:space="preserve"><value>Ekranlar mutfak, kasa ve servis için düşünülür: uzaktan okunur, yoğun saatte hızlı kullanılır.</value></data>
+  <data name="Marketing.Home.ValueLearnTitle" xml:space="preserve"><value>Hızlı öğrenilen arayüz</value></data>
+  <data name="Marketing.Home.ValueLearnText" xml:space="preserve"><value>Yeni ekip üyesi ilk vardiyasında temel işlemleri yapabilsin diye sade ekranlar.</value></data>
+  <data name="Marketing.Home.ValueLocalTitle" xml:space="preserve"><value>Yerel ihtiyaçlara odaklanma</value></data>
+  <data name="Marketing.Home.ValueLocalText" xml:space="preserve"><value>Türkiye’deki sipariş platformları, paket servis ve Türkçe kullanım önce gelir.</value></data>
+  <data name="Marketing.Home.ValueSupportTitle" xml:space="preserve"><value>Kurulum ve destek</value></data>
+  <data name="Marketing.Home.ValueSupportText" xml:space="preserve"><value>Kurulumu birlikte yapar, kullanım sırasında yanınızda oluruz.</value></data>
+  <data name="Marketing.Home.ValueFamilyTitle" xml:space="preserve"><value>Büyüyebilen ürün ailesi</value></data>
+  <data name="Marketing.Home.ValueFamilyText" xml:space="preserve"><value>Wasla, online siparişten restoran içi satışa uzanan bir ürün ailesi olarak gelişiyor.</value></data>
+  <data name="Marketing.Home.TrustTitle" xml:space="preserve"><value>Türkiye’deki restoranlar için geliştiriliyor.</value></data>
+  <data name="Marketing.Home.TrustLead" xml:space="preserve"><value>Müşteri yorumlarını ve rakamları gerçek verilerle paylaşacağız. Bugün söyleyebildiklerimiz:</value></data>
+  <data name="Marketing.Home.TrustRestaurantsTitle" xml:space="preserve"><value>Türkiye’deki restoran operasyonları için</value></data>
+  <data name="Marketing.Home.TrustRestaurantsText" xml:space="preserve"><value>Paket servis mutfağı, kasa ve masa servisi düşünülerek tasarlanıyor.</value></data>
+  <data name="Marketing.Home.TrustPlatformsTitle" xml:space="preserve"><value>Yerel sipariş platformlarına odak</value></data>
+  <data name="Marketing.Home.TrustPlatformsText" xml:space="preserve"><value>Yemeksepeti, Trendyol GO ve GetirYemek bağlantıları üzerinde çalışıyoruz; entegrasyonlar kademeli olarak devreye alınıyor.</value></data>
+  <data name="Marketing.Home.TrustTurkishTitle" xml:space="preserve"><value>Türkçe ürün ve destek</value></data>
+  <data name="Marketing.Home.TrustTurkishText" xml:space="preserve"><value>Arayüz ve destek Türkçe; kurulumda ekibimiz yanınızda.</value></data>
+  <data name="Marketing.Home.TrustPrintBridgeText" xml:space="preserve"><value>Windows bilgisayara kurulan yardımcı uygulama ile fişler yazıcınıza gider.</value></data>
+  <data name="Marketing.Home.TrustLanguagesTitle" xml:space="preserve"><value>Çok dilli yapı</value></data>
+  <data name="Marketing.Home.TrustLanguagesText" xml:space="preserve"><value>Türkçe, İngilizce, Arapça ve Rusça arayüz altyapısı geliştiriliyor.</value></data>
+  <data name="Marketing.Home.FinalTitle" xml:space="preserve"><value>Restoranınız için doğru Wasla ürününü keşfedin.</value></data>
+  <data name="Marketing.Home.FinalLead" xml:space="preserve"><value>Online siparişler için Wasla Orders bugün hazır; restoran içi satışlar için Wasla POS yakında.</value></data>
+  <data name="Marketing.Pos.MetaTitle" xml:space="preserve"><value>Wasla POS (Yakında) — Restoran içi satış | Wasla</value></data>
+  <data name="Marketing.Pos.MetaDescription" xml:space="preserve"><value>Wasla POS; masa, paket, gel-al ve tezgâh satışları için geliştirilen dokunmatik restoran POS’udur. Geliştirme aşamasındadır ve henüz satışta değildir.</value></data>
+  <data name="Marketing.Pos.HeroTitle" xml:space="preserve"><value>Masadan kasaya, restoran içi satışlarınız</value></data>
+  <data name="Marketing.Pos.HeroTitleAccent" xml:space="preserve"><value>tek ekranda.</value></data>
+  <data name="Marketing.Pos.HeroLead" xml:space="preserve"><value>Wasla POS ile masa ve paket siparişlerini alacak, menünüzü yönetecek, ödemeleri tamamlayacak ve servis akışını tek bir modern POS üzerinden takip edeceksiniz.</value></data>
+  <data name="Marketing.Pos.Notice" xml:space="preserve"><value>Wasla POS geliştirme aşamasındadır; henüz satın alınamaz ve canlı kullanımda değildir. Bu sayfadaki ekranlar ürün konseptini gösterir.</value></data>
+  <data name="Marketing.Pos.HeroPoint1" xml:space="preserve"><value>Dokunmatik kullanım</value></data>
+  <data name="Marketing.Pos.HeroPoint2" xml:space="preserve"><value>Masa ve paket</value></data>
+  <data name="Marketing.Pos.HeroPoint3" xml:space="preserve"><value>Mutfak fişi</value></data>
+  <data name="Marketing.Pos.ServicesTitle" xml:space="preserve"><value>Her servis tipi için kendi akışı.</value></data>
+  <data name="Marketing.Pos.ServicesLead" xml:space="preserve"><value>Masa, paket, hızlı satış ve gel-al siparişleri aynı POS üzerinde, her biri kendi düzeniyle.</value></data>
+  <data name="Marketing.Pos.ServiceTableTitle" xml:space="preserve"><value>Masa siparişi</value></data>
+  <data name="Marketing.Pos.ServiceTableText" xml:space="preserve"><value>Masayı seçin, ürünleri ekleyin, siparişi mutfağa gönderin.</value></data>
+  <data name="Marketing.Pos.ServiceTakeawayTitle" xml:space="preserve"><value>Paket siparişi</value></data>
+  <data name="Marketing.Pos.ServiceTakeawayText" xml:space="preserve"><value>Telefonla gelen siparişi müşteri ve adres bilgisiyle kaydedin.</value></data>
+  <data name="Marketing.Pos.ServiceQuickTitle" xml:space="preserve"><value>Hızlı satış</value></data>
+  <data name="Marketing.Pos.ServiceQuickText" xml:space="preserve"><value>Tezgâhtaki satışı masa açmadan, birkaç dokunuşla tamamlayın.</value></data>
+  <data name="Marketing.Pos.ServicePickupTitle" xml:space="preserve"><value>Gel-al siparişi</value></data>
+  <data name="Marketing.Pos.ServicePickupText" xml:space="preserve"><value>Müşterinin alacağı saati girin, hazır olduğunda teslim edin.</value></data>
+  <data name="Marketing.Pos.TablesTitle" xml:space="preserve"><value>Salonu tek bakışta görün.</value></data>
+  <data name="Marketing.Pos.TablesLead" xml:space="preserve"><value>Hangi masa boş, hangisi dolu, hangisi hesap bekliyor; servis ekibi aynı ekrandan takip eder.</value></data>
+  <data name="Marketing.Pos.TablesPoint1" xml:space="preserve"><value>Salon ve masa görünümü</value></data>
+  <data name="Marketing.Pos.TablesPoint2" xml:space="preserve"><value>Boş, dolu ve hesap isteyen masalar</value></data>
+  <data name="Marketing.Pos.TablesPoint3" xml:space="preserve"><value>Masaya sipariş ekleme</value></data>
+  <data name="Marketing.Pos.TablesPoint4" xml:space="preserve"><value>Hesap ve ödeme akışı</value></data>
+  <data name="Marketing.Pos.TouchTitle" xml:space="preserve"><value>Dokunmatik ve hızlı sipariş.</value></data>
+  <data name="Marketing.Pos.TouchLead" xml:space="preserve"><value>Büyük dokunma alanları, net kategoriler ve tek ekranda seçenekler. Yoğun saatte bile sipariş birkaç dokunuşta alınır.</value></data>
+  <data name="Marketing.Pos.TouchPoint1" xml:space="preserve"><value>Menü kategorileri</value></data>
+  <data name="Marketing.Pos.TouchPoint2" xml:space="preserve"><value>Ürün seçenekleri</value></data>
+  <data name="Marketing.Pos.TouchPoint3" xml:space="preserve"><value>Ekstralar ve notlar</value></data>
+  <data name="Marketing.Pos.TouchPoint4" xml:space="preserve"><value>Hızlı ürün ekleme</value></data>
+  <data name="Marketing.Pos.TouchNote" xml:space="preserve"><value>Dokunma alanları en az 48 px (tasarım hedefi).</value></data>
+  <data name="Marketing.Pos.MenuTitle" xml:space="preserve"><value>Menü ve fiyatlar elinizin altında.</value></data>
+  <data name="Marketing.Pos.MenuLead" xml:space="preserve"><value>Ürünleri ve kategorileri düzenleyin, fiyatları güncelleyin, biten ürünü satışa kapatın.</value></data>
+  <data name="Marketing.Pos.MenuPoint1" xml:space="preserve"><value>Ürünler ve kategoriler</value></data>
+  <data name="Marketing.Pos.MenuPoint2" xml:space="preserve"><value>Fiyat güncelleme</value></data>
+  <data name="Marketing.Pos.MenuPoint3" xml:space="preserve"><value>Mevcut / tükendi durumu</value></data>
+  <data name="Marketing.Pos.PaymentTitle" xml:space="preserve"><value>Ödemeyi alın, fişi yazdırın, masayı kapatın.</value></data>
+  <data name="Marketing.Pos.PaymentLead" xml:space="preserve"><value>Hesaptan kapanışa kadar her adım aynı ekranda ve aynı sırayla.</value></data>
+  <data name="Marketing.Pos.PaymentStageBill" xml:space="preserve"><value>Hesap</value></data>
+  <data name="Marketing.Pos.PaymentStageMethod" xml:space="preserve"><value>Ödeme yöntemi</value></data>
+  <data name="Marketing.Pos.PaymentStageReceipt" xml:space="preserve"><value>Fiş</value></data>
+  <data name="Marketing.Pos.PaymentStageClose" xml:space="preserve"><value>Kapanış</value></data>
+  <data name="Marketing.Pos.KitchenTitle" xml:space="preserve"><value>Sipariş mutfağa, fiş yazıcıya.</value></data>
+  <data name="Marketing.Pos.KitchenLead" xml:space="preserve"><value>Garsonun aldığı sipariş, mutfak fişi olarak termal yazıcıdan çıkar. Mutfak neyi, hangi masa için hazırlayacağını bilir.</value></data>
+  <data name="Marketing.Pos.KitchenStepPos" xml:space="preserve"><value>POS</value></data>
+  <data name="Marketing.Pos.KitchenStepPosMeta" xml:space="preserve"><value>Masa 6 · Mutfağa gönder</value></data>
+  <data name="Marketing.Pos.KitchenStepTicket" xml:space="preserve"><value>Mutfak fişi</value></data>
+  <data name="Marketing.Pos.KitchenStepTicketMeta" xml:space="preserve"><value>2× Adana Kebap · Acısız</value></data>
+  <data name="Marketing.Pos.KitchenStepPrinter" xml:space="preserve"><value>Termal yazıcı</value></data>
+  <data name="Marketing.Pos.KitchenStepPrinterMeta" xml:space="preserve"><value>Mutfak yazıcısı · Yazdırıldı</value></data>
+  <data name="Marketing.Pos.EcosystemTitle" xml:space="preserve"><value>Online siparişler ve restoran içi satışlar aynı Wasla ekosisteminde.</value></data>
+  <data name="Marketing.Pos.EcosystemLead" xml:space="preserve"><value>İki ürün, aynı restoranın iki sipariş kanalını yönetir.</value></data>
+  <data name="Marketing.Pos.EcosystemInStore" xml:space="preserve"><value>Masa ve restoran içi satışlar</value></data>
+  <data name="Marketing.Pos.EcosystemOperation" xml:space="preserve"><value>Restoran operasyonunuz</value></data>
+  <data name="Marketing.Pos.EcosystemKitchen" xml:space="preserve"><value>Mutfak</value></data>
+  <data name="Marketing.Pos.EcosystemTeam" xml:space="preserve"><value>Ekip</value></data>
+  <data name="Marketing.Pos.FinalTitle" xml:space="preserve"><value>Restoran içi satış deneyiminizi modernleştirin.</value></data>
+  <data name="Marketing.Pos.FinalLead" xml:space="preserve"><value>Wasla POS yakında. Gelişmeleri takip edin; online siparişler için Wasla Orders’ı bugün kullanmaya başlayabilirsiniz.</value></data>
+  <data name="Marketing.Mock.OnlinePlatformOrders" xml:space="preserve"><value>Online platform siparişleri</value></data>
+  <data name="Marketing.Mock.OneFamily" xml:space="preserve"><value>Tek ürün ailesi</value></data>
+  <data name="Marketing.Mock.SameTeam" xml:space="preserve"><value>Aynı restoran, aynı ekip</value></data>
+  <data name="Marketing.Mock.KitchenTicketPrinted" xml:space="preserve"><value>Mutfak fişi yazdırıldı</value></data>
+  <data name="Marketing.Mock.TableAndTakeaway" xml:space="preserve"><value>Masa ve paket siparişleri</value></data>
+  <data name="Marketing.Mock.Hall" xml:space="preserve"><value>Salon</value></data>
+  <data name="Marketing.Mock.Garden" xml:space="preserve"><value>Bahçe</value></data>
+  <data name="Marketing.Mock.Terrace" xml:space="preserve"><value>Teras</value></data>
+  <data name="Marketing.Mock.Table" xml:space="preserve"><value>Masa {0}</value></data>
+  <data name="Marketing.Mock.Guests" xml:space="preserve"><value>{0} kişi</value></data>
+  <data name="Marketing.Mock.GuestsMinutes" xml:space="preserve"><value>{0} kişi · {1} dk</value></data>
+  <data name="Marketing.Mock.TableFree" xml:space="preserve"><value>Boş</value></data>
+  <data name="Marketing.Mock.TableOccupied" xml:space="preserve"><value>Dolu</value></data>
+  <data name="Marketing.Mock.TableBill" xml:space="preserve"><value>Hesap istendi</value></data>
+  <data name="Marketing.Mock.TableSelected" xml:space="preserve"><value>Seçili</value></data>
+  <data name="Marketing.Mock.TakePayment" xml:space="preserve"><value>Ödeme al</value></data>
+  <data name="Marketing.Mock.OrderItems" xml:space="preserve"><value>2× Adana Dürüm, 1× Ayran</value></data>
+  <data name="Marketing.Mock.Approve" xml:space="preserve"><value>Onayla</value></data>
+  <data name="Marketing.Mock.ReceiptPlatform" xml:space="preserve"><value>YEMEKSEPETİ · PAKET</value></data>
+  <data name="Marketing.Mock.ItemAdana" xml:space="preserve"><value>Adana Kebap</value></data>
+  <data name="Marketing.Mock.ItemUrfa" xml:space="preserve"><value>Urfa Kebap</value></data>
+  <data name="Marketing.Mock.ItemIskender" xml:space="preserve"><value>İskender</value></data>
+  <data name="Marketing.Mock.ItemBeyti" xml:space="preserve"><value>Beyti</value></data>
+  <data name="Marketing.Mock.ItemChicken" xml:space="preserve"><value>Tavuk Şiş</value></data>
+  <data name="Marketing.Mock.ItemLamb" xml:space="preserve"><value>Kuzu Şiş</value></data>
+  <data name="Marketing.Mock.ItemLentilSoup" xml:space="preserve"><value>Mercimek Çorbası</value></data>
+  <data name="Marketing.Mock.ItemAyran" xml:space="preserve"><value>Ayran</value></data>
+  <data name="Marketing.Mock.ItemLahmacun" xml:space="preserve"><value>Lahmacun</value></data>
+  <data name="Marketing.Mock.ItemMixedPide" xml:space="preserve"><value>Karışık Pide</value></data>
+  <data name="Marketing.Mock.ItemTea" xml:space="preserve"><value>Çay</value></data>
+  <data name="Marketing.Mock.ItemWater" xml:space="preserve"><value>Su</value></data>
+  <data name="Marketing.Mock.ItemSimit" xml:space="preserve"><value>Simit</value></data>
+  <data name="Marketing.Mock.ItemLavash" xml:space="preserve"><value>Lavaş</value></data>
+  <data name="Marketing.Mock.ItemKunefe" xml:space="preserve"><value>Künefe</value></data>
+  <data name="Marketing.Mock.NewOrderAmount" xml:space="preserve"><value>Yeni sipariş · {0}</value></data>
+  <data name="Marketing.Mock.PhoneTakeaway" xml:space="preserve"><value>Paket #P-031 · telefon</value></data>
+  <data name="Marketing.Mock.PickupAt" xml:space="preserve"><value>Gel-al · 19:30</value></data>
+  <data name="Marketing.Mock.QuickSaleCounter" xml:space="preserve"><value>Hızlı satış · tezgâh</value></data>
+  <data name="Marketing.Mock.ServiceTable" xml:space="preserve"><value>Masa</value></data>
+  <data name="Marketing.Mock.ServiceTakeaway" xml:space="preserve"><value>Paket</value></data>
+  <data name="Marketing.Mock.ServiceQuickSale" xml:space="preserve"><value>Hızlı satış</value></data>
+  <data name="Marketing.Mock.ServicePickup" xml:space="preserve"><value>Gel-al</value></data>
+  <data name="Marketing.Mock.CatSoups" xml:space="preserve"><value>Çorbalar</value></data>
+  <data name="Marketing.Mock.CatKebabs" xml:space="preserve"><value>Kebaplar</value></data>
+  <data name="Marketing.Mock.CatPide" xml:space="preserve"><value>Pideler</value></data>
+  <data name="Marketing.Mock.CatDrinks" xml:space="preserve"><value>İçecekler</value></data>
+  <data name="Marketing.Mock.CatDesserts" xml:space="preserve"><value>Tatlılar</value></data>
+  <data name="Marketing.Mock.SoldOut" xml:space="preserve"><value>Tükendi</value></data>
+  <data name="Marketing.Mock.Available" xml:space="preserve"><value>Mevcut</value></data>
+  <data name="Marketing.Mock.Open" xml:space="preserve"><value>Açık</value></data>
+  <data name="Marketing.Mock.NotSpicy" xml:space="preserve"><value>Acısız</value></data>
+  <data name="Marketing.Mock.MildSpicy" xml:space="preserve"><value>Az acılı</value></data>
+  <data name="Marketing.Mock.Spicy" xml:space="preserve"><value>Acılı</value></data>
+  <data name="Marketing.Mock.SendToKitchen" xml:space="preserve"><value>Mutfağa</value></data>
+  <data name="Marketing.Mock.TakeawayOrder" xml:space="preserve"><value>Paket siparişi #P-031</value></data>
+  <data name="Marketing.Mock.PreparingMinutes" xml:space="preserve"><value>Hazırlanıyor · {0} dk</value></data>
+  <data name="Marketing.Mock.PaidByCard" xml:space="preserve"><value>Kartla ödendi</value></data>
+  <data name="Marketing.Mock.Customer" xml:space="preserve"><value>Müşteri</value></data>
+  <data name="Marketing.Mock.Phone" xml:space="preserve"><value>Telefon</value></data>
+  <data name="Marketing.Mock.Address" xml:space="preserve"><value>Adres</value></data>
+  <data name="Marketing.Mock.TableTotal" xml:space="preserve"><value>Masa toplamı</value></data>
+  <data name="Marketing.Mock.Card" xml:space="preserve"><value>Kart</value></data>
+  <data name="Marketing.Mock.ItemsAmount" xml:space="preserve"><value>{0} ürün · {1}</value></data>
+  <data name="Marketing.Mock.MarkDelivered" xml:space="preserve"><value>Teslim edildi olarak işaretle</value></data>
+  <data name="Marketing.Mock.AddOrder" xml:space="preserve"><value>Sipariş ekle</value></data>
+  <data name="Marketing.Mock.PrintBill" xml:space="preserve"><value>Hesabı yazdır</value></data>
+  <data name="Marketing.Mock.Portion" xml:space="preserve"><value>Porsiyon</value></data>
+  <data name="Marketing.Mock.PortionOne" xml:space="preserve"><value>1 porsiyon</value></data>
+  <data name="Marketing.Mock.PortionOneHalf" xml:space="preserve"><value>1,5 porsiyon</value></data>
+  <data name="Marketing.Mock.Spice" xml:space="preserve"><value>Acı seviyesi</value></data>
+  <data name="Marketing.Mock.Extras" xml:space="preserve"><value>Ekstralar</value></data>
+  <data name="Marketing.Mock.RoastedPepper" xml:space="preserve"><value>Közlenmiş biber</value></data>
+  <data name="Marketing.Mock.ExtraLavash" xml:space="preserve"><value>Ekstra lavaş</value></data>
+  <data name="Marketing.Mock.Note" xml:space="preserve"><value>Not</value></data>
+  <data name="Marketing.Mock.NoOnion" xml:space="preserve"><value>Soğansız</value></data>
+  <data name="Marketing.Mock.AddToCart" xml:space="preserve"><value>Sepete ekle · {0}</value></data>
+  <data name="Marketing.Mock.CartFor" xml:space="preserve"><value>Sepet · {0}</value></data>
+  <data name="Marketing.Mock.ItemCount" xml:space="preserve"><value>{0} ürün</value></data>
+  <data name="Marketing.Mock.QuickAdd" xml:space="preserve"><value>Hızlı ekle</value></data>
+  <data name="Marketing.Mock.SearchProduct" xml:space="preserve"><value>Ürün ara</value></data>
+  <data name="Marketing.Mock.AllCategories" xml:space="preserve"><value>Tüm kategoriler</value></data>
+  <data name="Marketing.Mock.AddProduct" xml:space="preserve"><value>Ürün ekle</value></data>
+  <data name="Marketing.Mock.ColProduct" xml:space="preserve"><value>Ürün</value></data>
+  <data name="Marketing.Mock.ColCategory" xml:space="preserve"><value>Kategori</value></data>
+  <data name="Marketing.Mock.ColPrice" xml:space="preserve"><value>Fiyat</value></data>
+  <data name="Marketing.Mock.ColStatus" xml:space="preserve"><value>Durum</value></data>
+  <data name="Marketing.Mock.Subtotal" xml:space="preserve"><value>Ara toplam</value></data>
+  <data name="Marketing.Mock.Service" xml:space="preserve"><value>Servis</value></data>
+  <data name="Marketing.Mock.NotIncluded" xml:space="preserve"><value>Dahil değil</value></data>
+  <data name="Marketing.Mock.AmountDue" xml:space="preserve"><value>Ödenecek</value></data>
+  <data name="Marketing.Mock.AmountByCard" xml:space="preserve"><value>{0} kartla</value></data>
+  <data name="Marketing.Mock.Bill" xml:space="preserve"><value>HESAP</value></data>
+  <data name="Marketing.Mock.SentToPrinter" xml:space="preserve"><value>Kasa yazıcısına gönderildi</value></data>
+  <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} kapatıldı</value></data>
+  <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>MUTFAK · {0}</value></data>
 </root>

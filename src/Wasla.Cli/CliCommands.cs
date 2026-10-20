@@ -1835,10 +1835,7 @@ internal static class CliCommands
     }
 
     private static TenantSqlServerResolution ResolveTenantSqlServer(IConfiguration configuration, string? sqlServerOverride) =>
-        TenantSqlServerConfiguration.Resolve(
-            sqlServerOverride,
-            configuration[TenantSqlServerConfiguration.CustomerDbKey],
-            configuration[TenantSqlServerConfiguration.OnboardingKey]);
+        TenantSqlServerConfiguration.Resolve(sqlServerOverride, configuration[TenantSqlServerConfiguration.ServerInstanceKey]);
 
     private static string? CentralCatalogOrNull(string? centralConnectionString)
     {

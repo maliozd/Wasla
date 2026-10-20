@@ -171,7 +171,7 @@ public sealed class OrderSyncWorker : BackgroundService
         try
         {
             _logger.LogDebug(
-                "Starting sync for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
+                "Starting sync for tenant {TenantId} ({TenantSlug}). TenantName={TenantName}",
                 customer.Id,
                 customer.Slug,
                 customer.Name);
@@ -191,7 +191,7 @@ public sealed class OrderSyncWorker : BackgroundService
             // One customer's failure must not stop the others in the same cycle.
             _logger.LogError(
                 ex,
-                "Sync failed for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
+                "Sync failed for tenant {TenantId} ({TenantSlug}). TenantName={TenantName}",
                 customer.Id,
                 customer.Slug,
                 customer.Name);
@@ -232,7 +232,7 @@ public sealed class OrderSyncWorker : BackgroundService
             // One customer's failure must not stop the others in the same cycle.
             _logger.LogError(
                 ex,
-                "Order history recovery failed for customer {CustomerId} ({CustomerSlug}). CustomerName={CustomerName}",
+                "Order history recovery failed for tenant {TenantId} ({TenantSlug}). TenantName={TenantName}",
                 customer.Id,
                 customer.Slug,
                 customer.Name);

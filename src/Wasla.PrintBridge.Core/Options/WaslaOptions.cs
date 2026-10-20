@@ -2,7 +2,7 @@
 
 public sealed class WaslaOptions
 {
-    public const string SectionName = "OrderHub";
+    public const string SectionName = "Wasla";
 
     public const string DefaultServerUrl = "https://localhost:7200";
 

@@ -136,4 +136,5 @@ Not themed: every page that does not use one of the three layouts above has no t
 | Live layout | `Areas/Tenant/Views/Shared/_OrdersDisplayLayout.cshtml` |
 | Orders JS | `wwwroot/js/orders/*.js` |
 | RTL | `wwwroot/css/rtl.css` |
+| Public marketing header, footer and menus | `Views/Shared/_PublicLayout.cshtml`, `wwwroot/js/wasla-marketing.js`; see [design-system.md](design-system.md#public-marketing-site) |
 | Localization | `Wasla.Web/Resources/SharedResource*.resx` |

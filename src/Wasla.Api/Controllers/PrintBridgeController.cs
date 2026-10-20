@@ -34,7 +34,7 @@ public sealed class PrintBridgeController : ControllerBase
 
         return Ok(new PrintBridgeHealthResponse(
             true,
-            auth.CustomerName,
+            auth.TenantName,
             auth.DeviceName,
             DateTime.UtcNow,
             auth.MachineName,
@@ -49,7 +49,7 @@ public sealed class PrintBridgeController : ControllerBase
         var auth = PrintBridgeContext.Get(HttpContext);
         if (auth is null) return Unauthorized();
 
-        var jobs = await _jobs.GetPendingJobsAsync(auth.CustomerId, max, ct).ConfigureAwait(false);
+        var jobs = await _jobs.GetPendingJobsAsync(auth.TenantId, max, ct).ConfigureAwait(false);
         var items = jobs.Select(j => new PendingPrintJobItemDto(
             j.Id,
             j.OrderId,
@@ -67,7 +67,7 @@ public sealed class PrintBridgeController : ControllerBase
         var auth = PrintBridgeContext.Get(HttpContext);
         if (auth is null) return Unauthorized();
 
-        var result = await _jobs.TryMarkPrintingAsync(auth.CustomerId, jobId, auth.DeviceName, auth.InstallationId, ct)
+        var result = await _jobs.TryMarkPrintingAsync(auth.TenantId, jobId, auth.DeviceName, auth.InstallationId, ct)
             .ConfigureAwait(false);
 
         return Ok(MapClaimResult(result));
@@ -82,7 +82,7 @@ public sealed class PrintBridgeController : ControllerBase
         if (auth is null) return Unauthorized();
 
         var result = await _devices
-            .UpdateDeviceNameAsync(auth.CustomerId, auth.DeviceId, body?.DeviceName ?? string.Empty, ct)
+            .UpdateDeviceNameAsync(auth.TenantId, auth.DeviceId, body?.DeviceName ?? string.Empty, ct)
             .ConfigureAwait(false);
 
         return Ok(new PrintJobActionResponse(result.Success, false, result.Success ? "updated" : result.ErrorKey ?? "failed"));
@@ -94,7 +94,7 @@ public sealed class PrintBridgeController : ControllerBase
         var auth = PrintBridgeContext.Get(HttpContext);
         if (auth is null) return Unauthorized();
 
-        var result = await _jobs.TryMarkPrintedAsync(auth.CustomerId, jobId, ct).ConfigureAwait(false);
+        var result = await _jobs.TryMarkPrintedAsync(auth.TenantId, jobId, ct).ConfigureAwait(false);
         return Ok(MapClaimResult(result));
     }
 
@@ -105,7 +105,7 @@ public sealed class PrintBridgeController : ControllerBase
         if (auth is null)
             return Unauthorized();
 
-        var result = await _history.CreateReprintAsync(auth.CustomerId, jobId, auth.CustomerName, ct)
+        var result = await _history.CreateReprintAsync(auth.TenantId, jobId, auth.TenantName, ct)
             .ConfigureAwait(false);
 
         return Ok(new ReprintPrintJobResponse(result.Success, result.MessageKey, result.NewPrintJobId));
@@ -121,7 +121,7 @@ public sealed class PrintBridgeController : ControllerBase
         if (auth is null) return Unauthorized();
 
         var result = await _jobs.TryMarkFailedAsync(
-                auth.CustomerId,
+                auth.TenantId,
                 jobId,
                 body?.ErrorMessage ?? "Print failed.",
                 ct)

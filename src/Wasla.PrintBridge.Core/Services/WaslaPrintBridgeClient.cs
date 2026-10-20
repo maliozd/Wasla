@@ -53,7 +53,7 @@ public sealed class WaslaPrintBridgeClient
             .ConfigureAwait(false);
 
         return new PrintBridgeHealthResult(
-            payload?.CustomerName ?? string.Empty,
+            payload?.TenantName ?? string.Empty,
             payload?.DeviceName ?? string.Empty,
             payload?.ServerTimeUtc ?? DateTime.UtcNow,
             payload?.MachineName);
@@ -262,8 +262,8 @@ public sealed class WaslaPrintBridgeClient
         CancellationToken ct,
         WaslaOptions? connection = null)
     {
-        var hub = connection ?? _holder.Snapshot().OrderHub;
-        var serverUrl = hub.ServerUrl.TrimEnd('/');
+        var target = connection ?? _holder.Snapshot().Connection;
+        var serverUrl = target.ServerUrl.TrimEnd('/');
 
         HttpResponseMessage response;
         try
@@ -320,8 +320,8 @@ public sealed class WaslaPrintBridgeClient
 
     private string BuildAbsoluteUrl(string relativeUrl, WaslaOptions? connection = null)
     {
-        var hub = connection ?? _holder.Snapshot().OrderHub;
-        return $"{hub.ServerUrl.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
+        var target = connection ?? _holder.Snapshot().Connection;
+        return $"{target.ServerUrl.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
     }
 
     /// <summary>
@@ -330,10 +330,10 @@ public sealed class WaslaPrintBridgeClient
     /// </summary>
     private HttpRequestMessage CreateRequest(HttpMethod method, string url, WaslaOptions? connection = null)
     {
-        var (savedHub, bridge, _) = _holder.Snapshot();
-        var hub = connection ?? savedHub;
+        var (savedConnection, bridge, _) = _holder.Snapshot();
+        var target = connection ?? savedConnection;
         var request = new HttpRequestMessage(method, url);
-        request.Headers.TryAddWithoutValidation("X-PrintBridge-Token", hub.AgentToken);
+        request.Headers.TryAddWithoutValidation("X-PrintBridge-Token", target.AgentToken);
         var machineName = string.IsNullOrWhiteSpace(bridge.MachineName)
             ? Environment.MachineName
             : bridge.MachineName;
@@ -457,7 +457,7 @@ public sealed class WaslaPrintBridgeClient
     }
 
     public sealed record PrintBridgeHealthResult(
-        string CustomerName,
+        string TenantName,
         string DeviceName,
         DateTime ServerTimeUtc,
         string? MachineName = null);
@@ -477,7 +477,7 @@ public sealed class WaslaPrintBridgeClient
 
     private sealed record PrintBridgeHealthResponse(
         bool Success,
-        string CustomerName,
+        string TenantName,
         string DeviceName,
         DateTime ServerTimeUtc,
         string? MachineName);

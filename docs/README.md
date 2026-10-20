@@ -21,6 +21,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [orders/synchronization.md](orders/synchronization.md) | Worker, pagination, upsert |
 | [orders/live-screen.md](orders/live-screen.md) | Operational UI versus Orders |
 | [integrations/food-platforms.md](integrations/food-platforms.md) | Trendyol GO, Yemeksepeti, Getir, Mock/Real |
+| [integrations/provider-webhooks.md](integrations/provider-webhooks.md) | Decision: provider webhook evidence, polling as reconciliation, provider questions (WAS-17) |
 | [integrations/print-bridge.md](integrations/print-bridge.md) | Desktop printing client |
 | [frontend/architecture.md](frontend/architecture.md) | Razor, Bootstrap, vanilla JS |
 | [frontend/design-system.md](frontend/design-system.md) | Tokens; `wasla-foundation.css` is the foundation |
@@ -51,7 +52,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | Live Screen | [orders/live-screen.md](orders/live-screen.md), [orders/lifecycle.md](orders/lifecycle.md), [frontend/architecture.md](frontend/architecture.md), [frontend/design-system.md](frontend/design-system.md) |
 | Guided setup or order training | [product/onboarding.md](product/onboarding.md), [orders/live-screen.md](orders/live-screen.md) |
 | Orders management UI | [orders/lifecycle.md](orders/lifecycle.md), [frontend/architecture.md](frontend/architecture.md) |
-| Provider or sync | [architecture/tenancy.md](architecture/tenancy.md), [orders/synchronization.md](orders/synchronization.md), [integrations/food-platforms.md](integrations/food-platforms.md) |
+| Provider or sync | [architecture/tenancy.md](architecture/tenancy.md), [orders/synchronization.md](orders/synchronization.md), [integrations/food-platforms.md](integrations/food-platforms.md), [integrations/provider-webhooks.md](integrations/provider-webhooks.md) |
 | Print Bridge | [architecture/tenancy.md](architecture/tenancy.md), [integrations/print-bridge.md](integrations/print-bridge.md) |
 | Live updates, SignalR | [architecture/realtime.md](architecture/realtime.md), [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md), [architecture/authentication.md](architecture/authentication.md#long-lived-live-connections), [operations/observability.md](operations/observability.md#live-notification-metrics) |
 | Signup or provisioning | [architecture/tenancy.md](architecture/tenancy.md), [operations/cli.md](operations/cli.md) |

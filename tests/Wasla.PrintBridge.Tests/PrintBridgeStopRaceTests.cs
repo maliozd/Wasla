@@ -351,10 +351,10 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
         {
             var store = new PrintBridgeSettingsStore();
             var document = store.Load();
-            if (string.IsNullOrEmpty(document.OrderHub.AgentToken))
+            if (string.IsNullOrEmpty(document.Wasla.AgentToken))
             {
-                document.OrderHub.ServerUrl = ServerUrl;
-                document.OrderHub.AgentToken = FakeToken;
+                document.Wasla.ServerUrl = ServerUrl;
+                document.Wasla.AgentToken = FakeToken;
                 document.PrintBridge.PrinterName = FirstInstalledPrinterOrSkip();
                 document.PrintBridge.DryRun = false;
                 document.PrintBridge.IdlePollIntervalSeconds = 1;
@@ -364,7 +364,7 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
             }
 
             var holder = new PrintBridgeSettingsHolder();
-            holder.Replace(document.OrderHub, document.PrintBridge, document.Ui);
+            holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
             var http = new HttpClient(server, disposeHandler: false);
             var client = new WaslaPrintBridgeClient(
                 http,
@@ -495,7 +495,7 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
             switch (action)
             {
                 case "health":
-                    return Json(HttpStatusCode.OK, new { success = true, customerName = "QA", deviceName = "Kasa 1", serverTimeUtc = DateTime.UtcNow });
+                    return Json(HttpStatusCode.OK, new { success = true, tenantName = "QA", deviceName = "Kasa 1", serverTimeUtc = DateTime.UtcNow });
 
                 case "pending":
                 {

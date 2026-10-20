@@ -57,7 +57,7 @@ public static class ServiceCollectionExtensions
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
         services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
-        services.Configure<CustomerOnboardingOptions>(configuration.GetSection(CustomerOnboardingOptions.SectionName));
+        services.Configure<TenantOnboardingOptions>(configuration.GetSection(TenantOnboardingOptions.SectionName));
 
         services.AddWaslaEmail(configuration);
 
