@@ -133,7 +133,7 @@ internal sealed class CheckoutTestHarness : IDisposable
             Status = status,
             Slug = slug,
             BusinessName = "Checkout Test Restaurant",
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_{slug.Replace('-', '_')}",
             BusinessPhone = "5551112233",
             BusinessEmail = "business@example.test",

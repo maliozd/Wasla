@@ -342,7 +342,7 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
             Id = TenantId,
             Name = "Visual Test Restaurant",
             Slug = "visual-test",
-            PrimaryDomain = "visual-test.wasla.local",
+            PrimaryDomain = "visual-test.app.wasla.local",
             DatabaseName = "Wasla_Tenant_visual_test",
             EncryptedConnectionString = SecretMarkers.EncryptedConnectionString,
             IsActive = true,

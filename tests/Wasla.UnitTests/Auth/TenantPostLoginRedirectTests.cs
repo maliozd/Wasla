@@ -195,7 +195,7 @@ public sealed class TenantPostLoginRedirectTests : IAsyncLifetime
         [
             // Other hosts and schemes
             "https://evil.example/dashboard", "http://evil.example", "HtTpS://evil.example", "https:/evil.example",
-            "javascript:alert(1)", "data:text/html,x", "http://beta.wasla.local/dashboard",
+            "javascript:alert(1)", "data:text/html,x", "http://beta.app.wasla.local/dashboard",
             // Protocol-relative and backslash forms
             "//evil.example/dashboard", "///evil.example", "/\\evil.example", "\\\\evil.example", "\\/evil.example",
             "/\\/evil.example",
@@ -424,7 +424,7 @@ public sealed class TenantPostLoginRedirectTests : IAsyncLifetime
     {
         var kitchen = Seed(UserRole.Kitchen);
         using var alpha = Alpha();
-        var landing = await PostLoginAsync(alpha, kitchen.Email, "http://beta.wasla.local/orders");
+        var landing = await PostLoginAsync(alpha, kitchen.Email, "http://beta.app.wasla.local/orders");
 
         using var replay = alpha.ReplayTo(_host.BaseAddress, TenantSessionWebHost.BetaHost);
         var copied = await replay.GetAsync("/auth/login?returnUrl=%2Forders");

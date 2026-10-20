@@ -199,12 +199,12 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.TenantId);
         Assert.Equal("Business successslug", result.TenantName);
-        Assert.Equal("successslug.wasla.local", result.TenantDomain);
+        Assert.Equal("successslug.app.wasla.local", result.TenantDomain);
 
         var tenant = await _db.Tenants.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(result.TenantId, tenant.Id);
         Assert.Equal("successslug", tenant.Slug);
-        Assert.Equal("successslug.wasla.local", tenant.PrimaryDomain);
+        Assert.Equal("successslug.app.wasla.local", tenant.PrimaryDomain);
         Assert.Equal("Wasla_successslug", tenant.DatabaseName);
         Assert.Equal("encrypted_base64", tenant.EncryptedConnectionString);
         Assert.Equal(1, tenant.EncryptionKeyVersion);
@@ -446,7 +446,7 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
             Status = status,
             Slug = slug,
             BusinessName = $"Business {slug}",
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_{slug}",
             BusinessPhone = "+905551112233",
             Country = "TR",
@@ -470,7 +470,7 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
             Id = id,
             Name = $"Tenant {slug}",
             Slug = slug,
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_{slug}",
             EncryptedConnectionString = "enc",
             EncryptionKeyVersion = 1,

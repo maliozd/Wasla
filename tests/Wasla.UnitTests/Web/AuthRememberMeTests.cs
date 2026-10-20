@@ -168,7 +168,7 @@ public sealed class AuthRememberMeTests
     [InlineData(true)]
     public async Task Tenant_Login_RespectsRememberMe(bool rememberMe)
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var authValidation = new FakeAuthValidationService
         {
             Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner", UserRole.Owner, Guid.NewGuid())
@@ -202,7 +202,7 @@ public sealed class AuthRememberMeTests
     public async Task Tenant_LoginGet_RedirectsWhenTenantMatches()
     {
         var tenantId = Guid.NewGuid();
-        var tenant = Tenant(tenantId, "tenant.wasla.local");
+        var tenant = Tenant(tenantId, "tenant.app.wasla.local");
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
         [
             new Claim("TenantId", tenantId.ToString()),
@@ -228,7 +228,7 @@ public sealed class AuthRememberMeTests
     [Fact]
     public async Task Tenant_LoginGet_DoesNotRedirectOnTenantIdMismatch()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
         [
             new Claim("TenantId", Guid.NewGuid().ToString()),
@@ -254,7 +254,7 @@ public sealed class AuthRememberMeTests
     [Fact]
     public async Task Tenant_LoginGet_DoesNotRedirectForCentralAdminPrincipal()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var adminPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
         [
             new Claim(ClaimTypes.Role, "CentralAdmin")
@@ -315,13 +315,13 @@ public sealed class AuthRememberMeTests
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Scheme = "https";
-        httpContext.Request.Host = new HostString("tenant.wasla.local", 443);
+        httpContext.Request.Host = new HostString("tenant.app.wasla.local", 443);
         httpContext.RequestServices = new ServiceCollection()
             .AddSingleton<IAuthenticationService>(authenticationService ?? new CapturingAuthenticationService())
             .BuildServiceProvider();
 
         var controller = new TenantAuthController(
-            new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.wasla.local")),
+            new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.app.wasla.local")),
             authValidation ?? new FakeAuthValidationService(),
             new NoopLoginRecorder(),
             new FakeSignupCompletionTokenService(),

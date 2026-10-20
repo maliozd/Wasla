@@ -258,7 +258,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         {
             PlanCode = selected,
             IsContactSalesPlan = found?.IsContactSales ?? false,
-            MarketingBaseDomain = _options.MarketingBaseDomain,
+            ApplicationBaseDomain = _options.ApplicationBaseDomain,
             PlanOptions = BuildPlanOptions(selected),
             Country = "Türkiye",
             BusinessPhoneType = "Mobile"
@@ -270,7 +270,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
 
     private async Task PopulateReferenceDataAsync(SignupViewModel model, CancellationToken ct)
     {
-        model.MarketingBaseDomain = _options.MarketingBaseDomain;
+        model.ApplicationBaseDomain = _options.ApplicationBaseDomain;
         model.IsPaymentSimulatorAvailable = CheckoutPaymentSimulator.IsAvailable(_environment);
         model.PlanOptions = BuildPlanOptions(model.PlanCode);
         model.IsContactSalesPlan = _planCatalog.FindByCode(model.PlanCode)?.IsContactSales ?? false;

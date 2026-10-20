@@ -3080,7 +3080,7 @@
   <data name="TenantAddressRequired.PageTitle" xml:space="preserve"><value>Restaurant panel address required</value></data>
   <data name="TenantAddressRequired.Title" xml:space="preserve"><value>Restaurant panel address required</value></data>
   <data name="TenantAddressRequired.Description" xml:space="preserve"><value>To sign in to your panel, use your restaurant's dedicated Wasla address.</value></data>
-  <data name="TenantAddressRequired.Example" xml:space="preserve"><value>Example: bahce-tadi.wasla.local</value></data>
+  <data name="TenantAddressRequired.Example" xml:space="preserve"><value>Example: {0}</value></data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve"><value>Back to signup</value></data>
   <data name="PrintBridge.Auto.SectionTitle" xml:space="preserve"><value>Wasla Print Bridge Setup</value></data>
   <data name="PrintBridge.Auto.RecommendedBadge" xml:space="preserve"><value>Recommended</value></data>

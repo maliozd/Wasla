@@ -85,7 +85,7 @@ public sealed partial class AdminPendingRegistrationsWebTests : IAsyncLifetime
 
         var detail = WebUtility.HtmlDecode((await browser.GetAsync($"/admin/pending-registrations/{_provisioned}")).Body);
         Assert.Contains("provisioned-pide@example.test", detail, StringComparison.Ordinal);
-        Assert.Contains("https://provisioned-pide.wasla.local/auth/login", detail, StringComparison.Ordinal);
+        Assert.Contains("https://provisioned-pide.app.wasla.local/auth/login", detail, StringComparison.Ordinal);
         Assert.Contains("Wasla_Tenant_provisioned-pide", detail, StringComparison.Ordinal);
 
         foreach (var body in bodies)
@@ -106,7 +106,7 @@ public sealed partial class AdminPendingRegistrationsWebTests : IAsyncLifetime
         Assert.EndsWith($"/admin/pending-registrations/{_paid}", response.Location!.ToString(), StringComparison.Ordinal);
         var call = Assert.Single(_provisioning.Calls);
         Assert.Equal(_paid, call.RegistrationId);
-        Assert.Matches(@"^http://paid-lahmacun\.wasla\.local(:\d+)?/auth/login$", call.PanelLoginUrl);
+        Assert.Matches(@"^http://paid-lahmacun\.app\.wasla\.local(:\d+)?/auth/login$", call.PanelLoginUrl);
         Assert.False(call.Force);
 
         var after = WebUtility.HtmlDecode((await browser.GetAsync(response.Location.ToString())).Body);
@@ -247,7 +247,7 @@ public sealed partial class AdminPendingRegistrationsWebTests : IAsyncLifetime
             string? panelLoginUrl = null, CancellationToken ct = default)
         {
             _calls.Enqueue(new ProvisionCall(registrationId, force, panelLoginUrl));
-            return Task.FromResult(ProvisioningResult.Success(Guid.NewGuid(), "Paid Lahmacun", "paid-lahmacun.wasla.local"));
+            return Task.FromResult(ProvisioningResult.Success(Guid.NewGuid(), "Paid Lahmacun", "paid-lahmacun.app.wasla.local"));
         }
     }
 }

@@ -101,7 +101,8 @@ internal sealed class SignupWebHost : IAsyncDisposable
             .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
 
         services.AddDbContext<CentralDbContext>(options => options.UseSqlite(centralDb));
-        services.Configure<TenantOnboardingOptions>(_ => { });
+        // Wasla:TenantOnboarding from the test's configuration, otherwise the Development domains (WAS-66).
+        services.Configure<TenantOnboardingOptions>(builder.Configuration.GetSection(TenantOnboardingOptions.SectionName));
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
@@ -186,6 +187,15 @@ internal sealed class TestBrowser : IDisposable
 
     public Task<TestResponse> GetAsync(string path, string host = SignupWebHost.CentralHost) =>
         SendAsync(new HttpRequestMessage(HttpMethod.Get, path), host);
+
+    /// <summary>A GET with extra request headers, for example forwarded headers a client sends itself.</summary>
+    public Task<TestResponse> SendWithHeadersAsync(string path, string host, params (string Name, string Value)[] headers)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, path);
+        foreach (var (name, value) in headers)
+            request.Headers.TryAddWithoutValidation(name, value);
+        return SendAsync(request, host);
+    }
 
     public Task<TestResponse> PostFormAsync(
         string path,

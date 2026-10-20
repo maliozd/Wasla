@@ -22,7 +22,7 @@ public sealed class TenantResolutionMiddlewareTests
             tenantId,
             "Sushim",
             "sushim",
-            "sushim.wasla.local"));
+            "sushim.app.wasla.local"));
         var pendingRegistrations = new FakePendingRegistrationService();
         var nextCalled = false;
         var middleware = new TenantResolutionMiddleware(_ =>
@@ -30,7 +30,7 @@ public sealed class TenantResolutionMiddlewareTests
             nextCalled = true;
             return Task.CompletedTask;
         });
-        var context = CreateContext("sushim.wasla.local");
+        var context = CreateContext("sushim.app.wasla.local");
 
         await InvokeAsync(middleware, context, resolver, pendingRegistrations);
 
@@ -48,20 +48,20 @@ public sealed class TenantResolutionMiddlewareTests
         var pendingRegistrations = new FakePendingRegistrationService(
             CreateSummary(registrationId, PendingRegistrationStatus.AwaitingPayment));
         var middleware = new TenantResolutionMiddleware(_ => Task.CompletedTask);
-        var context = CreateContext("hasan-ustanin-yeri.wasla.local");
+        var context = CreateContext("hasan-ustanin-yeri.app.wasla.local");
 
         await InvokeAsync(middleware, context, new FakeTenantResolver(null), pendingRegistrations);
 
         Assert.Equal(StatusCodes.Status302Found, context.Response.StatusCode);
         Assert.Equal($"/signup/pending/{registrationId}", context.Response.Headers.Location.ToString());
-        Assert.Equal("hasan-ustanin-yeri.wasla.local", pendingRegistrations.LastLookupHost);
+        Assert.Equal("hasan-ustanin-yeri.app.wasla.local", pendingRegistrations.LastLookupHost);
     }
 
     [Fact]
     public async Task InvokeAsync_WhenNoTenantOrPendingRegistration_RedirectsToGenericUnknownTenantPage()
     {
         var middleware = new TenantResolutionMiddleware(_ => Task.CompletedTask);
-        var context = CreateContext("unknown.wasla.local");
+        var context = CreateContext("unknown.app.wasla.local");
 
         await InvokeAsync(
             middleware,
@@ -70,7 +70,7 @@ public sealed class TenantResolutionMiddlewareTests
             new FakePendingRegistrationService());
 
         Assert.Equal(StatusCodes.Status302Found, context.Response.StatusCode);
-        Assert.Equal("/tenant-not-found?host=unknown.wasla.local", context.Response.Headers.Location.ToString());
+        Assert.Equal("/tenant-not-found?host=unknown.app.wasla.local", context.Response.Headers.Location.ToString());
     }
 
     [Theory]
@@ -81,12 +81,12 @@ public sealed class TenantResolutionMiddlewareTests
     {
         var pendingRegistrations = new FakePendingRegistrationService(CreateSummary(Guid.NewGuid(), status));
         var middleware = new TenantResolutionMiddleware(_ => Task.CompletedTask);
-        var context = CreateContext("inactive.wasla.local");
+        var context = CreateContext("inactive.app.wasla.local");
 
         await InvokeAsync(middleware, context, new FakeTenantResolver(null), pendingRegistrations);
 
         Assert.Equal(StatusCodes.Status302Found, context.Response.StatusCode);
-        Assert.Equal("/tenant-not-found?host=inactive.wasla.local", context.Response.Headers.Location.ToString());
+        Assert.Equal("/tenant-not-found?host=inactive.app.wasla.local", context.Response.Headers.Location.ToString());
     }
 
     [Theory]
@@ -98,7 +98,7 @@ public sealed class TenantResolutionMiddlewareTests
         var registrationId = Guid.NewGuid();
         var pendingRegistrations = new FakePendingRegistrationService(CreateSummary(registrationId, status));
         var middleware = new TenantResolutionMiddleware(_ => Task.CompletedTask);
-        var context = CreateContext("sushim.wasla.local");
+        var context = CreateContext("sushim.app.wasla.local");
 
         await InvokeAsync(middleware, context, new FakeTenantResolver(null), pendingRegistrations);
 
@@ -107,18 +107,178 @@ public sealed class TenantResolutionMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_PassesOriginalHostToPendingRegistrationLookup()
+    public async Task InvokeAsync_PassesTheNormalizedHostToPendingRegistrationLookup()
     {
         var registrationId = Guid.NewGuid();
         var pendingRegistrations = new FakePendingRegistrationService(
             CreateSummary(registrationId, PendingRegistrationStatus.PaymentSucceeded));
         var middleware = new TenantResolutionMiddleware(_ => Task.CompletedTask);
-        var context = CreateContext("HASAN-USTANIN-YERI.wasla.local");
+        var context = CreateContext("HASAN-USTANIN-YERI.app.wasla.local.");
 
         await InvokeAsync(middleware, context, new FakeTenantResolver(null), pendingRegistrations);
 
         Assert.Equal($"/signup/pending/{registrationId}", context.Response.Headers.Location.ToString());
-        Assert.Equal("HASAN-USTANIN-YERI.wasla.local", pendingRegistrations.LastLookupHost);
+        Assert.Equal("hasan-ustanin-yeri.app.wasla.local", pendingRegistrations.LastLookupHost);
+    }
+
+    [Theory]
+    [InlineData("sushim.app.wasla.local")]
+    [InlineData("SUSHIM.App.Wasla.Local")]
+    [InlineData("sushim.app.wasla.local.")]
+    public async Task InvokeAsync_EverySpellingOfATenantHost_ResolvesThroughOneNormalizedHostAndCacheKey(string host)
+    {
+        var tenant = new ResolvedTenantDto(Guid.NewGuid(), "Sushim", "sushim", "sushim.app.wasla.local");
+        var resolver = new FakeTenantResolver(tenant);
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var context = CreateContext(host);
+        context.Request.Host = new HostString(host, 7200);
+
+        await InvokeAsync(new TenantResolutionMiddleware(_ => Task.CompletedTask), context, resolver, new FakePendingRegistrationService(), cache);
+
+        Assert.Equal(new[] { "sushim.app.wasla.local" }, resolver.LookedUpHosts);
+        Assert.Same(tenant, context.Items["CurrentTenant"]);
+        Assert.True(cache.TryGetValue("tenant:sushim.app.wasla.local", out _));
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ACachedTenant_IsOnlyServedForItsOwnHost()
+    {
+        var alpha = new ResolvedTenantDto(Guid.NewGuid(), "Alpha", "alpha", "alpha.app.wasla.local");
+        var beta = new ResolvedTenantDto(Guid.NewGuid(), "Beta", "beta", "beta.app.wasla.local");
+        var resolver = new FakeTenantResolver(beta);
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        cache.Set("tenant:alpha.app.wasla.local", alpha);
+        var context = CreateContext("beta.app.wasla.local");
+
+        await InvokeAsync(new TenantResolutionMiddleware(_ => Task.CompletedTask), context, resolver, new FakePendingRegistrationService(), cache);
+
+        Assert.Same(beta, context.Items["CurrentTenant"]);
+        Assert.Equal(new[] { "beta.app.wasla.local" }, resolver.LookedUpHosts);
+    }
+
+    [Theory]
+    [InlineData("/auth/login", "/tenant-address-required?returnUrl=%2Fauth%2Flogin")]
+    [InlineData("/", "/tenant-address-required")]
+    [InlineData("/orders", "/tenant-address-required?returnUrl=%2Forders")]
+    [InlineData("/pos", "/tenant-address-required?returnUrl=%2Fpos")]
+    public async Task InvokeAsync_TheApplicationHost_IsNotATenant_AndAsksForTheTenantAddress(string path, string location)
+    {
+        var nextCalled = false;
+        var context = CreateContext("APP.wasla.local");
+        context.Request.Path = path;
+
+        await InvokeAsync(
+            new TenantResolutionMiddleware(_ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }),
+            context,
+            new ThrowingTenantResolver(),
+            new FakePendingRegistrationService());
+
+        Assert.False(nextCalled);
+        Assert.Equal(StatusCodes.Status302Found, context.Response.StatusCode);
+        Assert.Equal(location, context.Response.Headers.Location.ToString());
+        Assert.False(context.Items.ContainsKey("CurrentTenant"));
+    }
+
+    [Theory]
+    [InlineData("/signup")]
+    [InlineData("/tenant-address-required")]
+    [InlineData("/admin/auth/login")]
+    public async Task InvokeAsync_TheApplicationHost_StillServesPublicBypassPages(string path)
+    {
+        var nextCalled = false;
+        var context = CreateContext("app.wasla.local");
+        context.Request.Path = path;
+
+        await InvokeAsync(
+            new TenantResolutionMiddleware(_ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }),
+            context,
+            new ThrowingTenantResolver(),
+            new FakePendingRegistrationService());
+
+        Assert.True(nextCalled);
+        Assert.False(context.Items.ContainsKey("CurrentTenant"));
+    }
+
+    [Theory]
+    [InlineData("www.app.wasla.local")]
+    [InlineData("admin.app.wasla.local")]
+    [InlineData("api.app.wasla.local")]
+    [InlineData("app.app.wasla.local")]
+    [InlineData("nested.sushim.app.wasla.local")]
+    [InlineData("sushim.app.wasla.local.evil.example")]
+    [InlineData("app.wasla.local.evil.example")]
+    [InlineData("sushim.wasla.local")]
+    [InlineData("evil.example")]
+    [InlineData("-bad.app.wasla.local")]
+    public async Task InvokeAsync_AnInvalidHost_GetsTheUnknownTenantPage_WithoutAnyLookup(string host)
+    {
+        var nextCalled = false;
+        var pending = new FakePendingRegistrationService();
+        var context = CreateContext(host);
+
+        await InvokeAsync(
+            new TenantResolutionMiddleware(_ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }),
+            context,
+            new ThrowingTenantResolver(),
+            pending);
+
+        Assert.False(nextCalled);
+        Assert.False(pending.WasCalled);
+        Assert.Equal(StatusCodes.Status302Found, context.Response.StatusCode);
+        Assert.Equal($"/tenant-not-found?host={Uri.EscapeDataString(host)}", context.Response.Headers.Location.ToString());
+        Assert.False(context.Items.ContainsKey("CurrentTenant"));
+    }
+
+    [Fact]
+    public async Task InvokeAsync_IgnoresForwardedHost()
+    {
+        var context = CreateContext("app.wasla.local");
+        context.Request.Headers["X-Forwarded-Host"] = "sushim.app.wasla.local";
+
+        await InvokeAsync(
+            new TenantResolutionMiddleware(_ => Task.CompletedTask),
+            context,
+            new ThrowingTenantResolver(),
+            new FakePendingRegistrationService());
+
+        Assert.Equal("/tenant-address-required?returnUrl=%2Fauth%2Flogin", context.Response.Headers.Location.ToString());
+        Assert.False(context.Items.ContainsKey("CurrentTenant"));
+    }
+
+    [Theory]
+    [InlineData("wasla.local", "/")]
+    [InlineData("WWW.wasla.local", "/pos")]
+    [InlineData("localhost", "/")]
+    public async Task InvokeAsync_TheMarketingHost_ServesItsPagesWithoutTenantResolution(string host, string path)
+    {
+        var nextCalled = false;
+        var context = CreateContext(host);
+        context.Request.Path = path;
+
+        await InvokeAsync(
+            new TenantResolutionMiddleware(_ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }),
+            context,
+            new ThrowingTenantResolver(),
+            new FakePendingRegistrationService());
+
+        Assert.True(nextCalled);
+        Assert.False(context.Items.ContainsKey("CurrentTenant"));
     }
 
     [Theory]
@@ -133,7 +293,7 @@ public sealed class TenantResolutionMiddlewareTests
             called = true;
             return Task.CompletedTask;
         });
-        var context = CreateContext("sushim.wasla.local");
+        var context = CreateContext("sushim.app.wasla.local");
         context.Request.Path = path;
 
         await InvokeAsync(middleware, context, new ThrowingTenantResolver(), new FakePendingRegistrationService());
@@ -157,6 +317,16 @@ public sealed class TenantResolutionMiddlewareTests
         IPendingRegistrationService pendingRegistrations)
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
+        await InvokeAsync(middleware, context, resolver, pendingRegistrations, cache);
+    }
+
+    private static async Task InvokeAsync(
+        TenantResolutionMiddleware middleware,
+        HttpContext context,
+        ITenantResolver resolver,
+        IPendingRegistrationService pendingRegistrations,
+        IMemoryCache cache)
+    {
         using var misses = new TenantHostMissCache(Options.Create(new TenantHostMissCacheOptions()));
         await middleware.InvokeAsync(
             context,
@@ -164,7 +334,7 @@ public sealed class TenantResolutionMiddlewareTests
             resolver,
             pendingRegistrations,
             misses,
-            Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local" }),
+            Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local", ApplicationBaseDomain = "app.wasla.local" }),
             NullLogger<TenantResolutionMiddleware>.Instance);
     }
 
@@ -172,7 +342,7 @@ public sealed class TenantResolutionMiddlewareTests
         new(
             id,
             "Sushim",
-            "sushim.wasla.local",
+            "sushim.app.wasla.local",
             "starter",
             "Monthly",
             status,
@@ -195,8 +365,13 @@ public sealed class TenantResolutionMiddlewareTests
 
     private sealed class FakeTenantResolver(ResolvedTenantDto? tenant) : ITenantResolver
     {
-        public Task<ResolvedTenantDto?> ResolveByHostAsync(string host, CancellationToken ct) =>
-            Task.FromResult(tenant);
+        public List<string> LookedUpHosts { get; } = new();
+
+        public Task<ResolvedTenantDto?> ResolveByHostAsync(string host, CancellationToken ct)
+        {
+            LookedUpHosts.Add(host);
+            return Task.FromResult(tenant);
+        }
     }
 
     private sealed class FakePendingRegistrationService(PendingRegistrationSummary? pending = null)

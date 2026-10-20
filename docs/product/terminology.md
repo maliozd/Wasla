@@ -19,7 +19,7 @@ A **Tenant** is one independently operated restaurant location in the current ar
 Examples:
 
 - Central registry row (`Wasla.Domain.Entities.Central.Tenant`)
-- Host `{slug}.wasla.local` / production tenant domain
+- Host `{slug}.app.wasla.local` / production tenant domain `{slug}.app.wasla.tr`
 - Owner of one dedicated tenant database
 
 A business that operates several restaurants uses a separate tenant for each location. A future grouping above those tenants is not implemented. See [tenancy.md](../architecture/tenancy.md).

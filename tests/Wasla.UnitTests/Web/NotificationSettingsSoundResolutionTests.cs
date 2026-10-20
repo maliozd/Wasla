@@ -173,7 +173,7 @@ public sealed class NotificationSettingsSoundResolutionTests
     private sealed class FixedCurrentTenantService : ICurrentTenantService
     {
         public ResolvedTenantDto? CurrentTenant { get; } =
-            new(Guid.NewGuid(), "Tenant", "tenant", "tenant.wasla.local");
+            new(Guid.NewGuid(), "Tenant", "tenant", "tenant.app.wasla.local");
     }
 
     private sealed class DefaultNotificationSettingsService : IUserNotificationSettingsService
