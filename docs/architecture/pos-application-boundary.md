@@ -6,7 +6,7 @@ Proposed in WAS-34 (2026-10). It becomes accepted when the pull request that add
 
 ## Context: what the current code gives POS
 
-Facts from the code on `dev` at `198b49b`, the base of this branch:
+Facts from the code on `dev` at `198b49b`, the base of this branch, rechecked at `40fe698`:
 
 - **Every Orders server project depends on one Infrastructure assembly.** `Wasla.Web`, `Wasla.Api`, `Wasla.Worker` and `Wasla.Cli` reference `Wasla.Infrastructure`. That assembly holds both `CentralDbContext` and `TenantDbContext`, their migrations, the provider clients, order services, printing services, `TenantResolver` and `AesSecretManager`. Referencing it from POS would bring in all of Orders.
 - **Tenant users live in the Orders tenant database.** `AppUser` (email, BCrypt hash, `UserRole`, security stamp) is a `TenantDbContext` entity. Web login checks the password against that database (`AuthValidationService`), and every request is revalidated against it ([authentication.md](authentication.md#tenant-session-revalidation)). CentralDb's `TenantMembership` is a plan and subscription record, not a user store.
