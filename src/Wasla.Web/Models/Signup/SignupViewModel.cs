@@ -107,7 +107,8 @@ public sealed class SignupViewModel
     [Display(Name = "Signup.ConfirmPassword")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    public string MarketingBaseDomain { get; set; } = "wasla.local";
+    /// <summary>The domain the tenant address is built under: <c>{slug}.{ApplicationBaseDomain}</c> (WAS-66).</summary>
+    public string ApplicationBaseDomain { get; set; } = string.Empty;
 
     public IReadOnlyList<SelectListItem> PlanOptions { get; set; } = Array.Empty<SelectListItem>();
 

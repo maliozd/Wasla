@@ -119,7 +119,7 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
         await using var central = NewCentral();
         var tenant = await central.Tenants.SingleAsync(t => t.Id == _tenantA, ct);
         Assert.Equal("reset-a", tenant.Slug);
-        Assert.Equal("reset-a.wasla.local", tenant.PrimaryDomain);
+        Assert.Equal("reset-a.app.wasla.local", tenant.PrimaryDomain);
         Assert.True(tenant.IsActive);
         var membership = await central.TenantMemberships.SingleAsync(m => m.TenantId == _tenantA, ct);
         Assert.Equal("Growth", membership.PlanCode);
@@ -408,7 +408,7 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
                 Id = id,
                 Name = slug,
                 Slug = slug,
-                PrimaryDomain = slug + ".wasla.local",
+                PrimaryDomain = slug + ".app.wasla.local",
                 DatabaseName = "Wasla_" + slug,
                 EncryptedConnectionString = "encrypted",
                 EncryptionKeyVersion = 1,

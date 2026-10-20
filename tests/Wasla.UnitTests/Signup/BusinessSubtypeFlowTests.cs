@@ -85,7 +85,7 @@ public sealed class BusinessSubtypeFlowTests : IDisposable
             TenantId = Guid.NewGuid(),
             Slug = "legacy-type",
             BusinessName = "Legacy",
-            PrimaryDomain = "legacy-type.wasla.local",
+            PrimaryDomain = "legacy-type.app.wasla.local",
             DatabaseName = "Wasla_legacy_type",
             BusinessPhone = "555",
             BusinessPhoneType = BusinessPhoneType.Mobile,

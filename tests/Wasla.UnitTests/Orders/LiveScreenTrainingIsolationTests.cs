@@ -356,7 +356,7 @@ public sealed class LiveScreenTrainingIsolationTests : IDisposable
 
     private sealed class FixedTenant(Guid tenantId) : ICurrentTenantService
     {
-        public ResolvedTenantDto? CurrentTenant { get; } = new(tenantId, "Tenant", "tenant", "tenant.wasla.local");
+        public ResolvedTenantDto? CurrentTenant { get; } = new(tenantId, "Tenant", "tenant", "tenant.app.wasla.local");
     }
 
     /// <summary>The two policies LiveData asks about, answered from the role's navigation permissions.</summary>

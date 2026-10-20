@@ -1,8 +1,8 @@
-﻿using System.Net;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Onboarding;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Tenant;
@@ -69,33 +69,37 @@ public sealed class TenantResolutionMiddleware
             return;
         }
 
-        var marketingBaseDomain = onboardingOptions.Value.MarketingBaseDomain;
-
-        // Central/public hosts serve landing, signup, and checkout without tenant resolution.
-        if (IsCentralPublicHost(host, marketingBaseDomain))
+        // Only the Host header decides (WAS-66); X-Forwarded-Host is never applied (TrustedProxies).
+        var options = onboardingOptions.Value;
+        var classified = WaslaHostClassifier.Classify(host, options.MarketingBaseDomain, options.ApplicationBaseDomain);
+        switch (classified.Kind)
         {
-            if (path.StartsWith("/auth", StringComparison.OrdinalIgnoreCase))
-            {
-                var attemptedUrl = $"{context.Request.Path}{context.Request.QueryString}";
-                if (string.IsNullOrWhiteSpace(attemptedUrl))
-                    attemptedUrl = "/auth/login";
-                var encodedReturnUrl = Uri.EscapeDataString(attemptedUrl);
-                context.Response.Redirect($"/tenant-address-required?returnUrl={encodedReturnUrl}");
+            // Central/public hosts serve landing, signup, and checkout without tenant resolution.
+            case WaslaHostKind.Public:
+                if (path.StartsWith("/auth", StringComparison.OrdinalIgnoreCase))
+                {
+                    RedirectToTenantAddressRequired(context);
+                    return;
+                }
+
+                await _next(context);
                 return;
-            }
 
-            await _next(context);
-            return;
+            // The application entry is not a tenant: every page outside the bypass list asks for the tenant address.
+            case WaslaHostKind.Application:
+                RedirectToTenantAddressRequired(context);
+                return;
+
+            // Unknown, malformed, reserved and look-alike hosts get the unknown-tenant page without any lookup, so
+            // they cannot be told apart from an unregistered tenant address.
+            case WaslaHostKind.Invalid:
+                RedirectToTenantNotFound(context, host);
+                return;
         }
 
-        // Non-tenant hosts that are not under the marketing domain fall through to normal routing.
-        if (!IsTenantHost(host, marketingBaseDomain))
-        {
-            await _next(context);
-            return;
-        }
-
-        var cacheKey = $"tenant:{host.ToLowerInvariant()}";
+        // Lookups and cache keys use the normalized host, so case and a trailing dot resolve the same tenant.
+        var tenantHost = classified.Host;
+        var cacheKey = $"tenant:{tenantHost}";
         if (cache.TryGetValue(cacheKey, out ResolvedTenantDto? cachedTenant) && cachedTenant is not null)
         {
             await ContinueWithTenantAsync(context, logger, cachedTenant);
@@ -105,8 +109,8 @@ public sealed class TenantResolutionMiddleware
         // A host without a tenant is remembered for a short time, and concurrent requests for it share one lookup, so
         // requests for unknown hosts cannot turn into one CentralDb query each (TenantHostMissCache).
         var lookup = await misses.GetOrLookupAsync(
-            TenantHostMissCache.Key(host)!,
-            () => LookupAsync(host, resolver, pendingRegistrations, logger),
+            TenantHostMissCache.Key(tenantHost)!,
+            () => LookupAsync(tenantHost, resolver, pendingRegistrations, logger),
             context.RequestAborted);
         if (lookup.Tenant is null)
         {
@@ -117,8 +121,7 @@ public sealed class TenantResolutionMiddleware
             }
 
             // Subdomain request but no matching tenant: block access with a friendly page.
-            var encodedHost = Uri.EscapeDataString(host);
-            context.Response.Redirect($"/tenant-not-found?host={encodedHost}");
+            RedirectToTenantNotFound(context, host);
             return;
         }
 
@@ -181,38 +184,18 @@ public sealed class TenantResolutionMiddleware
         return false;
     }
 
-    private static bool IsCentralPublicHost(string host, string marketingBaseDomain)
+    private static void RedirectToTenantAddressRequired(HttpContext context)
     {
-        var normalizedHost = NormalizeHost(host);
-        var normalizedDomain = NormalizeDomain(marketingBaseDomain);
+        var attemptedUrl = $"{context.Request.Path}{context.Request.QueryString}";
+        if (string.IsNullOrWhiteSpace(attemptedUrl) || attemptedUrl == "/")
+        {
+            context.Response.Redirect("/tenant-address-required");
+            return;
+        }
 
-        if (normalizedHost == "localhost") return true;
-        if (normalizedHost == normalizedDomain) return true;
-        if (normalizedHost == $"www.{normalizedDomain}") return true;
-
-        var hostForIpCheck = normalizedHost;
-        if (hostForIpCheck.StartsWith('[') && hostForIpCheck.EndsWith(']'))
-            hostForIpCheck = hostForIpCheck[1..^1];
-
-        if (IPAddress.TryParse(hostForIpCheck, out _))
-            return true;
-
-        return false;
+        context.Response.Redirect($"/tenant-address-required?returnUrl={Uri.EscapeDataString(attemptedUrl)}");
     }
 
-    private static bool IsTenantHost(string host, string marketingBaseDomain)
-    {
-        if (IsCentralPublicHost(host, marketingBaseDomain)) return false;
-
-        var normalizedHost = NormalizeHost(host);
-        var normalizedDomain = NormalizeDomain(marketingBaseDomain);
-
-        return normalizedHost.EndsWith("." + normalizedDomain, StringComparison.Ordinal);
-    }
-
-    private static string NormalizeHost(string host) =>
-        host.Trim().TrimEnd('.').ToLowerInvariant();
-
-    private static string NormalizeDomain(string marketingBaseDomain) =>
-        marketingBaseDomain.Trim().TrimStart('.').TrimEnd('.').ToLowerInvariant();
+    private static void RedirectToTenantNotFound(HttpContext context, string host) =>
+        context.Response.Redirect($"/tenant-not-found?host={Uri.EscapeDataString(host)}");
 }

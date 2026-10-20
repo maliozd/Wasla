@@ -21,7 +21,7 @@ Wasla uses **CentralDb + one physical database per tenant**. It does **not** use
 
 ```mermaid
 flowchart LR
-  Host["Request host\n{slug}.wasla.local"] --> MW["TenantResolutionMiddleware"]
+  Host["Request host\n{slug}.app.wasla.local"] --> MW["TenantResolutionMiddleware"]
   MW --> Resolver["TenantResolver\nCentralDb.Tenants"]
   MW --> Items["HttpContext.Items\nCurrentTenant"]
   Items --> CTS["ICurrentTenantService"]
@@ -86,6 +86,36 @@ Domain types for tenant-DB entities still live under the legacy namespace `Wasla
 
 ## Host / domain resolution
 
+### Host contract (WAS-66)
+
+Wasla Orders answers on three kinds of host. Two settings in `Wasla:TenantOnboarding` define them; nothing else (no request value, no forwarded header) does.
+
+| Host | Production | Development | Role |
+|------|------------|-------------|------|
+| Marketing | `wasla.tr` (`MarketingBaseDomain`), plus `www.wasla.tr` | `wasla.local`, `www.wasla.local`, `localhost`, IP addresses | Public marketing site (homepage, `/pos`), signup, checkout. `/auth` asks for the tenant address |
+| Application | `app.wasla.tr` (`ApplicationBaseDomain`) | `app.wasla.local` | Central entry into Wasla Orders. Not a tenant: every page outside the public paths below redirects to `/tenant-address-required` |
+| Tenant | `{slug}.app.wasla.tr` | `{slug}.app.wasla.local` | One tenant, resolved by its stored `PrimaryDomain` |
+
+Classification is `WaslaHostClassifier` (`src/Wasla.Application/Onboarding/WaslaHostClassifier.cs`). It compares exact host boundaries only:
+
+- The host is trimmed and lower-cased, and one trailing dot is removed; the port is never part of it. `SUSHIM.App.Wasla.TR.` and `sushim.app.wasla.tr:8443` are the same tenant host, with one cache key.
+- A tenant host is exactly one label followed by `.{ApplicationBaseDomain}`. The label must be a valid slug (`^[a-z0-9][a-z0-9_-]*$`, at most 63 characters) and not a reserved name.
+- Everything else is invalid: an empty or additional label (`a.b.app.wasla.tr`), an invalid slug, a reserved label (`admin.app.wasla.tr`), a look-alike suffix (`sushim.app.wasla.tr.evil.example`, `app.wasla.tr.evil.example`, `evilapp.wasla.tr`), the former `{slug}.wasla.tr` shape, and any other host name.
+- An invalid host gets the same response as an unregistered tenant address (a redirect to `/tenant-not-found?host=…`, then 404) without any CentralDb lookup, so the two cannot be told apart and a flood of invented hosts costs nothing.
+- Never a fallback: no host resolves to another tenant, the first tenant or a default tenant.
+
+**Reserved names.** `RegistrationNameNormalizer.ReservedSlugs` is the one list: `admin`, `api`, `app`, `docs`, `help`, `partners`, `pos`, `status`, `www`. Signup refuses them as unavailable addresses (`Signup.SlugUnavailable`), slug availability reports them as taken, and resolution never looks them up. Root-level names such as `admin.wasla.tr` or `api.wasla.tr` are not tenant hosts at all; they stay free for Wasla's own products and infrastructure.
+
+**Former shape.** Tenant hosts used to be `{slug}.{MarketingBaseDomain}`. The production domain was not live under that shape, so there is no redirect from it: `{slug}.wasla.tr` is an invalid host. Development tenants created before WAS-66 keep `{slug}.wasla.local` in `Tenants.PrimaryDomain` and are not reachable until that value is changed to `{slug}.app.wasla.local` (or the tenant is provisioned again).
+
+**Startup validation.** Web and Api (through `AddWaslaInfrastructure`) refuse to start when either domain is not a host name with at least two labels (no scheme, port or path), when the two are equal or the application domain is the `www.` host, or when the marketing domain is under the application domain.
+
+**Generated URLs.** Tenant links (status pages, panel sign-in, welcome and password-reset links, provisioning email, Central Admin) are built from the tenant's stored `PrimaryDomain` (`TenantWelcomeUrlBuilder`). Marketing links (homepage, signup, canonical URL) and the application sign-in use the configured domains. The request contributes only its scheme and, in Development and Staging, its port; a request on `localhost` keeps `localhost` for the marketing and application links so a local run works without host names.
+
+Public paths served on every host without tenant resolution are the bypass list in `TenantResolutionMiddleware` (for example `/signup`, `/checkout`, `/tenant-address-required`, `/tenant-not-found`, `/admin`, `/culture`, `/health`, static files, `/api/print-bridge`).
+
+DNS, wildcard DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS certificates are deployment work (WAS-76); see [../operations/deployment.md](../operations/deployment.md#domains-and-https).
+
 ### Resolver
 
 **Source:** `src/Wasla.Infrastructure/Tenant/TenantResolver.cs`
@@ -102,9 +132,11 @@ Domain types for tenant-DB entities still live under the legacy namespace `Wasla
 - Cache TTL: **5 minutes** (`tenant:{host}`)
 - Sets `HttpContext.Items["CurrentTenant"]` to `ResolvedTenantDto`
 - Bypass prefixes include `/admin`, `/signup`, `/checkout`, static assets, `/api/print-bridge`, health/swagger, and several public status/access pages
-- Central/public hosts (`localhost`, marketing base domain, `www.{domain}`, raw IPs) skip tenant resolution for normal public routes; `/auth` on a central host redirects to tenant-address guidance
-- Tenant hosts are `{slug}.{MarketingBaseDomain}` (development marketing domain is typically `wasla.local`)
-- If host looks like a tenant host but no tenant exists: checks pending registration, else redirects to tenant-not-found. That outcome is kept in the [unknown-host cache](#unknown-host-cache)
+- Classifies the `Host` header with the [host contract](#host-contract-was-66); `X-Forwarded-Host` is never applied
+- Marketing hosts (`localhost`, the marketing domain, `www.{domain}`, raw IPs) skip tenant resolution for normal public routes; `/auth` on a marketing host redirects to tenant-address guidance
+- The application host redirects every non-bypass path to `/tenant-address-required`
+- Tenant hosts are `{slug}.{ApplicationBaseDomain}`, looked up by the normalized host. If no tenant exists: checks pending registration, else redirects to tenant-not-found. That outcome is kept in the [unknown-host cache](#unknown-host-cache)
+- Invalid hosts redirect to tenant-not-found without any lookup
 - Does **not** create databases, run migrations, or provision tenants
 
 ### API middleware
@@ -125,7 +157,7 @@ The `Host` header is chosen by the client, so without this every request with an
 - A host that resolves to no tenant is remembered with what was found (nothing, or a pending registration for the Web redirect) for **60 seconds** (`TenantResolution:MissCache:Ttl`). Repeated requests for it within that time do not query CentralDb.
 - Requests for the same host that arrive while its lookup runs wait for that one lookup. The lookup is not cancelled when the request that started it ends. A lookup that fails (CentralDb down) is not remembered.
 - The cache holds at most **10,000** hosts (`TenantResolution:MissCache:MaxEntries`). When it is full, a further miss is answered correctly but not remembered until entries expire, so random hosts cannot grow memory beyond the bound.
-- The key is the host exactly as `TenantResolver` looks it up: trimmed and lower-cased, without the port (`Request.Host.Host`). A trailing dot or another spelling is a different key, so an entry can only answer for the host that produced it, and a miss is never served for a tenant's own host. `X-Forwarded-Host` is never applied. Tenants are not stored here; they stay in the 5-minute tenant cache.
+- The key is the host exactly as `TenantResolver` looks it up: in Web the normalized tenant host of the [host contract](#host-contract-was-66) (trimmed, lower-cased, one trailing dot removed, no port); in Api the trimmed, lower-cased `Request.Host.Host`. An entry can only answer for the host that produced it, and a miss is never served for a tenant's own host. Web looks up only valid tenant hosts, so invalid hosts never reach this cache there. `X-Forwarded-Host` is never applied. Tenants are not stored here; they stay in the 5-minute tenant cache.
 - **Trade-off:** a tenant created (or reactivated) for a host that was just requested shows as unknown for at most the TTL, and a pending registration's redirect can be up to the TTL old. Both settle on their own; there is no manual invalidation.
 - Validated at startup: `Ttl` from `00:00:01` to `00:10:00`, `MaxEntries` from 1 to 1,000,000. Process-local, like the other caches below.
 
