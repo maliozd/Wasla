@@ -682,11 +682,9 @@ body.wasla-tenant.wasla-app .wasla-sidebar-user-label {
   font-weight: 500;
 }
 
-/* Collapsed sidebar */
+/* Collapsed sidebar. Link and control text stays their accessible name: wasla-foundation.css hides it visually. */
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-tenant-name,
 body.wasla-tenant.wasla-app.sidebar-collapsed .customer-text,
-body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-text,
-body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-label,
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-footer .footer-label,
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-user-label {
   display: none;

@@ -118,7 +118,7 @@
 
                         <a class="nav-link @Active("/dashboard")" asp-area="Tenant" asp-controller="Dashboard" asp-action="Index">
 
-                            <i class="bi bi-speedometer2 me-2"></i><span class="nav-text">@L["Layout.Dashboard"]</span>
+                            <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i><span class="nav-text">@L["Layout.Dashboard"]</span>
 
                         </a>
 
@@ -131,7 +131,7 @@
 
                         <a class="nav-link @ActiveOrders()" asp-area="Tenant" asp-controller="Orders" asp-action="Index">
 
-                            <i class="bi bi-bag me-2"></i><span class="nav-text">@L["Layout.Orders"]</span>
+                            <i class="bi bi-bag me-2" aria-hidden="true"></i><span class="nav-text">@L["Layout.Orders"]</span>
 
                         </a>
 
@@ -146,7 +146,7 @@
                         <a class="nav-link @Active("/orders/live-display")" asp-area="Tenant" asp-controller="Orders" asp-action="LiveDisplay"
                            target="_blank" rel="noopener noreferrer">
 
-                            <i class="bi bi-display me-2"></i><span class="nav-text">@L["Layout.LiveScreen"]</span>
+                            <i class="bi bi-display me-2" aria-hidden="true"></i><span class="nav-text">@L["Layout.LiveScreen"]</span>
 
                         </a>
 
@@ -160,7 +160,7 @@
                         <a class="nav-link wasla-sidebar-nav-group__head @(printBridgeSection ? "wasla-sidebar-nav-parent--current" : "")"
                            href="@(navPermissions.CanManagePrintBridgeDevices ? "/print-bridge/devices" : "/print-bridge/setup")">
 
-                            <i class="bi bi-printer me-2"></i><span class="nav-text">@L["PrintBridge.Title"]</span>
+                            <i class="bi bi-printer me-2" aria-hidden="true"></i><span class="nav-text">@L["PrintBridge.Title"]</span>
 
                         </a>
 
@@ -205,7 +205,7 @@
 
                         <a class="nav-link @Active("/platform-connections")" asp-area="Tenant" asp-controller="PlatformConnections" asp-action="Index">
 
-                            <i class="bi bi-plug me-2"></i><span class="nav-text">@L["Layout.PlatformConnections"]</span>
+                            <i class="bi bi-plug me-2" aria-hidden="true"></i><span class="nav-text">@L["Layout.PlatformConnections"]</span>
 
                         </a>
 
@@ -215,7 +215,7 @@
 
                         <a class="nav-link @Active("/branches")" asp-area="Tenant" asp-controller="Branches" asp-action="Index">
 
-                            <i class="bi bi-diagram-3 me-2"></i><span class="nav-text">@L["Layout.Branches"]</span>
+                            <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i><span class="nav-text">@L["Layout.Branches"]</span>
 
                         </a>
 
@@ -228,7 +228,7 @@
 
                         <a class="nav-link @Active("/settings/users")" asp-area="Tenant" asp-controller="TenantUsers" asp-action="Index">
 
-                            <i class="bi bi-people me-2"></i><span class="nav-text">@L["Navigation.UserSettings"]</span>
+                            <i class="bi bi-people me-2" aria-hidden="true"></i><span class="nav-text">@L["Navigation.UserSettings"]</span>
 
                         </a>
 

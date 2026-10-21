@@ -75,8 +75,43 @@ function el(id) {
   return node;
 }
 
-/** One Devices page on a virtual clock. <clientOffsetMs> is the browser clock minus the server clock. */
-function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", visibility = "visible", timeZoneId = "Europe/Istanbul", intl = Intl } = {}) {
+/**
+ * Parsed markup as far as the page queries it: rows by an id attribute (`tr[data-...]`) and the controls inside a row by
+ * class or tag. A control records when it is focused. Parsing the same markup again creates new controls.
+ */
+function fragment(html, focused) {
+  return {
+    querySelector: () => null,
+    querySelectorAll(selector) {
+      const attribute = (selector.match(/^tr\[([\w-]+)\]$/) || [])[1];
+      if (!attribute) return [];
+      const rows = new RegExp("<tr[^>]*\\b" + attribute + "=\"([^\"]+)\"[^>]*>([\\s\\S]*?)</tr>", "g");
+      return [...html.matchAll(rows)].map(([, id, body]) => ({
+        getAttribute: (n) => (n === attribute ? id : null),
+        querySelector(control) {
+          const found = control.startsWith(".") ? body.includes(control.slice(1)) : body.includes("<" + control);
+          return found ? { row: id, control, focus: (options) => focused.push({ row: id, control, options }) } : null;
+        }
+      }));
+    }
+  };
+}
+
+/** The template element the page parses markup with: the browser would serialize parsed markup the same way. */
+function template(focused) {
+  let html = "";
+  return {
+    get innerHTML() { return html; },
+    set innerHTML(v) { html = String(v); },
+    get content() { return fragment(html, focused); }
+  };
+}
+
+/**
+ * One Devices page on a virtual clock. <clientOffsetMs> is the browser clock minus the server clock. <jobs> is the
+ * print-job history's server-rendered markup, which the job refresh answers with until <setJobs> changes it.
+ */
+function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", visibility = "visible", timeZoneId = "Europe/Istanbul", intl = Intl, jobs = null } = {}) {
   const clock = { now: Date.parse(initial.serverTimeUtc) + clientOffsetMs };
   class FakeDate extends Date {
     constructor(...args) { if (args.length === 0) super(clock.now); else super(...args); }
@@ -93,6 +128,17 @@ function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", vis
     "printBridgeJobsPanel", "printBridgeRefreshJobsBtn"];
   const els = Object.fromEntries(ids.map((id) => [id, el(id)]));
   els.printBridgeAntiForgery = Object.assign(el("printBridgeAntiForgery"), { querySelector: () => ({ value: "antiforgery" }) });
+  const focused = [];
+  const jobsPanel = els.printBridgeJobsPanel;
+  Object.assign(jobsPanel, {
+    querySelectorAll: (s) => fragment(jobsPanel.innerHTML, focused).querySelectorAll(s),
+    contains: (n) => !!n && n.inJobs === true
+  });
+  let jobsAnswer = jobs === null ? "<p>jobs</p>" : jobs;
+  if (jobs !== null) {
+    jobsPanel.innerHTML = jobs;
+    jobsPanel.writes = 0;
+  }
 
   // Toggles as the browser would build them from the table markup; a re-render creates new elements.
   let toggleCache = { html: null, toggles: [] };
@@ -125,6 +171,7 @@ function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", vis
     activeElement: null,
     documentElement: { lang: culture },
     getElementById: (id) => els[id] || null,
+    createElement: (tag) => (tag === "template" ? template(focused) : null),
     querySelectorAll: (s) => (s === ".pb-device-active-toggle" ? toggles() : []),
     addEventListener: (n, fn) => { (docListeners[n] ||= []).push(fn); }
   };
@@ -134,14 +181,16 @@ function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", vis
   function fetch(url, init = {}) {
     const request = { url, method: init.method || "GET", body: init.body ? String(init.body) : "", cache: init.cache };
     requests.push(request);
-    if (url === JOBS_URL) return Promise.resolve({ ok: true, text: () => Promise.resolve("<p>jobs</p>") });
+    if (url === JOBS_URL) return Promise.resolve({ ok: true, text: () => Promise.resolve(jobsAnswer) });
     return new Promise((resolve, reject) => {
       pending.push({ request, resolve, reject });
     });
   }
 
+  let selection = null;
   const window = {
     confirm: () => true,
+    getSelection: () => selection,
     addEventListener: (n, fn) => { (winListeners[n] ||= []).push(fn); },
     WaslaPrintBridge: {
       messages: MESSAGES, devicesUrl: DEVICES_URL, devicesPollIntervalMs: 15000, setActiveUrlTemplate: "/print-bridge/devices/{id}/set-active",
@@ -191,6 +240,19 @@ function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", vis
     async pagehide() { (winListeners.pagehide || []).forEach((fn) => fn({})); await settle(); },
     serverNow: () => clock.now - clientOffsetMs,
     toggles,
+    focused,
+    setJobs(html) { jobsAnswer = html; },
+    jobsRequests: () => requests.filter((r) => r.url === JOBS_URL),
+    /** Selected text that reaches into the element with this id ("elsewhere" for none); null clears the selection. */
+    select(id) {
+      selection = id === null ? null
+        : { isCollapsed: false, rangeCount: 1, getRangeAt: () => ({ intersectsNode: (n) => n === els[id] }) };
+    },
+    /** Keyboard focus on a reprint button of the job region (by job id), elsewhere ("outside") or nowhere (null). */
+    focus(job) {
+      document.activeElement = job === null ? null : job === "outside" ? { inJobs: false }
+        : { inJobs: true, closest: () => ({ getAttribute: (n) => (n === "data-print-job-id" ? job : null) }), matches: (s) => s === ".pb-reprint-job-btn" };
+    },
     panel: () => els.printBridgeDevicesPanel.innerHTML,
     badge: () => (els.printBridgeDevicesPanel.innerHTML.match(/<span class="badge [^"]+">([^<]*)<\/span><span class="badge [^"]+ pb-device-active-badge">/) || [])[1],
     badges: () => [...els.printBridgeDevicesPanel.innerHTML.matchAll(/<span class="badge [^"]+">([^<]*)<\/span><span class="badge [^"]+ pb-device-active-badge">/g)].map((m) => m[1]),
@@ -501,4 +563,95 @@ test("Arabic times use the Gregorian calendar, chosen explicitly rather than lef
   assert.ok(p.panel().includes(expected("ar-SA", T0)));
   const hijri = new Intl.DateTimeFormat("ar-SA", Object.assign({}, OPTIONS, { calendar: "islamic-umalqura" })).format(new Date(T0));
   assert.equal(p.panel().includes(hijri), false);
+});
+
+// --- Refreshed regions keep the user's place (WAS-132) ---
+
+const jobRow = (id, reprint = true) => `<tr class="wasla-print-job-row" data-print-job-id="${id}" data-print-job-status="Printed"><td>${id}</td><td>` +
+  (reprint ? `<button type="button" class="btn btn-sm btn-outline-primary pb-reprint-job-btn" data-job-id="${id}">Reprint</button>` : "—") + "</td></tr>";
+const jobTable = (...rows) => `<div class="table-responsive"><table><tbody>${rows.join("")}</tbody></table></div>`;
+
+test("an unchanged print-job answer leaves the region alone, poll after poll", async () => {
+  const markup = jobTable(jobRow("j1"), jobRow("j2"));
+  // Server-rendered inside the page with the view's surrounding whitespace; the refresh answers with the bare partial.
+  const p = page({ jobs: "\n            " + markup + "\n        " });
+  p.setJobs(markup);
+
+  await p.advance(9_000);
+
+  assert.equal(p.jobsRequests().length, 3);
+  assert.equal(p.els.printBridgeJobsPanel.writes, 0);
+});
+
+test("a changed print-job answer is written once; the same answer again is not", async () => {
+  const p = page({ jobs: jobTable(jobRow("j1")) });
+  const changed = jobTable(jobRow("j2"), jobRow("j1"));
+  p.setJobs(changed);
+
+  await p.advance(3_000);
+  assert.equal(p.els.printBridgeJobsPanel.writes, 1);
+  assert.equal(p.els.printBridgeJobsPanel.innerHTML, changed);
+
+  await p.advance(6_000);
+  assert.equal(p.els.printBridgeJobsPanel.writes, 1);
+});
+
+test("a changed answer gives focus back to the same job's reprint button without scrolling", async () => {
+  const p = page({ jobs: jobTable(jobRow("j1"), jobRow("j2")) });
+  p.focus("j2");
+  p.setJobs(jobTable(jobRow("j3"), jobRow("j1"), jobRow("j2")));
+
+  await p.advance(3_000);
+
+  assert.equal(p.els.printBridgeJobsPanel.writes, 1);
+  // The options object comes from the page's realm: compare its value.
+  assert.deepEqual(JSON.parse(JSON.stringify(p.focused)), [{ row: "j2", control: ".pb-reprint-job-btn", options: { preventScroll: true } }]);
+});
+
+test("while the focused button would disappear, the answer waits until focus has left the region", async () => {
+  const p = page({ jobs: jobTable(jobRow("j1"), jobRow("j2")) });
+  p.focus("j1");
+  const changed = jobTable(jobRow("j1", false), jobRow("j2"));
+  p.setJobs(changed);
+
+  await p.advance(6_000);
+  assert.equal(p.jobsRequests().length, 2);
+  assert.equal(p.els.printBridgeJobsPanel.writes, 0, "focus stays on the button the user is on");
+
+  p.focus("outside");
+  await p.advance(3_000);
+  assert.equal(p.els.printBridgeJobsPanel.writes, 1);
+  assert.equal(p.els.printBridgeJobsPanel.innerHTML, changed);
+  assert.deepEqual(p.focused, [], "focus is never moved into the region");
+});
+
+test("while text is selected in the job region, a changed answer waits; a selection elsewhere does not hold it back", async () => {
+  const p = page({ jobs: jobTable(jobRow("j1")) });
+  p.select("printBridgeJobsPanel");
+  p.setJobs(jobTable(jobRow("j2"), jobRow("j1")));
+
+  await p.advance(6_000);
+  assert.equal(p.els.printBridgeJobsPanel.writes, 0);
+
+  p.select("elsewhere");
+  await p.advance(3_000);
+  assert.equal(p.els.printBridgeJobsPanel.writes, 1);
+});
+
+test("while text is selected in the devices table, a changed snapshot waits for the next one", async () => {
+  const p = page();
+  const writes = p.els.printBridgeDevicesPanel.writes;
+  p.select("printBridgeDevicesPanel");
+
+  p.cfg.refreshDevices();
+  await p.respond(snapshot({ serverMs: T0 + 20_000, devices: [device({ name: "Bar" })] }));
+  assert.equal(p.els.printBridgeDevicesPanel.writes, writes);
+  assert.match(p.panel(), /Kitchen/);
+  assert.equal(p.els.printBridgeSummaryLastDevice.textContent, "Bar", "the summary outside the table still updates");
+
+  p.select(null);
+  p.cfg.refreshDevices();
+  await p.respond(snapshot({ serverMs: T0 + 21_000, devices: [device({ name: "Bar" })] }));
+  assert.equal(p.els.printBridgeDevicesPanel.writes, writes + 1);
+  assert.match(p.panel(), /Bar/);
 });
