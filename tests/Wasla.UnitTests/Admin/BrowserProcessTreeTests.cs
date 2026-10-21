@@ -127,6 +127,49 @@ public sealed class BrowserProcessTreeTests
         Assert.True(table.Root.Disposed);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Refresh_ReleasesEveryUnpromotedHandle_WhenTheVerificationSnapshotFails(bool cancelled)
+    {
+        // Child 101 is tracked. Its child 102 and the browser's new child 103 are opened, and the snapshot that would
+        // confirm them fails (WAS-106).
+        var table = new ScriptedTable([new ProcessEntry(100, 4, "msedge.exe"), new ProcessEntry(101, 100, "msedge.exe")]);
+        var tracked = table.Processes[101] = new FakeTracked(101, RootCreated + 1);
+        Exception failure = cancelled ? new OperationCanceledException() : new System.ComponentModel.Win32Exception(8);
+        // A snapshot taken once more handles than this have been opened fails.
+        var failAfterOpened = int.MaxValue;
+        var tree = new BrowserProcessTree(
+            table.Root, () => table.Root.Exited = true,
+            () => table.Opened.Count > failAfterOpened ? throw failure : table.Snapshot(), table.Open);
+        tree.Refresh();
+        failAfterOpened = table.Opened.Count;
+        table.Script(
+        [
+            new ProcessEntry(100, 4, "msedge.exe"),
+            new ProcessEntry(101, 100, "msedge.exe"),
+            new ProcessEntry(102, 101, "msedge.exe"),
+            new ProcessEntry(103, 100, "msedge.exe")
+        ]);
+        var grandchild = table.Processes[102] = new FakeTracked(102, RootCreated + 2);
+        var child = table.Processes[103] = new FakeTracked(103, RootCreated + 3);
+
+        Assert.Same(failure, Assert.Throws(failure.GetType(), () => tree.Refresh()));
+
+        Assert.Equal([102, 103], table.Opened.Skip(failAfterOpened));
+        Assert.Equal(1, grandchild.Disposals);
+        Assert.Equal(1, child.Disposals);
+        Assert.Equal(0, tracked.Disposals);
+        Assert.Equal(0, table.Root.Disposals);
+
+        tree.Dispose();
+
+        Assert.Equal(1, tracked.Disposals);
+        Assert.Equal(1, table.Root.Disposals);
+        Assert.Equal(1, grandchild.Disposals);
+        Assert.Equal(1, child.Disposals);
+    }
+
     /// <summary>
     /// Snapshots returned in order (the last one repeats) and the process each id opens as at that moment. The started
     /// process is id 100.
@@ -183,7 +226,9 @@ public sealed class BrowserProcessTreeTests
 
         public int Terminations { get; private set; }
 
-        public bool Disposed { get; private set; }
+        public bool Disposed => Disposals > 0;
+
+        public int Disposals { get; private set; }
 
         /// <summary>Runs before the process ends; an exception leaves it running.</summary>
         public Action? OnTerminate { get; set; }
@@ -195,6 +240,6 @@ public sealed class BrowserProcessTreeTests
             Exited = true;
         }
 
-        public override void Dispose() => Disposed = true;
+        public override void Dispose() => Disposals++;
     }
 }

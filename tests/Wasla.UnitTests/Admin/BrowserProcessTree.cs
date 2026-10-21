@@ -85,39 +85,51 @@ internal sealed class BrowserProcessTree : IBrowserProcessTree
         while (true)
         {
             var candidates = new List<(TrackedProcess Child, int ParentId, long ParentCreated)>();
-            foreach (var (id, parentId, name) in snapshot)
-            {
-                if (rejected.Contains(id) || _tracked.Any(p => p.Id == id))
-                    continue;
-                if (_tracked.FirstOrDefault(p => p.Id == parentId)?.CreatedAt is not { } parentCreated)
-                    continue;
-                if (_open(id, name) is { } child)
-                    candidates.Add((child, parentId, parentCreated));
-            }
-
-            if (candidates.Count == 0)
-                return [.. _tracked];
-
-            // The handles now pin the opened processes, so this snapshot shows their real parents. It also lists any
-            // children of the processes added below, for the next pass.
-            snapshot = _snapshot();
-            var parents = snapshot.GroupBy(e => e.Id).ToDictionary(g => g.Key, g => g.First().ParentId);
             var added = false;
-            foreach (var (child, parentId, parentCreated) in candidates)
+            try
             {
-                // Not ours: the id passed to another process before it was opened, or a process older than its supposed
-                // parent got that parent id from an earlier, unrelated process. Edge creates its first children within
-                // the same clock tick as itself, so an equal creation time is its own.
-                if (!parents.TryGetValue(child.Id, out var actualParent) || actualParent != parentId
-                    || child.CreatedAt is not { } created || created < parentCreated)
+                foreach (var (id, parentId, name) in snapshot)
                 {
-                    rejected.Add(child.Id);
-                    child.Dispose();
-                    continue;
+                    if (rejected.Contains(id) || _tracked.Any(p => p.Id == id))
+                        continue;
+                    if (_tracked.FirstOrDefault(p => p.Id == parentId)?.CreatedAt is not { } parentCreated)
+                        continue;
+                    if (_open(id, name) is { } child)
+                        candidates.Add((child, parentId, parentCreated));
                 }
 
-                _tracked.Add(child);
-                added = true;
+                if (candidates.Count == 0)
+                    return [.. _tracked];
+
+                // The handles now pin the opened processes, so this snapshot shows their real parents. It also lists any
+                // children of the processes added below, for the next pass.
+                snapshot = _snapshot();
+                var parents = snapshot.GroupBy(e => e.Id).ToDictionary(g => g.Key, g => g.First().ParentId);
+                foreach (var (child, parentId, parentCreated) in candidates)
+                {
+                    // Not ours: the id passed to another process before it was opened, or a process older than its supposed
+                    // parent got that parent id from an earlier, unrelated process. Edge creates its first children within
+                    // the same clock tick as itself, so an equal creation time is its own.
+                    if (!parents.TryGetValue(child.Id, out var actualParent) || actualParent != parentId
+                        || child.CreatedAt is not { } created || created < parentCreated)
+                    {
+                        rejected.Add(child.Id);
+                        continue;
+                    }
+
+                    _tracked.Add(child);
+                    added = true;
+                }
+            }
+            finally
+            {
+                // Only a handle the tree now tracks stays open: a rejected candidate's, and every candidate's when the
+                // verification snapshot throws, is released here.
+                foreach (var (child, _, _) in candidates)
+                {
+                    if (!_tracked.Contains(child))
+                        child.Dispose();
+                }
             }
 
             if (!added)
