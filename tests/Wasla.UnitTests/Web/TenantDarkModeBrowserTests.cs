@@ -22,8 +22,8 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
     private const string TenantKey = "Wasla.tenant.theme";
 
     // Shared helpers for the page checks: colour parsing, alpha compositing against what is painted behind an element,
-    // relative luminance and the WCAG contrast ratio.
-    private const string Library = """
+    // relative luminance and the WCAG contrast ratio. Also used by PlatformConnectionCredentialBrowserTests.
+    internal const string Library = """
         const parse = s => {
           if (s.startsWith('color(srgb')) { const m = s.slice(10).match(/-?[\d.]+(e-?\d+)?/g).map(Number); return [m[0] * 255, m[1] * 255, m[2] * 255, m[3] ?? 1]; }
           const m = s.match(/[\d.]+/g); if (!m) return [0, 0, 0, 0];
