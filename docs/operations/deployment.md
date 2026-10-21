@@ -41,20 +41,20 @@ Web, Worker and Api share one EF model. Tenant migrations run only through the C
 For every release that contains a CentralDb or TenantDb migration:
 
 1. Stop, or keep on the previous version, every Web, Worker and Api instance.
-2. Run `migrate-central`, then `migrate-all-customers`.
-3. If either command exits non-zero, **stop the rollout**. `migrate-all-customers` continues past a failed tenant and then exits `1`; fix the failed tenants and rerun until it exits `0`.
+2. Run `migrate-central`, then `migrate-all-tenants`.
+3. If either command exits non-zero, **stop the rollout**. `migrate-all-tenants` continues past a failed tenant and then exits `1`; fix the failed tenants and rerun until it exits `0`.
 4. Confirm with `migration-status` that every active tenant shows `Pending: 0`.
 5. Only then deploy and start the new Web, Worker and Api versions.
 
 Never start the new Web or Worker against partially migrated tenants. The application does not check this itself; the release procedure must enforce it.
 
-Example: `AddAppUserLastLoginAt` (WAS-46) adds the nullable `AppUsers.LastLoginAt` column. Tenant login reads only the columns it needs, and a failed last-login write is logged without blocking the login, so a tenant that missed the migration can still sign in. That is a safety margin, not a reason to change the order: the Users page, user management and password reset read full `AppUsers` rows and fail on that tenant until `migrate-all-customers` has run.
+Example: `AddAppUserLastLoginAt` (WAS-46) adds the nullable `AppUsers.LastLoginAt` column. Tenant login reads only the columns it needs, and a failed last-login write is logged without blocking the login, so a tenant that missed the migration can still sign in. That is a safety margin, not a reason to change the order: the Users page, user management and password reset read full `AppUsers` rows and fail on that tenant until `migrate-all-tenants` has run.
 
-Example without that margin: `AddAppUserSecurityStamp` (WAS-89) adds `AppUsers.SecurityStamp` and gives every existing user a new value. Tenant login and the check every tenant request makes against its session read that column, so on a tenant that missed the migration no one can sign in and every signed-in request fails closed with the error page until `migrate-all-customers` has run. Sessions issued before the release carry no stamp, so every tenant user signs in again once. See [../architecture/authentication.md](../architecture/authentication.md#tenant-session-revalidation).
+Example without that margin: `AddAppUserSecurityStamp` (WAS-89) adds `AppUsers.SecurityStamp` and gives every existing user a new value. Tenant login and the check every tenant request makes against its session read that column, so on a tenant that missed the migration no one can sign in and every signed-in request fails closed with the error page until `migrate-all-tenants` has run. Sessions issued before the release carry no stamp, so every tenant user signs in again once. See [../architecture/authentication.md](../architecture/authentication.md#tenant-session-revalidation).
 
-For this release, stop the previous Web version before `migrate-all-customers` runs (do not use the "keep on the previous version" option of step 1 for Web), and never run it next to the new Web. The previous version changes passwords and active states without replacing the stamp, so a password it changes, or a user it deactivates and reactivates, keeps that user's sessions on the new Web valid. A user it creates after the migration gets the column's all-zero default stamp, which never opens a session, so that user cannot sign in until their password is reset or changed on the new version.
+For this release, stop the previous Web version before `migrate-all-tenants` runs (do not use the "keep on the previous version" option of step 1 for Web), and never run it next to the new Web. The previous version changes passwords and active states without replacing the stamp, so a password it changes, or a user it deactivates and reactivates, keeps that user's sessions on the new Web valid. A user it creates after the migration gets the column's all-zero default stamp, which never opens a session, so that user cannot sign in until their password is reset or changed on the new version.
 
-Example: `AddOrderItemSequence` (WAS-44) adds `OrderItems.Sequence` and `OrderItemOptions.Sequence` (`int`, default 0) and backfills nothing. Order sync, order details, the Orders list, the Live Screen snapshot, receipt creation and reprints all use these columns. On a tenant that missed the migration, those fail until `migrate-all-customers` has run. Existing rows keep 0 and are shown in the fallback order (stored time, then Id) described in [../frontend/design-system.md](../frontend/design-system.md#tables-and-sorting). Order sync compares item order, so on its first poll after the release, every order the provider still returns whose fallback order differs from the provider's is updated once. That is one write and one live notification per order, which stores its positions; no receipt is created. The column has a database default, so a previous build that does not know it can still write items to a migrated tenant. That build compares items without their order and writes positions as 0, so do not run it next to the new Worker.
+Example: `AddOrderItemSequence` (WAS-44) adds `OrderItems.Sequence` and `OrderItemOptions.Sequence` (`int`, default 0) and backfills nothing. Order sync, order details, the Orders list, the Live Screen snapshot, receipt creation and reprints all use these columns. On a tenant that missed the migration, those fail until `migrate-all-tenants` has run. Existing rows keep 0 and are shown in the fallback order (stored time, then Id) described in [../frontend/design-system.md](../frontend/design-system.md#tables-and-sorting). Order sync compares item order, so on its first poll after the release, every order the provider still returns whose fallback order differs from the provider's is updated once. That is one write and one live notification per order, which stores its positions; no receipt is created. The column has a database default, so a previous build that does not know it can still write items to a migrated tenant. That build compares items without their order and writes positions as 0, so do not run it next to the new Worker.
 
 Example in CentralDb: `AddCentralAdminSecurityStamp` (WAS-37) adds `CentralAdminUsers.SecurityStamp` and gives every existing central admin a new value. Admin login and the check every Central Admin request makes read that column, so a new Web started before `migrate-central` cannot sign in central admins, and every signed-in Admin request fails closed with the error page. Central Admin cookies issued before the release carry no stamp, so every central admin signs in again once. After `migrate-central`, reset central admin passwords only with the new CLI: an older CLI changes the hash without replacing the stamp, so the admin's existing sessions would survive that reset. See [../architecture/authentication.md](../architecture/authentication.md#central-admin-session-revalidation).
 
@@ -86,10 +86,34 @@ Central admins are created with CLI `add-central-admin`, not `CentralAdmin__Emai
 
 ## Domains and HTTPS
 
-- Public / marketing host and `{slug}.<MarketingBaseDomain>` tenant hosts.
-- Onboarding settings are in `Wasla:TenantOnboarding`: `MarketingBaseDomain`, `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`. The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
+Wasla Orders uses three host roles (WAS-66). The application implements them; the production domain is not live yet, and DNS, wildcard DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS belong to WAS-76.
+
+| Role | Host | Setting |
+|------|------|---------|
+| Marketing site, signup, checkout | `wasla.tr` (and `www.wasla.tr`, which WAS-76 redirects to the apex) | `Wasla__TenantOnboarding__MarketingBaseDomain` = `wasla.tr` |
+| Application entry (asks for the tenant address) | `app.wasla.tr` | `Wasla__TenantOnboarding__ApplicationBaseDomain` = `app.wasla.tr` |
+| Tenant | `{slug}.app.wasla.tr` | Built from `ApplicationBaseDomain` at signup and stored as the tenant's `PrimaryDomain` |
+
+- Set both domains for Web and Api, as bare host names (no scheme, port or path). Outside Development they refuse to start when either is not set or is a Development-only name (`localhost`, `.local`, `.localhost`, `.test`, `.example`, `.invalid`, `.internal`, `.lan`, `.home.arpa`); in every environment when either is malformed, when they are equal, when the application domain is the `www.` host, or when the marketing domain is under the application domain. The error names the key and the environment variable. The committed base `appsettings.json` names no domain; only `appsettings.Development.json` sets `wasla.local` and `app.wasla.local`. Wasla.Worker and the CLI do not need them. The full contract and the host and path policy: [../architecture/tenancy.md](../architecture/tenancy.md#host-contract-was-66).
+- Health probes (`/health/live`, `/health/ready`) of Web and Api answer on any host name, so a probe may use the IP, `localhost` or the public host. Everything else treats `localhost` and IP addresses as invalid hosts outside Development: Central Admin (`/admin`) and the Print Bridge API answer only on the marketing, application and tenant hosts, signup and checkout only on the marketing host, and the proxy must therefore pass the public `Host` header for every non-probe request.
+- Wasla.Api resolves tenants under the same contract: only `{slug}.app.wasla.tr` is a tenant; any other host gets 404 "Tenant not found" without a CentralDb lookup.
+- The tenant address is fixed when a registration is submitted. Changing `ApplicationBaseDomain` later does not move existing tenants; their stored `PrimaryDomain` keeps the old host, which the new contract no longer resolves.
+- Other onboarding settings are in `Wasla:TenantOnboarding`: `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`. The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
+- The proxy must pass the original `Host` header through unchanged; tenants are resolved from it and `X-Forwarded-Host` is never applied ([Reverse proxy and client address](#reverse-proxy-and-client-address)).
+- Cookies stay host-only: the tenant session, Central Admin session, antiforgery and signup-ownership cookies set no `Domain`, so a tenant's session is never sent to another tenant, to `app.wasla.tr` or to `wasla.tr`.
 - Production should force HTTPS (Web enables HSTS + HTTPS redirection outside Development).
 - Print Bridge and browsers need a trusted certificate chain on real domains.
+
+**Expected DNS and TLS shape (WAS-76, not applied by this repository):**
+
+| Record | Points to |
+|--------|-----------|
+| `wasla.tr` | The Web server (marketing) |
+| `www.wasla.tr` | The same server, redirected permanently to `wasla.tr` by the proxy |
+| `app.wasla.tr` | The Web server (application entry) |
+| `*.app.wasla.tr` | The Web server (tenant hosts) |
+
+The tenant hosts need a wildcard certificate for `*.app.wasla.tr` in addition to `wasla.tr`, `www.wasla.tr` and `app.wasla.tr`; a wildcard covers one label only, which matches the tenant host contract. Obtaining and renewing it is part of the deployment.
 
 Useful URL overrides (env `__` form):
 
@@ -224,7 +248,8 @@ DataProtection__KeyPath
 Platforms__ProviderMode
 Platform__TrendyolGo__BaseUrl
 Platform__Yemeksepeti__BaseUrl
-Wasla__TenantOnboarding__MarketingBaseDomain
+Wasla__TenantOnboarding__MarketingBaseDomain   # Web and Api, required outside Development: wasla.tr in production
+Wasla__TenantOnboarding__ApplicationBaseDomain # Web and Api, required outside Development: app.wasla.tr; tenants are {slug}.app.wasla.tr
 Wasla__TenantOnboarding__SqlAuth
 Wasla__ApiBaseUrl
 Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl behind a proxy
@@ -243,7 +268,6 @@ TenantDb__ServerInstance                     # CLI and Web: SQL Server for new t
 
 - No OpenTelemetry exporter or metrics stack; the `Wasla.Realtime` meter is read locally with `dotnet-counters` (see [observability.md](observability.md#live-notification-metrics)).
 - Worker has no HTTP health endpoint for orchestrators.
-- Legacy names remain outside the Web, Api, Worker and CLI configuration: the `migrate-customer` command names (WAS-137).
 
 ## Related docs
 

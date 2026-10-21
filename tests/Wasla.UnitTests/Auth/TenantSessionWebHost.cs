@@ -39,7 +39,7 @@ namespace Wasla.UnitTests.Auth;
 
 /// <summary>
 /// Serves the tenant application in-process for tenant session tests: the real <see cref="TenantResolutionMiddleware"/>
-/// resolving two tenant hosts (<c>alpha.wasla.local</c>, <c>beta.wasla.local</c>) from a SQLite CentralDb, the real tenant
+/// resolving two tenant hosts (<c>alpha.app.wasla.local</c>, <c>beta.app.wasla.local</c>) from a SQLite CentralDb, the real tenant
 /// cookie scheme, the tenant role policies Web Program.cs registers, the real tenant AuthController and
 /// TenantUsersController with their compiled views, and the real Infrastructure services over one SQLite database per
 /// tenant. Requests carry a tenant host in the Host header. Users, passwords and data are fake.
@@ -47,8 +47,8 @@ namespace Wasla.UnitTests.Auth;
 internal sealed class TenantSessionWebHost : IAsyncDisposable
 {
     public const string Password = "Correct-Horse-9";
-    public const string AlphaHost = "alpha.wasla.local";
-    public const string BetaHost = "beta.wasla.local";
+    public const string AlphaHost = "alpha.app.wasla.local";
+    public const string BetaHost = "beta.app.wasla.local";
 
     private readonly WebApplication _app;
     private readonly string _contentRoot;

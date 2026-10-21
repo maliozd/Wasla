@@ -616,7 +616,7 @@ public sealed class CliResetPasswordTests
         {
             Name = name,
             Slug = slug,
-            PrimaryDomain = slug + ".wasla.local",
+            PrimaryDomain = slug + ".app.wasla.local",
             DatabaseName = "wasla_" + slug,
             EncryptedConnectionString = "not-used-in-test",
             EncryptionKeyVersion = 1,

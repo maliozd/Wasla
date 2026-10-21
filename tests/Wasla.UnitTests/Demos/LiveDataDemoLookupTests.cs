@@ -21,7 +21,7 @@ namespace Wasla.UnitTests.Demos;
 /// </summary>
 public sealed class LiveDataDemoLookupTests
 {
-    private static readonly ResolvedTenantDto Tenant = new(Guid.NewGuid(), "Demo Tenant", "demo-tenant", "demo-tenant.wasla.local");
+    private static readonly ResolvedTenantDto Tenant = new(Guid.NewGuid(), "Demo Tenant", "demo-tenant", "demo-tenant.app.wasla.local");
 
     [Fact]
     public async Task ANonOwner_DoesNotTriggerTheDemoLookup()

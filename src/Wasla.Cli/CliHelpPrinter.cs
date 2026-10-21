@@ -2,16 +2,16 @@
 
 internal static class CliHelpPrinter
 {
-    private static readonly string[] CustomerCommands =
+    private static readonly string[] TenantCommands =
     [
-        "add-customer",
+        "add-tenant",
         "provision-signup-request",
-        "list-customers",
-        "delete-customer",
-        "reset-customer-db",
-        "reset-all-customer-dbs",
-        "seed-customer-admin",
-        "update-customer-profile"
+        "list-tenants",
+        "delete-tenant",
+        "reset-tenant-db",
+        "reset-all-tenant-dbs",
+        "seed-tenant-admin",
+        "update-tenant-profile"
     ];
 
     private static readonly string[] MigrationCommands =
@@ -19,8 +19,8 @@ internal static class CliHelpPrinter
         "migrate-central",
         "seed-turkey-reference-data",
         "seed-address-reference-data",
-        "migrate-customer",
-        "migrate-all-customers",
+        "migrate-tenant",
+        "migrate-all-tenants",
         "migration-status"
     ];
 
@@ -47,7 +47,7 @@ internal static class CliHelpPrinter
     ];
 
     private static readonly HashSet<string> AllCommands = new(
-        CustomerCommands
+        TenantCommands
             .Concat(MigrationCommands)
             .Concat(CentralAdminCommands)
             .Concat(AccountCommands)
@@ -56,30 +56,30 @@ internal static class CliHelpPrinter
 
     public static void PrintGeneralHelp()
     {
-        Console.WriteLine("OrderHub CLI");
+        Console.WriteLine("Wasla CLI");
         Console.WriteLine();
         Console.WriteLine("Usage:");
         Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- <command> [options]");
         Console.WriteLine();
 
-        Console.WriteLine("Customer commands:");
-        Console.WriteLine("  add-customer              Create a customer, customer database, migrations and first admin user.");
+        Console.WriteLine("Tenant commands:");
+        Console.WriteLine("  add-tenant                Create a tenant, tenant database, migrations and first admin user.");
         Console.WriteLine("  provision-signup-request  Provision a paid PendingRegistration into a live tenant.");
-        Console.WriteLine("  list-customers            List customers from CentralDb.");
-        Console.WriteLine("  delete-customer           Delete customer record and drop customer database. Requires --confirm.");
-        Console.WriteLine("  reset-customer-db         Drop/recreate a single customer database. Requires --confirm.");
-        Console.WriteLine("  reset-all-customer-dbs    Drop/recreate all active customer databases. Requires --confirm.");
-        Console.WriteLine("  seed-customer-admin       Create an Owner admin user for a customer DB if missing.");
-        Console.WriteLine("  update-customer-profile   Set the restaurant phone, city or country used by the setup checklist.");
+        Console.WriteLine("  list-tenants              List tenants from CentralDb.");
+        Console.WriteLine("  delete-tenant             Delete tenant record and drop tenant database. Requires --confirm.");
+        Console.WriteLine("  reset-tenant-db           Drop/recreate a single tenant database. Requires --confirm.");
+        Console.WriteLine("  reset-all-tenant-dbs      Drop/recreate all active tenant databases. Requires --confirm.");
+        Console.WriteLine("  seed-tenant-admin         Create an Owner admin user for a tenant DB if missing.");
+        Console.WriteLine("  update-tenant-profile     Set the restaurant phone, city or country used by the setup checklist.");
         Console.WriteLine();
 
         Console.WriteLine("Migration commands:");
         Console.WriteLine("  migrate-central           Apply pending CentralDb migrations.");
         Console.WriteLine("  seed-turkey-reference-data Seed all 81 Turkish cities and districts into CentralDb.");
         Console.WriteLine("  seed-address-reference-data Import address reference data (country, city, district; neighborhoods/streets when files are available).");
-        Console.WriteLine("  migrate-customer          Apply pending CustomerDb migrations for one customer.");
-        Console.WriteLine("  migrate-all-customers     Apply pending CustomerDb migrations for all active customers.");
-        Console.WriteLine("  migration-status          Show CentralDb and CustomerDb migration status.");
+        Console.WriteLine("  migrate-tenant            Apply pending TenantDb migrations for one tenant.");
+        Console.WriteLine("  migrate-all-tenants       Apply pending TenantDb migrations for all active tenants.");
+        Console.WriteLine("  migration-status          Show CentralDb and TenantDb migration status.");
         Console.WriteLine();
 
         Console.WriteLine("Central admin commands:");
@@ -97,22 +97,22 @@ internal static class CliHelpPrinter
         Console.WriteLine("  hash-password             Print a BCrypt hash (no configuration or master key required).");
         Console.WriteLine("  generate-print-bridge-token Register a Print Bridge device and print a one-time agent token.");
         Console.WriteLine("  seed-print-job            Create a pending receipt PrintJob for Print Bridge testing.");
-        Console.WriteLine("  list-print-jobs           List recent PrintJobs for a customer (dev/testing).");
+        Console.WriteLine("  list-print-jobs           List recent PrintJobs for a tenant (dev/testing).");
         Console.WriteLine("  help                      Show CLI help.");
         Console.WriteLine();
 
         Console.WriteLine("Examples:");
-        Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-customer --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\"");
+        Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-tenant --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\"");
         Console.WriteLine();
-        Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- list-customers");
+        Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- list-tenants");
         Console.WriteLine();
-        Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- migrate-all-customers");
+        Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- migrate-all-tenants");
         Console.WriteLine();
-        Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- delete-customer --slug ahmet --confirm");
+        Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- delete-tenant --slug ahmet --confirm");
         Console.WriteLine();
 
         Console.WriteLine("Warning:");
-        Console.WriteLine("  delete-customer, reset-customer-db and reset-all-customer-dbs are destructive commands.");
+        Console.WriteLine("  delete-tenant, reset-tenant-db and reset-all-tenant-dbs are destructive commands.");
         Console.WriteLine("  They require --confirm and are blocked in Production unless --force-production is explicitly provided.");
         Console.WriteLine("  With no DOTNET_ENVIRONMENT/ASPNETCORE_ENVIRONMENT set, the CLI counts as Production.");
         Console.WriteLine("  They refuse CentralDb, SQL Server system databases, a database named by more than one tenant,");
@@ -131,34 +131,34 @@ internal static class CliHelpPrinter
 
         switch (command.ToLowerInvariant())
         {
-            case "add-customer":
-                Console.WriteLine("add-customer");
+            case "add-tenant":
+                Console.WriteLine("add-tenant");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  add-customer --name <name> --slug <slug> --domain <domain> --admin-email <email> --admin-password <password> --admin-name <name>");
+                Console.WriteLine("  add-tenant --name <name> --slug <slug> --domain <domain> --admin-email <email> --admin-password <password> --admin-name <name>");
                 Console.WriteLine("               [--business-phone <phone>] [--city <city>] [--country <country>]");
                 Console.WriteLine();
                 Console.WriteLine("Also records the tenant membership. The dashboard setup checklist needs a business phone");
-                Console.WriteLine("and a city or country; without them, set them later with update-customer-profile.");
+                Console.WriteLine("and a city or country; without them, set them later with update-tenant-profile.");
                 Console.WriteLine();
                 Console.WriteLine("The tenant database is created on --sql-server, or on TenantDb:ServerInstance.");
                 Console.WriteLine("There is no default server: without one, nothing is created.");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
-                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-customer --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\" --business-phone \"+90 212 000 00 00\" --city Istanbul");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- add-tenant --name \"Ahmet Pizza\" --slug ahmet --domain ahmet.Wasla.local --admin-email admin@ahmet.com --admin-password \"Test123!\" --admin-name \"Ahmet Admin\" --business-phone \"+90 212 000 00 00\" --city Istanbul");
                 return;
 
-            case "update-customer-profile":
-                Console.WriteLine("update-customer-profile");
+            case "update-tenant-profile":
+                Console.WriteLine("update-tenant-profile");
                 Console.WriteLine();
                 Console.WriteLine("Sets the restaurant contact used by the dashboard setup checklist. Creates the tenant's");
                 Console.WriteLine("membership row when missing. Omitted fields keep their value; repeating a call changes nothing.");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  update-customer-profile --tenant <slug-or-id> [--business-phone <phone>] [--city <city>] [--country <country>]");
+                Console.WriteLine("  update-tenant-profile --tenant <slug-or-id> [--business-phone <phone>] [--city <city>] [--country <country>]");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
-                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- update-customer-profile --tenant ahmet --business-phone \"+90 212 000 00 00\" --city Istanbul");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- update-tenant-profile --tenant ahmet --business-phone \"+90 212 000 00 00\" --city Istanbul");
                 return;
 
             case "provision-signup-request":
@@ -178,74 +178,74 @@ internal static class CliHelpPrinter
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- provision-signup-request --registration-id 00000000-0000-0000-0000-000000000001");
                 return;
 
-            case "delete-customer":
-                Console.WriteLine("delete-customer (DESTRUCTIVE)");
+            case "delete-tenant":
+                Console.WriteLine("delete-tenant (DESTRUCTIVE)");
                 Console.WriteLine();
                 Console.WriteLine("What it does:");
-                Console.WriteLine("  - Drops the customer database (CustomerDb)");
-                Console.WriteLine("  - Deletes the Customer record from CentralDb");
+                Console.WriteLine("  - Drops the tenant database (TenantDb)");
+                Console.WriteLine("  - Deletes the Tenant record from CentralDb");
                 Console.WriteLine();
                 Console.WriteLine("Safety:");
                 Console.WriteLine("  - Requires --confirm");
                 Console.WriteLine("  - Blocked in Production unless --force-production is provided");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  delete-customer --slug <slug> --confirm");
-                Console.WriteLine("  delete-customer --customer-id <guid> --confirm");
+                Console.WriteLine("  delete-tenant --slug <slug> --confirm");
+                Console.WriteLine("  delete-tenant --tenant-id <guid> --confirm");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
-                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- delete-customer --slug ahmet --confirm");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- delete-tenant --slug ahmet --confirm");
                 return;
 
-            case "reset-customer-db":
-                Console.WriteLine("reset-customer-db (DESTRUCTIVE)");
+            case "reset-tenant-db":
+                Console.WriteLine("reset-tenant-db (DESTRUCTIVE)");
                 Console.WriteLine();
                 Console.WriteLine("What it does:");
-                Console.WriteLine("  - Keeps the CentralDb Customer record");
-                Console.WriteLine("  - Drops + recreates the CustomerDb (all users/orders/platform connections/etc are deleted)");
-                Console.WriteLine("  - Applies all CustomerDb migrations");
+                Console.WriteLine("  - Keeps the CentralDb Tenant record");
+                Console.WriteLine("  - Drops + recreates the TenantDb (all users/orders/platform connections/etc are deleted)");
+                Console.WriteLine("  - Applies all TenantDb migrations");
                 Console.WriteLine();
                 Console.WriteLine("Safety:");
                 Console.WriteLine("  - Requires --confirm");
                 Console.WriteLine("  - Blocked in Production unless --force-production is provided");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  reset-customer-db --slug <slug> --confirm");
-                Console.WriteLine("  reset-customer-db --customer-id <guid> --confirm");
+                Console.WriteLine("  reset-tenant-db --slug <slug> --confirm");
+                Console.WriteLine("  reset-tenant-db --tenant-id <guid> --confirm");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
-                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- reset-customer-db --slug ahmet --confirm");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- reset-tenant-db --slug ahmet --confirm");
                 Console.WriteLine();
                 Console.WriteLine("Tip:");
-                Console.WriteLine("  After reset, recreate admin user with seed-customer-admin.");
+                Console.WriteLine("  After reset, recreate admin user with seed-tenant-admin.");
                 return;
 
-            case "reset-all-customer-dbs":
-                Console.WriteLine("reset-all-customer-dbs (DESTRUCTIVE)");
+            case "reset-all-tenant-dbs":
+                Console.WriteLine("reset-all-tenant-dbs (DESTRUCTIVE)");
                 Console.WriteLine();
                 Console.WriteLine("What it does:");
-                Console.WriteLine("  - Keeps CentralDb Customer records");
-                Console.WriteLine("  - Drops + recreates + migrates ALL active CustomerDbs (all tenant data is deleted)");
+                Console.WriteLine("  - Keeps CentralDb Tenant records");
+                Console.WriteLine("  - Drops + recreates + migrates ALL active TenantDbs (all tenant data is deleted)");
                 Console.WriteLine();
                 Console.WriteLine("Safety:");
                 Console.WriteLine("  - Requires --confirm");
                 Console.WriteLine("  - Blocked in Production unless --force-production is provided");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  reset-all-customer-dbs --confirm");
+                Console.WriteLine("  reset-all-tenant-dbs --confirm");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
-                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- reset-all-customer-dbs --confirm");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- reset-all-tenant-dbs --confirm");
                 return;
 
-            case "migrate-all-customers":
-                Console.WriteLine("migrate-all-customers");
+            case "migrate-all-tenants":
+                Console.WriteLine("migrate-all-tenants");
                 Console.WriteLine();
                 Console.WriteLine("What it does:");
-                Console.WriteLine("  Applies pending CustomerDb migrations to all active customers.");
+                Console.WriteLine("  Applies pending TenantDb migrations to all active tenants.");
                 Console.WriteLine();
                 Console.WriteLine("Example:");
-                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- migrate-all-customers");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- migrate-all-tenants");
                 return;
 
             case "encrypt":
@@ -330,5 +330,8 @@ internal static class CliHelpPrinter
     }
 
     public static bool IsKnownCommand(string command) => AllCommands.Contains(command);
+
+    /// <summary>Every command name the early gate in Program.cs accepts.</summary>
+    internal static IReadOnlyCollection<string> KnownCommands => AllCommands;
 }
 

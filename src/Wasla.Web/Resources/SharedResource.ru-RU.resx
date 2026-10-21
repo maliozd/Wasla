@@ -3577,7 +3577,7 @@
     <value>Чтобы войти в свою панель, используйте специальный адрес Wasla вашего ресторана.</value>
   </data>
   <data name="TenantAddressRequired.Example" xml:space="preserve">
-    <value>Пример: bahce-tadi.wasla.local</value>
+    <value>Пример: {0}</value>
   </data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
     <value>Вернуться к регистрации</value>
@@ -4345,12 +4345,12 @@
   <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>База данных ресторана не ответила за несколько секунд. Проверьте, что SQL Server работает, а эта база существует и принимает настроенный вход, затем обновите страницу.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>Не удалось расшифровать сохранённые данные подключения. Проверьте, что сервер использует тот же ENCRYPTION_MASTER_KEY, с которым ресторан был подготовлен.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>Базу данных ресторана не удалось проверить из-за непредвиденной ошибки. Смотрите журналы сервера для этого ресторана.</value></data>
-  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>В базе данных ресторана нет миграций, нужных этой версии. Примените их через CLI (migrate-customer или migrate-all-customers) по процедуре выпуска; до этого функции, использующие новые столбцы, могут не работать.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>В базе данных ресторана нет миграций, нужных этой версии. Примените их через CLI (migrate-tenant или migrate-all-tenants) по процедуре выпуска; до этого функции, использующие новые столбцы, могут не работать.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>В базе данных ресторана есть миграции, неизвестные этой версии приложения. Возможно, её обновила более новая версия; проверьте, какая версия развёрнута.</value></data>
   <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>Последняя записанная миграция для этого ресторана не удалась. Выполните migration-status через CLI и повторите миграцию для этого ресторана.</value></data>
   <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>Некоторые разделы не удалось прочитать. Обычно причина — ожидающая миграция; смотрите журналы сервера.</value></data>
   <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>Ресторан всё ещё в режиме настройки: заказы синхронизируются, но ничего не принимается и не печатается автоматически, пока владелец не завершит или не пропустит пошаговую настройку.</value></data>
-  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>У ресторана нет активного владельца. Только владелец управляет настройками, подключениями и устройствами; при необходимости добавьте владельца через CLI (seed-customer-admin).</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>У ресторана нет активного владельца. Только владелец управляет настройками, подключениями и устройствами; при необходимости добавьте владельца через CLI (seed-tenant-admin).</value></data>
   <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>Не подключена ни одна платформа доставки, поэтому заказы не поступают. Владелец добавляет подключение в разделе «Подключения к платформам».</value></data>
   <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>Все подключения к платформам отключены, поэтому заказы не загружаются. Уточните у владельца, задумано ли это.</value></data>
   <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>Синхронизация заказов выключена в настройках ресторана; Worker его пропускает. Существующие заказы остаются видимыми.</value></data>

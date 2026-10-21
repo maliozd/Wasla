@@ -1,15 +1,19 @@
 ﻿@using System.Globalization
 @using Microsoft.Extensions.Localization
 @using Wasla.Web.Models.Marketing
+@using Microsoft.Extensions.Options
+@using Wasla.Infrastructure.Options
 @using Wasla.Web.Routing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IOptions<TenantOnboardingOptions> Onboarding
+@inject IWebHostEnvironment Environment
 @{
     var returnUrl = (Context.Request.Path.Value ?? "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : "");
     var culture = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
     // Marketing pages (homepage, Wasla POS) hand over their metadata; signup, checkout and other public pages keep their title only.
     var metadata = ViewData[PublicPageMetadata.ViewDataKey] as PublicPageMetadata;
-    var canonicalUrl = metadata is null ? null : PublicSiteUrls.BuildCanonicalUrl(Context.Request, metadata.CanonicalPath);
+    var canonicalUrl = metadata is null ? null : PublicSiteUrls.BuildCanonicalUrl(Context.Request, Environment, Onboarding.Value.MarketingBaseDomain, metadata.CanonicalPath);
 }
 <!DOCTYPE html>
 <html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")" class="wm-no-js">

@@ -240,7 +240,7 @@ public sealed class ApiCredentialRateLimitTests : IAsyncLifetime
     public async Task UnknownHost_IsStillAnswered404_NeverConsumesATenantsAllowance_AndOpensNoDatabase()
     {
         await StartAsync(RateLimitTestConfig.Limits(1));
-        using var unknown = _api.Client("unknown.wasla.local");
+        using var unknown = _api.Client("unknown.app.wasla.local");
 
         for (var i = 0; i < 4; i++)
         {
@@ -340,7 +340,7 @@ public sealed class ApiCredentialRateLimitTests : IAsyncLifetime
     {
         await StartAsync(RateLimitTestConfig.Limits(1));
         using var client = _api.Client(TenantSessionWebHost.AlphaHost);
-        var origin = new KeyValuePair<string, string>("Origin", "http://beta.wasla.local");
+        var origin = new KeyValuePair<string, string>("Origin", "http://beta.app.wasla.local");
         await ValidateAsync(client, _alphaOwner.Email, "Wrong-Password-1", origin);
 
         var limited = await ValidateAsync(client, _alphaOwner.Email, "Wrong-Password-1", origin);

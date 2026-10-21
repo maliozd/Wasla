@@ -343,7 +343,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
             Id = _tenantId,
             Name = name,
             Slug = "sushi-m",
-            PrimaryDomain = "sushi-m.wasla.local",
+            PrimaryDomain = "sushi-m.app.wasla.local",
             DatabaseName = "Wasla_SushiM",
             EncryptedConnectionString = "enc",
             CreatedAt = DateTime.UtcNow,

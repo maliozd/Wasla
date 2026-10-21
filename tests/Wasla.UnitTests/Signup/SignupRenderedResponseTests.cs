@@ -645,7 +645,7 @@ internal sealed class SentinelApplicant
             Id = Guid.NewGuid(),
             Status = status,
             Slug = $"s{token}",
-            PrimaryDomain = $"s{token}.wasla.local",
+            PrimaryDomain = $"s{token}.app.wasla.local",
             DatabaseName = $"Wasla_s{token}",
             BusinessName = $"Bizname{token}",
             BusinessPhone = NewPhone(),

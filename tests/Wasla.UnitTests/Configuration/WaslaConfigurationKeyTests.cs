@@ -52,6 +52,7 @@ public sealed partial class WaslaConfigurationKeyTests
         "Wasla:ApiBaseUrl",
         "Wasla:PrintBridgeDownload:PackageFileName",
         "Wasla:PrintBridgeDownload:PackagePath",
+        "Wasla:TenantOnboarding:ApplicationBaseDomain",
         "Wasla:TenantOnboarding:MarketingBaseDomain",
         "Wasla:TenantOnboarding:SqlAuth",
         "Wasla:TenantOnboarding:TrialDays"
@@ -63,7 +64,7 @@ public sealed partial class WaslaConfigurationKeyTests
     /// <summary>The setting names that belong to onboarding, the tenant database, public URLs or the package download.</summary>
     private static readonly HashSet<string> WaslaOwnedSettingNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        "MarketingBaseDomain", "SqlAuth", "TrialDays", "PendingRegistrationExpiryDays",
+        "MarketingBaseDomain", "ApplicationBaseDomain", "SqlAuth", "TrialDays", "PendingRegistrationExpiryDays",
         "MaxActivePendingRegistrationsPerOwnerEmail", "ServerInstance", "ApiBaseUrl", "TenantWebBaseUrl",
         "PublicWebBaseUrl", "PackageFileName", "PackagePath"
     };
@@ -109,7 +110,12 @@ public sealed partial class WaslaConfigurationKeyTests
         var web = Load("Wasla.Web", "appsettings.json");
 
         Assert.Equal("http://localhost:59451", web["Wasla:ApiBaseUrl"]);
-        Assert.Equal("wasla.local", web["Wasla:TenantOnboarding:MarketingBaseDomain"]);
+        // The host domains are set only for Development; elsewhere the environment must supply them (WAS-66).
+        Assert.Null(web["Wasla:TenantOnboarding:MarketingBaseDomain"]);
+        Assert.Null(web["Wasla:TenantOnboarding:ApplicationBaseDomain"]);
+        var development = Load("Wasla.Web", "appsettings.json", "appsettings.Development.json");
+        Assert.Equal("wasla.local", development["Wasla:TenantOnboarding:MarketingBaseDomain"]);
+        Assert.Equal("app.wasla.local", development["Wasla:TenantOnboarding:ApplicationBaseDomain"]);
         Assert.Equal("trusted", web["Wasla:TenantOnboarding:SqlAuth"]);
         Assert.Equal("14", web["Wasla:TenantOnboarding:TrialDays"]);
         Assert.Equal(PrintBridgePackagePaths.DefaultPackageFileName, web["Wasla:PrintBridgeDownload:PackageFileName"]);
@@ -179,6 +185,7 @@ public sealed partial class WaslaConfigurationKeyTests
         {
             ("Platforms:ProviderMode", "Mock"),
             ("Wasla:TenantOnboarding:MarketingBaseDomain", "example.test"),
+            ("Wasla:TenantOnboarding:ApplicationBaseDomain", "orders.example.test"),
             ("Wasla:TenantOnboarding:SqlAuth", "sql:test-user:not-a-real-password"),
             ("Wasla:TenantOnboarding:TrialDays", "30"),
             ("Wasla:TenantOnboarding:PendingRegistrationExpiryDays", "5"),
@@ -199,6 +206,7 @@ public sealed partial class WaslaConfigurationKeyTests
 
             Assert.Equal("Wasla:TenantOnboarding", TenantOnboardingOptions.SectionName);
             Assert.Equal("example.test", options.MarketingBaseDomain);
+            Assert.Equal("orders.example.test", options.ApplicationBaseDomain);
             Assert.Equal("sql:test-user:not-a-real-password", options.SqlAuth);
             Assert.Equal(30, options.TrialDays);
             Assert.Equal(5, options.PendingRegistrationExpiryDays);
@@ -217,6 +225,7 @@ public sealed partial class WaslaConfigurationKeyTests
         var options = provider.GetRequiredService<IOptions<TenantOnboardingOptions>>().Value;
 
         Assert.Equal("wasla.local", options.MarketingBaseDomain);
+        Assert.Equal("app.wasla.local", options.ApplicationBaseDomain);
         Assert.Equal("trusted", options.SqlAuth);
         Assert.Equal(14, options.TrialDays);
         Assert.Equal(7, options.PendingRegistrationExpiryDays);
@@ -273,6 +282,7 @@ public sealed partial class WaslaConfigurationKeyTests
 
         Assert.Contains("TenantDb__ServerInstance", variables);
         Assert.Contains("Wasla__TenantOnboarding__MarketingBaseDomain", variables);
+        Assert.Contains("Wasla__TenantOnboarding__ApplicationBaseDomain", variables);
         Assert.All(variables, variable => Assert.True(IsApprovedDocumentedKey(ToKey(variable)), $"deployment.md lists {variable}."));
     }
 

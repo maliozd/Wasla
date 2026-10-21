@@ -100,7 +100,7 @@ public sealed class CentralAdminPendingRegistrationProjectionTests : IDisposable
         Assert.Single(_central.Counter.Commands);
 
         Assert.NotNull(detail);
-        Assert.Equal("linked.wasla.local", detail.TenantDomain);
+        Assert.Equal("linked.app.wasla.local", detail.TenantDomain);
         Assert.Equal(tenant.Id, detail.TenantId);
         Assert.Equal("Wasla_Tenant_linked", detail.DatabaseName);
         Assert.Equal("linked@example.test", detail.OwnerEmail);

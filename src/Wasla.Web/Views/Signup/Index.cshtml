@@ -11,8 +11,8 @@
     Layout = "_PublicLayout";
     ViewData["Title"] = L["Signup.Title"];
     var domainPreview = string.IsNullOrWhiteSpace(Model.Slug)
-        ? $"your-name.{Model.MarketingBaseDomain}"
-        : $"{Model.Slug}.{Model.MarketingBaseDomain}";
+        ? $"your-name.{Model.ApplicationBaseDomain}"
+        : $"{Model.Slug}.{Model.ApplicationBaseDomain}";
     var publicPlans = PlanCatalog.GetPublicPlans();
     var trCulture = CultureInfo.GetCultureInfo("tr-TR");
     var planSummaries = publicPlans.Select(plan =>
@@ -176,7 +176,7 @@
                                         <label asp-for="Slug" class="form-label"></label>
                                         <div class="input-group">
                                             <input asp-for="Slug" class="form-control" id="signupSlug" pattern="[a-z0-9][a-z0-9_-]*" />
-                                            <span class="input-group-text text-muted">.@Model.MarketingBaseDomain</span>
+                                            <span class="input-group-text text-muted">.@Model.ApplicationBaseDomain</span>
                                         </div>
                                         <div class="form-text">
                                             @L["Signup.SlugHelp"]
@@ -335,7 +335,7 @@
                                 </button>
                             </section>
                             </div>
-                            <input type="hidden" id="signupBaseDomain" value="@Model.MarketingBaseDomain" />
+                            <input type="hidden" id="signupBaseDomain" value="@Model.ApplicationBaseDomain" />
                         </form>
                     </div>
                 </div>
