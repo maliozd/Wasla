@@ -4,6 +4,7 @@ using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Data.Sqlite;
+using Wasla.UnitTests.DevelopmentTools;
 using Wasla.UnitTests.Signup;
 using Wasla.Web.Routing;
 
@@ -18,6 +19,9 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
     public static readonly TheoryData<string> Cultures = new() { "tr-TR", "en-US", "ar-SA", "ru-RU" };
 
     private static readonly string[] MarketingPaths = ["/", PublicSiteUrls.PosPath];
+
+    /// <summary>Sign-in on the configured application entry (WAS-66): the host's Development domains, no port in Production.</summary>
+    private const string ApplicationLoginUrl = "http://app.wasla.local/auth/login";
 
     private readonly Host _host;
 
@@ -76,7 +80,8 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
         Assert.Contains("/signup?plan=Starter", homeLinks);
         Assert.Contains("/signup?plan=Pro", homeLinks);
         Assert.Contains("/signup?plan=ProPlus", homeLinks);
-        Assert.Contains("/auth/login", homeLinks);
+        Assert.Equal(2, homeLinks.Count(l => l == ApplicationLoginUrl));
+        Assert.DoesNotContain("/auth/login", homeLinks);
         Assert.Contains(PublicSiteUrls.PosPath, homeLinks);
         Assert.Contains("#pricing", homeLinks);
         Assert.Contains("/#orders", Links(pos.Body));
@@ -95,6 +100,15 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
         {
             foreach (var link in Links(body).Where(l => !l.StartsWith("https://", StringComparison.Ordinal)))
             {
+                if (link == ApplicationLoginUrl)
+                {
+                    // The application entry asks for the tenant address on its own host.
+                    var entry = await browser.GetAsync("/auth/login", "app.wasla.local");
+                    Assert.Equal(HttpStatusCode.Redirect, entry.Status);
+                    Assert.True(IsExpectedRedirect("/auth/login", entry.Location), $"{link} on {path} redirected to {entry.Location}.");
+                    continue;
+                }
+
                 var target = link.StartsWith('#') ? path + link : link;
                 var hash = target.IndexOf('#');
                 var targetPath = hash < 0 ? target : target[..hash];
@@ -120,14 +134,14 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
 
     [Theory]
     [MemberData(nameof(Cultures))]
-    public async Task Instagram_IsTheOnlyExternalLink_AndShowsItsHandle(string culture)
+    public async Task InstagramAndTheApplicationEntry_AreTheOnlyAbsoluteLinks_AndInstagramShowsItsHandle(string culture)
     {
         foreach (var path in MarketingPaths)
         {
             var page = await GetAsync(path, culture);
 
-            var external = Links(page.Body).Where(l => l.StartsWith("http", StringComparison.Ordinal)).Distinct().ToList();
-            Assert.Equal(new[] { PublicSiteUrls.InstagramUrl }, external);
+            var external = Links(page.Body).Where(l => l.StartsWith("http", StringComparison.Ordinal)).Distinct().Order(StringComparer.Ordinal).ToList();
+            Assert.Equal(new[] { ApplicationLoginUrl, PublicSiteUrls.InstagramUrl }, external);
             Assert.Equal("https://www.instagram.com/app.wasla.tr/", PublicSiteUrls.InstagramUrl);
             Assert.Contains("</span>app.wasla.tr</span>", page.Body);
         }
@@ -175,18 +189,23 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
     }
 
     [Fact]
-    public void CanonicalUrl_KeepsSchemeAndPortAndDropsWww()
+    public void CanonicalUrl_IsTheConfiguredApex_WhateverHostAndPortTheRequestNames()
     {
+        var production = new TestHostEnvironment("Production");
         var request = new DefaultHttpContext().Request;
         request.Scheme = "https";
-        request.Host = new HostString("WWW.Wasla.tr");
+        request.Host = new HostString("WWW.Wasla.tr", 8443);
         request.QueryString = new QueryString("?ref=1");
 
-        Assert.Equal("https://wasla.tr/pos", PublicSiteUrls.BuildCanonicalUrl(request, "/pos"));
+        Assert.Equal("https://wasla.tr/pos", PublicSiteUrls.BuildCanonicalUrl(request, production, "wasla.tr", "/pos"));
 
+        request.Host = new HostString("evil.example");
+        Assert.Equal("https://wasla.tr/", PublicSiteUrls.BuildCanonicalUrl(request, production, "wasla.tr", "/"));
+
+        // A local run keeps its own host, and Development keeps the port.
         request.Scheme = "http";
         request.Host = new HostString("localhost", 5200);
-        Assert.Equal("http://localhost:5200/", PublicSiteUrls.BuildCanonicalUrl(request, "/"));
+        Assert.Equal("http://localhost:5200/", PublicSiteUrls.BuildCanonicalUrl(request, new TestHostEnvironment("Development"), "wasla.local", "/"));
     }
 
     private static void AssertDocument(string html, string culture, string titleKey, string descriptionKey, string canonical)

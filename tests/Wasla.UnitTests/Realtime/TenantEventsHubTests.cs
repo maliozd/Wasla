@@ -22,7 +22,7 @@ namespace Wasla.UnitTests.Realtime;
 
 /// <summary>
 /// WAS-23 against the real Web pipeline (<see cref="TenantSessionWebHost"/>: real tenant resolution for
-/// <c>alpha.wasla.local</c> and <c>beta.wasla.local</c>, the real tenant cookie with its per-request session check, the
+/// <c>alpha.app.wasla.local</c> and <c>beta.app.wasla.local</c>, the real tenant cookie with its per-request session check, the
 /// tenant policies, <c>AddWaslaRealtime</c>/<c>MapWaslaRealtime</c> as in Program.cs) and a real SignalR client. A
 /// tenant's connection receives its own tenant's print notifications and nothing else; no client can choose a group;
 /// cross-origin hub requests are refused; a deactivated or demoted user's open connection is closed; notifications
@@ -227,9 +227,9 @@ public sealed class TenantEventsHubTests
         Assert.False(RealtimeOriginMiddleware.IsSameOrigin("https://beta.app.wasla.tr", Host("alpha.app.wasla.tr")));
         Assert.False(RealtimeOriginMiddleware.IsSameOrigin("https://alpha.app.wasla.tr.evil.example", Host("alpha.app.wasla.tr")));
         Assert.False(RealtimeOriginMiddleware.IsSameOrigin("https://user@alpha.app.wasla.tr", Host("alpha.app.wasla.tr")));
-        Assert.True(RealtimeOriginMiddleware.IsSameOrigin("http://alpha.wasla.local:5200", Host("alpha.wasla.local:5200")));
-        Assert.False(RealtimeOriginMiddleware.IsSameOrigin("http://alpha.wasla.local:5201", Host("alpha.wasla.local:5200")));
-        Assert.False(RealtimeOriginMiddleware.IsSameOrigin("ws://alpha.wasla.local:5200", Host("alpha.wasla.local:5200")));
+        Assert.True(RealtimeOriginMiddleware.IsSameOrigin("http://alpha.app.wasla.local:5200", Host("alpha.app.wasla.local:5200")));
+        Assert.False(RealtimeOriginMiddleware.IsSameOrigin("http://alpha.app.wasla.local:5201", Host("alpha.app.wasla.local:5200")));
+        Assert.False(RealtimeOriginMiddleware.IsSameOrigin("ws://alpha.app.wasla.local:5200", Host("alpha.app.wasla.local:5200")));
     }
 
     [Theory]

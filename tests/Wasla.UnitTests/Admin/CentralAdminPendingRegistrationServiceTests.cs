@@ -185,7 +185,7 @@ public sealed class CentralAdminPendingRegistrationServiceTests : IDisposable
             Status = status,
             Slug = slug,
             BusinessName = $"Business {slug}",
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_{slug}",
             BusinessPhone = "+905551112233",
             Country = "TR",

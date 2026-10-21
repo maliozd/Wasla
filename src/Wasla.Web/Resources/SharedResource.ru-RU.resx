@@ -3577,7 +3577,7 @@
     <value>Чтобы войти в свою панель, используйте специальный адрес Wasla вашего ресторана.</value>
   </data>
   <data name="TenantAddressRequired.Example" xml:space="preserve">
-    <value>Пример: bahce-tadi.wasla.local</value>
+    <value>Пример: {0}</value>
   </data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
     <value>Вернуться к регистрации</value>

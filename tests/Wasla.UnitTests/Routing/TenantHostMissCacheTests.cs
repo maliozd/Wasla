@@ -27,7 +27,7 @@ namespace Wasla.UnitTests.Routing;
 /// </summary>
 public sealed class TenantHostMissCacheTests
 {
-    private static readonly ResolvedTenantDto Alpha = new(Guid.NewGuid(), "Alpha", "alpha", "alpha.wasla.local");
+    private static readonly ResolvedTenantDto Alpha = new(Guid.NewGuid(), "Alpha", "alpha", "alpha.app.wasla.local");
 
     // --- The cache ------------------------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ public sealed class TenantHostMissCacheTests
 
         for (var i = 0; i < 10; i++)
         {
-            var result = await cache.GetOrLookupAsync("unknown.wasla.local", () =>
+            var result = await cache.GetOrLookupAsync("unknown.app.wasla.local", () =>
             {
                 Interlocked.Increment(ref lookups);
                 return Task.FromResult(TenantHostLookup.NotFound);
@@ -59,7 +59,7 @@ public sealed class TenantHostMissCacheTests
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var requests = Enumerable.Range(0, 50).Select(_ => Task.Run(() => cache.GetOrLookupAsync("unknown.wasla.local", async () =>
+        var requests = Enumerable.Range(0, 50).Select(_ => Task.Run(() => cache.GetOrLookupAsync("unknown.app.wasla.local", async () =>
         {
             Interlocked.Increment(ref lookups);
             started.TrySetResult();
@@ -88,14 +88,14 @@ public sealed class TenantHostMissCacheTests
             return Task.FromResult(TenantHostLookup.NotFound);
         }
 
-        await cache.GetOrLookupAsync("new.wasla.local", Lookup, TestContext.Current.CancellationToken);
+        await cache.GetOrLookupAsync("new.app.wasla.local", Lookup, TestContext.Current.CancellationToken);
         clock.Advance(TimeSpan.FromSeconds(59));
-        await cache.GetOrLookupAsync("new.wasla.local", Lookup, TestContext.Current.CancellationToken);
+        await cache.GetOrLookupAsync("new.app.wasla.local", Lookup, TestContext.Current.CancellationToken);
         Assert.Equal(1, lookups);
 
         // A tenant provisioned for the host meanwhile is found once the entry expires.
         clock.Advance(TimeSpan.FromSeconds(2));
-        var found = await cache.GetOrLookupAsync("new.wasla.local",
+        var found = await cache.GetOrLookupAsync("new.app.wasla.local",
             () => Task.FromResult(new TenantHostLookup(Alpha)), TestContext.Current.CancellationToken);
 
         Assert.Same(Alpha, found.Tenant);
@@ -109,7 +109,7 @@ public sealed class TenantHostMissCacheTests
 
         for (var i = 0; i < 200; i++)
         {
-            var result = await cache.GetOrLookupAsync($"random-{i}.wasla.local", () =>
+            var result = await cache.GetOrLookupAsync($"random-{i}.app.wasla.local", () =>
             {
                 Interlocked.Increment(ref lookups);
                 return Task.FromResult(TenantHostLookup.NotFound);
@@ -128,14 +128,14 @@ public sealed class TenantHostMissCacheTests
         using var cache = Cache();
         var lookups = 0;
 
-        await cache.GetOrLookupAsync("alpha.wasla.local", () =>
+        await cache.GetOrLookupAsync("alpha.app.wasla.local", () =>
         {
             Interlocked.Increment(ref lookups);
             return Task.FromResult(new TenantHostLookup(Alpha));
         }, TestContext.Current.CancellationToken);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetOrLookupAsync("down.wasla.local",
+        await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetOrLookupAsync("down.app.wasla.local",
             () => throw new InvalidOperationException("Simulated CentralDb failure (test)."), TestContext.Current.CancellationToken));
-        var afterFailure = await cache.GetOrLookupAsync("down.wasla.local", () =>
+        var afterFailure = await cache.GetOrLookupAsync("down.app.wasla.local", () =>
         {
             Interlocked.Increment(ref lookups);
             return Task.FromResult(new TenantHostLookup(Alpha));
@@ -147,9 +147,9 @@ public sealed class TenantHostMissCacheTests
     }
 
     [Theory]
-    [InlineData("Alpha.WASLA.local", "alpha.wasla.local")]
-    [InlineData("  alpha.wasla.local ", "alpha.wasla.local")]
-    [InlineData("alpha.wasla.local.", "alpha.wasla.local.")]
+    [InlineData("Alpha.app.WASLA.local", "alpha.app.wasla.local")]
+    [InlineData("  alpha.app.wasla.local ", "alpha.app.wasla.local")]
+    [InlineData("alpha.app.wasla.local.", "alpha.app.wasla.local.")]
     [InlineData("", null)]
     [InlineData("   ", null)]
     public void Key_IsTheHostAsTheResolverLooksItUp(string host, string? expected)
@@ -193,17 +193,17 @@ public sealed class TenantHostMissCacheTests
         using var web = new WebMiddlewareHarness(resolver, pending);
         resolver.Gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var concurrent = Enumerable.Range(0, 20).Select(_ => Task.Run(() => web.InvokeAsync("unknown.wasla.local"))).ToList();
+        var concurrent = Enumerable.Range(0, 20).Select(_ => Task.Run(() => web.InvokeAsync("unknown.app.wasla.local"))).ToList();
         await resolver.Started.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
         await Task.Delay(100, TestContext.Current.CancellationToken);
         resolver.Gate.SetResult();
         var contexts = (await Task.WhenAll(concurrent)).ToList();
         for (var i = 0; i < 10; i++)
-            contexts.Add(await web.InvokeAsync("unknown.wasla.local"));
+            contexts.Add(await web.InvokeAsync("unknown.app.wasla.local"));
 
-        Assert.Equal(1, resolver.Lookups("unknown.wasla.local"));
+        Assert.Equal(1, resolver.Lookups("unknown.app.wasla.local"));
         Assert.Equal(1, pending.Lookups);
-        Assert.All(contexts, context => Assert.Equal("/tenant-not-found?host=unknown.wasla.local", context.Response.Headers.Location.ToString()));
+        Assert.All(contexts, context => Assert.Equal("/tenant-not-found?host=unknown.app.wasla.local", context.Response.Headers.Location.ToString()));
     }
 
     [Fact]
@@ -216,11 +216,11 @@ public sealed class TenantHostMissCacheTests
 
         for (var i = 0; i < 5; i++)
         {
-            var context = await web.InvokeAsync("sushim.wasla.local");
+            var context = await web.InvokeAsync("sushim.app.wasla.local");
             Assert.Equal($"/signup/pending/{registrationId}", context.Response.Headers.Location.ToString());
         }
 
-        Assert.Equal(1, resolver.Lookups("sushim.wasla.local"));
+        Assert.Equal(1, resolver.Lookups("sushim.app.wasla.local"));
         Assert.Equal(1, pending.Lookups);
     }
 
@@ -230,24 +230,26 @@ public sealed class TenantHostMissCacheTests
         var resolver = new CountingResolver(Alpha);
         using var web = new WebMiddlewareHarness(resolver, new CountingPendingRegistrations());
 
-        // Misses for look-alike hosts, a forwarded host header pointing at the tenant, a port.
-        var trailingDot = await web.InvokeAsync("alpha.wasla.local.");
-        var otherTenant = await web.InvokeAsync("beta.wasla.local");
-        var forwarded = await web.InvokeAsync("evil.wasla.local", forwardedHost: "alpha.wasla.local");
-        var tenant = await web.InvokeAsync("alpha.wasla.local");
-        var upperCase = await web.InvokeAsync("ALPHA.WASLA.LOCAL");
-        var withPort = await web.InvokeAsync("alpha.wasla.local", port: 8443);
+        // Misses for another tenant host and a forwarded host header pointing at the tenant; a look-alike host is refused
+        // before any lookup (WAS-66). Case, a trailing dot and a port are the tenant's own host.
+        var lookAlike = await web.InvokeAsync("alpha.app.wasla.local.evil.example");
+        var otherTenant = await web.InvokeAsync("beta.app.wasla.local");
+        var forwarded = await web.InvokeAsync("evil.app.wasla.local", forwardedHost: "alpha.app.wasla.local");
+        var tenant = await web.InvokeAsync("alpha.app.wasla.local");
+        var upperCase = await web.InvokeAsync("ALPHA.app.WASLA.LOCAL");
+        var trailingDot = await web.InvokeAsync("alpha.app.wasla.local.");
+        var withPort = await web.InvokeAsync("alpha.app.wasla.local", port: 8443);
 
-        Assert.StartsWith("/tenant-not-found", trailingDot.Response.Headers.Location.ToString());
+        Assert.StartsWith("/tenant-not-found", lookAlike.Response.Headers.Location.ToString());
         Assert.StartsWith("/tenant-not-found", otherTenant.Response.Headers.Location.ToString());
-        Assert.Equal("/tenant-not-found?host=evil.wasla.local", forwarded.Response.Headers.Location.ToString());
-        foreach (var context in new[] { tenant, upperCase, withPort })
+        Assert.Equal("/tenant-not-found?host=evil.app.wasla.local", forwarded.Response.Headers.Location.ToString());
+        foreach (var context in new[] { tenant, upperCase, trailingDot, withPort })
         {
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
             Assert.Same(Alpha, context.Items["CurrentTenant"]);
         }
 
-        Assert.Equal(3, web.Misses.Count);
+        Assert.Equal(2, web.Misses.Count);
     }
 
     // --- Through the Api pipeline --------------------------------------------------------------------
@@ -270,11 +272,11 @@ public sealed class TenantHostMissCacheTests
         {
             var concurrent = Enumerable.Range(0, 20).Select(async _ =>
             {
-                using var client = api.Client("unknown.wasla.local");
+                using var client = api.Client("unknown.app.wasla.local");
                 return (await client.GetAsync("/api/auth/me")).StatusCode;
             }).ToList();
             var statuses = (await Task.WhenAll(concurrent)).ToList();
-            using (var client = api.Client("unknown.wasla.local"))
+            using (var client = api.Client("unknown.app.wasla.local"))
             {
                 for (var i = 0; i < 10; i++)
                     statuses.Add((await client.SendAsync(HttpMethod.Post, "/api/auth/validate",
@@ -285,7 +287,7 @@ public sealed class TenantHostMissCacheTests
             var tenantResponse = await alpha.GetAsync("/api/auth/me");
 
             Assert.All(statuses, status => Assert.Equal(HttpStatusCode.NotFound, status));
-            Assert.Equal(1, lookups.GetValueOrDefault("unknown.wasla.local"));
+            Assert.Equal(1, lookups.GetValueOrDefault("unknown.app.wasla.local"));
             Assert.Equal(HttpStatusCode.Unauthorized, tenantResponse.StatusCode);
             Assert.Equal(1, lookups.GetValueOrDefault(TenantSessionWebHost.AlphaHost));
         }
@@ -328,7 +330,8 @@ public sealed class TenantHostMissCacheTests
                 resolver,
                 pending,
                 Misses,
-                Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local" }),
+                Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local", ApplicationBaseDomain = "app.wasla.local" }),
+                new Wasla.UnitTests.DevelopmentTools.TestHostEnvironment("Production"),
                 NullLogger<WebTenantResolutionMiddleware>.Instance);
             return context;
         }

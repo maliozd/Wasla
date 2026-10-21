@@ -415,7 +415,7 @@ public sealed partial class DevelopmentToolsWebTests
 
     private sealed class SluggedTenant(Guid id, string slug) : ICurrentTenantService
     {
-        public ResolvedTenantDto? CurrentTenant { get; } = new(id, "Reset Me", slug, slug + ".wasla.local");
+        public ResolvedTenantDto? CurrentTenant { get; } = new(id, "Reset Me", slug, slug + ".app.wasla.local");
     }
 
     private sealed class FixedPolicy(bool succeeds) : IAuthorizationService
