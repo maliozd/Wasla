@@ -31,7 +31,7 @@ public sealed class TenantDatabaseOwnershipException : InvalidOperationException
 
 /// <summary>
 /// Ownership marker for tenant databases (WAS-93). Right after <c>CREATE DATABASE</c>, provisioning stores a
-/// database-level extended property naming the registration (signup) or tenant (CLI <c>add-customer</c>) it created
+/// database-level extended property naming the registration (signup) or tenant (CLI <c>add-tenant</c>) it created
 /// the database for. A database that already exists is only used again when that marker names the same registration
 /// or tenant; otherwise provisioning stops. Tenant databases created before WAS-93 have no marker, which matters only
 /// if one of them were provisioned again: that is refused.

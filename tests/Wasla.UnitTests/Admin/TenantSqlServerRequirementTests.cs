@@ -17,7 +17,7 @@ namespace Wasla.UnitTests.Admin;
 
 /// <summary>
 /// WAS-93, WAS-136: tenant databases are created only on an explicitly configured SQL Server: <c>--sql-server</c>,
-/// else <c>TenantDb:ServerInstance</c>. Without either, provisioning and <c>add-customer</c> stop before any database
+/// else <c>TenantDb:ServerInstance</c>. Without either, provisioning and <c>add-tenant</c> stop before any database
 /// work with an error that names <c>TenantDb:ServerInstance</c>; nothing falls back to LocalDB or '.'.
 /// All databases are in-memory SQLite or fakes.
 /// </summary>
@@ -202,11 +202,11 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task AddCustomer_WithoutAServer_StopsBeforeAnyDatabaseWork(string? configured)
+    public async Task AddTenant_WithoutAServer_StopsBeforeAnyDatabaseWork(string? configured)
     {
         using var host = BuildCliHost(configured);
 
-        var exitCode = await QuietAsync(() => CliCommands.AddCustomerAsync(
+        var exitCode = await QuietAsync(() => CliCommands.AddTenantAsync(
             host,
             name: "No Server",
             slug: "no-server",
