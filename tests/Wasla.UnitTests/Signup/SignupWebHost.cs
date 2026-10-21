@@ -19,6 +19,7 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Infrastructure.Diagnostics;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
@@ -118,6 +119,7 @@ internal sealed class SignupWebHost : IAsyncDisposable
             builder.Configuration.AddInMemoryCollection(configuration);
         services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
         services.AddWaslaTenantHostMissCache(builder.Configuration);
+        services.AddWaslaHealthChecks();
 
         var app = builder.Build();
         app.UseRequestLocalization();
@@ -125,6 +127,7 @@ internal sealed class SignupWebHost : IAsyncDisposable
         app.UseMiddleware<TenantResolutionMiddleware>();
         app.MapControllers();
         app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+        app.MapWaslaHealthChecks();
 
         await app.StartAsync();
         return new SignupWebHost(app, contentRoot, new Uri(app.Urls.First()));

@@ -230,6 +230,32 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
         Assert.Contains("href=\"http://wasla.tr/signup\"", page.Body);
     }
 
+    [Theory]
+    [InlineData("localhost")]
+    [InlineData("127.0.0.1")]
+    [InlineData("[::1]")]
+    [InlineData("10.0.0.5")]
+    public async Task InProduction_LocalhostAndAddresses_AreInvalidHosts_ButHealthProbesAnswer(string host)
+    {
+        using var browser = _host.Web.NewBrowser();
+
+        foreach (var path in new[] { "/", "/auth/login", "/signup", "/checkout", "/checkout/review/0f8fad5b-d9cb-469f-a165-70867728950e", "/admin", "/admin/auth/login", "/pos" })
+        {
+            var response = await browser.GetAsync(path, host);
+            Assert.Equal(HttpStatusCode.Redirect, response.Status);
+            Assert.Equal($"/tenant-not-found?host={Uri.EscapeDataString(host)}", response.Location);
+        }
+
+        var notFound = await browser.GetAsync($"/tenant-not-found?host={Uri.EscapeDataString(host)}", host);
+        Assert.Equal(HttpStatusCode.NotFound, notFound.Status);
+        Assert.Contains("href=\"http://wasla.tr/signup\"", notFound.Body);
+        Assert.DoesNotContain($"href=\"http://{host}", notFound.Body);
+
+        Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync("/health/live", host)).Status);
+        Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync("/health/ready", host)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync("/api/print-bridge/health", host)).Status);
+    }
+
     [Fact]
     public async Task ThePrintBridgeApi_OnAnInvalidHost_IsAPlainNotFound()
     {

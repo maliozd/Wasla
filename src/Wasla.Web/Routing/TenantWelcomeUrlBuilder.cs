@@ -103,7 +103,7 @@ public static class TenantWelcomeUrlBuilder
         var builder = new UriBuilder
         {
             Scheme = request.Scheme,
-            Host = ResolveCentralHost(request, marketingBaseDomain),
+            Host = ResolveCentralHost(request, environment, marketingBaseDomain),
             Path = path,
             Port = ResolvePort(request, environment)
         };
@@ -113,8 +113,8 @@ public static class TenantWelcomeUrlBuilder
 
     /// <summary>
     /// The application entry's sign-in (WAS-66): <c>/auth/login</c> on the configured application domain, which asks for
-    /// the tenant address. The host comes from configuration, never from the request; a request on <c>localhost</c>
-    /// (Development without host names) stays on <c>localhost</c>.
+    /// the tenant address. The host comes from configuration, never from the request; in Development a request on <c>localhost</c>
+    /// (a local run without host names) stays on <c>localhost</c>.
     /// </summary>
     public static string BuildApplicationLoginUrl(
         HttpRequest request,
@@ -126,7 +126,7 @@ public static class TenantWelcomeUrlBuilder
         var builder = new UriBuilder
         {
             Scheme = request.Scheme,
-            Host = ResolveCentralHost(request, applicationBaseDomain),
+            Host = ResolveCentralHost(request, environment, applicationBaseDomain),
             Path = "/auth/login",
             Port = ResolvePort(request, environment)
         };
@@ -134,9 +134,13 @@ public static class TenantWelcomeUrlBuilder
         return builder.Uri.AbsoluteUri;
     }
 
-    private static string ResolveCentralHost(HttpRequest request, string configuredDomain)
+    /// <summary>
+    /// The configured domain. Only in Development does a request on <c>localhost</c> keep <c>localhost</c>, so a local run
+    /// works without host names; elsewhere the request host never decides (WAS-66).
+    /// </summary>
+    private static string ResolveCentralHost(HttpRequest request, IWebHostEnvironment environment, string configuredDomain)
     {
-        if (string.Equals(request.Host.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+        if (environment.IsDevelopment() && string.Equals(request.Host.Host, "localhost", StringComparison.OrdinalIgnoreCase))
             return "localhost";
 
         return configuredDomain.Trim().TrimStart('.');

@@ -259,7 +259,6 @@ public sealed class TenantResolutionMiddlewareTests
     [Theory]
     [InlineData("wasla.local", "/")]
     [InlineData("WWW.wasla.local", "/pos")]
-    [InlineData("localhost", "/")]
     public async Task InvokeAsync_TheMarketingHost_ServesItsPagesWithoutTenantResolution(string host, string path)
     {
         var nextCalled = false;
@@ -467,6 +466,86 @@ public sealed class TenantResolutionMiddlewareTests
         Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
     }
 
+    // --- localhost and IP addresses are Development-only hosts (WAS-66) ---------------------------------
+
+    public static TheoryData<string, string, string, string> LocalHostPolicy()
+    {
+        var data = new TheoryData<string, string, string, string>();
+        foreach (var host in new[] { "localhost", "LOCALHOST", "127.0.0.1", "10.0.0.5", "[::1]", "[2001:db8::1]" })
+        {
+            foreach (var environment in new[] { "Production", "Staging", "Pilot" })
+            {
+                foreach (var path in new[] { "/", "/pos", "/auth/login", "/signup", "/checkout", "/checkout/review/0f8fad5b-d9cb-469f-a165-70867728950e", "/admin", "/admin/auth/login", "/tenant-address-required" })
+                    data.Add(environment, host, path, "notfound");
+                data.Add(environment, host, "/api/print-bridge/jobs/claim", "404");
+                data.Add(environment, host, "/health/live", "next");
+                data.Add(environment, host, "/health/ready", "next");
+                data.Add(environment, host, "/tenant-not-found", "next");
+            }
+
+            // Development keeps the local run working: the marketing host.
+            data.Add("Development", host, "/", "next");
+            data.Add("Development", host, "/pos", "next");
+            data.Add("Development", host, "/auth/login", "address");
+            data.Add("Development", host, "/signup", "next");
+            data.Add("Development", host, "/checkout", "next");
+            data.Add("Development", host, "/admin", "next");
+            data.Add("Development", host, "/api/print-bridge/jobs/claim", "next");
+            data.Add("Development", host, "/health/ready", "next");
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(LocalHostPolicy))]
+    public async Task InvokeAsync_LocalhostAndAddresses_AreValidHostsOnlyInDevelopment(string environment, string host, string path, string outcome)
+    {
+        var nextCalled = false;
+        var pending = new FakePendingRegistrationService();
+        var context = new DefaultHttpContext();
+        context.Request.Host = new HostString(host, 5200);
+        context.Request.Path = path;
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+
+        await InvokeAsync(
+            new TenantResolutionMiddleware(_ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }),
+            context,
+            new ThrowingTenantResolver(),
+            pending,
+            cache,
+            environment);
+
+        var location = context.Response.Headers.Location.ToString();
+        Assert.False(context.Items.ContainsKey("CurrentTenant"));
+        Assert.False(pending.WasCalled);
+        switch (outcome)
+        {
+            case "next":
+                Assert.True(nextCalled, $"{environment} {host}{path}");
+                break;
+            case "notfound":
+                Assert.False(nextCalled, $"{environment} {host}{path}");
+                Assert.Equal($"/tenant-not-found?host={Uri.EscapeDataString(host)}", location);
+                break;
+            case "address":
+                Assert.False(nextCalled);
+                Assert.StartsWith("/tenant-address-required", location);
+                break;
+            case "404":
+                Assert.False(nextCalled);
+                Assert.Equal(StatusCodes.Status404NotFound, context.Response.StatusCode);
+                Assert.True(string.IsNullOrEmpty(location));
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null);
+        }
+    }
+
     private static DefaultHttpContext CreateContext(string host)
     {
         var context = new DefaultHttpContext();
@@ -490,7 +569,8 @@ public sealed class TenantResolutionMiddlewareTests
         HttpContext context,
         ITenantResolver resolver,
         IPendingRegistrationService pendingRegistrations,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        string environment = "Production")
     {
         using var misses = new TenantHostMissCache(Options.Create(new TenantHostMissCacheOptions()));
         await middleware.InvokeAsync(
@@ -500,7 +580,7 @@ public sealed class TenantResolutionMiddlewareTests
             pendingRegistrations,
             misses,
             Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local", ApplicationBaseDomain = "app.wasla.local" }),
-            new Wasla.UnitTests.DevelopmentTools.TestHostEnvironment("Production"),
+            new Wasla.UnitTests.DevelopmentTools.TestHostEnvironment(environment),
             NullLogger<TenantResolutionMiddleware>.Instance);
     }
 

@@ -8,7 +8,10 @@ public enum WaslaHostKind
     /// <summary>Not a Wasla host: unknown, malformed, reserved, an extra label or a look-alike suffix.</summary>
     Invalid,
 
-    /// <summary>The public marketing site: the marketing domain, <c>www.</c> in front of it, <c>localhost</c> or an IP address.</summary>
+    /// <summary>
+    /// The public marketing site: the marketing domain or <c>www.</c> in front of it, and, only where local hosts are
+    /// allowed (Development), <c>localhost</c> or an IP address.
+    /// </summary>
     Public,
 
     /// <summary>The central application entry: exactly the application domain (<c>app.wasla.tr</c>).</summary>
@@ -28,18 +31,23 @@ public readonly record struct WaslaHost(WaslaHostKind Kind, string Host, string?
 /// boundaries count: a tenant host is <c>{slug}.{applicationBaseDomain}</c> and nothing else, so extra labels, an empty
 /// label, an invalid or reserved slug and names that merely contain or end with a Wasla domain
 /// (<c>tenant.app.wasla.tr.evil.example</c>) are <see cref="WaslaHostKind.Invalid"/>. Case and one trailing dot are
-/// normalized; the port is never part of the host.
+/// normalized; the port is never part of the host. <c>localhost</c> and IP addresses are Development-only: they count
+/// as the marketing host only when the caller allows local hosts, and are invalid otherwise.
 /// </summary>
 public static class WaslaHostClassifier
 {
-    public static WaslaHost Classify(string? host, string marketingBaseDomain, string applicationBaseDomain)
+    /// <param name="allowLocalHosts">
+    /// True only in Development: <c>localhost</c> and IP addresses then serve as the marketing host, so a local run works
+    /// without host names. Elsewhere they are <see cref="WaslaHostKind.Invalid"/>.
+    /// </param>
+    public static WaslaHost Classify(string? host, string marketingBaseDomain, string applicationBaseDomain, bool allowLocalHosts)
     {
         var normalized = NormalizeHost(host);
         if (normalized is null)
             return new WaslaHost(WaslaHostKind.Invalid, string.Empty);
 
-        if (normalized == "localhost" || IsIpAddress(normalized))
-            return new WaslaHost(WaslaHostKind.Public, normalized);
+        if (IsLocalHost(normalized))
+            return new WaslaHost(allowLocalHosts ? WaslaHostKind.Public : WaslaHostKind.Invalid, normalized);
 
         var marketing = NormalizeDomain(marketingBaseDomain);
         if (marketing.Length > 0 && (normalized == marketing || normalized == "www." + marketing))
@@ -104,9 +112,16 @@ public static class WaslaHostClassifier
         return normalized;
     }
 
-    private static bool IsIpAddress(string host)
+    /// <summary><c>localhost</c> or an IPv4/IPv6 address (bracketed or not), compared trimmed and case-insensitively.</summary>
+    public static bool IsLocalHost(string? host)
     {
-        var candidate = host.StartsWith('[') && host.EndsWith(']') ? host[1..^1] : host;
+        var normalized = NormalizeHost(host);
+        if (normalized is null)
+            return false;
+        if (normalized == "localhost")
+            return true;
+
+        var candidate = normalized.StartsWith('[') && normalized.EndsWith(']') ? normalized[1..^1] : normalized;
         return IPAddress.TryParse(candidate, out _);
     }
 }

@@ -15,16 +15,46 @@ public sealed class WaslaHostClassifierTests
     [InlineData("wasla.tr", "wasla.tr")]
     [InlineData("WWW.Wasla.TR", "www.wasla.tr")]
     [InlineData("wasla.tr.", "wasla.tr")]
-    [InlineData("localhost", "localhost")]
-    [InlineData("127.0.0.1", "127.0.0.1")]
-    [InlineData("[::1]", "[::1]")]
-    public void MarketingHostsLocalhostAndAddresses_ArePublic(string host, string normalized)
+    public void TheMarketingHosts_ArePublic(string host, string normalized)
     {
-        var result = WaslaHostClassifier.Classify(host, Marketing, Application);
+        var result = WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: false);
 
         Assert.Equal(WaslaHostKind.Public, result.Kind);
         Assert.Equal(normalized, result.Host);
         Assert.Null(result.Slug);
+    }
+
+    [Theory]
+    [InlineData("localhost", "localhost")]
+    [InlineData("LocalHost.", "localhost")]
+    [InlineData("127.0.0.1", "127.0.0.1")]
+    [InlineData("10.20.30.40", "10.20.30.40")]
+    [InlineData("[::1]", "[::1]")]
+    [InlineData("[2001:db8::1]", "[2001:db8::1]")]
+    public void LocalhostAndAddresses_AreThePublicHost_OnlyWhereLocalHostsAreAllowed(string host, string normalized)
+    {
+        var development = WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: true);
+        var elsewhere = WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: false);
+
+        Assert.Equal(WaslaHostKind.Public, development.Kind);
+        Assert.Equal(normalized, development.Host);
+        Assert.Equal(WaslaHostKind.Invalid, elsewhere.Kind);
+        Assert.Null(elsewhere.Slug);
+        Assert.True(WaslaHostClassifier.IsLocalHost(host));
+    }
+
+    [Theory]
+    [InlineData("wasla.tr")]
+    [InlineData("app.wasla.tr")]
+    [InlineData("sushim.app.wasla.tr")]
+    [InlineData("localhost.wasla.tr")]
+    [InlineData("127.0.0.1.app.wasla.tr")]
+    public void WaslaHosts_AreNotLocalHosts_AndKeepTheirRoleInEveryEnvironment(string host)
+    {
+        Assert.False(WaslaHostClassifier.IsLocalHost(host));
+        Assert.Equal(
+            WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: false).Kind,
+            WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: true).Kind);
     }
 
     [Theory]
@@ -33,7 +63,7 @@ public sealed class WaslaHostClassifierTests
     [InlineData(" app.wasla.tr. ")]
     public void TheApplicationDomain_IsTheApplicationEntry_NotATenant(string host)
     {
-        var result = WaslaHostClassifier.Classify(host, Marketing, Application);
+        var result = WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: false);
 
         Assert.Equal(WaslaHostKind.Application, result.Kind);
         Assert.Equal("app.wasla.tr", result.Host);
@@ -46,7 +76,7 @@ public sealed class WaslaHostClassifierTests
     [InlineData("sushim.app.wasla.tr.")]
     public void OneSlugLabelUnderTheApplicationDomain_IsThatTenant_InOneNormalizedForm(string host)
     {
-        var result = WaslaHostClassifier.Classify(host, Marketing, Application);
+        var result = WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: false);
 
         Assert.Equal(WaslaHostKind.Tenant, result.Kind);
         Assert.Equal("sushim.app.wasla.tr", result.Host);
@@ -59,7 +89,7 @@ public sealed class WaslaHostClassifierTests
     [InlineData("7dunya.app.wasla.tr", "7dunya")]
     public void ValidSlugFormats_AreTenants(string host, string slug)
     {
-        var result = WaslaHostClassifier.Classify(host, Marketing, Application);
+        var result = WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: false);
 
         Assert.Equal(WaslaHostKind.Tenant, result.Kind);
         Assert.Equal(slug, result.Slug);
@@ -99,7 +129,7 @@ public sealed class WaslaHostClassifierTests
     [InlineData("intranet")]
     public void EveryOtherHost_IsInvalid(string host)
     {
-        var result = WaslaHostClassifier.Classify(host, Marketing, Application);
+        var result = WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: false);
 
         Assert.Equal(WaslaHostKind.Invalid, result.Kind);
         Assert.Null(result.Slug);
@@ -112,7 +142,7 @@ public sealed class WaslaHostClassifierTests
     [InlineData(".")]
     public void AnEmptyHost_IsInvalid(string? host)
     {
-        Assert.Equal(WaslaHostKind.Invalid, WaslaHostClassifier.Classify(host, Marketing, Application).Kind);
+        Assert.Equal(WaslaHostKind.Invalid, WaslaHostClassifier.Classify(host, Marketing, Application, allowLocalHosts: false).Kind);
     }
 
     [Fact]
@@ -120,24 +150,24 @@ public sealed class WaslaHostClassifierTests
     {
         var longest = new string('a', RegistrationNameNormalizer.MaxSlugLength);
 
-        Assert.Equal(WaslaHostKind.Tenant, WaslaHostClassifier.Classify($"{longest}.app.wasla.tr", Marketing, Application).Kind);
-        Assert.Equal(WaslaHostKind.Invalid, WaslaHostClassifier.Classify($"{longest}a.app.wasla.tr", Marketing, Application).Kind);
+        Assert.Equal(WaslaHostKind.Tenant, WaslaHostClassifier.Classify($"{longest}.app.wasla.tr", Marketing, Application, allowLocalHosts: false).Kind);
+        Assert.Equal(WaslaHostKind.Invalid, WaslaHostClassifier.Classify($"{longest}a.app.wasla.tr", Marketing, Application, allowLocalHosts: false).Kind);
     }
 
     [Fact]
     public void TheDevelopmentDomains_FollowTheSameShape()
     {
-        Assert.Equal(WaslaHostKind.Public, WaslaHostClassifier.Classify("wasla.local", "wasla.local", "app.wasla.local").Kind);
-        Assert.Equal(WaslaHostKind.Public, WaslaHostClassifier.Classify("www.wasla.local", "wasla.local", "app.wasla.local").Kind);
-        Assert.Equal(WaslaHostKind.Application, WaslaHostClassifier.Classify("app.wasla.local", "wasla.local", "app.wasla.local").Kind);
-        Assert.Equal("sushim", WaslaHostClassifier.Classify("sushim.app.wasla.local", "wasla.local", "app.wasla.local").Slug);
-        Assert.Equal(WaslaHostKind.Invalid, WaslaHostClassifier.Classify("sushim.wasla.local", "wasla.local", "app.wasla.local").Kind);
+        Assert.Equal(WaslaHostKind.Public, WaslaHostClassifier.Classify("wasla.local", "wasla.local", "app.wasla.local", allowLocalHosts: false).Kind);
+        Assert.Equal(WaslaHostKind.Public, WaslaHostClassifier.Classify("www.wasla.local", "wasla.local", "app.wasla.local", allowLocalHosts: false).Kind);
+        Assert.Equal(WaslaHostKind.Application, WaslaHostClassifier.Classify("app.wasla.local", "wasla.local", "app.wasla.local", allowLocalHosts: false).Kind);
+        Assert.Equal("sushim", WaslaHostClassifier.Classify("sushim.app.wasla.local", "wasla.local", "app.wasla.local", allowLocalHosts: false).Slug);
+        Assert.Equal(WaslaHostKind.Invalid, WaslaHostClassifier.Classify("sushim.wasla.local", "wasla.local", "app.wasla.local", allowLocalHosts: false).Kind);
     }
 
     [Fact]
     public void ConfiguredDomains_AreComparedTrimmedAndCaseInsensitively()
     {
-        var result = WaslaHostClassifier.Classify("sushim.app.wasla.tr", " .WASLA.TR. ", " APP.Wasla.tr. ");
+        var result = WaslaHostClassifier.Classify("sushim.app.wasla.tr", " .WASLA.TR. ", " APP.Wasla.tr. ", allowLocalHosts: false);
 
         Assert.Equal(WaslaHostKind.Tenant, result.Kind);
         Assert.Equal("sushim", result.Slug);

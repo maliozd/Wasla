@@ -1,4 +1,3 @@
-using System.Net;
 using Wasla.Application.Onboarding;
 
 namespace Wasla.Web.Routing;
@@ -22,7 +21,8 @@ public static class PublicSiteUrls
     /// <summary>
     /// The absolute canonical URL of <paramref name="path"/> on the configured marketing domain (the apex, WAS-66): the
     /// request's scheme, its port only in Development and Staging, and no query string or fragment. The host never comes
-    /// from the request, except that a request on <c>localhost</c> or an IP address (a local run) keeps that host.
+    /// from the request, except that in Development a request on <c>localhost</c> or an IP address (a local run) keeps
+    /// that host.
     /// </summary>
     public static string BuildCanonicalUrl(
         HttpRequest request,
@@ -37,7 +37,7 @@ public static class PublicSiteUrls
             throw new ArgumentException("The canonical path must start with '/'.", nameof(path));
 
         var requestHost = request.Host.Host.Trim().TrimEnd('.').ToLowerInvariant();
-        var isLocalRun = requestHost == "localhost" || IPAddress.TryParse(requestHost.Trim('[', ']'), out _);
+        var isLocalRun = environment.IsDevelopment() && WaslaHostClassifier.IsLocalHost(requestHost);
 
         var builder = new UriBuilder
         {
