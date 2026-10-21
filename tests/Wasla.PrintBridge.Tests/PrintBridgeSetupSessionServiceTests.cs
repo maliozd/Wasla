@@ -1,5 +1,7 @@
+using System.Data.Common;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Domain.Entities.Central;
@@ -508,6 +510,51 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Exchange_NewDeviceMode_SessionExpiringWhileTheTenantLockIsAwaited_CreatesNoDevice()
+    {
+        var created = await _service.CreateSessionAsync(
+            _tenantId, PrintBridgeSetupMode.NewDevice,
+            null, ServerUrl, null,
+            confirmReplaceActiveToken: false, CancellationToken.None);
+        var deviceCountBefore = await _db.PrintBridgeDevices
+            .CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken);
+
+        // The code is claimed while the session is valid; it expires before the tenant lock is held.
+        var lockWait = new BeforeTransactionStart();
+        await using var exchangeDb = new CentralDbContext(new DbContextOptionsBuilder<CentralDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(lockWait)
+            .Options);
+        var service = CreateSetupService(exchangeDb, CreateDeviceService(exchangeDb));
+        lockWait.Run = () => _db.PrintBridgeSetupSessions
+            .Where(s => s.Id == created.SessionId)
+            .ExecuteUpdateAsync(
+                set => set.SetProperty(s => s.ExpiresAtUtc, DateTime.UtcNow.AddSeconds(-1)),
+                TestContext.Current.CancellationToken);
+
+        var result = await service.ExchangeAsync(
+            created.Code,
+            new PrintBridgeSetupClientInfo("Late POS", "1.0.0", "Printer", Guid.NewGuid()),
+            CancellationToken.None);
+
+        Assert.Null(result);
+        Assert.Equal(deviceCountBefore, await _db.PrintBridgeDevices
+            .CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken));
+
+        var session = await _db.PrintBridgeSetupSessions.AsNoTracking()
+            .SingleAsync(s => s.Id == created.SessionId, TestContext.Current.CancellationToken);
+        Assert.NotNull(session.ExchangedAtUtc);
+        Assert.Null(session.PrintBridgeDeviceId);
+        Assert.Null(session.CompletedAtUtc);
+
+        var status = await _service.GetStatusAsync(_tenantId, created.SessionId, CancellationToken.None);
+        Assert.Equal(PrintBridgeSetupSessionStatus.Expired, status!.Status);
+
+        // The same code cannot be exchanged again.
+        Assert.Null(await _service.ExchangeAsync(created.Code, EmptyClientInfo(), CancellationToken.None));
+    }
+
+    [Fact]
     public async Task Exchange_NewDeviceMode_ConcurrentExchanges_DoNotExceedQuotaWithSqliteProvider()
     {
         var databaseName = $"wasla_print_bridge_concurrency_{Guid.NewGuid():N}";
@@ -802,6 +849,28 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
             string? legacyLockedBy,
             CancellationToken ct) =>
             Task.FromResult(false);
+    }
+
+    /// <summary>
+    /// Runs <see cref="Run"/> once, just before the next transaction starts on this context. For a new-device
+    /// exchange that is after it claimed the code and before it takes the tenant lock.
+    /// </summary>
+    private sealed class BeforeTransactionStart : DbTransactionInterceptor
+    {
+        public Func<Task>? Run { get; set; }
+
+        public override async ValueTask<InterceptionResult<DbTransaction>> TransactionStartingAsync(
+            DbConnection connection,
+            TransactionStartingEventData eventData,
+            InterceptionResult<DbTransaction> result,
+            CancellationToken cancellationToken = default)
+        {
+            var run = Run;
+            Run = null;
+            if (run is not null)
+                await run();
+            return result;
+        }
     }
 
     private sealed class FixedTenantLockResult : IPrintBridgeSetupTenantLock
