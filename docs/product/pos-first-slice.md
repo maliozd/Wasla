@@ -186,6 +186,6 @@ In this order, before a pilot restaurant:
 | Shipping installed software is new operational work | One signed installer and updater with automatic rollback (WAS-168); support bundles; versions in sync health |
 | Certificate expiry or IP changes force every Terminal to be re-paired | Terminals pin a per-installation CA; server certificates renew automatically with an overlap; IP changes need no new certificate; CA rollover is signed by the old key |
 | Library extractions (WAS-156, WAS-163) break Orders or Print Bridge | Move only, no behavior change, the full Orders and Print Bridge suites |
-| A long outage meets an expired lease | 14-day lease, warnings, restricted mode that never stops a service in progress, one-time emergency extension |
+| A long outage meets an expired lease | Provisionally 14-day lease (final length open), warnings, restricted mode that never stops a service in progress, and a one-time emergency extension |
 | Fiscal rules make a non-fiscal POS unsellable in Türkiye | Legal review before any paid pilot (WAS-169 gate); receipts say they are not fiscal documents |
 | Owners find two credentials (Orders and POS) confusing | An explicit open decision with triggers in the [ADR](../architecture/pos-application-boundary.md#later-decisions) |
