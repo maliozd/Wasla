@@ -42,7 +42,7 @@ Development hosts follow the production shape (WAS-66, [../architecture/tenancy.
 
 Map the hosts you use in the hosts file to `127.0.0.1`; there is no wildcard, so add one line per tenant slug. Web launch profiles bind HTTP `5200` and HTTPS `7200` (see `Wasla.Web` launchSettings). Prefer the HTTPS tenant URL when using mkcert. In Development, links between hosts keep the request's port, for example `http://app.wasla.local:5200/auth/login`. On `localhost` the marketing pages link sign-in to `localhost` as well, so the marketing site works without any hosts entry.
 
-Domains in Web `appsettings.json`: `Wasla:TenantOnboarding:MarketingBaseDomain` = `wasla.local` and `Wasla:TenantOnboarding:ApplicationBaseDomain` = `app.wasla.local`.
+Domains in Web and Api `appsettings.Development.json`: `Wasla:TenantOnboarding:MarketingBaseDomain` = `wasla.local` and `Wasla:TenantOnboarding:ApplicationBaseDomain` = `app.wasla.local`. The base `appsettings.json` names none; running Web or Api in any other environment without both set to public host names stops at startup.
 
 Tenants created before WAS-66 have `{slug}.wasla.local` as their stored primary domain, which is no longer a tenant host. Change it to `{slug}.app.wasla.local` in your own development CentralDb (`Tenants.PrimaryDomain`, and `PendingRegistrations.PrimaryDomain` for registrations still in progress), or provision the tenant again.
 

@@ -41,6 +41,8 @@ builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
+// Same host-domain startup policy as Wasla.Web (WAS-66).
+builder.Services.AddWaslaHostDomains(builder.Configuration, builder.Environment);
 
 // Print Bridge job reports this process records are announced to Wasla.Web's open screens (Realtime:Internal). Same
 // startup policy as Wasla.Worker: outside Development it must be configured or explicitly disabled (WAS-103).

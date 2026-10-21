@@ -331,6 +331,7 @@ public sealed class TenantHostMissCacheTests
                 pending,
                 Misses,
                 Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local", ApplicationBaseDomain = "app.wasla.local" }),
+                new Wasla.UnitTests.DevelopmentTools.TestHostEnvironment("Production"),
                 NullLogger<WebTenantResolutionMiddleware>.Instance);
             return context;
         }

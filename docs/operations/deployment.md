@@ -94,7 +94,8 @@ Wasla Orders uses three host roles (WAS-66). The application implements them; th
 | Application entry (asks for the tenant address) | `app.wasla.tr` | `Wasla__TenantOnboarding__ApplicationBaseDomain` = `app.wasla.tr` |
 | Tenant | `{slug}.app.wasla.tr` | Built from `ApplicationBaseDomain` at signup and stored as the tenant's `PrimaryDomain` |
 
-- Set both domains together, as bare host names (no scheme, port or path). Web and Api refuse to start when either is malformed, when they are equal, when the application domain is the `www.` host, or when the marketing domain is under the application domain. The committed values are the Development domains `wasla.local` and `app.wasla.local`; a production deployment that leaves them unset generates Development links. The full contract: [../architecture/tenancy.md](../architecture/tenancy.md#host-contract-was-66).
+- Set both domains for Web and Api, as bare host names (no scheme, port or path). Outside Development they refuse to start when either is not set or is a Development-only name (`localhost`, `.local`, `.localhost`, `.test`, `.example`, `.invalid`, `.internal`, `.lan`, `.home.arpa`); in every environment when either is malformed, when they are equal, when the application domain is the `www.` host, or when the marketing domain is under the application domain. The error names the key and the environment variable. The committed base `appsettings.json` names no domain; only `appsettings.Development.json` sets `wasla.local` and `app.wasla.local`. Wasla.Worker and the CLI do not need them. The full contract and the host and path policy: [../architecture/tenancy.md](../architecture/tenancy.md#host-contract-was-66).
+- Health probes (`/health/live`, `/health/ready`) answer on any host name, so a probe may use the IP, `localhost` or the public host. Central Admin (`/admin`) and the Print Bridge API answer on the marketing, application and tenant hosts, not on unknown host names.
 - The tenant address is fixed when a registration is submitted. Changing `ApplicationBaseDomain` later does not move existing tenants; their stored `PrimaryDomain` keeps the old host, which the new contract no longer resolves.
 - Other onboarding settings are in `Wasla:TenantOnboarding`: `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`. The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
 - The proxy must pass the original `Host` header through unchanged; tenants are resolved from it and `X-Forwarded-Host` is never applied ([Reverse proxy and client address](#reverse-proxy-and-client-address)).
@@ -246,8 +247,8 @@ DataProtection__KeyPath
 Platforms__ProviderMode
 Platform__TrendyolGo__BaseUrl
 Platform__Yemeksepeti__BaseUrl
-Wasla__TenantOnboarding__MarketingBaseDomain   # wasla.tr in production
-Wasla__TenantOnboarding__ApplicationBaseDomain # app.wasla.tr in production; tenants are {slug}.app.wasla.tr
+Wasla__TenantOnboarding__MarketingBaseDomain   # Web and Api, required outside Development: wasla.tr in production
+Wasla__TenantOnboarding__ApplicationBaseDomain # Web and Api, required outside Development: app.wasla.tr; tenants are {slug}.app.wasla.tr
 Wasla__TenantOnboarding__SqlAuth
 Wasla__ApiBaseUrl
 Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl behind a proxy
