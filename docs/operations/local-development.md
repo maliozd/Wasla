@@ -67,12 +67,12 @@ $env:DOTNET_ENVIRONMENT = "Development"
 dotnet run --project src\Wasla.Cli -- migrate-central
 ```
 
-The CLI's committed `appsettings.json` names no CentralDb and no tenant SQL Server (WAS-93). Its `appsettings.Development.json` sets both to LocalDB, so local CLI runs need `DOTNET_ENVIRONMENT=Development`; without it the CLI stops with "ConnectionStrings:CentralDb is not configured" before touching any database. Environment variables (`ConnectionStrings__CentralDb`, `TenantDb__ServerInstance`) override both files, and `--sql-server` overrides the tenant server. The destructive commands (`delete-customer`, `reset-customer-db`, `reset-all-customer-dbs`) also treat an unset environment as Production and then ask for `--force-production`.
+The CLI's committed `appsettings.json` names no CentralDb and no tenant SQL Server (WAS-93). Its `appsettings.Development.json` sets both to LocalDB, so local CLI runs need `DOTNET_ENVIRONMENT=Development`; without it the CLI stops with "ConnectionStrings:CentralDb is not configured" before touching any database. Environment variables (`ConnectionStrings__CentralDb`, `TenantDb__ServerInstance`) override both files, and `--sql-server` overrides the tenant server. The destructive commands (`delete-tenant`, `reset-tenant-db`, `reset-all-tenant-dbs`) also treat an unset environment as Production and then ask for `--force-production`.
 
 Create a tenant (creates DB + admin) **or** provision a paid signup request:
 
 ```powershell
-dotnet run --project src\Wasla.Cli -- add-customer --name "Demo Restaurant" --slug demo --domain demo.app.wasla.local --admin-email admin@demo.local --admin-password "YourStrongPassword!" --admin-name "Demo Admin"
+dotnet run --project src\Wasla.Cli -- add-tenant --name "Demo Restaurant" --slug demo --domain demo.app.wasla.local --admin-email admin@demo.local --admin-password "YourStrongPassword!" --admin-name "Demo Admin"
 
 dotnet run --project src\Wasla.Cli -- provision-signup-request --registration-id <guid>
 ```
@@ -82,7 +82,7 @@ Tenant databases are created only on an explicitly chosen SQL Server: `--sql-ser
 Apply tenant schema updates after pulls:
 
 ```powershell
-dotnet run --project src\Wasla.Cli -- migrate-all-customers
+dotnet run --project src\Wasla.Cli -- migrate-all-tenants
 dotnet run --project src\Wasla.Cli -- migration-status
 ```
 

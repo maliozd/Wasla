@@ -62,7 +62,7 @@ Every Central Admin request is revalidated against the admin's row in CentralDb 
 |-------------|-----------|
 | Database unavailable or timed out | Check SQL Server, that the tenant database exists and accepts the configured login; run `migration-status` |
 | Connection details unreadable | Check that this server uses the `ENCRYPTION_MASTER_KEY` that provisioned the tenant |
-| Migrations pending | Apply with `migrate-customer` / `migrate-all-customers` following [deployment.md](deployment.md#release-order-migrate-every-database-first) |
+| Migrations pending | Apply with `migrate-tenant` / `migrate-all-tenants` following [deployment.md](deployment.md#release-order-migrate-every-database-first) |
 | Sync overdue or never synced | Check that `Wasla.Worker` is running |
 | Paused after repeated failures | Check the platform's status; the owner verifies the connection's credentials |
 | Print Bridge offline with queued jobs | The restaurant checks the Print Bridge computer; jobs are picked up on reconnect |

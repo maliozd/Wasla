@@ -220,36 +220,34 @@ Provisioning creates the tenant database and CentralDb registry state. Current s
 
 - `src/Wasla.Infrastructure/Services/PendingRegistrationProvisioningService.cs`
 - Invoked by:
-  - CLI: `provision-signup-request` (`src/Wasla.Cli/Program.cs`)
+  - CLI: `provision-signup-request` (`src/Wasla.Cli/CliCommandTree.cs`)
   - Central Admin UI: `PendingRegistrationsController.Provision` (`src/Wasla.Web/Areas/Admin/Controllers/PendingRegistrationsController.cs`)
-- Related CLI onboarding still uses legacy command names such as `add-customer` (creates registry + DB + first admin)
+- Related CLI onboarding: `add-tenant` (creates registry + DB + first admin)
 
 ### Tenant database identity (WAS-93)
 
 Provisioning fails closed on databases it cannot prove it created for the tenant being provisioned.
 
-- **Server-assigned names.** Signup and `add-customer` assign `Wasla_{Label}_{12 hex}`, where the label is the slug in PascalCase (`Tenant` when empty, a `T` prefix when it starts with a digit) and the suffix is random (`TenantDatabaseNames`). The business name no longer forms the name, so a business called "Central" gets `Wasla_Central_3f9a…`, not the CentralDb catalog `Wasla_Central`. A new name is free when no tenant and no registration in any status uses it.
-- **Reserved names.** Before any database work, provisioning and `add-customer` refuse the CentralDb catalog (compared case-insensitively) and the SQL Server system databases (`master`, `model`, `msdb`, `tempdb`, `mssqlsystemresource`, `distribution`, `SSISDB`, `ReportServer`, `ReportServerTempDB`). An unknown CentralDb catalog is a refusal.
-- **Ownership marker.** Right after `CREATE DATABASE`, provisioning stores the database-level extended property `Wasla.TenantDatabaseOwner` = `PendingRegistration:{registrationId}` (signup) or `Tenant:{tenantId}` (`add-customer`). If the name already exists on the server, the database is reused only when that property names the same registration; a missing or different marker stops provisioning with "will not adopt it", and CentralDb is not written. `--force` does not bypass this. Source: `src/Wasla.Infrastructure/Services/TenantDatabaseOwnership.cs`.
+- **Server-assigned names.** Signup and `add-tenant` assign `Wasla_{Label}_{12 hex}`, where the label is the slug in PascalCase (`Tenant` when empty, a `T` prefix when it starts with a digit) and the suffix is random (`TenantDatabaseNames`). The business name no longer forms the name, so a business called "Central" gets `Wasla_Central_3f9a…`, not the CentralDb catalog `Wasla_Central`. A new name is free when no tenant and no registration in any status uses it.
+- **Reserved names.** Before any database work, provisioning and `add-tenant` refuse the CentralDb catalog (compared case-insensitively) and the SQL Server system databases (`master`, `model`, `msdb`, `tempdb`, `mssqlsystemresource`, `distribution`, `SSISDB`, `ReportServer`, `ReportServerTempDB`). An unknown CentralDb catalog is a refusal.
+- **Ownership marker.** Right after `CREATE DATABASE`, provisioning stores the database-level extended property `Wasla.TenantDatabaseOwner` = `PendingRegistration:{registrationId}` (signup) or `Tenant:{tenantId}` (`add-tenant`). If the name already exists on the server, the database is reused only when that property names the same registration; a missing or different marker stops provisioning with "will not adopt it", and CentralDb is not written. `--force` does not bypass this. Source: `src/Wasla.Infrastructure/Services/TenantDatabaseOwnership.cs`.
 - **Unique `Tenants.DatabaseName`.** Index `IX_Tenants_DatabaseName` (migration `AddTenantDatabaseNameUniqueIndex`). The migration stops with error 50093 and changes nothing if existing rows already share a name; an operator resolves those rows first (the query is in the error). It is not applied automatically.
-- **Atomic CentralDb writes.** The tenant row, its membership and the registration's `Provisioned` status are committed in one transaction (`add-customer`: tenant and membership). A failure leaves the registration `PaymentSucceeded` without a tenant row.
+- **Atomic CentralDb writes.** The tenant row, its membership and the registration's `Provisioned` status are committed in one transaction (`add-tenant`: tenant and membership). A failure leaves the registration `PaymentSucceeded` without a tenant row.
 - **Partial failures.** A database created by a failed attempt is not dropped automatically (a timeout after a successful commit must never drop a live tenant). It keeps its marker, so only a retry of the same registration resumes it, and no other tenant can inherit it. If the process stops between `CREATE DATABASE` and writing the marker, the next attempt finds an unmarked database and refuses it; an operator checks that it is empty and removes it.
 - **Existing tenants.** Databases created before WAS-93 have no marker and keep their old names. Nothing reads the marker for them in normal operation, migrations or the CLI; only provisioning them again (for example `--force` on a registration marked Provisioned without a tenant row) is refused.
 - **Operator review.** Central Admin's pending-registration details show the registration's target `DatabaseName`.
-- **Explicit SQL Server.** Tenant databases are created on `--sql-server`, else `TenantDb:ServerInstance` (`TenantSqlServerConfiguration`, WAS-136); no other key is read. Unset, empty or whitespace-only values do not count; with neither, provisioning and `add-customer` stop before any database work. There is no fallback to LocalDB or `.`; Development configures LocalDB explicitly. A value that is set but malformed (for example containing `;`) stops provisioning instead of falling through to the configured server.
+- **Explicit SQL Server.** Tenant databases are created on `--sql-server`, else `TenantDb:ServerInstance` (`TenantSqlServerConfiguration`, WAS-136); no other key is read. Unset, empty or whitespace-only values do not count; with neither, provisioning and `add-tenant` stop before any database work. There is no fallback to LocalDB or `.`; Development configures LocalDB explicitly. A value that is set but malformed (for example containing `;`) stops provisioning instead of falling through to the configured server.
 - **One attempt per registration.** Provisioning takes a session-owned SQL Server application lock in CentralDb (`sp_getapplock`, resource `Wasla.ProvisionRegistration.{registrationId}`) before reading the registration, and holds it until it returns (`ProvisioningRegistrationLock`). A simultaneous attempt from any Web or CLI process is refused at once ("in progress") before any database work; a later one reports AlreadyProvisioned. Without it, a second attempt could find the first attempt's marker, resume, and run EF migrations against the same tenant database at the same time. The lock ends with the session, so a crashed process does not leave it held. SQLite unit tests run without it; it was verified against LocalDB.
 
 ### Destructive CLI ops (high level)
 
-Legacy CLI command names still say “customer”:
-
 | Command | Intent |
 |---------|--------|
-| `delete-customer` | Delete central tenant record and drop tenant DB (destructive; requires confirm) |
-| `reset-customer-db` | Drop/recreate/migrate one tenant DB; keep CentralDb tenant row (destructive) |
-| `migrate-customer` | Apply pending tenant DB migrations for one tenant |
+| `delete-tenant` | Delete central tenant record and drop tenant DB (destructive; requires confirm) |
+| `reset-tenant-db` | Drop/recreate/migrate one tenant DB; keep CentralDb tenant row (destructive) |
+| `migrate-tenant` | Apply pending tenant DB migrations for one tenant |
 
-Do **not** opportunistically rename these CLI commands during unrelated feature work.
+Full inventory and guards: [../operations/cli.md](../operations/cli.md).
 
 ### What resolution must not do
 
