@@ -86,10 +86,34 @@ Central admins are created with CLI `add-central-admin`, not `CentralAdmin__Emai
 
 ## Domains and HTTPS
 
-- Public / marketing host and `{slug}.<MarketingBaseDomain>` tenant hosts.
-- Onboarding settings are in `Wasla:TenantOnboarding`: `MarketingBaseDomain`, `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`. The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
+Wasla Orders uses three host roles (WAS-66). The application implements them; the production domain is not live yet, and DNS, wildcard DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS belong to WAS-76.
+
+| Role | Host | Setting |
+|------|------|---------|
+| Marketing site, signup, checkout | `wasla.tr` (and `www.wasla.tr`, which WAS-76 redirects to the apex) | `Wasla__TenantOnboarding__MarketingBaseDomain` = `wasla.tr` |
+| Application entry (asks for the tenant address) | `app.wasla.tr` | `Wasla__TenantOnboarding__ApplicationBaseDomain` = `app.wasla.tr` |
+| Tenant | `{slug}.app.wasla.tr` | Built from `ApplicationBaseDomain` at signup and stored as the tenant's `PrimaryDomain` |
+
+- Set both domains for Web and Api, as bare host names (no scheme, port or path). Outside Development they refuse to start when either is not set or is a Development-only name (`localhost`, `.local`, `.localhost`, `.test`, `.example`, `.invalid`, `.internal`, `.lan`, `.home.arpa`); in every environment when either is malformed, when they are equal, when the application domain is the `www.` host, or when the marketing domain is under the application domain. The error names the key and the environment variable. The committed base `appsettings.json` names no domain; only `appsettings.Development.json` sets `wasla.local` and `app.wasla.local`. Wasla.Worker and the CLI do not need them. The full contract and the host and path policy: [../architecture/tenancy.md](../architecture/tenancy.md#host-contract-was-66).
+- Health probes (`/health/live`, `/health/ready`) of Web and Api answer on any host name, so a probe may use the IP, `localhost` or the public host. Everything else treats `localhost` and IP addresses as invalid hosts outside Development: Central Admin (`/admin`) and the Print Bridge API answer only on the marketing, application and tenant hosts, signup and checkout only on the marketing host, and the proxy must therefore pass the public `Host` header for every non-probe request.
+- Wasla.Api resolves tenants under the same contract: only `{slug}.app.wasla.tr` is a tenant; any other host gets 404 "Tenant not found" without a CentralDb lookup.
+- The tenant address is fixed when a registration is submitted. Changing `ApplicationBaseDomain` later does not move existing tenants; their stored `PrimaryDomain` keeps the old host, which the new contract no longer resolves.
+- Other onboarding settings are in `Wasla:TenantOnboarding`: `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`. The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
+- The proxy must pass the original `Host` header through unchanged; tenants are resolved from it and `X-Forwarded-Host` is never applied ([Reverse proxy and client address](#reverse-proxy-and-client-address)).
+- Cookies stay host-only: the tenant session, Central Admin session, antiforgery and signup-ownership cookies set no `Domain`, so a tenant's session is never sent to another tenant, to `app.wasla.tr` or to `wasla.tr`.
 - Production should force HTTPS (Web enables HSTS + HTTPS redirection outside Development).
 - Print Bridge and browsers need a trusted certificate chain on real domains.
+
+**Expected DNS and TLS shape (WAS-76, not applied by this repository):**
+
+| Record | Points to |
+|--------|-----------|
+| `wasla.tr` | The Web server (marketing) |
+| `www.wasla.tr` | The same server, redirected permanently to `wasla.tr` by the proxy |
+| `app.wasla.tr` | The Web server (application entry) |
+| `*.app.wasla.tr` | The Web server (tenant hosts) |
+
+The tenant hosts need a wildcard certificate for `*.app.wasla.tr` in addition to `wasla.tr`, `www.wasla.tr` and `app.wasla.tr`; a wildcard covers one label only, which matches the tenant host contract. Obtaining and renewing it is part of the deployment.
 
 Useful URL overrides (env `__` form):
 
@@ -224,7 +248,8 @@ DataProtection__KeyPath
 Platforms__ProviderMode
 Platform__TrendyolGo__BaseUrl
 Platform__Yemeksepeti__BaseUrl
-Wasla__TenantOnboarding__MarketingBaseDomain
+Wasla__TenantOnboarding__MarketingBaseDomain   # Web and Api, required outside Development: wasla.tr in production
+Wasla__TenantOnboarding__ApplicationBaseDomain # Web and Api, required outside Development: app.wasla.tr; tenants are {slug}.app.wasla.tr
 Wasla__TenantOnboarding__SqlAuth
 Wasla__ApiBaseUrl
 Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl behind a proxy

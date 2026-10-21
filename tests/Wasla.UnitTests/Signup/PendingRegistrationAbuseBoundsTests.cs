@@ -122,7 +122,7 @@ public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
         await SeedAsync(PendingRegistrationStatus.PaymentSucceeded, mutate: r =>
         {
             r.Slug = "paid-slug";
-            r.PrimaryDomain = "paid-slug.wasla.local";
+            r.PrimaryDomain = "paid-slug.app.wasla.local";
             r.ExpiresAtUtc = DateTime.UtcNow.AddDays(-30);
         });
 
@@ -138,7 +138,7 @@ public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
         await SeedAsync(PendingRegistrationStatus.AwaitingPayment, mutate: r =>
         {
             r.Slug = "lapsed-slug";
-            r.PrimaryDomain = "lapsed-slug.wasla.local";
+            r.PrimaryDomain = "lapsed-slug.app.wasla.local";
             r.ExpiresAtUtc = DateTime.UtcNow.AddMinutes(-1);
         });
 

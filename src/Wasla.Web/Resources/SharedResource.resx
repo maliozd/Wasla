@@ -827,7 +827,7 @@
     <value>Panel girişi için restoranınıza özel Wasla adresini kullanmalısınız.</value>
   </data>
   <data name="TenantAddressRequired.Example" xml:space="preserve">
-    <value>Örnek: bahce-tadi.wasla.local</value>
+    <value>Örnek: {0}</value>
   </data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
     <value>Kayıt sayfasına dön</value>

@@ -55,7 +55,7 @@ For the process and data-flow map, read [Architecture overview](docs/architectur
 
 - .NET 8 SDK
 - SQL Server or LocalDB
-- Windows hosts-file access for `*.wasla.local`
+- Windows hosts-file access for `wasla.local`, `app.wasla.local` and `{slug}.app.wasla.local`
 - Node.js when running the frontend module tests
 - Windows for running the Print Bridge desktop UI
 

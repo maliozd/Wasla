@@ -237,7 +237,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     {
         var tenantId = Guid.NewGuid();
         var orders = new RecordingOrders();
-        var controller = CreateController(new FixedTenant(new ResolvedTenantDto(tenantId, "Sushi M", "sushi-m", "sushi-m.wasla.local")), orders);
+        var controller = CreateController(new FixedTenant(new ResolvedTenantDto(tenantId, "Sushi M", "sushi-m", "sushi-m.app.wasla.local")), orders);
 
         var modes = new Wasla.UnitTests.GuidedSetup.GuidedSetupCoordinatorTests.FakeTenantModes();
         var result = await controller.LiveData(guidedSetup: null!, operationalModes: modes, platformConnections: new FakePlatformConnections(), CancellationToken.None);

@@ -229,13 +229,13 @@ public sealed class WebLoginRateLimitTests : IAsyncLifetime
     public async Task UnknownTenantHost_IsStillRedirected_AndNeverLimited()
     {
         await StartAsync(RateLimitTestConfig.Limits(1));
-        using var unknown = _web.Client("unknown.wasla.local");
+        using var unknown = _web.Client("unknown.app.wasla.local");
 
         for (var i = 0; i < 3; i++)
         {
             var response = await unknown.PostFormAsync("/auth/login", [new("Email", _alphaOwner.Email), new("Password", "Wrong-Password-1")]);
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-            Assert.Equal("/tenant-not-found?host=unknown.wasla.local", response.Headers.Location?.OriginalString);
+            Assert.Equal("/tenant-not-found?host=unknown.app.wasla.local", response.Headers.Location?.OriginalString);
         }
 
         Assert.Equal(0, _probe.TenantChecks);

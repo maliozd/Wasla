@@ -18,7 +18,7 @@ public sealed class ProvisioningEmailFactoryTests
         request.Scheme = "http";
         request.Host = new HostString("admin.wasla.local", 5200);
         var environment = new TestWebHostEnvironment { EnvironmentName = "Development" };
-        var loginUrl = TenantWelcomeUrlBuilder.BuildLoginUrl(request, environment, "tenant.wasla.local");
+        var loginUrl = TenantWelcomeUrlBuilder.BuildLoginUrl(request, environment, "tenant.app.wasla.local");
 
         var factory = new ProvisioningEmailFactory(
             new EmailTemplateRenderer(),
@@ -28,13 +28,13 @@ public sealed class ProvisioningEmailFactoryTests
         {
             OwnerFullName = "Owner",
             OwnerEmail = "owner@example.test",
-            PrimaryDomain = "tenant.wasla.local"
+            PrimaryDomain = "tenant.app.wasla.local"
         }, loginUrl);
 
-        Assert.Equal("http://tenant.wasla.local:5200/auth/login", loginUrl);
+        Assert.Equal("http://tenant.app.wasla.local:5200/auth/login", loginUrl);
         Assert.Contains(loginUrl, message.TextBody);
-        Assert.Contains("http://tenant.wasla.local:5200/auth/login", message.HtmlBody);
-        Assert.DoesNotContain("https://tenant.wasla.local/auth/login", message.TextBody);
+        Assert.Contains("http://tenant.app.wasla.local:5200/auth/login", message.HtmlBody);
+        Assert.DoesNotContain("https://tenant.app.wasla.local/auth/login", message.TextBody);
     }
 
     private sealed class TestWebHostEnvironment : IWebHostEnvironment

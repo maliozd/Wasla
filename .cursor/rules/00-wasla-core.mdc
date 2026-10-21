@@ -41,8 +41,8 @@ Keep solutions practical, conservative, and MVP-focused.
 - `TenantDb` stores operational restaurant data.
 - EF Core contexts are `CentralDbContext` and `TenantDbContext`.
 - Tenant resolution uses `TenantResolutionMiddleware`, claim `TenantId`, and HttpContext item `CurrentTenant`.
-- Central/public development hosts are `localhost`, `wasla.local`, and `www.wasla.local`.
-- Tenant development hosts use `{slug}.wasla.local`, for example `sushim.wasla.local`.
+- Host roles (WAS-66, `docs/architecture/tenancy.md`): marketing `wasla.tr` (Development `localhost`, `wasla.local`, `www.wasla.local`), application entry `app.wasla.tr` (Development `app.wasla.local`), tenants `{slug}.app.wasla.tr` (Development `{slug}.app.wasla.local`, for example `sushim.app.wasla.local`).
+- Classify hosts with `WaslaHostClassifier`; never match tenant hosts with `Contains`, loose `EndsWith` or unvalidated splitting.
 - End-customer order fields such as `CustomerName`, `CustomerPhone`, and `CustomerAddress` refer to the restaurant's buyer and should not be renamed to Tenant.
 
 ## Git workflow

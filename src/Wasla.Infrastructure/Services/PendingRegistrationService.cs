@@ -42,10 +42,10 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
     public async Task<bool> IsSlugAvailableAsync(string slug, CancellationToken ct)
     {
         var normalized = RegistrationNameNormalizer.NormalizeSlug(slug);
-        if (!RegistrationNameNormalizer.IsValidSlugFormat(normalized))
+        if (!RegistrationNameNormalizer.IsValidSlugFormat(normalized) || RegistrationNameNormalizer.IsReservedSlug(normalized))
             return false;
 
-        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(normalized, _options.MarketingBaseDomain);
+        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(normalized, _options.ApplicationBaseDomain);
         return !await IsSlugOrDomainTakenAsync(normalized, primaryDomain, ct);
     }
 
@@ -70,8 +70,9 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.TooManyActiveRegistrations);
         }
 
-        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(slug, _options.MarketingBaseDomain);
-        if (await IsSlugOrDomainTakenAsync(slug, primaryDomain, ct))
+        // A reserved name is never a tenant address (WAS-66); it is answered like a taken one.
+        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(slug, _options.ApplicationBaseDomain);
+        if (RegistrationNameNormalizer.IsReservedSlug(slug) || await IsSlugOrDomainTakenAsync(slug, primaryDomain, ct))
         {
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.DuplicateSlug);
         }
@@ -449,7 +450,7 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
 
         var normalizedSlug = RegistrationNameNormalizer.ExtractSlugFromHost(
             normalizedHost,
-            _options.MarketingBaseDomain);
+            _options.ApplicationBaseDomain);
         var now = DateTime.UtcNow;
 
         var row = await _central.PendingRegistrations.AsNoTracking()

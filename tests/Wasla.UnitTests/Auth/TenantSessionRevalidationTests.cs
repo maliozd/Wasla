@@ -307,7 +307,7 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
     // --- Requests without a resolved tenant -------------------------------------------------------
 
     [Theory]
-    [InlineData("/tenant-not-found?host=x.wasla.local")]
+    [InlineData("/tenant-not-found?host=x.app.wasla.local")]
     [InlineData("/culture?culture=en-US&returnUrl=%2F")]
     public async Task PathWithoutTenantResolution_NeitherAcceptsNorDeletesTheSession(string path)
     {

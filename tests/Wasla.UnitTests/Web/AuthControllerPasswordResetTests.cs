@@ -52,7 +52,7 @@ public sealed class AuthControllerPasswordResetTests
     [Fact]
     public async Task ForgotPasswordPost_EmailSentShowsDedicatedConfirmationState()
     {
-        var tenant = Tenant(Guid.NewGuid(), "sushim.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "sushim.app.wasla.local");
         var service = new FakeTenantPasswordResetService
         {
             RequestResult = TenantPasswordResetRequestResult.EmailSent()
@@ -71,7 +71,7 @@ public sealed class AuthControllerPasswordResetTests
         Assert.True(string.IsNullOrEmpty(model.Email));
         Assert.Equal(tenant.Id, service.LastRequestTenantId);
         Assert.Equal("owner@example.test", service.LastRequestEmail);
-        Assert.Equal("http://sushim.wasla.local:5200/auth/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", service.LastGeneratedResetUrl);
+        Assert.Equal("http://sushim.app.wasla.local:5200/auth/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", service.LastGeneratedResetUrl);
         Assert.Empty(controller.TempData);
     }
 
@@ -110,7 +110,7 @@ public sealed class AuthControllerPasswordResetTests
     [Fact]
     public async Task ForgotPasswordPost_UsesCurrentTenantNotPostedTenantId()
     {
-        var currentTenant = Tenant(Guid.NewGuid(), "current.wasla.local");
+        var currentTenant = Tenant(Guid.NewGuid(), "current.app.wasla.local");
         var postedTenantId = Guid.NewGuid();
         var service = new FakeTenantPasswordResetService();
         var controller = CreateController(tenant: currentTenant, service: service);
@@ -140,7 +140,7 @@ public sealed class AuthControllerPasswordResetTests
     [Fact]
     public async Task ResetPasswordPost_ValidPostPassesCurrentTenantToService()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var service = new FakeTenantPasswordResetService { ResetResult = TenantPasswordResetResult.Success() };
         var controller = CreateController(tenant: tenant, service: service);
 
@@ -209,11 +209,11 @@ public sealed class AuthControllerPasswordResetTests
         var production = BuildRequest("https", "admin.wasla.com", 5443);
 
         Assert.Equal(
-            "http://tenant.wasla.local:5200/auth/reset-password?token=abc%2B%2F%3D",
-            TenantWelcomeUrlBuilder.BuildPasswordResetUrl(dev, new TestWebHostEnvironment("Development"), "tenant.wasla.local", "abc+/="));
+            "http://tenant.app.wasla.local:5200/auth/reset-password?token=abc%2B%2F%3D",
+            TenantWelcomeUrlBuilder.BuildPasswordResetUrl(dev, new TestWebHostEnvironment("Development"), "tenant.app.wasla.local", "abc+/="));
         Assert.Equal(
-            "https://tenant.wasla.local:5443/auth/reset-password?token=abc",
-            TenantWelcomeUrlBuilder.BuildPasswordResetUrl(staging, new TestWebHostEnvironment("Staging"), "tenant.wasla.local", "abc"));
+            "https://tenant.app.wasla.local:5443/auth/reset-password?token=abc",
+            TenantWelcomeUrlBuilder.BuildPasswordResetUrl(staging, new TestWebHostEnvironment("Staging"), "tenant.app.wasla.local", "abc"));
         Assert.Equal(
             "https://tenant.wasla.com/auth/reset-password?token=abc",
             TenantWelcomeUrlBuilder.BuildPasswordResetUrl(production, new TestWebHostEnvironment("Production"), "tenant.wasla.com", "abc"));
@@ -222,7 +222,7 @@ public sealed class AuthControllerPasswordResetTests
     [Fact]
     public async Task LoginPost_ValidCredentialsSignsInTenantSchemeWithPersistentClaims()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var userId = Guid.NewGuid();
         var authValidation = new FakeAuthValidationService
         {
@@ -253,7 +253,7 @@ public sealed class AuthControllerPasswordResetTests
     [Fact]
     public async Task LoginPost_ValidCredentialsExpiresTheActiveTenantCookieBeforeFreshSignIn()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var authValidation = new FakeAuthValidationService
         {
             Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner User", UserRole.Owner, Guid.NewGuid())
@@ -305,7 +305,7 @@ public sealed class AuthControllerPasswordResetTests
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Scheme = "https";
-        httpContext.Request.Host = new HostString("tenant.wasla.local", 443);
+        httpContext.Request.Host = new HostString("tenant.app.wasla.local", 443);
         if (authValidation is not null || authenticationService is not null)
         {
             httpContext.RequestServices = new ServiceCollection()
@@ -314,7 +314,7 @@ public sealed class AuthControllerPasswordResetTests
         }
 
         var controller = new AuthController(
-            new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.wasla.local")),
+            new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.app.wasla.local")),
             authValidation ?? new FakeAuthValidationService(),
             new NoopLoginRecorder(),
             new FakeSignupCompletionTokenService(),

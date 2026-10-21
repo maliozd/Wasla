@@ -307,7 +307,7 @@ public sealed class RealtimeLoadTests
                     var slug = $"load{i}";
                     var tenant = host.Central.AddTenant(slug);
                     host.Tenants.CreateTenantDatabase(tenant.Id);
-                    fleet.Tenants.Add((tenant.Id, $"{slug}.wasla.local"));
+                    fleet.Tenants.Add((tenant.Id, $"{slug}.app.wasla.local"));
                 }
 
                 foreach (var (id, hostName) in fleet.Tenants)

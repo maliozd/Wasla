@@ -275,7 +275,7 @@ Web and API use the **same scheme, cookie name and cookie settings** (`WaslaTena
 - **Keys.** By default they are not shared: the API persists keys to `DataProtection:KeyPath`; when that is unset it uses `C:\Wasla-keys` on Windows and the framework's default key store on other operating systems (`ApiDataProtection`; no committed configuration sets the path). Web uses `DataProtection:KeyPath` only when it is set, otherwise the default store. An operator who points both at one folder shares the key ring. `docs/deployment-config.md` (non-canonical) recommends exactly that when Web and API must share protected payloads.
 - **Host.** The cookie is host-only. A browser sends it to the API only when the API is served on the tenant's own host (for example behind a reverse proxy under the tenant domain). Anyone who has the cookie value can still present it with the tenant's `Host` header.
 
-Since WAS-94 a shared key ring is safe for tenant sessions in the sense that matters: a Web session presented to the API gets exactly the Web checks (current user, active, stamp, role, tenant from the host) and the same role policies, so a deactivated, deleted, demoted or password-reset user's old cookie is rejected by the API as it is by Web, and a lower role cannot use an API write that its Web policy forbids. Sharing is still a deployment choice, not a requirement; in local development Web (`{slug}.wasla.local`) and API (`localhost`) are different hosts with different keys, so a Web login does **not** authenticate API calls there.
+Since WAS-94 a shared key ring is safe for tenant sessions in the sense that matters: a Web session presented to the API gets exactly the Web checks (current user, active, stamp, role, tenant from the host) and the same role policies, so a deactivated, deleted, demoted or password-reset user's old cookie is rejected by the API as it is by Web, and a lower role cannot use an API write that its Web policy forbids. Sharing is still a deployment choice, not a requirement; in local development Web (`{slug}.app.wasla.local`) and API (`localhost`) are different hosts with different keys, so a Web login does **not** authenticate API calls there.
 
 What sharing does not change: the Central Admin cookie is not registered by the API at all; Web revalidates it against CentralDb (WAS-37, [Central admin session revalidation](#central-admin-session-revalidation)). Provider HTTP clients and their cookie containers are unrelated to these sessions (WAS-95).
 
@@ -361,7 +361,7 @@ Tenant sessions ([Tenant session revalidation](#tenant-session-revalidation)) an
 
 ### API testing
 
-`POST /api/auth/validate` validates credentials only. Wasla.Api does not expose an endpoint that signs in a browser. Web login on `{slug}.wasla.local` does not authenticate `localhost` API requests. See [../operations/local-development.md](../operations/local-development.md).
+`POST /api/auth/validate` validates credentials only. Wasla.Api does not expose an endpoint that signs in a browser. Web login on `{slug}.app.wasla.local` does not authenticate `localhost` API requests. See [../operations/local-development.md](../operations/local-development.md).
 
 ## Authorization hook (high level)
 

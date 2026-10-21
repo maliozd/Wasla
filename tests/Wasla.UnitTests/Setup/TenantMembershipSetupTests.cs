@@ -176,7 +176,7 @@ public sealed class TenantMembershipSetupTests : IDisposable
             Id = Guid.NewGuid(),
             Name = "Setup " + slug,
             Slug = slug,
-            PrimaryDomain = slug + ".wasla.local",
+            PrimaryDomain = slug + ".app.wasla.local",
             DatabaseName = "Wasla_" + slug.Replace("-", string.Empty),
             EncryptedConnectionString = "encrypted",
             CreatedAt = Now,
