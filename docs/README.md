@@ -35,7 +35,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [product/product-boundaries.md](product/product-boundaries.md) | Wasla Orders, Wasla POS, and shared-infrastructure boundaries |
 | [product/pos-mvp.md](product/pos-mvp.md) | Wasla POS MVP (planned, not implemented): local-first installed product, workflows, POS roles, scope, payment boundary, UX and non-functional requirements |
 | [product/pos-first-slice.md](product/pos-first-slice.md) | Wasla POS first vertical slice (selling offline, then syncing), acceptance criteria and backlog |
-| [architecture/pos-application-boundary.md](architecture/pos-application-boundary.md) | Decision: Wasla POS as a local-first installed product (POS Edge, local SQLite, POS Terminal, cloud sync) in this repository; data authority, sync, printing, devices and licensing |
+| [architecture/pos-application-boundary.md](architecture/pos-application-boundary.md) | Decision: Wasla POS as a local-first installed product (POS Edge, local SQLite, POS Terminal, cloud sync) in this repository; data authority, sync, restore and cloud recovery, printing, devices and certificate lifecycle, licensing |
 | [product/terminology.md](product/terminology.md) | Product names, Tenant vs order customer, clean-break policy and the historical migration exception |
 | [product/roles-and-permissions.md](product/roles-and-permissions.md) | Server-side role matrix |
 | [product/onboarding.md](product/onboarding.md) | Per-user guided setup, tenant operational mode (Setup / Live), going live |

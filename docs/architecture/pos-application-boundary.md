@@ -28,9 +28,9 @@ Facts from the code on `dev` at `40fe698`:
 
 1. **Wasla POS is installed at the restaurant.** Each restaurant location runs one **POS Edge**. It is a Windows service hosting an ASP.NET Core application with the local POS database, the POS user interface, the local print queue and the cloud synchronizer.
 2. **The operational POS database is local SQLite**, owned by POS Edge. Nothing else opens it.
-3. **Cashier devices are Windows touch terminals running the Wasla POS Terminal**, a WebView2 desktop shell. It shows the user interface served by POS Edge, over the restaurant network or on the Edge machine itself, through HTTPS with a pinned certificate.
+3. **Cashier devices are Windows touch terminals running the Wasla POS Terminal**, a WebView2 desktop shell. It shows the user interface served by POS Edge, over the restaurant network or on the Edge machine itself, through HTTPS. The Terminal pins the installation's own certificate authority, so routine certificate renewal never needs re-pairing.
 4. **The Wasla cloud is not in the sale path.** Opening checks, adding lines, kitchen tickets, payments, closing, printing, history and PIN sign-in on paired devices all run against POS Edge alone.
-5. **POS Edge synchronizes with Wasla POS Cloud** over outbound HTTPS only. It uses a durable local outbox, per-installation sequence numbers, idempotent uploads and acknowledgements given after durable storage ([Synchronization](#synchronization)).
+5. **POS Edge synchronizes with Wasla POS Cloud** over outbound HTTPS only. It uses a durable local outbox, per-installation sequence numbers, idempotent uploads and acknowledgements given after durable storage ([Synchronization](#synchronization)). After a restore, POS Cloud returns the synced facts the backup lacks in a signed recovery package ([Restore and recovery](#restore-and-recovery-from-the-cloud)).
 6. **POS Edge prints locally.** It uses a printing library extracted from Print Bridge's proven Windows printing code, and it never needs the cloud or Wasla Orders. Print Bridge stays the Orders printing client ([Printing](#printing)).
 7. **Code stays in this repository as separate applications**: POS Edge, POS Terminal, POS Cloud and their tools. None of them reference Orders projects, and Orders references none of them ([Repository](#repository-and-application-boundaries)).
 
@@ -46,7 +46,7 @@ Facts from the code on `dev` at `40fe698`:
 ┌─────────────────────────┼───────────────── restaurant ──────────────────────┐
 │  POS Edge machine (Windows 10/11 Pro, always on, wired, UPS recommended)    │
 │   ├── Wasla POS Edge (Windows service, NT SERVICE\WaslaPosEdge)             │
-│   │     ├── HTTPS on the LAN (pinned certificate) and loopback              │
+│   │     ├── HTTPS on the LAN (pinned installation CA) and loopback          │
 │   │     ├── SQLite database, outbox, backups (ProgramData\Wasla\Pos)        │
 │   │     └── print queue → Windows spooler → receipt and kitchen printers    │
 │   └── Wasla POS Terminal (optional: the Edge machine as a cashier station)  │
@@ -68,7 +68,7 @@ Facts from the code on `dev` at `40fe698`:
 | Local user interface | Plain browser; WebView2 desktop shell; WinUI native UI | **WebView2 shell (Wasla POS Terminal)** showing Razor pages served by Edge | One UI codebase in the repository's MVC/Razor, Bootstrap and vanilla JavaScript stack. The shell pins Edge's certificate, keeps the device credential out of browser storage, and runs full screen. The repository already ships a WebView2 shell with a navigation and security policy (Print Bridge). A plain browser would need a trusted LAN certificate on every device. WinUI would be a second UI stack |
 | Terminals | Same machine only; LAN terminals | **Both**: the Edge machine may run a Terminal, and further Windows terminals connect over the LAN | Most restaurants have one or two Windows touch terminals. Tablets and phones need a separate certificate and shell decision ([Later](#later-decisions)) |
 | Local database | SQLite; SQL Server Express; SQL Server LocalDB; PostgreSQL | **SQLite (WAL mode)** | No database server to install, patch or administer. One file to back up and restore. The installer stays small. POS Edge is the only process that writes, which suits SQLite's single writer. The EF Core provider is already used in this repository's tests. SQL Server Express adds a service, an administrator and a 10 GB limit. LocalDB is per user and unsuitable for a service |
-| Local transport | Plain HTTP on the LAN; HTTPS with a public certificate; HTTPS with a per-installation certificate | **HTTPS with a per-installation self-signed certificate, pinned at pairing** | PINs and device credentials never cross the LAN in clear text. No public DNS or certificate authority is needed, and nothing depends on the internet |
+| Local transport | Plain HTTP on the LAN; HTTPS with a public certificate; HTTPS with a per-installation certificate | **HTTPS with a per-installation private CA, pinned at pairing** | PINs and device credentials never cross the LAN in clear text. No public DNS or certificate authority is needed, and nothing depends on the internet |
 
 ### Local database
 
@@ -82,7 +82,7 @@ Facts from the code on `dev` at `40fe698`:
 
 - **Installer.** One signed, per-machine Windows installer with two features: *POS Edge* and *POS Terminal*. Both are .NET 8 self-contained, so no .NET runtime prerequisite is needed. The installer:
   - creates the service with a virtual service account;
-  - generates the installation certificate;
+  - generates the installation's private certificate authority and first server certificate ([Certificate lifecycle](#certificate-lifecycle)); repair and upgrade keep both;
   - adds a Windows Firewall rule that allows the Edge port only on the Private profile and the local subnet;
   - creates the data and backup folders with restricted ACLs.
 
@@ -98,14 +98,8 @@ Facts from the code on `dev` at `40fe698`:
 - **Backups.**
   - SQLite online backups (`VACUUM INTO`) run every 15 minutes to a local backup folder, and one daily backup is kept for 14 days. A second backup path (another disk or a USB drive) is configurable and recommended.
   - Each backup is checked with `PRAGMA integrity_check` before it replaces an older one. Backup failures are shown in the sync health and the back office.
-  - Encrypted backups uploaded to the cloud are later work.
-- **Restore** is an explicit command on a stopped service (the back office cannot do it):
-  1. Install POS Edge on the same or a replacement machine.
-  2. Restore a chosen backup.
-  3. Re-establish the installation identity ([Activation](#activation-and-installation-identity)), which starts a new sync epoch.
-  4. Re-pair the terminals if the machine or its certificate changed.
-
-  A restore smoke test is part of the slice and of pilot readiness.
+  - Encrypted whole-database backups uploaded to the cloud are later work. Synced facts are already recoverable from POS Cloud ([Restore and recovery](#restore-and-recovery-from-the-cloud)).
+- **Restore** is an explicit operation on a stopped service; the back office cannot start one. It always ends with a recovery from POS Cloud, which brings back the facts synced after the backup ([Restore and recovery](#restore-and-recovery-from-the-cloud)). A restore and recovery drill is part of the slice and of pilot readiness.
 
 ### Diagnostics
 
@@ -126,7 +120,7 @@ Facts from the code on `dev` at `40fe698`:
    - a one-time **Owner setup code**.
 
    The credential is stored encrypted with DPAPI for the machine and readable only by the service account.
-3. **One active installation per tenant.** Activating a replacement machine uses a *replace* code. It revokes the old installation's credential and keeps the installation id with a new **epoch** ([Synchronization](#synchronization)).
+3. **One active installation per tenant.** A replacement machine, or a restore on the same machine, does not activate a second installation. It runs a restore operation with a one-time *restore code*. That operation revokes the current credential, keeps the installation id, starts a new **epoch** and recovers the synced facts ([Restore and recovery](#restore-and-recovery-from-the-cloud)).
 4. **Sync authentication.** Every request to POS Cloud carries the tenant id, the installation id and the installation credential. POS Cloud opens that tenant's POS cloud database through the CentralDb registry and compares hashes. A wrong tenant, installation or credential is answered 401 with no detail, and nothing else of that tenant is read. The credential can be rotated by a cloud command.
 
 POS Cloud never writes CentralDb at runtime. Only `Wasla.Pos.Cli`, an operator tool, writes the POS registration row, through the platform library.
@@ -134,15 +128,56 @@ POS Cloud never writes CentralDb at runtime. Only `Wasla.Pos.Cli`, an operator t
 ## Devices and the local network
 
 - **Listening.** POS Edge listens with HTTPS on the configured LAN interface and on loopback, on one configurable port. It has no plain-HTTP listener on the LAN. A second, loopback-only listener serves the setup console (activation, first Owner PIN, restore status). It refuses any non-loopback request.
-- **Certificate.** Generated at installation: ECDSA, with the machine name, its LAN addresses and `localhost` as subject names. The private key is accessible only to the service account.
+- **Certificates.** Each installation has its own private certificate authority (the *installation CA*). It issues POS Edge's short-lived server certificates, and Terminals pin the CA's public key, not a server certificate ([Certificate lifecycle](#certificate-lifecycle)).
 - **Pairing a terminal.**
-  1. On an already signed-in terminal, or on the Edge console, an Owner or Manager creates a **pairing code**. It is single-use, valid 10 minutes, and includes the first characters of the Edge certificate's fingerprint.
-  2. On the new terminal, the POS Terminal asks for the Edge address and the code. It connects, checks that the presented certificate matches the fingerprint in the code, and only then sends the code. A mismatch stops pairing.
-  3. POS Edge returns a random **device credential** (stored hashed in the Edge database) and the full certificate fingerprint. The Terminal pins that fingerprint and stores the credential with DPAPI.
+  1. On an already signed-in terminal, or on the Edge console, an Owner or Manager creates a **pairing code**. It is single-use, valid 10 minutes, and includes the first characters of the installation CA's public-key fingerprint.
+  2. On the new terminal, the POS Terminal asks for the Edge address and the code. It connects, checks that the server certificate chains to a CA whose key matches the fingerprint in the code, and only then sends the code. A mismatch stops pairing.
+  3. POS Edge returns a random **device credential** (stored hashed in the Edge database), the installation id and the CA's full public key. The Terminal pins that key and stores the credential with DPAPI.
 
   There is no anonymous pairing endpoint: an exchange without a valid code is refused and rate limited.
 - **Requests.** Every request except the pairing exchange and an anonymous health probe must present a valid, unrevoked device credential. The health probe shows no tenant data. Staff actions also need a PIN session bound to that device. Device revocation in the back office takes effect immediately.
 - **Firewall.** The installer's rule admits the port only from the local subnet on the Private network profile. The documentation tells installers not to expose the Edge machine to the internet and not to put it on a guest Wi-Fi network.
+
+### Certificate lifecycle
+
+Terminals trust a per-installation key that changes rarely and only through a signed handover. They do not trust a server certificate that expires. No public certificate authority and no internet access are involved.
+
+| Item | Lifetime | Where | Notes |
+| --- | --- | --- | --- |
+| **Installation CA** | 10 years | Generated by the installer (ECDSA P-256, `CA:true`, path length 0). Its private key is protected with DPAPI on the Edge machine and readable only by the service account | Signs only this installation's server certificates and CA rollovers. It is never in database backups, and never leaves the machine |
+| **Server certificate** | 90 days | Issued by the installation CA. Subject names: the machine name, `localhost`, `127.0.0.1`, `::1`, and the URI `urn:wasla:pos:installation:<installationId>` | Renewed by POS Edge itself. Server authentication only |
+
+**How a Terminal validates POS Edge.** It accepts a server certificate only when all of the following hold:
+- it chains to a pinned installation CA key;
+- it is within its validity period;
+- it has the server-authentication usage;
+- it carries the `urn:wasla:pos:installation:` URI of the paired installation.
+
+The address itself is not part of the check: the Terminal connects to whatever address it has stored (an IP address or a host name). The pinned key never signs anything for anyone else, so a matching name would add no security. A changed IP address or machine name therefore needs **no new certificate** and no re-pairing; the Owner corrects the address in the Terminal's settings. A DHCP reservation for the Edge machine is recommended. Anything that fails these checks is refused with "This is not your POS Edge", and is never offered as a click-through. The WebView2 shell and the Terminal's own HTTP client use the same check.
+
+**Server certificate renewal (routine, no Terminal involvement).**
+- 30 days before expiry, POS Edge issues the next server certificate from the installation CA.
+- It tests the new certificate with a loopback TLS handshake and only then serves it.
+- The previous certificate stays on disk until it expires, and it is still valid during that time. That is the overlap: a Terminal accepts either certificate, because both chain to the pinned CA.
+- If issuing or the self-test fails, POS Edge keeps serving the current certificate and retries daily. Sync health shows a warning from 14 days before expiry.
+- Rollback is going back to the previous, still-valid certificate.
+- A corrupted or deleted server certificate is reissued from the CA at startup.
+- Updater repairs and upgrades keep the CA and the certificates, because they live in `C:\ProgramData\Wasla\Pos`, not in the program folder.
+
+**Installation CA rollover (rare, signed by the old key).**
+1. POS Edge creates a new CA 12 months before the current CA expires, or when an Owner requests a rollover.
+2. It publishes a **rollover statement**, signed by the current CA key. The statement carries the new CA's public key, the installation id and the validity period.
+3. A Terminal fetches the statement over a connection authenticated with the current pin. It verifies the old-key signature, then pins **both** keys.
+4. POS Edge switches to server certificates from the new CA once every active paired Terminal has acknowledged the new pin, or 30 days before the old CA expires, whichever comes first. A Terminal that missed the overlap must be re-paired.
+5. The old pin is dropped when the old CA expires.
+
+A new key is never trusted without the old key's signature. If the rollover fails before the switch, POS Edge keeps using the old CA and retries.
+
+**Lost or compromised keys.**
+- The installation CA key and the server certificate keys sit on the same machine under the same protection, so a suspected compromise of either is treated as a compromise of the installation CA.
+- The Owner, or support with a cloud command, marks the CA **compromised**. POS Edge then creates a new CA, revokes every device credential, and every Terminal must be re-paired with a new pairing code.
+- A lost CA key has the same outcome: on a replacement machine, or after the key is corrupted, there is no old key to sign a rollover.
+- **Restoring the database on the same machine keeps the CA**, so no re-pairing is needed. **A replacement machine needs re-pairing.**
 
 ## Staff, PINs and recovery
 
@@ -161,11 +196,19 @@ POS staff identity stays POS-owned (Orders users live in the Orders tenant datab
 
 ## Licensing while offline
 
-- POS Edge holds an **entitlement lease**. It is signed by POS Cloud with a Wasla POS signing key, and POS Edge verifies it with the public key built into each release. It states the tenant, the installation, the entitlement status and `validUntil`. Every successful sync refreshes it. A lease normally runs **14 days** past its issue, so a two-week internet or Wasla cloud outage changes nothing for the restaurant. The exact period is an [open decision](../product/pos-mvp.md#unresolved-product-decisions).
+- POS Edge holds an **entitlement lease**. It is signed by POS Cloud with a Wasla POS signing key, and POS Edge verifies it with the public key built into each release. It states the tenant, the installation, the entitlement status and `validUntil`. Every successful sync refreshes it.
+
+**Lease length is a provisional design assumption of 14 days.** The final period is an [open product decision](../product/pos-mvp.md#unresolved-product-decisions). POS Cloud sets `validUntil` in each lease and POS Edge only honors it, so changing the period needs no Edge release. With 14 days, a two-week internet or Wasla cloud outage changes nothing for the restaurant.
 - **While the lease is valid:** full operation. In its last 3 days, Owners and Managers see a warning to connect to the internet.
 - **After the lease expires, or after POS Cloud reports an expired, cancelled or revoked entitlement on reconnection:** *restricted mode* starts at the next business day.
-  - Restricted mode refuses **new** checks.
-  - It still allows everything needed to finish and keep what exists: paying and closing open checks, printing, voids on open checks, history, backups, support bundles and synchronization.
+  - Restricted mode refuses **new** checks. Nothing else.
+  - **An expired lease never blocks completing, printing or reviewing a sale that is already open.** Restricted mode still allows:
+    - adding lines to an open check and sending them to the kitchen;
+    - paying and closing open checks;
+    - printing and reprinting;
+    - voids on open checks;
+    - history;
+    - backups, support bundles and synchronization.
   - The restaurant is never stopped in the middle of a service, and never loses access to its own sale records.
 - **Emergency extension.** Support can issue a one-time code. It is signed, bound to the installation id, extends the lease by at most 7 days, and can be used once (its id is recorded locally). It is entered by an Owner, works offline and is audited. It cannot be reused or chained beyond what support issues.
 - **Clock tampering.** POS Edge persists the highest time it has seen and evaluates the lease against the later of that and the current clock. Moving the clock back therefore does not extend a lease. Large clock changes are audited.
@@ -182,6 +225,7 @@ Authority means who may change the data. Every type has exactly one authority, s
 | POS devices (terminals) and device credentials | Local | Local (hashes); cloud gets metadata without credentials | Local → cloud; cloud → local revocation commands |
 | POS staff and roles | Local | Local; cloud copy without PIN hash | Local → cloud; cloud → local revocation commands |
 | PIN hashes, pepper, recovery code hash | Local | Local and its backups only | Never leaves the installation |
+| Installation CA key and server certificate keys | Local | Edge machine only, protected with DPAPI; not in database backups | Never leaves the machine |
 | Menu, categories, products, modifiers, prices | Local (MVP) | Local; cloud copy as versioned snapshots | Local → cloud |
 | Areas and tables | Local | Local; cloud copy | Local → cloud |
 | Open checks and their lines | Local | Local only | Not uploaded while open |
@@ -199,7 +243,7 @@ Authority means who may change the data. Every type has exactly one authority, s
 
 Rules:
 
-- The cloud never creates, edits or deletes a check, line, payment, reversal, kitchen ticket, receipt or audit record. It stores what the installation sends.
+- The cloud never creates, edits or deletes a check, line, payment, reversal, kitchen ticket, receipt or audit record. It stores what the installation sends. It returns those records to the installation only in a signed recovery package, during an explicit restore operation ([Restore and recovery](#restore-and-recovery-from-the-cloud)), never during normal selling.
 - Active checks exist only at the installation. Nothing in the cloud can change them.
 - Cloud-authored data is limited to commands that only restrict or extend (revoke, lease, rotate, extend). They are applied idempotently in their own sequence, and a revocation is never reversed by sync.
 - Editing the menu or configuration in the cloud is later work. When it comes, each configuration aggregate gets exactly one writer at a time and version-checked changes. A stale change is refused, never merged silently.
@@ -238,7 +282,7 @@ The minimum protocol for the first product. It is not a general event platform.
 | Sequence gap (first record not `checkpoint + 1`) | Refused, with the expected sequence | Resends from the expected sequence |
 | Upload from a revoked installation or an old epoch | 401 or 409 with the reason | Sync stops and shows the reason; restricted mode follows the lease rules |
 
-**Restore and epochs.** After a restore, the local sequence may be behind what the cloud already holds, for example sales made after the restored backup that were synced before the machine failed. The installation therefore starts a new epoch, and its new records never reuse an old `(epoch, sequence)`. The cloud keeps the earlier epoch's records. Support can see that those records exist in the cloud but not locally. Pulling them back into the installation is later work.
+**Restore and epochs.** A restore always starts a new epoch, so new records never reuse an old `(epoch, sequence)`. The facts synced after the restored backup are brought back by the recovery package, not by normal sync ([Restore and recovery](#restore-and-recovery-from-the-cloud)).
 
 **Cloud → local commands.** POS Edge reads `GET /pos-sync/v1/commands?after=<n>` on every contact. It applies each command idempotently, in order, records the applied number, and reports it back. Commands: lease refresh, installation credential rotation, device or staff revocation, emergency extension metadata, release availability.
 
@@ -266,7 +310,9 @@ POS Edge keeps, shows Owners and Managers in the back office, shows all staff as
 - protocol status;
 - lease expiry;
 - clock skew;
-- the last backup result.
+- the last backup result;
+- the server certificate and installation CA expiry, and whether a CA rollover is in progress;
+- the current epoch, and the last restore operation and its result.
 
 POS Cloud keeps each installation's checkpoint, epoch, last contact and blocked reason. Support reads them with `Wasla.Pos.Cli installation-status`. A Central Admin view is later work.
 
@@ -301,15 +347,102 @@ Decision:
 
 Consequence: printing from a Windows service sees only printers installed for all users on the Edge machine. Per-user printers and printers attached only to a terminal are not supported in the MVP.
 
+## Restore and recovery from the cloud
+
+A backup alone does not restore a restaurant's history. Suppose the newest backup is from 14:00, sales from 14:00 to 14:12 were synced, and the disk fails at 14:13. Restoring the 14:00 backup misses those sales, although POS Cloud holds them. A restore therefore always ends with a **cloud recovery**: POS Cloud returns, as a signed package, the acknowledged immutable facts that are newer than the restored backup. The recovery is part of the restore, never part of selling.
+
+### What can be recovered
+
+| Category | Example | Outcome |
+| --- | --- | --- |
+| **Synced before the failure** (acknowledged by POS Cloud) | The 14:00–14:12 closed checks, payments, reversals, kitchen tickets, receipts and audit records, and the latest menu, table, staff and settings snapshots | **Restored** from the recovery package with their original ids. Local history and day totals are complete up to the last acknowledged record |
+| **Committed but not synced, present in a surviving backup** | A backup on the second backup path holds sales that never reached the cloud | **Restored** from that backup, then uploaded under their original `(epoch, sequence)` |
+| **Committed but not synced, in no surviving backup** | A sale closed at 14:12:50, after the last backup and before its upload | **Lost.** The restore report names the last known record and its time, so the restaurant can reconcile from paper receipts |
+| **Open checks** | A table still open at 14:13 | Restored only as far as the restored backup holds it. Open checks are never uploaded |
+| **Unsent Terminal drafts** | Lines on a Terminal screen that were never sent | **May be unrecoverable.** They exist only on that Terminal |
+| **PIN hashes, device credentials, the installation CA key** | — | Never in the cloud. They come back only from the backup (PINs and device credentials) or not at all (the CA key on a replacement machine). See below |
+
+### The restore operation
+
+1. **Restore code (operator, cloud).** `Wasla.Pos.Cli restore-code --tenant <slug> --installation <id>` first **revokes the installation's current credential and closes its current epoch**. From then on, POS Cloud refuses normal uploads from that credential, so nothing new can arrive for the old epoch while the package is built. It then issues a one-time restore code, valid for 24 hours and bound to the tenant and the installation.
+2. **Restore locally (Edge, service stopped).** On the same or a replacement machine:
+   - restore the chosen backup with `restore --backup <file>`; or
+   - with `restore --cloud-only`, when no usable backup exists.
+
+   POS Edge enters the **Recovering** state. Its sale endpoints refuse every request, and Terminals show "POS Edge is being restored".
+3. **Handshake (Edge → Cloud, outbound HTTPS).** On the loopback console, POS Edge sends:
+   - the restore code;
+   - a new restore-operation id;
+   - the restored position `B`, the highest `(epoch, sequence)` in the restored database;
+   - the `(recordId, epoch, sequence, payloadHash)` of every restored outbox record that the backup had not yet seen acknowledged.
+4. **Comparison (Cloud).** Both the backup and the cloud hold a **prefix of the same ordered history**: the cloud only acknowledges contiguous sequences, and a backup is a past state. One of them is therefore ahead of the other, and records they share must have equal hashes. POS Cloud checks the shared records, then answers with:
+   - a new installation credential and a new epoch;
+   - the **recovery package**: every acknowledged record of this installation after `B`, in `(epoch, sequence)` order (empty when the backup is ahead);
+   - the list of backup records the cloud lacks (empty when the cloud is ahead);
+   - for a replacement machine or a cloud-only restore, a new Owner setup code.
+5. **Package integrity.** The package is signed with the POS Cloud signing key, the same key that signs leases. It is bound to:
+   - the tenant, installation and restore-operation id;
+   - the new epoch;
+   - `B` and the cloud's last acknowledged position;
+   - the record count, and a SHA-256 over the ordered record hashes.
+
+   POS Edge verifies the signature, the binding and each record's `payloadHash` before writing anything. Asking again with the same operation id returns the same package. A new operation needs a new restore code.
+6. **Apply (Edge, one SQLite transaction).**
+   - Each recovered fact is inserted into the business tables under its original id: closed and cancelled checks with lines and voids, payments, reversals, kitchen tickets, receipts, audit records, and configuration snapshots (menu, tables, staff without PIN hashes, settings).
+   - A record that is already present with the same hash is skipped, so applying twice changes nothing.
+   - Each recovered record is also written to the outbox history as **Recovered**, with its original `(epoch, sequence)`. It counts as acknowledged and is **never uploaded again**, and it is never treated as a new sale.
+   - The local cloud checkpoint is set to the cloud's last acknowledged position.
+7. **Upload the backup's unsynced records**, if the backup was ahead. They are sent under their original `(epoch, sequence)` with the restore-operation id. POS Cloud accepts them for the closed epoch only from this operation, and only as the contiguous continuation of what it holds.
+8. **Resume.**
+   - POS Edge switches to the new epoch, where sequences start at 1.
+   - It recalculates its counters ([numbering](#numbering-after-a-restore)).
+   - It writes a restore audit record: operation id, `B`, records recovered, records uploaded, and the last known record.
+   - It leaves the Recovering state. Selling resumes.
+
+### Mismatched records
+
+If the backup and the cloud hold the same `recordId` or the same `(epoch, sequence)` with different hashes, they are not two versions of one history. That points to corruption or tampering. Then:
+- POS Edge **writes nothing** and stays in the Recovering state.
+- POS Cloud records the operation as a conflict, with both hashes.
+- Nothing is merged and neither side is chosen automatically.
+
+Support then chooses one of two paths, and the choice is audited in both places:
+- **Another backup.** Try an older or a different backup.
+- **Cloud-only recovery.** POS Cloud's acknowledged records stand as the financial record of what was synced. The backup's unsynced records are then lost and are listed in the restore report.
+
+### Numbering after a restore
+
+- Check, takeaway and receipt numbers are counters per business day.
+- After recovery, each counter continues from the highest number in the restored and recovered records for that day.
+- Numbers issued after the newest backup and never synced may already be on printed paper. So from epoch 2 onwards, numbers are printed with the epoch as a prefix (for example `2-0046`). A number can then never repeat one from an earlier epoch.
+- Epoch 1 numbers have no prefix.
+
+### Credentials, Terminals and PINs after a restore
+
+- **Old credential.** Revoked before the package is issued (step 1), so a failed machine that comes back cannot upload any more.
+- **Same-machine restore.** The installation CA stays. Device credentials and PIN hashes come back from the backup, and Terminals keep working once the backup's device records are back.
+- **Replacement machine.** A new installation CA, so every Terminal is re-paired. PIN hashes come back from the backup.
+- **Cloud-only restore.** Staff come back without PINs:
+  - the new Owner setup code sets the Owner PIN;
+  - the Owner then resets the other staff PINs;
+  - Terminals are re-paired.
+
+### What recovery needs and never does
+
+- **Internet once.** Recovery needs the internet for the handshake. POS Edge does not sell from a restored backup before it completes, because selling on a stale history would reissue numbers and understate totals. During an internet outage the restaurant uses its paper or fiscal-register fallback until the handshake completes; a mobile hotspot is enough, because only outbound HTTPS is used.
+- **Never during selling.** The recovery endpoint accepts only a valid restore code. Normal sync and cloud commands never carry sale facts to an installation, and nothing in recovery can change an open check.
+
 ## Failure behavior
 
 | Failure | Effect | Recovery |
 | --- | --- | --- |
-| Internet or Wasla cloud down | None for sales, printing, history or sign-in. Sync health shows "offline since". The outbox grows | Automatic upload on reconnection. The lease covers 14 days |
+| Internet or Wasla cloud down | None for sales, printing, history or sign-in. Sync health shows "offline since". The outbox grows | Automatic upload on reconnection. The lease covers the lease period (provisionally 14 days) |
 | A terminal loses the LAN | That terminal cannot send, pay or close. Its unsent draft lines stay on screen. Other terminals continue | It reconnects by itself. Repeated requests carry the same idempotency keys |
 | POS Edge service crashes | Terminals show "POS Edge unavailable" | Windows restarts the service. Committed work and the outbox are in SQLite; draft lines on terminals survive |
-| Edge machine fails (disk, power supply, theft) | **The restaurant cannot use POS** until it is replaced. Terminals depend on it. Synced closed checks, payments, tickets and audit records are safe in the cloud | Install on a replacement machine, restore the newest local backup (up to 15 minutes of unsynced work can be lost if only the disk failed and the backup path survived), activate in replace mode (new epoch), re-pair terminals. Target: within 2 hours with a spare machine. Meanwhile the restaurant follows its paper and fiscal-register fallback |
-| Database corruption | POS Edge refuses to start on a failed integrity check | Restore from the newest backup that passes its integrity check |
+| Edge machine fails (disk, power supply, theft) | **The restaurant cannot use POS** until it is replaced. Terminals depend on it | Install on a replacement machine, restore the newest surviving backup, run the restore operation with cloud recovery, and re-pair the Terminals. **Synced facts are restored into local history**, not merely visible to support. Only committed-but-unsynced records missing from every surviving backup, open-check changes after the backup, and unsent Terminal drafts can be lost ([Restore and recovery](#restore-and-recovery-from-the-cloud)). Target: within 2 hours with a spare machine. Meanwhile the restaurant follows its paper and fiscal-register fallback |
+| Database corruption | POS Edge refuses to start on a failed integrity check | Restore operation on the same machine from the newest backup that passes its integrity check, with cloud recovery. No re-pairing |
+| Server certificate expired, corrupted or lost | Terminals refuse an invalid certificate | POS Edge reissues it from the installation CA. No re-pairing ([Certificate lifecycle](#certificate-lifecycle)) |
+| Installation CA key lost or suspected compromised | Terminals cannot verify POS Edge | New CA, device credentials revoked, all Terminals re-paired |
 | Printer offline or out of paper | The job fails, or the spooler holds it | Manual retry or reprint, as above |
 
 A secondary or failover Edge, and replication between Edges, are out of scope for the MVP.
@@ -364,7 +497,8 @@ Guardrails:
 
 - Tablets and phones (Android, iPadOS) as waiter devices: they need their own shell, or a trusted LAN certificate scheme.
 - Cloud menu and configuration editing, with the single-writer rule above.
-- Encrypted cloud backups of the Edge database, and pulling an earlier epoch's records back after a restore.
+- Encrypted cloud backups of the whole Edge database. They would also restore open checks, and PIN hashes under the restaurant's own key.
+- Restoring the installation CA on a replacement machine, which would avoid re-pairing. It needs a key escrow design.
 - A secondary Edge, or failover.
 - One Wasla login for Orders and POS, which needs identity to move out of the Orders tenant database.
 - Central Admin views of POS installations.
@@ -373,6 +507,8 @@ Guardrails:
 
 - **Selling works without internet or the Wasla cloud**, for at least the lease period.
 - **The Edge machine is the single point of failure in each restaurant.** Its backups, a replacement procedure and a paper fallback are part of every installation.
+- **A restore needs one short online handshake** before selling resumes. In exchange, history and totals are complete up to the last synced record.
+- **Terminals pin a per-installation CA, not a server certificate.** Routine renewal and IP changes never need re-pairing; a replacement machine or a compromised key does.
 - **Wasla now ships installed software:** a signed installer, an updater, a certificate per installation, Windows Firewall rules and support bundles. That is new operational work, owned by POS.
 - **SQLite needs care:** money as integer kuruş, POS's own concurrency tests, and explicit migrations after a backup.
 - **Owners have separate Orders and POS credentials** until the identity decision is made.

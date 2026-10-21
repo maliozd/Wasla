@@ -207,11 +207,11 @@ POS roles are owned by Wasla POS. They are **not** the Wasla Orders `UserRole` v
 
 **Backup and recovery basics:**
 - Automatic local backups with integrity checks.
-- A documented restore onto the same or a replacement machine.
-- A restore smoke test.
+- A restore onto the same or a replacement machine, followed by a **cloud recovery** that brings back every sale, payment, kitchen ticket and audit record synced after the restored backup, without duplicates ([ADR](../architecture/pos-application-boundary.md#restore-and-recovery-from-the-cloud)).
+- A restore and recovery test from a deliberately stale backup.
 
 **Devices and staff:**
-- Paired terminals with a pinned certificate.
+- Paired terminals that pin a per-installation certificate authority. Server certificates renew without re-pairing, and IP address changes need no new certificate ([ADR](../architecture/pos-application-boundary.md#certificate-lifecycle)).
 - Staff sign-in with a personal PIN on a paired terminal; lockout.
 - Owner recovery without a permanent bypass.
 - The role table above.
@@ -274,7 +274,7 @@ In rough order of expected value:
 
 ### Assumptions
 
-- **Internet use.** Service does not need the internet. It is needed for activation, for updates, and to renew the licence at least once per lease period (14 days, [open decision](#unresolved-product-decisions)). Sync uses outbound HTTPS only.
+- **Internet use.** Service does not need the internet. It is needed for activation, for updates, and to renew the licence at least once per lease period (provisionally 14 days; the final length is an [open decision](#unresolved-product-decisions)). It is also needed once during a restore after a failure ([Edge machine failure](#edge-machine-failure)). Sync uses outbound HTTPS only.
 - **Edge machine.** The restaurant has one always-on Windows 10 or 11 Pro (64-bit) PC as the Edge machine, wired to the restaurant network. A UPS is recommended. It may also be a cashier station.
 - **Terminals.** Windows touch devices at 1024×768 or larger, on the same network as the Edge machine (wired or a staff Wi-Fi, never a guest network).
 - **Printers.** At least one ESC/POS-capable receipt printer is installed on the Edge machine for all users. A kitchen printer is optional; tickets can print on the receipt printer.
@@ -288,14 +288,14 @@ In rough order of expected value:
 | Decision | Why it matters | Needed before |
 | --- | --- | --- |
 | **Fiscal documents.** What Turkish fiscal obligations (ÖKC, e-Arşiv, e-Adisyon) apply to a restaurant using Wasla POS, and whether Wasla must integrate with them | Not researched in WAS-34; needs legal and tax review. Until decided, every Wasla receipt says it is not a fiscal document, and the restaurant keeps its fiscal device | **Any paid pilot** (blocker) |
-| **Licence lease and restricted mode.** Lease length (proposed 14 days), warning period, and what restricted mode refuses | Trades protection against unpaid use against the risk of stopping a restaurant during a long outage ([ADR](../architecture/pos-application-boundary.md#licensing-while-offline)) | Pilot onboarding |
+| **Licence lease length.** The final lease length (14 days is a provisional design assumption) and the warning period. Restricted mode is not open: it refuses only new checks and never blocks completing, printing or reviewing an open sale | Trades protection against unpaid use against the risk of stopping a restaurant during a long outage ([ADR](../architecture/pos-application-boundary.md#licensing-while-offline)) | Pilot onboarding |
 | **Hardware and support model.** Who supplies and installs the Edge machine, whether a spare machine is required, and the restore time target | The Edge machine is the single point of failure ([ADR](../architecture/pos-application-boundary.md#failure-behavior)) | Pilot selection |
 | **Owner account.** Whether the POS Owner signs in with the same email and password as Wasla Orders | POS staff identity is local for the MVP; one Wasla login needs identity to move out of the Orders tenant database ([ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery)) | Selling POS and Orders together |
 | **Waiter payments.** Whether waiters may record payments, as a per-restaurant setting | Changes the role table and the audit trail | Pilot onboarding |
 | **Waiter tablets.** Whether non-Windows devices are needed for the first pilots | Needs a second shell or a trusted LAN certificate scheme | Pilot selection |
 | **Pricing and packaging.** Whether POS is a separate plan, an add-on to Orders, or bundled | Decides what the licence lease checks (WAS-147 owns the billing domain) | Self-service activation |
 | **Kitchen printing layout.** One kitchen printer, or routing by category to several stations | Several stations need product-to-printer routing in the menu | First pilot with more than one kitchen station |
-| **Receipt numbering.** Per business day or continuous | Affects history search and any later fiscal integration | First slice (the slice uses per-day numbers and can change before production) |
+| **Receipt numbering.** Per business day or continuous. After a restore, numbers carry the epoch as a prefix in either case ([ADR](../architecture/pos-application-boundary.md#numbering-after-a-restore)) | Affects history search and any later fiscal integration | First slice (the slice uses per-day numbers and can change before production) |
 
 ## Payment boundary
 
@@ -384,7 +384,7 @@ These are targets for design and tests. None is measured yet.
 - Selling, printing, history and PIN sign-in on paired terminals continue unchanged. The sync chip shows "Offline since".
 - Synced facts wait in POS Edge's durable outbox and are uploaded, in order and without duplicates, when the connection returns ([ADR](../architecture/pos-application-boundary.md#synchronization)).
 - A Wasla cloud outage is the same as an internet outage for the restaurant.
-- The licence lease covers at least 14 days without contact. Restricted mode, if ever reached, refuses only new checks from the next business day. It never stops paying, closing, printing or viewing existing checks ([ADR](../architecture/pos-application-boundary.md#licensing-while-offline)).
+- The licence lease covers the lease period without contact (provisionally 14 days). Restricted mode, if ever reached, refuses only new checks from the next business day. **An expired lease never blocks completing, printing or reviewing a sale that is already open**: adding lines, sending to the kitchen, paying, closing, printing and history all continue ([ADR](../architecture/pos-application-boundary.md#licensing-while-offline)).
 
 ### LAN loss
 
@@ -396,7 +396,16 @@ These are targets for design and tests. None is measured yet.
 
 If the Edge machine fails, the restaurant cannot use POS until it is replaced and restored ([ADR](../architecture/pos-application-boundary.md#failure-behavior)):
 - **Backups:** automatic backups every 15 minutes, and daily backups kept for 14 days.
-- **Data safety:** synced facts are also safe in the cloud.
+- **Restore with cloud recovery.** Restoring a backup is always followed by a cloud recovery ([ADR](../architecture/pos-application-boundary.md#restore-and-recovery-from-the-cloud)).
+  - It needs a one-time restore code from Wasla and a short online handshake.
+  - It brings back, as local history, every sale, payment, kitchen ticket, receipt and audit record that was synced after the backup.
+  - Local history and day totals are therefore complete up to the last synced record.
+  - Nothing is uploaded twice. Numbers after a restore carry the epoch as a prefix.
+- **What can be lost:**
+  - sales committed but not yet synced that are in no surviving backup (the restore report names the last known record);
+  - changes to open checks after the backup;
+  - unsent Terminal drafts.
+- **Terminals.** A replacement machine needs its Terminals re-paired. A restore on the same machine does not.
 - **Fallback:** paper and the fiscal register.
 - **Restore target:** within 2 hours with a spare machine.
 
@@ -431,7 +440,7 @@ If the Edge machine fails, the restaurant cannot use POS until it is replaced an
 
 - **One tenant per installation.** One POS Edge serves exactly one tenant and its database holds only that tenant's data. A terminal paired to one installation cannot act on another.
 - **Credentials:**
-  - Terminals present a device credential over HTTPS to a pinned certificate.
+  - Terminals present a device credential over HTTPS, and accept POS Edge only with a server certificate from their pinned installation CA.
   - Staff sign in with a PIN only on a paired terminal.
   - POS Edge authenticates to the cloud with its installation credential. The cloud never trusts a tenant id from a request without that credential.
 - **PINs** are hashed with a local secret, rate limited per terminal and staff member, and locked after repeated failures.
