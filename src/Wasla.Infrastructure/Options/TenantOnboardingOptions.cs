@@ -9,13 +9,16 @@ public sealed class TenantOnboardingOptions
 
     /// <summary>
     /// The public marketing site's domain (<c>wasla.tr</c>; Development <c>wasla.local</c>). It and <c>www.</c> in front
-    /// of it serve the marketing pages, signup and checkout.
+    /// of it serve the marketing pages, signup and checkout. The default is the Development domain; outside Development
+    /// Wasla.Web and Wasla.Api refuse to start unless it is set to a public host name
+    /// (<see cref="DependencyInjection.HostDomainRegistration"/>).
     /// </summary>
     public string MarketingBaseDomain { get; set; } = "wasla.local";
 
     /// <summary>
     /// The central application domain (<c>app.wasla.tr</c>; Development <c>app.wasla.local</c>, WAS-66). The domain
-    /// itself is the application entry; tenant addresses are exactly <c>{slug}.{ApplicationBaseDomain}</c>.
+    /// itself is the application entry; tenant addresses are exactly <c>{slug}.{ApplicationBaseDomain}</c>. Same
+    /// startup policy as <see cref="MarketingBaseDomain"/>.
     /// </summary>
     public string ApplicationBaseDomain { get; set; } = "app.wasla.local";
 

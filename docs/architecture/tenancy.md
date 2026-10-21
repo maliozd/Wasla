@@ -93,7 +93,7 @@ Wasla Orders answers on three kinds of host. Two settings in `Wasla:TenantOnboar
 | Host | Production | Development | Role |
 |------|------------|-------------|------|
 | Marketing | `wasla.tr` (`MarketingBaseDomain`), plus `www.wasla.tr` | `wasla.local`, `www.wasla.local`, `localhost`, IP addresses | Public marketing site (homepage, `/pos`), signup, checkout. `/auth` asks for the tenant address |
-| Application | `app.wasla.tr` (`ApplicationBaseDomain`) | `app.wasla.local` | Central entry into Wasla Orders. Not a tenant: every page outside the public paths below redirects to `/tenant-address-required` |
+| Application | `app.wasla.tr` (`ApplicationBaseDomain`) | `app.wasla.local` | Central entry into Wasla Orders. Neither a tenant nor the marketing site (see the [host and path policy](#host-and-path-policy)) |
 | Tenant | `{slug}.app.wasla.tr` | `{slug}.app.wasla.local` | One tenant, resolved by its stored `PrimaryDomain` |
 
 Classification is `WaslaHostClassifier` (`src/Wasla.Application/Onboarding/WaslaHostClassifier.cs`). It compares exact host boundaries only:
@@ -101,18 +101,38 @@ Classification is `WaslaHostClassifier` (`src/Wasla.Application/Onboarding/Wasla
 - The host is trimmed and lower-cased, and one trailing dot is removed; the port is never part of it. `SUSHIM.App.Wasla.TR.` and `sushim.app.wasla.tr:8443` are the same tenant host, with one cache key.
 - A tenant host is exactly one label followed by `.{ApplicationBaseDomain}`. The label must be a valid slug (`^[a-z0-9][a-z0-9_-]*$`, at most 63 characters) and not a reserved name.
 - Everything else is invalid: an empty or additional label (`a.b.app.wasla.tr`), an invalid slug, a reserved label (`admin.app.wasla.tr`), a look-alike suffix (`sushim.app.wasla.tr.evil.example`, `app.wasla.tr.evil.example`, `evilapp.wasla.tr`), the former `{slug}.wasla.tr` shape, and any other host name.
-- An invalid host gets the same response as an unregistered tenant address (a redirect to `/tenant-not-found?host=…`, then 404) without any CentralDb lookup, so the two cannot be told apart and a flood of invented hosts costs nothing.
+- An invalid host serves only the any-host paths below. Everything else gets the same response as an unregistered tenant address (a redirect to `/tenant-not-found?host=…`, then 404; the Print Bridge API a plain 404) without any CentralDb lookup, so the two cannot be told apart and a flood of invented hosts costs nothing.
 - Never a fallback: no host resolves to another tenant, the first tenant or a default tenant.
 
 **Reserved names.** `RegistrationNameNormalizer.ReservedSlugs` is the one list: `admin`, `api`, `app`, `docs`, `help`, `partners`, `pos`, `status`, `www`. Signup refuses them as unavailable addresses (`Signup.SlugUnavailable`), slug availability reports them as taken, and resolution never looks them up. Root-level names such as `admin.wasla.tr` or `api.wasla.tr` are not tenant hosts at all; they stay free for Wasla's own products and infrastructure.
 
 **Former shape.** Tenant hosts used to be `{slug}.{MarketingBaseDomain}`. The production domain was not live under that shape, so there is no redirect from it: `{slug}.wasla.tr` is an invalid host. Development tenants created before WAS-66 keep `{slug}.wasla.local` in `Tenants.PrimaryDomain` and are not reachable until that value is changed to `{slug}.app.wasla.local` (or the tenant is provisioned again).
 
-**Startup validation.** Web and Api (through `AddWaslaInfrastructure`) refuse to start when either domain is not a host name with at least two labels (no scheme, port or path), when the two are equal or the application domain is the `www.` host, or when the marketing domain is under the application domain.
+**Startup validation.** Web and Api refuse to start when either domain is not a host name with at least two labels (no scheme, port or path), when the two are equal or the application domain is the `www.` host, or when the marketing domain is under the application domain (`TenantOnboardingOptionsValidator`, every environment). Outside Development they also refuse to start when either key is not set or names a Development-only domain: `localhost`, or a name under `.localhost`, `.local`, `.test`, `.example`, `.invalid`, `.internal`, `.lan` or `.home.arpa` (`AddWaslaHostDomains` in both `Program.cs` files, `src/Wasla.Infrastructure/DependencyInjection/HostDomainRegistration.cs`). The committed base `appsettings.json` names no domain; only `appsettings.Development.json` sets `wasla.local` and `app.wasla.local`, which are also the code defaults. Wasla.Worker and the CLI build no links and are not checked.
 
 **Generated URLs.** Tenant links (status pages, panel sign-in, welcome and password-reset links, provisioning email, Central Admin) are built from the tenant's stored `PrimaryDomain` (`TenantWelcomeUrlBuilder`). Marketing links (homepage, signup, canonical URL) and the application sign-in use the configured domains. The request contributes only its scheme and, in Development and Staging, its port; a request on `localhost` keeps `localhost` for the marketing and application links so a local run works without host names.
 
-Public paths served on every host without tenant resolution are the bypass list in `TenantResolutionMiddleware` (for example `/signup`, `/checkout`, `/tenant-address-required`, `/tenant-not-found`, `/admin`, `/culture`, `/health`, static files, `/api/print-bridge`).
+### Host and path policy
+
+`TenantResolutionMiddleware` classifies the host first and then the path; no path makes a host serve what its role does not. Prefixes match whole path segments (`/signupx` is not `/signup`).
+
+| Path | Marketing | Application | Tenant | Invalid |
+|------|-----------|-------------|--------|---------|
+| Static assets (`/css`, `/js`, `/lib`, `/images`, `/img`, `/favicon*`), `/error`, `/health/*`, `/culture`, `/setlanguage`, `/tenant-not-found` | Served | Served | Served | Served |
+| Marketing pages (`/`, `/pos`) and every other page | Served | → `/tenant-address-required` | Tenant resolved, then served | → tenant-not-found |
+| `/auth/*` | → `/tenant-address-required` | → `/tenant-address-required` | Tenant resolved, then served | → tenant-not-found |
+| `/signup*`, `/checkout*` | Served | → same path on the marketing host | → same path on the marketing host | → tenant-not-found |
+| `/signup/pending/{id}` | Served | → same path on the marketing host | Served (the status page a pending tenant host redirects to) | → tenant-not-found |
+| `/tenant-address-required` | Served | Served | Tenant resolved, then served | → tenant-not-found |
+| `/admin/*` (Central Admin) | Served | Served | Served | → tenant-not-found |
+| `/api/print-bridge/*` | Served | Served | Served | 404 |
+
+- "Served" without a tenant means no tenant resolution and no `CurrentTenant`. Tenant pages on the marketing or application host get no tenant and fail their authorization as before.
+- The redirect to the marketing host is built from `MarketingBaseDomain`, keeps the path and query, and keeps the request port only in Development and Staging.
+- **Health probes** answer on every host, an empty `Host` included, because a probe may address the process by IP, `localhost` or a container name; they carry no tenant data.
+- **Central Admin** stays under `/admin` on the marketing, application and tenant hosts, as before WAS-66, with its own host-only cookie; it is not served on invalid hosts. There is no `admin.wasla.tr` routing.
+- **Print Bridge** devices are authenticated by `X-PrintBridge-Token`, not by the host, so the API answers on every valid Wasla host (the setup page hands out the tenant host, or `Wasla:TenantWebBaseUrl` / `Wasla:PublicWebBaseUrl` behind a proxy). Invalid hosts get a plain 404.
+- A request without a `Host` header gets 400, except on the any-host paths.
 
 DNS, wildcard DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS certificates are deployment work (WAS-76); see [../operations/deployment.md](../operations/deployment.md#domains-and-https).
 

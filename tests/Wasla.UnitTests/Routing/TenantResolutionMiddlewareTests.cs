@@ -184,10 +184,9 @@ public sealed class TenantResolutionMiddlewareTests
     }
 
     [Theory]
-    [InlineData("/signup")]
     [InlineData("/tenant-address-required")]
     [InlineData("/admin/auth/login")]
-    public async Task InvokeAsync_TheApplicationHost_StillServesPublicBypassPages(string path)
+    public async Task InvokeAsync_TheApplicationHost_StillServesTheTenantAddressPageAndCentralAdmin(string path)
     {
         var nextCalled = false;
         var context = CreateContext("app.wasla.local");
@@ -302,6 +301,172 @@ public sealed class TenantResolutionMiddlewareTests
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
     }
 
+    // --- Host and path policy (WAS-66) ---------------------------------------------------------------
+    // Outcomes: "next" continues without a tenant, "tenant" continues with the resolved tenant, "address" redirects to
+    // the tenant address page, "notfound" to the unknown-tenant page, "marketing" to the same path on the marketing host,
+    // "404" is a plain status for machine clients.
+
+    private const string Marketing = "wasla.local";
+    private const string App = "app.wasla.local";
+    private const string Tenant = "known.app.wasla.local";
+    private const string Registration = "/signup/pending/0f8fad5b-d9cb-469f-a165-70867728950e";
+
+    public static TheoryData<string, string, string> HostAndPathPolicy()
+    {
+        var data = new TheoryData<string, string, string>();
+        void Row(string path, string marketing, string app, string tenant, string invalid)
+        {
+            data.Add(Marketing, path, marketing);
+            data.Add("WWW.wasla.local", path, marketing);
+            data.Add(App, path, app);
+            data.Add(Tenant, path, tenant);
+            foreach (var host in new[] { "evil.example", "known.app.wasla.local.evil.example", "admin.app.wasla.local", "a.known.app.wasla.local", "known.wasla.local" })
+                data.Add(host, path, invalid);
+        }
+
+        // Pages of the marketing site and the tenant application.
+        Row("/", "next", "address", "tenant", "notfound");
+        Row("/pos", "next", "address", "tenant", "notfound");
+        Row("/auth/login", "address", "address", "tenant", "notfound");
+        Row("/orders", "next", "address", "tenant", "notfound");
+        Row("/signupx", "next", "address", "tenant", "notfound");
+        Row("/administrator", "next", "address", "tenant", "notfound");
+        // Signup and checkout belong to the marketing host.
+        Row("/signup", "next", "marketing", "marketing", "notfound");
+        Row("/signup/", "next", "marketing", "marketing", "notfound");
+        Row("/Signup", "next", "marketing", "marketing", "notfound");
+        Row("/signup/districts", "next", "marketing", "marketing", "notfound");
+        Row("/checkout", "next", "marketing", "marketing", "notfound");
+        Row("/checkout/review/0f8fad5b-d9cb-469f-a165-70867728950e", "next", "marketing", "marketing", "notfound");
+        // A pending tenant host's status page stays on that host; the application entry sends it to the marketing host.
+        Row(Registration, "next", "marketing", "next", "notfound");
+        Row("/signup/pending/not-a-guid", "next", "marketing", "marketing", "notfound");
+        // Central Admin and the token-authenticated Print Bridge API: every valid Wasla host, as before.
+        Row("/admin", "next", "next", "next", "notfound");
+        Row("/admin/auth/login", "next", "next", "next", "notfound");
+        Row("/api/print-bridge/jobs/claim", "next", "next", "next", "404");
+        // The tenant address page: the marketing host and the application entry.
+        Row("/tenant-address-required", "next", "next", "tenant", "notfound");
+        Row("/customer-access-required", "next", "next", "tenant", "notfound");
+        // Every host: failure pages, probes, culture and static assets, so nothing loops.
+        foreach (var path in new[] { "/tenant-not-found", "/error", "/health/live", "/health/ready", "/culture/set", "/css/site.css", "/js/x.js", "/lib/x.js", "/images/x.svg", "/favicon.ico" })
+            Row(path, "next", "next", "next", "next");
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(HostAndPathPolicy))]
+    public async Task InvokeAsync_FollowsTheHostAndPathPolicy(string host, string path, string outcome)
+    {
+        var tenant = new ResolvedTenantDto(Guid.NewGuid(), "Known", "known", Tenant);
+        var resolver = new FakeTenantResolver(tenant);
+        var pending = new FakePendingRegistrationService();
+        var nextCalled = false;
+        var context = CreateContext(host);
+        context.Request.Scheme = "https";
+        var query = path.IndexOf('?');
+        context.Request.Path = query < 0 ? path : path[..query];
+
+        await InvokeAsync(
+            new TenantResolutionMiddleware(_ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }),
+            context,
+            resolver,
+            pending);
+
+        var location = context.Response.Headers.Location.ToString();
+        var label = $"{host}{path}";
+        switch (outcome)
+        {
+            case "next":
+                Assert.True(nextCalled, label);
+                Assert.False(context.Items.ContainsKey("CurrentTenant"), label);
+                Assert.Empty(resolver.LookedUpHosts);
+                break;
+            case "tenant":
+                Assert.True(nextCalled, label);
+                Assert.Same(tenant, context.Items["CurrentTenant"]);
+                break;
+            case "address":
+                Assert.False(nextCalled, label);
+                Assert.StartsWith("/tenant-address-required", location);
+                break;
+            case "notfound":
+                Assert.False(nextCalled, label);
+                Assert.Equal($"/tenant-not-found?host={Uri.EscapeDataString(host)}", location);
+                Assert.Empty(resolver.LookedUpHosts);
+                Assert.False(pending.WasCalled, label);
+                break;
+            case "marketing":
+                Assert.False(nextCalled, label);
+                Assert.Equal($"https://wasla.local{context.Request.Path.ToUriComponent()}", location);
+                Assert.Empty(resolver.LookedUpHosts);
+                break;
+            case "404":
+                Assert.False(nextCalled, label);
+                Assert.Equal(StatusCodes.Status404NotFound, context.Response.StatusCode);
+                Assert.True(string.IsNullOrEmpty(location), label);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null);
+        }
+    }
+
+    [Fact]
+    public async Task InvokeAsync_MovingSignupToTheMarketingHost_KeepsThePathAndQuery_AndNeverTheRequestHostOrPort()
+    {
+        var context = CreateContext(Tenant);
+        context.Request.Scheme = "https";
+        context.Request.Host = new HostString(Tenant, 8443);
+        context.Request.Path = "/signup";
+        context.Request.QueryString = new QueryString("?plan=Pro");
+        context.Request.Headers["X-Forwarded-Host"] = "evil.example";
+
+        await InvokeAsync(new TenantResolutionMiddleware(_ => Task.CompletedTask), context, new ThrowingTenantResolver(), new FakePendingRegistrationService());
+
+        Assert.Equal("https://wasla.local/signup?plan=Pro", context.Response.Headers.Location.ToString());
+    }
+
+    [Theory]
+    [InlineData("/health/live")]
+    [InlineData("/tenant-not-found")]
+    [InlineData("/css/site.css")]
+    public async Task InvokeAsync_WithoutAHost_StillServesTheAnyHostPaths(string path)
+    {
+        var nextCalled = false;
+        var context = new DefaultHttpContext();
+        context.Request.Path = path;
+
+        await InvokeAsync(
+            new TenantResolutionMiddleware(_ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            }),
+            context,
+            new ThrowingTenantResolver(),
+            new FakePendingRegistrationService());
+
+        Assert.True(nextCalled);
+    }
+
+    [Theory]
+    [InlineData("/signup")]
+    [InlineData("/admin")]
+    [InlineData("/")]
+    public async Task InvokeAsync_WithoutAHost_RefusesEverythingElse(string path)
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Path = path;
+
+        await InvokeAsync(new TenantResolutionMiddleware(_ => Task.CompletedTask), context, new ThrowingTenantResolver(), new FakePendingRegistrationService());
+
+        Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+    }
+
     private static DefaultHttpContext CreateContext(string host)
     {
         var context = new DefaultHttpContext();
@@ -335,6 +500,7 @@ public sealed class TenantResolutionMiddlewareTests
             pendingRegistrations,
             misses,
             Options.Create(new TenantOnboardingOptions { MarketingBaseDomain = "wasla.local", ApplicationBaseDomain = "app.wasla.local" }),
+            new Wasla.UnitTests.DevelopmentTools.TestHostEnvironment("Production"),
             NullLogger<TenantResolutionMiddleware>.Instance);
     }
 

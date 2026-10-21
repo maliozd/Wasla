@@ -110,8 +110,12 @@ public sealed partial class WaslaConfigurationKeyTests
         var web = Load("Wasla.Web", "appsettings.json");
 
         Assert.Equal("http://localhost:59451", web["Wasla:ApiBaseUrl"]);
-        Assert.Equal("wasla.local", web["Wasla:TenantOnboarding:MarketingBaseDomain"]);
-        Assert.Equal("app.wasla.local", web["Wasla:TenantOnboarding:ApplicationBaseDomain"]);
+        // The host domains are set only for Development; elsewhere the environment must supply them (WAS-66).
+        Assert.Null(web["Wasla:TenantOnboarding:MarketingBaseDomain"]);
+        Assert.Null(web["Wasla:TenantOnboarding:ApplicationBaseDomain"]);
+        var development = Load("Wasla.Web", "appsettings.json", "appsettings.Development.json");
+        Assert.Equal("wasla.local", development["Wasla:TenantOnboarding:MarketingBaseDomain"]);
+        Assert.Equal("app.wasla.local", development["Wasla:TenantOnboarding:ApplicationBaseDomain"]);
         Assert.Equal("trusted", web["Wasla:TenantOnboarding:SqlAuth"]);
         Assert.Equal("14", web["Wasla:TenantOnboarding:TrialDays"]);
         Assert.Equal(PrintBridgePackagePaths.DefaultPackageFileName, web["Wasla:PrintBridgeDownload:PackageFileName"]);

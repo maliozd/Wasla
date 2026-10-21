@@ -159,6 +159,89 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
         Assert.DoesNotContain("href=\"http://known.app.wasla.tr", page.Body);
     }
 
+    // --- Host × path policy ----------------------------------------------------------------------------
+
+    [Theory]
+    // Invalid hosts expose neither signup, checkout, Central Admin nor a tenant page.
+    [InlineData("evil.example", "/signup", "/tenant-not-found?host=evil.example")]
+    [InlineData("evil.example", "/signup/pending/0f8fad5b-d9cb-469f-a165-70867728950e", "/tenant-not-found?host=evil.example")]
+    [InlineData("evil.example", "/checkout", "/tenant-not-found?host=evil.example")]
+    [InlineData("evil.example", "/checkout/review/0f8fad5b-d9cb-469f-a165-70867728950e", "/tenant-not-found?host=evil.example")]
+    [InlineData("evil.example", "/admin", "/tenant-not-found?host=evil.example")]
+    [InlineData("evil.example", "/admin/auth/login", "/tenant-not-found?host=evil.example")]
+    [InlineData("evil.example", "/tenant-address-required", "/tenant-not-found?host=evil.example")]
+    [InlineData("known.app.wasla.tr.evil.example", "/signup", "/tenant-not-found?host=known.app.wasla.tr.evil.example")]
+    [InlineData("admin.app.wasla.tr", "/admin", "/tenant-not-found?host=admin.app.wasla.tr")]
+    [InlineData("known.wasla.tr", "/checkout", "/tenant-not-found?host=known.wasla.tr")]
+    // The application entry and tenant hosts send signup and checkout to the marketing host, path and query kept.
+    [InlineData("app.wasla.tr", "/signup", "http://wasla.tr/signup")]
+    [InlineData("app.wasla.tr", "/signup?plan=Pro", "http://wasla.tr/signup?plan=Pro")]
+    [InlineData("app.wasla.tr", "/checkout", "http://wasla.tr/checkout")]
+    [InlineData("app.wasla.tr", "/checkout/review/0f8fad5b-d9cb-469f-a165-70867728950e", "http://wasla.tr/checkout/review/0f8fad5b-d9cb-469f-a165-70867728950e")]
+    [InlineData("app.wasla.tr", "/signup/pending/0f8fad5b-d9cb-469f-a165-70867728950e", "http://wasla.tr/signup/pending/0f8fad5b-d9cb-469f-a165-70867728950e")]
+    [InlineData("known.app.wasla.tr", "/signup", "http://wasla.tr/signup")]
+    [InlineData("known.app.wasla.tr", "/checkout", "http://wasla.tr/checkout")]
+    [InlineData("known.app.wasla.tr", "/checkout/success/0f8fad5b-d9cb-469f-a165-70867728950e", "http://wasla.tr/checkout/success/0f8fad5b-d9cb-469f-a165-70867728950e")]
+    [InlineData("nobody.app.wasla.tr", "/signup", "http://wasla.tr/signup")]
+    // The application entry is not the marketing site.
+    [InlineData("app.wasla.tr", "/pos", "/tenant-address-required?returnUrl=%2Fpos")]
+    public async Task EachHost_ServesOnlyItsOwnPaths(string host, string path, string location)
+    {
+        await SeedTenantAsync("known", isActive: true);
+        using var browser = _host.Web.NewBrowser();
+
+        var response = await browser.GetAsync(path, host);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.Status);
+        Assert.Equal(location, response.Location);
+    }
+
+    [Theory]
+    [InlineData("evil.example", "/signup", HttpStatusCode.NotFound)]
+    [InlineData("admin.app.wasla.tr", "/admin", HttpStatusCode.NotFound)]
+    [InlineData("nobody.app.wasla.tr", "/", HttpStatusCode.NotFound)]
+    [InlineData("app.wasla.tr", "/", HttpStatusCode.OK)]
+    [InlineData("app.wasla.tr", "/signup", HttpStatusCode.OK)]
+    [InlineData("known.app.wasla.tr", "/signup?plan=Pro", HttpStatusCode.OK)]
+    public async Task EveryRedirectChain_EndsOnARenderedPage_WithoutALoop(string host, string path, HttpStatusCode final)
+    {
+        await SeedTenantAsync("known", isActive: true);
+        using var browser = _host.Web.NewBrowser();
+
+        var (response, hops) = await FollowAsync(browser, host, path);
+
+        Assert.Equal(final, response.Status);
+        Assert.InRange(hops, 1, 2);
+        Assert.Contains("<html", response.Body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("evil.example")]
+    [InlineData("known.app.wasla.tr")]
+    [InlineData("app.wasla.tr")]
+    public async Task TheUnknownTenantPage_RendersOnEveryHost_WithoutARedirect(string host)
+    {
+        using var browser = _host.Web.NewBrowser();
+
+        var page = await browser.GetAsync("/tenant-not-found?host=evil.example", host);
+
+        Assert.Equal(HttpStatusCode.NotFound, page.Status);
+        Assert.Null(page.Location);
+        Assert.Contains("href=\"http://wasla.tr/signup\"", page.Body);
+    }
+
+    [Fact]
+    public async Task ThePrintBridgeApi_OnAnInvalidHost_IsAPlainNotFound()
+    {
+        using var browser = _host.Web.NewBrowser();
+
+        var response = await browser.GetAsync("/api/print-bridge/jobs/claim", "evil.example");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.Status);
+        Assert.Null(response.Location);
+        Assert.Equal(string.Empty, response.Body);
+    }
+
     [Fact]
     public async Task AnInactiveTenant_IsAnUnknownTenantAddress()
     {
@@ -199,6 +282,9 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
         var tenantHost = await browser.GetAsync("/", $"{slug}.app.wasla.tr");
         Assert.Equal(HttpStatusCode.Redirect, tenantHost.Status);
         Assert.Equal(submitted.Location, tenantHost.Location);
+        var statusOnTenantHost = await browser.GetAsync(tenantHost.Location!, $"{slug}.app.wasla.tr");
+        Assert.Equal(HttpStatusCode.OK, statusOnTenantHost.Status);
+        Assert.Contains("href=\"http://wasla.tr/\"", statusOnTenantHost.Body);
 
         // Once provisioned, the status page offers the panel's sign-in on the nested tenant host.
         await using (var db = NewDb())
@@ -215,10 +301,11 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
     }
 
     [Theory]
-    [InlineData("evil.example")]
-    [InlineData("evil.example:8443")]
-    [InlineData("app.wasla.tr")]
-    public async Task StatusPageUrls_ComeFromTheRegistrationAndConfiguration_NeverFromTheHostHeader(string hostile)
+    // The hosts that serve a status page: the marketing host (any spelling, any port) and the registration's own host.
+    [InlineData("WWW.Wasla.TR:8443")]
+    [InlineData("wasla.tr")]
+    [InlineData("{own}")]
+    public async Task StatusPageUrls_ComeFromTheRegistrationAndConfiguration_NeverFromTheHostHeader(string host)
     {
         using var browser = _host.Web.NewBrowser();
         var token = await browser.GetAntiforgeryTokenAsync("/signup", Marketing);
@@ -226,14 +313,25 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
         var submitted = await browser.PostFormAsync("/signup", SignupForm(token, slug), Marketing);
         Assert.Equal(HttpStatusCode.Redirect, submitted.Status);
 
-        var page = await browser.SendWithHeadersAsync(submitted.Location!, hostile, ("X-Forwarded-Host", "attacker.example"));
+        var page = await browser.SendWithHeadersAsync(
+            submitted.Location!,
+            host.Replace("{own}", $"{slug}.APP.wasla.tr", StringComparison.Ordinal),
+            ("X-Forwarded-Host", "attacker.example"));
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
         Assert.Contains($"href=\"http://{slug}.app.wasla.tr\"", page.Body);
         Assert.Contains("href=\"http://wasla.tr/\"", page.Body);
-        Assert.DoesNotContain("evil.example", page.Body);
         Assert.DoesNotContain("attacker.example", page.Body);
         Assert.DoesNotContain(":8443", page.Body);
+        Assert.DoesNotContain("APP.wasla", page.Body);
+
+        // Any other host does not serve it at all.
+        foreach (var other in new[] { "evil.example", "app.wasla.tr", "known.app.wasla.tr.evil.example" })
+        {
+            var refused = await browser.GetAsync(submitted.Location!, other);
+            Assert.Equal(HttpStatusCode.Redirect, refused.Status);
+            Assert.DoesNotContain(slug, refused.Location!, StringComparison.Ordinal);
+        }
     }
 
     [Theory]
@@ -288,6 +386,28 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
             UpdatedAt = DateTime.UtcNow
         });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>Follows redirects as a browser would, onto another host for an absolute location; at most five.</summary>
+    private static async Task<(TestResponse Response, int Hops)> FollowAsync(TestBrowser browser, string host, string path)
+    {
+        var response = await browser.GetAsync(path, host);
+        var hops = 0;
+        while (response.Status == HttpStatusCode.Redirect && hops < 5)
+        {
+            hops++;
+            var location = response.Location!;
+            if (Uri.TryCreate(location, UriKind.Absolute, out var absolute))
+            {
+                host = absolute.Authority;
+                location = absolute.PathAndQuery;
+            }
+
+            response = await browser.GetAsync(location, host);
+        }
+
+        Assert.NotEqual(HttpStatusCode.Redirect, response.Status);
+        return (response, hops);
     }
 
     private CentralDbContext NewDb() =>
