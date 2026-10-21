@@ -60,7 +60,7 @@ public sealed class TenantMembershipSetupTests : IDisposable
     }
 
     [Fact]
-    public async Task CliProvisionedTenant_WithoutContact_IsUnblockedByUpdateCustomerProfile_AndRepeatIsANoOp()
+    public async Task CliProvisionedTenant_WithoutContact_IsUnblockedByUpdateTenantProfile_AndRepeatIsANoOp()
     {
         var tenantId = await SeedTenantAsync("cli-later");
         await using (var central = NewCentral())
@@ -76,11 +76,11 @@ public sealed class TenantMembershipSetupTests : IDisposable
         Assert.False((await ReadStatusAsync(tenantId)).Restaurant.IsComplete);
 
         var contact = new TenantContactUpdate("+90 212 000 00 00", "Ankara", null);
-        Assert.Equal(0, await (CliCommands.UpdateCustomerProfileAsync(_host, "cli-later", contact, CancellationToken.None)));
+        Assert.Equal(0, await (CliCommands.UpdateTenantProfileAsync(_host, "cli-later", contact, CancellationToken.None)));
         Assert.True((await ReadStatusAsync(tenantId)).Restaurant.IsComplete);
         var first = await ReadMembershipAsync(tenantId);
 
-        Assert.Equal(0, await (CliCommands.UpdateCustomerProfileAsync(_host, tenantId.ToString(), contact, CancellationToken.None)));
+        Assert.Equal(0, await (CliCommands.UpdateTenantProfileAsync(_host, tenantId.ToString(), contact, CancellationToken.None)));
         var second = await ReadMembershipAsync(tenantId);
 
         Assert.Equal(first.UpdatedAt, second.UpdatedAt);
@@ -89,11 +89,11 @@ public sealed class TenantMembershipSetupTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateCustomerProfile_CreatesTheMissingMembership_ForAnExistingCliTenant()
+    public async Task UpdateTenantProfile_CreatesTheMissingMembership_ForAnExistingCliTenant()
     {
         var tenantId = await SeedTenantAsync("cli-old");
 
-        var exit = await (CliCommands.UpdateCustomerProfileAsync(
+        var exit = await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-old", new TenantContactUpdate("+90 312 000 00 00", null, "Türkiye"), CancellationToken.None));
 
         Assert.Equal(0, exit);
@@ -104,13 +104,13 @@ public sealed class TenantMembershipSetupTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateCustomerProfile_KeepsOmittedFields_AndRejectsInvalidInput()
+    public async Task UpdateTenantProfile_KeepsOmittedFields_AndRejectsInvalidInput()
     {
         var tenantId = await SeedTenantAsync("cli-partial");
-        await (CliCommands.UpdateCustomerProfileAsync(
+        await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-partial", new TenantContactUpdate("+90 212 000 00 00", "Izmir", null), CancellationToken.None));
 
-        await (CliCommands.UpdateCustomerProfileAsync(
+        await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-partial", new TenantContactUpdate(null, null, "Türkiye"), CancellationToken.None));
 
         var membership = await ReadMembershipAsync(tenantId);
@@ -118,11 +118,11 @@ public sealed class TenantMembershipSetupTests : IDisposable
         Assert.Equal("Izmir", membership.City);
         Assert.Equal("Türkiye", membership.Country);
 
-        Assert.Equal(2, await (CliCommands.UpdateCustomerProfileAsync(
+        Assert.Equal(2, await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-partial", new TenantContactUpdate(null, null, null), CancellationToken.None)));
-        Assert.Equal(2, await (CliCommands.UpdateCustomerProfileAsync(
+        Assert.Equal(2, await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-partial", new TenantContactUpdate(new string('1', 51), null, null), CancellationToken.None)));
-        Assert.Equal(2, await (CliCommands.UpdateCustomerProfileAsync(
+        Assert.Equal(2, await (CliCommands.UpdateTenantProfileAsync(
             _host, "missing-tenant", new TenantContactUpdate("+90 212 000 00 00", null, null), CancellationToken.None)));
     }
 
