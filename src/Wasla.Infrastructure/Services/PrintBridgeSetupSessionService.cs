@@ -318,7 +318,8 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
     /// <summary>
     /// Atomically checks quota, creates a new PrintBridgeDevice, generates its token, and
     /// binds the session to it. Returns null and marks the session as failed if quota is exceeded
-    /// or creation fails; in that case no device record is persisted.
+    /// or creation fails; in that case no device record is persisted. Also returns null, without marking the session,
+    /// when the session ended (failed or expired) while the tenant lock was awaited.
     /// </summary>
     private async Task<(string RawToken, string DeviceName)?> CreateAndBindNewDeviceAsync(
         PrintBridgeSetupSession session,
@@ -344,6 +345,18 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                         session.Id,
                         session.TenantId,
                         appLockResult);
+                }
+                else if (!await IsSessionStillExchangeableAsync(session.Id, ct).ConfigureAwait(false))
+                {
+                    // A development tenant reset (or expiry) ended the session while this exchange waited for the
+                    // tenant lock. The reset already recorded its reason, so nothing is marked here.
+                    await tx.RollbackAsync(ct).ConfigureAwait(false);
+
+                    _logger.LogWarning(
+                        "Print Bridge new-device exchange stopped: the setup session ended before the device was created. " +
+                        "SessionId={SessionId}, TenantId={TenantId}",
+                        session.Id,
+                        session.TenantId);
                 }
                 else
                 {
@@ -454,15 +467,40 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         _centralDb.PrintBridgeDevices.Add(device);
         await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
 
-        // Bind the session to the newly created device.
-        await _centralDb.PrintBridgeSetupSessions
-            .Where(s => s.Id == session.Id)
+        // Bind the session to the newly created device, only while it is still unfinished and unbound.
+        var bound = await _centralDb.PrintBridgeSetupSessions
+            .Where(s => s.Id == session.Id
+                && s.PrintBridgeDeviceId == null
+                && s.CompletedAtUtc == null
+                && s.FailedAtUtc == null)
             .ExecuteUpdateAsync(set => set
                 .SetProperty(s => s.PrintBridgeDeviceId, device.Id)
                 .SetProperty(s => s.UpdatedAt, now), ct)
             .ConfigureAwait(false);
 
+        if (bound != 1)
+            throw new InvalidOperationException("The Print Bridge setup session could not be bound to the new device.");
+
         return (device.Id, rawToken, deviceName);
+    }
+
+    /// <summary>
+    /// Re-reads the session inside the new-device transaction, after the tenant lock is held. The development
+    /// tenant reset fails unfinished sessions under the same lock, so a session it ended while this exchange waited
+    /// is seen here, before any device or token exists.
+    /// </summary>
+    private async Task<bool> IsSessionStillExchangeableAsync(Guid sessionId, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        return await _centralDb.PrintBridgeSetupSessions
+            .AsNoTracking()
+            .AnyAsync(s => s.Id == sessionId
+                && s.ExchangedAtUtc != null
+                && s.PrintBridgeDeviceId == null
+                && s.CompletedAtUtc == null
+                && s.FailedAtUtc == null
+                && s.ExpiresAtUtc > now, ct)
+            .ConfigureAwait(false);
     }
 
     private async Task<bool> ActiveInstallationExistsAsync(
