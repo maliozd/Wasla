@@ -70,7 +70,9 @@ public sealed class TenantResolutionMiddleware
         // classified first and then the path, so no path makes a host serve what its role does not
         // (docs/architecture/tenancy.md, host and path policy).
         var options = onboardingOptions.Value;
-        var classified = WaslaHostClassifier.Classify(host, options.MarketingBaseDomain, options.ApplicationBaseDomain);
+        // localhost and IP addresses are the marketing host only in Development; elsewhere they are invalid hosts.
+        var classified = WaslaHostClassifier.Classify(
+            host, options.MarketingBaseDomain, options.ApplicationBaseDomain, allowLocalHosts: environment.IsDevelopment());
         switch (classified.Kind)
         {
             // Unknown, malformed, reserved and look-alike hosts serve only the any-host paths. They get the
