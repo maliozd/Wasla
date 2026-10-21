@@ -168,7 +168,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                 .ConfigureAwait(false);
 
             if (deviceResult is null)
-                return null; // quota exceeded or creation failed; session already marked failed
+                return null; // quota exceeded or creation failed (session marked failed), or the session ended while the lock was awaited (left as the reset or expiry left it)
 
             (rawToken, deviceName) = deviceResult.Value;
         }
