@@ -10,6 +10,7 @@
   var reprintInFlight = {};
   var printJobsRefreshInFlight = false;
   var printJobsPollTimer = null;
+  var lastPrintJobsMarkup = null;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -177,27 +178,68 @@
 
   var lastDevicesHtml = null;
 
-  /** The device control that has keyboard focus inside the table, so a re-render can give it back. */
-  function focusedDeviceControl(panel) {
-    var active = document.activeElement;
-    if (!active || typeof panel.contains !== "function" || !panel.contains(active) || typeof active.closest !== "function") return null;
-    var row = active.closest("tr[data-device-id]");
-    if (!row) return null;
-    return {
-      id: row.getAttribute("data-device-id"),
-      toggle: !!(active.classList && active.classList.contains("pb-device-active-toggle"))
-    };
+  // --- Refreshed regions: a refresh never takes the user's place away (WAS-132) ---
+  //
+  // The devices table and the print-job history are rebuilt from markup, which destroys the focused control, any text
+  // selection and the table's scroll position. A region is replaced only when its markup changed. While text is selected
+  // in it, or the control with keyboard focus would not exist in the new markup, the update waits for a later refresh: a
+  // refresh never moves focus into or out of a region. Otherwise the same logical control (same row, same kind) gets focus
+  // back and the table keeps its scroll position.
+
+  var DEVICE_CONTROLS = { row: "tr[data-device-id]", idAttribute: "data-device-id", controls: [".pb-device-active-toggle", "a"] };
+  var JOB_CONTROLS = { row: "tr[data-print-job-id]", idAttribute: "data-print-job-id", controls: [".pb-reprint-job-btn"] };
+
+  function selectionInside(region) {
+    var selection = typeof window.getSelection === "function" ? window.getSelection() : null;
+    if (!selection || selection.isCollapsed || !selection.rangeCount) return false;
+    return selection.getRangeAt(0).intersectsNode(region);
   }
 
-  function restoreFocus(panel, key) {
-    if (!key || typeof panel.querySelectorAll !== "function") return;
-    var rows = panel.querySelectorAll("tr[data-device-id]");
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].getAttribute("data-device-id") !== key.id) continue;
-      var target = rows[i].querySelector(key.toggle ? ".pb-device-active-toggle" : "a");
-      if (target && typeof target.focus === "function") target.focus();
-      return;
+  /** The control with keyboard focus inside <region>, as its row id and kind; null when focus is elsewhere. */
+  function focusedControl(region, spec) {
+    var active = document.activeElement;
+    if (!active || active === region || typeof region.contains !== "function" || !region.contains(active)) return null;
+    var row = typeof active.closest === "function" ? active.closest(spec.row) : null;
+    var kind = null;
+    for (var i = 0; i < spec.controls.length && kind === null; i++) {
+      if (typeof active.matches === "function" && active.matches(spec.controls[i])) kind = spec.controls[i];
     }
+    return { id: row ? row.getAttribute(spec.idAttribute) : null, kind: kind };
+  }
+
+  function findControl(root, spec, key) {
+    if (key.id === null || key.kind === null) return null;
+    var rows = root.querySelectorAll(spec.row);
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].getAttribute(spec.idAttribute) === key.id) return rows[i].querySelector(key.kind);
+    }
+    return null;
+  }
+
+  /** Replaces <region>'s markup unless the user is in the way. Returns whether it was replaced. */
+  function replaceRegion(region, html, spec) {
+    if (selectionInside(region)) return false;
+    var focusKey = focusedControl(region, spec);
+    if (focusKey) {
+      var probe = document.createElement("template");
+      probe.innerHTML = html;
+      if (!findControl(probe.content, spec, focusKey)) return false;
+    }
+
+    var scroller = region.querySelector(".table-responsive");
+    var scrollLeft = scroller ? scroller.scrollLeft : 0;
+    var scrollTop = scroller ? scroller.scrollTop : 0;
+
+    region.innerHTML = html;
+
+    scroller = region.querySelector(".table-responsive");
+    if (scroller) {
+      scroller.scrollLeft = scrollLeft;
+      scroller.scrollTop = scrollTop;
+    }
+    var target = focusKey ? findControl(region, spec, focusKey) : null;
+    if (target) target.focus({ preventScroll: true });
+    return true;
   }
 
   function renderDevicesTable(devices) {
@@ -279,12 +321,10 @@
 
     // Nothing changed: leave the table (and whatever has keyboard focus in it) alone.
     if (html === lastDevicesHtml) return;
-
-    var focusKey = focusedDeviceControl(panel);
-    panel.innerHTML = html;
+    // The user is in the way: the next snapshot tries again.
+    if (!replaceRegion(panel, html, DEVICE_CONTROLS)) return;
     lastDevicesHtml = html;
     bindActiveToggles();
-    restoreFocus(panel, focusKey);
   }
 
   function updateQuotaUi(quota) {
@@ -572,14 +612,26 @@
         return resp.text();
       })
       .then(function (html) {
-        panel.innerHTML = html;
+        // An unchanged answer leaves the region alone; a changed one the user is in the way of waits for the next poll.
+        var markup = normalizedMarkup(html);
+        if (markup === lastPrintJobsMarkup) return;
+        if (replaceRegion(panel, html, JOB_CONTROLS)) lastPrintJobsMarkup = markup;
       })
       .finally(function () {
         printJobsRefreshInFlight = false;
       });
   }
 
+  /** Markup as this browser serializes it, so a server answer compares with what the region was rendered from. */
+  function normalizedMarkup(html) {
+    var probe = document.createElement("template");
+    probe.innerHTML = html;
+    return probe.innerHTML.trim();
+  }
+
   function startPrintJobsPolling() {
+    var panel = document.getElementById("printBridgeJobsPanel");
+    if (panel && lastPrintJobsMarkup === null) lastPrintJobsMarkup = normalizedMarkup(panel.innerHTML);
     var intervalMs = cfg.printJobsPollIntervalMs || 3000;
     if (printJobsPollTimer) {
       clearInterval(printJobsPollTimer);

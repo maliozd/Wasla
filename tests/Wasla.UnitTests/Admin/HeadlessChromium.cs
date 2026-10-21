@@ -316,6 +316,33 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         return result.GetProperty("result").GetProperty("value").Deserialize<T>()!;
     }
 
+    /// <summary>
+    /// The role and accessible name the browser computes for every element matching <paramref name="selector"/>, in
+    /// document order, read from its accessibility tree (the CDP Accessibility domain) rather than recomputed in script.
+    /// An element the tree ignores (for example one with <c>display: none</c>) has <see cref="AccessibleNode.Ignored"/>.
+    /// </summary>
+    public async Task<IReadOnlyList<AccessibleNode>> AccessibleNodesAsync(string selector, CancellationToken ct)
+    {
+        var document = await SendAsync("DOM.getDocument", new { depth = 0 }, ct);
+        var root = document.GetProperty("result").GetProperty("root").GetProperty("nodeId").GetInt32();
+        var matches = await SendAsync("DOM.querySelectorAll", new { nodeId = root, selector }, ct);
+        var nodes = new List<AccessibleNode>();
+        foreach (var nodeId in matches.GetProperty("result").GetProperty("nodeIds").EnumerateArray())
+        {
+            var tree = await SendAsync("Accessibility.getPartialAXTree", new { nodeId = nodeId.GetInt32(), fetchRelatives = false }, ct);
+            var node = tree.GetProperty("result").GetProperty("nodes")[0];
+            nodes.Add(new AccessibleNode(
+                AxValue(node, "role"),
+                AxValue(node, "name") ?? "",
+                node.TryGetProperty("ignored", out var ignored) && ignored.GetBoolean()));
+        }
+
+        return nodes;
+    }
+
+    private static string? AxValue(JsonElement node, string property) =>
+        node.TryGetProperty(property, out var value) && value.TryGetProperty("value", out var text) ? text.GetString() : null;
+
     private async Task<JsonElement> SendAsync(string method, object parameters, CancellationToken ct)
     {
         var id = Interlocked.Increment(ref _nextId);
@@ -387,3 +414,6 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         }
     }
 }
+
+/// <summary>One element as the browser's accessibility tree exposes it: its computed role and accessible name.</summary>
+internal sealed record AccessibleNode(string? Role, string Name, bool Ignored);
