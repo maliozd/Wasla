@@ -108,7 +108,7 @@ Every command past `help` and `hash-password` stops when `ConnectionStrings:Cent
 
 `provision-signup-request` is the payment-gated signup → live tenant path. Do not mark registrations Provisioned by hand in the DB. Web middleware must not provision.
 
-Both `provision-signup-request` and `add-tenant` create the tenant's single `TenantMemberships` row. The dashboard restaurant setup step reads the business phone and city or country from it. `add-tenant` records an operator-provisioned membership (`Starter`, `Active`, no trial). Tenants created by `add-tenant` before this change have no membership row; run `update-tenant-profile` for a tenant that needs its setup checklist completed.
+Both `provision-signup-request` and `add-tenant` create the tenant's single `TenantMemberships` row. The dashboard restaurant setup step reads the business phone and city or country from it. `add-tenant` records an operator-provisioned membership (`Starter`, `Active`, no trial). Tenants that an earlier CLI version created before the CLI began recording memberships have no membership row; run `update-tenant-profile` for a tenant that needs its setup checklist completed.
 
 ### Migrations
 
