@@ -2,90 +2,176 @@
 
 ## Status and scope
 
-Plan from WAS-34 (2026-10). **Nothing here is implemented.** It defines the smallest end-to-end POS slice that proves the decisions in [../architecture/pos-application-boundary.md](../architecture/pos-application-boundary.md), and the dependency-ordered issues that build it. The product scope is in [pos-mvp.md](pos-mvp.md).
+Plan from WAS-34 (2026-10, revised for the local-first architecture). **Nothing here is implemented.**
 
-The slice is a development and test milestone. It is not production-ready and not a pilot: the [fiscal decision](pos-mvp.md#unresolved-product-decisions), the menu editor, staff management and a physical-printer pilot come after it.
+It defines the smallest end-to-end POS slice that proves the local-first decisions in [../architecture/pos-application-boundary.md](../architecture/pos-application-boundary.md): selling and printing with the internet cut, then synchronizing safely. It also lists the dependency-ordered issues that build the slice. The product scope is in [pos-mvp.md](pos-mvp.md).
+
+The slice is a development and test milestone. It is not production-ready and not a pilot. The signed installer and updater, the restore drill on real hardware, physical-printer checks and the [fiscal decision](pos-mvp.md#unresolved-product-decisions) come after it ([After the slice](#after-the-slice)).
 
 ## The slice
 
-> An operator activates POS for a test restaurant and imports a minimal menu → the Owner pairs a device and signs in with a PIN → opens table 1, or a quick sale → adds products, one with a modifier → sends a kitchen ticket → records a cash or external-terminal payment → the check closes → the Owner reopens it read-only from history.
+1. Install and initialize POS Edge for a test tenant, using the development service registration.
+2. Create and migrate the local POS database.
+3. Activate the installation with a one-time code from `Wasla.Pos.Cli`, while online.
+4. Set the Owner PIN on the loopback console, pair a Terminal, and sign in with the Owner PIN.
+5. Import a minimal menu (two categories, five products, one modifier group) and one table.
+6. **Disconnect the WAN** (block outbound traffic from the Edge machine).
+7. Open table 1, or a quick sale.
+8. Add products, one of them with a modifier.
+9. Send a kitchen ticket.
+10. Print it locally, or prove the local print job flow against a recording printer, without cloud access.
+11. Record a cash or external-terminal payment.
+12. Close the sale and reopen it read-only from local history.
+13. **Restore the WAN.**
+14. Upload the sale, payment, kitchen ticket and audit records through the durable outbox.
+15. Simulate a retry, a crash and a replay, and prove the cloud stores each record once.
+16. Show the installation as synchronized, with the correct checkpoint, in sync health and in `Wasla.Pos.Cli installation-status`.
 
 ### Included
 
-- POS activation for one tenant: POS database created and migrated, first Owner and first device pairing code issued (`Wasla.Pos.Cli`)
-- Menu import from a JSON file by the operator (`Wasla.Pos.Cli`): categories, products with prices, one modifier group type (single and multiple choice), areas and tables. Idempotent by the file's own keys
-- Device pairing; Owner PIN sign-in; inactivity lock; POS roles and policies for Owner and Cashier (Manager, Waiter and Kitchen exist in the policy table and tests, without screens of their own)
-- Sale screen: categories, product tiles, modifier panel, cart; tables screen; dine-in check for a table; quick sale
-- Send to kitchen: kitchen ticket record and a POS print job (rendered document) available through the POS device protocol
-- Payment records: cash (tendered, change) and external terminal (optional reference); several payments per check; close on full payment
-- History of the business day; read-only check detail with lines, kitchen tickets and payments
-- Audit records for sign-in, send, payment and close
-- TR, EN, AR, RU resources for every slice screen; Arabic right to left
+- **Applications:** POS Edge as a Windows service with local HTTPS and a loopback-only console. The POS Terminal shell. POS Cloud with activation and ingestion. `Wasla.Pos.Cli`.
+- **Local data:** a local SQLite database with migrations, the transactional outbox, scheduled backups and a restore command.
+- **Activation and licence:** installation activation, the installation credential, and an entitlement lease with grace and restricted mode.
+- **Devices and staff:** Terminal pairing with a pinned certificate; Owner PIN sign-in, lockout, the recovery code; POS roles and policies (Manager, Cashier, Waiter and Kitchen exist in the policy table and tests, without screens of their own).
+- **Menu and selling:** menu and table import. Sale screen, tables screen, dine-in check, quick sale and send to kitchen.
+- **Payments and history:** cash and external-terminal payment records, closing, local history and the day summary.
+- **Printing:** local printing of the kitchen ticket, pre-bill and receipt through the printing library extracted from Print Bridge.
+- **Sync:** outbox upload, ingestion, acknowledgements, protocol versioning, conflict blocking, cloud commands and sync health.
+- **Languages:** TR, EN, AR and RU resources for every slice screen, with Arabic right to left.
 
 ### Not included
 
-Takeaway, voids and cancellations, payment reversals, pre-bill, receipt printing, reprints, the menu and table editor, staff management, Manager/Waiter screens, the Print Bridge second connection, shifts, and everything listed as later or out of scope in [pos-mvp.md](pos-mvp.md#mvp-boundary). They follow in the [backlog](#backlog).
+The following follow in the [backlog](#backlog) or after it:
+- the signed installer, updater and rollback;
+- takeaway;
+- voids, cancellations and payment reversals;
+- the menu and table editor;
+- staff management beyond the Owner;
+- cloud-issued recovery tokens;
+- shifts.
+
+Everything listed as later or out of scope in [pos-mvp.md](pos-mvp.md#mvp-boundary) is also excluded.
 
 ## Acceptance criteria
 
-Each criterion names the test that proves it. "Browser test" means a headless-browser test like the existing ones in `tests/Wasla.UnitTests` ([../operations/testing.md](../operations/testing.md)), run against an in-process POS host with fake data.
+Each criterion names the test that proves it. Tests run against an in-process POS Edge and an in-process POS Cloud with fake credentials and fake data. "WAN disconnected" means the Edge's cloud client fails every request, and a test asserts that **no** request reaches POS Cloud during the step. SQLite tests prove SQLite behavior, and are labelled so. They do not prove SQL Server locking ([../operations/testing.md](../operations/testing.md)).
 
-1. **Activation.** `Wasla.Pos.Cli activate` for an active tenant creates a POS database with a server-assigned name and ownership marker, applies POS migrations, records the activation in CentralDb, and prints one Owner setup code and one pairing code. Repeating it reports "already active" and changes nothing. Two simultaneous runs produce one database. A tenant without activation gets 404 on its POS host. *SQL Server test on a throwaway database; CLI unit tests.*
-2. **Menu import.** Importing the sample file twice gives the same menu (no duplicates); an invalid file (missing price, unknown modifier group, negative price) changes nothing and lists the errors. *Unit tests.*
-3. **Isolation.** A device paired to tenant A, presenting its credential on tenant B's POS host, is rejected, and nothing of tenant B is read. A POS request never opens an Orders tenant database. *Unit tests; reference-direction tests.*
-4. **Sign-in.** A PIN works only on a paired device; five wrong PINs lock that staff member on that device for the configured time; the lock and each failure are audited without the PIN. *Unit tests; browser test of the PIN pad in four cultures and right to left.*
-5. **Sale screen.** Tapping a product without modifiers adds a line; a product with a required single-choice group cannot be added until a choice is made; totals update with option prices. All controls are at least 48×48 CSS px; the layout mirrors in Arabic; there is no horizontal scroll at 1024×768. *Node tests for the cart module; browser test at 1024×768 and 768×1024, LTR and RTL, light and dark.*
-6. **Table check.** Opening table 1 creates its check; opening it from a second device shows the same check; a second open check for table 1 is impossible even when two devices try at the same moment. *SQL Server concurrency test.*
-7. **Send to kitchen.** Sending creates one kitchen ticket with exactly the unsent lines and one Pending POS print job of kind rendered document for the kitchen printer role. Repeating the request with the same idempotency key creates nothing new. A protocol client with a fake token claims the job, and `mark-printing` and `mark-printed` follow the same rules as Orders jobs (a repeated report is `skipped`). *Unit tests; protocol contract tests against a fake client.*
-8. **Payment.** Recording exact cash closes the check and frees the table; cash above the total records change; an external-terminal payment with reference `123456` is recorded, and a reference of 16 digits that passes the Luhn check is refused. Two devices paying the same check at the same moment: one wins, the other sees the closed check, and exactly one payment exists. A timed-out payment retried with the same idempotency key is recorded once. *SQL Server concurrency tests; unit tests.*
-9. **History.** The closed check appears in today's history (`Europe/Istanbul` business day) with its total and payment method and opens read-only: no control on it changes the check, and every write endpoint answers that a closed check cannot change. *Unit tests; browser test.*
-10. **Audit.** Sign-in, send to kitchen, payment and close each produce one audit record with time, device, staff member, check and amounts. *Unit tests.*
-11. **Orders unaffected.** `Wasla.sln` builds; the full `Wasla.UnitTests`, `Wasla.PrintBridge.Tests` and Node tests pass on the slice's final commit, with no Orders behavior change. *CI.*
+1. **Sale with the WAN disconnected throughout.**
+   - Steps 7–12 complete with every cloud request failing, and none of them waits for the cloud.
+   - The sync chip shows "Offline since", and the outbox holds the expected records in sequence order.
+   - *Integration test; Terminal or headless-browser test of the sale screen at 1024×768, LTR and RTL.*
+2. **Local printing without cloud.**
+   - Send to kitchen creates one Pending local print job, and the print worker sends it to a recording printer.
+   - The job ends Printed, all with the WAN disconnected.
+   - A restart while the job is in Printing leaves it "print uncertain", never reprinted automatically.
+   - Print Bridge and Orders printing tests stay green and unchanged.
+   - *Unit tests; `Wasla.PrintBridge.Tests`.*
+3. **Restart with unsynchronized records.**
+   - After the sale, stop POS Edge while records are unacknowledged, start it, and restore the WAN.
+   - Every record is uploaded once, in order, and the checkpoint equals the last sequence.
+   - *Integration test.*
+4. **Duplicate upload.**
+   - The same batch is sent twice, including concurrently. The cloud stores each `recordId` once and acknowledges both.
+   - *Integration test; SQL Server test for concurrent ingestion on a throwaway database.*
+5. **Partial batch acknowledgement.**
+   - A batch whose record *n* is invalid stores records before *n* and acknowledges up to *n − 1*.
+   - The Edge shows sync as blocked at *n* and never skips it. Selling continues.
+   - *Integration test.*
+6. **Cloud temporarily unavailable.**
+   - POS Cloud answers 503 with `Retry-After`, then recovers. The Edge backs off, resumes, and uploads everything once.
+   - A lost acknowledgement (the cloud stored the batch, the response was dropped) leads to a resend that stores nothing twice.
+   - *Integration test.*
+7. **Protocol-version mismatch.**
+   - An Edge with an unsupported protocol version gets `protocol_unsupported`. It keeps queueing, shows "update needed to synchronize", and keeps selling.
+   - The cloud accepts the previous version.
+   - *Integration test.*
+8. **Wrong tenant or installation credential.**
+   - An upload with another tenant's id, another installation's id or a wrong credential gets 401 and stores nothing.
+   - A Terminal paired with installation A is refused by installation B.
+   - *Integration and unit tests.*
+9. **Local database backup and restore smoke test.**
+   - A scheduled backup passes its integrity check. A restore on a stopped service brings back the closed sale.
+   - The restore starts a new epoch, and records written after the restore never reuse an acknowledged `(epoch, sequence)`.
+   - *Integration test.*
+10. **Synchronized checkpoint.**
+    - After reconnection, sync health shows the last successful upload, zero pending records and the cloud's checkpoint.
+    - `Wasla.Pos.Cli installation-status` shows the same checkpoint and epoch.
+    - *Integration test.*
+11. **Licence without cloud.**
+    - With the WAN disconnected beyond the lease, an open check can still be paid, closed and printed, and history opens.
+    - A new check is refused from the next business day.
+    - Setting the clock back does not extend the lease.
+    - *Unit tests.*
+12. **Payment and card-data boundary.**
+    - A 16-digit reference that passes the Luhn check is refused at entry and is never uploaded.
+    - No PIN, credential or activation code appears in logs, audit records, outbox payloads or support bundles.
+    - *Unit tests.*
+13. **Wasla Orders unaffected.**
+    - `Wasla.sln` builds. The full `Wasla.UnitTests`, `Wasla.PrintBridge.Tests` and Node tests pass on the slice's final commit.
+    - No Orders behavior, configuration or schema changes, except the two library extractions, which are behavior-neutral.
+    - *CI.*
 
-Not proven by the slice: real printers and paper output, real restaurant networks, performance targets, Print Bridge talking to POS. The [Print Bridge issue](#backlog) covers the last one; the others need a pilot.
+Not proven by the slice: real restaurant networks and routers, physical printers and paper output, the installer and updater, performance targets, long outages measured in days, and a failed Edge machine replaced on real hardware. [WAS-168](https://linear.app/wasla-food/issue/WAS-168) and [WAS-169](https://linear.app/wasla-food/issue/WAS-169) cover them.
 
 ## Implementation order
 
-Each step is one issue in the backlog, merged into `dev` through its own branch and worktree, with focused tests. No step changes Orders behavior; step 1 moves Orders code without changing it.
+Each step is one Linear issue, merged into `dev` through its own branch and worktree, with focused tests. No step changes Orders behavior. WAS-156 and WAS-163 move Orders and Print Bridge code into shared libraries without changing behavior.
 
-1. Extract the platform library.
-2. Scaffold the POS application and guardrails.
-3. POS activation and database.
-4. Devices, PIN sign-in, roles, audit.
-5. Menu and tables import.
-6. Sale screen, tables, checks and send to kitchen.
-7. Payments, close and history. **The slice is complete here.**
-8. Print protocol extraction and POS print rendering.
-9. Print Bridge second connection.
-
-Steps 8 and 9 can start once step 6 has merged, in parallel with step 7.
+1. [WAS-157](https://linear.app/wasla-food/issue/WAS-157) Scaffold POS Edge, the Terminal shell and POS Cloud, with CI and boundary tests.
+2. [WAS-158](https://linear.app/wasla-food/issue/WAS-158) Local SQLite database, migrations, outbox, backup and restore.
+3. [WAS-156](https://linear.app/wasla-food/issue/WAS-156) Platform library for secrets and the CentralDb POS registry. It can run in parallel with steps 1 and 2.
+4. [WAS-165](https://linear.app/wasla-food/issue/WAS-165) Activation, installation identity and the offline licence lease.
+5. [WAS-159](https://linear.app/wasla-food/issue/WAS-159) Terminal pairing, PIN sign-in, POS roles, recovery code.
+6. [WAS-160](https://linear.app/wasla-food/issue/WAS-160) Menu and tables import.
+7. [WAS-161](https://linear.app/wasla-food/issue/WAS-161) Sale screen, table checks, quick sale, send to kitchen.
+8. [WAS-162](https://linear.app/wasla-food/issue/WAS-162) Payments, close, local history.
+9. [WAS-163](https://linear.app/wasla-food/issue/WAS-163) Local printing with the extracted printing library. It can run in parallel with step 10.
+10. [WAS-166](https://linear.app/wasla-food/issue/WAS-166) Outbox upload and cloud ingestion.
+11. [WAS-167](https://linear.app/wasla-food/issue/WAS-167) Sync health, protocol versions, conflicts and cloud commands. **The slice is complete when this step and step 9 are merged.**
+12. [WAS-168](https://linear.app/wasla-food/issue/WAS-168) Installer, update and rollback. It can start once step 2 is merged and run in parallel with steps 4–11.
+13. [WAS-169](https://linear.app/wasla-food/issue/WAS-169) Pilot readiness, including the fiscal gate.
 
 ## Backlog
 
-Created in the Linear project *Wasla POS — MVP*. Each issue's description holds its full boundary and verification; this table is the summary.
+Linear project *Wasla POS — MVP*. Each issue's description holds its full boundary and verification; this table is the summary. WAS-156 to WAS-163 were rewritten for the local-first architecture. [WAS-164](https://linear.app/wasla-food/issue/WAS-164) (a second, remote Print Bridge connection) was cancelled. WAS-165 to WAS-169 are new.
 
-| # | Issue | Boundary | Depends on | Verification |
-| --- | --- | --- | --- | --- |
-| 1 | [WAS-156](https://linear.app/wasla-food/issue/WAS-156) Extract the shared platform library for tenant resolution, secrets and the CentralDb registry | Move `TenantResolver`, `TenantHostMissCache`, `ISecretManager`/`AesSecretManager` and a read-only registry reader into a new library referenced by Orders. No behavior, configuration or schema change | This ADR merged | `dotnet build Wasla.sln`; full `Wasla.UnitTests` and `Wasla.PrintBridge.Tests`; reference-direction test for the new library |
-| 2 | [WAS-157](https://linear.app/wasla-food/issue/WAS-157) Scaffold the Wasla POS application, solution, CI job and boundary tests | `src/Pos/*`, `tests/Pos/*`, `Wasla.Pos.sln`, a CI job, POS host resolution (unknown or unactivated tenant → 404), health endpoint, POS layout with tokens, cultures and RTL. No POS feature | 1 | POS build and tests; reference-direction tests in both test projects; existing CI job unchanged and green |
-| 3 | [WAS-158](https://linear.app/wasla-food/issue/WAS-158) Activate POS per tenant: CentralDb registration, POS database and migrations | Additive CentralDb table and migration; `PosDbContext` and initial migration; `Wasla.Pos.Cli` activate, migrate, migrate-all, status; ownership marker, reserved names, application lock | 2 | Unit tests; SQL Server test on a throwaway database; `migration-status` unchanged for Orders; no migration applied to a shared database |
-| 4 | [WAS-159](https://linear.app/wasla-food/issue/WAS-159) Pair POS devices and sign in staff with PINs under POS roles | Device pairing and revocation, PIN hashing, lockout, inactivity lock, POS role policies, audit log | 3 | Unit tests for isolation, lockout and the policy matrix; browser test of the PIN pad in four cultures, RTL, both themes |
-| 5 | [WAS-160](https://linear.app/wasla-food/issue/WAS-160) Import a POS menu, modifiers, areas and tables from a file | Catalog, modifier and table entities; validated, idempotent import command; sale-screen menu read model | 4 | Unit tests for import idempotency and validation |
-| 6 | [WAS-161](https://linear.app/wasla-food/issue/WAS-161) Build the touch sale screen, table checks, quick sale and send to kitchen | Sale and tables screens, cart module, check and line writes with idempotency keys, one open check per table, kitchen ticket records and POS print job rows | 5 | Unit, Node and browser tests (sizes, RTL, themes); SQL Server concurrency test for one open check per table |
-| 7 | [WAS-162](https://linear.app/wasla-food/issue/WAS-162) Record cash and external-terminal payments, close checks and show sale history | Payment records, close, compare-and-set, duplicate protection, reference validation, business-day history, read-only detail | 6 | SQL Server concurrency tests; unit tests; browser test. Slice acceptance criteria 1–11 |
-| 8 | [WAS-163](https://linear.app/wasla-food/issue/WAS-163) Extract the Print Bridge device protocol and add rendered-document jobs for POS | Shared protocol library; rendered-document job kind; POS device endpoints and print-device pairing; kitchen ticket rendering in four languages. Orders routes and receipts unchanged | 6 | Orders print tests unchanged and green; protocol contract tests against both servers with fake clients |
-| 9 | [WAS-164](https://linear.app/wasla-food/issue/WAS-164) Let one Print Bridge installation print for Wasla Orders and Wasla POS | A second connection with its own `ServerUrl`, token and loop; printer roles; connection UI in the WebView2 app; rendered-document printing | 8 | `Wasla.PrintBridge.Tests` with two fake servers and fake tokens (one connection per job, stop and exit rules); WebView2 runtime tests; manual test with a physical receipt printer, reported separately |
+| Order | Issue | Area | Boundary | Depends on | Verification |
+| --- | --- | --- | --- | --- | --- |
+| 1 | [WAS-157](https://linear.app/wasla-food/issue/WAS-157) | Edge runtime foundation | POS projects and `Wasla.Pos.sln`; Edge as a Windows service with LAN and loopback HTTPS; loopback-only console; Terminal shell; Cloud health endpoint; CI job; reference-direction tests | This ADR merged | POS build and tests; existing CI unchanged; console refuses LAN requests |
+| 2 | [WAS-158](https://linear.app/wasla-food/issue/WAS-158) | Local database and migrations | SQLite, WAL mode, money in kuruş, explicit `migrate`, transactional outbox, scheduled backups, restore with a new epoch | 1 | Outbox and backup/restore tests, labelled as SQLite evidence |
+| 3 | [WAS-156](https://linear.app/wasla-food/issue/WAS-156) | Shared platform | Secrets and the CentralDb registry reader and POS registration writer, extracted from `Wasla.Infrastructure` with no Orders behavior change | This ADR merged | Full Orders suites; reference-direction test |
+| 4 | [WAS-165](https://linear.app/wasla-food/issue/WAS-165) | Activation and licence | Tenant activation, POS cloud database, installation credential, signed lease, restricted mode, emergency code, clock high-water mark | 2, 3 | Unit tests; SQL Server test on a throwaway database |
+| 5 | [WAS-159](https://linear.app/wasla-food/issue/WAS-159) | Pairing and PIN | Certificate, pairing codes bound to its fingerprint, device credentials, peppered PINs, lockout, Owner setup and recovery codes, POS roles | 4 | Unit tests with the WAN disconnected; Terminal or browser test in four cultures and RTL |
+| 6 | [WAS-160](https://linear.app/wasla-food/issue/WAS-160) | Menu and tables | Local entities, validated idempotent import, snapshots to the outbox | 5 | Unit tests with the WAN disconnected |
+| 7 | [WAS-161](https://linear.app/wasla-food/issue/WAS-161) | Local sale workflow | Sale and tables screens, checks, quick sale, send to kitchen with ticket, print job and outbox in one transaction | 6 | Unit, Node and Terminal/browser tests; concurrency on SQLite |
+| 8 | [WAS-162](https://linear.app/wasla-food/issue/WAS-162) | Payments, history, audit | Cash and external-terminal records, close, history, day summary, outbox and audit | 7 | Concurrency on SQLite; unit and browser tests |
+| 9 | [WAS-163](https://linear.app/wasla-food/issue/WAS-163) | Local printing | Printing library extracted from Print Bridge Core; Edge print worker; printer roles; documents | 8 | Print Bridge tests unchanged; worker tests with a recording printer; manual physical print reported separately |
+| 10 | [WAS-166](https://linear.app/wasla-food/issue/WAS-166) | Outbox and cloud ingestion | Sync contracts v1, batches, ingestion with unique keys, acknowledgement after durable storage, partial acknowledgement, retry, replay | 4, 8 | Integration tests; SQL Server concurrent ingestion test |
+| 11 | [WAS-167](https://linear.app/wasla-food/issue/WAS-167) | Sync health, conflicts, versions | Protocol N/N−1, integrity conflicts, poison records, cloud commands, sync health, `installation-status`, support bundle | 10 | Integration tests; browser test of sync health |
+| 12 | [WAS-168](https://linear.app/wasla-food/issue/WAS-168) | Installer, update, rollback | Signed per-machine installer, service account, firewall rule, certificate, WebView2 Runtime, updater with backup, migrate, health check and rollback | 2 | Clean Windows 10 and 11 VMs; forced rollback; tampered package refused |
+| 13 | [WAS-169](https://linear.app/wasla-food/issue/WAS-169) | Backup/restore and pilot readiness | Restore drill on real hardware, physical printing, WAN-cut service, support runbook, fiscal gate | 9, 11, 12 | Written report from real hardware, separate from automated results |
 
-### After the slice
+## After the slice
 
-Not created as issues yet. Each is created when the slice is accepted, in this order: the back-office editor for menu, tables, staff and devices; takeaway; voids, cancellations and payment reversals with manager approval; pre-bill, receipt printing and reprints; a pilot readiness review covering the fiscal decision, offline expectations, backups of POS databases, and physical printer and network checks at a pilot restaurant.
+In this order, before a pilot restaurant:
+
+1. [WAS-168](https://linear.app/wasla-food/issue/WAS-168): the installer, updater and rollback.
+2. The remaining MVP features. Each gets its own issue when the slice is accepted:
+   - the back-office editor for menu, tables, staff and terminals;
+   - takeaway;
+   - voids, cancellations and payment reversals with manager approval;
+   - void slips and reprints;
+   - cloud-issued Owner recovery tokens.
+3. [WAS-169](https://linear.app/wasla-food/issue/WAS-169): pilot readiness. **The fiscal decision is a blocker for any paid pilot.**
 
 ## Risks
 
 | Risk | Mitigation |
 | --- | --- |
-| The platform extraction (step 1) breaks Orders | Move only, with no behavior change and the full Orders test suites; it lands before any POS code |
-| Fiscal rules make a non-fiscal POS unsellable in Türkiye | Legal review before any paid pilot ([open decisions](pos-mvp.md#unresolved-product-decisions)); receipts say they are not fiscal documents |
-| Online-only POS is not acceptable to pilot restaurants | Ask during pilot selection; the slice already uses ids and idempotency keys that offline capture needs |
-| Two credentials per owner feel broken | Explicit open decision with triggers in the [ADR](../architecture/pos-application-boundary.md#identity-and-sign-in) |
-| Print Bridge with two connections regresses Orders printing | Separate issue with the existing stop, exit and connection-change tests extended to two servers |
+| The Edge machine is a single point of failure | Backups every 15 minutes with integrity checks, a second backup path, replace-mode activation, a restore drill (WAS-169), and a paper or fiscal-register fallback in the runbook |
+| SQLite behavior differs from the SQL Server the team knows | Money in kuruş, writes serialized in the Edge, POS's own concurrency tests labelled as SQLite evidence, explicit migrations after a backup |
+| Shipping installed software is new operational work | One signed installer and updater with automatic rollback (WAS-168); support bundles; versions in sync health |
+| Library extractions (WAS-156, WAS-163) break Orders or Print Bridge | Move only, no behavior change, the full Orders and Print Bridge suites |
+| A long outage meets an expired lease | 14-day lease, warnings, restricted mode that never stops a service in progress, one-time emergency extension |
+| Fiscal rules make a non-fiscal POS unsellable in Türkiye | Legal review before any paid pilot (WAS-169 gate); receipts say they are not fiscal documents |
+| Owners find two credentials (Orders and POS) confusing | An explicit open decision with triggers in the [ADR](../architecture/pos-application-boundary.md#later-decisions) |

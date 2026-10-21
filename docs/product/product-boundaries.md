@@ -23,7 +23,7 @@ This description records the product boundary. It does not claim that these feat
 
 The public `/pos` page (WAS-155) is marketing for this direction only: it presents Wasla POS as coming soon, labels its screens as concept interface and offers no purchase or sign-up for it. It adds no POS module or behaviour to this solution.
 
-The MVP scope, POS roles and payment boundary are defined in [pos-mvp.md](pos-mvp.md). Where POS code, data, identity and printing will live is decided in [../architecture/pos-application-boundary.md](../architecture/pos-application-boundary.md): a separate application in this repository with its own database per tenant, never a screen of Wasla Orders. The first build steps are in [pos-first-slice.md](pos-first-slice.md). None of it is implemented yet.
+The MVP scope, POS roles and payment boundary are defined in [pos-mvp.md](pos-mvp.md). How POS is built is decided in [../architecture/pos-application-boundary.md](../architecture/pos-application-boundary.md): a local-first product installed at the restaurant (POS Edge with a local database, POS Terminals on the restaurant network, synchronization with the Wasla cloud), built as separate applications in this repository and never a screen of Wasla Orders. Selling does not depend on the internet. The first build steps are in [pos-first-slice.md](pos-first-slice.md). None of it is implemented yet.
 
 ## Sharing between products
 
