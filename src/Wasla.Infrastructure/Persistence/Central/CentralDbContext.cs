@@ -12,6 +12,8 @@ using District = Wasla.Domain.Entities.Central.District;
 using Neighborhood = Wasla.Domain.Entities.Central.Neighborhood;
 using Street = Wasla.Domain.Entities.Central.Street;
 using PendingRegistrationBusinessType = Wasla.Domain.Entities.Central.PendingRegistrationBusinessType;
+using BillingSubscription = Wasla.Domain.Entities.Central.BillingSubscription;
+using BillingPayment = Wasla.Domain.Entities.Central.BillingPayment;
 using Wasla.Infrastructure.Persistence.Central.Configurations;
 
 namespace Wasla.Infrastructure.Persistence.Central;
@@ -36,6 +38,8 @@ public class CentralDbContext : DbContext
     public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
     public DbSet<Street> Streets => Set<Street>();
     public DbSet<PendingRegistrationBusinessType> PendingRegistrationBusinessTypes => Set<PendingRegistrationBusinessType>();
+    public DbSet<BillingSubscription> BillingSubscriptions => Set<BillingSubscription>();
+    public DbSet<BillingPayment> BillingPayments => Set<BillingPayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,5 +56,7 @@ public class CentralDbContext : DbContext
         modelBuilder.ApplyConfiguration(new NeighborhoodConfiguration());
         modelBuilder.ApplyConfiguration(new StreetConfiguration());
         modelBuilder.ApplyConfiguration(new PendingRegistrationBusinessTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new BillingSubscriptionConfiguration());
+        modelBuilder.ApplyConfiguration(new BillingPaymentConfiguration());
     }
 }
