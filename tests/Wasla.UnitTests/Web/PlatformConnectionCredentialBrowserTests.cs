@@ -146,18 +146,18 @@ public sealed class PlatformConnectionCredentialBrowserTests
             foreach (var field in masked.EnumerateArray())
                 Assert.Equal(("password", "false"), (field.GetProperty("type").GetString(), field.GetProperty("pressed").GetString()));
 
-            // The control and the field stay readable in this theme.
-            var contrast = await browser.EvaluateAsync<JsonElement>("""
-                (() => {
-                  const rgb = c => c.match(/[\d.]+/g).slice(0, 4).map(Number);
-                  const lum = ([r, g, b]) => [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); })
-                    .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
-                  const background = el => { for (; el; el = el.parentElement) { const c = rgb(getComputedStyle(el).backgroundColor); if (c.length < 4 || c[3] > 0) return c; } return [255, 255, 255]; };
-                  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+            // The control and the field stay readable in this theme. The focused control is still in its colour transition
+            // after the keys above, so the colours are read once it has settled: a value read mid-transition is neither the
+            // focused nor the resting colour. Bootstrap's focus colour is a color-mix(), which the browser reports as
+            // color(srgb …); the shared library parses it and composites translucent backgrounds.
+            var contrast = await browser.EvaluateAsync<JsonElement>($$"""
+                (async () => {
+                  {{TenantDarkModeBrowserTests.Library}}
                   const input = document.getElementById('ApiKey'), toggle = document.querySelector('[data-credential-toggle][aria-controls="ApiKey"]');
+                  await Promise.all([input, toggle].flatMap(el => el.getAnimations({ subtree: true })).map(a => a.finished.catch(() => null)));
                   return {
-                    input: ratio(rgb(getComputedStyle(input).color), background(input)),
-                    toggle: ratio(rgb(getComputedStyle(toggle.querySelector('.bi')).color), background(toggle))
+                    input: ratio(parse(getComputedStyle(input).color), behind(input)),
+                    toggle: ratio(parse(getComputedStyle(toggle.querySelector('.bi')).color), behind(toggle))
                   };
                 })()
                 """, ct);
