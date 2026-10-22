@@ -12,6 +12,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Services;
+using Wasla.UnitTests.Cli;
 
 namespace Wasla.UnitTests.Admin;
 
@@ -21,6 +22,7 @@ namespace Wasla.UnitTests.Admin;
 /// work with an error that names <c>TenantDb:ServerInstance</c>; nothing falls back to LocalDB or '.'.
 /// All databases are in-memory SQLite or fakes.
 /// </summary>
+[Collection(nameof(CliConsoleCollection))]
 public sealed class TenantSqlServerRequirementTests : IDisposable
 {
     private const string LocalDb = "(localdb)\\MSSQLLocalDB";

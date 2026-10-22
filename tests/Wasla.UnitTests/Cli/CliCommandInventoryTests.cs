@@ -405,10 +405,3 @@ public sealed class CliCommandInventoryTests
             throw new InvalidOperationException("No tenant connection string may be decrypted by these tests.");
     }
 }
-
-/// <summary>
-/// CLI tests that redirect <see cref="Console"/>. Not run in parallel with any other test, so no other test's output
-/// lands in their capture.
-/// </summary>
-[CollectionDefinition(nameof(CliConsoleCollection), DisableParallelization = true)]
-public sealed class CliConsoleCollection;

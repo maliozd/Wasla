@@ -15,6 +15,7 @@ using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Services;
 using Wasla.UnitTests.Admin;
+using Wasla.UnitTests.Cli;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Auth;
@@ -25,6 +26,7 @@ namespace Wasla.UnitTests.Auth;
 /// the real Web login form, keeps that cookie, changes the account the way an Owner, the password reset or the CLI does,
 /// and then presents the old cookie to the Api with the tenant's Host header.
 /// </summary>
+[Collection(nameof(CliConsoleCollection))]
 public sealed class ApiTenantSessionTests : IAsyncLifetime
 {
     private const string NewPassword = "New-Correct-Horse-7";
