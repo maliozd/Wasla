@@ -360,7 +360,8 @@ Decision:
 1. **POS Edge owns the device.** All communication with the ÖKC runs in POS Edge, behind one device-adapter interface: status, start a sale, wait for its result, cancel where supported, query a transaction or the device's last transaction. Each supported brand or model is a driver behind that interface. A fake driver with scripted outcomes (approve, decline, cancel, time out after approval, connection loss) is used in tests and in the first slice. Terminals never talk to the ÖKC; they show the state POS Edge reports.
 2. **One fiscal transaction per payment attempt**, persisted in SQLite before anything is sent:
    - States: Created → Sending → Awaiting customer → Declined | Cancelled | Awaiting fiscal receipt → Completed; any state after Sending can become Unknown.
-   - Unknown → Checking on the ÖKC → Completed | Failed | Unresolved. Unresolved is closed only by a Manager or Owner decision with a reason, audited.
+   - Unknown → Checking on the ÖKC → Completed | Failed | Unresolved. Failed requires definitive evidence, matched to the original transaction, that no payment was approved and no fiscal receipt was issued. No matching query record, a timeout or an unavailable device remains Unknown or Unresolved and blocks another payment.
+   - A known approval with missing fiscal completion stays Awaiting fiscal receipt or Unknown; it never permits another charge. A Manager or Owner resolution must record the approver, time, reason and matching ÖKC or bank evidence references, without card data. Manager approval alone cannot mark it Failed or unlock payment; inconclusive evidence leaves it unresolved and blocked.
    - POS Edge sends one transaction at a time per device and never starts a second one for a check while one is in flight or unknown. After a restart, every transaction that was sent but not finished becomes Unknown and is checked first.
    - Completed transactions become payment records in the same SQLite transaction as their outbox and audit records (`FiscalTransactionCompleted`, alongside the existing payment record types).
 3. **Identifiers stay separate.** The Wasla check number, the ÖKC's fiscal receipt and Z numbers (and any other device identifiers) and the bank transaction reference and approval code are stored in separate fields and never derived from one another. Fiscal and bank identifiers are never generated, renumbered or epoch-prefixed by POS Edge.
@@ -477,7 +478,7 @@ Support then chooses one of two paths, and the choice is audited in both places:
 | Installation CA key lost or suspected compromised | Terminals cannot verify POS Edge | New CA, device credentials revoked, all Terminals re-paired |
 | Printer offline or out of paper | The job fails, or the spooler holds it | Manual retry or reprint, as above |
 | ÖKC unreachable or needs attention | Pay is disabled with the reason; selling, kitchen sends and pre-bills continue | Fix the device; the restaurant may use the ÖKC on its own meanwhile |
-| ÖKC transaction outcome unknown (connection lost, timeout, POS Edge restart) | No new payment for that check | POS Edge checks the transaction on the ÖKC first; Completed is recorded once, Failed allows a retry, Unresolved needs a Manager or Owner decision |
+| ÖKC transaction outcome unknown (connection lost, timeout, POS Edge restart) | No new payment for that check | POS Edge checks the original transaction; Completed is recorded once. Only definitive non-completion allows a retry. No matching record or inconclusive evidence stays blocked; a Manager or Owner resolution requires matching ÖKC or bank evidence |
 
 A secondary or failover Edge, and replication between Edges, are out of scope for the MVP.
 

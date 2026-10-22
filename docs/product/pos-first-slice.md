@@ -125,7 +125,10 @@ Each criterion names the test that proves it. Tests run against an in-process PO
     - A decline or cancellation records no payment and allows a new attempt.
     - A completed transaction stores the fiscal receipt number, Z number and bank reference in separate fields, and the check closes.
     - A transaction that times out after approval becomes Unknown. A second payment for the check is refused until it is checked; the check finds it completed and records it once.
-    - A transaction the device does not know becomes Failed and allows a retry; an unanswered check stays Unknown and needs a Manager or Owner decision.
+    - Only a definitive result, matched to the original transaction, proving that no payment was approved and no fiscal receipt was issued becomes Failed and allows a retry. A query returning no matching record, a timeout or an unavailable device stays Unknown and blocks another payment.
+    - Approval followed by missing fiscal completion stays Awaiting fiscal receipt or Unknown; it never allows another charge.
+    - A Manager or Owner resolution records the approver, time, reason and the matching ÖKC or bank evidence references. Approval by a manager alone, or a query with no matching record, cannot mark the transaction Failed or unlock payment. If the evidence is inconclusive, it stays unresolved and payment remains blocked.
+    - Fake-driver scenarios cover approval followed by a lost response and no matching query record (still blocked), definitive non-completion (retry allowed), and an unsupported manager override (refused).
     - A POS Edge restart while a transaction is in flight leaves it Unknown, never Completed or Failed by assumption.
     - *Unit and integration tests, with the WAN disconnected.*
 15. **Wasla Orders unaffected.**

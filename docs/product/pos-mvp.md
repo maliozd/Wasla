@@ -109,8 +109,8 @@ The primary payment flow, for card and cash. POS Edge talks to the ÖKC; Termina
    - Card: the ÖKC shows the amount; the guest taps or inserts the card and enters the PIN on the ÖKC. Wasla never sees card data.
    - Cash: the cashier enters the tendered amount on the Terminal (quick notes and keypad; change is shown), and confirms on the ÖKC if the device asks.
    - **Cancel** asks the ÖKC to cancel, where the device supports it.
-4. **Declined or cancelled.** The bank declines, the guest or the cashier cancels, or the ÖKC times out before approval. Nothing is recorded as paid and no fiscal receipt exists; the cashier may try again or choose another method.
-5. **Waiting for the fiscal receipt.** After approval, the ÖKC prints the fiscal receipt and returns its result.
+4. **Declined or cancelled.** The ÖKC definitively confirms that the original transaction was declined or cancelled, with no payment approved and no fiscal receipt issued. Nothing is recorded as paid; the cashier may try again or choose another method. A timeout alone is not proof of non-completion and follows workflow 7.
+5. **Waiting for the fiscal receipt.** After approval, the ÖKC prints the fiscal receipt and returns its result. If approval is known but fiscal completion is not, the transaction stays Awaiting fiscal receipt or becomes Unknown; another charge is blocked until it is reconciled.
 6. **Completed.** POS Edge records the payment with the ÖKC's result: the fiscal receipt number and Z number (plus any other device identifiers it returns) and, for cards, the bank transaction reference and approval code. The check closes when completed payments cover the total.
 7. **Unknown outcome**: see [workflow 7](#7-unknown-ökc-outcome).
 
@@ -131,9 +131,11 @@ A fiscal transaction is **unknown** when POS Edge cannot tell how it ended: the 
 1. The Terminal says that the outcome is unknown and that **no other payment may be taken**, on the ÖKC or on any bank terminal, until it is checked. Every new payment attempt for that check is refused while a transaction on it is unknown.
 2. **Check on the ÖKC first.** POS Edge queries the ÖKC for the transaction, by Wasla's reference if the device supports one, otherwise by its last transaction and fiscal receipt.
    - **Completed on the ÖKC:** recorded once as a completed payment with its fiscal and bank identifiers. Nothing is sent again.
-   - **Not completed** (no approval and no fiscal receipt): marked failed; a new attempt is allowed.
-   - **Cannot be determined** (ÖKC unreachable, or no matching record): stays unknown. A Manager or Owner resolves it from the ÖKC's own records (last fiscal receipt, bank slip, device reports) and records the decision with a reason. It is audited.
-3. Only after the check ends in "not completed" or a recorded resolution may another payment be started.
+   - **Not completed:** only a definitive result, matched to the original transaction, proving that no payment was approved and no fiscal receipt was issued marks it failed and allows a new attempt.
+   - **Cannot be determined** (ÖKC unreachable, query timeout, or no matching record): stays unknown and blocks another payment. No matching record by itself does not prove that payment failed.
+   - **Approved, fiscal completion missing:** stays Awaiting fiscal receipt or Unknown and blocks another charge. Do not mark it failed merely because the fiscal receipt is missing.
+3. A Manager or Owner may resolve it only from evidence matched to the original transaction (ÖKC transaction or device reports and, where needed, bank records). Record the approver, time, reason and evidence references without card data. A manager's approval alone cannot mark it failed or unlock payment. If the evidence remains inconclusive, the transaction stays unresolved and payment remains blocked.
+4. A resolution proving completion records the original payment once; it never repeats that charge. Only a resolution definitively proving non-completion allows a new payment attempt.
 
 **Manual payment record (exception, not the primary flow).** Recording a payment that was taken outside the ÖKC flow, for example on a separate bank terminal while the ÖKC integration is unavailable, is an exception. Whether it is allowed at all, who may use it and how the fiscal document is then issued is an [open decision](#unresolved-product-decisions). If kept: Manager or Owner only, with a reason, the card-number guard of the [payment boundary](#payment-boundary), and the check shows that no fiscal receipt is linked.
 
