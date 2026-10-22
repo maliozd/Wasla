@@ -2727,6 +2727,9 @@
   <data name="PrintBridge.ConfirmReprint" xml:space="preserve">
     <value>Reprint receipt for {0}?</value>
   </data>
+  <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
+    <value>Updates to this table are paused while you select text or use a control in it.</value>
+  </data>
   <data name="PrintBridge.CreatedAt" xml:space="preserve">
     <value>Created</value>
   </data>
