@@ -16,7 +16,7 @@ function runGate(failStep) {
     fs.writeFileSync(path.join(dir, 'dotnet'), '#!/bin/sh\nprintf "cli:%s:%s\\n" "$2" "$3" >> "$CALLS"\n[ "$2" != "$FAIL_STEP" ]\n', { mode: 0o755 });
     fs.writeFileSync(path.join(dir, 'start'), '#!/bin/sh\nprintf "start:%s\\n" "$1" >> "$CALLS"\n', { mode: 0o755 });
 
-    const result = spawnSync('bash', [script, cli, '--', path.join(dir, 'start'), 'new-version'], {
+    const result = spawnSync(script, [cli, '--', path.join(dir, 'start'), 'new-version'], {
       encoding: 'utf8',
       env: { ...process.env, PATH: `${dir}${path.delimiter}${process.env.PATH}`, CALLS: log, FAIL_STEP: failStep ?? '' },
     });
@@ -42,8 +42,8 @@ for (const step of ['migrate-central', 'migrate-all-tenants', 'migration-status'
 }
 
 test('a missing CLI or start command fails closed', () => {
-  const missingCli = spawnSync('bash', [script, '/does/not/exist', '--', 'true'], { encoding: 'utf8' });
+  const missingCli = spawnSync(script, ['/does/not/exist', '--', 'true'], { encoding: 'utf8' });
   assert.equal(missingCli.status, 2);
-  const missingStart = spawnSync('bash', [script, '/does/not/exist', '--'], { encoding: 'utf8' });
+  const missingStart = spawnSync(script, ['/does/not/exist', '--'], { encoding: 'utf8' });
   assert.equal(missingStart.status, 2);
 });
