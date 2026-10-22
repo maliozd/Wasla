@@ -33,6 +33,7 @@ Facts from the code on `dev` at `40fe698`:
 5. **POS Edge synchronizes with Wasla POS Cloud** over outbound HTTPS only. It uses a durable local outbox, per-installation sequence numbers, idempotent uploads and acknowledgements given after durable storage ([Synchronization](#synchronization)). After a restore, POS Cloud returns the synced facts the backup lacks in a signed recovery package ([Restore and recovery](#restore-and-recovery-from-the-cloud)).
 6. **POS Edge prints locally.** It uses a printing library extracted from Print Bridge's proven Windows printing code, and it never needs the cloud or Wasla Orders. Print Bridge stays the Orders printing client ([Printing](#printing)).
 7. **Code stays in this repository as separate applications**: POS Edge, POS Terminal, POS Cloud and their tools. None of them reference Orders projects, and Orders references none of them ([Repository](#repository-and-application-boundaries)).
+8. **Payments run through the restaurant's fiscal cash register (ÖKC), driven by POS Edge.** POS Edge owns the device communication through a device adapter; Terminals never talk to the ÖKC. The ÖKC issues the fiscal receipt; POS Edge prints only non-fiscal documents. The first brand and model are open ([Fiscal cash register](#fiscal-cash-register-ökc), added 2026-10-22).
 
 ## Installed product
 
@@ -48,7 +49,8 @@ Facts from the code on `dev` at `40fe698`:
 │   ├── Wasla POS Edge (Windows service, NT SERVICE\WaslaPosEdge)             │
 │   │     ├── HTTPS on the LAN (pinned installation CA) and loopback          │
 │   │     ├── SQLite database, outbox, backups (ProgramData\Wasla\Pos)        │
-│   │     └── print queue → Windows spooler → receipt and kitchen printers    │
+│   │     ├── print queue → Windows spooler → receipt and kitchen printers    │
+│   │     └── ÖKC adapter → fiscal cash register (ÖKC, link device-dependent) │
 │   └── Wasla POS Terminal (optional: the Edge machine as a cashier station)  │
 │                                                                             │
 │  Windows touch terminals ── restaurant LAN ──► POS Edge (HTTPS)             │
@@ -232,6 +234,8 @@ Authority means who may change the data. Every type has exactly one authority, s
 | Closed or cancelled checks with lines and voids | Local | Local; immutable cloud copy | Local → cloud once, at close or cancel |
 | Kitchen tickets and void slips | Local | Local; immutable cloud copy | Local → cloud |
 | Payment records and reversals | Local | Local; immutable cloud copy | Local → cloud; never edited anywhere |
+| Fiscal transactions (state, fiscal receipt and Z numbers, bank reference and approval code) | The ÖKC issues the fiscal and bank identifiers; POS Edge records them | Local; immutable cloud copy when finished | Local → cloud; never edited anywhere |
+| ÖKC pairing and connection settings | Local | Local only | Not synced (machine-specific); sent only in support bundles without secrets |
 | Receipts (number, rendered snapshot, reprints) | Local | Local; cloud copy | Local → cloud |
 | Audit records | Local | Local, append-only; cloud copy | Local → cloud |
 | POS settings (receipt header, business-day cutoff, inactivity lock) | Local | Local; cloud copy | Local → cloud |
@@ -341,11 +345,40 @@ Decision:
    - A job found in Printing after a crash or restart is **never reprinted automatically**. It is shown as "print uncertain" with a manual reprint, which prints a copy marked as a reprint.
    - A failed job is shown on the terminals that created it and in the back office, with a manual retry.
    - A print failure never undoes a kitchen send or a payment.
-3. **POS renders its documents itself:** kitchen ticket, void slip, pre-bill and receipt. It renders them to printable lines in the receipt language, with Arabic handled on the Edge. POS document changes ship with POS Edge, never with Print Bridge.
+3. **POS renders its documents itself:** kitchen ticket, void slip and pre-bill, all non-fiscal and marked as such. It renders them to printable lines in the receipt language, with Arabic handled on the Edge. POS document changes ship with POS Edge, never with Print Bridge. Fiscal receipts are printed by the ÖKC ([Fiscal cash register](#fiscal-cash-register-ökc)), never by POS Edge.
 4. **Printer roles are local.** The back office maps "receipt" and "kitchen" to Windows printers installed on the Edge machine for all users. The kitchen role may map to the receipt printer.
 5. **Orders and POS printing stay isolated.** Orders jobs stay in the Orders tenant database and are printed by Print Bridge. POS jobs stay in the Edge database and are printed by POS Edge. They may share a physical printer: the Windows spooler queues jobs from both. Neither product reads the other's jobs.
 
 Consequence: printing from a Windows service sees only printers installed for all users on the Edge machine. Per-user printers and printers attached only to a terminal are not supported in the MVP.
+
+## Fiscal cash register (ÖKC)
+
+**Status.** Product direction confirmed on 2026-10-22: Wasla POS integrates with a Turkish fiscal cash register (ÖKC). The first brand and model are **not chosen**. This section fixes the boundary; everything device-specific waits for the technical investigation below. Choosing ÖKC integration does not settle e-Arşiv, e-Fatura or e-Adisyon obligations ([pos-mvp](../product/pos-mvp.md#unresolved-product-decisions)).
+
+Decision:
+
+1. **POS Edge owns the device.** All communication with the ÖKC runs in POS Edge, behind one device-adapter interface: status, start a sale, wait for its result, cancel where supported, query a transaction or the device's last transaction. Each supported brand or model is a driver behind that interface. A fake driver with scripted outcomes (approve, decline, cancel, time out after approval, connection loss) is used in tests and in the first slice. Terminals never talk to the ÖKC; they show the state POS Edge reports.
+2. **One fiscal transaction per payment attempt**, persisted in SQLite before anything is sent:
+   - States: Created → Sending → Awaiting customer → Declined | Cancelled | Awaiting fiscal receipt → Completed; any state after Sending can become Unknown.
+   - Unknown → Checking on the ÖKC → Completed | Failed | Unresolved. Failed requires definitive evidence, matched to the original transaction, that no payment was approved and no fiscal receipt was issued. No matching query record, a timeout or an unavailable device remains Unknown or Unresolved and blocks another payment.
+   - A known approval with missing fiscal completion stays Awaiting fiscal receipt or Unknown; it never permits another charge. A Manager or Owner resolution must record the approver, time, reason and matching ÖKC or bank evidence references, without card data. Manager approval alone cannot mark it Failed or unlock payment; inconclusive evidence leaves it unresolved and blocked.
+   - POS Edge sends one transaction at a time per device and never starts a second one for a check while one is in flight or unknown. After a restart, every transaction that was sent but not finished becomes Unknown and is checked first.
+   - Completed transactions become payment records in the same SQLite transaction as their outbox and audit records (`FiscalTransactionCompleted`, alongside the existing payment record types).
+3. **Identifiers stay separate.** The Wasla check number, the ÖKC's fiscal receipt and Z numbers (and any other device identifiers) and the bank transaction reference and approval code are stored in separate fields and never derived from one another. Fiscal and bank identifiers are never generated, renumbered or epoch-prefixed by POS Edge.
+4. **Card data boundary.** The adapter drops any field that could be card data (card number, masked or not, expiry, track data) before storage, logs, audit or upload. Only the bank transaction reference and approval code are kept.
+5. **Documents.** The ÖKC prints fiscal receipts and any fiscal cancellation or return documents. POS Edge prints only non-fiscal documents ([Printing](#printing)).
+6. **No cloud in the payment path.** Card approval uses the ÖKC's own bank connection; POS Edge and the Wasla cloud are not in it.
+
+Open for the technical investigation (two Verifone devices are available for testing; others can be obtained):
+
+- brand and model of the first supported device;
+- SDK or protocol access, its licence and documentation;
+- the connection: USB, serial, LAN, or an application running on the device itself (which may change where the driver runs);
+- manufacturer or authority approval and certification requirements for software that drives an ÖKC;
+- fees (SDK, certification, per device);
+- item-level sale or total only, VAT groups and departments, several and partial payments on one fiscal receipt;
+- cancellations, returns (*iade*), fiscal receipt copies, Z report triggering;
+- which result fields are returned, and whether the device accepts Wasla's reference for the unknown-outcome check.
 
 ## Restore and recovery from the cloud
 
@@ -412,7 +445,7 @@ Support then chooses one of two paths, and the choice is audited in both places:
 
 ### Numbering after a restore
 
-- Check, takeaway and receipt numbers are counters per business day.
+- Check and takeaway numbers are counters per business day. Fiscal receipt and Z numbers belong to the ÖKC and are never generated, continued or prefixed by POS Edge.
 - After recovery, each counter continues from the highest number in the restored and recovered records for that day.
 - Numbers issued after the newest backup and never synced may already be on printed paper. So from epoch 2 onwards, numbers are printed with the epoch as a prefix (for example `2-0046`). A number can then never repeat one from an earlier epoch.
 - Epoch 1 numbers have no prefix.
@@ -444,6 +477,8 @@ Support then chooses one of two paths, and the choice is audited in both places:
 | Server certificate expired, corrupted or lost | Terminals refuse an invalid certificate | POS Edge reissues it from the installation CA. No re-pairing ([Certificate lifecycle](#certificate-lifecycle)) |
 | Installation CA key lost or suspected compromised | Terminals cannot verify POS Edge | New CA, device credentials revoked, all Terminals re-paired |
 | Printer offline or out of paper | The job fails, or the spooler holds it | Manual retry or reprint, as above |
+| ÖKC unreachable or needs attention | Pay is disabled with the reason; selling, kitchen sends and pre-bills continue | Fix the device; the restaurant may use the ÖKC on its own meanwhile |
+| ÖKC transaction outcome unknown (connection lost, timeout, POS Edge restart) | No new payment for that check | POS Edge checks the original transaction; Completed is recorded once. Only definitive non-completion allows a retry. No matching record or inconclusive evidence stays blocked; a Manager or Owner resolution requires matching ÖKC or bank evidence |
 
 A secondary or failover Edge, and replication between Edges, are out of scope for the MVP.
 
