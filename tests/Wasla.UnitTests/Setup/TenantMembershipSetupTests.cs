@@ -10,6 +10,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
+using Wasla.UnitTests.Cli;
 
 namespace Wasla.UnitTests.Setup;
 
@@ -17,6 +18,7 @@ namespace Wasla.UnitTests.Setup;
 /// The restaurant setup step reads the business phone and location from the tenant's membership row.
 /// Paid signup always created it; CLI-provisioned tenants did not, which left their setup panel stuck.
 /// </summary>
+[Collection(nameof(CliConsoleCollection))]
 public sealed class TenantMembershipSetupTests : IDisposable
 {
     private static readonly DateTime Now = new(2026, 9, 28, 9, 0, 0, DateTimeKind.Utc);

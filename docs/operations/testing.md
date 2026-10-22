@@ -164,6 +164,10 @@ An output directory that is still inside this repository (including a gitignored
 
 Do not set a global output path outside the repo to “make tests pass.”
 
+## Process-wide console
+
+`Console.Out` and `Console.Error` are shared by every test in the process, and xUnit runs test classes in parallel. A test class that redirects them to capture CLI output, or that runs a CLI command writing to the console, belongs to `CliConsoleCollection` (`tests/Wasla.UnitTests/Cli/CliConsoleCollection.cs`), which runs alone (WAS-171). Otherwise one capture can restore another's already disposed writer, so a later console write fails with `ObjectDisposedException`, or a capture can collect another test's output. Tests that start the CLI as a separate process read that process's own output and need no collection.
+
 ## Shared working tree
 
 Other agents may have processes and uncommitted files in this tree.
