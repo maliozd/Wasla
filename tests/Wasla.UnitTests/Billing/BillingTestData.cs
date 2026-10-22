@@ -91,6 +91,15 @@ internal static class BillingTestData
         return subscription;
     }
 
+    /// <summary>Seeds a registration awaiting payment and starts its subscription in <paramref name="scope"/>.</summary>
+    public static async Task<(Guid SubscriptionId, Guid RegistrationId)> StartAsync(SqliteCentralDatabase db, BillingProviderScope scope)
+    {
+        var registration = await db.SeedRegistrationAsync();
+        var started = await db.Store().StartForRegistrationAsync(registration.Id, scope, MonthlyPrice, CancellationToken.None);
+        Assert.Equal(BillingStoreOutcome.Applied, started.Outcome);
+        return (started.SubscriptionId!.Value, registration.Id);
+    }
+
     public static BillingProviderPayment Payment(string reference, DateTime periodStart, BillingPrice? price = null) =>
         new(reference, price ?? MonthlyPrice, periodStart, periodStart.AddMonths(1), periodStart.AddMinutes(5));
 }
