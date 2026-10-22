@@ -18,6 +18,7 @@ namespace Wasla.UnitTests.Realtime;
 /// modal falls back to reading the state every 10 seconds, and a reconnect reads it at once. Skips only when no
 /// Chromium browser is installed or Bootstrap cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class PrintStatusBrowserTests : IAsyncLifetime
 {
     private static readonly TimeSpan Push = TimeSpan.FromSeconds(5);

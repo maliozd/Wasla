@@ -34,6 +34,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      # A pull request into dev runs the fast scope (no headless-browser or WebView2 runtime tests); every other event
+      # runs every test. The script owns the filters; see docs/operations/testing.md.
+      - name: Select test scope
+        shell: pwsh
+        run: ./scripts/ci/select-test-scope.ps1
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -79,29 +85,36 @@ jobs:
         id: build
         run: dotnet build Wasla.sln --configuration Release --no-restore
 
-      - name: Run Wasla.UnitTests
-        run: >
-          dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj
-          --configuration Release
-          --no-build
-          --verbosity normal
-          --logger "trx;LogFileName=Wasla.UnitTests.trx"
-          --results-directory artifacts/test-results
-          --blame-hang-timeout 15m
-          --blame-hang-dump-type none
+      # An empty filter (full scope) passes no --filter, so the whole project runs.
+      - name: Run Wasla.UnitTests (${{ env.TEST_SCOPE }})
+        shell: pwsh
+        run: |
+          $filter = if ($env:UNIT_TESTS_FILTER) { '--filter', $env:UNIT_TESTS_FILTER } else { @() }
+          dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj `
+            --configuration Release `
+            --no-build `
+            --verbosity normal `
+            --logger "trx;LogFileName=Wasla.UnitTests.trx" `
+            --results-directory artifacts/test-results `
+            --blame-hang-timeout 15m `
+            --blame-hang-dump-type none `
+            @filter
 
       # Runs after a unit-test failure too, so one run reports both suites.
-      - name: Run Wasla.PrintBridge.Tests
+      - name: Run Wasla.PrintBridge.Tests (${{ env.TEST_SCOPE }})
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: >
-          dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj
-          --configuration Release
-          --no-build
-          --verbosity normal
-          --logger "trx;LogFileName=Wasla.PrintBridge.Tests.trx"
-          --results-directory artifacts/test-results
-          --blame-hang-timeout 15m
-          --blame-hang-dump-type none
+        shell: pwsh
+        run: |
+          $filter = if ($env:PRINT_BRIDGE_TESTS_FILTER) { '--filter', $env:PRINT_BRIDGE_TESTS_FILTER } else { @() }
+          dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj `
+            --configuration Release `
+            --no-build `
+            --verbosity normal `
+            --logger "trx;LogFileName=Wasla.PrintBridge.Tests.trx" `
+            --results-directory artifacts/test-results `
+            --blame-hang-timeout 15m `
+            --blame-hang-dump-type none `
+            @filter
 
       - name: Require every test to run and pass
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}

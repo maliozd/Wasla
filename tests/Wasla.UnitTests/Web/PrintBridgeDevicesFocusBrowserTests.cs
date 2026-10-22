@@ -21,6 +21,7 @@ namespace Wasla.UnitTests.Web;
 /// page started and rows it shows), never a fixed sleep. Skips only when no Chromium browser is installed (see
 /// <see cref="HeadlessChromium.BrowserVariable"/>) or Bootstrap cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
 {
     // Runs before the page's scripts: counts the print-job reads the page starts (its in-flight guard starts the next one

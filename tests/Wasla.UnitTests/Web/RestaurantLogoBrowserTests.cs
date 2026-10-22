@@ -19,6 +19,7 @@ namespace Wasla.UnitTests.Web;
 /// one of the wrong type before it is sent. Skips only when no Chromium browser is installed or Bootstrap cannot be
 /// loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class RestaurantLogoBrowserTests
 {
     private const string TenantThemeKey = "Wasla.tenant.theme";
