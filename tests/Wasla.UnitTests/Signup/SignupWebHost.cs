@@ -20,6 +20,7 @@ using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
@@ -64,7 +65,8 @@ internal sealed class SignupWebHost : IAsyncDisposable
         string keyRingPath,
         string environmentName = "Production",
         string applicationName = "Wasla",
-        IReadOnlyDictionary<string, string?>? configuration = null)
+        IReadOnlyDictionary<string, string?>? configuration = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         var contentRoot = Directory.CreateTempSubdirectory("wasla-signup-host-").FullName;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -107,6 +109,8 @@ internal sealed class SignupWebHost : IAsyncDisposable
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IBillingPlanPriceReader, BillingPlanPriceReader>();
         services.AddScoped<ITenantResolver, TenantResolver>();
         // The signup validator is not under test here; the controller's own checks still run.
         services.AddSingleton<IValidator<PendingRegistrationRequest>>(new InlineValidator<PendingRegistrationRequest>());
@@ -120,6 +124,7 @@ internal sealed class SignupWebHost : IAsyncDisposable
         services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
         services.AddWaslaTenantHostMissCache(builder.Configuration);
         services.AddWaslaHealthChecks();
+        configureServices?.Invoke(services);
 
         var app = builder.Build();
         app.UseRequestLocalization();

@@ -2851,7 +2851,6 @@
   <data name="Pricing.BillingNote" xml:space="preserve"><value>الأسعار إرشادية. الفوترة الفعلية غير مفعّلة بعد.</value></data>
   <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>للمطاعم الصغيرة والإعداد لأول مرة</value></data>
-  <data name="Pricing.Plan.Starter.Price" xml:space="preserve"><value>300 ليرة تركية / شهر</value></data>
   <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>جهاز Print Bridge نشط واحد</value></data>
   <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>لوحة طلبات أساسية</value></data>
   <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>ربط المنصات المدعومة</value></data>
@@ -2860,7 +2859,6 @@
   <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>سجل الطلبات</value></data>
   <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>للمطاعم النشطة</value></data>
-  <data name="Pricing.Plan.Pro.Price" xml:space="preserve"><value>600 ليرة تركية / شهر</value></data>
   <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 أجهزة Print Bridge نشطة</value></data>
   <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>كل ما في Starter</value></data>
   <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>مزامنة تلقائية للطلبات</value></data>
@@ -2870,7 +2868,6 @@
   <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>سجل الطلبات والتقارير</value></data>
   <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>للمطاعم المزدحمة أو العمليات الأكبر</value></data>
-  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve"><value>1,200 ليرة تركية / شهر</value></data>
   <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 أجهزة Print Bridge نشطة</value></data>
   <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>كل ما في Pro</value></data>
   <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 أجهزة Print Bridge نشطة</value></data>
@@ -2893,7 +2890,6 @@
   <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>اختيارك</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>باقة {0}</value></data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>مع هذه الباقة:</value></data>
-  <data name="Signup.YearlyAdvantageNote" xml:space="preserve"><value>شهران مجانيان مع الدفع السنوي.</value></data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>عرض مخصص</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>بيانات العمل</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>حساب المالك</value></data>
@@ -3005,7 +3001,6 @@
   <data name="Checkout.PlanLabel" xml:space="preserve"><value>الخطة</value></data>
   <data name="Checkout.OwnerFullNameLabel" xml:space="preserve"><value>الشخص المخوّل</value></data>
   <data name="Checkout.UnknownPlanLabel" xml:space="preserve"><value>باقة قياسية</value></data>
-  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve"><value>السعر الشهري المرجعي</value></data>
   <data name="Checkout.TotalAmount" xml:space="preserve"><value>المبلغ الإجمالي</value></data>
   <data name="Checkout.SimulateSuccess" xml:space="preserve"><value>محاكاة دفع ناجح</value></data>
   <data name="Checkout.SimulateFailed" xml:space="preserve"><value>محاكاة دفع فاشل</value></data>
@@ -4112,4 +4107,53 @@
   <data name="Marketing.Mock.SentToPrinter" xml:space="preserve"><value>أُرسل إلى طابعة الكاشير</value></data>
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>تم إغلاق {0}</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>المطبخ · {0}</value></data>
+  <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>أسعار الباقات</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>يحصّل الدفع السعر الساري لباقة التسجيل وفترة الفوترة. لا يمكن بدء الدفع لباقة وفترة بلا سعر. لا تُعدَّل الأسعار أبدًا: جدوِل سعرًا جديدًا من تاريخ لاحق.</value></data>
+  <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>الأسعار السارية الآن</value></data>
+  <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>الباقة</value></data>
+  <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>فترة الفوترة</value></data>
+  <data name="Admin.PlanPrices.Amount" xml:space="preserve"><value>المبلغ</value></data>
+  <data name="Admin.PlanPrices.Vat" xml:space="preserve"><value>ضريبة القيمة المضافة</value></data>
+  <data name="Admin.PlanPrices.EffectiveFrom" xml:space="preserve"><value>يسري من</value></data>
+  <data name="Admin.PlanPrices.NextScheduled" xml:space="preserve"><value>المجدول التالي</value></data>
+  <data name="Admin.PlanPrices.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.PlanPrices.NoPrice" xml:space="preserve"><value>لا يوجد سعر — الدفع غير متاح</value></data>
+  <data name="Admin.PlanPrices.Status.InEffect" xml:space="preserve"><value>سارٍ</value></data>
+  <data name="Admin.PlanPrices.Status.Scheduled" xml:space="preserve"><value>مجدول</value></data>
+  <data name="Admin.PlanPrices.Status.Superseded" xml:space="preserve"><value>تم استبداله</value></data>
+  <data name="Admin.PlanPrices.HistoryHeading" xml:space="preserve"><value>كل الأسعار</value></data>
+  <data name="Admin.PlanPrices.HistoryEmpty" xml:space="preserve"><value>لم يُحدَّد أي سعر بعد.</value></data>
+  <data name="Admin.PlanPrices.FormHeading" xml:space="preserve"><value>جدولة سعر</value></data>
+  <data name="Admin.PlanPrices.AmountKurus" xml:space="preserve"><value>المبلغ (قروش)</value></data>
+  <data name="Admin.PlanPrices.AmountKurusHelp" xml:space="preserve"><value>عدد صحيح بالقروش: 29990 تعني 299.90 ليرة تركية.</value></data>
+  <data name="Admin.PlanPrices.KurusValue" xml:space="preserve"><value>{0} قرش</value></data>
+  <data name="Admin.PlanPrices.VatQuestion" xml:space="preserve"><value>هل يشمل هذا المبلغ ضريبة القيمة المضافة؟</value></data>
+  <data name="Admin.PlanPrices.VatYes" xml:space="preserve"><value>نعم، شامل الضريبة</value></data>
+  <data name="Admin.PlanPrices.VatNo" xml:space="preserve"><value>لا، غير شامل الضريبة</value></data>
+  <data name="Admin.PlanPrices.EffectiveDate" xml:space="preserve"><value>يسري في تاريخ</value></data>
+  <data name="Admin.PlanPrices.EffectiveDateHelp" xml:space="preserve"><value>من الساعة 00:00 بتوقيت تركيا في هذا التاريخ. تاريخ اليوم يسري فورًا.</value></data>
+  <data name="Admin.PlanPrices.Save" xml:space="preserve"><value>جدولة السعر</value></data>
+  <data name="Admin.PlanPrices.SelectPlaceholder" xml:space="preserve"><value>اختر…</value></data>
+  <data name="Admin.PlanPrices.Saved" xml:space="preserve"><value>تم حفظ السعر.</value></data>
+  <data name="Admin.PlanPrices.Withdraw" xml:space="preserve"><value>سحب</value></data>
+  <data name="Admin.PlanPrices.Withdrawn" xml:space="preserve"><value>تم سحب السعر المجدول.</value></data>
+  <data name="Admin.PlanPrices.WithdrawRefused" xml:space="preserve"><value>يمكن سحب السعر الذي لم يسرِ بعد فقط.</value></data>
+  <data name="Admin.PlanPrices.Error.Summary" xml:space="preserve"><value>لم يتم حفظ السعر. تحقق من الحقول أدناه.</value></data>
+  <data name="Admin.PlanPrices.Error.Plan" xml:space="preserve"><value>اختر باقة يمكن شراؤها عبر الإنترنت.</value></data>
+  <data name="Admin.PlanPrices.Error.Period" xml:space="preserve"><value>اختر شهريًا أو سنويًا.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountRequired" xml:space="preserve"><value>أدخل المبلغ بالقروش.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountInvalid" xml:space="preserve"><value>أدخل عددًا صحيحًا من القروش بدون نقاط أو فواصل.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountRange" xml:space="preserve"><value>يجب أن يكون المبلغ بين 1 و1,000,000,000 قرش.</value></data>
+  <data name="Admin.PlanPrices.Error.VatRequired" xml:space="preserve"><value>اختر ما إذا كان المبلغ يشمل ضريبة القيمة المضافة.</value></data>
+  <data name="Admin.PlanPrices.Error.DateRequired" xml:space="preserve"><value>أدخل تاريخ سريان السعر.</value></data>
+  <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve"><value>أدخل تاريخًا صالحًا.</value></data>
+  <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve"><value>لا يمكن أن يكون التاريخ في الماضي.</value></data>
+  <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>يوجد بالفعل سعر لهذه الباقة وفترة الفوترة يسري في ذلك التاريخ.</value></data>
+  <data name="Billing.VatIncluded" xml:space="preserve"><value>شامل ضريبة القيمة المضافة</value></data>
+  <data name="Billing.VatExcluded" xml:space="preserve"><value>غير شامل ضريبة القيمة المضافة</value></data>
+  <data name="Billing.CurrencyTry" xml:space="preserve"><value>ليرة تركية</value></data>
+  <data name="Billing.PriceNotSet" xml:space="preserve"><value>لم يُحدَّد سعر هذه الباقة بعد.</value></data>
+  <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / شهر</value></data>
+  <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / سنة</value></data>
+  <data name="Pricing.YearlySaving" xml:space="preserve"><value>الدفع السنوي أقل بمقدار {0} من 12 دفعة شهرية.</value></data>
 </root>

@@ -17,6 +17,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [architecture/authentication.md](architecture/authentication.md) | Cookie schemes and Web/API session limits |
 | [architecture/realtime.md](architecture/realtime.md) | Live tenant notifications (SignalR hub, internal channel, browser fallback) |
 | [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md) | Decision: one Web instance for live notifications; multi-instance topology and its triggers |
+| [architecture/billing.md](architecture/billing.md) | Provider-neutral billing boundary, CentralDb plan prices, subscription and payment records, states, invariants, iyzico mapping intent, open price decision |
 | [orders/lifecycle.md](orders/lifecycle.md) | Statuses, operator actions, sync merge |
 | [orders/synchronization.md](orders/synchronization.md) | Worker, pagination, upsert |
 | [orders/live-screen.md](orders/live-screen.md) | Operational UI versus Orders |
@@ -56,6 +57,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | Print Bridge | [architecture/tenancy.md](architecture/tenancy.md), [integrations/print-bridge.md](integrations/print-bridge.md) |
 | Live updates, SignalR | [architecture/realtime.md](architecture/realtime.md), [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md), [architecture/authentication.md](architecture/authentication.md#long-lived-live-connections), [operations/observability.md](operations/observability.md#live-notification-metrics) |
 | Signup or provisioning | [architecture/tenancy.md](architecture/tenancy.md), [operations/cli.md](operations/cli.md) |
+| Billing, subscriptions, payment provider | [architecture/billing.md](architecture/billing.md), [architecture/tenancy.md](architecture/tenancy.md), [operations/migrations.md](operations/migrations.md) |
 | CLI | [operations/cli.md](operations/cli.md), [architecture/tenancy.md](architecture/tenancy.md) |
 | Migrations | [architecture/tenancy.md](architecture/tenancy.md), [operations/migrations.md](operations/migrations.md) |
 | Deploy or config | [operations/deployment.md](operations/deployment.md), [operations/observability.md](operations/observability.md) |

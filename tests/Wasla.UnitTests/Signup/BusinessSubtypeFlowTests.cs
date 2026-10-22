@@ -205,7 +205,7 @@ public sealed class BusinessSubtypeFlowTests : IDisposable
     private sealed class SelfServicePlanCatalog : IWaslaPlanCatalog
     {
         private static readonly WaslaPlanDefinition Starter = new(
-            "starter", "plan", "plan", 100m, "price", [], false, false, false, 1, "cta", "devices");
+            "starter", "plan", "plan", null, [], false, false, false, 1, "cta", "devices");
 
         public IReadOnlyList<WaslaPlanDefinition> GetPublicPlans() => [Starter];
         public string? NormalizePlanCode(string? planCode) => planCode;
