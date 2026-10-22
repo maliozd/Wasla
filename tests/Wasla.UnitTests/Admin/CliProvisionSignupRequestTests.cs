@@ -8,9 +8,11 @@ using Wasla.Cli;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
+using Wasla.UnitTests.Cli;
 
 namespace Wasla.UnitTests.Admin;
 
+[Collection(nameof(CliConsoleCollection))]
 public sealed class CliProvisionSignupRequestTests : IDisposable
 {
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
