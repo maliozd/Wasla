@@ -68,7 +68,7 @@ Requires `ENCRYPTION_MASTER_KEY` for most CLI invocation paths used after help (
 | `migrate-central` | Apply pending CentralDb migrations |
 | `migrate-tenant` | Apply pending TenantDb migrations for **one** tenant (`--slug` or `--tenant-id`) |
 | `migrate-all-tenants` | Apply pending TenantDb migrations for active tenants |
-| `migration-status` | Show applied/pending status for CentralDb and tenant DBs |
+| `migration-status` | Show applied/pending status for CentralDb and tenant DBs; `--require-current` exits non-zero when CentralDb or any active tenant DB has pending or unknown migrations, or cannot be read |
 
 ### Dry-run
 
@@ -88,7 +88,7 @@ Requires `ENCRYPTION_MASTER_KEY` for most CLI invocation paths used after help (
 
 - Applying the wrong context’s migrations to a database corrupts that database’s `__EFMigrationsHistory` relative to the model.
 - SQL errors such as “Invalid column name” after a pull usually mean tenant (or central) migrations were not applied.
-- In deployed environments every tenant migration must succeed before the new Web or Worker starts. See [deployment.md](deployment.md#release-order-migrate-every-database-first).
+- In deployed environments every tenant migration must succeed before the new Web or Worker starts. Use the release gate in [deployment.md](deployment.md#release-order-migrate-every-database-first), not the informational `migration-status` exit code alone. `migrate-all-tenants --dry-run` is also informational and must not be used as a release gate.
 - Do not reset or squash migrations unless explicitly requested as a dedicated task.
 
 ## Related docs

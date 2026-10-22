@@ -163,10 +163,15 @@ internal static class CliCommandTree
 
         // --- migration-status ---
         var migrationStatus = new Command("migration-status", "Show CentralDb and per-tenant TenantDb migration status.");
+        var optRequireCurrent = new Option<bool>("--require-current", "Exit non-zero if CentralDb or any active TenantDb is pending, ahead of this build, or unreadable");
+        migrationStatus.AddOption(optRequireCurrent);
 
         migrationStatus.SetHandler(async (InvocationContext context) =>
         {
-            context.ExitCode = await CliCommands.MigrationStatusAsync(host, context.GetCancellationToken());
+            context.ExitCode = await CliCommands.MigrationStatusAsync(
+                host,
+                context.ParseResult.GetValueForOption(optRequireCurrent),
+                context.GetCancellationToken());
         });
 
         // --- migrate-all-tenants ---

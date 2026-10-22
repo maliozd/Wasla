@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Cli;
+using Wasla.Domain.Entities.Central;
 using Wasla.Infrastructure.Persistence.Central;
 
 namespace Wasla.UnitTests.Cli;
@@ -33,7 +34,7 @@ public sealed class CliCommandInventoryTests
         ["seed-address-reference-data"] = [],
         ["migrate-tenant"] = ["--slug", "--tenant-id"],
         ["migrate-all-tenants"] = ["--dry-run", "--only"],
-        ["migration-status"] = [],
+        ["migration-status"] = ["--require-current"],
         ["delete-tenant"] = ["--slug", "--tenant-id", "--confirm", "--force-production"],
         ["reset-tenant-db"] = ["--slug", "--tenant-id", "--confirm", "--force-production"],
         ["reset-all-tenant-dbs"] = ["--confirm", "--force-production"],
@@ -248,6 +249,62 @@ public sealed class CliCommandInventoryTests
 
         Assert.Equal(expectedExitCode, code);
         Assert.Contains(expectedOutput, output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task MigrationStatus_RequireCurrent_RejectsPendingCentralMigrations()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync(Ct);
+        using var host = CentralOnlyHost(connection);
+        using (var scope = host.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<CentralDbContext>().Database.EnsureCreatedAsync(Ct);
+
+        var (code, output) = await CaptureAsync(() => CliCommandTree.Build(host).InvokeAsync(["migration-status", "--require-current"]));
+
+        Assert.Equal(1, code);
+        Assert.Contains("Migration readiness check failed.", output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(false, false, 0)]
+    [InlineData(true, false, 1)]
+    [InlineData(false, true, 1)]
+    public async Task MigrationStatus_RequireCurrent_RejectsUnknownHistoryAndUnreadableActiveTenant(
+        bool unknownHistory, bool unreadableTenant, int expectedCode)
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync(Ct);
+        using var host = CentralOnlyHost(connection);
+        using (var scope = host.Services.CreateScope())
+        {
+            var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+            await central.Database.EnsureCreatedAsync(Ct);
+            await central.Database.ExecuteSqlRawAsync(
+                "CREATE TABLE \"__EFMigrationsHistory\" (\"MigrationId\" TEXT NOT NULL PRIMARY KEY, \"ProductVersion\" TEXT NOT NULL);");
+            foreach (var migration in central.Database.GetMigrations())
+                await central.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO \"__EFMigrationsHistory\" VALUES ({0}, '8.0.10');", migration);
+            if (unknownHistory)
+                await central.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO \"__EFMigrationsHistory\" VALUES ('20990101_NewerBuild', '8.0.10');");
+            if (unreadableTenant)
+            {
+                central.Tenants.Add(new Tenant
+                {
+                    Name = "Unreachable", Slug = "unreachable", PrimaryDomain = "unreachable.app.wasla.local",
+                    DatabaseName = "Wasla_Unreachable", EncryptedConnectionString = "fake"
+                });
+                await central.SaveChangesAsync(Ct);
+            }
+        }
+
+        var (code, output) = await CaptureAsync(() => CliCommandTree.Build(host).InvokeAsync(["migration-status", "--require-current"]));
+
+        Assert.Equal(expectedCode, code);
+        Assert.Contains(expectedCode == 0 ? "All active databases are current" : "Migration readiness check failed", output, StringComparison.Ordinal);
+        if (unreadableTenant)
+            Assert.Contains("(could not read migration status) InvalidOperationException", output, StringComparison.Ordinal);
     }
 
     // --- Destructive guards -------------------------------------------------------------------------

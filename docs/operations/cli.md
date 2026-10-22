@@ -117,7 +117,7 @@ Both `provision-signup-request` and `add-tenant` create the tenant's single `Ten
 | `migrate-central` | Apply pending CentralDb migrations |
 | `migrate-tenant` | Apply pending TenantDb migrations for one tenant (`--slug` or `--tenant-id`) |
 | `migrate-all-tenants` | Apply pending TenantDb migrations for active tenants; supports `--dry-run`, `--only` |
-| `migration-status` | Show CentralDb and per-tenant migration status |
+| `migration-status` | Show CentralDb and per-tenant migration status; `--require-current` provides a strict, read-only release gate (pending, unknown or unreadable schema exits non-zero) |
 | `seed-turkey-reference-data` | Seed Turkish cities/districts into CentralDb |
 | `seed-address-reference-data` | Import address reference data |
 
