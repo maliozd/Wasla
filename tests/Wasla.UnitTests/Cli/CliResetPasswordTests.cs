@@ -13,6 +13,7 @@ using Wasla.UnitTests.Admin;
 
 namespace Wasla.UnitTests.Cli;
 
+[Collection(nameof(CliConsoleCollection))]
 public sealed class CliResetPasswordTests
 {
     private const string OldPassword = "OldPassword123!";
