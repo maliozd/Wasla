@@ -44,11 +44,7 @@ public sealed class BillingPlanPriceAdminService : IBillingPlanPriceAdminService
             .ThenByDescending(p => p.EffectiveFromUtc)
             .ToListAsync(ct);
 
-        var inEffectIds = rows
-            .Where(p => p.EffectiveFromUtc <= now)
-            .GroupBy(p => (p.PlanCode, p.BillingPeriod))
-            .Select(g => g.MaxBy(p => p.EffectiveFromUtc)!.Id)
-            .ToHashSet();
+        var inEffectIds = BillingPlanPriceQueries.InEffect(rows, now).Select(p => p.Id).ToHashSet();
 
         var prices = rows.Select(p => new BillingPlanPriceRow(
                 p.Id,

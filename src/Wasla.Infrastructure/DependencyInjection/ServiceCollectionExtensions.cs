@@ -70,6 +70,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
         services.AddScoped<IBillingSubscriptionStore, BillingSubscriptionStore>();
         services.AddScoped<IBillingPlanPriceAdminService, BillingPlanPriceAdminService>();
+        services.AddScoped<IBillingPlanPriceReader, BillingPlanPriceReader>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<ITenantBusinessSubtypeReader, TenantBusinessSubtypeReader>();
 

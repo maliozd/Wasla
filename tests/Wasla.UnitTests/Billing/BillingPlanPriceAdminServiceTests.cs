@@ -163,8 +163,37 @@ public sealed class BillingPlanPriceAdminServiceTests : IDisposable
         var priced = await PendingRegistrations().GetCheckoutDetailsAsync(registration.Id, Ct);
 
         Assert.Null(none!.Price);
-        Assert.Equal(new BillingPlanPriceQuote(77.70m, true), priced!.Price);
+        Assert.Equal(("Starter", "Monthly", new BillingPrice(77.70m, "TRY"), true), (priced!.Price!.PlanCode, priced.Price.BillingPeriod, priced.Price.Price, priced.Price.VatIncluded));
         Assert.False(priced.IsYearlyBilling);
+    }
+
+    [Fact]
+    public async Task ThePublicReader_ReturnsTheSamePricesCheckoutCharges_MonthlyAndYearlySeparately()
+    {
+        var monthly = await ScheduleAsync("Starter", "30000", vat: true, Today);
+        var yearly = await ScheduleAsync("Starter", "275000", vat: false, Today, period: "Yearly");
+        var next = await ScheduleAsync("Starter", "40000", vat: true, Today.AddDays(2));
+
+        var now = await Reader().GetPricesInEffectAsync(Ct);
+        _db.Time.UtcNow = BillingPlanPriceInput.EffectiveFromUtc(Today.AddDays(2));
+        var later = await Reader().GetPricesInEffectAsync(Ct);
+        var charged = await StartAsync();
+
+        Assert.Equal((monthly, 300m, true), Starter(now, "Monthly"));
+        Assert.Equal((yearly, 2750m, false), Starter(now, "Yearly"));
+        Assert.DoesNotContain(now, p => p.PlanPriceId == next);
+        // The seeded Pro, Monthly price is there too; nothing is invented for plans and periods without a price.
+        Assert.Contains(now, p => p.PlanCode == "Pro" && p.BillingPeriod == "Monthly");
+        Assert.DoesNotContain(now, p => p.PlanCode == "ProPlus" || (p.PlanCode == "Pro" && p.BillingPeriod == "Yearly"));
+        Assert.Equal((next, 400m, true), Starter(later, "Monthly"));
+        Assert.Equal((yearly, 2750m, false), Starter(later, "Yearly"));
+        Assert.Equal(next, charged.PlanPriceId);
+
+        static (Guid, decimal, bool) Starter(IReadOnlyList<BillingPriceQuote> prices, string period)
+        {
+            var quote = prices.Single(p => p.PlanCode == "Starter" && p.BillingPeriod == period);
+            return (quote.PlanPriceId, quote.Price.Amount, quote.VatIncluded);
+        }
     }
 
     [Fact]
@@ -214,6 +243,8 @@ public sealed class BillingPlanPriceAdminServiceTests : IDisposable
 
     private BillingPlanPriceAdminService Service() =>
         new(_db.Open(), new WaslaPlanCatalog(), _db.Time, NullLogger<BillingPlanPriceAdminService>.Instance);
+
+    private BillingPlanPriceReader Reader() => new(_db.Open(), _db.Time);
 
     private PendingRegistrationService PendingRegistrations()
     {

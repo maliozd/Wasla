@@ -2883,9 +2883,6 @@
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve">
     <value>Для небольших ресторанов и первой установки</value>
   </data>
-  <data name="Pricing.Plan.Starter.Price" xml:space="preserve">
-    <value>300 TL / месяц</value>
-  </data>
   <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve">
     <value>1 активное устройство Print Bridge</value>
   </data>
@@ -2909,9 +2906,6 @@
   </data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve">
     <value>Для активных ресторанов</value>
-  </data>
-  <data name="Pricing.Plan.Pro.Price" xml:space="preserve">
-    <value>600 TL / месяц</value>
   </data>
   <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve">
     <value>3 активных устройства Print Bridge</value>
@@ -2939,9 +2933,6 @@
   </data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve">
     <value>Для оживленных ресторанов или крупных предприятий</value>
-  </data>
-  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve">
-    <value>1200 TL / месяц</value>
   </data>
   <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve">
     <value>10 активных устройств Print Bridge</value>
@@ -3008,9 +2999,6 @@
   </data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve">
     <value>С этим пакетом:</value>
-  </data>
-  <data name="Signup.YearlyAdvantageNote" xml:space="preserve">
-    <value>2 месяца бесплатно при ежегодной оплате.</value>
   </data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve">
     <value>Индивидуальное предложение</value>
@@ -4653,5 +4641,9 @@
   <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>Для этого тарифа и периода оплаты на эту дату уже есть цена.</value></data>
   <data name="Billing.VatIncluded" xml:space="preserve"><value>НДС включён</value></data>
   <data name="Billing.VatExcluded" xml:space="preserve"><value>Без НДС</value></data>
-  <data name="Checkout.PriceNotSet" xml:space="preserve"><value>Цена этого тарифа ещё не задана.</value></data>
+  <data name="Billing.CurrencyTry" xml:space="preserve"><value>TL</value></data>
+  <data name="Billing.PriceNotSet" xml:space="preserve"><value>Цена этого тарифа ещё не задана.</value></data>
+  <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / месяц</value></data>
+  <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / год</value></data>
+  <data name="Pricing.YearlySaving" xml:space="preserve"><value>Годовая оплата на {0} меньше 12 ежемесячных платежей.</value></data>
 </root>

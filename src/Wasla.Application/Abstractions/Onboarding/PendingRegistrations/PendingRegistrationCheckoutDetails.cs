@@ -1,4 +1,5 @@
-﻿using Wasla.Domain.Enums;
+﻿using Wasla.Application.Abstractions.Billing;
+using Wasla.Domain.Enums;
 
 namespace Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 
@@ -25,12 +26,6 @@ public sealed record PendingRegistrationCheckoutDetails(
     string? PostalCode,
     string? LocationUrl,
     PendingRegistrationStatus Status,
-    BillingPlanPriceQuote? Price,
+    BillingPriceQuote? Price,
     bool IsYearlyBilling,
     IReadOnlyList<string>? BusinessTypeCodes = null);
-
-/// <summary>
-/// The CentralDb plan price in effect for the registration's plan and period when the summary was read, the same price
-/// a checkout would charge (WAS-147). Null when no price applies, and then no checkout can start.
-/// </summary>
-public sealed record BillingPlanPriceQuote(decimal AmountTry, bool VatIncluded);

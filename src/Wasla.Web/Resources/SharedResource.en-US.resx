@@ -2851,7 +2851,6 @@
   <data name="Pricing.BillingNote" xml:space="preserve"><value>Prices are indicative. Real billing is not active yet.</value></data>
   <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>For small restaurants and first-time setup</value></data>
-  <data name="Pricing.Plan.Starter.Price" xml:space="preserve"><value>300 TL / month</value></data>
   <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>1 active Print Bridge device</value></data>
   <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>Basic order dashboard</value></data>
   <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>Supported platform connections</value></data>
@@ -2860,7 +2859,6 @@
   <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>Order history</value></data>
   <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>For active restaurants</value></data>
-  <data name="Pricing.Plan.Pro.Price" xml:space="preserve"><value>600 TL / month</value></data>
   <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 active Print Bridge devices</value></data>
   <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>Everything in Starter</value></data>
   <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>Automatic order synchronization</value></data>
@@ -2870,7 +2868,6 @@
   <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>Order history and reports</value></data>
   <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>For busy restaurants or larger operations</value></data>
-  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve"><value>1,200 TL / month</value></data>
   <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 active Print Bridge devices</value></data>
   <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>Everything in Pro</value></data>
   <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 active Print Bridge devices</value></data>
@@ -2893,7 +2890,6 @@
   <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>Your selection</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>{0} package</value></data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>With this package:</value></data>
-  <data name="Signup.YearlyAdvantageNote" xml:space="preserve"><value>2 months free with yearly billing.</value></data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>Custom offer</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>Business details</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>Owner account</value></data>
@@ -4155,5 +4151,9 @@
   <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>A price for this plan and billing period already takes effect on that date.</value></data>
   <data name="Billing.VatIncluded" xml:space="preserve"><value>VAT included</value></data>
   <data name="Billing.VatExcluded" xml:space="preserve"><value>VAT not included</value></data>
-  <data name="Checkout.PriceNotSet" xml:space="preserve"><value>The price for this plan has not been set yet.</value></data>
+  <data name="Billing.CurrencyTry" xml:space="preserve"><value>TL</value></data>
+  <data name="Billing.PriceNotSet" xml:space="preserve"><value>The price for this plan has not been set yet.</value></data>
+  <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / month</value></data>
+  <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / year</value></data>
+  <data name="Pricing.YearlySaving" xml:space="preserve"><value>Yearly billing costs {0} less than 12 monthly payments.</value></data>
 </root>

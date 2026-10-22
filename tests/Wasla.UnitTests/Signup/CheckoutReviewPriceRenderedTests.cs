@@ -31,8 +31,8 @@ public sealed class CheckoutReviewPriceRenderedTests : IClassFixture<SignupRende
 
         Assert.Equal(HttpStatusCode.OK, before.Status);
         var unpriced = WebUtility.HtmlDecode(before.Body);
-        Assert.Contains(Text("Checkout.PriceNotSet"), unpriced, StringComparison.Ordinal);
-        Assert.DoesNotContain(" TRY", unpriced, StringComparison.Ordinal);
+        Assert.Contains(Text("Billing.PriceNotSet"), unpriced, StringComparison.Ordinal);
+        Assert.DoesNotContain(" TL / ay", unpriced, StringComparison.Ordinal);
 
         // The registration is Starter, Monthly. Another plan's price and a future Starter price must not show.
         await _hosts.AddPlanPriceAsync(Price("Starter", 123.45m, vatIncluded: false, DateTime.UtcNow.AddDays(-1)));
@@ -41,9 +41,9 @@ public sealed class CheckoutReviewPriceRenderedTests : IClassFixture<SignupRende
 
         var after = WebUtility.HtmlDecode((await owner.GetAsync($"/checkout/review/{applicant.Id}")).Body);
 
-        Assert.Contains("123,45 TRY", after, StringComparison.Ordinal);
+        Assert.Contains("123,45 TL / ay", after, StringComparison.Ordinal);
         Assert.Contains(Text("Billing.VatExcluded"), after, StringComparison.Ordinal);
-        Assert.DoesNotContain(Text("Checkout.PriceNotSet"), after, StringComparison.Ordinal);
+        Assert.DoesNotContain(Text("Billing.PriceNotSet"), after, StringComparison.Ordinal);
         Assert.DoesNotContain("999,99", after, StringComparison.Ordinal);
         Assert.DoesNotContain("555,55", after, StringComparison.Ordinal);
     }
