@@ -10,12 +10,16 @@ on:
       - dev
       - master
   workflow_dispatch:
+  # Called by ci-base-change.yml when a pull request's base changes to master. A called workflow keeps the caller's
+  # event, so the scope and the concurrency group below are those of a pull request into master.
+  workflow_call:
 
 permissions:
   contents: read
 
 # A new push to a pull request cancels the pull request's older run. Pushes and manual runs each get a group of their
 # own (a pending run is cancelled by any newer run in its group), so every commit on dev and master gets a result.
+# A run started by a base change to master is in its pull request's group, so it replaces the run for the old base.
 concurrency:
   group: ci-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
   cancel-in-progress: true

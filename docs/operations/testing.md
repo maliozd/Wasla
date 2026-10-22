@@ -42,7 +42,7 @@ A new push to a pull request cancels that pull request's older run; a cancelled 
 | Event | Scope | `Wasla.UnitTests` | `Wasla.PrintBridge.Tests` |
 | --- | --- | --- | --- |
 | Pull request into `dev` | fast | `--filter "Category!=Browser"` | `--filter "Category!=WebView2Runtime"` |
-| Push to `dev`, pull request into `master`, push to `master`, manual run on any branch | full | No filter: every test | No filter: every test |
+| Push to `dev`, pull request into `master` (also when its base changes to `master`), push to `master`, manual run on any branch | full | No filter: every test | No filter: every test |
 
 Any other event or base branch also gets the full scope. Both scopes build the whole solution, run every tracked Node test, check the prerequisites, require every selected test to run and pass, report leftover processes and upload the results.
 
@@ -90,7 +90,7 @@ Or open **Actions → CI → Run workflow** and choose the branch. The run tests
 
 A pull request into `dev` can merge with only the fast scope green. The full scope then runs on the push to `dev`, so `dev` can turn red for a browser or WebView2 runtime failure that the pull request never ran. Treat a red `dev` run as the first thing to fix (fix forward or revert), and do not open a pull request from `dev` into `master` until the latest `dev` run is green. `master` gets no unvalidated change: pull requests into `master` and pushes to `master` always run the full scope.
 
-The workflow reacts to a pull request being opened, pushed to or reopened, not to its base branch changing. After moving a pull request's base from `dev` to `master`, push a commit or close and reopen it so the full scope runs. Re-running an old run keeps the event and base branch it started with, and so its scope.
+Moving a pull request's base to `master` starts the full scope by itself: `.github/workflows/ci-base-change.yml` reacts to an edit of a pull request into `master`, and when the edit changed the base it runs the CI workflow on the merge with `master`. Its checks are named `Full CI after base change / ` followed by the CI job names. It replaces an older run of that pull request that is still in progress. A title or description edit only skips its job (`Full CI after base change` shows as skipped) and starts no CI run. Moving a base from `master` back to `dev` starts nothing; the existing full checks stay. Re-running an old run keeps the event and base branch it started with, and so its scope.
 
 Prerequisites on the Windows runner:
 

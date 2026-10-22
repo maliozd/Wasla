@@ -1,0 +1,24 @@
+name: CI after base change
+
+# The CI workflow does not react to a pull request's base branch changing, so a pull request moved from dev to master
+# would keep only its fast checks. This runs the CI workflow again for a pull request whose base changed to master;
+# the CI workflow sees a pull request into master and runs the full scope on the merge with master.
+#
+# It is a separate workflow because adding the edited event to ci.yml would start a CI run for every title or body edit:
+# that run would either cancel the pull request's real run (same concurrency group) or, skipped, leave skipped checks
+# with the CI job names, which GitHub counts as passing. Here a title or body edit only skips this job.
+on:
+  pull_request:
+    types:
+      - edited
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  full-ci:
+    name: Full CI after base change
+    if: ${{ github.event.changes.base != null }}
+    uses: ./.github/workflows/ci.yml
