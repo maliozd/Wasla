@@ -2727,6 +2727,9 @@
   <data name="PrintBridge.ConfirmReprint" xml:space="preserve">
     <value>إعادة طباعة الإيصال للطلب {0}؟</value>
   </data>
+  <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
+    <value>تحديثات هذا الجدول متوقفة مؤقتًا أثناء تحديد نص فيه أو استخدام أحد عناصر التحكم فيه.</value>
+  </data>
   <data name="PrintBridge.CreatedAt" xml:space="preserve">
     <value>تاريخ الإنشاء</value>
   </data>

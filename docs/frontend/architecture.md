@@ -88,6 +88,9 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 - Viewport meta on layouts; Live Screen has narrow Focus behavior.
 - RTL: `dir="rtl"` + `wwwroot/css/rtl.css` (+ logical properties in foundation/theme where applied).
 - Focus-visible styles on key controls; `aria-pressed` on view switch; live regions for connection/sound status.
+- A label's `for` names the id the input actually renders (an explicit `id` overrides the one `asp-for` would give it).
+- The collapsed tenant sidebar shows icons only: link and control text is visually hidden, never `display: none`, so it stays the accessible name; decorative icons are `aria-hidden` (WAS-132).
+- A region rebuilt from polled markup is replaced only when its markup changed, and not while the user is selecting text in it or would lose the focused control; see the Print Bridge Devices page in [../integrations/print-bridge.md](../integrations/print-bridge.md#devices-page-presence-web-panel).
 - `prefers-reduced-motion`: Live view transitions and several theme animations disable/simplify when reduce is set.
 
 ### Browser-local vs server settings
