@@ -23,7 +23,7 @@ const MESSAGES = {
   statusInactive: "Inactive", lastSeen: "Last seen", lastSeenNever: "Never", versionUnknown: "Unknown version", details: "Details",
   emptyValue: "—", lastConnectedNone: "None", noDevicesTitle: "No devices yet", noDevicesDescription: "Set one up.",
   setupNewDevice: "Set up a new device", machineName: "Computer", printerName: "Printer", deviceActive: "Active",
-  deviceUpdateFailed: "Update failed", reprintFailed: "Request failed"
+  deviceUpdateFailed: "Update failed", reprintFailed: "Request failed", updatesPaused: "Updates paused"
 };
 
 function device(overrides = {}) {
@@ -125,7 +125,7 @@ function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", vis
 
   const ids = ["printBridgeDevicesPanel", "printBridgeSummaryActive", "printBridgeSummaryIncluded", "printBridgeSummaryLastDevice",
     "printBridgeSummaryLastSeen", "printBridgeLimitExceededAlert", "printBridgeLimitReachedAlert", "printBridgeMessageHost",
-    "printBridgeJobsPanel", "printBridgeRefreshJobsBtn"];
+    "printBridgeJobsPanel", "printBridgeRefreshJobsBtn", "printBridgeJobsPaused", "printBridgeDevicesPaused"];
   const els = Object.fromEntries(ids.map((id) => [id, el(id)]));
   els.printBridgeAntiForgery = Object.assign(el("printBridgeAntiForgery"), { querySelector: () => ({ value: "antiforgery" }) });
   const focused = [];
@@ -238,6 +238,10 @@ function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", vis
     },
     async setVisibility(state) { document.visibilityState = state; (docListeners.visibilitychange || []).forEach((fn) => fn()); await settle(); },
     async pagehide() { (winListeners.pagehide || []).forEach((fn) => fn({})); await settle(); },
+    /** Dispatches a document event, as the browser does for focusin and selectionchange. */
+    async fire(name) { (docListeners[name] || []).forEach((fn) => fn({})); await settle(); },
+    jobsPaused: () => els.printBridgeJobsPaused.textContent,
+    devicesPaused: () => els.printBridgeDevicesPaused.textContent,
     serverNow: () => clock.now - clientOffsetMs,
     toggles,
     focused,
@@ -608,37 +612,84 @@ test("a changed answer gives focus back to the same job's reprint button without
   assert.deepEqual(JSON.parse(JSON.stringify(p.focused)), [{ row: "j2", control: ".pb-reprint-job-btn", options: { preventScroll: true } }]);
 });
 
-test("while the focused button would disappear, the answer waits until focus has left the region", async () => {
+test("while the focused button would disappear, the answer waits and says so, and applies as soon as focus leaves", async () => {
   const p = page({ jobs: jobTable(jobRow("j1"), jobRow("j2")) });
   p.focus("j1");
-  const changed = jobTable(jobRow("j1", false), jobRow("j2"));
+  const changed = jobTable(jobRow("j3"), jobRow("j1", false), jobRow("j2"));
   p.setJobs(changed);
 
   await p.advance(6_000);
   assert.equal(p.jobsRequests().length, 2);
   assert.equal(p.els.printBridgeJobsPanel.writes, 0, "focus stays on the button the user is on");
+  assert.equal(p.jobsPaused(), "Updates paused");
+  assert.equal(p.els.printBridgeJobsPaused.classList.contains("mb-2"), true);
 
+  // Focus moves out of the region: the waiting answer applies at once, without another request.
   p.focus("outside");
-  await p.advance(3_000);
+  await p.fire("focusin");
+  assert.equal(p.jobsRequests().length, 2);
   assert.equal(p.els.printBridgeJobsPanel.writes, 1);
   assert.equal(p.els.printBridgeJobsPanel.innerHTML, changed);
+  assert.equal(p.jobsPaused(), "");
+  assert.equal(p.els.printBridgeJobsPaused.classList.contains("mb-2"), false);
   assert.deepEqual(p.focused, [], "focus is never moved into the region");
 });
 
-test("while text is selected in the job region, a changed answer waits; a selection elsewhere does not hold it back", async () => {
+test("focus moving to another job's button that still exists applies the waiting answer and keeps focus there", async () => {
+  const p = page({ jobs: jobTable(jobRow("j1"), jobRow("j2")) });
+  p.focus("j1");
+  p.setJobs(jobTable(jobRow("j3"), jobRow("j1", false), jobRow("j2")));
+  await p.advance(3_000);
+  assert.equal(p.els.printBridgeJobsPanel.writes, 0);
+
+  p.focus("j2");
+  await p.fire("focusin");
+  assert.equal(p.els.printBridgeJobsPanel.writes, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(p.focused)), [{ row: "j2", control: ".pb-reprint-job-btn", options: { preventScroll: true } }]);
+  assert.equal(p.jobsPaused(), "");
+});
+
+test("while text is selected in the job region, a changed answer waits and says so once; ending the selection applies it", async () => {
   const p = page({ jobs: jobTable(jobRow("j1")) });
+  // Count writes to the status line: each write would be announced again.
+  let noticeText = "", noticeWrites = 0;
+  Object.defineProperty(p.els.printBridgeJobsPaused, "textContent", {
+    get: () => noticeText, set: (v) => { noticeText = String(v); noticeWrites++; }
+  });
   p.select("printBridgeJobsPanel");
   p.setJobs(jobTable(jobRow("j2"), jobRow("j1")));
 
-  await p.advance(6_000);
+  await p.advance(9_000);
+  await p.fire("selectionchange"); // still selected inside: keeps waiting
   assert.equal(p.els.printBridgeJobsPanel.writes, 0);
+  assert.equal(noticeText, "Updates paused");
+  assert.equal(noticeWrites, 1, "three waiting polls and a selection change announce the pause once");
 
+  // The selection moves elsewhere: applied at once, without waiting for the next poll.
   p.select("elsewhere");
-  await p.advance(3_000);
+  await p.fire("selectionchange");
+  assert.equal(p.jobsRequests().length, 3);
   assert.equal(p.els.printBridgeJobsPanel.writes, 1);
+  assert.equal(noticeText, "");
 });
 
-test("while text is selected in the devices table, a changed snapshot waits for the next one", async () => {
+test("an answer that returns to what is shown clears a waiting update and its notice", async () => {
+  const shown = jobTable(jobRow("j1"));
+  const p = page({ jobs: shown });
+  p.select("printBridgeJobsPanel");
+  p.setJobs(jobTable(jobRow("j2"), jobRow("j1")));
+  await p.advance(3_000);
+  assert.equal(p.jobsPaused(), "Updates paused");
+
+  p.setJobs(shown);
+  await p.advance(3_000);
+  assert.equal(p.jobsPaused(), "");
+  p.select(null);
+  await p.fire("selectionchange");
+  assert.equal(p.els.printBridgeJobsPanel.writes, 0, "nothing is waiting any more");
+});
+
+test("while text is selected in the devices table, a changed snapshot waits and says so; ending the selection applies it", async () => {
   const p = page();
   const writes = p.els.printBridgeDevicesPanel.writes;
   p.select("printBridgeDevicesPanel");
@@ -648,10 +699,13 @@ test("while text is selected in the devices table, a changed snapshot waits for 
   assert.equal(p.els.printBridgeDevicesPanel.writes, writes);
   assert.match(p.panel(), /Kitchen/);
   assert.equal(p.els.printBridgeSummaryLastDevice.textContent, "Bar", "the summary outside the table still updates");
+  assert.equal(p.devicesPaused(), "Updates paused");
+  assert.equal(p.jobsPaused(), "", "only the waiting region says so");
 
   p.select(null);
-  p.cfg.refreshDevices();
-  await p.respond(snapshot({ serverMs: T0 + 21_000, devices: [device({ name: "Bar" })] }));
+  await p.fire("selectionchange");
+  assert.equal(p.deviceRequests().length, 1, "applied from the snapshot already read");
   assert.equal(p.els.printBridgeDevicesPanel.writes, writes + 1);
   assert.match(p.panel(), /Bar/);
+  assert.equal(p.devicesPaused(), "");
 });

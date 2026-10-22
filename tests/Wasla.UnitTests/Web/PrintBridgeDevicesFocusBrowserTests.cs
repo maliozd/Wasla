@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Domain.Entities.Customer;
@@ -66,6 +67,8 @@ public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
             jobs: [...panel.querySelectorAll('tr[data-print-job-id]')].map(r => r.getAttribute('data-print-job-id')),
             reprint: [...panel.querySelectorAll('.pb-reprint-job-btn')].map(b => b.getAttribute('data-job-id')),
             deviceNames: [...devices.querySelectorAll('tr[data-device-id] .fw-semibold')].map(e => e.textContent),
+            jobsPaused: (document.getElementById('printBridgeJobsPaused') || {}).textContent ?? null,
+            devicesPaused: (document.getElementById('printBridgeDevicesPaused') || {}).textContent ?? null,
             scrollLeft: scroller ? scroller.scrollLeft : 0, scrollY,
             scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth,
             errors: window.__waslaPageErrors
@@ -142,6 +145,8 @@ public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
         Assert.True(job == after.GetProperty("focusedJob").GetString(),
             $"{page}: focus is on {after.GetProperty("focused")} (job {after.GetProperty("focusedJob")}), expected the reprint button of job {job}");
         Assert.True(after.GetProperty("focusInJobs").GetBoolean());
+        Assert.True(after.GetProperty("focusVisible").GetBoolean(), $"{page}: the restored reprint button has no visible focus indicator (:focus-visible)");
+        Assert.Equal("", after.GetProperty("jobsPaused").GetString());
         foreach (var scroll in new[] { "scrollLeft", "scrollY" })
             Assert.True(Math.Abs(before.GetProperty(scroll).GetDouble() - after.GetProperty(scroll).GetDouble()) <= 1,
                 $"{page}: {scroll} moved from {before.GetProperty(scroll)} to {after.GetProperty(scroll)}");
@@ -163,12 +168,22 @@ public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
 
         var job = await TabIntoFirstReprintButtonAsync(browser, page, ct);
         await SetJobStatusAsync(Guid.Parse(job), PrintJobStatus.Pending, ct);
-        await WaitForCompletedPollsAsync(browser, 2, page, ct);
+        // New receipts keep arriving while the user stays on the button.
+        var arrived = new List<Guid>();
+        for (var i = 0; i < 3; i++)
+        {
+            arrived.Add(await AddReprintableJobAsync(ct));
+            await WaitForCompletedPollsAsync(browser, 1, page, ct);
+        }
 
         var waiting = await StateAsync(browser, ct);
         Assert.True(waiting.GetProperty("sameNode").GetBoolean(),
             $"{page}: the refresh took focus away from the button (now on {waiting.GetProperty("focused")})");
+        Assert.True(waiting.GetProperty("focusVisible").GetBoolean(), $"{page}: the waiting button lost its focus ring");
         Assert.Contains(job, waiting.GetProperty("reprint").EnumerateArray().Select(e => e.GetString()));
+        Assert.All(arrived, id => Assert.DoesNotContain(id.ToString(), waiting.GetProperty("jobs").EnumerateArray().Select(e => e.GetString())));
+        await AssertPausedNoticeAsync(browser, waiting, "jobsPaused", "#printBridgeJobsPaused", "ru-RU", page, ct);
+        Assert.Equal("", waiting.GetProperty("devicesPaused").GetString());
 
         // The user moves on (Shift+Tab to the Refresh button, outside the region); the next poll applies the change.
         await browser.PressKeyAsync("Tab", shift: true, ct);
@@ -178,6 +193,8 @@ public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
             TimeSpan.FromSeconds(30), ct), $"{page}: the waiting update was never applied");
         var applied = await StateAsync(browser, ct);
         Assert.Equal("printBridgeRefreshJobsBtn", applied.GetProperty("focused").GetString());
+        Assert.All(arrived, id => Assert.Contains(id.ToString(), applied.GetProperty("jobs").EnumerateArray().Select(e => e.GetString())));
+        Assert.Equal("", applied.GetProperty("jobsPaused").GetString());
         AssertNoOverflowOrErrors(applied, page);
     }
 
@@ -189,13 +206,20 @@ public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
         await using var browser = await OpenDevicesPageAsync("en-US", 1366, ct);
 
         var selected = await SelectFirstOrderCodeAsync(browser, ct);
-        var added = await AddReprintableJobAsync(ct);
-        await WaitForCompletedPollsAsync(browser, 2, page, ct);
+        // The selection is left in place while several receipts arrive.
+        var arrived = new List<Guid>();
+        for (var i = 0; i < 3; i++)
+        {
+            arrived.Add(await AddReprintableJobAsync(ct));
+            await WaitForCompletedPollsAsync(browser, 1, page, ct);
+        }
 
+        var added = arrived[^1];
         var waiting = await StateAsync(browser, ct);
-        Assert.DoesNotContain(added.ToString(), waiting.GetProperty("jobs").EnumerateArray().Select(e => e.GetString()));
+        Assert.All(arrived, id => Assert.DoesNotContain(id.ToString(), waiting.GetProperty("jobs").EnumerateArray().Select(e => e.GetString())));
         Assert.Equal(selected, waiting.GetProperty("selection").GetString());
         Assert.True(waiting.GetProperty("selectionConnected").GetBoolean(), $"{page}: the selection points into removed markup");
+        await AssertPausedNoticeAsync(browser, waiting, "jobsPaused", "#printBridgeJobsPaused", "en-US", page, ct);
 
         // A click on the page heading ends the selection; the next poll applies the change without moving focus.
         await ClickAsync(browser, "#recent-print-activity h2", ct);
@@ -203,6 +227,8 @@ public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
         Assert.True(await browser.WaitForAsync(HasJob(added), TimeSpan.FromSeconds(30), ct), $"{page}: the waiting update was never applied");
         var applied = await StateAsync(browser, ct);
         Assert.False(applied.GetProperty("focusInJobs").GetBoolean(), $"{page}: the update moved focus into the region");
+        Assert.All(arrived, id => Assert.Contains(id.ToString(), applied.GetProperty("jobs").EnumerateArray().Select(e => e.GetString())));
+        Assert.Equal("", applied.GetProperty("jobsPaused").GetString());
         AssertNoOverflowOrErrors(applied, page);
     }
 
@@ -247,11 +273,13 @@ public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
         AssertDeviceShown(waiting, "Kitchen printer 2", page);
         Assert.Equal(selected, waiting.GetProperty("selection").GetString());
         Assert.True(waiting.GetProperty("selectionConnected").GetBoolean(), $"{page}: the selection points into removed markup");
+        await AssertPausedNoticeAsync(browser, waiting, "devicesPaused", "#printBridgeDevicesPaused", culture, page, ct);
 
         await ClickAsync(browser, "#recent-print-activity h2", ct);
         await RefreshDevicesAsync(browser, ct);
         var applied = await StateAsync(browser, ct);
         AssertDeviceShown(applied, "Kitchen printer 3", page);
+        Assert.Equal("", applied.GetProperty("devicesPaused").GetString());
         Assert.False(applied.GetProperty("focusInDevices").GetBoolean(), $"{page}: the update moved focus into the table");
         AssertNoOverflowOrErrors(applied, page);
     }
@@ -371,6 +399,31 @@ public sealed class PrintBridgeDevicesFocusBrowserTests : IAsyncLifetime
         Assert.True(target.GetProperty("hit").GetBoolean(), $"{selector} is covered or off screen.");
         await browser.ClickAtAsync(target.GetProperty("x").GetDouble(), target.GetProperty("y").GetDouble(), ct);
     }
+
+    /// <summary>
+    /// A paused update tells the user why the region is not current: a visible, localized message in a polite status
+    /// region (announced once, never moving focus).
+    /// </summary>
+    private static async Task AssertPausedNoticeAsync(
+        HeadlessChromium browser, JsonElement state, string property, string selector, string culture, string page, CancellationToken ct)
+    {
+        Assert.True(Resource(culture, "PrintBridge.UpdatesPaused") == state.GetProperty(property).GetString(),
+            $"{page}: the paused update is not explained; {selector} says \"{state.GetProperty(property).GetString()}\"");
+        var notice = (await browser.AccessibleNodesAsync(selector, ct)).Single();
+        Assert.Equal("status", notice.Role);
+        Assert.True(await browser.EvaluateAsync<bool>(
+            $"(() => {{ const r = document.querySelector({JsonSerializer.Serialize(selector)}).getBoundingClientRect(); return r.width > 0 && r.height > 0; }})()", ct),
+            $"{page}: {selector} is not visible");
+        AssertNoOverflowOrErrors(state, page + " while paused");
+    }
+
+    private static string Resource(string culture, string key) =>
+        XDocument.Load(TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "Resources", $"SharedResource.{culture}.resx"))
+            .Root!
+            .Elements("data")
+            .Where(element => element.Attribute("name")?.Value == key)
+            .Select(element => element.Element("value")?.Value)
+            .SingleOrDefault() ?? $"[missing {key} in {culture}]";
 
     private static void AssertDeviceShown(JsonElement state, string name, string page) =>
         Assert.True(state.GetProperty("deviceNames").EnumerateArray().Any(e => e.GetString() == name),

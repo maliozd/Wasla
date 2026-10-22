@@ -184,10 +184,36 @@
   // selection and the table's scroll position. A region is replaced only when its markup changed. While text is selected
   // in it, or the control with keyboard focus would not exist in the new markup, the update waits for a later refresh: a
   // refresh never moves focus into or out of a region. Otherwise the same logical control (same row, same kind) gets focus
-  // back and the table keeps its scroll position.
+  // back and the table keeps its scroll position. A waiting update is explained in the region's status line, and is applied
+  // as soon as the user moves focus or ends the selection, so the region is never stale without saying so.
 
-  var DEVICE_CONTROLS = { row: "tr[data-device-id]", idAttribute: "data-device-id", controls: [".pb-device-active-toggle", "a"] };
-  var JOB_CONTROLS = { row: "tr[data-print-job-id]", idAttribute: "data-print-job-id", controls: [".pb-reprint-job-btn"] };
+  var DEVICE_CONTROLS = {
+    row: "tr[data-device-id]", idAttribute: "data-device-id", controls: [".pb-device-active-toggle", "a"], notice: "printBridgeDevicesPaused"
+  };
+  var JOB_CONTROLS = {
+    row: "tr[data-print-job-id]", idAttribute: "data-print-job-id", controls: [".pb-reprint-job-btn"], notice: "printBridgeJobsPaused"
+  };
+  var pausedUpdates = {};
+
+  /** Shows or clears a region's "updates paused" status line; unchanged text is not rewritten, so it is announced once. */
+  function setPaused(spec, retry) {
+    if (retry) pausedUpdates[spec.notice] = retry;
+    else delete pausedUpdates[spec.notice];
+    var notice = document.getElementById(spec.notice);
+    if (!notice) return;
+    var text = retry ? (messages.updatesPaused || "") : "";
+    if (notice.textContent === text) return;
+    notice.textContent = text;
+    notice.classList.toggle("mb-2", !!retry);
+  }
+
+  /** Tries every waiting update again; each one waits once more if the user is still in the way. */
+  function retryPausedUpdates() {
+    Object.keys(pausedUpdates).forEach(function (key) {
+      var retry = pausedUpdates[key];
+      if (retry) retry();
+    });
+  }
 
   function selectionInside(region) {
     var selection = typeof window.getSelection === "function" ? window.getSelection() : null;
@@ -216,15 +242,26 @@
     return null;
   }
 
-  /** Replaces <region>'s markup unless the user is in the way. Returns whether it was replaced. */
-  function replaceRegion(region, html, spec) {
-    if (selectionInside(region)) return false;
-    var focusKey = focusedControl(region, spec);
-    if (focusKey) {
-      var probe = document.createElement("template");
-      probe.innerHTML = html;
-      if (!findControl(probe.content, spec, focusKey)) return false;
+  /**
+   * Replaces <region>'s markup unless the user is in the way, in which case <retry> runs again once they move on. Returns
+   * whether it was replaced.
+   */
+  function replaceRegion(region, html, spec, retry) {
+    var focusKey = null;
+    var blocked = selectionInside(region);
+    if (!blocked) {
+      focusKey = focusedControl(region, spec);
+      if (focusKey) {
+        var probe = document.createElement("template");
+        probe.innerHTML = html;
+        blocked = !findControl(probe.content, spec, focusKey);
+      }
     }
+    if (blocked) {
+      setPaused(spec, retry);
+      return false;
+    }
+    setPaused(spec, null);
 
     var scroller = region.querySelector(".table-responsive");
     var scrollLeft = scroller ? scroller.scrollLeft : 0;
@@ -320,9 +357,13 @@
     }
 
     // Nothing changed: leave the table (and whatever has keyboard focus in it) alone.
-    if (html === lastDevicesHtml) return;
-    // The user is in the way: the next snapshot tries again.
-    if (!replaceRegion(panel, html, DEVICE_CONTROLS)) return;
+    if (html === lastDevicesHtml) {
+      setPaused(DEVICE_CONTROLS, null);
+      return;
+    }
+    // The user is in the way: the latest snapshot is shown once they move on.
+    var retry = function () { if (deviceState) renderDevicesTable(deviceState.devices); };
+    if (!replaceRegion(panel, html, DEVICE_CONTROLS, retry)) return;
     lastDevicesHtml = html;
     bindActiveToggles();
   }
@@ -612,14 +653,21 @@
         return resp.text();
       })
       .then(function (html) {
-        // An unchanged answer leaves the region alone; a changed one the user is in the way of waits for the next poll.
-        var markup = normalizedMarkup(html);
-        if (markup === lastPrintJobsMarkup) return;
-        if (replaceRegion(panel, html, JOB_CONTROLS)) lastPrintJobsMarkup = markup;
+        applyPrintJobs(panel, html);
       })
       .finally(function () {
         printJobsRefreshInFlight = false;
       });
+  }
+
+  /** An unchanged answer leaves the region alone; a changed one the user is in the way of waits until they move on. */
+  function applyPrintJobs(panel, html) {
+    var markup = normalizedMarkup(html);
+    if (markup === lastPrintJobsMarkup) {
+      setPaused(JOB_CONTROLS, null);
+      return;
+    }
+    if (replaceRegion(panel, html, JOB_CONTROLS, function () { applyPrintJobs(panel, html); })) lastPrintJobsMarkup = markup;
   }
 
   /** Markup as this browser serializes it, so a server answer compares with what the region was rendered from. */
@@ -702,5 +750,8 @@
     bindPrintJobReprintDelegation();
     bindRefreshPrintJobs();
     startPrintJobsPolling();
+    // A waiting update applies as soon as the user moves focus or ends the selection, not only on the next refresh.
+    document.addEventListener("focusin", retryPausedUpdates);
+    document.addEventListener("selectionchange", retryPausedUpdates);
   });
 })();

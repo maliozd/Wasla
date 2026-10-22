@@ -1717,4 +1717,7 @@
   <data name="PlatformConnections.CredentialsReenter" xml:space="preserve">
     <value>Güvenliğiniz için girdiğiniz API bilgileri temizlendi ve hiçbir değişiklik kaydedilmedi. Lütfen yeniden girin.</value>
   </data>
+  <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
+    <value>Bu tablodaki güncellemeler, metin seçtiğiniz veya tablodaki bir denetimi kullandığınız sürece duraklatılır.</value>
+  </data>
 </root>
