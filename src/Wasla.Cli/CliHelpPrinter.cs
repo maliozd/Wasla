@@ -79,7 +79,7 @@ internal static class CliHelpPrinter
         Console.WriteLine("  seed-address-reference-data Import address reference data (country, city, district; neighborhoods/streets when files are available).");
         Console.WriteLine("  migrate-tenant            Apply pending TenantDb migrations for one tenant.");
         Console.WriteLine("  migrate-all-tenants       Apply pending TenantDb migrations for all active tenants.");
-        Console.WriteLine("  migration-status          Show CentralDb and TenantDb migration status.");
+        Console.WriteLine("  migration-status          Show CentralDb and TenantDb migration status; --require-current gates a release.");
         Console.WriteLine();
 
         Console.WriteLine("Central admin commands:");
@@ -246,6 +246,14 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Example:");
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- migrate-all-tenants");
+                return;
+
+            case "migration-status":
+                Console.WriteLine("migration-status");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  migration-status [--require-current]");
+                Console.WriteLine("  --require-current fails when CentralDb or any active TenantDb is pending, unknown, or unreadable.");
                 return;
 
             case "encrypt":
