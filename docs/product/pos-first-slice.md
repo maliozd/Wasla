@@ -6,7 +6,7 @@ Plan from WAS-34 (2026-10, revised for the local-first architecture). **Nothing 
 
 It defines the smallest end-to-end POS slice that proves the local-first decisions in [../architecture/pos-application-boundary.md](../architecture/pos-application-boundary.md): selling and printing with the internet cut, then synchronizing safely. It also lists the dependency-ordered issues that build the slice. The product scope is in [pos-mvp.md](pos-mvp.md).
 
-The slice is a development and test milestone. It is not production-ready and not a pilot. The signed installer and updater, the restore drill on real hardware, physical-printer checks and the [fiscal decision](pos-mvp.md#unresolved-product-decisions) come after it ([After the slice](#after-the-slice)).
+The slice is a development and test milestone. It is not production-ready and not a pilot. The signed installer and updater, the restore drill on real hardware, physical-printer checks, a real ÖKC driver and the [e-Arşiv / e-Fatura / e-Adisyon review](pos-mvp.md#unresolved-product-decisions) come after it ([After the slice](#after-the-slice)).
 
 ## The slice
 
@@ -20,7 +20,7 @@ The slice is a development and test milestone. It is not production-ready and no
 8. Add products, one of them with a modifier.
 9. Send a kitchen ticket.
 10. Print it locally, or prove the local print job flow against a recording printer, without cloud access.
-11. Record a cash or external-terminal payment.
+11. Pay through the fake ÖKC driver (no device brand is chosen yet): a declined card, then a completed card or cash payment with fiscal and bank identifiers, and one transaction that ends unknown and is checked on the device before any retry.
 12. Close the sale and reopen it read-only from local history.
 13. **Restore the WAN.**
 14. Upload the sale, payment, kitchen ticket and audit records through the durable outbox.
@@ -35,8 +35,8 @@ The slice is a development and test milestone. It is not production-ready and no
 - **Activation and licence:** installation activation, the installation credential, and an entitlement lease with grace and restricted mode.
 - **Devices and staff:** an installation CA with renewable server certificates; Terminal pairing that pins the CA; Owner PIN sign-in, lockout, the recovery code; POS roles and policies (Manager, Cashier, Waiter and Kitchen exist in the policy table and tests, without screens of their own).
 - **Menu and selling:** menu and table import. Sale screen, tables screen, dine-in check, quick sale and send to kitchen.
-- **Payments and history:** cash and external-terminal payment records, closing, local history and the day summary.
-- **Printing:** local printing of the kitchen ticket, pre-bill and receipt through the printing library extracted from Print Bridge.
+- **Payments and history:** the ÖKC device-adapter interface with a fake driver, fiscal transactions (sending, waiting for the customer, declined, cancelled, waiting for the fiscal receipt, completed, unknown and its check), payment records with separate check, fiscal and bank identifiers, closing, local history and the day summary.
+- **Printing:** local printing of the kitchen ticket and pre-bill (non-fiscal) through the printing library extracted from Print Bridge. Fiscal receipts are the ÖKC's job and are simulated by the fake driver.
 - **Sync:** outbox upload, ingestion, acknowledgements, protocol versioning, conflict blocking, cloud commands, sync health, and the restore operation with its signed recovery package.
 - **Languages:** TR, EN, AR and RU resources for every slice screen, with Arabic right to left.
 
@@ -44,6 +44,7 @@ The slice is a development and test milestone. It is not production-ready and no
 
 The following follow in the [backlog](#backlog) or after it:
 - the signed installer, updater and rollback;
+- a real ÖKC driver, which waits for the device investigation;
 - takeaway;
 - voids, cancellations and payment reversals;
 - the menu and table editor;
@@ -110,7 +111,8 @@ Each criterion names the test that proves it. Tests run against an in-process PO
     - Setting the clock back does not extend the lease.
     - *Unit tests.*
 12. **Payment and card-data boundary.**
-    - A 16-digit reference that passes the Luhn check is refused at entry and is never uploaded.
+    - A card-number-like field returned by the fake ÖKC driver is dropped by the adapter and never stored, logged, audited or uploaded.
+    - If the manual payment record is kept, a 16-digit reference that passes the Luhn check is refused at entry and is never uploaded.
     - No PIN, credential or activation code appears in logs, audit records, outbox payloads or support bundles.
     - *Unit tests.*
 13. **Certificate lifecycle without re-pairing.**
@@ -119,7 +121,14 @@ Each criterion names the test that proves it. Tests run against an in-process PO
     - A CA rollover is accepted only with the old key's signature. An unsigned new CA, a certificate from another installation's CA, or a certificate without the paired installation id is refused.
     - Marking the CA compromised revokes every device credential.
     - *Unit tests; Terminal test against an in-process Edge.*
-14. **Wasla Orders unaffected.**
+14. **ÖKC outcomes through the fake driver.**
+    - A decline or cancellation records no payment and allows a new attempt.
+    - A completed transaction stores the fiscal receipt number, Z number and bank reference in separate fields, and the check closes.
+    - A transaction that times out after approval becomes Unknown. A second payment for the check is refused until it is checked; the check finds it completed and records it once.
+    - A transaction the device does not know becomes Failed and allows a retry; an unanswered check stays Unknown and needs a Manager or Owner decision.
+    - A POS Edge restart while a transaction is in flight leaves it Unknown, never Completed or Failed by assumption.
+    - *Unit and integration tests, with the WAN disconnected.*
+15. **Wasla Orders unaffected.**
     - `Wasla.sln` builds. The full `Wasla.UnitTests`, `Wasla.PrintBridge.Tests` and Node tests pass on the slice's final commit.
     - No Orders behavior, configuration or schema changes, except the two library extractions, which are behavior-neutral.
     - *CI.*
@@ -137,7 +146,7 @@ Each step is one Linear issue, merged into `dev` through its own branch and work
 5. [WAS-159](https://linear.app/wasla-food/issue/WAS-159) Terminal pairing, PIN sign-in, POS roles, recovery code.
 6. [WAS-160](https://linear.app/wasla-food/issue/WAS-160) Menu and tables import.
 7. [WAS-161](https://linear.app/wasla-food/issue/WAS-161) Sale screen, table checks, quick sale, send to kitchen.
-8. [WAS-162](https://linear.app/wasla-food/issue/WAS-162) Payments, close, local history.
+8. [WAS-162](https://linear.app/wasla-food/issue/WAS-162) Payments through the ÖKC adapter (fake driver), close, local history.
 9. [WAS-163](https://linear.app/wasla-food/issue/WAS-163) Local printing with the extracted printing library. It can run in parallel with step 10.
 10. [WAS-166](https://linear.app/wasla-food/issue/WAS-166) Outbox upload and cloud ingestion.
 11. [WAS-167](https://linear.app/wasla-food/issue/WAS-167) Sync health, protocol versions, conflicts and cloud commands. **The slice is complete when this step and step 9 are merged.**
@@ -157,8 +166,8 @@ Linear project *Wasla POS — MVP*. Each issue's description holds its full boun
 | 5 | [WAS-159](https://linear.app/wasla-food/issue/WAS-159) | Pairing, PIN, certificates | Installation CA and renewable server certificates, CA rollover and compromise, pairing codes bound to the CA key, device credentials, peppered PINs, lockout, Owner setup and recovery codes, POS roles | 4 | Unit tests with the WAN disconnected; renewal, IP-change and rollover tests; Terminal or browser test in four cultures and RTL |
 | 6 | [WAS-160](https://linear.app/wasla-food/issue/WAS-160) | Menu and tables | Local entities, validated idempotent import, snapshots to the outbox | 5 | Unit tests with the WAN disconnected |
 | 7 | [WAS-161](https://linear.app/wasla-food/issue/WAS-161) | Local sale workflow | Sale and tables screens, checks, quick sale, send to kitchen with ticket, print job and outbox in one transaction | 6 | Unit, Node and Terminal/browser tests; concurrency on SQLite |
-| 8 | [WAS-162](https://linear.app/wasla-food/issue/WAS-162) | Payments, history, audit | Cash and external-terminal records, close, history, day summary, outbox and audit | 7 | Concurrency on SQLite; unit and browser tests |
-| 9 | [WAS-163](https://linear.app/wasla-food/issue/WAS-163) | Local printing | Printing library extracted from Print Bridge Core; Edge print worker; printer roles; documents | 8 | Print Bridge tests unchanged; worker tests with a recording printer; manual physical print reported separately |
+| 8 | [WAS-162](https://linear.app/wasla-food/issue/WAS-162) | Payments, history, audit | ÖKC device-adapter interface and fake driver, fiscal transactions with the unknown-outcome check, payment records with separate check, fiscal and bank identifiers, close, history, day summary, outbox and audit | 7 | Concurrency on SQLite; fake-driver outcome tests; unit and browser tests |
+| 9 | [WAS-163](https://linear.app/wasla-food/issue/WAS-163) | Local printing | Printing library extracted from Print Bridge Core; Edge print worker; printer roles; non-fiscal documents (kitchen ticket, void slip, pre-bill; no customer receipt) | 8 | Print Bridge tests unchanged; worker tests with a recording printer; manual physical print reported separately |
 | 10 | [WAS-166](https://linear.app/wasla-food/issue/WAS-166) | Outbox and cloud ingestion | Sync contracts v1, batches, ingestion with unique keys, acknowledgement after durable storage, partial acknowledgement, retry, replay | 4, 8 | Integration tests; SQL Server concurrent ingestion test |
 | 11 | [WAS-167](https://linear.app/wasla-food/issue/WAS-167) | Sync health, conflicts, versions, recovery | Protocol N/N−1, integrity conflicts, poison records, cloud commands, sync health, `installation-status`, support bundle; restore codes, signed recovery packages, recovery conflicts, numbering after a restore | 10 | Integration tests, including stale-backup recovery; browser test of sync health |
 | 12 | [WAS-168](https://linear.app/wasla-food/issue/WAS-168) | Installer, update, rollback | Signed per-machine installer, service account, firewall rule, installation CA and server certificate (kept on repair and upgrade), WebView2 Runtime, updater with backup, migrate, health check and rollback | 2, 5 | Clean Windows 10 and 11 VMs; forced rollback; tampered package refused |
@@ -169,13 +178,15 @@ Linear project *Wasla POS — MVP*. Each issue's description holds its full boun
 In this order, before a pilot restaurant:
 
 1. [WAS-168](https://linear.app/wasla-food/issue/WAS-168): the installer, updater and rollback.
-2. The remaining MVP features. Each gets its own issue when the slice is accepted:
+2. **ÖKC technical investigation, then the first real driver** (issues to be created). The investigation tests the available Verifone devices and others, and records brand and model, SDK or protocol access, connection, manufacturer or authority approval requirements and fees ([ADR](../architecture/pos-application-boundary.md#fiscal-cash-register-ökc)). The driver implements the adapter interface proven by the fake driver in the slice.
+3. The remaining MVP features. Each gets its own issue when the slice is accepted:
    - the back-office editor for menu, tables, staff and terminals;
    - takeaway;
    - voids, cancellations and payment reversals with manager approval;
-   - void slips and reprints;
+   - void slips and reprints of non-fiscal documents;
+   - ÖKC cancellations and returns (*iade*) for reversals and sale cancellations, as the chosen device allows;
    - cloud-issued Owner recovery tokens.
-3. [WAS-169](https://linear.app/wasla-food/issue/WAS-169): pilot readiness. **The fiscal decision is a blocker for any paid pilot.**
+4. [WAS-169](https://linear.app/wasla-food/issue/WAS-169): pilot readiness. **A working ÖKC integration and the e-Arşiv / e-Fatura / e-Adisyon review are blockers for any paid pilot.**
 
 ## Risks
 
@@ -187,5 +198,7 @@ In this order, before a pilot restaurant:
 | Certificate expiry or IP changes force every Terminal to be re-paired | Terminals pin a per-installation CA; server certificates renew automatically with an overlap; IP changes need no new certificate; CA rollover is signed by the old key |
 | Library extractions (WAS-156, WAS-163) break Orders or Print Bridge | Move only, no behavior change, the full Orders and Print Bridge suites |
 | A long outage meets an expired lease | Provisionally 14-day lease (final length open), warnings, restricted mode that never stops a service in progress, and a one-time emergency extension |
-| Fiscal rules make a non-fiscal POS unsellable in Türkiye | Legal review before any paid pilot (WAS-169 gate); receipts say they are not fiscal documents |
+| ÖKC integration depends on vendor SDK access, approvals and fees that are not known yet | Technical investigation with the available Verifone devices and others before choosing; a device-adapter boundary and a fake driver so the payment flow does not wait for the brand choice |
+| An unknown ÖKC outcome leads to a double charge or a missing payment | Every unknown transaction is checked on the ÖKC before any retry; a new payment for the check is refused meanwhile; unresolved cases need a Manager or Owner decision, audited |
+| Fiscal obligations beyond the ÖKC (e-Arşiv, e-Fatura, e-Adisyon) are not met | Legal and tax review before any paid pilot (WAS-169 gate); POS Edge's own documents say they are not fiscal documents |
 | Owners find two credentials (Orders and POS) confusing | An explicit open decision with triggers in the [ADR](../architecture/pos-application-boundary.md#later-decisions) |
