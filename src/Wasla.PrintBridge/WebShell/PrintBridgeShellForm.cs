@@ -4,6 +4,7 @@ using Microsoft.Web.WebView2.WinForms;
 using Microsoft.Win32;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.UI;
 
 namespace Wasla.PrintBridge.WebShell;
 
@@ -28,6 +29,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     private readonly ILogger _logger;
     private readonly System.Windows.Forms.Timer _refreshTimer;
     private bool _useDarkPalette;
+    private bool _windowActive;
     private Form? _openDialog;
 
     private CoreWebView2Environment? _environment;
@@ -62,6 +64,8 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         MinimumSize = new Size(420, 420);
         BackColor = canvas;
         ShowInTaskbar = true;
+        if (WaslaAppIcon.Instance is { } icon)
+            Icon = icon;
 
         _webView = new WebView2
         {
@@ -189,6 +193,20 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
+        ApplyTitleBarTheme();
+    }
+
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        _windowActive = true;
+        ApplyTitleBarTheme();
+    }
+
+    protected override void OnDeactivate(EventArgs e)
+    {
+        base.OnDeactivate(e);
+        _windowActive = false;
         ApplyTitleBarTheme();
     }
 
@@ -452,14 +470,17 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
 
         Post(() =>
         {
+            // Applied even when light or dark is unchanged: the accent-colour and high-contrast settings also
+            // decide the title bar.
             var dark = ShellWindowTheme.IsWindowsAppDarkModeEnabled();
-            if (dark == _useDarkPalette)
-                return;
+            if (dark != _useDarkPalette)
+            {
+                _useDarkPalette = dark;
+                var canvas = ShellPalette.For(dark).Canvas;
+                BackColor = canvas;
+                _webView.DefaultBackgroundColor = canvas;
+            }
 
-            _useDarkPalette = dark;
-            var canvas = ShellPalette.For(dark).Canvas;
-            BackColor = canvas;
-            _webView.DefaultBackgroundColor = canvas;
             ApplyTitleBarTheme();
         });
     }
@@ -467,7 +488,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     private void ApplyTitleBarTheme()
     {
         if (IsHandleCreated)
-            ShellWindowTheme.TrySetDarkTitleBar(Handle, _useDarkPalette);
+            ShellWindowTheme.TryApplyTitleBar(Handle, _useDarkPalette, _windowActive);
     }
 
     private void RaiseUnavailable()

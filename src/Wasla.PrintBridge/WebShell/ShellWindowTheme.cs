@@ -59,6 +59,8 @@ internal sealed record ShellPalette(
     public static ShellPalette For(bool dark) => dark ? Dark : Light;
 }
 
+internal readonly record struct TitleBarColors(Color Caption, Color Text, Color Border);
+
 internal static class ShellWindowTheme
 {
     private static readonly string FontFamilyName = ResolveFontFamily();
@@ -86,18 +88,59 @@ internal static class ShellWindowTheme
         }
     }
 
-    /// <summary>Matches the title bar to the palette (Windows 10 2004 and later; ignored elsewhere).</summary>
-    public static void TrySetDarkTitleBar(IntPtr handle, bool dark)
+    /// <summary>
+    /// The native title bar's caption, caption text and border colours: the surface the window's top band and
+    /// dialogs use, so the title bar and the app header read as one band. Inactive windows get the secondary text
+    /// and the quiet border, as Windows does. <see langword="null"/> under high contrast, where Windows' own
+    /// system colours must win.
+    /// </summary>
+    internal static TitleBarColors? TitleBarColorsFor(bool dark, bool active, bool highContrast)
+    {
+        if (highContrast)
+            return null;
+
+        var palette = ShellPalette.For(dark);
+        return new TitleBarColors(
+            palette.Surface,
+            active ? palette.Text : palette.TextSecondary,
+            active ? palette.BorderStrong : palette.Border);
+    }
+
+    /// <summary>
+    /// Matches the native title bar to the palette. Dark mode needs Windows 10 2004 or later. The caption, text and
+    /// border colours need Windows 11; they also replace the accent colour Windows otherwise paints when
+    /// "Show accent colour on title bars and window borders" is on. Older builds reject what they do not know,
+    /// which is ignored, so the window keeps the standard Windows frame and its behaviour everywhere.
+    /// </summary>
+    public static void TryApplyTitleBar(IntPtr handle, bool dark, bool active = true)
     {
         const int DwmwaUseImmersiveDarkMode = 20;
-        var enabled = dark ? 1 : 0;
+        const int DwmwaBorderColor = 34;
+        const int DwmwaCaptionColor = 35;
+        const int DwmwaTextColor = 36;
+
+        var colors = TitleBarColorsFor(dark, active, SystemInformation.HighContrast);
         try
         {
+            var enabled = dark ? 1 : 0;
             _ = DwmSetWindowAttribute(handle, DwmwaUseImmersiveDarkMode, ref enabled, sizeof(int));
+            SetColor(handle, DwmwaCaptionColor, colors?.Caption);
+            SetColor(handle, DwmwaTextColor, colors?.Text);
+            SetColor(handle, DwmwaBorderColor, colors?.Border);
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
         {
         }
+    }
+
+    /// <summary>A COLORREF (0x00BBGGRR), or DWMWA_COLOR_DEFAULT to hand the colour back to Windows.</summary>
+    internal static int ToColorRef(Color? color) =>
+        color is { } c ? c.R | (c.G << 8) | (c.B << 16) : unchecked((int)0xFFFFFFFF);
+
+    private static void SetColor(IntPtr handle, int attribute, Color? color)
+    {
+        var value = ToColorRef(color);
+        _ = DwmSetWindowAttribute(handle, attribute, ref value, sizeof(int));
     }
 
     // The page asks for "Segoe UI Variable Text" first; Windows 10 has only Segoe UI.
