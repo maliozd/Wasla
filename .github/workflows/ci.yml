@@ -13,6 +13,11 @@ on:
   # Called by ci-base-change.yml when a pull request's base changes to master. A called workflow keeps the caller's
   # event, so the scope and the concurrency group below are those of a pull request into master.
   workflow_call:
+    inputs:
+      ref:
+        description: Commit to test instead of the event's commit (the pull request's merge with its new base)
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -35,8 +40,11 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: true
 
     steps:
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       # A pull request into dev runs the fast scope (no headless-browser or WebView2 runtime tests); every other event
       # runs every test. The script owns the filters; see docs/operations/testing.md.
@@ -154,8 +162,11 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
