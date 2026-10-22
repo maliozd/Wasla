@@ -954,20 +954,29 @@ internal static class CliCommands
         }
     }
 
-    public static async Task<int> MigrationStatusAsync(IHost host, CancellationToken ct)
+    public static async Task<int> MigrationStatusAsync(IHost host, bool requireCurrent, CancellationToken ct)
     {
         try
         {
             using var scope = host.Services.CreateScope();
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+            var notCurrent = false;
 
             Console.WriteLine("=== CentralDb ===");
             var centralPending = (await central.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
             var centralApplied = (await central.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+            var centralKnown = central.Database.GetMigrations().ToHashSet(StringComparer.Ordinal);
+            var centralUnknown = centralApplied.Any(m => !centralKnown.Contains(m));
             var centralLatest = centralApplied.Count > 0 ? centralApplied[^1] : "(none)";
             Console.WriteLine($"Latest applied: {centralLatest}");
             Console.WriteLine($"Pending count:  {centralPending.Count}");
+            if (centralPending.Count > 0 || centralUnknown)
+            {
+                notCurrent = true;
+                if (centralUnknown)
+                    Console.WriteLine("CentralDb has migrations unknown to this build.");
+            }
             if (centralPending.Count > 0)
             {
                 foreach (var m in centralPending)
@@ -997,8 +1006,16 @@ internal static class CliCommands
                     var applied = (await db.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
                     var latest = applied.Count > 0 ? applied[^1] : "(none)";
                     var pending = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+                    var known = db.Database.GetMigrations().ToHashSet(StringComparer.Ordinal);
+                    var unknown = applied.Any(m => !known.Contains(m));
                     Console.WriteLine($"  TenantDb latest applied: {latest}");
                     Console.WriteLine($"  Pending: {pending.Count}");
+                    if (pending.Count > 0 || unknown)
+                    {
+                        notCurrent = true;
+                        if (unknown)
+                            Console.WriteLine("  TenantDb has migrations unknown to this build.");
+                    }
                     if (pending.Count > 0)
                     {
                         foreach (var m in pending)
@@ -1007,13 +1024,18 @@ internal static class CliCommands
                 }
                 catch (Exception ex)
                 {
+                    notCurrent = true;
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"  (could not read migration status) {ex.Message}");
+                    Console.WriteLine(requireCurrent
+                        ? $"  (could not read migration status) {ex.GetType().Name}"
+                        : $"  (could not read migration status) {ex.Message}");
                     Console.ResetColor();
                 }
             }
 
-            return 0;
+            if (requireCurrent)
+                Console.WriteLine(notCurrent ? "Migration readiness check failed." : "All active databases are current for this build.");
+            return requireCurrent && notCurrent ? 1 : 0;
         }
         catch (Exception ex)
         {

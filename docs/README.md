@@ -34,9 +34,9 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [operations/tenant-operations-center.md](operations/tenant-operations-center.md) | Central Admin tenant overview, list and per-tenant health |
 | [operations/testing.md](operations/testing.md) | What to run, and what not to claim |
 | [product/product-boundaries.md](product/product-boundaries.md) | Wasla Orders, Wasla POS, and shared-infrastructure boundaries |
-| [product/pos-mvp.md](product/pos-mvp.md) | Wasla POS MVP (planned, not implemented): local-first installed product, workflows, POS roles, scope, payment boundary, UX and non-functional requirements |
+| [product/pos-mvp.md](product/pos-mvp.md) | Wasla POS MVP (planned, not implemented): local-first installed product, workflows, payments through the fiscal cash register (ÖKC), POS roles, scope, payment boundary, UX and non-functional requirements |
 | [product/pos-first-slice.md](product/pos-first-slice.md) | Wasla POS first vertical slice (selling offline, then syncing), acceptance criteria and backlog |
-| [architecture/pos-application-boundary.md](architecture/pos-application-boundary.md) | Decision: Wasla POS as a local-first installed product (POS Edge, local SQLite, POS Terminal, cloud sync) in this repository; data authority, sync, restore and cloud recovery, printing, devices and certificate lifecycle, licensing |
+| [architecture/pos-application-boundary.md](architecture/pos-application-boundary.md) | Decision: Wasla POS as a local-first installed product (POS Edge, local SQLite, POS Terminal, cloud sync) in this repository; data authority, sync, restore and cloud recovery, printing, the fiscal cash register (ÖKC) boundary, devices and certificate lifecycle, licensing |
 | [product/terminology.md](product/terminology.md) | Product names, Tenant vs order customer, clean-break policy and the historical migration exception |
 | [product/roles-and-permissions.md](product/roles-and-permissions.md) | Server-side role matrix |
 | [product/onboarding.md](product/onboarding.md) | Per-user guided setup, tenant operational mode (Setup / Live), going live |
